@@ -1,0 +1,25 @@
+@(user:Option[User], loginForm:Form[User], errors:String = "")
+
+@import helper._
+
+@main("Welcome to Querki") {
+
+	@user match {
+	  case None => {
+	    <p>Welcome to Querki! Please log in:<p>
+		@form(routes.Application.login) {
+		  @inputText(loginForm("name"), '_label -> "Your name:")
+		  <input type="submit" value="Log in">
+		}
+	  }
+      case Some(u) => {
+	    <p>Welcome back, @u.name !</p>
+	  }
+	}
+
+	
+	@************
+    @play20.welcome(message)
+	************@
+    
+}
