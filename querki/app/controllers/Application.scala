@@ -14,16 +14,26 @@ object Application extends Controller {
       "name" -> nonEmptyText
     )(User.apply)(User.unapply)
   )
-  def index = Action {
-    Ok(views.html.index(None, userForm))
+  
+  def index = Action { request =>
+    val userNameOpt = request.cookies.get("username")
+	val user = userNameOpt match {
+	  case None => None
+	  case Some(cookie) => Some(User(cookie.value))
+	}
+    Ok(views.html.index(user, userForm))
   }
   
   def login = Action { implicit request =>
     userForm.bindFromRequest.fold(
-      errors => BadRequest(views.html.index(None, errors, "I didn't understand that")),
+      errors => BadRequest(views.html.index(None, errors, Some("I didn't understand that"))),
       user => {
-	    Ok(views.html.index(Some(user), userForm))
+	    Redirect(routes.Application.index).withCookies(Cookie("username", user.name))
       }
     )
+  }
+  
+  def logout = Action {
+    Redirect(routes.Application.index).discardingCookies("username")
   }
 }

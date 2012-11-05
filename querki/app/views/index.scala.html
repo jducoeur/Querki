@@ -1,4 +1,4 @@
-@(user:Option[User], loginForm:Form[User], errors:String = "")
+@(user:Option[User], loginForm:Form[User], errors:Option[String] = None)
 
 @import helper._
 
@@ -6,6 +6,10 @@
 
 	@user match {
 	  case None => {
+	    @errors match {
+		  case None => {}
+		  case Some(msg) => { <p>@msg</p> }
+		}
 	    <p>Welcome to Querki! Please log in:<p>
 		@form(routes.Application.login) {
 		  @inputText(loginForm("name"), '_label -> "Your name:")
@@ -14,6 +18,9 @@
 	  }
       case Some(u) => {
 	    <p>Welcome back, @u.name !</p>
+		@form(routes.Application.logout) {
+		  <input type="submit" value="Log out">
+		}
 	  }
 	}
 
