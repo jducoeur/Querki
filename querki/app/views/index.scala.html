@@ -1,8 +1,9 @@
 @(user:Option[User], loginForm:Form[User], errors:Option[String] = None)
 
 @import helper._
+@import helper.twitterBootstrap._
 
-@main("Welcome to Querki") {
+@main("Welcome to Querki", user) {
 
 	@user match {
 	  case None => {
@@ -10,17 +11,24 @@
 		  case None => {}
 		  case Some(msg) => { <p>@msg</p> }
 		}
-	    <p>Welcome to Querki! Please log in:<p>
-		@form(routes.Application.login) {
-		  @inputText(loginForm("name"), '_label -> "Your name:")
-		  <input type="submit" value="Log in">
+		<div class="page-header">
+		  <h1>Welcome to Querki!</h1>
+		</div>
+	    <p>Please log in:<p>
+		@form(routes.Application.login, 'class -> "form-inline") {
+		  <input type="text" name="name" id="name" value="" placeholder="Your name">
+		  <input type="submit" value="Log in" class="btn btn-primary">
 		}
 	  }
       case Some(u) => {
-	    <p>Welcome back, @u.name !</p>
-		@form(routes.Application.logout) {
-		  <input type="submit" value="Log out">
-		}
+	    <div class="hero-unit">
+	      <h1>Welcome back, @u.name !</h1>
+		  <p>None of this does anything yet, but it's starting to at
+		  least look nice while it's not doing it.</p>
+		  @form(routes.Application.logout) {
+		    <input type="submit" value="Log out" class="btn btn-primary btn-large">
+		  }
+		</div>
 	  }
 	}
 
