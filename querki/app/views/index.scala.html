@@ -1,4 +1,4 @@
-@(user:Option[User], loginForm:Form[User], errors:Option[String] = None)
+@(user:Option[User], loginForm:Form[User], additional:Option[String] = None, errors:Option[String] = None)
 
 @import helper._
 @import helper.twitterBootstrap._
@@ -25,6 +25,10 @@
 	      <h1>Welcome back, @u.name !</h1>
 		  <p>None of this does anything yet, but it's starting to at
 		  least look nice while it's not doing it.</p>
+		  @additional match {
+		    case Some(m) => { <p>Akka says: @m </p> }
+		    case None => {}
+		  }
 		  @form(routes.Application.logout) {
 		    <input type="submit" value="Log out" class="btn btn-primary btn-large">
 		  }

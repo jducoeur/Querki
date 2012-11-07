@@ -5,6 +5,8 @@ import play.api.data._
 import play.api.data.Forms._
 import play.api.mvc._
 
+import models.SpaceManager
+import models.SaySomething
 import models.User
 
 object Application extends Controller {
@@ -16,12 +18,16 @@ object Application extends Controller {
   )
   
   def index = Action { request =>
-    val userNameOpt = request.cookies.get("username")
-	val user = userNameOpt match {
-	  case None => None
-	  case Some(cookie) => Some(User(cookie.value))
-	}
-    Ok(views.html.index(user, userForm))
+    Async {
+	    val userNameOpt = request.cookies.get("username")
+		val user = userNameOpt match {
+		  case None => None
+		  case Some(cookie) => Some(User(cookie.value))
+		}
+	    SpaceManager.ask[String,Result](SaySomething("Why, hello")) { mgrResp =>
+	      Ok(views.html.index(user, userForm, Some(mgrResp)))      
+	    }      
+    }
   }
   
   def login = Action { implicit request =>
