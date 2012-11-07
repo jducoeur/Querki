@@ -4,9 +4,11 @@ import akka.actor._
 import akka.pattern.ask
 import akka.util.duration._
 import akka.util.Timeout
-
+import play.api.Configuration
+import play.api.Play
 import play.api.Play.current
 import play.api.libs.concurrent._
+import play.Configuration
 
 sealed trait SpaceMessage
 case class Load() extends SpaceMessage
@@ -27,11 +29,14 @@ class SpaceManager extends Actor {
   
   var counter = 0
   
+  // TEMP:
+  val replyMsg = Play.configuration.getString("querki.test.replyMsg").getOrElse("MISSING REPLY MSG!")
+  
   def receive = {
     // TEMP:
     case msg:SaySomething => {
       counter += 1
-      sender ! msg.something + " from Akka! This is call number " + counter
+      sender ! msg.something + replyMsg + counter
     }
     case GetSpace => {}
   }
