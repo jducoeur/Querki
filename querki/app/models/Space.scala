@@ -10,11 +10,35 @@ import play.api.Play.current
 import play.api.libs.concurrent._
 import play.Configuration
 
+/**
+ * A Space is the Querki equivalent of a database -- a collection of related Things,
+ * Properties and Types.
+ * 
+ * Note that, just like everything else, a Space is a special sort of Thing. It can
+ * have Properties (including user-defined ones), and can potentially inherit from a
+ * Model.
+ * 
+ * A SpaceState is a Space at a specific point in time. Operations are usually performed
+ * on a SpaceState, to keep them consistent. Changes are sent to the Space, which generates
+ * a new SpaceState from them.
+ * 
+ * TODO: implement Space inheritance -- that is, Apps.
+ */
+case class SpaceState(
+    s:OID, 
+    m:OID,
+    types:Map[OID, PType],
+    spaceProps:Map[OID, Property],
+    things:Map[OID, ThingState]) 
+  extends Thing(s, s, m, Kind.Space) 
+{
+  
+}
+
 sealed trait SpaceMessage
 case class Load() extends SpaceMessage
 
 class Space extends Actor {
-
   def receive = {
     case Load => {}
   }

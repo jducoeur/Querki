@@ -12,7 +12,9 @@ object ApplicationBuild extends Build {
     )
 
     val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
-      // Add your own project settings here      
+      // Add your own project settings here
+      // Merde: there apparently isn't a Play build against RC1 yet!
+      //scalaVersion := "2.10.0-RC1"
     )
 
 }
