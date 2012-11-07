@@ -1,4 +1,14 @@
-This is your new Play 2.0 application
-=====================================
+The Querki Project
+==================
 
-This file will be packaged with your application, when using `play dist`.
+You know how everybody is all excited about Big Data these days? Huge, complex systems to process billions of records in an enterprise environment? Yeah, this isn't that.
+
+The Querki Project can best be thought of as the beginning of the Small Data revolution. It's a very new and different sort of database/website, designed specifically for tiny, easy data-centric problems -- the sort of problems that ordinary people actually have day-to-day. This is anything from shopping lists to personal inventories to club organization to cookbooks: problems that are typically messy, poorly structured, fluid, evolving, involving small amounts of data, but nonetheless *do* have relevant structure.
+
+These tend to get ignored by the engineering community, because each problem seems so *simple* -- they're the sort of things that a competent programmer could toss off in Rails in less than a day. But why would I want to spend a day on a problem like that? I should be able to toss it off in *minutes*.
+
+Or to put it another way: Querki is to Rails essentially as a wiki is to a static website. It's not as powerful as Rails, but it's a *heck* of a lot easier and quicker to use for the sorts of problems it can deal with. It focuses on ease of use for everyday users, rather than power for the programmers.
+
+(Which isn't to say that it doesn't have power -- Querki's object-oriented data model makes a lot of messy problems much easier than a traditional RDBMS. But it is currently aimed at data sets of hundreds or thousands of records, not millions.)
+
+For more information, see the ever-growing Wiki.
