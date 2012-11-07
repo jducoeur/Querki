@@ -45,7 +45,8 @@ class SpaceManager extends Actor {
 
 object SpaceManager {
   // I don't love having to hold a static reference like this, but Play's statelessness
-  // probably requires that:
+  // probably requires that. Should we instead be holding a Path, and looking it up
+  // each time?
   lazy val ref = Akka.system.actorOf(Props[SpaceManager], name="SpaceManager")
   
   // This is probably over-broad -- we're going to need the timeout to push through to
