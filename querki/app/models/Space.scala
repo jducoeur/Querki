@@ -63,9 +63,9 @@ case class GetSpace(id:OID) extends SpaceMgrMsg
 // TEMP:
 case class SaySomething(something:String) extends SpaceMgrMsg
 
-sealed trait SpaceMgrResponse
-case class RequestedSpace(state:SpaceState) extends SpaceMgrResponse
-case class GetSpaceFailed(id:OID) extends SpaceMgrResponse
+sealed trait GetSpaceResponse
+case class RequestedSpace(state:SpaceState) extends GetSpaceResponse
+case class GetSpaceFailed(id:OID) extends GetSpaceResponse
 
 sealed trait ListMySpacesResponse
 case class MySpaces(spaces:Seq[(OID,String)]) extends ListMySpacesResponse

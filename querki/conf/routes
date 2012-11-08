@@ -5,6 +5,7 @@
 # Home page
 GET     /                           controllers.Application.index
 GET     /spaces                     controllers.Application.spaces
+GET     /space/:spaceId             controllers.Application.space(spaceId:String)
 
 POST    /login                      controllers.Application.login
 GET     /logout                     controllers.Application.logout

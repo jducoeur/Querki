@@ -134,5 +134,12 @@ This is the basic Page Thing. Use it as your Model for *basic* Pages without rea
   val props = oidMap[Property](UrProp, NameProp, DisplayTextProp)
   val things = oidMap[ThingState](UrThing, Page)
   
-  val State = SpaceState(systemOID, UrThing, SystemUserOID, "System", types, props, things)
+  object State extends SpaceState(systemOID, UrThing, SystemUserOID, "System", types, props, things) {
+    override val props = toProps(
+        name("System"),
+        (DisplayTextProp -> PropValue("""
+This is the fundamental System Space. Everything else derives from it.
+"""))
+        )
+  }
 }

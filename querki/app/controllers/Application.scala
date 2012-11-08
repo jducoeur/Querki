@@ -35,6 +35,15 @@ object Application extends Controller {
     }
   }
   
+  def space(spaceId:String) = Action { request =>
+    Async {
+      SpaceManager.ask[GetSpaceResponse, Result](GetSpace(OID(spaceId))) {
+        case RequestedSpace(state) => Ok(views.html.space(getUser(request), state))
+        case GetSpaceFailed(id) => Ok(views.html.spaces(getUser(request), Seq.empty))
+      }
+    }
+  }
+  
   def login = Action { implicit request =>
     userForm.bindFromRequest.fold(
       errors => BadRequest(views.html.index(None, errors, Some("I didn't understand that"))),

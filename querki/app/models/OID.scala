@@ -35,10 +35,18 @@ trait ThingPtr {
 class OID(val raw:Long) extends ThingPtr {
   override def toString = java.lang.Long.toString(raw, 36)
   def id = this
+  
+  override def equals(other:Any) = {
+    other match {
+      case o:OID => this.raw == o.raw
+      case _ => false
+    }
+  }
+  override def hashCode = raw.hashCode
 }
 
 object OID {
   def apply(raw:Long) = new OID(raw)
-  def apply(name:String) = new OID(java.lang.Long.parseLong(name))
+  def apply(name:String) = new OID(java.lang.Long.parseLong(name, 36))
   def apply(shard:Int, index:Int) = new OID(shard << 32 + index)
 }
