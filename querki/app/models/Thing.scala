@@ -1,5 +1,8 @@
 package models
 
+import models.system.SystemSpace
+import models.ThingPtr._
+
 /**
  * Enumeration of what sort of Thing this is. Note that this is an intentionally
  * exclusive set. That's mostly to make it reasonably easy to reason about stuff:
@@ -24,12 +27,20 @@ object Kind {
  * should do to start, though.
  */
 abstract class Thing(
-    val id:OID, 
-    val spaceId:OID, 
-    val model:OID, 
+    val id:ThingPtr, 
+    val spaceId:ThingPtr, 
+    val model:ThingPtr, 
     val kind:Kind.Kind,
-    val props:Map[OID, PropValue] = Map.empty)
+    val props:Map[ThingPtr, PropValue] = Map.empty)
 {
+  // A couple of convenience methods for the hard-coded Things in System:
+  def toProps(pairs:(OID,PropValue)*):Map[ThingPtr, PropValue] = {
+    (Map.empty[ThingPtr, PropValue] /: pairs) { (m:Map[ThingPtr, PropValue], pair:(OID, PropValue)) =>
+      m + (OID2ThingPtr(pair._1) -> pair._2)
+    }
+  }
+  
+  def name(str:String) = (SystemSpace.NameOID -> SystemSpace.TextType(str))
 }
 
 /**
@@ -39,6 +50,6 @@ abstract class Thing(
  * 
  * Note that Models are basically just ordinary Things.
  */
-case class ThingState(i:OID, s:OID, m:OID) extends Thing(i, s, m, Kind.Thing) {
+case class ThingState(i:ThingPtr, s:ThingPtr, m:ThingPtr) extends Thing(i, s, m, Kind.Thing) {
   
 }
