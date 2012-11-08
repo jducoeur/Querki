@@ -1,0 +1,16 @@
+@(user:Option[User], spaces:Seq[(OID,String)])
+
+@main("Your Spaces", user) {
+
+	<div class="page-header">
+	  <h1>Your Spaces</h1>
+	</div>
+	
+    <div class="well">
+    	<ul>
+        @for(space <- spaces) {
+            <li><a href="/space/@space._1">@space._2</a></li>
+        }
+        </ul>
+    </div>
+}

@@ -27,6 +27,8 @@ import play.Configuration
 case class SpaceState(
     s:OID, 
     m:ThingPtr,
+    owner:OID,
+    name:String,
     types:Map[OID, PType],
     spaceProps:Map[OID, Property],
     things:Map[OID, ThingState]) 
@@ -56,11 +58,29 @@ class Space extends Actor {
 }
 
 sealed trait SpaceMgrMsg
-case class GetSpace(id:String) extends SpaceMgrMsg
+case class ListMySpaces(owner:OID) extends SpaceMgrMsg
+case class GetSpace(id:OID) extends SpaceMgrMsg
 // TEMP:
 case class SaySomething(something:String) extends SpaceMgrMsg
 
+sealed trait SpaceMgrResponse
+case class RequestedSpace(state:SpaceState) extends SpaceMgrResponse
+case class GetSpaceFailed(id:OID) extends SpaceMgrResponse
+
+sealed trait ListMySpacesResponse
+case class MySpaces(spaces:Seq[(OID,String)]) extends ListMySpacesResponse
+
 class SpaceManager extends Actor {
+  
+  // The local cache of Space States.
+  // TODO: this needs to age properly.
+  // TODO: this needs a cap of how many states we will try to cache.
+  var spaceCache:Map[OID,SpaceState] = Map.empty
+  
+  def addState(state:SpaceState) = spaceCache += (state.id -> state)
+  
+  // The System Space is hardcoded, and we create it at the beginning of time:
+  addState(system.SystemSpace.State)
   
   var counter = 0
   
@@ -73,7 +93,17 @@ class SpaceManager extends Actor {
       counter += 1
       sender ! msg.something + replyMsg + counter
     }
-    case GetSpace => {}
+    case req:ListMySpaces => {
+      val results = spaceCache.values.filter(_.owner == req.owner).map(space => (space.id, space.name)).toSeq
+      sender ! MySpaces(results)
+    }
+    case req:GetSpace => {
+      val cached = spaceCache.get(req.id)
+      if (cached.nonEmpty)
+        sender ! RequestedSpace(cached.get)
+      else
+        sender ! GetSpaceFailed(req.id)
+     }
   }
   
 }

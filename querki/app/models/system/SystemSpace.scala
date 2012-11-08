@@ -115,16 +115,24 @@ object SystemSpace {
         )
   }
   
-//  object Page extends ThingState(, systemOID, RootOID) {
-//    override val props = Map[OID, PropValue](
-//        )
-//  }
+  object Page extends ThingState(OID(0, 8), systemOID, RootOID) {
+    override val props = toProps(
+        name("Simple-Page"),
+        (DisplayTextProp -> PropValue("""
+This is the basic Page Thing. Use it as your Model for *basic* Pages without real structure.
+"""))
+        )
+  }
   
-  val types = Map[OID,PType](
-      (IntType.id -> IntType),
-      (TextType.id -> TextType),
-      (YesNoType.id -> YesNoType)
-      )
+  val SystemUserOID = OID(0, 9)
   
-  val State = SpaceState(systemOID, UrThing, types, Map.empty, Map.empty)
+  def oidMap[T <: Thing](items:T*):Map[OID,T] = {
+    (Map.empty[OID,T] /: items) ((m, i) => m + (i.id -> i))
+  }
+  
+  val types = oidMap[PType](IntType, TextType, YesNoType)
+  val props = oidMap[Property](UrProp, NameProp, DisplayTextProp)
+  val things = oidMap[ThingState](UrThing, Page)
+  
+  val State = SpaceState(systemOID, UrThing, SystemUserOID, "System", types, props, things)
 }

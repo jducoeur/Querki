@@ -29,9 +29,9 @@
 		    case Some(m) => { <p>Akka says: @m </p> }
 		    case None => {}
 		  }
-		  @form(routes.Application.logout) {
-		    <input type="submit" value="Log out" class="btn btn-primary btn-large">
-		  }
+		  <a href="/spaces" class="btn btn-primary btn-large">Show my Spaces</a>
+		  &nbsp;&nbsp;
+		  <a href="@routes.Application.logout" class="btn">Log out</a>
 		</div>
 	  }
 	}

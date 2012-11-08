@@ -107,7 +107,7 @@ abstract class Thing(
    */
   def render:Wikitext = {
     val opt = getPropOpt(DisplayTextProp)
-    opt.map(pv => TextType.render(pv.v)).getOrElse(Wikitext(""))
+    opt.map(pv => TextType.render(pv.v)).getOrElse(Wikitext("TODO: no DisplayText defined! Need to add ability to render the props."))
   }
 }
 
@@ -118,6 +118,4 @@ abstract class Thing(
  * 
  * Note that Models are basically just ordinary Things.
  */
-case class ThingState(i:OID, s:ThingPtr, m:ThingPtr) extends Thing(i, s, m, Kind.Thing) {
-  
-}
+case class ThingState(i:OID, s:ThingPtr, m:ThingPtr) extends Thing(i, s, m, Kind.Thing) {}

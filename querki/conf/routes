@@ -4,6 +4,7 @@
 
 # Home page
 GET     /                           controllers.Application.index
+GET     /spaces                     controllers.Application.spaces
 
 POST    /login                      controllers.Application.login
 GET     /logout                     controllers.Application.logout
