@@ -1,7 +1,6 @@
 package models.system
 
 import models._
-import models.ThingPtr._
 
 /**
  * This is the master wrapper for the System Space. This is a hardcoded Space, living in
@@ -10,7 +9,7 @@ import models.ThingPtr._
  */
 object SystemSpace {
   /**
-   * The OID of the System Space
+   * The OID of the System Space itself. All these Things are contained in it.
    */
   val systemOID = OID(0, 0)
   
@@ -23,69 +22,96 @@ object SystemSpace {
     override val props = toProps(
         name("Thing")
         )
+        
+    override def getProp(propId:ThingPtr):PropAndVal = {
+      // If we've gotten up to here and haven't found the property, use
+      // the default:
+      val prop = space.prop(propId)
+      localProp(propId).getOrElse(PropAndVal(prop, prop.default))
+    }
+    
+    override def hasProp(propId:ThingPtr):Boolean = {
+      props.contains(propId)
+    }
   }
   
   /**
    * The Type for integers
    */
-  object IntType extends PType(OID(0, 2), systemOID, RootOID) {
-    class IntVal(val num:Int) extends PropValue
-    type valType = IntVal
+  object IntType extends PType(OID(0, 2), systemOID, UrThing) {
+    type valType = Int
     
     override val props = toProps(
         name("Type-Whole-Number")
         )
     
-    def deserialize(str:String) = new IntVal(java.lang.Integer.parseInt(str))
-    def serialize(v:valType) = v.toString()
+    def deserialize(v:PropValue) = java.lang.Integer.parseInt(v.serialized)
+    def serialize(v:valType) = PropValue(v.toString)
+    def render(v:PropValue) = v.serialized
+    
+    val default = PropValue("0")
   }
   
-  val TextOID = OID(0, 3)
+  type Wikitext = String
   /**
    * The Type for Text -- probably the most common type in Querki
    */
-  object TextType extends PType(TextOID, systemOID, RootOID) {
-    class TextVal(val text:String) extends PropValue
-    type valType = TextVal
+  object TextType extends PType(OID(0, 3), systemOID, UrThing) {
+    type valType = Wikitext
     
     override val props = toProps(
         name("Type-Text")
         )
+        
+    def apply(str:String) = Wikitext(str)
     
-    def deserialize(str:String) = new TextVal(str)
-    def apply(str:String) = deserialize(str)
-    def serialize(v:valType) = v.text
+    def deserialize(v:PropValue) = v.serialized
+    def serialize(v:valType) = PropValue(v)
+    def render(v:PropValue) = v.serialized
+    
+    val default = PropValue("")
+  }
+  object Wikitext {
+    def apply(str:String) = new Wikitext(str)
   }
   
   /**
    * The YesNo Type -- or Boolean, as us geeks think of it
    */
-  object YesNoType extends PType(OID(0, 4), systemOID, RootOID) {
-    class YesNoVal(val b:Boolean) extends PropValue
-    type valType = YesNoVal
+  object YesNoType extends PType(OID(0, 4), systemOID, UrThing) {
+    type valType = Boolean
     
     override val props = toProps(
         name("Type-YesNo")
         )
     
-    def deserialize(str:String) = new YesNoVal(java.lang.Boolean.parseBoolean(str))
-    def serialize(v:valType) = v.b.toString
+    def deserialize(v:PropValue) = java.lang.Boolean.parseBoolean(v.serialized)
+    def serialize(v:valType) = PropValue(v.toString)
+    def render(v:PropValue) = v.serialized
+    
+    val default = PropValue("false")
   }
   
-  val PropOID = OID(0, 5)
+  // TODO: still need to add Collections!!!
+  
   /**
    * The root Property, from which all others derive.
    */
-  object UrProp extends Property(PropOID, systemOID, RootOID, TextType) {
+  object UrProp extends Property(OID(0, 5), systemOID, UrThing, TextType) {
     override val props = toProps(
         name("Property")
         )
   }
   
-  val NameOID = OID(0, 6)
-  object NameProp extends Property(NameOID, systemOID, PropOID, TextType) {
+  object NameProp extends Property(OID(0, 6), systemOID, UrProp, TextType) {
     override val props = toProps(
         name("Name")
+        )
+  }
+  
+  object DisplayTextProp extends Property(OID(0, 7), systemOID, UrProp, TextType) {
+    override val props = toProps(
+        name("Display-Text")
         )
   }
   
@@ -93,4 +119,12 @@ object SystemSpace {
 //    override val props = Map[OID, PropValue](
 //        )
 //  }
+  
+  val types = Map[OID,PType](
+      (IntType.id -> IntType),
+      (TextType.id -> TextType),
+      (YesNoType.id -> YesNoType)
+      )
+  
+  val State = SpaceState(systemOID, UrThing, types, Map.empty, Map.empty)
 }

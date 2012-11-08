@@ -1,7 +1,7 @@
 package models
 
 import models.system.SystemSpace
-import models.ThingPtr._
+import models.system.SystemSpace._
 
 /**
  * Enumeration of what sort of Thing this is. Note that this is an intentionally
@@ -27,20 +27,88 @@ object Kind {
  * should do to start, though.
  */
 abstract class Thing(
-    val id:ThingPtr, 
+    val id:OID, 
     val spaceId:ThingPtr, 
     val model:ThingPtr, 
     val kind:Kind.Kind,
-    val props:Map[ThingPtr, PropValue] = Map.empty)
+    val props:Map[ThingPtr, PropValue] = Map.empty) extends ThingPtr
 {
   // A couple of convenience methods for the hard-coded Things in System:
-  def toProps(pairs:(OID,PropValue)*):Map[ThingPtr, PropValue] = {
-    (Map.empty[ThingPtr, PropValue] /: pairs) { (m:Map[ThingPtr, PropValue], pair:(OID, PropValue)) =>
-      m + (OID2ThingPtr(pair._1) -> pair._2)
+  def toProps(pairs:(ThingPtr,PropValue)*):Map[ThingPtr, PropValue] = {
+    (Map.empty[ThingPtr, PropValue] /: pairs) { (m:Map[ThingPtr, PropValue], pair:(ThingPtr, PropValue)) =>
+      m + (pair._1 -> pair._2)
     }
   }
   
-  def name(str:String) = (SystemSpace.NameOID -> SystemSpace.TextType(str))
+  def name(str:String):(Property,PropValue) = (NameProp -> PropValue(str))
+  
+  def space:SpaceState = {
+    // TODO: do this for real!
+    SystemSpace.State
+  }
+  
+  def getModel:Thing = {
+    // TODO: this will eventually need to be able to walk the Space-inheritance tree
+    model match {
+      case directPtr:Thing => directPtr
+      case id:OID => space.thing(id)
+    }
+  }
+  
+  /**
+   * The Property as defined on *this* specific Thing.
+   */
+  def localProp(propId:ThingPtr):Option[PropAndVal] = {
+    val (id,ptr) = propId match {
+      case i:OID => (i, space.prop(i))
+      case t:Thing => (t.id, t.asInstanceOf[Property])
+    }
+    val byId = props.get(id)
+    if (byId.nonEmpty)
+      Some(PropAndVal(ptr, byId.get))
+    else
+      props.get(ptr).map(v => PropAndVal(ptr, v))
+  }
+  
+  /**
+   * The key method for fetching a Property Value from a Thing. This walks the tree
+   * as necessary.
+   * 
+   * Note that this walks up the tree recursively. It eventually ends with UrThing,
+   * which does things a little differently.
+   */
+  def getProp(propId:ThingPtr):PropAndVal = {
+    localProp(propId).getOrElse(getModel.getProp(propId))
+  }
+  
+  /**
+   * Returns true iff this Thing or any ancestor has the specified property defined on it.
+   * Note that this ignores defaults.
+   */
+  def hasProp(propId:ThingPtr):Boolean = {
+    props.contains(propId) || getModel.hasProp(propId)
+  }
+  
+  /**
+   * Convenience method -- returns either the value of the specified property or None.
+   */
+  def getPropOpt(propId:ThingPtr):Option[PropAndVal] = {
+    if (hasProp(propId))
+      Some(getProp(propId))
+    else
+      None
+  }
+  
+  /**
+   * Every Thing can be rendered -- this returns a Wikitext string that will then be
+   * displayed in-page.
+   * 
+   * TODO: allow this to be redefined with a QL Property if desired.
+   */
+  def render:Wikitext = {
+    val opt = getPropOpt(DisplayTextProp)
+    opt.map(pv => TextType.render(pv.v)).getOrElse(Wikitext(""))
+  }
 }
 
 /**
@@ -50,6 +118,6 @@ abstract class Thing(
  * 
  * Note that Models are basically just ordinary Things.
  */
-case class ThingState(i:ThingPtr, s:ThingPtr, m:ThingPtr) extends Thing(i, s, m, Kind.Thing) {
+case class ThingState(i:OID, s:ThingPtr, m:ThingPtr) extends Thing(i, s, m, Kind.Thing) {
   
 }

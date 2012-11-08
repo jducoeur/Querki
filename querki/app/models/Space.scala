@@ -26,13 +26,24 @@ import play.Configuration
  */
 case class SpaceState(
     s:OID, 
-    m:OID,
+    m:ThingPtr,
     types:Map[OID, PType],
     spaceProps:Map[OID, Property],
     things:Map[OID, ThingState]) 
   extends Thing(s, s, m, Kind.Space) 
 {
-  
+  def resolve[T <: ThingPtr](ptr:ThingPtr)(lookup: OID => T):T = {
+    ptr match {
+      case id:OID => lookup(id)
+      // TODO: Ick -- this is evil, and suggests that the ThingPtr model is fundamentally
+      // flawed still. The problem is, any given ThingPtr potentially covers a host of
+      // subtypes; we only know from context that we're expecting a specific one.
+      case _ => ptr.asInstanceOf[T]
+    }
+  }
+  def typ(ptr:ThingPtr) = resolve(ptr) (types(_))
+  def prop(ptr:ThingPtr) = resolve(ptr) (spaceProps(_))
+  def thing(ptr:ThingPtr) = resolve(ptr) (things(_))
 }
 
 sealed trait SpaceMessage
