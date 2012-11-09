@@ -1,8 +1,6 @@
-@(title: String, user:Option[User])(content: Html)
+@(title: String, user:Option[User], nav:NavSections)(content: Html)
 
 <!DOCTYPE html>
-
-@import views._
 
 @*********************
  * This is the main system template. We'll get fancier as things go,
@@ -64,19 +62,12 @@
           <div class="well sidebar-nav">
             <p style="text-align:center"><b>@title</b></p>
             <ul class="nav nav-list">
-              <li class="nav-header">TO DO -- Design These</li>
-              <li class="active"><a href="#">Link</a></li>
-              <li><a href="#">Link</a></li>
-              <li><a href="#">Link</a></li>
-              <li><a href="#">Link</a></li>
-              <li class="nav-header">@TestNavSection.title</li>
-              @for(link <- TestNavSection.links) {
-                <li><a href="@link.url">@link.display</a></li>
+              @for(section <- nav.sections) {
+                <li class="nav-header">@section.title</li>
+                @for(link <- section.links) {
+                  <li><a href="@link.url">@link.display</a></li>
+                }
               }
-              <li class="nav-header">Sidebar</li>
-              <li><a href="#">Link</a></li>
-              <li><a href="#">Link</a></li>
-              <li><a href="#">Link</a></li>
             </ul>
           </div><!--/.well -->
         </div><!--/span-->

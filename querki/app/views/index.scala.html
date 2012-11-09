@@ -3,7 +3,7 @@
 @import helper._
 @import helper.twitterBootstrap._
 
-@main("Welcome to Querki", user) {
+@main("Welcome to Querki", user, NavSection.homeNav) {
 
 	@user match {
 	  case None => {
