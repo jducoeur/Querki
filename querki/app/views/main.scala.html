@@ -2,6 +2,8 @@
 
 <!DOCTYPE html>
 
+@import views._
+
 @*********************
  * This is the main system template. We'll get fancier as things go,
  * but by and large, all universal template shell should go here.
@@ -58,21 +60,19 @@
 	<!-- This container stuff is likely to go into a lower-level, Space-rendering template -->
 	<div class="container-fluid">
       <div class="row-fluid">
-        <div class="span3">
+        <div class="span2">
           <div class="well sidebar-nav">
+            <p style="text-align:center"><b>@title</b></p>
             <ul class="nav nav-list">
               <li class="nav-header">TO DO -- Design These</li>
               <li class="active"><a href="#">Link</a></li>
               <li><a href="#">Link</a></li>
               <li><a href="#">Link</a></li>
               <li><a href="#">Link</a></li>
-              <li class="nav-header">Sidebar</li>
-              <li><a href="#">Link</a></li>
-              <li><a href="#">Link</a></li>
-              <li><a href="#">Link</a></li>
-              <li><a href="#">Link</a></li>
-              <li><a href="#">Link</a></li>
-              <li><a href="#">Link</a></li>
+              <li class="nav-header">@TestNavSection.title</li>
+              @for(link <- TestNavSection.links) {
+                <li><a href="@link.url">@link.display</a></li>
+              }
               <li class="nav-header">Sidebar</li>
               <li><a href="#">Link</a></li>
               <li><a href="#">Link</a></li>
@@ -80,7 +80,7 @@
             </ul>
           </div><!--/.well -->
         </div><!--/span-->
-        <div class="span9">
+        <div class="span10">
           @content
 		</div><!--/span-->
       </div><!--/row-->
