@@ -6,6 +6,7 @@ object NavSection {
   def spaceNav(state:SpaceState) =
     NavSections(Seq(
       NavSection("This Space", Seq(
+        NavLink("Space Home", "./"),
         NavLink("All Things", "./things")
       )),
       querkiSection

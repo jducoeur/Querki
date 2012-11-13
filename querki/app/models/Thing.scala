@@ -103,11 +103,10 @@ abstract class Thing(
       None
   }
   
-  // TODO: make the output here into genuine Wikitext
   def renderProps:Wikitext = {
     val listMap = props.map { entry =>
       val prop = space.prop(entry._1)
-      "<dt>" + prop.displayName + "</dt><dd>" + prop.render(entry._2) + "</dd>"
+      "<dt>" + prop.displayName + "</dt><dd>" + prop.render(entry._2).raw + "</dd>"
     }
     Wikitext(listMap.mkString("<dl>", "", "</dl>"))    
   }

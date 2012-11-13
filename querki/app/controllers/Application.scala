@@ -56,7 +56,7 @@ object Application extends Controller {
   }
   
   def space(spaceId:String) = Action { request =>
-    withSpace(request, spaceId, (user, state) => Ok(views.html.space(user, state)))
+    withSpace(request, spaceId, (user, state) => Ok(views.html.thing(user, state, state)))
   }
   
   def things(spaceId:String) = Action { request =>
