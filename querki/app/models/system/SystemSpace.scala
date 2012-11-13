@@ -49,12 +49,11 @@ object SystemSpace {
     
     def deserialize(v:PropValue) = java.lang.Integer.parseInt(v.serialized)
     def serialize(v:valType) = PropValue(v.toString)
-    def render(v:PropValue) = v.serialized
+    def render(v:PropValue) = Wikitext(v.serialized.toString())
     
     val default = PropValue("0")
   }
   
-  type Wikitext = String
   /**
    * The Type for Text -- probably the most common type in Querki
    */
@@ -67,14 +66,11 @@ object SystemSpace {
         
     def apply(str:String) = Wikitext(str)
     
-    def deserialize(v:PropValue) = v.serialized
-    def serialize(v:valType) = PropValue(v)
-    def render(v:PropValue) = v.serialized
+    def deserialize(v:PropValue) = Wikitext(v.serialized)
+    def serialize(v:valType) = PropValue(v.internal)
+    def render(v:PropValue) = Wikitext(v.serialized)
     
     val default = PropValue("")
-  }
-  object Wikitext {
-    def apply(str:String) = new Wikitext(str)
   }
   
   /**
@@ -89,7 +85,7 @@ object SystemSpace {
     
     def deserialize(v:PropValue) = java.lang.Boolean.parseBoolean(v.serialized)
     def serialize(v:valType) = PropValue(v.toString)
-    def render(v:PropValue) = v.serialized
+    def render(v:PropValue) = Wikitext(v.serialized.toString())
     
     val default = PropValue("false")
   }
@@ -123,6 +119,8 @@ object SystemSpace {
         setName("Simple-Page"),
         (DisplayTextProp -> PropValue("""
 This is the basic Page Thing. Use it as your Model for *basic* Pages without real structure.
+            
+Use the **DisplayText** property to indicate what to show on the page. You can put anything in there.
 """))
         )
   }
@@ -146,7 +144,7 @@ This is the basic Page Thing. Use it as your Model for *basic* Pages without rea
     
     def deserialize(v:PropValue) = toDisplay(v.serialized)
     def serialize(v:valType) = PropValue(toInternal(v))
-    def render(v:PropValue) = toDisplay(v.serialized)
+    def render(v:PropValue) = Wikitext(toDisplay(v.serialized))
     
     val default = PropValue("MISSING NAME!")
   }

@@ -1,7 +1,5 @@
 package models
 
-import models.system.SystemSpace.Wikitext
-
 /**
  * The value of a Property on a Thing. This is kept as a String, and evaluated
  * on-the-fly as necessary.

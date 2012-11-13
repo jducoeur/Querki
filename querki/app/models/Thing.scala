@@ -44,7 +44,7 @@ abstract class Thing(
   val props:Map[ThingPtr, PropValue] = Map.empty
   
   def setName(str:String):(OID,PropValue) = (NameOID -> PropValue(str))
-  def displayName = getProp(NameProp).render
+  def displayName = getProp(NameProp).render.raw
   
   def space:SpaceState = {
     // TODO: do this for real!
@@ -109,7 +109,7 @@ abstract class Thing(
       val prop = space.prop(entry._1)
       "<dt>" + prop.displayName + "</dt><dd>" + prop.render(entry._2) + "</dd>"
     }
-    listMap.mkString("<dl>", "", "</dl>")    
+    Wikitext(listMap.mkString("<dl>", "", "</dl>"))    
   }
   
   /**

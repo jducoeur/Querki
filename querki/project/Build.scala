@@ -9,6 +9,7 @@ object ApplicationBuild extends Build {
 
     val appDependencies = Seq(
       // Add your project dependencies here,
+      "eu.henkelmann" % "actuarius_2.9.2" % "0.2.4"
     )
 
     val main = PlayProject(appName, appVersion, appDependencies, mainLang = SCALA).settings(
@@ -16,5 +17,4 @@ object ApplicationBuild extends Build {
       // Merde: there apparently isn't a Play build against RC1 yet!
       //scalaVersion := "2.10.0-RC1"
     )
-
 }
