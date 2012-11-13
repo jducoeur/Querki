@@ -2,10 +2,8 @@
 
 @listKind(title:String, kind:Map[OID,Thing]) = {
 	<h3>@title</h3>
-	<ul>
-	@for(thing <- kind.values) {
-	  <li><a href="@thing.id">@thing.displayName</a></li>
-	}
+	<ul>@for(thing <- kind.values) {
+	  <li><a href="@thing.id">@thing.displayName</a></li>}
 	</ul>
 }
 

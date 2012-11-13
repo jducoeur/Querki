@@ -44,5 +44,5 @@ class RawTransformer extends Transformer with Decorator {
     override def deco() = this
     override def allowVerbatimXml():Boolean = false
     override def decorateParagraphOpen():String = ""
-    override def decorateParagraphClose():String = "\n"    
+    override def decorateParagraphClose():String = ""    
 }
