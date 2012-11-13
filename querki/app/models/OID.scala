@@ -50,3 +50,5 @@ object OID {
   def apply(name:String) = new OID(java.lang.Long.parseLong(name, 36))
   def apply(shard:Int, index:Int) = new OID((shard.toLong << 32) + index)
 }
+
+object UnknownOID extends OID(-1)

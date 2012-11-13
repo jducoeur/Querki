@@ -149,6 +149,8 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
     val default = PropValue("MISSING NAME!")
   }
   
+  val TestUserOID = OID(0, 11)
+  
   def oidMap[T <: Thing](items:T*):Map[OID,T] = {
     (Map.empty[OID,T] /: items) ((m, i) => m + (i.id -> i))
   }

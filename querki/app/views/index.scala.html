@@ -1,4 +1,4 @@
-@(user:Option[User], loginForm:Form[User], additional:Option[String] = None, errors:Option[String] = None)
+@(user:Option[User], loginForm:Form[User], errors:Option[String] = None)
 
 @import helper._
 @import helper.twitterBootstrap._
@@ -9,7 +9,12 @@
 	  case None => {
 	    @errors match {
 		  case None => {}
-		  case Some(msg) => { <p>@msg</p> }
+		  case Some(msg) => { 
+            <div class="alert">
+              <button type="button" class="close" data-dismiss="alert">x</button>
+              <strong>Error:</strong> @msg
+            </div>
+		  }
 		}
 		<div class="page-header">
 		  <h1>Welcome to Querki!</h1>
@@ -22,23 +27,14 @@
 	  }
       case Some(u) => {
 	    <div class="hero-unit">
-	      <h1>Welcome back, @u.name !</h1>
+	      <h1>Welcome back, @{u.name}! (#@u.id)</h1>
 		  <p>None of this does anything yet, but it's starting to at
 		  least look nice while it's not doing it.</p>
-		  @additional match {
-		    case Some(m) => { <p>Akka says: @m </p> }
-		    case None => {}
-		  }
+
 		  <a href="/spaces" class="btn btn-primary btn-large">Show my Spaces</a>
 		  &nbsp;&nbsp;
 		  <a href="@routes.Application.logout" class="btn">Log out</a>
 		</div>
 	  }
 	}
-
-	
-	@************
-    @play20.welcome(message)
-	************@
-    
 }
