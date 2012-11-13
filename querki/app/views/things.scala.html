@@ -1,32 +1,21 @@
 @(user:Option[User], state:SpaceState)
 
+@listKind(title:String, kind:Map[OID,Thing]) = {
+	<h3>@title</h3>
+	<ul>
+	@for(thing <- kind.values) {
+	  <li><a href="@thing.id">@thing.displayName</a></li>
+	}
+	</ul>
+}
+
 @main(state.name, user, NavSection.spaceNav(state)) {
 
 	<div class="page-header">
-	  <h1>Things in @state.name</h1>
+	  <h1>Contents of @state.name</h1>
 	</div>
-	
-	<h2>Types</h2>
-	
-	<ul>
-	@for(typ <- state.types.values) {
-	  <li><a href="@typ.id">@typ.displayName</a></li>
-	}
-	</ul>
-	
-	<h2>Properties</h2>
-	
-	<ul>
-	@for(typ <- state.spaceProps.values) {
-	  <li><a href="@typ.id">@typ.displayName</a></li>
-	}
-	</ul>
-	
-	<h2>Things</h2>
-	
-	<ul>
-	@for(typ <- state.things.values) {
-	  <li><a href="@typ.id">@typ.displayName</a></li>
-	}
-	</ul>
+
+	@listKind("Types", state.types)
+	@listKind("Properties", state.spaceProps)
+	@listKind("Things", state.things)
 }
