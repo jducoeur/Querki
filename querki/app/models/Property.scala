@@ -61,4 +61,5 @@ case class PropAndVal(prop:Property, v:PropValue) {
   type valType = prop.pType.valType
   
   def get = prop.pType.deserialize(v)
+  def render = prop.pType.render(v)
 }

@@ -1,5 +1,7 @@
 package models.system
 
+import play.api._
+
 import models._
 
 /**
@@ -20,7 +22,7 @@ object SystemSpace {
    */
   object UrThing extends ThingState(RootOID, systemOID, RootOID) {
     override val props = toProps(
-        name("Thing")
+        setName("Thing")
         )
         
     override def getProp(propId:ThingPtr):PropAndVal = {
@@ -42,7 +44,7 @@ object SystemSpace {
     type valType = Int
     
     override val props = toProps(
-        name("Type-Whole-Number")
+        setName("Type-Whole-Number")
         )
     
     def deserialize(v:PropValue) = java.lang.Integer.parseInt(v.serialized)
@@ -60,7 +62,7 @@ object SystemSpace {
     type valType = Wikitext
     
     override val props = toProps(
-        name("Type-Text")
+        setName("Type-Text")
         )
         
     def apply(str:String) = Wikitext(str)
@@ -82,7 +84,7 @@ object SystemSpace {
     type valType = Boolean
     
     override val props = toProps(
-        name("Type-YesNo")
+        setName("Type-YesNo")
         )
     
     def deserialize(v:PropValue) = java.lang.Boolean.parseBoolean(v.serialized)
@@ -99,25 +101,26 @@ object SystemSpace {
    */
   object UrProp extends Property(OID(0, 5), systemOID, UrThing, TextType) {
     override val props = toProps(
-        name("Property")
+        setName("Property")
         )
   }
   
-  object NameProp extends Property(OID(0, 6), systemOID, UrProp, TextType) {
+  val NameOID = OID(0, 6)
+  object NameProp extends Property(NameOID, systemOID, UrProp, NameType) {
     override val props = toProps(
-        name("Name")
+        setName("Name")
         )
   }
   
   object DisplayTextProp extends Property(OID(0, 7), systemOID, UrProp, TextType) {
     override val props = toProps(
-        name("Display-Text")
+        setName("Display-Text")
         )
   }
   
   object Page extends ThingState(OID(0, 8), systemOID, RootOID) {
     override val props = toProps(
-        name("Simple-Page"),
+        setName("Simple-Page"),
         (DisplayTextProp -> PropValue("""
 This is the basic Page Thing. Use it as your Model for *basic* Pages without real structure.
 """))
@@ -126,17 +129,39 @@ This is the basic Page Thing. Use it as your Model for *basic* Pages without rea
   
   val SystemUserOID = OID(0, 9)
   
+  /**
+   * The Type for Display Names -- similar to Text, but not identical
+   */
+  object NameType extends PType(OID(0, 10), systemOID, UrThing) {
+    type valType = String
+    
+    override val props = toProps(
+        setName("Type-Name")
+        )
+
+    def toInternal(str:String) = str.replaceAll(" ", "-")
+    def toDisplay(str:String) = str.replaceAll("-", " ")
+        
+    def apply(str:String) = toInternal(str)
+    
+    def deserialize(v:PropValue) = toDisplay(v.serialized)
+    def serialize(v:valType) = PropValue(toInternal(v))
+    def render(v:PropValue) = toDisplay(v.serialized)
+    
+    val default = PropValue("MISSING NAME!")
+  }
+  
   def oidMap[T <: Thing](items:T*):Map[OID,T] = {
     (Map.empty[OID,T] /: items) ((m, i) => m + (i.id -> i))
   }
   
-  val types = oidMap[PType](IntType, TextType, YesNoType)
+  val types = oidMap[PType](IntType, TextType, YesNoType, NameType)
   val props = oidMap[Property](UrProp, NameProp, DisplayTextProp)
   val things = oidMap[ThingState](UrThing, Page)
   
   object State extends SpaceState(systemOID, UrThing, SystemUserOID, "System", types, props, things) {
     override val props = toProps(
-        name("System"),
+        setName("System"),
         (DisplayTextProp -> PropValue("""
 This is the fundamental System Space. Everything else derives from it.
 """))

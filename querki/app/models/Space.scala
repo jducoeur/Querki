@@ -4,6 +4,8 @@ import akka.actor._
 import akka.pattern.ask
 import akka.util.duration._
 import akka.util.Timeout
+
+import play.api._
 import play.api.Configuration
 import play.api.Play
 import play.api.Play.current
@@ -46,6 +48,7 @@ case class SpaceState(
   def typ(ptr:ThingPtr) = resolve(ptr) (types(_))
   def prop(ptr:ThingPtr) = resolve(ptr) (spaceProps(_))
   def thing(ptr:ThingPtr) = resolve(ptr) (things(_))
+  
 }
 
 sealed trait SpaceMessage

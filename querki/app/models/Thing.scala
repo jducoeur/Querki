@@ -1,5 +1,7 @@
 package models
 
+import play.api._
+
 import models.system.SystemSpace
 import models.system.SystemSpace._
 
@@ -30,8 +32,7 @@ abstract class Thing(
     val id:OID, 
     val spaceId:ThingPtr, 
     val model:ThingPtr, 
-    val kind:Kind.Kind,
-    val props:Map[ThingPtr, PropValue] = Map.empty) extends ThingPtr
+    val kind:Kind.Kind) extends ThingPtr
 {
   // A couple of convenience methods for the hard-coded Things in System:
   def toProps(pairs:(ThingPtr,PropValue)*):Map[ThingPtr, PropValue] = {
@@ -40,7 +41,10 @@ abstract class Thing(
     }
   }
   
-  def name(str:String):(Property,PropValue) = (NameProp -> PropValue(str))
+  val props:Map[ThingPtr, PropValue] = Map.empty
+  
+  def setName(str:String):(OID,PropValue) = (NameOID -> PropValue(str))
+  def displayName = getProp(NameProp).render
   
   def space:SpaceState = {
     // TODO: do this for real!
@@ -59,11 +63,11 @@ abstract class Thing(
    * The Property as defined on *this* specific Thing.
    */
   def localProp(propId:ThingPtr):Option[PropAndVal] = {
-    val (id,ptr) = propId match {
+    val (pid,ptr) = propId match {
       case i:OID => (i, space.prop(i))
       case t:Thing => (t.id, t.asInstanceOf[Property])
     }
-    val byId = props.get(id)
+    val byId = props.get(pid)
     if (byId.nonEmpty)
       Some(PropAndVal(ptr, byId.get))
     else

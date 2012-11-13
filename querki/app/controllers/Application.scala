@@ -19,6 +19,25 @@ object Application extends Controller {
 	request.cookies.get("username").map(cookie => User(cookie.value))
   }
   
+  /**
+   * Utility method for pages that are basically displaying some aspect of a whole Space.
+   * 
+   * @param request The incoming page request
+   * @param spaceId The stringified OID of the space to display, from the URL
+   * @param action A callback that, given the user and the space's state, produces the
+   * actual page content
+   */
+  // TODO: check authorization!
+  def withSpace(request:Request[_], spaceId:String, action:(Option[User], SpaceState) => SimpleResult[_]) = {
+    val user = getUser(request)
+    Async {
+      SpaceManager.ask[GetSpaceResponse, Result](GetSpace(OID(spaceId))) {
+        case RequestedSpace(state) => action(user, state) //Ok(views.html.space(getUser(request), state))
+        case GetSpaceFailed(id) => Ok(views.html.spaces(getUser(request), Seq.empty))
+      }
+    }    
+  }
+  
   def index = Action { request =>
     Async {
 	    SpaceManager.ask[String,Result](SaySomething("Why, hello")) { mgrResp =>
@@ -27,6 +46,7 @@ object Application extends Controller {
     }
   }
   
+  // TODO: require login!
   def spaces = Action { request =>
     Async {
       SpaceManager.ask[ListMySpacesResponse, Result](ListMySpaces(system.SystemSpace.SystemUserOID)) { 
@@ -36,12 +56,11 @@ object Application extends Controller {
   }
   
   def space(spaceId:String) = Action { request =>
-    Async {
-      SpaceManager.ask[GetSpaceResponse, Result](GetSpace(OID(spaceId))) {
-        case RequestedSpace(state) => Ok(views.html.space(getUser(request), state))
-        case GetSpaceFailed(id) => Ok(views.html.spaces(getUser(request), Seq.empty))
-      }
-    }
+    withSpace(request, spaceId, (user, state) => Ok(views.html.space(user, state)))
+  }
+  
+  def things(spaceId:String) = Action { request =>
+    withSpace(request, spaceId, (user, state) => Ok(views.html.things(user, state)))
   }
   
   def login = Action { implicit request =>

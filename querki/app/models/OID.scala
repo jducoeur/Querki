@@ -48,5 +48,5 @@ class OID(val raw:Long) extends ThingPtr {
 object OID {
   def apply(raw:Long) = new OID(raw)
   def apply(name:String) = new OID(java.lang.Long.parseLong(name, 36))
-  def apply(shard:Int, index:Int) = new OID(shard << 32 + index)
+  def apply(shard:Int, index:Int) = new OID((shard.toLong << 32) + index)
 }
