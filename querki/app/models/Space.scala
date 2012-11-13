@@ -49,6 +49,10 @@ case class SpaceState(
   def prop(ptr:ThingPtr) = resolve(ptr) (spaceProps(_))
   def thing(ptr:ThingPtr) = resolve(ptr) (things(_))
   
+  def anything(oid:OID) = {
+    // TODO: this should do something more sensible if the OID isn't found at all:
+    things.getOrElse(oid, spaceProps.getOrElse(oid, types.getOrElse(oid, this)))
+  }
 }
 
 sealed trait SpaceMessage

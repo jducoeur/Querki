@@ -52,6 +52,8 @@ case class Property(i:OID, s:ThingPtr, m:ThingPtr, val pType:PType) extends Thin
     // on a prop-by-prop basis
     pType.default
   }
+  
+  def render(v:PropValue) = pType.render(v)
 }
 
 /**
@@ -61,5 +63,5 @@ case class PropAndVal(prop:Property, v:PropValue) {
   type valType = prop.pType.valType
   
   def get = prop.pType.deserialize(v)
-  def render = prop.pType.render(v)
+  def render = prop.render(v)
 }

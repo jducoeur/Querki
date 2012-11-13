@@ -63,6 +63,12 @@ object Application extends Controller {
     withSpace(request, spaceId, (user, state) => Ok(views.html.things(user, state)))
   }
   
+  def thing(spaceId:String, thingId:String) = Action { request =>
+    withSpace(request, spaceId, (user, state) => {
+      Ok(views.html.thing(user, state, state.anything(OID(thingId))))
+    })
+  }
+  
   def login = Action { implicit request =>
     userForm.bindFromRequest.fold(
       errors => BadRequest(views.html.index(None, errors, Some("I didn't understand that"))),

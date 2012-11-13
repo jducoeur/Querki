@@ -103,6 +103,15 @@ abstract class Thing(
       None
   }
   
+  // TODO: make the output here into genuine Wikitext
+  def renderProps:Wikitext = {
+    val listMap = props.map { entry =>
+      val prop = space.prop(entry._1)
+      "<dt>" + prop.displayName + "</dt><dd>" + prop.render(entry._2) + "</dd>"
+    }
+    listMap.mkString("<dl>", "", "</dl>")    
+  }
+  
   /**
    * Every Thing can be rendered -- this returns a Wikitext string that will then be
    * displayed in-page.
@@ -111,7 +120,7 @@ abstract class Thing(
    */
   def render:Wikitext = {
     val opt = getPropOpt(DisplayTextProp)
-    opt.map(pv => TextType.render(pv.v)).getOrElse(Wikitext("TODO: no DisplayText defined! Need to add ability to render the props."))
+    opt.map(pv => TextType.render(pv.v)).getOrElse(renderProps)
   }
 }
 

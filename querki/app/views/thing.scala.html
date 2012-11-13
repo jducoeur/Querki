@@ -1,0 +1,10 @@
+@(user:Option[User], space:SpaceState, thing:Thing)
+
+@main(thing.displayName, user, NavSection.spaceNav(space)) {
+
+	<div class="page-header">
+	  <h1>@thing.displayName</h1>
+	</div>
+	
+	<p>@Html(thing.render)</p>
+}
