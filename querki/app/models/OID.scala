@@ -1,5 +1,9 @@
 package models
 
+import anorm._
+import play.api.db._
+import play.api.Play.current
+
 /**
  * By and large, we internally use ThingPtrs. This is an abstract "pointer" to a Thing.
  * It can be either an OID or a hard reference. (Note that Thing derives from ThingPtr.)
@@ -49,6 +53,24 @@ object OID {
   def apply(raw:Long) = new OID(raw)
   def apply(name:String) = new OID(java.lang.Long.parseLong(name, 36))
   def apply(shard:Int, index:Int) = new OID((shard.toLong << 32) + index)
+  
+  // TODO: this really ought to be done as a stored procedure, but let's wait until
+  // we're using MySQL before we bother trying that. For now, we'll just use a
+  // transaction -- inefficient, but it'll work.
+  // TODO: eventually, this needs to become shard-smart. But that's a ways off yet.
+  def next = {
+    DB.withTransaction { implicit conn =>
+      val nextQuery = SQL("""
+          select * from OIDNexter
+          """)
+      val stream = nextQuery.apply()
+      val localId =  stream.headOption.map(row => row.get[Int]("nextId").get).get
+      SQL("""
+          UPDATE OIDNexter SET nextId = {next} WHERE nextId = {old}
+          """).on("next" -> (localId + 1).toString, "old" -> localId).executeUpdate()
+      OID(1, localId)
+    }
+  }
 }
 
 object UnknownOID extends OID(-1)

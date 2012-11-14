@@ -5,6 +5,7 @@
 # Home page
 GET     /                           controllers.Application.index
 GET     /spaces                     controllers.Application.spaces
+GET     /newSpace                   controllers.Application.newSpace
 GET     /space/:spaceId/            controllers.Application.space(spaceId:String)
 GET     /space/:spaceId/things      controllers.Application.things(spaceId:String)
 GET     /space/:spaceId/:thingId    controllers.Application.thing(spaceId:String, thingId:String)
