@@ -95,20 +95,20 @@ object SystemSpace {
   /**
    * The root Property, from which all others derive.
    */
-  object UrProp extends Property(OID(0, 5), systemOID, UrThing, TextType) {
+  object UrProp extends Property(OID(0, 5), systemOID, UrThing, TextType, ExactlyOne) {
     override val props = toProps(
         setName("Property")
         )
   }
   
   val NameOID = OID(0, 6)
-  object NameProp extends Property(NameOID, systemOID, UrProp, NameType) {
+  object NameProp extends Property(NameOID, systemOID, UrProp, NameType, ExactlyOne) {
     override val props = toProps(
         setName("Name")
         )
   }
   
-  object DisplayTextProp extends Property(OID(0, 7), systemOID, UrProp, TextType) {
+  object DisplayTextProp extends Property(OID(0, 7), systemOID, UrProp, TextType, Optional) {
     override val props = toProps(
         setName("Display-Text")
         )
@@ -117,11 +117,11 @@ object SystemSpace {
   object Page extends ThingState(OID(0, 8), systemOID, RootOID) {
     override val props = toProps(
         setName("Simple-Page"),
-        (DisplayTextProp -> ElemValue(Wikitext("""
+        (DisplayTextProp -> PropValue(Some(ElemValue(Wikitext("""
 This is the basic Page Thing. Use it as your Model for *basic* Pages without real structure.
             
 Use the **DisplayText** property to indicate what to show on the page. You can put anything in there.
-""")))
+""")))))
         )
   }
   
@@ -186,10 +186,10 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
       PropValue(OneColl(elemT.deserialize(ser)))
     }
     def serialize(v:PropValue[implType], elemT:PType):String = {
-      elemT.serialize(v.v.asInstanceOf[ElemValue[elemT.valType]])
+      elemT.serialize(v.v.v.asInstanceOf[ElemValue[elemT.valType]])
     }
     def render(v:PropValue[implType], elemT:PType):Wikitext = {
-      elemT.render(v.v.asInstanceOf[ElemValue[elemT.valType]])
+      elemT.render(v.v.v.asInstanceOf[ElemValue[elemT.valType]])
     }
     def default(elemT:PType):PropValue[implType] = {
       PropValue(OneColl(elemT.default))
@@ -269,9 +269,9 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
   object State extends SpaceState(systemOID, UrThing, SystemUserOID, "System", types, props, things) {
     override val props = toProps(
         setName("System"),
-        (DisplayTextProp -> ElemValue(Wikitext("""
+        (DisplayTextProp -> PropValue(Some(ElemValue(Wikitext("""
 This is the fundamental System Space. Everything else derives from it.
-""")))
+""")))))
         )
   }
 }

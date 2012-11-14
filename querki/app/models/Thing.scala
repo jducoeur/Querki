@@ -36,15 +36,15 @@ abstract class Thing(
     val kind:Kind.Kind) extends ThingPtr
 {
   // A couple of convenience methods for the hard-coded Things in System:
-  def toProps(pairs:(ThingPtr,ElemValue[_])*):Map[ThingPtr, ElemValue[_]] = {
-    (Map.empty[ThingPtr, ElemValue[_]] /: pairs) { (m:Map[ThingPtr, ElemValue[_]], pair:(ThingPtr, ElemValue[_])) =>
+  def toProps(pairs:(ThingPtr,PropValue[_])*):Map[ThingPtr, PropValue[_]] = {
+    (Map.empty[ThingPtr, PropValue[_]] /: pairs) { (m:Map[ThingPtr, PropValue[_]], pair:(ThingPtr, PropValue[_])) =>
       m + (pair._1 -> pair._2)
     }
   }
   
-  val props:Map[ThingPtr, ElemValue[_]] = Map.empty
+  val props:Map[ThingPtr, PropValue[_]] = Map.empty
   
-  def setName(str:String):(OID,ElemValue[String]) = (NameOID -> ElemValue(str))
+  def setName(str:String):(OID,PropValue[_]) = (NameOID -> PropValue(OneColl(ElemValue(str))))
   def displayName = getProp(NameProp).render.raw
   
   def space:SpaceState = {

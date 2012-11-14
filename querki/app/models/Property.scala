@@ -81,22 +81,21 @@ abstract class Collection(i:OID, s:ThingPtr, m:ThingPtr) extends Thing(i, s, m, 
  * A Property is a field that may exist on a Thing. It is, itself, a Thing with a
  * specific Type.
  */
-case class Property(i:OID, s:ThingPtr, m:ThingPtr, val pType:PType) extends Thing(i, s, m, Kind.Property) {
+case class Property(i:OID, s:ThingPtr, m:ThingPtr, val pType:PType, val cType:Collection) extends Thing(i, s, m, Kind.Property) {
   def default = {
-    // TODO: this should route through the Collection type instead
     // TODO: add the concept of the default meta-property, so you can set it
     // on a prop-by-prop basis
-    pType.default
+    cType.default(pType)
   }
   
-  def render(v:ElemValue[pType.valType]) = pType.render(v)
+  def render(v:PropValue[cType.implType]) = cType.render(v, pType)
 }
 
 /**
  * A convenient wrapper for passing a value around in a way that can be fetched.
  */
-case class PropAndVal(prop:Property, v:ElemValue[_]) {
-  type valType = ElemValue[prop.pType.valType]
+case class PropAndVal(prop:Property, v:PropValue[_]) {
+  type valType = PropValue[prop.cType.implType]
   
   def get = v.v
   def render = prop.render(v.asInstanceOf[valType])
