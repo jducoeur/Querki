@@ -12,6 +12,11 @@ import play.api.Play.current
 import play.api.libs.concurrent._
 import play.Configuration
 
+// Database imports:
+import anorm._
+import play.api.db._
+import play.api.Play.current
+
 /**
  * A Space is the Querki equivalent of a database -- a collection of related Things,
  * Properties and Types.
@@ -56,12 +61,39 @@ case class SpaceState(
 }
 
 sealed trait SpaceMessage
-case class Load() extends SpaceMessage
 
+/**
+ * The Actor that encapsulates a Space.
+ * 
+ * As a hard and fast rule, application code in Querki never alters a Space directly.
+ * Instead, all changes are described as messages to the Space's Actor; that is
+ * responsible for making the actual changes. This way, the database layer is firmly
+ * encapsulated, and race conditions are prevented.
+ * 
+ * Similarly, you fetch the Space's current State from the Space Actor. The State is
+ * an immutable object completely describing the Space at a single moment; you are
+ * allowed to process that in any way, just not change it.
+ * 
+ * An Actor's name is based on its OID, as is its Thing Table in the DB. Use Space.sid()
+ * to get the name. Note that this has *nothing* to do with the Space's Display Name, which
+ * is user-defined. (And unique only to that user.)
+ */
 class Space extends Actor {
+  override def preStart() = {
+    // TODO: load the Space's current state
+  } 
+  
   def receive = {
-    case Load => {}
+    case req:CreateSpace => {
+      // TODO: send back a RequestedSpace
+    }
   }
+}
+
+object Space {
+  def sid(id:OID) = "s" + id.toString
+  def thingTable = sid _
+  def historyTable(id:OID) = "h" + id.toString
 }
 
 sealed trait SpaceMgrMsg
@@ -75,6 +107,9 @@ case class GetSpaceFailed(id:OID) extends GetSpaceResponse
 case class ListMySpaces(owner:OID) extends SpaceMgrMsg
 sealed trait ListMySpacesResponse
 case class MySpaces(spaces:Seq[(OID,String)]) extends ListMySpacesResponse
+
+// This responds eventually with a RequestedSpace:
+case class CreateSpace(owner:OID, name:String) extends SpaceMgrMsg
 
 class SpaceManager extends Actor {
   
@@ -98,6 +133,9 @@ class SpaceManager extends Actor {
       val results = spaceCache.values.filter(_.owner == req.owner).map(space => (space.id, space.name)).toSeq
       sender ! MySpaces(results)
     }
+    // TODO: this should go through the Space instead, for all except System. The
+    // local cache in SpaceManager is mainly for future optimization in clustered
+    // environments.
     case req:GetSpace => {
       val cached = spaceCache.get(req.id)
       if (cached.nonEmpty)
@@ -105,8 +143,38 @@ class SpaceManager extends Actor {
       else
         sender ! GetSpaceFailed(req.id)
      }
+    case req:CreateSpace => {
+      // TODO: check that the owner hasn't run out of spaces he can create
+      // TODO: check that the owner doesn't already have a space with that name
+      // TODO: this involves DB access, so should be async using the Actor DSL
+      val (spaceId, spaceActor) = createSpace(req.owner, req.name)
+      // Now, let the Space Actor finish the process once it is ready:
+      spaceActor.forward(req)
+    }
   }
   
+  private def createSpace(owner:OID, name:String) = {
+    val spaceId = OID.next
+    val spaceActor = context.actorOf(Props[Space], name = Space.sid(spaceId))
+    DB.withTransaction { implicit conn =>
+      SQL("""
+          CREATE TABLE {tname} (
+            id bigint NOT NULL,
+            parent bigint NOT NULL,
+            kind tinyint NOT NULL,
+            props clob NOT NULL,
+            PRIMARY KEY (id)
+          )
+          """).on("tname" -> Space.thingTable(spaceId)).executeUpdate()
+      SQL("""
+          INSERT INTO Spaces
+          (id, shard, name, display, owner, size) VALUES
+          ({sid}, {shard}, {name}, {display}, {ownerId}, 0)
+          """).on("sid" -> spaceId.toString, "shard" -> 1.toString, "name" -> name,
+                  "display" -> name, "ownerId" -> owner.toString).executeUpdate()
+    }
+    (spaceId, spaceActor)
+  }
 }
 
 object SpaceManager {

@@ -7,7 +7,7 @@
 # --- !Ups
  
 CREATE TABLE User (
-    id bigint(20) NOT NULL,
+    id bigint NOT NULL,
     name varchar(255) NOT NULL,
     PRIMARY KEY (id)
 );
@@ -21,15 +21,19 @@ CREATE TABLE OIDNexter (
 
 INSERT INTO OIDNexter (nextId) VALUES (0)
 
-CREATE TABLE Spaces {
-    id bigint(20) NOT NULL,
+CREATE TABLE Spaces (
+    id bigint NOT NULL,
+    shard int NOT NULL,
     name varchar(255) NOT NULL,
-    owner bigint(20) NOT NULL,
+    display varchar(255) NOT NULL,
+    owner bigint NOT NULL,
+    size int NOT NULL,
     PRIMARY KEY (id)
-}
+);
  
 # --- !Downs
  
 DROP TABLE Spaces;
 DROP TABLE OIDNexter;
 DROP TABLE User;
+DROP ALL OBJECTS;
