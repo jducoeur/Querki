@@ -47,11 +47,11 @@ object SystemSpace {
         setName("Type-Whole-Number")
         )
     
-    def deserialize(v:String) = PropValue(java.lang.Integer.parseInt(v))
-    def serialize(v:PropValue[valType]) = v.v.toString
-    def render(v:PropValue[valType]) = Wikitext(v.v.toString())
+    def deserialize(v:String) = ElemValue(java.lang.Integer.parseInt(v))
+    def serialize(v:ElemValue[valType]) = v.v.toString
+    def render(v:ElemValue[valType]) = Wikitext(v.v.toString())
     
-    val default = PropValue(0)
+    val default = ElemValue(0)
   }
   
   /**
@@ -66,11 +66,11 @@ object SystemSpace {
         
     def apply(str:String) = Wikitext(str)
     
-    def deserialize(v:String) = PropValue(Wikitext(v))
-    def serialize(v:PropValue[valType]) = v.v.internal
-    def render(v:PropValue[valType]) = v.v
+    def deserialize(v:String) = ElemValue(Wikitext(v))
+    def serialize(v:ElemValue[valType]) = v.v.internal
+    def render(v:ElemValue[valType]) = v.v
     
-    val default = PropValue(Wikitext(""))
+    val default = ElemValue(Wikitext(""))
   }
   
   /**
@@ -83,11 +83,11 @@ object SystemSpace {
         setName("Type-YesNo")
         )
     
-    def deserialize(ser:String) = PropValue(java.lang.Boolean.parseBoolean(ser))
-    def serialize(v:PropValue[valType]) = v.v.toString
-    def render(v:PropValue[valType]) = Wikitext(v.v.toString())
+    def deserialize(ser:String) = ElemValue(java.lang.Boolean.parseBoolean(ser))
+    def serialize(v:ElemValue[valType]) = v.v.toString
+    def render(v:ElemValue[valType]) = Wikitext(v.v.toString())
     
-    val default = PropValue(false)
+    val default = ElemValue(false)
   }
   
   // TODO: still need to add Collections!!!
@@ -117,7 +117,7 @@ object SystemSpace {
   object Page extends ThingState(OID(0, 8), systemOID, RootOID) {
     override val props = toProps(
         setName("Simple-Page"),
-        (DisplayTextProp -> PropValue(Wikitext("""
+        (DisplayTextProp -> ElemValue(Wikitext("""
 This is the basic Page Thing. Use it as your Model for *basic* Pages without real structure.
             
 Use the **DisplayText** property to indicate what to show on the page. You can put anything in there.
@@ -142,11 +142,11 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
         
     def apply(str:String) = toInternal(str)
     
-    def deserialize(v:String) = PropValue(toDisplay(v))
-    def serialize(v:PropValue[valType]) = toInternal(v.v)
-    def render(v:PropValue[valType]) = Wikitext(toDisplay(v.v))
+    def deserialize(v:String) = ElemValue(toDisplay(v))
+    def serialize(v:ElemValue[valType]) = toInternal(v.v)
+    def render(v:ElemValue[valType]) = Wikitext(toDisplay(v.v))
     
-    val default = PropValue("MISSING NAME!")
+    val default = ElemValue("MISSING NAME!")
   }
   
   val TestUserOID = OID(0, 11)
@@ -229,7 +229,7 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
   object State extends SpaceState(systemOID, UrThing, SystemUserOID, "System", types, props, things) {
     override val props = toProps(
         setName("System"),
-        (DisplayTextProp -> PropValue(Wikitext("""
+        (DisplayTextProp -> ElemValue(Wikitext("""
 This is the fundamental System Space. Everything else derives from it.
 """)))
         )

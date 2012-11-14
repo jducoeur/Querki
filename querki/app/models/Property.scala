@@ -4,7 +4,7 @@ package models
  * The value of a Property on a Thing. This is kept as a String, and evaluated
  * on-the-fly as necessary.
  */
-case class PropValue[T](v:T)
+case class ElemValue[T](v:T)
 
 /**
  * Properties have Types. There's nothing controversial here -- Types are usually
@@ -20,23 +20,23 @@ abstract class PType(i:OID, s:ThingPtr, m:ThingPtr) extends Thing(i, s, m, Kind.
    * Each PType is required to implement this -- it is the deserializer for the
    * type.
    */
-  def deserialize(ser:String):PropValue[valType]
+  def deserialize(ser:String):ElemValue[valType]
   
   /**
    * Also required for all PTypes, to serialize values of this type.
    */
-  def serialize(v:PropValue[valType]):String
+  def serialize(v:ElemValue[valType]):String
   
   /**
    * Takes a value of this type, and turns it into displayable form. Querki
    * equivalent to toString.
    */
-  def render(ser:PropValue[valType]):Wikitext
+  def render(ser:ElemValue[valType]):Wikitext
   
   /**
    * Also required for all PTypes -- the default value to fall back on.
    */
-  def default:PropValue[valType]
+  def default:ElemValue[valType]
 }
 
 /**
@@ -56,23 +56,23 @@ abstract class Collection(i:OID, s:ThingPtr, m:ThingPtr) extends Thing(i, s, m, 
    * Each Collection is required to implement this -- it is the deserializer for the
    * type.
    */
-  def deserialize(ser:String, elemT:PType):PropValue[implType]
+  def deserialize(ser:String, elemT:PType):ElemValue[implType]
   
   /**
    * Also required for all Collections, to serialize values of this type.
    */
-  def serialize(v:PropValue[implType], elemT:PType):String
+  def serialize(v:ElemValue[implType], elemT:PType):String
   
   /**
    * Takes a value of this type, and turns it into displayable form. Querki
    * equivalent to toString.
    */
-  def render(v:PropValue[implType], elemT:PType):Wikitext
+  def render(v:ElemValue[implType], elemT:PType):Wikitext
   
   /**
    * Also required for all Collections -- the default value to fall back on.
    */
-  def default(elemT:PType):PropValue[implType]
+  def default(elemT:PType):ElemValue[implType]
 }
 
 /**
@@ -87,14 +87,14 @@ case class Property(i:OID, s:ThingPtr, m:ThingPtr, val pType:PType) extends Thin
     pType.default
   }
   
-  def render(v:PropValue[pType.valType]) = pType.render(v)
+  def render(v:ElemValue[pType.valType]) = pType.render(v)
 }
 
 /**
  * A convenient wrapper for passing a value around in a way that can be fetched.
  */
-case class PropAndVal(prop:Property, v:PropValue[_]) {
-  type valType = PropValue[prop.pType.valType]
+case class PropAndVal(prop:Property, v:ElemValue[_]) {
+  type valType = ElemValue[prop.pType.valType]
   
   def get = v.v
   def render = prop.render(v.asInstanceOf[valType])
