@@ -150,73 +150,113 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
   }
   
   val TestUserOID = OID(0, 11)
-//  
-//  /**
-//   * Root Collection type. Exists solely so that there is a common runtime root, in case
-//   * we want to be able to write new collections.
-//   */
-//  object UrCollection extends Collection(OID(0, 12), systemOID, UrThing) {
-//	type implType = Object
-//  
-//    def deserialize(ser:PropValue, elemT:PType):implType = 
-//      throw new Error("Trying to deserialize root collection!")
-//    def serialize(v:implType, elemT:PType):PropValue = 
-//      throw new Error("Trying to serialize root collection!")
-//    def render(ser:PropValue, elemT:PType):Wikitext = 
-//      throw new Error("Trying to render root collection!")
-//    def default(elemT:PType):PropValue = 
-//      throw new Error("Trying to default root collection!")    
-//  }
-//  
-//  object ExactlyOne extends Collection(OID(0, 13), systemOID, UrCollection) {
-//    type implType = Any
-//    
-//    def deserialize(ser:PropValue, elemT:PType):implType = {
-//      elemT.deserialize(ser)
-//    }
-//    def serialize(v:implType, elemT:PType):PropValue = {
-//      elemT.serialize(v.asInstanceOf[elemT.valType])
-//    }
-//    def render(ser:PropValue, elemT:PType):Wikitext = {
-//      elemT.render(ser)
-//    }
-//    def default(elemT:PType):PropValue = {
-//      elemT.default
-//    }
-//  }
-//  
-//  object Optional extends Collection(OID(0, 14), systemOID, UrCollection) {
-//    type implType = Option[_]
-//    
-//    def deserialize(ser:PropValue, elemT:PType):implType = {
-//      ser.serialized match {
-//        case "!" => None
-//        case s:String => {
-//          val elemStr = s.slice(1, s.length() - 1)
-//          Some(elemT.deserialize(ser))
-//        }
-//      }
-//    }
-//    
-//    def serialize(v:implType, elemT:PType):PropValue = {
-//      v match {
-//        case Some(elem) => PropValue("(" + elemT.serialize(v.asInstanceOf[elemT.valType]) + ")")
-//        case None => PropValue ("!")
-//      }
-//    }
-//    
-//    def render(ser:PropValue, elemT:PType):Wikitext = {
-//      val v = deserialize(ser, elemT)
-//      v match {
-//        case Some(elem) => elemT.render(elem)
-//        case None => Wikitext("")
-//      }
-//    }
-//    
-//    def default(elemT:PType):PropValue = {
-//      elemT.default
-//    }
-//  }
+  
+  //////////////////////////////////////
+  //
+  // Collections
+  //
+  
+  // TODO: the Collections are full of fugly isInstanceOf expressions. I suspect that I
+  // need fancy type math to get rid of these. Figure out how to make it work. It likely
+  // has everything to do with the type signature of PropValue and ElemValue.
+  
+  /**
+   * Root Collection type. Exists solely so that there is a common runtime root, in case
+   * we want to be able to write new collections.
+   */
+  object UrCollection extends Collection(OID(0, 12), systemOID, UrThing) {
+	type implType = Object
+  
+    def deserialize(ser:String, elemT:PType):PropValue[implType] = 
+      throw new Error("Trying to deserialize root collection!")
+    def serialize(v:PropValue[implType], elemT:PType):String = 
+      throw new Error("Trying to serialize root collection!")
+    def render(ser:PropValue[implType], elemT:PType):Wikitext = 
+      throw new Error("Trying to render root collection!")
+    def default(elemT:PType):PropValue[implType] = 
+      throw new Error("Trying to default root collection!")    
+  }
+  
+  case class OneColl[T <: ElemValue[_]](v:T)
+  
+  object ExactlyOne extends Collection(OID(0, 13), systemOID, UrCollection) {
+    type implType = OneColl[_]
+    
+    def deserialize(ser:String, elemT:PType):PropValue[implType] = {
+      PropValue(OneColl(elemT.deserialize(ser)))
+    }
+    def serialize(v:PropValue[implType], elemT:PType):String = {
+      elemT.serialize(v.v.asInstanceOf[ElemValue[elemT.valType]])
+    }
+    def render(v:PropValue[implType], elemT:PType):Wikitext = {
+      elemT.render(v.v.asInstanceOf[ElemValue[elemT.valType]])
+    }
+    def default(elemT:PType):PropValue[implType] = {
+      PropValue(OneColl(elemT.default))
+    }
+  }
+  
+  object Optional extends Collection(OID(0, 14), systemOID, UrCollection) {
+    type implType = Option[_]
+    
+    def deserialize(ser:String, elemT:PType):PropValue[implType] = {
+      ser match {
+        case "!" => PropValue(None)
+        case s:String => {
+          val elemStr = s.slice(1, s.length() - 1)
+          PropValue(Some(elemT.deserialize(ser)))
+        }
+      }
+    }
+    
+    def serialize(v:PropValue[implType], elemT:PType):String = {
+      v.v match {
+        case Some(elem) => "(" + elemT.serialize(v.asInstanceOf[ElemValue[elemT.valType]]) + ")"
+        case None => "!"
+      }
+    }
+    
+    def render(v:PropValue[implType], elemT:PType):Wikitext = {
+      v.v match {
+        case Some(elem) => elemT.render(elem.asInstanceOf[ElemValue[elemT.valType]])
+        case None => Wikitext("")
+      }
+    }
+    
+    def default(elemT:PType):PropValue[implType] = {
+      PropValue(None)
+    }
+  }
+  
+  
+  object QList extends Collection(OID(0, 15), systemOID, UrCollection) {
+    type implType = List[_]
+    
+    def deserialize(ser:String, elemT:PType):PropValue[implType] = {
+      val guts = ser.slice(1, ser.length() - 1)
+      val elemStrs = guts.split(",").toList
+      val elems = elemStrs.map(elemT.deserialize(_))
+      PropValue(elems)
+    }
+    
+    def serialize(v:PropValue[implType], elemT:PType):String = {
+      v.v.
+        map(elem => elemT.serialize(elem.asInstanceOf[ElemValue[elemT.valType]])).
+        mkString("[", "," ,"]")
+    }
+    
+    def render(v:PropValue[implType], elemT:PType):Wikitext = {
+      val renderedElems = v.v.
+        map(elem => elemT.render(elem.asInstanceOf[ElemValue[elemT.valType]]))
+      Wikitext(renderedElems.mkString("\n"))
+    }
+    
+    def default(elemT:PType):PropValue[implType] = {
+      PropValue(List.empty)
+    }
+  }
+  
+  ///////////////////////////////
   
   def oidMap[T <: Thing](items:T*):Map[OID,T] = {
     (Map.empty[OID,T] /: items) ((m, i) => m + (i.id -> i))
