@@ -16,20 +16,15 @@
             </div>
 		  }
 		}
-		<div class="page-header">
-		  <h1>Welcome to Querki!</h1>
+	    <div class="hero-unit">
+	      <h1>Welcome to Querki!</h1>
+
+		  <a href="/login" class="btn btn-primary btn-large">Log In</a>
 		</div>
-	    <p>Please log in:<p>
-		@form(routes.Application.login, 'class -> "form-inline") {
-		  <input type="text" name="name" id="name" value="" placeholder="Your name">
-		  <input type="submit" value="Log in" class="btn btn-primary">
-		}
 	  }
       case Some(u) => {
 	    <div class="hero-unit">
 	      <h1>Welcome back, @{u.name}! (#@u.id)</h1>
-		  <p>None of this does anything yet, but it's starting to at
-		  least look nice while it's not doing it.</p>
 
 		  <a href="/spaces" class="btn btn-primary btn-large">Show my Spaces</a>
 		  &nbsp;&nbsp;

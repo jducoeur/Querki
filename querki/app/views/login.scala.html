@@ -1,0 +1,26 @@
+@(loginForm:Form[User], errors:Option[String] = None)
+
+@import helper._
+@import helper.twitterBootstrap._
+
+@main("Log in to Querki", None, NavSection.homeNav) {
+
+    @errors match {
+	  case None => {}
+	  case Some(msg) => { 
+        <div class="alert">
+          <button type="button" class="close" data-dismiss="alert">x</button>
+          <strong>Error:</strong> @msg
+        </div>
+	  }
+	}
+		
+	<div class="page-header">
+	  <h1>Please log in</h1>
+	</div>
+	
+	@form(routes.Application.dologin, 'class -> "form-inline") {
+	  <input type="text" name="name" id="name" value="" placeholder="Your name">
+	  <input type="submit" value="Log in" class="btn btn-primary">
+	}
+}

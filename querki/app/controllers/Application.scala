@@ -104,13 +104,18 @@ object Application extends Controller {
     Ok(views.html.index(Some(user), userForm))
   }
   
-  def login = Action { implicit request =>
+  def login = 
+    Security.Authenticated(username, request => Ok(views.html.login(userForm))) { user =>
+      Action { Redirect(routes.Application.index) }
+    }
+  
+  def dologin = Action { implicit request =>
     userForm.bindFromRequest.fold(
       errors => BadRequest(views.html.index(None, errors, Some("I didn't understand that"))),
       user => {
         val lookedUp = User.get(user.name)
         if (lookedUp.isEmpty)
-          BadRequest(views.html.index(None, userForm, Some("I don't know who you are")))
+          BadRequest(views.html.login(userForm, Some("I don't know who you are")))
         else
 	      Redirect(routes.Application.index).withSession(Security.username -> user.name)
       }
