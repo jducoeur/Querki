@@ -47,11 +47,11 @@ object SystemSpace {
         setName("Type-Whole-Number")
         )
     
-    def deserialize(v:PropValue) = java.lang.Integer.parseInt(v.serialized)
-    def serialize(v:valType) = PropValue(v.toString)
-    def render(v:PropValue) = Wikitext(v.serialized.toString())
+    def deserialize(v:String) = PropValue(java.lang.Integer.parseInt(v))
+    def serialize(v:PropValue[valType]) = v.v.toString
+    def render(v:PropValue[valType]) = Wikitext(v.v.toString())
     
-    val default = PropValue("0")
+    val default = PropValue(0)
   }
   
   /**
@@ -66,11 +66,11 @@ object SystemSpace {
         
     def apply(str:String) = Wikitext(str)
     
-    def deserialize(v:PropValue) = Wikitext(v.serialized)
-    def serialize(v:valType) = PropValue(v.internal)
-    def render(v:PropValue) = Wikitext(v.serialized)
+    def deserialize(v:String) = PropValue(Wikitext(v))
+    def serialize(v:PropValue[valType]) = v.v.internal
+    def render(v:PropValue[valType]) = v.v
     
-    val default = PropValue("")
+    val default = PropValue(Wikitext(""))
   }
   
   /**
@@ -83,11 +83,11 @@ object SystemSpace {
         setName("Type-YesNo")
         )
     
-    def deserialize(v:PropValue) = java.lang.Boolean.parseBoolean(v.serialized)
-    def serialize(v:valType) = PropValue(v.toString)
-    def render(v:PropValue) = Wikitext(v.serialized.toString())
+    def deserialize(ser:String) = PropValue(java.lang.Boolean.parseBoolean(ser))
+    def serialize(v:PropValue[valType]) = v.v.toString
+    def render(v:PropValue[valType]) = Wikitext(v.v.toString())
     
-    val default = PropValue("false")
+    val default = PropValue(false)
   }
   
   // TODO: still need to add Collections!!!
@@ -117,11 +117,11 @@ object SystemSpace {
   object Page extends ThingState(OID(0, 8), systemOID, RootOID) {
     override val props = toProps(
         setName("Simple-Page"),
-        (DisplayTextProp -> PropValue("""
+        (DisplayTextProp -> PropValue(Wikitext("""
 This is the basic Page Thing. Use it as your Model for *basic* Pages without real structure.
             
 Use the **DisplayText** property to indicate what to show on the page. You can put anything in there.
-"""))
+""")))
         )
   }
   
@@ -142,14 +142,81 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
         
     def apply(str:String) = toInternal(str)
     
-    def deserialize(v:PropValue) = toDisplay(v.serialized)
-    def serialize(v:valType) = PropValue(toInternal(v))
-    def render(v:PropValue) = Wikitext(toDisplay(v.serialized))
+    def deserialize(v:String) = PropValue(toDisplay(v))
+    def serialize(v:PropValue[valType]) = toInternal(v.v)
+    def render(v:PropValue[valType]) = Wikitext(toDisplay(v.v))
     
     val default = PropValue("MISSING NAME!")
   }
   
   val TestUserOID = OID(0, 11)
+//  
+//  /**
+//   * Root Collection type. Exists solely so that there is a common runtime root, in case
+//   * we want to be able to write new collections.
+//   */
+//  object UrCollection extends Collection(OID(0, 12), systemOID, UrThing) {
+//	type implType = Object
+//  
+//    def deserialize(ser:PropValue, elemT:PType):implType = 
+//      throw new Error("Trying to deserialize root collection!")
+//    def serialize(v:implType, elemT:PType):PropValue = 
+//      throw new Error("Trying to serialize root collection!")
+//    def render(ser:PropValue, elemT:PType):Wikitext = 
+//      throw new Error("Trying to render root collection!")
+//    def default(elemT:PType):PropValue = 
+//      throw new Error("Trying to default root collection!")    
+//  }
+//  
+//  object ExactlyOne extends Collection(OID(0, 13), systemOID, UrCollection) {
+//    type implType = Any
+//    
+//    def deserialize(ser:PropValue, elemT:PType):implType = {
+//      elemT.deserialize(ser)
+//    }
+//    def serialize(v:implType, elemT:PType):PropValue = {
+//      elemT.serialize(v.asInstanceOf[elemT.valType])
+//    }
+//    def render(ser:PropValue, elemT:PType):Wikitext = {
+//      elemT.render(ser)
+//    }
+//    def default(elemT:PType):PropValue = {
+//      elemT.default
+//    }
+//  }
+//  
+//  object Optional extends Collection(OID(0, 14), systemOID, UrCollection) {
+//    type implType = Option[_]
+//    
+//    def deserialize(ser:PropValue, elemT:PType):implType = {
+//      ser.serialized match {
+//        case "!" => None
+//        case s:String => {
+//          val elemStr = s.slice(1, s.length() - 1)
+//          Some(elemT.deserialize(ser))
+//        }
+//      }
+//    }
+//    
+//    def serialize(v:implType, elemT:PType):PropValue = {
+//      v match {
+//        case Some(elem) => PropValue("(" + elemT.serialize(v.asInstanceOf[elemT.valType]) + ")")
+//        case None => PropValue ("!")
+//      }
+//    }
+//    
+//    def render(ser:PropValue, elemT:PType):Wikitext = {
+//      val v = deserialize(ser, elemT)
+//      v match {
+//        case Some(elem) => elemT.render(elem)
+//        case None => Wikitext("")
+//      }
+//    }
+//    
+//    def default(elemT:PType):PropValue = {
+//      elemT.default
+//    }
+//  }
   
   def oidMap[T <: Thing](items:T*):Map[OID,T] = {
     (Map.empty[OID,T] /: items) ((m, i) => m + (i.id -> i))
@@ -162,9 +229,9 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
   object State extends SpaceState(systemOID, UrThing, SystemUserOID, "System", types, props, things) {
     override val props = toProps(
         setName("System"),
-        (DisplayTextProp -> PropValue("""
+        (DisplayTextProp -> PropValue(Wikitext("""
 This is the fundamental System Space. Everything else derives from it.
-"""))
+""")))
         )
   }
 }

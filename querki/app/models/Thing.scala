@@ -17,6 +17,7 @@ object Kind {
   val Type = 1
   val Property = 2
   val Space = 3
+  val Collection = 4
 }
 
 /**
@@ -35,15 +36,15 @@ abstract class Thing(
     val kind:Kind.Kind) extends ThingPtr
 {
   // A couple of convenience methods for the hard-coded Things in System:
-  def toProps(pairs:(ThingPtr,PropValue)*):Map[ThingPtr, PropValue] = {
-    (Map.empty[ThingPtr, PropValue] /: pairs) { (m:Map[ThingPtr, PropValue], pair:(ThingPtr, PropValue)) =>
+  def toProps(pairs:(ThingPtr,PropValue[_])*):Map[ThingPtr, PropValue[_]] = {
+    (Map.empty[ThingPtr, PropValue[_]] /: pairs) { (m:Map[ThingPtr, PropValue[_]], pair:(ThingPtr, PropValue[_])) =>
       m + (pair._1 -> pair._2)
     }
   }
   
-  val props:Map[ThingPtr, PropValue] = Map.empty
+  val props:Map[ThingPtr, PropValue[_]] = Map.empty
   
-  def setName(str:String):(OID,PropValue) = (NameOID -> PropValue(str))
+  def setName(str:String):(OID,PropValue[String]) = (NameOID -> PropValue(str))
   def displayName = getProp(NameProp).render.raw
   
   def space:SpaceState = {
@@ -106,7 +107,8 @@ abstract class Thing(
   def renderProps:Wikitext = {
     val listMap = props.map { entry =>
       val prop = space.prop(entry._1)
-      "<dt>" + prop.displayName + "</dt><dd>" + prop.render(entry._2).raw + "</dd>"
+      val pv = PropAndVal(prop, entry._2)
+      "<dt>" + prop.displayName + "</dt><dd>" + pv.render.raw + "</dd>"
     }
     Wikitext(listMap.mkString("<dl>", "", "</dl>"))    
   }
@@ -119,7 +121,7 @@ abstract class Thing(
    */
   def render:Wikitext = {
     val opt = getPropOpt(DisplayTextProp)
-    opt.map(pv => TextType.render(pv.v)).getOrElse(renderProps)
+    opt.map(pv => pv.render).getOrElse(renderProps)
   }
 }
 

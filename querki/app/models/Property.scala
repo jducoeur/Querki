@@ -4,7 +4,7 @@ package models
  * The value of a Property on a Thing. This is kept as a String, and evaluated
  * on-the-fly as necessary.
  */
-case class PropValue(serialized:String)
+case class PropValue[T](v:T)
 
 /**
  * Properties have Types. There's nothing controversial here -- Types are usually
@@ -20,23 +20,59 @@ abstract class PType(i:OID, s:ThingPtr, m:ThingPtr) extends Thing(i, s, m, Kind.
    * Each PType is required to implement this -- it is the deserializer for the
    * type.
    */
-  def deserialize(ser:PropValue):valType
+  def deserialize(ser:String):PropValue[valType]
   
   /**
    * Also required for all PTypes, to serialize values of this type.
    */
-  def serialize(v:valType):PropValue
+  def serialize(v:PropValue[valType]):String
   
   /**
    * Takes a value of this type, and turns it into displayable form. Querki
    * equivalent to toString.
    */
-  def render(ser:PropValue):Wikitext
+  def render(ser:PropValue[valType]):Wikitext
   
   /**
    * Also required for all PTypes -- the default value to fall back on.
    */
-  def default:PropValue
+  def default:PropValue[valType]
+}
+
+/**
+ * A Collection is the Querki equivalent of a Functor in Category Theory. Properties
+ * always combine a Type *and* a Collection. (You must explicitly state both Optional
+ * or ExactlyOne.) 
+ * 
+ * As of this writing, it isn't obvious that Collections will be
+ * required to be strictly monadic, but they probably all are. By being rigorous
+ * and consistent about this, we make it much easier to write QL safely -- each
+ * QL step is basically a flatMap.
+ */
+abstract class Collection(i:OID, s:ThingPtr, m:ThingPtr) extends Thing(i, s, m, Kind.Collection) {
+  type implType
+  
+  /**
+   * Each Collection is required to implement this -- it is the deserializer for the
+   * type.
+   */
+  def deserialize(ser:String, elemT:PType):PropValue[implType]
+  
+  /**
+   * Also required for all Collections, to serialize values of this type.
+   */
+  def serialize(v:PropValue[implType], elemT:PType):String
+  
+  /**
+   * Takes a value of this type, and turns it into displayable form. Querki
+   * equivalent to toString.
+   */
+  def render(v:PropValue[implType], elemT:PType):Wikitext
+  
+  /**
+   * Also required for all Collections -- the default value to fall back on.
+   */
+  def default(elemT:PType):PropValue[implType]
 }
 
 /**
@@ -51,15 +87,15 @@ case class Property(i:OID, s:ThingPtr, m:ThingPtr, val pType:PType) extends Thin
     pType.default
   }
   
-  def render(v:PropValue) = pType.render(v)
+  def render(v:PropValue[pType.valType]) = pType.render(v)
 }
 
 /**
  * A convenient wrapper for passing a value around in a way that can be fetched.
  */
-case class PropAndVal(prop:Property, v:PropValue) {
-  type valType = prop.pType.valType
+case class PropAndVal(prop:Property, v:PropValue[_]) {
+  type valType = PropValue[prop.pType.valType]
   
-  def get = prop.pType.deserialize(v)
-  def render = prop.render(v)
+  def get = v.v
+  def render = prop.render(v.asInstanceOf[valType])
 }
