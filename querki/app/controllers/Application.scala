@@ -3,6 +3,7 @@ package controllers
 import play.api._
 import play.api.data._
 import play.api.data.Forms._
+import play.api.libs.concurrent.Promise
 import play.api.mvc._
 
 import models._
@@ -35,6 +36,21 @@ object Application extends Controller {
   }
   
   /**
+   * Helper for asking the SpaceManager for info. Assumes that the process is
+   * asynchronous, and buffers the incoming HTTP request accordingly.
+   * 
+   * @tparam A The type of the expected return message from SpaceManager. This usually names a trait;
+   * the actual messages should be derived from that.
+   * @param msg The message to send to the SpaceManager.
+   * @param cb A partial function that takes the SpaceManager response and produces a result.
+   */
+  def askSpaceMgr[A](msg:SpaceMgrMsg)(cb: A => Result)(implicit m:Manifest[A]) = {
+    Async {
+      SpaceManager.ask[A, Result](msg)(cb)
+    }
+  }
+  
+  /**
    * Utility method for pages that are basically displaying some aspect of a whole Space.
    * 
    * @param spaceId The stringified OID of the space to display, from the URL
@@ -42,11 +58,9 @@ object Application extends Controller {
    * actual page content
    */
   def withSpaceAndRequest(spaceId:String)(f: (User, SpaceState) => Request[AnyContent] => Result) = withUser { user => implicit request =>
-    Async {
-      SpaceManager.ask[GetSpaceResponse, Result](GetSpace(OID(spaceId))) {
-        case RequestedSpace(state) => f(user, state)(request)
-        case GetSpaceFailed(id) => Ok(views.html.spaces(Some(user), Seq.empty))
-      }
+    askSpaceMgr[GetSpaceResponse](GetSpace(OID(spaceId), Some(user.id))) {
+      case RequestedSpace(state) => f(user, state)(request)
+      case GetSpaceFailed(id) => Ok(views.html.spaces(Some(user), Seq.empty))
     }     
   }
   
@@ -55,11 +69,9 @@ object Application extends Controller {
    * care about the request.
    */
   def withSpace(spaceId:String)(f: (User, SpaceState) => Result) = withUser { user => implicit request =>
-    Async {
-      SpaceManager.ask[GetSpaceResponse, Result](GetSpace(OID(spaceId))) {
-        case RequestedSpace(state) => f(user, state)
-        case GetSpaceFailed(id) => Ok(views.html.spaces(Some(user), Seq.empty))
-      }
+    askSpaceMgr[GetSpaceResponse](GetSpace(OID(spaceId), Some(user.id))) {
+      case RequestedSpace(state) => f(user, state)
+      case GetSpaceFailed(id) => Ok(views.html.spaces(Some(user), Seq.empty))
     }     
   }
   
@@ -70,10 +82,8 @@ object Application extends Controller {
   }    
 
   def spaces = withUser { user => implicit request => 
-    Async {
-      SpaceManager.ask[ListMySpacesResponse, Result](ListMySpaces(user.id)) { 
-        case MySpaces(list) => Ok(views.html.spaces(Some(user), list))
-      }
+    askSpaceMgr[ListMySpacesResponse](ListMySpaces(user.id)) { 
+      case MySpaces(list) => Ok(views.html.spaces(Some(user), list))
     }
   }
     

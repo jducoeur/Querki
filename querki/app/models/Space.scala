@@ -65,15 +65,14 @@ class Space extends Actor {
 }
 
 sealed trait SpaceMgrMsg
-case class ListMySpaces(owner:OID) extends SpaceMgrMsg
-case class GetSpace(id:OID) extends SpaceMgrMsg
-// TEMP:
-case class SaySomething(something:String) extends SpaceMgrMsg
 
+// TODO: check whether the requester is authorized to look at this Space
+case class GetSpace(id:OID, requester:Option[OID]) extends SpaceMgrMsg
 sealed trait GetSpaceResponse
 case class RequestedSpace(state:SpaceState) extends GetSpaceResponse
 case class GetSpaceFailed(id:OID) extends GetSpaceResponse
 
+case class ListMySpaces(owner:OID) extends SpaceMgrMsg
 sealed trait ListMySpacesResponse
 case class MySpaces(spaces:Seq[(OID,String)]) extends ListMySpacesResponse
 
@@ -95,11 +94,6 @@ class SpaceManager extends Actor {
   val replyMsg = Play.configuration.getString("querki.test.replyMsg").getOrElse("MISSING REPLY MSG!")
   
   def receive = {
-    // TEMP:
-    case msg:SaySomething => {
-      counter += 1
-      sender ! msg.something + replyMsg + counter
-    }
     case req:ListMySpaces => {
       val results = spaceCache.values.filter(_.owner == req.owner).map(space => (space.id, space.name)).toSeq
       sender ! MySpaces(results)

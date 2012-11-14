@@ -5,9 +5,6 @@ import models._
 object Global extends GlobalSettings {
   
   override def onStart(app: Application) {
-    
-    SpaceManager.ask[String,Unit](SaySomething("Newly woken up")) { Logger.info(_) }
-    
     Logger.info("Querki has started")
   }  
   
