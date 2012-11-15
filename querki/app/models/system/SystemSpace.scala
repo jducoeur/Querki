@@ -116,11 +116,11 @@ object SystemSpace {
   object Page extends ThingState(OID(0, 8), systemOID, RootOID,
       toProps(
         setName("Simple-Page"),
-        (DisplayTextProp -> PropValue(Some(ElemValue(Wikitext("""
+        DisplayTextProp(Wikitext("""
 This is the basic Page Thing. Use it as your Model for *basic* Pages without real structure.
             
 Use the **DisplayText** property to indicate what to show on the page. You can put anything in there.
-""")))))))
+"""))))
   
   val SystemUserOID = OID(0, 9)
   
@@ -178,6 +178,8 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
       throw new Error("Trying to render root collection!")
     def default(elemT:PType):PropValue[implType] = 
       throw new Error("Trying to default root collection!")    
+	def wrap(elem:ElemValue[_]):implType =
+	  throw new Error("Trying to wrap root collection!")    
   }
   
   case class OneColl[T <: ElemValue[_]](v:T)
@@ -201,6 +203,7 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
     def default(elemT:PType):PropValue[implType] = {
       PropValue(OneColl(elemT.default))
     }
+    def wrap(elem:ElemValue[_]):implType = OneColl(elem)
   }
   
   object Optional extends Collection(OID(0, 14), systemOID, UrCollection,
@@ -237,6 +240,8 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
     def default(elemT:PType):PropValue[implType] = {
       PropValue(None)
     }
+    
+    def wrap(elem:ElemValue[_]):implType = Some(elem)
   }
   
   
@@ -269,7 +274,47 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
     def default(elemT:PType):PropValue[implType] = {
       PropValue(List.empty)
     }
+    
+    def wrap(elem:ElemValue[_]):implType = List(elem)
   }
+  
+  ///////////////////////////////
+  
+  /**
+   * The Type for Links to other Things
+   */
+  object LinkType extends PType(OID(0, 16), systemOID, UrThing,
+      toProps(
+        setName("Type-Link")
+        )) 
+  {
+    type valType = OID
+    
+    def deserialize(v:String) = ElemValue(OID(v))
+    def serialize(v:ElemValue[valType]) = v.v.toString
+    // TODO: this is a good illustration of the fact that render should actually
+    // be contextual -- you can't really render a Link in isolation, without knowing
+    // about the Thing it points to:
+    def render(v:ElemValue[valType]) = Wikitext(v.v.toString)
+
+    val default = ElemValue[valType](UnknownOID)
+  }
+    
+  /**
+   * The Property that points from a Property to its Type.
+   */
+  object TypeProp extends Property(OID(0, 17), systemOID, UrProp, LinkType, ExactlyOne,
+      toProps(
+        setName("__Type")
+        ))
+  
+  /**
+   * The Property that points from a Property to its Collection.
+   */
+  object CollectionProp extends Property(OID(0, 18), systemOID, UrProp, LinkType, ExactlyOne,
+      toProps(
+        setName("__Collection")
+        ))
   
   ///////////////////////////////
   
@@ -277,15 +322,15 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
     (Map.empty[OID,T] /: items) ((m, i) => m + (i.id -> i))
   }
   
-  val types = oidMap[PType](IntType, TextType, YesNoType, NameType)
-  val props = oidMap[Property](UrProp, NameProp, DisplayTextProp)
+  val types = oidMap[PType](IntType, TextType, YesNoType, NameType, LinkType)
+  val props = oidMap[Property](UrProp, NameProp, DisplayTextProp, TypeProp, CollectionProp)
   val things = oidMap[ThingState](UrThing, Page)
   
   object State extends SpaceState(systemOID, UrThing,
       toProps(
         setName("System"),
-        (DisplayTextProp -> PropValue(Some(ElemValue(Wikitext("""
+        DisplayTextProp(Wikitext("""
 This is the fundamental System Space. Everything else derives from it.
-""")))))
+"""))
         ), SystemUserOID, "System", types, props, things)
 }

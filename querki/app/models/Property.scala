@@ -2,6 +2,8 @@ package models
 
 import Thing._
 
+import system.SystemSpace._
+
 /**
  * The value of a primitive Type. These are always considered "elements", since they
  * are always wrapped inside Collections.
@@ -77,6 +79,12 @@ abstract class Collection(i:OID, s:ThingPtr, m:ThingPtr, pf:PropFetcher) extends
    * Also required for all Collections -- the default value to fall back on.
    */
   def default(elemT:PType):PropValue[implType]
+  
+  def wrap(elem:ElemValue[_]):implType
+  /**
+   * Convenience wrapper for creating in-code PropValues.
+   */
+  def apply[T](elem:T):PropValue[implType] = PropValue(wrap(ElemValue(elem)))
 }
 
 /**
@@ -91,7 +99,13 @@ case class Property(i:OID, s:ThingPtr, m:ThingPtr, val pType:PType, val cType:Co
     cType.default(pType)
   }
   
+  override lazy val props:PropMap = propFetcher() + 
+		  TypeProp(pType.id) +
+		  CollectionProp(cType.id)
+  
   def render(v:PropValue[cType.implType]) = cType.render(v, pType)
+  
+  def apply[T](elem:T):(Property, PropValue[_]) = (this, cType(elem))
 }
 
 /**

@@ -31,6 +31,8 @@ object Thing {
     }
   }
   
+  // NOTE: don't try to make this more concise -- it causes chicken-and-egg problems in system
+  // initialization:
   def setName(str:String):(OID,PropValue[_]) = (NameOID -> PropValue(OneColl(ElemValue(str))))
 }
 
