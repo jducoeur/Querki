@@ -66,6 +66,8 @@ object SystemSpace {
         
     def apply(str:String) = Wikitext(str)
     
+    // TODO: escape JSON special chars for serialization!
+    
     def deserialize(v:String) = ElemValue(Wikitext(v))
     def serialize(v:ElemValue[valType]) = v.v.internal
     def render(v:ElemValue[valType]) = v.v
@@ -129,6 +131,8 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
   
   /**
    * The Type for Display Names -- similar to Text, but not identical
+   * 
+   * TODO: introduce validation, since only a subset of chars are legal (I think)
    */
   object NameType extends PType(OID(0, 10), systemOID, UrThing) {
     type valType = String

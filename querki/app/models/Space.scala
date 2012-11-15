@@ -79,8 +79,52 @@ sealed trait SpaceMessage
  * is user-defined. (And unique only to that user.)
  */
 class Space extends Actor {
+  
+  import context._
+  
+  def id = OID(self.path.name)
+  var _currentState:Option[SpaceState] = None
+  // This should return okay any time after preStart:
+  def state = {
+    _currentState match {
+      case Some(s) => s
+      case None => throw new Exception("State not ready in Actor " + id)
+    }
+  }
+  
+  /**
+   * Fetch the high-level information about this Space. Note that this will throw
+   * an exception if for some reason we can't load the record. 
+   */
+  lazy val spaceInfo = {
+    DB.withTransaction { implicit conn =>
+      SQL("""
+          select * from Spaces where id = {id}
+          """).on("id" -> id).apply().headOption.get
+    }    
+  }
+  lazy val name = spaceInfo.get[String]("name").get
+  
   override def preStart() = {
-    // TODO: load the Space's current state
+    DB.withTransaction { implicit conn =>
+      // The stream of all of the Things in this Space:
+      val stateStream = SQL("""
+          select * from {tname}
+          """).on("tname" -> Space.thingTable(id))()
+      // Split the stream, dividing it by Kind:
+      val streamsByKind = stateStream.groupBy(_.get[Int]("kind").get)
+      // Now load each kind. We do this in order, although in practice it shouldn't
+      // matter too much:
+//      val propStream = streamsByKind(Kind.Property).map { row =>
+//        new Property(
+//            OID(row.get[Long]("id").get),
+//            id,
+//            OID(row.get[Long]("model").get)) {
+//          // TODO: parse the props clob
+//          override val props = Map.empty
+//        }
+//      }
+    }
   } 
   
   def receive = {
@@ -91,9 +135,14 @@ class Space extends Actor {
 }
 
 object Space {
-  def sid(id:OID) = "s" + id.toString
-  def thingTable = sid _
-  def historyTable(id:OID) = "h" + id.toString
+  // The name of the Space Actor
+  def sid(id:OID) = id.toString
+  // The OID of the Space, based on the sid
+  def oid(sid:String) = OID(sid)
+  // The name of the Space's Thing Table
+  def thingTable(id:OID) = "s" + sid(id)
+  // The name of the Space's History Table
+  def historyTable(id:OID) = "h" + sid(id)
 }
 
 sealed trait SpaceMgrMsg
@@ -160,7 +209,7 @@ class SpaceManager extends Actor {
       SQL("""
           CREATE TABLE {tname} (
             id bigint NOT NULL,
-            parent bigint NOT NULL,
+            model bigint NOT NULL,
             kind tinyint NOT NULL,
             props clob NOT NULL,
             PRIMARY KEY (id)
@@ -172,6 +221,7 @@ class SpaceManager extends Actor {
           ({sid}, {shard}, {name}, {display}, {ownerId}, 0)
           """).on("sid" -> spaceId.toString, "shard" -> 1.toString, "name" -> name,
                   "display" -> name, "ownerId" -> owner.toString).executeUpdate()
+      // TODO: also need to insert the Space's own Thing record into the new table
     }
     (spaceId, spaceActor)
   }
