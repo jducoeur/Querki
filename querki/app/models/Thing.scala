@@ -34,6 +34,30 @@ object Thing {
   // NOTE: don't try to make this more concise -- it causes chicken-and-egg problems in system
   // initialization:
   def setName(str:String):(OID,PropValue[_]) = (NameOID -> PropValue(OneColl(ElemValue(str))))
+
+  // TODO: this escape/unescape is certainly too simplistic to cope with recursive types.
+  // Come back to this sometime before we make the type system more robust.
+  def escape(str:String) = {
+    str.replace("\\", "\\\\").replace(";", "\\;").replace(":", "\\:").replace("}", "\\}")
+  }
+  def unescape(str:String) = {
+    str.replace("\\}", "}").replace("\\:", ":").replace("\\;", ";").replace("\\\\", "\\")
+  }
+    
+  def deserializeProps(str:String, space:SpaceState):PropMap = {
+    // Strip the surrounding {} pair:
+    val stripExt = str.slice(1, str.length() - 1)
+    val propStrs = stripExt.split(";")
+    val propPairs = propStrs.map { propStr =>
+      val (idStr, valStrAndColon) = propStr.splitAt(propStr.indexOf(':'))
+      val valStr = unescape(valStrAndColon.drop(1))
+      val id = OID(idStr)
+      val prop = space.prop(id)
+      val v = prop.deserialize(valStr)
+      (prop, v)
+    }
+    toProps(propPairs:_*)()
+  }
 }
 
 import Thing._
@@ -133,6 +157,29 @@ abstract class Thing(
   def render:Wikitext = {
     val opt = getPropOpt(DisplayTextProp)
     opt.map(pv => pv.render).getOrElse(renderProps)
+  }
+  
+  def serializeProps = {
+    val serializedProps = props.map { pair =>
+      val (ptr, v) = pair
+      val prop = space.prop(ptr)
+      val oid = prop.id
+      // TODO: *sigh* -- how do I get rid of this nasty cast below?
+      oid.toString + 
+        ":" + 
+        Thing.escape(prop.cType.serialize(v.asInstanceOf[PropValue[prop.cType.implType]], prop.pType))
+    }
+    
+    serializedProps.mkString("{", ";", "}")
+  }
+  
+  def export:String = {
+    "{" +
+    "id:" + id.toString + ";" +
+    "model:" + model.id.toString + ";" +
+    "kind:" + kind.toString + ";" +
+    "props:" + serializeProps +
+    "}"
   }
 }
 

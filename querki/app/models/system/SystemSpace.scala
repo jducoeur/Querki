@@ -48,12 +48,14 @@ object SystemSpace {
         )) 
   {
     type valType = Int
+    type rawType = Int
     
     def deserialize(v:String) = ElemValue(java.lang.Integer.parseInt(v))
     def serialize(v:ElemValue[valType]) = v.v.toString
     def render(v:ElemValue[valType]) = Wikitext(v.v.toString())
     
     val default = ElemValue(0)
+    def wrap(raw:rawType):valType = raw
   }
   
   /**
@@ -65,8 +67,7 @@ object SystemSpace {
         ))
   {
     type valType = Wikitext
-    
-    def apply(str:String) = Wikitext(str)
+    type rawType = String
     
     // TODO: escape JSON special chars for serialization!
     
@@ -75,6 +76,7 @@ object SystemSpace {
     def render(v:ElemValue[valType]) = v.v
     
     val default = ElemValue(Wikitext(""))
+    def wrap(raw:rawType):valType = Wikitext(raw)
   }
   
   /**
@@ -86,12 +88,14 @@ object SystemSpace {
         ))
   {
     type valType = Boolean
+    type rawType = Boolean
     
     def deserialize(ser:String) = ElemValue(java.lang.Boolean.parseBoolean(ser))
     def serialize(v:ElemValue[valType]) = v.v.toString
     def render(v:ElemValue[valType]) = Wikitext(v.v.toString())
     
     val default = ElemValue(false)
+    def wrap(raw:rawType):valType = raw
   }
 
   /**
@@ -135,17 +139,17 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
         )) 
   {
     type valType = String
+    type rawType = String
     
     def toInternal(str:String) = str.replaceAll(" ", "-")
     def toDisplay(str:String) = str.replaceAll("-", " ")
         
-    def apply(str:String) = toInternal(str)
-    
     def deserialize(v:String) = ElemValue(toDisplay(v))
     def serialize(v:ElemValue[valType]) = toInternal(v.v)
     def render(v:ElemValue[valType]) = Wikitext(toDisplay(v.v))
     
     val default = ElemValue("MISSING NAME!")
+    def wrap(raw:rawType):valType = raw
   }
   
   val TestUserOID = OID(0, 11)
@@ -225,7 +229,7 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
     
     def serialize(v:PropValue[implType], elemT:PType):String = {
       v.v match {
-        case Some(elem) => "(" + elemT.serialize(v.asInstanceOf[ElemValue[elemT.valType]]) + ")"
+        case Some(elem) => "(" + elemT.serialize(elem.asInstanceOf[ElemValue[elemT.valType]]) + ")"
         case None => "!"
       }
     }
@@ -289,6 +293,7 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
         )) 
   {
     type valType = OID
+    type rawType = ThingPtr
     
     def deserialize(v:String) = ElemValue(OID(v))
     def serialize(v:ElemValue[valType]) = v.v.toString
@@ -298,6 +303,7 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
     def render(v:ElemValue[valType]) = Wikitext(v.v.toString)
 
     val default = ElemValue[valType](UnknownOID)
+    def wrap(raw:rawType):valType = raw.id
   }
     
   /**
@@ -332,5 +338,5 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
         DisplayTextProp(Wikitext("""
 This is the fundamental System Space. Everything else derives from it.
 """))
-        ), SystemUserOID, "System", types, props, things)
+        ), SystemUserOID, "System", None, types, props, things)
 }

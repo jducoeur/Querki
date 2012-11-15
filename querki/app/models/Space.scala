@@ -39,27 +39,33 @@ case class SpaceState(
     pf:PropFetcher,
     owner:OID,
     name:String,
+    app:Option[SpaceState],
     types:Map[OID, PType],
     spaceProps:Map[OID, Property],
     things:Map[OID, ThingState]) 
   extends Thing(s, s, m, Kind.Space, pf) 
 {
-  def resolve[T <: ThingPtr](ptr:ThingPtr)(lookup: OID => T):T = {
+  // Walks up the App tree, looking for the specified Thing of the implied type:
+  def resolve[T <: ThingPtr](ptr:ThingPtr)(lookup: (SpaceState, OID) => Option[T]):T = {
     ptr match {
-      case id:OID => lookup(id)
+      case id:OID => lookup(this, id).getOrElse(
+          app.map(_.resolve(ptr)(lookup)).getOrElse(throw new Exception("Couldn't find " + ptr)))
       // TODO: Ick -- this is evil, and suggests that the ThingPtr model is fundamentally
       // flawed still. The problem is, any given ThingPtr potentially covers a host of
       // subtypes; we only know from context that we're expecting a specific one.
       case _ => ptr.asInstanceOf[T]
     }
   }
-  def typ(ptr:ThingPtr) = resolve(ptr) (types(_))
-  def prop(ptr:ThingPtr) = resolve(ptr) (spaceProps(_))
-  def thing(ptr:ThingPtr) = resolve(ptr) (things(_))
+  def typ(ptr:ThingPtr) = resolve(ptr) (_.types.get(_))
+  def prop(ptr:ThingPtr) = resolve(ptr) (_.spaceProps.get(_))
+  def thing(ptr:ThingPtr) = resolve(ptr) (_.things.get(_))
   
-  def anything(oid:OID) = {
+  def anything(oid:OID):Thing = {
     // TODO: this should do something more sensible if the OID isn't found at all:
-    things.getOrElse(oid, spaceProps.getOrElse(oid, types.getOrElse(oid, this)))
+    things.getOrElse(oid, 
+        spaceProps.getOrElse(oid, 
+            types.getOrElse(oid, 
+                app.map(_.anything(oid)).getOrElse(this))))
   }
 }
 

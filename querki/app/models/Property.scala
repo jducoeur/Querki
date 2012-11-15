@@ -21,6 +21,7 @@ case class PropValue[M](v:M)
 abstract class PType(i:OID, s:ThingPtr, m:ThingPtr, pf:PropFetcher) extends Thing(i, s, m, Kind.Type, pf) {
   
   type valType
+  type rawType
   
   /**
    * Each PType is required to implement this -- it is the deserializer for the
@@ -43,6 +44,9 @@ abstract class PType(i:OID, s:ThingPtr, m:ThingPtr, pf:PropFetcher) extends Thin
    * Also required for all PTypes -- the default value to fall back on.
    */
   def default:ElemValue[valType]
+  
+  def wrap(raw:rawType):valType
+  def apply(raw:rawType):ElemValue[valType] = ElemValue(wrap(raw))
 }
 
 /**
@@ -100,12 +104,18 @@ case class Property(i:OID, s:ThingPtr, m:ThingPtr, val pType:PType, val cType:Co
   }
   
   override lazy val props:PropMap = propFetcher() + 
-		  TypeProp(pType.id) +
-		  CollectionProp(cType.id)
+		  CollectionProp(cType.id) +
+		  TypeProp(pType.id)
   
   def render(v:PropValue[cType.implType]) = cType.render(v, pType)
+
+  // TODO: currently, this takes pType.valType as its input, and that's unchecked. This
+  // is because I haven't figured out the correct syntax to get it to work correctly.
+  // What I *want* is for it to instead take pType.rawType, and go through pType.apply()
+  // to generate the correctly-typed ElemValue, and then feed that into cType.apply().
+  def apply[T](elem:T):(Property, PropValue[cType.implType]) = (this, cType(elem))
   
-  def apply[T](elem:T):(Property, PropValue[_]) = (this, cType(elem))
+  def deserialize(str:String):PropValue[cType.implType] = cType.deserialize(str, pType)
 }
 
 /**
