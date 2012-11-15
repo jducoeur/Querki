@@ -1,5 +1,7 @@
 package models
 
+import Thing._
+
 /**
  * The value of a primitive Type. These are always considered "elements", since they
  * are always wrapped inside Collections.
@@ -14,7 +16,7 @@ case class PropValue[M](v:M)
  * this is specifically so that we can potentially add user-defined Types down
  * the road.
  */
-abstract class PType(i:OID, s:ThingPtr, m:ThingPtr) extends Thing(i, s, m, Kind.Type) {
+abstract class PType(i:OID, s:ThingPtr, m:ThingPtr, pf:PropFetcher) extends Thing(i, s, m, Kind.Type, pf) {
   
   type valType
   
@@ -51,7 +53,7 @@ abstract class PType(i:OID, s:ThingPtr, m:ThingPtr) extends Thing(i, s, m, Kind.
  * and consistent about this, we make it much easier to write QL safely -- each
  * QL step is basically a flatMap.
  */
-abstract class Collection(i:OID, s:ThingPtr, m:ThingPtr) extends Thing(i, s, m, Kind.Collection) {
+abstract class Collection(i:OID, s:ThingPtr, m:ThingPtr, pf:PropFetcher) extends Thing(i, s, m, Kind.Collection, pf) {
   type implType
   
   /**
@@ -81,7 +83,8 @@ abstract class Collection(i:OID, s:ThingPtr, m:ThingPtr) extends Thing(i, s, m, 
  * A Property is a field that may exist on a Thing. It is, itself, a Thing with a
  * specific Type.
  */
-case class Property(i:OID, s:ThingPtr, m:ThingPtr, val pType:PType, val cType:Collection) extends Thing(i, s, m, Kind.Property) {
+case class Property(i:OID, s:ThingPtr, m:ThingPtr, val pType:PType, val cType:Collection, pf:PropFetcher)
+  extends Thing(i, s, m, Kind.Property, pf) {
   def default = {
     // TODO: add the concept of the default meta-property, so you can set it
     // on a prop-by-prop basis

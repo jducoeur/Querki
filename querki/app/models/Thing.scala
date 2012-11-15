@@ -20,6 +20,22 @@ object Kind {
   val Collection = 4
 }
 
+object Thing {
+  type PropMap = Map[ThingPtr, PropValue[_]]
+  type PropFetcher = () => PropMap
+  
+  // A couple of convenience methods for the hard-coded Things in System:
+  def toProps(pairs:(ThingPtr,PropValue[_])*):PropFetcher = () => {
+    (Map.empty[ThingPtr, PropValue[_]] /: pairs) { (m:Map[ThingPtr, PropValue[_]], pair:(ThingPtr, PropValue[_])) =>
+      m + (pair._1 -> pair._2)
+    }
+  }
+  
+  def setName(str:String):(OID,PropValue[_]) = (NameOID -> PropValue(OneColl(ElemValue(str))))
+}
+
+import Thing._
+
 /**
  * The root concept of the entire world. Thing is the Querki equivalent of Object,
  * the basis of the entire type system.
@@ -33,18 +49,11 @@ abstract class Thing(
     val id:OID, 
     val spaceId:ThingPtr, 
     val model:ThingPtr, 
-    val kind:Kind.Kind) extends ThingPtr
+    val kind:Kind.Kind,
+    val propFetcher: PropFetcher) extends ThingPtr
 {
-  // A couple of convenience methods for the hard-coded Things in System:
-  def toProps(pairs:(ThingPtr,PropValue[_])*):Map[ThingPtr, PropValue[_]] = {
-    (Map.empty[ThingPtr, PropValue[_]] /: pairs) { (m:Map[ThingPtr, PropValue[_]], pair:(ThingPtr, PropValue[_])) =>
-      m + (pair._1 -> pair._2)
-    }
-  }
+  lazy val props:PropMap = propFetcher()
   
-  val props:Map[ThingPtr, PropValue[_]] = Map.empty
-  
-  def setName(str:String):(OID,PropValue[_]) = (NameOID -> PropValue(OneColl(ElemValue(str))))
   def displayName = getProp(NameProp).render.raw
   
   def space:SpaceState = {
@@ -132,4 +141,5 @@ abstract class Thing(
  * 
  * Note that Models are basically just ordinary Things.
  */
-case class ThingState(i:OID, s:ThingPtr, m:ThingPtr) extends Thing(i, s, m, Kind.Thing) {}
+case class ThingState(i:OID, s:ThingPtr, m:ThingPtr, pf: PropFetcher) 
+  extends Thing(i, s, m, Kind.Thing, pf) {}

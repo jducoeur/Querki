@@ -17,6 +17,8 @@ import anorm._
 import play.api.db._
 import play.api.Play.current
 
+import Thing._
+
 /**
  * A Space is the Querki equivalent of a database -- a collection of related Things,
  * Properties and Types.
@@ -34,12 +36,13 @@ import play.api.Play.current
 case class SpaceState(
     s:OID, 
     m:ThingPtr,
+    pf:PropFetcher,
     owner:OID,
     name:String,
     types:Map[OID, PType],
     spaceProps:Map[OID, Property],
     things:Map[OID, ThingState]) 
-  extends Thing(s, s, m, Kind.Space) 
+  extends Thing(s, s, m, Kind.Space, pf) 
 {
   def resolve[T <: ThingPtr](ptr:ThingPtr)(lookup: OID => T):T = {
     ptr match {

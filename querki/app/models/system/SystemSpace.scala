@@ -4,6 +4,8 @@ import play.api._
 
 import models._
 
+import Thing._
+
 /**
  * This is the master wrapper for the System Space. This is a hardcoded Space, living in
  * Shard 0. Note that all the OIDs are hardcoded, specifically so that they will be
@@ -20,11 +22,11 @@ object SystemSpace {
    * The Ur-Thing, from which the entire world descends. Note that this is
    * its own parent!
    */
-  object UrThing extends ThingState(RootOID, systemOID, RootOID) {
-    override val props = toProps(
+  object UrThing extends ThingState(RootOID, systemOID, RootOID,
+      toProps(
         setName("Thing")
-        )
-        
+        )) 
+  {
     override def getProp(propId:ThingPtr):PropAndVal = {
       // If we've gotten up to here and haven't found the property, use
       // the default:
@@ -40,12 +42,12 @@ object SystemSpace {
   /**
    * The Type for integers
    */
-  object IntType extends PType(OID(0, 2), systemOID, UrThing) {
-    type valType = Int
-    
-    override val props = toProps(
+  object IntType extends PType(OID(0, 2), systemOID, UrThing,
+      toProps(
         setName("Type-Whole-Number")
-        )
+        )) 
+  {
+    type valType = Int
     
     def deserialize(v:String) = ElemValue(java.lang.Integer.parseInt(v))
     def serialize(v:ElemValue[valType]) = v.v.toString
@@ -57,13 +59,13 @@ object SystemSpace {
   /**
    * The Type for Text -- probably the most common type in Querki
    */
-  object TextType extends PType(OID(0, 3), systemOID, UrThing) {
+  object TextType extends PType(OID(0, 3), systemOID, UrThing,
+      toProps(
+        setName("Type-Text")
+        ))
+  {
     type valType = Wikitext
     
-    override val props = toProps(
-        setName("Type-Text")
-        )
-        
     def apply(str:String) = Wikitext(str)
     
     // TODO: escape JSON special chars for serialization!
@@ -78,12 +80,12 @@ object SystemSpace {
   /**
    * The YesNo Type -- or Boolean, as us geeks think of it
    */
-  object YesNoType extends PType(OID(0, 4), systemOID, UrThing) {
-    type valType = Boolean
-    
-    override val props = toProps(
+  object YesNoType extends PType(OID(0, 4), systemOID, UrThing,
+      toProps(
         setName("Type-YesNo")
-        )
+        ))
+  {
+    type valType = Boolean
     
     def deserialize(ser:String) = ElemValue(java.lang.Boolean.parseBoolean(ser))
     def serialize(v:ElemValue[valType]) = v.v.toString
@@ -91,41 +93,34 @@ object SystemSpace {
     
     val default = ElemValue(false)
   }
-  
-  // TODO: still need to add Collections!!!
-  
+
   /**
    * The root Property, from which all others derive.
    */
-  object UrProp extends Property(OID(0, 5), systemOID, UrThing, TextType, ExactlyOne) {
-    override val props = toProps(
+  object UrProp extends Property(OID(0, 5), systemOID, UrThing, TextType, ExactlyOne,
+      toProps(
         setName("Property")
-        )
-  }
+        ))
   
   val NameOID = OID(0, 6)
-  object NameProp extends Property(NameOID, systemOID, UrProp, NameType, ExactlyOne) {
-    override val props = toProps(
+  object NameProp extends Property(NameOID, systemOID, UrProp, NameType, ExactlyOne,
+      toProps(
         setName("Name")
-        )
-  }
+        ))
   
-  object DisplayTextProp extends Property(OID(0, 7), systemOID, UrProp, TextType, Optional) {
-    override val props = toProps(
+  object DisplayTextProp extends Property(OID(0, 7), systemOID, UrProp, TextType, Optional,
+      toProps(
         setName("Display-Text")
-        )
-  }
+        ))
   
-  object Page extends ThingState(OID(0, 8), systemOID, RootOID) {
-    override val props = toProps(
+  object Page extends ThingState(OID(0, 8), systemOID, RootOID,
+      toProps(
         setName("Simple-Page"),
         (DisplayTextProp -> PropValue(Some(ElemValue(Wikitext("""
 This is the basic Page Thing. Use it as your Model for *basic* Pages without real structure.
             
 Use the **DisplayText** property to indicate what to show on the page. You can put anything in there.
-""")))))
-        )
-  }
+""")))))))
   
   val SystemUserOID = OID(0, 9)
   
@@ -134,13 +129,13 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
    * 
    * TODO: introduce validation, since only a subset of chars are legal (I think)
    */
-  object NameType extends PType(OID(0, 10), systemOID, UrThing) {
+  object NameType extends PType(OID(0, 10), systemOID, UrThing,
+      toProps(
+        setName("Type-Name")
+        )) 
+  {
     type valType = String
     
-    override val props = toProps(
-        setName("Type-Name")
-        )
-
     def toInternal(str:String) = str.replaceAll(" ", "-")
     def toDisplay(str:String) = str.replaceAll("-", " ")
         
@@ -168,7 +163,11 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
    * Root Collection type. Exists solely so that there is a common runtime root, in case
    * we want to be able to write new collections.
    */
-  object UrCollection extends Collection(OID(0, 12), systemOID, UrThing) {
+  object UrCollection extends Collection(OID(0, 12), systemOID, UrThing,
+      toProps(
+        setName("Collection")
+        )) 
+  {
 	type implType = Object
   
     def deserialize(ser:String, elemT:PType):PropValue[implType] = 
@@ -183,7 +182,11 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
   
   case class OneColl[T <: ElemValue[_]](v:T)
   
-  object ExactlyOne extends Collection(OID(0, 13), systemOID, UrCollection) {
+  object ExactlyOne extends Collection(OID(0, 13), systemOID, UrCollection,
+      toProps(
+        setName("Exactly-One")
+        )) 
+  {
     type implType = OneColl[_]
     
     def deserialize(ser:String, elemT:PType):PropValue[implType] = {
@@ -200,7 +203,11 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
     }
   }
   
-  object Optional extends Collection(OID(0, 14), systemOID, UrCollection) {
+  object Optional extends Collection(OID(0, 14), systemOID, UrCollection,
+      toProps(
+        setName("Optional")
+        )) 
+  {
     type implType = Option[_]
     
     def deserialize(ser:String, elemT:PType):PropValue[implType] = {
@@ -233,7 +240,11 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
   }
   
   
-  object QList extends Collection(OID(0, 15), systemOID, UrCollection) {
+  object QList extends Collection(OID(0, 15), systemOID, UrCollection,
+      toProps(
+        setName("List")
+        )) 
+  {
     type implType = List[_]
     
     def deserialize(ser:String, elemT:PType):PropValue[implType] = {
@@ -270,12 +281,11 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
   val props = oidMap[Property](UrProp, NameProp, DisplayTextProp)
   val things = oidMap[ThingState](UrThing, Page)
   
-  object State extends SpaceState(systemOID, UrThing, SystemUserOID, "System", types, props, things) {
-    override val props = toProps(
+  object State extends SpaceState(systemOID, UrThing,
+      toProps(
         setName("System"),
         (DisplayTextProp -> PropValue(Some(ElemValue(Wikitext("""
 This is the fundamental System Space. Everything else derives from it.
 """)))))
-        )
-  }
+        ), SystemUserOID, "System", types, props, things)
 }
