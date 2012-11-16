@@ -89,6 +89,9 @@ abstract class Collection(i:OID, s:ThingPtr, m:ThingPtr, pf:PropFetcher) extends
    * Convenience wrapper for creating in-code PropValues.
    */
   def apply[T](elem:T):PropValue[implType] = PropValue(wrap(ElemValue(elem)))
+  
+  def get[ElemT](pv:PropValue[implType]):ElemT =
+    throw new Exception("Tried to call Collection.get on a collection that doesn't support it!")
 }
 
 /**
@@ -108,6 +111,19 @@ case class Property(i:OID, s:ThingPtr, m:ThingPtr, val pType:PType, val cType:Co
 		  TypeProp(pType.id)
   
   def render(v:PropValue[cType.implType]) = cType.render(v, pType)
+  
+  def from(m:PropMap):PropValue[cType.implType] = m(this).asInstanceOf[PropValue[cType.implType]]
+  
+  /**
+   * Convenience method to fetch the value of this property in this map.
+   * 
+   * IMPORTANT: T must be exactly pType.valType. I still haven't figured out how
+   * to deduce that automatically, though.
+   * 
+   * IMPORTANT: this is only legal on ExactlyOne Properties! It will throw
+   * an exception otherwise.
+   */
+  def get[T](m:PropMap):T = cType.get(from(m))
 
   // TODO: currently, this takes pType.valType as its input, and that's unchecked. This
   // is because I haven't figured out the correct syntax to get it to work correctly.

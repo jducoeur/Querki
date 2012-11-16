@@ -208,6 +208,13 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
       PropValue(OneColl(elemT.default))
     }
     def wrap(elem:ElemValue[_]):implType = OneColl(elem)
+    
+    // TODO: yet more asInstanceOf horror:
+    override def get[ElemT](pv:PropValue[implType]):ElemT = {
+      val coll:OneColl[_] = pv.v
+      val elemV:ElemValue[ElemT] = coll.v.asInstanceOf[ElemValue[ElemT]]
+      elemV.v
+    }
   }
   
   object Optional extends Collection(OID(0, 14), systemOID, UrCollection,

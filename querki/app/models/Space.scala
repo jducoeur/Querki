@@ -39,6 +39,7 @@ case class SpaceState(
     pf:PropFetcher,
     owner:OID,
     name:String,
+    // TODO: in principle, this is a List[SpaceState] -- there can be multiple ancestors:
     app:Option[SpaceState],
     types:Map[OID, PType],
     spaceProps:Map[OID, Property],
@@ -90,6 +91,7 @@ sealed trait SpaceMessage
 class Space extends Actor {
   
   import context._
+  import models.system.SystemSpace.{State => systemState, _} 
   
   def id = OID(self.path.name)
   var _currentState:Option[SpaceState] = None
@@ -115,6 +117,7 @@ class Space extends Actor {
   lazy val name = spaceInfo.get[String]("name").get
   
   override def preStart() = {
+    // TODO: we need to walk up the tree and load any ancestor Apps before we prep this Space
     DB.withTransaction { implicit conn =>
       // The stream of all of the Things in this Space:
       val stateStream = SQL("""
@@ -124,14 +127,29 @@ class Space extends Actor {
       val streamsByKind = stateStream.groupBy(_.get[Int]("kind").get)
       // Now load each kind. We do this in order, although in practice it shouldn't
       // matter too much:
-//      val propStream = streamsByKind(Kind.Property).map { row =>
-//        new Property(
-//            OID(row.get[Long]("id").get),
-//            id,
-//            OID(row.get[Long]("model").get)) {
-//          // TODO: parse the props clob
-//          override val props = Map.empty
-//        }
+      val propStream = streamsByKind(Kind.Property).map { row =>
+        // TODO: the app shouldn't be hardcoded to SystemSpace
+        val propMap = Thing.deserializeProps(row.get[String]("props").get, systemState)
+        new Property(
+            OID(row.get[Long]("id").get),
+            id,
+            OID(row.get[Long]("model").get),
+            TypeProp.get(propMap),
+            CollectionProp.get(propMap),
+            () => propMap)
+      }
+      val thingStream = streamsByKind(Kind.Thing).map { row =>
+        // TODO: the app shouldn't be hardcoded to SystemSpace
+        val propMap = Thing.deserializeProps(row.get[String]("props").get, systemState)
+        new ThingState(
+            OID(row.get[Long]("id").get),
+            id,
+            OID(row.get[Long]("model").get),
+            () => propMap)
+      }
+//      val spaceStream = streamsByKind(Kind.Space).map { row =>
+//        // TODO: the app shouldn't be hardcoded to SystemSpace
+//        val propMap = Thing.deserializeProps(row.get[String]("props").get, systemState)
 //      }
     }
   } 
