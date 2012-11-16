@@ -33,7 +33,8 @@ object Thing {
   
   // NOTE: don't try to make this more concise -- it causes chicken-and-egg problems in system
   // initialization:
-  def setName(str:String):(OID,PropValue[_]) = (NameOID -> PropValue(OneColl(ElemValue(str))))
+  def setName(str:String):(OID,PropValue[_]) = 
+    (NameOID -> PropValue(OneColl[String](ElemValue(str))))
 
   // TODO: this escape/unescape is certainly too simplistic to cope with recursive types.
   // Come back to this sometime before we make the type system more robust.
@@ -98,16 +99,16 @@ abstract class Thing(
   /**
    * The Property as defined on *this* specific Thing.
    */
-  def localProp(propId:ThingPtr):Option[PropAndVal] = {
+  def localProp(propId:ThingPtr):Option[PropAndVal[_, _]] = {
     val (pid,ptr) = propId match {
       case i:OID => (i, space.prop(i))
-      case t:Thing => (t.id, t.asInstanceOf[Property])
+      case t:Property[_,_] => (t.id, t)
     }
     val byId = props.get(pid)
     if (byId.nonEmpty)
-      Some(PropAndVal(ptr, byId.get))
+      Some(ptr.pair(byId.get))
     else
-      props.get(ptr).map(v => PropAndVal(ptr, v))
+      props.get(ptr).map(v => ptr.pair(v))
   }
   
   /**
@@ -117,7 +118,7 @@ abstract class Thing(
    * Note that this walks up the tree recursively. It eventually ends with UrThing,
    * which does things a little differently.
    */
-  def getProp(propId:ThingPtr):PropAndVal = {
+  def getProp(propId:ThingPtr):PropAndVal[_,_] = {
     localProp(propId).getOrElse(getModel.getProp(propId))
   }
   
@@ -132,7 +133,7 @@ abstract class Thing(
   /**
    * Convenience method -- returns either the value of the specified property or None.
    */
-  def getPropOpt(propId:ThingPtr):Option[PropAndVal] = {
+  def getPropOpt(propId:ThingPtr):Option[PropAndVal[_,_]] = {
     if (hasProp(propId))
       Some(getProp(propId))
     else
@@ -142,7 +143,7 @@ abstract class Thing(
   def renderProps:Wikitext = {
     val listMap = props.map { entry =>
       val prop = space.prop(entry._1)
-      val pv = PropAndVal(prop, entry._2)
+      val pv = prop.pair(entry._2)
       "<dt>" + prop.displayName + "</dt><dd>" + pv.render.raw + "</dd>"
     }
     Wikitext(listMap.mkString("<dl>", "", "</dl>"))    
@@ -164,10 +165,9 @@ abstract class Thing(
       val (ptr, v) = pair
       val prop = space.prop(ptr)
       val oid = prop.id
-      // TODO: *sigh* -- how do I get rid of this nasty cast below?
       oid.toString + 
         ":" + 
-        Thing.escape(prop.cType.serialize(v.asInstanceOf[PropValue[prop.cType.implType]], prop.pType))
+        Thing.escape(prop.serialize(prop.castVal(v)))
     }
     
     serializedProps.mkString("{", ";", "}")

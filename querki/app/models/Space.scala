@@ -41,8 +41,8 @@ case class SpaceState(
     name:String,
     // TODO: in principle, this is a List[SpaceState] -- there can be multiple ancestors:
     app:Option[SpaceState],
-    types:Map[OID, PType],
-    spaceProps:Map[OID, Property],
+    types:Map[OID, PType[_]],
+    spaceProps:Map[OID, Property[_,_]],
     things:Map[OID, ThingState]) 
   extends Thing(s, s, m, Kind.Space, pf) 
 {

@@ -27,11 +27,11 @@ object SystemSpace {
         setName("Thing")
         )) 
   {
-    override def getProp(propId:ThingPtr):PropAndVal = {
+    override def getProp(propId:ThingPtr):PropAndVal[_,_] = {
       // If we've gotten up to here and haven't found the property, use
       // the default:
       val prop = space.prop(propId)
-      localProp(propId).getOrElse(PropAndVal(prop, prop.default))
+      localProp(propId).getOrElse(prop.defaultPair)
     }
     
     override def hasProp(propId:ThingPtr):Boolean = {
@@ -42,77 +42,70 @@ object SystemSpace {
   /**
    * The Type for integers
    */
-  object IntType extends PType(OID(0, 2), systemOID, UrThing,
+  object IntType extends PType[Int](OID(0, 2), systemOID, UrThing,
       toProps(
         setName("Type-Whole-Number")
-        )) 
+        )) with SimplePTypeBuilder[Int]
   {
-    type valType = Int
-    type rawType = Int
-    
     def deserialize(v:String) = ElemValue(java.lang.Integer.parseInt(v))
-    def serialize(v:ElemValue[valType]) = v.v.toString
-    def render(v:ElemValue[valType]) = Wikitext(v.v.toString())
+    def serialize(v:elemVT) = v.elem.toString
+    def render(v:elemVT) = Wikitext(v.elem.toString())
     
     val default = ElemValue(0)
-    def wrap(raw:rawType):valType = raw
   }
   
   /**
    * The Type for Text -- probably the most common type in Querki
    */
-  object TextType extends PType(OID(0, 3), systemOID, UrThing,
+  object TextType extends PType[Wikitext](OID(0, 3), systemOID, UrThing,
       toProps(
         setName("Type-Text")
-        ))
+        )) with PTypeBuilder[Wikitext,String]
   {
-    type valType = Wikitext
-    type rawType = String
-    
     // TODO: escape JSON special chars for serialization!
     
     def deserialize(v:String) = ElemValue(Wikitext(v))
-    def serialize(v:ElemValue[valType]) = v.v.internal
-    def render(v:ElemValue[valType]) = v.v
+    def serialize(v:elemVT) = v.elem.internal
+    def render(v:elemVT) = v.elem
     
     val default = ElemValue(Wikitext(""))
-    def wrap(raw:rawType):valType = Wikitext(raw)
+    def wrap(raw:String):valType = Wikitext(raw)
   }
   
   /**
    * The YesNo Type -- or Boolean, as us geeks think of it
    */
-  object YesNoType extends PType(OID(0, 4), systemOID, UrThing,
+  object YesNoType extends PType[Boolean](OID(0, 4), systemOID, UrThing,
       toProps(
         setName("Type-YesNo")
-        ))
+        )) with SimplePTypeBuilder[Boolean]
   {
-    type valType = Boolean
-    type rawType = Boolean
-    
     def deserialize(ser:String) = ElemValue(java.lang.Boolean.parseBoolean(ser))
-    def serialize(v:ElemValue[valType]) = v.v.toString
-    def render(v:ElemValue[valType]) = Wikitext(v.v.toString())
+    def serialize(v:elemVT) = v.elem.toString
+    def render(v:elemVT) = Wikitext(v.elem.toString())
     
     val default = ElemValue(false)
-    def wrap(raw:rawType):valType = raw
   }
 
   /**
    * The root Property, from which all others derive.
    */
-  object UrProp extends Property(OID(0, 5), systemOID, UrThing, TextType, ExactlyOne,
+  object ExactlyOneText extends ExactlyOne[Wikitext]
+  class UrProp extends Property(OID(0, 5), systemOID, UrThing, TextType, ExactlyOneText,
       toProps(
         setName("Property")
         ))
+  object UrProp extends UrProp
   
+  object ExactlyOneString extends ExactlyOne[String]
   val NameOID = OID(0, 6)
-  object NameProp extends Property(NameOID, systemOID, UrProp, NameType, ExactlyOne,
+  object NameProp extends Property(NameOID, systemOID, UrProp, NameType, ExactlyOneString,
       toProps(
         setName("Name")
         ))
   
-  object DisplayTextProp extends Property(OID(0, 7), systemOID, UrProp, TextType, Optional,
+  object OptionalText extends Optional[Wikitext]
+  object DisplayTextProp extends Property(OID(0, 7), systemOID, UrProp, TextType, OptionalText,
       toProps(
         setName("Display-Text")
         ))
@@ -133,24 +126,21 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
    * 
    * TODO: introduce validation, since only a subset of chars are legal (I think)
    */
-  object NameType extends PType(OID(0, 10), systemOID, UrThing,
+  class NameType extends PType[String](OID(0, 10), systemOID, UrThing,
       toProps(
         setName("Type-Name")
-        )) 
+        )) with SimplePTypeBuilder[String]
   {
-    type valType = String
-    type rawType = String
-    
     def toInternal(str:String) = str.replaceAll(" ", "-")
     def toDisplay(str:String) = str.replaceAll("-", " ")
         
     def deserialize(v:String) = ElemValue(toDisplay(v))
-    def serialize(v:ElemValue[valType]) = toInternal(v.v)
-    def render(v:ElemValue[valType]) = Wikitext(toDisplay(v.v))
+    def serialize(v:elemVT) = toInternal(v.elem)
+    def render(v:elemVT) = Wikitext(toDisplay(v.elem))
     
     val default = ElemValue("MISSING NAME!")
-    def wrap(raw:rawType):valType = raw
   }
+  object NameType extends NameType
   
   val TestUserOID = OID(0, 11)
   
@@ -167,64 +157,62 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
    * Root Collection type. Exists solely so that there is a common runtime root, in case
    * we want to be able to write new collections.
    */
-  object UrCollection extends Collection(OID(0, 12), systemOID, UrThing,
+  class UrCollection[VT] extends Collection[VT, Option[VT]](OID(0, 12), systemOID, UrThing,
       toProps(
         setName("Collection")
         )) 
   {
-	type implType = Object
-  
-    def deserialize(ser:String, elemT:PType):PropValue[implType] = 
+    def deserialize(ser:String, elemT:pType):PropValue[implType] = 
       throw new Error("Trying to deserialize root collection!")
-    def serialize(v:PropValue[implType], elemT:PType):String = 
+    def serialize(v:PropValue[implType], elemT:pType):String = 
       throw new Error("Trying to serialize root collection!")
-    def render(ser:PropValue[implType], elemT:PType):Wikitext = 
+    def render(ser:PropValue[implType], elemT:pType):Wikitext = 
       throw new Error("Trying to render root collection!")
-    def default(elemT:PType):PropValue[implType] = 
+    def default(elemT:pType):PropValue[implType] = 
       throw new Error("Trying to default root collection!")    
-	def wrap(elem:ElemValue[_]):implType =
+	def wrap(elem:ElemValue[VT,VT]):implType =
 	  throw new Error("Trying to wrap root collection!")    
   }
+  object UrCollection extends UrCollection
   
-  case class OneColl[T <: ElemValue[_]](v:T)
+  case class OneColl[VT](v:ElemValue[VT, VT])
   
-  object ExactlyOne extends Collection(OID(0, 13), systemOID, UrCollection,
-      toProps(
-        setName("Exactly-One")
-        )) 
+  class ExactlyOne[VT] extends Collection[VT, OneColl[VT]](
+    OID(0, 13), 
+    systemOID, 
+    UrCollection,
+    toProps(
+      setName("Exactly-One")
+      )) 
   {
-    type implType = OneColl[_]
-    
-    def deserialize(ser:String, elemT:PType):PropValue[implType] = {
+	def deserialize(ser:String, elemT:pType):PropValue[implType] = {
       PropValue(OneColl(elemT.deserialize(ser)))
     }
-    def serialize(v:PropValue[implType], elemT:PType):String = {
-      elemT.serialize(v.v.v.asInstanceOf[ElemValue[elemT.valType]])
+    def serialize(v:PropValue[implType], elemT:pType):String = {
+      elemT.serialize(v.v.v.asInstanceOf[elemVT])
     }
-    def render(v:PropValue[implType], elemT:PType):Wikitext = {
-      elemT.render(v.v.v.asInstanceOf[ElemValue[elemT.valType]])
+    def render(v:PropValue[implType], elemT:pType):Wikitext = {
+      elemT.render(v.v.v.asInstanceOf[elemVT])
     }
-    def default(elemT:PType):PropValue[implType] = {
+    def default(elemT:pType):PropValue[implType] = {
       PropValue(OneColl(elemT.default))
     }
-    def wrap(elem:ElemValue[_]):implType = OneColl(elem)
+    def wrap(elem:ElemValue[VT,VT]):implType = OneColl(elem)
     
-    // TODO: yet more asInstanceOf horror:
-    override def get[ElemT](pv:PropValue[implType]):ElemT = {
-      val coll:OneColl[_] = pv.v
-      val elemV:ElemValue[ElemT] = coll.v.asInstanceOf[ElemValue[ElemT]]
-      elemV.v
-    }
+//    override def get(pv:PropValue[implType]):VT = {
+//      val coll:implType = pv.v
+//      val elemV:elemVT = coll.v
+//      elemV.elem
+//    }
   }
+  object ExactlyOne extends ExactlyOne
   
-  object Optional extends Collection(OID(0, 14), systemOID, UrCollection,
+  class Optional[VT] extends Collection[VT, Option[ElemValue[VT, VT]]](OID(0, 14), systemOID, UrCollection,
       toProps(
         setName("Optional")
         )) 
   {
-    type implType = Option[_]
-    
-    def deserialize(ser:String, elemT:PType):PropValue[implType] = {
+    def deserialize(ser:String, elemT:pType):PropValue[implType] = {
       ser match {
         case "!" => PropValue(None)
         case s:String => {
@@ -234,89 +222,87 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
       }
     }
     
-    def serialize(v:PropValue[implType], elemT:PType):String = {
+    def serialize(v:PropValue[implType], elemT:pType):String = {
       v.v match {
-        case Some(elem) => "(" + elemT.serialize(elem.asInstanceOf[ElemValue[elemT.valType]]) + ")"
+        case Some(elem) => "(" + elemT.serialize(elem.asInstanceOf[elemVT]) + ")"
         case None => "!"
       }
     }
     
-    def render(v:PropValue[implType], elemT:PType):Wikitext = {
+    def render(v:PropValue[implType], elemT:pType):Wikitext = {
       v.v match {
-        case Some(elem) => elemT.render(elem.asInstanceOf[ElemValue[elemT.valType]])
+        case Some(elem) => elemT.render(elem.asInstanceOf[elemVT])
         case None => Wikitext("")
       }
     }
     
-    def default(elemT:PType):PropValue[implType] = {
+    def default(elemT:pType):PropValue[implType] = {
       PropValue(None)
     }
     
-    def wrap(elem:ElemValue[_]):implType = Some(elem)
+    def wrap(elem:elemVT):implType = Some(elem)
   }
+  object Optional extends Optional
   
   
-  object QList extends Collection(OID(0, 15), systemOID, UrCollection,
+  class QList[VT] extends Collection[VT, List[ElemValue[VT, VT]]](OID(0, 15), systemOID, UrCollection,
       toProps(
         setName("List")
         )) 
   {
-    type implType = List[_]
-    
-    def deserialize(ser:String, elemT:PType):PropValue[implType] = {
+    def deserialize(ser:String, elemT:pType):PropValue[implType] = {
       val guts = ser.slice(1, ser.length() - 1)
       val elemStrs = guts.split(",").toList
       val elems = elemStrs.map(elemT.deserialize(_))
       PropValue(elems)
     }
     
-    def serialize(v:PropValue[implType], elemT:PType):String = {
+    def serialize(v:PropValue[implType], elemT:pType):String = {
       v.v.
-        map(elem => elemT.serialize(elem.asInstanceOf[ElemValue[elemT.valType]])).
+        map(elem => elemT.serialize(elem.asInstanceOf[elemVT])).
         mkString("[", "," ,"]")
     }
     
-    def render(v:PropValue[implType], elemT:PType):Wikitext = {
+    def render(v:PropValue[implType], elemT:pType):Wikitext = {
       val renderedElems = v.v.
-        map(elem => elemT.render(elem.asInstanceOf[ElemValue[elemT.valType]]))
+        map(elem => elemT.render(elem.asInstanceOf[elemVT]))
       Wikitext(renderedElems.mkString("\n"))
     }
     
-    def default(elemT:PType):PropValue[implType] = {
+    def default(elemT:pType):PropValue[implType] = {
       PropValue(List.empty)
     }
     
-    def wrap(elem:ElemValue[_]):implType = List(elem)
+    def wrap(elem:elemVT):implType = List(elem)
   }
+  object QList extends QList
   
   ///////////////////////////////
   
   /**
    * The Type for Links to other Things
    */
-  object LinkType extends PType(OID(0, 16), systemOID, UrThing,
+  object LinkType extends PType[OID](OID(0, 16), systemOID, UrThing,
       toProps(
         setName("Type-Link")
-        )) 
+        )) with PTypeBuilder[OID, ThingPtr]
   {
-    type valType = OID
-    type rawType = ThingPtr
-    
     def deserialize(v:String) = ElemValue(OID(v))
-    def serialize(v:ElemValue[valType]) = v.v.toString
+    def serialize(v:elemVT) = v.elem.toString
     // TODO: this is a good illustration of the fact that render should actually
     // be contextual -- you can't really render a Link in isolation, without knowing
     // about the Thing it points to:
-    def render(v:ElemValue[valType]) = Wikitext(v.v.toString)
+    def render(v:elemVT) = Wikitext(v.elem.toString)
 
-    val default = ElemValue[valType](UnknownOID)
-    def wrap(raw:rawType):valType = raw.id
+    val default = ElemValue[valType, valType](UnknownOID)
+    def wrap(raw:ThingPtr):valType = raw.id
   }
     
+  object ExactlyOneLink extends ExactlyOne[OID]
   /**
    * The Property that points from a Property to its Type.
    */
-  object TypeProp extends Property(OID(0, 17), systemOID, UrProp, LinkType, ExactlyOne,
+  object TypeProp extends Property(OID(0, 17), systemOID, UrProp, LinkType, ExactlyOneLink,
       toProps(
         setName("__Type")
         ))
@@ -324,7 +310,7 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
   /**
    * The Property that points from a Property to its Collection.
    */
-  object CollectionProp extends Property(OID(0, 18), systemOID, UrProp, LinkType, ExactlyOne,
+  object CollectionProp extends Property(OID(0, 18), systemOID, UrProp, LinkType, ExactlyOneLink,
       toProps(
         setName("__Collection")
         ))
@@ -335,8 +321,8 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
     (Map.empty[OID,T] /: items) ((m, i) => m + (i.id -> i))
   }
   
-  val types = oidMap[PType](IntType, TextType, YesNoType, NameType, LinkType)
-  val props = oidMap[Property](UrProp, NameProp, DisplayTextProp, TypeProp, CollectionProp)
+  val types = oidMap[PType[_]](IntType, TextType, YesNoType, NameType, LinkType)
+  val props = oidMap[Property[_,_]](UrProp, NameProp, DisplayTextProp, TypeProp, CollectionProp)
   val things = oidMap[ThingState](UrThing, Page)
   
   object State extends SpaceState(systemOID, UrThing,
