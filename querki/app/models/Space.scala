@@ -44,7 +44,7 @@ case class SpaceState(
     types:Map[OID, PType[_]],
     spaceProps:Map[OID, Property[_,_]],
     things:Map[OID, ThingState],
-    colls:Map[OID, Collection[_,_]]) 
+    colls:Map[OID, Collection[_]]) 
   extends Thing(s, s, m, Kind.Space, pf) 
 {
   // Walks up the App tree, looking for the specified Thing of the implied type:
@@ -137,10 +137,7 @@ class Space extends Actor {
         // This cast is slightly weird, but safe and should be necessary
         val boundTyp = typ.asInstanceOf[PType[typ.valType]]
         val coll = systemState.coll(CollectionProp.first(propMap))
-        // TODO: OTOH, this cast is evil and likely wrong. We probably need some sort of
-        // CollectionFactory that produces memoized collections with the right
-        // characteristics.
-        val boundColl = coll.asInstanceOf[Collection[typ.valType, coll.implType]]
+        val boundColl = coll.asInstanceOf[Collection[coll.implType]]
         new Property(
             OID(row.get[Long]("id").get),
             id,

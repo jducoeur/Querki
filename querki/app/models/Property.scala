@@ -7,10 +7,15 @@ import system.SystemSpace._
 /**
  * The value of a primitive Type. These are always considered "elements", since they
  * are always wrapped inside Collections.
+ * 
+ * Note that ElemValue is untyped. The is necessary -- if we try to keep this strongly
+ * typed, then the matrix composition of Collections and PTypes becomes impossible at
+ * runtime. So ElemValues are fundamentally not typesafe, and should only be evaluated
+ * in the context of their associated PTypes.
  */
-case class ElemValue[VT, T <: PType[VT]#valType](elem:T)
+case class ElemValue(elem:Any)
 
-case class PropValue[CT](v:CT)
+case class PropValue[CT](coll:CT)
 
 /**
  * Properties have Types. There's nothing controversial here -- Types are usually
@@ -21,33 +26,43 @@ case class PropValue[CT](v:CT)
 abstract class PType[VT](i:OID, s:ThingPtr, m:ThingPtr, pf:PropFetcher) extends Thing(i, s, m, Kind.Type, pf) {
   
   type valType = VT
-  type elemVT = ElemValue[VT, valType]
   
   /**
    * Each PType is required to implement this -- it is the deserializer for the
    * type.
    */
-  def deserialize(ser:String):elemVT
+  protected def doDeserialize(ser:String):VT
+  final def deserialize(ser:String):ElemValue = ElemValue(doDeserialize(ser))
   
   /**
    * Also required for all PTypes, to serialize values of this type.
    */
-  def serialize(v:elemVT):String
+  protected def doSerialize(v:VT):String
+  final def serialize(v:ElemValue):String = doSerialize(get(v))
   
   /**
    * Takes a value of this type, and turns it into displayable form. Querki
    * equivalent to toString.
    */
-  def render(ser:elemVT):Wikitext
+  protected def doRender(v:VT):Wikitext
+  final def render(v:ElemValue):Wikitext = doRender(get(v))
   
   /**
    * Also required for all PTypes -- the default value to fall back on.
    */
-  def default:elemVT
+  protected def doDefault:VT
+  final def default:ElemValue = ElemValue(doDefault)
+  
+  /**
+   * The type unwrapper -- takes an opaque ElemValue and returns the underlying value.
+   * This is a fundamentally unsafe operation, so it should always be performed in the
+   * context of a Property.
+   */
+  def get(v:ElemValue):VT = v.elem.asInstanceOf[VT]
 }
 trait PTypeBuilder[VT, RT] {
   def wrap(raw:RT):VT
-  def apply(raw:RT):ElemValue[VT, VT] = ElemValue(wrap(raw))  
+  def apply(raw:RT):ElemValue = ElemValue(wrap(raw))  
 }
 trait SimplePTypeBuilder[VT] extends PTypeBuilder[VT, VT] {
   def wrap(raw:VT) = raw
@@ -63,10 +78,9 @@ trait SimplePTypeBuilder[VT] extends PTypeBuilder[VT, VT] {
  * and consistent about this, we make it much easier to write QL safely -- each
  * QL step is basically a flatMap.
  */
-abstract class Collection[VT, CT](i:OID, s:ThingPtr, m:ThingPtr, pf:PropFetcher) extends Thing(i, s, m, Kind.Collection, pf) {
+abstract class Collection[CT](i:OID, s:ThingPtr, m:ThingPtr, pf:PropFetcher) extends Thing(i, s, m, Kind.Collection, pf) {
   
-  type pType = PType[VT]
-  type elemVT = ElemValue[VT, VT]
+  type pType = PType[_]
   type implType = CT
   
   /**
@@ -91,21 +105,28 @@ abstract class Collection[VT, CT](i:OID, s:ThingPtr, m:ThingPtr, pf:PropFetcher)
    */
   def default(elemT:pType):PropValue[implType]
   
-  def wrap(elem:ElemValue[VT, pType#valType]):implType
+  def wrap(elem:ElemValue):implType
   /**
    * Convenience wrapper for creating in-code PropValues.
+   * 
+   * TODO: this really isn't right -- Collection shouldn't ever create ElemValues.
    */
-  def apply(elem:VT):PropValue[implType] = PropValue(wrap(ElemValue(elem)))
+  def apply(elem:Any):PropValue[implType] = PropValue(wrap(ElemValue(elem)))
   
-  def get[ElemT](pv:PropValue[implType]):ElemT =
-    throw new Exception("Tried to call Collection.get on a collection that doesn't support it!")
+  /**
+   * Returns the head of the collection.
+   * 
+   * NOTE: this will throw an exception if you call it on an empty collection! It is the
+   * equivalent of Option.get
+   */
+  def first(pv:PropValue[implType]):ElemValue
 }
 
 /**
  * A Property is a field that may exist on a Thing. It is, itself, a Thing with a
  * specific Type.
  */
-case class Property[VT, CT](i:OID, s:ThingPtr, m:ThingPtr, val pType:PType[VT], val cType:Collection[VT, CT], pf:PropFetcher)
+case class Property[VT, CT](i:OID, s:ThingPtr, m:ThingPtr, val pType:PType[VT], val cType:Collection[CT], pf:PropFetcher)
   extends Thing(i, s, m, Kind.Property, pf) {
   def default = {
     // TODO: add the concept of the default meta-property, so you can set it
@@ -128,21 +149,11 @@ case class Property[VT, CT](i:OID, s:ThingPtr, m:ThingPtr, val pType:PType[VT], 
   
   /**
    * Convenience method to fetch the value of this property in this map.
-   * 
-   * IMPORTANT: T must be exactly pType.valType. I still haven't figured out how
-   * to deduce that automatically, though.
-   * 
-   * IMPORTANT: this is only legal on ExactlyOne Properties! It will throw
-   * an exception otherwise.
-   * 
-   * TODO: change this to first(), and it should be legal everywhere.
    */
-  def first(m:PropMap):VT = cType.get(from(m))
+  def first(m:PropMap):VT = pType.get(cType.first(from(m)))
 
-  // TODO: currently, this takes pType.valType as its input, and that's unchecked. This
-  // is because I haven't figured out the correct syntax to get it to work correctly.
-  // What I *want* is for it to instead take pType.rawType, and go through pType.apply()
-  // to generate the correctly-typed ElemValue, and then feed that into cType.apply().
+  // TODO: This should actually be taking an RT, not a VT. We may need to reintroduce the notion
+  // of a PType's builder into Property.
   def apply(elem:VT) = (this, cType(elem))
   
   def serialize(v:PropValue[_]):String = cType.serialize(castVal(v), pType)
