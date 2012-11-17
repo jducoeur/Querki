@@ -43,7 +43,8 @@ case class SpaceState(
     app:Option[SpaceState],
     types:Map[OID, PType[_]],
     spaceProps:Map[OID, Property[_,_]],
-    things:Map[OID, ThingState]) 
+    things:Map[OID, ThingState],
+    colls:Map[OID, Collection[_,_]]) 
   extends Thing(s, s, m, Kind.Space, pf) 
 {
   // Walks up the App tree, looking for the specified Thing of the implied type:
@@ -60,13 +61,15 @@ case class SpaceState(
   def typ(ptr:ThingPtr) = resolve(ptr) (_.types.get(_))
   def prop(ptr:ThingPtr) = resolve(ptr) (_.spaceProps.get(_))
   def thing(ptr:ThingPtr) = resolve(ptr) (_.things.get(_))
+  def coll(ptr:ThingPtr) = resolve(ptr) (_.colls.get(_))
   
   def anything(oid:OID):Thing = {
     // TODO: this should do something more sensible if the OID isn't found at all:
     things.getOrElse(oid, 
         spaceProps.getOrElse(oid, 
             types.getOrElse(oid, 
-                app.map(_.anything(oid)).getOrElse(this))))
+                colls.getOrElse(oid,
+                	app.map(_.anything(oid)).getOrElse(this)))))
   }
 }
 
@@ -130,12 +133,20 @@ class Space extends Actor {
       val propStream = streamsByKind(Kind.Property).map { row =>
         // TODO: the app shouldn't be hardcoded to SystemSpace
         val propMap = Thing.deserializeProps(row.get[String]("props").get, systemState)
+        val typ = systemState.typ(TypeProp.first(propMap))
+        // This cast is slightly weird, but safe and should be necessary
+        val boundTyp = typ.asInstanceOf[PType[typ.valType]]
+        val coll = systemState.coll(CollectionProp.first(propMap))
+        // TODO: OTOH, this cast is evil and likely wrong. We probably need some sort of
+        // CollectionFactory that produces memoized collections with the right
+        // characteristics.
+        val boundColl = coll.asInstanceOf[Collection[typ.valType, coll.implType]]
         new Property(
             OID(row.get[Long]("id").get),
             id,
             OID(row.get[Long]("model").get),
-            TypeProp.get(propMap),
-            CollectionProp.get(propMap),
+            boundTyp,
+            boundColl,
             () => propMap)
       }
       val thingStream = streamsByKind(Kind.Thing).map { row =>

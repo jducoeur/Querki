@@ -189,10 +189,10 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
       PropValue(OneColl(elemT.deserialize(ser)))
     }
     def serialize(v:PropValue[implType], elemT:pType):String = {
-      elemT.serialize(v.v.v.asInstanceOf[elemVT])
+      elemT.serialize(v.v.v)
     }
     def render(v:PropValue[implType], elemT:pType):Wikitext = {
-      elemT.render(v.v.v.asInstanceOf[elemVT])
+      elemT.render(v.v.v)
     }
     def default(elemT:pType):PropValue[implType] = {
       PropValue(OneColl(elemT.default))
@@ -224,14 +224,14 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
     
     def serialize(v:PropValue[implType], elemT:pType):String = {
       v.v match {
-        case Some(elem) => "(" + elemT.serialize(elem.asInstanceOf[elemVT]) + ")"
+        case Some(elem) => "(" + elemT.serialize(elem) + ")"
         case None => "!"
       }
     }
     
     def render(v:PropValue[implType], elemT:pType):Wikitext = {
       v.v match {
-        case Some(elem) => elemT.render(elem.asInstanceOf[elemVT])
+        case Some(elem) => elemT.render(elem)
         case None => Wikitext("")
       }
     }
@@ -259,13 +259,13 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
     
     def serialize(v:PropValue[implType], elemT:pType):String = {
       v.v.
-        map(elem => elemT.serialize(elem.asInstanceOf[elemVT])).
+        map(elem => elemT.serialize(elem)).
         mkString("[", "," ,"]")
     }
     
     def render(v:PropValue[implType], elemT:pType):Wikitext = {
       val renderedElems = v.v.
-        map(elem => elemT.render(elem.asInstanceOf[elemVT]))
+        map(elem => elemT.render(elem))
       Wikitext(renderedElems.mkString("\n"))
     }
     
@@ -324,6 +324,7 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
   val types = oidMap[PType[_]](IntType, TextType, YesNoType, NameType, LinkType)
   val props = oidMap[Property[_,_]](UrProp, NameProp, DisplayTextProp, TypeProp, CollectionProp)
   val things = oidMap[ThingState](UrThing, Page)
+  val colls = oidMap[Collection[_,_]](UrCollection, ExactlyOne, Optional, QList)
   
   object State extends SpaceState(systemOID, UrThing,
       toProps(
@@ -331,5 +332,5 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
         DisplayTextProp(Wikitext("""
 This is the fundamental System Space. Everything else derives from it.
 """))
-        ), SystemUserOID, "System", None, types, props, things)
+        ), SystemUserOID, "System", None, types, props, things, colls)
 }

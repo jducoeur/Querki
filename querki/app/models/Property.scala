@@ -122,9 +122,9 @@ case class Property[VT, CT](i:OID, s:ThingPtr, m:ThingPtr, val pType:PType[VT], 
 		  CollectionProp(cType.id) +
 		  TypeProp(pType.id)
   
-  def render(v:PropValue[cType.implType]) = cType.render(v, pType)
+  def render(v:PropValue[CT]) = cType.render(v, pType)
   
-  def from(m:PropMap):PropValue[cType.implType] = m(this).asInstanceOf[PropValue[cType.implType]]
+  def from(m:PropMap):PropValue[CT] = castVal(m(this))
   
   /**
    * Convenience method to fetch the value of this property in this map.
@@ -134,8 +134,10 @@ case class Property[VT, CT](i:OID, s:ThingPtr, m:ThingPtr, val pType:PType[VT], 
    * 
    * IMPORTANT: this is only legal on ExactlyOne Properties! It will throw
    * an exception otherwise.
+   * 
+   * TODO: change this to first(), and it should be legal everywhere.
    */
-  def get[T](m:PropMap):T = cType.get(from(m))
+  def first(m:PropMap):VT = cType.get(from(m))
 
   // TODO: currently, this takes pType.valType as its input, and that's unchecked. This
   // is because I haven't figured out the correct syntax to get it to work correctly.
