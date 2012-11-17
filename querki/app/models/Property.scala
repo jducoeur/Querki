@@ -87,23 +87,27 @@ abstract class Collection[CT](i:OID, s:ThingPtr, m:ThingPtr, pf:PropFetcher) ext
    * Each Collection is required to implement this -- it is the deserializer for the
    * type.
    */
-  def deserialize(ser:String, elemT:pType):PropValue[implType]
+  protected def doDeserialize(ser:String, elemT:pType):implType
+  final def deserialize(ser:String, elemT:pType):PropValue[implType] = PropValue(doDeserialize(ser,elemT))
   
   /**
    * Also required for all Collections, to serialize values of this type.
    */
-  def serialize(v:PropValue[implType], elemT:pType):String
+  protected def doSerialize(v:implType, elemT:pType):String 
+  final def serialize(v:PropValue[implType], elemT:pType):String = doSerialize(v.coll, elemT)
   
   /**
    * Takes a value of this type, and turns it into displayable form. Querki
    * equivalent to toString.
    */
-  def render(v:PropValue[implType], elemT:pType):Wikitext
+  protected def doRender(v:implType, elemT:pType):Wikitext
+  final def render(v:PropValue[implType], elemT:pType):Wikitext = doRender(v.coll, elemT)
   
   /**
    * Also required for all Collections -- the default value to fall back on.
    */
-  def default(elemT:pType):PropValue[implType]
+  protected def doDefault(elemT:pType):implType
+  final def default(elemT:pType):PropValue[implType] = PropValue(doDefault(elemT))
   
   def wrap(elem:ElemValue):implType
   /**
@@ -119,7 +123,8 @@ abstract class Collection[CT](i:OID, s:ThingPtr, m:ThingPtr, pf:PropFetcher) ext
    * NOTE: this will throw an exception if you call it on an empty collection! It is the
    * equivalent of Option.get
    */
-  def first(pv:PropValue[implType]):ElemValue
+  protected def doFirst(v:implType):ElemValue
+  final def first(v:PropValue[implType]):ElemValue = doFirst(v.coll)
 }
 
 /**

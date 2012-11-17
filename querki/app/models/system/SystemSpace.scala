@@ -159,17 +159,17 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
         setName("Collection")
         )) 
   {
-    def deserialize(ser:String, elemT:pType):PropValue[implType] = 
+    def doDeserialize(ser:String, elemT:pType):implType = 
       throw new Error("Trying to deserialize root collection!")
-    def serialize(v:PropValue[implType], elemT:pType):String = 
+    def doSerialize(v:implType, elemT:pType):String = 
       throw new Error("Trying to serialize root collection!")
-    def render(ser:PropValue[implType], elemT:pType):Wikitext = 
+    def doRender(ser:implType, elemT:pType):Wikitext = 
       throw new Error("Trying to render root collection!")
-    def default(elemT:pType):PropValue[implType] = 
+    def doDefault(elemT:pType):implType = 
       throw new Error("Trying to default root collection!")    
 	def wrap(elem:ElemValue):implType =
 	  throw new Error("Trying to wrap root collection!")    
-    def first(pv:PropValue[implType]):ElemValue =
+    def doFirst(pv:implType):ElemValue =
       throw new Error("Trying to wrap root collection!")
   }
   object UrCollection extends UrCollection
@@ -184,21 +184,21 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
       setName("Exactly-One")
       )) 
   {
-	def deserialize(ser:String, elemT:pType):PropValue[implType] = {
-      PropValue(OneColl(elemT.deserialize(ser)))
+	def doDeserialize(ser:String, elemT:pType):implType = {
+      OneColl(elemT.deserialize(ser))
     }
-    def serialize(v:PropValue[implType], elemT:pType):String = {
-      elemT.serialize(v.coll.v)
+    def doSerialize(v:implType, elemT:pType):String = {
+      elemT.serialize(v.v)
     }
-    def render(v:PropValue[implType], elemT:pType):Wikitext = {
-      elemT.render(v.coll.v)
+    def doRender(v:implType, elemT:pType):Wikitext = {
+      elemT.render(v.v)
     }
-    def default(elemT:pType):PropValue[implType] = {
-      PropValue(OneColl(elemT.default))
+    def doDefault(elemT:pType):implType = {
+      OneColl(elemT.default)
     }
     def wrap(elem:ElemValue):implType = OneColl(elem)
     
-    def first(pv:PropValue[implType]):ElemValue = pv.coll.v
+    def doFirst(v:implType):ElemValue = v.v
   }
   object ExactlyOne extends ExactlyOne
   
@@ -207,37 +207,35 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
         setName("Optional")
         )) 
   {
-    def deserialize(ser:String, elemT:pType):PropValue[implType] = {
+    def doDeserialize(ser:String, elemT:pType):implType = {
       ser match {
-        case "!" => PropValue(None)
+        case "!" => None
         case s:String => {
           val elemStr = s.slice(1, s.length() - 1)
-          PropValue(Some(elemT.deserialize(ser)))
+          Some(elemT.deserialize(ser))
         }
       }
     }
     
-    def serialize(v:PropValue[implType], elemT:pType):String = {
-      v.coll match {
+    def doSerialize(v:implType, elemT:pType):String = {
+      v match {
         case Some(elem) => "(" + elemT.serialize(elem) + ")"
         case None => "!"
       }
     }
     
-    def render(v:PropValue[implType], elemT:pType):Wikitext = {
-      v.coll match {
+    def doRender(v:implType, elemT:pType):Wikitext = {
+      v match {
         case Some(elem) => elemT.render(elem)
         case None => Wikitext("")
       }
     }
     
-    def default(elemT:pType):PropValue[implType] = {
-      PropValue(None)
-    }
+    def doDefault(elemT:pType):implType = None
     
     def wrap(elem:ElemValue):implType = Some(elem)
     
-    def first(pv:PropValue[implType]):ElemValue = pv.coll match {
+    def doFirst(pv:implType):ElemValue = pv match {
       case Some(elemV) => elemV
       case None => throw new Exception("Trying to first on an empty Optional!")
     }
@@ -250,32 +248,27 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
         setName("List")
         )) 
   {
-    def deserialize(ser:String, elemT:pType):PropValue[implType] = {
+    def doDeserialize(ser:String, elemT:pType):implType = {
       val guts = ser.slice(1, ser.length() - 1)
       val elemStrs = guts.split(",").toList
-      val elems = elemStrs.map(elemT.deserialize(_))
-      PropValue(elems)
+      elemStrs.map(elemT.deserialize(_))
     }
     
-    def serialize(v:PropValue[implType], elemT:pType):String = {
-      v.coll.
-        map(elem => elemT.serialize(elem)).
+    def doSerialize(v:implType, elemT:pType):String = {
+      v.map(elem => elemT.serialize(elem)).
         mkString("[", "," ,"]")
     }
     
-    def render(v:PropValue[implType], elemT:pType):Wikitext = {
-      val renderedElems = v.coll.
-        map(elem => elemT.render(elem))
+    def doRender(v:implType, elemT:pType):Wikitext = {
+      val renderedElems = v.map(elem => elemT.render(elem))
       Wikitext(renderedElems.mkString("\n"))
     }
     
-    def default(elemT:pType):PropValue[implType] = {
-      PropValue(List.empty)
-    }
+    def doDefault(elemT:pType):implType = List.empty
     
     def wrap(elem:ElemValue):implType = List(elem)
     
-    def first(pv:PropValue[implType]):ElemValue = pv.coll.head
+    def doFirst(v:implType):ElemValue = v.head
   }
   object QList extends QList
   
