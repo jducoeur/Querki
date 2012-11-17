@@ -42,7 +42,7 @@ case class SpaceState(
     // TODO: in principle, this is a List[SpaceState] -- there can be multiple ancestors:
     app:Option[SpaceState],
     types:Map[OID, PType[_]],
-    spaceProps:Map[OID, Property[_,_]],
+    spaceProps:Map[OID, Property[_,_,_]],
     things:Map[OID, ThingState],
     colls:Map[OID, Collection[_]]) 
   extends Thing(s, s, m, Kind.Space, pf) 
@@ -135,7 +135,7 @@ class Space extends Actor {
         val propMap = Thing.deserializeProps(row.get[String]("props").get, systemState)
         val typ = systemState.typ(TypeProp.first(propMap))
         // This cast is slightly weird, but safe and should be necessary
-        val boundTyp = typ.asInstanceOf[PType[typ.valType]]
+        val boundTyp = typ.asInstanceOf[PType[typ.valType] with PTypeBuilder[typ.valType, Any]]
         val coll = systemState.coll(CollectionProp.first(propMap))
         val boundColl = coll.asInstanceOf[Collection[coll.implType]]
         new Property(

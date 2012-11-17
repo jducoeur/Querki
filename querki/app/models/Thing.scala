@@ -99,10 +99,10 @@ abstract class Thing(
   /**
    * The Property as defined on *this* specific Thing.
    */
-  def localProp(propId:ThingPtr):Option[PropAndVal[_, _]] = {
+  def localProp(propId:ThingPtr):Option[PropAndVal[_,_]] = {
     val (pid,ptr) = propId match {
       case i:OID => (i, space.prop(i))
-      case t:Property[_,_] => (t.id, t)
+      case t:Property[_,_,_] => (t.id, t)
     }
     val byId = props.get(pid)
     if (byId.nonEmpty)

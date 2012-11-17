@@ -110,11 +110,11 @@ object SystemSpace {
   object Page extends ThingState(OID(0, 8), systemOID, RootOID,
       toProps(
         setName("Simple-Page"),
-        DisplayTextProp(Wikitext("""
+        DisplayTextProp("""
 This is the basic Page Thing. Use it as your Model for *basic* Pages without real structure.
             
 Use the **DisplayText** property to indicate what to show on the page. You can put anything in there.
-"""))))
+""")))
   
   val SystemUserOID = OID(0, 9)
   
@@ -316,15 +316,15 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
   }
   
   val types = oidMap[PType[_]](IntType, TextType, YesNoType, NameType, LinkType)
-  val props = oidMap[Property[_,_]](UrProp, NameProp, DisplayTextProp, TypeProp, CollectionProp)
+  val props = oidMap[Property[_,_,_]](UrProp, NameProp, DisplayTextProp, TypeProp, CollectionProp)
   val things = oidMap[ThingState](UrThing, Page)
   val colls = oidMap[Collection[_]](UrCollection, ExactlyOne, Optional, QList)
   
   object State extends SpaceState(systemOID, UrThing,
       toProps(
         setName("System"),
-        DisplayTextProp(Wikitext("""
+        DisplayTextProp("""
 This is the fundamental System Space. Everything else derives from it.
-"""))
+""")
         ), SystemUserOID, "System", None, types, props, things, colls)
 }

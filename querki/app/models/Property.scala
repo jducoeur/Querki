@@ -60,12 +60,15 @@ abstract class PType[VT](i:OID, s:ThingPtr, m:ThingPtr, pf:PropFetcher) extends 
    */
   def get(v:ElemValue):VT = v.elem.asInstanceOf[VT]
 }
-trait PTypeBuilder[VT, RT] {
+trait PTypeBuilder[VT, -RT] {
   def wrap(raw:RT):VT
   def apply(raw:RT):ElemValue = ElemValue(wrap(raw))  
 }
 trait SimplePTypeBuilder[VT] extends PTypeBuilder[VT, VT] {
   def wrap(raw:VT) = raw
+}
+trait NullTypeBuilder[VT] extends PTypeBuilder[VT, Nothing] {
+  def wrap(raw:Nothing) = throw new Exception("Can't call NullTypeBuilder!")
 }
 
 /**
@@ -112,10 +115,8 @@ abstract class Collection[CT](i:OID, s:ThingPtr, m:ThingPtr, pf:PropFetcher) ext
   def wrap(elem:ElemValue):implType
   /**
    * Convenience wrapper for creating in-code PropValues.
-   * 
-   * TODO: this really isn't right -- Collection shouldn't ever create ElemValues.
    */
-  def apply(elem:Any):PropValue[implType] = PropValue(wrap(ElemValue(elem)))
+  def apply(elem:ElemValue):PropValue[implType] = PropValue(wrap(elem))
   
   /**
    * Returns the head of the collection.
@@ -131,7 +132,13 @@ abstract class Collection[CT](i:OID, s:ThingPtr, m:ThingPtr, pf:PropFetcher) ext
  * A Property is a field that may exist on a Thing. It is, itself, a Thing with a
  * specific Type.
  */
-case class Property[VT, CT](i:OID, s:ThingPtr, m:ThingPtr, val pType:PType[VT], val cType:Collection[CT], pf:PropFetcher)
+case class Property[VT, -RT, CT](
+    i:OID, 
+    s:ThingPtr, 
+    m:ThingPtr, 
+    val pType:PType[VT] with PTypeBuilder[VT, RT], 
+    val cType:Collection[CT], 
+    pf:PropFetcher)
   extends Thing(i, s, m, Kind.Property, pf) {
   def default = {
     // TODO: add the concept of the default meta-property, so you can set it
@@ -145,8 +152,8 @@ case class Property[VT, CT](i:OID, s:ThingPtr, m:ThingPtr, val pType:PType[VT], 
   def pair(v:PropValue[_]) = PropAndVal(this, castVal(v))
 
   override lazy val props:PropMap = propFetcher() + 
-		  CollectionProp(cType.id) +
-		  TypeProp(pType.id)
+		  CollectionProp(cType) +
+		  TypeProp(pType)
   
   def render(v:PropValue[CT]) = cType.render(v, pType)
   
@@ -159,7 +166,7 @@ case class Property[VT, CT](i:OID, s:ThingPtr, m:ThingPtr, val pType:PType[VT], 
 
   // TODO: This should actually be taking an RT, not a VT. We may need to reintroduce the notion
   // of a PType's builder into Property.
-  def apply(elem:VT) = (this, cType(elem))
+  def apply(raw:RT) = (this, cType(pType(raw)))
   
   def serialize(v:PropValue[_]):String = cType.serialize(castVal(v), pType)
   def deserialize(str:String):PropValue[cType.implType] = cType.deserialize(str, pType)
@@ -168,7 +175,7 @@ case class Property[VT, CT](i:OID, s:ThingPtr, m:ThingPtr, val pType:PType[VT], 
 /**
  * A convenient wrapper for passing a value around in a way that can be fetched.
  */
-case class PropAndVal[VT, CT](prop:Property[VT, CT], v:PropValue[CT]) {
+case class PropAndVal[VT, CT](prop:Property[VT, _, CT], v:PropValue[CT]) {
   def render = prop.render(v)
   def split() = (prop, v)
 }
