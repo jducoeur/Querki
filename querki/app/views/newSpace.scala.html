@@ -1,0 +1,26 @@
+@(user:User, errors:Option[String] = None)
+
+@import helper._
+@import helper.twitterBootstrap._
+
+@main("Create a new Space", None, NavSection.homeNav) {
+
+    @errors match {
+	  case None => {}
+	  case Some(msg) => { 
+        <div class="alert">
+          <button type="button" class="close" data-dismiss="alert">x</button>
+          <strong>Error:</strong> @msg
+        </div>
+	  }
+	}
+		
+	<div class="page-header">
+	  <h1>Create a New Space</h1>
+	</div>
+	
+	@form(routes.Application.doNewSpace, 'class -> "form-inline") {
+	  <input type="text" name="name" id="name" value="" placeholder="Name of the New Space">
+	  <input type="submit" value="Create" class="btn btn-primary">
+	}
+}

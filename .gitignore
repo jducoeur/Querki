@@ -4,6 +4,7 @@
 
 .target
 testdb/
+*.db
 
 #################
 ## Eclipse

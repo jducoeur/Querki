@@ -19,7 +19,7 @@ CREATE TABLE OIDNexter (
     nextId int NOT NULL
 );
 
-INSERT INTO OIDNexter (nextId) VALUES (0)
+INSERT INTO OIDNexter (nextId) VALUES (0);
 
 CREATE TABLE Spaces (
     id bigint NOT NULL,

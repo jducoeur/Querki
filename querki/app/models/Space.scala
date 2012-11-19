@@ -75,6 +75,8 @@ case class SpaceState(
 
 sealed trait SpaceMessage
 
+case class CreatePropertyMessage(model:OID, pType:OID, cType:OID, props:PropMap) extends SpaceMessage
+
 /**
  * The Actor that encapsulates a Space.
  * 
@@ -119,7 +121,7 @@ class Space extends Actor {
   }
   lazy val name = spaceInfo.get[String]("name").get
   
-  override def preStart() = {
+  def loadSpace() = {
     // TODO: we need to walk up the tree and load any ancestor Apps before we prep this Space
     DB.withTransaction { implicit conn =>
       // The stream of all of the Things in this Space:
@@ -134,7 +136,8 @@ class Space extends Actor {
         // TODO: the app shouldn't be hardcoded to SystemSpace
         val propMap = Thing.deserializeProps(row.get[String]("props").get, systemState)
         val typ = systemState.typ(TypeProp.first(propMap))
-        // This cast is slightly weird, but safe and should be necessary
+        // This cast is slightly weird, but safe and should be necessary. But I'm not sure
+        // that the PTypeBuilder part is correct -- we may need to get the RT correct.
         val boundTyp = typ.asInstanceOf[PType[typ.valType] with PTypeBuilder[typ.valType, Any]]
         val coll = systemState.coll(CollectionProp.first(propMap))
         val boundColl = coll.asInstanceOf[Collection[coll.implType]]
@@ -159,12 +162,38 @@ class Space extends Actor {
 //        // TODO: the app shouldn't be hardcoded to SystemSpace
 //        val propMap = Thing.deserializeProps(row.get[String]("props").get, systemState)
 //      }
-    }
+    }    
+  }
+  
+  override def preStart() = {
+    // TODO: this should always be loaded from disk; the way we're creating this in receive is
+    // very temporary:
+    //loadSpace()
+
   } 
   
   def receive = {
     case req:CreateSpace => {
-      // TODO: send back a RequestedSpace
+	    _currentState = Some(SpaceState(
+	      id,
+	      UrThing,
+	      Thing.toProps(setName(req.name)),
+	      req.owner,
+	      req.name,
+	      None,
+	      Map.empty[OID, PType[_]],
+	      Map.empty[OID, Property[_,_,_]],
+	      Map.empty[OID, ThingState],
+	      Map.empty[OID, Collection[_]]) 
+	    )
+      sender ! RequestedSpace(state)
+    }
+    
+    case req:GetSpace => {
+      if (req.id != id)
+        throw new Exception("Space " + id + " somehow got a request for space " + req.id + "!")
+      else
+        sender ! RequestedSpace(state)
     }
   }
 }
@@ -196,36 +225,62 @@ case class MySpaces(spaces:Seq[(OID,String)]) extends ListMySpacesResponse
 case class CreateSpace(owner:OID, name:String) extends SpaceMgrMsg
 
 class SpaceManager extends Actor {
+  import models.system.SystemSpace
+  import SystemSpace._
   
-  // The local cache of Space States.
-  // TODO: this needs to age properly.
-  // TODO: this needs a cap of how many states we will try to cache.
-  var spaceCache:Map[OID,SpaceState] = Map.empty
-  
-  def addState(state:SpaceState) = spaceCache += (state.id -> state)
-  
-  // The System Space is hardcoded, and we create it at the beginning of time:
-  addState(system.SystemSpace.State)
-  
-  var counter = 0
+//  // The local cache of Space States.
+//  // TODO: this needs to age properly.
+//  // TODO: this needs a cap of how many states we will try to cache.
+//  var spaceCache:Map[OID,SpaceState] = Map.empty
+//  
+//  def addState(state:SpaceState) = spaceCache += (state.id -> state)
+//  
+//  // The System Space is hardcoded, and we create it at the beginning of time:
+//  addState(system.SystemSpace.State)
   
   // TEMP:
   val replyMsg = Play.configuration.getString("querki.test.replyMsg").getOrElse("MISSING REPLY MSG!")
   
   def receive = {
     case req:ListMySpaces => {
-      val results = spaceCache.values.filter(_.owner == req.owner).map(space => (space.id, space.name)).toSeq
-      sender ! MySpaces(results)
+      //val results = spaceCache.values.filter(_.owner == req.owner).map(space => (space.id, space.name)).toSeq
+      if (req.owner == SystemUserOID)
+        sender ! MySpaces(Seq((systemOID, State.name)))
+      else {
+        // TODO: this involves DB access, so should be async using the Actor DSL
+        val results = DB.withConnection { implicit conn =>
+          val spaceStream = SQL("""
+              select id, display from Spaces
+              where owner = {owner}
+              """).on("owner" -> req.owner.raw)()
+          spaceStream.force.map { row =>
+            val id = OID(row.get[Long]("id").get)
+            val name = row.get[String]("display").get
+            (id, name)
+          }
+        }
+        sender ! MySpaces(results)
+      }
     }
     // TODO: this should go through the Space instead, for all except System. The
     // local cache in SpaceManager is mainly for future optimization in clustered
     // environments.
     case req:GetSpace => {
-      val cached = spaceCache.get(req.id)
-      if (cached.nonEmpty)
-        sender ! RequestedSpace(cached.get)
-      else
-        sender ! GetSpaceFailed(req.id)
+      if (req.id == systemOID)
+        sender ! RequestedSpace(State)
+      else {
+    	// TODO: is there any efficient way to determine whether this identifies an existing
+        // loaded Space? The Akka docs discourages scraping context.children, but I'm not
+        // seeing any other way to figure it out.
+        val sid = Space.sid(req.id)
+        val space = context.actorFor(sid)
+        space.forward(req)
+      }
+//      val cached = spaceCache.get(req.id)
+//      if (cached.nonEmpty)
+//        sender ! RequestedSpace(cached.get)
+//      else
+//        sender ! GetSpaceFailed(req.id)
      }
     case req:CreateSpace => {
       // TODO: check that the owner hasn't run out of spaces he can create
@@ -240,6 +295,10 @@ class SpaceManager extends Actor {
   private def createSpace(owner:OID, name:String) = {
     val spaceId = OID.next
     val spaceActor = context.actorOf(Props[Space], name = Space.sid(spaceId))
+    Logger.info("Creating new Space with OID " + Space.thingTable(spaceId))
+    // Why the replace() here? It looks to me like the .on() function always
+    // surrounds its parameter with quotes, and I don't think that works in
+    // the table name. Sad.
     DB.withTransaction { implicit conn =>
       SQL("""
           CREATE TABLE {tname} (
@@ -247,15 +306,14 @@ class SpaceManager extends Actor {
             model bigint NOT NULL,
             kind tinyint NOT NULL,
             props clob NOT NULL,
-            PRIMARY KEY (id)
-          )
-          """).on("tname" -> Space.thingTable(spaceId)).executeUpdate()
+            PRIMARY KEY (id))
+          """.replace("{tname}", Space.thingTable(spaceId))).executeUpdate()
       SQL("""
           INSERT INTO Spaces
           (id, shard, name, display, owner, size) VALUES
           ({sid}, {shard}, {name}, {display}, {ownerId}, 0)
-          """).on("sid" -> spaceId.toString, "shard" -> 1.toString, "name" -> name,
-                  "display" -> name, "ownerId" -> owner.toString).executeUpdate()
+          """).on("sid" -> spaceId.raw, "shard" -> 1.toString, "name" -> name,
+                  "display" -> name, "ownerId" -> owner.raw).executeUpdate()
       // TODO: also need to insert the Space's own Thing record into the new table
     }
     (spaceId, spaceActor)

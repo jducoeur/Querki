@@ -61,6 +61,9 @@ abstract class PType[VT](i:OID, s:ThingPtr, m:ThingPtr, pf:PropFetcher) extends 
   def get(v:ElemValue):VT = v.elem.asInstanceOf[VT]
 }
 trait PTypeBuilder[VT, -RT] {
+  
+  type rawType = RT
+  
   def wrap(raw:RT):VT
   def apply(raw:RT):ElemValue = ElemValue(wrap(raw))  
 }

@@ -17,6 +17,13 @@ object Application extends Controller {
      ((user: User) => Some((user.name)))
   )
   
+  val newSpaceForm = Form(
+    mapping(
+      "name" -> nonEmptyText
+    )((name) => name)
+     ((name:String) => Some(name))
+  )
+  
   def getUser(username:String):Option[User] = User.get(username)
   
   def username(request: RequestHeader) = request.session.get(Security.username)
@@ -100,8 +107,18 @@ object Application extends Controller {
   }
   
   def newSpace = withUser { user => implicit request =>
-    //Ok(views.html.newSpace(user))
-    Ok(views.html.index(Some(user), userForm))
+    Ok(views.html.newSpace(user))
+  }
+  
+  def doNewSpace = withUser { user => implicit request =>
+    newSpaceForm.bindFromRequest.fold(
+      errors => BadRequest(views.html.newSpace(user, Some("You have to specify a legal space name"))),
+      name => {
+        askSpaceMgr[GetSpaceResponse](CreateSpace(user.id, name)) {
+          case RequestedSpace(state) => Redirect(routes.Application.space(state.id.toString))
+        }
+      }
+    )
   }
   
   def login = 
