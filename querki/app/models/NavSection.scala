@@ -14,6 +14,7 @@ object NavSection {
   
   val querkiSection = NavSection("Querki", Seq(
       NavLink("Home", "/"),
+      NavLink("Your Spaces", "/spaces"),
       NavLink("Logout", "/logout")
       ))
 }

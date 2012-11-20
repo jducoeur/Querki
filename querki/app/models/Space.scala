@@ -108,6 +108,8 @@ class Space extends Actor {
     }
   }
   
+  def SpaceSQL(query:String) = Space.SpaceSQL(id, query)
+  
   /**
    * Fetch the high-level information about this Space. Note that this will throw
    * an exception if for some reason we can't load the record. 
@@ -126,58 +128,57 @@ class Space extends Actor {
     // TODO: we need to walk up the tree and load any ancestor Apps before we prep this Space
     DB.withTransaction { implicit conn =>
       // The stream of all of the Things in this Space:
-      val stateStream = SQL("""
+      val stateStream = SpaceSQL("""
           select * from {tname}
-          """.replace("{tname}", Space.thingTable(id)))()
+          """)()
       // Split the stream, dividing it by Kind:
       val streamsByKind = stateStream.groupBy(_.get[Int]("kind").get)
+      
       // Now load each kind. We do this in order, although in practice it shouldn't
       // matter too much so long as Space comes last:
-      val propStream = streamsByKind.get(Kind.Property).getOrElse(Stream.Empty).map { row =>
-        // TODO: the app shouldn't be hardcoded to SystemSpace
-        val propMap = Thing.deserializeProps(row.get[String]("props").get, systemState)
+      def getThingStream[T <: Thing](kind:Int)(builder:(OID, OID, PropMap) => T):Stream[T] = {
+        streamsByKind.get(kind).getOrElse(Stream.Empty).map { row =>
+          // TODO: the app shouldn't be hardcoded to SystemSpace
+          val propMap = Thing.deserializeProps(row.get[String]("props").get, systemState)
+          builder(OID(row.get[Long]("id").get), OID(row.get[Long]("model").get), propMap)
+        }
+      }
+      def getThings[T <: Thing](kind:Int)(builder:(OID, OID, PropMap) => T):Map[OID, T] = {
+        val tStream = getThingStream(kind)(builder)
+        (Map.empty[OID, T] /: tStream)((m, t) => m + (t.id -> t))
+      }
+      
+      val props = getThings(Kind.Property) { (thingId, modelId, propMap) =>
         val typ = systemState.typ(TypeProp.first(propMap))
         // This cast is slightly weird, but safe and should be necessary. But I'm not sure
         // that the PTypeBuilder part is correct -- we may need to get the RT correct.
         val boundTyp = typ.asInstanceOf[PType[typ.valType] with PTypeBuilder[typ.valType, Any]]
         val coll = systemState.coll(CollectionProp.first(propMap))
         val boundColl = coll.asInstanceOf[Collection[coll.implType]]
-        new Property(
-            OID(row.get[Long]("id").get),
-            id,
-            OID(row.get[Long]("model").get),
-            boundTyp,
-            boundColl,
-            () => propMap)
+        new Property(thingId, id, modelId, boundTyp, boundColl, () => propMap)
       }
-      val props = (Map.empty[OID, Property[_,_,_]] /: propStream)((m, prop) => m + (prop.id -> prop))
-      val thingStream = streamsByKind.get(Kind.Thing).getOrElse(Stream.Empty).map { row =>
-        // TODO: the app shouldn't be hardcoded to SystemSpace
-        val propMap = Thing.deserializeProps(row.get[String]("props").get, systemState)
-        new ThingState(
-            OID(row.get[Long]("id").get),
-            id,
-            OID(row.get[Long]("model").get),
-            () => propMap)
+      
+      val things = getThings(Kind.Thing) { (thingId, modelId, propMap) =>
+        new ThingState(thingId, id, modelId, () => propMap)        
       }
-      val things = (Map.empty[OID, ThingState] /: thingStream)((m, thing) => m + (thing.id -> thing))
-      // TBD: note that it is a hard error if there aren't any Spaces found. We exactly exactly one:
-      val spaceStream = streamsByKind(Kind.Space).map { row =>
-        // TODO: the app shouldn't be hardcoded to SystemSpace
-        val propMap = Thing.deserializeProps(row.get[String]("props").get, systemState)
+      
+      val spaceStream = getThingStream(Kind.Space) { (thingId, modelId, propMap) =>
         new SpaceState(
-             OID(row.get[Long]("id").get),
-             OID(row.get[Long]("model").get),
+             thingId,
+             modelId,
              () => propMap,
              owner,
              name,
              Some(systemState),
+             // TODO: dynamic PTypes
              Map.empty[OID, PType[_]],
              props,
              things,
+             // TODO (probably rather later): dynamic Collections
              Map.empty[OID, Collection[_]]
             )
       }
+      // TBD: note that it is a hard error if there aren't any Spaces found. We expect exactly one:
       _currentState = Some(spaceStream.head)
     }    
   }
@@ -210,6 +211,14 @@ object Space {
   def thingTable(id:OID) = "s" + sid(id)
   // The name of the Space's History Table
   def historyTable(id:OID) = "h" + sid(id)
+  
+  /**
+   * The intent here is to use this with queries that use the thingTable. You can't use
+   * on()-style parameters for table names, so we need to work around that.
+   * 
+   * You can always use this in place of ordinary SQL(); it is simply a no-op for ordinary queries.
+   */
+  def SpaceSQL(spaceId:OID, query:String):SqlQuery = SQL(query.replace("{tname}", thingTable(spaceId)))
 }
 
 sealed trait SpaceMgrMsg
@@ -230,6 +239,7 @@ case class CreateSpace(owner:OID, name:String) extends SpaceMgrMsg
 class SpaceManager extends Actor {
   import models.system.SystemSpace
   import SystemSpace._
+  import Space.SpaceSQL
   
 //  // The local cache of Space States.
 //  // TODO: this needs to age properly.
@@ -306,14 +316,14 @@ class SpaceManager extends Actor {
     // surrounds its parameter with quotes, and I don't think that works in
     // the table name. Sad.
     DB.withTransaction { implicit conn =>
-      SQL("""
+      SpaceSQL(spaceId, """
           CREATE TABLE {tname} (
             id bigint NOT NULL,
             model bigint NOT NULL,
             kind int NOT NULL,
             props clob NOT NULL,
             PRIMARY KEY (id))
-          """.replace("{tname}", Space.thingTable(spaceId))).executeUpdate()
+          """).executeUpdate()
       SQL("""
           INSERT INTO Spaces
           (id, shard, name, display, owner, size) VALUES
@@ -321,11 +331,11 @@ class SpaceManager extends Actor {
           """).on("sid" -> spaceId.raw, "shard" -> 1.toString, "name" -> name,
                   "display" -> name, "ownerId" -> owner.raw).executeUpdate()
       val initProps = Thing.serializeProps(Thing.toProps(Thing.setName(name))(), State)
-      SQL("""
+      SpaceSQL(spaceId, """
           INSERT INTO {tname}
           (id, model, kind, props) VALUES
           ({spaceId}, {modelId}, {kind}, {props})
-          """.replace("{tname}", Space.thingTable(spaceId))
+          """
           ).on("spaceId" -> spaceId.raw,
                // TBD: what should the Model for a Space be?
                "modelId" -> RootOID.raw,
