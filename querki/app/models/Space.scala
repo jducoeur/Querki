@@ -116,10 +116,11 @@ class Space extends Actor {
     DB.withTransaction { implicit conn =>
       SQL("""
           select * from Spaces where id = {id}
-          """).on("id" -> id).apply().headOption.get
+          """).on("id" -> id.raw).apply().headOption.get
     }    
   }
   lazy val name = spaceInfo.get[String]("name").get
+  lazy val owner = OID(spaceInfo.get[Long]("owner").get)
   
   def loadSpace() = {
     // TODO: we need to walk up the tree and load any ancestor Apps before we prep this Space
@@ -127,12 +128,12 @@ class Space extends Actor {
       // The stream of all of the Things in this Space:
       val stateStream = SQL("""
           select * from {tname}
-          """).on("tname" -> Space.thingTable(id))()
+          """.replace("{tname}", Space.thingTable(id)))()
       // Split the stream, dividing it by Kind:
       val streamsByKind = stateStream.groupBy(_.get[Int]("kind").get)
       // Now load each kind. We do this in order, although in practice it shouldn't
-      // matter too much:
-      val propStream = streamsByKind(Kind.Property).map { row =>
+      // matter too much so long as Space comes last:
+      val propStream = streamsByKind.get(Kind.Property).getOrElse(Stream.Empty).map { row =>
         // TODO: the app shouldn't be hardcoded to SystemSpace
         val propMap = Thing.deserializeProps(row.get[String]("props").get, systemState)
         val typ = systemState.typ(TypeProp.first(propMap))
@@ -149,7 +150,8 @@ class Space extends Actor {
             boundColl,
             () => propMap)
       }
-      val thingStream = streamsByKind(Kind.Thing).map { row =>
+      val props = (Map.empty[OID, Property[_,_,_]] /: propStream)((m, prop) => m + (prop.id -> prop))
+      val thingStream = streamsByKind.get(Kind.Thing).getOrElse(Stream.Empty).map { row =>
         // TODO: the app shouldn't be hardcoded to SystemSpace
         val propMap = Thing.deserializeProps(row.get[String]("props").get, systemState)
         new ThingState(
@@ -158,34 +160,35 @@ class Space extends Actor {
             OID(row.get[Long]("model").get),
             () => propMap)
       }
-//      val spaceStream = streamsByKind(Kind.Space).map { row =>
-//        // TODO: the app shouldn't be hardcoded to SystemSpace
-//        val propMap = Thing.deserializeProps(row.get[String]("props").get, systemState)
-//      }
+      val things = (Map.empty[OID, ThingState] /: thingStream)((m, thing) => m + (thing.id -> thing))
+      // TBD: note that it is a hard error if there aren't any Spaces found. We exactly exactly one:
+      val spaceStream = streamsByKind(Kind.Space).map { row =>
+        // TODO: the app shouldn't be hardcoded to SystemSpace
+        val propMap = Thing.deserializeProps(row.get[String]("props").get, systemState)
+        new SpaceState(
+             OID(row.get[Long]("id").get),
+             OID(row.get[Long]("model").get),
+             () => propMap,
+             owner,
+             name,
+             Some(systemState),
+             Map.empty[OID, PType[_]],
+             props,
+             things,
+             Map.empty[OID, Collection[_]]
+            )
+      }
+      _currentState = Some(spaceStream.head)
     }    
   }
   
   override def preStart() = {
-    // TODO: this should always be loaded from disk; the way we're creating this in receive is
-    // very temporary:
-    //loadSpace()
+    loadSpace()
 
   } 
   
   def receive = {
     case req:CreateSpace => {
-	    _currentState = Some(SpaceState(
-	      id,
-	      UrThing,
-	      Thing.toProps(setName(req.name)),
-	      req.owner,
-	      req.name,
-	      None,
-	      Map.empty[OID, PType[_]],
-	      Map.empty[OID, Property[_,_,_]],
-	      Map.empty[OID, ThingState],
-	      Map.empty[OID, Collection[_]]) 
-	    )
       sender ! RequestedSpace(state)
     }
     
@@ -269,11 +272,15 @@ class SpaceManager extends Actor {
       if (req.id == systemOID)
         sender ! RequestedSpace(State)
       else {
-    	// TODO: is there any efficient way to determine whether this identifies an existing
-        // loaded Space? The Akka docs discourages scraping context.children, but I'm not
-        // seeing any other way to figure it out.
         val sid = Space.sid(req.id)
-        val space = context.actorFor(sid)
+    	// TODO: this *should* be using context.child(), but that doesn't exist in Akka
+        // 2.0.2, so we have to wait until we have access to 2.1.0:
+        //val childOpt = context.child(sid)
+        val childOpt = context.children find (_.path.name == sid)
+        val space = childOpt match {
+          case Some(child) => child
+          case None => context.actorOf(Props[Space], sid)
+        }
         space.forward(req)
       }
 //      val cached = spaceCache.get(req.id)
@@ -281,7 +288,7 @@ class SpaceManager extends Actor {
 //        sender ! RequestedSpace(cached.get)
 //      else
 //        sender ! GetSpaceFailed(req.id)
-     }
+    }
     case req:CreateSpace => {
       // TODO: check that the owner hasn't run out of spaces he can create
       // TODO: check that the owner doesn't already have a space with that name
@@ -294,7 +301,6 @@ class SpaceManager extends Actor {
   
   private def createSpace(owner:OID, name:String) = {
     val spaceId = OID.next
-    val spaceActor = context.actorOf(Props[Space], name = Space.sid(spaceId))
     Logger.info("Creating new Space with OID " + Space.thingTable(spaceId))
     // Why the replace() here? It looks to me like the .on() function always
     // surrounds its parameter with quotes, and I don't think that works in
@@ -304,7 +310,7 @@ class SpaceManager extends Actor {
           CREATE TABLE {tname} (
             id bigint NOT NULL,
             model bigint NOT NULL,
-            kind tinyint NOT NULL,
+            kind int NOT NULL,
             props clob NOT NULL,
             PRIMARY KEY (id))
           """.replace("{tname}", Space.thingTable(spaceId))).executeUpdate()
@@ -314,8 +320,21 @@ class SpaceManager extends Actor {
           ({sid}, {shard}, {name}, {display}, {ownerId}, 0)
           """).on("sid" -> spaceId.raw, "shard" -> 1.toString, "name" -> name,
                   "display" -> name, "ownerId" -> owner.raw).executeUpdate()
-      // TODO: also need to insert the Space's own Thing record into the new table
+      val initProps = Thing.serializeProps(Thing.toProps(Thing.setName(name))(), State)
+      SQL("""
+          INSERT INTO {tname}
+          (id, model, kind, props) VALUES
+          ({spaceId}, {modelId}, {kind}, {props})
+          """.replace("{tname}", Space.thingTable(spaceId))
+          ).on("spaceId" -> spaceId.raw,
+               // TBD: what should the Model for a Space be?
+               "modelId" -> RootOID.raw,
+               "kind" -> Kind.Space,
+               // TBD: what are the initial Properties for a Space?
+               // TODO: we need a mechanism to serialize a PropMap!
+               "props" -> initProps).executeUpdate()
     }
+    val spaceActor = context.actorOf(Props[Space], name = Space.sid(spaceId))
     (spaceId, spaceActor)
   }
 }

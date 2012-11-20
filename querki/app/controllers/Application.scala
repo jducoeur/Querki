@@ -116,6 +116,8 @@ object Application extends Controller {
       name => {
         askSpaceMgr[GetSpaceResponse](CreateSpace(user.id, name)) {
           case RequestedSpace(state) => Redirect(routes.Application.space(state.id.toString))
+          // TODO: we'll want more granular failure messages:
+          case GetSpaceFailed(id) =>  BadRequest(views.html.newSpace(user, Some("I wasn't able to create the new Space!")))
         }
       }
     )

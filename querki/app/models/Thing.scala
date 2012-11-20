@@ -44,12 +44,25 @@ object Thing {
   def unescape(str:String) = {
     str.replace("\\}", "}").replace("\\:", ":").replace("\\;", ";").replace("\\\\", "\\")
   }
+  
+  def serializeProps(props:PropMap, space:SpaceState) = {
+    val serializedProps = props.map { pair =>
+      val (ptr, v) = pair
+      val prop = space.prop(ptr)
+      val oid = prop.id
+      oid.toString + 
+        ":" + 
+        Thing.escape(prop.serialize(prop.castVal(v)))
+    }
     
+    serializedProps.mkString("{", ";", "}")
+  }    
+  
   def deserializeProps(str:String, space:SpaceState):PropMap = {
     // Strip the surrounding {} pair:
     val stripExt = str.slice(1, str.length() - 1)
     val propStrs = stripExt.split(";")
-    val propPairs = propStrs.map { propStr =>
+    val propPairs = propStrs.filter(_.trim.length() > 0).map { propStr =>
       val (idStr, valStrAndColon) = propStr.splitAt(propStr.indexOf(':'))
       val valStr = unescape(valStrAndColon.drop(1))
       val id = OID(idStr)
@@ -160,18 +173,7 @@ abstract class Thing(
     opt.map(pv => pv.render).getOrElse(renderProps)
   }
   
-  def serializeProps = {
-    val serializedProps = props.map { pair =>
-      val (ptr, v) = pair
-      val prop = space.prop(ptr)
-      val oid = prop.id
-      oid.toString + 
-        ":" + 
-        Thing.escape(prop.serialize(prop.castVal(v)))
-    }
-    
-    serializedProps.mkString("{", ";", "}")
-  }
+  def serializeProps = Thing.serializeProps(props, space)
   
   def export:String = {
     "{" +
