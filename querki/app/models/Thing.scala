@@ -21,12 +21,12 @@ object Kind {
 }
 
 object Thing {
-  type PropMap = Map[ThingPtr, PropValue[_]]
+  type PropMap = Map[OID, PropValue[_]]
   type PropFetcher = () => PropMap
   
   // A couple of convenience methods for the hard-coded Things in System:
-  def toProps(pairs:(ThingPtr,PropValue[_])*):PropFetcher = () => {
-    (Map.empty[ThingPtr, PropValue[_]] /: pairs) { (m:Map[ThingPtr, PropValue[_]], pair:(ThingPtr, PropValue[_])) =>
+  def toProps(pairs:(OID,PropValue[_])*):PropFetcher = () => {
+    (Map.empty[OID, PropValue[_]] /: pairs) { (m:Map[OID, PropValue[_]], pair:(OID, PropValue[_])) =>
       m + (pair._1 -> pair._2)
     }
   }
@@ -68,7 +68,7 @@ object Thing {
       val id = OID(idStr)
       val prop = space.prop(id)
       val v = prop.deserialize(valStr)
-      (prop, v)
+      (id, v)
     }
     toProps(propPairs:_*)()
   }
@@ -87,10 +87,10 @@ import Thing._
  */
 abstract class Thing(
     val id:OID, 
-    val spaceId:ThingPtr, 
-    val model:ThingPtr, 
+    val spaceId:OID, 
+    val model:OID, 
     val kind:Kind.Kind,
-    val propFetcher: PropFetcher) extends ThingPtr
+    val propFetcher: PropFetcher)
 {
   lazy val props:PropMap = propFetcher()
   
@@ -101,27 +101,14 @@ abstract class Thing(
     SystemSpace.State
   }
   
-  def getModel:Thing = {
-    // TODO: this will eventually need to be able to walk the Space-inheritance tree
-    model match {
-      case directPtr:Thing => directPtr
-      case id:OID => space.thing(id)
-    }
-  }
+  def getModel:Thing = { space.anything(model) }
   
   /**
    * The Property as defined on *this* specific Thing.
    */
-  def localProp(propId:ThingPtr):Option[PropAndVal[_,_]] = {
-    val (pid,ptr) = propId match {
-      case i:OID => (i, space.prop(i))
-      case t:Property[_,_,_] => (t.id, t)
-    }
-    val byId = props.get(pid)
-    if (byId.nonEmpty)
-      Some(ptr.pair(byId.get))
-    else
-      props.get(ptr).map(v => ptr.pair(v))
+  def localProp(pid:OID):Option[PropAndVal[_,_]] = {
+    val ptr = space.prop(pid)
+    props.get(pid).map(v => ptr.pair(v))
   }
   
   /**
@@ -131,7 +118,7 @@ abstract class Thing(
    * Note that this walks up the tree recursively. It eventually ends with UrThing,
    * which does things a little differently.
    */
-  def getProp(propId:ThingPtr):PropAndVal[_,_] = {
+  def getProp(propId:OID):PropAndVal[_,_] = {
     localProp(propId).getOrElse(getModel.getProp(propId))
   }
   
@@ -139,14 +126,14 @@ abstract class Thing(
    * Returns true iff this Thing or any ancestor has the specified property defined on it.
    * Note that this ignores defaults.
    */
-  def hasProp(propId:ThingPtr):Boolean = {
+  def hasProp(propId:OID):Boolean = {
     props.contains(propId) || getModel.hasProp(propId)
   }
   
   /**
    * Convenience method -- returns either the value of the specified property or None.
    */
-  def getPropOpt(propId:ThingPtr):Option[PropAndVal[_,_]] = {
+  def getPropOpt(propId:OID):Option[PropAndVal[_,_]] = {
     if (hasProp(propId))
       Some(getProp(propId))
     else
@@ -192,5 +179,5 @@ abstract class Thing(
  * 
  * Note that Models are basically just ordinary Things.
  */
-case class ThingState(i:OID, s:ThingPtr, m:ThingPtr, pf: PropFetcher) 
+case class ThingState(i:OID, s:OID, m:OID, pf: PropFetcher) 
   extends Thing(i, s, m, Kind.Thing, pf) {}

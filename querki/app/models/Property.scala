@@ -23,7 +23,7 @@ case class PropValue[CT](coll:CT)
  * this is specifically so that we can potentially add user-defined Types down
  * the road.
  */
-abstract class PType[VT](i:OID, s:ThingPtr, m:ThingPtr, pf:PropFetcher) extends Thing(i, s, m, Kind.Type, pf) {
+abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s, m, Kind.Type, pf) {
   
   type valType = VT
   
@@ -84,7 +84,7 @@ trait NullTypeBuilder[VT] extends PTypeBuilder[VT, Nothing] {
  * and consistent about this, we make it much easier to write QL safely -- each
  * QL step is basically a flatMap.
  */
-abstract class Collection[CT](i:OID, s:ThingPtr, m:ThingPtr, pf:PropFetcher) extends Thing(i, s, m, Kind.Collection, pf) {
+abstract class Collection[CT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s, m, Kind.Collection, pf) {
   
   type pType = PType[_]
   type implType = CT
@@ -137,8 +137,8 @@ abstract class Collection[CT](i:OID, s:ThingPtr, m:ThingPtr, pf:PropFetcher) ext
  */
 case class Property[VT, -RT, CT](
     i:OID, 
-    s:ThingPtr, 
-    m:ThingPtr, 
+    s:OID, 
+    m:OID, 
     val pType:PType[VT] with PTypeBuilder[VT, RT], 
     val cType:Collection[CT], 
     pf:PropFetcher)
@@ -169,7 +169,7 @@ case class Property[VT, -RT, CT](
 
   // TODO: This should actually be taking an RT, not a VT. We may need to reintroduce the notion
   // of a PType's builder into Property.
-  def apply(raw:RT) = (this, cType(pType(raw)))
+  def apply(raw:RT) = (this.id, cType(pType(raw)))
   
   def serialize(v:PropValue[_]):String = cType.serialize(castVal(v), pType)
   def deserialize(str:String):PropValue[cType.implType] = cType.deserialize(str, pType)

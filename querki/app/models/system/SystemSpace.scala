@@ -6,6 +6,8 @@ import models._
 
 import Thing._
 
+import OID.thing2OID
+
 /**
  * This is the master wrapper for the System Space. This is a hardcoded Space, living in
  * Shard 0. Note that all the OIDs are hardcoded, specifically so that they will be
@@ -27,14 +29,14 @@ object SystemSpace {
         setName("Thing")
         )) 
   {
-    override def getProp(propId:ThingPtr):PropAndVal[_,_] = {
+    override def getProp(propId:OID):PropAndVal[_,_] = {
       // If we've gotten up to here and haven't found the property, use
       // the default:
       val prop = space.prop(propId)
       localProp(propId).getOrElse(prop.defaultPair)
     }
     
-    override def hasProp(propId:ThingPtr):Boolean = {
+    override def hasProp(propId:OID):Boolean = {
       props.contains(propId)
     }
   }
@@ -212,7 +214,7 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
         case "!" => None
         case s:String => {
           val elemStr = s.slice(1, s.length() - 1)
-          Some(elemT.deserialize(ser))
+          Some(elemT.deserialize(elemStr))
         }
       }
     }
@@ -280,7 +282,7 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
   object LinkType extends PType[OID](OID(0, 16), systemOID, UrThing,
       toProps(
         setName("Type-Link")
-        )) with PTypeBuilder[OID, ThingPtr]
+        )) with SimplePTypeBuilder[OID]
   {
     def doDeserialize(v:String) = OID(v)
     def doSerialize(v:OID) = v.toString
@@ -290,7 +292,6 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
     def doRender(v:OID) = Wikitext(v.toString)
 
     val doDefault = UnknownOID
-    def wrap(raw:ThingPtr):valType = raw.id
   }
     
   /**

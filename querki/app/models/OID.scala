@@ -19,9 +19,9 @@ import play.api.Play.current
  * So I'm introducing ThingPtr as an abstraction now, so that we can add that sort of
  * optimization later.
  */
-trait ThingPtr {
-  def id:OID
-}
+//trait ThingPtr {
+//  def id:OID
+//}
 
 /**
  * OID is the primary identifier for all objects in Querki. Internally, it is a long
@@ -36,7 +36,7 @@ trait ThingPtr {
  * make it easy to distribute object creation, while having confidence that there won't
  * be overlap.
  */
-class OID(val raw:Long) extends ThingPtr {
+class OID(val raw:Long) {
   override def toString = java.lang.Long.toString(raw, 36)
   def id = this
   
@@ -71,6 +71,8 @@ object OID {
       OID(1, localId)
     }
   }
+  
+  implicit def thing2OID(t:Thing):OID = t.id
 }
 
 object UnknownOID extends OID(-1)
