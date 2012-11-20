@@ -7,7 +7,8 @@ object NavSection {
     NavSections(Seq(
       NavSection("This Space", Seq(
         NavLink("Space Home", "./"),
-        NavLink("All Things", "./things")
+        NavLink("All Things", "./things"),
+        NavLink("Create a Thing", "./createThing")
       )),
       querkiSection
     ))

@@ -1,4 +1,4 @@
-@(title: String, user:Option[User], nav:NavSections)(content: Html)
+@(title: String, user:Option[User], nav:NavSections, errors:Option[String] = None)(content: Html)
 
 <!DOCTYPE html>
 
@@ -72,6 +72,17 @@
           </div><!--/.well -->
         </div><!--/span-->
         <div class="span10">
+		
+		  @errors match {
+			case None => {}
+			case Some(msg) => { 
+		      <div class="alert">
+		        <button type="button" class="close" data-dismiss="alert">x</button>
+		        <strong>Error:</strong> @msg
+		      </div>
+			}
+	      }
+	
           @content
 		</div><!--/span-->
       </div><!--/row-->

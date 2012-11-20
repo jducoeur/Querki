@@ -73,9 +73,22 @@ case class SpaceState(
   }
 }
 
-sealed trait SpaceMessage
 
-case class CreatePropertyMessage(model:OID, pType:OID, cType:OID, props:PropMap) extends SpaceMessage
+
+
+sealed class SpaceMessage(val spaceId:OID, val requester:OID) extends SpaceMgrMsg
+
+case class CreateThing(id:OID, who:OID, modelId:OID, props:PropMap) extends SpaceMessage(id, who)
+
+case class CreatePropertyMessage(id:OID, who:OID, model:OID, pType:OID, cType:OID, props:PropMap) extends SpaceMessage(id, who)
+
+// This is the most common response when you create/fetch any sort of Thing
+sealed trait ThingResponse
+case class ThingFound(id:OID, state:SpaceState) extends ThingResponse
+case class ThingFailed() extends ThingResponse
+
+
+
 
 /**
  * The Actor that encapsulates a Space.
@@ -193,11 +206,23 @@ class Space extends Actor {
       sender ! RequestedSpace(state)
     }
     
-    case req:GetSpace => {
-      if (req.id != id)
-        throw new Exception("Space " + id + " somehow got a request for space " + req.id + "!")
-      else
-        sender ! RequestedSpace(state)
+    // TODO: check whether the requester is authorized to look at this Space
+    // That probably applies to all requests.
+    case GetSpace(spaceId, requesterId) => {
+      sender ! RequestedSpace(state)
+    }
+    
+    case CreateThing(spaceId, who, modelId, props) => {
+      DB.withTransaction { implicit conn =>
+        val thingId = OID.next
+        val thing = ThingState(thingId, spaceId, modelId, () => props)
+        // TODO: add a history record
+        Space.createThingInSql(thingId, spaceId, modelId, Kind.Thing, props, systemState)
+        // TODO: keep the previous states here in the Space, so we can undo/history
+        _currentState = Some(state.copy(things = state.things + (thingId -> thing)))
+        
+        sender ! ThingFound(thingId, state)
+      }
     }
   }
 }
@@ -219,11 +244,21 @@ object Space {
    * You can always use this in place of ordinary SQL(); it is simply a no-op for ordinary queries.
    */
   def SpaceSQL(spaceId:OID, query:String):SqlQuery = SQL(query.replace("{tname}", thingTable(spaceId)))
+  def createThingInSql(thingId:OID, spaceId:OID, modelId:OID, kind:Int, props:PropMap, serialContext:SpaceState)(implicit conn:java.sql.Connection) = {
+    SpaceSQL(spaceId, """
+        INSERT INTO {tname}
+        (id, model, kind, props) VALUES
+        ({thingId}, {modelId}, {kind}, {props})
+        """
+        ).on("thingId" -> thingId.raw,
+             "modelId" -> modelId.raw,
+             "kind" -> kind,
+             "props" -> Thing.serializeProps(props, serialContext)).executeUpdate()    
+  }
 }
 
 sealed trait SpaceMgrMsg
 
-// TODO: check whether the requester is authorized to look at this Space
 case class GetSpace(id:OID, requester:Option[OID]) extends SpaceMgrMsg
 sealed trait GetSpaceResponse
 case class RequestedSpace(state:SpaceState) extends GetSpaceResponse
@@ -254,6 +289,18 @@ class SpaceManager extends Actor {
   // TEMP:
   val replyMsg = Play.configuration.getString("querki.test.replyMsg").getOrElse("MISSING REPLY MSG!")
   
+  def getSpace(spaceId:OID):ActorRef = {
+    val sid = Space.sid(spaceId)
+ 	// TODO: this *should* be using context.child(), but that doesn't exist in Akka
+    // 2.0.2, so we have to wait until we have access to 2.1.0:
+    //val childOpt = context.child(sid)
+    val childOpt = context.children find (_.path.name == sid)
+    childOpt match {
+      case Some(child) => child
+      case None => context.actorOf(Props[Space], sid)
+    }
+  }
+  
   def receive = {
     case req:ListMySpaces => {
       //val results = spaceCache.values.filter(_.owner == req.owner).map(space => (space.id, space.name)).toSeq
@@ -275,30 +322,22 @@ class SpaceManager extends Actor {
         sender ! MySpaces(results)
       }
     }
+    
     // TODO: this should go through the Space instead, for all except System. The
     // local cache in SpaceManager is mainly for future optimization in clustered
     // environments.
     case req:GetSpace => {
       if (req.id == systemOID)
         sender ! RequestedSpace(State)
-      else {
-        val sid = Space.sid(req.id)
-    	// TODO: this *should* be using context.child(), but that doesn't exist in Akka
-        // 2.0.2, so we have to wait until we have access to 2.1.0:
-        //val childOpt = context.child(sid)
-        val childOpt = context.children find (_.path.name == sid)
-        val space = childOpt match {
-          case Some(child) => child
-          case None => context.actorOf(Props[Space], sid)
-        }
-        space.forward(req)
-      }
+      else
+        getSpace(req.id).forward(req)
 //      val cached = spaceCache.get(req.id)
 //      if (cached.nonEmpty)
 //        sender ! RequestedSpace(cached.get)
 //      else
 //        sender ! GetSpaceFailed(req.id)
     }
+    
     case req:CreateSpace => {
       // TODO: check that the owner hasn't run out of spaces he can create
       // TODO: check that the owner doesn't already have a space with that name
@@ -306,6 +345,12 @@ class SpaceManager extends Actor {
       val (spaceId, spaceActor) = createSpace(req.owner, req.name)
       // Now, let the Space Actor finish the process once it is ready:
       spaceActor.forward(req)
+    }
+    
+    // This clause is a pure forwarder for messages to a particular Space.
+    // Is there a better way to do this?
+    case req:SpaceMessage => {
+      getSpace(req.spaceId).forward(req)
     }
   }
   
@@ -330,19 +375,8 @@ class SpaceManager extends Actor {
           ({sid}, {shard}, {name}, {display}, {ownerId}, 0)
           """).on("sid" -> spaceId.raw, "shard" -> 1.toString, "name" -> name,
                   "display" -> name, "ownerId" -> owner.raw).executeUpdate()
-      val initProps = Thing.serializeProps(Thing.toProps(Thing.setName(name))(), State)
-      SpaceSQL(spaceId, """
-          INSERT INTO {tname}
-          (id, model, kind, props) VALUES
-          ({spaceId}, {modelId}, {kind}, {props})
-          """
-          ).on("spaceId" -> spaceId.raw,
-               // TBD: what should the Model for a Space be?
-               "modelId" -> RootOID.raw,
-               "kind" -> Kind.Space,
-               // TBD: what are the initial Properties for a Space?
-               // TODO: we need a mechanism to serialize a PropMap!
-               "props" -> initProps).executeUpdate()
+      val initProps = Thing.toProps(Thing.setName(name))()
+      Space.createThingInSql(spaceId, spaceId, RootOID, Kind.Space, initProps, State)
     }
     val spaceActor = context.actorOf(Props[Space], name = Space.sid(spaceId))
     (spaceId, spaceActor)

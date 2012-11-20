@@ -24,6 +24,13 @@ object Application extends Controller {
      ((name:String) => Some(name))
   )
   
+  val newThingForm = Form(
+    mapping(
+      "name" -> nonEmptyText
+    )((name) => name)
+     ((name:String) => Some(name))
+  )
+  
   def getUser(username:String):Option[User] = User.get(username)
   
   def username(request: RequestHeader) = request.session.get(Security.username)
@@ -120,6 +127,25 @@ object Application extends Controller {
           case GetSpaceFailed(id) =>  BadRequest(views.html.newSpace(user, Some("I wasn't able to create the new Space!")))
         }
       }
+    )
+  }
+  
+  def createThing(spaceId:String) = withSpace(spaceId) { (user, state) =>
+    Logger.info("Yes, I'm in createThing")
+    Ok(views.html.createThing(user, state))
+  }
+  
+  def doCreateThing(spaceId:String) = withUser { user => implicit request =>
+    newThingForm.bindFromRequest.fold(
+      errors => BadRequest(views.html.newSpace(user, Some("You have to specify a legal name"))),
+      name => {
+        val props = Thing.toProps(Thing.setName(name))()
+        askSpaceMgr[ThingResponse](CreateThing(OID(spaceId), user.id, system.SystemSpace.RootOID, props)) {
+          case ThingFound(thingId, state) => Redirect(routes.Application.thing(state.id.toString, thingId.toString))
+          // TODO: we'll want more granular failure messages:
+          case ThingFailed() => Redirect(routes.Application.createThing(spaceId))
+        }
+      }      
     )
   }
   

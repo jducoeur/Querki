@@ -1,0 +1,24 @@
+@(user:User, space:SpaceState, errors:Option[String] = None)
+
+@import helper._
+@import helper.twitterBootstrap._
+
+@main("Create a Thing", None, NavSection.spaceNav(space), errors) {
+		
+	<div class="page-header">
+	  <h1>Create a New Thing</h1>
+	</div>
+	
+	@form(routes.Application.doCreateThing(space.id.toString), 'class -> "form-inline") {
+	  <fieldset>
+	    <label>Name of the new Thing</label>
+	    <input type="text" name="name" id="name" value="" placeholder="Name">
+	  
+	    <label>ASK FOR THE DISPLAY NAME</label>
+	    <label>ASK FOR THE MODEL</label>
+	    <label>ASK FOR PROPERTIES</label>
+	  
+	    <input type="submit" value="Create" class="btn btn-primary">
+	  </fieldset>
+	}
+}
