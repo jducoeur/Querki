@@ -12,11 +12,12 @@
 	@form(routes.Application.doCreateThing(space.id.toString), 'class -> "form-inline") {
 	  <fieldset>
 	    <label>Name of the new Thing</label>
-	    <input type="text" name="name" id="name" value="" placeholder="Name">
-	  
-	    <label>ASK FOR THE DISPLAY NAME</label>
-	    <label>ASK FOR THE MODEL</label>
-	    <label>ASK FOR PROPERTIES</label>
+	    <input type="text" name="value[0]" id="name" value="" placeholder="Name">
+	    <input type="hidden" name="field[0]" value="6">
+	    
+	    <label>Display Text</label>
+	    <input type="text" name="value[1]" value="" placeholder="Any text">
+	    <input type="hidden" name="field[1]" value="7">
 	  
 	    <input type="submit" value="Create" class="btn btn-primary">
 	  </fieldset>

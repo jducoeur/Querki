@@ -26,9 +26,10 @@ object Application extends Controller {
   
   val newThingForm = Form(
     mapping(
-      "name" -> nonEmptyText
-    )((name) => name)
-     ((name:String) => Some(name))
+      "value" -> list(text),
+      "field" -> list(text)
+    )((value, field) => (value, field))
+     ((tuple:(List[String], List[String])) => Some((tuple._1, tuple._2)))
   )
   
   def getUser(username:String):Option[User] = User.get(username)
@@ -138,8 +139,21 @@ object Application extends Controller {
   def doCreateThing(spaceId:String) = withUser { user => implicit request =>
     newThingForm.bindFromRequest.fold(
       errors => BadRequest(views.html.newSpace(user, Some("You have to specify a legal name"))),
-      name => {
-        val props = Thing.toProps(Thing.setName(name))()
+      tuple => {
+        val rawProps = tuple._2.zip(tuple._1)
+        val propPairs = rawProps.map { pair =>
+          val (propIdStr, rawValue) = pair
+          val propId = OID(propIdStr)
+          // TODO: we need to cope with local props, rather than depending on SystemState:
+          val prop = models.system.SystemSpace.State.prop(propId)
+          // TODO: deserialize isn't precisely correct, although it's close:
+          val value = prop.deserialize(rawValue)
+          (propId, value)
+        }
+        val props = Thing.toProps(
+            propPairs:_*
+//            Thing.setName(tuple._1)
+            )()
         askSpaceMgr[ThingResponse](CreateThing(OID(spaceId), user.id, system.SystemSpace.RootOID, props)) {
           case ThingFound(thingId, state) => Redirect(routes.Application.thing(state.id.toString, thingId.toString))
           // TODO: we'll want more granular failure messages:
