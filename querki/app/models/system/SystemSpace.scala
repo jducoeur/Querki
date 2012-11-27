@@ -4,6 +4,7 @@ import play.api._
 
 import models._
 
+import Property._
 import Thing._
 
 import OID.thing2OID
@@ -94,19 +95,25 @@ object SystemSpace {
    */
   class UrProp extends Property(OID(0, 5), systemOID, UrThing, TextType, ExactlyOne,
       toProps(
-        setName("Property")
+        setName("Property"),
+        (PromptOID -> PropValue(None)),
+        (PlaceholderTextOID -> PropValue(None))
         ))
   object UrProp extends UrProp
   
   val NameOID = OID(0, 6)
   object NameProp extends Property(NameOID, systemOID, UrProp, NameType, ExactlyOne,
       toProps(
-        setName("Name")
+        setName("Name"),
+        prompt("Name of the new Thing"),
+        placeholderText("Name")
         ))
   
   object DisplayTextProp extends Property(OID(0, 7), systemOID, UrProp, TextType, Optional,
       toProps(
-        setName("Display-Text")
+        setName("Display-Text"),
+        prompt("Display text"),
+        placeholderText("How this Thing shows up")
         ))
   
   object Page extends ThingState(OID(0, 8), systemOID, RootOID,
@@ -173,6 +180,8 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
 	  throw new Error("Trying to wrap root collection!")    
     def doFirst(pv:implType):ElemValue =
       throw new Error("Trying to wrap root collection!")
+    def doIsEmpty(pv:implType) =
+      throw new Error("Trying to isEmpty root collection!")
   }
   object UrCollection extends UrCollection
   
@@ -201,6 +210,8 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
     def wrap(elem:ElemValue):implType = OneColl(elem)
     
     def doFirst(v:implType):ElemValue = v.v
+    
+    def doIsEmpty(v:implType) = false
   }
   object ExactlyOne extends ExactlyOne
   
@@ -241,6 +252,8 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
       case Some(elemV) => elemV
       case None => throw new Exception("Trying to first on an empty Optional!")
     }
+    
+    def doIsEmpty(v:implType) = v.isEmpty
   }
   object Optional extends Optional
   
@@ -271,6 +284,8 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
     def wrap(elem:ElemValue):implType = List(elem)
     
     def doFirst(v:implType):ElemValue = v.head
+    
+    def doIsEmpty(v:implType) = v.isEmpty
   }
   object QList extends QList
   
@@ -312,12 +327,25 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
   
   ///////////////////////////////
   
+  val PlaceholderTextOID = OID(0, 19)
+  object PlaceholderTextProp extends Property(PlaceholderTextOID, systemOID, UrProp, TextType, Optional,
+      toProps(
+        setName("Placeholder Text")
+        ))
+  
+  val PromptOID = OID(0, 20)
+  object PromptProp extends Property(PromptOID, systemOID, UrProp, TextType, Optional,
+      toProps(
+        setName("Prompt")
+        ))
+  
   def oidMap[T <: Thing](items:T*):Map[OID,T] = {
     (Map.empty[OID,T] /: items) ((m, i) => m + (i.id -> i))
   }
   
   val types = oidMap[PType[_]](IntType, TextType, YesNoType, NameType, LinkType)
-  val props = oidMap[Property[_,_,_]](UrProp, NameProp, DisplayTextProp, TypeProp, CollectionProp)
+  val props = oidMap[Property[_,_,_]](UrProp, NameProp, DisplayTextProp, TypeProp, CollectionProp,
+      PlaceholderTextProp, PromptProp)
   val things = oidMap[ThingState](UrThing, Page)
   val colls = oidMap[Collection[_]](UrCollection, ExactlyOne, Optional, QList)
   

@@ -129,6 +129,9 @@ abstract class Collection[CT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing
    */
   protected def doFirst(v:implType):ElemValue
   final def first(v:PropValue[implType]):ElemValue = doFirst(v.coll)
+  
+  protected def doIsEmpty(v:implType):Boolean
+  final def isEmpty(v:PropValue[implType]):Boolean = doIsEmpty(v.coll)
 }
 
 /**
@@ -166,13 +169,22 @@ case class Property[VT, -RT, CT](
    * Convenience method to fetch the value of this property in this map.
    */
   def first(m:PropMap):VT = pType.get(cType.first(from(m)))
+  
+  def isEmpty(v:PropValue[CT]) = cType.isEmpty(v)
 
-  // TODO: This should actually be taking an RT, not a VT. We may need to reintroduce the notion
-  // of a PType's builder into Property.
   def apply(raw:RT) = (this.id, cType(pType(raw)))
   
   def serialize(v:PropValue[_]):String = cType.serialize(castVal(v), pType)
   def deserialize(str:String):PropValue[cType.implType] = cType.deserialize(str, pType)
+}
+
+object Property {
+  def optTextProp(id:OID, text:String) = (id -> PropValue(Some(ElemValue(Wikitext(text))))) 
+  /**
+   * Convenience methods for meta-Properties
+   */
+  def placeholderText(text:String) = optTextProp(PlaceholderTextOID, text)  
+  def prompt(text:String) = optTextProp(PromptOID, text)
 }
 
 /**
@@ -180,5 +192,7 @@ case class Property[VT, -RT, CT](
  */
 case class PropAndVal[VT, CT](prop:Property[VT, _, CT], v:PropValue[CT]) {
   def render = prop.render(v)
+  def renderOr(other: => Wikitext) = if (prop.isEmpty(v)) other else render
+  def renderIfDefined = if (!prop.isEmpty(v)) render else Wikitext("")
   def split() = (prop, v)
 }

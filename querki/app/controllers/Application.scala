@@ -8,8 +8,10 @@ import play.api.mvc._
 
 import models._
 
-object Application extends Controller {
+import models.system.SystemSpace._
 
+object Application extends Controller {
+  
   val userForm = Form(
     mapping(
       "name" -> nonEmptyText
@@ -133,7 +135,10 @@ object Application extends Controller {
   
   def createThing(spaceId:String) = withSpace(spaceId) { (user, state) =>
     Logger.info("Yes, I'm in createThing")
-    Ok(views.html.createThing(user, state))
+    Ok(views.html.createThing(user, state, Seq(
+        (NameProp -> None),
+        (DisplayTextProp -> None)
+        ).zipWithIndex))
   }
   
   def doCreateThing(spaceId:String) = withUser { user => implicit request =>

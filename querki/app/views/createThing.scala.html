@@ -1,7 +1,21 @@
-@(user:User, space:SpaceState, errors:Option[String] = None)
+@(user:User, space:SpaceState, propsSoFar:Seq[((Property[_,_,_], Option[String]), Int)], errors:Option[String] = None)
 
 @import helper._
 @import helper.twitterBootstrap._
+
+@import models.system.SystemSpace._
+
+@showProperty(prop:Property[_,_,_], v:Option[String], i:Int) = {
+  <p>
+    <label>@Html(prop.getProp(PromptProp).renderOr(prop.getProp(NameProp).render).raw)</label>
+    <input type="text" name="value[@i]" value="@v" placeholder="@prop.getProp(PlaceholderTextProp).renderIfDefined.raw">
+	<input type="hidden" name="field[@i]" value="@prop.id.toString">
+  </p>
+}
+@showProp(tupl:((Property[_,_,_], Option[String]), Int)) = @{
+  val ((prop, v), i) = tupl
+  showProperty(prop, v, i)
+}
 
 @main("Create a Thing", None, NavSection.spaceNav(space), errors) {
 		
@@ -11,13 +25,9 @@
 	
 	@form(routes.Application.doCreateThing(space.id.toString), 'class -> "form-inline") {
 	  <fieldset>
-	    <label>Name of the new Thing</label>
-	    <input type="text" name="value[0]" id="name" value="" placeholder="Name">
-	    <input type="hidden" name="field[0]" value="6">
-	    
-	    <label>Display Text</label>
-	    <input type="text" name="value[1]" value="" placeholder="Any text">
-	    <input type="hidden" name="field[1]" value="7">
+        @for(propPair <- propsSoFar) {
+          @showProp(propPair)
+        }
 	  
 	    <input type="submit" value="Create" class="btn btn-primary">
 	  </fieldset>
