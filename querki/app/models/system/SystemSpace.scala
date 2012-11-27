@@ -57,13 +57,8 @@ object SystemSpace {
     val doDefault = 0
   }
   
-  /**
-   * The Type for Text -- probably the most common type in Querki
-   */
-  object TextType extends PType[Wikitext](OID(0, 3), systemOID, UrThing,
-      toProps(
-        setName("Type-Text")
-        )) with PTypeBuilder[Wikitext,String]
+  abstract class TextTypeBase(oid:OID, pf:PropFetcher) extends PType[Wikitext](oid, systemOID, UrThing, pf
+      ) with PTypeBuilder[Wikitext,String]
   {
     // TODO: escape JSON special chars for serialization!
     
@@ -74,6 +69,14 @@ object SystemSpace {
     val doDefault = Wikitext("")
     def wrap(raw:String):valType = Wikitext(raw)
   }
+  
+  /**
+   * The Type for Text -- probably the most common type in Querki
+   */
+  object TextType extends TextTypeBase(OID(0, 3),
+      toProps(
+        setName("Type-Text")
+        )) with PTypeBuilder[Wikitext,String]
   
   /**
    * The YesNo Type -- or Boolean, as us geeks think of it
@@ -109,7 +112,7 @@ object SystemSpace {
         placeholderText("Name")
         ))
   
-  object DisplayTextProp extends Property(OID(0, 7), systemOID, UrProp, TextType, Optional,
+  object DisplayTextProp extends Property(OID(0, 7), systemOID, UrProp, LargeTextType, Optional,
       toProps(
         setName("Display-Text"),
         prompt("Display text"),
@@ -338,6 +341,14 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
       toProps(
         setName("Prompt")
         ))
+  
+    /**
+   * The Type for Large Text -- stuff that we expect to take up more space on-screen
+   */
+  object LargeTextType extends TextTypeBase(OID(0, 21),
+      toProps(
+        setName("Type-Large-Text")
+        )) with PTypeBuilder[Wikitext,String]
   
   def oidMap[T <: Thing](items:T*):Map[OID,T] = {
     (Map.empty[OID,T] /: items) ((m, i) => m + (i.id -> i))

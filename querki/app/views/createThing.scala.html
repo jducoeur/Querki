@@ -5,11 +5,19 @@
 
 @import models.system.SystemSpace._
 
+@showInputControl(prop:Property[_,_,_], v:Option[String], i:Int) = {
+  @if(prop.pType == LargeTextType) {
+    <textarea name="value[@i]" placeholder="@prop.getProp(PlaceholderTextProp).renderIfDefined.raw">@v</textarea>
+  } else {
+    <input type="text" name="value[@i]" value="@v" placeholder="@prop.getProp(PlaceholderTextProp).renderIfDefined.raw">
+  }
+}
+
 @showProperty(prop:Property[_,_,_], v:Option[String], i:Int) = {
   <div class="control-group">
     <label class="control-label">@Html(prop.getProp(PromptProp).renderOr(prop.getProp(NameProp).render).raw)</label>
     <div class="controls">
-      <input type="text" name="value[@i]" value="@v" placeholder="@prop.getProp(PlaceholderTextProp).renderIfDefined.raw">
+      @showInputControl(prop, v, i)
     </div>
 	<input type="hidden" name="field[@i]" value="@prop.id.toString">
   </div>
