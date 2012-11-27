@@ -6,11 +6,13 @@
 @import models.system.SystemSpace._
 
 @showProperty(prop:Property[_,_,_], v:Option[String], i:Int) = {
-  <p>
-    <label>@Html(prop.getProp(PromptProp).renderOr(prop.getProp(NameProp).render).raw)</label>
-    <input type="text" name="value[@i]" value="@v" placeholder="@prop.getProp(PlaceholderTextProp).renderIfDefined.raw">
+  <div class="control-group">
+    <label class="control-label">@Html(prop.getProp(PromptProp).renderOr(prop.getProp(NameProp).render).raw)</label>
+    <div class="controls">
+      <input type="text" name="value[@i]" value="@v" placeholder="@prop.getProp(PlaceholderTextProp).renderIfDefined.raw">
+    </div>
 	<input type="hidden" name="field[@i]" value="@prop.id.toString">
-  </p>
+  </div>
 }
 @showProp(tupl:((Property[_,_,_], Option[String]), Int)) = @{
   val ((prop, v), i) = tupl
@@ -23,13 +25,17 @@
 	  <h1>Create a New Thing</h1>
 	</div>
 	
-	@form(routes.Application.doCreateThing(space.id.toString), 'class -> "form-inline") {
+	@form(routes.Application.doCreateThing(space.id.toString), 'class -> "form-horizontal") {
 	  <fieldset>
         @for(propPair <- propsSoFar) {
           @showProp(propPair)
         }
 	  
-	    <input type="submit" value="Create" class="btn btn-primary">
+	    <div class="control-group">
+	      <div class="controls">
+	        <input type="submit" value="Create" class="btn btn-primary">
+	      </div>
+	    </div>
 	  </fieldset>
 	}
 }
