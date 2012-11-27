@@ -53,7 +53,7 @@ object SystemSpace {
     def doDeserialize(v:String) = java.lang.Integer.parseInt(v)
     def doSerialize(v:Int) = v.toString
     def doRender(v:Int) = Wikitext(v.toString)
-    
+
     val doDefault = 0
   }
   

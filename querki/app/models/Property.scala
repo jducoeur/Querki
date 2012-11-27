@@ -54,6 +54,13 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
   final def default:ElemValue = ElemValue(doDefault)
   
   /**
+   * Parses text input from the user. By default, we assume that this is the same
+   * as deserialization, but override this when that's not true.
+   */
+  protected def doFromUser(str:String):VT = doDeserialize(str)
+  final def fromUser(str:String):ElemValue = ElemValue(doFromUser(str))
+  
+  /**
    * The type unwrapper -- takes an opaque ElemValue and returns the underlying value.
    * This is a fundamentally unsafe operation, so it should always be performed in the
    * context of a Property.
@@ -173,6 +180,8 @@ case class Property[VT, -RT, CT](
   def isEmpty(v:PropValue[CT]) = cType.isEmpty(v)
 
   def apply(raw:RT) = (this.id, cType(pType(raw)))
+  
+  def fromUser(str:String) = cType(pType.deserialize(str))
   
   def serialize(v:PropValue[_]):String = cType.serialize(castVal(v), pType)
   def deserialize(str:String):PropValue[cType.implType] = cType.deserialize(str, pType)

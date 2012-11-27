@@ -26,12 +26,15 @@ object Application extends Controller {
      ((name:String) => Some(name))
   )
   
+  case class NewThingForm(values:List[String], fields:List[String], addedProperty:String)
+  
   val newThingForm = Form(
     mapping(
       "value" -> list(text),
-      "field" -> list(text)
-    )((value, field) => (value, field))
-     ((tuple:(List[String], List[String])) => Some((tuple._1, tuple._2)))
+      "field" -> list(text),
+      "addedProperty" -> text
+    )((value, field, addedProperty) => NewThingForm(value, field, addedProperty))
+     ((info:NewThingForm) => Some((info.values, info.fields, info.addedProperty)))
   )
   
   def getUser(username:String):Option[User] = User.get(username)
@@ -133,36 +136,65 @@ object Application extends Controller {
     )
   }
   
-  def createThing(spaceId:String) = withSpace(spaceId) { (user, state) =>
-    Logger.info("Yes, I'm in createThing")
-    Ok(views.html.createThing(user, state, Seq(
-        (NameProp -> None),
-        (DisplayTextProp -> None)
-        ).zipWithIndex))
+  def getOtherProps(existing:Seq[(Property[_,_,_], Option[String])]):Seq[Property[_,_,_]] = {
+    val existingProps = existing.map(_._1)
+    // TODO: this should walk up the Space tree from the current, and add all the props
+    // found therein.
+    // TODO: sort alphabetically
+    // TODO: filter out "non-user" Properties
+    (State.spaceProps.values.toSet -- existingProps).toSeq
   }
   
-  def doCreateThing(spaceId:String) = withUser { user => implicit request =>
+  def createThing(spaceId:String) = withSpace(spaceId) { (user, state) =>
+    val props = Seq(
+        (NameProp -> None),
+        (DisplayTextProp -> None))
+    Ok(views.html.createThing(
+        user, 
+        state, 
+        props.zipWithIndex,
+        getOtherProps(props)
+      ))
+  }
+  
+  def doCreateThing(spaceId:String) = withSpaceAndRequest(spaceId) { (user, state) => implicit request =>
     newThingForm.bindFromRequest.fold(
       errors => BadRequest(views.html.newSpace(user, Some("You have to specify a legal name"))),
-      tuple => {
-        val rawProps = tuple._2.zip(tuple._1)
-        val propPairs = rawProps.map { pair =>
-          val (propIdStr, rawValue) = pair
-          val propId = OID(propIdStr)
-          // TODO: we need to cope with local props, rather than depending on SystemState:
-          val prop = models.system.SystemSpace.State.prop(propId)
-          // TODO: deserialize isn't precisely correct, although it's close:
-          val value = prop.deserialize(rawValue)
-          (propId, value)
-        }
-        val props = Thing.toProps(
-            propPairs:_*
+      info => {
+        val rawProps = info.fields.zip(info.values)
+        if (info.addedProperty.length > 0) {
+          val allProps = rawProps :+ (info.addedProperty, "")
+          val props = allProps.map { pair =>
+            val (propIdStr, rawValue) = pair
+            val propId = OID(propIdStr)
+            // TODO: we need to cope with local props, rather than depending on SystemState:
+            val prop = models.system.SystemSpace.State.prop(propId)
+            (prop, Some(rawValue))
+          }
+          Ok(views.html.createThing(
+              user,
+              state,
+              props.zipWithIndex,
+              getOtherProps(props)
+            ))
+        } else {
+          val propPairs = rawProps.map { pair =>
+            val (propIdStr, rawValue) = pair
+            val propId = OID(propIdStr)
+            // TODO: we need to cope with local props, rather than depending on SystemState:
+            val prop = models.system.SystemSpace.State.prop(propId)
+            val value = prop.fromUser(rawValue)
+            (propId, value)
+          }
+          val props = Thing.toProps(
+              propPairs:_*
 //            Thing.setName(tuple._1)
-            )()
-        askSpaceMgr[ThingResponse](CreateThing(OID(spaceId), user.id, system.SystemSpace.RootOID, props)) {
-          case ThingFound(thingId, state) => Redirect(routes.Application.thing(state.id.toString, thingId.toString))
-          // TODO: we'll want more granular failure messages:
-          case ThingFailed() => Redirect(routes.Application.createThing(spaceId))
+              )()
+          askSpaceMgr[ThingResponse](CreateThing(OID(spaceId), user.id, system.SystemSpace.RootOID, props)) {
+            case ThingFound(thingId, state) => Redirect(routes.Application.thing(state.id.toString, thingId.toString))
+            // TODO: we'll want more granular failure messages:
+            case ThingFailed() => Redirect(routes.Application.createThing(spaceId))
+          }
         }
       }      
     )

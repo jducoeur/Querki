@@ -1,4 +1,4 @@
-@(user:User, space:SpaceState, propsSoFar:Seq[((Property[_,_,_], Option[String]), Int)], errors:Option[String] = None)
+@(user:User, space:SpaceState, propsSoFar:Seq[((Property[_,_,_], Option[String]), Int)], otherProps:Seq[Property[_,_,_]], errors:Option[String] = None)
 
 @import helper._
 @import helper.twitterBootstrap._
@@ -38,6 +38,18 @@
         @for(propPair <- propsSoFar) {
           @showProp(propPair)
         }
+        
+        <div class="control-group">
+          <input type="submit" class="control-label btn" value="Add a Property:">
+          <div class="controls">
+            <select name="addedProperty">
+              <option value="">Choose a Property</option>
+              @for(prop <- otherProps) {
+                <option value="@prop.id.toString">@prop.getProp(NameProp).render.raw</option>
+              }
+            </select>
+          </div>
+        </div>
 	  
 	    <div class="control-group">
 	      <div class="controls">
