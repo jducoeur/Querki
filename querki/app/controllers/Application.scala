@@ -77,9 +77,9 @@ object Application extends Controller {
    * @param f A callback that, given the user and the space's state, produces the
    * actual page content
    */
-  def withSpaceAndRequest(spaceId:String)(f: (User, SpaceState) => Request[AnyContent] => Result) = withUser { user => implicit request =>
+  def withSpaceAndRequest(spaceId:String)(f: (User => SpaceState => Request[AnyContent] => Result)) = withUser { user => implicit request =>
     askSpaceMgr[GetSpaceResponse](GetSpace(OID(spaceId), Some(user.id))) {
-      case RequestedSpace(state) => f(user, state)(request)
+      case RequestedSpace(state) => f(user)(state)(request)
       case GetSpaceFailed(id) => Ok(views.html.spaces(Some(user), Seq.empty))
     }     
   }
@@ -88,9 +88,9 @@ object Application extends Controller {
    * Simpler version of withSpaceAndRequest, for the majority of methods that don't actually
    * care about the request.
    */
-  def withSpace(spaceId:String)(f: (User, SpaceState) => Result) = withUser { user => implicit request =>
+  def withSpace(spaceId:String)(f: (User => SpaceState => Result)) = withUser { user => implicit request =>
     askSpaceMgr[GetSpaceResponse](GetSpace(OID(spaceId), Some(user.id))) {
-      case RequestedSpace(state) => f(user, state)
+      case RequestedSpace(state) => f(user)(state)
       case GetSpaceFailed(id) => Ok(views.html.spaces(Some(user), Seq.empty))
     }     
   }
@@ -107,16 +107,16 @@ object Application extends Controller {
     }
   }
     
-  def space(spaceId:String) = withSpace(spaceId) { (user, state) =>
-    Ok(views.html.thing(Some(user), state, state))
+  def space(spaceId:String) = withSpace(spaceId) { user => implicit state =>
+    Ok(views.html.thing(Some(user), state))
   }
   
-  def things(spaceId:String) = withSpace(spaceId) { (user, state) =>
-    Ok(views.html.things(Some(user), state))
+  def things(spaceId:String) = withSpace(spaceId) { user => implicit state =>
+    Ok(views.html.things(Some(user)))
   }
   
-  def thing(spaceId:String, thingId:String) = withSpace(spaceId) { (user, state) =>
-    Ok(views.html.thing(Some(user), state, state.anything(OID(thingId))))
+  def thing(spaceId:String, thingId:String) = withSpace(spaceId) { user => implicit state =>
+    Ok(views.html.thing(Some(user), state.anything(OID(thingId))))
   }
   
   def newSpace = withUser { user => implicit request =>
@@ -145,20 +145,19 @@ object Application extends Controller {
     (state.allProps.values.toSet -- existingProps).toSeq
   }
   
-  def createThing(spaceId:String) = withSpace(spaceId) { (user, state) =>
+  def createThing(spaceId:String) = withSpace(spaceId) { user => implicit state =>
     val props = Seq(
         (NameProp -> None),
         (DisplayTextProp -> None))
     Ok(views.html.createThing(
         user, 
-        state, 
         state.allModels,
         props.zipWithIndex,
         getOtherProps(state, props)
       ))
   }
   
-  def doCreateThing(spaceId:String) = withSpaceAndRequest(spaceId) { (user, state) => implicit request =>
+  def doCreateThing(spaceId:String) = withSpaceAndRequest(spaceId) { user => implicit state => implicit request =>
     newThingForm.bindFromRequest.fold(
       errors => BadRequest(views.html.newSpace(user, Some("You have to specify a legal name"))),
       info => {
@@ -173,7 +172,6 @@ object Application extends Controller {
           }
           Ok(views.html.createThing(
               user,
-              state,
               state.allModels,
               props.zipWithIndex,
               getOtherProps(state, props)

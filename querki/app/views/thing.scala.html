@@ -1,4 +1,4 @@
-@(user:Option[User], space:SpaceState, thing:Thing)
+@(user:Option[User], thing:Thing)(implicit space:SpaceState)
 
 @main(thing.displayName, user, NavSection.spaceNav(space)) {
 

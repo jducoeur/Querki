@@ -1,4 +1,4 @@
-@(user:Option[User], state:SpaceState)
+@(user:Option[User])(implicit state:SpaceState)
 
 @listKind(title:String, kind:Map[OID,Thing]) = {
 	<h3>@title</h3>

@@ -31,14 +31,14 @@ object SystemSpace {
         (IsModelOID -> PropValue(OneColl(ElemValue(false))))
         )) 
   {
-    override def getProp(propId:OID):PropAndVal[_,_] = {
+    override def getProp(propId:OID)(implicit state:SpaceState):PropAndVal[_,_] = {
       // If we've gotten up to here and haven't found the property, use
       // the default:
-      val prop = space.prop(propId)
+      val prop = state.prop(propId)
       localProp(propId).getOrElse(prop.defaultPair)
     }
     
-    override def hasProp(propId:OID):Boolean = {
+    override def hasProp(propId:OID)(implicit state:SpaceState):Boolean = {
       props.contains(propId)
     }
   }

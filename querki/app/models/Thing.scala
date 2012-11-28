@@ -94,20 +94,15 @@ abstract class Thing(
 {
   lazy val props:PropMap = propFetcher()
   
-  def displayName = getProp(NameProp).render.raw
-  
-  def space:SpaceState = {
-    // TODO: do this for real!
-    SystemSpace.State
-  }
-  
-  def getModel:Thing = { space.anything(model) }
+  def displayName(implicit state:SpaceState) = getProp(NameProp).render.raw
+
+  def getModel(implicit state:SpaceState):Thing = { state.anything(model) }
   
   /**
    * The Property as defined on *this* specific Thing.
    */
-  def localProp(pid:OID):Option[PropAndVal[_,_]] = {
-    val ptr = space.prop(pid)
+  def localProp(pid:OID)(implicit state:SpaceState):Option[PropAndVal[_,_]] = {
+    val ptr = state.prop(pid)
     props.get(pid).map(v => ptr.pair(v))
   }
   
@@ -118,7 +113,7 @@ abstract class Thing(
    * Note that this walks up the tree recursively. It eventually ends with UrThing,
    * which does things a little differently.
    */
-  def getProp(propId:OID):PropAndVal[_,_] = {
+  def getProp(propId:OID)(implicit state:SpaceState):PropAndVal[_,_] = {
     localProp(propId).getOrElse(getModel.getProp(propId))
   }
   
@@ -126,23 +121,23 @@ abstract class Thing(
    * Returns true iff this Thing or any ancestor has the specified property defined on it.
    * Note that this ignores defaults.
    */
-  def hasProp(propId:OID):Boolean = {
+  def hasProp(propId:OID)(implicit state:SpaceState):Boolean = {
     props.contains(propId) || getModel.hasProp(propId)
   }
   
   /**
    * Convenience method -- returns either the value of the specified property or None.
    */
-  def getPropOpt(propId:OID):Option[PropAndVal[_,_]] = {
+  def getPropOpt(propId:OID)(implicit state:SpaceState):Option[PropAndVal[_,_]] = {
     if (hasProp(propId))
       Some(getProp(propId))
     else
       None
   }
   
-  def renderProps:Wikitext = {
+  def renderProps(implicit state:SpaceState):Wikitext = {
     val listMap = props.map { entry =>
-      val prop = space.prop(entry._1)
+      val prop = state.prop(entry._1)
       val pv = prop.pair(entry._2)
       "<dt>" + prop.displayName + "</dt><dd>" + pv.render.raw + "</dd>"
     }
@@ -155,14 +150,14 @@ abstract class Thing(
    * 
    * TODO: allow this to be redefined with a QL Property if desired.
    */
-  def render:Wikitext = {
+  def render(implicit state:SpaceState):Wikitext = {
     val opt = getPropOpt(DisplayTextProp)
     opt.map(pv => pv.render).getOrElse(renderProps)
   }
   
-  def serializeProps = Thing.serializeProps(props, space)
+  def serializeProps(implicit state:SpaceState) = Thing.serializeProps(props, state)
   
-  def export:String = {
+  def export(implicit state:SpaceState):String = {
     "{" +
     "id:" + id.toString + ";" +
     "model:" + model.id.toString + ";" +
