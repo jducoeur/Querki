@@ -19,6 +19,8 @@ import play.api.Play.current
 
 import Thing._
 
+import system.SystemSpace._
+
 /**
  * A Space is the Querki equivalent of a database -- a collection of related Things,
  * Properties and Types.
@@ -64,6 +66,20 @@ case class SpaceState(
             types.getOrElse(oid, 
                 colls.getOrElse(oid,
                 	app.map(_.anything(oid)).getOrElse(this)))))
+  }
+  
+  def allProps:Map[OID, Property[_,_,_]] = if (app.isEmpty) spaceProps else spaceProps ++ app.get.allProps
+  
+  def allModels:Iterable[ThingState] = {
+    // TODO: putting this on the back burner for a bit, while I wrestle with some
+    // type problems:
+    List.empty
+//    val myModels = things.values.filter(_.getProp(IsModelProp).first)
+//    if (app.isEmpty) {
+//      myModels
+//    } else {
+//      myModels ++ app.get.allModels
+//    }
   }
 }
 

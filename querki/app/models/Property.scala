@@ -176,6 +176,7 @@ case class Property[VT, -RT, CT](
    * Convenience method to fetch the value of this property in this map.
    */
   def first(m:PropMap):VT = pType.get(cType.first(from(m)))
+  def first(v:PropValue[CT]):VT = pType.get(cType.first(v))
   
   def isEmpty(v:PropValue[CT]) = cType.isEmpty(v)
 
@@ -204,4 +205,5 @@ case class PropAndVal[VT, CT](prop:Property[VT, _, CT], v:PropValue[CT]) {
   def renderOr(other: => Wikitext) = if (prop.isEmpty(v)) other else render
   def renderIfDefined = if (!prop.isEmpty(v)) render else Wikitext("")
   def split() = (prop, v)
+  def first = prop.first(v)
 }

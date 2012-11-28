@@ -136,13 +136,13 @@ object Application extends Controller {
     )
   }
   
-  def getOtherProps(existing:Seq[(Property[_,_,_], Option[String])]):Seq[Property[_,_,_]] = {
+  def getOtherProps(state:SpaceState, existing:Seq[(Property[_,_,_], Option[String])]):Seq[Property[_,_,_]] = {
     val existingProps = existing.map(_._1)
     // TODO: this should walk up the Space tree from the current, and add all the props
     // found therein.
     // TODO: sort alphabetically
     // TODO: filter out "non-user" Properties
-    (State.spaceProps.values.toSet -- existingProps).toSeq
+    (state.allProps.values.toSet -- existingProps).toSeq
   }
   
   def createThing(spaceId:String) = withSpace(spaceId) { (user, state) =>
@@ -152,8 +152,9 @@ object Application extends Controller {
     Ok(views.html.createThing(
         user, 
         state, 
+        state.allModels,
         props.zipWithIndex,
-        getOtherProps(props)
+        getOtherProps(state, props)
       ))
   }
   
@@ -167,22 +168,21 @@ object Application extends Controller {
           val props = allProps.map { pair =>
             val (propIdStr, rawValue) = pair
             val propId = OID(propIdStr)
-            // TODO: we need to cope with local props, rather than depending on SystemState:
-            val prop = models.system.SystemSpace.State.prop(propId)
+            val prop = state.prop(propId)
             (prop, Some(rawValue))
           }
           Ok(views.html.createThing(
               user,
               state,
+              state.allModels,
               props.zipWithIndex,
-              getOtherProps(props)
+              getOtherProps(state, props)
             ))
         } else {
           val propPairs = rawProps.map { pair =>
             val (propIdStr, rawValue) = pair
             val propId = OID(propIdStr)
-            // TODO: we need to cope with local props, rather than depending on SystemState:
-            val prop = models.system.SystemSpace.State.prop(propId)
+            val prop = state.prop(propId)
             val value = prop.fromUser(rawValue)
             (propId, value)
           }

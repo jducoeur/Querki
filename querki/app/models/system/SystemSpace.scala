@@ -27,7 +27,8 @@ object SystemSpace {
    */
   object UrThing extends ThingState(RootOID, systemOID, RootOID,
       toProps(
-        setName("Thing")
+        setName("Thing"),
+        (IsModelOID -> PropValue(OneColl(ElemValue(false))))
         )) 
   {
     override def getProp(propId:OID):PropAndVal[_,_] = {
@@ -122,6 +123,7 @@ object SystemSpace {
   object Page extends ThingState(OID(0, 8), systemOID, RootOID,
       toProps(
         setName("Simple-Page"),
+        IsModelProp(true),
         DisplayTextProp("""
 This is the basic Page Thing. Use it as your Model for *basic* Pages without real structure.
             
@@ -350,14 +352,25 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
         setName("Type-Large-Text")
         )) with PTypeBuilder[Wikitext,String]
   
+  val IsModelOID = OID(0, 22)
+  object IsModelProp extends Property(IsModelOID, systemOID, UrProp, YesNoType, ExactlyOne,
+      toProps(
+        setName("Is a Model")
+        ))
+  
+  object SimpleThing extends ThingState(OID(0, 23), systemOID, RootOID,
+      toProps(
+        setName("Simple-Thing"),
+        IsModelProp(true)))
+  
   def oidMap[T <: Thing](items:T*):Map[OID,T] = {
     (Map.empty[OID,T] /: items) ((m, i) => m + (i.id -> i))
   }
   
-  val types = oidMap[PType[_]](IntType, TextType, YesNoType, NameType, LinkType)
+  val types = oidMap[PType[_]](IntType, TextType, YesNoType, NameType, LinkType, LargeTextType)
   val props = oidMap[Property[_,_,_]](UrProp, NameProp, DisplayTextProp, TypeProp, CollectionProp,
-      PlaceholderTextProp, PromptProp)
-  val things = oidMap[ThingState](UrThing, Page)
+      PlaceholderTextProp, PromptProp, IsModelProp)
+  val things = oidMap[ThingState](UrThing, Page, SimpleThing)
   val colls = oidMap[Collection[_]](UrCollection, ExactlyOne, Optional, QList)
   
   object State extends SpaceState(systemOID, UrThing,

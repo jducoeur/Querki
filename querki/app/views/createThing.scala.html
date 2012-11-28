@@ -1,4 +1,4 @@
-@(user:User, space:SpaceState, propsSoFar:Seq[((Property[_,_,_], Option[String]), Int)], otherProps:Seq[Property[_,_,_]], errors:Option[String] = None)
+@(user:User, space:SpaceState, candidateModels:Iterable[Thing], propsSoFar:Seq[((Property[_,_,_], Option[String]), Int)], otherProps:Seq[Property[_,_,_]], errors:Option[String] = None)
 
 @import helper._
 @import helper.twitterBootstrap._
