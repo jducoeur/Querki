@@ -171,6 +171,7 @@ case class Property[VT, -RT, CT](
   def render(v:PropValue[CT]) = cType.render(v, pType)
   
   def from(m:PropMap):PropValue[CT] = castVal(m(this))
+  def fromOpt(m:PropMap):Option[PropValue[CT]] = m.get(this.id) map castVal
   
   /**
    * Convenience method to fetch the value of this property in this map.
@@ -195,6 +196,28 @@ object Property {
    */
   def placeholderText(text:String) = optTextProp(PlaceholderTextOID, text)  
   def prompt(text:String) = optTextProp(PromptOID, text)
+  
+  implicit object PropNameOrdering extends Ordering[Property[_,_,_]] {
+    def compare(a:Property[_,_,_], b:Property[_,_,_]) = {
+      if (a == NameProp) {
+        if (b == NameProp)
+          0
+        else
+          // Name always displays first
+          -1
+      } else
+        a.displayName compare b.displayName
+    }
+  }
+  
+  import collection.immutable.TreeMap
+  
+  type PropList = TreeMap[Property[_,_,_], Option[String]]
+  object PropList {
+    def apply(pairs:(Property[_,_,_], Option[String])*):PropList = {
+      (TreeMap.empty[Property[_,_,_], Option[String]] /: pairs)((m, pair) => m + pair)
+    }
+  }
 }
 
 /**
@@ -207,3 +230,4 @@ case class PropAndVal[VT, CT](prop:Property[VT, _, CT], v:PropValue[CT]) {
   def split() = (prop, v)
   def first = prop.first(v)
 }
+

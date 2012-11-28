@@ -8,6 +8,8 @@ import play.api.mvc._
 
 import models._
 
+import Property._
+
 import models.system.SystemSpace._
 
 object Application extends Controller {
@@ -26,15 +28,16 @@ object Application extends Controller {
      ((name:String) => Some(name))
   )
   
-  case class NewThingForm(values:List[String], fields:List[String], addedProperty:String)
-  
+  case class NewThingForm(values:List[String], fields:List[String], addedProperty:String, newModel:String, model:String)
   val newThingForm = Form(
     mapping(
       "value" -> list(text),
       "field" -> list(text),
-      "addedProperty" -> text
-    )((value, field, addedProperty) => NewThingForm(value, field, addedProperty))
-     ((info:NewThingForm) => Some((info.values, info.fields, info.addedProperty)))
+      "addedProperty" -> text,
+      "newModel" -> text,
+      "model" -> text
+    )((value, field, addedProperty, newModel, model) => NewThingForm(value, field, addedProperty, newModel, model))
+     ((info:NewThingForm) => Some((info.values, info.fields, info.addedProperty, info.newModel, info.model)))
   )
   
   def getUser(username:String):Option[User] = User.get(username)
@@ -136,23 +139,30 @@ object Application extends Controller {
     )
   }
   
-  def getOtherProps(state:SpaceState, existing:Seq[(Property[_,_,_], Option[String])]):Seq[Property[_,_,_]] = {
-    val existingProps = existing.map(_._1)
-    // TODO: this should walk up the Space tree from the current, and add all the props
-    // found therein.
+  def getOtherProps(state:SpaceState, existing:PropList):Seq[Property[_,_,_]] = {
+    val existingProps = existing.keys
     // TODO: sort alphabetically
     // TODO: filter out "non-user" Properties
     (state.allProps.values.toSet -- existingProps).toSeq
   }
   
+  def replaceModelProps(existing:PropList, model:Thing)(implicit state:SpaceState):PropList = {
+    val nonEmpty = existing.filter { keyval =>
+      val current = keyval._2
+      current.isDefined && current.get.length > 0
+    }
+    (nonEmpty /: model.allProps) { (m, prop) => 
+      if (m.contains(prop)) m else m + (prop -> None)
+    }
+  }
+  
   def createThing(spaceId:String) = withSpace(spaceId) { user => implicit state =>
-    val props = Seq(
-        (NameProp -> None),
-        (DisplayTextProp -> None))
+    val props = PropList((NameProp -> None))
     Ok(views.html.createThing(
         user, 
+        SimpleThing,
         state.allModels,
-        props.zipWithIndex,
+        props,
         getOtherProps(state, props)
       ))
   }
@@ -162,20 +172,37 @@ object Application extends Controller {
       errors => BadRequest(views.html.newSpace(user, Some("You have to specify a legal name"))),
       info => {
         val rawProps = info.fields.zip(info.values)
-        if (info.addedProperty.length > 0) {
-          val allProps = rawProps :+ (info.addedProperty, "")
-          val props = allProps.map { pair =>
+        def makeProps(propList:List[(String, String)]):PropList = {
+          val rawList = propList.map { pair =>
             val (propIdStr, rawValue) = pair
             val propId = OID(propIdStr)
             val prop = state.prop(propId)
-            (prop, Some(rawValue))
+            (prop -> Some(rawValue))
           }
+          PropList(rawList:_*)
+        }
+        if (info.addedProperty.length > 0) {
+          val allProps = rawProps :+ (info.addedProperty, "")
+          val props = makeProps(allProps)
           Ok(views.html.createThing(
               user,
+              // TODO: this should be the current model:
+              SimpleThing,
               state.allModels,
-              props.zipWithIndex,
+              props,
               getOtherProps(state, props)
             ))
+        } else if (info.newModel.length > 0) {
+          val model = state.anything(OID(info.newModel))
+          val currentProps = makeProps(rawProps)
+          val props = replaceModelProps(currentProps, model)
+          Ok(views.html.createThing(
+              user,
+              model,
+              state.allModels,
+              props,
+              getOtherProps(state, props)
+            ))          
         } else {
           val propPairs = rawProps.map { pair =>
             val (propIdStr, rawValue) = pair
@@ -184,11 +211,8 @@ object Application extends Controller {
             val value = prop.fromUser(rawValue)
             (propId, value)
           }
-          val props = Thing.toProps(
-              propPairs:_*
-//            Thing.setName(tuple._1)
-              )()
-          askSpaceMgr[ThingResponse](CreateThing(OID(spaceId), user.id, system.SystemSpace.RootOID, props)) {
+          val props = Thing.toProps(propPairs:_*)()
+          askSpaceMgr[ThingResponse](CreateThing(OID(spaceId), user.id, OID(info.model), props)) {
             case ThingFound(thingId, state) => Redirect(routes.Application.thing(state.id.toString, thingId.toString))
             // TODO: we'll want more granular failure messages:
             case ThingFailed() => Redirect(routes.Application.createThing(spaceId))

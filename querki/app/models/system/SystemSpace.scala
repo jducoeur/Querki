@@ -38,9 +38,15 @@ object SystemSpace {
       localProp(propId).getOrElse(prop.defaultPair)
     }
     
+    override def getPropVal[VT, CT](prop:Property[VT, _, CT])(implicit state:SpaceState):PropValue[CT] = {
+      localPropVal(prop).getOrElse(prop.default)
+    }
+  
     override def hasProp(propId:OID)(implicit state:SpaceState):Boolean = {
       props.contains(propId)
     }
+    
+    override def allProps(implicit state:SpaceState):Set[Property[_,_,_]] = localProps
   }
   
   /**

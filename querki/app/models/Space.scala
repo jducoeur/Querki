@@ -71,15 +71,13 @@ case class SpaceState(
   def allProps:Map[OID, Property[_,_,_]] = if (app.isEmpty) spaceProps else spaceProps ++ app.get.allProps
   
   def allModels:Iterable[ThingState] = {
-    // TODO: putting this on the back burner for a bit, while I wrestle with some
-    // type problems:
-    List.empty
-//    val myModels = things.values.filter(_.getProp(IsModelProp).first)
-//    if (app.isEmpty) {
-//      myModels
-//    } else {
-//      myModels ++ app.get.allModels
-//    }
+    implicit val s = this
+    val myModels = things.values.filter(_.first(IsModelProp))
+    if (app.isEmpty) {
+      myModels
+    } else {
+      myModels ++ app.get.allModels
+    }
   }
 }
 

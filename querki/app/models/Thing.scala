@@ -94,7 +94,14 @@ abstract class Thing(
 {
   lazy val props:PropMap = propFetcher()
   
-  def displayName(implicit state:SpaceState) = getProp(NameProp).render.raw
+  def displayName:String = {
+    val localName = localProp(NameProp)
+    if (localName.isEmpty)
+      id.toString
+    else {
+      localName.get.render.raw
+    }
+  }
 
   def getModel(implicit state:SpaceState):Thing = { state.anything(model) }
   
@@ -104,6 +111,9 @@ abstract class Thing(
   def localProp(pid:OID)(implicit state:SpaceState):Option[PropAndVal[_,_]] = {
     val ptr = state.prop(pid)
     props.get(pid).map(v => ptr.pair(v))
+  }
+  def localProp[VT, CT](prop:Property[VT, _, CT]):Option[PropAndVal[VT,CT]] = {
+    prop.fromOpt(this.props) map prop.pair
   }
   
   /**
@@ -115,6 +125,30 @@ abstract class Thing(
    */
   def getProp(propId:OID)(implicit state:SpaceState):PropAndVal[_,_] = {
     localProp(propId).getOrElse(getModel.getProp(propId))
+  }
+  
+  def localPropVal[VT, CT](prop:Property[VT, _, CT]):Option[PropValue[CT]] = {
+    prop.fromOpt(props)
+  }
+  
+  /**
+   * If you have the actual Property object you're looking for, this returns its value
+   * on this object in a typesafe way.
+   */
+  def getPropVal[VT, CT](prop:Property[VT, _, CT])(implicit state:SpaceState):PropValue[CT] = {
+    localPropVal(prop).getOrElse(getModel.getPropVal(prop))
+  }
+  
+  /**
+   * Return the first value in the collection for this Type. This is a convenient, type-safe way to
+   * get at a property value for ExactlyOne properties.
+   * 
+   * IMPORTANT: this will throw an Exception if you try to call it on an Optional that is empty!
+   * In general, while it is syntactically legal to call this on an Optional type, it's usually
+   * inappropriate.
+   */
+  def first[VT, CT](prop:Property[VT, _, CT])(implicit state:SpaceState):VT = {
+    prop.first(getPropVal(prop))
   }
   
   /**
@@ -133,6 +167,17 @@ abstract class Thing(
       Some(getProp(propId))
     else
       None
+  }
+  
+  def localProps(implicit state:SpaceState):Set[Property[_,_,_]] = {
+    props.keys.map(state.prop(_)).toSet    
+  }
+  
+  /**
+   * Lists all of the Properties defined on this Thing and its ancestors.
+   */
+  def allProps(implicit state:SpaceState):Set[Property[_,_,_]] = {
+    localProps ++ getModel.allProps
   }
   
   def renderProps(implicit state:SpaceState):Wikitext = {
@@ -155,6 +200,7 @@ abstract class Thing(
     opt.map(pv => pv.render).getOrElse(renderProps)
   }
   
+
   def serializeProps(implicit state:SpaceState) = Thing.serializeProps(props, state)
   
   def export(implicit state:SpaceState):String = {

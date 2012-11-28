@@ -1,9 +1,11 @@
-@(user:User, candidateModels:Iterable[Thing], propsSoFar:Seq[((Property[_,_,_], Option[String]), Int)], otherProps:Seq[Property[_,_,_]], errors:Option[String] = None)(implicit space:SpaceState)
+@(user:User, model:Thing, candidateModels:Iterable[Thing], propsSoFar:Property.PropList, otherProps:Seq[Property[_,_,_]], errors:Option[String] = None)(implicit space:SpaceState)
 
 @import helper._
 @import helper.twitterBootstrap._
 
 @import models.system.SystemSpace._
+
+@import models.Property._
 
 @showInputControl(prop:Property[_,_,_], v:Option[String], i:Int) = {
   @if(prop.pType == LargeTextType) {
@@ -35,8 +37,30 @@
 	
 	@form(routes.Application.doCreateThing(space.id.toString), 'class -> "form-horizontal") {
 	  <fieldset>
-        @for(propPair <- propsSoFar) {
-          @showProp(propPair)
+	  
+	    <div class="control-group">
+	      <label class="control-label">Model:</label>
+	      <div class="controls">
+	        <label>@model.getProp(NameProp).render.raw</label>
+	      </div>
+	    </div>
+	    <div class="control-group">
+	      <input type="submit" class="control-label btn" value="Change Model:">
+	      <div class="controls">
+	        <select name="newModel">
+	          <option value="">Choose a Model</option>
+	          @for(model <- candidateModels) {
+	            <option value="@model.id.toString">@model.getProp(NameProp).render.raw</option>
+	          }
+	        </select>
+	      </div>
+	      <input type="hidden" name="model" value="@model.id.toString">
+	    </div>
+	  
+	    @defining(propsSoFar.zipWithIndex) { allProps =>
+          @for(propPair <- allProps) {
+            @showProp(propPair)
+          }
         }
         
         <div class="control-group">
