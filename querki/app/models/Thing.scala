@@ -124,21 +124,37 @@ abstract class Thing(
    * which does things a little differently.
    */
   def getProp(propId:OID)(implicit state:SpaceState):PropAndVal[_,_] = {
-    localProp(propId).getOrElse(getModel.getProp(propId))
+    // TODO: we're doing redundant lookups of the property. Rationalize this stack of calls.
+    val prop = state.prop(propId)
+    if (prop.first(NotInheritedProp))
+      localOrDefault(propId)
+    else
+      localProp(propId).getOrElse(getModel.getProp(propId))
   }
   
   def localPropVal[VT, CT](prop:Property[VT, _, CT]):Option[PropValue[CT]] = {
     prop.fromOpt(props)
   }
   
+  def localOrDefault(propId:OID)(implicit state:SpaceState):PropAndVal[_,_] = {
+    val prop = state.prop(propId)
+    localProp(propId).getOrElse(prop.defaultPair)
+  }
+    
   /**
    * If you have the actual Property object you're looking for, this returns its value
    * on this object in a typesafe way.
    */
   def getPropVal[VT, CT](prop:Property[VT, _, CT])(implicit state:SpaceState):PropValue[CT] = {
-    localPropVal(prop).getOrElse(getModel.getPropVal(prop))
+    val local = localPropVal(prop)
+    if (local.isDefined)
+      local.get
+    else if (prop.first(NotInheritedProp))
+      prop.default
+    else
+      getModel.getPropVal(prop)
   }
-  
+
   /**
    * Return the first value in the collection for this Type. This is a convenient, type-safe way to
    * get at a property value for ExactlyOne properties.

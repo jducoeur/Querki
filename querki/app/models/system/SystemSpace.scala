@@ -34,8 +34,7 @@ object SystemSpace {
     override def getProp(propId:OID)(implicit state:SpaceState):PropAndVal[_,_] = {
       // If we've gotten up to here and haven't found the property, use
       // the default:
-      val prop = state.prop(propId)
-      localProp(propId).getOrElse(prop.defaultPair)
+      localOrDefault(propId)
     }
     
     override def getPropVal[VT, CT](prop:Property[VT, _, CT])(implicit state:SpaceState):PropValue[CT] = {
@@ -107,7 +106,8 @@ object SystemSpace {
       toProps(
         setName("Property"),
         (PromptOID -> PropValue(None)),
-        (PlaceholderTextOID -> PropValue(None))
+        (PlaceholderTextOID -> PropValue(None)),
+        (NotInheritedOID -> PropValue(OneColl(ElemValue(false))))
         ))
   object UrProp extends UrProp
   
@@ -361,9 +361,14 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
         )) with PTypeBuilder[Wikitext,String]
   
   val IsModelOID = OID(0, 22)
+  /**
+   * A flag set on a Thing to indicate that it should be used as a Model. Note that this
+   * Property is not inherited: the child of a Model is not usually a Model.
+   */
   object IsModelProp extends Property(IsModelOID, systemOID, UrProp, YesNoType, ExactlyOne,
       toProps(
-        setName("Is a Model")
+        setName("Is a Model"),
+        NotInheritedProp(true)
         ))
   
   object SimpleThing extends ThingState(OID(0, 23), systemOID, RootOID,
@@ -371,13 +376,24 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
         setName("Simple-Thing"),
         IsModelProp(true)))
   
+  val NotInheritedOID = OID(0, 24)
+  /**
+   * Meta-property: if this Property has NotInherited set, then its values are not inherited from its parent.
+   */
+  object NotInheritedProp extends Property(NotInheritedOID, systemOID, UrProp, YesNoType, ExactlyOne,
+      toProps(
+        setName("Not Inherited"),
+        // Need to define this explicitly, to break infinite loops in lookup:
+        (NotInheritedOID -> PropValue(OneColl(ElemValue(false))))
+        ))
+  
   def oidMap[T <: Thing](items:T*):Map[OID,T] = {
     (Map.empty[OID,T] /: items) ((m, i) => m + (i.id -> i))
   }
   
   val types = oidMap[PType[_]](IntType, TextType, YesNoType, NameType, LinkType, LargeTextType)
   val props = oidMap[Property[_,_,_]](UrProp, NameProp, DisplayTextProp, TypeProp, CollectionProp,
-      PlaceholderTextProp, PromptProp, IsModelProp)
+      PlaceholderTextProp, PromptProp, IsModelProp, NotInheritedProp)
   val things = oidMap[ThingState](UrThing, Page, SimpleThing)
   val colls = oidMap[Collection[_]](UrCollection, ExactlyOne, Optional, QList)
   

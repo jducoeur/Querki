@@ -165,7 +165,7 @@ case class Property[VT, -RT, CT](
     // on a prop-by-prop basis
     cType.default(pType)
   }
-  def defaultPair = PropAndVal(this, default)
+  def defaultPair:PropAndVal[VT,CT] = PropAndVal(this, default)
   // EVIL but arguably necessary. This is where we are trying to confine the cast from something
   // we get out of the PropMap (which is a bit undertyped) to match the associated Property.
   def castVal(v:PropValue[_]) = v.asInstanceOf[PropValue[CT]]
