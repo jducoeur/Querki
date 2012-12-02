@@ -2,6 +2,8 @@ package models
 
 import play.api._
 
+import models.system._
+import models.system.OIDs._
 import models.system.SystemSpace
 import models.system.SystemSpace._
 

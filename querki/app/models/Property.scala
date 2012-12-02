@@ -2,6 +2,8 @@ package models
 
 import Thing._
 
+import system._
+import system.OIDs._
 import system.SystemSpace._
 
 /**
