@@ -61,6 +61,13 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
   final def fromUser(str:String):ElemValue = ElemValue(doFromUser(str))
   
   /**
+   * Turns this value into an appropriate form for user editing. Currently that means
+   * a String, although that's likely to get more interesting soon.
+   */
+  protected def doToUser(v:VT):String = doSerialize(v)
+  final def toUser(v:ElemValue):String = doToUser(get(v))
+  
+  /**
    * The type unwrapper -- takes an opaque ElemValue and returns the underlying value.
    * This is a fundamentally unsafe operation, so it should always be performed in the
    * context of a Property.
@@ -183,7 +190,15 @@ case class Property[VT, -RT, CT](
 
   def apply(raw:RT) = (this.id, cType(pType(raw)))
   
-  def fromUser(str:String) = cType(pType.deserialize(str))
+  def fromUser(str:String) = cType(pType.fromUser(str))
+  // TODO: this clearly isn't correct. How are we actually going to handle more complex types?
+  def toUser(v:PropValue[_]):String = {
+    val cv = castVal(v)
+    if (cType.isEmpty(cv))
+      ""
+    else
+      pType.toUser(cType.first(cv))
+  }
   
   def serialize(v:PropValue[_]):String = cType.serialize(castVal(v), pType)
   def deserialize(str:String):PropValue[cType.implType] = cType.deserialize(str, pType)
@@ -222,8 +237,8 @@ object Property {
       (TreeMap.empty[Property[_,_,_], Option[String]] /: thing.props.keys) { (m, propId) =>
         val prop = state.prop(propId)
         val value = prop.from(thing.props)
-        // TODO: first clearly isn't right -- there's more connective tissue needed here:
-        val str = prop.serialize(value)
+        // TODO: in the long run, this can't be a simple string:
+        val str = prop.toUser(value)
         m + (prop -> Some(str))
       }
     }

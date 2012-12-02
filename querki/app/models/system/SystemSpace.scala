@@ -155,6 +155,8 @@ Use the **DisplayText** property to indicate what to show on the page. You can p
     def doSerialize(v:String) = toInternal(v)
     def doRender(v:String) = Wikitext(toDisplay(v))
     
+    override protected def doToUser(v:String):String = toDisplay(v)
+    
     val doDefault = "MISSING NAME!"
   }
   object NameType extends NameType
