@@ -151,6 +151,10 @@ abstract class Thing(
     prop.first(getPropVal(prop))
   }
   
+  def localFirst[VT, CT](prop:Property[VT, _, CT])(implicit state:SpaceState):Option[VT] = {
+    localPropVal(prop) map (prop.first(_))
+  }
+  
   /**
    * Returns true iff this Thing or any ancestor has the specified property defined on it.
    * Note that this ignores defaults.

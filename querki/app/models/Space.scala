@@ -72,7 +72,7 @@ case class SpaceState(
   
   def allModels:Iterable[ThingState] = {
     implicit val s = this
-    val myModels = things.values.filter(_.first(IsModelProp))
+    val myModels = things.values.filter(_.localFirst(IsModelProp).getOrElse(false))
     if (app.isEmpty) {
       myModels
     } else {

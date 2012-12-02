@@ -1,4 +1,4 @@
-@(user:User, thingId:Option[OID], model:Thing, candidateModels:Iterable[Thing], propsSoFar:Property.PropList, otherProps:Seq[Property[_,_,_]], errors:Option[String] = None)(implicit space:SpaceState)
+@(user:User, thing:Option[Thing], model:Thing, candidateModels:Iterable[Thing], propsSoFar:Property.PropList, otherProps:Seq[Property[_,_,_]], errors:Option[String] = None)(implicit space:SpaceState)
 
 @import helper._
 @import helper.twitterBootstrap._
@@ -32,20 +32,20 @@
 @main("Create a Thing", None, NavSection.spaceNav(space), errors) {
 		
 	<div class="page-header">
-	  @if(thingId.isEmpty) {
+	  @if(thing.isEmpty) {
 	    <h1>Create a New Thing</h1>
 	  } else {
-	    <h1>Edit a Thing</h1>
+	    <h1>Edit @thing.get.displayName</h1>
 	  }
 	</div>
 	
-	@form(if (thingId.isEmpty) { routes.Application.doCreateThing(space.id.toString) } else { routes.Application.doEditThing(space.id.toString, thingId.get.toString) }, 'class -> "form-horizontal") {
+	@form(if (thing.isEmpty) { routes.Application.doCreateThing(space.id.toString) } else { routes.Application.doEditThing(space.id.toString, thing.get.id.toString) }, 'class -> "form-horizontal") {
 	  <fieldset>
 	  
 	    <div class="control-group">
 	      <label class="control-label">Model:</label>
 	      <div class="controls">
-	        <label>@model.getProp(NameProp).render.raw</label>
+	        <label>@model.displayName</label>
 	      </div>
 	    </div>
 	    <div class="control-group">
@@ -54,7 +54,7 @@
 	        <select name="newModel">
 	          <option value="">Choose a Model</option>
 	          @for(model <- candidateModels) {
-	            <option value="@model.id.toString">@model.getProp(NameProp).render.raw</option>
+	            <option value="@model.id.toString">@model.displayName</option>
 	          }
 	        </select>
 	      </div>
@@ -73,7 +73,7 @@
             <select name="addedProperty">
               <option value="">Choose a Property</option>
               @for(prop <- otherProps) {
-                <option value="@prop.id.toString">@prop.getProp(NameProp).render.raw</option>
+                <option value="@prop.id.toString">@prop.displayName</option>
               }
             </select>
           </div>
@@ -81,7 +81,7 @@
 	  
 	    <div class="control-group">
 	      <div class="controls">
-	        <input type="submit" value="@if(thingId.isEmpty) { Create } else { Change }" class="btn btn-primary">
+	        <input type="submit" value="@if(thing.isEmpty) { Create } else { Change }" class="btn btn-primary">
 	      </div>
 	    </div>
 	  </fieldset>

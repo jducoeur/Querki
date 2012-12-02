@@ -232,7 +232,7 @@ object Application extends Controller {
     val props = PropList.from(thing)
     Ok(views.html.createThing(
         user, 
-        Some(thingId),
+        Some(thing),
         SimpleThing,
         state.allModels,
         props,
@@ -263,7 +263,7 @@ object Application extends Controller {
           val props = makeProps(allProps)
           Ok(views.html.createThing(
               user,
-              Some(thingId),
+              Some(thing),
               oldModel,
               state.allModels,
               props,
@@ -275,7 +275,7 @@ object Application extends Controller {
           val props = replaceModelProps(currentProps, model)
           Ok(views.html.createThing(
               user,
-              Some(thingId),
+              Some(thing),
               model,
               state.allModels,
               props,
