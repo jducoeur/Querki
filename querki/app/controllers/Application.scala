@@ -160,6 +160,7 @@ object Application extends Controller {
     val props = PropList((NameProp -> None))
     Ok(views.html.createThing(
         user, 
+        None,
         SimpleThing,
         state.allModels,
         props,
@@ -186,6 +187,7 @@ object Application extends Controller {
           val props = makeProps(allProps)
           Ok(views.html.createThing(
               user,
+              None,
               // TODO: this should be the current model:
               SimpleThing,
               state.allModels,
@@ -198,6 +200,7 @@ object Application extends Controller {
           val props = replaceModelProps(currentProps, model)
           Ok(views.html.createThing(
               user,
+              None,
               model,
               state.allModels,
               props,
@@ -222,6 +225,81 @@ object Application extends Controller {
     )
   }
   
+  def editThing(spaceId:String, thingIdStr:String) = withSpace(spaceId) { user => implicit state =>
+    val thingId = OID(thingIdStr)
+    val thing = state.thing(thingId)
+    // TODO: error if the thing isn't found
+    val props = PropList.from(thing)
+    Ok(views.html.createThing(
+        user, 
+        Some(thingId),
+        SimpleThing,
+        state.allModels,
+        props,
+        getOtherProps(state, props)
+      ))
+  }
+  
+  // TODO: meld this with doCreateThing
+  def doEditThing(spaceId:String, thingIdStr:String) = withSpaceAndRequest(spaceId) { user => implicit state => implicit request =>
+    newThingForm.bindFromRequest.fold(
+      errors => BadRequest(views.html.newSpace(user, Some("You have to specify a legal name"))),
+      info => {
+        val thingId = OID(thingIdStr)
+        val thing = state.thing(thingId)
+        val oldModel = state.thing(thing.model)
+        val rawProps = info.fields.zip(info.values)
+        def makeProps(propList:List[(String, String)]):PropList = {
+          val rawList = propList.map { pair =>
+            val (propIdStr, rawValue) = pair
+            val propId = OID(propIdStr)
+            val prop = state.prop(propId)
+            (prop -> Some(rawValue))
+          }
+          PropList(rawList:_*)
+        }
+        if (info.addedProperty.length > 0) {
+          val allProps = rawProps :+ (info.addedProperty, "")
+          val props = makeProps(allProps)
+          Ok(views.html.createThing(
+              user,
+              Some(thingId),
+              oldModel,
+              state.allModels,
+              props,
+              getOtherProps(state, props)
+            ))
+        } else if (info.newModel.length > 0) {
+          val model = state.anything(OID(info.newModel))
+          val currentProps = makeProps(rawProps)
+          val props = replaceModelProps(currentProps, model)
+          Ok(views.html.createThing(
+              user,
+              Some(thingId),
+              model,
+              state.allModels,
+              props,
+              getOtherProps(state, props)
+            ))          
+        } else {
+          val propPairs = rawProps.map { pair =>
+            val (propIdStr, rawValue) = pair
+            val propId = OID(propIdStr)
+            val prop = state.prop(propId)
+            val value = prop.fromUser(rawValue)
+            (propId, value)
+          }
+          val props = Thing.toProps(propPairs:_*)()
+          askSpaceMgr[ThingResponse](ModifyThing(OID(spaceId), user.id, thingId, OID(info.model), props)) {
+            case ThingFound(thingId, state) => Redirect(routes.Application.thing(state.id.toString, thingId.toString))
+            // TODO: we'll want more granular failure messages:
+            case ThingFailed() => Redirect(routes.Application.editThing(spaceId, thingId.toString))
+          }
+        }
+      }      
+    )
+  }
+    
   def login = 
     Security.Authenticated(username, request => Ok(views.html.login(userForm))) { user =>
       Action { Redirect(routes.Application.index) }

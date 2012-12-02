@@ -217,6 +217,16 @@ object Property {
     def apply(pairs:(Property[_,_,_], Option[String])*):PropList = {
       (TreeMap.empty[Property[_,_,_], Option[String]] /: pairs)((m, pair) => m + pair)
     }
+    
+    def from(thing:Thing)(implicit state:SpaceState):PropList = {
+      (TreeMap.empty[Property[_,_,_], Option[String]] /: thing.props.keys) { (m, propId) =>
+        val prop = state.prop(propId)
+        val value = prop.from(thing.props)
+        // TODO: first clearly isn't right -- there's more connective tissue needed here:
+        val str = prop.serialize(value)
+        m + (prop -> Some(str))
+      }
+    }
   }
 }
 

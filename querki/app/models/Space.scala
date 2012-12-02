@@ -88,7 +88,9 @@ sealed class SpaceMessage(val spaceId:OID, val requester:OID) extends SpaceMgrMs
 
 case class CreateThing(id:OID, who:OID, modelId:OID, props:PropMap) extends SpaceMessage(id, who)
 
-case class CreatePropertyMessage(id:OID, who:OID, model:OID, pType:OID, cType:OID, props:PropMap) extends SpaceMessage(id, who)
+case class ModifyThing(space:OID, who:OID, id:OID, modelId:OID, props:PropMap) extends SpaceMessage(space,who)
+
+case class CreateProperty(id:OID, who:OID, model:OID, pType:OID, cType:OID, props:PropMap) extends SpaceMessage(id, who)
 
 // This is the most common response when you create/fetch any sort of Thing
 sealed trait ThingResponse
@@ -128,6 +130,10 @@ class Space extends Actor {
       case None => throw new Exception("State not ready in Actor " + id)
     }
   }
+  // TODO: keep the previous states here in the Space, so we can undo/history
+  def updateState(newState:SpaceState) = {
+    _currentState = Some(newState)
+  }
   
   def SpaceSQL(query:String) = Space.SpaceSQL(id, query)
   
@@ -144,6 +150,18 @@ class Space extends Actor {
   }
   lazy val name = spaceInfo.get[String]("name").get
   lazy val owner = OID(spaceInfo.get[Long]("owner").get)
+  
+  // TODO: this needs to become much more sophisticated. But for now, it's good enough
+  // to say that only the owner can edit:
+  def canCreateThings(who:OID):Boolean = {
+    who == owner
+  }
+  
+  // TODO: this needs to become much more sophisticated. But for now, it's good enough
+  // to say that only the owner can edit:
+  def canEdit(who:OID, thingId:OID):Boolean = {
+    who == owner
+  }
   
   def loadSpace() = {
     // TODO: we need to walk up the tree and load any ancestor Apps before we prep this Space
@@ -221,14 +239,42 @@ class Space extends Actor {
     }
     
     case CreateThing(spaceId, who, modelId, props) => {
-      DB.withTransaction { implicit conn =>
+      if (!canCreateThings(who))
+        sender ! ThingFailed
+      else DB.withTransaction { implicit conn =>
         val thingId = OID.next
         val thing = ThingState(thingId, spaceId, modelId, () => props)
         // TODO: add a history record
         Space.createThingInSql(thingId, spaceId, modelId, Kind.Thing, props, systemState)
-        // TODO: keep the previous states here in the Space, so we can undo/history
-        _currentState = Some(state.copy(things = state.things + (thingId -> thing)))
+        updateState(state.copy(things = state.things + (thingId -> thing)))
         
+        sender ! ThingFound(thingId, state)
+      }
+    }
+    
+    case ModifyThing(spaceId, who, thingId, modelId, newProps) => {
+      Logger.info("In ModifyThing")
+      if (!canEdit(who, thingId)) {
+        Logger.info(who.toString + " can't edit -- requires " + owner.toString)
+        sender ! ThingFailed
+      } else DB.withTransaction { implicit conn =>
+        Logger.info("About to get the thing")
+        val oldThing = state.thing(thingId)
+        Logger.info("Got the thing")
+        // TODO: compare properties, build a history record of the changes
+        val newThingState = oldThing.copy(m = modelId, pf = () => newProps)
+        Logger.info("Created newThingState")
+        Space.SpaceSQL(spaceId, """
+          UPDATE {tname}
+          SET model = {modelId}, props = {props}
+          WHERE id = {thingId}
+          """
+          ).on("thingId" -> thingId.raw,
+               "modelId" -> modelId.raw,
+               "props" -> Thing.serializeProps(newProps, state)).executeUpdate()    
+        updateState(state.copy(things = state.things + (thingId -> newThingState)))
+        
+        Logger.info("About to leave ModifyThing")
         sender ! ThingFound(thingId, state)
       }
     }
