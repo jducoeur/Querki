@@ -292,6 +292,13 @@ object Space {
   def thingTable(id:OID) = "s" + sid(id)
   // The name of the Space's History Table
   def historyTable(id:OID) = "h" + sid(id)
+
+  /**
+   * A Map of Things, suitable for passing into a SpaceState.
+   */
+  def oidMap[T <: Thing](items:T*):Map[OID,T] = {
+    (Map.empty[OID,T] /: items) ((m, i) => m + (i.id -> i))
+  }
   
   /**
    * The intent here is to use this with queries that use the thingTable. You can't use

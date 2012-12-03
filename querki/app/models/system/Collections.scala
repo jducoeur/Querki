@@ -140,3 +140,6 @@ abstract class SystemCollection[T](cid:OID, pf:PropFetcher) extends Collection[T
   }
   object QList extends QList(QListOID)
   
+object SystemCollections {
+  def all = Space.oidMap[Collection[_]](UrCollection, ExactlyOne, Optional, QList)
+}

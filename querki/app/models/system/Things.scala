@@ -36,18 +36,18 @@ object UrThing extends ThingState(RootOID, systemOID, RootOID,
 }
   
 
-  object Page extends ThingState(OID(0, 8), systemOID, RootOID,
-      toProps(
-        setName("Simple-Page"),
-        IsModelProp(true),
-        DisplayTextProp("""
+object Page extends ThingState(PageOID, systemOID, RootOID,
+    toProps(
+      setName("Simple-Page"),
+      IsModelProp(true),
+      DisplayTextProp("""
 This is the basic Page Thing. Use it as your Model for *basic* Pages without real structure.
             
 Use the **DisplayText** property to indicate what to show on the page. You can put anything in there.
 """)))
 
-  object SimpleThing extends ThingState(OID(0, 23), systemOID, RootOID,
-      toProps(
-        setName("Simple-Thing"),
-        IsModelProp(true)))
+object SimpleThing extends ThingState(SimpleThingOID, systemOID, RootOID,
+    toProps(
+      setName("Simple-Thing"),
+      IsModelProp(true)))
   

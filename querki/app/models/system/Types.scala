@@ -113,3 +113,6 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
         )) with PTypeBuilder[Wikitext,String]
   object LargeTextType extends LargeTextType(LargeTextTypeOID)
   
+object SystemTypes {
+  def all = Space.oidMap[PType[_]](IntType, TextType, YesNoType, NameType, LinkType, LargeTextType)  
+}

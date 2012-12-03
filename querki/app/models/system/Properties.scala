@@ -22,14 +22,14 @@ class SystemProperty[VT, -RT, CT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT]
         (NotInheritedOID -> PropValue(OneColl(ElemValue(false))))
         ))
   
-  class NameProp(pid:OID) extends SystemProperty(pid, NameType, ExactlyOne,
+  object NameProp extends SystemProperty(NameOID, NameType, ExactlyOne,
       toProps(
         setName("Name"),
         prompt("Name of the new Thing"),
         placeholderText("Name")
         ))
   
-  class DisplayTextProp(pid:OID) extends SystemProperty(pid, LargeTextType, Optional,
+  object DisplayTextProp extends SystemProperty(DisplayTextOID, LargeTextType, Optional,
       toProps(
         setName("Display-Text"),
         prompt("Display text"),
@@ -39,7 +39,7 @@ class SystemProperty[VT, -RT, CT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT]
   /**
    * The Property that points from a Property to its Type.
    */
-  object TypeProp extends Property(OID(0, 17), systemOID, UrPropOID, LinkType, ExactlyOne,
+  object TypeProp extends SystemProperty(TypePropOID, LinkType, ExactlyOne,
       toProps(
         setName("__Type")
         ))
@@ -47,17 +47,17 @@ class SystemProperty[VT, -RT, CT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT]
   /**
    * The Property that points from a Property to its Collection.
    */
-  object CollectionProp extends Property(OID(0, 18), systemOID, UrPropOID, LinkType, ExactlyOne,
+  object CollectionProp extends SystemProperty(CollectionPropOID, LinkType, ExactlyOne,
       toProps(
         setName("__Collection")
         ))
     
-  object PlaceholderTextProp extends Property(PlaceholderTextOID, systemOID, UrPropOID, TextType, Optional,
+  object PlaceholderTextProp extends SystemProperty(PlaceholderTextOID, TextType, Optional,
       toProps(
         setName("Placeholder Text")
         ))
   
-  object PromptProp extends Property(PromptOID, systemOID, UrPropOID, TextType, Optional,
+  object PromptProp extends SystemProperty(PromptOID, TextType, Optional,
       toProps(
         setName("Prompt")
         ))
@@ -66,7 +66,7 @@ class SystemProperty[VT, -RT, CT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT]
    * A flag set on a Thing to indicate that it should be used as a Model. Note that this
    * Property is not inherited: the child of a Model is not usually a Model.
    */
-  object IsModelProp extends Property(IsModelOID, systemOID, UrPropOID, YesNoType, ExactlyOne,
+  object IsModelProp extends SystemProperty(IsModelOID, YesNoType, ExactlyOne,
       toProps(
         setName("Is a Model"),
         NotInheritedProp(true)
@@ -75,10 +75,9 @@ class SystemProperty[VT, -RT, CT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT]
   /**
    * Meta-property: if this Property has NotInherited set, then its values are not inherited from its parent.
    */
-  object NotInheritedProp extends Property(NotInheritedOID, systemOID, UrPropOID, YesNoType, ExactlyOne,
+  object NotInheritedProp extends SystemProperty(NotInheritedOID, YesNoType, ExactlyOne,
       toProps(
         setName("Not Inherited"),
         // Need to define this explicitly, to break infinite loops in lookup:
         (NotInheritedOID -> PropValue(OneColl(ElemValue(false))))
         ))
-    
