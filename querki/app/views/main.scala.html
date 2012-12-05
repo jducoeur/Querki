@@ -1,4 +1,6 @@
-@(title: String, user:Option[User], nav:NavSections, errors:Option[String] = None)(content: Html)
+@(title: String, user:Option[User], nav:NavSections, space:Option[SpaceState] = None, thing:Option[Thing] = None, errors:Option[String] = None)(content: Html)
+
+@import models.system._
 
 <!DOCTYPE html>
 
@@ -16,6 +18,9 @@
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap.css")">
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap-responsive.css")">
+        @if(space.isDefined && thing.isDefined && thing.get.hasProp(OIDs.StylesheetOID)(space.get)) {
+          <link rel="stylesheet" media="screen" href="@routes.Application.attachment(space.get.id.toString, thing.get.first(StylesheetProp)(space.get).toString)">        
+        }
         <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
 		
 		<style type="text/css">

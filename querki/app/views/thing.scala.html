@@ -1,6 +1,6 @@
 @(user:Option[User], thing:Thing)(implicit space:SpaceState)
 
-@main(thing.displayName, user, NavSection.spaceNav(space)) {
+@main(thing.displayName, user, NavSection.spaceNav(space), Some(space), Some(thing)) {
 
 	<div class="page-header">
 	  <h1>@thing.displayName</h1>

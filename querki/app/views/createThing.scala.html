@@ -30,7 +30,7 @@
   showProperty(prop, v, i)
 }
 
-@main("Create a Thing", None, NavSection.spaceNav(space), errors) {
+@main("Create a Thing", None, NavSection.spaceNav(space), Some(space), thing, errors) {
 		
 	<div class="page-header">
 	  @if(thing.isEmpty) {
