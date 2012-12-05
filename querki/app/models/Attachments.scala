@@ -1,5 +1,7 @@
 package models
 
+import Thing._
+
 object AttachmentKind {
   type AttachmentKind = Int
   

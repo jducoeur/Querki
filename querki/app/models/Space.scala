@@ -215,6 +215,12 @@ class Space extends Actor {
         new ThingState(thingId, id, modelId, () => propMap)        
       }
       
+      val attachments = getThings(Kind.Attachment) { (thingId, modelId, propMap) =>
+        new ThingState(thingId, id, modelId, () => propMap, Kind.Attachment)        
+      }
+      
+      val allThings = things ++ attachments
+      
       val spaceStream = getThingStream(Kind.Space) { (thingId, modelId, propMap) =>
         new SpaceState(
              thingId,
@@ -226,7 +232,7 @@ class Space extends Actor {
              // TODO: dynamic PTypes
              Map.empty[OID, PType[_]],
              props,
-             things,
+             allThings,
              // TODO (probably rather later): dynamic Collections
              Map.empty[OID, Collection[_]]
             )
