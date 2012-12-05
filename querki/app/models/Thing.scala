@@ -100,7 +100,7 @@ abstract class Thing(
   lazy val props:PropMap = propFetcher()
   
   def displayName:String = {
-    val localName = localProp(NameProp)
+    val localName = localProp(DisplayNameProp) orElse localProp(NameProp)
     if (localName.isEmpty)
       id.toString
     else {

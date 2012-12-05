@@ -92,3 +92,13 @@ object StylesheetProp extends SystemProperty(StylesheetOID, LinkType, Optional,
     toProps(
       setName("Stylesheet")
       ))
+
+/**
+ * If set, this is the display name of the specified object. Whereas the primary NameProp
+ * has a number of restrictions, the DisplayNameProp does not. It is used to list a Thing
+ * by preference when it is set.
+ */
+object DisplayNameProp extends SystemProperty(DisplayNameOID, TextType, Optional,
+    toProps(
+      setName("Display Name")
+      ))

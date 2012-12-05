@@ -314,6 +314,7 @@ object Application extends Controller {
         val thing = state.anything(thingId)
         
         request.body.asMultipartFormData flatMap(_.file("cssFile")) map { filePart =>
+          val filename = filePart.filename
     	  val tempfile = filePart.ref.file
     	  // TODO: check whether the CSS contains any Javascript-enabling keywords
     	  // TBD: Note that this codec forces everything to be treated as pure-binary. That's
@@ -327,8 +328,9 @@ object Application extends Controller {
     	  } finally {
     	    source.close()
     	  }
+    	  val attachProps = Thing.toProps(DisplayNameProp(filename))()
     	  askSpaceMgr[ThingResponse](
-    	    CreateAttachment(state.id, user.id, contents, AttachmentKind.CSS, contents.size, OIDs.RootOID, Thing.emptyProps)) {
+    	    CreateAttachment(state.id, user.id, contents, AttachmentKind.CSS, contents.size, OIDs.RootOID, attachProps)) {
     	    case ThingFound(attachmentId, state2) => {
     	      val newProps = thing.props + (StylesheetProp(attachmentId))
     	      askSpaceMgr[ThingResponse](ModifyThing(state.id, user.id, thingId, thing.model, newProps)) {

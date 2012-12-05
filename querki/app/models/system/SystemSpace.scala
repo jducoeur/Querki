@@ -41,6 +41,7 @@ object OIDs {
   val SimpleThingOID = sysId(23)
   val NotInheritedOID = sysId(24)
   val StylesheetOID = sysId(25)
+  val DisplayNameOID = sysId(26)
 }
 
 /**
@@ -67,7 +68,8 @@ object SystemSpace {
       PromptProp, 
       IsModelProp, 
       NotInheritedProp,
-      StylesheetProp)
+      StylesheetProp,
+      DisplayNameProp)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing)

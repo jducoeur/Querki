@@ -15,5 +15,6 @@
 
 	@listKind("Types", state.types)
 	@listKind("Properties", state.spaceProps)
-	@listKind("Things", state.things)
+	@listKind("Things", state.things.filter(_._2.kind == Kind.Thing))
+	@listKind("Attachments", state.things.filter(_._2.kind == Kind.Attachment))
 }

@@ -253,7 +253,7 @@ class Space extends Actor {
       sender ! ThingFailed
     else DB.withTransaction { implicit conn =>
       val thingId = OID.next
-      val thing = ThingState(thingId, spaceId, modelId, () => props)
+      val thing = ThingState(thingId, spaceId, modelId, () => props, kind)
       // TODO: add a history record
       Space.createThingInSql(thingId, spaceId, modelId, kind, props, systemState)
       updateState(state.copy(things = state.things + (thingId -> thing)))
