@@ -96,6 +96,8 @@ case class CreateAttachment(space:OID, who:OID,
     content:Array[Byte], kind:AttachmentKind, size:Int, 
     modelId:OID, props:PropMap) extends SpaceMessage(space, who)
 
+case class GetAttachment(space:OID, who:OID, attachId:OID) extends SpaceMessage(space, who)
+
 case class ModifyThing(space:OID, who:OID, id:OID, modelId:OID, props:PropMap) extends SpaceMessage(space,who)
 
 case class CreateProperty(id:OID, who:OID, model:OID, pType:OID, cType:OID, props:PropMap) extends SpaceMessage(id, who)
@@ -105,6 +107,9 @@ sealed trait ThingResponse
 case class ThingFound(id:OID, state:SpaceState) extends ThingResponse
 case class ThingFailed() extends ThingResponse
 
+sealed trait AttachmentResponse
+case class AttachmentContents(id:OID, size:Int, kind:AttachmentKind, content:Array[Byte]) extends AttachmentResponse
+case class AttachmentFailed() extends AttachmentResponse
 
 
 
@@ -291,6 +296,26 @@ class Space extends Actor {
              "kind" -> kind,
              "size" -> size,
              "content" -> content).executeUpdate()        
+      }
+    }
+    
+    case GetAttachment(space, who, attachId) => {
+      if (!canRead(who))
+        sender ! AttachmentFailed
+      else DB.withTransaction { implicit conn =>
+        // TODO: this will throw an error if the specified attachment doesn't exist
+        // Guard against that.
+        val results = AttachSQL("""
+            SELECT kind, size, content FROM {tname} where id = {id}
+            """).on("id" -> attachId.raw)().map {
+          // TODO: we really, really must not hardcode this type below. This is some sort of
+          // serious Anorm driver failure, I think. As it stands, it's going to crash when we
+          // move to MySQL:
+          case Row(kind:Int, size:Int, content:org.h2.jdbc.JdbcBlob) => {
+            AttachmentContents(attachId, size, kind, content.getBytes(1, content.length().toInt))
+          }
+        }.head
+        sender ! results
       }
     }
     

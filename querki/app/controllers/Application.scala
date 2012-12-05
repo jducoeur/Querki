@@ -353,6 +353,20 @@ object Application extends Controller {
           Ok(views.html.addCSS(user, thing))    	  
     	}
   }
+  
+  def attachment(spaceId:String, thingIdStr:String) = withUser { user => implicit request =>
+    askSpaceMgr[AttachmentResponse](GetAttachment(OID(spaceId), user.id, OID(thingIdStr))) {
+      case AttachmentContents(id, size, kind, content) => {
+        kind match {
+          case AttachmentKind.CSS => {
+            Ok(content).as("text/css")
+          }
+          case _ => BadRequest
+        }
+      }
+      case AttachmentFailed() => BadRequest
+    }     
+  }
       
   def login = 
     Security.Authenticated(username, request => Ok(views.html.login(userForm))) { user =>

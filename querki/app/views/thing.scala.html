@@ -16,4 +16,10 @@
 	<h3>Exported, looks like:</h3>
 	
 	<p>@thing.export</p>
+	
+	@if(thing.kind == Kind.Attachment) {
+	  <hr/>
+	  
+	  <a href="@routes.Application.attachment(space.id.toString, thing.id.toString)" class="btn">Get Attachment</a>
+	}
 }
