@@ -8,13 +8,17 @@ GET     /login                      controllers.Application.login
 GET     /spaces                     controllers.Application.spaces
 GET     /newSpace                   controllers.Application.newSpace
 POST    /doNewSpace                 controllers.Application.doNewSpace
+
 GET     /space/:spaceId/            controllers.Application.space(spaceId:String)
 GET     /space/:spaceId/things      controllers.Application.things(spaceId:String)
 GET     /space/:spaceId/createThing controllers.Application.createThing(spaceId)
 POST    /space/:spaceId/createThing controllers.Application.doCreateThing(spaceId)
+
 GET     /space/:spaceId/:thingId    controllers.Application.thing(spaceId:String, thingId:String)
 GET     /space/:spaceId/:thingId/edit controllers.Application.editThing(spaceId, thingId)
 POST    /space/:spaceId/:thingId/edit controllers.Application.doEditThing(spaceId, thingId)
+GET     /space/:spaceId/:thingId/addCSS controllers.Application.addCSS(spaceId, thingId)
+POST    /space/:spaceId/:thingId/addCSS controllers.Application.doAddCSS(spaceId, thingId)
 
 POST    /dologin                    controllers.Application.dologin
 GET     /logout                     controllers.Application.logout

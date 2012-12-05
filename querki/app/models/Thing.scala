@@ -20,6 +20,7 @@ object Kind {
   val Property = 2
   val Space = 3
   val Collection = 4
+  val Attachment = 5
 }
 
 object Thing {
@@ -32,6 +33,8 @@ object Thing {
       m + (pair._1 -> pair._2)
     }
   }
+  
+  def emptyProps = Map.empty[OID, PropValue[_]]
   
   // NOTE: don't try to make this more concise -- it causes chicken-and-egg problems in system
   // initialization:

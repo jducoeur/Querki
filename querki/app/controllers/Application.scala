@@ -82,7 +82,7 @@ object Application extends Controller {
    * actual page content
    */
   def withSpaceAndRequest(spaceId:String)(f: (User => SpaceState => Request[AnyContent] => Result)) = withUser { user => implicit request =>
-    askSpaceMgr[GetSpaceResponse](GetSpace(OID(spaceId), Some(user.id))) {
+    askSpaceMgr[GetSpaceResponse](GetSpace(OID(spaceId), user.id)) {
       case RequestedSpace(state) => f(user)(state)(request)
       case GetSpaceFailed(id) => Ok(views.html.spaces(Some(user), Seq.empty))
     }     
@@ -93,7 +93,7 @@ object Application extends Controller {
    * care about the request.
    */
   def withSpace(spaceId:String)(f: (User => SpaceState => Result)) = withUser { user => implicit request =>
-    askSpaceMgr[GetSpaceResponse](GetSpace(OID(spaceId), Some(user.id))) {
+    askSpaceMgr[GetSpaceResponse](GetSpace(OID(spaceId), user.id)) {
       case RequestedSpace(state) => f(user)(state)
       case GetSpaceFailed(id) => Ok(views.html.spaces(Some(user), Seq.empty))
     }     
@@ -300,7 +300,58 @@ object Application extends Controller {
       }      
     )
   }
-    
+  
+  def addCSS(spaceId:String, thingIdStr:String) = withSpace(spaceId) { user => implicit state =>
+    val thingId = OID(thingIdStr)
+    val thing = state.anything(thingId)
+    // TODO: error if the thing isn't found
+    Ok(views.html.addCSS(user, thing))
+  }
+  
+  // TODO: limit the size of the uploaded file!!!
+  def doAddCSS(spaceId:String, thingIdStr:String) = withSpaceAndRequest(spaceId) { user => implicit state => implicit request =>
+    	val thingId = OID(thingIdStr)
+        val thing = state.anything(thingId)
+        
+        request.body.asMultipartFormData flatMap(_.file("cssFile")) map { filePart =>
+    	  val tempfile = filePart.ref.file
+    	  // TODO: check whether the CSS contains any Javascript-enabling keywords
+    	  // TBD: Note that this codec forces everything to be treated as pure-binary. That's
+    	  // because we are trying to be consistent about attachments. Not clear whether
+    	  // that's the right approach in the long run, though.
+    	  val source = io.Source.fromFile(tempfile)(scala.io.Codec.ISO8859)
+    	  val contents = try {
+    	    // TODO: is there any way to get the damned file into the DB without copying it
+    	    // through memory like this?
+    	    source.map(_.toByte).toArray
+    	  } finally {
+    	    source.close()
+    	  }
+    	  askSpaceMgr[ThingResponse](
+    	    CreateAttachment(state.id, user.id, contents, AttachmentKind.CSS, contents.size, OIDs.RootOID, Thing.emptyProps)) {
+    	    case ThingFound(attachmentId, state2) => {
+    	      val newProps = thing.props + (StylesheetProp(attachmentId))
+    	      askSpaceMgr[ThingResponse](ModifyThing(state.id, user.id, thingId, thing.model, newProps)) {
+    	        case ThingFound(thingIdAgain, state3) => {
+    	          Redirect(routes.Application.thing(state.id.toString, thingId.toString))
+    	        }
+    	        case ThingFailed() => {
+                  // TODO: return an error
+                  Ok(views.html.addCSS(user, thing))    	          
+    	        }
+    	      }
+    	    }
+    	    case ThingFailed() => {
+              // TODO: return an error
+              Ok(views.html.addCSS(user, thing))
+    	    }
+    	  }
+    	} getOrElse {
+          // TODO: return an error
+          Ok(views.html.addCSS(user, thing))    	  
+    	}
+  }
+      
   def login = 
     Security.Authenticated(username, request => Ok(views.html.login(userForm))) { user =>
       Action { Redirect(routes.Application.index) }

@@ -17,6 +17,8 @@ import anorm._
 import play.api.db._
 import play.api.Play.current
 
+import AttachmentKind._
+import Kind._
 import Thing._
 
 import system._
@@ -90,6 +92,10 @@ sealed class SpaceMessage(val spaceId:OID, val requester:OID) extends SpaceMgrMs
 
 case class CreateThing(id:OID, who:OID, modelId:OID, props:PropMap) extends SpaceMessage(id, who)
 
+case class CreateAttachment(space:OID, who:OID, 
+    content:Array[Byte], kind:AttachmentKind, size:Int, 
+    modelId:OID, props:PropMap) extends SpaceMessage(space, who)
+
 case class ModifyThing(space:OID, who:OID, id:OID, modelId:OID, props:PropMap) extends SpaceMessage(space,who)
 
 case class CreateProperty(id:OID, who:OID, model:OID, pType:OID, cType:OID, props:PropMap) extends SpaceMessage(id, who)
@@ -138,6 +144,7 @@ class Space extends Actor {
   }
   
   def SpaceSQL(query:String) = Space.SpaceSQL(id, query)
+  def AttachSQL(query:String) = Space.AttachSQL(id, query)
   
   /**
    * Fetch the high-level information about this Space. Note that this will throw
@@ -152,6 +159,11 @@ class Space extends Actor {
   }
   lazy val name = spaceInfo.get[String]("name").get
   lazy val owner = OID(spaceInfo.get[Long]("owner").get)
+  
+  // TODO: this needs to become real. For now, everything is world-readable.
+  def canRead(who:OID):Boolean = {
+    true
+  }
   
   // TODO: this needs to become much more sophisticated. But for now, it's good enough
   // to say that only the owner can edit:
@@ -226,31 +238,53 @@ class Space extends Actor {
   
   override def preStart() = {
     loadSpace()
-
   } 
+  
+  def createSomething(spaceId:OID, who:OID, modelId:OID, props:PropMap, kind:Kind)(
+      otherWork:OID => java.sql.Connection => Unit) = 
+  {
+    if (!canCreateThings(who))
+      sender ! ThingFailed
+    else DB.withTransaction { implicit conn =>
+      val thingId = OID.next
+      val thing = ThingState(thingId, spaceId, modelId, () => props)
+      // TODO: add a history record
+      Space.createThingInSql(thingId, spaceId, modelId, kind, props, systemState)
+      updateState(state.copy(things = state.things + (thingId -> thing)))
+      // This callback intentionally takes place inside the transaction:
+      otherWork(thingId)(conn)
+        
+      sender ! ThingFound(thingId, state)
+    }    
+  }
   
   def receive = {
     case req:CreateSpace => {
       sender ! RequestedSpace(state)
     }
     
-    // TODO: check whether the requester is authorized to look at this Space
-    // That probably applies to all requests.
     case GetSpace(spaceId, requesterId) => {
-      sender ! RequestedSpace(state)
+      if (!canRead(requesterId))
+        sender ! ThingFailed
+      else
+        sender ! RequestedSpace(state)
     }
     
     case CreateThing(spaceId, who, modelId, props) => {
-      if (!canCreateThings(who))
-        sender ! ThingFailed
-      else DB.withTransaction { implicit conn =>
-        val thingId = OID.next
-        val thing = ThingState(thingId, spaceId, modelId, () => props)
-        // TODO: add a history record
-        Space.createThingInSql(thingId, spaceId, modelId, Kind.Thing, props, systemState)
-        updateState(state.copy(things = state.things + (thingId -> thing)))
-        
-        sender ! ThingFound(thingId, state)
+      createSomething(spaceId, who, modelId, props, Kind.Thing) { thingId => implicit conn => Unit }
+    }
+    
+    case CreateAttachment(spaceId, who, content, kind, size, modelId, props) => {
+      createSomething(spaceId, who, modelId, props, Kind.Attachment) { thingId => implicit conn =>
+      	AttachSQL("""
+          INSERT INTO {tname}
+          (id, kind, size, content) VALUES
+          ({thingId}, {kind}, {size}, {content})
+        """
+        ).on("thingId" -> thingId.raw,
+             "kind" -> kind,
+             "size" -> size,
+             "content" -> content).executeUpdate()        
       }
     }
     
@@ -292,6 +326,8 @@ object Space {
   def thingTable(id:OID) = "s" + sid(id)
   // The name of the Space's History Table
   def historyTable(id:OID) = "h" + sid(id)
+  // The name of the Space's Attachments Table
+  def attachTable(id:OID) = "a" + sid(id)
 
   /**
    * A Map of Things, suitable for passing into a SpaceState.
@@ -318,11 +354,13 @@ object Space {
              "kind" -> kind,
              "props" -> Thing.serializeProps(props, serialContext)).executeUpdate()    
   }
+  
+  def AttachSQL(spaceId:OID, query:String):SqlQuery = SQL(query.replace("{tname}", attachTable(spaceId)))
 }
 
 sealed trait SpaceMgrMsg
 
-case class GetSpace(id:OID, requester:Option[OID]) extends SpaceMgrMsg
+case class GetSpace(id:OID, requester:OID) extends SpaceMgrMsg
 sealed trait GetSpaceResponse
 case class RequestedSpace(state:SpaceState) extends GetSpaceResponse
 case class GetSpaceFailed(id:OID) extends GetSpaceResponse
@@ -337,7 +375,7 @@ case class CreateSpace(owner:OID, name:String) extends SpaceMgrMsg
 class SpaceManager extends Actor {
   import models.system.SystemSpace
   import SystemSpace._
-  import Space.SpaceSQL
+  import Space._
   
 //  // The local cache of Space States.
 //  // TODO: this needs to age properly.
@@ -386,9 +424,6 @@ class SpaceManager extends Actor {
       }
     }
     
-    // TODO: this should go through the Space instead, for all except System. The
-    // local cache in SpaceManager is mainly for future optimization in clustered
-    // environments.
     case req:GetSpace => {
       if (req.id == systemOID)
         sender ! RequestedSpace(State)
@@ -430,6 +465,14 @@ class SpaceManager extends Actor {
             model bigint NOT NULL,
             kind int NOT NULL,
             props clob NOT NULL,
+            PRIMARY KEY (id))
+          """).executeUpdate()
+      AttachSQL(spaceId, """
+          CREATE TABLE {tname} (
+            id bigint NOT NULL,
+            kind int NOT NULL,
+            size int NOT NULL,
+            content blob NOT NULL,
             PRIMARY KEY (id))
           """).executeUpdate()
       SQL("""

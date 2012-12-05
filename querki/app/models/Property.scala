@@ -186,6 +186,7 @@ case class Property[VT, -RT, CT](
    * Convenience method to fetch the value of this property in this map.
    */
   def first(m:PropMap):VT = pType.get(cType.first(from(m)))
+  def firstOpt(m:PropMap):Option[VT] = fromOpt(m) map cType.first map pType.get
   def first(v:PropValue[CT]):VT = pType.get(cType.first(v))
   
   def isEmpty(v:PropValue[CT]) = cType.isEmpty(v)

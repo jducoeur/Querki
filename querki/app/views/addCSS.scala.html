@@ -1,0 +1,35 @@
+@(user:User, thing:Thing, errors:Option[String] = None)(implicit space:SpaceState)
+
+@import helper._
+@import helper.twitterBootstrap._
+
+@import models.system._
+@import models.system.SystemSpace._
+
+@import models.Property._
+
+@main("Add a Stylesheet", Some(user), NavSection.spaceNav(space), errors) {
+		
+	<div class="page-header">
+	  <h1>Add a Stylesheet to @thing.displayName</h1>
+	</div>
+	
+	@form(routes.Application.doAddCSS(space.id.toString, thing.id.toString), 'class -> "form-horizontal", 'enctype -> "multipart/form-data") {
+	  <fieldset>
+
+        <div class="control-group">
+          <label class="control-label">Choose a CSS file</label>
+	      <div class="controls">
+	        <input type="file" name="cssFile" accept="text/css">
+	      </div>
+	    </div>
+	    
+	    <div class="control-group">
+	      <div class="controls">
+	        <input type="submit" value="Load" class="btn btn-primary">	      
+	      </div>
+	    </div>
+	    
+	  </fieldset>
+	}
+}

@@ -72,12 +72,23 @@ class SystemProperty[VT, -RT, CT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT]
         NotInheritedProp(true)
         ))
 
-  /**
-   * Meta-property: if this Property has NotInherited set, then its values are not inherited from its parent.
-   */
-  object NotInheritedProp extends SystemProperty(NotInheritedOID, YesNoType, ExactlyOne,
-      toProps(
-        setName("Not Inherited"),
-        // Need to define this explicitly, to break infinite loops in lookup:
-        (NotInheritedOID -> PropValue(OneColl(ElemValue(false))))
-        ))
+/**
+ * Meta-property: if this Property has NotInherited set, then its values are not inherited from its parent.
+ */
+object NotInheritedProp extends SystemProperty(NotInheritedOID, YesNoType, ExactlyOne,
+    toProps(
+      setName("Not Inherited"),
+      // Need to define this explicitly, to break infinite loops in lookup:
+      (NotInheritedOID -> PropValue(OneColl(ElemValue(false))))
+      ))
+
+/**
+ * Points to the optional CSS file for this Thing. If placed on a Space, applies Space-wide.
+ * 
+ * TBD: this isn't quite so "system-ish". We might start defining properties nearer to their
+ * relevant functionality.
+ */
+object StylesheetProp extends SystemProperty(StylesheetOID, LinkType, Optional,
+    toProps(
+      setName("Stylesheet")
+      ))
