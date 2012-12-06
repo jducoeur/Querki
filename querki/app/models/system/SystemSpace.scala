@@ -42,6 +42,9 @@ object OIDs {
   val NotInheritedOID = sysId(24)
   val StylesheetOID = sysId(25)
   val DisplayNameOID = sysId(26)
+  val CSSTextOID = sysId(27)
+  val CSSOID = sysId(28)
+  val StylesheetBaseOID = sysId(29)
 }
 
 /**
@@ -69,10 +72,11 @@ object SystemSpace {
       IsModelProp, 
       NotInheritedProp,
       StylesheetProp,
-      DisplayNameProp)
+      DisplayNameProp,
+      CSSProp)
       
   // Things:
-  val things = oidMap[ThingState](UrThing, Page, SimpleThing)
+  val things = oidMap[ThingState](UrThing, Page, SimpleThing, StylesheetBase)
   
   object State extends SpaceState(systemOID, RootOID,
       toProps(

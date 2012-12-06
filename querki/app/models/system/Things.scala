@@ -50,4 +50,14 @@ object SimpleThing extends ThingState(SimpleThingOID, systemOID, RootOID,
     toProps(
       setName("Simple-Thing"),
       IsModelProp(true)))
-  
+
+object StylesheetBase extends ThingState(StylesheetBaseOID, systemOID, RootOID,
+    toProps(
+      setName("Stylesheet"),
+      IsModelProp(true),
+      DisplayTextProp("""
+This is a Stylesheet. It is intended for more advanced users, and allows you to controls the look of your Things.
+          
+The important Property here is CSS -- this contains normal CSS code, just like for a webpage.
+"""),
+      CSSProp("")))

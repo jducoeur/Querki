@@ -9,10 +9,20 @@
 @import models.Property._
 
 @showInputControl(prop:Property[_,_,_], v:Option[String], i:Int) = {
-  @if(prop.pType == LargeTextType) {
-    <textarea name="value[@i]" placeholder="@prop.getProp(PlaceholderTextProp).renderIfDefined.raw">@v</textarea>
-  } else {
-    <input type="text" name="value[@i]" value="@v" placeholder="@prop.getProp(PlaceholderTextProp).renderIfDefined.raw">
+  @if(prop.pType == LargeTextType || prop.pType == CSSTextType) {
+    <textarea rows="5" cols="50" name="value[@i]" placeholder="@prop.getProp(PlaceholderTextProp).renderIfDefined.raw">@v</textarea>
+  }
+  
+  @if(prop.pType == LinkType) {
+    <select name="value[@i]">
+      @for(candidate <- space.things.values) {
+        <option value="@candidate.id.toString">@candidate.displayName</option>
+      }
+    </select>    
+  }
+  
+  @if(prop.pType == IntType || prop.pType == TextType || prop.pType == NameType) {
+    <input type="text" name="value[@i]" value="@v" placeholder="@prop.getProp(PlaceholderTextProp).renderIfDefined.raw">    
   }
 }
 

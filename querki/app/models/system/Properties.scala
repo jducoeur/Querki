@@ -102,3 +102,12 @@ object DisplayNameProp extends SystemProperty(DisplayNameOID, TextType, Optional
     toProps(
       setName("Display Name")
       ))
+
+/**
+ * This special property is used for Stylesheet Things. Basically, if this Thing is used as
+ * the Stylesheet for other Things, it should have this Property set.
+ */
+object CSSProp extends SystemProperty(CSSOID, CSSTextType, Optional,
+    toProps(
+      setName("CSS")
+      ))

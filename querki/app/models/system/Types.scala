@@ -113,6 +113,25 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
         )) with PTypeBuilder[Wikitext,String]
   object LargeTextType extends LargeTextType(LargeTextTypeOID)
   
+/**
+ * A Type for CSS Text as a proper Property, so we can edit directly in Querki.
+ */
+class CSSTextType(tid:OID) extends SystemType[String](tid,
+    toProps(
+        setName("Type-CSS"))
+    ) with SimplePTypeBuilder[String]
+{
+  // TODO: filter any Javascript-enabling keywords!
+    
+  def doDeserialize(v:String) = v
+  def doSerialize(v:String) = v
+  def doRender(v:String) = Wikitext(v)
+    
+  val doDefault = ""
+}
+object CSSTextType extends CSSTextType(CSSTextOID)
+  
+  
 object SystemTypes {
-  def all = Space.oidMap[PType[_]](IntType, TextType, YesNoType, NameType, LinkType, LargeTextType)  
+  def all = Space.oidMap[PType[_]](IntType, TextType, YesNoType, NameType, LinkType, LargeTextType, CSSTextType)  
 }

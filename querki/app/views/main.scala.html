@@ -19,7 +19,17 @@
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap.css")">
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap-responsive.css")">
         @if(space.isDefined && thing.isDefined && thing.get.hasProp(OIDs.StylesheetOID)(space.get)) {
-          <link rel="stylesheet" media="screen" href="@routes.Application.attachment(space.get.id.toString, thing.get.first(StylesheetProp)(space.get).toString)">        
+          @defining(thing.get.first(StylesheetProp)(space.get)) { stylesheetOID =>
+          @defining(space.get.thing(stylesheetOID)) { stylesheetThing =>
+          @if(stylesheetThing.kind == Kind.Attachment) {
+            <link rel="stylesheet" media="screen" href="@routes.Application.attachment(space.get.id.toString, stylesheetOID.toString)">
+          } else {
+            <style type="text/css">
+            @stylesheetThing.first(CSSProp)(space.get)
+            </style>
+          }
+          }
+          }
         }
         <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
 		
