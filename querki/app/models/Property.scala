@@ -75,6 +75,16 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * context of a Property.
    */
   def get(v:ElemValue):VT = v.elem.asInstanceOf[VT]
+  
+  /**
+   * Can this String value be legitimately interpreted as this type?
+   * 
+   * This is closely related to doFromUser -- iff something can be parsed by doFromUser, it
+   * should validate cleanly. It is intended for UI use.
+   * 
+   * Defaults to true; subclasses are encouraged to override this appropriately.
+   */
+  def validate(v:String):Boolean = true
 }
 trait PTypeBuilder[VT, -RT] {
   
@@ -193,6 +203,7 @@ case class Property[VT, -RT, CT](
 
   def apply(raw:RT) = (this.id, cType(pType(raw)))
   
+  def validate(str:String) = pType.validate(str)
   def fromUser(str:String) = cType(pType.fromUser(str))
   // TODO: this clearly isn't correct. How are we actually going to handle more complex types?
   def toUser(v:PropValue[_]):String = {

@@ -19,6 +19,14 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
     def doDeserialize(v:String) = java.lang.Integer.parseInt(v)
     def doSerialize(v:Int) = v.toString
     def doRender(v:Int) = Wikitext(v.toString)
+    
+    override def validate(v:String):Boolean = try {
+      val dummy = java.lang.Integer.parseInt(v)
+      true
+    } catch {
+      case _ => false      
+    }
+
 
     val doDefault = 0
   }
@@ -58,6 +66,12 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
     def doSerialize(v:Boolean) = v.toString
     def doRender(v:Boolean) = Wikitext(v.toString())
     
+    override def validate(v:String):Boolean = try {
+      java.lang.Boolean.parseBoolean(v)
+    } catch {
+      case _ => false
+    }
+    
     val doDefault = false
   }
   object YesNoType extends YesNoType(YesNoTypeOID)
@@ -81,6 +95,13 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
     
     override protected def doToUser(v:String):String = toDisplay(v)
     
+    /**
+     * Names are only allowed to contain alphanumerics, dashes and spaces
+     */
+    override def validate(v:String):Boolean = {
+      (true /: v)((current, c) => current && c.isLetterOrDigit || c == '-' || c == ' ')
+    }
+    
     val doDefault = "MISSING NAME!"
   }
   object NameType extends NameType(NameTypeOID)
@@ -99,6 +120,8 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
     // be contextual -- you can't really render a Link in isolation, without knowing
     // about the Thing it points to:
     def doRender(v:OID) = Wikitext(v.toString)
+    
+    // TODO: define validate()
 
     val doDefault = UnknownOID
   }
@@ -121,7 +144,8 @@ class CSSTextType(tid:OID) extends SystemType[String](tid,
         setName("Type-CSS"))
     ) with SimplePTypeBuilder[String]
 {
-  // TODO: filter any Javascript-enabling keywords!
+  // TODO: filter any Javascript-enabling keywords! This should go in validate, as well
+  // as fromUser().
     
   def doDeserialize(v:String) = v
   def doSerialize(v:String) = v

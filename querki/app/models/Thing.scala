@@ -44,10 +44,10 @@ object Thing {
   // TODO: this escape/unescape is certainly too simplistic to cope with recursive types.
   // Come back to this sometime before we make the type system more robust.
   def escape(str:String) = {
-    str.replace("\\", "\\\\").replace(";", "\\;").replace(":", "\\:").replace("}", "\\}")
+    str.replace("\\", "\\\\").replace(";", "\\;").replace(":", "\\:").replace("}", "\\}").replace("{", "\\{")
   }
   def unescape(str:String) = {
-    str.replace("\\}", "}").replace("\\:", ":").replace("\\;", ";").replace("\\\\", "\\")
+    str.replace("\\{", "{").replace("\\}", "}").replace("\\:", ":").replace("\\;", ";").replace("\\\\", "\\")
   }
   
   def serializeProps(props:PropMap, space:SpaceState) = {
@@ -66,7 +66,10 @@ object Thing {
   def deserializeProps(str:String, space:SpaceState):PropMap = {
     // Strip the surrounding {} pair:
     val stripExt = str.slice(1, str.length() - 1)
-    val propStrs = stripExt.split(";")
+    // Note that we have to split on semicolons that are *not* preceded by backslashes. This is
+    // a little tricky to express in regex -- the weird bit is saying "things that aren't backslashes,
+    // non-capturing".
+    val propStrs = stripExt.split("""(?<=[^\\]);""")
     val propPairs = propStrs.filter(_.trim.length() > 0).map { propStr =>
       val (idStr, valStrAndColon) = propStr.splitAt(propStr.indexOf(':'))
       val valStr = unescape(valStrAndColon.drop(1))

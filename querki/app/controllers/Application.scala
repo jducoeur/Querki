@@ -169,6 +169,7 @@ object Application extends Controller {
       ))
   }
   
+  // TODO: OMG, this method needs refactoring in the worst way:
   def doCreateThing(spaceId:String) = withSpaceAndRequest(spaceId) { user => implicit state => implicit request =>
     newThingForm.bindFromRequest.fold(
       errors => BadRequest(views.html.newSpace(user, Some("You have to specify a legal name"))),
@@ -208,18 +209,39 @@ object Application extends Controller {
               getOtherProps(state, props)
             ))          
         } else {
-          val propPairs = rawProps.map { pair =>
+          val propsWithRawvals = rawProps.map { pair =>
             val (propIdStr, rawValue) = pair
             val propId = OID(propIdStr)
             val prop = state.prop(propId)
-            val value = prop.fromUser(rawValue)
-            (propId, value)
+            (prop, rawValue)
           }
-          val props = Thing.toProps(propPairs:_*)()
-          askSpaceMgr[ThingResponse](CreateThing(OID(spaceId), user.id, OID(info.model), props)) {
-            case ThingFound(thingId, state) => Redirect(routes.Application.thing(state.id.toString, thingId.toString))
-            // TODO: we'll want more granular failure messages:
-            case ThingFailed() => Redirect(routes.Application.createThing(spaceId))
+          val illegalVals = propsWithRawvals.filterNot(pair => pair._1.validate(pair._2))
+          if (illegalVals.isEmpty) {
+            val propPairs = propsWithRawvals.map { pair =>
+              val (prop, rawValue) = pair
+              val value = prop.fromUser(rawValue)
+              (prop.id, value)
+            }
+            val props = Thing.toProps(propPairs:_*)()
+            askSpaceMgr[ThingResponse](CreateThing(OID(spaceId), user.id, OID(info.model), props)) {
+              case ThingFound(thingId, state) => Redirect(routes.Application.thing(state.id.toString, thingId.toString))
+              // TODO: we'll want more granular failure messages:
+              case ThingFailed() => Redirect(routes.Application.createThing(spaceId))
+            }
+          } else {
+            val props = makeProps(rawProps)
+            val badProps = illegalVals.map { _._1.displayName }
+            val errorMsg = "Illegal values for " + badProps.mkString
+            BadRequest(views.html.createThing(
+                user,
+                None,
+                // TODO: this should be the current model:
+                SimpleThing,
+                state.allModels,
+                props,
+                getOtherProps(state, props),
+                Some(errorMsg)
+              ))
           }
         }
       }      
@@ -241,7 +263,7 @@ object Application extends Controller {
       ))
   }
   
-  // TODO: meld this with doCreateThing
+  // TODO: meld this with doCreateThing! Note that that has evolved more than this has!
   def doEditThing(spaceId:String, thingIdStr:String) = withSpaceAndRequest(spaceId) { user => implicit state => implicit request =>
     newThingForm.bindFromRequest.fold(
       errors => BadRequest(views.html.newSpace(user, Some("You have to specify a legal name"))),
