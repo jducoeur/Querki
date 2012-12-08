@@ -394,7 +394,7 @@ sealed trait SpaceMgrMsg
 case class GetSpace(id:OID, requester:OID) extends SpaceMgrMsg
 sealed trait GetSpaceResponse
 case class RequestedSpace(state:SpaceState) extends GetSpaceResponse
-case class GetSpaceFailed(id:OID) extends GetSpaceResponse
+case class GetSpaceFailed(id:OID, msg:String) extends GetSpaceResponse
 
 case class ListMySpaces(owner:OID) extends SpaceMgrMsg
 sealed trait ListMySpacesResponse
@@ -468,7 +468,8 @@ class SpaceManager extends Actor {
     }
     
     case req:CreateSpace => {
-      if (NameProp.validate(req.name)) {
+      val errorMsg = legalSpaceName(req.owner, req.name)
+      if (errorMsg.isEmpty) {
         // TODO: check that the owner hasn't run out of spaces he can create
         // TODO: check that the owner doesn't already have a space with that name
         // TODO: this involves DB access, so should be async using the Actor DSL
@@ -476,7 +477,7 @@ class SpaceManager extends Actor {
         // Now, let the Space Actor finish the process once it is ready:
         spaceActor.forward(req)
       } else {
-        sender ! GetSpaceFailed(UnknownOID)
+        sender ! GetSpaceFailed(UnknownOID, errorMsg.get)
       }
     }
     
@@ -485,6 +486,21 @@ class SpaceManager extends Actor {
     case req:SpaceMessage => {
       getSpace(req.spaceId).forward(req)
     }
+  }
+  
+  private def legalSpaceName(ownerId:OID, name:String):Option[String] = {
+    def numWithName = DB.withTransaction { implicit conn =>
+      SQL("""
+          SELECT COUNT(*) AS c from Spaces WHERE owner = {ownerId} AND name = {name}
+          """).on("ownerId" -> ownerId.raw, "name" -> name).apply().headOption.get.get[Long]("c").get
+    }
+    if (!NameProp.validate(name))
+      Some("That's not a legal name for a Space")
+    else if (numWithName > 0) {
+      Logger.info("numWithName = " + numWithName)
+      Some("You already have a Space with that name")
+    } else
+      None
   }
   
   private def createSpace(owner:OID, name:String) = {

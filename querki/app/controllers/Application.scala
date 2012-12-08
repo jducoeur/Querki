@@ -84,7 +84,7 @@ object Application extends Controller {
   def withSpaceAndRequest(spaceId:String)(f: (User => SpaceState => Request[AnyContent] => Result)) = withUser { user => implicit request =>
     askSpaceMgr[GetSpaceResponse](GetSpace(OID(spaceId), user.id)) {
       case RequestedSpace(state) => f(user)(state)(request)
-      case GetSpaceFailed(id) => Ok(views.html.spaces(Some(user), Seq.empty))
+      case GetSpaceFailed(id, msg) => Ok(views.html.spaces(Some(user), Seq.empty, Some(msg)))
     }     
   }
   
@@ -95,7 +95,7 @@ object Application extends Controller {
   def withSpace(spaceId:String)(f: (User => SpaceState => Result)) = withUser { user => implicit request =>
     askSpaceMgr[GetSpaceResponse](GetSpace(OID(spaceId), user.id)) {
       case RequestedSpace(state) => f(user)(state)
-      case GetSpaceFailed(id) => Ok(views.html.spaces(Some(user), Seq.empty))
+      case GetSpaceFailed(id, msg) => Ok(views.html.spaces(Some(user), Seq.empty, Some(msg)))
     }     
   }
   
@@ -135,7 +135,7 @@ object Application extends Controller {
           askSpaceMgr[GetSpaceResponse](CreateSpace(user.id, name)) {
             case RequestedSpace(state) => Redirect(routes.Application.space(state.id.toString))
             // TODO: we'll want more granular failure messages:
-            case GetSpaceFailed(id) =>  BadRequest(views.html.newSpace(user, Some("I wasn't able to create the new Space!")))
+            case GetSpaceFailed(id, msg) =>  BadRequest(views.html.newSpace(user, Some(msg)))
           }
         } else {
           BadRequest(views.html.newSpace(user, Some("That's not a legal Space name")))

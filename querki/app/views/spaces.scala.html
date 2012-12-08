@@ -1,6 +1,6 @@
-@(user:Option[User], spaces:Seq[(OID,String)])
+@(user:Option[User], spaces:Seq[(OID,String)], errors:Option[String] = None)
 
-@main("Your Spaces", user, NavSection.homeNav, None, None) {
+@main("Your Spaces", user, NavSection.homeNav, None, None, errors) {
 
 	<div class="page-header">
 	  <h1>Your Spaces</h1>
