@@ -95,6 +95,10 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
     
     override protected def doToUser(v:String):String = toDisplay(v)
     
+    def equalNames(str1:String, str2:String):Boolean = {
+      toInternal(str1).toLowerCase().contentEquals(toInternal(str2).toLowerCase())
+    }
+    
     /**
      * Names are only allowed to contain alphanumerics, dashes and spaces
      */

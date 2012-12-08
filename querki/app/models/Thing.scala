@@ -110,6 +110,10 @@ abstract class Thing(
       localName.get.render.raw
     }
   }
+  
+  def canonicalName:Option[String] = {
+    NameProp.firstOpt(props)
+  }
 
   def getModel(implicit state:SpaceState):Thing = { state.anything(model) }
   

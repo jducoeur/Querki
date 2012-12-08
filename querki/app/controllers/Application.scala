@@ -188,14 +188,14 @@ object Application extends Controller {
           }
           PropList(rawList:_*)
         }
+        val oldModel = state.anything(OID(info.model))
         if (info.addedProperty.length > 0) {
           val allProps = rawProps :+ (info.addedProperty, "")
           val props = makeProps(allProps)
           Ok(views.html.createThing(
               user,
               None,
-              // TODO: this should be the current model:
-              SimpleThing,
+              oldModel,
               state.allModels,
               props,
               getOtherProps(state, props)
@@ -229,8 +229,18 @@ object Application extends Controller {
             val props = Thing.toProps(propPairs:_*)()
             askSpaceMgr[ThingResponse](CreateThing(OID(spaceId), user.id, OID(info.model), props)) {
               case ThingFound(thingId, state) => Redirect(routes.Application.thing(state.id.toString, thingId.toString))
-              // TODO: we'll want more granular failure messages:
-              case ThingFailed() => Redirect(routes.Application.createThing(spaceId))
+              case ThingFailed(msg) => {
+                val currentProps = makeProps(rawProps)
+                BadRequest(views.html.createThing(
+                  user,
+                  None,
+                  oldModel,
+                  state.allModels,
+                  currentProps,
+                  getOtherProps(state, currentProps),
+                  Some(msg)
+                ))
+              }
             }
           } else {
             val props = makeProps(rawProps)
@@ -239,8 +249,7 @@ object Application extends Controller {
             BadRequest(views.html.createThing(
                 user,
                 None,
-                // TODO: this should be the current model:
-                SimpleThing,
+                oldModel,
                 state.allModels,
                 props,
                 getOtherProps(state, props),
@@ -319,8 +328,8 @@ object Application extends Controller {
           val props = Thing.toProps(propPairs:_*)()
           askSpaceMgr[ThingResponse](ModifyThing(OID(spaceId), user.id, thingId, OID(info.model), props)) {
             case ThingFound(thingId, state) => Redirect(routes.Application.thing(state.id.toString, thingId.toString))
-            // TODO: we'll want more granular failure messages:
-            case ThingFailed() => Redirect(routes.Application.editThing(spaceId, thingId.toString))
+            // TODO: flash the error message
+            case ThingFailed(msg) => Redirect(routes.Application.editThing(spaceId, thingId.toString))
           }
         }
       }      
@@ -363,15 +372,13 @@ object Application extends Controller {
     	        case ThingFound(thingIdAgain, state3) => {
     	          Redirect(routes.Application.thing(state.id.toString, thingId.toString))
     	        }
-    	        case ThingFailed() => {
-                  // TODO: return an error
-                  Ok(views.html.addCSS(user, thing))    	          
+    	        case ThingFailed(msg) => {
+                  Ok(views.html.addCSS(user, thing, Some(msg)))    	          
     	        }
     	      }
     	    }
-    	    case ThingFailed() => {
-              // TODO: return an error
-              Ok(views.html.addCSS(user, thing))
+    	    case ThingFailed(msg) => {
+              Ok(views.html.addCSS(user, thing, Some(msg)))
     	    }
     	  }
     	} getOrElse {

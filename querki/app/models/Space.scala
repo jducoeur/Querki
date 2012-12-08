@@ -72,6 +72,21 @@ case class SpaceState(
                 	app.map(_.anything(oid)).getOrElse(this)))))
   }
   
+  def thingWithName(name:String, things:Map[OID, Thing]):Option[Thing] = {
+    things.values.find { thing =>
+      val thingNameOpt = thing.canonicalName
+      thingNameOpt.isDefined && NameType.equalNames(thingNameOpt.get, name)
+    }
+  }
+  
+  def anythingByName(rawName:String):Option[Thing] = {
+    val name = NameType.toInternal(rawName)
+    thingWithName(name, things).orElse(
+      thingWithName(name, spaceProps).orElse(
+        thingWithName(name, types).orElse(
+          thingWithName(name, colls))))
+  }
+  
   def allProps:Map[OID, Property[_,_,_]] = if (app.isEmpty) spaceProps else spaceProps ++ app.get.allProps
   
   def allModels:Iterable[ThingState] = {
@@ -105,7 +120,7 @@ case class CreateProperty(id:OID, who:OID, model:OID, pType:OID, cType:OID, prop
 // This is the most common response when you create/fetch any sort of Thing
 sealed trait ThingResponse
 case class ThingFound(id:OID, state:SpaceState) extends ThingResponse
-case class ThingFailed() extends ThingResponse
+case class ThingFailed(msg:String) extends ThingResponse
 
 sealed trait AttachmentResponse
 case class AttachmentContents(id:OID, size:Int, kind:AttachmentKind, content:Array[Byte]) extends AttachmentResponse
@@ -254,8 +269,11 @@ class Space extends Actor {
   def createSomething(spaceId:OID, who:OID, modelId:OID, props:PropMap, kind:Kind)(
       otherWork:OID => java.sql.Connection => Unit) = 
   {
+    val name = NameProp.firstOpt(props)
     if (!canCreateThings(who))
-      sender ! ThingFailed
+      sender ! ThingFailed("You are not allowed to create anything in this Space")
+    else if (name.isDefined && state.anythingByName(name.get).isDefined)
+      sender ! ThingFailed("This Space already has a Thing with that name")
     else DB.withTransaction { implicit conn =>
       val thingId = OID.next
       val thing = ThingState(thingId, spaceId, modelId, () => props, kind)
@@ -468,6 +486,10 @@ class SpaceManager extends Actor {
     }
     
     case req:CreateSpace => {
+      // TODO: technically, the legal name check should happen in the same transactions as
+      // space creation, to avoid the just-barely-possible race condition of creating the
+      // same name in two different sessions simultaneously. Extraordinarily unlikely, but
+      // we should fix this.
       val errorMsg = legalSpaceName(req.owner, req.name)
       if (errorMsg.isEmpty) {
         // TODO: check that the owner hasn't run out of spaces he can create
