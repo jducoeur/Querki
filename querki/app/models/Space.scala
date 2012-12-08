@@ -468,12 +468,16 @@ class SpaceManager extends Actor {
     }
     
     case req:CreateSpace => {
-      // TODO: check that the owner hasn't run out of spaces he can create
-      // TODO: check that the owner doesn't already have a space with that name
-      // TODO: this involves DB access, so should be async using the Actor DSL
-      val (spaceId, spaceActor) = createSpace(req.owner, req.name)
-      // Now, let the Space Actor finish the process once it is ready:
-      spaceActor.forward(req)
+      if (NameProp.validate(req.name)) {
+        // TODO: check that the owner hasn't run out of spaces he can create
+        // TODO: check that the owner doesn't already have a space with that name
+        // TODO: this involves DB access, so should be async using the Actor DSL
+        val (spaceId, spaceActor) = createSpace(req.owner, req.name)
+        // Now, let the Space Actor finish the process once it is ready:
+        spaceActor.forward(req)
+      } else {
+        sender ! GetSpaceFailed(UnknownOID)
+      }
     }
     
     // This clause is a pure forwarder for messages to a particular Space.
