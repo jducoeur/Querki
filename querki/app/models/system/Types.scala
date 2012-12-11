@@ -110,8 +110,10 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
     }
     
     def equalNames(str1:String, str2:String):Boolean = {
-      toInternal(str1).toLowerCase().contentEquals(toInternal(str2).toLowerCase())
+      canonicalize(str1).contentEquals(canonicalize(str2))
     }
+    
+    def canonicalize(str:String):String = toInternal(str).toLowerCase
 
     val doDefault = "MISSING NAME!"
   }

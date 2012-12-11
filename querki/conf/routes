@@ -25,7 +25,8 @@ POST    /space/:spaceId/:thingId/edit controllers.Application.doEditThing(spaceI
 
 GET     /u/:userName/               controllers.Application.userByName(userName)
 GET     /u/:userName/:spaceName/    controllers.Application.spaceByName(userName, spaceName)
-GET     /u/:userName/:spaceName/:thingName controllers.Application.thingByName(userName, spaceName, thingName) 
+GET     /u/:userName/:spaceName/:thingName controllers.Application.thingByName(userName, spaceName, thingName, chromeless:Boolean = false) 
+GET     /ucl/:userName/:spaceName/:thingName controllers.Application.thingByName(userName, spaceName, thingName, chromeless:Boolean = true) 
 
 POST    /dologin                    controllers.Application.dologin
 GET     /logout                     controllers.Application.logout

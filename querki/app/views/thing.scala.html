@@ -1,13 +1,16 @@
-@(user:Option[User], thing:Thing)(implicit space:SpaceState)
+@(user:Option[User], thing:Thing, chromeless:Boolean = false)(implicit space:SpaceState)
 
-@main(thing.displayName, user, NavSection.spaceNav(space), Some(space), Some(thing)) {
+@main(thing.displayName, user, NavSection.spaceNav(space), Some(space), Some(thing), None, chromeless, true) {
 
+    @if(!chromeless) {
 	<div class="page-header">
 	  <h1>@thing.displayName</h1>
 	</div>
+	}
 	
 	<p>@Html(thing.render.display)</p>
 	
+	@if(!chromeless) {
 	<a href="@routes.Application.editThing(space.id.toString, thing.id.toString)" class="btn">Edit</a>
 	
 	<hr/>
@@ -20,5 +23,6 @@
 	  <hr/>
 	  
 	  <a href="@routes.Application.attachment(space.id.toString, thing.id.toString)" class="btn">Get Attachment</a>
+	}
 	}
 }

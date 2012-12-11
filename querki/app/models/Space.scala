@@ -540,7 +540,7 @@ class SpaceManager extends Actor {
     DB.withTransaction { implicit conn =>
       val rowOption = SQL("""
           SELECT id from Spaces WHERE owner = {ownerId} AND name = {name}
-          """).on("ownerId" -> ownerId.raw, "name" -> name)().headOption
+          """).on("ownerId" -> ownerId.raw, "name" -> NameType.canonicalize(name))().headOption
       rowOption.map(row => OID(row.get[Long]("id").get))
     }
   }
@@ -549,7 +549,7 @@ class SpaceManager extends Actor {
     def numWithName = DB.withTransaction { implicit conn =>
       SQL("""
           SELECT COUNT(*) AS c from Spaces WHERE owner = {ownerId} AND name = {name}
-          """).on("ownerId" -> ownerId.raw, "name" -> name).apply().headOption.get.get[Long]("c").get
+          """).on("ownerId" -> ownerId.raw, "name" -> NameType.canonicalize(name)).apply().headOption.get.get[Long]("c").get
     }
     if (!NameProp.validate(name))
       Some("That's not a legal name for a Space")
@@ -560,7 +560,8 @@ class SpaceManager extends Actor {
       None
   }
   
-  private def createSpace(owner:OID, name:String) = {
+  private def createSpace(owner:OID, display:String) = {
+    val name = NameType.canonicalize(display)
     val spaceId = OID.next
     Logger.info("Creating new Space with OID " + Space.thingTable(spaceId))
     // Why the replace() here? It looks to me like the .on() function always
@@ -588,8 +589,8 @@ class SpaceManager extends Actor {
           (id, shard, name, display, owner, size) VALUES
           ({sid}, {shard}, {name}, {display}, {ownerId}, 0)
           """).on("sid" -> spaceId.raw, "shard" -> 1.toString, "name" -> name,
-                  "display" -> name, "ownerId" -> owner.raw).executeUpdate()
-      val initProps = Thing.toProps(Thing.setName(name))()
+                  "display" -> display, "ownerId" -> owner.raw).executeUpdate()
+      val initProps = Thing.toProps(Thing.setName(name), DisplayNameProp(display))()
       Space.createThingInSql(spaceId, spaceId, RootOID, Kind.Space, initProps, State)
     }
     val spaceActor = context.actorOf(Props[Space], name = Space.sid(spaceId))

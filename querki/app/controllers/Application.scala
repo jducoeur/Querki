@@ -338,13 +338,13 @@ object Application extends Controller {
     }    
   }
   
-  def spaceByName(userName:String, spaceName:String) = byName(userName, spaceName, None)
-  def thingByName(userName:String, spaceName:String, thingName:String) = byName(userName, spaceName, Some(thingName))
+  def spaceByName(userName:String, spaceName:String) = byName(userName, spaceName, None, false)
+  def thingByName(userName:String, spaceName:String, thingName:String, chromeless:Boolean) = byName(userName, spaceName, Some(thingName), chromeless)
   // TODO: this is currently a gaping security hole. It needs to become much more sophisticated. Add a
   // "withUserOptional", which passes through the credentials if found, but permits the operation
   // to play through regardless. It should check whether this user (or anonymous) is permitted to
   // see this thing once it is fetched.
-  def byName[A](userName:String, spaceName:String, thingName:Option[String]) = Action {
+  def byName[A](userName:String, spaceName:String, thingName:Option[String], chromeless:Boolean) = Action {
     val userOpt = getUser(userName)
     if (userOpt.isDefined) {
       val owner = userOpt.get
@@ -353,10 +353,10 @@ object Application extends Controller {
           case ThingFound(thingId, state) => {
             if (thingName.isDefined) {
               // TODO: this should show the logged-in user:
-              Ok(views.html.thing(None, state.anything(thingId))(state))
+              Ok(views.html.thing(None, state.anything(thingId), chromeless)(state))
             } else {
               // TODO: this should show the logged-in user:
-              Ok(views.html.thing(None, state)(state))
+              Ok(views.html.thing(None, state, chromeless)(state))
             }
           }
           case ThingFailed(msg) => {

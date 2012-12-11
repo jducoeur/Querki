@@ -1,4 +1,4 @@
-@(title: String, user:Option[User], nav:NavSections, space:Option[SpaceState] = None, thing:Option[Thing] = None, errors:Option[String] = None)(content: Html)
+@(title: String, user:Option[User], nav:NavSections, space:Option[SpaceState] = None, thing:Option[Thing] = None, errors:Option[String] = None, chromeless:Boolean = false, addStyles:Boolean = false)(content: Html)
 
 @import models.system._
 
@@ -10,6 +10,9 @@
  *
  * Most of this is adapted from Bootstrap's "fluid" example:
  *   http://twitter.github.com/bootstrap/examples/fluid.html
+ *
+ * TODO: by now, this is taking OMG a lot of params. Time to lift out a
+ * DisplayContext structure.
  ********************@
 
 <html>
@@ -18,6 +21,18 @@
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap.css")">
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap-responsive.css")">
+		
+		<style type="text/css">
+          body {
+            padding-top: 60px;
+            padding-bottom: 40px;
+          }
+          .sidebar-nav {
+            padding: 9px 0;
+          }
+        </style>
+
+        @if(addStyles) {        
         @if(space.isDefined && thing.isDefined && thing.get.hasProp(OIDs.StylesheetOID)(space.get)) {
           @defining(thing.get.first(StylesheetProp)(space.get)) { stylesheetOID =>
           @defining(space.get.thing(stylesheetOID)) { stylesheetThing =>
@@ -31,20 +46,13 @@
           }
           }
         }
+        }
         <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
-		
-		<style type="text/css">
-          body {
-            padding-top: 60px;
-            padding-bottom: 40px;
-          }
-          .sidebar-nav {
-            padding: 9px 0;
-          }
-        </style>
+
     </head>
     <body>
-    <div class="navbar navbar-inverse navbar-fixed-top">
+    @if(!chromeless) {
+    <div class="querki-topbar navbar navbar-inverse navbar-fixed-top">
       <div class="navbar-inner">
         <div class="container-fluid">
           <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
@@ -66,14 +74,16 @@
               <li><a href="#contact">Contact</a></li>
             </ul>
           </div><!--/.nav-collapse -->
-        </div>
-      </div>
-    </div>
+        </div><!--container-fluid-->
+      </div><!--navbar-inner-->
+    </div><!--querki-topbar-->
+    }
 	
 	<!-- This container stuff is likely to go into a lower-level, Space-rendering template -->
 	<div class="container-fluid">
       <div class="row-fluid">
-        <div class="span2">
+        @if(!chromeless) {
+        <div class="span2 querki-sidebar">
           <div class="well sidebar-nav">
             <p style="text-align:center"><b>@title</b></p>
             <ul class="nav nav-list">
@@ -85,9 +95,14 @@
               }
             </ul>
           </div><!--/.well -->
-        </div><!--/span-->
-        <div class="span10">
-		
+        </div><!--/span2-->
+        }
+        
+        @if(chromeless) {
+        <div class="querki-content span12">
+        } else {
+        <div class="querki-content span10">
+		}
 		  @errors match {
 			case None => {}
 			case Some(msg) => { 
@@ -99,14 +114,16 @@
 	      }
 	
           @content
-		</div><!--/span-->
+		</div><!--/span10-->
       </div><!--/row-->
 
+      @if(!chromeless) {
       <hr>
 
       <footer>
         <p>&copy; Querki 2012</p>
       </footer>
+      }
 
     </div><!--/.fluid-container-->
 	
