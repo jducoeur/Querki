@@ -2,14 +2,12 @@ package models
 
 import Thing._
 
-// TODO: is this enumeration worthwhile? Maybe I should just use MIME type instead.
-object AttachmentKind {
-  type AttachmentKind = Int
+object MIMEType {
+  type MIMEType = String
   
-  val CSS = 0
-  val JPEG = 1
+  val CSS = "text/css"
+  val JPEG = "image/jpeg"
 }
 
 object Attachments {
-
 }

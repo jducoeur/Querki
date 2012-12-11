@@ -307,7 +307,7 @@ object Application extends Controller {
 	  }
 	  val attachProps = Thing.toProps(DisplayNameProp(filename))()
 	  askSpaceMgr[ThingResponse](
-	    CreateAttachment(state.id, user.id, contents, AttachmentKind.CSS, contents.size, OIDs.RootOID, attachProps)) {
+	    CreateAttachment(state.id, user.id, contents, MIMEType.CSS, contents.size, OIDs.RootOID, attachProps)) {
 	    case ThingFound(attachmentId, state2) => {
 	      val newProps = thing.props + (StylesheetProp(attachmentId))
 	      askSpaceMgr[ThingResponse](ModifyThing(state.id, user.id, thingId, thing.model, newProps)) {
@@ -355,7 +355,7 @@ object Application extends Controller {
 	  }
 	  val attachProps = Thing.toProps(DisplayNameProp(filename))()
 	  askSpaceMgr[ThingResponse](
-	    CreateAttachment(state.id, user.id, contents, AttachmentKind.JPEG, contents.size, OIDs.PhotoBaseOID, attachProps)) {
+	    CreateAttachment(state.id, user.id, contents, MIMEType.JPEG, contents.size, OIDs.PhotoBaseOID, attachProps)) {
 	    case ThingFound(attachmentId, state2) => {
 	      Redirect(routes.Application.thing(state.id.toString, attachmentId.toString))
 	    }
@@ -370,12 +370,8 @@ object Application extends Controller {
     
   def attachment(spaceId:String, thingIdStr:String) = withUser { user => implicit request =>
     askSpaceMgr[AttachmentResponse](GetAttachment(OID(spaceId), user.id, OID(thingIdStr))) {
-      case AttachmentContents(id, size, kind, content) => {
-        kind match {
-          case AttachmentKind.CSS => Ok(content).as("text/css")
-          case AttachmentKind.JPEG => Ok(content).as("image/jpeg")
-          case _ => BadRequest
-        }
+      case AttachmentContents(id, size, mime, content) => {
+        Ok(content).as(mime)
       }
       case AttachmentFailed() => BadRequest
     }     

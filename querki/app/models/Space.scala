@@ -17,7 +17,6 @@ import anorm._
 import play.api.db._
 import play.api.Play.current
 
-import AttachmentKind._
 import Kind._
 import Thing._
 
@@ -101,14 +100,14 @@ case class SpaceState(
 }
 
 
-
+import MIMEType.MIMEType
 
 sealed class SpaceMessage(val spaceId:OID, val requester:OID) extends SpaceMgrMsg
 
 case class CreateThing(id:OID, who:OID, modelId:OID, props:PropMap) extends SpaceMessage(id, who)
 
 case class CreateAttachment(space:OID, who:OID, 
-    content:Array[Byte], kind:AttachmentKind, size:Int, 
+    content:Array[Byte], mime:MIMEType, size:Int, 
     modelId:OID, props:PropMap) extends SpaceMessage(space, who)
 
 case class GetAttachment(space:OID, who:OID, attachId:OID) extends SpaceMessage(space, who)
@@ -125,7 +124,7 @@ case class ThingFound(id:OID, state:SpaceState) extends ThingResponse
 case class ThingFailed(msg:String) extends ThingResponse
 
 sealed trait AttachmentResponse
-case class AttachmentContents(id:OID, size:Int, kind:AttachmentKind, content:Array[Byte]) extends AttachmentResponse
+case class AttachmentContents(id:OID, size:Int, mime:MIMEType, content:Array[Byte]) extends AttachmentResponse
 case class AttachmentFailed() extends AttachmentResponse
 
 
@@ -305,15 +304,15 @@ class Space extends Actor {
       createSomething(spaceId, who, modelId, props, Kind.Thing) { thingId => implicit conn => Unit }
     }
     
-    case CreateAttachment(spaceId, who, content, kind, size, modelId, props) => {
+    case CreateAttachment(spaceId, who, content, mime, size, modelId, props) => {
       createSomething(spaceId, who, modelId, props, Kind.Attachment) { thingId => implicit conn =>
       	AttachSQL("""
           INSERT INTO {tname}
-          (id, kind, size, content) VALUES
-          ({thingId}, {kind}, {size}, {content})
+          (id, mime, size, content) VALUES
+          ({thingId}, {mime}, {size}, {content})
         """
         ).on("thingId" -> thingId.raw,
-             "kind" -> kind,
+             "mime" -> mime,
              "size" -> size,
              "content" -> content).executeUpdate()        
       }
@@ -326,13 +325,13 @@ class Space extends Actor {
         // TODO: this will throw an error if the specified attachment doesn't exist
         // Guard against that.
         val results = AttachSQL("""
-            SELECT kind, size, content FROM {tname} where id = {id}
+            SELECT mime, size, content FROM {tname} where id = {id}
             """).on("id" -> attachId.raw)().map {
           // TODO: we really, really must not hardcode this type below. This is some sort of
           // serious Anorm driver failure, I think. As it stands, it's going to crash when we
           // move to MySQL:
-          case Row(kind:Int, size:Int, content:org.h2.jdbc.JdbcBlob) => {
-            AttachmentContents(attachId, size, kind, content.getBytes(1, content.length().toInt))
+          case Row(mime:MIMEType, size:Int, content:org.h2.jdbc.JdbcBlob) => {
+            AttachmentContents(attachId, size, mime, content.getBytes(1, content.length().toInt))
           }
         }.head
         sender ! results
@@ -579,7 +578,7 @@ class SpaceManager extends Actor {
       AttachSQL(spaceId, """
           CREATE TABLE {tname} (
             id bigint NOT NULL,
-            kind int NOT NULL,
+            mime varchar(127) NOT NULL,
             size int NOT NULL,
             content blob NOT NULL,
             PRIMARY KEY (id))
