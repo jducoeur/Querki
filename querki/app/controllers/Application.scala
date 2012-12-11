@@ -400,6 +400,50 @@ object Application extends Controller {
       case AttachmentFailed() => BadRequest
     }     
   }
+  
+  def userByName(userName:String) = {
+    // TBD: Note that, for now at least, this simply returns my own spaces. I'm leery about
+    // allowing people to see each other's spaces too casually.
+    // TBD: is this the appropriate response to, say, "http://querki.net/jducoeur/"? Or
+    // should this show the profile page instead?
+    withUser { user => implicit request => 
+      askSpaceMgr[ListMySpacesResponse](ListMySpaces(user.id)) { 
+        case MySpaces(list) => Ok(views.html.spaces(Some(user), list))
+      }
+    }    
+  }
+  
+  def spaceByName(userName:String, spaceName:String) = byName(userName, spaceName, None)
+  def thingByName(userName:String, spaceName:String, thingName:String) = byName(userName, spaceName, Some(thingName))
+  // TODO: this is currently a gaping security hole. It needs to become much more sophisticated. Add a
+  // "withUserOptional", which passes through the credentials if found, but permits the operation
+  // to play through regardless. It should check whether this user (or anonymous) is permitted to
+  // see this thing once it is fetched.
+  def byName[A](userName:String, spaceName:String, thingName:Option[String]) = Action {
+    val userOpt = getUser(userName)
+    if (userOpt.isDefined) {
+      val owner = userOpt.get
+        // TODO: pass the actual logged-in user (if any) to this request:
+        askSpaceMgr[ThingResponse](GetThingByName(UnknownOID, owner.id, spaceName, thingName)) {
+          case ThingFound(thingId, state) => {
+            if (thingName.isDefined) {
+              // TODO: this should show the logged-in user:
+              Ok(views.html.thing(None, state.anything(thingId))(state))
+            } else {
+              // TODO: this should show the logged-in user:
+              Ok(views.html.thing(None, state)(state))
+            }
+          }
+          case ThingFailed(msg) => {
+            // TODO: what's the right response here?
+            Redirect(routes.Application.index)
+          }
+        }
+    } else {
+      // TODO: flash an error
+      Redirect(routes.Application.index)
+    }
+  }
       
   def login = 
     Security.Authenticated(username, request => Ok(views.html.login(userForm))) { user =>

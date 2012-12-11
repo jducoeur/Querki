@@ -117,6 +117,8 @@ case class ModifyThing(space:OID, who:OID, id:OID, modelId:OID, props:PropMap) e
 
 case class CreateProperty(id:OID, who:OID, model:OID, pType:OID, cType:OID, props:PropMap) extends SpaceMessage(id, who)
 
+case class GetThingByName(req:OID, owner:OID, spaceName:String, thingName:Option[String]) extends SpaceMgrMsg
+
 // This is the most common response when you create/fetch any sort of Thing
 sealed trait ThingResponse
 case class ThingFound(id:OID, state:SpaceState) extends ThingResponse
@@ -363,6 +365,23 @@ class Space extends Actor {
         sender ! ThingFound(thingId, state)
       }
     }
+    
+    case GetThingByName(req, owner, spaceName, thingNameOpt) => {
+      if (!canRead(req))
+        sender ! ThingFailed("Space not found")
+      else if (thingNameOpt.isDefined) {
+        val thingOpt = state.anythingByName(thingNameOpt.get)
+        if (thingOpt.isDefined) {
+          sender ! ThingFound(thingOpt.get.id, state)
+        } else {
+          // TODO: better error message!
+          sender ! ThingFailed("Thing not found")
+        }
+      } else {
+        // TODO: is this the most semantically appropriate response?
+        sender ! ThingFound(UnknownOID, state)
+      }
+    }
   }
 }
 
@@ -503,10 +522,27 @@ class SpaceManager extends Actor {
       }
     }
     
+    case req:GetThingByName => {
+      val spaceId = getSpaceByName(req.owner, req.spaceName)
+      if (spaceId.isDefined)
+        getSpace(spaceId.get).forward(req)
+      else
+        sender ! ThingFailed("Space not found")
+    }
+    
     // This clause is a pure forwarder for messages to a particular Space.
     // Is there a better way to do this?
     case req:SpaceMessage => {
       getSpace(req.spaceId).forward(req)
+    }
+  }
+  
+  private def getSpaceByName(ownerId:OID, name:String):Option[OID] = {
+    DB.withTransaction { implicit conn =>
+      val rowOption = SQL("""
+          SELECT id from Spaces WHERE owner = {ownerId} AND name = {name}
+          """).on("ownerId" -> ownerId.raw, "name" -> name)().headOption
+      rowOption.map(row => OID(row.get[Long]("id").get))
     }
   }
   

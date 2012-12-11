@@ -22,6 +22,10 @@ POST    /space/:spaceId/:thingId/addCSS controllers.Application.doAddCSS(spaceId
 
 GET     /space/:spaceId/a/:attachmentId controllers.Application.attachment(spaceId, attachmentId)
 
+GET     /u/:userName/               controllers.Application.userByName(userName)
+GET     /u/:userName/:spaceName/    controllers.Application.spaceByName(userName, spaceName)
+GET     /u/:userName/:spaceName/:thingName controllers.Application.thingByName(userName, spaceName, thingName) 
+
 POST    /dologin                    controllers.Application.dologin
 GET     /logout                     controllers.Application.logout
 
