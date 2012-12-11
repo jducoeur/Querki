@@ -13,7 +13,8 @@ object NavSection {
       NavSection("This Space", Seq(
         NavLink("Space Home", routes.Application.space(id)),
         NavLink("All Things", routes.Application.things(id)),
-        NavLink("Create a Thing", routes.Application.createThing(id))
+        NavLink("Create a Thing", routes.Application.createThing(id)),
+        NavLink("Upload a Photo", routes.Application.upload(id))
       )),
       querkiSection
     ))

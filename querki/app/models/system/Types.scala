@@ -119,6 +119,9 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
   
   /**
    * The Type for Links to other Things
+   * 
+   * TODO: this wants to become Typed Links very, very soon. Most use cases don't want me to
+   * list every Thing in the Space.
    */
   class LinkType(tid:OID) extends SystemType[OID](tid,
       toProps(

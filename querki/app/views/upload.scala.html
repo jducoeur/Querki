@@ -1,0 +1,35 @@
+@(user:User, errors:Option[String] = None)(implicit space:SpaceState)
+
+@import helper._
+@import helper.twitterBootstrap._
+
+@import models.system._
+@import models.system.SystemSpace._
+
+@import models.Property._
+
+@main("Upload", Some(user), NavSection.spaceNav(space), Some(space), None, errors) {
+		
+	<div class="page-header">
+	  <h1>Upload an Image</h1>
+	</div>
+	
+	@form(routes.Application.doUpload(space.id.toString), 'class -> "form-horizontal", 'enctype -> "multipart/form-data") {
+	  <fieldset>
+
+        <div class="control-group">
+          <label class="control-label">Choose an image file</label>
+	      <div class="controls">
+	        <input type="file" name="uploadedFile" accept="image/jpeg">
+	      </div>
+	    </div>
+	    
+	    <div class="control-group">
+	      <div class="controls">
+	        <input type="submit" value="Load" class="btn btn-primary">	      
+	      </div>
+	    </div>
+	    
+	  </fieldset>
+	}
+}

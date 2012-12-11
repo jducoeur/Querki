@@ -45,6 +45,7 @@ object OIDs {
   val CSSTextOID = sysId(27)
   val CSSOID = sysId(28)
   val StylesheetBaseOID = sysId(29)
+  val PhotoBaseOID = sysId(30)
 }
 
 /**
@@ -76,7 +77,7 @@ object SystemSpace {
       CSSProp)
       
   // Things:
-  val things = oidMap[ThingState](UrThing, Page, SimpleThing, StylesheetBase)
+  val things = oidMap[ThingState](UrThing, Page, SimpleThing, StylesheetBase, PhotoBase)
   
   object State extends SpaceState(systemOID, RootOID,
       toProps(

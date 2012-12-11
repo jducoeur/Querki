@@ -275,57 +275,105 @@ object Application extends Controller {
     Ok(views.html.addCSS(user, thing))
   }
   
+  // TODO: I think this function is the straw that breaks the camel's back when it comes to code structure.
+  // It has too many nested levels, and they're only going to get worse. It needs a big rewrite.
+  //
+  // A better solution is probably to use 2.10's Try monad pretty rigorously. Say that askSpaceMgr returns
+  // a monadic response, that composes by calling the next step in the chain. If you get ThingFound, we
+  // continue; if you get ThingFailed, we fail the Try with an error. Done right, and all of this can
+  // become a nice for() statement, and will be much easier to reason about in the long run. That will
+  // have to wait until we have 2.10 going, though.
+  //
   // TODO: limit the size of the uploaded file!!!
   def doAddCSS(spaceId:String, thingIdStr:String) = withSpaceAndRequest(spaceId) { user => implicit state => implicit request =>
-    	val thingId = OID(thingIdStr)
-        val thing = state.anything(thingId)
-        
-        request.body.asMultipartFormData flatMap(_.file("cssFile")) map { filePart =>
-          val filename = filePart.filename
-    	  val tempfile = filePart.ref.file
-    	  // TODO: check whether the CSS contains any Javascript-enabling keywords
-    	  // TBD: Note that this codec forces everything to be treated as pure-binary. That's
-    	  // because we are trying to be consistent about attachments. Not clear whether
-    	  // that's the right approach in the long run, though.
-    	  val source = io.Source.fromFile(tempfile)(scala.io.Codec.ISO8859)
-    	  val contents = try {
-    	    // TODO: is there any way to get the damned file into the DB without copying it
-    	    // through memory like this?
-    	    source.map(_.toByte).toArray
-    	  } finally {
-    	    source.close()
-    	  }
-    	  val attachProps = Thing.toProps(DisplayNameProp(filename))()
-    	  askSpaceMgr[ThingResponse](
-    	    CreateAttachment(state.id, user.id, contents, AttachmentKind.CSS, contents.size, OIDs.RootOID, attachProps)) {
-    	    case ThingFound(attachmentId, state2) => {
-    	      val newProps = thing.props + (StylesheetProp(attachmentId))
-    	      askSpaceMgr[ThingResponse](ModifyThing(state.id, user.id, thingId, thing.model, newProps)) {
-    	        case ThingFound(thingIdAgain, state3) => {
-    	          Redirect(routes.Application.thing(state.id.toString, thingId.toString))
-    	        }
-    	        case ThingFailed(msg) => {
-                  Ok(views.html.addCSS(user, thing, Some(msg)))    	          
-    	        }
-    	      }
-    	    }
-    	    case ThingFailed(msg) => {
-              Ok(views.html.addCSS(user, thing, Some(msg)))
-    	    }
-    	  }
-    	} getOrElse {
-          // TODO: return an error
-          Ok(views.html.addCSS(user, thing))    	  
-    	}
+	val thingId = OID(thingIdStr)
+    val thing = state.anything(thingId)
+    
+    request.body.asMultipartFormData flatMap(_.file("cssFile")) map { filePart =>
+      val filename = filePart.filename
+	  val tempfile = filePart.ref.file
+	  // TODO: check whether the CSS contains any Javascript-enabling keywords. That should
+	  // be done in the CSSType's validation.
+	  // TBD: Note that this codec forces everything to be treated as pure-binary. That's
+	  // because we are trying to be consistent about attachments. Not clear whether
+	  // that's the right approach in the long run, though.
+	  val source = io.Source.fromFile(tempfile)(scala.io.Codec.ISO8859)
+	  val contents = try {
+	    // TODO: is there any way to get the damned file into the DB without copying it
+	    // through memory like this?
+	    source.map(_.toByte).toArray
+	  } finally {
+	    source.close()
+	  }
+	  val attachProps = Thing.toProps(DisplayNameProp(filename))()
+	  askSpaceMgr[ThingResponse](
+	    CreateAttachment(state.id, user.id, contents, AttachmentKind.CSS, contents.size, OIDs.RootOID, attachProps)) {
+	    case ThingFound(attachmentId, state2) => {
+	      val newProps = thing.props + (StylesheetProp(attachmentId))
+	      askSpaceMgr[ThingResponse](ModifyThing(state.id, user.id, thingId, thing.model, newProps)) {
+	        case ThingFound(thingIdAgain, state3) => {
+	          Redirect(routes.Application.thing(state.id.toString, thingId.toString))
+	        }
+	        case ThingFailed(msg) => {
+              Ok(views.html.addCSS(user, thing, Some(msg)))    	          
+	        }
+	      }
+	    }
+	    case ThingFailed(msg) => {
+          Ok(views.html.addCSS(user, thing, Some(msg)))
+	    }
+	  }
+	} getOrElse {
+      // TODO: return an error
+      Ok(views.html.addCSS(user, thing))    	  
+	}
+  }
+
+  def upload(spaceId:String) = withSpace(spaceId) { user => implicit state =>
+    Ok(views.html.upload(user))
   }
   
+  // TODO: merge this with doAddCSS. That's a more-complex version of the same code, right up
+  // the line.
+  // TODO: generalize upload. You should be able to select the desired file type from a whitelist,
+  // and upload that type properly.
+  // TODO: limit the size of the uploaded file!!!
+  def doUpload(spaceId:String) = withSpaceAndRequest(spaceId) { user => implicit state => implicit request =>
+    request.body.asMultipartFormData flatMap(_.file("uploadedFile")) map { filePart =>
+      val filename = filePart.filename
+	  val tempfile = filePart.ref.file
+	  // TBD: Note that this codec forces everything to be treated as pure-binary. That's
+	  // because we are trying to be consistent about attachments. Not clear whether
+	  // that's the right approach in the long run, though.
+	  val source = io.Source.fromFile(tempfile)(scala.io.Codec.ISO8859)
+	  val contents = try {
+	    // TODO: is there any way to get the damned file into the DB without copying it
+	    // through memory like this?
+	    source.map(_.toByte).toArray
+	  } finally {
+	    source.close()
+	  }
+	  val attachProps = Thing.toProps(DisplayNameProp(filename))()
+	  askSpaceMgr[ThingResponse](
+	    CreateAttachment(state.id, user.id, contents, AttachmentKind.JPEG, contents.size, OIDs.PhotoBaseOID, attachProps)) {
+	    case ThingFound(attachmentId, state2) => {
+	      Redirect(routes.Application.thing(state.id.toString, attachmentId.toString))
+	    }
+	    case ThingFailed(msg) => {
+          Ok(views.html.upload(user, Some(msg)))
+	    }
+	  }
+	} getOrElse {
+      Ok(views.html.upload(user, Some("You didn't specify a file")))
+	}
+  }
+    
   def attachment(spaceId:String, thingIdStr:String) = withUser { user => implicit request =>
     askSpaceMgr[AttachmentResponse](GetAttachment(OID(spaceId), user.id, OID(thingIdStr))) {
       case AttachmentContents(id, size, kind, content) => {
         kind match {
-          case AttachmentKind.CSS => {
-            Ok(content).as("text/css")
-          }
+          case AttachmentKind.CSS => Ok(content).as("text/css")
+          case AttachmentKind.JPEG => Ok(content).as("image/jpeg")
           case _ => BadRequest
         }
       }

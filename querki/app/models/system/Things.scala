@@ -61,3 +61,14 @@ This is a Stylesheet. It is intended for more advanced users, and allows you to 
 The important Property here is CSS -- this contains normal CSS code, just like for a webpage.
 """),
       CSSProp("")))
+
+object PhotoBase extends ThingState(PhotoBaseOID, systemOID, RootOID,
+    toProps(
+      setName("Photograph-Base"),
+      IsModelProp(true),
+      DisplayTextProp("""
+This is the Model for all uploaded photographs. You shouldn't try to base something on this directly --
+just upload a photograph, and you'll get one of these.
+""")),
+    Kind.Attachment
+    )
