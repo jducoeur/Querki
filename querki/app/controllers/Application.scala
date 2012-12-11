@@ -29,16 +29,15 @@ object Application extends Controller {
      ((name:String) => Some(name))
   )
   
-  case class NewThingForm(values:List[String], fields:List[String], addedProperty:String, newModel:String, model:String)
+  case class NewThingForm(fields:List[String], addedProperty:String, newModel:String, model:String)
   val newThingForm = Form(
     mapping(
-      "value" -> list(text),
       "field" -> list(text),
       "addedProperty" -> text,
       "newModel" -> text,
       "model" -> text
-    )((value, field, addedProperty, newModel, model) => NewThingForm(value, field, addedProperty, newModel, model))
-     ((info:NewThingForm) => Some((info.values, info.fields, info.addedProperty, info.newModel, info.model)))
+    )((field, addedProperty, newModel, model) => NewThingForm(field, addedProperty, newModel, model))
+     ((info:NewThingForm) => Some((info.fields, info.addedProperty, info.newModel, info.model)))
   )
   
   def getUser(username:String):Option[User] = User.get(username)
@@ -184,29 +183,30 @@ object Application extends Controller {
   def doCreateThing(spaceId:String) = editThingInternal(spaceId:String, None)
   
   def editThingInternal(spaceId:String, thingIdStr:Option[String]) = withSpaceAndRequest(spaceId) { user => implicit state => implicit request =>
-    newThingForm.bindFromRequest.fold(
+    val rawForm = newThingForm.bindFromRequest
+    rawForm.fold(
       // TODO: correct error message here:
       errors => BadRequest(views.html.newSpace(user, Some("You have to specify a legal name"))),
       info => {
         // Whether we're creating or editing depends on whether thingIdStr is specified:
         val thingId = thingIdStr map (OID(_))
         val thing = thingId map (state.anything(_))
-        val rawProps = info.fields.zip(info.values)
+        val rawProps = info.fields map { fieldId => (fieldId, rawForm("v-" + fieldId).value) }
         val oldModel = state.anything(OID(info.model))
         
-        def makeProps(propList:List[(String, String)]):PropList = {
+        def makeProps(propList:List[(String, Option[String])]):PropList = {
           val rawList = propList.map { pair =>
             val (propIdStr, rawValue) = pair
             val propId = OID(propIdStr)
             val prop = state.prop(propId)
-            (prop -> Some(rawValue))
+            (prop -> rawValue)
           }
           PropList(rawList:_*)
         }
         
         if (info.addedProperty.length > 0) {
           // User chose to add a Property; add that to the UI and continue:
-          val allProps = rawProps :+ (info.addedProperty, "")
+          val allProps = rawProps :+ (info.addedProperty, Some(""))
           showEditPage(user, thing, oldModel, makeProps(allProps))
         } else if (info.newModel.length > 0) {
           // User is changing models. Replace the empty Properties with ones
@@ -216,9 +216,12 @@ object Application extends Controller {
         } else {
           // User has submitted a creation/change. Is it legal?
           val propsWithRawvals = rawProps.map { pair =>
-            val (propIdStr, rawValue) = pair
+            val (propIdStr, rawValueOpt) = pair
             val propId = OID(propIdStr)
             val prop = state.prop(propId)
+            // This is mainly for checkboxes -- those don't return *anything* if they are not
+            // checked:
+            val rawValue = if (rawValueOpt.isDefined) rawValueOpt.get else prop.renderedDefault.raw.toString
             (prop, rawValue)
           }
           val illegalVals = propsWithRawvals.filterNot(pair => pair._1.validate(pair._2))

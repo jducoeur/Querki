@@ -19,14 +19,6 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
     def doDeserialize(v:String) = java.lang.Integer.parseInt(v)
     def doSerialize(v:Int) = v.toString
     def doRender(v:Int) = Wikitext(v.toString)
-    
-    override def validate(v:String):Boolean = try {
-      val dummy = java.lang.Integer.parseInt(v)
-      true
-    } catch {
-      case _ => false      
-    }
-
 
     val doDefault = 0
   }
@@ -35,8 +27,6 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
   abstract class TextTypeBase(oid:OID, pf:PropFetcher) extends SystemType[Wikitext](oid, pf
       ) with PTypeBuilder[Wikitext,String]
   {
-    // TODO: escape JSON special chars for serialization!
-    
     def doDeserialize(v:String) = Wikitext(v)
     def doSerialize(v:Wikitext) = v.internal
     def doRender(v:Wikitext) = v
@@ -62,15 +52,33 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
         setName("Type-YesNo")
         )) with SimplePTypeBuilder[Boolean]
   {
-    def doDeserialize(ser:String) = java.lang.Boolean.parseBoolean(ser)
+    // It turns out that Java's parseBoolean is both too tolerant of nonsense, and
+    // doesn't handle many common cases. So we'll do it ourselves:
+    def doDeserialize(v:String) = {
+      v.toLowerCase() match {
+        case "true" => true
+        case "false" => false
+        
+        case "1" => true
+        case "0" => false
+        
+        case "yes" => true
+        case "no" => false
+        
+        case "on" => true
+        case "off" => false
+        
+        case "t" => true
+        case "f" => false
+        
+        case "y" => true
+        case "n" => false
+        
+        case _ => throw new Exception("I can't interpret " + v + " as a YesNo value")
+      }
+    }
     def doSerialize(v:Boolean) = v.toString
     def doRender(v:Boolean) = Wikitext(v.toString())
-    
-    override def validate(v:String):Boolean = try {
-      java.lang.Boolean.parseBoolean(v)
-    } catch {
-      case _ => false
-    }
     
     val doDefault = false
   }
@@ -78,8 +86,6 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
   
   /**
    * The Type for Display Names -- similar to Text, but not identical
-   * 
-   * TODO: introduce validation, since only a subset of chars are legal (I think)
    */
   class NameType(tid:OID) extends SystemType[String](tid,
       toProps(
@@ -94,18 +100,19 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
     def doRender(v:String) = Wikitext(toDisplay(v))
     
     override protected def doToUser(v:String):String = toDisplay(v)
+    override protected def doFromUser(v:String):String = {
+      if (v.length() == 0)
+        throw new Exception("Names must have non-zero length")
+      else if (v.exists(c => !c.isLetterOrDigit && c != '-' && c != ' '))
+        throw new Exception("Names may only contain letters, digits, dashes and spaces")
+      else
+        toDisplay(v)
+    }
     
     def equalNames(str1:String, str2:String):Boolean = {
       toInternal(str1).toLowerCase().contentEquals(toInternal(str2).toLowerCase())
     }
-    
-    /**
-     * Names are only allowed to contain alphanumerics, dashes and spaces
-     */
-    override def validate(v:String):Boolean = {
-      ((v.length() > 0) /: v)((current, c) => current && c.isLetterOrDigit || c == '-' || c == ' ')
-    }
-    
+
     val doDefault = "MISSING NAME!"
   }
   object NameType extends NameType(NameTypeOID)
@@ -125,7 +132,7 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
     // about the Thing it points to:
     def doRender(v:OID) = Wikitext(v.toString)
     
-    // TODO: define validate()
+    // TODO: define doFromUser()
 
     val doDefault = UnknownOID
   }
@@ -148,8 +155,7 @@ class CSSTextType(tid:OID) extends SystemType[String](tid,
         setName("Type-CSS"))
     ) with SimplePTypeBuilder[String]
 {
-  // TODO: filter any Javascript-enabling keywords! This should go in validate, as well
-  // as fromUser().
+  // TODO: filter any Javascript-enabling keywords! This should go in doFromUser().
     
   def doDeserialize(v:String) = v
   def doSerialize(v:String) = v

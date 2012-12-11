@@ -14,6 +14,9 @@ import system.SystemSpace._
  * typed, then the matrix composition of Collections and PTypes becomes impossible at
  * runtime. So ElemValues are fundamentally not typesafe, and should only be evaluated
  * in the context of their associated PTypes.
+ * 
+ * TODO: at some point, re-evaluate this. I have a suspicion that clever use of
+ * Type Constraints might be able to work around the problems, but I'm not sure.
  */
 case class ElemValue(elem:Any)
 
@@ -58,6 +61,9 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
   /**
    * Parses text input from the user. By default, we assume that this is the same
    * as deserialization, but override this when that's not true.
+   * 
+   * This should throw an Exception if the input is not legal. This is used in
+   * validation.
    */
   protected def doFromUser(str:String):VT = doDeserialize(str)
   final def fromUser(str:String):ElemValue = ElemValue(doFromUser(str))
@@ -81,10 +87,13 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * 
    * This is closely related to doFromUser -- iff something can be parsed by doFromUser, it
    * should validate cleanly. It is intended for UI use.
-   * 
-   * Defaults to true; subclasses are encouraged to override this appropriately.
    */
-  def validate(v:String):Boolean = true
+  final def validate(v:String):Boolean = try {
+    val dummy = doFromUser(v)
+    true
+  } catch {
+    case _ => false
+  }
 }
 trait PTypeBuilder[VT, -RT] {
   
@@ -188,6 +197,7 @@ case class Property[VT, -RT, CT](
 		  TypeProp(pType)
   
   def render(v:PropValue[CT]) = cType.render(v, pType)
+  def renderedDefault = render(default)
   
   def from(m:PropMap):PropValue[CT] = castVal(m(this))
   def fromOpt(m:PropMap):Option[PropValue[CT]] = m.get(this.id) map castVal

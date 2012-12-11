@@ -10,11 +10,11 @@
 
 @showInputControl(prop:Property[_,_,_], v:Option[String], i:Int) = {
   @if(prop.pType == LargeTextType || prop.pType == CSSTextType) {
-    <textarea rows="5" cols="50" name="value[@i]" placeholder="@prop.getProp(PlaceholderTextProp).renderIfDefined.raw">@v</textarea>
+    <textarea rows="5" cols="50" name="v-@prop.id.toString" placeholder="@prop.getProp(PlaceholderTextProp).renderIfDefined.raw">@v</textarea>
   }
   
   @if(prop.pType == LinkType) {
-    <select name="value[@i]">
+    <select name="v-@prop.id.toString">
       @for(candidate <- space.things.values) {
         <option value="@candidate.id.toString">@candidate.displayName</option>
       }
@@ -22,11 +22,11 @@
   }
   
   @if(prop.pType == IntType || prop.pType == TextType || prop.pType == NameType) {
-    <input type="text" name="value[@i]" value="@v" placeholder="@prop.getProp(PlaceholderTextProp).renderIfDefined.raw">    
+    <input type="text" name="v-@prop.id.toString" value="@v" placeholder="@prop.getProp(PlaceholderTextProp).renderIfDefined.raw">    
   }
   
   @if(prop.pType == YesNoType) {
-    <input type="checkbox" name="value[@i]">
+    <input type="checkbox" name="v-@prop.id.toString">
   }
 }
 
