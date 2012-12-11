@@ -23,9 +23,6 @@ GET     /space/:spaceId/:thingId    controllers.Application.thing(spaceId:String
 GET     /space/:spaceId/:thingId/edit controllers.Application.editThing(spaceId, thingId)
 POST    /space/:spaceId/:thingId/edit controllers.Application.doEditThing(spaceId, thingId)
 
-GET     /space/:spaceId/:thingId/addCSS controllers.Application.addCSS(spaceId, thingId)
-POST    /space/:spaceId/:thingId/addCSS controllers.Application.doAddCSS(spaceId, thingId)
-
 GET     /u/:userName/               controllers.Application.userByName(userName)
 GET     /u/:userName/:spaceName/    controllers.Application.spaceByName(userName, spaceName)
 GET     /u/:userName/:spaceName/:thingName controllers.Application.thingByName(userName, spaceName, thingName) 
