@@ -161,24 +161,39 @@ object Application extends Controller {
     }
   }
   
-  def createThing(spaceId:String) = withSpace(spaceId) { user => implicit state =>
-    val props = PropList((NameProp -> None))
-    Ok(views.html.createThing(
+  def showEditPage(user:User, existing:Option[Thing], model:Thing, props:PropList, errorMsg:Option[String] = None)(implicit state:SpaceState) = {
+    val page = views.html.editThing(
         user, 
-        None,
-        SimpleThing,
+        existing,
+        model,
         state.allModels,
         props,
-        getOtherProps(state, props)
-      ))
+        getOtherProps(state, props),
+        errorMsg
+      )
+    if (errorMsg.isDefined)
+      BadRequest(page)
+    else
+      Ok(page)    
   }
   
-  // TODO: OMG, this method needs refactoring in the worst way:
-  def doCreateThing(spaceId:String) = withSpaceAndRequest(spaceId) { user => implicit state => implicit request =>
+  def createThing(spaceId:String) = withSpace(spaceId) { user => implicit state =>
+    showEditPage(user, None, SimpleThing, PropList((NameProp -> None)))
+  }
+  
+  def doCreateThing(spaceId:String) = editThingInternal(spaceId:String, None)
+  
+  def editThingInternal(spaceId:String, thingIdStr:Option[String]) = withSpaceAndRequest(spaceId) { user => implicit state => implicit request =>
     newThingForm.bindFromRequest.fold(
+      // TODO: correct error message here:
       errors => BadRequest(views.html.newSpace(user, Some("You have to specify a legal name"))),
       info => {
+        // Whether we're creating or editing depends on whether thingIdStr is specified:
+        val thingId = thingIdStr map (OID(_))
+        val thing = thingId map (state.anything(_))
         val rawProps = info.fields.zip(info.values)
+        val oldModel = state.anything(OID(info.model))
+        
         def makeProps(propList:List[(String, String)]):PropList = {
           val rawList = propList.map { pair =>
             val (propIdStr, rawValue) = pair
@@ -188,31 +203,18 @@ object Application extends Controller {
           }
           PropList(rawList:_*)
         }
-        val oldModel = state.anything(OID(info.model))
+        
         if (info.addedProperty.length > 0) {
+          // User chose to add a Property; add that to the UI and continue:
           val allProps = rawProps :+ (info.addedProperty, "")
-          val props = makeProps(allProps)
-          Ok(views.html.createThing(
-              user,
-              None,
-              oldModel,
-              state.allModels,
-              props,
-              getOtherProps(state, props)
-            ))
+          showEditPage(user, thing, oldModel, makeProps(allProps))
         } else if (info.newModel.length > 0) {
+          // User is changing models. Replace the empty Properties with ones
+          // appropriate to the new model, and continue:
           val model = state.anything(OID(info.newModel))
-          val currentProps = makeProps(rawProps)
-          val props = replaceModelProps(currentProps, model)
-          Ok(views.html.createThing(
-              user,
-              None,
-              model,
-              state.allModels,
-              props,
-              getOtherProps(state, props)
-            ))          
+          showEditPage(user, thing, model, replaceModelProps(makeProps(rawProps), model))
         } else {
+          // User has submitted a creation/change. Is it legal?
           val propsWithRawvals = rawProps.map { pair =>
             val (propIdStr, rawValue) = pair
             val propId = OID(propIdStr)
@@ -221,40 +223,31 @@ object Application extends Controller {
           }
           val illegalVals = propsWithRawvals.filterNot(pair => pair._1.validate(pair._2))
           if (illegalVals.isEmpty) {
+            // Everything parses, anyway, so send it on to the Space for processing:
             val propPairs = propsWithRawvals.map { pair =>
               val (prop, rawValue) = pair
               val value = prop.fromUser(rawValue)
               (prop.id, value)
             }
             val props = Thing.toProps(propPairs:_*)()
-            askSpaceMgr[ThingResponse](CreateThing(OID(spaceId), user.id, OID(info.model), props)) {
+            val spaceMsg = if (thingId.isDefined) {
+              // Editing an existing Thing
+              ModifyThing(OID(spaceId), user.id, thingId.get, OID(info.model), props)
+            } else {
+              // Creating a new Thing
+              CreateThing(OID(spaceId), user.id, OID(info.model), props)
+            }
+            askSpaceMgr[ThingResponse](spaceMsg) {
               case ThingFound(thingId, state) => Redirect(routes.Application.thing(state.id.toString, thingId.toString))
               case ThingFailed(msg) => {
-                val currentProps = makeProps(rawProps)
-                BadRequest(views.html.createThing(
-                  user,
-                  None,
-                  oldModel,
-                  state.allModels,
-                  currentProps,
-                  getOtherProps(state, currentProps),
-                  Some(msg)
-                ))
+                showEditPage(user, thing, oldModel, makeProps(rawProps), Some(msg))
               }
             }
           } else {
-            val props = makeProps(rawProps)
-            val badProps = illegalVals.map { _._1.displayName }
+            // One or more values didn't parse against their PTypes. Give an error and continue:
+            val badProps = illegalVals.map { pair => pair._1.displayName + " (" + pair._2 + ") " }
             val errorMsg = "Illegal values for " + badProps.mkString
-            BadRequest(views.html.createThing(
-                user,
-                None,
-                oldModel,
-                state.allModels,
-                props,
-                getOtherProps(state, props),
-                Some(errorMsg)
-              ))
+            showEditPage(user, thing, oldModel, makeProps(rawProps), Some(errorMsg))
           }
         }
       }      
@@ -263,79 +256,15 @@ object Application extends Controller {
   
   def editThing(spaceId:String, thingIdStr:String) = withSpace(spaceId) { user => implicit state =>
     val thingId = OID(thingIdStr)
-    val thing = state.thing(thingId)
+    val thing = state.anything(thingId)
+    // TODO: security check that I'm allowed to edit this
     // TODO: error if the thing isn't found
-    val props = PropList.from(thing)
-    Ok(views.html.createThing(
-        user, 
-        Some(thing),
-        SimpleThing,
-        state.allModels,
-        props,
-        getOtherProps(state, props)
-      ))
+    val model = state.anything(thing.model)
+    showEditPage(user, Some(thing), model, PropList.from(thing))
   }
   
-  // TODO: meld this with doCreateThing! Note that that has evolved more than this has!
-  def doEditThing(spaceId:String, thingIdStr:String) = withSpaceAndRequest(spaceId) { user => implicit state => implicit request =>
-    newThingForm.bindFromRequest.fold(
-      errors => BadRequest(views.html.newSpace(user, Some("You have to specify a legal name"))),
-      info => {
-        val thingId = OID(thingIdStr)
-        val thing = state.thing(thingId)
-        val oldModel = state.thing(thing.model)
-        val rawProps = info.fields.zip(info.values)
-        def makeProps(propList:List[(String, String)]):PropList = {
-          val rawList = propList.map { pair =>
-            val (propIdStr, rawValue) = pair
-            val propId = OID(propIdStr)
-            val prop = state.prop(propId)
-            (prop -> Some(rawValue))
-          }
-          PropList(rawList:_*)
-        }
-        if (info.addedProperty.length > 0) {
-          val allProps = rawProps :+ (info.addedProperty, "")
-          val props = makeProps(allProps)
-          Ok(views.html.createThing(
-              user,
-              Some(thing),
-              oldModel,
-              state.allModels,
-              props,
-              getOtherProps(state, props)
-            ))
-        } else if (info.newModel.length > 0) {
-          val model = state.anything(OID(info.newModel))
-          val currentProps = makeProps(rawProps)
-          val props = replaceModelProps(currentProps, model)
-          Ok(views.html.createThing(
-              user,
-              Some(thing),
-              model,
-              state.allModels,
-              props,
-              getOtherProps(state, props)
-            ))          
-        } else {
-          val propPairs = rawProps.map { pair =>
-            val (propIdStr, rawValue) = pair
-            val propId = OID(propIdStr)
-            val prop = state.prop(propId)
-            val value = prop.fromUser(rawValue)
-            (propId, value)
-          }
-          val props = Thing.toProps(propPairs:_*)()
-          askSpaceMgr[ThingResponse](ModifyThing(OID(spaceId), user.id, thingId, OID(info.model), props)) {
-            case ThingFound(thingId, state) => Redirect(routes.Application.thing(state.id.toString, thingId.toString))
-            // TODO: flash the error message
-            case ThingFailed(msg) => Redirect(routes.Application.editThing(spaceId, thingId.toString))
-          }
-        }
-      }      
-    )
-  }
-  
+  def doEditThing(spaceId:String, thingIdStr:String) = editThingInternal(spaceId, Some(thingIdStr))
+
   def addCSS(spaceId:String, thingIdStr:String) = withSpace(spaceId) { user => implicit state =>
     val thingId = OID(thingIdStr)
     val thing = state.anything(thingId)

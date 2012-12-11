@@ -103,7 +103,7 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
      * Names are only allowed to contain alphanumerics, dashes and spaces
      */
     override def validate(v:String):Boolean = {
-      (true /: v)((current, c) => current && c.isLetterOrDigit || c == '-' || c == ' ')
+      ((v.length() > 0) /: v)((current, c) => current && c.isLetterOrDigit || c == '-' || c == ' ')
     }
     
     val doDefault = "MISSING NAME!"

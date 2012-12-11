@@ -24,6 +24,10 @@
   @if(prop.pType == IntType || prop.pType == TextType || prop.pType == NameType) {
     <input type="text" name="value[@i]" value="@v" placeholder="@prop.getProp(PlaceholderTextProp).renderIfDefined.raw">    
   }
+  
+  @if(prop.pType == YesNoType) {
+    <input type="checkbox" name="value[@i]">
+  }
 }
 
 @showProperty(prop:Property[_,_,_], v:Option[String], i:Int) = {
