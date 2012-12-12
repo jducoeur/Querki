@@ -316,14 +316,34 @@ object Application extends Controller {
       Ok(views.html.upload(user, Some("You didn't specify a file")))
 	}
   }
-    
-  def attachment(spaceId:String, thingIdStr:String) = withUser { user => implicit request =>
-    askSpaceMgr[AttachmentResponse](GetAttachment(OID(spaceId), user.id, OID(thingIdStr))) {
+
+  // TODO: deal with security here. This is another place where we need to take an *optional* user ID,
+  // and let the Space decide whether to allow access.
+  def attachment(spaceId:String, thingIdStr:String) = Action {
+    askSpaceMgr[AttachmentResponse](GetAttachment(UnknownOID, UnknownOID, AsOID(OID(spaceId)), AsUnknown(thingIdStr))) {
       case AttachmentContents(id, size, mime, content) => {
         Ok(content).as(mime)
       }
       case AttachmentFailed() => BadRequest
     }     
+  }
+  // TODO: same security comments as above.
+  // TODO: should/can this be refactored with byName below?
+  def attachmentByName(ownerName:String, spaceName:String, thingName:String) = Action {
+    val userOpt = getUser(ownerName)
+    if (userOpt.isDefined) {
+      val owner = userOpt.get
+      Logger.info("About to request the attachment!")
+      askSpaceMgr[AttachmentResponse](GetAttachment(UnknownOID, owner.id, AsName(spaceName), AsName(thingName))) {
+        case AttachmentContents(id, size, mime, content) => {
+          Ok(content).as(mime)
+        }
+        case AttachmentFailed() => BadRequest
+      }
+    } else {
+      // TODO: flash an error
+      Redirect(routes.Application.index)      
+    }
   }
   
   def userByName(userName:String) = {

@@ -78,6 +78,8 @@ case class SpaceState(
     }
   }
   
+  // TBD: should this try recognizing Display Names as well? I've confused myself that way once
+  // or twice.
   def anythingByName(rawName:String):Option[Thing] = {
     val name = NameType.toInternal(rawName)
     thingWithName(name, things).orElse(
@@ -102,19 +104,36 @@ case class SpaceState(
 
 import MIMEType.MIMEType
 
-sealed class SpaceMessage(val spaceId:OID, val requester:OID) extends SpaceMgrMsg
+/**
+ * ThingId deals with the fact that we sometimes are passing OIDs around in messages, and
+ * sometimes OIDs. This provides an abstraction that lets you use either in a sensible way.
+ */
+sealed trait ThingId
+case class AsOID(oid:OID) extends ThingId
+case class AsName(name:String) extends ThingId
+case class AsUnknown(str:String) extends ThingId
+object UnknownThingId extends AsOID(UnknownOID)
 
-case class CreateThing(id:OID, who:OID, modelId:OID, props:PropMap) extends SpaceMessage(id, who)
+/**
+ * The base class for message that get routed to a Space. Note that owner is only relevant if
+ * the spaceId is AsName (which needs to be disambiguated by owner).
+ */
+sealed class SpaceMessage(val requester:OID, val owner:OID, val spaceId:ThingId) extends SpaceMgrMsg
+object SpaceMessage {
+  def unapply(input:SpaceMessage) = Some((input.requester, input.owner, input.spaceId))
+}
 
-case class CreateAttachment(space:OID, who:OID, 
+case class CreateThing(space:OID, req:OID, modelId:OID, props:PropMap) extends SpaceMessage(req, UnknownOID, AsOID(space))
+
+case class CreateAttachment(space:OID, req:OID, 
     content:Array[Byte], mime:MIMEType, size:Int, 
-    modelId:OID, props:PropMap) extends SpaceMessage(space, who)
+    modelId:OID, props:PropMap) extends SpaceMessage(req, UnknownOID, AsOID(space))
 
-case class GetAttachment(space:OID, who:OID, attachId:OID) extends SpaceMessage(space, who)
+case class GetAttachment(req:OID, own:OID, space:ThingId, attachId:ThingId) extends SpaceMessage(req, own, space)
 
-case class ModifyThing(space:OID, who:OID, id:OID, modelId:OID, props:PropMap) extends SpaceMessage(space,who)
+case class ModifyThing(space:OID, req:OID, id:OID, modelId:OID, props:PropMap) extends SpaceMessage(req, UnknownOID, AsOID(space))
 
-case class CreateProperty(id:OID, who:OID, model:OID, pType:OID, cType:OID, props:PropMap) extends SpaceMessage(id, who)
+case class CreateProperty(id:OID, req:OID, model:OID, pType:OID, cType:OID, props:PropMap) extends SpaceMessage(req, UnknownOID, AsOID(id))
 
 case class GetThingByName(req:OID, owner:OID, spaceName:String, thingName:Option[String]) extends SpaceMgrMsg
 
@@ -318,20 +337,32 @@ class Space extends Actor {
       }
     }
     
-    case GetAttachment(space, who, attachId) => {
+    case GetAttachment(who, owner, space, attachId) => {
       if (!canRead(who))
         sender ! AttachmentFailed
       else DB.withTransaction { implicit conn =>
+        val attachOid = attachId match {
+          case AsOID(oid) => oid
+          // TODO: handle the case where this name is not recognized:
+          case AsName(name) => {
+            state.anythingByName(name).get.id
+          }
+          case AsUnknown(str) => {
+            val thingOpt = state.anythingByName(str)
+            // TODO: handle it if neither works:
+            thingOpt map (_.id) getOrElse { OID(str) }
+          }
+        }
         // TODO: this will throw an error if the specified attachment doesn't exist
         // Guard against that.
         val results = AttachSQL("""
             SELECT mime, size, content FROM {tname} where id = {id}
-            """).on("id" -> attachId.raw)().map {
+            """).on("id" -> attachOid.raw)().map {
           // TODO: we really, really must not hardcode this type below. This is some sort of
           // serious Anorm driver failure, I think. As it stands, it's going to crash when we
           // move to MySQL:
           case Row(mime:MIMEType, size:Int, content:org.h2.jdbc.JdbcBlob) => {
-            AttachmentContents(attachId, size, mime, content.getBytes(1, content.length().toInt))
+            AttachmentContents(attachOid, size, mime, content.getBytes(1, content.length().toInt))
           }
         }.head
         sender ! results
@@ -532,7 +563,17 @@ class SpaceManager extends Actor {
     // This clause is a pure forwarder for messages to a particular Space.
     // Is there a better way to do this?
     case req:SpaceMessage => {
-      getSpace(req.spaceId).forward(req)
+      Logger.info("SpaceMgr got " + req)
+      // TODO: cope with messages in name style instead
+      req match {
+        case SpaceMessage(_, _, AsOID(spaceId)) => getSpace(spaceId).forward(req)
+        case SpaceMessage(_, ownerId, AsName(spaceName)) => {
+          val spaceOpt = getSpaceByName(ownerId, spaceName)
+          // TODO: the error clause below potentially leaks information about whether a
+          // give space exists for an owner. Examine the various security paths holistically.
+          spaceOpt map getSpace map { Logger.info("Forwarding by name"); _.forward(req) } getOrElse { sender ! ThingFailed("Not a legal path") }
+        }
+      }
     }
   }
   

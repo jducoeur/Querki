@@ -18,6 +18,9 @@ GET     /space/:spaceId/upload      controllers.Application.upload(spaceId)
 POST    /space/:spaceId/upload      controllers.Application.doUpload(spaceId)
 
 GET     /space/:spaceId/a/:attachmentId controllers.Application.attachment(spaceId, attachmentId)
+GET     /u/:userName/:spaceName/a/:attachmentName controllers.Application.attachmentByName(userName, spaceName, attachmentName)
+# Okay, this is officially a stupid way to do this. We should use ?cl instead, or something like that
+GET     /ucl/:userName/:spaceName/a/:attachmentName controllers.Application.attachmentByName(userName, spaceName, attachmentName)
 
 GET     /space/:spaceId/:thingId    controllers.Application.thing(spaceId:String, thingId:String)
 GET     /space/:spaceId/:thingId/edit controllers.Application.editThing(spaceId, thingId)
