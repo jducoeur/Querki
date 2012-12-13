@@ -17,7 +17,7 @@ import models._
  * 
  * @param requester The validated User who is asking for this page, if any.
  */
-case class RequestContext(request:Request[AnyContent], requester:Option[User], state:SpaceState, thing:Option[Thing])
+case class RequestContext(request:Request[AnyContent], requester:Option[User], state:Option[SpaceState], thing:Option[Thing])
 
 object RequestContext {
   implicit def rc2Space(rc:RequestContext) = rc.state

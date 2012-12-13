@@ -463,6 +463,7 @@ object Space {
 
 sealed trait SpaceMgrMsg
 
+// TODO: I don't think this is used any more?
 case class GetSpace(id:OID, requester:OID) extends SpaceMgrMsg
 sealed trait GetSpaceResponse
 case class RequestedSpace(state:SpaceState) extends GetSpaceResponse
@@ -527,6 +528,7 @@ class SpaceManager extends Actor {
       }
     }
     
+    // TODO: I don't think this is used any more?
     case req:GetSpace => {
       if (req.id == systemOID)
         sender ! RequestedSpace(State)
@@ -557,6 +559,7 @@ class SpaceManager extends Actor {
       }
     }
 
+    // TODO: CRITICAL: we need a pseudo-Space for System!
     // This clause is a pure forwarder for messages to a particular Space.
     // Is there a better way to do this?
     case req:SpaceMessage => {
