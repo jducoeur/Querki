@@ -3,6 +3,8 @@
 @import helper._
 @import helper.twitterBootstrap._
 
+@import play.api.Logger
+
 @import models.system._
 @import models.system.SystemSpace._
 
@@ -14,9 +16,15 @@
   }
   
   @if(prop.pType == LinkType) {
+    @{Logger.info("Displaying Link Property " + prop + "; currently " + v)}
     <select name="v-@prop.id.toString">
       @for(candidate <- space.things.values) {
-        <option value="@candidate.id.toString">@candidate.displayName</option>
+        @{Logger.info("  Candidate is " + candidate.id.toString)}
+        @if(v.isDefined && (candidate.id.toString == v.get)) {
+          <option value="@candidate.id.toString" selected>@candidate.displayName</option>        
+        } else {
+          <option value="@candidate.id.toString">@candidate.displayName</option>
+        }
       }
     </select>    
   }

@@ -19,8 +19,6 @@ POST    /space/:spaceId/upload      controllers.Application.doUpload(spaceId)
 
 GET     /space/:spaceId/a/:attachmentId controllers.Application.attachment(spaceId, attachmentId)
 GET     /u/:userName/:spaceName/a/:attachmentName controllers.Application.attachmentByName(userName, spaceName, attachmentName)
-# Okay, this is officially a stupid way to do this. We should use ?cl instead, or something like that
-GET     /ucl/:userName/:spaceName/a/:attachmentName controllers.Application.attachmentByName(userName, spaceName, attachmentName)
 
 GET     /space/:spaceId/:thingId    controllers.Application.thing(spaceId:String, thingId:String)
 GET     /space/:spaceId/:thingId/edit controllers.Application.editThing(spaceId, thingId)
@@ -28,8 +26,7 @@ POST    /space/:spaceId/:thingId/edit controllers.Application.doEditThing(spaceI
 
 GET     /u/:userName/               controllers.Application.userByName(userName)
 GET     /u/:userName/:spaceName/    controllers.Application.spaceByName(userName, spaceName)
-GET     /u/:userName/:spaceName/:thingName controllers.Application.thingByName(userName, spaceName, thingName, chromeless:Boolean = false) 
-GET     /ucl/:userName/:spaceName/:thingName controllers.Application.thingByName(userName, spaceName, thingName, chromeless:Boolean = true) 
+GET     /u/:userName/:spaceName/:thingName controllers.Application.thingByName(userName, spaceName, thingName) 
 
 POST    /dologin                    controllers.Application.dologin
 GET     /logout                     controllers.Application.logout

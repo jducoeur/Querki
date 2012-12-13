@@ -118,8 +118,9 @@ object Application extends Controller {
     Ok(views.html.things(Some(user)))
   }
   
-  def thing(spaceId:String, thingId:String) = withSpace(spaceId) { user => implicit state =>
-    Ok(views.html.thing(Some(user), state.anything(OID(thingId))))
+  def thing(spaceId:String, thingId:String) = withSpaceAndRequest(spaceId) { user => implicit state => implicit request =>
+    val chromelessFlag = request.queryString.contains("cl")
+    Ok(views.html.thing(Some(user), state.anything(OID(thingId)), chromelessFlag))
   }
   
   def newSpace = withUser { user => implicit request =>
@@ -358,25 +359,28 @@ object Application extends Controller {
     }    
   }
   
-  def spaceByName(userName:String, spaceName:String) = byName(userName, spaceName, None, false)
-  def thingByName(userName:String, spaceName:String, thingName:String, chromeless:Boolean) = byName(userName, spaceName, Some(thingName), chromeless)
+  def spaceByName(userName:String, spaceName:String) = byName(userName, spaceName, None)
+  def thingByName(userName:String, spaceName:String, thingName:String) = byName(userName, spaceName, Some(thingName))
   // TODO: this is currently a gaping security hole. It needs to become much more sophisticated. Add a
   // "withUserOptional", which passes through the credentials if found, but permits the operation
   // to play through regardless. It should check whether this user (or anonymous) is permitted to
   // see this thing once it is fetched.
-  def byName[A](userName:String, spaceName:String, thingName:Option[String], chromeless:Boolean) = Action {
+  // TODO: merge this with thing() -- this is just a fancier version. Indeed, there's a big refactor
+  // waiting in here -- all this byName stuff should just become more regular.
+  def byName[A](userName:String, spaceName:String, thingName:Option[String]) = Action { implicit request =>
     val userOpt = getUser(userName)
     if (userOpt.isDefined) {
       val owner = userOpt.get
+      val chromelessFlag = request.queryString.contains("cl")
         // TODO: pass the actual logged-in user (if any) to this request:
         askSpaceMgr[ThingResponse](GetThingByName(UnknownOID, owner.id, spaceName, thingName)) {
           case ThingFound(thingId, state) => {
             if (thingName.isDefined) {
               // TODO: this should show the logged-in user:
-              Ok(views.html.thing(None, state.anything(thingId), chromeless)(state))
+              Ok(views.html.thing(None, state.anything(thingId), chromelessFlag)(state))
             } else {
               // TODO: this should show the logged-in user:
-              Ok(views.html.thing(None, state, chromeless)(state))
+              Ok(views.html.thing(None, state, chromelessFlag)(state))
             }
           }
           case ThingFailed(msg) => {
