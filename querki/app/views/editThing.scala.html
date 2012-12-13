@@ -16,10 +16,8 @@
   }
   
   @if(prop.pType == LinkType) {
-    @{Logger.info("Displaying Link Property " + prop + "; currently " + v)}
     <select name="v-@prop.id.toString">
       @for(candidate <- space.things.values) {
-        @{Logger.info("  Candidate is " + candidate.id.toString)}
         @if(v.isDefined && (candidate.id.toString == v.get)) {
           <option value="@candidate.id.toString" selected>@candidate.displayName</option>        
         } else {

@@ -1,6 +1,8 @@
-@(user:Option[User], thing:Thing, chromeless:Boolean = false)(implicit space:SpaceState)
+@(rc:RequestContext, thing:Thing, chromeless:Boolean = false)
 
-@main(thing.displayName, user, NavSection.spaceNav(space), Some(space), Some(thing), None, chromeless, true) {
+@implicitSpace = @{ rc.state }
+
+@main(thing.displayName, rc.requester, NavSection.spaceNav(rc.state), Some(rc.state), Some(thing), None, chromeless, true) {
 
     @if(!chromeless) {
 	<div class="page-header">
@@ -11,7 +13,7 @@
 	<p>@Html(thing.render.display)</p>
 	
 	@if(!chromeless) {
-	<a href="@routes.Application.editThing(space.id.toString, thing.id.toString)" class="btn">Edit</a>
+	<a href="@routes.Application.editThing(rc.state.id.toString, thing.id.toString)" class="btn">Edit</a>
 	
 	<hr/>
 	
@@ -22,7 +24,7 @@
 	@if(thing.kind == Kind.Attachment) {
 	  <hr/>
 	  
-	  <a href="@routes.Application.attachment(space.id.toString, thing.id.toString)" class="btn">Get Attachment</a>
+	  <a href="@routes.Application.attachment(rc.state.id.toString, thing.id.toString)" class="btn">Get Attachment</a>
 	}
 	}
 }

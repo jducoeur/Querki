@@ -74,26 +74,11 @@ object Application extends Controller {
   }
   
   /**
-   * Utility method for pages that are basically displaying some aspect of a whole Space.
-   * 
-   * @param spaceId The stringified OID of the space to display, from the URL
-   * @param f A callback that, given the user and the space's state, produces the
-   * actual page content
+   * Given a Space, this fetches that Space's current state before calling the core logic.
    */
-  def withSpaceAndRequest(spaceId:String)(f: (User => SpaceState => Request[AnyContent] => Result)) = withUser { user => implicit request =>
+  def withSpace(spaceId:String)(f: (RequestContext => Result)) = withUser { user => implicit request =>
     askSpaceMgr[GetSpaceResponse](GetSpace(OID(spaceId), user.id)) {
-      case RequestedSpace(state) => f(user)(state)(request)
-      case GetSpaceFailed(id, msg) => Ok(views.html.spaces(Some(user), Seq.empty, Some(msg)))
-    }     
-  }
-  
-  /**
-   * Simpler version of withSpaceAndRequest, for the majority of methods that don't actually
-   * care about the request.
-   */
-  def withSpace(spaceId:String)(f: (User => SpaceState => Result)) = withUser { user => implicit request =>
-    askSpaceMgr[GetSpaceResponse](GetSpace(OID(spaceId), user.id)) {
-      case RequestedSpace(state) => f(user)(state)
+      case RequestedSpace(state) => f(RequestContext(request, Some(user), state, None))
       case GetSpaceFailed(id, msg) => Ok(views.html.spaces(Some(user), Seq.empty, Some(msg)))
     }     
   }
@@ -110,17 +95,18 @@ object Application extends Controller {
     }
   }
     
-  def space(spaceId:String) = withSpace(spaceId) { user => implicit state =>
-    Ok(views.html.thing(Some(user), state))
+  def space(spaceId:String) = withSpace(spaceId) { implicit rc =>
+    Ok(views.html.thing(rc, rc.state))
   }
   
-  def things(spaceId:String) = withSpace(spaceId) { user => implicit state =>
-    Ok(views.html.things(Some(user)))
+  def things(spaceId:String) = withSpace(spaceId) { implicit rc =>
+    implicit val state = rc.state
+    Ok(views.html.things(rc.requester))
   }
   
-  def thing(spaceId:String, thingId:String) = withSpaceAndRequest(spaceId) { user => implicit state => implicit request =>
-    val chromelessFlag = request.queryString.contains("cl")
-    Ok(views.html.thing(Some(user), state.anything(OID(thingId)), chromelessFlag))
+  def thing(spaceId:String, thingId:String) = withSpace(spaceId) { implicit rc =>
+    val chromelessFlag = rc.request.queryString.contains("cl")
+    Ok(views.html.thing(rc, rc.state.anything(OID(thingId)), chromelessFlag))
   }
   
   def newSpace = withUser { user => implicit request =>
@@ -177,17 +163,21 @@ object Application extends Controller {
       Ok(page)    
   }
   
-  def createThing(spaceId:String) = withSpace(spaceId) { user => implicit state =>
-    showEditPage(user, None, SimpleThing, PropList((NameProp -> None)))
+  def createThing(spaceId:String) = withSpace(spaceId) { implicit rc =>
+    implicit val state = rc.state
+    showEditPage(rc.requester.get, None, SimpleThing, PropList((NameProp -> None)))
   }
   
   def doCreateThing(spaceId:String) = editThingInternal(spaceId:String, None)
   
-  def editThingInternal(spaceId:String, thingIdStr:Option[String]) = withSpaceAndRequest(spaceId) { user => implicit state => implicit request =>
+  def editThingInternal(spaceId:String, thingIdStr:Option[String]) = withSpace(spaceId) { implicit rc =>
+    implicit val request = rc.request
+    implicit val state = rc.state
+    val user = rc.requester.get
     val rawForm = newThingForm.bindFromRequest
     rawForm.fold(
       // TODO: correct error message here:
-      errors => BadRequest(views.html.newSpace(user, Some("You have to specify a legal name"))),
+      errors => BadRequest(views.html.newSpace(rc.requester.get, Some("You have to specify a legal name"))),
       info => {
         // Whether we're creating or editing depends on whether thingIdStr is specified:
         val thingId = thingIdStr map (OID(_))
@@ -258,19 +248,21 @@ object Application extends Controller {
     )
   }
   
-  def editThing(spaceId:String, thingIdStr:String) = withSpace(spaceId) { user => implicit state =>
+  def editThing(spaceId:String, thingIdStr:String) = withSpace(spaceId) { implicit rc =>
+    implicit val state = rc.state
     val thingId = OID(thingIdStr)
     val thing = state.anything(thingId)
     // TODO: security check that I'm allowed to edit this
     // TODO: error if the thing isn't found
     val model = state.anything(thing.model)
-    showEditPage(user, Some(thing), model, PropList.from(thing))
+    showEditPage(rc.requester.get, Some(thing), model, PropList.from(thing))
   }
   
   def doEditThing(spaceId:String, thingIdStr:String) = editThingInternal(spaceId, Some(thingIdStr))
 
-  def upload(spaceId:String) = withSpace(spaceId) { user => implicit state =>
-    Ok(views.html.upload(user))
+  def upload(spaceId:String) = withSpace(spaceId) { implicit rc =>
+    implicit val state = rc.state
+    Ok(views.html.upload(rc.requester.get))
   }
   
   // TODO: I think this function is the straw that breaks the camel's back when it comes to code structure.
@@ -288,8 +280,10 @@ object Application extends Controller {
   // should automatically generate thumbnails.
   //
   // TODO: limit the size of the uploaded file!!!
-  def doUpload(spaceId:String) = withSpaceAndRequest(spaceId) { user => implicit state => implicit request =>
-    request.body.asMultipartFormData flatMap(_.file("uploadedFile")) map { filePart =>
+  def doUpload(spaceId:String) = withSpace(spaceId) { implicit rc =>
+    implicit val state = rc.state
+    val user = rc.requester.get
+    rc.request.body.asMultipartFormData flatMap(_.file("uploadedFile")) map { filePart =>
       val filename = filePart.filename
 	  val tempfile = filePart.ref.file
 	  // TBD: Note that this codec forces everything to be treated as pure-binary. That's
@@ -321,7 +315,7 @@ object Application extends Controller {
   // TODO: deal with security here. This is another place where we need to take an *optional* user ID,
   // and let the Space decide whether to allow access.
   def attachment(spaceId:String, thingIdStr:String) = Action {
-    askSpaceMgr[AttachmentResponse](GetAttachment(UnknownOID, UnknownOID, AsOID(OID(spaceId)), AsUnknown(thingIdStr))) {
+    askSpaceMgr[AttachmentResponse](GetAttachment(UnknownOID, UnknownOID, AsOID(OID(spaceId)), ThingId(thingIdStr))) {
       case AttachmentContents(id, size, mime, content) => {
         Ok(content).as(mime)
       }
@@ -373,14 +367,16 @@ object Application extends Controller {
       val owner = userOpt.get
       val chromelessFlag = request.queryString.contains("cl")
         // TODO: pass the actual logged-in user (if any) to this request:
-        askSpaceMgr[ThingResponse](GetThingByName(UnknownOID, owner.id, spaceName, thingName)) {
+        askSpaceMgr[ThingResponse](GetThing(UnknownOID, owner.id, ThingId(spaceName), thingName map (ThingId(_)))) {
           case ThingFound(thingId, state) => {
+            val thing = state.anything(thingId)
+            // TODO: this should show the logged-in user:
+            val rc = RequestContext(request, None, state, Some(thing))
             if (thingName.isDefined) {
-              // TODO: this should show the logged-in user:
-              Ok(views.html.thing(None, state.anything(thingId), chromelessFlag)(state))
+              Ok(views.html.thing(rc, thing, chromelessFlag))
             } else {
               // TODO: this should show the logged-in user:
-              Ok(views.html.thing(None, state, chromelessFlag)(state))
+              Ok(views.html.thing(rc, state, chromelessFlag))
             }
           }
           case ThingFailed(msg) => {

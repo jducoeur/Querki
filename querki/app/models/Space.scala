@@ -111,8 +111,15 @@ import MIMEType.MIMEType
 sealed trait ThingId
 case class AsOID(oid:OID) extends ThingId
 case class AsName(name:String) extends ThingId
-case class AsUnknown(str:String) extends ThingId
 object UnknownThingId extends AsOID(UnknownOID)
+object ThingId {
+  def apply(str:String):ThingId = {
+    str(0) match {
+      case '.' => AsOID(OID(str.substring(1)))
+      case _ => AsName(str)
+    }
+  }
+}
 
 /**
  * The base class for message that get routed to a Space. Note that owner is only relevant if
@@ -135,7 +142,7 @@ case class ModifyThing(space:OID, req:OID, id:OID, modelId:OID, props:PropMap) e
 
 case class CreateProperty(id:OID, req:OID, model:OID, pType:OID, cType:OID, props:PropMap) extends SpaceMessage(req, UnknownOID, AsOID(id))
 
-case class GetThingByName(req:OID, owner:OID, spaceName:String, thingName:Option[String]) extends SpaceMgrMsg
+case class GetThing(req:OID, own:OID, space:ThingId, thing:Option[ThingId]) extends SpaceMessage(req, own, space)
 
 // This is the most common response when you create/fetch any sort of Thing
 sealed trait ThingResponse
@@ -347,11 +354,6 @@ class Space extends Actor {
           case AsName(name) => {
             state.anythingByName(name).get.id
           }
-          case AsUnknown(str) => {
-            val thingOpt = state.anythingByName(str)
-            // TODO: handle it if neither works:
-            thingOpt map (_.id) getOrElse { OID(str) }
-          }
         }
         // TODO: this will throw an error if the specified attachment doesn't exist
         // Guard against that.
@@ -396,11 +398,14 @@ class Space extends Actor {
       }
     }
     
-    case GetThingByName(req, owner, spaceName, thingNameOpt) => {
+    case GetThing(req, owner, space, thingIdOpt) => {
       if (!canRead(req))
         sender ! ThingFailed("Space not found")
-      else if (thingNameOpt.isDefined) {
-        val thingOpt = state.anythingByName(thingNameOpt.get)
+      else if (thingIdOpt.isDefined) {
+        val thingOpt = thingIdOpt.get match {
+          case AsOID(oid) => Some(state.anything(oid))
+          case AsName(name) => state.anythingByName(name)
+        }
         if (thingOpt.isDefined) {
           sender ! ThingFound(thingOpt.get.id, state)
         } else {
@@ -551,15 +556,7 @@ class SpaceManager extends Actor {
         sender ! GetSpaceFailed(UnknownOID, errorMsg.get)
       }
     }
-    
-    case req:GetThingByName => {
-      val spaceId = getSpaceByName(req.owner, req.spaceName)
-      if (spaceId.isDefined)
-        getSpace(spaceId.get).forward(req)
-      else
-        sender ! ThingFailed("Space not found")
-    }
-    
+
     // This clause is a pure forwarder for messages to a particular Space.
     // Is there a better way to do this?
     case req:SpaceMessage => {
@@ -571,7 +568,7 @@ class SpaceManager extends Actor {
           val spaceOpt = getSpaceByName(ownerId, spaceName)
           // TODO: the error clause below potentially leaks information about whether a
           // give space exists for an owner. Examine the various security paths holistically.
-          spaceOpt map getSpace map { Logger.info("Forwarding by name"); _.forward(req) } getOrElse { sender ! ThingFailed("Not a legal path") }
+          spaceOpt map getSpace map { _.forward(req) } getOrElse { sender ! ThingFailed("Not a legal path") }
         }
       }
     }
