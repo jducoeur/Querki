@@ -8,7 +8,7 @@ object NavSection {
   object homeNav extends NavSections(Seq(querkiSection))
   
   def spaceNav(state:SpaceState) = {
-    val id = state.id.toString
+    val id = state.id.toThingId
     NavSections(Seq(
       NavSection("This Space", Seq(
         NavLink("Space Home", routes.Application.space(id)),

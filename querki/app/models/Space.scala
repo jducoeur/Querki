@@ -88,6 +88,13 @@ case class SpaceState(
           thingWithName(name, colls))))
   }
   
+  def anything(thingId:ThingId):Option[Thing] = {
+    thingId match {
+      case AsOID(oid) => Some(anything(oid))
+      case AsName(name) => anythingByName(name)
+    }
+  }
+  
   def allProps:Map[OID, Property[_,_,_]] = if (app.isEmpty) spaceProps else spaceProps ++ app.get.allProps
   
   def allModels:Iterable[ThingState] = {
@@ -109,8 +116,12 @@ import MIMEType.MIMEType
  * sometimes OIDs. This provides an abstraction that lets you use either in a sensible way.
  */
 sealed trait ThingId
-case class AsOID(oid:OID) extends ThingId
-case class AsName(name:String) extends ThingId
+case class AsOID(oid:OID) extends ThingId {
+  override def toString() = "." + oid.toString
+}
+case class AsName(name:String) extends ThingId {
+  override def toString() = NameType.canonicalize(name)
+}
 object UnknownThingId extends AsOID(UnknownOID)
 object ThingId {
   def apply(str:String):ThingId = {
@@ -120,10 +131,7 @@ object ThingId {
     }
   }
   
-  implicit def thingId2Str(id:ThingId) = id match {
-    case AsOID(oid) => "." + oid.toString
-    case AsName(name) => NameType.canonicalize(name)
-  }
+  implicit def thingId2Str(id:ThingId) = id.toString()
 }
 
 /**
@@ -135,15 +143,17 @@ object SpaceMessage {
   def unapply(input:SpaceMessage) = Some((input.requester, input.owner, input.spaceId))
 }
 
-case class CreateThing(space:OID, req:OID, modelId:OID, props:PropMap) extends SpaceMessage(req, UnknownOID, AsOID(space))
+// TODO: all messages should have an optional owner ID!!!
+
+case class CreateThing(space:ThingId, req:OID, modelId:OID, props:PropMap) extends SpaceMessage(req, UnknownOID, space)
+
+case class ModifyThing(space:ThingId, req:OID, id:ThingId, modelId:OID, props:PropMap) extends SpaceMessage(req, UnknownOID, space)
 
 case class CreateAttachment(space:OID, req:OID, 
     content:Array[Byte], mime:MIMEType, size:Int, 
     modelId:OID, props:PropMap) extends SpaceMessage(req, UnknownOID, AsOID(space))
 
 case class GetAttachment(req:OID, own:OID, space:ThingId, attachId:ThingId) extends SpaceMessage(req, own, space)
-
-case class ModifyThing(space:OID, req:OID, id:OID, modelId:OID, props:PropMap) extends SpaceMessage(req, UnknownOID, AsOID(space))
 
 case class CreateProperty(id:OID, req:OID, model:OID, pType:OID, cType:OID, props:PropMap) extends SpaceMessage(req, UnknownOID, AsOID(id))
 
@@ -298,9 +308,24 @@ class Space extends Actor {
     loadSpace()
   } 
   
-  def createSomething(spaceId:OID, who:OID, modelId:OID, props:PropMap, kind:Kind)(
+  def checkSpaceId(thingId:ThingId):OID = {
+    thingId match {
+      case AsOID(oid) => if (oid == id) oid else throw new Exception("Space " + id + " somehow got message for " + oid)
+      case AsName(thingName) => if (NameType.equalNames(thingName, name)) id else throw new Exception("Space " + name + " somehow got message for " + thingName)
+    }
+  }
+  
+  def resolveThingId(thingId:ThingId):OID = {
+    thingId match {
+      case AsOID(oid) => oid
+      case AsName(thingName) => state.anythingByName(thingName) getOrElse (throw new Exception("Space " + name + " doesn't contain " + thingName))
+    }
+  }
+  
+  def createSomething(spaceThingId:ThingId, who:OID, modelId:OID, props:PropMap, kind:Kind)(
       otherWork:OID => java.sql.Connection => Unit) = 
   {
+    val spaceId = checkSpaceId(spaceThingId)
     val name = NameProp.firstOpt(props)
     if (!canCreateThings(who))
       sender ! ThingFailed("You are not allowed to create anything in this Space")
@@ -329,7 +354,7 @@ class Space extends Actor {
     }
     
     case CreateAttachment(spaceId, who, content, mime, size, modelId, props) => {
-      createSomething(spaceId, who, modelId, props, Kind.Attachment) { thingId => implicit conn =>
+      createSomething(AsOID(spaceId), who, modelId, props, Kind.Attachment) { thingId => implicit conn =>
       	AttachSQL("""
           INSERT INTO {tname}
           (id, mime, size, content) VALUES
@@ -369,14 +394,16 @@ class Space extends Actor {
       }
     }
     
-    case ModifyThing(spaceId, who, thingId, modelId, newProps) => {
+    case ModifyThing(spaceThingId, who, thingId, modelId, newProps) => {
       Logger.info("In ModifyThing")
-      if (!canEdit(who, thingId)) {
+      val spaceId = checkSpaceId(spaceThingId)
+      val thingOid = resolveThingId(thingId)
+      if (!canEdit(who, thingOid)) {
         Logger.info(who.toString + " can't edit -- requires " + owner.toString)
         sender ! ThingFailed
       } else DB.withTransaction { implicit conn =>
         Logger.info("About to get the thing")
-        val oldThing = state.thing(thingId)
+        val oldThing = state.thing(thingOid)
         Logger.info("Got the thing")
         // TODO: compare properties, build a history record of the changes
         val newThingState = oldThing.copy(m = modelId, pf = () => newProps)
@@ -386,13 +413,13 @@ class Space extends Actor {
           SET model = {modelId}, props = {props}
           WHERE id = {thingId}
           """
-          ).on("thingId" -> thingId.raw,
+          ).on("thingId" -> thingOid.raw,
                "modelId" -> modelId.raw,
                "props" -> Thing.serializeProps(newProps, state)).executeUpdate()    
-        updateState(state.copy(things = state.things + (thingId -> newThingState)))
+        updateState(state.copy(things = state.things + (thingOid -> newThingState)))
         
         Logger.info("About to leave ModifyThing")
-        sender ! ThingFound(thingId, state)
+        sender ! ThingFound(thingOid, state)
       }
     }
     
@@ -463,9 +490,9 @@ sealed trait SpaceMgrMsg
 
 case class ListMySpaces(owner:OID) extends SpaceMgrMsg
 sealed trait ListMySpacesResponse
-case class MySpaces(spaces:Seq[(OID,String)]) extends ListMySpacesResponse
+case class MySpaces(spaces:Seq[(ThingId,String)]) extends ListMySpacesResponse
 
-// This responds eventually with a RequestedSpace:
+// This responds eventually with a ThingFound:
 case class CreateSpace(owner:OID, name:String) extends SpaceMgrMsg
 
 class SpaceManager extends Actor {
@@ -473,15 +500,11 @@ class SpaceManager extends Actor {
   import SystemSpace._
   import Space._
   
-//  // The local cache of Space States.
-//  // TODO: this needs to age properly.
-//  // TODO: this needs a cap of how many states we will try to cache.
-//  var spaceCache:Map[OID,SpaceState] = Map.empty
-//  
-//  def addState(state:SpaceState) = spaceCache += (state.id -> state)
-//  
-//  // The System Space is hardcoded, and we create it at the beginning of time:
-//  addState(system.SystemSpace.State)
+  // TODO: Add the local cache of Space States. This will require a bit of rethink about what
+  // gets done in the Space Actor, and what belongs to the SpaceState itself, so that all
+  // non-mutating operations can just got through the State.
+  // TODO: this cache needs to age properly.
+  // TODO: this needs a cap of how many states we will try to cache.
   
   // TEMP:
   val replyMsg = Play.configuration.getString("querki.test.replyMsg").getOrElse("MISSING REPLY MSG!")
@@ -502,18 +525,19 @@ class SpaceManager extends Actor {
     case req:ListMySpaces => {
       //val results = spaceCache.values.filter(_.owner == req.owner).map(space => (space.id, space.name)).toSeq
       if (req.owner == SystemUserOID)
-        sender ! MySpaces(Seq((systemOID, State.name)))
+        sender ! MySpaces(Seq((AsOID(systemOID), State.name)))
       else {
         // TODO: this involves DB access, so should be async using the Actor DSL
         val results = DB.withConnection { implicit conn =>
           val spaceStream = SQL("""
-              select id, display from Spaces
+              select id, name, display from Spaces
               where owner = {owner}
               """).on("owner" -> req.owner.raw)()
           spaceStream.force.map { row =>
             val id = OID(row.get[Long]("id").get)
-            val name = row.get[String]("display").get
-            (id, name)
+            val name = row.get[String]("name").get
+            val display = row.get[String]("display").get
+            (AsName(name), display)
           }
         }
         sender ! MySpaces(results)
@@ -528,7 +552,6 @@ class SpaceManager extends Actor {
       val errorMsg = legalSpaceName(req.owner, req.name)
       if (errorMsg.isEmpty) {
         // TODO: check that the owner hasn't run out of spaces he can create
-        // TODO: check that the owner doesn't already have a space with that name
         // TODO: this involves DB access, so should be async using the Actor DSL
         val (spaceId, spaceActor) = createSpace(req.owner, req.name)
         // Now, let the Space Actor finish the process once it is ready:

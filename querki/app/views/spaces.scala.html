@@ -1,6 +1,6 @@
-@(user:Option[User], spaces:Seq[(OID,String)], errors:Option[String] = None)
+@(user:User, spaces:Seq[(ThingId,String)], errors:Option[String] = None)
 
-@main("Your Spaces", user, NavSection.homeNav, None, None, errors) {
+@main("Your Spaces", Some(user), NavSection.homeNav, None, None, errors) {
 
 	<div class="page-header">
 	  <h1>Your Spaces</h1>
@@ -9,7 +9,7 @@
     <div class="well">
     	<ul>
         @for(space <- spaces) {
-            <li><a href="/space/@space._1/">@space._2</a></li>
+            <li><a href="/u/@user.toThingId/@space._1/">@space._2</a></li>
         }
         </ul>
     </div>

@@ -60,7 +60,7 @@
 	  }
 	</div>
 	
-	@form(if (thing.isEmpty) { routes.Application.doCreateThing(space.id.toString) } else { routes.Application.doEditThing(space.id.toString, thing.get.id.toString) }, 'class -> "form-horizontal") {
+	@form(if (thing.isEmpty) { routes.Application.doCreateThing(space.id.toThingId) } else { routes.Application.doEditThing(space.id.toThingId, thing.get.id.toThingId) }, 'class -> "form-horizontal") {
 	  <fieldset>
 	  
 	    <div class="control-group">

@@ -114,6 +114,11 @@ abstract class Thing(
   def canonicalName:Option[String] = {
     NameProp.firstOpt(props)
   }
+  
+  def toThingId:ThingId = {
+    val nameOpt = canonicalName
+    nameOpt map AsName getOrElse AsOID(id)
+  }
 
   def getModel(implicit state:SpaceState):Thing = { state.anything(model) }
   

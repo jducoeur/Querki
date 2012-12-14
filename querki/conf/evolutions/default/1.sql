@@ -12,8 +12,8 @@ CREATE TABLE User (
     PRIMARY KEY (id)
 );
 
-INSERT INTO User (id, name) VALUES (9, 'System');
-INSERT INTO User (id, name) VALUES (11, 'Mark');
+INSERT INTO User (id, name) VALUES (9, 'system');
+INSERT INTO User (id, name) VALUES (11, 'mark');
 
 CREATE TABLE OIDNexter (
     nextId int NOT NULL
