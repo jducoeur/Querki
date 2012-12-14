@@ -351,8 +351,7 @@ object Application extends Controller {
 	}
   }
 
-  // TODO: deal with security here. This is another place where we need to take an *optional* user ID,
-  // and let the Space decide whether to allow access.
+  // TODO: this should go away, in favor of the more robust attachmentByName
   def attachment(spaceId:String, thingIdStr:String) = Action {
     askSpaceMgr[AttachmentResponse](GetAttachment(UnknownOID, UnknownOID, ThingId(spaceId), ThingId(thingIdStr))) {
       case AttachmentContents(id, size, mime, content) => {
@@ -361,7 +360,8 @@ object Application extends Controller {
       case AttachmentFailed() => BadRequest
     }     
   }
-  // TODO: same security comments as above.
+  // TODO: deal with security here. This is another place where we need to take an *optional* user ID,
+  // and let the Space decide whether to allow access.
   // TODO: should/can this be refactored with byName below?
   def attachmentByName(ownerName:String, spaceName:String, thingName:String) = Action {
     val userOpt = getUser(ownerName)
