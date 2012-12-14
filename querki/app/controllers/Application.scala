@@ -43,19 +43,32 @@ object Application extends Controller {
   def getUser(username:String):Option[User] = User.get(username)
   
   def username(request: RequestHeader) = request.session.get(Security.username)
+  def forceUsername(request: RequestHeader) = username(request) orElse Some("")
 
   def onUnauthorized(request: RequestHeader) = Results.Redirect(routes.Application.login)
 
-  def withAuth(requireLogin:Boolean)(f: => String => Request[AnyContent] => Result) = {
-    Security.Authenticated(username, onUnauthorized) { user =>
+  def withAuth(requireLogin:Boolean)(f: => String => Request[AnyContent] => Result):Action[(Action[AnyContent], AnyContent)] = {
+    val handler = { user:String =>
       Action(request => f(user)(request))
+    }
+    if (requireLogin)
+      Security.Authenticated(username, onUnauthorized)(handler)
+    else {
+      // Note that forceUsername can never fail, it just returns empty string
+      Security.Authenticated(forceUsername, onUnauthorized)(handler)
     }
   }
   
   def withUser(requireLogin:Boolean)(f: RequestContext => Result) = withAuth(requireLogin) { username => implicit request =>
     getUser(username).map { user =>
       f(RequestContext(request, Some(user), None, None))
-    }.getOrElse(onUnauthorized(request))
+    }.getOrElse {
+      if (requireLogin)
+        onUnauthorized(request)
+      else
+        // There isn't a legitimate logged-in user, but that's allowed for this call:
+        f(RequestContext(request, None, None, None))
+    }
   }
   
   /**
@@ -109,10 +122,8 @@ object Application extends Controller {
     withSpace(requireLogin, spaceId, Some(thingIdStr)) _
   }
   
-  def index = Security.Authenticated(username, request => Ok(views.html.index(None, userForm))) { 
-    user => Action {
-      Ok(views.html.index(getUser(user), userForm)) 
-    }
+  def index = withUser(false) { rc =>
+      Ok(views.html.index(rc.requester, userForm))
   }    
 
   def spaces = withUser(true) { rc => 
