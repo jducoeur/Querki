@@ -119,6 +119,11 @@ object ThingId {
       case _ => AsName(str)
     }
   }
+  
+  implicit def thingId2Str(id:ThingId) = id match {
+    case AsOID(oid) => "." + oid.toString
+    case AsName(name) => NameType.canonicalize(name)
+  }
 }
 
 /**
@@ -316,16 +321,9 @@ class Space extends Actor {
   
   def receive = {
     case req:CreateSpace => {
-      sender ! RequestedSpace(state)
+      sender ! ThingFound(UnknownOID, state)
     }
-    
-    case GetSpace(spaceId, requesterId) => {
-      if (!canRead(requesterId))
-        sender ! ThingFailed
-      else
-        sender ! RequestedSpace(state)
-    }
-    
+
     case CreateThing(spaceId, who, modelId, props) => {
       createSomething(spaceId, who, modelId, props, Kind.Thing) { thingId => implicit conn => Unit }
     }
@@ -463,12 +461,6 @@ object Space {
 
 sealed trait SpaceMgrMsg
 
-// TODO: I don't think this is used any more?
-case class GetSpace(id:OID, requester:OID) extends SpaceMgrMsg
-sealed trait GetSpaceResponse
-case class RequestedSpace(state:SpaceState) extends GetSpaceResponse
-case class GetSpaceFailed(id:OID, msg:String) extends GetSpaceResponse
-
 case class ListMySpaces(owner:OID) extends SpaceMgrMsg
 sealed trait ListMySpacesResponse
 case class MySpaces(spaces:Seq[(OID,String)]) extends ListMySpacesResponse
@@ -527,20 +519,7 @@ class SpaceManager extends Actor {
         sender ! MySpaces(results)
       }
     }
-    
-    // TODO: I don't think this is used any more?
-    case req:GetSpace => {
-      if (req.id == systemOID)
-        sender ! RequestedSpace(State)
-      else
-        getSpace(req.id).forward(req)
-//      val cached = spaceCache.get(req.id)
-//      if (cached.nonEmpty)
-//        sender ! RequestedSpace(cached.get)
-//      else
-//        sender ! GetSpaceFailed(req.id)
-    }
-    
+
     case req:CreateSpace => {
       // TODO: technically, the legal name check should happen in the same transactions as
       // space creation, to avoid the just-barely-possible race condition of creating the
@@ -555,7 +534,7 @@ class SpaceManager extends Actor {
         // Now, let the Space Actor finish the process once it is ready:
         spaceActor.forward(req)
       } else {
-        sender ! GetSpaceFailed(UnknownOID, errorMsg.get)
+        sender ! ThingFailed(errorMsg.get)
       }
     }
 

@@ -38,6 +38,7 @@ import play.api.Play.current
  */
 class OID(val raw:Long) {
   override def toString = java.lang.Long.toString(raw, 36)
+  def toThingId = AsOID(this)
   def id = this
   
   override def equals(other:Any) = {

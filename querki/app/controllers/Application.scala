@@ -157,10 +157,9 @@ object Application extends Controller {
       errors => BadRequest(views.html.newSpace(requester, Some("You have to specify a legal space name"))),
       name => {
         if (NameProp.validate(name)) {
-          askSpaceMgr[GetSpaceResponse](CreateSpace(requester.id, name)) {
-            case RequestedSpace(state) => Redirect(routes.Application.space(state.id.toString))
-            // TODO: we'll want more granular failure messages:
-            case GetSpaceFailed(id, msg) =>  BadRequest(views.html.newSpace(requester, Some(msg)))
+          askSpaceMgr[ThingResponse](CreateSpace(requester.id, name)) {
+            case ThingFound(_, state) => Redirect(routes.Application.space(state.id.toThingId))
+            case ThingFailed(msg) =>  BadRequest(views.html.newSpace(requester, Some(msg)))
           }
         } else {
           BadRequest(views.html.newSpace(requester, Some("That's not a legal Space name")))
