@@ -143,8 +143,6 @@ object SpaceMessage {
   def unapply(input:SpaceMessage) = Some((input.requester, input.owner, input.spaceId))
 }
 
-// TODO: all messages should have an optional owner ID!!!
-
 case class CreateThing(req:OID, own:OID, space:ThingId, modelId:OID, props:PropMap) extends SpaceMessage(req, own, space)
 
 case class ModifyThing(req:OID, own:OID, space:ThingId, id:ThingId, modelId:OID, props:PropMap) extends SpaceMessage(req, own, space)
@@ -155,6 +153,7 @@ case class CreateAttachment(req:OID, own:OID, space:ThingId,
 
 case class GetAttachment(req:OID, own:OID, space:ThingId, attachId:ThingId) extends SpaceMessage(req, own, space)
 
+// TODO: this message needs cleanup before we start using it, to match the rest:
 case class CreateProperty(id:OID, req:OID, model:OID, pType:OID, cType:OID, props:PropMap) extends SpaceMessage(req, UnknownOID, AsOID(id))
 
 case class GetThing(req:OID, own:OID, space:ThingId, thing:Option[ThingId]) extends SpaceMessage(req, own, space)
