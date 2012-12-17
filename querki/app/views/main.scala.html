@@ -1,4 +1,4 @@
-@(title: String, user:Option[User], nav:NavSections, space:Option[SpaceState] = None, thing:Option[Thing] = None, errors:Option[String] = None, chromeless:Boolean = false, addStyles:Boolean = false)(content: Html)
+@(title: String, rc:RequestContext, user:Option[User], nav:NavSections, space:Option[SpaceState] = None, thing:Option[Thing] = None, errors:Option[String] = None, chromeless:Boolean = false, addStyles:Boolean = false)(content: Html)
 
 @import models.system._
 
@@ -37,7 +37,7 @@
           @defining(thing.get.first(StylesheetProp)(space.get)) { stylesheetOID =>
           @defining(space.get.thing(stylesheetOID)) { stylesheetThing =>
           @if(stylesheetThing.kind == Kind.Attachment) {
-            <link rel="stylesheet" media="screen" href="@routes.Application.attachment(space.get.id.toString, stylesheetOID.toString)">
+            <link rel="stylesheet" media="screen" href="@routes.Application.attachment(rc.ownerName, space.get.toThingId, stylesheetThing.toThingId)">
           } else {
             <style type="text/css">
             @stylesheetThing.first(CSSProp)(space.get)

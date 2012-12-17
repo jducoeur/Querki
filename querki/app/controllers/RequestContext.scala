@@ -17,7 +17,11 @@ import models._
  * 
  * @param requester The validated User who is asking for this page, if any.
  */
-case class RequestContext(request:Request[AnyContent], requester:Option[User], state:Option[SpaceState], thing:Option[Thing])
+case class RequestContext(requestHeader:RequestHeader, requester:Option[User], ownerId:OID, state:Option[SpaceState], thing:Option[Thing]) {
+  def request = requestHeader.asInstanceOf[Request[AnyContent]]
+  def requesterOID = requester map (_.id) getOrElse UnknownOID  
+  def ownerName = state map Application.ownerName getOrElse ""
+}
 
 object RequestContext {
   implicit def rc2Space(rc:RequestContext) = rc.state

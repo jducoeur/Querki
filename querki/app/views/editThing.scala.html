@@ -1,4 +1,4 @@
-@(user:User, thing:Option[Thing], model:Thing, candidateModels:Iterable[Thing], propsSoFar:Property.PropList, otherProps:Seq[Property[_,_,_]], errors:Option[String] = None)(implicit space:SpaceState)
+@(rc:RequestContext, user:User, thing:Option[Thing], model:Thing, candidateModels:Iterable[Thing], propsSoFar:Property.PropList, otherProps:Seq[Property[_,_,_]], errors:Option[String] = None)(implicit space:SpaceState)
 
 @import helper._
 @import helper.twitterBootstrap._
@@ -50,7 +50,7 @@
   showProperty(prop, v, i)
 }
 
-@main("Create a Thing", None, NavSection.spaceNav(space), Some(space), thing, errors) {
+@main("Create a Thing", rc, None, NavSection.spaceNav(rc), Some(space), thing, errors) {
 		
 	<div class="page-header">
 	  @if(thing.isEmpty) {
@@ -60,7 +60,7 @@
 	  }
 	</div>
 	
-	@form(if (thing.isEmpty) { routes.Application.doCreateThing(space.id.toThingId) } else { routes.Application.doEditThing(space.id.toThingId, thing.get.id.toThingId) }, 'class -> "form-horizontal") {
+	@form(if (thing.isEmpty) { routes.Application.doCreateThing(rc.ownerName, space.toThingId) } else { routes.Application.doEditThing(rc.ownerName, space.toThingId, thing.get.toThingId) }, 'class -> "form-horizontal") {
 	  <fieldset>
 	  
 	    <div class="control-group">

@@ -1,9 +1,9 @@
-@(user:User, errors:Option[String] = None)
+@(rc:RequestContext, user:User, errors:Option[String] = None)
 
 @import helper._
 @import helper.twitterBootstrap._
 
-@main("Create a new Space", None, NavSection.homeNav, None, None) {
+@main("Create a new Space", rc, None, NavSection.homeNav, None, None) {
 
     @errors match {
 	  case None => {}

@@ -1,4 +1,4 @@
-@(user:User, errors:Option[String] = None)(implicit space:SpaceState)
+@(rc:RequestContext, user:User, errors:Option[String] = None)(implicit space:SpaceState)
 
 @import helper._
 @import helper.twitterBootstrap._
@@ -8,13 +8,13 @@
 
 @import models.Property._
 
-@main("Upload", Some(user), NavSection.spaceNav(space), Some(space), None, errors) {
+@main("Upload", rc, Some(user), NavSection.spaceNav(rc), Some(space), None, errors) {
 		
 	<div class="page-header">
 	  <h1>Upload an Image</h1>
 	</div>
 	
-	@form(routes.Application.doUpload(space.id.toString), 'class -> "form-horizontal", 'enctype -> "multipart/form-data") {
+	@form(routes.Application.doUpload(rc.ownerName, space.toThingId), 'class -> "form-horizontal", 'enctype -> "multipart/form-data") {
 	  <fieldset>
 
         <div class="control-group">

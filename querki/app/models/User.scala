@@ -13,6 +13,7 @@ case class User(id:OID, name:String, password:String) {
 }
 
 object User {
+  // TODO: dear Lord, this needs to be cached:
   def get(rawName:String) = {
     val name = system.NameType.canonicalize(rawName)
     DB.withConnection { implicit conn =>
@@ -22,6 +23,16 @@ object User {
       val stream = personQuery.apply()
       stream.headOption.map(row => User(OID(row.get[Long]("id").get), row.get[String]("name").get, ""))
     }
+  }
+  
+  def getName(id:OID):String = {
+    DB.withConnection { implicit conn =>
+      val personQuery = SQL("""
+          select name from User where id={id}
+          """).on("id" -> id.raw)
+      val stream = personQuery.apply()
+      stream.headOption.map(row => row.get[String]("name").get) getOrElse ("UNKNOWN USER")
+    }    
   }
   
     // TODO: the whole login procedure should become very different:

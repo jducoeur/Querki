@@ -145,13 +145,13 @@ object SpaceMessage {
 
 // TODO: all messages should have an optional owner ID!!!
 
-case class CreateThing(space:ThingId, req:OID, modelId:OID, props:PropMap) extends SpaceMessage(req, UnknownOID, space)
+case class CreateThing(req:OID, own:OID, space:ThingId, modelId:OID, props:PropMap) extends SpaceMessage(req, own, space)
 
-case class ModifyThing(space:ThingId, req:OID, id:ThingId, modelId:OID, props:PropMap) extends SpaceMessage(req, UnknownOID, space)
+case class ModifyThing(req:OID, own:OID, space:ThingId, id:ThingId, modelId:OID, props:PropMap) extends SpaceMessage(req, own, space)
 
-case class CreateAttachment(space:OID, req:OID, 
+case class CreateAttachment(req:OID, own:OID, space:ThingId, 
     content:Array[Byte], mime:MIMEType, size:Int, 
-    modelId:OID, props:PropMap) extends SpaceMessage(req, UnknownOID, AsOID(space))
+    modelId:OID, props:PropMap) extends SpaceMessage(req, own, space)
 
 case class GetAttachment(req:OID, own:OID, space:ThingId, attachId:ThingId) extends SpaceMessage(req, own, space)
 
@@ -349,12 +349,12 @@ class Space extends Actor {
       sender ! ThingFound(UnknownOID, state)
     }
 
-    case CreateThing(spaceId, who, modelId, props) => {
+    case CreateThing(who, owner, spaceId, modelId, props) => {
       createSomething(spaceId, who, modelId, props, Kind.Thing) { thingId => implicit conn => Unit }
     }
     
-    case CreateAttachment(spaceId, who, content, mime, size, modelId, props) => {
-      createSomething(AsOID(spaceId), who, modelId, props, Kind.Attachment) { thingId => implicit conn =>
+    case CreateAttachment(who, owner, spaceId, content, mime, size, modelId, props) => {
+      createSomething(spaceId, who, modelId, props, Kind.Attachment) { thingId => implicit conn =>
       	AttachSQL("""
           INSERT INTO {tname}
           (id, mime, size, content) VALUES
@@ -394,7 +394,7 @@ class Space extends Actor {
       }
     }
     
-    case ModifyThing(spaceThingId, who, thingId, modelId, newProps) => {
+    case ModifyThing(who, owner, spaceThingId, thingId, modelId, newProps) => {
       Logger.info("In ModifyThing")
       val spaceId = checkSpaceId(spaceThingId)
       val thingOid = resolveThingId(thingId)

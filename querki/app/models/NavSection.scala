@@ -7,14 +7,16 @@ import controllers._
 object NavSection {
   object homeNav extends NavSections(Seq(querkiSection))
   
-  def spaceNav(state:SpaceState) = {
-    val id = state.id.toThingId
+  def spaceNav(rc:RequestContext) = {
+    val state = rc.state.get
+    val id = state.toThingId
+    val owner = rc.ownerName
     NavSections(Seq(
       NavSection("This Space", Seq(
-        NavLink("Space Home", routes.Application.space(id)),
-        NavLink("All Things", routes.Application.things(id)),
-        NavLink("Create a Thing", routes.Application.createThing(id)),
-        NavLink("Upload a Photo", routes.Application.upload(id))
+        NavLink("Space Home", routes.Application.space(owner, id)),
+        NavLink("All Things", routes.Application.things(owner, id)),
+        NavLink("Create a Thing", routes.Application.createThing(owner, id)),
+        NavLink("Upload a Photo", routes.Application.upload(owner, id))
       )),
       querkiSection
     ))

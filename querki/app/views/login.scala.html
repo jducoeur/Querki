@@ -1,9 +1,9 @@
-@(loginForm:Form[User], errors:Option[String] = None)
+@(rc:RequestContext, loginForm:Form[User], errors:Option[String] = None)
 
 @import helper._
 @import helper.twitterBootstrap._
 
-@main("Log in to Querki", None, NavSection.homeNav, None, None) {
+@main("Log in to Querki", rc, None, NavSection.homeNav, None, None) {
 
     @errors match {
 	  case None => {}
