@@ -1,6 +1,8 @@
-@(rc:RequestContext, user:User, spaces:Seq[(ThingId,String)], errors:Option[String] = None)
+@(rc:RequestContext, spaces:Seq[(ThingId,String)], errors:Option[String] = None)
 
-@main("Your Spaces", rc, Some(user), NavSection.homeNav, None, None, errors) {
+@user = @{ rc.requester.get }
+
+@main("Your Spaces", rc, errors) {
 
 	<div class="page-header">
 	  <h1>Your Spaces</h1>

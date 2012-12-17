@@ -1,4 +1,4 @@
-@(rc:RequestContext, user:Option[User])(implicit state:SpaceState)
+@(rc:RequestContext)(implicit state:SpaceState)
 
 @listKind(title:String, kind:Map[OID,Thing]) = {
 	<h3>@title</h3>
@@ -7,7 +7,7 @@
 	</ul>
 }
 
-@main(state.name, rc, user, NavSection.spaceNav(rc), Some(state), None) {
+@main(state.name, rc) {
 
 	<div class="page-header">
 	  <h1>Contents of @state.name</h1>

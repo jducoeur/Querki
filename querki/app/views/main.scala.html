@@ -1,6 +1,15 @@
-@(title: String, rc:RequestContext, user:Option[User], nav:NavSections, space:Option[SpaceState] = None, thing:Option[Thing] = None, errors:Option[String] = None, chromeless:Boolean = false, addStyles:Boolean = false)(content: Html)
+@(title: String, rc:RequestContext, errors:Option[String] = None, chromeless:Boolean = false, addStyles:Boolean = false)(content: Html)
 
 @import models.system._
+
+@space = @{ rc.state }
+@thing = @{ rc.thing }
+@nav = @{
+  rc.state match {
+    case Some(space) => NavSection.spaceNav(rc)
+    case None => NavSection.homeNav
+  }
+}
 
 <!DOCTYPE html>
 
@@ -63,9 +72,11 @@
           <a class="brand" href="#">Querki</a>
           <div class="nav-collapse collapse">
             <p class="navbar-text pull-right">
-			  @user match {
+              @defining(rc.requester) { requester =>
+			  @requester match {
 			    case None => { <span>Not logged in</span> }
 				case Some(u) => { <span>Logged in as <a href="#" class="navbar-link">@u.name</a></span>	}
+			  }
 			  }
             </p>
             <ul class="nav">

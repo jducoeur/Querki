@@ -1,9 +1,11 @@
-@(rc:RequestContext, user:Option[User], errors:Option[String] = None)
+@(rc:RequestContext, errors:Option[String] = None)
 
 @import helper._
 @import helper.twitterBootstrap._
 
-@main("Welcome to Querki", rc, user, NavSection.homeNav, None, None) {
+@user = @{ rc.requester }
+
+@main("Welcome to Querki", rc) {
 
 	@user match {
 	  case None => {

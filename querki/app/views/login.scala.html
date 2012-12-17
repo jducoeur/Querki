@@ -3,18 +3,8 @@
 @import helper._
 @import helper.twitterBootstrap._
 
-@main("Log in to Querki", rc, None, NavSection.homeNav, None, None) {
+@main("Log in to Querki", rc, errors) {
 
-    @errors match {
-	  case None => {}
-	  case Some(msg) => { 
-        <div class="alert">
-          <button type="button" class="close" data-dismiss="alert">x</button>
-          <strong>Error:</strong> @msg
-        </div>
-	  }
-	}
-		
 	<div class="page-header">
 	  <h1>Please log in</h1>
 	</div>

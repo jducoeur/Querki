@@ -1,4 +1,4 @@
-@(rc:RequestContext, user:User, errors:Option[String] = None)(implicit space:SpaceState)
+@(rc:RequestContext, errors:Option[String] = None)(implicit space:SpaceState)
 
 @import helper._
 @import helper.twitterBootstrap._
@@ -8,7 +8,7 @@
 
 @import models.Property._
 
-@main("Upload", rc, Some(user), NavSection.spaceNav(rc), Some(space), None, errors) {
+@main("Upload", rc, errors) {
 		
 	<div class="page-header">
 	  <h1>Upload an Image</h1>

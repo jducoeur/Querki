@@ -62,6 +62,7 @@ object Application extends Controller {
   def username(request: RequestHeader) = request.session.get(Security.username)
   def forceUsername(request: RequestHeader) = username(request) orElse Some("")
 
+  // TODO: preserve the page request, and go there after they log in
   def onUnauthorized(request: RequestHeader) = Results.Redirect(routes.Application.login)
 
   def withAuth(requireLogin:Boolean)(f: => String => Request[AnyContent] => Result):Action[(Action[AnyContent], AnyContent)] = {
@@ -129,11 +130,11 @@ object Application extends Controller {
         if (thingIdStr.isDefined && thingOpt.isEmpty)
           // TODO: a more appropriate error here. There might not be a user, so don't go to a page that
           // requires one:
-          BadRequest(views.html.index(rc, rc.requester, Some("Not a valid path")))
+          BadRequest(views.html.index(rc, Some("Not a valid path")))
         else
           f(rc.copy(ownerId = ownerId, state = Some(state), thing = thingOpt))
       }
-      case ThingFailed(msg) => Ok(views.html.index(rc, rc.requester, Some(msg)))
+      case ThingFailed(msg) => Ok(views.html.index(rc, Some(msg)))
     }     
   }
 
@@ -142,46 +143,46 @@ object Application extends Controller {
   }
   
   def index = withUser(false) { rc =>
-      Ok(views.html.index(rc, rc.requester))
+      Ok(views.html.index(rc))
   }    
 
   def spaces = withUser(true) { rc => 
     askSpaceMgr[ListMySpacesResponse](ListMySpaces(rc.requester.get.id)) { 
-      case MySpaces(list) => Ok(views.html.spaces(rc, rc.requester.get, list))
+      case MySpaces(list) => Ok(views.html.spaces(rc, list))
     }
   }
     
   def space(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId) { implicit rc =>
-    Ok(views.html.thing(rc, rc.state.get))
+    Ok(views.html.thing(rc))
   }
   
   def things(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId) { implicit rc =>
     implicit val state = rc.state.get
-    Ok(views.html.things(rc, rc.requester))
+    Ok(views.html.things(rc))
   }
   
   def thing(ownerId:String, spaceId:String, thingId:String) = withThing(false, ownerId, spaceId, thingId) { implicit rc =>
     val chromelessFlag = rc.request.queryString.contains("cl")
-    Ok(views.html.thing(rc, rc.thing.get, chromelessFlag))
+    Ok(views.html.thing(rc, chromelessFlag))
   }
   
   def newSpace = withUser(true) { rc =>
-    Ok(views.html.newSpace(rc, rc.requester.get))
+    Ok(views.html.newSpace(rc))
   }
   
   def doNewSpace = withUser(true) { rc =>
     implicit val request = rc.request
     val requester = rc.requester.get
     newSpaceForm.bindFromRequest.fold(
-      errors => BadRequest(views.html.newSpace(rc, requester, Some("You have to specify a legal space name"))),
+      errors => BadRequest(views.html.newSpace(rc, Some("You have to specify a legal space name"))),
       name => {
         if (NameProp.validate(name)) {
           askSpaceMgr[ThingResponse](CreateSpace(requester.id, name)) {
             case ThingFound(_, state) => Redirect(routes.Application.space(requester.name, state.id.toThingId))
-            case ThingFailed(msg) =>  BadRequest(views.html.newSpace(rc, requester, Some(msg)))
+            case ThingFailed(msg) =>  BadRequest(views.html.newSpace(rc, Some(msg)))
           }
         } else {
-          BadRequest(views.html.newSpace(rc, requester, Some("That's not a legal Space name")))
+          BadRequest(views.html.newSpace(rc, Some("That's not a legal Space name")))
         }
       }
     )
@@ -204,11 +205,9 @@ object Application extends Controller {
     }
   }
   
-  def showEditPage(rc: RequestContext, user:User, existing:Option[Thing], model:Thing, props:PropList, errorMsg:Option[String] = None)(implicit state:SpaceState) = {
+  def showEditPage(rc: RequestContext, model:Thing, props:PropList, errorMsg:Option[String] = None)(implicit state:SpaceState) = {
     val page = views.html.editThing(
         rc,
-        user, 
-        existing,
         model,
         state.allModels,
         props,
@@ -223,23 +222,22 @@ object Application extends Controller {
   
   def createThing(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
     implicit val state = rc.state.get
-    showEditPage(rc, rc.requester.get, None, SimpleThing, PropList((NameProp -> None)))
+    showEditPage(rc, SimpleThing, PropList((NameProp -> None)))
   }
   
   def doCreateThing(ownerId:String, spaceId:String) = editThingInternal(ownerId, spaceId, None)
   
-  def editThingInternal(ownerId:String, spaceId:String, thingIdStr:Option[String]) = withSpace(true, ownerId, spaceId) { implicit rc =>
+  def editThingInternal(ownerId:String, spaceId:String, thingIdStr:Option[String]) = withSpace(true, ownerId, spaceId, thingIdStr) { implicit rc =>
     implicit val request = rc.request
     implicit val state = rc.state.get
     val user = rc.requester.get
     val rawForm = newThingForm.bindFromRequest
     rawForm.fold(
-      // TODO: correct error message here:
-      errors => BadRequest(views.html.newSpace(rc, rc.requester.get, Some("You have to specify a legal name"))),
+      // TODO: flash an error message here. What can cause this?
+      errors => BadRequest(views.html.thing(rc)),
       info => {
-        // Whether we're creating or editing depends on whether thingIdStr is specified:
-        val thingId = thingIdStr map (ThingId(_))
-        val thing = thingId flatMap (state.anything(_))
+        // Whether we're creating or editing depends on whether thing is specified:
+        val thing = rc.thing
         val rawProps = info.fields map { fieldId => (fieldId, rawForm("v-" + fieldId).value) }
         val oldModel = state.anything(OID(info.model))
         
@@ -256,12 +254,12 @@ object Application extends Controller {
         if (info.addedProperty.length > 0) {
           // User chose to add a Property; add that to the UI and continue:
           val allProps = rawProps :+ (info.addedProperty, Some(""))
-          showEditPage(rc, user, thing, oldModel, makeProps(allProps))
+          showEditPage(rc, oldModel, makeProps(allProps))
         } else if (info.newModel.length > 0) {
           // User is changing models. Replace the empty Properties with ones
           // appropriate to the new model, and continue:
           val model = state.anything(OID(info.newModel))
-          showEditPage(rc, user, thing, model, replaceModelProps(makeProps(rawProps), model))
+          showEditPage(rc, model, replaceModelProps(makeProps(rawProps), model))
         } else {
           // User has submitted a creation/change. Is it legal?
           val propsWithRawvals = rawProps.map { pair =>
@@ -282,9 +280,9 @@ object Application extends Controller {
               (prop.id, value)
             }
             val props = Thing.toProps(propPairs:_*)()
-            val spaceMsg = if (thingId.isDefined) {
+            val spaceMsg = if (thing.isDefined) {
               // Editing an existing Thing
-              ModifyThing(user.id, rc.ownerId, ThingId(spaceId), thingId.get, OID(info.model), props)
+              ModifyThing(user.id, rc.ownerId, ThingId(spaceId), thing.get.id.toThingId, OID(info.model), props)
             } else {
               // Creating a new Thing
               CreateThing(user.id, rc.ownerId, ThingId(spaceId), OID(info.model), props)
@@ -295,39 +293,33 @@ object Application extends Controller {
                 Redirect(routes.Application.thing(ownerName(state), state.toThingId, thing.toThingId))
               }
               case ThingFailed(msg) => {
-                showEditPage(rc, user, thing, oldModel, makeProps(rawProps), Some(msg))
+                showEditPage(rc, oldModel, makeProps(rawProps), Some(msg))
               }
             }
           } else {
             // One or more values didn't parse against their PTypes. Give an error and continue:
             val badProps = illegalVals.map { pair => pair._1.displayName + " (" + pair._2 + ") " }
             val errorMsg = "Illegal values for " + badProps.mkString
-            showEditPage(rc, user, thing, oldModel, makeProps(rawProps), Some(errorMsg))
+            showEditPage(rc, oldModel, makeProps(rawProps), Some(errorMsg))
           }
         }
       }      
     )
   }
   
-  def editThing(ownerId:String, spaceId:String, thingIdStr:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
+  def editThing(ownerId:String, spaceId:String, thingIdStr:String) = withSpace(true, ownerId, spaceId, Some(thingIdStr)) { implicit rc =>
     implicit val state = rc.state.get
-    val thingId = ThingId(thingIdStr)
-    val thingOpt = state.anything(thingId)
-    thingOpt map { thing =>
-	  // TODO: security check that I'm allowed to edit this
-	  val model = state.anything(thing.model)
-	  showEditPage(rc, rc.requester.get, Some(thing), model, PropList.from(thing))
-    } getOrElse {
-      // TODO: flash an error
-      Redirect(routes.Application.thing(ownerId, spaceId, thingIdStr))
-    }
+    val thing = rc.thing.get
+    // TODO: security check that I'm allowed to edit this
+	val model = state.anything(thing.model)
+	showEditPage(rc, model, PropList.from(thing))
   }
   
   def doEditThing(ownerId:String, spaceId:String, thingIdStr:String) = editThingInternal(ownerId, spaceId, Some(thingIdStr))
 
   def upload(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
     implicit val state = rc.state.get
-    Ok(views.html.upload(rc, rc.requester.get))
+    Ok(views.html.upload(rc))
   }
   
   // TODO: I think this function is the straw that breaks the camel's back when it comes to code structure.
@@ -369,11 +361,11 @@ object Application extends Controller {
 	      Redirect(routes.Application.thing(ownerId, state.toThingId, attachmentId.toThingId))
 	    }
 	    case ThingFailed(msg) => {
-          Ok(views.html.upload(rc, user, Some(msg)))
+          Ok(views.html.upload(rc, Some(msg)))
 	    }
 	  }
 	} getOrElse {
-      Ok(views.html.upload(rc, user, Some("You didn't specify a file")))
+      Ok(views.html.upload(rc, Some("You didn't specify a file")))
 	}
   }
 
@@ -414,7 +406,7 @@ object Application extends Controller {
     // should this show the profile page instead?
     withUser(true) { rc => 
       askSpaceMgr[ListMySpacesResponse](ListMySpaces(rc.requester.get.id)) { 
-        case MySpaces(list) => Ok(views.html.spaces(rc, rc.requester.get, list))
+        case MySpaces(list) => Ok(views.html.spaces(rc, list))
       }
     }    
   }
@@ -439,10 +431,9 @@ object Application extends Controller {
             // TODO: this should show the logged-in user:
             val rc = RequestContext(request, None, owner.id, Some(state), Some(thing))
             if (thingName.isDefined) {
-              Ok(views.html.thing(rc, thing, chromelessFlag))
+              Ok(views.html.thing(rc, chromelessFlag))
             } else {
-              // TODO: this should show the logged-in user:
-              Ok(views.html.thing(rc, state, chromelessFlag))
+              Ok(views.html.thing(rc, chromelessFlag))
             }
           }
           case ThingFailed(msg) => {

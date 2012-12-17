@@ -1,8 +1,14 @@
-@(rc:RequestContext, thing:Thing, chromeless:Boolean = false)
+@(rc:RequestContext, chromeless:Boolean = false)
 
-@implicitSpace = @{ rc.state.get }
+@space = @{ rc.state.get }
+@thing = @{ 
+  rc.thing match {
+    case Some(t) => t
+    case None => space
+  }
+}
 
-@main(thing.displayName, rc, rc.requester, NavSection.spaceNav(rc), Some(implicitSpace), Some(thing), None, chromeless, true) {
+@main(thing.displayName, rc, None, chromeless, true) {
 
     @if(!chromeless) {
 	<div class="page-header">
@@ -10,21 +16,21 @@
 	</div>
 	}
 	
-	<p>@Html(thing.render.display)</p>
+	<p>@Html(thing.render(space).display)</p>
 	
 	@if(!chromeless) {
-	<a href="@routes.Application.editThing(rc.ownerName, implicitSpace.toThingId, thing.toThingId)" class="btn">Edit</a>
+	<a href="@routes.Application.editThing(rc.ownerName, space.toThingId, thing.toThingId)" class="btn">Edit</a>
 	
 	<hr/>
 	
 	<h3>Exported, looks like:</h3>
 	
-	<p>@thing.export</p>
+	<p>@thing.export(space)</p>
 	
 	@if(thing.kind == Kind.Attachment) {
 	  <hr/>
 	  
-	  <a href="@routes.Application.attachment(rc.ownerName, implicitSpace.toThingId, thing.toThingId)" class="btn">Get Attachment</a>
+	  <a href="@routes.Application.attachment(rc.ownerName, space.toThingId, thing.toThingId)" class="btn">Get Attachment</a>
 	}
 	}
 }

@@ -1,4 +1,4 @@
-@(rc:RequestContext, user:User, thing:Option[Thing], model:Thing, candidateModels:Iterable[Thing], propsSoFar:Property.PropList, otherProps:Seq[Property[_,_,_]], errors:Option[String] = None)(implicit space:SpaceState)
+@(rc:RequestContext, model:Thing, candidateModels:Iterable[Thing], propsSoFar:Property.PropList, otherProps:Seq[Property[_,_,_]], errors:Option[String] = None)
 
 @import helper._
 @import helper.twitterBootstrap._
@@ -10,9 +10,12 @@
 
 @import models.Property._
 
+@thing = @{ rc.thing }
+@space = @{ rc.state.get }
+
 @showInputControl(prop:Property[_,_,_], v:Option[String], i:Int) = {
   @if(prop.pType == LargeTextType || prop.pType == CSSTextType) {
-    <textarea rows="5" cols="50" name="v-@prop.id.toString" placeholder="@prop.getProp(PlaceholderTextProp).renderIfDefined.raw">@v</textarea>
+    <textarea rows="5" cols="50" name="v-@prop.id.toString" placeholder="@prop.getProp(PlaceholderTextProp)(space).renderIfDefined.raw">@v</textarea>
   }
   
   @if(prop.pType == LinkType) {
@@ -28,7 +31,7 @@
   }
   
   @if(prop.pType == IntType || prop.pType == TextType || prop.pType == NameType) {
-    <input type="text" name="v-@prop.id.toString" value="@v" placeholder="@prop.getProp(PlaceholderTextProp).renderIfDefined.raw">    
+    <input type="text" name="v-@prop.id.toString" value="@v" placeholder="@prop.getProp(PlaceholderTextProp)(space).renderIfDefined.raw">    
   }
   
   @if(prop.pType == YesNoType) {
@@ -38,7 +41,7 @@
 
 @showProperty(prop:Property[_,_,_], v:Option[String], i:Int) = {
   <div class="control-group">
-    <label class="control-label">@Html(prop.getProp(PromptProp).renderOr(prop.getProp(NameProp).render).raw)</label>
+    <label class="control-label">@Html(prop.getProp(PromptProp)(space).renderOr(prop.getProp(NameProp)(space).render).raw)</label>
     <div class="controls">
       @showInputControl(prop, v, i)
     </div>
@@ -50,7 +53,7 @@
   showProperty(prop, v, i)
 }
 
-@main("Create a Thing", rc, None, NavSection.spaceNav(rc), Some(space), thing, errors) {
+@main("Create a Thing", rc, errors) {
 		
 	<div class="page-header">
 	  @if(thing.isEmpty) {
