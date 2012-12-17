@@ -41,6 +41,8 @@ object Application extends Controller {
      ((info:NewThingForm) => Some((info.fields, info.addedProperty, info.newModel, info.model)))
   )
   
+  def doError(redirectTo:Call, errorMsg:String) = Redirect(redirectTo).flashing("error" -> errorMsg)
+  
   def getUser(username:String):Option[User] = User.get(username)
   
   def getUserByThingId(thingIdStr:String):OID = {
@@ -128,13 +130,11 @@ object Application extends Controller {
           case oid:OID => Some(state.anything(oid))
         }
         if (thingIdStr.isDefined && thingOpt.isEmpty)
-          // TODO: a more appropriate error here. There might not be a user, so don't go to a page that
-          // requires one:
-          BadRequest(views.html.index(rc, Some("Not a valid path")))
+          doError(routes.Application.index, "That wasn't a valid path")
         else
           f(rc.copy(ownerId = ownerId, state = Some(state), thing = thingOpt))
       }
-      case ThingFailed(msg) => Ok(views.html.index(rc, Some(msg)))
+      case ThingFailed(msg) => doError(routes.Application.index, msg)
     }     
   }
 
@@ -174,15 +174,15 @@ object Application extends Controller {
     implicit val request = rc.request
     val requester = rc.requester.get
     newSpaceForm.bindFromRequest.fold(
-      errors => BadRequest(views.html.newSpace(rc, Some("You have to specify a legal space name"))),
+      errors => doError(routes.Application.newSpace, "You have to specify a legal space name"),
       name => {
         if (NameProp.validate(name)) {
           askSpaceMgr[ThingResponse](CreateSpace(requester.id, name)) {
             case ThingFound(_, state) => Redirect(routes.Application.space(requester.name, state.id.toThingId))
-            case ThingFailed(msg) =>  BadRequest(views.html.newSpace(rc, Some(msg)))
+            case ThingFailed(msg) => doError(routes.Application.newSpace, msg)
           }
         } else {
-          BadRequest(views.html.newSpace(rc, Some("That's not a legal Space name")))
+          doError(routes.Application.newSpace, "That's not a legal Space name")
         }
       }
     )
@@ -207,12 +207,11 @@ object Application extends Controller {
   
   def showEditPage(rc: RequestContext, model:Thing, props:PropList, errorMsg:Option[String] = None)(implicit state:SpaceState) = {
     val page = views.html.editThing(
-        rc,
+        rc.copy(error = errorMsg),
         model,
         state.allModels,
         props,
-        getOtherProps(state, props),
-        errorMsg
+        getOtherProps(state, props)
       )
     if (errorMsg.isDefined)
       BadRequest(page)
@@ -361,11 +360,11 @@ object Application extends Controller {
 	      Redirect(routes.Application.thing(ownerId, state.toThingId, attachmentId.toThingId))
 	    }
 	    case ThingFailed(msg) => {
-          Ok(views.html.upload(rc, Some(msg)))
+          doError(routes.Application.upload(ownerId, spaceId), msg)
 	    }
 	  }
 	} getOrElse {
-      Ok(views.html.upload(rc, Some("You didn't specify a file")))
+      doError(routes.Application.upload(ownerId, spaceId), "You didn't specify a file")
 	}
   }
 
@@ -378,27 +377,7 @@ object Application extends Controller {
       case AttachmentFailed() => BadRequest
     }     
   }
-  
-  // TODO: deal with security here. This is another place where we need to take an *optional* user ID,
-  // and let the Space decide whether to allow access.
-  // TODO: should/can this be refactored with byName below?
-  def attachmentByName(ownerName:String, spaceName:String, thingName:String) = Action {
-    val userOpt = getUser(ownerName)
-    if (userOpt.isDefined) {
-      val owner = userOpt.get
-      Logger.info("About to request the attachment!")
-      askSpaceMgr[AttachmentResponse](GetAttachment(UnknownOID, owner.id, AsName(spaceName), AsName(thingName))) {
-        case AttachmentContents(id, size, mime, content) => {
-          Ok(content).as(mime)
-        }
-        case AttachmentFailed() => BadRequest
-      }
-    } else {
-      // TODO: flash an error
-      Redirect(routes.Application.index)      
-    }
-  }
-  
+
   def userByName(userName:String) = {
     // TBD: Note that, for now at least, this simply returns my own spaces. I'm leery about
     // allowing people to see each other's spaces too casually.
@@ -410,56 +389,20 @@ object Application extends Controller {
       }
     }    
   }
-  
-  def spaceByName(userName:String, spaceName:String) = byName(userName, spaceName, None)
-  def thingByName(userName:String, spaceName:String, thingName:String) = byName(userName, spaceName, Some(thingName))
-  // TODO: this is currently a gaping security hole. It needs to become much more sophisticated. Add a
-  // "withUserOptional", which passes through the credentials if found, but permits the operation
-  // to play through regardless. It should check whether this user (or anonymous) is permitted to
-  // see this thing once it is fetched.
-  // TODO: merge this with thing() -- this is just a fancier version. Indeed, there's a big refactor
-  // waiting in here -- all this byName stuff should just become more regular.
-  def byName[A](userName:String, spaceName:String, thingName:Option[String]) = Action { implicit request =>
-    val userOpt = getUser(userName)
-    if (userOpt.isDefined) {
-      val owner = userOpt.get
-      val chromelessFlag = request.queryString.contains("cl")
-        // TODO: pass the actual logged-in user (if any) to this request:
-        askSpaceMgr[ThingResponse](GetThing(UnknownOID, owner.id, ThingId(spaceName), thingName map (ThingId(_)))) {
-          case ThingFound(thingId, state) => {
-            val thing = state.anything(thingId)
-            // TODO: this should show the logged-in user:
-            val rc = RequestContext(request, None, owner.id, Some(state), Some(thing))
-            if (thingName.isDefined) {
-              Ok(views.html.thing(rc, chromelessFlag))
-            } else {
-              Ok(views.html.thing(rc, chromelessFlag))
-            }
-          }
-          case ThingFailed(msg) => {
-            // TODO: what's the right response here?
-            Redirect(routes.Application.index)
-          }
-        }
-    } else {
-      // TODO: flash an error
-      Redirect(routes.Application.index)
-    }
-  }
-      
+
   def login = 
-    Security.Authenticated(username, request => Ok(views.html.login(RequestContext(request, None, UnknownOID, None, None), userForm))) { user =>
+    Security.Authenticated(username, request => Ok(views.html.login(RequestContext(request, None, UnknownOID, None, None)))) { user =>
       Action { Redirect(routes.Application.index) }
     }
   
   def dologin = Action { implicit request =>
     val rc = RequestContext(request, None, UnknownOID, None, None)
     userForm.bindFromRequest.fold(
-      errors => BadRequest(views.html.login(rc, errors, Some("I didn't understand that"))),
+      errors => doError(routes.Application.login, "I didn't understand that"),
       user => {
         val lookedUp = User.get(user.name)
         if (lookedUp.isEmpty || !User.checkLogin(lookedUp.get.name, user.password))
-          BadRequest(views.html.login(rc, userForm, Some("I don't know who you are")))
+          doError(routes.Application.login, "I don't know who you are")
         else
 	      Redirect(routes.Application.index).withSession(Security.username -> user.name)
       }

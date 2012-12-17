@@ -1,4 +1,4 @@
-@(rc:RequestContext, model:Thing, candidateModels:Iterable[Thing], propsSoFar:Property.PropList, otherProps:Seq[Property[_,_,_]], errors:Option[String] = None)
+@(rc:RequestContext, model:Thing, candidateModels:Iterable[Thing], propsSoFar:Property.PropList, otherProps:Seq[Property[_,_,_]])
 
 @import helper._
 @import helper.twitterBootstrap._
@@ -53,7 +53,7 @@
   showProperty(prop, v, i)
 }
 
-@main("Create a Thing", rc, errors) {
+@main("Create a Thing", rc) {
 		
 	<div class="page-header">
 	  @if(thing.isEmpty) {

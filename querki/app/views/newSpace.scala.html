@@ -1,20 +1,10 @@
-@(rc:RequestContext, errors:Option[String] = None)
+@(rc:RequestContext)
 
 @import helper._
 @import helper.twitterBootstrap._
 
 @main("Create a new Space", rc) {
-
-    @errors match {
-	  case None => {}
-	  case Some(msg) => { 
-        <div class="alert">
-          <button type="button" class="close" data-dismiss="alert">x</button>
-          <strong>Error:</strong> @msg
-        </div>
-	  }
-	}
-		
+	
 	<div class="page-header">
 	  <h1>Create a New Space</h1>
 	</div>

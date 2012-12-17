@@ -1,4 +1,4 @@
-@(title: String, rc:RequestContext, errors:Option[String] = None, chromeless:Boolean = false, addStyles:Boolean = false)(content: Html)
+@(title: String, rc:RequestContext, chromeless:Boolean = false, addStyles:Boolean = false)(content: Html)
 
 @import models.system._
 
@@ -9,6 +9,10 @@
     case Some(space) => NavSection.spaceNav(rc)
     case None => NavSection.homeNav
   }
+}
+@errors = @{
+  val flash = rc.request.flash
+  flash.get("error") getOrElse rc.error
 }
 
 <!DOCTYPE html>

@@ -25,10 +25,6 @@ GET     /u/:userName/:spaceId/:thingId    controllers.Application.thing(userName
 GET     /u/:userName/:spaceId/:thingId/edit controllers.Application.editThing(userName, spaceId, thingId)
 POST    /u/:userName/:spaceId/:thingId/edit controllers.Application.doEditThing(userName, spaceId, thingId)
 
-# GET     /u/:userName/:spaceName/a/:attachmentName controllers.Application.attachmentByName(userName, spaceName, attachmentName)
-# GET     /u/:userName/:spaceName/    controllers.Application.spaceByName(userName, spaceName)
-# GET     /u/:userName/:spaceName/:thingName controllers.Application.thingByName(userName, spaceName, thingName) 
-
 POST    /dologin                    controllers.Application.dologin
 GET     /logout                     controllers.Application.logout
 

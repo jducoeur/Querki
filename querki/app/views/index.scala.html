@@ -1,4 +1,4 @@
-@(rc:RequestContext, errors:Option[String] = None)
+@(rc:RequestContext)
 
 @import helper._
 @import helper.twitterBootstrap._
@@ -9,15 +9,6 @@
 
 	@user match {
 	  case None => {
-	    @errors match {
-		  case None => {}
-		  case Some(msg) => { 
-            <div class="alert">
-              <button type="button" class="close" data-dismiss="alert">x</button>
-              <strong>Error:</strong> @msg
-            </div>
-		  }
-		}
 	    <div class="hero-unit">
 	      <h1>Welcome to Querki!</h1>
 
