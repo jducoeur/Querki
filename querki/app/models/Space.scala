@@ -507,7 +507,7 @@ class SpaceManager extends Actor {
   // TODO: this needs a cap of how many states we will try to cache.
   
   // TEMP:
-  val replyMsg = Play.configuration.getString("querki.test.replyMsg").getOrElse("MISSING REPLY MSG!")
+  val replyMsg = Play.configuration.getString("querki.test.replyMsg").get
   
   def getSpace(spaceId:OID):ActorRef = {
     val sid = Space.sid(spaceId)
@@ -566,6 +566,7 @@ class SpaceManager extends Actor {
     // Is there a better way to do this?
     case req:SpaceMessage => {
       Logger.info("SpaceMgr got " + req)
+      Logger.info("Config message is " + replyMsg)
       // TODO: cope with messages in name style instead
       req match {
         case SpaceMessage(_, _, AsOID(spaceId)) => getSpace(spaceId).forward(req)

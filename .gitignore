@@ -5,6 +5,7 @@
 .target
 testdb/
 *.db
+application.conf
 
 #################
 ## Eclipse
