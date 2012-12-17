@@ -1,4 +1,4 @@
-@(rc:RequestContext)(implicit space:SpaceState)
+@(rc:RequestContext)
 
 @import helper._
 @import helper.twitterBootstrap._
@@ -14,7 +14,7 @@
 	  <h1>Upload an Image</h1>
 	</div>
 	
-	@form(routes.Application.doUpload(rc.ownerName, space.toThingId), 'class -> "form-horizontal", 'enctype -> "multipart/form-data") {
+	@form(routes.Application.doUpload(rc.ownerName, rc.state.get.toThingId), 'class -> "form-horizontal", 'enctype -> "multipart/form-data") {
 	  <fieldset>
 
         <div class="control-group">

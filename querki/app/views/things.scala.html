@@ -1,4 +1,6 @@
-@(rc:RequestContext)(implicit state:SpaceState)
+@(rc:RequestContext)
+
+@state = @{ rc.state.get }
 
 @listKind(title:String, kind:Map[OID,Thing]) = {
 	<h3>@title</h3>

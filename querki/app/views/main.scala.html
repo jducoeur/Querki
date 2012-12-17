@@ -1,4 +1,4 @@
-@(title: String, rc:RequestContext, chromeless:Boolean = false, addStyles:Boolean = false)(content: Html)
+@(title: String, rc:RequestContext, addStyles:Boolean = false)(content: Html)
 
 @import models.system._
 
@@ -64,7 +64,7 @@
 
     </head>
     <body>
-    @if(!chromeless) {
+    @if(!rc.chromeless) {
     <div class="querki-topbar navbar navbar-inverse navbar-fixed-top">
       <div class="navbar-inner">
         <div class="container-fluid">
@@ -97,7 +97,7 @@
 	<!-- This container stuff is likely to go into a lower-level, Space-rendering template -->
 	<div class="container-fluid">
       <div class="row-fluid">
-        @if(!chromeless) {
+        @if(!rc.chromeless) {
         <div class="span2 querki-sidebar">
           <div class="well sidebar-nav">
             <p style="text-align:center"><b>@title</b></p>
@@ -113,7 +113,7 @@
         </div><!--/span2-->
         }
         
-        @if(chromeless) {
+        @if(rc.chromeless) {
         <div class="querki-content span12">
         } else {
         <div class="querki-content span10">
@@ -132,7 +132,7 @@
 		</div><!--/span10-->
       </div><!--/row-->
 
-      @if(!chromeless) {
+      @if(!rc.chromeless) {
       <hr>
 
       <footer>

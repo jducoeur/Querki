@@ -41,6 +41,12 @@ object Application extends Controller {
      ((info:NewThingForm) => Some((info.fields, info.addedProperty, info.newModel, info.model)))
   )
   
+  /**
+   * Standard error handler. Iff you get an error and the correct response is to redirect to
+   * another page, use this. The only exception is iff you need to preserve data, and thus want
+   * to simply redisplay the current page; in that case, set the error in the RequestContext before
+   * constructing the page.
+   */
   def doError(redirectTo:Call, errorMsg:String) = Redirect(redirectTo).flashing("error" -> errorMsg)
   
   def getUser(username:String):Option[User] = User.get(username)
@@ -79,6 +85,11 @@ object Application extends Controller {
     }
   }
   
+  // Note that the requireLogin flag is critical, and subtle. This call and withAuth will
+  // *try* to get an authenticated user, but will only *require* it iff requireLogin is set.
+  // This reflects the fact that there are many more or less public pages. It is the responsibility
+  // of the caller to use this flag sensibly. Note that RequestContext.requester is guaranteed to
+  // be set iff requireLogin is true.
   def withUser(requireLogin:Boolean)(f: RequestContext => Result) = withAuth(requireLogin) { username => implicit request =>
     getUser(username).map { user =>
       f(RequestContext(request, Some(user), UnknownOID, None, None))
@@ -86,7 +97,8 @@ object Application extends Controller {
       if (requireLogin)
         onUnauthorized(request)
       else
-        // There isn't a legitimate logged-in user, but that's allowed for this call:
+        // There isn't a legitimate logged-in user, but that's allowed for this call, since
+        // requireLogin isn't set:
         f(RequestContext(request, None, UnknownOID, None, None))
     }
   }
@@ -119,8 +131,6 @@ object Application extends Controller {
         thingIdStr:Option[String] = None
       )(f: (RequestContext => Result)):Action[(Action[AnyContent], AnyContent)] = withUser(requireLogin) { rc =>
     val requesterId = rc.requester map (_.id) getOrElse UnknownOID
-    // TODO: this should cope with a user string:
-    // TODO: I believe the GetSpace method can in principle go away now:
     val thingId = thingIdStr map (ThingId(_))
     val ownerId = getUserByThingId(ownerIdStr)
     askSpaceMgr[ThingResponse](GetThing(requesterId, ownerId, ThingId(spaceId), thingId)) {
@@ -138,12 +148,16 @@ object Application extends Controller {
     }     
   }
 
+  /**
+   * Convenience wrapper for withSpace -- use this for pages that are talking about
+   * a specific Thing.
+   */
   def withThing(requireLogin:Boolean, ownerId:String, spaceId:String, thingIdStr:String) = { 
     withSpace(requireLogin, ownerId, spaceId, Some(thingIdStr)) _
   }
   
   def index = withUser(false) { rc =>
-      Ok(views.html.index(rc))
+    Ok(views.html.index(rc))
   }    
 
   def spaces = withUser(true) { rc => 
@@ -157,13 +171,11 @@ object Application extends Controller {
   }
   
   def things(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId) { implicit rc =>
-    implicit val state = rc.state.get
     Ok(views.html.things(rc))
   }
   
   def thing(ownerId:String, spaceId:String, thingId:String) = withThing(false, ownerId, spaceId, thingId) { implicit rc =>
-    val chromelessFlag = rc.request.queryString.contains("cl")
-    Ok(views.html.thing(rc, chromelessFlag))
+    Ok(views.html.thing(rc))
   }
   
   def newSpace = withUser(true) { rc =>
@@ -178,7 +190,7 @@ object Application extends Controller {
       name => {
         if (NameProp.validate(name)) {
           askSpaceMgr[ThingResponse](CreateSpace(requester.id, name)) {
-            case ThingFound(_, state) => Redirect(routes.Application.space(requester.name, state.id.toThingId))
+            case ThingFound(_, state) => Redirect(routes.Application.space(requester.name, state.toThingId))
             case ThingFailed(msg) => doError(routes.Application.newSpace, msg)
           }
         } else {
@@ -205,7 +217,8 @@ object Application extends Controller {
     }
   }
   
-  def showEditPage(rc: RequestContext, model:Thing, props:PropList, errorMsg:Option[String] = None)(implicit state:SpaceState) = {
+  def showEditPage(rc: RequestContext, model:Thing, props:PropList, errorMsg:Option[String] = None) = {
+    val state = rc.state.get
     val page = views.html.editThing(
         rc.copy(error = errorMsg),
         model,
@@ -220,7 +233,6 @@ object Application extends Controller {
   }
   
   def createThing(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
-    implicit val state = rc.state.get
     showEditPage(rc, SimpleThing, PropList((NameProp -> None)))
   }
   
@@ -232,8 +244,8 @@ object Application extends Controller {
     val user = rc.requester.get
     val rawForm = newThingForm.bindFromRequest
     rawForm.fold(
-      // TODO: flash an error message here. What can cause this?
-      errors => BadRequest(views.html.thing(rc)),
+      // TODO: What can cause this?
+      errors => doError(routes.Application.space(ownerId, spaceId), "Something went wrong"),
       info => {
         // Whether we're creating or editing depends on whether thing is specified:
         val thing = rc.thing
@@ -317,7 +329,6 @@ object Application extends Controller {
   def doEditThing(ownerId:String, spaceId:String, thingIdStr:String) = editThingInternal(ownerId, spaceId, Some(thingIdStr))
 
   def upload(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
-    implicit val state = rc.state.get
     Ok(views.html.upload(rc))
   }
   

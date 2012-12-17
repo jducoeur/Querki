@@ -1,4 +1,4 @@
-@(rc:RequestContext, chromeless:Boolean = false)
+@(rc:RequestContext)
 
 @space = @{ rc.state.get }
 @thing = @{ 
@@ -8,9 +8,9 @@
   }
 }
 
-@main(thing.displayName, rc, chromeless, true) {
+@main(thing.displayName, rc, true) {
 
-    @if(!chromeless) {
+    @if(!rc.chromeless) {
 	<div class="page-header">
 	  <h1>@thing.displayName</h1>
 	</div>
@@ -18,7 +18,7 @@
 	
 	<p>@Html(thing.render(space).display)</p>
 	
-	@if(!chromeless) {
+	@if(!rc.chromeless) {
 	<a href="@routes.Application.editThing(rc.ownerName, space.toThingId, thing.toThingId)" class="btn">Edit</a>
 	
 	<hr/>

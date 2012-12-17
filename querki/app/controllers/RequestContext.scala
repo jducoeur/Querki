@@ -27,6 +27,8 @@ case class RequestContext(
   def request = requestHeader.asInstanceOf[Request[AnyContent]]
   def requesterOID = requester map (_.id) getOrElse UnknownOID  
   def ownerName = state map Application.ownerName getOrElse ""
+  
+  def chromeless = request.queryString.contains("cl")
 }
 
 object RequestContext {
