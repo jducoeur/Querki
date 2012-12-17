@@ -17,9 +17,10 @@ object Application extends Controller {
   
   val userForm = Form(
     mapping(
-      "name" -> nonEmptyText
-    )((name) => User(UnknownOID, name))
-     ((user: User) => Some((user.name)))
+      "name" -> nonEmptyText,
+      "password" -> nonEmptyText
+    )((name, password) => User(UnknownOID, name, password))
+     ((user: User) => Some((user.name, "")))
   )
   
   val newSpaceForm = Form(
@@ -442,7 +443,7 @@ object Application extends Controller {
       errors => BadRequest(views.html.login(errors, Some("I didn't understand that"))),
       user => {
         val lookedUp = User.get(user.name)
-        if (lookedUp.isEmpty)
+        if (lookedUp.isEmpty || !User.checkLogin(lookedUp.get.name, user.password))
           BadRequest(views.html.login(userForm, Some("I don't know who you are")))
         else
 	      Redirect(routes.Application.index).withSession(Security.username -> user.name)

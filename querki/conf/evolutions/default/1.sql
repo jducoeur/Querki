@@ -14,6 +14,7 @@ CREATE TABLE User (
 
 INSERT INTO User (id, name) VALUES (9, 'system');
 INSERT INTO User (id, name) VALUES (11, 'mark');
+INSERT INTO User (id, name) VALUES (31, 'jducoeur');
 
 CREATE TABLE OIDNexter (
     nextId int NOT NULL

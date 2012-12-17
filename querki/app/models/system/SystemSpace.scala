@@ -46,6 +46,7 @@ object OIDs {
   val CSSOID = sysId(28)
   val StylesheetBaseOID = sysId(29)
   val PhotoBaseOID = sysId(30)
+  val PrototypeUserOID = sysId(31)
 }
 
 /**
