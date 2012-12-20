@@ -401,9 +401,15 @@ object Application extends Controller {
     }    
   }
 
+  // TODO: that onUnauthorized will infinite-loop if it's ever invoked. What should we do instead?
   def login = 
-    Security.Authenticated(username, request => Ok(views.html.login(RequestContext(request, None, UnknownOID, None, None)))) { user =>
-      Action { Redirect(routes.Application.index) }
+    Security.Authenticated(forceUsername, onUnauthorized) { name =>
+      Action { implicit request =>
+        if (name.length == 0)
+          Ok(views.html.login(RequestContext(request, None, UnknownOID, None, None)))
+        else
+          Redirect(routes.Application.index) 
+      }
     }
   
   def dologin = Action { implicit request =>

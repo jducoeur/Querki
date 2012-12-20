@@ -18,13 +18,12 @@ import models._
  * @param requester The validated User who is asking for this page, if any.
  */
 case class RequestContext(
-    requestHeader:RequestHeader, 
+    request:Request[AnyContent], 
     requester:Option[User], 
     ownerId:OID, 
     state:Option[SpaceState], 
     thing:Option[Thing],
     error:Option[String] = None) {
-  def request = requestHeader.asInstanceOf[Request[AnyContent]]
   def requesterOID = requester map (_.id) getOrElse UnknownOID  
   def ownerName = state map Application.ownerName getOrElse ""
   
