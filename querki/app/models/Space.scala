@@ -346,21 +346,6 @@ class Space extends Actor {
   }
   
   def modifyThing(oldThing:ThingState, spaceId:OID, modelId:OID, newProps:PropMap) = {
-    DB.withTransaction { implicit conn =>
-      // TODO: compare properties, build a history record of the changes
-      val thingId = oldThing.id
-      Space.SpaceSQL(spaceId, """
-        UPDATE {tname}
-        SET model = {modelId}, props = {props}
-        WHERE id = {thingId}
-        """
-        ).on("thingId" -> thingId.raw,
-             "modelId" -> modelId.raw,
-             "props" -> Thing.serializeProps(newProps, state)).executeUpdate()    
-      val newThingState = oldThing.copy(m = modelId, pf = () => newProps)
-      updateState(state.copy(things = state.things + (thingId -> newThingState)))
-      sender ! ThingFound(thingId, state)
-    }
   }
   
   def receive = {
@@ -422,9 +407,33 @@ class Space extends Actor {
           Logger.info(who.toString + " can't edit -- requires " + owner.toString)
           sender ! ThingFailed("You're not allowed to modify that")
         } else {
-          oldThing match {
-            case t:ThingState => modifyThing(t, spaceId, modelId, newProps)
-          }
+	      DB.withTransaction { implicit conn =>
+	        // TODO: compare properties, build a history record of the changes
+	        val thingId = oldThing.id
+	        Space.SpaceSQL(spaceId, """
+	          UPDATE {tname}
+	          SET model = {modelId}, props = {props}
+	          WHERE id = {thingId}
+	          """
+	          ).on("thingId" -> thingId.raw,
+	               "modelId" -> modelId.raw,
+	               "props" -> Thing.serializeProps(newProps, state)).executeUpdate()    
+	        // TODO: this needs a clause for each Kind you can get:
+            oldThing match {
+              case t:ThingState => {
+	            val newThingState = t.copy(m = modelId, pf = () => newProps)
+	            updateState(state.copy(things = state.things + (thingId -> newThingState))) 
+              }
+              case s:SpaceState => {
+                // TODO: handle changing the name of the Space correctly. We need to update
+                // the Spaces table in that case.
+                // TODO: handle changing the owner or apps of the Space. (Different messages?)
+                val newName = NameProp.first(newProps)
+                updateState(state.copy(m = modelId, pf = () => newProps, name = newName))
+              }
+	        }
+	        sender ! ThingFound(thingId, state)
+	      }
         }
       } getOrElse {
         sender ! ThingFailed("Thing not found")
