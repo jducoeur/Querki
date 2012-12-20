@@ -47,7 +47,15 @@ object Application extends Controller {
    * to simply redisplay the current page; in that case, set the error in the RequestContext before
    * constructing the page.
    */
-  def doError(redirectTo:Call, errorMsg:String) = Redirect(redirectTo).flashing("error" -> errorMsg)
+  def doError(redirectTo:Call, errorMsg:String) = {
+    // TODO: figure out a better way to do this, and make it configurable:
+    try {
+      throw new Exception("Got error; redirecting: " + errorMsg)
+    } catch {
+      case e:Throwable => Logger.info(e.toString, e)
+    }
+    Redirect(redirectTo).flashing("error" -> errorMsg)
+  }
   
   def getUser(username:String):Option[User] = User.get(username)
   
@@ -139,6 +147,7 @@ object Application extends Controller {
           case UnknownOID => None
           case oid:OID => Some(state.anything(oid))
         }
+        Logger.info("Looking for " + spaceId + "/" + thingIdStr + ";  found " + id)
         if (thingIdStr.isDefined && thingOpt.isEmpty)
           doError(routes.Application.index, "That wasn't a valid path")
         else

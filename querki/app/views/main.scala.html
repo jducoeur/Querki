@@ -12,7 +12,7 @@
 }
 @errors = @{
   val flash = rc.request.flash
-  flash.get("error") getOrElse rc.error
+  flash.get("error") orElse rc.error
 }
 
 <!DOCTYPE html>

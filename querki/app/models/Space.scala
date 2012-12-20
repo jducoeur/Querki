@@ -65,10 +65,11 @@ case class SpaceState(
   def anything(oid:OID):Thing = {
     // TODO: this should do something more sensible if the OID isn't found at all:
     things.getOrElse(oid, 
-        spaceProps.getOrElse(oid, 
-            types.getOrElse(oid, 
-                colls.getOrElse(oid,
-                	app.map(_.anything(oid)).getOrElse(this)))))
+      spaceProps.getOrElse(oid, 
+        types.getOrElse(oid, 
+          colls.getOrElse(oid,
+            selfByOID(oid).getOrElse(
+              app.map(_.anything(oid)).getOrElse(this))))))
   }
   
   def thingWithName(name:String, things:Map[OID, Thing]):Option[Thing] = {
@@ -78,6 +79,13 @@ case class SpaceState(
     }
   }
   
+  def selfByOID(oid:OID):Option[Thing] = {
+    if (oid == id) Some(this) else None
+  }
+  def spaceByName(tryName:String):Option[Thing] = {
+    if (tryName == NameType.toInternal(name)) Some(this) else None
+  }
+  
   // TBD: should this try recognizing Display Names as well? I've confused myself that way once
   // or twice.
   def anythingByName(rawName:String):Option[Thing] = {
@@ -85,7 +93,8 @@ case class SpaceState(
     thingWithName(name, things).orElse(
       thingWithName(name, spaceProps).orElse(
         thingWithName(name, types).orElse(
-          thingWithName(name, colls))))
+          thingWithName(name, colls).orElse(
+            spaceByName(name)))))
   }
   
   def anything(thingId:ThingId):Option[Thing] = {
@@ -313,14 +322,7 @@ class Space extends Actor {
       case AsName(thingName) => if (NameType.equalNames(thingName, name)) id else throw new Exception("Space " + name + " somehow got message for " + thingName)
     }
   }
-  
-  def resolveThingId(thingId:ThingId):OID = {
-    thingId match {
-      case AsOID(oid) => oid
-      case AsName(thingName) => state.anythingByName(thingName) getOrElse (throw new Exception("Space " + name + " doesn't contain " + thingName))
-    }
-  }
-  
+
   def createSomething(spaceThingId:ThingId, who:OID, modelId:OID, props:PropMap, kind:Kind)(
       otherWork:OID => java.sql.Connection => Unit) = 
   {
@@ -341,6 +343,24 @@ class Space extends Actor {
         
       sender ! ThingFound(thingId, state)
     }    
+  }
+  
+  def modifyThing(oldThing:ThingState, spaceId:OID, modelId:OID, newProps:PropMap) = {
+    DB.withTransaction { implicit conn =>
+      // TODO: compare properties, build a history record of the changes
+      val thingId = oldThing.id
+      Space.SpaceSQL(spaceId, """
+        UPDATE {tname}
+        SET model = {modelId}, props = {props}
+        WHERE id = {thingId}
+        """
+        ).on("thingId" -> thingId.raw,
+             "modelId" -> modelId.raw,
+             "props" -> Thing.serializeProps(newProps, state)).executeUpdate()    
+      val newThingState = oldThing.copy(m = modelId, pf = () => newProps)
+      updateState(state.copy(things = state.things + (thingId -> newThingState)))
+      sender ! ThingFound(thingId, state)
+    }
   }
   
   def receive = {
@@ -396,29 +416,18 @@ class Space extends Actor {
     case ModifyThing(who, owner, spaceThingId, thingId, modelId, newProps) => {
       Logger.info("In ModifyThing")
       val spaceId = checkSpaceId(spaceThingId)
-      val thingOid = resolveThingId(thingId)
-      if (!canEdit(who, thingOid)) {
-        Logger.info(who.toString + " can't edit -- requires " + owner.toString)
-        sender ! ThingFailed
-      } else DB.withTransaction { implicit conn =>
-        Logger.info("About to get the thing")
-        val oldThing = state.thing(thingOid)
-        Logger.info("Got the thing")
-        // TODO: compare properties, build a history record of the changes
-        val newThingState = oldThing.copy(m = modelId, pf = () => newProps)
-        Logger.info("Created newThingState")
-        Space.SpaceSQL(spaceId, """
-          UPDATE {tname}
-          SET model = {modelId}, props = {props}
-          WHERE id = {thingId}
-          """
-          ).on("thingId" -> thingOid.raw,
-               "modelId" -> modelId.raw,
-               "props" -> Thing.serializeProps(newProps, state)).executeUpdate()    
-        updateState(state.copy(things = state.things + (thingOid -> newThingState)))
-        
-        Logger.info("About to leave ModifyThing")
-        sender ! ThingFound(thingOid, state)
+      val oldThingOpt = state.anything(thingId)
+      oldThingOpt map { oldThing =>
+        if (!canEdit(who, oldThing.id)) {
+          Logger.info(who.toString + " can't edit -- requires " + owner.toString)
+          sender ! ThingFailed("You're not allowed to modify that")
+        } else {
+          oldThing match {
+            case t:ThingState => modifyThing(t, spaceId, modelId, newProps)
+          }
+        }
+      } getOrElse {
+        sender ! ThingFailed("Thing not found")
       }
     }
     
