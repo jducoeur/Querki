@@ -215,20 +215,29 @@ class Space extends Actor {
   
   def SpaceSQL(query:String) = Space.SpaceSQL(id, query)
   def AttachSQL(query:String) = Space.AttachSQL(id, query)
-  
+
+  /**
+   * This is a var instead of a lazy val, because the name can change at runtime.
+   */
+  var _currentSpaceInfo:Option[SqlRow] = None
   /**
    * Fetch the high-level information about this Space. Note that this will throw
-   * an exception if for some reason we can't load the record. 
+   * an exception if for some reason we can't load the record. Re-run this if you
+   * have reason to believe the Spaces record has been changed. 
    */
-  lazy val spaceInfo = {
-    DB.withTransaction { implicit conn =>
+  def fetchSpaceInfo() = {
+    _currentSpaceInfo = Some(DB.withTransaction { implicit conn =>
       SQL("""
           select * from Spaces where id = {id}
           """).on("id" -> id.raw).apply().headOption.get
-    }    
+    })
   }
-  lazy val name = spaceInfo.get[String]("name").get
-  lazy val owner = OID(spaceInfo.get[Long]("owner").get)
+  def spaceInfo:SqlRow = {
+    if (_currentSpaceInfo.isEmpty) fetchSpaceInfo()
+    _currentSpaceInfo.get
+  }
+  def name = spaceInfo.get[String]("name").get
+  def owner = OID(spaceInfo.get[Long]("owner").get)
   
   // TODO: this needs to become real. For now, everything is world-readable.
   def canRead(who:OID):Boolean = {
@@ -428,12 +437,25 @@ class Space extends Actor {
                 // TODO: handle changing the name of the Space correctly. We need to update
                 // the Spaces table in that case.
                 // TODO: handle changing the owner or apps of the Space. (Different messages?)
-                val newName = NameProp.first(newProps)
+                val newDisplay = NameProp.first(newProps)
+                val oldName = NameProp.first(oldThing.props)
+                val newName = NameType.canonicalize(newDisplay)
+                if (!NameType.equalNames(newName, oldName)) {
+                  SQL("""
+                    UPDATE Spaces
+                    SET name = {newName}, display = {displayName}
+                    WHERE id = {thingId}
+                    """
+                  ).on("newName" -> newName, 
+                       "thingId" -> thingId.raw,
+                       "displayName" -> newDisplay).executeUpdate()
+                }
                 updateState(state.copy(m = modelId, pf = () => newProps, name = newName))
               }
 	        }
 	        sender ! ThingFound(thingId, state)
 	      }
+          fetchSpaceInfo()
         }
       } getOrElse {
         sender ! ThingFailed("Thing not found")
@@ -507,7 +529,7 @@ sealed trait SpaceMgrMsg
 
 case class ListMySpaces(owner:OID) extends SpaceMgrMsg
 sealed trait ListMySpacesResponse
-case class MySpaces(spaces:Seq[(ThingId,String)]) extends ListMySpacesResponse
+case class MySpaces(spaces:Seq[(AsName,AsOID,String)]) extends ListMySpacesResponse
 
 // This responds eventually with a ThingFound:
 case class CreateSpace(owner:OID, name:String) extends SpaceMgrMsg
@@ -542,7 +564,7 @@ class SpaceManager extends Actor {
     case req:ListMySpaces => {
       //val results = spaceCache.values.filter(_.owner == req.owner).map(space => (space.id, space.name)).toSeq
       if (req.owner == SystemUserOID)
-        sender ! MySpaces(Seq((AsOID(systemOID), State.name)))
+        sender ! MySpaces(Seq((AsName("System"), AsOID(systemOID), State.name)))
       else {
         // TODO: this involves DB access, so should be async using the Actor DSL
         val results = DB.withConnection { implicit conn =>
@@ -554,7 +576,7 @@ class SpaceManager extends Actor {
             val id = OID(row.get[Long]("id").get)
             val name = row.get[String]("name").get
             val display = row.get[String]("display").get
-            (AsName(name), display)
+            (AsName(name), AsOID(id), display)
           }
         }
         sender ! MySpaces(results)
