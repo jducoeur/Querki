@@ -120,7 +120,7 @@ abstract class Thing(
     nameOpt map AsName getOrElse AsOID(id)
   }
 
-  def getModel(implicit state:SpaceState):Thing = { state.anything(model) }
+  def getModel(implicit state:SpaceState):Thing = { state.anything(model).get }
   
   /**
    * The Property as defined on *this* specific Thing.

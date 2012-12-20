@@ -62,14 +62,14 @@ case class SpaceState(
   def thing(ptr:OID) = resolve(ptr) (_.things.get(_))
   def coll(ptr:OID) = resolve(ptr) (_.colls.get(_))
   
-  def anything(oid:OID):Thing = {
+  def anything(oid:OID):Option[Thing] = {
     // TODO: this should do something more sensible if the OID isn't found at all:
-    things.getOrElse(oid, 
-      spaceProps.getOrElse(oid, 
-        types.getOrElse(oid, 
-          colls.getOrElse(oid,
-            selfByOID(oid).getOrElse(
-              app.map(_.anything(oid)).getOrElse(this))))))
+    things.get(oid).orElse(
+      spaceProps.get(oid).orElse(
+        types.get(oid).orElse(
+          colls.get(oid).orElse(
+            selfByOID(oid).orElse(
+              app.flatMap(_.anything(oid)))))))
   }
   
   def thingWithName(name:String, things:Map[OID, Thing]):Option[Thing] = {
@@ -99,7 +99,7 @@ case class SpaceState(
   
   def anything(thingId:ThingId):Option[Thing] = {
     thingId match {
-      case AsOID(oid) => Some(anything(oid))
+      case AsOID(oid) => anything(oid)
       case AsName(name) => anythingByName(name)
     }
   }
@@ -466,10 +466,7 @@ class Space extends Actor {
       if (!canRead(req))
         sender ! ThingFailed("Space not found")
       else if (thingIdOpt.isDefined) {
-        val thingOpt = thingIdOpt.get match {
-          case AsOID(oid) => Some(state.anything(oid))
-          case AsName(name) => state.anythingByName(name)
-        }
+        val thingOpt = state.anything(thingIdOpt.get)
         if (thingOpt.isDefined) {
           sender ! ThingFound(thingOpt.get.id, state)
         } else {

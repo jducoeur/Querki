@@ -145,7 +145,7 @@ object Application extends Controller {
       case ThingFound(id, state) => {
         val thingOpt = id match {
           case UnknownOID => None
-          case oid:OID => Some(state.anything(oid))
+          case oid:OID => state.anything(oid)
         }
         Logger.info("Looking for " + spaceId + "/" + thingIdStr + ";  found " + id)
         if (thingIdStr.isDefined && thingOpt.isEmpty)
@@ -259,7 +259,7 @@ object Application extends Controller {
         // Whether we're creating or editing depends on whether thing is specified:
         val thing = rc.thing
         val rawProps = info.fields map { fieldId => (fieldId, rawForm("v-" + fieldId).value) }
-        val oldModel = state.anything(OID(info.model))
+        val oldModel = state.anything(OID(info.model)).get
         
         def makeProps(propList:List[(String, Option[String])]):PropList = {
           val rawList = propList.map { pair =>
@@ -278,7 +278,7 @@ object Application extends Controller {
         } else if (info.newModel.length > 0) {
           // User is changing models. Replace the empty Properties with ones
           // appropriate to the new model, and continue:
-          val model = state.anything(OID(info.newModel))
+          val model = state.anything(OID(info.newModel)).get
           showEditPage(rc, model, replaceModelProps(makeProps(rawProps), model))
         } else {
           // User has submitted a creation/change. Is it legal?
@@ -309,7 +309,7 @@ object Application extends Controller {
             }
             askSpaceMgr[ThingResponse](spaceMsg) {
               case ThingFound(thingId, state) => {
-                val thing = state.anything(thingId)
+                val thing = state.anything(thingId).get
                 Redirect(routes.Application.thing(ownerName(state), state.toThingId, thing.toThingId))
               }
               case ThingFailed(msg) => {
@@ -331,7 +331,7 @@ object Application extends Controller {
     implicit val state = rc.state.get
     val thing = rc.thing.get
     // TODO: security check that I'm allowed to edit this
-	val model = state.anything(thing.model)
+	val model = state.anything(thing.model).get
 	showEditPage(rc, model, PropList.from(thing))
   }
   
