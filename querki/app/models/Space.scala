@@ -434,13 +434,13 @@ class Space extends Actor {
 	            updateState(state.copy(things = state.things + (thingId -> newThingState))) 
               }
               case s:SpaceState => {
-                // TODO: handle changing the name of the Space correctly. We need to update
-                // the Spaces table in that case.
                 // TODO: handle changing the owner or apps of the Space. (Different messages?)
-                val newDisplay = NameProp.first(newProps)
+                val rawName = NameProp.first(newProps)
+                val newName = NameType.canonicalize(rawName)
                 val oldName = NameProp.first(oldThing.props)
-                val newName = NameType.canonicalize(newDisplay)
-                if (!NameType.equalNames(newName, oldName)) {
+                val oldDisplay = DisplayNameProp.firstOpt(oldThing.props) map (_.raw.toString) getOrElse rawName
+                val newDisplay = DisplayNameProp.firstOpt(newProps) map (_.raw.toString) getOrElse rawName
+                if (!NameType.equalNames(newName, oldName) || !(oldDisplay.contentEquals(newDisplay))) {
                   SQL("""
                     UPDATE Spaces
                     SET name = {newName}, display = {displayName}
