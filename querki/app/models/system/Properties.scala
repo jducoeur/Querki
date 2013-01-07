@@ -41,7 +41,10 @@ class SystemProperty[VT, -RT, CT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT]
    */
   object TypeProp extends SystemProperty(TypePropOID, LinkType, ExactlyOne,
       toProps(
-        setName("__Type")
+        setName("__Type"),
+        prompt("What Type does this Property hold"),
+        LinkKindProp(Kind.Type),
+        LinkAllowAppsProp(true)
         ))
   
   /**
@@ -49,7 +52,10 @@ class SystemProperty[VT, -RT, CT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT]
    */
   object CollectionProp extends SystemProperty(CollectionPropOID, LinkType, ExactlyOne,
       toProps(
-        setName("__Collection")
+        setName("__Collection"),
+        prompt("How many are contained in this Property"),
+        LinkKindProp(Kind.Collection),
+        LinkAllowAppsProp(true)
         ))
     
   object PlaceholderTextProp extends SystemProperty(PlaceholderTextOID, TextType, Optional,
@@ -124,4 +130,30 @@ object CSSProp extends SystemProperty(CSSOID, CSSTextType, Optional,
 object GoogleFontProp extends SystemProperty(GoogleFontOID, TextType, Optional,
     toProps(
       setName("Google Font Name")
+      ))
+
+/**
+ * Meta-property, set on Properties of LinkType, to filter what to Link to.
+ */
+object LinkKindProp extends SystemProperty(LinkKindOID, IntType, QList,
+    toProps(
+      setName("Link Kind"),
+      prompt("Kind that this Property can Link to"),
+      DisplayTextProp("""
+By and large, Link Properties should always point to a particular kind -- it should point to
+Things, Properties, Types, or Collections. This says which Kind is allowed.
+          
+This is an extremely advanced property, and not intended for casual use.
+""")
+      ))
+
+object LinkAllowAppsProp extends SystemProperty(LinkAllowAppsOID, YesNoType, Optional,
+    toProps(
+      setName("Allow Links to Apps"),
+      DisplayTextProp("""
+Links, by default, are only to other Things in the same Space. If set, this says that this
+Property should allow linking to Things in Apps.
+          
+This is an extremely advanced property, and not intended for casual use.
+""")
       ))

@@ -115,6 +115,41 @@ case class SpaceState(
       myModels ++ app.get.allModels
     }
   }
+  
+  /**
+   * Given a Link Property, return all of the appropriate candidates for that property to point to.
+   * 
+   * The Property passed into here should usually be of LinkType -- while in theory that's not required,
+   * it would be surprising for it to be used otherwise.
+   */
+  def linkCandidates(prop:Property[_,_,_]):Iterable[Thing] = {
+    implicit val s = this
+    if (app.isDefined && prop.hasProp(LinkAllowAppsProp) && prop.first(LinkAllowAppsProp))
+      linkCandidatesLocal(prop) ++: app.get.linkCandidates(prop)
+    else
+      linkCandidatesLocal(prop)
+  }
+  
+  def linkCandidatesLocal(prop:Property[_,_,_]):Iterable[Thing] = {
+    implicit val s = this
+    if (prop.hasProp(LinkKindOID)) {
+      val allowedKinds = prop.getPropVal(LinkKindProp).coll
+      def fetchKind(wrappedVal:ElemValue):Iterable[Thing] = {
+        val kind = LinkKindProp.pType.get(wrappedVal)
+        kind match {
+          case Kind.Thing => things.values
+          case Kind.Property => spaceProps.values
+          case Kind.Type => types.values
+          case Kind.Collection => colls.values
+          // TODO: distinguish Things and Attachments?
+          case _ => Iterable.empty[Thing]
+        }
+      }
+      (Iterable.empty[Thing] /: allowedKinds)((it, kind) => it ++: fetchKind(kind))
+    } else {
+      things.values
+    }
+  }
 }
 
 

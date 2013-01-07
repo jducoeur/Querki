@@ -21,7 +21,7 @@
   
   @if(prop.pType == LinkType) {
     <select name="v-@prop.id.toString">
-      @for(candidate <- space.things.values) {
+      @for(candidate <- space.linkCandidates(prop)) {
         @if(v.isDefined && (candidate.id.toString == v.get)) {
           <option value="@candidate.id.toString" selected>@candidate.displayName</option>        
         } else {
