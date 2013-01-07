@@ -124,15 +124,21 @@ case class SpaceState(
    */
   def linkCandidates(prop:Property[_,_,_]):Iterable[Thing] = {
     implicit val s = this
+    
     if (app.isDefined && prop.hasProp(LinkAllowAppsProp) && prop.first(LinkAllowAppsProp))
       linkCandidatesLocal(prop) ++: app.get.linkCandidates(prop)
     else
       linkCandidatesLocal(prop)
   }
   
+  /**
+   * This enumerates all of the plausible candidates for the given property within this Space.
+   */
   def linkCandidatesLocal(prop:Property[_,_,_]):Iterable[Thing] = {
     implicit val s = this
-    if (prop.hasProp(LinkKindOID)) {
+    
+    // First, filter the candidates based on LinkKind:
+    val allCandidates = if (prop.hasProp(LinkKindOID)) {
       val allowedKinds = prop.getPropVal(LinkKindProp).coll
       def fetchKind(wrappedVal:ElemValue):Iterable[Thing] = {
         val kind = LinkKindProp.pType.get(wrappedVal)
@@ -147,7 +153,18 @@ case class SpaceState(
       }
       (Iterable.empty[Thing] /: allowedKinds)((it, kind) => it ++: fetchKind(kind))
     } else {
+      // No LinkKind specified, so figure that they only want Things:
       things.values
+    }
+    
+    // Now, if they've specified a particular Model to be the limit of the candidate
+    // tree -- essentially, they've specified what type you can link to -- filter for
+    // that:
+    if (prop.hasProp(LinkModelProp)) {
+      val limit = prop.first(LinkModelProp)
+      allCandidates filter (_.isAncestor(limit))
+    } else {
+      allCandidates
     }
   }
 }

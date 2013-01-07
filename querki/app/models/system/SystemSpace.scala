@@ -50,6 +50,7 @@ object OIDs {
   val GoogleFontOID = sysId(32)
   val LinkKindOID = sysId(33)
   val LinkAllowAppsOID = sysId(34)
+  val LinkModelOID = sysId(35)
 }
 
 /**
@@ -81,7 +82,8 @@ object SystemSpace {
       CSSProp,
       GoogleFontProp,
       LinkKindProp,
-      LinkAllowAppsProp)
+      LinkAllowAppsProp,
+      LinkModelProp)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing, StylesheetBase, PhotoBase)

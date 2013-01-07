@@ -217,6 +217,13 @@ abstract class Thing(
     localProps ++ getModel.allProps
   }
   
+  /**
+   * True iff the other is an ancestor of this Thing via the Model chain.
+   */
+  def isAncestor(other:OID)(implicit state:SpaceState):Boolean = {
+    (other == model) || getModel.isAncestor(other)
+  }
+  
   def renderProps(implicit state:SpaceState):Wikitext = {
     val listMap = props.map { entry =>
       val prop = state.prop(entry._1)

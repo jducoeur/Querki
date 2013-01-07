@@ -33,6 +33,8 @@ object UrThing extends ThingState(RootOID, systemOID, RootOID,
   }
     
   override def allProps(implicit state:SpaceState):Set[Property[_,_,_]] = localProps
+  
+  override def isAncestor(other:OID)(implicit state:SpaceState):Boolean = false
 }
   
 

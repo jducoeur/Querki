@@ -96,7 +96,8 @@ object NotInheritedProp extends SystemProperty(NotInheritedOID, YesNoType, Exact
  */
 object StylesheetProp extends SystemProperty(StylesheetOID, LinkType, Optional,
     toProps(
-      setName("Stylesheet")
+      setName("Stylesheet"),
+      LinkModelProp(StylesheetBase)
       ))
 
 /**
@@ -155,5 +156,21 @@ Links, by default, are only to other Things in the same Space. If set, this says
 Property should allow linking to Things in Apps.
           
 This is an extremely advanced property, and not intended for casual use.
+""")
+      ))
+
+object LinkModelProp extends SystemProperty(LinkModelOID, LinkType, Optional,
+    toProps(
+      setName("Link Model"),
+      DisplayTextProp("""
+By default, Link Properties allow you to link to *anything*. This usually isn't what you want --
+most often, you're looking for Things under a specific Model. For example, if you specify the
+Stylesheet Property, you only want to give Stylesheets as options to Link to.
+          
+So this is a meta-Property: when you create a Property that is a Link, you can add this to
+say exactly what it can link *to*.
+          
+Note that this is only enforced loosely, and you can't absolutely count upon this restriction
+always being true. But used properly, it will steer folks in the right direction.
 """)
       ))
