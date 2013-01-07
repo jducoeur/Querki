@@ -12,6 +12,7 @@
 
 @thing = @{ rc.thing }
 @space = @{ rc.state.get }
+@isEdit = @{ thing.isDefined }
 
 @showInputControl(prop:Property[_,_,_], v:Option[String], i:Int) = {
   @if(prop.pType == LargeTextType || prop.pType == CSSTextType) {
@@ -53,7 +54,14 @@
   showProperty(prop, v, i)
 }
 
-@main("Create a Thing", rc) {
+@pageTitle = @{
+  if (isEdit)
+    "Editing " + thing.get.displayName
+  else
+    "Create a Thing"
+}
+
+@main(pageTitle, rc) {
 		
 	<div class="page-header">
 	  @if(thing.isEmpty) {
