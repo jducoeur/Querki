@@ -44,7 +44,8 @@ class SystemProperty[VT, -RT, CT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT]
         setName("__Type"),
         prompt("What Type does this Property hold"),
         LinkKindProp(Kind.Type),
-        LinkAllowAppsProp(true)
+        LinkAllowAppsProp(true),
+        AppliesToKindProp(Kind.Property)
         ))
   
   /**
@@ -55,17 +56,20 @@ class SystemProperty[VT, -RT, CT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT]
         setName("__Collection"),
         prompt("How many are contained in this Property"),
         LinkKindProp(Kind.Collection),
-        LinkAllowAppsProp(true)
+        LinkAllowAppsProp(true),
+        AppliesToKindProp(Kind.Property)
         ))
     
   object PlaceholderTextProp extends SystemProperty(PlaceholderTextOID, TextType, Optional,
       toProps(
-        setName("Placeholder Text")
+        setName("Placeholder Text"),
+        AppliesToKindProp(Kind.Property)
         ))
   
   object PromptProp extends SystemProperty(PromptOID, TextType, Optional,
       toProps(
-        setName("Prompt")
+        setName("Prompt"),
+        AppliesToKindProp(Kind.Property)
         ))
 
   /**
@@ -75,7 +79,9 @@ class SystemProperty[VT, -RT, CT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT]
   object IsModelProp extends SystemProperty(IsModelOID, YesNoType, ExactlyOne,
       toProps(
         setName("Is a Model"),
-        NotInheritedProp(true)
+        NotInheritedProp(true),
+        // TBD: we might allow Property Models down the road, but not yet:
+        AppliesToKindProp(Kind.Thing)
         ))
 
 /**
@@ -85,7 +91,8 @@ object NotInheritedProp extends SystemProperty(NotInheritedOID, YesNoType, Exact
     toProps(
       setName("Not Inherited"),
       // Need to define this explicitly, to break infinite loops in lookup:
-      (NotInheritedOID -> PropValue(OneColl(ElemValue(false))))
+      (NotInheritedOID -> PropValue(OneColl(ElemValue(false)))),
+      AppliesToKindProp(Kind.Property)
       ))
 
 /**
@@ -97,7 +104,8 @@ object NotInheritedProp extends SystemProperty(NotInheritedOID, YesNoType, Exact
 object StylesheetProp extends SystemProperty(StylesheetOID, LinkType, Optional,
     toProps(
       setName("Stylesheet"),
-      LinkModelProp(StylesheetBase)
+      LinkModelProp(StylesheetBase),
+      AppliesToKindProp(Kind.Thing)
       ))
 
 /**
@@ -130,7 +138,9 @@ object CSSProp extends SystemProperty(CSSOID, CSSTextType, Optional,
  */
 object GoogleFontProp extends SystemProperty(GoogleFontOID, TextType, Optional,
     toProps(
-      setName("Google Font Name")
+      setName("Google Font Name"),
+      // TODO: in fact, this only applies to Stylesheets:
+      AppliesToKindProp(Kind.Thing)
       ))
 
 /**
@@ -145,7 +155,8 @@ By and large, Link Properties should always point to a particular kind -- it sho
 Things, Properties, Types, or Collections. This says which Kind is allowed.
           
 This is an extremely advanced property, and not intended for casual use.
-""")
+"""),
+      AppliesToKindProp(Kind.Property)
       ))
 
 object LinkAllowAppsProp extends SystemProperty(LinkAllowAppsOID, YesNoType, Optional,
@@ -156,7 +167,8 @@ Links, by default, are only to other Things in the same Space. If set, this says
 Property should allow linking to Things in Apps.
           
 This is an extremely advanced property, and not intended for casual use.
-""")
+"""),
+      AppliesToKindProp(Kind.Property)
       ))
 
 object LinkModelProp extends SystemProperty(LinkModelOID, LinkType, Optional,
@@ -172,5 +184,21 @@ say exactly what it can link *to*.
           
 Note that this is only enforced loosely, and you can't absolutely count upon this restriction
 always being true. But used properly, it will steer folks in the right direction.
+"""),
+      AppliesToKindProp(Kind.Property)
+      ))
+
+object AppliesToKindProp extends SystemProperty(AppliesToKindOID, IntType, QList,
+    toProps(
+      setName("Applies To"),
+      (AppliesToKindOID -> PropValue(List(ElemValue(Kind.Property)))),
+      DisplayTextProp("""
+By default, a Property can be used on anything -- even when that is nonsensical. The
+result is that, when creating a new Thing, you get a messy list of lots of Properties,
+many of which are irrelevant.
+          
+So to keep that from happening, use this on your Properties. In most cases, a Property
+is really intended to only apply to Things *or* Properties, not both. So using this
+will keep you from having a long and confusing Property List.
 """)
       ))

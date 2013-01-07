@@ -210,11 +210,25 @@ object Application extends Controller {
     )
   }
   
-  def getOtherProps(state:SpaceState, existing:PropList):Seq[Property[_,_,_]] = {
+  def getOtherProps(state:SpaceState, kind:Kind.Kind, existing:PropList):Seq[Property[_,_,_]] = {
     val existingProps = existing.keys
+    // This lists all of the visible properties that aren't in the existing list:
     // TODO: sort alphabetically
     // TODO: filter out "non-user" Properties
-    (state.allProps.values.toSet -- existingProps).toSeq
+    val candidates = (state.allProps.values.toSet -- existingProps).toSeq
+    
+    // Now, filter out ones that aren't applicable to the target Kind:
+    implicit val s = state
+    candidates filter { candidate =>
+      // TODO: this pattern -- "if this QList property exists, then do something to each value" -- seems
+      // common. Find the right factoring for it:
+      if (candidate.hasProp(AppliesToKindProp)) {
+        val allowedKinds = candidate.getPropVal(AppliesToKindProp).coll
+        (false /: allowedKinds)((current, allowedKind) => current || (AppliesToKindProp.pType.get(allowedKind) == kind))
+      } else {
+        true
+      }
+    }
   }
   
   def replaceModelProps(existing:PropList, model:Thing)(implicit state:SpaceState):PropList = {
@@ -244,7 +258,7 @@ object Application extends Controller {
         model,
         otherModels(state, model),
         props,
-        getOtherProps(state, props)
+        getOtherProps(state, model.kind, props)
       )
     if (errorMsg.isDefined)
       BadRequest(page)
