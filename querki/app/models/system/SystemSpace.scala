@@ -67,7 +67,7 @@ object SystemSpace {
   
   // Properties:
   val props = oidMap[Property[_,_,_]](
-      new UrProp(UrPropOID), 
+      UrProp, 
       NameProp, 
       DisplayTextProp, 
       TypeProp, 

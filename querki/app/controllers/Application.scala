@@ -11,6 +11,7 @@ import models._
 import Property._
 
 import system._
+import models.system._
 import models.system.SystemSpace._
 
 object Application extends Controller {
@@ -226,12 +227,22 @@ object Application extends Controller {
     }
   }
   
+  def otherModels(state:SpaceState, mainModel:Thing):Iterable[Thing] = {
+    mainModel.kind match {
+      case Kind.Thing => state.allModels
+      // For the time being, we're only allowing basic Properties. We might allow Properties to
+      // serve as Models, but one thing at a time.
+      case Kind.Property => Seq(UrProp)
+      case _ => throw new Exception("Don't yet know how to create a Thing of kind " + mainModel.kind)
+    }
+  }
+  
   def showEditPage(rc: RequestContext, model:Thing, props:PropList, errorMsg:Option[String] = None) = {
     val state = rc.state.get
     val page = views.html.editThing(
         rc.copy(error = errorMsg),
         model,
-        state.allModels,
+        otherModels(state, model),
         props,
         getOtherProps(state, props)
       )
@@ -243,6 +254,10 @@ object Application extends Controller {
   
   def createThing(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
     showEditPage(rc, SimpleThing, PropList((NameProp -> None)))
+  }
+  
+  def createProperty(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
+    showEditPage(rc, UrProp, PropList((NameProp -> None), (TypeProp -> None), (CollectionProp -> None)))
   }
   
   def doCreateThing(ownerId:String, spaceId:String) = editThingInternal(ownerId, spaceId, None)
@@ -260,6 +275,8 @@ object Application extends Controller {
         val thing = rc.thing
         val rawProps = info.fields map { fieldId => (fieldId, rawForm("v-" + fieldId).value) }
         val oldModel = state.anything(OID(info.model)).get
+        
+        val kind = oldModel.kind
         
         def makeProps(propList:List[(String, Option[String])]):PropList = {
           val rawList = propList.map { pair =>
@@ -305,7 +322,7 @@ object Application extends Controller {
               ModifyThing(user.id, rc.ownerId, ThingId(spaceId), thing.get.id.toThingId, OID(info.model), props)
             } else {
               // Creating a new Thing
-              CreateThing(user.id, rc.ownerId, ThingId(spaceId), OID(info.model), props)
+              CreateThing(user.id, rc.ownerId, ThingId(spaceId), kind, OID(info.model), props)
             }
             askSpaceMgr[ThingResponse](spaceMsg) {
               case ThingFound(thingId, state) => {

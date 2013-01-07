@@ -14,7 +14,7 @@ class SystemProperty[VT, -RT, CT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT]
   /**
    * The root Property, from which all others derive.
    */
-  class UrProp(pid:OID) extends Property(pid, systemOID, UrThing, TextType, ExactlyOne,
+  object UrProp extends Property(UrPropOID, systemOID, UrThing, TextType, ExactlyOne,
       toProps(
         setName("Property"),
         (PromptOID -> PropValue(None)),

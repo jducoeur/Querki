@@ -187,7 +187,7 @@ object SpaceMessage {
   def unapply(input:SpaceMessage) = Some((input.requester, input.owner, input.spaceId))
 }
 
-case class CreateThing(req:OID, own:OID, space:ThingId, modelId:OID, props:PropMap) extends SpaceMessage(req, own, space)
+case class CreateThing(req:OID, own:OID, space:ThingId, kind:Kind, modelId:OID, props:PropMap) extends SpaceMessage(req, own, space)
 
 case class ModifyThing(req:OID, own:OID, space:ThingId, id:ThingId, modelId:OID, props:PropMap) extends SpaceMessage(req, own, space)
 
@@ -301,12 +301,19 @@ class Space extends Actor {
       // Split the stream, dividing it by Kind:
       val streamsByKind = stateStream.groupBy(_.get[Int]("kind").get)
       
+      // Start off using the App to boot this Space. Then we add each aspect as we read it in.
+      // This works decently for now, but will fall afoul when we try to have local meta-Properties;
+      // those will wind up with pointer errors.
+      // TODO: Do the Property load in multiple phases, so we can have local meta-properties.
+      // TODO: this should use the App, not SystemSpace:
+      var curState:SpaceState = systemState
+      
       // Now load each kind. We do this in order, although in practice it shouldn't
       // matter too much so long as Space comes last:
       def getThingStream[T <: Thing](kind:Int)(builder:(OID, OID, PropMap) => T):Stream[T] = {
         streamsByKind.get(kind).getOrElse(Stream.Empty).map { row =>
           // TODO: the app shouldn't be hardcoded to SystemSpace
-          val propMap = Thing.deserializeProps(row.get[String]("props").get, systemState)
+          val propMap = Thing.deserializeProps(row.get[String]("props").get, curState)
           builder(OID(row.get[Long]("id").get), OID(row.get[Long]("model").get), propMap)
         }
       }
@@ -314,26 +321,6 @@ class Space extends Actor {
         val tStream = getThingStream(kind)(builder)
         (Map.empty[OID, T] /: tStream)((m, t) => m + (t.id -> t))
       }
-      
-      val props = getThings(Kind.Property) { (thingId, modelId, propMap) =>
-        val typ = systemState.typ(TypeProp.first(propMap))
-        // This cast is slightly weird, but safe and should be necessary. But I'm not sure
-        // that the PTypeBuilder part is correct -- we may need to get the RT correct.
-        val boundTyp = typ.asInstanceOf[PType[typ.valType] with PTypeBuilder[typ.valType, Any]]
-        val coll = systemState.coll(CollectionProp.first(propMap))
-        val boundColl = coll.asInstanceOf[Collection[coll.implType]]
-        new Property(thingId, id, modelId, boundTyp, boundColl, () => propMap)
-      }
-      
-      val things = getThings(Kind.Thing) { (thingId, modelId, propMap) =>
-        new ThingState(thingId, id, modelId, () => propMap)        
-      }
-      
-      val attachments = getThings(Kind.Attachment) { (thingId, modelId, propMap) =>
-        new ThingState(thingId, id, modelId, () => propMap, Kind.Attachment)        
-      }
-      
-      val allThings = things ++ attachments
       
       val spaceStream = getThingStream(Kind.Space) { (thingId, modelId, propMap) =>
         new SpaceState(
@@ -345,14 +332,38 @@ class Space extends Actor {
              Some(systemState),
              // TODO: dynamic PTypes
              Map.empty[OID, PType[_]],
-             props,
-             allThings,
+             Map.empty[OID, Property[_,_,_]],
+             Map.empty[OID, ThingState],
              // TODO (probably rather later): dynamic Collections
              Map.empty[OID, Collection[_]]
             )
       }
       // TBD: note that it is a hard error if there aren't any Spaces found. We expect exactly one:
-      _currentState = Some(spaceStream.head)
+      curState = spaceStream.head
+      
+      val props = getThings(Kind.Property) { (thingId, modelId, propMap) =>
+        val typ = systemState.typ(TypeProp.first(propMap))
+        // This cast is slightly weird, but safe and should be necessary. But I'm not sure
+        // that the PTypeBuilder part is correct -- we may need to get the RT correct.
+        val boundTyp = typ.asInstanceOf[PType[typ.valType] with PTypeBuilder[typ.valType, Any]]
+        val coll = systemState.coll(CollectionProp.first(propMap))
+        val boundColl = coll.asInstanceOf[Collection[coll.implType]]
+        new Property(thingId, id, modelId, boundTyp, boundColl, () => propMap)
+      }
+      curState = curState.copy(spaceProps = props)
+      
+      val things = getThings(Kind.Thing) { (thingId, modelId, propMap) =>
+        new ThingState(thingId, id, modelId, () => propMap)        
+      }
+      
+      val attachments = getThings(Kind.Attachment) { (thingId, modelId, propMap) =>
+        new ThingState(thingId, id, modelId, () => propMap, Kind.Attachment)        
+      }
+      
+      val allThings = things ++ attachments
+      curState = curState.copy(things = allThings)
+      
+      _currentState = Some(curState)
     }    
   }
   
@@ -378,10 +389,23 @@ class Space extends Actor {
       sender ! ThingFailed("This Space already has a Thing with that name")
     else DB.withTransaction { implicit conn =>
       val thingId = OID.next
-      val thing = ThingState(thingId, spaceId, modelId, () => props, kind)
       // TODO: add a history record
-      Space.createThingInSql(thingId, spaceId, modelId, kind, props, systemState)
-      updateState(state.copy(things = state.things + (thingId -> thing)))
+      Space.createThingInSql(thingId, spaceId, modelId, kind, props, state)
+      kind match {
+        case Kind.Thing => {
+          val thing = ThingState(thingId, spaceId, modelId, () => props, kind)
+          updateState(state.copy(things = state.things + (thingId -> thing)))
+        }
+        case Kind.Property => {
+          val typ = state.typ(TypeProp.first(props))
+          val coll = state.coll(CollectionProp.first(props))
+          val boundTyp = typ.asInstanceOf[PType[typ.valType] with PTypeBuilder[typ.valType, Any]]
+          val boundColl = coll.asInstanceOf[Collection[coll.implType]]
+          val thing = Property(thingId, spaceId, modelId, boundTyp, boundColl, () => props)
+          updateState(state.copy(spaceProps = state.spaceProps + (thingId -> thing)))          
+        }
+        case _ => throw new Exception("Got a request to create a thing of kind " + kind + ", but don't know how yet!")
+      }
       // This callback intentionally takes place inside the transaction:
       otherWork(thingId)(conn)
         
@@ -397,8 +421,8 @@ class Space extends Actor {
       sender ! ThingFound(UnknownOID, state)
     }
 
-    case CreateThing(who, owner, spaceId, modelId, props) => {
-      createSomething(spaceId, who, modelId, props, Kind.Thing) { thingId => implicit conn => Unit }
+    case CreateThing(who, owner, spaceId, kind, modelId, props) => {
+      createSomething(spaceId, who, modelId, props, kind) { thingId => implicit conn => Unit }
     }
     
     case CreateAttachment(who, owner, spaceId, content, mime, size, modelId, props) => {
