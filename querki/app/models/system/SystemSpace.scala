@@ -47,6 +47,7 @@ object OIDs {
   val StylesheetBaseOID = sysId(29)
   val PhotoBaseOID = sysId(30)
   val PrototypeUserOID = sysId(31)
+  val GoogleFontOID = sysId(32)
 }
 
 /**
@@ -75,7 +76,8 @@ object SystemSpace {
       NotInheritedProp,
       StylesheetProp,
       DisplayNameProp,
-      CSSProp)
+      CSSProp,
+      GoogleFontProp)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing, StylesheetBase, PhotoBase)

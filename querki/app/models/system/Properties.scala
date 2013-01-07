@@ -111,3 +111,17 @@ object CSSProp extends SystemProperty(CSSOID, CSSTextType, Optional,
     toProps(
       setName("CSS")
       ))
+
+/**
+ * This is the name of a Google Font to embed. It should be referenced from a Stylesheet.
+ * 
+ * TODO: this probably shouldn't be TextType, but some more limited type that only allows
+ * a small character set.
+ * 
+ * TODO: this should probably be a List instead of just a single item, so you can specify
+ * multiple fonts.
+ */
+object GoogleFontProp extends SystemProperty(GoogleFontOID, TextType, Optional,
+    toProps(
+      setName("Google Font Name")
+      ))
