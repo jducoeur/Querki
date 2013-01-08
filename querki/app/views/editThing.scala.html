@@ -15,29 +15,7 @@
 @isEdit = @{ thing.isDefined }
 
 @showInputControl(prop:Property[_,_,_], v:Option[String], i:Int) = {
-  @if(prop.pType == LargeTextType || prop.pType == CSSTextType) {
-    <textarea rows="5" cols="50" name="v-@prop.id.toString" placeholder="@prop.getProp(PlaceholderTextProp)(space).renderIfDefined.raw">@v</textarea>
-  }
-  
-  @if(prop.pType == LinkType) {
-    <select name="v-@prop.id.toString">
-      @for(candidate <- space.linkCandidates(prop)) {
-        @if(v.isDefined && (candidate.id.toString == v.get)) {
-          <option value="@candidate.id.toString" selected>@candidate.displayName</option>        
-        } else {
-          <option value="@candidate.id.toString">@candidate.displayName</option>
-        }
-      }
-    </select>    
-  }
-  
-  @if(prop.pType == IntType || prop.pType == TextType || prop.pType == NameType) {
-    <input type="text" name="v-@prop.id.toString" value="@v" placeholder="@prop.getProp(PlaceholderTextProp)(space).renderIfDefined.raw">    
-  }
-  
-  @if(prop.pType == YesNoType) {
-    <input type="checkbox" name="v-@prop.id.toString">
-  }
+  @prop.renderInput(space, v)
 }
 
 @showProperty(prop:Property[_,_,_], v:Option[String], i:Int) = {
@@ -61,7 +39,7 @@
     "Create a Thing"
 }
 
-@main(pageTitle, rc) {
+@main(QuerkiTemplate.Edit, pageTitle, rc) {
 		
 	<div class="page-header">
 	  @if(thing.isEmpty) {

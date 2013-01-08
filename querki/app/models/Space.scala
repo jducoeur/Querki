@@ -125,12 +125,13 @@ case class SpaceState(
   def linkCandidates(prop:Property[_,_,_]):Iterable[Thing] = {
     implicit val s = this
     
+    val locals = linkCandidatesLocal(prop)
     if (app.isDefined && prop.hasProp(LinkAllowAppsProp) && prop.first(LinkAllowAppsProp))
-      linkCandidatesLocal(prop) ++: app.get.linkCandidates(prop)
+      locals ++: app.get.linkCandidates(prop)
     else
-      linkCandidatesLocal(prop)
+      locals
   }
-  
+
   /**
    * This enumerates all of the plausible candidates for the given property within this Space.
    */

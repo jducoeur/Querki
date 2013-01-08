@@ -5,7 +5,7 @@
 
 @user = @{ rc.requester }
 
-@main("Welcome to Querki", rc) {
+@main(QuerkiTemplate.Index, "Welcome to Querki", rc) {
 
 	@user match {
 	  case None => {

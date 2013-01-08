@@ -1,5 +1,7 @@
 package models
 
+import play.api.templates.Html
+
 import Thing._
 
 import system._
@@ -94,6 +96,18 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
   } catch {
     case _ => false
   }
+  
+  /**
+   * Display the appropriate input control for this type, with the default value set as specified.
+   * 
+   * All Types that can be user-input should define this.
+   * 
+   * TBD: in practice, I don't love this. The coupling is roughly correct, but it winds up mixing
+   * HTML-specific code into a very primitive level of the system. There should probably instead be
+   * side classes for each PType, which describe how to render them in particular circumstances. But
+   * we'll get to that...
+   */
+  def renderInput(prop:Property[_,_,_], state:SpaceState, currentValue:Option[String]):Html = throw new Exception("I don't yet know how to display input for " + this)
 }
 trait PTypeBuilder[VT, -RT] {
   
@@ -226,6 +240,9 @@ case class Property[VT, -RT, CT](
   
   def serialize(v:PropValue[_]):String = cType.serialize(castVal(v), pType)
   def deserialize(str:String):PropValue[cType.implType] = cType.deserialize(str, pType)
+  
+  // TODO: this is wrong. More correctly, we have to go through the cType as well:
+  def renderInput(state:SpaceState, currentValue:Option[String]):Html = pType.renderInput(this, state, currentValue)
 }
 
 object Property {

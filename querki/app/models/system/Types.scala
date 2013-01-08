@@ -1,5 +1,8 @@
 package models.system
 
+import play.api.Logger
+import play.api.templates.Html
+
 import models._
 
 import Thing._
@@ -7,6 +10,23 @@ import Thing._
 import OIDs._
 
 abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, systemOID, RootOID, pf)
+
+object CommonInputRenderers {
+  def renderLargeText(prop:Property[_, _,_], state:SpaceState, currentValue:Option[String]):Html = {
+    val v = currentValue getOrElse ""
+    val xml = 
+      <textarea rows="5" cols="50" name={"v-" + prop.id.toString} placeholder={prop.getProp(PlaceholderTextProp)(state).renderIfDefined.raw}>{v}</textarea>
+    Html(xml.toString)
+  }
+  
+  def renderText(prop:Property[_, _,_], state:SpaceState, currentValue:Option[String]):Html = {
+    val v = currentValue getOrElse ""
+    val xml = 
+      <input type="text" name={"v-" + prop.id.toString} value={v} placeholder={prop.getProp(PlaceholderTextProp)(state).renderIfDefined.raw}/>
+    Html(xml.toString)
+  }
+
+}
 
   /**
    * The Type for integers
@@ -33,6 +53,9 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
     
     val doDefault = Wikitext("")
     def wrap(raw:String):valType = Wikitext(raw)
+    
+    override def renderInput(prop:Property[_,_,_], state:SpaceState, currentValue:Option[String]):Html = 
+      CommonInputRenderers.renderText(prop, state, currentValue)
   }
   
   /**
@@ -41,7 +64,10 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
   class TextType(tid:OID) extends TextTypeBase(tid,
       toProps(
         setName("Type-Text")
-        )) with PTypeBuilder[Wikitext,String]
+        )) with PTypeBuilder[Wikitext,String] {
+    override def renderInput(prop:Property[_,_,_], state:SpaceState, currentValue:Option[String]):Html = 
+      CommonInputRenderers.renderText(prop, state, currentValue)
+  }
   object TextType extends TextType(TextTypeOID)
   
   /**
@@ -81,6 +107,11 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
     def doRender(v:Boolean) = Wikitext(v.toString())
     
     val doDefault = false
+    
+    override def renderInput(prop:Property[_,_,_], state:SpaceState, currentValue:Option[String]):Html = {
+      val xml = <input type="checkbox" name={"v-" + prop.id.toString}/>
+      Html(xml.toString)
+    }
   }
   object YesNoType extends YesNoType(YesNoTypeOID)
   
@@ -116,14 +147,16 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
     def canonicalize(str:String):String = toInternal(str).toLowerCase
 
     val doDefault = "MISSING NAME!"
+      
+    override def renderInput(prop:Property[_,_,_], state:SpaceState, currentValue:Option[String]):Html = 
+      CommonInputRenderers.renderText(prop, state, currentValue)
   }
   object NameType extends NameType(NameTypeOID)
   
   /**
    * The Type for Links to other Things
    * 
-   * TODO: this wants to become Typed Links very, very soon. Most use cases don't want me to
-   * list every Thing in the Space.
+   * TODO: This Type, and its associated Properties, may want to become a Module.
    */
   class LinkType(tid:OID) extends SystemType[OID](tid,
       toProps(
@@ -140,6 +173,21 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
     // TODO: define doFromUser()
 
     val doDefault = UnknownOID
+    
+    override def renderInput(prop:Property[_,_,_], state:SpaceState, v:Option[String]):Html = {
+      val result = 
+        <select name={ "v-" + prop.id.toString }> {
+          val candidates = state.linkCandidates(prop)
+          candidates map { candidate =>
+            if(v.isDefined && (candidate.id.toString == v.get)) {
+              <option value={candidate.id.toString} selected="selected">{candidate.displayName}</option>        
+            } else {
+              <option value={candidate.id.toString}>{candidate.displayName}</option>
+            }
+          }
+        } </select>
+      Html(result.toString)
+    }
   }
   object LinkType extends LinkType(LinkTypeOID)
 
@@ -149,28 +197,12 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
   class LargeTextType(tid:OID) extends TextTypeBase(tid,
       toProps(
         setName("Type-Large-Text")
-        )) with PTypeBuilder[Wikitext,String]
+        )) with PTypeBuilder[Wikitext,String] {
+    override def renderInput(prop:Property[_,_,_], state:SpaceState, currentValue:Option[String]):Html =
+      CommonInputRenderers.renderLargeText(prop, state, currentValue)
+  }
   object LargeTextType extends LargeTextType(LargeTextTypeOID)
   
-/**
- * A Type for CSS Text as a proper Property, so we can edit directly in Querki.
- */
-class CSSTextType(tid:OID) extends SystemType[String](tid,
-    toProps(
-        setName("Type-CSS"))
-    ) with SimplePTypeBuilder[String]
-{
-  // TODO: filter any Javascript-enabling keywords! This should go in doFromUser().
-    
-  def doDeserialize(v:String) = v
-  def doSerialize(v:String) = v
-  def doRender(v:String) = Wikitext(v)
-    
-  val doDefault = ""
-}
-object CSSTextType extends CSSTextType(CSSTextOID)
-  
-  
 object SystemTypes {
-  def all = Space.oidMap[PType[_]](IntType, TextType, YesNoType, NameType, LinkType, LargeTextType, CSSTextType)  
+  def all = Space.oidMap[PType[_]](IntType, TextType, YesNoType, NameType, LinkType, LargeTextType)  
 }

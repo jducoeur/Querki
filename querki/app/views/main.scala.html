@@ -1,4 +1,4 @@
-@(title: String, rc:RequestContext, addStyles:Boolean = false)(content: Html)
+@(template:QuerkiTemplate.QuerkiTemplate, title: String, rc:RequestContext, addStyles:Boolean = false)(content: Html)
 
 @import models.system._
 
@@ -23,9 +23,6 @@
  *
  * Most of this is adapted from Bootstrap's "fluid" example:
  *   http://twitter.github.com/bootstrap/examples/fluid.html
- *
- * TODO: by now, this is taking OMG a lot of params. Time to lift out a
- * DisplayContext structure.
  ********************@
 
 <html>
@@ -44,25 +41,9 @@
             padding: 9px 0;
           }
         </style>
+        
+        @PageEventManager.addHeaders(rc, template)
 
-        @if(addStyles) {        
-        @if(space.isDefined && thing.isDefined && thing.get.hasProp(OIDs.StylesheetOID)(space.get)) {
-          @defining(thing.get.first(StylesheetProp)(space.get)) { stylesheetOID =>
-          @defining(space.get.thing(stylesheetOID)) { stylesheetThing =>
-            @if(stylesheetThing.kind == Kind.Attachment) {
-              <link rel="stylesheet" media="screen" href="@routes.Application.attachment(rc.ownerName, space.get.toThingId, stylesheetThing.toThingId)">
-            } else {
-              @if(stylesheetThing.hasProp(OIDs.GoogleFontOID)(space.get)) {
-                <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=@stylesheetThing.first(GoogleFontProp)(space.get).raw.toString">
-              }
-              <style type="text/css">
-              @stylesheetThing.first(CSSProp)(space.get)
-              </style>
-            }
-          }
-          }
-        }
-        }
         <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
 
     </head>

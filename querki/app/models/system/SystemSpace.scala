@@ -7,6 +7,21 @@ import models._
 import Property._
 import Thing._
 
+/**
+ * The Object IDs of the core System objects. These are collected here to avoid accidental
+ * namespace contention -- when you add an object, you add a value to the end of this table.
+ * 
+ * OIDs here are *permanent*, and should never change -- since the values will wind up in the
+ * database, you mustn't alter them. If you need to change behaviour, deprecate the old value
+ * and add a new one.
+ * 
+ * Note that we have 16 bits of namespace here -- this table defines what amounts to Module 0.
+ * That *should* be plenty for the long run, since most functionality should go into Modules.
+ * 
+ * Note that there are a few apparently holes in this run; that is because of Things that were
+ * originally defined in System but got moved to Modules. We should avoid doing that -- favor
+ * putting things in Modules unless they are clearly core.
+ */
 object OIDs {
   
   def sysId(local:Int) = OID(0, local)
@@ -40,14 +55,14 @@ object OIDs {
   val IsModelOID = sysId(22)
   val SimpleThingOID = sysId(23)
   val NotInheritedOID = sysId(24)
-  val StylesheetOID = sysId(25)
+//  val StylesheetOID = sysId(25)
   val DisplayNameOID = sysId(26)
-  val CSSTextOID = sysId(27)
-  val CSSOID = sysId(28)
-  val StylesheetBaseOID = sysId(29)
+//  val CSSTextOID = sysId(27)
+//  val CSSOID = sysId(28)
+//  val StylesheetBaseOID = sysId(29)
   val PhotoBaseOID = sysId(30)
   val PrototypeUserOID = sysId(31)
-  val GoogleFontOID = sysId(32)
+//  val GoogleFontOID = sysId(32)
   val LinkKindOID = sysId(33)
   val LinkAllowAppsOID = sysId(34)
   val LinkModelOID = sysId(35)
@@ -78,23 +93,35 @@ object SystemSpace {
       PromptProp, 
       IsModelProp, 
       NotInheritedProp,
-      StylesheetProp,
       DisplayNameProp,
-      CSSProp,
-      GoogleFontProp,
       LinkKindProp,
       LinkAllowAppsProp,
       LinkModelProp,
       AppliesToKindProp)
       
   // Things:
-  val things = oidMap[ThingState](UrThing, Page, SimpleThing, StylesheetBase, PhotoBase)
+  val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase)
   
-  object State extends SpaceState(systemOID, RootOID,
+  def init = {
+    _state = Some(modules.Modules.initAllModules(initialSystemState))
+  }
+  
+  def term = {
+    modules.Modules.termAllModules
+  }
+  
+  private def initialSystemState = {
+    SpaceState(systemOID, RootOID,
       toProps(
         setName("System"),
         DisplayTextProp("""
 This is the fundamental System Space. Everything else derives from it.
 """)
-        ), SystemUserOID, "System", None, SystemTypes.all, props, things, SystemCollections.all)
+        ), SystemUserOID, "System", None, SystemTypes.all, props, things, SystemCollections.all)    
+  }
+  
+  // Note the intentional implication here: trying to access State before init has been
+  // called will throw an exception:
+  private var _state:Option[SpaceState] = None
+  lazy val State = _state.get
 }

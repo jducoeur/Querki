@@ -96,19 +96,6 @@ object NotInheritedProp extends SystemProperty(NotInheritedOID, YesNoType, Exact
       ))
 
 /**
- * Points to the optional CSS file for this Thing. If placed on a Space, applies Space-wide.
- * 
- * TBD: this isn't quite so "system-ish". We might start defining properties nearer to their
- * relevant functionality.
- */
-object StylesheetProp extends SystemProperty(StylesheetOID, LinkType, Optional,
-    toProps(
-      setName("Stylesheet"),
-      LinkModelProp(StylesheetBase),
-      AppliesToKindProp(Kind.Thing)
-      ))
-
-/**
  * If set, this is the display name of the specified object. Whereas the primary NameProp
  * has a number of restrictions, the DisplayNameProp does not. It is used to list a Thing
  * by preference when it is set.
@@ -116,31 +103,6 @@ object StylesheetProp extends SystemProperty(StylesheetOID, LinkType, Optional,
 object DisplayNameProp extends SystemProperty(DisplayNameOID, TextType, Optional,
     toProps(
       setName("Display Name")
-      ))
-
-/**
- * This special property is used for Stylesheet Things. Basically, if this Thing is used as
- * the Stylesheet for other Things, it should have this Property set.
- */
-object CSSProp extends SystemProperty(CSSOID, CSSTextType, Optional,
-    toProps(
-      setName("CSS")
-      ))
-
-/**
- * This is the name of a Google Font to embed. It should be referenced from a Stylesheet.
- * 
- * TODO: this probably shouldn't be TextType, but some more limited type that only allows
- * a small character set.
- * 
- * TODO: this should probably be a List instead of just a single item, so you can specify
- * multiple fonts.
- */
-object GoogleFontProp extends SystemProperty(GoogleFontOID, TextType, Optional,
-    toProps(
-      setName("Google Font Name"),
-      // TODO: in fact, this only applies to Stylesheets:
-      AppliesToKindProp(Kind.Thing)
       ))
 
 /**
