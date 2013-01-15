@@ -413,7 +413,7 @@ class Space extends Actor {
       // TODO: add a history record
       Space.createThingInSql(thingId, spaceId, modelId, kind, props, state)
       kind match {
-        case Kind.Thing => {
+        case Kind.Thing | Kind.Attachment => {
           val thing = ThingState(thingId, spaceId, modelId, () => props, kind)
           updateState(state.copy(things = state.things + (thingId -> thing)))
         }

@@ -245,7 +245,7 @@ object Application extends Controller {
   
   def otherModels(state:SpaceState, mainModel:Thing):Iterable[Thing] = {
     mainModel.kind match {
-      case Kind.Thing => state.allModels
+      case Kind.Thing | Kind.Attachment => state.allModels
       // For the time being, we're only allowing basic Properties. We might allow Properties to
       // serve as Models, but one thing at a time.
       case Kind.Property => Seq(UrProp)
