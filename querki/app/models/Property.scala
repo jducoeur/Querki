@@ -94,7 +94,7 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
     val dummy = doFromUser(v)
     true
   } catch {
-    case _ => false
+    case _:Exception => false
   }
   
   /**

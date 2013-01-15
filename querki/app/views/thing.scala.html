@@ -1,7 +1,9 @@
 @(rc:RequestContext)
 
+@import play.api.Logger
+
 @space = @{ rc.state.get }
-@thing = @{ 
+@thing = @{
   rc.thing match {
     case Some(t) => t
     case None => space
@@ -9,7 +11,6 @@
 }
 
 @main(QuerkiTemplate.Thing, thing.displayName, rc, true) {
-
     @if(!rc.chromeless) {
 	<div class="page-header">
 	  <h1>@thing.displayName</h1>

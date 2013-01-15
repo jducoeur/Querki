@@ -148,11 +148,13 @@ object Application extends Controller {
           case UnknownOID => None
           case oid:OID => state.anything(oid)
         }
+        // TEMP:
         Logger.info("Looking for " + spaceId + "/" + thingIdStr + ";  found " + id)
         if (thingIdStr.isDefined && thingOpt.isEmpty)
           doError(routes.Application.index, "That wasn't a valid path")
-        else
+        else {
           f(rc.copy(ownerId = ownerId, state = Some(state), thing = thingOpt))
+        }
       }
       case ThingFailed(msg) => doError(routes.Application.index, msg)
     }     

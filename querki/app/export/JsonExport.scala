@@ -1,3 +1,4 @@
+/* TODO: this needs rewriting for the new Play JSON system:
 package export
 
 import play.api.libs.json._
@@ -106,3 +107,4 @@ object SpaceImportExport {
     importer.importSpace(json)
   }
 }
+*/
