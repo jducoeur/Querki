@@ -43,28 +43,46 @@ object CommonInputRenderers {
     val doDefault = 0
   }
   object IntType extends IntType(IntTypeOID)
-
-  abstract class TextTypeBase(oid:OID, pf:PropFetcher) extends SystemType[Wikitext](oid, pf
-      ) with PTypeBuilder[Wikitext,String]
+  
+  /**
+   * QLText is a String that may contain both Wikitext and QL expressions. It must go through two
+   * transformations before display:
+   * 
+   * -- Processing, which parses and computes the QL expressions, turning them into Wikitext.
+   * -- Rendering, which turns the Wikitext into the final output format. (Usually HTML.)
+   * 
+   * Processing always happens in the server; rendering happens at the client for the typical
+   * web-browser UI, or in the client if you have a smart client (eg, a smartphone app).
+   * 
+   * QLText mainly exists for security purposes: the pipeline of QLText -> Wikitext -> Html
+   * doesn't necessarily do any transformation at all, but reifies the semantics of what's
+   * allowed and what needs processing before display. This is mainly to ensure that, eg,
+   * raw HTML doesn't get through when it's not allowed.
+   */
+  case class QLText(text:String)
+  
+  abstract class TextTypeBase(oid:OID, pf:PropFetcher) extends SystemType[QLText](oid, pf
+      ) with PTypeBuilder[QLText,String]
   {
-    def doDeserialize(v:String) = Wikitext(v)
-    def doSerialize(v:Wikitext) = v.internal
-    def doRender(v:Wikitext) = v
+    def doDeserialize(v:String) = QLText(v)
+    def doSerialize(v:QLText) = v.text
+    // TODO: this is WrongityWrongWrong. This is where we need to be processing the QLText:
+    def doRender(v:QLText) = Wikitext(v.text)
     
-    val doDefault = Wikitext("")
-    def wrap(raw:String):valType = Wikitext(raw)
+    val doDefault = QLText("")
+    def wrap(raw:String):valType = QLText(raw)
     
     override def renderInput(prop:Property[_,_,_], state:SpaceState, currentValue:Option[String]):Html = 
       CommonInputRenderers.renderText(prop, state, currentValue)
   }
-  
+
   /**
    * The Type for Text -- probably the most common type in Querki
    */
   class TextType(tid:OID) extends TextTypeBase(tid,
       toProps(
         setName("Type-Text")
-        )) with PTypeBuilder[Wikitext,String] {
+        )) with PTypeBuilder[QLText,String] {
     override def renderInput(prop:Property[_,_,_], state:SpaceState, currentValue:Option[String]):Html = 
       CommonInputRenderers.renderText(prop, state, currentValue)
   }
@@ -197,12 +215,44 @@ object CommonInputRenderers {
   class LargeTextType(tid:OID) extends TextTypeBase(tid,
       toProps(
         setName("Type-Large-Text")
-        )) with PTypeBuilder[Wikitext,String] {
+        )) with PTypeBuilder[QLText,String] {
     override def renderInput(prop:Property[_,_,_], state:SpaceState, currentValue:Option[String]):Html =
       CommonInputRenderers.renderLargeText(prop, state, currentValue)
   }
   object LargeTextType extends LargeTextType(LargeTextTypeOID)
   
+/**
+ * PlainText is essentially a simple String -- it represents a String field that does *not* contain
+ * QL or Wikitext. It is used for a few Properties like Display Name, that are more flexible than NameType
+ * but still can't go hog-wild.
+ * 
+ * Note that, while PlainText is mostly rendered literally, it still has to be HTML-neutered before display.
+ */
+case class PlainText(text:String) {
+  def raw:String = {
+    text.replaceAll("&", "&amp;").replaceAll("<", "&lt;")
+  }
+}
+  
+abstract class PlainTextType(tid:OID) extends SystemType[PlainText](tid,
+    toProps(
+      setName("Plain-Text")
+    )) with PTypeBuilder[PlainText,String]
+{
+  def doDeserialize(v:String) = PlainText(v)
+  def doSerialize(v:PlainText) = v.text
+  // TODO: this is probably incorrect, but may be taken care of by context? How do we make sure this
+  // doesn't actually get any internal Wikitext rendered?
+  def doRender(v:PlainText) = Wikitext(v.text)
+    
+  val doDefault = PlainText("")
+  def wrap(raw:String):valType = PlainText(raw)
+    
+  override def renderInput(prop:Property[_,_,_], state:SpaceState, currentValue:Option[String]):Html = 
+    CommonInputRenderers.renderText(prop, state, currentValue)
+}
+object PlainTextType extends PlainTextType(PlainTextOID)
+
 object SystemTypes {
-  def all = Space.oidMap[PType[_]](IntType, TextType, YesNoType, NameType, LinkType, LargeTextType)  
+  def all = Space.oidMap[PType[_]](IntType, TextType, YesNoType, NameType, LinkType, LargeTextType, PlainTextType)  
 }

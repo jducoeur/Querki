@@ -246,7 +246,7 @@ case class Property[VT, -RT, CT](
 }
 
 object Property {
-  def optTextProp(id:OID, text:String) = (id -> PropValue(Some(ElemValue(Wikitext(text))))) 
+  def optTextProp(id:OID, text:String) = (id -> PropValue(Some(ElemValue(QLText(text))))) 
   /**
    * Convenience methods for meta-Properties
    */

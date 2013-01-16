@@ -132,7 +132,7 @@ object CSSProp extends SystemProperty(CSSOID, CSSTextType, Optional,
  * TODO: this should probably be a List instead of just a single item, so you can specify
  * multiple fonts.
  */
-object GoogleFontProp extends SystemProperty(GoogleFontOID, TextType, Optional,
+object GoogleFontProp extends SystemProperty(GoogleFontOID, PlainTextType, Optional,
     toProps(
       setName("Google Font Name"),
       // TODO: in fact, this only applies to Stylesheets:
