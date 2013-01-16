@@ -11,7 +11,7 @@ import OIDs._
 // Collections
 //
 
-abstract class SystemCollection[T](cid:OID, pf:PropFetcher) extends Collection[T](cid, systemOID, UrCollectionOID, pf)
+abstract class SystemCollection[CT <% Iterable[ElemValue]](cid:OID, pf:PropFetcher) extends Collection[CT](cid, systemOID, UrCollectionOID, pf)
   
   /**
    * Root Collection type. Exists solely so that there is a common runtime root, in case

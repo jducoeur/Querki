@@ -22,7 +22,7 @@ import system.SystemSpace._
  */
 case class ElemValue(elem:Any)
 
-case class PropValue[CT](coll:CT)
+case class PropValue[CT <% Iterable[ElemValue]](coll:CT)
 
 /**
  * Properties have Types. There's nothing controversial here -- Types are usually
@@ -133,7 +133,7 @@ trait NullTypeBuilder[VT] extends PTypeBuilder[VT, Nothing] {
  * and consistent about this, we make it much easier to write QL safely -- each
  * QL step is basically a flatMap.
  */
-abstract class Collection[CT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s, m, Kind.Collection, pf) {
+abstract class Collection[CT <% Iterable[ElemValue]](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s, m, Kind.Collection, pf) {
   
   type pType = PType[_]
   type implType = CT
