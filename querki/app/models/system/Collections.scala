@@ -32,13 +32,12 @@ abstract class SystemCollection[CT <% Iterable[ElemValue]](cid:OID, pf:PropFetch
       throw new Error("Trying to default root collection!")    
 	def wrap(elem:ElemValue):implType =
 	  throw new Error("Trying to wrap root collection!")    
-    def doFirst(pv:implType):ElemValue =
-      throw new Error("Trying to wrap root collection!")
-    def doIsEmpty(pv:implType) =
-      throw new Error("Trying to isEmpty root collection!")
   }
   object UrCollection extends UrCollection
   
+  /**
+   * ExactlyOne is based on Some -- it is quite intentionally Optional without the choice of None.
+   */
   class ExactlyOne(cid:OID) extends SystemCollection[Some[ElemValue]](cid,
     toProps(
       setName("Exactly-One")
@@ -57,10 +56,6 @@ abstract class SystemCollection[CT <% Iterable[ElemValue]](cid:OID, pf:PropFetch
       Some(elemT.default)
     }
     def wrap(elem:ElemValue):implType = Some(elem)
-    
-    def doFirst(v:implType):ElemValue = v.get
-    
-    def doIsEmpty(v:implType) = false
   }
   object ExactlyOne extends ExactlyOne(ExactlyOneOID)
   
@@ -96,13 +91,6 @@ abstract class SystemCollection[CT <% Iterable[ElemValue]](cid:OID, pf:PropFetch
     def doDefault(elemT:pType):implType = None
     
     def wrap(elem:ElemValue):implType = Some(elem)
-    
-    def doFirst(pv:implType):ElemValue = pv match {
-      case Some(elemV) => elemV
-      case None => throw new Exception("Trying to first on an empty Optional!")
-    }
-    
-    def doIsEmpty(v:implType) = v.isEmpty
   }
   object Optional extends Optional(OptionalOID)
   
@@ -131,10 +119,6 @@ abstract class SystemCollection[CT <% Iterable[ElemValue]](cid:OID, pf:PropFetch
     def doDefault(elemT:pType):implType = List.empty
     
     def wrap(elem:ElemValue):implType = List(elem)
-    
-    def doFirst(v:implType):ElemValue = v.head
-    
-    def doIsEmpty(v:implType) = v.isEmpty
   }
   object QList extends QList(QListOID)
   

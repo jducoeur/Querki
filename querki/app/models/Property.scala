@@ -176,11 +176,9 @@ abstract class Collection[CT <% Iterable[ElemValue]](i:OID, s:OID, m:OID, pf:Pro
    * NOTE: this will throw an exception if you call it on an empty collection! It is the
    * equivalent of Option.get
    */
-  protected def doFirst(v:implType):ElemValue
-  final def first(v:PropValue[implType]):ElemValue = doFirst(v.coll)
+  final def first(v:PropValue[implType]):ElemValue = v.coll.head
   
-  protected def doIsEmpty(v:implType):Boolean
-  final def isEmpty(v:PropValue[implType]):Boolean = doIsEmpty(v.coll)
+  final def isEmpty(v:PropValue[implType]):Boolean = v.coll.isEmpty
 }
 
 /**
