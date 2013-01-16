@@ -127,7 +127,7 @@ abstract class SystemCollection[T](cid:OID, pf:PropFetcher) extends Collection[T
     
     def doRender(v:implType, elemT:pType):Wikitext = {
       val renderedElems = v.map(elem => elemT.render(elem))
-      Wikitext(renderedElems.mkString("\n"))
+      Wikitext(renderedElems map (_.internal) mkString("\n"))
     }
     
     def doDefault(elemT:pType):implType = List.empty
