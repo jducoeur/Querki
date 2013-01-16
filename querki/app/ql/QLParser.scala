@@ -3,7 +3,12 @@ package ql
 import scala.util.parsing.combinator._
 
 import models.system.QLText
-import models.Wikitext
+import models._
+
+/**
+ * Represents the incoming "context" of a parsed QLText.
+ */
+case class QLContext(context:PropValue[_], state:SpaceState)
 
 sealed abstract class QLTextPart
 case class UnQLText(text:String) extends QLTextPart

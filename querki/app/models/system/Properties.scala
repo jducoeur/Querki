@@ -19,7 +19,7 @@ class SystemProperty[VT, -RT, CT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT]
         setName("Property"),
         (PromptOID -> PropValue(None)),
         (PlaceholderTextOID -> PropValue(None)),
-        (NotInheritedOID -> PropValue(OneColl(ElemValue(false))))
+        (NotInheritedOID -> PropValue(Some(ElemValue(false))))
         ))
   
   object NameProp extends SystemProperty(NameOID, NameType, ExactlyOne,
@@ -91,7 +91,7 @@ object NotInheritedProp extends SystemProperty(NotInheritedOID, YesNoType, Exact
     toProps(
       setName("Not Inherited"),
       // Need to define this explicitly, to break infinite loops in lookup:
-      (NotInheritedOID -> PropValue(OneColl(ElemValue(false)))),
+      (NotInheritedOID -> PropValue(Some(ElemValue(false)))),
       AppliesToKindProp(Kind.Property)
       ))
 

@@ -39,7 +39,7 @@ object Thing {
   // NOTE: don't try to make this more concise -- it causes chicken-and-egg problems in system
   // initialization:
   def setName(str:String):(OID,PropValue[_]) = 
-    (NameOID -> PropValue(OneColl(ElemValue(str))))
+    (NameOID -> PropValue(Some(ElemValue(str))))
 
   // TODO: this escape/unescape is certainly too simplistic to cope with recursive types.
   // Come back to this sometime before we make the type system more robust.

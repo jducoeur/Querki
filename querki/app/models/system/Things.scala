@@ -15,7 +15,7 @@ import SystemSpace._
 object UrThing extends ThingState(RootOID, systemOID, RootOID,
     toProps(
       setName("Thing"),
-      (IsModelOID -> PropValue(OneColl(ElemValue(false))))
+      (IsModelOID -> PropValue(Some(ElemValue(false))))
       )) 
 {
   override def getProp(propId:OID)(implicit state:SpaceState):PropAndVal[_,_] = {

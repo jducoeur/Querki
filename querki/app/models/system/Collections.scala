@@ -39,28 +39,26 @@ abstract class SystemCollection[T](cid:OID, pf:PropFetcher) extends Collection[T
   }
   object UrCollection extends UrCollection
   
-  case class OneColl(v:ElemValue)
-  
-  class ExactlyOne(cid:OID) extends SystemCollection[OneColl](cid,
+  class ExactlyOne(cid:OID) extends SystemCollection[Some[ElemValue]](cid,
     toProps(
       setName("Exactly-One")
       )) 
   {
 	def doDeserialize(ser:String, elemT:pType):implType = {
-      OneColl(elemT.deserialize(ser))
+      Some(elemT.deserialize(ser))
     }
     def doSerialize(v:implType, elemT:pType):String = {
-      elemT.serialize(v.v)
+      elemT.serialize(v.get)
     }
     def doRender(v:implType, elemT:pType):Wikitext = {
-      elemT.render(v.v)
+      elemT.render(v.get)
     }
     def doDefault(elemT:pType):implType = {
-      OneColl(elemT.default)
+      Some(elemT.default)
     }
-    def wrap(elem:ElemValue):implType = OneColl(elem)
+    def wrap(elem:ElemValue):implType = Some(elem)
     
-    def doFirst(v:implType):ElemValue = v.v
+    def doFirst(v:implType):ElemValue = v.get
     
     def doIsEmpty(v:implType) = false
   }
