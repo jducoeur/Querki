@@ -181,13 +181,15 @@ abstract class Collection[CT <% Iterable[ElemValue]](i:OID, s:OID, m:OID, pf:Pro
   final def first(v:PropValue[implType]):ElemValue = v.coll.head
   
   final def isEmpty(v:PropValue[implType]):Boolean = v.coll.isEmpty
+  
+  implicit def toIterable(v:implType):Iterable[ElemValue] = v.asInstanceOf[Iterable[ElemValue]]
 }
 
 /**
  * A Property is a field that may exist on a Thing. It is, itself, a Thing with a
  * specific Type.
  */
-case class Property[VT, -RT, CT](
+case class Property[VT, -RT, CT <% Iterable[ElemValue]](
     i:OID, 
     s:OID, 
     m:OID, 
@@ -289,10 +291,10 @@ object Property {
 /**
  * A convenient wrapper for passing a value around in a way that can be fetched.
  */
-case class PropAndVal[VT, CT](prop:Property[VT, _, CT], v:PropValue[CT]) {
-  def render[VT, CT <% Iterable[ElemValue]](context:QLContext[VT, CT]) = prop.render(v)
+case class PropAndVal[VT, CT <% Iterable[ElemValue]](prop:Property[VT, _, CT], v:PropValue[CT]) {
+  def render[OVT, OCT <% Iterable[ElemValue]](context:QLContext[OVT, OCT]) = prop.render(v)
   def renderPlain = prop.render(v)
-  def renderOr[VT, CT <% Iterable[ElemValue]](context:QLContext[VT, CT])(other: => Wikitext) = if (prop.isEmpty(v)) other else render(context)
+  def renderOr[OVT, OCT <% Iterable[ElemValue]](context:QLContext[OVT, OCT])(other: => Wikitext) = if (prop.isEmpty(v)) other else render(context)
   def renderPlainOr(other: => Wikitext) = if (prop.isEmpty(v)) other else renderPlain
   def renderPlainIfDefined = if (!prop.isEmpty(v)) renderPlain else Wikitext("")
   def split() = (prop, v)

@@ -368,7 +368,9 @@ class Space extends Actor {
         // that the PTypeBuilder part is correct -- we may need to get the RT correct.
         val boundTyp = typ.asInstanceOf[PType[typ.valType] with PTypeBuilder[typ.valType, Any]]
         val coll = systemState.coll(CollectionProp.first(propMap))
-        val boundColl = coll.asInstanceOf[Collection[coll.implType]]
+        // TODO: this feels wrong. coll.implType should be good enough, since it is viewable
+        // as Iterable[ElemValue] by definition, but I can't figure out how to make that work.
+        val boundColl = coll.asInstanceOf[Collection[Iterable[ElemValue]]]
         new Property(thingId, id, modelId, boundTyp, boundColl, () => propMap)
       }
       curState = curState.copy(spaceProps = props)
@@ -421,7 +423,7 @@ class Space extends Actor {
           val typ = state.typ(TypeProp.first(props))
           val coll = state.coll(CollectionProp.first(props))
           val boundTyp = typ.asInstanceOf[PType[typ.valType] with PTypeBuilder[typ.valType, Any]]
-          val boundColl = coll.asInstanceOf[Collection[coll.implType]]
+          val boundColl = coll.asInstanceOf[Collection[Iterable[ElemValue]]]
           val thing = Property(thingId, spaceId, modelId, boundTyp, boundColl, () => props)
           updateState(state.copy(spaceProps = state.spaceProps + (thingId -> thing)))          
         }

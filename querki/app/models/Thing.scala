@@ -152,6 +152,13 @@ abstract class Thing(
     else
       localProp(propId).getOrElse(getModel.getProp(propId))
   }
+  def getProp[VT, CT](prop:Property[VT, _, CT])(implicit state:SpaceState):PropAndVal[VT,CT] = {
+    // TODO: we're doing redundant lookups of the property. Rationalize this stack of calls.
+    if (prop.first(NotInheritedProp))
+      localOrDefault(prop)
+    else
+      localProp(prop).getOrElse(getModel.getProp(prop))
+  }
   
   def localPropVal[VT, CT](prop:Property[VT, _, CT]):Option[PropValue[CT]] = {
     prop.fromOpt(props)
@@ -160,6 +167,9 @@ abstract class Thing(
   def localOrDefault(propId:OID)(implicit state:SpaceState):PropAndVal[_,_] = {
     val prop = state.prop(propId)
     localProp(propId).getOrElse(prop.defaultPair)
+  }
+  def localOrDefault[VT, CT](prop:Property[VT, _, CT])(implicit state:SpaceState):PropAndVal[VT,CT] = {
+    localProp(prop).getOrElse(prop.defaultPair)
   }
     
   /**
@@ -206,6 +216,12 @@ abstract class Thing(
   def getPropOpt(propId:OID)(implicit state:SpaceState):Option[PropAndVal[_,_]] = {
     if (hasProp(propId))
       Some(getProp(propId))
+    else
+      None
+  }
+  def getPropOpt[VT, CT](prop:Property[VT, _, CT])(implicit state:SpaceState):Option[PropAndVal[VT,CT]] = {
+    if (hasProp(prop))
+      Some(getProp(prop))
     else
       None
   }

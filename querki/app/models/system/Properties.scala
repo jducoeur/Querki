@@ -8,8 +8,8 @@ import Thing._
 import OIDs._
 import SystemSpace._
 
-class SystemProperty[VT, -RT, CT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection[CT], p:PropFetcher) extends
-  Property(pid, systemOID, UrPropOID, t, c, p)
+class SystemProperty[VT, -RT, CT <% Iterable[ElemValue]](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection[CT], p:PropFetcher) 
+  extends Property[VT, RT, CT](pid, systemOID, UrPropOID, t, c, p)
 
   /**
    * The root Property, from which all others derive.
