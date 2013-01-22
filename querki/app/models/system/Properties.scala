@@ -60,13 +60,13 @@ class SystemProperty[VT, -RT, CT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT]
         AppliesToKindProp(Kind.Property)
         ))
     
-  object PlaceholderTextProp extends SystemProperty(PlaceholderTextOID, TextType, Optional,
+  object PlaceholderTextProp extends SystemProperty(PlaceholderTextOID, PlainTextType, Optional,
       toProps(
         setName("Placeholder Text"),
         AppliesToKindProp(Kind.Property)
         ))
   
-  object PromptProp extends SystemProperty(PromptOID, TextType, Optional,
+  object PromptProp extends SystemProperty(PromptOID, PlainTextType, Optional,
       toProps(
         setName("Prompt"),
         AppliesToKindProp(Kind.Property)

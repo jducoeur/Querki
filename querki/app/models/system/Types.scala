@@ -15,14 +15,14 @@ object CommonInputRenderers {
   def renderLargeText(prop:Property[_, _,_], state:SpaceState, currentValue:Option[String]):Html = {
     val v = currentValue getOrElse ""
     val xml = 
-      <textarea rows="5" cols="50" name={"v-" + prop.id.toString} placeholder={prop.getProp(PlaceholderTextProp)(state).renderIfDefined.raw}>{v}</textarea>
+      <textarea rows="5" cols="50" name={"v-" + prop.id.toString} placeholder={prop.getProp(PlaceholderTextProp)(state).renderPlainIfDefined.raw}>{v}</textarea>
     Html(xml.toString)
   }
   
   def renderText(prop:Property[_, _,_], state:SpaceState, currentValue:Option[String]):Html = {
     val v = currentValue getOrElse ""
     val xml = 
-      <input type="text" name={"v-" + prop.id.toString} value={v} placeholder={prop.getProp(PlaceholderTextProp)(state).renderIfDefined.raw}/>
+      <input type="text" name={"v-" + prop.id.toString} value={v} placeholder={prop.getProp(PlaceholderTextProp)(state).renderPlainIfDefined.raw}/>
     Html(xml.toString)
   }
 

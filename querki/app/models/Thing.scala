@@ -7,6 +7,8 @@ import models.system.OIDs._
 import models.system.SystemSpace
 import models.system.SystemSpace._
 
+import ql._
+
 /**
  * Enumeration of what sort of Thing this is. Note that this is an intentionally
  * exclusive set. That's mostly to make it reasonably easy to reason about stuff:
@@ -102,12 +104,14 @@ abstract class Thing(
 {
   lazy val props:PropMap = propFetcher()
   
+  def thisAsContext(implicit state:SpaceState) = QLContext(TypedValue(Some(ElemValue(this.id)), LinkType, ExactlyOne), state)
+  
   def displayName:String = {
     val localName = localProp(DisplayNameProp) orElse localProp(NameProp)
     if (localName.isEmpty)
       id.toString
     else {
-      localName.get.render.raw
+      localName.get.renderPlain.raw
     }
   }
   
@@ -228,7 +232,7 @@ abstract class Thing(
     val listMap = props.map { entry =>
       val prop = state.prop(entry._1)
       val pv = prop.pair(entry._2)
-      "<dt>" + prop.displayName + "</dt><dd>" + pv.render.raw + "</dd>"
+      "<dt>" + prop.displayName + "</dt><dd>" + pv.render(thisAsContext).raw + "</dd>"
     }
     Wikitext(listMap.mkString("<dl>", "", "</dl>"))    
   }
@@ -241,7 +245,7 @@ abstract class Thing(
    */
   def render(implicit state:SpaceState):Wikitext = {
     val opt = getPropOpt(DisplayTextProp)
-    opt.map(pv => pv.render).getOrElse(renderProps)
+    opt.map(pv => pv.render(thisAsContext)).getOrElse(renderProps)
   }
   
 

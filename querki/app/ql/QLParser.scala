@@ -5,10 +5,12 @@ import scala.util.parsing.combinator._
 import models.system.QLText
 import models._
 
+case class TypedValue[VT, CT <% Iterable[ElemValue]](v:CT, pt:PType[VT], ct:Collection[CT])
+
 /**
  * Represents the incoming "context" of a parsed QLText.
  */
-case class QLContext(context:PropValue[_], state:SpaceState)
+case class QLContext[VT, CT <% Iterable[ElemValue]](context:TypedValue[VT,CT], state:SpaceState)
 
 sealed abstract class QLTextPart
 case class UnQLText(text:String) extends QLTextPart
@@ -17,7 +19,7 @@ case class QLPhrase(ops:Seq[QLName])
 case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart
 case class ParsedQLText(parts:Seq[QLTextPart])
 
-class QLParser(input:QLText) extends RegexParsers {
+class QLParser(input:QLText, context:QLContext[_,_]) extends RegexParsers {
   val name = """[a-zA-Z][\w- ]*""".r
   val unQLTextRegex = """([^\[]|\[(?!\[))+""".r
   

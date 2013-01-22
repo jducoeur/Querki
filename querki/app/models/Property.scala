@@ -8,6 +8,8 @@ import system._
 import system.OIDs._
 import system.SystemSpace._
 
+import ql.QLContext
+
 /**
  * The value of a primitive Type. These are always considered "elements", since they
  * are always wrapped inside Collections.
@@ -244,7 +246,7 @@ case class Property[VT, -RT, CT](
 }
 
 object Property {
-  def optTextProp(id:OID, text:String) = (id -> PropValue(Some(ElemValue(QLText(text))))) 
+  def optTextProp(id:OID, text:String) = (id -> PropValue(Some(ElemValue(PlainText(text))))) 
   /**
    * Convenience methods for meta-Properties
    */
@@ -288,9 +290,11 @@ object Property {
  * A convenient wrapper for passing a value around in a way that can be fetched.
  */
 case class PropAndVal[VT, CT](prop:Property[VT, _, CT], v:PropValue[CT]) {
-  def render = prop.render(v)
-  def renderOr(other: => Wikitext) = if (prop.isEmpty(v)) other else render
-  def renderIfDefined = if (!prop.isEmpty(v)) render else Wikitext("")
+  def render[VT, CT <% Iterable[ElemValue]](context:QLContext[VT, CT]) = prop.render(v)
+  def renderPlain = prop.render(v)
+  def renderOr[VT, CT <% Iterable[ElemValue]](context:QLContext[VT, CT])(other: => Wikitext) = if (prop.isEmpty(v)) other else render(context)
+  def renderPlainOr(other: => Wikitext) = if (prop.isEmpty(v)) other else renderPlain
+  def renderPlainIfDefined = if (!prop.isEmpty(v)) renderPlain else Wikitext("")
   def split() = (prop, v)
   def first = prop.first(v)
 }
