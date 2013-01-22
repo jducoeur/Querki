@@ -7,10 +7,20 @@ import models._
 
 case class TypedValue[VT, CT <% Iterable[ElemValue]](v:CT, pt:PType[VT], ct:Collection[CT])
 
+abstract class ContextBase[VT, CT <% Iterable[ElemValue]] {
+  def context:TypedValue[VT,CT]
+  def state:SpaceState
+}
+
 /**
  * Represents the incoming "context" of a parsed QLText.
  */
-case class QLContext[VT, CT <% Iterable[ElemValue]](context:TypedValue[VT,CT], state:SpaceState)
+case class QLContext[VT, CT <% Iterable[ElemValue]](context:TypedValue[VT,CT], state:SpaceState) extends ContextBase[VT,CT]
+
+case object EmptyContext extends ContextBase[String, Option[ElemValue]] {
+  def context:TypedValue[String,Option[ElemValue]] = throw new Exception("Can't use the contents of EmptyContext!")
+  def state:SpaceState = throw new Exception("Can't use the space of EmptyContext!")
+}
 
 sealed abstract class QLTextPart
 case class UnQLText(text:String) extends QLTextPart

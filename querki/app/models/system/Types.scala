@@ -9,6 +9,8 @@ import Thing._
 
 import OIDs._
 
+import ql._
+
 abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, systemOID, RootOID, pf)
 
 object CommonInputRenderers {
@@ -38,7 +40,7 @@ object CommonInputRenderers {
   {
     def doDeserialize(v:String) = java.lang.Integer.parseInt(v)
     def doSerialize(v:Int) = v.toString
-    def doRender(v:Int) = Wikitext(v.toString)
+    def doRender[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(v:Int) = Wikitext(v.toString)
 
     val doDefault = 0
   }
@@ -67,7 +69,7 @@ object CommonInputRenderers {
     def doDeserialize(v:String) = QLText(v)
     def doSerialize(v:QLText) = v.text
     // TODO: this is WrongityWrongWrong. This is where we need to be processing the QLText:
-    def doRender(v:QLText) = Wikitext(v.text)
+    def doRender[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(v:QLText) = Wikitext(v.text)
     
     val doDefault = QLText("")
     def wrap(raw:String):valType = QLText(raw)
@@ -122,7 +124,7 @@ object CommonInputRenderers {
       }
     }
     def doSerialize(v:Boolean) = v.toString
-    def doRender(v:Boolean) = Wikitext(v.toString())
+    def doRender[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(v:Boolean) = Wikitext(v.toString())
     
     val doDefault = false
     
@@ -146,7 +148,7 @@ object CommonInputRenderers {
         
     def doDeserialize(v:String) = toDisplay(v)
     def doSerialize(v:String) = toInternal(v)
-    def doRender(v:String) = Wikitext(toDisplay(v))
+    def doRender[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(v:String) = Wikitext(toDisplay(v))
     
     override protected def doToUser(v:String):String = toDisplay(v)
     override protected def doFromUser(v:String):String = {
@@ -186,7 +188,14 @@ object CommonInputRenderers {
     // TODO: this is a good illustration of the fact that render should actually
     // be contextual -- you can't really render a Link in isolation, without knowing
     // about the Thing it points to:
-    def doRender(v:OID) = Wikitext(v.toString)
+    def doRender[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(v:OID) = {
+      val target = context.state.anything(v)
+      val text = target match {
+        case Some(t) => "[" + t.displayName + "](" + t.toThingId + ")"
+        case None => "Bad Link: Thing " + v.toString + " not found"
+      }
+      Wikitext(text)
+    }
     
     // TODO: define doFromUser()
 
@@ -243,7 +252,7 @@ abstract class PlainTextType(tid:OID) extends SystemType[PlainText](tid,
   def doSerialize(v:PlainText) = v.text
   // TODO: this is probably incorrect, but may be taken care of by context? How do we make sure this
   // doesn't actually get any internal Wikitext rendered?
-  def doRender(v:PlainText) = Wikitext(v.text)
+  def doRender[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(v:PlainText) = Wikitext(v.text)
     
   val doDefault = PlainText("")
   def wrap(raw:String):valType = PlainText(raw)

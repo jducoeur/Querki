@@ -10,6 +10,8 @@ import models.system._
 import models.system.OIDs.sysId
 import models.Thing._
 
+import ql._
+
 // This is for the PageEventManager and related classes:
 import controllers._
 
@@ -92,7 +94,7 @@ class CSSTextType(tid:OID) extends SystemType[String](tid,
     
   def doDeserialize(v:String) = v
   def doSerialize(v:String) = v
-  def doRender(v:String) = Wikitext(v)
+  def doRender[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(v:String) = Wikitext(v)
     
   val doDefault = ""
     

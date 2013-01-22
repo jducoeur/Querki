@@ -5,6 +5,8 @@ import models._
 import Thing._
 
 import OIDs._
+
+import ql._
   
 //////////////////////////////////////
 //
@@ -26,7 +28,7 @@ abstract class SystemCollection[CT <% Iterable[ElemValue]](cid:OID, pf:PropFetch
       throw new Error("Trying to deserialize root collection!")
     def doSerialize(v:implType, elemT:pType):String = 
       throw new Error("Trying to serialize root collection!")
-    def doRender(ser:implType, elemT:pType):Wikitext = 
+    def doRender[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(ser:implType, elemT:pType):Wikitext = 
       throw new Error("Trying to render root collection!")
     def doDefault(elemT:pType):implType = 
       throw new Error("Trying to default root collection!")    
@@ -49,8 +51,8 @@ abstract class SystemCollection[CT <% Iterable[ElemValue]](cid:OID, pf:PropFetch
     def doSerialize(v:implType, elemT:pType):String = {
       elemT.serialize(v.get)
     }
-    def doRender(v:implType, elemT:pType):Wikitext = {
-      elemT.render(v.get)
+    def doRender[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(v:implType, elemT:pType):Wikitext = {
+      elemT.render(context)(v.get)
     }
     def doDefault(elemT:pType):implType = {
       Some(elemT.default)
@@ -81,9 +83,9 @@ abstract class SystemCollection[CT <% Iterable[ElemValue]](cid:OID, pf:PropFetch
       }
     }
     
-    def doRender(v:implType, elemT:pType):Wikitext = {
+    def doRender[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(v:implType, elemT:pType):Wikitext = {
       v match {
-        case Some(elem) => elemT.render(elem)
+        case Some(elem) => elemT.render(context)(elem)
         case None => Wikitext("")
       }
     }
@@ -111,8 +113,8 @@ abstract class SystemCollection[CT <% Iterable[ElemValue]](cid:OID, pf:PropFetch
         mkString("[", "," ,"]")
     }
     
-    def doRender(v:implType, elemT:pType):Wikitext = {
-      val renderedElems = v.map(elem => elemT.render(elem))
+    def doRender[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(v:implType, elemT:pType):Wikitext = {
+      val renderedElems = v.map(elem => elemT.render(context)(elem))
       Wikitext(renderedElems map (_.internal) mkString("\n"))
     }
     
