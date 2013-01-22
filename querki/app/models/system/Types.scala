@@ -68,8 +68,10 @@ object CommonInputRenderers {
   {
     def doDeserialize(v:String) = QLText(v)
     def doSerialize(v:QLText) = v.text
-    // TODO: this is WrongityWrongWrong. This is where we need to be processing the QLText:
-    def doRender[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(v:QLText) = Wikitext(v.text)
+    def doRender[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(v:QLText) = {
+      val parser = new QLParser(v, context)
+      parser.process
+    }
     
     val doDefault = QLText("")
     def wrap(raw:String):valType = QLText(raw)

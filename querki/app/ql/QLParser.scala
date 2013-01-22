@@ -2,7 +2,7 @@ package ql
 
 import scala.util.parsing.combinator._
 
-import models.system.QLText
+import models.system._
 import models._
 
 case class TypedValue[VT, CT <% Iterable[ElemValue]](v:CT, pt:PType[VT], ct:Collection[CT])
@@ -29,7 +29,7 @@ case class QLPhrase(ops:Seq[QLName])
 case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart
 case class ParsedQLText(parts:Seq[QLTextPart])
 
-class QLParser(input:QLText, context:QLContext[_,_]) extends RegexParsers {
+class QLParser[OVT, OCT <% Iterable[ElemValue]](input:QLText, context:ContextBase[OVT,OCT]) extends RegexParsers {
   val name = """[a-zA-Z][\w- ]*""".r
   val unQLTextRegex = """([^\[]|\[(?!\[))+""".r
   
@@ -39,8 +39,17 @@ class QLParser(input:QLText, context:QLContext[_,_]) extends RegexParsers {
   def qlExp:Parser[QLExp] = rep1sep(qlPhrase, "\n") ^^ { QLExp(_) }
   def qlText:Parser[ParsedQLText] = rep(unQLText | "[[" ~> qlExp <~ "]]") ^^ { ParsedQLText(_) }
   
+  // TODO: this is wrong. The Stage should produce another Context.
+  private def processStage(name:QLName):String = {
+    val thing = context.state.anythingByName(name.name)
+    thing match {
+      case Some(t) => LinkType.render(context)(ElemValue(t.id)).internal
+      case None => "[UNKNOWN NAME: " + name.name + "]"
+    }
+  }
+  
   private def processPhrase(ops:Seq[QLName]):String = {
-    val names = ops map ("NAME: " + _.name)
+    val names = ops map processStage
     names.mkString
   }
   
@@ -52,7 +61,7 @@ class QLParser(input:QLText, context:QLContext[_,_]) extends RegexParsers {
     val strs = parseTree.parts flatMap { 
       _ match {
         case UnQLText(t) => Seq(t)
-        case QLExp(phrases) => Seq("[[[") ++ processPhrases(phrases) ++ Seq("]]]")
+        case QLExp(phrases) => processPhrases(phrases)
       }
     }
     Wikitext(strs.mkString)
