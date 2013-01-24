@@ -7,6 +7,8 @@ import models.system.OIDs._
 import models.system.SystemSpace
 import models.system.SystemSpace._
 
+import controllers.RequestContext
+
 import ql._
 
 /**
@@ -104,7 +106,7 @@ abstract class Thing(
 {
   lazy val props:PropMap = propFetcher()
   
-  def thisAsContext(implicit state:SpaceState) = QLContext(TypedValue(Some(ElemValue(this.id)), LinkType, ExactlyOne), state)
+  def thisAsContext(implicit request:RequestContext) = QLContext(TypedValue(Some(ElemValue(this.id)), LinkType, ExactlyOne), request)
   
   def displayName:String = {
     val localName = localProp(DisplayNameProp) orElse localProp(NameProp)
@@ -244,9 +246,9 @@ abstract class Thing(
     (other == model) || getModel.isAncestor(other)
   }
   
-  def renderProps(implicit state:SpaceState):Wikitext = {
+  def renderProps(implicit request:RequestContext):Wikitext = {
     val listMap = props.map { entry =>
-      val prop = state.prop(entry._1)
+      val prop = request.state.get.prop(entry._1)
       val pv = prop.pair(entry._2)
       "<dt>" + prop.displayName + "</dt><dd>" + pv.render(thisAsContext).raw + "</dd>"
     }
@@ -259,7 +261,8 @@ abstract class Thing(
    * 
    * TODO: allow this to be redefined with a QL Property if desired.
    */
-  def render(implicit state:SpaceState):Wikitext = {
+  def render(implicit request:RequestContext):Wikitext = {
+    implicit val state = request.state.get
     val opt = getPropOpt(DisplayTextProp)
     opt.map(pv => pv.render(thisAsContext)).getOrElse(renderProps)
   }

@@ -187,9 +187,7 @@ object CommonInputRenderers {
   {
     def doDeserialize(v:String) = OID(v)
     def doSerialize(v:OID) = v.toString
-    // TODO: this is a good illustration of the fact that render should actually
-    // be contextual -- you can't really render a Link in isolation, without knowing
-    // about the Thing it points to:
+
     def doRender[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(v:OID) = {
       val target = context.state.anything(v)
       val text = target match {

@@ -4,22 +4,27 @@ import scala.util.parsing.combinator._
 
 import models.system._
 import models._
+import controllers.RequestContext
 
 case class TypedValue[VT, CT <% Iterable[ElemValue]](v:CT, pt:PType[VT], ct:Collection[CT])
 
 abstract class ContextBase[VT, CT <% Iterable[ElemValue]] {
   def context:TypedValue[VT,CT]
   def state:SpaceState
+  def request:RequestContext
 }
 
 /**
  * Represents the incoming "context" of a parsed QLText.
  */
-case class QLContext[VT, CT <% Iterable[ElemValue]](context:TypedValue[VT,CT], state:SpaceState) extends ContextBase[VT,CT]
+case class QLContext[VT, CT <% Iterable[ElemValue]](context:TypedValue[VT,CT], request:RequestContext) extends ContextBase[VT,CT] {
+  def state = request.state.getOrElse(SystemSpace.State)
+}
 
 case object EmptyContext extends ContextBase[String, Option[ElemValue]] {
   def context:TypedValue[String,Option[ElemValue]] = throw new Exception("Can't use the contents of EmptyContext!")
   def state:SpaceState = throw new Exception("Can't use the space of EmptyContext!")
+  def request:RequestContext = throw new Exception("Can't get the request of EmptyContext!")
 }
 
 sealed abstract class QLTextPart

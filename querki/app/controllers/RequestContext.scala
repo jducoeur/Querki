@@ -15,6 +15,10 @@ import models._
  * This object is a bit squishy semantically, but the high concept is that it should encapsulate
  * all the data that we *typically* pass around into *most* page renders.
  * 
+ * TODO: now that we've gotten into serious questions of rendering, this structure is being
+ * passed around more and more. It is getting deep into models and ql, so it probably doesn't
+ * belong in controllers per se.
+ * 
  * @param requester The validated User who is asking for this page, if any.
  */
 case class RequestContext(

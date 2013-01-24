@@ -17,7 +17,7 @@
 	</div>
 	}
 	
-	<p>@Html(thing.render(space).display)</p>
+	<p>@Html(thing.render(rc).display)</p>
 	
 	@if(!rc.chromeless) {
 	<a href="@routes.Application.editThing(rc.ownerName, space.toThingId, thing.toThingId)" class="btn">Edit</a>
