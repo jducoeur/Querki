@@ -94,8 +94,8 @@ class CSSTextType(tid:OID) extends SystemType[String](tid,
     
   def doDeserialize(v:String) = v
   def doSerialize(v:String) = v
-  def doRender[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(v:String) = Wikitext(v)
-    
+  def doRender(context:ContextBase)(v:String) = Wikitext(v)
+
   val doDefault = ""
     
   override def renderInput(prop:Property[_,_,_], state:SpaceState, currentValue:Option[String]):Html =

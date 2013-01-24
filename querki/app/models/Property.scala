@@ -53,8 +53,8 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * Takes a value of this type, and turns it into displayable form. Querki
    * equivalent to toString.
    */
-  protected def doRender[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(v:VT):Wikitext
-  final def render[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(v:ElemValue):Wikitext = doRender(context)(get(v))
+  protected def doRender(context:ContextBase)(v:VT):Wikitext
+  final def render(context:ContextBase)(v:ElemValue):Wikitext = doRender(context)(get(v))
   
   /**
    * Also required for all PTypes -- the default value to fall back on.
@@ -157,8 +157,10 @@ abstract class Collection[CT <% Iterable[ElemValue]](i:OID, s:OID, m:OID, pf:Pro
    * Takes a value of this type, and turns it into displayable form. Querki
    * equivalent to toString.
    */
-  protected def doRender[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(v:implType, elemT:pType):Wikitext
-  final def render[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(v:PropValue[implType], elemT:pType):Wikitext = doRender(context)(v.coll, elemT)
+  def render(context:ContextBase)(v:PropValue[Iterable[ElemValue]], elemT:pType):Wikitext = {
+    val renderedElems = v.coll.map(elem => elemT.render(context)(elem))
+    Wikitext(renderedElems map (_.internal) mkString("\n"))    
+  }
   
   /**
    * Also required for all Collections -- the default value to fall back on.
@@ -212,7 +214,10 @@ case class Property[VT, -RT, CT <% Iterable[ElemValue]](
 		  CollectionProp(cType) +
 		  TypeProp(pType)
   
-  def render[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(v:PropValue[CT]) = cType.render(context)(v, pType)
+  def render(context:ContextBase)(v:PropValue[CT]) = {
+    val guts:Iterable[ElemValue] = v.coll
+    cType.render(context)(PropValue(guts), pType)
+  }
   def renderedDefault = render(EmptyContext)(default)
   
   def from(m:PropMap):PropValue[CT] = castVal(m(this))
@@ -292,9 +297,9 @@ object Property {
  * A convenient wrapper for passing a value around in a way that can be fetched.
  */
 case class PropAndVal[VT, CT <% Iterable[ElemValue]](prop:Property[VT, _, CT], v:PropValue[CT]) {
-  def render[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT]) = prop.render(context)(v)
+  def render(context:ContextBase) = prop.render(context)(v)
   def renderPlain = render(EmptyContext)
-  def renderOr[OVT, OCT <% Iterable[ElemValue]](context:ContextBase[OVT, OCT])(other: => Wikitext) = if (prop.isEmpty(v)) other else render(context)
+  def renderOr(context:ContextBase)(other: => Wikitext) = if (prop.isEmpty(v)) other else render(context)
   def renderPlainOr(other: => Wikitext) = renderOr(EmptyContext)(other)
   def renderPlainIfDefined = if (!prop.isEmpty(v)) renderPlain else Wikitext("")
   def split() = (prop, v)

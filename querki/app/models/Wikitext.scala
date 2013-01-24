@@ -26,6 +26,11 @@ class Wikitext(wiki:String) {
    * This should only be used internally, never to display to the user!
    */
   def internal = wiki
+  
+  /**
+   * Wikitext can be concatenated just like strings.
+   */
+  def +(other:Wikitext) = new Wikitext(internal + other.internal)
 }
 
 object Wikitext {
