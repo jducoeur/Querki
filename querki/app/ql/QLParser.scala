@@ -34,7 +34,10 @@ case class QLPhrase(ops:Seq[QLName])
 case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart
 case class ParsedQLText(parts:Seq[QLTextPart])
 
-class QLParser[OVT, OCT <% Iterable[ElemValue]](input:QLText, context:ContextBase[OVT,OCT]) extends RegexParsers {
+class QLParser[OVT, OCT <% Iterable[ElemValue]](input:QLText, initialContext:ContextBase[_,_]) extends RegexParsers {
+  
+  type CB = ContextBase[_,_]
+  
   val name = """[a-zA-Z][\w- ]*""".r
   val unQLTextRegex = """([^\[]|\[(?!\[))+""".r
   
@@ -45,28 +48,28 @@ class QLParser[OVT, OCT <% Iterable[ElemValue]](input:QLText, context:ContextBas
   def qlText:Parser[ParsedQLText] = rep(unQLText | "[[" ~> qlExp <~ "]]") ^^ { ParsedQLText(_) }
   
   // TODO: this is wrong. The Stage should produce another Context.
-  private def processStage(name:QLName):String = {
+  private def processStage(name:QLName, context:ContextBase[_,_]):ContextBase[_,_] = {
     val thing = context.state.anythingByName(name.name)
-    thing match {
-      case Some(t) => LinkType.render(context)(ElemValue(t.id)).internal
-      case None => "[UNKNOWN NAME: " + name.name + "]"
+    val tv = thing match {
+      case Some(t) => TypedValue(Some(ElemValue(t.id)), LinkType, ExactlyOne) //LinkType.render(context)(ElemValue(t.id)).internal
+      case None => TypedValue(Some(ElemValue("[UNKNOWN NAME: " + name.name + "]")), PlainTextType, ExactlyOne)
     }
+    QLContext(tv, context.request)
   }
   
-  private def processPhrase(ops:Seq[QLName]):String = {
-    val names = ops map processStage
-    names.mkString
+  private def processPhrase(ops:Seq[QLName], startContext:ContextBase[_,_]):ContextBase[_,_] = {
+    (startContext /: ops) { (context, stage) => processStage(stage, context) }
   }
   
-  private def processPhrases(phrases:Seq[QLPhrase]):Seq[String] = {
-    phrases map (phrase => processPhrase(phrase.ops))
+  private def processPhrases(phrases:Seq[QLPhrase], context:CB):Seq[String] = {
+    phrases map (phrase => processPhrase(phrase.ops, context))
   }
   
-  private def processParseTree(parseTree:ParsedQLText):Wikitext = {
+  private def processParseTree(parseTree:ParsedQLText, context:CB):Wikitext = {
     val strs = parseTree.parts flatMap { 
       _ match {
         case UnQLText(t) => Seq(t)
-        case QLExp(phrases) => processPhrases(phrases)
+        case QLExp(phrases) => processPhrases(phrases, context)
       }
     }
     Wikitext(strs.mkString)
@@ -75,7 +78,7 @@ class QLParser[OVT, OCT <% Iterable[ElemValue]](input:QLText, context:ContextBas
   def process:Wikitext = {
     val parseResult = parseAll(qlText, input.text)
     parseResult match {
-      case Success(result, _) => processParseTree(result)
+      case Success(result, _) => processParseTree(result, initialContext)
       case Failure(msg, next) => Wikitext("Couldn't parse qlText: " + msg)
       // TODO: we should probably do something more serious in case of Error:
       case Error(msg, next) => Wikitext("ERROR: Couldn't parse qlText: " + msg)
