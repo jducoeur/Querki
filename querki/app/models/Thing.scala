@@ -270,6 +270,18 @@ abstract class Thing(
     opt.map(pv => pv.render(thisAsContext)).getOrElse(renderProps)
   }
   
+  /**
+   * Called when this Thing is encountered with no method invocation in a QL expression.
+   * Subclasses are allowed to override it as make sense.
+   * 
+   * This basic version returns a Link to this thing.
+   * TODO: add a "self" method to always be able to do this.
+   * 
+   * TODO: add a Property to allow runtime Things to override this.
+   */
+  def qlApply(context:ContextBase):TypedValue = {
+    TypedValue(ExactlyOne(LinkType(id)), LinkType)
+  }  
 
   def serializeProps(implicit state:SpaceState) = Thing.serializeProps(props, state)
   

@@ -25,14 +25,14 @@ import ql._
 case class ElemValue(elem:Any)
 
 trait PropValue {
-  type myCollection <: Collection
   type cType = coll.implType
   type pType = PType[_]
   
-  val coll:myCollection
+  val coll:Collection
   def cv:cType
   
   def serialize(elemT:pType):String = coll.doSerialize(cv, elemT)
+  def first = coll.first(this)
 }
 
 /**
@@ -221,12 +221,12 @@ class BootstrapCollection extends Collection(systemOID, systemOID, systemOID, ()
     List(elemT.default)
   }
   def wrap(elem:ElemValue):implType = List(elem)
-  def makePropValue(cv:implType):PropValue = BootstrapPropValue(cv)
+  def makePropValue(cv:implType):PropValue = BootstrapPropValue(cv, this)
     
-  private case class BootstrapPropValue(cv:implType) extends PropValue {
-    type myCollection = BootstrapCollection
-      
-    val coll = BootstrapCollection.this
+  private case class BootstrapPropValue(cv:implType, coll:BootstrapCollection) extends PropValue {
+//    type myCollection = BootstrapCollection
+//      
+//    val coll = BootstrapCollection.this
   }  
 }
 object BootstrapCollection extends BootstrapCollection {
@@ -295,6 +295,33 @@ case class Property[VT, -RT](
   
   // TODO: this is wrong. More correctly, we have to go through the cType as well:
   def renderInput(state:SpaceState, currentValue:Option[String]):Html = pType.renderInput(this, state, currentValue)
+  
+  /**
+   * qlApply on a Property expects the input context to be a single Link. It returns the value
+   * of this Property on that Link.
+   * 
+   * TODO: if this Property isn't defined on the target Thing or its ancestors, this should return None.
+   * So technically, this should be returning Optional.
+   */
+  override def qlApply(context:ContextBase):TypedValue = {
+    val valType = context.value.pt
+    valType match {
+      case link:LinkType => {
+        val coll = context.value.ct
+        // TODO: Evil!
+        val oid = context.value.v.first.elem.asInstanceOf[OID]
+        val thing = link.follow(context)(oid)
+        thing match {
+          case Some(t) => {
+            val result = t.getPropVal(this)(context.state)
+            TypedValue(result, pType)
+          }
+          case None => ErrorValue("Couldn't find Thing " + oid.toString)
+        }
+      }
+      case _ => ErrorValue("Can't apply a Property in a " + valType + " context.")
+    }
+  }  
 }
 
 object Property {

@@ -43,6 +43,12 @@ object CommonInputRenderers {
     def doRender(context:ContextBase)(v:Int) = Wikitext(v.toString)
 
     val doDefault = 0
+    
+    /**
+     * TODO: eventually, we may want a more nuanced Int inputter. But this will do to start.
+     */
+    override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:Option[String]):Html = 
+      CommonInputRenderers.renderText(prop, state, currentValue)
   }
   object IntType extends IntType(IntTypeOID)
   
@@ -187,9 +193,11 @@ object CommonInputRenderers {
   {
     def doDeserialize(v:String) = OID(v)
     def doSerialize(v:OID) = v.toString
+    
+    def follow(context:ContextBase)(v:OID) = context.state.anything(v)
 
     def doRender(context:ContextBase)(v:OID) = {
-      val target = context.state.anything(v)
+      val target = follow(context)(v)
       val text = target match {
         case Some(t) => "[" + t.displayName + "](" + t.toThingId + ")"
         case None => "Bad Link: Thing " + v.toString + " not found"

@@ -67,13 +67,9 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       List(elemT.default)
     }
     def wrap(elem:ElemValue):implType = List(elem)
-    def makePropValue(cv:implType):PropValue = ExactlyOnePropValue(cv)
-    
-    private case class ExactlyOnePropValue(cv:implType) extends PropValue {
-      type myCollection = ExactlyOne
-      
-      val coll = ExactlyOne.this
-    }
+
+    def makePropValue(cv:implType):PropValue = ExactlyOnePropValue(cv, this)
+    private case class ExactlyOnePropValue(cv:implType, coll:ExactlyOne) extends PropValue
   }
   object ExactlyOne extends ExactlyOne(ExactlyOneOID)
   object ExactlyOneProps {
@@ -118,15 +114,10 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     def doDefault(elemT:pType):implType = Nil
     
     def wrap(elem:ElemValue):implType = List(elem)
-    def makePropValue(cv:implType):PropValue = OptionalPropValue(cv)
+    def makePropValue(cv:implType):PropValue = OptionalPropValue(cv, this)    
+    private case class OptionalPropValue(cv:implType, coll:Optional) extends PropValue
     
     val None:PropValue = makePropValue(Nil)
-    
-    private case class OptionalPropValue(cv:implType) extends PropValue {
-      type myCollection = Optional
-      
-      val coll = Optional.this
-    }
   }
   object Optional extends Optional(OptionalOID)
   
@@ -157,13 +148,8 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     def doDefault(elemT:pType):implType = List.empty
     
     def wrap(elem:ElemValue):implType = List(elem)
-    def makePropValue(cv:implType):PropValue = QListPropValue(cv)
-    
-    private case class QListPropValue(cv:implType) extends PropValue {
-      type myCollection = QList
-      
-      val coll = QList.this
-    }
+    def makePropValue(cv:implType):PropValue = QListPropValue(cv, this)
+    private case class QListPropValue(cv:implType, coll:QList) extends PropValue
   }
   object QList extends QList(QListOID)
   

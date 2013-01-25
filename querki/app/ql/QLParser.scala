@@ -13,6 +13,9 @@ case class TypedValue(v:PropValue, pt:PType[_]) {
   
   def render(context:ContextBase):Wikitext = ct.render(context)(v, pt) 
 }
+object ErrorValue {
+  def apply(msg:String) = TypedValue(ExactlyOne(PlainTextType(msg)), PlainTextType)
+}
 
 abstract class ContextBase {
   def value:TypedValue
@@ -60,11 +63,8 @@ class QLParser(input:QLText, initialContext:ContextBase) extends RegexParsers {
   private def processStage(name:QLName, context:ContextBase):ContextBase = {
     val thing = context.state.anythingByName(name.name)
     val tv = thing match {
-      // TODO: this should call Thing.applyQL().
-      // TODO: the following illustrate how broken PropValue and ElemValue are. This line should be
-      // TypedValue(ExactlyOne(LinkType(t.id)))
-      case Some(t) => TypedValue(ExactlyOne(LinkType(t.id)), LinkType)
-      case None => TypedValue(ExactlyOne(PlainTextType("[UNKNOWN NAME: " + name.name + "]")), PlainTextType)
+      case Some(t) => t.qlApply(context)
+      case None => ErrorValue("[UNKNOWN NAME: " + name.name + "]")
     }
     QLContext(tv, context.request)
   }
