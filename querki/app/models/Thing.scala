@@ -109,7 +109,7 @@ abstract class Thing(
 {
   lazy val props:PropMap = propFetcher()
   
-  def thisAsContext(implicit request:RequestContext) = QLContext(TypedValue(ExactlyOne(ElemValue(this.id)), LinkType, ExactlyOne), request)
+  def thisAsContext(implicit request:RequestContext) = QLContext(TypedValue(ExactlyOne(LinkType(this.id)), LinkType), request)
   
   def displayName:String = {
     val localName = localProp(DisplayNameProp) orElse localProp(NameProp)

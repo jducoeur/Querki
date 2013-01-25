@@ -8,10 +8,14 @@ import controllers.RequestContext
 
 // TODO: we're about ready to obviate away ct here, since it is contained in v.
 // Maybe we can do the same for pt?
-case class TypedValue(v:PropValue, pt:PType[_], ct:Collection)
+case class TypedValue(v:PropValue, pt:PType[_]) {
+  def ct:Collection = v.coll
+  
+  def render(context:ContextBase):Wikitext = ct.render(context)(v, pt) 
+}
 
 abstract class ContextBase {
-  def context:TypedValue
+  def value:TypedValue
   def state:SpaceState
   def request:RequestContext
 }
@@ -19,12 +23,17 @@ abstract class ContextBase {
 /**
  * Represents the incoming "context" of a parsed QLText.
  */
-case class QLContext(context:TypedValue, request:RequestContext) extends ContextBase {
+case class QLContext(value:TypedValue, request:RequestContext) extends ContextBase {
   def state = request.state.getOrElse(SystemSpace.State)
 }
 
+/**
+ * This should only be used in cases where we really don't have a context -- generally,
+ * displaying outside of a proper page display in a Space. It is unlikely to work for
+ * any sophisticated properties, but can be used for PlainText and the like.
+ */
 case object EmptyContext extends ContextBase {
-  def context:TypedValue = throw new Exception("Can't use the contents of EmptyContext!")
+  def value:TypedValue = throw new Exception("Can't use the contents of EmptyContext!")
   def state:SpaceState = throw new Exception("Can't use the space of EmptyContext!")
   def request:RequestContext = throw new Exception("Can't get the request of EmptyContext!")
 }
@@ -54,8 +63,8 @@ class QLParser(input:QLText, initialContext:ContextBase) extends RegexParsers {
       // TODO: this should call Thing.applyQL().
       // TODO: the following illustrate how broken PropValue and ElemValue are. This line should be
       // TypedValue(ExactlyOne(LinkType(t.id)))
-      case Some(t) => TypedValue(ExactlyOne(ElemValue(t.id)), LinkType, ExactlyOne)
-      case None => TypedValue(ExactlyOne(ElemValue("[UNKNOWN NAME: " + name.name + "]")), PlainTextType, ExactlyOne)
+      case Some(t) => TypedValue(ExactlyOne(LinkType(t.id)), LinkType)
+      case None => TypedValue(ExactlyOne(PlainTextType("[UNKNOWN NAME: " + name.name + "]")), PlainTextType)
     }
     QLContext(tv, context.request)
   }
@@ -67,17 +76,9 @@ class QLParser(input:QLText, initialContext:ContextBase) extends RegexParsers {
   private def processPhrases(phrases:Seq[QLPhrase], context:ContextBase):Seq[ContextBase] = {
     phrases map (phrase => processPhrase(phrase.ops, context))
   }
-  
-  private def contextToWikitext(context:ContextBase):Wikitext = {
-    val tv = context.context
-    val ct = tv.ct
-    // TODO: Evil! EEEEVIL!
-    val pt = tv.pt.asInstanceOf[PType[tv.pt.valType]]
-    ct.render(context)(tv.v, pt)
-  }
-  
+
   private def contextsToWikitext(contexts:Seq[ContextBase]):Wikitext = {
-    (Wikitext("") /: contexts) { (soFar, context) => soFar + contextToWikitext(context) }
+    (Wikitext("") /: contexts) { (soFar, context) => soFar + context.value.render(context) }
   }
   
   private def processParseTree(parseTree:ParsedQLText, context:ContextBase):Wikitext = {
