@@ -91,13 +91,16 @@ case class SpaceState(
   
   // TBD: should this try recognizing Display Names as well? I've confused myself that way once
   // or twice.
+  // TBD: changed this to look up the app stack. That's clearly right sometimes, like in QL.
+  // Is it always right?
   def anythingByName(rawName:String):Option[Thing] = {
     val name = NameType.toInternal(rawName)
     thingWithName(name, things).orElse(
       thingWithName(name, spaceProps).orElse(
         thingWithName(name, types).orElse(
           thingWithName(name, colls).orElse(
-            spaceByName(name)))))
+            spaceByName(name).orElse(
+              app.flatMap(_.anythingByName(rawName)))))))
   }
   
   def anything(thingId:ThingId):Option[Thing] = {
