@@ -15,16 +15,16 @@ import SystemSpace._
 object UrThing extends ThingState(RootOID, systemOID, RootOID,
     toProps(
       setName("Thing"),
-      (IsModelOID -> PropValue(Some(ElemValue(false))))
+      (IsModelOID -> ExactlyOne(ElemValue(false)))
       )) 
 {
-  override def getProp(propId:OID)(implicit state:SpaceState):PropAndVal[_,_] = {
+  override def getProp(propId:OID)(implicit state:SpaceState):PropAndVal[_] = {
     // If we've gotten up to here and haven't found the property, use
     // the default:
     localOrDefault(propId)
   }
     
-  override def getPropVal[VT, CT](prop:Property[VT, _, CT])(implicit state:SpaceState):PropValue[CT] = {
+  override def getPropVal[VT, CT](prop:Property[VT, _])(implicit state:SpaceState):PropValue = {
     localPropVal(prop).getOrElse(prop.default)
   }
   
@@ -32,7 +32,7 @@ object UrThing extends ThingState(RootOID, systemOID, RootOID,
     props.contains(propId)
   }
     
-  override def allProps(implicit state:SpaceState):Set[Property[_,_,_]] = localProps
+  override def allProps(implicit state:SpaceState):Set[Property[_,_]] = localProps
   
   override def isAncestor(other:OID)(implicit state:SpaceState):Boolean = false
 }

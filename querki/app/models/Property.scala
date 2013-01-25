@@ -24,7 +24,16 @@ import ql._
  */
 case class ElemValue(elem:Any)
 
-case class PropValue[CT <% Iterable[ElemValue]](coll:CT)
+trait PropValue {
+  type myCollection <: Collection
+  type cType = coll.implType
+  type pType = PType[_]
+  
+  val coll:myCollection
+  def cv:cType
+  
+  def serialize(elemT:pType):String = coll.doSerialize(cv, elemT)
+}
 
 /**
  * Properties have Types. There's nothing controversial here -- Types are usually
@@ -35,7 +44,7 @@ case class PropValue[CT <% Iterable[ElemValue]](coll:CT)
 abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s, m, Kind.Type, pf) {
   
   type valType = VT
-  
+
   /**
    * Each PType is required to implement this -- it is the deserializer for the
    * type.
@@ -109,7 +118,7 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * side classes for each PType, which describe how to render them in particular circumstances. But
    * we'll get to that...
    */
-  def renderInput(prop:Property[_,_,_], state:SpaceState, currentValue:Option[String]):Html = throw new Exception("I don't yet know how to display input for " + this)
+  def renderInput(prop:Property[_,_], state:SpaceState, currentValue:Option[String]):Html = throw new Exception("I don't yet know how to display input for " + this)
 }
 trait PTypeBuilder[VT, -RT] {
   
@@ -135,30 +144,30 @@ trait NullTypeBuilder[VT] extends PTypeBuilder[VT, Nothing] {
  * and consistent about this, we make it much easier to write QL safely -- each
  * QL step is basically a flatMap.
  */
-abstract class Collection[CT <% Iterable[ElemValue]](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s, m, Kind.Collection, pf) {
+abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s, m, Kind.Collection, pf) {
   
   type pType = PType[_]
-  type implType = CT
+  type implType <: Iterable[ElemValue]
   
   /**
    * Each Collection is required to implement this -- it is the deserializer for the
    * type.
    */
   protected def doDeserialize(ser:String, elemT:pType):implType
-  final def deserialize(ser:String, elemT:pType):PropValue[implType] = PropValue(doDeserialize(ser,elemT))
+  final def deserialize(ser:String, elemT:pType):PropValue = makePropValue(doDeserialize(ser,elemT))
   
   /**
    * Also required for all Collections, to serialize values of this type.
    */
-  protected def doSerialize(v:implType, elemT:pType):String 
-  final def serialize(v:PropValue[implType], elemT:pType):String = doSerialize(v.coll, elemT)
+  def doSerialize(v:implType, elemT:pType):String 
+//  final def serialize(v:PropValue, elemT:pType):String = doSerialize(v.cv, elemT)
   
   /**
    * Takes a value of this type, and turns it into displayable form. Querki
    * equivalent to toString.
    */
-  def render(context:ContextBase)(v:PropValue[Iterable[ElemValue]], elemT:pType):Wikitext = {
-    val renderedElems = v.coll.map(elem => elemT.render(context)(elem))
+  def render(context:ContextBase)(v:PropValue, elemT:pType):Wikitext = {
+    val renderedElems = v.cv.map(elem => elemT.render(context)(elem))
     Wikitext(renderedElems map (_.internal) mkString("\n"))    
   }
   
@@ -166,13 +175,14 @@ abstract class Collection[CT <% Iterable[ElemValue]](i:OID, s:OID, m:OID, pf:Pro
    * Also required for all Collections -- the default value to fall back on.
    */
   protected def doDefault(elemT:pType):implType
-  final def default(elemT:pType):PropValue[implType] = PropValue(doDefault(elemT))
+  final def default(elemT:pType):PropValue = makePropValue(doDefault(elemT))
   
-  def wrap(elem:ElemValue):implType
   /**
    * Convenience wrapper for creating in-code PropValues.
    */
-  def apply(elem:ElemValue):PropValue[implType] = PropValue(wrap(elem))
+  def wrap(elem:ElemValue):implType
+  def makePropValue(cv:implType):PropValue
+  def apply(elem:ElemValue):PropValue = makePropValue(wrap(elem))
   
   /**
    * Returns the head of the collection.
@@ -180,23 +190,59 @@ abstract class Collection[CT <% Iterable[ElemValue]](i:OID, s:OID, m:OID, pf:Pro
    * NOTE: this will throw an exception if you call it on an empty collection! It is the
    * equivalent of Option.get
    */
-  final def first(v:PropValue[implType]):ElemValue = v.coll.head
+  final def first(v:PropValue):ElemValue = v.cv.head
   
-  final def isEmpty(v:PropValue[implType]):Boolean = v.coll.isEmpty
+  final def isEmpty(v:PropValue):Boolean = v.cv.isEmpty
   
   implicit def toIterable(v:implType):Iterable[ElemValue] = v.asInstanceOf[Iterable[ElemValue]]
+}
+
+/**
+ * A null collection, whose sole purpose is to be the cType for the initial hardcoded Properties.
+ * 
+ * TBD: this is bloody dangerous, and we'll see how well it works. But we have nasty
+ * chicken-and-egg problems otherwise -- every Thing has Properties, which have Collections,
+ * which causes looping. In particular, we need a Collection for the initial PropValues
+ * to point to.
+ */
+class BootstrapCollection extends Collection(systemOID, systemOID, systemOID, () => emptyProps) {
+  type implType = List[ElemValue]
+
+  def doDeserialize(ser:String, elemT:pType):implType =
+    throw new Exception("Can't deserialize a bootstrap collection!")
+
+  def doSerialize(v:implType, elemT:pType):String =
+    throw new Exception("Can't deserialize a bootstrap collection!")
+
+  def doRender(context:ContextBase)(v:implType, elemT:pType):Wikitext = {
+    elemT.render(context)(v.head)
+  }
+  def doDefault(elemT:pType):implType = {
+    List(elemT.default)
+  }
+  def wrap(elem:ElemValue):implType = List(elem)
+  def makePropValue(cv:implType):PropValue = BootstrapPropValue(cv)
+    
+  private case class BootstrapPropValue(cv:implType) extends PropValue {
+    type myCollection = BootstrapCollection
+      
+    val coll = BootstrapCollection.this
+  }  
+}
+object BootstrapCollection extends BootstrapCollection {
+  def bootProp(oid:OID, v:Any) = (oid -> makePropValue(wrap(ElemValue(v))))
 }
 
 /**
  * A Property is a field that may exist on a Thing. It is, itself, a Thing with a
  * specific Type.
  */
-case class Property[VT, -RT, CT <% Iterable[ElemValue]](
+case class Property[VT, -RT](
     i:OID, 
     s:OID, 
     m:OID, 
     val pType:PType[VT] with PTypeBuilder[VT, RT], 
-    val cType:Collection[CT], 
+    val cType:Collection, 
     pf:PropFetcher)
   extends Thing(i, s, m, Kind.Property, pf) {
   def default = {
@@ -204,40 +250,39 @@ case class Property[VT, -RT, CT <% Iterable[ElemValue]](
     // on a prop-by-prop basis
     cType.default(pType)
   }
-  def defaultPair:PropAndVal[VT,CT] = PropAndVal(this, default)
+  def defaultPair:PropAndVal[VT] = PropAndVal(this, default)
   // EVIL but arguably necessary. This is where we are trying to confine the cast from something
   // we get out of the PropMap (which is a bit undertyped) to match the associated Property.
-  def castVal(v:PropValue[_]) = v.asInstanceOf[PropValue[CT]]
-  def pair(v:PropValue[_]) = PropAndVal(this, castVal(v))
+  def castVal(v:PropValue) = v.asInstanceOf[PropValue]
+  def pair(v:PropValue) = PropAndVal(this, castVal(v))
 
   override lazy val props:PropMap = propFetcher() + 
 		  CollectionProp(cType) +
 		  TypeProp(pType)
   
-  def render(context:ContextBase)(v:PropValue[CT]) = {
-    val guts:Iterable[ElemValue] = v.coll
-    cType.render(context)(PropValue(guts), pType)
+  def render(context:ContextBase)(v:PropValue) = {
+    cType.render(context)(v, pType)
   }
   def renderedDefault = render(EmptyContext)(default)
   
-  def from(m:PropMap):PropValue[CT] = castVal(m(this))
-  def fromOpt(m:PropMap):Option[PropValue[CT]] = m.get(this.id) map castVal
+  def from(m:PropMap):PropValue = castVal(m(this))
+  def fromOpt(m:PropMap):Option[PropValue] = m.get(this.id) map castVal
   
   /**
    * Convenience method to fetch the value of this property in this map.
    */
   def first(m:PropMap):VT = pType.get(cType.first(from(m)))
   def firstOpt(m:PropMap):Option[VT] = fromOpt(m) map cType.first map pType.get
-  def first(v:PropValue[CT]):VT = pType.get(cType.first(v))
+  def first(v:PropValue):VT = pType.get(cType.first(v))
   
-  def isEmpty(v:PropValue[CT]) = cType.isEmpty(v)
+  def isEmpty(v:PropValue) = cType.isEmpty(v)
 
   def apply(raw:RT) = (this.id, cType(pType(raw)))
   
   def validate(str:String) = pType.validate(str)
   def fromUser(str:String) = cType(pType.fromUser(str))
   // TODO: this clearly isn't correct. How are we actually going to handle more complex types?
-  def toUser(v:PropValue[_]):String = {
+  def toUser(v:PropValue):String = {
     val cv = castVal(v)
     if (cType.isEmpty(cv))
       ""
@@ -245,23 +290,23 @@ case class Property[VT, -RT, CT <% Iterable[ElemValue]](
       pType.toUser(cType.first(cv))
   }
   
-  def serialize(v:PropValue[_]):String = cType.serialize(castVal(v), pType)
-  def deserialize(str:String):PropValue[cType.implType] = cType.deserialize(str, pType)
+  def serialize(v:PropValue):String = v.serialize(pType)
+  def deserialize(str:String):PropValue = cType.deserialize(str, pType)
   
   // TODO: this is wrong. More correctly, we have to go through the cType as well:
   def renderInput(state:SpaceState, currentValue:Option[String]):Html = pType.renderInput(this, state, currentValue)
 }
 
 object Property {
-  def optTextProp(id:OID, text:String) = (id -> PropValue(Some(ElemValue(PlainText(text))))) 
+  def optTextProp(id:OID, text:String) = (id -> Optional(ElemValue(PlainText(text)))) 
   /**
    * Convenience methods for meta-Properties
    */
   def placeholderText(text:String) = optTextProp(PlaceholderTextOID, text)  
   def prompt(text:String) = optTextProp(PromptOID, text)
   
-  implicit object PropNameOrdering extends Ordering[Property[_,_,_]] {
-    def compare(a:Property[_,_,_], b:Property[_,_,_]) = {
+  implicit object PropNameOrdering extends Ordering[Property[_,_]] {
+    def compare(a:Property[_,_], b:Property[_,_]) = {
       if (a == NameProp) {
         if (b == NameProp)
           0
@@ -275,14 +320,14 @@ object Property {
   
   import collection.immutable.TreeMap
   
-  type PropList = TreeMap[Property[_,_,_], Option[String]]
+  type PropList = TreeMap[Property[_,_], Option[String]]
   object PropList {
-    def apply(pairs:(Property[_,_,_], Option[String])*):PropList = {
-      (TreeMap.empty[Property[_,_,_], Option[String]] /: pairs)((m, pair) => m + pair)
+    def apply(pairs:(Property[_,_], Option[String])*):PropList = {
+      (TreeMap.empty[Property[_,_], Option[String]] /: pairs)((m, pair) => m + pair)
     }
     
     def from(thing:Thing)(implicit state:SpaceState):PropList = {
-      (TreeMap.empty[Property[_,_,_], Option[String]] /: thing.props.keys) { (m, propId) =>
+      (TreeMap.empty[Property[_,_], Option[String]] /: thing.props.keys) { (m, propId) =>
         val prop = state.prop(propId)
         val value = prop.from(thing.props)
         // TODO: in the long run, this can't be a simple string:
@@ -296,7 +341,7 @@ object Property {
 /**
  * A convenient wrapper for passing a value around in a way that can be fetched.
  */
-case class PropAndVal[VT, CT <% Iterable[ElemValue]](prop:Property[VT, _, CT], v:PropValue[CT]) {
+case class PropAndVal[VT](prop:Property[VT, _], v:PropValue) {
   def render(context:ContextBase) = prop.render(context)(v)
   def renderPlain = render(EmptyContext)
   def renderOr(context:ContextBase)(other: => Wikitext) = if (prop.isEmpty(v)) other else render(context)

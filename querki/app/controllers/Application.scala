@@ -212,7 +212,7 @@ object Application extends Controller {
     )
   }
   
-  def getOtherProps(state:SpaceState, kind:Kind.Kind, existing:PropList):Seq[Property[_,_,_]] = {
+  def getOtherProps(state:SpaceState, kind:Kind.Kind, existing:PropList):Seq[Property[_,_]] = {
     val existingProps = existing.keys
     // This lists all of the visible properties that aren't in the existing list:
     // TODO: sort alphabetically
@@ -225,7 +225,7 @@ object Application extends Controller {
       // TODO: this pattern -- "if this QList property exists, then do something to each value" -- seems
       // common. Find the right factoring for it:
       if (candidate.hasProp(AppliesToKindProp)) {
-        val allowedKinds = candidate.getPropVal(AppliesToKindProp).coll
+        val allowedKinds = candidate.getPropVal(AppliesToKindProp).cv
         (false /: allowedKinds)((current, allowedKind) => current || (AppliesToKindProp.pType.get(allowedKind) == kind))
       } else {
         true

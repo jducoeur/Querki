@@ -84,7 +84,7 @@ object SystemSpace {
   // errors on startup. This means we have to be careful to keep these lists in synch!
   
   // Properties:
-  val props = oidMap[Property[_,_,_]](
+  val props = oidMap[Property[_,_]](
       UrProp, 
       NameProp, 
       DisplayTextProp, 

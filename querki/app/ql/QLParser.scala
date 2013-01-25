@@ -6,7 +6,9 @@ import models.system._
 import models._
 import controllers.RequestContext
 
-case class TypedValue(v:Iterable[ElemValue], pt:PType[_], ct:Collection[_])
+// TODO: we're about ready to obviate away ct here, since it is contained in v.
+// Maybe we can do the same for pt?
+case class TypedValue(v:PropValue, pt:PType[_], ct:Collection)
 
 abstract class ContextBase {
   def context:TypedValue
@@ -52,8 +54,8 @@ class QLParser(input:QLText, initialContext:ContextBase) extends RegexParsers {
       // TODO: this should call Thing.applyQL().
       // TODO: the following illustrate how broken PropValue and ElemValue are. This line should be
       // TypedValue(ExactlyOne(LinkType(t.id)))
-      case Some(t) => TypedValue(Some(ElemValue(t.id)), LinkType, ExactlyOne)
-      case None => TypedValue(Some(ElemValue("[UNKNOWN NAME: " + name.name + "]")), PlainTextType, ExactlyOne)
+      case Some(t) => TypedValue(ExactlyOne(ElemValue(t.id)), LinkType, ExactlyOne)
+      case None => TypedValue(ExactlyOne(ElemValue("[UNKNOWN NAME: " + name.name + "]")), PlainTextType, ExactlyOne)
     }
     QLContext(tv, context.request)
   }
@@ -71,8 +73,7 @@ class QLParser(input:QLText, initialContext:ContextBase) extends RegexParsers {
     val ct = tv.ct
     // TODO: Evil! EEEEVIL!
     val pt = tv.pt.asInstanceOf[PType[tv.pt.valType]]
-    val v = PropValue(tv.v)
-    ct.render(context)(v, pt)
+    ct.render(context)(tv.v, pt)
   }
   
   private def contextsToWikitext(contexts:Seq[ContextBase]):Wikitext = {

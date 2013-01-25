@@ -25,7 +25,7 @@ object OIDs {
 
 class StylesheetModule(val moduleId:Short) extends modules.Module {
 
-  val props = oidMap[Property[_,_,_]](
+  val props = oidMap[Property[_,_]](
     StylesheetProp,
     CSSProp,
     GoogleFontProp
@@ -98,7 +98,7 @@ class CSSTextType(tid:OID) extends SystemType[String](tid,
 
   val doDefault = ""
     
-  override def renderInput(prop:Property[_,_,_], state:SpaceState, currentValue:Option[String]):Html =
+  override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:Option[String]):Html =
     CommonInputRenderers.renderLargeText(prop, state, currentValue)
 }
 object CSSTextType extends CSSTextType(CSSTextOID)

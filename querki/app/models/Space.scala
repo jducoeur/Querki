@@ -50,9 +50,9 @@ case class SpaceState(
     // TODO: in principle, this is a List[SpaceState] -- there can be multiple ancestors:
     app:Option[SpaceState],
     types:Map[OID, PType[_]],
-    spaceProps:Map[OID, Property[_,_,_]],
+    spaceProps:Map[OID, Property[_,_]],
     things:Map[OID, ThingState],
-    colls:Map[OID, Collection[_]]) 
+    colls:Map[OID, Collection]) 
   extends Thing(s, s, m, Kind.Space, pf) 
 {
   // Walks up the App tree, looking for the specified Thing of the implied type:
@@ -107,7 +107,7 @@ case class SpaceState(
     }
   }
   
-  def allProps:Map[OID, Property[_,_,_]] = if (app.isEmpty) spaceProps else spaceProps ++ app.get.allProps
+  def allProps:Map[OID, Property[_,_]] = if (app.isEmpty) spaceProps else spaceProps ++ app.get.allProps
   
   def allModels:Iterable[ThingState] = {
     implicit val s = this
@@ -125,7 +125,7 @@ case class SpaceState(
    * The Property passed into here should usually be of LinkType -- while in theory that's not required,
    * it would be surprising for it to be used otherwise.
    */
-  def linkCandidates(prop:Property[_,_,_]):Iterable[Thing] = {
+  def linkCandidates(prop:Property[_,_]):Iterable[Thing] = {
     implicit val s = this
     
     val locals = linkCandidatesLocal(prop)
@@ -138,12 +138,12 @@ case class SpaceState(
   /**
    * This enumerates all of the plausible candidates for the given property within this Space.
    */
-  def linkCandidatesLocal(prop:Property[_,_,_]):Iterable[Thing] = {
+  def linkCandidatesLocal(prop:Property[_,_]):Iterable[Thing] = {
     implicit val s = this
     
     // First, filter the candidates based on LinkKind:
     val allCandidates = if (prop.hasProp(LinkKindOID)) {
-      val allowedKinds = prop.getPropVal(LinkKindProp).coll
+      val allowedKinds = prop.getPropVal(LinkKindProp).cv
       def fetchKind(wrappedVal:ElemValue):Iterable[Thing] = {
         val kind = LinkKindProp.pType.get(wrappedVal)
         kind match {
@@ -353,10 +353,10 @@ class Space extends Actor {
              Some(systemState),
              // TODO: dynamic PTypes
              Map.empty[OID, PType[_]],
-             Map.empty[OID, Property[_,_,_]],
+             Map.empty[OID, Property[_,_]],
              Map.empty[OID, ThingState],
              // TODO (probably rather later): dynamic Collections
-             Map.empty[OID, Collection[_]]
+             Map.empty[OID, Collection]
             )
       }
       // TBD: note that it is a hard error if there aren't any Spaces found. We expect exactly one:
@@ -370,7 +370,7 @@ class Space extends Actor {
         val coll = systemState.coll(CollectionProp.first(propMap))
         // TODO: this feels wrong. coll.implType should be good enough, since it is viewable
         // as Iterable[ElemValue] by definition, but I can't figure out how to make that work.
-        val boundColl = coll.asInstanceOf[Collection[Iterable[ElemValue]]]
+        val boundColl = coll.asInstanceOf[Collection]
         new Property(thingId, id, modelId, boundTyp, boundColl, () => propMap)
       }
       curState = curState.copy(spaceProps = props)
@@ -423,7 +423,7 @@ class Space extends Actor {
           val typ = state.typ(TypeProp.first(props))
           val coll = state.coll(CollectionProp.first(props))
           val boundTyp = typ.asInstanceOf[PType[typ.valType] with PTypeBuilder[typ.valType, Any]]
-          val boundColl = coll.asInstanceOf[Collection[Iterable[ElemValue]]]
+          val boundColl = coll.asInstanceOf[Collection]
           val thing = Property(thingId, spaceId, modelId, boundTyp, boundColl, () => props)
           updateState(state.copy(spaceProps = state.spaceProps + (thingId -> thing)))          
         }

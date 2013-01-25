@@ -7,6 +7,8 @@ import models.system.OIDs._
 import models.system.SystemSpace
 import models.system.SystemSpace._
 
+import BootstrapCollection.bootProp
+
 import controllers.RequestContext
 
 import ql._
@@ -28,22 +30,23 @@ object Kind {
 }
 
 object Thing {
-  type PropMap = Map[OID, PropValue[_]]
+  type PropMap = Map[OID, PropValue]
   type PropFetcher = () => PropMap
   
   // A couple of convenience methods for the hard-coded Things in System:
-  def toProps(pairs:(OID,PropValue[_])*):PropFetcher = () => {
-    (Map.empty[OID, PropValue[_]] /: pairs) { (m:Map[OID, PropValue[_]], pair:(OID, PropValue[_])) =>
+  def toProps(pairs:(OID,PropValue)*):PropFetcher = () => {
+    (Map.empty[OID, PropValue] /: pairs) { (m:Map[OID, PropValue], pair:(OID, PropValue)) =>
       m + (pair._1 -> pair._2)
     }
   }
   
-  def emptyProps = Map.empty[OID, PropValue[_]]
+  def emptyProps = Map.empty[OID, PropValue]
   
   // NOTE: don't try to make this more concise -- it causes chicken-and-egg problems in system
   // initialization:
-  def setName(str:String):(OID,PropValue[_]) = 
-    (NameOID -> PropValue(Some(ElemValue(str))))
+  def setName(str:String):(OID,PropValue) = bootProp(NameOID, str)
+//    (NameOID -> ExactlyOne(ElemValue(str)))
+//    (NameOID -> PropValue(Some(ElemValue(str))))
 
   // TODO: this escape/unescape is certainly too simplistic to cope with recursive types.
   // Come back to this sometime before we make the type system more robust.
@@ -106,7 +109,7 @@ abstract class Thing(
 {
   lazy val props:PropMap = propFetcher()
   
-  def thisAsContext(implicit request:RequestContext) = QLContext(TypedValue(Some(ElemValue(this.id)), LinkType, ExactlyOne), request)
+  def thisAsContext(implicit request:RequestContext) = QLContext(TypedValue(ExactlyOne(ElemValue(this.id)), LinkType, ExactlyOne), request)
   
   def displayName:String = {
     val localName = localProp(DisplayNameProp) orElse localProp(NameProp)
@@ -131,11 +134,11 @@ abstract class Thing(
   /**
    * The Property as defined on *this* specific Thing.
    */
-  def localProp(pid:OID)(implicit state:SpaceState):Option[PropAndVal[_,_]] = {
+  def localProp(pid:OID)(implicit state:SpaceState):Option[PropAndVal[_]] = {
     val ptr = state.prop(pid)
     props.get(pid).map(v => ptr.pair(v))
   }
-  def localProp[VT, CT](prop:Property[VT, _, CT]):Option[PropAndVal[VT,CT]] = {
+  def localProp[VT, CT](prop:Property[VT, _]):Option[PropAndVal[VT]] = {
     prop.fromOpt(this.props) map prop.pair
   }
   
@@ -146,7 +149,7 @@ abstract class Thing(
    * Note that this walks up the tree recursively. It eventually ends with UrThing,
    * which does things a little differently.
    */
-  def getProp(propId:OID)(implicit state:SpaceState):PropAndVal[_,_] = {
+  def getProp(propId:OID)(implicit state:SpaceState):PropAndVal[_] = {
     // TODO: we're doing redundant lookups of the property. Rationalize this stack of calls.
     val prop = state.prop(propId)
     if (prop.first(NotInheritedProp))
@@ -154,7 +157,7 @@ abstract class Thing(
     else
       localProp(propId).getOrElse(getModel.getProp(propId))
   }
-  def getProp[VT, CT](prop:Property[VT, _, CT])(implicit state:SpaceState):PropAndVal[VT,CT] = {
+  def getProp[VT, CT](prop:Property[VT, _])(implicit state:SpaceState):PropAndVal[VT] = {
     // TODO: we're doing redundant lookups of the property. Rationalize this stack of calls.
     if (prop.first(NotInheritedProp))
       localOrDefault(prop)
@@ -162,15 +165,15 @@ abstract class Thing(
       localProp(prop).getOrElse(getModel.getProp(prop))
   }
   
-  def localPropVal[VT, CT](prop:Property[VT, _, CT]):Option[PropValue[CT]] = {
+  def localPropVal[VT, CT](prop:Property[VT, _]):Option[PropValue] = {
     prop.fromOpt(props)
   }
   
-  def localOrDefault(propId:OID)(implicit state:SpaceState):PropAndVal[_,_] = {
+  def localOrDefault(propId:OID)(implicit state:SpaceState):PropAndVal[_] = {
     val prop = state.prop(propId)
     localProp(propId).getOrElse(prop.defaultPair)
   }
-  def localOrDefault[VT, CT](prop:Property[VT, _, CT])(implicit state:SpaceState):PropAndVal[VT,CT] = {
+  def localOrDefault[VT, CT](prop:Property[VT, _])(implicit state:SpaceState):PropAndVal[VT] = {
     localProp(prop).getOrElse(prop.defaultPair)
   }
     
@@ -178,7 +181,7 @@ abstract class Thing(
    * If you have the actual Property object you're looking for, this returns its value
    * on this object in a typesafe way.
    */
-  def getPropVal[VT, CT](prop:Property[VT, _, CT])(implicit state:SpaceState):PropValue[CT] = {
+  def getPropVal[VT, CT](prop:Property[VT, _])(implicit state:SpaceState):PropValue = {
     val local = localPropVal(prop)
     if (local.isDefined)
       local.get
@@ -196,11 +199,11 @@ abstract class Thing(
    * In general, while it is syntactically legal to call this on an Optional type, it's usually
    * inappropriate.
    */
-  def first[VT, CT](prop:Property[VT, _, CT])(implicit state:SpaceState):VT = {
+  def first[VT](prop:Property[VT, _])(implicit state:SpaceState):VT = {
     prop.first(getPropVal(prop))
   }
   
-  def localFirst[VT, CT](prop:Property[VT, _, CT])(implicit state:SpaceState):Option[VT] = {
+  def localFirst[VT](prop:Property[VT, _])(implicit state:SpaceState):Option[VT] = {
     localPropVal(prop) map (prop.first(_))
   }
   
@@ -215,27 +218,27 @@ abstract class Thing(
   /**
    * Convenience method -- returns either the value of the specified property or None.
    */
-  def getPropOpt(propId:OID)(implicit state:SpaceState):Option[PropAndVal[_,_]] = {
+  def getPropOpt(propId:OID)(implicit state:SpaceState):Option[PropAndVal[_]] = {
     if (hasProp(propId))
       Some(getProp(propId))
     else
       None
   }
-  def getPropOpt[VT, CT](prop:Property[VT, _, CT])(implicit state:SpaceState):Option[PropAndVal[VT,CT]] = {
+  def getPropOpt[VT](prop:Property[VT, _])(implicit state:SpaceState):Option[PropAndVal[VT]] = {
     if (hasProp(prop))
       Some(getProp(prop))
     else
       None
   }
   
-  def localProps(implicit state:SpaceState):Set[Property[_,_,_]] = {
+  def localProps(implicit state:SpaceState):Set[Property[_,_]] = {
     props.keys.map(state.prop(_)).toSet    
   }
   
   /**
    * Lists all of the Properties defined on this Thing and its ancestors.
    */
-  def allProps(implicit state:SpaceState):Set[Property[_,_,_]] = {
+  def allProps(implicit state:SpaceState):Set[Property[_,_]] = {
     localProps ++ getModel.allProps
   }
   

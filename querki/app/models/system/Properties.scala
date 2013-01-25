@@ -8,8 +8,8 @@ import Thing._
 import OIDs._
 import SystemSpace._
 
-class SystemProperty[VT, -RT, CT <% Iterable[ElemValue]](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection[CT], p:PropFetcher) 
-  extends Property[VT, RT, CT](pid, systemOID, UrPropOID, t, c, p)
+class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
+  extends Property[VT, RT](pid, systemOID, UrPropOID, t, c, p)
 
   /**
    * The root Property, from which all others derive.
@@ -17,9 +17,9 @@ class SystemProperty[VT, -RT, CT <% Iterable[ElemValue]](pid:OID, t:PType[VT] wi
   object UrProp extends Property(UrPropOID, systemOID, UrThing, TextType, ExactlyOne,
       toProps(
         setName("Property"),
-        (PromptOID -> PropValue(None)),
-        (PlaceholderTextOID -> PropValue(None)),
-        (NotInheritedOID -> PropValue(Some(ElemValue(false))))
+        (PromptOID -> Optional.None),
+        (PlaceholderTextOID -> Optional.None),
+        (NotInheritedOID -> Optional(ElemValue(false)))
         ))
   
   object NameProp extends SystemProperty(NameOID, NameType, ExactlyOne,
@@ -91,7 +91,7 @@ object NotInheritedProp extends SystemProperty(NotInheritedOID, YesNoType, Exact
     toProps(
       setName("Not Inherited"),
       // Need to define this explicitly, to break infinite loops in lookup:
-      (NotInheritedOID -> PropValue(Some(ElemValue(false)))),
+      (NotInheritedOID -> ExactlyOne(ElemValue(false))),
       AppliesToKindProp(Kind.Property)
       ))
 
@@ -153,7 +153,7 @@ always being true. But used properly, it will steer folks in the right direction
 object AppliesToKindProp extends SystemProperty(AppliesToKindOID, IntType, QList,
     toProps(
       setName("Applies To"),
-      (AppliesToKindOID -> PropValue(List(ElemValue(Kind.Property)))),
+      (AppliesToKindOID -> QList(ElemValue(Kind.Property))),
       DisplayTextProp("""
 By default, a Property can be used on anything -- even when that is nonsensical. The
 result is that, when creating a new Thing, you get a messy list of lots of Properties,
