@@ -27,6 +27,12 @@ object OIDs {
   def sysId(local:Int) = OID(0, local)
   
   /**
+   * This is an OID that is used for internal never-persisted, never-pointed-to objects.
+   * Use with great caution.
+   */
+  val IllegalOID = sysId(-1)
+  
+  /**
    * The OID of the System Space itself. All these Things are contained in it.
    */
   val systemOID = sysId(0)

@@ -1,12 +1,27 @@
 package ql
 
+import play.api.Logger
+
 import scala.util.parsing.combinator._
 
 import models.system._
 import models._
 import controllers.RequestContext
 
-// TODO: we're about ready to obviate away ct here, since it is contained in v.
+/**
+ * This is a fake PType, which exists so that we can persist embedded Texts in the pipeline.
+ */
+object ParsedTextType extends SystemType[Wikitext](OIDs.IllegalOID, () => Thing.emptyProps) with SimplePTypeBuilder[Wikitext]
+{
+  def doDeserialize(v:String) = throw new Exception("Can't deserialize ParsedText!")
+  def doSerialize(v:Wikitext) = throw new Exception("Can't serialize ParsedText!")
+  def doRender(context:ContextBase)(v:Wikitext) = v
+    
+  val doDefault = Wikitext("")
+  def wrap(raw:String):valType = Wikitext(raw)
+}
+
+// TODO: we've gotten rid of the explicit ct parameter, since it is contained in v.
 // Maybe we can do the same for pt?
 case class TypedValue(v:PropValue, pt:PType[_]) {
   def ct:Collection = v.coll
@@ -43,24 +58,49 @@ case object EmptyContext extends ContextBase {
 
 sealed abstract class QLTextPart
 case class UnQLText(text:String) extends QLTextPart
-case class QLName(name:String)
-case class QLPhrase(ops:Seq[QLName])
+sealed abstract class QLStage
+case class QLName(name:String) extends QLStage
+case class QLTextStage(contents:ParsedQLText) extends QLStage
+case class QLPhrase(ops:Seq[QLStage])
 case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart
 case class ParsedQLText(parts:Seq[QLTextPart])
 
-class QLParser(input:QLText, initialContext:ContextBase) extends RegexParsers {
+class QLParser(val input:QLText, initialContext:ContextBase) extends RegexParsers {
   
-  val name = """[a-zA-Z][\w- ]*""".r
-  val unQLTextRegex = """([^\[]|\[(?!\[))+""".r
+  val name = """[a-zA-Z][\w- ]*[\w]""".r
+  val unQLTextRegex = """([^\[\"]|\[(?!\[)|\"(?!\"))+""".r
+  // TODO: we shouldn't be eliminating whitespace at all, but it's causing parse error if I take it out completely:
+  override val whiteSpace = " ".r
   
   def unQLText:Parser[UnQLText] = unQLTextRegex ^^ { UnQLText(_) }
+  def qlName:Parser[QLName] = name ^^ { n => QLName(n) }
+  def qlTextStage:Parser[QLTextStage] = "\"\"" ~> qlText <~ "\"\"" ^^ { QLTextStage(_) }
+  def qlStage:Parser[QLStage] = qlName | qlTextStage
   // TODO: phrase is going to get a *lot* more complex with time:
-  def qlPhrase:Parser[QLPhrase] = name ^^ { n => QLPhrase(Seq(QLName(n))) }
+  def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, "->") ^^ { QLPhrase(_) }
   def qlExp:Parser[QLExp] = rep1sep(qlPhrase, "\n") ^^ { QLExp(_) }
   def qlText:Parser[ParsedQLText] = rep(unQLText | "[[" ~> qlExp <~ "]]") ^^ { ParsedQLText(_) }
   
-  // TODO: this is wrong. The Stage should produce another Context.
-  private def processStage(name:QLName, context:ContextBase):ContextBase = {
+  /**
+   * Note that the output here is nominally a new Context, but the underlying type is
+   * ParsedTextType. So far, you can't *do* anything with that afterwards other than
+   * render it, which just returns the already-computed Wikitext.
+   */
+  private def processTextStage(text:QLTextStage, context:ContextBase):ContextBase = {
+    val ct = context.value.ct
+    val pt = context.value.pt
+    // For each element of the incoming context, recurse in and process the embedded Text
+    // in that context.
+    val transformed = context.value.v.cv map { elem =>
+      val elemContext = QLContext(TypedValue(ExactlyOne(elem), pt), context.request)
+      ParsedTextType(processParseTree(text.contents, elemContext))
+    }
+    // TBD: the asInstanceOf here is surprising -- I would have expected transformed to come out
+    // as the right type simply by type signature. Can we get rid of it?
+    QLContext(TypedValue(ct.makePropValue(transformed.asInstanceOf[ct.implType]), ParsedTextType), context.request)
+  }
+  
+  private def processName(name:QLName, context:ContextBase):ContextBase = {
     val thing = context.state.anythingByName(name.name)
     val tv = thing match {
       case Some(t) => t.qlApply(context)
@@ -69,7 +109,14 @@ class QLParser(input:QLText, initialContext:ContextBase) extends RegexParsers {
     QLContext(tv, context.request)
   }
   
-  private def processPhrase(ops:Seq[QLName], startContext:ContextBase):ContextBase = {
+  private def processStage(stage:QLStage, context:ContextBase):ContextBase = {
+    stage match {
+      case name:QLName => processName(name, context)
+      case subText:QLTextStage => processTextStage(subText, context)
+    }
+  }
+  
+  private def processPhrase(ops:Seq[QLStage], startContext:ContextBase):ContextBase = {
     (startContext /: ops) { (context, stage) => processStage(stage, context) }
   }
   
@@ -90,13 +137,15 @@ class QLParser(input:QLText, initialContext:ContextBase) extends RegexParsers {
     }
   }
   
+  def parse = parseAll(qlText, input.text)
+  
   def process:Wikitext = {
-    val parseResult = parseAll(qlText, input.text)
+    val parseResult = parse
     parseResult match {
       case Success(result, _) => processParseTree(result, initialContext)
-      case Failure(msg, next) => Wikitext("Couldn't parse qlText: " + msg)
+      case Failure(msg, next) => { Logger.warn("Couldn't parse qlText: " + msg + " at " + next.pos); Wikitext("Couldn't parse qlText: " + msg) }
       // TODO: we should probably do something more serious in case of Error:
-      case Error(msg, next) => Wikitext("ERROR: Couldn't parse qlText: " + msg)
+      case Error(msg, next) => { Logger.error("Couldn't parse qlText: " + msg); Wikitext("ERROR: Couldn't parse qlText: " + msg) }
     }
   }
 }

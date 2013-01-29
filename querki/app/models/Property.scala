@@ -85,7 +85,7 @@ case class Property[VT, -RT](
     valType match {
       case link:LinkType => {
         val coll = context.value.ct
-        // TODO: Evil!
+        // TODO: Evil! ElemValue really ought to have its own mapping into the PType.
         val oid = context.value.v.first.elem.asInstanceOf[OID]
         val thing = link.follow(context)(oid)
         thing match {
