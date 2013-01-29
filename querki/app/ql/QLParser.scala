@@ -79,7 +79,7 @@ class QLParser(val input:QLText, initialContext:ContextBase) extends RegexParser
   def qlStage:Parser[QLStage] = qlName | qlTextStage
   // TODO: phrase is going to get a *lot* more complex with time:
   def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, "\\s*->\\s*".r) ^^ { QLPhrase(_) }
-  def qlExp:Parser[QLExp] = rep1sep(qlPhrase, "\n") ^^ { QLExp(_) }
+  def qlExp:Parser[QLExp] = rep1sep(qlPhrase, "\\s*\\r?\\n|\\s*;\\s*".r) ^^ { QLExp(_) }
   def qlText:Parser[ParsedQLText] = rep(unQLText | "[[" ~> qlExp <~ "]]") ^^ { ParsedQLText(_) }
   
   /**
@@ -144,7 +144,7 @@ class QLParser(val input:QLText, initialContext:ContextBase) extends RegexParser
     val parseResult = parse
     parseResult match {
       case Success(result, _) => processParseTree(result, initialContext)
-      case Failure(msg, next) => { Logger.warn("Couldn't parse qlText: " + msg + " at " + next.pos); Wikitext("Couldn't parse qlText: " + msg) }
+      case Failure(msg, next) => { Logger.warn(s"Couldn't parse qlText: $msg at ${next.pos}"); Wikitext("Couldn't parse qlText: " + msg) }
       // TODO: we should probably do something more serious in case of Error:
       case Error(msg, next) => { Logger.error("Couldn't parse qlText: " + msg); Wikitext("ERROR: Couldn't parse qlText: " + msg) }
     }
