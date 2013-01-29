@@ -69,15 +69,16 @@ class QLParser(val input:QLText, initialContext:ContextBase) extends RegexParser
   
   val name = """[a-zA-Z][\w- ]*[\w]""".r
   val unQLTextRegex = """([^\[\"]|\[(?!\[)|\"(?!\"))+""".r
-  // TODO: we shouldn't be eliminating whitespace at all, but it's causing parse error if I take it out completely:
-  override val whiteSpace = " ".r
+  // We don't want the RegexParser removing whitespace on our behalf. Note that we need to be
+  // very careful about whitespace!
+  override val whiteSpace = "".r
   
   def unQLText:Parser[UnQLText] = unQLTextRegex ^^ { UnQLText(_) }
   def qlName:Parser[QLName] = name ^^ { n => QLName(n) }
   def qlTextStage:Parser[QLTextStage] = "\"\"" ~> qlText <~ "\"\"" ^^ { QLTextStage(_) }
   def qlStage:Parser[QLStage] = qlName | qlTextStage
   // TODO: phrase is going to get a *lot* more complex with time:
-  def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, "->") ^^ { QLPhrase(_) }
+  def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, "\\s*->\\s*".r) ^^ { QLPhrase(_) }
   def qlExp:Parser[QLExp] = rep1sep(qlPhrase, "\n") ^^ { QLExp(_) }
   def qlText:Parser[ParsedQLText] = rep(unQLText | "[[" ~> qlExp <~ "]]") ^^ { ParsedQLText(_) }
   
