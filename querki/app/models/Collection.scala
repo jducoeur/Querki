@@ -81,21 +81,19 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
 }
 
 /**
- * A null collection, whose sole purpose is to be the cType for the initial hardcoded Properties.
+ * A null collection, whose sole purpose is to be the cType for the Name Property.
  * 
  * TBD: this is bloody dangerous, and we'll see how well it works. But we have nasty
  * chicken-and-egg problems otherwise -- every Thing has Properties, which have Collections,
  * which causes looping. In particular, we need a Collection for the initial PropValues
  * to point to.
  */
-class BootstrapCollection extends Collection(systemOID, systemOID, systemOID, () => emptyProps) {
+class NameCollection extends Collection(IllegalOID, systemOID, systemOID, () => emptyProps) {
   type implType = List[ElemValue]
 
-  def doDeserialize(ser:String, elemT:pType):implType =
-    throw new Exception("Can't deserialize a bootstrap collection!")
+  def doDeserialize(ser:String, elemT:pType):implType = List(elemT.deserialize(ser))
 
-  def doSerialize(v:implType, elemT:pType):String =
-    throw new Exception("Can't deserialize a bootstrap collection!")
+  def doSerialize(v:implType, elemT:pType):String = elemT.serialize(v.head)
 
   def doRender(context:ContextBase)(v:implType, elemT:pType):Wikitext = {
     elemT.render(context)(v.head)
@@ -104,14 +102,10 @@ class BootstrapCollection extends Collection(systemOID, systemOID, systemOID, ()
     List(elemT.default)
   }
   def wrap(elem:ElemValue):implType = List(elem)
-  def makePropValue(cv:implType):PropValue = BootstrapPropValue(cv, this)
+  def makePropValue(cv:implType):PropValue = NamePropValue(cv, NameCollection.this)
     
-  private case class BootstrapPropValue(cv:implType, coll:BootstrapCollection) extends PropValue {
-//    type myCollection = BootstrapCollection
-//      
-//    val coll = BootstrapCollection.this
-  }  
+  private case class NamePropValue(cv:implType, coll:NameCollection) extends PropValue {}  
 }
-object BootstrapCollection extends BootstrapCollection {
+object NameCollection extends NameCollection {
   def bootProp(oid:OID, v:Any) = (oid -> makePropValue(wrap(ElemValue(v))))
 }

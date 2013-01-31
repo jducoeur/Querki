@@ -7,7 +7,7 @@ import models.system.OIDs._
 import models.system.SystemSpace
 import models.system.SystemSpace._
 
-import BootstrapCollection.bootProp
+import NameCollection.bootProp
 
 import controllers.RequestContext
 
