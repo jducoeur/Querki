@@ -6,7 +6,7 @@
 @user = @{ rc.requester }
 
 @main(QuerkiTemplate.Index, "Welcome to Querki", rc) {
-
+	
 	@user match {
 	  case None => {
 	    <div class="hero-unit">
@@ -19,10 +19,9 @@
 	    <div class="hero-unit">
 	      <h1>Welcome back, @{u.name}! (#@u.id)</h1>
 
-		  <a href="/spaces" class="btn btn-primary btn-large">Show my Spaces</a>
-		  &nbsp;&nbsp;
-		  <a href="@routes.Application.logout" class="btn">Log out</a>
+		  <a href="/spaces" class="btn btn-primary">Show my Spaces</a>
 		</div>
 	  }
 	}
+
 }
