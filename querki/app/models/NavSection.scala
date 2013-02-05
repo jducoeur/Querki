@@ -7,13 +7,15 @@ import controllers._
 object NavSection {
   object homeNav extends NavSections(Seq(querkiSection))
   
-  val maxNameDisplay = 15
+  val maxNameDisplay = 25
     
   def truncateName(name:String) = {
     if (name.length < maxNameDisplay)
       name
-    else
-      (name take maxNameDisplay) + "..."
+    else {
+      val cutoff = Math.max(name.lastIndexOf(" ", maxNameDisplay), 10)
+      (name take cutoff) + "..."
+    }
   }
       
   def nav(rc:RequestContext) = {
