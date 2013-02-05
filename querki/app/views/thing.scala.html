@@ -11,13 +11,22 @@
 }
 
 @main(QuerkiTemplate.Thing, thing.displayName, rc, true) {
+
+    <script>
+      $(document).ready(function() {
+        $("p").on("dblclick", function() {
+          window.location = "@routes.Application.editThing(rc.ownerName, space.toThingId, thing.toThingId)";
+        });
+      });
+    </script>
+
     @if(!rc.chromeless) {
 	<div class="page-header">
 	  <h1>@thing.displayName</h1>
 	</div>
 	}
 	
-	<p>@Html(thing.render(rc).display)</p>
+	<p id="thingContents">@Html(thing.render(rc).display)</p>
 	
 	@if(!rc.chromeless) {
 	<a href="@routes.Application.editThing(rc.ownerName, space.toThingId, thing.toThingId)" class="btn">Edit</a>
