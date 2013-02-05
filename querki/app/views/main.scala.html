@@ -33,12 +33,15 @@
         <!-- TODO: we need to make this CSS responsive! But that may require jQuery Mobile... -->
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/jquery-ui-1.10.0.custom.css")">
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/jquery.ui.menubar.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap-responsive.css")">
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
         
         <!-- TODO: these should come from a jQuery CDN, instead of locally -->
         <script src="@routes.Assets.at("javascripts/jquery-1.9.0.js")"></script>
         <script src="@routes.Assets.at("javascripts/jquery-ui-1.10.0.custom.js")"></script>
         <script src="@routes.Assets.at("javascripts/jquery.ui.menubar.js")"></script>        
+        <script src="@routes.Assets.at("javascripts/bootstrap.js")"></script>        
 
         @PageEventManager.addHeaders(rc, template)
 
@@ -126,27 +129,8 @@
 	<!-- This container stuff is likely to go into a lower-level, Space-rendering template -->
 	<div class="guts container-fluid">
       <div class="row-fluid">
-        @if(!rc.chromeless) {
-        <div class="span2 querki-sidebar">
-          <div class="well sidebar-nav">
-            <p style="text-align:center"><b>@title</b></p>
-            <ul class="nav nav-list">
-              @for(section <- nav.sections) {
-                <li class="nav-header">@section.title</li>
-                @for(link <- section.links) {
-                  <li><a href="@link.url">@link.display</a></li>
-                }
-              }
-            </ul>
-          </div><!--/.well -->
-        </div><!--/span2-->
-        }
-        
-        @if(rc.chromeless) {
         <div class="querki-content span12">
-        } else {
-        <div class="querki-content span10">
-		}
+
 		  @errors match {
 			case None => {}
 			case Some(msg) => { 
@@ -159,7 +143,7 @@
 
           @content
 	
-		</div><!--/span10-->
+		</div><!--/span12-->
       </div><!--/row-->
 
       @if(!rc.chromeless) {

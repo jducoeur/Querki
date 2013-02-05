@@ -7,20 +7,33 @@ import controllers._
 object NavSection {
   object homeNav extends NavSections(Seq(querkiSection))
   
+  val maxNameDisplay = 15
+    
+  def truncateName(name:String) = {
+    if (name.length < maxNameDisplay)
+      name
+    else
+      (name take maxNameDisplay) + "..."
+  }
+      
   def spaceNav(rc:RequestContext) = {
     val state = rc.state.get
     val id = state.toThingId
     val owner = rc.ownerName
-    NavSections(Seq(
-      querkiSection,
-      NavSection("This Space", Seq(
+    val thing = rc.thing
+    
+
+    val spaceSection = rc.state map { state =>
+      NavSection(truncateName(state.displayName), Seq(
         NavLink("Space Home", routes.Application.space(owner, id)),
         NavLink("All Things", routes.Application.things(owner, id)),
         NavLink("Create a Thing", routes.Application.createThing(owner, id)),
         NavLink("Add a Property", routes.Application.createProperty(owner, id)),
         NavLink("Upload a Photo", routes.Application.upload(owner, id))
       ))
-    ))
+    }
+    
+    NavSections(Seq(querkiSection) ++ spaceSection)
   }
   
   val querkiSection = NavSection("Querki", Seq(
