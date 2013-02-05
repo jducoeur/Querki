@@ -12,14 +12,14 @@ object NavSection {
     val id = state.toThingId
     val owner = rc.ownerName
     NavSections(Seq(
+      querkiSection,
       NavSection("This Space", Seq(
         NavLink("Space Home", routes.Application.space(owner, id)),
         NavLink("All Things", routes.Application.things(owner, id)),
         NavLink("Create a Thing", routes.Application.createThing(owner, id)),
         NavLink("Add a Property", routes.Application.createProperty(owner, id)),
         NavLink("Upload a Photo", routes.Application.upload(owner, id))
-      )),
-      querkiSection
+      ))
     ))
   }
   

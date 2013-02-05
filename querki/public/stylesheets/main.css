@@ -1,0 +1,20 @@
+/*
+ * Menu tweaks for Querki. The existing menubar doesn't work quite right in our theme, so
+ * I have a few modifications to make it look correct.
+ *
+ * By default, we want the menu items to show with the "soft" background. If we don't
+ * give a background, they show with the default content -- which makes the white text
+ * almost invisible. When focused, we switch to the hard background instead.
+ */
+ 
+.ui-menu-item {
+	background: #4eb305 url(images/ui-bg_highlight-soft_50_4eb305_1x100.png) 50% 50% repeat-x;
+	border-bottom-left-radius: 10px;
+	border-bottom-right-radius: 10px;
+	border-top-left-radius: 10px;
+	border-top-right-radius: 10px;
+}
+
+.ui-menu-item .ui-state-focus{
+	background: #285c00 url(images/ui-bg_highlight-hard_30_285c00_1x100.png) 50% 50% repeat-x;
+}
