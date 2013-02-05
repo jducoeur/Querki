@@ -13,24 +13,24 @@
 @main(QuerkiTemplate.Thing, thing.displayName, rc, true) {
 
     <script>
-      $(document).ready(function() {
-        $("p").on("dblclick", function() {
+      $(function() {
+        $(".clickToEdit").on("dblclick", function() {
           window.location = "@routes.Application.editThing(rc.ownerName, space.toThingId, thing.toThingId)";
         });
       });
     </script>
 
     @if(!rc.chromeless) {
-	<div class="page-header">
+	<div class="clickToEdit page-header">
 	  <h1>@thing.displayName</h1>
 	</div>
 	}
 	
-	<p id="thingContents">@Html(thing.render(rc).display)</p>
+	<div class="clickToEdit">
+	  @Html(thing.render(rc).display)
+	</div>
 	
 	@if(!rc.chromeless) {
-	<a href="@routes.Application.editThing(rc.ownerName, space.toThingId, thing.toThingId)" class="btn">Edit</a>
-	
 	<hr/>
 	
 	<h3>Exported, looks like:</h3>
