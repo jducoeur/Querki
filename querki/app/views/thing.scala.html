@@ -29,13 +29,4 @@
 	<div class="clickToEdit">
 	  @Html(thing.render(rc).display)
 	</div>
-	
-	@if(!rc.chromeless) {
-	<hr/>
-	
-	<h3>Exported, looks like:</h3>
-	
-	<p>@thing.export(space)</p>
-
-	}
 }

@@ -7,6 +7,7 @@ object MIMEType {
   
   val CSS = "text/css"
   val JPEG = "image/jpeg"
+  val JSON = "application/json"
 }
 
 object Attachments {

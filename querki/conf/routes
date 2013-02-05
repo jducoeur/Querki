@@ -26,6 +26,8 @@ GET     /u/:userName/:spaceId/:thingId    controllers.Application.thing(userName
 GET     /u/:userName/:spaceId/:thingId/edit controllers.Application.editThing(userName, spaceId, thingId)
 POST    /u/:userName/:spaceId/:thingId/edit controllers.Application.doEditThing(userName, spaceId, thingId)
 
+GET     /u/:userName/:spaceId/:thingId/export controllers.Application.exportThing(userName, spaceId, thingId)
+
 POST    /dologin                    controllers.Application.dologin
 GET     /logout                     controllers.Application.logout
 

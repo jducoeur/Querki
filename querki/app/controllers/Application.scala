@@ -430,6 +430,14 @@ object Application extends Controller {
       case AttachmentFailed() => BadRequest
     }     
   }
+  
+  def exportThing(ownerId:String, spaceId:String, thingIdStr:String) = withSpace(true, ownerId, spaceId, Some(thingIdStr)) { implicit rc =>
+    implicit val state = rc.state.get
+    val thing = rc.thing.get
+    // TODO: security check that I'm allowed to export this
+    val export = thing.export
+    Ok(export).as(MIMEType.JSON)
+  }
 
   def userByName(userName:String) = {
     // TBD: Note that, for now at least, this simply returns my own spaces. I'm leery about
