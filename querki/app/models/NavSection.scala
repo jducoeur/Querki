@@ -32,10 +32,16 @@ object NavSection {
     
     val thingSection = rc.thing map { thing =>
       val thingId = thing.toThingId
+      def attachment:Option[NavLink] = {
+        thing.kind match {
+          case Kind.Attachment => Some(NavLink("Download", routes.Application.attachment(owner, spaceId, thingId)))
+          case _ => None
+        }
+      }
       NavSection(truncateName(thing.displayName), Seq(
         NavLink("Edit", routes.Application.editThing(owner, spaceId, thingId)),
         NavLink("Show", routes.Application.thing(owner, spaceId, thingId))
-      ))
+      ) ++ attachment)
     }
     
     val loginSection = rc.requester map { user =>

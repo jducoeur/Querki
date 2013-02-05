@@ -36,11 +36,6 @@
 	<h3>Exported, looks like:</h3>
 	
 	<p>@thing.export(space)</p>
-	
-	@if(thing.kind == Kind.Attachment) {
-	  <hr/>
-	  
-	  <a href="@routes.Application.attachment(rc.ownerName, space.toThingId, thing.toThingId)" class="btn">Get Attachment</a>
-	}
+
 	}
 }
