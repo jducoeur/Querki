@@ -16,24 +16,41 @@ object NavSection {
       (name take maxNameDisplay) + "..."
   }
       
-  def spaceNav(rc:RequestContext) = {
-    val state = rc.state.get
-    val id = state.toThingId
+  def nav(rc:RequestContext) = {
+    def spaceId = rc.state.get.toThingId
     val owner = rc.ownerName
-    val thing = rc.thing
     
-
     val spaceSection = rc.state map { state =>
       NavSection(truncateName(state.displayName), Seq(
-        NavLink("Space Home", routes.Application.space(owner, id)),
-        NavLink("All Things", routes.Application.things(owner, id)),
-        NavLink("Create a Thing", routes.Application.createThing(owner, id)),
-        NavLink("Add a Property", routes.Application.createProperty(owner, id)),
-        NavLink("Upload a Photo", routes.Application.upload(owner, id))
+        NavLink("Space Home", routes.Application.space(owner, spaceId)),
+        NavLink("All Things", routes.Application.things(owner, spaceId)),
+        NavLink("Create a Thing", routes.Application.createThing(owner, spaceId)),
+        NavLink("Add a Property", routes.Application.createProperty(owner, spaceId)),
+        NavLink("Upload a Photo", routes.Application.upload(owner, spaceId))
       ))
     }
     
-    NavSections(Seq(querkiSection) ++ spaceSection)
+    val thingSection = rc.thing map { thing =>
+      val thingId = thing.toThingId
+      NavSection(truncateName(thing.displayName), Seq(
+        NavLink("Edit", routes.Application.editThing(owner, spaceId, thingId)),
+        NavLink("Show", routes.Application.thing(owner, spaceId, thingId))
+      ))
+    }
+    
+    val loginSection = rc.requester map { user =>
+      NavSection("Logged in as " + user.name, Seq(
+        NavLink("Your Spaces", routes.Application.spaces),
+        NavLink("Log out", routes.Application.logout)
+      ))
+    } getOrElse {
+      NavSection("Not logged in", Seq(
+        NavLink("Log in", routes.Application.login)
+      ))
+    }
+    
+    val sections = Seq(querkiSection) ++ spaceSection ++ thingSection
+    NavSections(sections :+ loginSection)
   }
   
   val querkiSection = NavSection("Querki", Seq(

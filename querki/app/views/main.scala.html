@@ -5,12 +5,7 @@
 
 @space = @{ rc.state }
 @thing = @{ rc.thing }
-@nav = @{
-  rc.state match {
-    case Some(space) => NavSection.spaceNav(rc)
-    case None => NavSection.homeNav
-  }
-}
+@nav = @{ NavSection.nav(rc) }
 @errors = @{
   val flash = rc.request.flash
   flash.get("error") orElse rc.error
@@ -78,48 +73,10 @@
     <body>
 	    @if(!rc.chromeless) {
 		    <ul id="querkiBar" class="menubar">
-				<li><a href="/">Querki</a></li>
-				<li><a href="#Space">Space</a>
-					<ul>
-						<li><a href="#AllThings">All Things</a></li>
-						<li class="ui-state-disabled"><a href="#">Open recent...</a></li>
-						<li><a href="#CreateThing">Create Thing</a></li>
-						<li><a href="#AddProperty">Add Property</a></li>
-						<li><a href="#Upload">Upload</a></li>
-					</ul>
-				</li>
-				<li><a href="#Thing">Thing</a>
-					<ul>
-						<li><a href="#Edit">Edit</a></li>
-					</ul>
-				</li>
-				<!-- TODO: this should be top right -->
-				<!-- TODO: this should show differently if not logged in -->
-				@requester match {
-					case None => { 
-						<li id="identityMenu"><a href="#NoLogin">Not logged in</a>
-							<ul>
-								<li><a href="#Login">Log in</a></li>
-								<li><a href="#Signup">Sign up</a></li>
-							</ul>
-						</li>
-					}
-					case Some(u) => {
-						<li id="identityMenu"><a href="#MyProfile">Logged in as @u.name</a>
-							<ul>
-								<li><a href="#Spaces">Your Spaces</a></li>
-								<li><a href="#Logout">Logout</a></li>
-							</ul>
-						</li>			
-					}
-				}		
-		
               @for(section <- nav.sections) {
                 <li><a href="#@section.title">@section.title</a>
-                  <ul>
-                  @for(link <- section.links) {
-                    <li><a href="@link.url">@link.display</a></li>
-                  }
+                  <ul>@for(link <- section.links) {
+                    <li><a href="@link.url">@link.display</a></li>}
                   </ul>
                 </li>
               }
