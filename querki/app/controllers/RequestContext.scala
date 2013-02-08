@@ -31,7 +31,16 @@ case class RequestContext(
   def requesterOID = requester map (_.id) getOrElse UnknownOID  
   def ownerName = state map Application.ownerName getOrElse ""
   
-  def chromeless = request.queryString.contains("cl")
+  def hasQueryParam(paramName:String) = request.queryString.contains(paramName)
+  def queryParam(paramName:String):Seq[String] = request.queryString(paramName)
+  def firstQueryParam(paramName:String):Option[String] = {
+    queryParam(paramName) match {
+      case first :: rest => Some(first)
+      case _ => None
+    }
+  }
+  
+  def chromeless = hasQueryParam("cl")
 }
 
 object RequestContext {

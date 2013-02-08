@@ -26,7 +26,7 @@ object NavSection {
       NavSection(truncateName(state.displayName), Seq(
         NavLink("Space Home", routes.Application.space(owner, spaceId)),
         NavLink("All Things", routes.Application.things(owner, spaceId)),
-        NavLink("Create a Thing", routes.Application.createThing(owner, spaceId)),
+        NavLink("Create a Thing", routes.Application.createThing(owner, spaceId, None)),
         NavLink("Add a Property", routes.Application.createProperty(owner, spaceId)),
         NavLink("Upload a Photo", routes.Application.upload(owner, spaceId))
       ))
@@ -43,6 +43,7 @@ object NavSection {
       NavSection(truncateName(thing.displayName), Seq(
         NavLink("Edit", routes.Application.editThing(owner, spaceId, thingId)),
         NavLink("Show", routes.Application.thing(owner, spaceId, thingId)),
+        NavLink("Create a " + thing.displayName, routes.Application.createThing(owner, spaceId, Some(thingId))),
         NavLink("Export", routes.Application.exportThing(owner, spaceId, thingId))
       ) ++ attachment)
     }

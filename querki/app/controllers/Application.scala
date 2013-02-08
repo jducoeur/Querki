@@ -268,8 +268,12 @@ object Application extends Controller {
       Ok(page)    
   }
   
-  def createThing(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
-    showEditPage(rc, SimpleThing, PropList((NameProp -> None)))
+  def createThing(ownerId:String, spaceId:String, modelIdOpt:Option[String]) = withSpace(true, ownerId, spaceId) { implicit rc =>
+    implicit val state = rc.state.get
+    val modelThingIdOpt = modelIdOpt map (ThingId(_))
+    val modelOpt = modelThingIdOpt flatMap (rc.state.get.anything(_))
+    val model = modelOpt getOrElse SimpleThing
+    showEditPage(rc, model, replaceModelProps(PropList((NameProp -> None)), model))
   }
   
   def createProperty(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
