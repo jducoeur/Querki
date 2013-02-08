@@ -101,8 +101,9 @@ case class Property[VT, -RT](
   }  
 }
 
-case class DisplayPropVal(v: Option[String], inheritedVal:Option[String] = None, inheritedFrom:Option[Thing] = None) {
+case class DisplayPropVal(prop: Property[_,_], v: Option[String], inheritedVal:Option[String] = None, inheritedFrom:Option[Thing] = None) {
   def isInherited = v.isEmpty && inheritedVal.isDefined
+  def inputControlId = "v-" + prop.id.toString
 }
 
 object Property {
@@ -134,13 +135,18 @@ object Property {
       (TreeMap.empty[Property[_,_], DisplayPropVal] /: pairs)((m, pair) => m + pair)
     }
     
+    def empties(props:Property[_,_]*):PropList = {
+      val pairs = props map (prop => (prop, DisplayPropVal(prop, None)))
+      apply(pairs:_*)
+    }
+    
     def from(thing:Thing)(implicit state:SpaceState):PropList = {
       (TreeMap.empty[Property[_,_], DisplayPropVal] /: thing.props.keys) { (m, propId) =>
         val prop = state.prop(propId)
         val value = prop.from(thing.props)
         // TODO: in the long run, this can't be a simple string:
         val str = prop.toUser(value)
-        m + (prop -> DisplayPropVal(Some(str)))
+        m + (prop -> DisplayPropVal(prop, Some(str)))
       }
     }
   }

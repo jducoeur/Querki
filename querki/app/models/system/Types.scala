@@ -25,8 +25,9 @@ object CommonInputRenderers {
       else
         prop.getProp(PlaceholderTextProp)(state).renderPlainIfDefined.raw
     val xml2 = xml %
-    	Attribute("name", Text("v-" + prop.id.toString),
-    	Attribute("placeholder", Text(placeholder), Null))
+    	Attribute("name", Text(currentValue.inputControlId),
+    	Attribute("id", Text(currentValue.inputControlId),
+    	Attribute("placeholder", Text(placeholder), Null)))
     val xml3 = 
       if (currentValue.isInherited)
         xml2 % 
