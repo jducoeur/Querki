@@ -14,11 +14,11 @@
 @space = @{ rc.state.get }
 @isEdit = @{ thing.isDefined }
 
-@showInputControl(prop:Property[_,_], v:Option[String], i:Int) = {
+@showInputControl(prop:Property[_,_], v:DisplayPropVal, i:Int) = {
   @prop.renderInput(space, v)
 }
 
-@showProperty(prop:Property[_,_], v:Option[String], i:Int) = {
+@showProperty(prop:Property[_,_], v:DisplayPropVal, i:Int) = {
   <div class="control-group">
     <label class="control-label">@Html(prop.getProp(PromptProp)(space).renderPlainOr(prop.getProp(NameProp)(space).renderPlain).raw)</label>
     <div class="controls">
@@ -27,7 +27,7 @@
 	<input type="hidden" name="field[@i]" value="@prop.id.toString">
   </div>
 }
-@showProp(tupl:((Property[_,_], Option[String]), Int)) = @{
+@showProp(tupl:((Property[_,_], DisplayPropVal), Int)) = @{
   val ((prop, v), i) = tupl
   showProperty(prop, v, i)
 }

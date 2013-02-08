@@ -71,7 +71,7 @@ case class Property[VT, -RT](
   def deserialize(str:String):PropValue = cType.deserialize(str, pType)
   
   // TODO: this is wrong. More correctly, we have to go through the cType as well:
-  def renderInput(state:SpaceState, currentValue:Option[String]):Html = pType.renderInput(this, state, currentValue)
+  def renderInput(state:SpaceState, currentValue:DisplayPropVal):Html = pType.renderInput(this, state, currentValue)
   
   /**
    * qlApply on a Property expects the input context to be a single Link. It returns the value
@@ -101,6 +101,8 @@ case class Property[VT, -RT](
   }  
 }
 
+case class DisplayPropVal(v: Option[String], inheritedVal:Option[String] = None, inheritedFrom:Option[Thing] = None)
+
 object Property {
   def optTextProp(id:OID, text:String) = (id -> Optional(ElemValue(PlainText(text)))) 
   /**
@@ -124,19 +126,19 @@ object Property {
   
   import collection.immutable.TreeMap
   
-  type PropList = TreeMap[Property[_,_], Option[String]]
+  type PropList = TreeMap[Property[_,_], DisplayPropVal]
   object PropList {
-    def apply(pairs:(Property[_,_], Option[String])*):PropList = {
-      (TreeMap.empty[Property[_,_], Option[String]] /: pairs)((m, pair) => m + pair)
+    def apply(pairs:(Property[_,_], DisplayPropVal)*):PropList = {
+      (TreeMap.empty[Property[_,_], DisplayPropVal] /: pairs)((m, pair) => m + pair)
     }
     
     def from(thing:Thing)(implicit state:SpaceState):PropList = {
-      (TreeMap.empty[Property[_,_], Option[String]] /: thing.props.keys) { (m, propId) =>
+      (TreeMap.empty[Property[_,_], DisplayPropVal] /: thing.props.keys) { (m, propId) =>
         val prop = state.prop(propId)
         val value = prop.from(thing.props)
         // TODO: in the long run, this can't be a simple string:
         val str = prop.toUser(value)
-        m + (prop -> Some(str))
+        m + (prop -> DisplayPropVal(Some(str)))
       }
     }
   }

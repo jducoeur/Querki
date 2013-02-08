@@ -103,7 +103,7 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * side classes for each PType, which describe how to render them in particular circumstances. But
    * we'll get to that...
    */
-  def renderInput(prop:Property[_,_], state:SpaceState, currentValue:Option[String]):Html = throw new Exception("I don't yet know how to display input for " + this)
+  def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Html = throw new Exception("I don't yet know how to display input for " + this)
 }
 
 trait PTypeBuilder[VT, -RT] {

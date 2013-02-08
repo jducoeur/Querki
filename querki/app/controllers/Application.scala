@@ -236,10 +236,10 @@ object Application extends Controller {
   def replaceModelProps(existing:PropList, model:Thing)(implicit state:SpaceState):PropList = {
     val nonEmpty = existing.filter { keyval =>
       val current = keyval._2
-      current.isDefined && current.get.length > 0
+      current.v.isDefined && current.v.get.length > 0
     }
     (nonEmpty /: model.allProps) { (m, prop) => 
-      if (m.contains(prop)) m else m + (prop -> None)
+      if (m.contains(prop)) m else m + (prop -> DisplayPropVal(None, Some(prop.toUser(prop.from(model.props))), Some(model)))
     }
   }
   
@@ -273,11 +273,17 @@ object Application extends Controller {
     val modelThingIdOpt = modelIdOpt map (ThingId(_))
     val modelOpt = modelThingIdOpt flatMap (rc.state.get.anything(_))
     val model = modelOpt getOrElse SimpleThing
-    showEditPage(rc, model, replaceModelProps(PropList((NameProp -> None)), model))
+    showEditPage(rc, model, replaceModelProps(PropList((NameProp -> DisplayPropVal(None))), model))
   }
   
   def createProperty(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
-    showEditPage(rc, UrProp, PropList((NameProp -> None), (TypeProp -> None), (CollectionProp -> None)))
+    showEditPage(
+        rc, 
+        UrProp, 
+        PropList(
+            (NameProp -> DisplayPropVal(None)), 
+            (TypeProp -> DisplayPropVal(None)), 
+            (CollectionProp -> DisplayPropVal(None))))
   }
   
   def doCreateThing(ownerId:String, spaceId:String) = editThingInternal(ownerId, spaceId, None)
@@ -303,7 +309,9 @@ object Application extends Controller {
             val (propIdStr, rawValue) = pair
             val propId = OID(propIdStr)
             val prop = state.prop(propId)
-            (prop -> rawValue)
+            // TODO: this is clearly wrong. We need to propagate the inherited-ness through
+            // the chain:
+            (prop -> DisplayPropVal(rawValue))
           }
           PropList(rawList:_*)
         }

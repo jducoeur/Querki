@@ -1,5 +1,7 @@
 package models.system
 
+import scala.xml._
+
 import play.api.Logger
 import play.api.templates.Html
 
@@ -14,20 +16,31 @@ import ql._
 abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, systemOID, RootOID, pf)
 
 object CommonInputRenderers {
-  def renderLargeText(prop:Property[_, _], state:SpaceState, currentValue:Option[String]):Html = {
-    val v = currentValue getOrElse ""
-    val xml = 
-      <textarea rows="5" cols="50" name={"v-" + prop.id.toString} placeholder={prop.getProp(PlaceholderTextProp)(state).renderPlainIfDefined.raw}>{v}</textarea>
-    Html(xml.toString)
+  def renderAnyText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal)(doRender: (String) => Elem):Html = {
+    val v = currentValue.v.getOrElse(currentValue.inheritedVal.getOrElse(""))
+    val xml = doRender(v)
+    val xml2 = xml %
+    	Attribute("name", Text("v-" + prop.id.toString),
+    	Attribute("placeholder", Text(prop.getProp(PlaceholderTextProp)(state).renderPlainIfDefined.raw), Null))
+    val xml3 = 
+      if (currentValue.v.isEmpty && currentValue.inheritedVal.isDefined)
+        xml2 % Attribute("disabled", Text("disabled"), Null)
+      else
+        xml2  
+    Html(xml3.toString)    
   }
   
-  def renderText(prop:Property[_, _], state:SpaceState, currentValue:Option[String]):Html = {
-    val v = currentValue getOrElse ""
-    val xml = 
-      <input type="text" name={"v-" + prop.id.toString} value={v} placeholder={prop.getProp(PlaceholderTextProp)(state).renderPlainIfDefined.raw}/>
-    Html(xml.toString)
+  def renderLargeText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal):Html = {
+    renderAnyText(prop, state, currentValue) { v =>
+      <textarea rows="5" cols="50">{v}</textarea>
+    }
   }
-
+  
+  def renderText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal):Html = {
+    renderAnyText(prop, state, currentValue) { v =>
+      <input type="text" value={v}/>
+    }
+  }
 }
 
   /**
@@ -47,7 +60,7 @@ object CommonInputRenderers {
     /**
      * TODO: eventually, we may want a more nuanced Int inputter. But this will do to start.
      */
-    override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:Option[String]):Html = 
+    override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Html = 
       CommonInputRenderers.renderText(prop, state, currentValue)
   }
   object IntType extends IntType(IntTypeOID)
@@ -82,7 +95,7 @@ object CommonInputRenderers {
     val doDefault = QLText("")
     def wrap(raw:String):valType = QLText(raw)
     
-    override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:Option[String]):Html = 
+    override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Html = 
       CommonInputRenderers.renderText(prop, state, currentValue)
   }
 
@@ -93,7 +106,7 @@ object CommonInputRenderers {
       toProps(
         setName("Type-Text")
         )) with PTypeBuilder[QLText,String] {
-    override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:Option[String]):Html = 
+    override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Html = 
       CommonInputRenderers.renderText(prop, state, currentValue)
   }
   object TextType extends TextType(TextTypeOID)
@@ -136,7 +149,7 @@ object CommonInputRenderers {
     
     val doDefault = false
     
-    override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:Option[String]):Html = {
+    override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Html = {
       val xml = <input type="checkbox" name={"v-" + prop.id.toString}/>
       Html(xml.toString)
     }
@@ -176,7 +189,7 @@ object CommonInputRenderers {
 
     val doDefault = "MISSING NAME!"
       
-    override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:Option[String]):Html = 
+    override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Html = 
       CommonInputRenderers.renderText(prop, state, currentValue)
   }
   object NameType extends NameType(NameTypeOID)
@@ -209,12 +222,12 @@ object CommonInputRenderers {
 
     val doDefault = UnknownOID
     
-    override def renderInput(prop:Property[_,_], state:SpaceState, v:Option[String]):Html = {
+    override def renderInput(prop:Property[_,_], state:SpaceState, v:DisplayPropVal):Html = {
       val result = 
         <select name={ "v-" + prop.id.toString }> {
           val candidates = state.linkCandidates(prop)
           candidates map { candidate =>
-            if(v.isDefined && (candidate.id.toString == v.get)) {
+            if(v.v.isDefined && (candidate.id.toString == v.v.get)) {
               <option value={candidate.id.toString} selected="selected">{candidate.displayName}</option>        
             } else {
               <option value={candidate.id.toString}>{candidate.displayName}</option>
@@ -233,7 +246,7 @@ object CommonInputRenderers {
       toProps(
         setName("Type-Large-Text")
         )) with PTypeBuilder[QLText,String] {
-    override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:Option[String]):Html =
+    override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Html =
       CommonInputRenderers.renderLargeText(prop, state, currentValue)
   }
   object LargeTextType extends LargeTextType(LargeTextTypeOID)
@@ -265,7 +278,7 @@ abstract class PlainTextType(tid:OID) extends SystemType[PlainText](tid,
   val doDefault = PlainText("")
   def wrap(raw:String):valType = PlainText(raw)
     
-  override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:Option[String]):Html = 
+  override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Html = 
     CommonInputRenderers.renderText(prop, state, currentValue)
 }
 object PlainTextType extends PlainTextType(PlainTextOID)

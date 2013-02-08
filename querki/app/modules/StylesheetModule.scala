@@ -98,7 +98,7 @@ class CSSTextType(tid:OID) extends SystemType[String](tid,
 
   val doDefault = ""
     
-  override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:Option[String]):Html =
+  override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Html =
     CommonInputRenderers.renderLargeText(prop, state, currentValue)
 }
 object CSSTextType extends CSSTextType(CSSTextOID)
