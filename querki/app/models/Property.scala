@@ -101,7 +101,9 @@ case class Property[VT, -RT](
   }  
 }
 
-case class DisplayPropVal(v: Option[String], inheritedVal:Option[String] = None, inheritedFrom:Option[Thing] = None)
+case class DisplayPropVal(v: Option[String], inheritedVal:Option[String] = None, inheritedFrom:Option[Thing] = None) {
+  def isInherited = v.isEmpty && inheritedVal.isDefined
+}
 
 object Property {
   def optTextProp(id:OID, text:String) = (id -> Optional(ElemValue(PlainText(text)))) 

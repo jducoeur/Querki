@@ -44,6 +44,12 @@
         
 		<script>
 		$(function() {
+		    // Bootstrap and jQuery UI both have conflicting .button functions. This is a
+		    // Bootstrap function to turn it into "btn" instead. See:
+		    // https://github.com/twitter/bootstrap/issues/6094
+		    var btn = $.fn.button.noConflict()
+		    $.fn.btn = btn
+		    
 			$("#querkiBar").menubar({
 				autoExpand: false,
 				menuIcon: true,
@@ -66,6 +72,13 @@
 		
 		.guts {
 		  margin: 8px;
+		}
+		
+		.form-horizontal .control-label {
+		  width: 250px;
+		}
+		.form-horizontal .controls {
+		  margin-left: 270px;
 		}
 		
  	</style>

@@ -17,16 +17,23 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, syst
 
 object CommonInputRenderers {
   def renderAnyText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal)(doRender: (String) => Elem):Html = {
-    val v = currentValue.v.getOrElse(currentValue.inheritedVal.getOrElse(""))
+    val v = currentValue.v.getOrElse("")
     val xml = doRender(v)
+    val placeholder:String =
+      if (currentValue.isInherited)
+        currentValue.inheritedVal.get
+      else
+        prop.getProp(PlaceholderTextProp)(state).renderPlainIfDefined.raw
     val xml2 = xml %
     	Attribute("name", Text("v-" + prop.id.toString),
-    	Attribute("placeholder", Text(prop.getProp(PlaceholderTextProp)(state).renderPlainIfDefined.raw), Null))
+    	Attribute("placeholder", Text(placeholder), Null))
     val xml3 = 
-      if (currentValue.v.isEmpty && currentValue.inheritedVal.isDefined)
-        xml2 % Attribute("disabled", Text("disabled"), Null)
+      if (currentValue.isInherited)
+        xml2 % 
+          Attribute("disabled", Text("disabled"),
+          Attribute("title", Text("Inherited from " + currentValue.inheritedFrom.get.displayName + "; click the Edit button to change"), Null))
       else
-        xml2  
+        xml2
     Html(xml3.toString)    
   }
   
