@@ -22,7 +22,7 @@
   <div class="control-group @{if(v.isInherited) "inherited"}">
     <label class="control-label">@Html(prop.getProp(PromptProp)(space).renderPlainOr(prop.getProp(NameProp)(space).renderPlain).raw)
       @if(v.isInherited) { 
-        &nbsp;&nbsp;<button data-edits="@v.inputControlId" class="edit-button btn-mini">Edit @prop.displayName</button>
+        &nbsp;&nbsp;<button data-edits="@v.inputControlId" class="edit-button btn-mini">Edit</button>
       }
     </label>
     <div class="controls">
@@ -46,20 +46,37 @@
 @main(QuerkiTemplate.Edit, pageTitle, rc) {
 
     <script>
+      function handleEditButton(evt) {
+        var inputId = $(this).data("edits");
+        var inp = $("#" + inputId)
+        inp.removeAttr("disabled");
+        inp.focus();
+        $(this).button('option', 'icons.primary', "ui-icon-trash");
+        $(this).attr("title", "Revert");
+        $(this).off("click");
+        $(this).on("click", handleRevertButton);
+        return false;
+      }
+      
+      function handleRevertButton(evt) {
+        var inputId = $(this).data("edits");
+        var inp = $("#" + inputId);
+        inp.attr("disabled", "disabled");
+        inp.val("");
+        $(this).button('option', 'icons.primary', "ui-icon-pencil");
+        $(this).attr("title", "Edit");
+        $(this).off("click");
+        $(this).on("click", handleEditButton);
+        return false;
+      }
+    
       $(function() {
         $(".edit-button").button({
           icons: {
             primary: "ui-icon-pencil"
           },
           text: false
-        }).on("click", function (evt) {
-          var inputId = $(this).data("edits");
-          var inp = $("#" + inputId)
-          inp.removeAttr("disabled");
-          inp.focus();
-          $(this).button('option', 'icons.primary', "ui-icon-trash");
-          return false;
-        });
+        }).on("click", handleEditButton);
       });
     </script>
 		
