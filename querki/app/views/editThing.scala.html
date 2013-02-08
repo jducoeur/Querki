@@ -57,7 +57,7 @@
           var inp = $("#" + inputId)
           inp.removeAttr("disabled");
           inp.focus();
-          //$(this).option('icons.primary', "ui-icon-trash");
+          $(this).button('option', 'icons.primary', "ui-icon-trash");
           return false;
         });
       });
