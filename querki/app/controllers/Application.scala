@@ -285,6 +285,14 @@ object Application extends Controller {
   
   def doCreateThing(ownerId:String, spaceId:String) = editThingInternal(ownerId, spaceId, None)
   
+  case class FieldInfo(fieldId:String, value:Option[String], empty:Option[Boolean]) {
+    def prop(implicit state:SpaceState):Property[_,_] = state.prop(OID(fieldId))
+    def isEmpty = empty match {
+      case Some(b) => b
+      case None => false
+    }
+  }
+  
   def editThingInternal(ownerId:String, spaceId:String, thingIdStr:Option[String]) = withSpace(true, ownerId, spaceId, thingIdStr) { implicit rc =>
     implicit val request = rc.request
     implicit val state = rc.state.get
@@ -296,26 +304,25 @@ object Application extends Controller {
       info => {
         // Whether we're creating or editing depends on whether thing is specified:
         val thing = rc.thing
-        val rawProps = info.fields map { fieldId => (fieldId, rawForm("v-" + fieldId).value) }
+        val rawProps = info.fields map { fieldId => 
+          FieldInfo(fieldId, rawForm("v-" + fieldId).value, rawForm("empty-" + fieldId).value map (_.toBoolean))
+        }
         val oldModel = state.anything(OID(info.model)).get
         
         val kind = oldModel.kind
         
-        def makeProps(propList:List[(String, Option[String])]):PropList = {
-          val rawList = propList.map { pair =>
-            val (propIdStr, rawValue) = pair
-            val propId = OID(propIdStr)
-            val prop = state.prop(propId)
+        def makeProps(propList:List[FieldInfo]):PropList = {
+          val rawList = propList.map { info =>
             // TODO: this is clearly wrong. We need to propagate the inherited-ness through
             // the chain:
-            (prop -> DisplayPropVal(prop, rawValue))
+            (info.prop -> DisplayPropVal(info.prop, info.value))
           }
           PropList(rawList:_*)
         }
         
         if (info.addedProperty.length > 0) {
           // User chose to add a Property; add that to the UI and continue:
-          val allProps = rawProps :+ (info.addedProperty, Some(""))
+          val allProps = rawProps :+ FieldInfo(info.addedProperty, Some(""), None)
           showEditPage(rc, oldModel, makeProps(allProps))
         } else if (info.newModel.length > 0) {
           // User is changing models. Replace the empty Properties with ones
@@ -324,8 +331,9 @@ object Application extends Controller {
           showEditPage(rc, model, replaceModelProps(makeProps(rawProps), model))
         } else {
           // User has submitted a creation/change. Is it legal?
-          val propsWithRawvals = rawProps.map { pair =>
-            val (propIdStr, rawValueOpt) = pair
+          val filledProps = rawProps.filterNot(_.isEmpty)
+          val propsWithRawvals = filledProps.map { pair =>
+            val FieldInfo(propIdStr, rawValueOpt, empty) = pair
             val propId = OID(propIdStr)
             val prop = state.prop(propId)
             // This is mainly for checkboxes -- those don't return *anything* if they are not
