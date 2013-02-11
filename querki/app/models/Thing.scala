@@ -130,6 +130,7 @@ abstract class Thing(
   }
 
   def getModel(implicit state:SpaceState):Thing = { state.anything(model).get }
+  def hasModel = true
   
   /**
    * The Property as defined on *this* specific Thing.

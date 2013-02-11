@@ -26,7 +26,8 @@ class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:
       toProps(
         setName("Name"),
         prompt("Name of the new Thing"),
-        placeholderText("Name")
+        placeholderText("Name"),
+        NotInheritedProp(true)
         ))
   
   object DisplayTextProp extends SystemProperty(DisplayTextOID, LargeTextType, Optional,
@@ -45,7 +46,8 @@ class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:
         prompt("What Type does this Property hold"),
         LinkKindProp(Kind.Type),
         LinkAllowAppsProp(true),
-        AppliesToKindProp(Kind.Property)
+        AppliesToKindProp(Kind.Property),
+        NotInheritedProp(true)
         ))
   
   /**
@@ -57,7 +59,8 @@ class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:
         prompt("How many are contained in this Property"),
         LinkKindProp(Kind.Collection),
         LinkAllowAppsProp(true),
-        AppliesToKindProp(Kind.Property)
+        AppliesToKindProp(Kind.Property),
+        NotInheritedProp(true)
         ))
     
   object PlaceholderTextProp extends SystemProperty(PlaceholderTextOID, PlainTextType, Optional,

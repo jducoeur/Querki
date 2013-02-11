@@ -142,13 +142,40 @@ object Property {
       apply(pairs:_*)
     }
     
+    def inheritedProps(model:Thing)(implicit state:SpaceState):PropList = {
+      // Get the Model's PropList, and push its values into the inherited slots:
+      val raw = from(model)
+      raw map { fromModel =>
+        val (prop, v) = fromModel
+        if (prop.first(NotInheritedProp))
+          (prop, DisplayPropVal(prop, None))
+        else if (v.v.isDefined)
+          (prop, DisplayPropVal(prop, None, v.v, Some(model)))
+        else
+          fromModel
+      }      
+    }
+    
+    // TODO: this is all pretty inefficient. We should be caching the PropLists,
+    // especially for common models.
     def from(thing:Thing)(implicit state:SpaceState):PropList = {
-      (TreeMap.empty[Property[_,_], DisplayPropVal] /: thing.props.keys) { (m, propId) =>
+      val inherited =
+        if (thing.hasModel)
+          inheritedProps(thing.getModel)
+        else
+          TreeMap.empty[Property[_,_], DisplayPropVal]      
+      
+      (inherited /: thing.props.keys) { (m, propId) =>
         val prop = state.prop(propId)
         val value = prop.from(thing.props)
         // TODO: in the long run, this can't be a simple string:
         val str = prop.toUser(value)
-        m + (prop -> DisplayPropVal(prop, Some(str)))
+        val disp =
+          if (m.contains(prop))
+            m(prop).copy(v = Some(str))
+          else
+            DisplayPropVal(prop, Some(str))
+        m + (prop -> disp)
       }
     }
   }

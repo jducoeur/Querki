@@ -234,15 +234,16 @@ object Application extends Controller {
   }
   
   def replaceModelProps(existing:PropList, model:Thing)(implicit state:SpaceState):PropList = {
-    val nonEmpty = existing.filter { keyval =>
-      val current = keyval._2
-      current.v.isDefined && current.v.get.length > 0
-    }
-    // TODO: recurse up the chain and add props from super-models:
-    (nonEmpty /: model.props.keys) { (m, propId) =>
-      val prop = state.prop(propId)
-      if (m.contains(prop)) m else m + (prop -> DisplayPropVal(prop, None, Some(prop.toUser(prop.from(model.props))), Some(model)))
-    }
+    existing
+//    val nonEmpty = existing.filter { keyval =>
+//      val current = keyval._2
+//      current.v.isDefined && current.v.get.length > 0
+//    }
+//    // TODO: recurse up the chain and add props from super-models:
+//    (nonEmpty /: model.props.keys) { (m, propId) =>
+//      val prop = state.prop(propId)
+//      if (m.contains(prop)) m else m + (prop -> DisplayPropVal(prop, None, Some(prop.toUser(prop.from(model.props))), Some(model)))
+//    }
   }
   
   def otherModels(state:SpaceState, mainModel:Thing):Iterable[Thing] = {
@@ -275,14 +276,14 @@ object Application extends Controller {
     val modelThingIdOpt = modelIdOpt map (ThingId(_))
     val modelOpt = modelThingIdOpt flatMap (rc.state.get.anything(_))
     val model = modelOpt getOrElse SimpleThing
-    showEditPage(rc, model, replaceModelProps(PropList.empties(NameProp), model))
+    showEditPage(rc, model, PropList.inheritedProps(model))
   }
   
   def createProperty(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
     showEditPage(
         rc, 
-        UrProp, 
-        PropList.empties(NameProp, TypeProp, CollectionProp))
+        UrProp,
+        PropList.inheritedProps(UrProp)(rc.state.get))
   }
   
   def doCreateThing(ownerId:String, spaceId:String) = editThingInternal(ownerId, spaceId, None)
