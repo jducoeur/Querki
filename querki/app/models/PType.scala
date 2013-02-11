@@ -1,5 +1,7 @@
 package models
 
+import scala.xml._
+
 import play.api.templates.Html
 
 import Thing._
@@ -103,7 +105,21 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * side classes for each PType, which describe how to render them in particular circumstances. But
    * we'll get to that...
    */
-  def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Html = throw new Exception("I don't yet know how to display input for " + this)
+  def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):scala.xml.Elem
+  def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Html = {
+    val xmlRaw = renderInputXml(prop, state, currentValue)
+    val xml2 = xmlRaw %
+    	Attribute("name", Text(currentValue.inputControlId),
+    	Attribute("id", Text(currentValue.inputControlId), Null))
+    val xml3 = 
+      if (currentValue.isInherited)
+        xml2 % 
+          Attribute("disabled", Text("disabled"),
+          Attribute("title", Text("Inherited from " + currentValue.inheritedFrom.get.displayName + "; click the Edit button to change"), Null))
+      else
+        xml2
+    Html(xml3.toString)
+  }
 }
 
 trait PTypeBuilder[VT, -RT] {

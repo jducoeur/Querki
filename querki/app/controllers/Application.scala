@@ -238,7 +238,9 @@ object Application extends Controller {
       val current = keyval._2
       current.v.isDefined && current.v.get.length > 0
     }
-    (nonEmpty /: model.allProps) { (m, prop) => 
+    // TODO: recurse up the chain and add props from super-models:
+    (nonEmpty /: model.props.keys) { (m, propId) =>
+      val prop = state.prop(propId)
       if (m.contains(prop)) m else m + (prop -> DisplayPropVal(prop, None, Some(prop.toUser(prop.from(model.props))), Some(model)))
     }
   }

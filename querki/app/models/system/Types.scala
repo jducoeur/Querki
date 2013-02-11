@@ -13,10 +13,13 @@ import OIDs._
 
 import ql._
 
-abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, systemOID, RootOID, pf)
+abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, systemOID, RootOID, pf) {
+  def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Elem = 
+    CommonInputRenderers.renderText(prop, state, currentValue)
+}
 
 object CommonInputRenderers {
-  def renderAnyText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal)(doRender: (String) => Elem):Html = {
+  def renderAnyText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal)(doRender: (String) => Elem):Elem = {
     val v = currentValue.v.getOrElse("")
     val xml = doRender(v)
     val placeholder:String =
@@ -24,27 +27,17 @@ object CommonInputRenderers {
         currentValue.inheritedVal.get
       else
         prop.getProp(PlaceholderTextProp)(state).renderPlainIfDefined.raw
-    val xml2 = xml %
-    	Attribute("name", Text(currentValue.inputControlId),
-    	Attribute("id", Text(currentValue.inputControlId),
-    	Attribute("placeholder", Text(placeholder), Null)))
-    val xml3 = 
-      if (currentValue.isInherited)
-        xml2 % 
-          Attribute("disabled", Text("disabled"),
-          Attribute("title", Text("Inherited from " + currentValue.inheritedFrom.get.displayName + "; click the Edit button to change"), Null))
-      else
-        xml2
-    Html(xml3.toString)    
+    val xml2 = xml % Attribute("placeholder", Text(placeholder), Null)
+    xml2
   }
   
-  def renderLargeText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal):Html = {
+  def renderLargeText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal):Elem = {
     renderAnyText(prop, state, currentValue) { v =>
       <textarea rows="5" cols="50">{v}</textarea>
     }
   }
   
-  def renderText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal):Html = {
+  def renderText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal):Elem = {
     renderAnyText(prop, state, currentValue) { v =>
       <input type="text" value={v}/>
     }
@@ -68,8 +61,6 @@ object CommonInputRenderers {
     /**
      * TODO: eventually, we may want a more nuanced Int inputter. But this will do to start.
      */
-    override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Html = 
-      CommonInputRenderers.renderText(prop, state, currentValue)
   }
   object IntType extends IntType(IntTypeOID)
   
@@ -102,9 +93,6 @@ object CommonInputRenderers {
     
     val doDefault = QLText("")
     def wrap(raw:String):valType = QLText(raw)
-    
-    override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Html = 
-      CommonInputRenderers.renderText(prop, state, currentValue)
   }
 
   /**
@@ -114,8 +102,6 @@ object CommonInputRenderers {
       toProps(
         setName("Type-Text")
         )) with PTypeBuilder[QLText,String] {
-    override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Html = 
-      CommonInputRenderers.renderText(prop, state, currentValue)
   }
   object TextType extends TextType(TextTypeOID)
   
@@ -157,9 +143,8 @@ object CommonInputRenderers {
     
     val doDefault = false
     
-    override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Html = {
-      val xml = <input type="checkbox" name={"v-" + prop.id.toString}/>
-      Html(xml.toString)
+    override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Elem = {
+      <input type="checkbox"/>
     }
   }
   object YesNoType extends YesNoType(YesNoTypeOID)
@@ -196,9 +181,6 @@ object CommonInputRenderers {
     def canonicalize(str:String):String = toInternal(str).toLowerCase
 
     val doDefault = "MISSING NAME!"
-      
-    override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Html = 
-      CommonInputRenderers.renderText(prop, state, currentValue)
   }
   object NameType extends NameType(NameTypeOID)
   
@@ -230,9 +212,8 @@ object CommonInputRenderers {
 
     val doDefault = UnknownOID
     
-    override def renderInput(prop:Property[_,_], state:SpaceState, v:DisplayPropVal):Html = {
-      val result = 
-        <select name={ "v-" + prop.id.toString }> {
+    override def renderInputXml(prop:Property[_,_], state:SpaceState, v:DisplayPropVal):Elem = {
+        <select> {
           val candidates = state.linkCandidates(prop)
           candidates map { candidate =>
             if(v.v.isDefined && (candidate.id.toString == v.v.get)) {
@@ -242,7 +223,6 @@ object CommonInputRenderers {
             }
           }
         } </select>
-      Html(result.toString)
     }
   }
   object LinkType extends LinkType(LinkTypeOID)
@@ -254,7 +234,7 @@ object CommonInputRenderers {
       toProps(
         setName("Type-Large-Text")
         )) with PTypeBuilder[QLText,String] {
-    override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Html =
+    override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Elem =
       CommonInputRenderers.renderLargeText(prop, state, currentValue)
   }
   object LargeTextType extends LargeTextType(LargeTextTypeOID)
@@ -285,9 +265,6 @@ abstract class PlainTextType(tid:OID) extends SystemType[PlainText](tid,
     
   val doDefault = PlainText("")
   def wrap(raw:String):valType = PlainText(raw)
-    
-  override def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Html = 
-    CommonInputRenderers.renderText(prop, state, currentValue)
 }
 object PlainTextType extends PlainTextType(PlainTextOID)
 
