@@ -55,65 +55,69 @@
 
     <script>
     
-      $.fn.editButton = function () {
-        this.each(function () {
-	        var inputId = $(this).data("edits");
-	        var $inp = $("#" + inputId);
+      // This is essentially a jQuery plugin for the concept of "Edit/Revert Buttons"
+      (function( $ ) {
+        function inputElem(t) {
+          var inputId = t.data("edits");
+	      return $("#" + inputId);        
+        }
+        
+        function setEmpty(t, v) {
+	      var emptyId = "#" + t.data("empty");
+	      var $emptyFlag = $(emptyId);
+	      $emptyFlag.val(v);        
+        }
+        
+        function setButton(t, icon, title, cb) {
+	      t.button({
+	        icons: {
+	          primary: icon
+	        },
+	        text: false
+	      });
+	      t.attr("title", title);
+	      t.off("click");
+	      t.on("click", cb);          
+        }
+      
+        $.fn.editButton = function () {
+          this.each(function () {
 	        var modelName = $(this).data("model-name");
+	        $inp = inputElem($(this));
 	        $inp.attr("title", "Inherited from " + modelName + "; click the Edit button to change");
 	        $inp.val("");
 	        $inp.attr("disabled", "disabled");
-	        var emptyId = "#" + $(this).data("empty");
-	        var $emptyFlag = $(emptyId);
-	        $emptyFlag.val("true");
-	        $(this).button({
-	          icons: {
-	            primary: "ui-icon-pencil"
-	          },
-	          text: false
-	        });
-	        $(this).attr("title", "Edit");
-	        $(this).off("click");
-	        $(this).on("click", handleEditButton);        
-        });
-      }
+	        setEmpty($(this), "true");
+	        setButton($(this), "ui-icon-pencil", "Edit", handleEditButton);   
+          });
+        }
       
-      $.fn.revertButton = function () {
-        this.each(function () {
-	        var inputId = $(this).data("edits");
-	        var $inp = $("#" + inputId)
+        $.fn.revertButton = function () {
+          this.each(function () {
+	        var $inp = inputElem($(this));
 	        $inp.removeAttr("disabled");
 	        var modelName = $(this).data("model-name");
 	        $inp.attr("title", "Overriding " + modelName + "; click the Revert button to go back to the model's value");
-	        var emptyId = "#" + $(this).data("empty");
-	        var $emptyFlag = $(emptyId);
-	        $emptyFlag.val("false");
-	        $(this).button({
-	          icons: {
-	            primary: "ui-icon-trash"
-	          },
-	          text: false
-	        });
-	        $(this).attr("title", "Revert");
-	        $(this).off("click");
-	        $(this).on("click", handleRevertButton);
-        });
-      }
+	        setEmpty($(this), "false");
+	        setButton($(this), "ui-icon-trash", "Revert", handleRevertButton);   
+          });
+        }
     
-      function handleEditButton(evt) {
-        $(this).revertButton();
+        function handleEditButton(evt) {
+          $(this).revertButton();
 
-        var inputId = $(this).data("edits");
-        var $inp = $("#" + inputId)
-        $inp.focus();
+          var $inp = inputElem($(this));
+          $inp.focus();
 
-        return false;
-      }
+          return false;
+        }
       
-      function handleRevertButton(evt) {
-        $(this).editButton();
-        return false;
-      }
+        function handleRevertButton(evt) {
+          $(this).editButton();
+          return false;
+        }
+      }( jQuery ));
+      
     
       $(function() {
         $(".edit-button").editButton();
