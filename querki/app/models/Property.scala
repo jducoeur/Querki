@@ -106,6 +106,7 @@ case class DisplayPropVal(prop: Property[_,_], v: Option[String], inheritedVal:O
   def propId = prop.id.toString
   def inputControlId = "v-" + propId
   def emptyControlId = "empty-" + propId
+  def hasInheritance = inheritedVal.isDefined
 }
 
 object Property {

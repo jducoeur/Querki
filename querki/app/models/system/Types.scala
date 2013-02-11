@@ -23,7 +23,7 @@ object CommonInputRenderers {
     val v = currentValue.v.getOrElse("")
     val xml = doRender(v)
     val placeholder:String =
-      if (currentValue.isInherited)
+      if (currentValue.hasInheritance)
         currentValue.inheritedVal.get
       else
         prop.getProp(PlaceholderTextProp)(state).renderPlainIfDefined.raw
