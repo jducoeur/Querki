@@ -12,6 +12,25 @@
 }
 @requester = @{ rc.requester }
 
+@createForm(s:SpaceState) = {
+    <div id="create-dialog" title="Create a Thing">
+      <p>Choose which kind of Thing to create:</p>
+        <select name="newModel" id="newModel">
+          <option value="">Choose a Model</option>
+          @for(model <- s.allModels) {
+            <option value="@model.toThingId">@model.displayName</option>
+          }
+        </select>
+    </div>
+}
+
+@createFormInSpace = @{
+  space match {
+    case Some(s) => createForm(s)
+    case None => {}
+  }
+}
+
 <!DOCTYPE html>
 
 @*********************
@@ -61,27 +80,37 @@
 				at: "right"
 			});
 			
-			$("#createThing").on("click", function(evt) {
-			  $("#create-dialog").dialog("open");
-			  return false;
-			});
+			@if(space.isDefined) {
+				$("#createThing").on("click", function(evt) {
+				  $("#create-dialog").dialog("open");
+				  return false;
+				});
 			
-			$("#create-dialog").dialog({
-			  autoOpen:false,
-			  height: 300,
-			  width: 350,
-			  modal: true,
-			  buttons: {
-			    "Create": function () {
-			    
-			    },
-			    "Cancel": function () {
-			      $(this).dialog("close");
-			    }
-			  },
-			  close: function () {
-			  }
-			});
+				$("#create-dialog").dialog({
+				  autoOpen:false,
+				  height: 300,
+				  width: 350,
+				  modal: true,
+				  buttons: {
+				    "Create": function () {
+				      var modelId = $("#newModel :selected").first().val()
+				      if (modelId && (modelId.length > 0)) {
+				        // TBD: Bit of an abstraction break here -- the Javascript needs to know the URL syntax for
+				        // model creation. Can we do this better somehow? 
+				        window.location = "@routes.Application.createThing(rc.ownerName, space.get.toThingId, None)" + "?model=" + modelId;
+				      } else {
+				        // TODO: The Create button should really be disabled unless a legit option
+				        // is picked; not quite sure how to do that in jQuery UI. 
+				      }
+				    },
+				    "Cancel": function () {
+				      $(this).dialog("close");
+				    }
+				  },
+				  close: function () {
+				  }
+				});
+			}
 		});
 		</script>
 		
@@ -119,10 +148,8 @@
 			</ul>
 	    }
 	    
-	    <div id="create-dialog" title="Create a Thing">
-	      <p>Choose which kind of Thing to create:</p>
-	    </div>
-		
+	@createFormInSpace
+
 	<!-- This container stuff is likely to go into a lower-level, Space-rendering template -->
 	<div class="guts container-fluid">
       <div class="row-fluid">
