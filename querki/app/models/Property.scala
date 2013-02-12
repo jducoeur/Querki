@@ -96,7 +96,7 @@ case class Property[VT, -RT](
           case None => ErrorValue("Couldn't find Thing " + oid.toString)
         }
       }
-      case _ => ErrorValue("Can't apply a Property in a " + valType.displayName + " context.")
+      case _ => ErrorValue("Can't apply a Property in a " + valType.displayName + " context!")
     }
   }  
 }

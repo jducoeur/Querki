@@ -29,20 +29,37 @@ case class TypedValue(v:PropValue, pt:PType[_]) {
   def render(context:ContextBase):Wikitext = ct.render(context)(v, pt) 
 }
 object ErrorValue {
-  def apply(msg:String) = TypedValue(ExactlyOne(PlainTextType(msg)), PlainTextType)
+  def apply(msg:String) = {
+    try {
+      throw new Exception("dummy")
+    } catch {
+      case e:Exception => Logger.error(s"Displaying error $msg; stack trace:\n${e.getStackTraceString}")  
+    }
+    TypedValue(ExactlyOne(PlainTextType(msg)), PlainTextType)
+  }
 }
 
 abstract class ContextBase {
   def value:TypedValue
   def state:SpaceState
   def request:RequestContext
+  // Parent matters at rendering time -- we render the final context in the context of its parent.
+  // This matter most when (as often), the last context is a Text; it needs to be rendered correctly
+  // in its parent context.
+  def parent:ContextBase
+  
+  override def toString = "Context(" + value.v + ")"
 }
 
 /**
  * Represents the incoming "context" of a parsed QLText.
  */
-case class QLContext(value:TypedValue, request:RequestContext) extends ContextBase {
+case class QLContext(value:TypedValue, request:RequestContext, parentIn:Option[ContextBase] = None) extends ContextBase {
   def state = request.state.getOrElse(SystemSpace.State)
+  def parent = parentIn match {
+    case Some(p) => p
+    case None => this
+  }
 }
 
 /**
@@ -54,6 +71,7 @@ case object EmptyContext extends ContextBase {
   def value:TypedValue = throw new Exception("Can't use the contents of EmptyContext!")
   def state:SpaceState = throw new Exception("Can't use the space of EmptyContext!")
   def request:RequestContext = throw new Exception("Can't get the request of EmptyContext!")
+  def parent:ContextBase = throw new Exception("EmptyContext doesn't have a parent!")
 }
 
 sealed abstract class QLTextPart
@@ -66,6 +84,11 @@ case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart
 case class ParsedQLText(parts:Seq[QLTextPart])
 
 class QLParser(val input:QLText, initialContext:ContextBase) extends RegexParsers {
+  
+  // Crude but useful debugging of the process tree. Could stand to be beefed up when I have time
+  def logContext(msg:String, context:ContextBase) = {
+    //Logger.info(msg + ": " + context)
+  }
   
   val name = """[a-zA-Z][\w- ]*[\w]""".r
   val unQLTextRegex = """([^\[\"]|\[(?!\[)|\"(?!\"))+""".r
@@ -95,29 +118,33 @@ class QLParser(val input:QLText, initialContext:ContextBase) extends RegexParser
    * render it, which just returns the already-computed Wikitext.
    */
   private def processTextStage(text:QLTextStage, context:ContextBase):ContextBase = {
+    logContext("processTextStage " + text, context)
     val ct = context.value.ct
     val pt = context.value.pt
     // For each element of the incoming context, recurse in and process the embedded Text
     // in that context.
     val transformed = context.value.v.cv map { elem =>
-      val elemContext = QLContext(TypedValue(ExactlyOne(elem), pt), context.request)
+      val elemContext = QLContext(TypedValue(ExactlyOne(elem), pt), context.request, Some(context))
       ParsedTextType(processParseTree(text.contents, elemContext))
     }
     // TBD: the asInstanceOf here is surprising -- I would have expected transformed to come out
     // as the right type simply by type signature. Can we get rid of it?
-    QLContext(TypedValue(ct.makePropValue(transformed.asInstanceOf[ct.implType]), ParsedTextType), context.request)
+    QLContext(TypedValue(ct.makePropValue(transformed.asInstanceOf[ct.implType]), ParsedTextType), context.request, Some(context))
   }
   
   private def processName(name:QLName, context:ContextBase):ContextBase = {
+    logContext("processName " + name, context)
     val thing = context.state.anythingByName(name.name)
     val tv = thing match {
       case Some(t) => t.qlApply(context)
       case None => ErrorValue("[UNKNOWN NAME: " + name.name + "]")
     }
-    QLContext(tv, context.request)
+    logContext("processName got " + tv, context)
+    QLContext(tv, context.request, Some(context))
   }
   
   private def processStage(stage:QLStage, context:ContextBase):ContextBase = {
+    logContext("processStage " + stage, context)
     stage match {
       case name:QLName => processName(name, context)
       case subText:QLTextStage => processTextStage(subText, context)
@@ -125,18 +152,21 @@ class QLParser(val input:QLText, initialContext:ContextBase) extends RegexParser
   }
   
   private def processPhrase(ops:Seq[QLStage], startContext:ContextBase):ContextBase = {
+    logContext("processPhrase " + ops, startContext)
     (startContext /: ops) { (context, stage) => processStage(stage, context) }
   }
   
   private def processPhrases(phrases:Seq[QLPhrase], context:ContextBase):Seq[ContextBase] = {
+    logContext("processPhrases " + phrases, context)
     phrases map (phrase => processPhrase(phrase.ops, context))
   }
 
   private def contextsToWikitext(contexts:Seq[ContextBase]):Wikitext = {
-    (Wikitext("") /: contexts) { (soFar, context) => soFar + context.value.render(context) }
+    (Wikitext("") /: contexts) { (soFar, context) => soFar + context.value.render(context.parent) }
   }
   
   private def processParseTree(parseTree:ParsedQLText, context:ContextBase):Wikitext = {
+    logContext("processParseTree " + parseTree, context)
     (Wikitext("") /: parseTree.parts) { (soFar, nextPart) =>
       soFar + (nextPart match {
         case UnQLText(t) => Wikitext(t)
