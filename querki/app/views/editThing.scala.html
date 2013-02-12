@@ -50,7 +50,7 @@
   if (isEdit)
     "Editing " + thing.get.displayName
   else
-    "Create a Thing"
+    "Create a " + model.displayName
 }
 
 @main(QuerkiTemplate.Edit, pageTitle, rc) {
@@ -141,35 +141,11 @@
     </script>
 		
 	<div class="page-header">
-	  @if(thing.isEmpty) {
-	    <h1>Create a New Thing</h1>
-	  } else {
-	    <h1>Edit @thing.get.displayName</h1>
-	  }
+	    <h1>@pageTitle</h1>
 	</div>
 	
 	@form(if (thing.isEmpty) { routes.Application.doCreateThing(rc.ownerName, space.toThingId) } else { routes.Application.doEditThing(rc.ownerName, space.toThingId, thing.get.toThingId) }, 'class -> "form-horizontal") {
 	  <fieldset>
-	  
-	    <div class="control-group">
-	      <label class="control-label">Model:</label>
-	      <div class="controls">
-	        <label>@model.displayName</label>
-	      </div>
-	    </div>
-	    <div class="control-group">
-	      <input type="submit" class="control-label btn" value="Change Model:">
-	      <div class="controls">
-	        <select name="newModel">
-	          <option value="">Choose a Model</option>
-	          @for(model <- candidateModels) {
-	            <option value="@model.id.toString">@model.displayName</option>
-	          }
-	        </select>
-	      </div>
-	      <input type="hidden" name="model" value="@model.id.toString">
-	    </div>
-	  
 	    @defining(propsSoFar.zipWithIndex.toList.sortBy(_._2)) { allProps =>
           @for(propPair <- allProps) {
             @showProp(propPair)

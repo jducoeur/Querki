@@ -25,7 +25,6 @@ class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:
   object NameProp extends SystemProperty(NameOID, NameType, ExactlyOne,
       toProps(
         setName("Name"),
-        prompt("Name of the new Thing"),
         placeholderText("Name"),
         NotInheritedProp(true)
         ))

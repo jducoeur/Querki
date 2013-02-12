@@ -326,6 +326,9 @@ object Application extends Controller {
         } else if (info.newModel.length > 0) {
           // User is changing models. Replace the empty Properties with ones
           // appropriate to the new model, and continue:
+          // TODO: for now, there is no way to get to here -- it's an annoying edge case,
+          // and mucking up the UI. Later, let's reintroduce a less-intrusive way to
+          // invoke this.
           val model = state.anything(OID(info.newModel)).get
           showEditPage(rc, model, makeProps(rawProps))
         } else {
