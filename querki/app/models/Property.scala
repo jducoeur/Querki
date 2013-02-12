@@ -119,13 +119,15 @@ object Property {
   
   implicit object PropNameOrdering extends Ordering[Property[_,_]] {
     def compare(a:Property[_,_], b:Property[_,_]) = {
-      if (a == NameProp) {
-        if (b == NameProp)
+      if (a eq NameProp) {
+        if (b eq NameProp)
           0
         else
           // Name always displays first
           -1
-      } else
+      } else if (b eq NameProp)
+        1
+      else
         a.displayName compare b.displayName
     }
   }
