@@ -315,7 +315,11 @@ object Application extends Controller {
           }
         }
         
-        if (info.addedProperty.length > 0) {
+        val redisplayStr = rawForm("redisplay").value.get
+        
+        if (redisplayStr.length() > 0 && redisplayStr.toBoolean)
+          showEditPage(rc, oldModel, makeProps(rawProps))
+        else if (info.addedProperty.length > 0) {
           // User chose to add a Property; add that to the UI and continue:
           val allProps = rawProps :+ FieldInfo(info.addedProperty, Some(""), None)
           showEditPage(rc, oldModel, makeProps(allProps))
