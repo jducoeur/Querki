@@ -81,6 +81,7 @@ case class QLName(name:String) extends QLStage
 case class QLTextStage(contents:ParsedQLText) extends QLStage
 case class QLPhrase(ops:Seq[QLStage])
 case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart
+case class QLLink(contents:ParsedQLText) extends QLTextPart
 case class ParsedQLText(parts:Seq[QLTextPart])
 
 class QLParser(val input:QLText, initialContext:ContextBase) extends RegexParsers {
@@ -91,7 +92,7 @@ class QLParser(val input:QLText, initialContext:ContextBase) extends RegexParser
   }
   
   val name = """[a-zA-Z][\w- ]*[\w]""".r
-  val unQLTextRegex = """([^\[\"]|\[(?!\[)|\"(?!\"))+""".r
+  val unQLTextRegex = """([^\[\"_]|\[(?!\[)|\"(?!\")|_(?!_))+""".r
   // We don't want the RegexParser removing whitespace on our behalf. Note that we need to be
   // very careful about whitespace!
   override val whiteSpace = "".r
@@ -110,7 +111,8 @@ class QLParser(val input:QLText, initialContext:ContextBase) extends RegexParser
   // TODO: phrase is going to get a *lot* more complex with time:
   def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, "\\s*->\\s*".r) ^^ { QLPhrase(_) }
   def qlExp:Parser[QLExp] = rep1sep(qlPhrase, "\\s*\\r?\\n|\\s*;\\s*".r) ^^ { QLExp(_) }
-  def qlText:Parser[ParsedQLText] = rep(unQLText | "[[" ~> qlExp <~ "]]") ^^ { ParsedQLText(_) }
+  def qlLink:Parser[QLLink] = qlText ^^ { QLLink(_) }
+  def qlText:Parser[ParsedQLText] = rep(unQLText | "[[" ~> qlExp <~ "]]" | "__" ~> qlLink <~ "__") ^^ { ParsedQLText(_) }
   
   /**
    * Note that the output here is nominally a new Context, but the underlying type is
@@ -165,12 +167,36 @@ class QLParser(val input:QLText, initialContext:ContextBase) extends RegexParser
     (Wikitext("") /: contexts) { (soFar, context) => soFar + context.value.render(context.parent) }
   }
   
+  private def linkToWikitext(contents:ParsedQLText, context:ContextBase):Wikitext = {
+    contents.parts.length match {
+      // Just four underscores, which means render the context right here:
+      case 0 => context.value.render(context)
+      // There is content, so turn it into a link to the context Thing:
+      case _ => {
+        val guts = processParseTree(contents, context)
+        context.value.pt match {
+          case LinkType => {
+            // TODO: this is evil. How should it be described instead?
+            val l = LinkType.follow(context)(context.value.v.first.elem.asInstanceOf[OID])
+            l match {
+              case Some(thing) => Wikitext("[") + guts + Wikitext("](" + thing.toThingId + ")")
+              case None => guts
+            }
+          }
+          // TODO: we ought to show some sort of error here?
+          case _ => guts
+        }        
+      }
+    }
+  }
+  
   private def processParseTree(parseTree:ParsedQLText, context:ContextBase):Wikitext = {
     logContext("processParseTree " + parseTree, context)
     (Wikitext("") /: parseTree.parts) { (soFar, nextPart) =>
       soFar + (nextPart match {
         case UnQLText(t) => Wikitext(t)
         case QLExp(phrases) => contextsToWikitext(processPhrases(phrases, context))
+        case QLLink(l) => linkToWikitext(l, context)
       })
     }
   }
