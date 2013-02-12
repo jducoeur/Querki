@@ -232,20 +232,7 @@ object Application extends Controller {
       }
     }
   }
-  
-  def replaceModelProps(existing:PropList, model:Thing)(implicit state:SpaceState):PropList = {
-    existing
-//    val nonEmpty = existing.filter { keyval =>
-//      val current = keyval._2
-//      current.v.isDefined && current.v.get.length > 0
-//    }
-//    // TODO: recurse up the chain and add props from super-models:
-//    (nonEmpty /: model.props.keys) { (m, propId) =>
-//      val prop = state.prop(propId)
-//      if (m.contains(prop)) m else m + (prop -> DisplayPropVal(prop, None, Some(prop.toUser(prop.from(model.props))), Some(model)))
-//    }
-  }
-  
+
   def otherModels(state:SpaceState, mainModel:Thing):Iterable[Thing] = {
     mainModel.kind match {
       case Kind.Thing | Kind.Attachment => state.allModels
@@ -315,12 +302,17 @@ object Application extends Controller {
         val kind = oldModel.kind
         
         def makeProps(propList:List[FieldInfo]):PropList = {
-          val rawList = propList.map { info =>
-            // TODO: this is clearly wrong. We need to propagate the inherited-ness through
-            // the chain:
-            (info.prop -> DisplayPropVal(info.prop, info.value))
+          val modelProps = PropList.inheritedProps(oldModel)
+          val nonEmpty = propList filterNot (_.isEmpty)
+          (modelProps /: nonEmpty) { (m, fieldInfo) =>
+            val prop = fieldInfo.prop
+            val disp =
+              if (m.contains(prop))
+                m(prop).copy(v = fieldInfo.value)
+              else
+                DisplayPropVal(prop, fieldInfo.value)
+            m + (prop -> disp)              
           }
-          PropList(rawList:_*)
         }
         
         if (info.addedProperty.length > 0) {
@@ -331,7 +323,7 @@ object Application extends Controller {
           // User is changing models. Replace the empty Properties with ones
           // appropriate to the new model, and continue:
           val model = state.anything(OID(info.newModel)).get
-          showEditPage(rc, model, replaceModelProps(makeProps(rawProps), model))
+          showEditPage(rc, model, makeProps(rawProps))
         } else {
           // User has submitted a creation/change. Is it legal?
           val filledProps = rawProps.filterNot(_.isEmpty)
@@ -385,7 +377,7 @@ object Application extends Controller {
     val thing = rc.thing.get
     // TODO: security check that I'm allowed to edit this
 	val model = state.anything(thing.model).get
-	showEditPage(rc, model, replaceModelProps(PropList.from(thing), model))
+	showEditPage(rc, model, PropList.from(thing))
   }
   
   def doEditThing(ownerId:String, spaceId:String, thingIdStr:String) = editThingInternal(ownerId, spaceId, Some(thingIdStr))
