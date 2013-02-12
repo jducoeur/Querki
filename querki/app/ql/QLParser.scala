@@ -99,14 +99,7 @@ class QLParser(val input:QLText, initialContext:ContextBase) extends RegexParser
   
   def unQLText:Parser[UnQLText] = unQLTextRegex ^^ { UnQLText(_) }
   def qlName:Parser[QLName] = name ^^ { n => QLName(n) }
-  def bangAsNewline:Parser[Option[UnQLText]] = (opt("!") ^^ { _ match {
-      case Some(exp) => Some(UnQLText("\n"))
-      case None => None
-    }})
-  def qlTextStage:Parser[QLTextStage] = 
-    (bangAsNewline <~ "\"\"") ~ qlText ~ ("\"\"" ~> bangAsNewline) ^^ { 
-    case newf ~ ParsedQLText(guts) ~ newb => QLTextStage(ParsedQLText((newf ++: guts) ++ newb)) 
-  }
+  def qlTextStage:Parser[QLTextStage] = "\"\"" ~> qlText <~ "\"\"" ^^ { QLTextStage(_) }
   def qlStage:Parser[QLStage] = qlName | qlTextStage
   // TODO: phrase is going to get a *lot* more complex with time:
   def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, "\\s*->\\s*".r) ^^ { QLPhrase(_) }

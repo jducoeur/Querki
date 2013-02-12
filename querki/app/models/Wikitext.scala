@@ -12,7 +12,7 @@ object DisplayText {
 class Wikitext(wiki:String) {
   def display = {
     val transformer = new QuerkiTransformer()
-    DisplayText(transformer(wiki))
+    DisplayText(transformer(internal))
   }
   /**
    * Produces the "raw" string, with minimal markup. Use this for situations where you
@@ -20,12 +20,15 @@ class Wikitext(wiki:String) {
    */
   def raw = {
     val transformer = new RawTransformer()
-    DisplayText(transformer(wiki))
+    DisplayText(transformer(internal))
   }
   /**
    * This should only be used internally, never to display to the user!
+   * 
+   * We do simple substitutions here, that aren't worth coding into the wikitext engine
+   * itself.
    */
-  def internal = wiki
+  def internal = wiki.replace('¶', '\n')
   
   /**
    * Wikitext can be concatenated just like strings.

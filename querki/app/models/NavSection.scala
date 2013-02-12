@@ -1,6 +1,7 @@
 package models
 
 import play.api.mvc.Call
+import play.api.templates.Html
 
 import controllers._
 
@@ -26,7 +27,7 @@ object NavSection {
       NavSection(truncateName(state.displayName), Seq(
         NavLink("Space Home", routes.Application.space(owner, spaceId)),
         NavLink("All Things", routes.Application.things(owner, spaceId)),
-        NavLink("Create a Thing", routes.Application.createThing(owner, spaceId, None)),
+        NavLink("Create a Thing", routes.Application.createThing(owner, spaceId, None), Some("createThing")),
         NavLink("Add a Property", routes.Application.createProperty(owner, spaceId)),
         NavLink("Upload a Photo", routes.Application.upload(owner, spaceId))
       ))
@@ -74,4 +75,9 @@ case class NavSections(sections:Seq[NavSection])
 
 case class NavSection(val title:String, val links:Seq[NavLink])
 
-case class NavLink(display:String, url:Call)
+case class NavLink(display:String, url:Call, id:Option[String] = None) {
+  def idAttr:Html = Html(id match {
+    case Some(i) => " id=\"" + i + "\" "
+    case None => ""
+  })
+}

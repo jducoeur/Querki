@@ -60,6 +60,28 @@
 				my: "right",
 				at: "right"
 			});
+			
+			$("#createThing").on("click", function(evt) {
+			  $("#create-dialog").dialog("open");
+			  return false;
+			});
+			
+			$("#create-dialog").dialog({
+			  autoOpen:false,
+			  height: 300,
+			  width: 350,
+			  modal: true,
+			  buttons: {
+			    "Create": function () {
+			    
+			    },
+			    "Cancel": function () {
+			      $(this).dialog("close");
+			    }
+			  },
+			  close: function () {
+			  }
+			});
 		});
 		</script>
 		
@@ -90,12 +112,16 @@
               @for(section <- nav.sections) {
                 <li><a href="#@section.title">@section.title</a>
                   <ul>@for(link <- section.links) {
-                    <li><a href="@link.url">@link.display</a></li>}
+                    <li><a href="@link.url" @link.idAttr>@link.display</a></li>}
                   </ul>
                 </li>
               }
 			</ul>
 	    }
+	    
+	    <div id="create-dialog" title="Create a Thing">
+	      <p>Choose which kind of Thing to create:</p>
+	    </div>
 		
 	<!-- This container stuff is likely to go into a lower-level, Space-rendering template -->
 	<div class="guts container-fluid">
