@@ -155,7 +155,7 @@
 	      <input type="hidden" name="model" value="@model.id.toString">
 	    </div>
 	  
-	    @defining(propsSoFar.zipWithIndex) { allProps =>
+	    @defining(propsSoFar.zipWithIndex.toList.sortBy(_._2)) { allProps =>
           @for(propPair <- allProps) {
             @showProp(propPair)
           }
