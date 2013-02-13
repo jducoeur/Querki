@@ -31,15 +31,14 @@ object Application extends Controller {
      ((name:String) => Some(name))
   )
   
-  case class NewThingForm(fields:List[String], addedProperty:String, newModel:String, model:String)
+  case class NewThingForm(fields:List[String], addedProperty:String, model:String)
   val newThingForm = Form(
     mapping(
       "field" -> list(text),
       "addedProperty" -> text,
-      "newModel" -> text,
       "model" -> text
-    )((field, addedProperty, newModel, model) => NewThingForm(field, addedProperty, newModel, model))
-     ((info:NewThingForm) => Some((info.fields, info.addedProperty, info.newModel, info.model)))
+    )((field, addedProperty, model) => NewThingForm(field, addedProperty, model))
+     ((info:NewThingForm) => Some((info.fields, info.addedProperty, info.model)))
   )
   
   /**
@@ -323,14 +322,14 @@ object Application extends Controller {
           // User chose to add a Property; add that to the UI and continue:
           val allProps = rawProps :+ FieldInfo(info.addedProperty, Some(""), None)
           showEditPage(rc, oldModel, makeProps(allProps))
-        } else if (info.newModel.length > 0) {
-          // User is changing models. Replace the empty Properties with ones
-          // appropriate to the new model, and continue:
-          // TODO: for now, there is no way to get to here -- it's an annoying edge case,
-          // and mucking up the UI. Later, let's reintroduce a less-intrusive way to
-          // invoke this.
-          val model = state.anything(OID(info.newModel)).get
-          showEditPage(rc, model, makeProps(rawProps))
+//        } else if (info.newModel.length > 0) {
+//          // User is changing models. Replace the empty Properties with ones
+//          // appropriate to the new model, and continue:
+//          // TODO: for now, there is no way to get to here -- it's an annoying edge case,
+//          // and mucking up the UI. Later, let's reintroduce a less-intrusive way to
+//          // invoke this.
+//          val model = state.anything(OID(info.newModel)).get
+//          showEditPage(rc, model, makeProps(rawProps))
         } else {
           // User has submitted a creation/change. Is it legal?
           val filledProps = rawProps.filterNot(_.isEmpty)
