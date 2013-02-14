@@ -14,32 +14,36 @@ import OIDs._
 import ql._
 
 abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, systemOID, RootOID, pf) {
-  def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Elem = 
-    CommonInputRenderers.renderText(prop, state, currentValue)
+  def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = 
+    CommonInputRenderers.renderText(prop, state, currentValue, v, this)
 }
 
 object CommonInputRenderers {
-  def renderAnyText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal)(doRender: (String) => Elem):Elem = {
-    val v = currentValue.v.getOrElse("")
-    val xml = doRender(v)
-    val placeholder:String =
-      if (currentValue.hasInheritance)
-        currentValue.inheritedVal.get
-      else
-        prop.getProp(PlaceholderTextProp)(state).renderPlainIfDefined.raw
-    val xml2 = xml % Attribute("placeholder", Text(placeholder), Null)
-    xml2
+  def renderAnyText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_])(doRender: (String) => Elem):Elem = {
+    val str = elemT.toUser(v)
+    val xml = doRender(str)
+    // TODO: how should placeholder work in the new world? The placeholder should happen at the
+    // collection-input level? Or am I mis-thinking that? There is only one text-input field, even
+    // for a list, after all.
+//    val placeholder:String =
+//      if (currentValue.hasInheritance)
+//        currentValue.inheritedVal.get
+//      else
+//        prop.getProp(PlaceholderTextProp)(state).renderPlainIfDefined.raw
+//    val xml2 = xml % Attribute("placeholder", Text(placeholder), Null)
+//    xml2
+    xml
   }
   
-  def renderLargeText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal):Elem = {
-    renderAnyText(prop, state, currentValue) { v =>
-      <textarea rows="5" cols="50">{v}</textarea>
+  def renderLargeText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_]):Elem = {
+    renderAnyText(prop, state, currentValue, v, elemT) { cv =>
+      <textarea rows="5" cols="50">{cv}</textarea>
     }
   }
   
-  def renderText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal):Elem = {
-    renderAnyText(prop, state, currentValue) { v =>
-      <input type="text" value={v}/>
+  def renderText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_]):Elem = {
+    renderAnyText(prop, state, currentValue, v, elemT) { cv =>
+      <input type="text" value={cv}/>
     }
   }
 }
@@ -143,7 +147,7 @@ object CommonInputRenderers {
     
     val doDefault = false
     
-    override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Elem = {
+    override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = {
       <input type="checkbox"/>
     }
   }
@@ -212,11 +216,11 @@ object CommonInputRenderers {
 
     val doDefault = UnknownOID
     
-    override def renderInputXml(prop:Property[_,_], state:SpaceState, v:DisplayPropVal):Elem = {
+    override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = {
         <select> {
           val candidates = state.linkCandidates(prop)
           candidates map { candidate =>
-            if(v.v.isDefined && (candidate.id.toString == v.v.get)) {
+            if(currentValue.v.isDefined && (candidate.id.toString == v.elem)) {
               <option value={candidate.id.toString} selected="selected">{candidate.displayName}</option>        
             } else {
               <option value={candidate.id.toString}>{candidate.displayName}</option>
@@ -234,8 +238,8 @@ object CommonInputRenderers {
       toProps(
         setName("Type-Large-Text")
         )) with PTypeBuilder[QLText,String] {
-    override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Elem =
-      CommonInputRenderers.renderLargeText(prop, state, currentValue)
+    override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem =
+      CommonInputRenderers.renderLargeText(prop, state, currentValue, v, this)
   }
   object LargeTextType extends LargeTextType(LargeTextTypeOID)
   

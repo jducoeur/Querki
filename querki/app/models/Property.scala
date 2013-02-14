@@ -72,7 +72,7 @@ case class Property[VT, -RT](
   def deserialize(str:String):PropValue = cType.deserialize(str, pType)
   
   // TODO: this is wrong. More correctly, we have to go through the cType as well:
-  def renderInput(state:SpaceState, currentValue:DisplayPropVal):Html = pType.renderInput(this, state, currentValue)
+  def renderInput(state:SpaceState, currentValue:DisplayPropVal):Html = cType.renderInput(this, state, currentValue, pType)
   
   /**
    * qlApply on a Property expects the input context to be a single Link. It returns the value
@@ -102,7 +102,7 @@ case class Property[VT, -RT](
   }  
 }
 
-case class DisplayPropVal(prop: Property[_,_], v: Option[String], inheritedVal:Option[String] = None, inheritedFrom:Option[Thing] = None) {
+case class DisplayPropVal(prop: Property[_,_], v: Option[PropValue], inheritedVal:Option[PropValue] = None, inheritedFrom:Option[Thing] = None) {
   def isInherited = v.isEmpty && inheritedVal.isDefined
   def propId = prop.id.toString
   def inputControlId = "v-" + propId
@@ -174,13 +174,11 @@ object Property {
       (inherited /: thing.props.keys) { (m, propId) =>
         val prop = state.prop(propId)
         val value = prop.from(thing.props)
-        // TODO: in the long run, this can't be a simple string:
-        val str = prop.toUser(value)
         val disp =
           if (m.contains(prop))
-            m(prop).copy(v = Some(str))
+            m(prop).copy(v = Some(value))
           else
-            DisplayPropVal(prop, Some(str))
+            DisplayPropVal(prop, Some(value))
         m + (prop -> disp)
       }
     }

@@ -105,9 +105,9 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * side classes for each PType, which describe how to render them in particular circumstances. But
    * we'll get to that...
    */
-  def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):scala.xml.Elem
-  def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal):Html = {
-    val xmlRaw = renderInputXml(prop, state, currentValue)
+  def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):scala.xml.Elem
+  def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Html = {
+    val xmlRaw = renderInputXml(prop, state, currentValue, v)
     val xml2 = xmlRaw %
     	Attribute("name", Text(currentValue.inputControlId),
     	Attribute("id", Text(currentValue.inputControlId), Null))

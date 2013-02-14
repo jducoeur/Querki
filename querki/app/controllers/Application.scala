@@ -301,9 +301,9 @@ object Application extends Controller {
             val prop = fieldInfo.prop
             val disp =
               if (m.contains(prop))
-                m(prop).copy(v = Some(prop.toUser(fieldInfo.value.get)))
+                m(prop).copy(v = fieldInfo.value)
               else
-                DisplayPropVal(prop, Some(prop.toUser(fieldInfo.value.get)))
+                DisplayPropVal(prop, fieldInfo.value)
             m + (prop -> disp)              
           }
         }

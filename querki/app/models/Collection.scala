@@ -67,6 +67,14 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
   def makePropValue(cv:implType):PropValue
   def apply(elem:ElemValue):PropValue = makePropValue(wrap(elem))
   
+  import play.api.templates.Html
+  def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):Html = {
+    // TODO: this needs to become much fancier, and Collection-specific! Note that
+    // it is currently just taking first:
+    val v = currentValue.v.map(_.first).getOrElse(elemT.default)
+    elemT.renderInput(prop, state, currentValue, v)
+  }
+  
   import play.api.data.Form
   // TODO: this really doesn't belong here. We need to tease the HTTP/HTML specific
   // stuff out from the core concepts.
