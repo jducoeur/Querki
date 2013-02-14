@@ -274,14 +274,6 @@ object Application extends Controller {
   
   def doCreateThing(ownerId:String, spaceId:String) = editThingInternal(ownerId, spaceId, None)
   
-  case class FieldInfo(fieldId:String, value:Option[String], empty:Option[Boolean]) {
-    def prop(implicit state:SpaceState):Property[_,_] = state.prop(OID(fieldId))
-    def isEmpty = empty match {
-      case Some(b) => b
-      case None => false
-    }
-  }
-  
   def editThingInternal(ownerId:String, spaceId:String, thingIdStr:Option[String]) = withSpace(true, ownerId, spaceId, thingIdStr) { implicit rc =>
     implicit val request = rc.request
     implicit val state = rc.state.get
@@ -293,23 +285,25 @@ object Application extends Controller {
       info => {
         // Whether we're creating or editing depends on whether thing is specified:
         val thing = rc.thing
-        val rawProps = info.fields map { fieldId => 
-          FieldInfo(fieldId, rawForm("v-" + fieldId).value, rawForm("empty-" + fieldId).value map (_.toBoolean))
+        val rawProps = info.fields map { propIdStr => 
+          val propId = OID(propIdStr)
+          val prop = state.prop(propId)
+          prop.fromUser(rawForm)
         }
         val oldModel = state.anything(OID(info.model)).get
         
         val kind = oldModel.kind
         
-        def makeProps(propList:List[FieldInfo]):PropList = {
+        def makeProps(propList:List[FormFieldInfo]):PropList = {
           val modelProps = PropList.inheritedProps(oldModel)
           val nonEmpty = propList filterNot (_.isEmpty)
           (modelProps /: nonEmpty) { (m, fieldInfo) =>
             val prop = fieldInfo.prop
             val disp =
               if (m.contains(prop))
-                m(prop).copy(v = fieldInfo.value)
+                m(prop).copy(v = Some(prop.toUser(fieldInfo.value.get)))
               else
-                DisplayPropVal(prop, fieldInfo.value)
+                DisplayPropVal(prop, Some(prop.toUser(fieldInfo.value.get)))
             m + (prop -> disp)              
           }
         }
@@ -320,7 +314,9 @@ object Application extends Controller {
           showEditPage(rc, oldModel, makeProps(rawProps))
         else if (info.addedProperty.length > 0) {
           // User chose to add a Property; add that to the UI and continue:
-          val allProps = rawProps :+ FieldInfo(info.addedProperty, Some(""), None)
+          val propId = OID(info.addedProperty)
+          val prop = state.prop(propId)
+          val allProps = rawProps :+ FormFieldInfo(prop, Some(prop.default), false, true)
           showEditPage(rc, oldModel, makeProps(allProps))
 //        } else if (info.newModel.length > 0) {
 //          // User is changing models. Replace the empty Properties with ones
@@ -333,22 +329,12 @@ object Application extends Controller {
         } else {
           // User has submitted a creation/change. Is it legal?
           val filledProps = rawProps.filterNot(_.isEmpty)
-          val propsWithRawvals = filledProps.map { pair =>
-            val FieldInfo(propIdStr, rawValueOpt, empty) = pair
-            val propId = OID(propIdStr)
-            val prop = state.prop(propId)
-            // This is mainly for checkboxes -- those don't return *anything* if they are not
-            // checked:
-            val rawValue = if (rawValueOpt.isDefined) rawValueOpt.get else prop.renderedDefault.raw.toString
-            (prop, rawValue)
-          }
-          val illegalVals = propsWithRawvals.filterNot(pair => pair._1.validate(pair._2))
+          val illegalVals = filledProps.filterNot(_.isValid)
           if (illegalVals.isEmpty) {
             // Everything parses, anyway, so send it on to the Space for processing:
-            val propPairs = propsWithRawvals.map { pair =>
-              val (prop, rawValue) = pair
-              val value = prop.fromUser(rawValue)
-              (prop.id, value)
+            val propPairs = filledProps.map { pair =>
+              val FormFieldInfo(prop, value, _, _) = pair
+              (prop.id, value.get)
             }
             val props = Thing.toProps(propPairs:_*)()
             val spaceMsg = if (thing.isDefined) {
@@ -369,7 +355,7 @@ object Application extends Controller {
             }
           } else {
             // One or more values didn't parse against their PTypes. Give an error and continue:
-            val badProps = illegalVals.map { pair => pair._1.displayName + " (" + pair._2 + ") " }
+            val badProps = illegalVals.map { info => info.prop.displayName }
             val errorMsg = "Illegal values for " + badProps.mkString
             showEditPage(rc, oldModel, makeProps(rawProps), Some(errorMsg))
           }

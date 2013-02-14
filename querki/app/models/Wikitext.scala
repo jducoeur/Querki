@@ -28,11 +28,10 @@ class Wikitext(wiki:String) {
    * We do simple substitutions here, that aren't worth coding into the wikitext engine
    * itself.
    * 
-   * IMPORTANT: the paragraph character below is extended ASCII, and Eclipse has a bad
-   * habit of screwing up the character encoding. Make sure this file gets saved as
-   * UTF-8; otherwise, it may screw up Play.
+   * Octal 266 is Hex 182, aka the paragraph character. Enter on the numeric keypad as
+   * Alt-0182.
    */
-  def internal = wiki.replace('¶', '\n')
+  def internal = wiki.replace('\266', '\n')
   
   /**
    * Wikitext can be concatenated just like strings.

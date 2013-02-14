@@ -57,7 +57,8 @@ case class Property[VT, -RT](
   def apply(raw:RT) = (this.id, cType(pType(raw)))
   
   def validate(str:String) = pType.validate(str)
-  def fromUser(str:String) = cType(pType.fromUser(str))
+  import play.api.data.Form
+  def fromUser(form:Form[_]):FormFieldInfo = cType.fromUser(form, this, pType)
   // TODO: this clearly isn't correct. How are we actually going to handle more complex types?
   def toUser(v:PropValue):String = {
     val cv = castVal(v)
@@ -105,6 +106,8 @@ case class DisplayPropVal(prop: Property[_,_], v: Option[String], inheritedVal:O
   def isInherited = v.isEmpty && inheritedVal.isDefined
   def propId = prop.id.toString
   def inputControlId = "v-" + propId
+  // This is a hidden input field, which is a flag to tell the receiving code whether the
+  // field is "empty" -- inherited or deleted, but with no local value:
   def emptyControlId = "empty-" + propId
   def hasInheritance = inheritedVal.isDefined
 }

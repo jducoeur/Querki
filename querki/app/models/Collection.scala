@@ -67,6 +67,30 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
   def makePropValue(cv:implType):PropValue
   def apply(elem:ElemValue):PropValue = makePropValue(wrap(elem))
   
+  import play.api.data.Form
+  // TODO: this really doesn't belong here. We need to tease the HTTP/HTML specific
+  // stuff out from the core concepts.
+  // TODO: this will need refactoring, to get more complex on a per-Collection basis
+  def fromUser(form:Form[_], prop:Property[_,_], elemT:pType):FormFieldInfo = {
+    val fieldId = prop.id.toString
+    val formV = form("v-" + fieldId).value
+    val empty = form("empty-" + fieldId).value map (_.toBoolean) getOrElse false
+    if (empty) {
+      FormFieldInfo(prop, None, true, true)
+    } else formV match {
+      // Normal case: pass it to the PType for parsing the value out:
+      case Some(v) => {
+        if (elemT.validate(v))
+          FormFieldInfo(prop, Some(apply(elemT.fromUser(v))), false, true)
+        else
+          FormFieldInfo(prop, None, true, false)
+      }
+      // There was no field value found. In this case, we take the default. That
+      // seems strange, but this case is entirely valid in the case of a checkbox:
+      case None => FormFieldInfo(prop, Some(default(elemT)), true, true)
+    }
+  }
+  
   /**
    * Returns the head of the collection.
    * 
