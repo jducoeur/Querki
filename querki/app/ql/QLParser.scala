@@ -62,6 +62,12 @@ case class QLContext(value:TypedValue, request:RequestContext, parentIn:Option[C
   }
 }
 
+case class QLRequestContext(request:RequestContext) extends ContextBase {
+  def state = request.state.getOrElse(SystemSpace.State)
+  def value:TypedValue = throw new Exception("Can't use the contents of QLRequestContext!")  
+  def parent:ContextBase = throw new Exception("QLRequestContext doesn't have a parent!")
+}
+
 /**
  * This should only be used in cases where we really don't have a context -- generally,
  * displaying outside of a proper page display in a Space. It is unlikely to work for

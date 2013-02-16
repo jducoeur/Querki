@@ -1,5 +1,7 @@
 package models
 
+import scala.xml.Elem
+
 import system.OIDs._
 
 import Thing._
@@ -67,13 +69,14 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
   def makePropValue(cv:implType):PropValue
   def apply(elem:ElemValue):PropValue = makePropValue(wrap(elem))
   
-  import play.api.templates.Html
-  def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):Html = {
-    // TODO: this needs to become much fancier, and Collection-specific! Note that
-    // it is currently just taking first:
-    val v = currentValue.v.map(_.first).getOrElse(elemT.default)
-    elemT.renderInput(prop, state, currentValue, v)
-  }
+  /**
+   * Collections must implement this -- it builds the HTML representation of how to input this
+   * collection.
+   * 
+   * TODO: this is an abstraction break, and really belongs in some side tree that maps Collections
+   * to HTML representations. But that's for another day.
+   */
+  def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):Elem
   
   import play.api.data.Form
   // TODO: this really doesn't belong here. We need to tease the HTTP/HTML specific
@@ -81,21 +84,23 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
   // TODO: this will need refactoring, to get more complex on a per-Collection basis
   def fromUser(form:Form[_], prop:Property[_,_], elemT:pType):FormFieldInfo = {
     val fieldId = prop.id.toString
-    val formV = form("v-" + fieldId).value
     val empty = form("empty-" + fieldId).value map (_.toBoolean) getOrElse false
     if (empty) {
       FormFieldInfo(prop, None, true, true)
-    } else formV match {
-      // Normal case: pass it to the PType for parsing the value out:
-      case Some(v) => {
-        if (elemT.validate(v))
-          FormFieldInfo(prop, Some(apply(elemT.fromUser(v))), false, true)
-        else
-          FormFieldInfo(prop, None, true, false)
+    } else {
+      val formV = form("v-" + fieldId).value
+      formV match {
+    	// Normal case: pass it to the PType for parsing the value out:
+        case Some(v) => {
+          if (elemT.validate(v))
+            FormFieldInfo(prop, Some(apply(elemT.fromUser(v))), false, true)
+          else
+            FormFieldInfo(prop, None, true, false)
+        }
+        // There was no field value found. In this case, we take the default. That
+        // seems strange, but this case is entirely valid in the case of a checkbox:
+        case None => FormFieldInfo(prop, Some(default(elemT)), true, true)
       }
-      // There was no field value found. In this case, we take the default. That
-      // seems strange, but this case is entirely valid in the case of a checkbox:
-      case None => FormFieldInfo(prop, Some(default(elemT)), true, true)
     }
   }
   
@@ -136,6 +141,11 @@ class NameCollection extends Collection(IllegalOID, systemOID, systemOID, () => 
   def wrap(elem:ElemValue):implType = List(elem)
   def makePropValue(cv:implType):PropValue = NamePropValue(cv, NameCollection.this)
     
+  def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+    val v = currentValue.v.map(_.first).getOrElse(elemT.default)
+    elemT.renderInput(prop, state, currentValue, v)
+  }
+
   private case class NamePropValue(cv:implType, coll:NameCollection) extends PropValue {}  
 }
 object NameCollection extends NameCollection {

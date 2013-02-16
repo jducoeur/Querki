@@ -59,16 +59,6 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
   final def default:ElemValue = ElemValue(doDefault)
   
   /**
-   * Parses text input from the user. By default, we assume that this is the same
-   * as deserialization, but override this when that's not true.
-   * 
-   * This should throw an Exception if the input is not legal. This is used in
-   * validation.
-   */
-  protected def doFromUser(str:String):VT = doDeserialize(str)
-  final def fromUser(str:String):ElemValue = ElemValue(doFromUser(str))
-  
-  /**
    * Turns this value into an appropriate form for user editing. Currently that means
    * a String, although that's likely to get more interesting soon.
    */
@@ -106,13 +96,23 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * we'll get to that...
    */
   def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):scala.xml.Elem
-  def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Html = {
+  def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = {
     val xmlRaw = renderInputXml(prop, state, currentValue, v)
     val xml2 = xmlRaw %
     	Attribute("name", Text(currentValue.inputControlId),
     	Attribute("id", Text(currentValue.inputControlId), Null))
-    Html(xml2.toString)
+    xml2
   }
+  
+  /**
+   * Parses form input from the user. By default, we assume that this is the same
+   * as deserialization, but override this when that's not true.
+   * 
+   * This should throw an Exception if the input is not legal. This is used in
+   * validation.
+   */
+  protected def doFromUser(str:String):VT = doDeserialize(str)
+  final def fromUser(str:String):ElemValue = ElemValue(doFromUser(str))
 }
 
 trait PTypeBuilder[VT, -RT] {

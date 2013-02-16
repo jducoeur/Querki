@@ -1,5 +1,9 @@
 package models.system
 
+import scala.xml._
+
+import play.api.Logger
+
 import models._
 
 import Thing._
@@ -38,6 +42,8 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
 	  throw new Error("Trying to wrap root collection!")    
 	def makePropValue(cv:implType):PropValue =
 	  throw new Error("Trying to makePropValue root collection!")    
+    def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem =
+	  throw new Error("Trying to render input on root collection!")    
   }
   object UrCollection extends UrCollection
   
@@ -67,6 +73,11 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       List(elemT.default)
     }
     def wrap(elem:ElemValue):implType = List(elem)
+    
+    def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+      val v = currentValue.v.map(_.first).getOrElse(elemT.default)
+      elemT.renderInput(prop, state, currentValue, v)
+    }
 
     def makePropValue(cv:implType):PropValue = ExactlyOnePropValue(cv, this)
     private case class ExactlyOnePropValue(cv:implType, coll:ExactlyOne) extends PropValue
@@ -117,6 +128,13 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     def makePropValue(cv:implType):PropValue = OptionalPropValue(cv, this)    
     private case class OptionalPropValue(cv:implType, coll:Optional) extends PropValue
     
+    def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+      // TODO: what should we do here? Has custom rendering become unnecessary here? Does the appearance of the
+      // trash button eliminate the need for anything fancy for Optional properties?
+      val v = currentValue.v.map(_.first).getOrElse(elemT.default)
+      elemT.renderInput(prop, state, currentValue, v)
+    }
+
     val None:PropValue = makePropValue(Nil)
   }
   object Optional extends Optional(OptionalOID)
@@ -150,6 +168,67 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     def wrap(elem:ElemValue):implType = List(elem)
     def makePropValue(cv:implType):PropValue = QListPropValue(cv, this)
     private case class QListPropValue(cv:implType, coll:QList) extends PropValue
+    
+    def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+      val inputRendered = elemT.renderInput(prop, state, currentValue, elemT.default)
+      <div class="coll-list-input">
+        <ul id={currentValue.collectionControlId} class="sortableList">{
+          if (currentValue.v.isDefined) {
+            val cv = currentValue.v.get.cv
+            cv.zipWithIndex.map { pair =>
+              val (elemV, i) = pair
+              val itemRendered = elemT.renderInput(prop, state, currentValue, elemV) %
+              	Attribute("id", Text(currentValue.collectionControlId + "-item[" + i + "]"), 
+              	Attribute("name", Text(currentValue.collectionControlId + "-item[" + i + "]"), Null))
+              <li>{itemRendered}</li>
+            }
+          }
+        }</ul>
+        {inputRendered}
+      </div>
+    }
+    
+  
+    import play.api.data.Form
+    // TODO: this will want to be refactored with the default version in Collection.scala
+    override def fromUser(form:Form[_], prop:Property[_,_], elemT:pType):FormFieldInfo = {
+      val fieldId = prop.id.toString
+      val empty = form("empty-" + fieldId).value map (_.toBoolean) getOrElse false
+      if (empty) {
+        FormFieldInfo(prop, None, true, true)
+      } else {
+        val oldListName = "coll-" + fieldId + "-item"
+        Logger.info("oldListName: " + oldListName)
+        val oldList = form(oldListName)
+        Logger.info("oldList: " + oldList)
+        val oldIndexes = oldList.indexes
+        Logger.info("oldIndexes: " + oldIndexes)
+        val oldRaw =
+          for (i <- oldIndexes;
+               v <- oldList("[" + i + "]").value)
+            yield v
+        Logger.info("oldRaw: " + oldRaw)
+        val oldVals = oldRaw.map(elemT.fromUser(_)).toList
+        Logger.info("oldVals: " + oldVals)
+        
+        // TODO: all of this might prove wrong if we do list-add client-side:
+        val formV = form("v-" + fieldId).value
+        val allVals = formV match {
+    	  // Normal case: pass it to the PType for parsing the value out:
+          case Some(v) => {
+            if (elemT.validate(v))
+              oldVals :+ elemT.fromUser(v)
+            else
+              // TODO: we need to propagate the error if we find errors:
+              oldVals
+          }
+          // There was no field value found. In this case, we take the default. That
+          // seems strange, but this case is entirely valid in the case of a checkbox:
+          case None => oldVals :+ elemT.default
+        }
+        FormFieldInfo(prop, Some(makePropValue(allVals)), false, true)
+      }
+    }
   }
   object QList extends QList(QListOID)
   

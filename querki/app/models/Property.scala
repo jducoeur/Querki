@@ -71,8 +71,9 @@ case class Property[VT, -RT](
   def serialize(v:PropValue):String = v.serialize(pType)
   def deserialize(str:String):PropValue = cType.deserialize(str, pType)
   
-  // TODO: this is wrong. More correctly, we have to go through the cType as well:
-  def renderInput(state:SpaceState, currentValue:DisplayPropVal):Html = cType.renderInput(this, state, currentValue, pType)
+  def renderInput(state:SpaceState, currentValue:DisplayPropVal):Html = {
+    Html(cType.renderInput(this, state, currentValue, pType).toString)
+  }
   
   /**
    * qlApply on a Property expects the input context to be a single Link. It returns the value
@@ -106,6 +107,7 @@ case class DisplayPropVal(prop: Property[_,_], v: Option[PropValue], inheritedVa
   def isInherited = v.isEmpty && inheritedVal.isDefined
   def propId = prop.id.toString
   def inputControlId = "v-" + propId
+  def collectionControlId = "coll-" + propId
   // This is a hidden input field, which is a flag to tell the receiving code whether the
   // field is "empty" -- inherited or deleted, but with no local value:
   def emptyControlId = "empty-" + propId

@@ -279,6 +279,7 @@ object Application extends Controller {
     implicit val state = rc.state.get
     val user = rc.requester.get
     val rawForm = newThingForm.bindFromRequest
+    
     rawForm.fold(
       // TODO: What can cause this?
       errors => doError(routes.Application.space(ownerId, spaceId), "Something went wrong"),
