@@ -170,7 +170,10 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     private case class QListPropValue(cv:implType, coll:QList) extends PropValue
     
     def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
-      val inputRendered = elemT.renderInput(prop, state, currentValue, elemT.default)
+      val inputTemplate = elemT.renderInput(prop, state, currentValue, elemT.default) %
+    		  Attribute("class", Text("inputTemplate"),
+    		  Attribute("data-basename", Text(currentValue.collectionControlId + "-item"),
+    		  Null))
       <div class="coll-list-input">
         <ul id={currentValue.collectionControlId} class="sortableList">{
           if (currentValue.v.isDefined) {
@@ -184,11 +187,12 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
             }
           }
         }</ul>
-        {inputRendered}
+        <button class="add-item-button btn-mini" data-size={currentValue.collectionControlId + "-size"}>&nbsp;</button>
+        <input type="hidden" id={currentValue.collectionControlId + "-size"} value={currentValue.v.map(_.cv.size).getOrElse(0).toString}/>
+        {inputTemplate}
       </div>
     }
     
-  
     import play.api.data.Form
     // TODO: this will want to be refactored with the default version in Collection.scala
     override def fromUser(form:Form[_], prop:Property[_,_], elemT:pType):FormFieldInfo = {
@@ -198,35 +202,14 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
         FormFieldInfo(prop, None, true, true)
       } else {
         val oldListName = "coll-" + fieldId + "-item"
-        Logger.info("oldListName: " + oldListName)
         val oldList = form(oldListName)
-        Logger.info("oldList: " + oldList)
         val oldIndexes = oldList.indexes
-        Logger.info("oldIndexes: " + oldIndexes)
         val oldRaw =
           for (i <- oldIndexes;
                v <- oldList("[" + i + "]").value)
             yield v
-        Logger.info("oldRaw: " + oldRaw)
         val oldVals = oldRaw.map(elemT.fromUser(_)).toList
-        Logger.info("oldVals: " + oldVals)
-        
-        // TODO: all of this might prove wrong if we do list-add client-side:
-        val formV = form("v-" + fieldId).value
-        val allVals = formV match {
-    	  // Normal case: pass it to the PType for parsing the value out:
-          case Some(v) => {
-            if (elemT.validate(v))
-              oldVals :+ elemT.fromUser(v)
-            else
-              // TODO: we need to propagate the error if we find errors:
-              oldVals
-          }
-          // There was no field value found. In this case, we take the default. That
-          // seems strange, but this case is entirely valid in the case of a checkbox:
-          case None => oldVals :+ elemT.default
-        }
-        FormFieldInfo(prop, Some(makePropValue(allVals)), false, true)
+        FormFieldInfo(prop, Some(makePropValue(oldVals)), false, true)
       }
     }
   }

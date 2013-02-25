@@ -130,6 +130,37 @@
           $(this).editButton();
           return false;
         }
+        
+        $.fn.addListItemButton = function () {
+          this.each(function () {
+            setButton($(this), "ui-icon-circle-plus", "Add Item", handleAddListItem);
+          });
+        }
+        
+        function dataField(t, fieldName) {
+          return "#" + t.data(fieldName);
+        }
+        
+        function viaField(t, fieldName) {
+          var controlId = dataField(t, fieldName);
+          return $(controlId);
+        }
+        
+        function handleAddListItem(evt) {
+          var templateField = $(this).parent().find(".inputTemplate").first();
+          var list = $(this).parent().find("ul").first();
+          var sizeField = viaField($(this), "size");
+          var curSize = Number(sizeField.val());
+          var newField = templateField.clone();
+          newField.attr("name", templateField.data("basename") + "[" + curSize + "]");
+          newField.removeClass("inputTemplate");
+          newField.show();
+          var newLi = $("<li></li>");
+          newLi.append(newField);
+          list.append(newLi);
+          sizeField.val(curSize + 1);
+          return false;
+        }
       }( jQuery ));
       
     
@@ -137,6 +168,8 @@
         $(".edit-button").editButton();
         $(".revert-button").revertButton();
         $(".trash-button").trashButton();
+        $(".add-item-button").addListItemButton();
+        $(".inputTemplate").hide();
       });
     </script>
 		
