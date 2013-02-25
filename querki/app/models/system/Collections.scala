@@ -186,7 +186,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
               val itemRendered = elemT.renderInput(prop, state, currentValue, elemV) %
               	Attribute("id", Text(currentValue.collectionControlId + "-item[" + i + "]"), 
               	Attribute("name", Text(currentValue.collectionControlId + "-item[" + i + "]"), Null))
-              <li><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>{itemRendered}</li>
+              <li><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>{itemRendered}<button class="delete-item-button btn-mini">&nbsp;</button></li>
             }
           }
         }</ul>

@@ -137,6 +137,12 @@
           });
         }
         
+        $.fn.deleteListItemButton = function () {
+          this.each(function () {
+            setButton($(this), "ui-icon-circle-minus", "Delete Item", handleDeleteListItem);
+          });
+        }
+        
         function dataField(t, fieldName) {
           return "#" + t.data(fieldName);
         }
@@ -157,15 +163,26 @@
           newField.show();
           var newLi = $("<li><span class=\"ui-icon ui-icon-arrowthick-2-n-s\"></span></li>");
           newLi.append(newField);
+          var delButton = $("<button class=\"delete-item-button btn-mini\">&nbsp;</button>");
+          setButton(delButton, "ui-icon-circle-minus", "Delete Item", handleDeleteListItem);
+          newLi.append(delButton);
           list.append(newLi);
           sizeField.val(curSize + 1);
           return false;
         }
+        
+        function handleDeleteListItem(evt) {
+          var targetLi = $(this).parent();
+          var sortList = targetLi.parent();
+          targetLi.detach();
+          renumberList(sortList);
+          return false;
+        }
+        
       }( jQuery ));
-      
-      function onSortFinished(evt, ui) {
-        var itemMoved = ui.item;
-        var sortList = itemMoved.parent();
+              
+        
+      function renumberList(sortList) {
         var allItems = sortList.children("li");
         var templateField = sortList.parent().find(".inputTemplate").first();
         var baseItemName = templateField.data("basename");
@@ -175,7 +192,13 @@
           var inputField = listItem.find("input");
           inputField.attr("name", baseItemName + "[" + i + "]");
           i = i + 1;
-        });
+        });        
+      }
+        
+      function onSortFinished(evt, ui) {
+        var itemMoved = ui.item;
+        var sortList = itemMoved.parent();
+        renumberList(sortList);
       }
     
       $(function() {
@@ -183,6 +206,7 @@
         $(".revert-button").revertButton();
         $(".trash-button").trashButton();
         $(".add-item-button").addListItemButton();
+        $(".delete-item-button").deleteListItemButton();
         $(".inputTemplate").hide();
         $(".sortableList").sortable({
           stop:onSortFinished
