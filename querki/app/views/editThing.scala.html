@@ -155,7 +155,7 @@
           newField.attr("name", templateField.data("basename") + "[" + curSize + "]");
           newField.removeClass("inputTemplate");
           newField.show();
-          var newLi = $("<li></li>");
+          var newLi = $("<li><span class=\"ui-icon ui-icon-arrowthick-2-n-s\"></span></li>");
           newLi.append(newField);
           list.append(newLi);
           sizeField.val(curSize + 1);
@@ -163,6 +163,20 @@
         }
       }( jQuery ));
       
+      function onSortFinished(evt, ui) {
+        var itemMoved = ui.item;
+        var sortList = itemMoved.parent();
+        var allItems = sortList.children("li");
+        var templateField = sortList.parent().find(".inputTemplate").first();
+        var baseItemName = templateField.data("basename");
+        var i = 0;
+        allItems.each(function () {
+          var listItem = $(this);
+          var inputField = listItem.find("input");
+          inputField.attr("name", baseItemName + "[" + i + "]");
+          i = i + 1;
+        });
+      }
     
       $(function() {
         $(".edit-button").editButton();
@@ -170,6 +184,9 @@
         $(".trash-button").trashButton();
         $(".add-item-button").addListItemButton();
         $(".inputTemplate").hide();
+        $(".sortableList").sortable({
+          stop:onSortFinished
+        });
       });
     </script>
 		

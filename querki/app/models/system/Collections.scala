@@ -169,6 +169,9 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     def makePropValue(cv:implType):PropValue = QListPropValue(cv, this)
     private case class QListPropValue(cv:implType, coll:QList) extends PropValue
     
+    // TODO: the stuff created here overlaps badly with the Javascript code in editThing.scala.html.
+    // Rationalize the two, to eliminate all the duplication. In theory, the concept and structure
+    // belongs here, and the details belong there.
     def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
       val inputTemplate = elemT.renderInput(prop, state, currentValue, elemT.default) %
     		  Attribute("class", Text("inputTemplate"),
@@ -183,7 +186,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
               val itemRendered = elemT.renderInput(prop, state, currentValue, elemV) %
               	Attribute("id", Text(currentValue.collectionControlId + "-item[" + i + "]"), 
               	Attribute("name", Text(currentValue.collectionControlId + "-item[" + i + "]"), Null))
-              <li>{itemRendered}</li>
+              <li><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>{itemRendered}</li>
             }
           }
         }</ul>
