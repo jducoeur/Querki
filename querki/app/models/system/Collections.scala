@@ -173,8 +173,8 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     // Rationalize the two, to eliminate all the duplication. In theory, the concept and structure
     // belongs here, and the details belong there.
     def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
-      val inputTemplate = elemT.renderInput(prop, state, currentValue, elemT.default) %
-    		  Attribute("class", Text("inputTemplate"),
+      val inputTemplate = elemT.renderInput(prop, state, currentValue, elemT.default) %      
+    		  Attribute("class", Text("inputTemplate list-input-element"),
     		  Attribute("data-basename", Text(currentValue.collectionControlId + "-item"),
     		  Null))
       <div class="coll-list-input">
@@ -184,8 +184,9 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
             cv.zipWithIndex.map { pair =>
               val (elemV, i) = pair
               val itemRendered = elemT.renderInput(prop, state, currentValue, elemV) %
+                Attribute("class", Text("list-input-element"),
               	Attribute("id", Text(currentValue.collectionControlId + "-item[" + i + "]"), 
-              	Attribute("name", Text(currentValue.collectionControlId + "-item[" + i + "]"), Null))
+              	Attribute("name", Text(currentValue.collectionControlId + "-item[" + i + "]"), Null)))
               <li><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>{itemRendered}<button class="delete-item-button btn-mini">&nbsp;</button></li>
             }
           }

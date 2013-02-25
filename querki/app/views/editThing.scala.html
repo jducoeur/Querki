@@ -189,7 +189,7 @@
         var i = 0;
         allItems.each(function () {
           var listItem = $(this);
-          var inputField = listItem.find("input");
+          var inputField = listItem.find(".list-input-element");
           inputField.attr("name", baseItemName + "[" + i + "]");
           i = i + 1;
         });        

@@ -184,7 +184,7 @@ object CommonInputRenderers {
     
     def canonicalize(str:String):String = toInternal(str).toLowerCase
 
-    val doDefault = "MISSING NAME!"
+    val doDefault = ""
   }
   object NameType extends NameType(NameTypeOID)
   
@@ -220,7 +220,7 @@ object CommonInputRenderers {
         <select> {
           val candidates = state.linkCandidates(prop)
           candidates map { candidate =>
-            if(currentValue.v.isDefined && (candidate.id.toString == v.elem)) {
+            if(candidate.id == v.elem) {
               <option value={candidate.id.toString} selected="selected">{candidate.displayName}</option>        
             } else {
               <option value={candidate.id.toString}>{candidate.displayName}</option>
