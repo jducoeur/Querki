@@ -1,0 +1,3 @@
+[submodule "qtext"]
+	path = qtext
+	url = https://github.com/jducoeur/qtext.git
