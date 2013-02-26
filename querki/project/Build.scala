@@ -10,11 +10,10 @@ object ApplicationBuild extends Build {
     val appDependencies = Seq(
 	  // Main Play dependencies
 	  jdbc,
-	  anorm//,
+	  anorm,
       // Add your project dependencies here,
-      //"eu.henkelmann" % "actuarius_2.9.2" % "0.2.4"
       //"org.hoisted" % "actuarius_2.10" % "0.2.5-SNAPSHOT"//,
-//      "mysql" % "mysql-connector-java" % "5.1.23"
+      "mysql" % "mysql-connector-java" % "5.1.23"
     )
 
     val main = play.Project(appName, appVersion, appDependencies).settings(

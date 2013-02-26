@@ -131,7 +131,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
       // TODO: what should we do here? Has custom rendering become unnecessary here? Does the appearance of the
       // trash button eliminate the need for anything fancy for Optional properties?
-      val v = currentValue.v.map(_.first).getOrElse(elemT.default)
+      val v = currentValue.v.map(propVal => if (propVal.cv.isEmpty) elemT.default else propVal.first).getOrElse(elemT.default)
       elemT.renderInput(prop, state, currentValue, v)
     }
 

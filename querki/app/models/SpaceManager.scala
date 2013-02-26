@@ -140,7 +140,7 @@ class SpaceManager extends Actor {
             id bigint NOT NULL,
             model bigint NOT NULL,
             kind int NOT NULL,
-            props clob NOT NULL,
+            props MEDIUMTEXT NOT NULL,
             PRIMARY KEY (id))
           """).executeUpdate()
       AttachSQL(spaceId, """
