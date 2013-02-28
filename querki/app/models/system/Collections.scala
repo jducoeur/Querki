@@ -148,9 +148,13 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     type implType = List[ElemValue]
     
     def doDeserialize(ser:String, elemT:pType):implType = {
-      val guts = ser.slice(1, ser.length() - 1)
-      val elemStrs = guts.split(",").toList
-      elemStrs.map(elemT.deserialize(_))
+      val guts = ser.slice(1, ser.length() - 1).trim()
+      if (guts.isEmpty())
+        doDefault(elemT)
+      else {
+        val elemStrs = guts.split(",").toList
+        elemStrs.map(elemT.deserialize(_))
+      }
     }
     
     def doSerialize(v:implType, elemT:pType):String = {
