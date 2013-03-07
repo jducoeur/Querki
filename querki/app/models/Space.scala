@@ -278,8 +278,8 @@ class Space extends Actor {
           // TODO: we really, really must not hardcode this type below. This is some sort of
           // serious Anorm driver failure, I think. As it stands, it's going to crash when we
           // move to MySQL:
-          case Row(mime:MIMEType, size:Int, content:org.h2.jdbc.JdbcBlob) => {
-            AttachmentContents(attachOid, size, mime, content.getBytes(1, content.length().toInt))
+          case Row(mime:MIMEType, size:Int, content:Array[Byte]) => {
+            AttachmentContents(attachOid, size, mime, content)
           }
         }.head
         sender ! results

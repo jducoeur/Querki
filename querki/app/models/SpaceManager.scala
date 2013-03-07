@@ -148,7 +148,7 @@ class SpaceManager extends Actor {
             id bigint NOT NULL,
             mime varchar(127) NOT NULL,
             size int NOT NULL,
-            content blob NOT NULL,
+            content mediumblob NOT NULL,
             PRIMARY KEY (id))
           """).executeUpdate()
       SQL("""
