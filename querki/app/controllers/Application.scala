@@ -81,7 +81,7 @@ object Application extends Controller {
   // TODO: preserve the page request, and go there after they log in
   def onUnauthorized(request: RequestHeader) = Results.Redirect(routes.Application.login)
 
-  def withAuth(requireLogin:Boolean)(f: => String => Request[AnyContent] => Result):Action[(Action[AnyContent], AnyContent)] = {
+  def withAuth(requireLogin:Boolean)(f: => String => Request[AnyContent] => Result):EssentialAction = {
     val handler = { user:String =>
       Action(request => f(user)(request))
     }
@@ -137,7 +137,7 @@ object Application extends Controller {
         ownerIdStr:String,
         spaceId:String, 
         thingIdStr:Option[String] = None
-      )(f: (RequestContext => Result)):Action[(Action[AnyContent], AnyContent)] = withUser(requireLogin) { rc =>
+      )(f: (RequestContext => Result)):EssentialAction = withUser(requireLogin) { rc =>
     val requesterId = rc.requester map (_.id) getOrElse UnknownOID
     val thingId = thingIdStr map (ThingId(_))
     val ownerId = getUserByThingId(ownerIdStr)
