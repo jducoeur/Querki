@@ -1,6 +1,4 @@
 package eu.henkelmann.actuarius
-
-import org.scalatest.junit.JUnitRunner
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
 import collection.SortedMap
@@ -10,7 +8,7 @@ import org.junit.runner.RunWith
  * Tests basic parsers that are used by the more complex parsing steps.
  */
 
-@RunWith(classOf[JUnitRunner])
+//@RunWith(classOf[JUnitRunner])
 class BaseParsersTest extends FlatSpec with ShouldMatchers with BaseParsers{
 
     "The BaseParsers" should "parse a newline" in {

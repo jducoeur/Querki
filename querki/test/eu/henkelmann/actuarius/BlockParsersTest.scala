@@ -1,15 +1,13 @@
 package eu.henkelmann.actuarius
 
 import org.junit.runner.RunWith
-import org.scalatest.junit.JUnitRunner
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.FlatSpec
-import xml.{Group, NodeSeq}
 
 /**
  * Tests the parsing on block level.
  */
-@RunWith(classOf[JUnitRunner])
+//@RunWith(classOf[JUnitRunner])
 class BlockParsersTest extends FlatSpec with ShouldMatchers with BlockParsers{
 
     "The BlockParsers" should "parse optional empty lines" in {
