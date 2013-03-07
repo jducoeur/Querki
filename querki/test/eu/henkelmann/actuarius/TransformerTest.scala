@@ -6,6 +6,9 @@ import org.junit.runner.RunWith
 
 /**
  * Tests the behavior of the complete parser, i.e. all parsing steps together.
+ * 
+ * IMPORTANT: this source file must use Unix newlines, not DOS ones! The resulting
+ * strings come out different, and the multi-line tests break if you use DOS encoding! 
  */
 //@RunWith(classOf[JUnitRunner])
 class TransformerTest extends FlatSpec with ShouldMatchers with Transformer {
@@ -30,6 +33,14 @@ class TransformerTest extends FlatSpec with ShouldMatchers with Transformer {
         apply("    foo\n  \n    bar\n") should equal ("<pre><code>foo\n  \nbar\n</code></pre>\n")
         apply("    foo\n\tbaz\n  \n    bar\n") should equal ("<pre><code>foo\nbaz\n  \nbar\n</code></pre>\n")
         apply("    public static void main(String[] args)\n") should equal ("<pre><code>public static void main(String[] args)\n</code></pre>\n")
+    }
+    
+    it should "parse a trivial paragraph" in {
+      apply("""Here is
+a paragraph""") should equal(
+"""<p>Here is
+a paragraph</p>
+""")
     }
 
     it should "parse paragraphs" in {
