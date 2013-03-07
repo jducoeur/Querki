@@ -166,6 +166,10 @@ class QLParser(val input:QLText, initialContext:ContextBase) extends RegexParser
     (Wikitext("") /: contexts) { (soFar, context) => soFar + context.value.render(context.parent) }
   }
   
+  /**
+   * This deals with QText that contains "__stuff__" or "____", both of which render as
+   * links to the incoming context. (Or simply the value of the context, if it's not a Link.)
+   */
   private def linkToWikitext(contents:ParsedQLText, context:ContextBase):Wikitext = {
     contents.parts.length match {
       // Just four underscores, which means render the context right here:

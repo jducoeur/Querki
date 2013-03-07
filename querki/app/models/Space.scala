@@ -161,7 +161,8 @@ class Space extends Actor {
         val typ = systemState.typ(TypeProp.first(propMap))
         // This cast is slightly weird, but safe and should be necessary. But I'm not sure
         // that the PTypeBuilder part is correct -- we may need to get the RT correct.
-        val boundTyp = typ.asInstanceOf[PType[typ.valType] with PTypeBuilder[typ.valType, Any]]
+//        val boundTyp = typ.asInstanceOf[PType[typ.valType] with PTypeBuilder[typ.valType, Any]]
+        val boundTyp = typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]]
         val coll = systemState.coll(CollectionProp.first(propMap))
         // TODO: this feels wrong. coll.implType should be good enough, since it is viewable
         // as Iterable[ElemValue] by definition, but I can't figure out how to make that work.
@@ -217,7 +218,8 @@ class Space extends Actor {
         case Kind.Property => {
           val typ = state.typ(TypeProp.first(props))
           val coll = state.coll(CollectionProp.first(props))
-          val boundTyp = typ.asInstanceOf[PType[typ.valType] with PTypeBuilder[typ.valType, Any]]
+//          val boundTyp = typ.asInstanceOf[PType[typ.valType] with PTypeBuilder[typ.valType, Any]]
+          val boundTyp = typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]]
           val boundColl = coll.asInstanceOf[Collection]
           val thing = Property(thingId, spaceId, modelId, boundTyp, boundColl, () => props)
           updateState(state.copy(spaceProps = state.spaceProps + (thingId -> thing)))          
