@@ -1,5 +1,7 @@
 package models
 
+import language.existentials
+
 /**
  * This class is the result of parsing a field out of a Play HTTP Form. It crosses the
  * HTTP/internal API lines somewhat uncomfortably; not clear yet where it belongs.

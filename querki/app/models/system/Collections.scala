@@ -1,5 +1,6 @@
 package models.system
 
+import language.existentials
 import scala.xml._
 
 import play.api.Logger

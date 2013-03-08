@@ -1,5 +1,6 @@
 package eu.henkelmann.actuarius
 
+import language.postfixOps
 import util.parsing.json.Parser
 import util.parsing.combinator.RegexParsers
 import collection.SortedMap

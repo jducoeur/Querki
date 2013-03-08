@@ -1,5 +1,6 @@
 package controllers
 
+import language.existentials
 import play.api._
 import play.api.data._
 import play.api.data.Forms._

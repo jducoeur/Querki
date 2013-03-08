@@ -1,5 +1,6 @@
 package eu.henkelmann.actuarius
 
+import language.postfixOps
 import scala.util.parsing.combinator.Parsers
 import scala.collection.mutable.{HashMap, ArrayBuffer}
 import scala.util.parsing.input.{Position, Reader}

@@ -1,6 +1,6 @@
 package eu.henkelmann.actuarius
 
-
+import language.postfixOps
 
 /**
  * A parser for inline markdown, markdown escapes and XML escapes.

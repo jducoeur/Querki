@@ -1,5 +1,7 @@
 package models
 
+import language.implicitConversions
+
 import eu.henkelmann.actuarius.{Decorator, Transformer}
 
 case class DisplayText(val str:String) {

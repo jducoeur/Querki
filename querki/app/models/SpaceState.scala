@@ -1,5 +1,6 @@
 package models
 
+import language.existentials
 import system._
 
 import OIDs._

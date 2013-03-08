@@ -1,5 +1,6 @@
 package models
 
+import language.implicitConversions
 import Kind._
 import Thing._
 

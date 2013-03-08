@@ -1,5 +1,6 @@
 package ql
 
+import language.existentials
 import play.api.Logger
 
 import scala.util.parsing.combinator._

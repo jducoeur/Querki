@@ -1,5 +1,6 @@
 package models
 
+import language.implicitConversions
 import anorm._
 import play.api.db._
 import play.api.Play.current

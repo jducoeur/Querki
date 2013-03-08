@@ -50,6 +50,8 @@ new OtherLine("more text")
         def p(line:String) = {
             lineToken(new LineReader(Seq(line))) match {
                 case Success(result, _) => result
+                case Error(msg, _) => throw new Exception(msg)
+                case Failure(msg, _) => throw new Exception(msg)
             }
         }
         p("a line")          should equal (new OtherLine("a line"))

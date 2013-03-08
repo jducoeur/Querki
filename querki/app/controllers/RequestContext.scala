@@ -43,6 +43,7 @@ case class RequestContext(
   def chromeless = hasQueryParam("cl")
 }
 
+import language.implicitConversions
 object RequestContext {
   implicit def rc2Space(rc:RequestContext) = rc.state
 }

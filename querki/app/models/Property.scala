@@ -1,5 +1,6 @@
 package models
 
+import language.existentials
 import play.api.templates.Html
 
 import Thing._

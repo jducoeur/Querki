@@ -1,5 +1,6 @@
 package models
 
+import language.implicitConversions
 import scala.xml.Elem
 
 import system.OIDs._

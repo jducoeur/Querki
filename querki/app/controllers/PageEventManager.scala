@@ -1,5 +1,6 @@
 package controllers
 
+import language.postfixOps
 import QuerkiTemplate._
 
 /**
