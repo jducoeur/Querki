@@ -165,7 +165,15 @@ trait BlockParsers extends Parsers {
         def endsWithNewline = lines.size > 1 && (lines.last.isInstanceOf[EmptyLine])
 
         def addResult(level:Int, out:StringBuilder, paragraph_? : Boolean) {
-            out.append(indent(level)).append(deco.decorateItemOpen)
+            lines(0) match {
+              case DItemStartLine(_, _, title) => {
+                out.append(indent(level)).append(deco.decorateDTitleOpen)
+                out.append(indent(level)).append(title)
+                out.append(indent(level)).append(deco.decorateDTitleClose)
+                out.append(indent(level)).append(deco.decorateDDescOpen)
+              }
+              case _ => out.append(indent(level)).append(deco.decorateItemOpen)
+            }
             //the block parser needs to recurse:
             val innerLines = lines.map(line => line.payload)
             val reader = BlockParsers.this.tokenizer.innerTokenize(innerLines, lookup)
@@ -175,7 +183,10 @@ trait BlockParsers extends Parsers {
                 case (p:Paragraph) :: Nil if (!paragraph_?) => p.addResultPlain(level+1, out)
                 case _                                      => innerBlocks.foreach(block => block.addResult(level+1, out))
             }
-            out.append(indent(level)).append(deco.decorateItemClose)
+            lines(0) match {
+              case DItemStartLine(_, _, _) => out.append(indent(level)).append(deco.decorateDDescClose)
+              case _ => out.append(indent(level)).append(deco.decorateItemClose)
+            }
         }
     }
 
@@ -225,6 +236,17 @@ trait BlockParsers extends Parsers {
             out.append(indent(level)).append(deco.decorateUListOpen)
             super.addResult(level, out)
             out.append(indent(level)).append(deco.decorateUListClose)
+        }
+    }
+
+    /**
+     * An unordered list of items.
+     */
+    class DList (items:List[ListItem]) extends ListBlock(items) {
+        override def addResult(level:Int, out:StringBuilder) {
+            out.append(indent(level)).append(deco.decorateDListOpen)
+            super.addResult(level, out)
+            out.append(indent(level)).append(deco.decorateDListClose)
         }
     }
 
@@ -376,6 +398,12 @@ trait BlockParsers extends Parsers {
         case lu ~ s ~ ls ~ cs ~ e => new ListItem(s :: ls ++ cs.flatten ++ e, lu)
     }
 
+    /**parses an item in a definition list
+     */
+    def dItem:Parser[ListItem] = lookup ~ line(classOf[DItemStartLine]) ~ itemLines ~ (itemContinuation*) ~ optEmptyLines ^^ {
+        case lu ~ s ~ ls ~ cs ~ e => new ListItem(s :: ls ++ cs.flatten ++ e, lu)
+    }
+
     /** parses an unordered list
      */
     def uList:Parser[UList] = (uItem+) ^^ {new UList(_)}
@@ -383,6 +411,10 @@ trait BlockParsers extends Parsers {
     /** parses an ordered list
      */
     def oList:Parser[OList] = (oItem+) ^^ {new OList(_)}
+
+    /** parses a definition list
+     */
+    def dList:Parser[DList] = (dItem+) ^^ {new DList(_)}
 
 
     ///////////////////////////////////////////////////////////////
@@ -412,6 +444,7 @@ trait BlockParsers extends Parsers {
                 case l:BlockQuoteLine => blockquote(in)
                 case l:OItemStartLine => oList(in)
                 case l:UItemStartLine => uList(in)
+                case l:DItemStartLine => dList(in)
                 case _ => paragraph(in)
             }
         }

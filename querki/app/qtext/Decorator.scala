@@ -80,6 +80,18 @@ trait Decorator {
     def decorateOListOpen():String = "<ol>\n"
     /** used to print the end of an ordered list, defaults to </ol>\n */
     def decorateOListClose():String = "</ol>\n"
+    /** used to print the beginning of a definition list, defaults to "<dl>\n" */
+    def decorateDListOpen():String = "<dl>\n"
+    /** used to print the end of a definition list, defaults to "</dl>\n" */
+    def decorateDListClose():String = "</dl>\n"
+    /** used to print the beginning of a definition, defaults to "<li>" */
+    def decorateDTitleOpen():String = "<dt>"
+    /** used to print the end of a definition, defaults to "</li>" */
+    def decorateDTitleClose():String = "</dt>\n"
+    /** used to print the beginning of a definition, defaults to "<li>" */
+    def decorateDDescOpen():String = "<dd>"
+    /** used to print the end of a definition, defaults to "</li>" */
+    def decorateDDescClose():String = "</dd>\n"
 }
 
 /**

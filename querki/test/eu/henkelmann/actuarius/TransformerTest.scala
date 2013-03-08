@@ -134,6 +134,27 @@ test"""
 """
         )
     }
+    
+    it should "parse definition lists" in {
+        apply(": color : red") should equal (
+"""<dl>
+<dt>color</dt>
+<dd>red</dd>
+</dl>
+"""
+        )   
+        apply(": color : red\n: number : 42\n: animal : cat\n") should equal (
+"""<dl>
+<dt>color</dt>
+<dd>red</dd>
+<dt>number</dt>
+<dd>42</dd>
+<dt>animal</dt>
+<dd>cat</dd>
+</dl>
+"""
+        )      
+    }
 
     it should "stop a list after an empty line" in {
 apply("""1. a

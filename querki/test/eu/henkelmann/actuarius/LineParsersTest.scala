@@ -103,6 +103,15 @@ class LineParsersTest extends FlatSpec with ShouldMatchers with LineParsers{
         evaluating(apply(p, "    1. foo")) should produce[IllegalArgumentException]
         evaluating(apply(p, "* foo")) should produce[IllegalArgumentException]
     }
+    
+    it should "parse definition start lines" in {
+      val p = dItemStartLine
+      apply(p, ": nam : def") should equal (DItemStartLine(": nam : ", "def", "nam"))
+      apply(p, " : This is My Title! : And This is My Definition") should equal (
+          DItemStartLine(" : This is My Title! : ", "And This is My Definition", "This is My Title!"))
+      apply(p, " : Space: The Final Frontier : These are the voyages") should equal (
+          DItemStartLine(" : Space: The Final Frontier : ", "These are the voyages", "Space: The Final Frontier"))      
+    }
 
     it should "parse link definitions" in {
         val p = linkDefinitionStart

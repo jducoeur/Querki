@@ -64,6 +64,9 @@ case class UItemStartLine(pre:String, pay:String) extends MarkdownLine(pre, pay)
 /** A line indicating the start of an ordered list item (starts with "   [NUMBER].  ")
  */
 case class OItemStartLine(pre:String, pay:String) extends MarkdownLine(pre, pay)
+/** A line indicating the start of an definition list item (starts with "   : [TITLE] :  ")
+ */
+case class DItemStartLine(pre:String, pay:String, title:String) extends MarkdownLine(pre, pay)
 /** A line in verbatim code or the continuation of a list item
  */
 case class CodeLine(pre:String, pay:String) extends MarkdownLine(pre, pay)
@@ -210,6 +213,17 @@ trait LineParsers extends InlineParsers {
      */
     val oItemStartLine:Parser[OItemStartLine] = (""" {0,3}[0-9]+\. [\t\v ]*""".r) ~ rest ^^ {
         case prefix ~ payload => new OItemStartLine(prefix, payload)
+    }
+
+    /** A line that starts a definition list item.
+     * Matches a line starting with up to three spaces followed by a colon, a space, a title, a space, a colon,
+     * and any whitespace.
+     */
+    val dItemStartLine:Parser[DItemStartLine] = (""" {0,3}: """.r) ~ ("""([^:]|(?<! ):)* """.r) ~ (""": [\t\v ]*""".r) ~ rest ^^ {
+        case start ~ title ~ end ~ payload => {
+          val prefix = start + title + end
+          new DItemStartLine(prefix, payload, title.trim)
+        }
     }
 
     /** Accepts an empty line. (A line that consists only of optional whitespace or the empty string.)
