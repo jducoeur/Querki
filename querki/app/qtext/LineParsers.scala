@@ -79,6 +79,10 @@ case class ExtendedFencedCode(pre:String, pay:String) extends MarkdownLine(pre, 
 /** Ending line of a fenced code block: three backticks followed by optional whitespace 
  */
 case class FencedCode(pre:String) extends MarkdownLine(pre)
+/** The beginning of a div for declaring a style class.
+ */
+case class ClassDivStartLine(content:String, className:String) extends MarkdownLine(content)
+case class ClassDivEnd(content:String) extends MarkdownLine(content)
 /** Any other line.
  */
 case class OtherLine(content:String) extends MarkdownLine(content)
@@ -250,6 +254,20 @@ trait LineParsers extends InlineParsers {
     val extendedFencedCodeLine:Parser[ExtendedFencedCode] = fencedCodeLine ~ """\w+[\t\v ]*""".r ^^ {
         case prefix ~ languageToken => new ExtendedFencedCode(prefix.fullLine, languageToken) 
     }  
+    
+    /**
+     * Matches the beginning of a style-class marker. Might wind up as a div or span, depending on whether
+     * there is anything else on the line.
+     */
+    val classDivStart:Parser[ClassDivStartLine] = """ {0,3}\{\{ *""".r ~ """[\w\-]*""".r ~ """ *:""".r ^^ {
+      case intro ~ className ~ colon => {
+        val prefix = intro + className + colon
+        new ClassDivStartLine(prefix, className)
+      }
+    } 
+    val classDivEnd:Parser[ClassDivEnd] = """ {0,3}\}\}""".r ^^ { 
+      case content => new ClassDivEnd(content) 
+    }
 
     /** Matches any line. Only called when all other line parsers have failed.
      * Makes sure line tokenizing does not fail and we do not loose any lines on the way.

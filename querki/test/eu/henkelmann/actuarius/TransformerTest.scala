@@ -155,6 +155,32 @@ test"""
 """
         )      
     }
+    
+    it should "handle class divs" in {
+      apply("""{{ myClass :
+this is some styled text
+}}"""
+          ) should equal (
+"""<div class="myClass">
+<p>this is some styled text</p>
+</div>
+"""
+          )
+      
+      apply("""{{ myClass :
+* list 1
+* list 2
+}}"""
+          ) should equal (
+"""<div class="myClass">
+<ul>
+<li>list 1</li>
+<li>list 2</li>
+</ul>
+</div>
+"""
+          )
+    }
 
     it should "stop a list after an empty line" in {
 apply("""1. a

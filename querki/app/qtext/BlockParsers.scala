@@ -104,6 +104,23 @@ trait BlockParsers extends Parsers {
             out.append(indent(level)).append(deco.decorateCodeBlockClose)
         }
     }
+    
+    /**
+     * Represents a block that is contained in a div with a class tag, for styling.
+     */
+    class ClassDivBlock(className:String, lines:List[MarkdownLine]) extends MarkdownBlock {
+        def addResult(level:Int, out:StringBuilder) {
+            //the block parser needs to recurse:
+            val fullLines = lines.map(line => line.fullLine)
+            val reader = BlockParsers.this.tokenizer.tokenize(fullLines)
+            //now apply the normal markdown parser to the new content
+            val innerBlocks = BlockParsers.this.applyBlocks(reader)
+            //wrap the resulting blocks in blockquote tags
+            out.append(indent(level)).append(deco.decorateClassDivOpen(className))
+            innerBlocks.foreach(block => block.addResult(level, out))
+            out.append(indent(level)).append(deco.decorateClassDivClose)
+        }      
+    }
 
     /**
      * Represents a paragraph of text
@@ -345,6 +362,13 @@ trait BlockParsers extends Parsers {
                                             //opt(line(classOf[FencedCodeEnd])) ^^ {
     //    case start ~ lines ~ end => new CodeBlock(lines.map(_.fullLine))
     //}
+    
+    def classDivBlock:Parser[ClassDivBlock] =
+      line(classOf[ClassDivStartLine]) ~
+      (notLine(classOf[ClassDivEnd])*) ~
+      line(classOf[ClassDivEnd]) ^^ {
+      case start ~ contentBlock ~ end => new ClassDivBlock(start.className, contentBlock)
+    }
 
 
     /** a consecutive block of paragraph lines
@@ -442,6 +466,7 @@ trait BlockParsers extends Parsers {
                 case l:ExtendedFencedCode => fencedCodeBlock(in)
                 case l:FencedCode => fencedCodeBlock(in)
                 case l:BlockQuoteLine => blockquote(in)
+                case l:ClassDivStartLine => classDivBlock(in)
                 case l:OItemStartLine => oList(in)
                 case l:UItemStartLine => uList(in)
                 case l:DItemStartLine => dList(in)

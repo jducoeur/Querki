@@ -112,6 +112,23 @@ class LineParsersTest extends FlatSpec with ShouldMatchers with LineParsers{
       apply(p, " : Space: The Final Frontier : These are the voyages") should equal (
           DItemStartLine(" : Space: The Final Frontier : ", "These are the voyages", "Space: The Final Frontier"))      
     }
+    
+    it should "parse class div declarations" in {
+      val p = classDivStart
+      apply(p, "{{myClass:") should equal (
+          ClassDivStartLine("{{myClass:", "myClass"))
+      apply(p, "{{ myClass :") should equal (
+          ClassDivStartLine("{{ myClass :", "myClass"))
+      apply(p, "{{ class-with-dashes :") should equal (
+          ClassDivStartLine("{{ class-with-dashes :", "class-with-dashes"))
+      
+      // If there is more on the line, then it is a classSpan instead:
+      evaluating(apply(p, "{{ myClass : some span text")) should produce[IllegalArgumentException]
+      
+      val p2 = classDivEnd
+      apply(p2, "}}") should equal(ClassDivEnd("}}"))
+      apply(p2, "  }}") should equal(ClassDivEnd("  }}"))
+    }
 
     it should "parse link definitions" in {
         val p = linkDefinitionStart
