@@ -97,6 +97,7 @@ trait Decorator {
     /** decorate the beginning and end of a class-defining div for style declaration */
     def decorateClassDivOpen(className:String):String = "<div class=\"" + className + "\">\n"
     def decorateClassDivClose():String = "</div>\n"
+    def decorateClassSpan(className:String, text:String):String = "<span class=\"" + className + "\">" + text + "</span>" 
 }
 
 /**

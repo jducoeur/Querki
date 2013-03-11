@@ -120,7 +120,7 @@ trait InlineParsers extends BaseParsers {
     //TODO:better handling of "  \n" here. Stopping at every space costs us 20% time!
     /** Chars that may indicate the start of a special Markdown inline sequence.
      */
-    val specialInlineChars = Set(' ', '`', '<', '[', '*', '_', '!')
+    val specialInlineChars = Set(' ', '`', '<', '[', '*', '_', '!', '{', '}')
     /** Chars that may indicate the start of a special markdown inline sequence or the end of a link text.
      */
     val specialLinkInlineChars = specialInlineChars + ']'
@@ -140,6 +140,7 @@ trait InlineParsers extends BaseParsers {
                 case '*' => spanAsterisk(ctx)(in)
                 case '_' => spanUnderscore(ctx)(in)
                 case '!' => img(ctx)(in)
+                case '{' => classSpan(ctx)(in)
                 case _   => Failure("Lookahead does not start inline element.", in)
             }
         }
@@ -338,6 +339,17 @@ trait InlineParsers extends BaseParsers {
         } else {
             span("__", ctx.addTag("strong")) ^^ { deco.decorateStrong(_) }
         }
+    
+    /**
+     * Parses style-class spans inline: {{ myClassName: some styled text }}
+     */
+    def classSpan(ctx:InlineContext):Parser[String] = {
+        """\{\{ *""".r ~ """[\w\-]*""".r ~ """ *:""".r ~
+                (spanInline(  "}}", ctx)+) ~
+                "}}" ^^ {
+          case start ~ className ~ end ~ content ~ close => deco.decorateClassSpan(className, content.mkString)
+        }      
+    }
 
 
     /**

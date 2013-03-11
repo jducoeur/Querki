@@ -44,6 +44,11 @@ class InlineParsersTest extends FlatSpec with ShouldMatchers with InlineParsers{
         ("`code\ncode`",    "<code>code\ncode</code>"),
         ("``code ` code``", "<code>code ` code</code>")
     )
+    
+    val classSpanTests = List(
+        ("{{myClass:some stuff}}", "<span class=\"myClass\">some stuff</span>"),
+        ("{{myClass:some *italic* stuff}}", "<span class=\"myClass\">some <em>italic</em> stuff</span>")
+    )
 
     val linkTests = List(
         ("""[link text](http://example.com "link title")""",
@@ -143,6 +148,10 @@ class InlineParsersTest extends FlatSpec with ShouldMatchers with InlineParsers{
 
     it should "create inline code" in {
         runSucceedingParsingTests(code, codeTests)
+    }
+    
+    it should "create style spans" in {
+      runSucceedingParsingTests(classSpan(new InlineContext()), classSpanTests)
     }
 
     it should "create links" in {

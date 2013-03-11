@@ -181,6 +181,19 @@ this is some styled text
 """
           )
     }
+    
+    it should "handle class spans" in {
+      apply("""{{ myClass: here is some styled text!}} and unstyled""") should equal (
+            """<p><span class="myClass"> here is some styled text!</span> and unstyled</p>
+""")
+      apply("""Here is some {{myClass:styled text that
+crosses a line}} and then
+continues
+""") should equal ("""<p>Here is some <span class="myClass">styled text that
+crosses a line</span> and then
+continues</p>
+""")
+    }
 
     it should "stop a list after an empty line" in {
 apply("""1. a
