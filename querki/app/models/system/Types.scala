@@ -139,6 +139,12 @@ object CommonInputRenderers {
         case "y" => true
         case "n" => false
         
+        // Okay, this one looks odd, but it relates to the way checkboxes get handled in HTTP. If the checkbox
+        // is empty (false), then it *is not transmitted*! If it is checked (true), then it gets transmitted,
+        // but its value is sometimes left empty; the fact that it is sent at all means that it is true.
+        // TBD: this is kind of idiotic. Why is it inconsistently happening?
+        case "" => true
+        
         case _ => throw new Exception("I can't interpret " + v + " as a YesNo value")
       }
     }
@@ -148,7 +154,10 @@ object CommonInputRenderers {
     val doDefault = false
     
     override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = {
-      <input type="checkbox"/>
+      if (get(v))
+        <input type="checkbox" checked="checked" />
+      else
+        <input type="checkbox"/>
     }
   }
   object YesNoType extends YesNoType(YesNoTypeOID)

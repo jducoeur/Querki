@@ -99,8 +99,10 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
             FormFieldInfo(prop, None, true, false)
         }
         // There was no field value found. In this case, we take the default. That
-        // seems strange, but this case is entirely valid in the case of a checkbox:
-        case None => FormFieldInfo(prop, Some(default(elemT)), true, true)
+        // seems strange, but this case is entirely valid in the case of a checkbox.
+        // IMPORTANT / TODO: this code is horribly specific to the weird edge case of
+        // checkboxes! I don't love it, and it needs heavy testing!
+        case None => FormFieldInfo(prop, Some(apply(elemT.default)), false, true)
       }
     }
   }
