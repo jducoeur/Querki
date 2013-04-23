@@ -129,7 +129,9 @@ abstract class Thing(
     nameOpt map AsName getOrElse AsOID(id)
   }
 
-  def getModel(implicit state:SpaceState):Thing = { state.anything(model).get }
+  def getModel(implicit state:SpaceState):Thing = { 
+    state.anything(model).getOrElse{ Logger.error("Unable to find Model for " + id); UrThing } 
+  }
   def hasModel = true
   
   /**

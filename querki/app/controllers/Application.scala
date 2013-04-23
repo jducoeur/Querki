@@ -368,7 +368,7 @@ object Application extends Controller {
     implicit val state = rc.state.get
     val thing = rc.thing.get
     // TODO: security check that I'm allowed to edit this
-	val model = state.anything(thing.model).get
+	val model = thing.getModel
 	showEditPage(rc, model, PropList.from(thing))
   }
   
