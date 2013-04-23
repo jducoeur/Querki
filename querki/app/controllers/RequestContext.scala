@@ -1,8 +1,10 @@
 package controllers
 
 import play.api.mvc._
-
 import models._
+
+import language.implicitConversions
+import identity.User
 
 /**
  * As Querki gets more complex, we're passing larger and larger bundles of information around.
@@ -42,8 +44,6 @@ case class RequestContext(
   
   def chromeless = hasQueryParam("cl")
 }
-
-import language.implicitConversions
 object RequestContext {
   implicit def rc2Space(rc:RequestContext) = rc.state
 }

@@ -5,11 +5,16 @@ import models.system.OIDs
 
 object Modules {
   
+  val Stylesheet = new stylesheet.StylesheetModule(1)
+  val Email = new email.EmailModule(2)
+  val Person = new person.PersonModule(3)
+  
   private var allModules = Seq.empty[Module]
   
   def init(module:Module, state:SpaceState):SpaceState = {
     val newState = module.addSystemObjects(state)
     module.init
+    // TODO: is this right? This looks suspiciously useless:
     module +: allModules
     newState
   }
@@ -17,7 +22,12 @@ object Modules {
   def initAllModules(state:SpaceState):SpaceState = {
     var s = state
     
-    s = init(new stylesheet.StylesheetModule(1), s)
+    // TODO: we shouldn't do this explicitly, we should declare these things just once:
+    // TODO: in the long run, these should self-declare their dependencies, and
+    // do a topological sort to initialize and terminate them in order:
+    s = init(Stylesheet, s)
+    s = init(Email, s)
+    s = init(Person, s)
     
     s
   }

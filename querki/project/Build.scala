@@ -14,7 +14,8 @@ object ApplicationBuild extends Build {
       // Add your project dependencies here,
       //"org.hoisted" % "actuarius_2.10" % "0.2.5-SNAPSHOT"//,
       "mysql" % "mysql-connector-java" % "5.1.23",
-      "org.scalatest" %% "scalatest" % "2.0.M5b" % "test"
+      "org.scalatest" %% "scalatest" % "2.0.M5b" % "test",
+      "javax.mail" % "javax.mail-api" % "1.5.0"
     )
     
     val main = play.Project(appName, appVersion, appDependencies).settings(

@@ -127,15 +127,39 @@ class Space extends Actor {
       // Now load each kind. We do this in order, although in practice it shouldn't
       // matter too much so long as Space comes last:
       def getThingStream[T <: Thing](kind:Int)(builder:(OID, OID, PropMap) => T):Stream[T] = {
-        streamsByKind.get(kind).getOrElse(Stream.Empty).map { row =>
-          // TODO: the app shouldn't be hardcoded to SystemSpace
-          val propMap = Thing.deserializeProps(row.get[String]("props").get, curState)
-          builder(OID(row.get[Long]("id").get), OID(row.get[Long]("model").get), propMap)
-        }
+        streamsByKind.get(kind).getOrElse(Stream.Empty).map({ row =>
+          // This is a critical catch, where we log load-time errors. But we don't want to
+          // raise them to the user, so objects that fail to load are (for the moment) quietly
+          // suppressed.
+          // TBD: we should get more refined about these errors, and expose them a bit
+          // more -- as it is, errors can propagate widely, so objects just vanish. 
+          // But they should generally be considered internal errors.
+          try {
+            val propMap = Thing.deserializeProps(row.get[String]("props").get, curState)
+            Some(builder(OID(row.get[Long]("id").get), OID(row.get[Long]("model").get), propMap))
+          } catch {
+            case error:Exception => {
+              // TODO: this should go to a more serious error log, that we pay attention to. It
+              // indicates an internal DB inconsistency that we should have ways to clean up.
+              Logger.error("Error while trying to load ThingStream " + id, error)
+              None
+            }            
+          }
+        }).flatten
       }
+      
       def getThings[T <: Thing](kind:Int)(builder:(OID, OID, PropMap) => T):Map[OID, T] = {
         val tStream = getThingStream(kind)(builder)
-        (Map.empty[OID, T] /: tStream)((m, t) => m + (t.id -> t))
+        (Map.empty[OID, T] /: tStream) { (m, t) =>
+          try {
+            m + (t.id -> t)
+          } catch {
+            case error:Exception => {
+              Logger.error("Error while trying to assemble ThingStream " + id, error)
+              m
+            }
+          }
+        }
       }
       
       val spaceStream = getThingStream(Kind.Space) { (thingId, modelId, propMap) =>
