@@ -25,22 +25,15 @@ object OIDs {
 
 class StylesheetModule(val moduleId:Short) extends modules.Module {
 
-  val props = oidMap[Property[_,_]](
+  override val props = Seq(
     StylesheetProp,
     CSSProp,
     GoogleFontProp
   )
   
-  val things = oidMap[ThingState](StylesheetBase)
+  override val things = Seq(StylesheetBase)
   
-  val types = oidMap[PType[_]](CSSTextType)
-  
-  override def addSystemObjects(state:SpaceState):SpaceState = {
-    state.copy(
-      spaceProps = props ++: state.spaceProps, 
-      things = things ++: state.things,
-      types = types ++: state.types)
-  }
+  override val types = Seq(CSSTextType)
   
   object HeaderHandler extends Contributor[HtmlEvent, String] {
     def notify(evt:HtmlEvent, sender:Aggregator[HtmlEvent,String]):String = {

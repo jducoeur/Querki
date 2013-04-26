@@ -43,6 +43,8 @@ object Modules {
   }
 }
 
+import models.Space.oidMap
+
 /**
  * Represents a "plug-in" part of the system.
  * 
@@ -70,6 +72,21 @@ object Modules {
  * This is fine, but note that these listeners are always required to be *fast* -- any slow
  * actions (where "slow" is certainly anything that takes longer than a millisecond, and
  * preferably less than that) must happen in separate Actors.
+ * 
+ * 
+ * =================
+ * Building a Module
+ * =================
+ * 
+ * A Module's constructor should be completely self-contained -- it should not have any
+ * external references to runtime data. That has an *extremely* important corollary: it
+ * shouldn't construct anything that refers to external objects. That in turn means that
+ * it shouldn't use OIDs from other Modules. And that, in turn, tends to imply that you
+ * shouldn't define any Things in the constructor.
+ * 
+ * Instead, Things should usually be created during init(). This will build everything
+ * *after* all of the Modules have been created, so all the MOIDs will exist. It also
+ * creates everything in DependsUpon order, so that Modules can depend on each other.
  */
 trait Module {
   
@@ -107,11 +124,25 @@ trait Module {
     OIDs.sysId(moduleId << 16 + localId)
   }
   
+  val types:Seq[PType[_]] = Seq.empty
+  val props:Seq[Property[_,_]] = Seq.empty
+  val things:Seq[ThingState] = Seq.empty
+  
   /**
    * If the Module requires any specialized Things, Properties, Types or Collections,
    * add them to the state here. The returned state should be the passed-in one plus
    * the Module's stuff. (Note that the passed-in state is the System Space -- you are
    * adding stuff to System.)
+   * 
+   * Individual Modules should not usually need to override this; instead, just define
+   * your objects in the types, props and things properties, and they will be added
+   * automatically.
    */
-  def addSystemObjects(state:SpaceState):SpaceState = { state }
+  def addSystemObjects(state:SpaceState):SpaceState = {
+    state.copy(
+      spaceProps = oidMap[Property[_,_]](props:_*) ++: state.spaceProps, 
+      things = oidMap[ThingState](things:_*) ++: state.things,
+      types = oidMap[PType[_]](types:_*) ++: state.types)
+  }
+  
 }

@@ -1,5 +1,7 @@
 package modules.email
 
+import javax.mail._
+
 import models._
 import models.Space.oidMap
 import models.Thing._
@@ -15,17 +17,9 @@ class EmailModule(val moduleId:Short) extends modules.Module {
   }  
   import MOIDs._
   
-  val types = oidMap[PType[_]](EmailAddressType)
+  override val types = Seq(EmailAddressType)
   
-  val props = oidMap[Property[_,_]](EmailProp)
-  
-  override def addSystemObjects(state:SpaceState):SpaceState = {
-    state.copy(
-      spaceProps = props ++: state.spaceProps, 
-//      things = things ++: state.things,
-      types = types ++: state.types
-    )
-  }
+  override val props = Seq(EmailProp)
   
   /**
    * Represents an email address. For the moment this is basically just a String, but we'll gradually

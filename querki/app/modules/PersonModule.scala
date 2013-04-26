@@ -17,15 +17,7 @@ class PersonModule(val moduleId:Short) extends modules.Module {
   }
   import MOIDs._
   
-  val things = oidMap[ThingState](Person)
-
-  override def addSystemObjects(state:SpaceState):SpaceState = {
-    state.copy(
-//      spaceProps = props ++: state.spaceProps, 
-      things = things ++: state.things
-//      types = types ++: state.types
-    )
-  }
+  override val things = Seq(Person)
 
   object Person extends ThingState(PersonOID, systemOID, RootOID,
     toProps(
