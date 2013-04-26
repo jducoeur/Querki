@@ -124,9 +124,18 @@ trait Module {
     OIDs.sysId(moduleId << 16 + localId)
   }
   
-  val types:Seq[PType[_]] = Seq.empty
-  val props:Seq[Property[_,_]] = Seq.empty
-  val things:Seq[ThingState] = Seq.empty
+  /**
+   * The PTypes introduced by this Module, if any.
+   */
+  lazy val types:Seq[PType[_]] = Seq.empty
+  /**
+   * The Properties introduced by this Module, if any.
+   */
+  lazy val props:Seq[Property[_,_]] = Seq.empty
+  /**
+   * The Things (usually Models, but not necessarily) introduced by this Module, if any.
+   */
+  lazy val things:Seq[ThingState] = Seq.empty
   
   /**
    * If the Module requires any specialized Things, Properties, Types or Collections,

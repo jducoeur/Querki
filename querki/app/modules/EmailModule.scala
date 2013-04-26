@@ -17,10 +17,6 @@ class EmailModule(val moduleId:Short) extends modules.Module {
   }  
   import MOIDs._
   
-  override val types = Seq(EmailAddressType)
-  
-  override val props = Seq(EmailProp)
-  
   /**
    * Represents an email address. For the moment this is basically just a String, but we'll gradually
    * add things like validation, so it's useful to get the abstraction clean now.
@@ -39,9 +35,12 @@ class EmailModule(val moduleId:Short) extends modules.Module {
     val doDefault = EmailAddress("")
     def wrap(raw:String):valType = EmailAddress(raw)
   }
-  object EmailAddressType extends EmailAddressType(EmailTypeOID)
+  lazy val EmailAddressType = new EmailAddressType(EmailTypeOID)
+  override lazy val types = Seq(EmailAddressType)
   
-  object EmailProp extends SystemProperty(EmailPropOID, EmailAddressType, Optional,
+  override lazy val props = Seq(
+    // The actual email-address property
+    new SystemProperty(EmailPropOID, EmailAddressType, Optional,
       toProps(
         setName("Email Address"),
         DisplayTextProp("""
@@ -53,4 +52,5 @@ that an address be given, or allow a list of them, you will need to create a
 separate Property with the Email Address type.
 """)
       ))
+    )
 }
