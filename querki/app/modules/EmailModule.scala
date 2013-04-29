@@ -6,14 +6,19 @@ import models._
 import models.Space.oidMap
 import models.Thing._
 import models.system._
+import models.system.OIDs._
 
 import ql.ContextBase
+
+import modules.Modules._
 
 class EmailModule(val moduleId:Short) extends modules.Module {
   
   object MOIDs {
     val EmailTypeOID = moid(1)
     val EmailPropOID = moid(2)
+    val EmailTemplateOID = moid(3)
+    val EmailToOID = moid(4)
   }  
   import MOIDs._
   
@@ -51,6 +56,33 @@ Note, however, that this Property is one optional address. If you want to requir
 that an address be given, or allow a list of them, you will need to create a
 separate Property with the Email Address type.
 """)
+      )),
+      
+    // TODO: introduce the Recipients property. This is an indirection between
+    // Email Message and Email To, a QL expression that returns the list of people
+    // people to email.
+    
+    new SystemProperty(EmailToOID, LinkType, QList,
+        toProps(
+          setName("Email To"),
+          (LinkModelOID -> Optional(ElemValue(Person.MOIDs.PersonOID))),
+          DisplayTextProp("""
+This is the raw list of people to send this email to. If you want to do
+something fancier than sending to specific people, see the Recipients property.
+""")
       ))
-    )
+  )
+    
+  override lazy val things = Seq(
+    ThingState(EmailTemplateOID, systemOID, RootOID,
+      toProps(
+        setName("Email Message"),
+        IsModelProp(true),
+        (EmailToOID -> QList.default(LinkType)),
+        DisplayTextProp("""
+This is the Model for sending emails. You start by creating an Email Message. Then you
+set its Display Text to say what you want (using all the same features you can use for
+showing a Thing on the Web).
+""")))
+  )
 }
