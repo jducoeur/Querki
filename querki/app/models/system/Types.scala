@@ -281,6 +281,22 @@ abstract class PlainTextType(tid:OID) extends SystemType[PlainText](tid,
 }
 object PlainTextType extends PlainTextType(PlainTextOID)
 
+class InternalMethodType(tid:OID) extends SystemType[String](tid,
+    toProps(
+      setName("Internal Method")
+    )) with SimplePTypeBuilder[String]
+{
+  def boom = throw new Exception("InternalMethodType cannot be used conventionally. It simply wraps code.")
+  def doDeserialize(v:String) = boom
+  def doSerialize(v:String) = boom
+
+  def doRender(context:ContextBase)(v:String) = Wikitext("Internal Method")
+    
+  val doDefault = ""
+  override def wrap(raw:String):valType = boom 
+}
+object InternalMethodType extends InternalMethodType(InternalMethodOID)
+
 object SystemTypes {
-  def all = Space.oidMap[PType[_]](IntType, TextType, YesNoType, NameType, LinkType, LargeTextType, PlainTextType)  
+  def all = Space.oidMap[PType[_]](IntType, TextType, YesNoType, NameType, LinkType, LargeTextType, PlainTextType, InternalMethodType)  
 }

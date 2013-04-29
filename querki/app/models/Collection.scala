@@ -18,6 +18,8 @@ trait PropValue {
   
   def serialize(elemT:pType):String = coll.doSerialize(cv, elemT)
   def first = coll.first(this)
+  
+  def isEmpty = coll.isEmpty(this)
 }
 
 /**

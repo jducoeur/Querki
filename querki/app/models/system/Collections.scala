@@ -224,6 +224,37 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
   }
   object QList extends QList(QListOID)
   
+/**
+ * This is a special marker collection that is Unit -- that is, it is by definition empty.
+ * It should only be used for "marker" Properties, where the existence or non-existence of the
+ * Property is the significant part. Action-only side-effecting Methods are the most likely
+ * usage.
+ */
+class QUnit(cid:OID) extends SystemCollection(cid,
+  toProps(
+    setName("Always Empty")
+  )) 
+{
+  type implType = List[ElemValue]
+    
+  def doDeserialize(ser:String, elemT:pType):implType = Nil
+    
+  def doSerialize(v:implType, elemT:pType):String = ""
+    
+  def doRender(context:ContextBase)(v:implType, elemT:pType):Wikitext = Wikitext("")
+    
+  def doDefault(elemT:pType):implType = Nil
+    
+  def wrap(elem:ElemValue):implType = Nil
+  def makePropValue(cv:implType):PropValue = UnitPropValue(cv, this)    
+  private case class UnitPropValue(cv:implType, coll:QUnit) extends PropValue
+    
+  def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+    <i>Defined</i>
+  }
+}
+object QUnit extends QUnit(QUnitOID)
+    
 object SystemCollections {
-  def all = Space.oidMap[Collection](UrCollection, ExactlyOne, Optional, QList)
+  def all = Space.oidMap[Collection](UrCollection, ExactlyOne, Optional, QList, QUnit)
 }

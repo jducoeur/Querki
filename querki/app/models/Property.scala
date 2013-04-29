@@ -76,14 +76,8 @@ case class Property[VT, -RT](
     Html(cType.renderInput(this, state, currentValue, pType).toString)
   }
   
-  /**
-   * qlApply on a Property expects the input context to be a single Link. It returns the value
-   * of this Property on that Link.
-   * 
-   * TODO: if this Property isn't defined on the target Thing or its ancestors, this should return None.
-   * So technically, this should be returning Optional.
-   */
-  override def qlApply(context:ContextBase):TypedValue = {
+  
+  def applyToIncomingThing(context:ContextBase)(action:(Thing, ContextBase) => TypedValue):TypedValue = {
     val valType = context.value.pt
     valType match {
       case link:LinkType => {
@@ -92,14 +86,25 @@ case class Property[VT, -RT](
         val oid = context.value.v.first.elem.asInstanceOf[OID]
         val thing = link.follow(context)(oid)
         thing match {
-          case Some(t) => {
-            val result = t.getPropVal(this)(context.state)
-            TypedValue(result, pType)
-          }
+          case Some(t) => action(t, context)
           case None => ErrorValue("Couldn't find Thing " + oid.toString)
         }
       }
       case _ => ErrorValue("Can't apply a Property in a " + valType.displayName + " context!")
+    }    
+  }
+  
+  /**
+   * qlApply on a Property expects the input context to be a single Link. It returns the value
+   * of this Property on that Link.
+   * 
+   * TODO: if this Property isn't defined on the target Thing or its ancestors, this should return None.
+   * So technically, this should be returning Optional.
+   */
+  override def qlApply(context:ContextBase):TypedValue = {
+    applyToIncomingThing(context) { (t, context) =>
+      val result = t.getPropVal(this)(context.state)
+      TypedValue(result, pType)
     }
   }  
 }

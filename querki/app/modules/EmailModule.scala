@@ -8,9 +8,11 @@ import models.Thing._
 import models.system._
 import models.system.OIDs._
 
-import ql.ContextBase
+import ql.{ContextBase, TypedValue}
 
 import modules.Modules._
+
+import play.api.Logger
 
 class EmailModule(val moduleId:Short) extends modules.Module {
   
@@ -19,8 +21,13 @@ class EmailModule(val moduleId:Short) extends modules.Module {
     val EmailPropOID = moid(2)
     val EmailTemplateOID = moid(3)
     val EmailToOID = moid(4)
+    val EmailSendOID = moid(5)
   }  
   import MOIDs._
+  
+  /******************************************
+   * TYPES
+   ******************************************/
   
   /**
    * Represents an email address. For the moment this is basically just a String, but we'll gradually
@@ -43,6 +50,31 @@ class EmailModule(val moduleId:Short) extends modules.Module {
   lazy val EmailAddressType = new EmailAddressType(EmailTypeOID)
   override lazy val types = Seq(EmailAddressType)
   
+  /***********************************************
+   * PROPERTIES
+   ***********************************************/
+  lazy val sendEmail = new SingleThingMethod(EmailSendOID, "Send Email", """Invoke this method to actually send this email.
+      It will return a List of the Persons who the email was sent to this time.""", 
+    {
+      (t:Thing, context:ContextBase) =>
+        // TODO: this is where we actually send the email!!!
+        Logger.info("Send Email has been called on " + t.displayName)
+        implicit val state = context.state
+        val recipients = t.getProp(emailTo)
+        // TODO: this should only pass along the people who the email was actually sent to:
+        TypedValue(recipients.v, LinkType)
+    })
+  
+  lazy val emailTo = new SystemProperty(EmailToOID, LinkType, QList,
+        toProps(
+          setName("Email To"),
+          (LinkModelOID -> Optional(ElemValue(Person.MOIDs.PersonOID))),
+          DisplayTextProp("""
+This is the raw list of people to send this email to. If you want to do
+something fancier than sending to specific people, see the Recipients property.
+""")
+      ))
+  
   override lazy val props = Seq(
     // The actual email-address property
     new SystemProperty(EmailPropOID, EmailAddressType, Optional,
@@ -62,15 +94,9 @@ separate Property with the Email Address type.
     // Email Message and Email To, a QL expression that returns the list of people
     // people to email.
     
-    new SystemProperty(EmailToOID, LinkType, QList,
-        toProps(
-          setName("Email To"),
-          (LinkModelOID -> Optional(ElemValue(Person.MOIDs.PersonOID))),
-          DisplayTextProp("""
-This is the raw list of people to send this email to. If you want to do
-something fancier than sending to specific people, see the Recipients property.
-""")
-      ))
+    emailTo,
+    
+    sendEmail
   )
     
   override lazy val things = Seq(
@@ -79,6 +105,7 @@ something fancier than sending to specific people, see the Recipients property.
         setName("Email Message"),
         IsModelProp(true),
         (EmailToOID -> QList.default(LinkType)),
+        sendEmail.decl,
         DisplayTextProp("""
 This is the Model for sending emails. You start by creating an Email Message. Then you
 set its Display Text to say what you want (using all the same features you can use for

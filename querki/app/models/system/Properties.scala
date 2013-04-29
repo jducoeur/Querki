@@ -166,3 +166,58 @@ is really intended to only apply to Things *or* Properties, not both. So using t
 will keep you from having a long and confusing Property List.
 """)
       ))
+
+import ql.{ContextBase, TypedValue}
+/**
+ * Internal methods -- functions defined in-code that can be assigned as properties -- should
+ * inherit from this.
+ */
+class InternalMethod(tid:OID, p:PropFetcher) extends SystemProperty(tid, InternalMethodType, QUnit, p)
+{
+  /**
+   * Methods should override this to implement their own functionality.
+   * 
+   * TBD: we probably want to lift out some common patterns, but we'll have to see what
+   * those look like.
+   */
+  override def qlApply(context:ContextBase):TypedValue = {
+    // By default, we just pass the incoming context right through:
+    return context.value
+  }
+  
+  /**
+   * Methods are, currently, always QUnit -- that is, they can't have data with them.
+   * 
+   * TBD: this is actually questionable. What if we allowed them to have their own data with
+   * the declaration? That would essentially allow us some simple higher-kinded functions,
+   * which might be kinda useful.
+   */
+  def decl = (tid, QUnit.default(InternalMethodType))
+}
+
+/**
+ * Convenience class for internal methods that expect to work with a single Thing -- for example,
+ * a method that operates on the Thing it is attached to. This is probably going to be the most
+ * common type of method.
+ * 
+ * TBD: action really ought to be a separate parameter list, but for some reason I'm having trouble
+ * instantiating it that way. Figure out the syntax and do that.
+ */
+class SingleThingMethod(tid:OID, name:String, desc:String, action:(Thing, ContextBase) => TypedValue) extends InternalMethod(tid,
+    toProps(
+      setName(name),
+      DisplayTextProp(desc)
+    ))
+{
+  override def qlApply(context:ContextBase):TypedValue = {
+    applyToIncomingThing(context)(handleThing)
+  }
+  
+  /**
+   * Definition of the method needs to define this -- take the incoming Thing (most often, the
+   * Thing that the Method is defined upon) and do whatever is appropriate.
+   * 
+   * Pure side-effecting methods should typically just return the value from the context.
+   */
+  def handleThing(t:Thing, context:ContextBase):TypedValue = action(t, context)
+}
