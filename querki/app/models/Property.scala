@@ -56,6 +56,7 @@ case class Property[VT, -RT](
   def isEmpty(v:PropValue) = cType.isEmpty(v)
 
   def apply(raw:RT) = (this.id, cType(pType(raw)))
+  def apply() = (this.id, cType.default(pType))
   
   def validate(str:String) = pType.validate(str)
   import play.api.data.Form

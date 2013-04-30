@@ -22,6 +22,9 @@ class EmailModule(val moduleId:Short) extends modules.Module {
     val EmailTemplateOID = moid(3)
     val EmailToOID = moid(4)
     val EmailSendOID = moid(5)
+    val EmailSubjectOID = moid(6)
+    val EmailCcOID = moid(7)
+    val EmailBodyOID = moid(8)
   }  
   import MOIDs._
   
@@ -53,6 +56,7 @@ class EmailModule(val moduleId:Short) extends modules.Module {
   /***********************************************
    * PROPERTIES
    ***********************************************/
+  
   lazy val sendEmail = new SingleThingMethod(EmailSendOID, "Send Email", """Invoke this method to actually send this email.
       It will return a List of the Persons who the email was sent to this time.""", 
     {
@@ -72,9 +76,24 @@ class EmailModule(val moduleId:Short) extends modules.Module {
           DisplayTextProp("""
 This is the raw list of people to send this email to. If you want to do
 something fancier than sending to specific people, see the Recipients property.
-""")
-      ))
+""")))
   
+  lazy val emailCc = new SystemProperty(EmailCcOID, LinkType, QList,
+        toProps(
+          setName("Email Cc"),
+          (LinkModelOID -> Optional(ElemValue(Person.MOIDs.PersonOID))),
+          DisplayTextProp("This is the raw list of people to copy on this email.")))
+  
+  lazy val emailSubject = new SystemProperty(EmailSubjectOID, TextType, ExactlyOne,
+      toProps(
+        setName("Email Subject"),
+        DisplayTextProp("The title of the email")))
+
+  lazy val emailBody = new SystemProperty(EmailBodyOID, LargeTextType, ExactlyOne,
+      toProps(
+        setName("Email Body"),
+        DisplayTextProp("The Contents of the email")))
+
   override lazy val props = Seq(
     // The actual email-address property
     new SystemProperty(EmailPropOID, EmailAddressType, Optional,
@@ -96,16 +115,29 @@ separate Property with the Email Address type.
     
     emailTo,
     
+    emailCc,
+    
+    emailSubject,
+    
+    emailBody,
+    
     sendEmail
   )
+  
+  /***********************************************
+   * THINGS
+   ***********************************************/
     
   override lazy val things = Seq(
     ThingState(EmailTemplateOID, systemOID, RootOID,
       toProps(
         setName("Email Message"),
         IsModelProp(true),
-        (EmailToOID -> QList.default(LinkType)),
-        sendEmail.decl,
+        emailTo(),
+        emailCc(),
+        emailSubject(""),
+        emailBody(),
+        sendEmail(),
         DisplayTextProp("""
 This is the Model for sending emails. You start by creating an Email Message. Then you
 set its Display Text to say what you want (using all the same features you can use for
