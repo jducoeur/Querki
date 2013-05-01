@@ -49,6 +49,30 @@ abstract class ContextBase {
   // in its parent context.
   def parent:ContextBase
   
+  /**
+   * Maps the given function to each element in this context.
+   */
+  def map[T](cb:ContextBase => T) = {
+    value.v.cv map { elem =>
+      val elemContext = QLContext(TypedValue(ExactlyOne(elem), value.pt), request, Some(this))
+      cb(elemContext)
+    }
+  }
+  
+  /**
+   * Maps the given function to each element in this context, and flattens the result.
+   * 
+   * TODO: this isn't quite right, monadically speaking -- it's shouldn't assume Option. At some
+   * point when I can think it through better, make the signatures here more correct. But Option is
+   * the case I usually care about.
+   */
+  def flatMap[T](cb:ContextBase => Option[T]) = {
+    value.v.cv flatMap { elem =>
+      val elemContext = QLContext(TypedValue(ExactlyOne(elem), value.pt), request, Some(this))
+      cb(elemContext)
+    }
+  }
+  
   override def toString = "Context(" + value.v + ")"
 }
 
@@ -122,11 +146,9 @@ class QLParser(val input:QLText, initialContext:ContextBase) extends RegexParser
   private def processTextStage(text:QLTextStage, context:ContextBase):ContextBase = {
     logContext("processTextStage " + text, context)
     val ct = context.value.ct
-    val pt = context.value.pt
     // For each element of the incoming context, recurse in and process the embedded Text
     // in that context.
-    val transformed = context.value.v.cv map { elem =>
-      val elemContext = QLContext(TypedValue(ExactlyOne(elem), pt), context.request, Some(context))
+    val transformed = context.map { elemContext =>
       ParsedTextType(processParseTree(text.contents, elemContext))
     }
     // TBD: the asInstanceOf here is surprising -- I would have expected transformed to come out

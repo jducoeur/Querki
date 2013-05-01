@@ -15,7 +15,9 @@ object ApplicationBuild extends Build {
       //"org.hoisted" % "actuarius_2.10" % "0.2.5-SNAPSHOT"//,
       "mysql" % "mysql-connector-java" % "5.1.23",
       "org.scalatest" %% "scalatest" % "2.0.M5b" % "test",
-      "javax.mail" % "javax.mail-api" % "1.5.0"
+      "javax.mail" % "javax.mail-api" % "1.5.0",
+      "com.sun.mail" % "smtp" % "1.5.0",
+      "com.sun.mail" % "mailapi" % "1.5.0"
     )
     
     val main = play.Project(appName, appVersion, appDependencies).settings(

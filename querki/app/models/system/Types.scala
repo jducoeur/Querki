@@ -211,6 +211,13 @@ object CommonInputRenderers {
     def doSerialize(v:OID) = v.toString
     
     def follow(context:ContextBase)(v:OID) = context.state.anything(v)
+    def followLink(context:ContextBase):Option[Thing] = {
+      // This should only be called if the valType is LinkType, and the Collection is
+      // single-valued!
+      // TODO: Evil! ElemValue really ought to have its own mapping into the PType.
+      val oid = context.value.v.first.elem.asInstanceOf[OID]
+      follow(context)(oid)
+    }
 
     def doRender(context:ContextBase)(v:OID) = {
       val target = follow(context)(v)

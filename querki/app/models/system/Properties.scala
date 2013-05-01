@@ -1,5 +1,7 @@
 package models.system
 
+import play.api.Logger
+
 import models._
 
 import Property._
@@ -167,7 +169,7 @@ will keep you from having a long and confusing Property List.
 """)
       ))
 
-import ql.{ContextBase, TypedValue}
+import ql.{ContextBase, ErrorValue, TypedValue}
 /**
  * Internal methods -- functions defined in-code that can be assigned as properties -- should
  * inherit from this.
@@ -210,7 +212,12 @@ class SingleThingMethod(tid:OID, name:String, desc:String, action:(Thing, Contex
     ))
 {
   override def qlApply(context:ContextBase):TypedValue = {
-    applyToIncomingThing(context)(handleThing)
+    try {
+      applyToIncomingThing(context)(handleThing)
+    } catch {
+      case error:Exception => Logger.error("Error while running internal method", error)
+      ErrorValue("Error while running internal method")
+    }
   }
   
   /**

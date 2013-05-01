@@ -54,6 +54,11 @@ case class Property[VT, -RT](
   def first(v:PropValue):VT = pType.get(cType.first(v))
   
   def isEmpty(v:PropValue) = cType.isEmpty(v)
+  
+  def flatMap[T](v:PropValue)(cb:VT => Option[T]) = v.cv.flatMap { elem => 
+    val vt = pType.get(elem)
+    cb(vt)
+  }
 
   def apply(raw:RT) = (this.id, cType(pType(raw)))
   def apply() = (this.id, cType.default(pType))
@@ -83,12 +88,10 @@ case class Property[VT, -RT](
     valType match {
       case link:LinkType => {
         val coll = context.value.ct
-        // TODO: Evil! ElemValue really ought to have its own mapping into the PType.
-        val oid = context.value.v.first.elem.asInstanceOf[OID]
-        val thing = link.follow(context)(oid)
+        val thing = link.followLink(context)
         thing match {
           case Some(t) => action(t, context)
-          case None => ErrorValue("Couldn't find Thing " + oid.toString)
+          case None => ErrorValue("Couldn't find Thing from " + context.toString)
         }
       }
       case _ => ErrorValue("Can't apply a Property in a " + valType.displayName + " context!")
@@ -205,5 +208,6 @@ case class PropAndVal[VT](prop:Property[VT, _], v:PropValue) {
   def renderPlainIfDefined = if (!prop.isEmpty(v)) renderPlain else Wikitext("")
   def split() = (prop, v)
   def first = prop.first(v)
+  def flatMap[T](cb:VT => Option[T]) = prop.flatMap(v)(cb)
 }
 
