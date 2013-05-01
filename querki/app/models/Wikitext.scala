@@ -36,6 +36,13 @@ class Wikitext(wiki:String) {
   def internal = wiki.replace('\266', '\n')
   
   /**
+   * This is the nearly raw, unprocessed text. It should only be used when we are *not* sending
+   * to an HTML environment -- generally, when you want to process a text field for QL but not
+   * for QText. Note that this does no XML escaping!
+   */
+  def plaintext = internal
+  
+  /**
    * Wikitext can be concatenated just like strings.
    */
   def +(other:Wikitext) = new Wikitext(internal + other.internal)

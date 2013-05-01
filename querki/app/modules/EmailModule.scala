@@ -12,7 +12,7 @@ import models.Thing._
 import models.system._
 import models.system.OIDs._
 
-import ql.{ContextBase, QLParser, TypedValue}
+import ql._
 
 import modules.Modules._
 
@@ -177,76 +177,57 @@ showing a Thing on the Web).
 
     // TODO: make this configurable:
     session.setDebug(true)
-//    
-//    def sendToPerson(person:Thing):Option[EmailAddress] = {
-//      try {
-//        val name = person.displayName
-//        val addrList = person.getProp(emailAddress)
-//        val addr = addrList.first
-//        // TBD: why is this asInstanceOf needed? Something having to do with setRecipients
-//        // being invariant?
-//        val msgAddr = new InternetAddress(addr.addr, name).asInstanceOf[Address]
-//        
-//        
-//      } catch {
-//        // Tres bizarre: *displaying* this error seems to throw another exception!
-//        case error:Throwable => Logger.info("Got an error from the email address " + error.getClass()); None 
-//      }
-//    }
     
-    val msg = new MimeMessage(session)
-    msg.setFrom(new InternetAddress(from))
-    
-    Logger.info("Created the MIME message")
-    
-    val toAddrs = recipients.flatMap({ personOID =>
-          Logger.info("About to follow the link")
-          val thing = state.anything(personOID)
-          thing match {
-            case Some(person) => {
-              Logger.info("About to get the email address")
-              try {
-                Logger.info("About to get the name")
-                val name = person.displayName
-                Logger.info("Really about to get the address for " + name)
-                val addrList = person.getProp(emailAddress)
-                Logger.info("About to get the first")
-                val addr = addrList.first
-                Logger.info("About to create the InternetAddress")
-                // TBD: why is this asInstanceOf needed? Something having to do with setRecipients
-                // being invariant?
-                Some(new InternetAddress(addr.addr, name).asInstanceOf[Address])
-              } catch {
-                // Tres bizarre: *displaying* this error seems to throw another exception!
-                case error:Throwable => Logger.info("Got an error from the email address " + error.getClass()); None 
-              }
-            }
-            case None => None  // TODO: some kind of error here?
-          }
-    }).toArray    
+    def sendToPerson(person:Thing):Option[OID] = {
+      try {
+        // TODO: check if this person has already been sent this email
+        val name = person.displayName
+        val addrList = person.getProp(emailAddress)
+        val addr = addrList.first
+        // TBD: there must be a better way to do this. It's a nasty workaround for the fact
+        // that setRecipients() is invariant, I believe.
+        val toAddrs = Array(new InternetAddress(addr.addr, name).asInstanceOf[Address])
+        
+        val msg = new MimeMessage(session)
+        msg.setFrom(new InternetAddress(from))
 
-    Logger.info("Got the Tos")
-    // TODO: all of this should happen *per-recipient*, since the QL can resolve differently!
-    msg.setRecipients(Message.RecipientType.TO, toAddrs)
-    
-    Logger.info("Set the recipients")
-    
-    val subjectQL = t.getProp(emailSubject).first
-    val subject = subjectQL.text  // NO -- this should be parsed
-    msg.setSubject(subject)
-    
-    val bodyQL = t.getProp(emailBody).first
-    val body = bodyQL.text  // NO -- this should be parsed
-    msg.setDataHandler(new DataHandler(new ByteArrayDataSource(body, "text/html")))
-    
-    msg.setHeader("X-Mailer", "Querki")
-    msg.setSentDate(new java.util.Date())
-    
-    Logger.info("About to send the message")
-    Transport.send(msg)
-    Logger.info("Message sent")
+	    msg.setRecipients(Message.RecipientType.TO, toAddrs)
+	    
+	    val personContext = QLContext(TypedValue(ExactlyOne(ElemValue(person.id)), LinkType), context.request, Some(context))
+	    
+	    val subjectQL = t.getProp(emailSubject).first
+	    val subjectParser = new QLParser(subjectQL, personContext)
+	    val subject = subjectParser.process.plaintext
+	    msg.setSubject(subject)
+	    
+	    val bodyQL = t.getProp(emailBody).first
+	    val bodyParser = new QLParser(bodyQL, personContext)
+	    val body = bodyParser.process.display
+	    msg.setDataHandler(new DataHandler(new ByteArrayDataSource(body, "text/html")))
+	    
+	    msg.setHeader("X-Mailer", "Querki")
+	    msg.setSentDate(new java.util.Date())
+	    
+	    Logger.info("About to send the message")
+	    Transport.send(msg)
 
-    // TODO: this should only pass along the people who the email was actually sent to:
-    TypedValue(recipients.v, LinkType)
+	    Some(person.id)
+      } catch {
+        case error:Throwable => Logger.info("Got an error while sending email " + error.getClass()); None 
+      }
+    }
+    
+    val sentTo = recipients.flatMap { personOID =>
+      val thing = state.anything(personOID)
+      thing match {
+        case Some(person) => sendToPerson(person)
+        case None => None  // TODO: some kind of error here?
+      }
+    }
+
+    // TODO: add the recipients to the Sent To list
+    
+    val resultingList = QList.makePropValue(sentTo.map(ElemValue(_)).toList)
+    TypedValue(resultingList, LinkType)
   }
 }
