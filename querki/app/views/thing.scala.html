@@ -20,13 +20,20 @@
       });
     </script>
 
-    @if(!rc.chromeless) {
-	<div class="clickToEdit page-header">
-	  <h1>@thing.displayName</h1>
-	</div>
-	}
+    @if(rc.hasProp) {
+    
+      @Html(thing.render(rc, rc.prop).display)
+
+    } else {
+	  <div class="clickToEdit">
+
+        @if(!rc.chromeless) {
+	    <div class="page-header">
+	      <h1>@thing.displayName</h1>
+	    }
 	
-	<div class="clickToEdit">
-	  @Html(thing.render(rc).display)
-	</div>
+	    @Html(thing.render(rc).display)
+	  
+	  </div>
+	}
 }

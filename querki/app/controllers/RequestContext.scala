@@ -36,13 +36,22 @@ case class RequestContext(
   def hasQueryParam(paramName:String) = request.queryString.contains(paramName)
   def queryParam(paramName:String):Seq[String] = request.queryString(paramName)
   def firstQueryParam(paramName:String):Option[String] = {
-    queryParam(paramName) match {
-      case first :: rest => Some(first)
-      case _ => None
-    }
+    val seq = queryParam(paramName)
+    if (seq.isEmpty) None else Some(seq.head)
   }
   
   def chromeless = hasQueryParam("cl")
+  
+  val propStrName = "prop"
+  def hasProp = hasQueryParam(propStrName)
+  def propStr = firstQueryParam(propStrName)
+  // If there was a property specified as a query parameter, that is the property we should
+  // evaluate and render. This returns that property, if there is one:
+  def prop:Option[Property[_,_]] = {
+    // TBD: I should be able to write this as a for comprehension, but I'm doing
+    // something wrong in the syntax. Fix it:
+    state.flatMap(space => propStr.flatMap(id => space.prop(ThingId(id))))
+  }
 }
 object RequestContext {
   implicit def rc2Space(rc:RequestContext) = rc.state

@@ -36,14 +36,31 @@ case class SpaceState(
   extends Thing(s, s, m, Kind.Space, pf) 
 {
   // Walks up the App tree, looking for the specified Thing of the implied type:
-  def resolve[T <: Thing](tid:OID)(lookup: (SpaceState, OID) => Option[T]):T = {
-    lookup(this, tid).getOrElse(
+  // IMPORTANT: note that the OID and ThingId versions of these methods are inconsistent in their
+  // return signatures! That is a historical accident.
+  // TODO: these OID methods really should return Option[T]. Throwing an exception this deep in the stack
+  // is tending to produce pretty damned cryptic exceptions. Instead, just make the higher levels cope
+  // with the Nones.
+  def resolve[T <: Thing](tid:OID)(lookup: (SpaceState) => Map[OID, T]):T = {
+    lookup(this).get(tid).getOrElse(
           app.map(_.resolve(tid)(lookup)).getOrElse(throw new Exception("Couldn't find " + tid)))
   }
-  def typ(ptr:OID) = resolve(ptr) (_.types.get(_))
-  def prop(ptr:OID) = resolve(ptr) (_.spaceProps.get(_))
-  def thing(ptr:OID) = resolve(ptr) (_.things.get(_))
-  def coll(ptr:OID) = resolve(ptr) (_.colls.get(_))
+  def typ(ptr:OID) = resolve(ptr) (_.types)
+  def prop(ptr:OID) = resolve(ptr) (_.spaceProps)
+  def thing(ptr:OID) = resolve(ptr) (_.things)
+  def coll(ptr:OID) = resolve(ptr) (_.colls)
+  
+  def resolve[T <: Thing](tid:ThingId)(lookup: (SpaceState) => Map[OID, T]):Option[T] = {
+    val map = lookup(this)
+    tid match {
+      case AsOID(id) => map.get(id).orElse(app.flatMap(_.resolve(tid)(lookup)))
+      case AsName(name) => thingWithName(name, map).orElse(app.flatMap(_.resolve(tid)(lookup)))
+    }
+  }
+  def typ(ptr:ThingId) = resolve(ptr) (_.types)
+  def prop(ptr:ThingId) = resolve(ptr) (_.spaceProps)
+  def thing(ptr:ThingId) = resolve(ptr) (_.things)
+  def coll(ptr:ThingId) = resolve(ptr) (_.colls)
   
   def anything(oid:OID):Option[Thing] = {
     // TODO: this should do something more sensible if the OID isn't found at all:
@@ -55,7 +72,7 @@ case class SpaceState(
               app.flatMap(_.anything(oid)))))))
   }
   
-  def thingWithName(name:String, things:Map[OID, Thing]):Option[Thing] = {
+  def thingWithName[T <: Thing](name:String, things:Map[OID, T]):Option[T] = {
     things.values.find { thing =>
       val thingNameOpt = thing.canonicalName
       thingNameOpt.isDefined && NameType.equalNames(thingNameOpt.get, name)

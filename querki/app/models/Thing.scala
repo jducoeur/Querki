@@ -265,11 +265,14 @@ abstract class Thing(
    * Every Thing can be rendered -- this returns a Wikitext string that will then be
    * displayed in-page.
    * 
+   * If you specify a property, that property will be rendered with this Thing as a context;
+   * otherwise, DisplayText will be rendered.
+   * 
    * TODO: allow this to be redefined with a QL Property if desired.
    */
-  def render(implicit request:RequestContext):Wikitext = {
+  def render(implicit request:RequestContext, prop:Option[Property[_,_]] = None):Wikitext = {
     implicit val state = request.state.get
-    val opt = getPropOpt(DisplayTextProp)
+    val opt = getPropOpt(prop.getOrElse(DisplayTextProp))
     opt.map(pv => pv.render(thisAsContext)).getOrElse(renderProps)
   }
   

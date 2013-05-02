@@ -40,8 +40,9 @@ class EmailModule(val moduleId:Short) extends modules.Module {
     val EmailToOID = moid(4)
     val EmailSendOID = moid(5)
     val EmailSubjectOID = moid(6)
-    val EmailCcOID = moid(7)
+//    val EmailCcOID = moid(7)
     val EmailBodyOID = moid(8)
+    val EmailShowSendOID = moid(9)
   }  
   import MOIDs._
   
@@ -78,6 +79,11 @@ class EmailModule(val moduleId:Short) extends modules.Module {
   lazy val sendEmail = new SingleThingMethod(EmailSendOID, "Send Email", """Invoke this method to actually send this email.
       It will return a List of the Persons who the email was sent to this time.""", doSendEmail)
   
+  lazy val showSendEmail = new SystemProperty(EmailShowSendOID, TextType, ExactlyOne,
+      toProps(
+        setName("Email Results")
+      ))
+  
   lazy val emailAddress = new SystemProperty(EmailPropOID, EmailAddressType, Optional,
       toProps(
         setName("Email Address"),
@@ -99,12 +105,14 @@ This is the raw list of people to send this email to. If you want to do
 something fancier than sending to specific people, see the Recipients property.
 """)))
   
-  lazy val emailCc = new SystemProperty(EmailCcOID, LinkType, QList,
-        toProps(
-          setName("Email Cc"),
-          (LinkModelOID -> Optional(ElemValue(Person.MOIDs.PersonOID))),
-          DisplayTextProp("This is the raw list of people to copy on this email.")))
-  
+  // On reflection, I'm not sure that Cc actually makes sense, since we are
+  // customizing all emails at this point.
+//  lazy val emailCc = new SystemProperty(EmailCcOID, LinkType, QList,
+//        toProps(
+//          setName("Email Cc"),
+//          (LinkModelOID -> Optional(ElemValue(Person.MOIDs.PersonOID))),
+//          DisplayTextProp("This is the raw list of people to copy on this email.")))
+//  
   lazy val emailSubject = new SystemProperty(EmailSubjectOID, TextType, ExactlyOne,
       toProps(
         setName("Email Subject"),
@@ -125,13 +133,13 @@ something fancier than sending to specific people, see the Recipients property.
     
     emailTo,
     
-    emailCc,
-    
     emailSubject,
     
     emailBody,
     
-    sendEmail
+    sendEmail,
+    
+    showSendEmail
   )
   
   /***********************************************
@@ -144,14 +152,24 @@ something fancier than sending to specific people, see the Recipients property.
         setName("Email Message"),
         IsModelProp(true),
         emailTo(),
-        emailCc(),
         emailSubject(""),
         emailBody(),
         sendEmail(),
+        showSendEmail("""Email successfully sent to:
+[[Send Email -> ""* ____ - [[Email Address]]""]]
+"""),
         DisplayTextProp("""
-This is the Model for sending emails. You start by creating an Email Message. Then you
-set its Display Text to say what you want (using all the same features you can use for
-showing a Thing on the Web).
+**Subject**: [[Email Subject]]
+
+**To**: 
+[[Email To -> ""* ____ - [[Email Address]]""]]
+
+**Body**:
+[[Email Body]]
+            
+------
+            
+[**Click here to send this email**](?prop=Email+Results)
 """)))
   )
   
