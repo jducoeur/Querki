@@ -33,6 +33,8 @@ class PersonModule(val moduleId:Short) extends modules.Module {
 
   lazy val emailAddressProp = Modules.Email.emailAddress
   
+  lazy val urlBase = Config.getString("querki.app.urlRoot")
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/
@@ -56,10 +58,8 @@ When the email is sent, it will be replaced by a link that the recipient of the 
   /***********************************************
    * THINGS
    ***********************************************/
-    
-  override lazy val things = Seq(
-    // The Person Model
-    ThingState(PersonOID, systemOID, RootOID,
+  
+  lazy val person = ThingState(PersonOID, systemOID, RootOID,
       toProps(
         setName("Person"),
         IsModelProp(true),
@@ -71,7 +71,11 @@ This represents a Person who is using Querki or can be invited to it. You can cr
 your Space, and compose an email to invite them to use the Space; you can also create a new Model
 to add new Properties for any Person in your Space.
 """)))
-   )
+    
+  override lazy val things = Seq(
+    // The Person Model
+    person
+  )
    
   /***********************************************
    * METHOD CONTENTS
@@ -94,16 +98,25 @@ to add new Properties for any Person in your Space.
   }
   
   val identityParam = "identity"
-   
-  def doInviteLink(t:Thing, context:ContextBase):TypedValue = {
-    // Get the Identity linked from this Person. If there isn't already one, make one.
-    val identityProp = t.localProp(identityLink)
-    val identityId = identityProp match {
-      case Some(propAndVal) => propAndVal.first
-      case None => setIdentityId(t, context)
-    }
-    val hash = idHash(t.id, identityId)
     
-    ErrorValue("Not yet implemented!")
+  def doInviteLink(t:Thing, context:ContextBase):TypedValue = {
+    if (t.isAncestor(PersonOID)(context.state)) {
+      // Get the Identity linked from this Person. If there isn't already one, make one.
+	  val identityProp = t.localProp(identityLink)
+	  val identityId = identityProp match {
+	    case Some(propAndVal) => propAndVal.first
+	    case None => setIdentityId(t, context)
+	  }
+	  val hash = idHash(t.id, identityId)
+	    
+	  val state = context.state
+	  // TODO: this surely belongs in a utility somewhere -- it constructs the full path to a Thing, plus some paths.
+	  val url = urlBase + "u/" + state.owner.toThingId + "/" + state.name + "/" + t.toThingId + "?" + identityParam + "=" + hash
+	  val link = ExactlyOne(ExternalLinkType(url))
+	    
+	  TypedValue(link, ExternalLinkType)
+	} else {
+	  TextValue("Invite Link is only defined when sending email")
+	}
   }
 }

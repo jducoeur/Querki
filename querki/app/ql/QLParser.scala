@@ -36,8 +36,11 @@ object ErrorValue {
     } catch {
       case e:Exception => Logger.error(s"Displaying error $msg; stack trace:\n${e.getStackTraceString}")  
     }
-    TypedValue(ExactlyOne(PlainTextType(msg)), PlainTextType)
+    TextValue(msg)
   }
+}
+object TextValue {
+  def apply(msg:String) = TypedValue(ExactlyOne(PlainTextType(msg)), PlainTextType)
 }
 
 abstract class ContextBase {

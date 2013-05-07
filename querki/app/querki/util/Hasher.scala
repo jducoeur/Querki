@@ -4,8 +4,8 @@ import java.security._
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
-import play.api.Play
-import play.api.Play.current
+//import play.api.Play
+//import play.api.Play.current
 
 /**
  * Wraps around part of a hash, to make stringifying easier. The stringifier code is
@@ -24,7 +24,7 @@ case class HashInfo(raw:Array[Byte]) {
   
   override def equals(other:Any) = {
     other match {
-      case HashInfo(otherRaw) => raw.equals(otherRaw)
+      case HashInfo(otherRaw) => raw.sameElements(otherRaw)
       case _ => false
     }
   }
@@ -79,10 +79,9 @@ object Hasher {
     salt
   }
   
-  lazy val iterations = 
-    Play.configuration.getInt("querki.security.hashIterations").getOrElse(20000)
+  lazy val iterations = Config.getInt("querki.security.hashIterations", 20000)
   
-  private def doCalcHash(salt:Array[Byte], original:String):EncryptedHash = {
+  def doCalcHash(salt:Array[Byte], original:String):EncryptedHash = {
     // The 160 here matches the SHA-1 algorithm we're using:
     val keySpec = new PBEKeySpec(original.toCharArray, salt, iterations, 160)
     val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")

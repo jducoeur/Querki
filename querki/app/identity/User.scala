@@ -61,7 +61,7 @@ object Identity {
              AND kind={kind}
           """).on("email" -> email.addr, "kind" -> IdentityKind.SimpleEmail)
       val stream = identityQuery.apply()
-      stream.headOption.map(row => Identity(OID(row.get[Int]("id").get), email)).getOrElse {
+      stream.headOption.map(row => Identity(OID(row.get[Long]("id").get), email)).getOrElse {
         val identityId = OID.next
         SQL("""
             INSERT INTO Identity
