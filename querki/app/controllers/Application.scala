@@ -212,13 +212,14 @@ object Application extends Controller {
   
   def getOtherProps(state:SpaceState, kind:Kind.Kind, existing:PropList):Seq[Property[_,_]] = {
     val existingProps = existing.keys
-    // This lists all of the visible properties that aren't in the existing list:
+    // This lists all of the visible properties that aren't in the existing list, and removes the
+    // InternalProps:
+    implicit val s = state
+    val candidates = (state.allProps.values.toSet -- existingProps).toSeq.filterNot(_.ifSet(InternalProp))
+
     // TODO: sort alphabetically
-    // TODO: filter out "non-user" Properties
-    val candidates = (state.allProps.values.toSet -- existingProps).toSeq
     
     // Now, filter out ones that aren't applicable to the target Kind:
-    implicit val s = state
     candidates filter { candidate =>
       // TODO: this pattern -- "if this QList property exists, then do something to each value" -- seems
       // common. Find the right factoring for it:

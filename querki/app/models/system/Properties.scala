@@ -169,6 +169,12 @@ will keep you from having a long and confusing Property List.
 """)
       ))
 
+object InternalProp extends SystemProperty(InternalPropOID, YesNoType, Optional,
+    toProps(
+      setName("Internal Property"),
+      AppliesToKindProp(Kind.Property),
+      DisplayTextProp("If set, this Property is system-internal, and should not be visible to end users.")))
+
 import ql.{ContextBase, ErrorValue, TypedValue}
 /**
  * Internal methods -- functions defined in-code that can be assigned as properties -- should

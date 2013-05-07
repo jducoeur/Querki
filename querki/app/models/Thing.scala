@@ -211,6 +211,24 @@ abstract class Thing(
   }
   
   /**
+   * Returns the first value of the specified Property *or* a given default.
+   */
+  def firstOr[VT](prop:Property[VT, _], default:VT)(implicit state:SpaceState):VT = {
+    val cv = getPropVal(prop)
+    if (prop.isEmpty(cv))
+      default
+    else
+      prop.first(cv)  
+  }
+  
+  /**
+   * Convenience method, to check whether a YesNo Property is non-empty, and is true.
+   */
+  def ifSet(prop:Property[Boolean, _])(implicit state:SpaceState):Boolean = {
+    firstOr(prop, false)
+  }
+  
+  /**
    * Returns true iff this Thing or any ancestor has the specified property defined on it.
    * Note that this ignores defaults.
    */

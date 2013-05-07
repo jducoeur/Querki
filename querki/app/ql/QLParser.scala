@@ -200,14 +200,21 @@ class QLParser(val input:QLText, initialContext:ContextBase) extends RegexParser
       // There is content, so turn it into a link to the context Thing:
       case _ => {
         val guts = processParseTree(contents, context)
+        def makeWikiLink(url:String):Wikitext = {
+          Wikitext("[") + guts + Wikitext("](" + url + ")")
+        }
         context.value.pt match {
           case LinkType => {
             // TODO: this is evil. How should it be described instead?
-            val l = LinkType.follow(context)(context.value.v.first.elem.asInstanceOf[OID])
+            val l = LinkType.follow(context)(LinkType.get(context.value.v.first))
             l match {
-              case Some(thing) => Wikitext("[") + guts + Wikitext("](" + thing.toThingId + ")")
+              case Some(thing) => makeWikiLink(thing.toThingId)
               case None => guts
             }
+          }
+          case ExternalLinkType => {
+            val url = ExternalLinkType.get(context.value.v.first)
+            makeWikiLink(url.toExternalForm())
           }
           // TODO: we ought to show some sort of error here?
           case _ => guts

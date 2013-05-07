@@ -19,19 +19,26 @@ import modules.Modules._
 import play.api.{Logger, Play}
 import play.api.Play.current
 
+/**
+ * Represents an email address. For the moment this is basically just a String, but we'll gradually
+ * add things like validation, so it's useful to get the abstraction clean now.
+ */
+case class EmailAddress(addr:String)
+
 class EmailModule(val moduleId:Short) extends modules.Module {
 
+  def fullKey(key:String) = "querki.mail." + key
   def getRequiredConf(key:String) = {
-    val fullKey = "querki.mail." + key
-    val opt = Play.configuration.getString(fullKey)
+    val opt = Play.configuration.getString(fullKey(key))
     opt match {
       case Some(v) => v
-      case None => throw new Exception("Didn't find required configuration key " + fullKey)
+      case None => throw new Exception("Didn't find required configuration key " + fullKey(key))
     }
   }
     
   lazy val smtpHost = getRequiredConf("smtpHost")
   lazy val from = getRequiredConf("from")
+  lazy val debug = Play.configuration.getBoolean(fullKey("debug")).getOrElse(false)
 
   object MOIDs {
     val EmailTypeOID = moid(1)
@@ -50,11 +57,6 @@ class EmailModule(val moduleId:Short) extends modules.Module {
    * TYPES
    ******************************************/
   
-  /**
-   * Represents an email address. For the moment this is basically just a String, but we'll gradually
-   * add things like validation, so it's useful to get the abstraction clean now.
-   */
-  case class EmailAddress(addr:String)
   class EmailAddressType(tid:OID) extends SystemType[EmailAddress](tid,
       toProps(
         setName("Email")
@@ -104,15 +106,7 @@ separate Property with the Email Address type.
 This is the raw list of people to send this email to. If you want to do
 something fancier than sending to specific people, see the Recipients property.
 """)))
-  
-  // On reflection, I'm not sure that Cc actually makes sense, since we are
-  // customizing all emails at this point.
-//  lazy val emailCc = new SystemProperty(EmailCcOID, LinkType, QList,
-//        toProps(
-//          setName("Email Cc"),
-//          (LinkModelOID -> Optional(ElemValue(Person.MOIDs.PersonOID))),
-//          DisplayTextProp("This is the raw list of people to copy on this email.")))
-//  
+
   lazy val emailSubject = new SystemProperty(EmailSubjectOID, TextType, ExactlyOne,
       toProps(
         setName("Email Subject"),
@@ -178,8 +172,6 @@ something fancier than sending to specific people, see the Recipients property.
    ***********************************************/
     
   def doSendEmail(t:Thing, context:ContextBase) = {
-    // TODO: this is where we actually send the email!!!
-    Logger.info("Send Email has been called again on " + t.displayName)
     implicit val state = context.state
     val recipients = t.getProp(emailTo)
     
@@ -193,8 +185,7 @@ something fancier than sending to specific people, see the Recipients property.
     
     val session = Session.getInstance(props, null)
 
-    // TODO: make this configurable:
-    session.setDebug(true)
+    session.setDebug(debug)
     
     def sendToPerson(person:Thing):Option[OID] = {
       try {

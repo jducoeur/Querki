@@ -41,3 +41,35 @@ object User {
     pwdOpt map { pwd => if (passwordEntered == pwd) true else false } getOrElse false    
   }
 }
+
+import modules.email.EmailAddress
+
+case class Identity(id:OID, email:EmailAddress)
+
+object IdentityKind {
+  val SimpleEmail = 1
+  
+  type IdentityKind = Int
+}
+
+object Identity {
+  def getOrCreateByEmail(email:EmailAddress, name:String):Identity = {
+    DB.withConnection { implicit conn =>
+      val identityQuery = SQL("""
+          SELECT * FROM Identity 
+           WHERE email={email}
+             AND kind={kind}
+          """).on("email" -> email.addr, "kind" -> IdentityKind.SimpleEmail)
+      val stream = identityQuery.apply()
+      stream.headOption.map(row => Identity(OID(row.get[Int]("id").get), email)).getOrElse {
+        val identityId = OID.next
+        SQL("""
+            INSERT INTO Identity
+            (id, name, kind, email) VALUES
+            ({id}, {name}, {kind}, {email})
+            """).on("id" -> identityId.raw, "name" -> name, "kind" -> IdentityKind.SimpleEmail, "email" -> email.addr).executeUpdate()
+        Identity(identityId, email)
+      }
+    }
+  }
+}

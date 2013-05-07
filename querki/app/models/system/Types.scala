@@ -284,7 +284,7 @@ abstract class PlainTextType(tid:OID) extends SystemType[PlainText](tid,
   def doRender(context:ContextBase)(v:PlainText) = Wikitext(v.text)
     
   val doDefault = PlainText("")
-  def wrap(raw:String):valType = PlainText(raw)
+  override def wrap(raw:String):valType = PlainText(raw)
 }
 object PlainTextType extends PlainTextType(PlainTextOID)
 
@@ -304,6 +304,21 @@ class InternalMethodType(tid:OID) extends SystemType[String](tid,
 }
 object InternalMethodType extends InternalMethodType(InternalMethodOID)
 
+import java.net.URL
+class ExternalLinkType(tid:OID) extends SystemType[URL](tid,
+    toProps(
+      setName("URL")
+    )) with PTypeBuilder[URL, String]
+{
+  def doDeserialize(v:String) = new URL(v)
+  def doSerialize(v:URL) = v.toExternalForm()
+  def doRender(context:ContextBase)(v:URL) = Wikitext("[" + v.toExternalForm() + "](" + v.toExternalForm() + ")")
+  
+  val doDefault = new URL("http:///")
+  override def wrap(raw:String):valType = new URL(raw)
+}
+object ExternalLinkType extends ExternalLinkType(ExternalLinkTypeOID)
+
 object SystemTypes {
-  def all = Space.oidMap[PType[_]](IntType, TextType, YesNoType, NameType, LinkType, LargeTextType, PlainTextType, InternalMethodType)  
+  def all = Space.oidMap[PType[_]](IntType, TextType, YesNoType, NameType, LinkType, LargeTextType, PlainTextType, InternalMethodType, ExternalLinkType)  
 }
