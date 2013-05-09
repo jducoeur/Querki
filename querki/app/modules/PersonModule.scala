@@ -14,6 +14,8 @@ import modules._
 
 import querki.util._
 
+import controllers.{Contributor, PageEventManager, Publisher, RequestContext}
+
 // TODO: this Module should formally depend on the Email Module. Probably --
 // it isn't entirely clear whether statically described Properties really
 // require initialization-order dependencies. But I believe that the Person
@@ -26,6 +28,14 @@ class PersonModule(val moduleId:Short) extends modules.Module {
     val IdentityLinkOID = moid(3)
   }
   import MOIDs._
+  
+  override def init = {
+    PageEventManager.requestReceived += IdentityLoginChecker
+  }
+  
+  override def term = {
+    PageEventManager.requestReceived -= IdentityLoginChecker
+  }
 
   /***********************************************
    * EXTERNAL REFS
@@ -118,5 +128,16 @@ to add new Properties for any Person in your Space.
 	} else {
 	  TextValue("Invite Link is only defined when sending email")
 	}
+  }
+  
+  /***********************************************
+   * LOGIN HANDLER
+   ***********************************************/
+  
+  object IdentityLoginChecker extends Contributor[RequestContext,RequestContext] {
+    def notify(rc:RequestContext, sender:Publisher[RequestContext, RequestContext]):RequestContext = {
+      // TODO: update the session if there's an Identity flag
+      rc
+    }
   }
 }

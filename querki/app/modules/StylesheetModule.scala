@@ -116,7 +116,7 @@ The important Property here is CSS -- this contains normal CSS code, just like f
   override lazy val things = Seq(StylesheetBase)
   
   object HeaderHandler extends Contributor[HtmlEvent, String] {
-    def notify(evt:HtmlEvent, sender:Aggregator[HtmlEvent,String]):String = {
+    def notify(evt:HtmlEvent, sender:Publisher[HtmlEvent,String]):String = {
       // For the time being, only Thing pages show styles. This will probably change
       if (evt.template == QuerkiTemplate.Thing) {
     	val rc = evt.rc

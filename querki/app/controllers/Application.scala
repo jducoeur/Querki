@@ -151,7 +151,10 @@ object Application extends Controller {
         if (thingIdStr.isDefined && thingOpt.isEmpty)
           doError(routes.Application.index, "That wasn't a valid path")
         else {
-          f(rc.copy(ownerId = ownerId, state = Some(state), thing = thingOpt))
+          val filledRC = rc.copy(ownerId = ownerId, state = Some(state), thing = thingOpt)
+          // Give the listeners a chance to chime in:
+          val updatedRC = PageEventManager.requestReceived(rc)
+          f(updatedRC)
         }
       }
       case ThingFailed(msg) => doError(routes.Application.index, msg)
