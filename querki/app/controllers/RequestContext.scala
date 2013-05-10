@@ -29,12 +29,13 @@ case class RequestContext(
     ownerId:OID, 
     state:Option[SpaceState], 
     thing:Option[Thing],
-    error:Option[String] = None) {
+    error:Option[String] = None,
+    sessionUpdates:Seq[(String,String)] = Seq.empty) {
   def requesterOID = requester map (_.id) getOrElse UnknownOID  
   def ownerName = state map Application.ownerName getOrElse ""
   
   def hasQueryParam(paramName:String) = request.queryString.contains(paramName)
-  def queryParam(paramName:String):Seq[String] = request.queryString(paramName)
+  def queryParam(paramName:String):Seq[String] = if (hasQueryParam(paramName)) request.queryString(paramName) else Seq.empty
   def firstQueryParam(paramName:String):Option[String] = {
     val seq = queryParam(paramName)
     if (seq.isEmpty) None else Some(seq.head)
@@ -51,6 +52,15 @@ case class RequestContext(
     // TBD: I should be able to write this as a for comprehension, but I'm doing
     // something wrong in the syntax. Fix it:
     state.flatMap(space => propStr.flatMap(id => space.prop(ThingId(id))))
+  }
+  
+  def updateSession(result:Result):Result = {
+    if (sessionUpdates.isEmpty)
+      result
+    else {
+      val newSession = (request.session /: sessionUpdates) ((sess, update) => sess + (update._1 -> update._2))
+      result.withSession(newSession)
+    }
   }
 }
 object RequestContext {

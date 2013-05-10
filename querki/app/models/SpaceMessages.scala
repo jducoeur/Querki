@@ -53,6 +53,11 @@ case class CreateThing(req:OID, own:OID, space:ThingId, kind:Kind, modelId:OID, 
 
 case class ModifyThing(req:OID, own:OID, space:ThingId, id:ThingId, modelId:OID, props:PropMap) extends SpaceMessage(req, own, space)
 
+/**
+ * A specialized form of ModifyThing for the most common case, especially for internal use: changing a few specific properties.
+ */
+case class ChangeProps(req:OID, own:OID, space:ThingId, id:ThingId, changedProps:PropMap) extends SpaceMessage(req, own, space)
+
 case class CreateAttachment(req:OID, own:OID, space:ThingId, 
     content:Array[Byte], mime:MIMEType, size:Int, 
     modelId:OID, props:PropMap) extends SpaceMessage(req, own, space)

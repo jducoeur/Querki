@@ -75,6 +75,7 @@ object OID {
   }
   
   implicit def thing2OID(t:Thing):OID = t.id
+  implicit def OID2ThingId(oid:OID):ThingId = oid.toThingId
 }
 
 object UnknownOID extends OID(-1)

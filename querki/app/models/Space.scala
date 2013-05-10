@@ -257,7 +257,63 @@ class Space extends Actor {
     }    
   }
   
-  def modifyThing(oldThing:ThingState, spaceId:OID, modelId:OID, newProps:PropMap) = {
+  def modifyThing(who:OID, owner:OID, spaceThingId:ThingId, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap)) = {
+      val spaceId = checkSpaceId(spaceThingId)
+      val oldThingOpt = state.anything(thingId)
+      oldThingOpt map { oldThing =>
+        if (!canEdit(who, oldThing.id)) {
+          Logger.info(who.toString + " can't edit -- requires " + owner.toString)
+          sender ! ThingFailed("You're not allowed to modify that")
+        } else {
+	      DB.withTransaction { implicit conn =>
+	        // TODO: compare properties, build a history record of the changes
+	        val thingId = oldThing.id
+	        val newProps = pf(oldThing)
+	        val modelId = modelIdOpt match {
+	          case Some(m) => m
+	          case None => oldThing.model
+	        }
+	        Space.SpaceSQL(spaceId, """
+	          UPDATE {tname}
+	          SET model = {modelId}, props = {props}
+	          WHERE id = {thingId}
+	          """
+	          ).on("thingId" -> thingId.raw,
+	               "modelId" -> modelId.raw,
+	               "props" -> Thing.serializeProps(newProps, state)).executeUpdate()    
+	        // TODO: this needs a clause for each Kind you can get:
+            oldThing match {
+              case t:ThingState => {
+	            val newThingState = t.copy(m = modelId, pf = () => newProps)
+	            updateState(state.copy(things = state.things + (thingId -> newThingState))) 
+              }
+              case s:SpaceState => {
+                // TODO: handle changing the owner or apps of the Space. (Different messages?)
+                val rawName = NameProp.first(newProps)
+                val newName = NameType.canonicalize(rawName)
+                val oldName = NameProp.first(oldThing.props)
+                val oldDisplay = DisplayNameProp.firstOpt(oldThing.props) map (_.raw.toString) getOrElse rawName
+                val newDisplay = DisplayNameProp.firstOpt(newProps) map (_.raw.toString) getOrElse rawName
+                if (!NameType.equalNames(newName, oldName) || !(oldDisplay.contentEquals(newDisplay))) {
+                  SQL("""
+                    UPDATE Spaces
+                    SET name = {newName}, display = {displayName}
+                    WHERE id = {thingId}
+                    """
+                  ).on("newName" -> newName, 
+                       "thingId" -> thingId.raw,
+                       "displayName" -> newDisplay).executeUpdate()
+                }
+                updateState(state.copy(m = modelId, pf = () => newProps, name = newName))
+              }
+	        }
+	        sender ! ThingFound(thingId, state)
+	      }
+          fetchSpaceInfo()
+        }
+      } getOrElse {
+        sender ! ThingFailed("Thing not found")
+      }    
   }
   
   def receive = {
@@ -310,59 +366,14 @@ class Space extends Actor {
       }
     }
     
+    case ChangeProps(who, owner, spaceThingId, thingId, changedProps) => {
+      Logger.info("In ModifyThing")
+      modifyThing(who, owner, spaceThingId, thingId, None, (_.props ++ changedProps))
+    }
+    
     case ModifyThing(who, owner, spaceThingId, thingId, modelId, newProps) => {
       Logger.info("In ModifyThing")
-      val spaceId = checkSpaceId(spaceThingId)
-      val oldThingOpt = state.anything(thingId)
-      oldThingOpt map { oldThing =>
-        if (!canEdit(who, oldThing.id)) {
-          Logger.info(who.toString + " can't edit -- requires " + owner.toString)
-          sender ! ThingFailed("You're not allowed to modify that")
-        } else {
-	      DB.withTransaction { implicit conn =>
-	        // TODO: compare properties, build a history record of the changes
-	        val thingId = oldThing.id
-	        Space.SpaceSQL(spaceId, """
-	          UPDATE {tname}
-	          SET model = {modelId}, props = {props}
-	          WHERE id = {thingId}
-	          """
-	          ).on("thingId" -> thingId.raw,
-	               "modelId" -> modelId.raw,
-	               "props" -> Thing.serializeProps(newProps, state)).executeUpdate()    
-	        // TODO: this needs a clause for each Kind you can get:
-            oldThing match {
-              case t:ThingState => {
-	            val newThingState = t.copy(m = modelId, pf = () => newProps)
-	            updateState(state.copy(things = state.things + (thingId -> newThingState))) 
-              }
-              case s:SpaceState => {
-                // TODO: handle changing the owner or apps of the Space. (Different messages?)
-                val rawName = NameProp.first(newProps)
-                val newName = NameType.canonicalize(rawName)
-                val oldName = NameProp.first(oldThing.props)
-                val oldDisplay = DisplayNameProp.firstOpt(oldThing.props) map (_.raw.toString) getOrElse rawName
-                val newDisplay = DisplayNameProp.firstOpt(newProps) map (_.raw.toString) getOrElse rawName
-                if (!NameType.equalNames(newName, oldName) || !(oldDisplay.contentEquals(newDisplay))) {
-                  SQL("""
-                    UPDATE Spaces
-                    SET name = {newName}, display = {displayName}
-                    WHERE id = {thingId}
-                    """
-                  ).on("newName" -> newName, 
-                       "thingId" -> thingId.raw,
-                       "displayName" -> newDisplay).executeUpdate()
-                }
-                updateState(state.copy(m = modelId, pf = () => newProps, name = newName))
-              }
-	        }
-	        sender ! ThingFound(thingId, state)
-	      }
-          fetchSpaceInfo()
-        }
-      } getOrElse {
-        sender ! ThingFailed("Thing not found")
-      }
+      modifyThing(who, owner, spaceThingId, thingId, Some(modelId), (_ => newProps))
     }
     
     case GetThing(req, owner, space, thingIdOpt) => {

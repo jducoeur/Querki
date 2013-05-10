@@ -11,10 +11,14 @@ import ql._
 import identity._
 
 import modules._
+// TODO: Hmm. This is a Module-boundaries break. I think we need an interface layer:
+import modules.email.EmailAddress
 
 import querki.util._
 
 import controllers.{Contributor, PageEventManager, Publisher, RequestContext}
+
+import play.api.Logger
 
 // TODO: this Module should formally depend on the Email Module. Probably --
 // it isn't entirely clear whether statically described Properties really
@@ -99,7 +103,22 @@ to add new Properties for any Person in your Space.
     implicit val s = context.state
     val emailAddr = t.first(emailAddressProp)
     val name = t.first(NameProp)
+    // Get the Identity in the database...
     val identity = Identity.getOrCreateByEmail(emailAddr, name)
+    // ... then point the Person to it, so we can use it later...
+    val req = context.request
+    val changeRequest = ChangeProps(req.requester.get.id, s.owner, s.id, t.toThingId, toProps(identityLink(identity.id))())
+    // TODO: eventually, all of this should get beefed up in various ways:
+    // -- ChangeProps should carry the version stamp of t, so that race conditions can be rejected.
+    // -- Ideally, we shouldn't send the email until the Identity has been fully established. Indeed, this whole
+    //    business really *ought* to be transactional.
+    SpaceManager.ask(changeRequest) { resp:ThingResponse =>
+      resp match {
+        case ThingFound(id, state) => Logger.info("Added identity " + identity.id + " to Person " + t.toThingId)
+        case ThingFailed(msg) => Logger.error("Unable to add identity " + identity.id + " to Person " + t.toThingId + ": " + msg)
+      }
+    }
+    // ... and finally, return it so we can use it now:
     identity.id
   }
   
@@ -108,6 +127,8 @@ to add new Properties for any Person in your Space.
   }
   
   val identityParam = "identity"
+  val identityName = "identityName"
+  val identityEmail = "identityEmail"
     
   def doInviteLink(t:Thing, context:ContextBase):TypedValue = {
     if (t.isAncestor(PersonOID)(context.state)) {
@@ -115,6 +136,7 @@ to add new Properties for any Person in your Space.
 	  val identityProp = t.localProp(identityLink)
 	  val identityId = identityProp match {
 	    case Some(propAndVal) => propAndVal.first
+	    // This will set identityProp, as well as getting the Identity's OID:
 	    case None => setIdentityId(t, context)
 	  }
 	  val hash = idHash(t.id, identityId)
@@ -134,10 +156,51 @@ to add new Properties for any Person in your Space.
    * LOGIN HANDLER
    ***********************************************/
   
+  case class SpaceSpecificUser(identityId:OID, name:String, email:EmailAddress) extends User {
+    val id = UnknownOID
+    val identity = Identity(identityId, email)
+    val identities = Seq(identity)
+  }
+  
+  /**
+   * This is called via callbacks when we are beginning to render a page. It looks to see whether the
+   * URL or the Session contains a space-specific Identity that we should be using as the "user".
+   * 
+   * TODO: make this Identity Space-specific! It should be possible to have different Persons in the
+   * Session for different Spaces.
+   */
   object IdentityLoginChecker extends Contributor[RequestContext,RequestContext] {
     def notify(rc:RequestContext, sender:Publisher[RequestContext, RequestContext]):RequestContext = {
-      // TODO: update the session if there's an Identity flag
-      rc
+      val rcOpt =
+        for (
+          idParam <- rc.firstQueryParam(identityParam);
+          candidate <- rc.thing;
+          idProp <- candidate.localProp(identityLink);
+          emailPropVal <- candidate.getPropOpt(emailAddressProp)(rc.state.get);
+          email = emailPropVal.first;
+          name = candidate.displayName;
+          identityId = idProp.first;
+          if Hasher.authenticate(candidate.id.toString + identityId.toString, EncryptedHash(idParam));
+          updates = Seq((identityParam -> identityId.toString), (identityName -> name), (identityEmail -> email.addr));
+          // TODO: if there is already a User in the RC, we should *add* to that User rather than
+          // replacing it:
+          newRc = rc.copy(
+              sessionUpdates = rc.sessionUpdates ++ updates,
+              requester = Some(SpaceSpecificUser(identityId, name, email)))
+        ) 
+          yield newRc
+          
+      rcOpt.getOrElse {
+        // Okay, the URL doesn't have an Identity login. Does the session already have one?
+        val session = rc.request.session
+        val withIdentityOpt = for (
+          existingIdentity <- session.get(identityParam);
+          idName <- session.get(identityName);
+          idEmail <- session.get(identityEmail)
+          )
+          yield rc.copy(requester = Some(SpaceSpecificUser(OID(existingIdentity), idName, EmailAddress(idEmail))))
+        withIdentityOpt.getOrElse(rc)
+      }
     }
   }
 }

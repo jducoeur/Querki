@@ -15,12 +15,13 @@ import identity.User
 
 object Application extends Controller {
   
+  case class UserForm(name:String, password:String)
   val userForm = Form(
     mapping(
       "name" -> nonEmptyText,
       "password" -> nonEmptyText
-    )((name, password) => User(UnknownOID, name, password))
-     ((user: User) => Some((user.name, "")))
+    )((name, password) => UserForm(name, password))
+     ((user: UserForm) => Some((user.name, "")))
   )
   
   val newSpaceForm = Form(
@@ -74,21 +75,24 @@ object Application extends Controller {
   
   def ownerName(state:SpaceState) = User.getName(state.owner)
   
-  def username(request: RequestHeader) = request.session.get(Security.username)
-  def forceUsername(request: RequestHeader) = username(request) orElse Some("")
+  def userFromSession(request:RequestHeader) = User.get(request)
+  // Workaround to deal with the fact that Security.Authenticated has to get a non-empty
+  // result in order to let things through. So if a registered user is *optional*, we need to
+  // return something:
+  def forceUser(request: RequestHeader) = userFromSession(request) orElse Some(User.Anonymous)
 
   // TODO: preserve the page request, and go there after they log in
   def onUnauthorized(request: RequestHeader) = Results.Redirect(routes.Application.login)
 
-  def withAuth(requireLogin:Boolean)(f: => String => Request[AnyContent] => Result):EssentialAction = {
-    val handler = { user:String =>
+  def withAuth(requireLogin:Boolean)(f: => User => Request[AnyContent] => Result):EssentialAction = {
+    val handler = { user:User =>
       Action(request => f(user)(request))
     }
     if (requireLogin)
-      Security.Authenticated(username, onUnauthorized)(handler)
+      Security.Authenticated(userFromSession, onUnauthorized)(handler)
     else {
       // Note that forceUsername can never fail, it just returns empty string
-      Security.Authenticated(forceUsername, onUnauthorized)(handler)
+      Security.Authenticated(forceUser, onUnauthorized)(handler)
     }
   }
   
@@ -97,17 +101,10 @@ object Application extends Controller {
   // This reflects the fact that there are many more or less public pages. It is the responsibility
   // of the caller to use this flag sensibly. Note that RequestContext.requester is guaranteed to
   // be set iff requireLogin is true.
-  def withUser(requireLogin:Boolean)(f: RequestContext => Result) = withAuth(requireLogin) { username => implicit request =>
-    getUser(username).map { user =>
-      f(RequestContext(request, Some(user), UnknownOID, None, None))
-    }.getOrElse {
-      if (requireLogin)
-        onUnauthorized(request)
-      else
-        // There isn't a legitimate logged-in user, but that's allowed for this call, since
-        // requireLogin isn't set:
-        f(RequestContext(request, None, UnknownOID, None, None))
-    }
+  def withUser(requireLogin:Boolean)(f: RequestContext => Result) = withAuth(requireLogin) { user => implicit request =>
+    // Iff requireLogin was false, we might not have a real user here, so massage it:
+    val userParam = if (user == User.Anonymous) None else Some(user)
+    f(RequestContext(request, userParam, UnknownOID, None, None))
   }
   
   /**
@@ -153,8 +150,9 @@ object Application extends Controller {
         else {
           val filledRC = rc.copy(ownerId = ownerId, state = Some(state), thing = thingOpt)
           // Give the listeners a chance to chime in:
-          val updatedRC = PageEventManager.requestReceived(rc)
-          f(updatedRC)
+          val updatedRC = PageEventManager.requestReceived(filledRC)
+          val result = f(updatedRC)
+          updatedRC.updateSession(result)
         }
       }
       case ThingFailed(msg) => doError(routes.Application.index, msg)
@@ -461,9 +459,9 @@ object Application extends Controller {
 
   // TODO: that onUnauthorized will infinite-loop if it's ever invoked. What should we do instead?
   def login = 
-    Security.Authenticated(forceUsername, onUnauthorized) { name =>
+    Security.Authenticated(forceUser, onUnauthorized) { user =>
       Action { implicit request =>
-        if (name.length == 0)
+        if (user == User.Anonymous)
           Ok(views.html.login(RequestContext(request, None, UnknownOID, None, None)))
         else
           Redirect(routes.Application.index) 
@@ -474,12 +472,12 @@ object Application extends Controller {
     val rc = RequestContext(request, None, UnknownOID, None, None)
     userForm.bindFromRequest.fold(
       errors => doError(routes.Application.login, "I didn't understand that"),
-      user => {
-        val lookedUp = User.get(user.name)
-        if (lookedUp.isEmpty || !User.checkLogin(lookedUp.get.name, user.password))
-          doError(routes.Application.login, "I don't know who you are")
-        else
-	      Redirect(routes.Application.index).withSession(Security.username -> user.name)
+      form => {
+        val userOpt = User.checkLogin(form.name, form.password)
+        userOpt match {
+          case Some(user) => Redirect(routes.Application.index).withSession(user.toSession:_*)
+          case None => doError(routes.Application.login, "I don't know who you are")
+        }
       }
     )
   }
