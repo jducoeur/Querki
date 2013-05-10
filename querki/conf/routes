@@ -31,5 +31,10 @@ GET     /u/:userName/:spaceId/:thingId/export controllers.Application.exportThin
 POST    /dologin                    controllers.Application.dologin
 GET     /logout                     controllers.Application.logout
 
+# AJAX test stuff:
+GET     /showTestAjax               controllers.Application.showTestAjax
+POST    /testAjax                   controllers.Application.testAjax(i1, i2)
+GET     /javascriptRoutes           controllers.Application.javascriptRoutes
+
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

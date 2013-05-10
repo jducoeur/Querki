@@ -1,0 +1,29 @@
+@(rc:RequestContext)
+
+@main(QuerkiTemplate.Index, "Testing AJAX", rc) {
+
+  <h1>Testing AJAX</h1>
+  
+  <p>Number 1: <input id="n1" type="text"></p>
+  <p>Number 2: <input id="n2" type="text"></p>
+  
+  <p>Result: <span id="total"></span></p>
+  
+  <script>
+    function updateTotal() {
+      var num1 = $("#n1").val();
+      var num2 = $("#n2").val();
+      jsRoutes.controllers.Application.testAjax(num1, num2).ajax({
+        success: function (result) {
+          $("#total").text(result);
+        }
+      });
+    }
+  
+    $(function() {
+      $("#n1").change(updateTotal)
+      $("#n2").change(updateTotal)
+    });
+  </script>
+
+}

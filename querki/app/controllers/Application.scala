@@ -485,4 +485,30 @@ object Application extends Controller {
   def logout = Action {
     Redirect(routes.Application.index).withNewSession
   }
+  
+  /**
+   * A tiny test function, to see if I understand how to use Ajax calls:
+   */
+  def testAjax(i1:String, i2:String) = Action { implicit request =>
+    Logger.info(s"Got test values $i1 and $i2")
+    try {
+      val result = i1.toInt + i2.toInt
+      Ok(result.toString)
+    } catch {
+      case e:Exception => Logger.info("Got an error while testing Ajax -- probably a badly formed number"); Ok("")
+    }
+  }
+  
+  def showTestAjax = withUser(false) { rc =>
+    Ok(views.html.testAjax(rc))
+  }
+  
+  def javascriptRoutes = Action { implicit request =>
+    import routes.javascript._
+    Ok(
+      Routes.javascriptRouter("jsRoutes")(
+        routes.javascript.Application.testAjax
+      )
+    ).as("text/javascript")
+  }
 }
