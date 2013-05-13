@@ -59,6 +59,11 @@ case class Property[VT, -RT](
     val vt = pType.get(elem)
     cb(vt)
   }
+  
+  def contains(v:PropValue, toCheck:VT):Boolean = v.cv.exists { elem =>
+    val vt = pType.get(elem)
+    vt == toCheck
+  }
 
   def apply(raw:RT) = (this.id, cType(pType(raw)))
   def apply() = (this.id, cType.default(pType))
@@ -209,5 +214,9 @@ case class PropAndVal[VT](prop:Property[VT, _], v:PropValue) {
   def split() = (prop, v)
   def first = prop.first(v)
   def flatMap[T](cb:VT => Option[T]) = prop.flatMap(v)(cb)
+  def ++(others:Iterable[VT]):PropValue = {
+    QList.makePropValue((v.cv ++ others.map(ElemValue(_))).toList)
+  }
+  def contains(toCheck:VT):Boolean = prop.contains(v, toCheck)
 }
 

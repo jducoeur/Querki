@@ -57,7 +57,7 @@ abstract class ContextBase {
    */
   def map[T](cb:ContextBase => T) = {
     value.v.cv map { elem =>
-      val elemContext = QLContext(TypedValue(ExactlyOne(elem), value.pt), request, Some(this))
+      val elemContext = next(TypedValue(ExactlyOne(elem), value.pt))
       cb(elemContext)
     }
   }
@@ -71,12 +71,17 @@ abstract class ContextBase {
    */
   def flatMap[T](cb:ContextBase => Option[T]) = {
     value.v.cv flatMap { elem =>
-      val elemContext = QLContext(TypedValue(ExactlyOne(elem), value.pt), request, Some(this))
+      val elemContext = next(TypedValue(ExactlyOne(elem), value.pt))
       cb(elemContext)
     }
   }
   
   override def toString = "Context(" + value.v + ")"
+  
+  /**
+   * Convenience method to build the successor to this context, in typical chained situations.
+   */
+  def next(v:TypedValue) = QLContext(v, request, Some(this))
 }
 
 /**
@@ -111,7 +116,7 @@ case object EmptyContext extends ContextBase {
 sealed abstract class QLTextPart
 case class UnQLText(text:String) extends QLTextPart
 sealed abstract class QLStage
-case class QLName(name:String) extends QLStage
+case class QLCall(name:String, methodName:Option[String], params:Option[Seq[QLPhrase]]) extends QLStage
 case class QLTextStage(contents:ParsedQLText) extends QLStage
 case class QLPhrase(ops:Seq[QLStage])
 case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart
@@ -132,9 +137,10 @@ class QLParser(val input:QLText, initialContext:ContextBase) extends RegexParser
   override val whiteSpace = "".r
   
   def unQLText:Parser[UnQLText] = unQLTextRegex ^^ { UnQLText(_) }
-  def qlName:Parser[QLName] = name ^^ { n => QLName(n) }
+  def qlCall:Parser[QLCall] = name ~ opt("." ~> name) ~ opt("(" ~> (rep1sep(qlPhrase, ",") <~ ")")) ^^ { 
+    case n ~ optMethod ~ optParams => QLCall(n, optMethod, optParams) }
   def qlTextStage:Parser[QLTextStage] = "\"\"" ~> qlText <~ "\"\"" ^^ { QLTextStage(_) }
-  def qlStage:Parser[QLStage] = qlName | qlTextStage
+  def qlStage:Parser[QLStage] = qlCall | qlTextStage
   // TODO: phrase is going to get a *lot* more complex with time:
   def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, "\\s*->\\s*".r) ^^ { QLPhrase(_) }
   def qlExp:Parser[QLExp] = rep1sep(qlPhrase, "\\s*\\r?\\n|\\s*;\\s*".r) ^^ { QLExp(_) }
@@ -156,24 +162,24 @@ class QLParser(val input:QLText, initialContext:ContextBase) extends RegexParser
     }
     // TBD: the asInstanceOf here is surprising -- I would have expected transformed to come out
     // as the right type simply by type signature. Can we get rid of it?
-    QLContext(TypedValue(ct.makePropValue(transformed.asInstanceOf[ct.implType]), ParsedTextType), context.request, Some(context))
+    context.next(TypedValue(ct.makePropValue(transformed.asInstanceOf[ct.implType]), ParsedTextType))
   }
   
-  private def processName(name:QLName, context:ContextBase):ContextBase = {
-    logContext("processName " + name, context)
-    val thing = context.state.anythingByName(name.name)
+  private def processCall(call:QLCall, context:ContextBase):ContextBase = {
+    logContext("processName " + call, context)
+    val thing = context.state.anythingByName(call.name)
     val tv = thing match {
       case Some(t) => t.qlApply(context)
-      case None => ErrorValue("[UNKNOWN NAME: " + name.name + "]")
+      case None => ErrorValue("[UNKNOWN NAME: " + call.name + "]")
     }
     logContext("processName got " + tv, context)
-    QLContext(tv, context.request, Some(context))
+    context.next(tv)
   }
   
   private def processStage(stage:QLStage, context:ContextBase):ContextBase = {
     logContext("processStage " + stage, context)
     stage match {
-      case name:QLName => processName(name, context)
+      case name:QLCall => processCall(name, context)
       case subText:QLTextStage => processTextStage(subText, context)
     }
   }

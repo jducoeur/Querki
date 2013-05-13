@@ -50,6 +50,7 @@ class EmailModule(val moduleId:Short) extends modules.Module {
 //    val EmailCcOID = moid(7)
     val EmailBodyOID = moid(8)
     val EmailShowSendOID = moid(9)
+    val SentToOID = moid(10)
   }  
   import MOIDs._
   
@@ -116,6 +117,11 @@ something fancier than sending to specific people, see the Recipients property.
       toProps(
         setName("Email Body"),
         DisplayTextProp("The Contents of the email")))
+  
+  lazy val sentToProp = new SystemProperty(SentToOID, LinkType, QList,
+      toProps(
+        setName("Sent To"),
+        DisplayTextProp("The Persons that this mail has already been sent to. (This is set automatically.)")))
 
   override lazy val props = Seq(
     // The actual email-address property
@@ -133,7 +139,9 @@ something fancier than sending to specific people, see the Recipients property.
     
     sendEmail,
     
-    showSendEmail
+    showSendEmail,
+    
+    sentToProp
   )
   
   /***********************************************
@@ -157,6 +165,9 @@ something fancier than sending to specific people, see the Recipients property.
 
 **To**: 
 [[Email To -> ""* ____ - [[Email Address]]""]]
+            
+**Already Sent To**:
+[[Sent To -> ""* ____ - [[Email Address]]""]]
 
 **Body**:
 [[Email Body]]
@@ -174,6 +185,7 @@ something fancier than sending to specific people, see the Recipients property.
   def doSendEmail(t:Thing, context:ContextBase) = {
     implicit val state = context.state
     val recipients = t.getProp(emailTo)
+    val previouslySentToOpt = t.getPropOpt(sentToProp) 
     
     // Construct the email:
     val props = System.getProperties()
@@ -227,16 +239,32 @@ something fancier than sending to specific people, see the Recipients property.
     }
     
     val sentTo = recipients.flatMap { personOID =>
-      val thing = state.anything(personOID)
-      thing match {
-        case Some(person) => sendToPerson(person)
-        case None => None  // TODO: some kind of error here?
+      if (previouslySentToOpt.isDefined && previouslySentToOpt.get.contains(personOID))
+        None
+      else {
+        val thing = state.anything(personOID)
+        thing match {
+          case Some(person) => sendToPerson(person)
+          case None => None  // TODO: some kind of error here?
+        }
       }
     }
-
-    // TODO: add the recipients to the Sent To list
-    
     val resultingList = QList.makePropValue(sentTo.map(ElemValue(_)).toList)
+    
+    val req = context.request
+    val fullSentTo = previouslySentToOpt match {
+      case Some(previouslySentTo) => previouslySentTo ++ sentTo
+      case None => resultingList
+    } 
+    val changeRequest = ChangeProps(req.requester.get.id, state.owner, state.id, t.toThingId, toProps(SentToOID -> fullSentTo)())
+    SpaceManager.ask(changeRequest) { resp:ThingResponse =>
+      resp match {
+        case ThingFound(id, state) => Logger.info("Noted email recipients")
+        // TODO: what should we do in case of failure?
+        case ThingFailed(msg) => Logger.error("Unable to record email recipients: " + msg)
+      }
+    }
+    
     TypedValue(resultingList, LinkType)
   }
 }

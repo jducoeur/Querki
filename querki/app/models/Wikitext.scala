@@ -54,9 +54,9 @@ object Wikitext {
 
 class QuerkiTransformer extends Transformer with Decorator {
     override def deco() = this
-    // TODO: we are allowing this for the short term, until I beef up the
-    // Markdown dialect enough. But soon, this will only be legal on specially-marked
-    // Properties.
+    // TODO: we are allowing this so that the QL engine can inject some HTML constructs.
+    // But we should enhance Wikitext so that it can contains XML only after passing
+    // through QL.
     override def allowVerbatimXml():Boolean = true
 }
 
