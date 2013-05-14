@@ -105,7 +105,7 @@ abstract class Thing(
     val spaceId:OID, 
     val model:OID, 
     val kind:Kind.Kind,
-    val propFetcher: PropFetcher)
+    val propFetcher: PropFetcher) extends QLFunction
 {
   lazy val props:PropMap = propFetcher()
   
@@ -192,6 +192,17 @@ abstract class Thing(
       prop.default
     else
       getModel.getPropVal(prop)
+  }
+  
+  def getDisplayPropVal[VT, _](prop:Property[VT, _])(implicit state:SpaceState):DisplayPropVal = {
+    val local = localPropVal(prop)
+    local match {
+      case Some(v) => DisplayPropVal(prop, Some(v))
+      case None => {
+        val inheritedVal = getPropOpt(prop)
+        DisplayPropVal(prop, None, inheritedVal.map(_.v))
+      }
+    }
   }
 
   /**
@@ -303,9 +314,21 @@ abstract class Thing(
    * 
    * TODO: add a Property to allow runtime Things to override this.
    */
-  def qlApply(context:ContextBase):TypedValue = {
+  def qlApply(context:ContextBase, params:Option[Seq[ContextBase]] = None):TypedValue = {
     TypedValue(ExactlyOne(LinkType(id)), LinkType)
   }  
+  
+  /**
+   * This is specifically for the right-hand side of a dot in QL processing. This counts
+   * as partial application, and should return a function that will handle the rest of the
+   * function.
+   * 
+   * Partial application is nonsensical for most Things; it is mainly intended for methods
+   * on properties.
+   */
+  def partiallyApply(context:ContextBase):QLFunction = {
+    new BogusFunction
+  }
 
   def serializeProps(implicit state:SpaceState) = Thing.serializeProps(props, state)
   

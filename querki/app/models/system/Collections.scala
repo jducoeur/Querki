@@ -165,7 +165,8 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     
     def doRender(context:ContextBase)(v:implType, elemT:pType):Wikitext = {
       val renderedElems = v.map(elem => elemT.render(context)(elem))
-      Wikitext(renderedElems map (_.internal) mkString("\n"))
+      // Concatenate the rendered elements, with newlines in-between:
+      (Wikitext.empty /: renderedElems) ((soFar, next) => soFar.+(next, true))
     }
     
     def doDefault(elemT:pType):implType = List.empty

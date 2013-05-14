@@ -22,12 +22,24 @@ object ParsedTextType extends SystemType[Wikitext](OIDs.IllegalOID, () => Thing.
   def wrap(raw:String):valType = Wikitext(raw)
 }
 
+/**
+ * This is a fake PType, so that code can inject HTML into the pipeline
+ */
+object RawHtmlType extends SystemType[Wikitext](OIDs.IllegalOID, () => Thing.emptyProps) with SimplePTypeBuilder[Wikitext]
+{
+  def doDeserialize(v:String) = throw new Exception("Can't deserialize ParsedText!")
+  def doSerialize(v:Wikitext) = throw new Exception("Can't serialize ParsedText!")
+  def doRender(context:ContextBase)(v:Wikitext) = v
+    
+  val doDefault = Wikitext("")
+}
+
 // TODO: we've gotten rid of the explicit ct parameter, since it is contained in v.
 // Maybe we can do the same for pt?
 case class TypedValue(v:PropValue, pt:PType[_]) {
   def ct:Collection = v.coll
   
-  def render(context:ContextBase):Wikitext = ct.render(context)(v, pt) 
+  def render(context:ContextBase):Wikitext = v.render(context, pt) 
 }
 object ErrorValue {
   def apply(msg:String) = {
@@ -41,6 +53,9 @@ object ErrorValue {
 }
 object TextValue {
   def apply(msg:String) = TypedValue(ExactlyOne(PlainTextType(msg)), PlainTextType)
+}
+object HtmlValue {
+  def apply(html:String) = TypedValue(ExactlyOne(RawHtmlType(HtmlWikitext(html))), RawHtmlType)
 }
 
 abstract class ContextBase {
@@ -82,6 +97,15 @@ abstract class ContextBase {
    * Convenience method to build the successor to this context, in typical chained situations.
    */
   def next(v:TypedValue) = QLContext(v, request, Some(this))
+  
+  /**
+   * Returns the root of the context tree. Mainly so that parameters can start again with the same root.
+   */
+  def root:ContextBase = 
+    if (parent == this)
+      this
+    else
+      parent.root
 }
 
 /**
@@ -113,6 +137,20 @@ case object EmptyContext extends ContextBase {
   def parent:ContextBase = throw new Exception("EmptyContext doesn't have a parent!")
 }
 
+/**
+ * A QLFunction is something that can be called in the QL pipeline. It is mostly implemented
+ * by Thing (with variants for Property and suchlike), but can also be anonymous -- for example,
+ * when a method returns a partially-applied function.
+ */
+trait QLFunction {
+  def qlApply(context:ContextBase, params:Option[Seq[ContextBase]] = None):TypedValue
+}
+class BogusFunction extends QLFunction {
+  def qlApply(context:ContextBase, params:Option[Seq[ContextBase]] = None):TypedValue = {
+    ErrorValue("It does not make sense to put this after a dot.")
+  }
+}
+
 sealed abstract class QLTextPart
 case class UnQLText(text:String) extends QLTextPart
 sealed abstract class QLStage
@@ -130,7 +168,7 @@ class QLParser(val input:QLText, initialContext:ContextBase) extends RegexParser
     //Logger.info(msg + ": " + context)
   }
   
-  val name = """[a-zA-Z][\w- ]*[\w]""".r
+  val name = """[a-zA-Z_][\w-_ ]*[\w]""".r
   val unQLTextRegex = """([^\[\"_]|\[(?!\[)|\"(?!\")|_(?!_))+""".r
   // We don't want the RegexParser removing whitespace on our behalf. Note that we need to be
   // very careful about whitespace!
@@ -169,7 +207,21 @@ class QLParser(val input:QLText, initialContext:ContextBase) extends RegexParser
     logContext("processName " + call, context)
     val thing = context.state.anythingByName(call.name)
     val tv = thing match {
-      case Some(t) => t.qlApply(context)
+      case Some(t) => {
+        // If there are parameters to the call, they are a collection of phrases. Process
+        // them first, and pass them in.
+        // TBD: do we need a way to do lazy call-by-name phrases? I think we do: some methods
+        // want to apply the phrase to the incoming items, *not* to the root.
+        val params = call.params.map(_.map(phrase => processPhrase(phrase.ops, context.root)))
+        val methodOpt = call.methodName.flatMap(context.state.anythingByName(_))
+        methodOpt match {
+          case Some(method) => {
+            val partialFunction = method.partiallyApply(context.next(TypedValue(ExactlyOne(LinkType(t.id)), LinkType)))
+            partialFunction.qlApply(context, params)
+          }
+          case None => t.qlApply(context, params)
+        }
+      }
       case None => ErrorValue("[UNKNOWN NAME: " + call.name + "]")
     }
     logContext("processName got " + tv, context)

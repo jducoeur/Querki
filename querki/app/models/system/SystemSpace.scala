@@ -78,6 +78,7 @@ object OIDs {
   val QUnitOID = sysId(39)
   val InternalPropOID = sysId(40)
   val ExternalLinkTypeOID = sysId(41)
+  val EditMethodOID = sysId(42)
 }
 
 /**
@@ -108,7 +109,8 @@ object SystemSpace {
       LinkKindProp,
       LinkAllowAppsProp,
       LinkModelProp,
-      AppliesToKindProp)
+      AppliesToKindProp,
+      EditMethod)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase)

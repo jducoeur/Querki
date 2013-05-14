@@ -18,6 +18,7 @@ trait PropValue {
   
   def serialize(elemT:pType):String = coll.doSerialize(cv, elemT)
   def first = coll.first(this)
+  def render(context:ContextBase, elemT:pType):Wikitext = coll.doRender(context)(cv, elemT)
   
   def isEmpty = coll.isEmpty(this)
 }
@@ -54,10 +55,11 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
    * Takes a value of this type, and turns it into displayable form. Querki
    * equivalent to toString.
    */
-  def render(context:ContextBase)(v:PropValue, elemT:pType):Wikitext = {
-    val renderedElems = v.cv.map(elem => elemT.render(context)(elem))
-    Wikitext(renderedElems map (_.internal) mkString("\n"))    
-  }
+  def doRender(context:ContextBase)(v:implType, elemT:pType):Wikitext
+//  def render(context:ContextBase)(v:PropValue, elemT:pType):Wikitext = {
+//    val renderedElems = v.cv.map(elem => elemT.render(context)(elem))
+//    Wikitext(renderedElems map (_.internal) mkString("\n"))    
+//  }
   
   /**
    * Also required for all Collections -- the default value to fall back on.

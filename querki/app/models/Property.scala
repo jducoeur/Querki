@@ -39,7 +39,7 @@ case class Property[VT, -RT](
 		  TypeProp(pType)
   
   def render(context:ContextBase)(v:PropValue) = {
-    cType.render(context)(v, pType)
+    v.render(context, pType)
   }
   def renderedDefault = render(EmptyContext)(default)
   
@@ -110,7 +110,7 @@ case class Property[VT, -RT](
    * TODO: if this Property isn't defined on the target Thing or its ancestors, this should return None.
    * So technically, this should be returning Optional.
    */
-  override def qlApply(context:ContextBase):TypedValue = {
+  override def qlApply(context:ContextBase, params:Option[Seq[ContextBase]] = None):TypedValue = {
     applyToIncomingThing(context) { (t, context) =>
       val result = t.getPropVal(this)(context.state)
       TypedValue(result, pType)
