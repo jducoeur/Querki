@@ -79,6 +79,9 @@ case class Property[VT, -RT](
     else
       pType.toUser(cType.first(cv))
   }
+  // TODO: this is *totally* not correct -- it doesn't deal with List types at all -- but it's
+  // a start so that we can cope with interactive forms:
+  def fromUser(str:String):PropValue = cType(pType.fromUser(str))
   
   def serialize(v:PropValue):String = v.serialize(pType)
   def deserialize(str:String):PropValue = cType.deserialize(str, pType)
@@ -118,7 +121,7 @@ case class Property[VT, -RT](
   }  
 }
 
-case class DisplayPropVal(prop: Property[_,_], v: Option[PropValue], inheritedVal:Option[PropValue] = None, inheritedFrom:Option[Thing] = None) {
+case class DisplayPropVal(on:Option[Thing], prop: Property[_,_], v: Option[PropValue], inheritedVal:Option[PropValue] = None, inheritedFrom:Option[Thing] = None) {
   def isInherited = v.isEmpty && inheritedVal.isDefined
   def propId = prop.id.toString
   def inputControlId = "v-" + propId
@@ -160,20 +163,20 @@ object Property {
       (TreeMap.empty[Property[_,_], DisplayPropVal] /: pairs)((m, pair) => m + pair)
     }
     
-    def empties(props:Property[_,_]*):PropList = {
-      val pairs = props map (prop => (prop, DisplayPropVal(prop, None)))
+    def empties(thing:Option[Thing], props:Property[_,_]*):PropList = {
+      val pairs = props map (prop => (prop, DisplayPropVal(thing, prop, None)))
       apply(pairs:_*)
     }
     
-    def inheritedProps(model:Thing)(implicit state:SpaceState):PropList = {
+    def inheritedProps(thing:Option[Thing], model:Thing)(implicit state:SpaceState):PropList = {
       // Get the Model's PropList, and push its values into the inherited slots:
       val raw = from(model)
       raw map { fromModel =>
         val (prop, v) = fromModel
         if (prop.first(NotInheritedProp))
-          (prop, DisplayPropVal(prop, None))
+          (prop, DisplayPropVal(thing, prop, None))
         else if (v.v.isDefined)
-          (prop, DisplayPropVal(prop, None, v.v, Some(model)))
+          (prop, DisplayPropVal(thing, prop, None, v.v, Some(model)))
         else
           fromModel
       }      
@@ -184,7 +187,7 @@ object Property {
     def from(thing:Thing)(implicit state:SpaceState):PropList = {
       val inherited =
         if (thing.hasModel)
-          inheritedProps(thing.getModel)
+          inheritedProps(Some(thing), thing.getModel)
         else
           TreeMap.empty[Property[_,_], DisplayPropVal]      
       
@@ -195,7 +198,7 @@ object Property {
           if (m.contains(prop))
             m(prop).copy(v = Some(value))
           else
-            DisplayPropVal(prop, Some(value))
+            DisplayPropVal(Some(thing), prop, Some(value))
         m + (prop -> disp)
       }
     }

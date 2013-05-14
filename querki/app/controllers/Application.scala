@@ -263,14 +263,14 @@ object Application extends Controller {
     val modelThingIdOpt = modelIdOpt map (ThingId(_))
     val modelOpt = modelThingIdOpt flatMap (rc.state.get.anything(_))
     val model = modelOpt getOrElse SimpleThing
-    showEditPage(rc, model, PropList.inheritedProps(model))
+    showEditPage(rc, model, PropList.inheritedProps(None, model))
   }
   
   def createProperty(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
     showEditPage(
         rc, 
         UrProp,
-        PropList.inheritedProps(UrProp)(rc.state.get))
+        PropList.inheritedProps(None, UrProp)(rc.state.get))
   }
   
   def doCreateThing(ownerId:String, spaceId:String) = editThingInternal(ownerId, spaceId, None)
@@ -297,7 +297,7 @@ object Application extends Controller {
         val kind = oldModel.kind
         
         def makeProps(propList:List[FormFieldInfo]):PropList = {
-          val modelProps = PropList.inheritedProps(oldModel)
+          val modelProps = PropList.inheritedProps(thing, oldModel)
           val nonEmpty = propList filterNot (_.isEmpty)
           (modelProps /: nonEmpty) { (m, fieldInfo) =>
             val prop = fieldInfo.prop
@@ -305,7 +305,7 @@ object Application extends Controller {
               if (m.contains(prop))
                 m(prop).copy(v = fieldInfo.value)
               else
-                DisplayPropVal(prop, fieldInfo.value)
+                DisplayPropVal(thing, prop, fieldInfo.value)
             m + (prop -> disp)              
           }
         }
@@ -375,6 +375,32 @@ object Application extends Controller {
   }
   
   def doEditThing(ownerId:String, spaceId:String, thingIdStr:String) = editThingInternal(ownerId, spaceId, Some(thingIdStr))
+  
+  /**
+   * This is the AJAX-style call to change a single property value. As of this writing, I expect it to become
+   * the dominant style before too long.
+   */
+  def setProperty(ownerId:String, spaceId:String, thingId:String, propId:String, newVal:String) = withThing(true, ownerId, spaceId, thingId) { implicit rc =>
+    val thing = rc.thing.get
+    val propOpt = rc.state.get.prop(ThingId(propId))
+    propOpt match {
+      case Some(prop) => {
+        val request = ChangeProps(rc.requester.get.id, rc.ownerId, rc.state.get.id, thing.id, Thing.toProps(prop.id -> prop.fromUser(newVal))())
+        askSpaceMgr[ThingResponse](request) {
+          case ThingFound(thingId, state) => {
+            Ok("Successfully changed to " + newVal)
+          }
+          case ThingFailed(msg) => {
+            Ok("Failed to change property: " + msg)
+          }
+        }
+      }
+      case None => {
+        Ok("Unknown property " + propId)
+      }
+    }
+  }
+
 
   def upload(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
     Ok(views.html.upload(rc))
@@ -507,7 +533,8 @@ object Application extends Controller {
     import routes.javascript._
     Ok(
       Routes.javascriptRouter("jsRoutes")(
-        routes.javascript.Application.testAjax
+        routes.javascript.Application.testAjax,
+        routes.javascript.Application.setProperty
       )
     ).as("text/javascript")
   }

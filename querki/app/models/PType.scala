@@ -100,8 +100,14 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
     val xmlRaw = renderInputXml(prop, state, currentValue, v)
     val xml2 = xmlRaw %
     	Attribute("name", Text(currentValue.inputControlId),
-    	Attribute("id", Text(currentValue.inputControlId), Null))
-    xml2
+    	Attribute("data-prop", Text(prop.id.toThingId),
+    	Attribute("class", Text("propEditor"),
+    	Attribute("id", Text(currentValue.inputControlId), Null))))
+    val xml3 = currentValue.on match {
+      case Some(thing) => xml2 % Attribute("data-thing", Text(thing.id.toThingId), Null)
+      case None => xml2
+    }
+    xml3
   }
   
   /**

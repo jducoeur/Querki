@@ -197,10 +197,10 @@ abstract class Thing(
   def getDisplayPropVal[VT, _](prop:Property[VT, _])(implicit state:SpaceState):DisplayPropVal = {
     val local = localPropVal(prop)
     local match {
-      case Some(v) => DisplayPropVal(prop, Some(v))
+      case Some(v) => DisplayPropVal(Some(this), prop, Some(v))
       case None => {
         val inheritedVal = getPropOpt(prop)
-        DisplayPropVal(prop, None, inheritedVal.map(_.v))
+        DisplayPropVal(Some(this), prop, None, inheritedVal.map(_.v))
       }
     }
   }

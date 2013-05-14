@@ -17,6 +17,28 @@
         $(".clickToEdit").on("dblclick", function() {
           window.location = "@routes.Application.editThing(rc.ownerName, space.toThingId, thing.toThingId)";
         });
+
+		function updateValue(evt) {
+		  var target = $(evt.target);
+		  var prop = target.data("prop");
+		  var thingId = target.data("thing");
+		  var v;
+		  if (target.attr('type') == "checkbox") {
+		    v = target.prop('checked');
+		  } else {
+		    v = target.val();
+		  }
+	      jsRoutes.controllers.Application.setProperty("@space.owner.toThingId", "@space.id.toThingId", thingId, prop, v).ajax({
+	        success: function (result) {
+	          // TODO: we should probably have a status indicator
+	        },
+	        error: function (err) {
+	          alert("Error trying to save value: " + err);
+	        }
+	      });
+		}
+				
+		$(".propEditor").change(updateValue);
       });
     </script>
 
