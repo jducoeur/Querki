@@ -2,6 +2,7 @@ package ql
 
 import language.existentials
 import play.api.Logger
+import play.api.templates.Html
 
 import scala.util.parsing.combinator._
 
@@ -55,7 +56,7 @@ object TextValue {
   def apply(msg:String) = TypedValue(ExactlyOne(PlainTextType(msg)), PlainTextType)
 }
 object HtmlValue {
-  def apply(html:String) = TypedValue(ExactlyOne(RawHtmlType(HtmlWikitext(html))), RawHtmlType)
+  def apply(html:Html) = TypedValue(ExactlyOne(RawHtmlType(HtmlWikitext(html))), RawHtmlType)
 }
 
 abstract class ContextBase {

@@ -117,7 +117,7 @@ object EditMethod extends MetaMethod(EditMethodOID,
           case prop:Property[_,_] => {
             val currentValue = mainThing.getDisplayPropVal(prop)(mainContext.state)
             val inputControl = prop.renderInput(mainContext.state, currentValue)
-            HtmlValue(inputControl.toString)
+            HtmlValue(inputControl)
           }
           case _ => ErrorValue("The _edit method can only be used on Properties")
         } 

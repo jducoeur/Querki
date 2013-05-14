@@ -1,5 +1,7 @@
 package models
 
+import play.api.templates.Html
+
 import language.implicitConversions
 
 import eu.henkelmann.actuarius.{Decorator, Transformer}
@@ -80,10 +82,11 @@ case class QWikitext(wiki:String) extends Wikitext {
  * Internal systems can inject HTML into the stream by creating an HtmlWikitext. This will not be
  * processed any further, just inserted directly.
  */
-case class HtmlWikitext(html:String) extends Wikitext {
-  def display = DisplayText(html)
-  def raw = DisplayText(html)
-  def plaintext = html
+case class HtmlWikitext(html:Html) extends Wikitext {
+  private def str = html.toString
+  def display = DisplayText(str)
+  def raw = DisplayText(str)
+  def plaintext = str
 }
 
 case class CompositeWikitext(left:Wikitext, right:Wikitext, insertNewline:Boolean) extends Wikitext {
