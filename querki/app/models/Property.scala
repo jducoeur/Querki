@@ -79,17 +79,9 @@ case class Property[VT, -RT](
     else
       pType.toUser(cType.first(cv))
   }
-  // TODO: this is *totally* not correct -- it doesn't deal with List types at all -- but it's
-  // a start so that we can cope with interactive forms:
-  def fromUser(str:String):PropValue = cType(pType.fromUser(str))
   
   def serialize(v:PropValue):String = v.serialize(pType)
   def deserialize(str:String):PropValue = cType.deserialize(str, pType)
-  
-  def renderInput(state:SpaceState, currentValue:DisplayPropVal):Html = {
-    Html(cType.renderInput(this, state, currentValue, pType).toString)
-  }
-  
   
   def applyToIncomingThing(context:ContextBase)(action:(Thing, ContextBase) => TypedValue):TypedValue = {
     val valType = context.value.pt

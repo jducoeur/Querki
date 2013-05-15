@@ -97,17 +97,7 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    */
   def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):scala.xml.Elem
   def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = {
-    val xmlRaw = renderInputXml(prop, state, currentValue, v)
-    val xml2 = xmlRaw %
-    	Attribute("name", Text(currentValue.inputControlId),
-    	Attribute("data-prop", Text(prop.id.toThingId),
-    	Attribute("class", Text("propEditor"),
-    	Attribute("id", Text(currentValue.inputControlId), Null))))
-    val xml3 = currentValue.on match {
-      case Some(thing) => xml2 % Attribute("data-thing", Text(thing.id.toThingId), Null)
-      case None => xml2
-    }
-    xml3
+    renderInputXml(prop, state, currentValue, v)
   }
   
   /**

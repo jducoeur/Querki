@@ -13,6 +13,8 @@ import models.system._
 import models.system.SystemSpace._
 import identity.User
 
+import querki.html.HtmlRenderer
+
 object Application extends Controller {
   
   case class UserForm(name:String, password:String)
@@ -385,7 +387,7 @@ object Application extends Controller {
     val propOpt = rc.state.get.prop(ThingId(propId))
     propOpt match {
       case Some(prop) => {
-        val request = ChangeProps(rc.requester.get.id, rc.ownerId, rc.state.get.id, thing.id, Thing.toProps(prop.id -> prop.fromUser(newVal))())
+        val request = ChangeProps(rc.requester.get.id, rc.ownerId, rc.state.get.id, thing.id, Thing.toProps(prop.id -> HtmlRenderer.propValFromUser(prop, newVal))())
         askSpaceMgr[ThingResponse](request) {
           case ThingFound(thingId, state) => {
             Ok("Successfully changed to " + newVal)

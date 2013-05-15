@@ -43,7 +43,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
 	  throw new Error("Trying to wrap root collection!")    
 	def makePropValue(cv:implType):PropValue =
 	  throw new Error("Trying to makePropValue root collection!")    
-    def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem =
+    def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem =
 	  throw new Error("Trying to render input on root collection!")    
   }
   object UrCollection extends UrCollection
@@ -75,7 +75,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     }
     def wrap(elem:ElemValue):implType = List(elem)
     
-    def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+    def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
       val v = currentValue.v.map(_.first).getOrElse(elemT.default)
       elemT.renderInput(prop, state, currentValue, v)
     }
@@ -129,7 +129,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     def makePropValue(cv:implType):PropValue = OptionalPropValue(cv, this)    
     private case class OptionalPropValue(cv:implType, coll:Optional) extends PropValue
     
-    def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+    def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
       // TODO: what should we do here? Has custom rendering become unnecessary here? Does the appearance of the
       // trash button eliminate the need for anything fancy for Optional properties?
       val v = currentValue.v.map(propVal => if (propVal.cv.isEmpty) elemT.default else propVal.first).getOrElse(elemT.default)
@@ -178,7 +178,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     // TODO: the stuff created here overlaps badly with the Javascript code in editThing.scala.html.
     // Rationalize the two, to eliminate all the duplication. In theory, the concept and structure
     // belongs here, and the details belong there.
-    def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+    def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
       val inputTemplate = elemT.renderInput(prop, state, currentValue, elemT.default) %      
     		  Attribute("class", Text("inputTemplate list-input-element"),
     		  Attribute("data-basename", Text(currentValue.collectionControlId + "-item"),
@@ -250,7 +250,7 @@ class QUnit(cid:OID) extends SystemCollection(cid,
   def makePropValue(cv:implType):PropValue = UnitPropValue(cv, this)    
   private case class UnitPropValue(cv:implType, coll:QUnit) extends PropValue
     
-  def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+  def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
     <i>Defined</i>
   }
 }

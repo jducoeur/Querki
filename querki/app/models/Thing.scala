@@ -1,6 +1,7 @@
 package models
 
 import play.api._
+import play.api.templates.Html
 
 import models.system._
 import models.system.OIDs._
@@ -287,7 +288,7 @@ abstract class Thing(
       val pv = prop.pair(entry._2)
       "<dt>" + prop.displayName + "</dt><dd>" + pv.render(thisAsContext).raw + "</dd>"
     }
-    Wikitext(listMap.mkString("<dl>", "", "</dl>"))    
+    HtmlWikitext(Html(listMap.mkString("<dl>", "", "</dl>")))    
   }
   
   /**

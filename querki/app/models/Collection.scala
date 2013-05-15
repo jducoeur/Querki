@@ -1,7 +1,7 @@
 package models
 
 import language.implicitConversions
-import scala.xml.Elem
+import scala.xml._
 
 import system.OIDs._
 
@@ -56,10 +56,6 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
    * equivalent to toString.
    */
   def doRender(context:ContextBase)(v:implType, elemT:pType):Wikitext
-//  def render(context:ContextBase)(v:PropValue, elemT:pType):Wikitext = {
-//    val renderedElems = v.cv.map(elem => elemT.render(context)(elem))
-//    Wikitext(renderedElems map (_.internal) mkString("\n"))    
-//  }
   
   /**
    * Also required for all Collections -- the default value to fall back on.
@@ -81,8 +77,11 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
    * TODO: this is an abstraction break, and really belongs in some side tree that maps Collections
    * to HTML representations. But that's for another day.
    */
-  def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):Elem
-  
+  def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):Elem
+  def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):Elem = {
+    doRenderInput(prop, state, currentValue, elemT)
+  }
+
   import play.api.data.Form
   // TODO: this really doesn't belong here. We need to tease the HTTP/HTML specific
   // stuff out from the core concepts.
@@ -109,6 +108,13 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
         case None => FormFieldInfo(prop, Some(apply(elemT.default)), false, true)
       }
     }
+  }
+  
+  /**
+   * TODO: this needs to become much more sophisticated, but it's a start.
+   */
+  def fromUser(newVal:String, prop:Property[_,_], elemT:pType):PropValue = {
+    apply(elemT.fromUser(newVal))
   }
   
   /**
@@ -148,7 +154,7 @@ class NameCollection extends Collection(IllegalOID, systemOID, systemOID, () => 
   def wrap(elem:ElemValue):implType = List(elem)
   def makePropValue(cv:implType):PropValue = NamePropValue(cv, NameCollection.this)
     
-  def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+  def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
     val v = currentValue.v.map(_.first).getOrElse(elemT.default)
     elemT.renderInput(prop, state, currentValue, v)
   }

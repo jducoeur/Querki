@@ -12,12 +12,14 @@
 
 @import models.Property._
 
+@import querki.html._
+
 @thing = @{ rc.thing }
 @space = @{ rc.state.get }
 @isEdit = @{ thing.isDefined }
 
 @showInputControl(prop:Property[_,_], v:DisplayPropVal, i:Int) = {
-  @prop.renderInput(space, v)
+  @HtmlRenderer.renderPropertyInput(space, prop, v)
 }
 
 @editButtonClass(v:DisplayPropVal) = @{

@@ -116,7 +116,11 @@ object EditMethod extends MetaMethod(EditMethodOID,
         shouldBeProp match {
           case prop:Property[_,_] => {
             val currentValue = mainThing.getDisplayPropVal(prop)(mainContext.state)
-            val inputControl = prop.renderInput(mainContext.state, currentValue)
+            // TODO: conceptually, this is a bit off -- the rendering style shouldn't be hard-coded here. We
+            // probably need to have the Context contain the desire to render in HTML, and delegate to the
+            // HTML renderer indirectly. In other words, the Context should know the renderer to use, and pass
+            // that into here:
+            val inputControl = querki.html.HtmlRenderer.renderPropertyInput(mainContext.state, prop, currentValue)
             HtmlValue(inputControl)
           }
           case _ => ErrorValue("The _edit method can only be used on Properties")
