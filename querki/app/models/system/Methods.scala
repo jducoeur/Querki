@@ -22,9 +22,9 @@ class InternalMethod(tid:OID, p:PropFetcher) extends SystemProperty(tid, Interna
    * TBD: we probably want to lift out some common patterns, but we'll have to see what
    * those look like.
    */
-  override def qlApply(context:ContextBase, params:Option[Seq[ContextBase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
     // By default, we just pass the incoming context right through:
-    return context.value
+    context.value
   }
   
   /**
@@ -51,7 +51,7 @@ class SingleThingMethod(tid:OID, name:String, desc:String, action:(Thing, Contex
       DisplayTextProp(desc)
     ))
 {
-  override def qlApply(context:ContextBase, params:Option[Seq[ContextBase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
     try {
       applyToIncomingThing(context)(handleThing)
     } catch {
@@ -69,8 +69,8 @@ class SingleThingMethod(tid:OID, name:String, desc:String, action:(Thing, Contex
   def handleThing(t:Thing, context:ContextBase):TypedValue = action(t, context)
 }
 
-class PartiallyAppliedFunction(partialContext:ContextBase, action:(ContextBase, Option[Seq[ContextBase]]) => TypedValue) extends QLFunction {
-  def qlApply(context:ContextBase, params:Option[Seq[ContextBase]] = None):TypedValue = {
+class PartiallyAppliedFunction(partialContext:ContextBase, action:(ContextBase, Option[Seq[QLPhrase]]) => TypedValue) extends QLFunction {
+  def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
     action(context, params)
   }
 }
@@ -85,12 +85,12 @@ class PartiallyAppliedFunction(partialContext:ContextBase, action:(ContextBase, 
  */
 abstract class MetaMethod(tid:OID, p:PropFetcher) extends InternalMethod(tid, p)
 {
-  override def qlApply(context:ContextBase, params:Option[Seq[ContextBase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
     ErrorValue(displayName + " can not be applied on its own; you need to use this on the right-hand side of a dot, as PropertyName." + displayName)
   }
   
   override def partiallyApply(leftContext:ContextBase):QLFunction = {
-    def handleRemainder(mainContext:ContextBase, params:Option[Seq[ContextBase]]):TypedValue = {
+    def handleRemainder(mainContext:ContextBase, params:Option[Seq[QLPhrase]]):TypedValue = {
       fullyApply(mainContext, leftContext, params)
     }
     new PartiallyAppliedFunction(leftContext, handleRemainder)
@@ -100,7 +100,7 @@ abstract class MetaMethod(tid:OID, p:PropFetcher) extends InternalMethod(tid, p)
    * The actual Method must implement this. It takes both contexts -- the partial context that we were
    * dotted to and the main incoming context -- and does the usual sorts of things with them.
    */
-  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[ContextBase]]):TypedValue
+  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):TypedValue
 }
 
 object EditMethod extends MetaMethod(EditMethodOID, 
@@ -110,7 +110,7 @@ object EditMethod extends MetaMethod(EditMethodOID,
       (AppliesToKindOID -> QList(ElemValue(Kind.Property)))
     )) 
 {
-  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[ContextBase]]):TypedValue = {
+  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):TypedValue = {
     applyToIncomingThing(mainContext) { (mainThing, _) =>
       applyToIncomingThing(partialContext) { (shouldBeProp, _) =>
         shouldBeProp match {
@@ -127,5 +127,50 @@ object EditMethod extends MetaMethod(EditMethodOID,
         } 
       }
     }
+  }
+}
+
+object SectionMethod extends InternalMethod(SectionMethodOID,
+    toProps(
+      setName("_section"),
+      DisplayTextProp("""_section is intended for the common case where you want to display a section
+on the page if and only if a specific List is non-empty. It looks like this:
+    My List -> _section(HEADER, DETAILS, EMPTY)
+Each of the parameters can be any QL phrase, although they are usually just text blocks. They are
+treated as follows:
+          
+* HEADER is shown first, if the incoming List is non-empty. It gets the entire List as its Context.
+* DETAILS is shown after the header. It is repeated for each element in the List, just as it would
+if you fed a List into a normal text block.
+* EMPTY is shown if and only if the List is empty. This lets you show something else if appropriate.
+It is optional -- you can leave it off.
+          """)
+    )) 
+{
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+    paramsOpt match {
+      case Some(params) if (params.length > 0) => {
+        val header = params(0)
+        val details = if (params.length > 1) Some(params(1)) else None
+        val empty = if (params.length > 2) Some(params(2)) else None
+        buildSection(context, header, details, empty)
+      }
+      case _ => ErrorValue("_section requires at least one parameter")
+    }
+  }  
+  
+  def buildSection(context:ContextBase, header:QLPhrase, detailsOpt:Option[QLPhrase], emptyOpt:Option[QLPhrase]):TypedValue = {
+    val parser = context.parser.get
+    val wikitext = if (context.isEmpty) {
+      parser.contextsToWikitext(emptyOpt.map(empty => Seq(parser.processPhrase(empty.ops, context.root))).getOrElse(Seq.empty))
+    } else {
+      val processedHeader = parser.contextsToWikitext(Seq(parser.processPhrase(header.ops, context.asCollection)))
+      val processedDetails = detailsOpt.map(details => parser.processPhrase(details.ops, context))
+      processedDetails match {
+        case Some(details) => processedHeader.+(parser.contextsToWikitext(Seq(details)), true)
+        case None => processedHeader
+      }
+    }
+    WikitextValue(wikitext)
   }
 }

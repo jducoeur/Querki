@@ -315,7 +315,7 @@ abstract class Thing(
    * 
    * TODO: add a Property to allow runtime Things to override this.
    */
-  def qlApply(context:ContextBase, params:Option[Seq[ContextBase]] = None):TypedValue = {
+  def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
     TypedValue(ExactlyOne(LinkType(id)), LinkType)
   }  
   

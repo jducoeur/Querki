@@ -105,7 +105,7 @@ case class Property[VT, -RT](
    * TODO: if this Property isn't defined on the target Thing or its ancestors, this should return None.
    * So technically, this should be returning Optional.
    */
-  override def qlApply(context:ContextBase, params:Option[Seq[ContextBase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
     applyToIncomingThing(context) { (t, context) =>
       val result = t.getPropVal(this)(context.state)
       TypedValue(result, pType)
