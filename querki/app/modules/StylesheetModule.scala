@@ -1,5 +1,6 @@
 package modules.stylesheet
 
+import play.api.Logger
 import play.api.templates.Html
 
 import models._
@@ -116,30 +117,41 @@ The important Property here is CSS -- this contains normal CSS code, just like f
   override lazy val things = Seq(StylesheetBase)
   
   object HeaderHandler extends Contributor[HtmlEvent, String] {
+    
+    def stylesheetsForThing(state:SpaceState, thing:Thing):String = {
+      implicit val s = state
+      Logger.info("Prepping Stylesheet for " + thing.displayName)
+      val parentStylesheetStr = if (thing.hasModel) stylesheetsForThing(state, thing.getModel) else ""
+      val localStylesheetOpt =
+        for (propVal <- thing.getPropOpt(StylesheetProp);
+             stylesheetOID = propVal.first)
+          yield state.thing(stylesheetOID)
+      val localStylesheetStr = localStylesheetOpt.map(stylesheet => "<style type=\"text/css\">" + stylesheet.first(CSSProp) + "</style>")
+      val googleFontStr =
+        for (
+          stylesheet <- localStylesheetOpt;
+          fontProp <- stylesheet.getPropOpt(GoogleFontProp);
+          fonts = fontProp.first.raw.toString()
+            )
+          yield "<link rel=\"stylesheet\" type=\"text/css\" href=\"http://fonts.googleapis.com/css?family=" + fonts + "\">"
+      parentStylesheetStr + localStylesheetStr.getOrElse("") + googleFontStr.getOrElse("")
+    }
+    
+    def notifyGuts(rc:RequestContext):String = {
+      val result = 
+        for (state <- rc.state;
+             thing <- rc.thing)
+          // TBD: Is this going to walk up the App chain properly? Might need enhancement 
+          yield stylesheetsForThing(state, state) + stylesheetsForThing(state, thing)
+      result.getOrElse("")
+    }
+    
     def notify(evt:HtmlEvent, sender:Publisher[HtmlEvent,String]):String = {
       // For the time being, only Thing pages show styles. This will probably change
-      if (evt.template == QuerkiTemplate.Thing) {
-    	val rc = evt.rc
-    	val thingOpt = rc.thing
-    	if (rc.state.isDefined && thingOpt.isDefined && thingOpt.get.hasProp(StylesheetProp)(rc.state.get)) {
-    	  implicit val state = rc.state.get
-    	  val thing = thingOpt.get
-    	  val result = new StringBuilder("")
-    	  // TODO: there should be a common pattern for dereferencing a Link like this:
-    	  val stylesheetOID = thing.first(StylesheetProp)
-    	  val stylesheet = state.thing(stylesheetOID)
-    	  if (stylesheet.hasProp(GoogleFontProp)) {
-    	    val fonts = stylesheet.first(GoogleFontProp).raw.toString
-    	    result ++= "<link rel=\"stylesheet\" type=\"text/css\" href=\"http://fonts.googleapis.com/css?family=" + fonts + "\">"
-    	  }
-    	  result ++= "<style type=\"text/css\">" + stylesheet.first(CSSProp) + "</style>"
-    	  result.toString
-    	} else {
-    	  ""
-    	}
-      } else {
+      if (evt.template == QuerkiTemplate.Thing)
+        notifyGuts(evt.rc)
+      else
         ""
-      }
     }
   }
   

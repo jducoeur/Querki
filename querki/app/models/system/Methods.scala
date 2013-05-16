@@ -167,6 +167,7 @@ It is optional -- you can leave it off.
       val processedHeader = parser.contextsToWikitext(Seq(parser.processPhrase(header.ops, context.asCollection)))
       val processedDetails = detailsOpt.map(details => parser.processPhrase(details.ops, context))
       processedDetails match {
+        // Note that we intentionally always put a newline between the header and details:
         case Some(details) => processedHeader.+(parser.contextsToWikitext(Seq(details)), true)
         case None => processedHeader
       }
