@@ -30,6 +30,7 @@ class PersonModule(val moduleId:Short) extends modules.Module {
     val PersonOID = moid(1)
     val InviteLinkCmdOID = moid(2)
     val IdentityLinkOID = moid(3)
+    val ChromelessInviteLinkOID = moid(4)
   }
   import MOIDs._
   
@@ -55,7 +56,11 @@ class PersonModule(val moduleId:Short) extends modules.Module {
 
   // The actual definition of this method is down below
   lazy val inviteLink = new SingleThingMethod(InviteLinkCmdOID, "Invite Link", """Place this command inside of an Email Message.
-When the email is sent, it will be replaced by a link that the recipient of the email can use to log into this Space as a Person.""", doInviteLink)
+When the email is sent, it will be replaced by a link that the recipient of the email can use to log into this Space as a Person.""", doInviteLink(false))
+  lazy val chromelessInviteLink = new SingleThingMethod(ChromelessInviteLinkOID, "Plain Invite Link", """Place this command inside of an Email Message.
+When the email is sent, it will be replaced by a link that the recipient of the email can use to log into this Space as a Person.
+Unlike the ordinary Invite Link command, this one results in a page with no Querki menu bar, just your pages.
+(NOTE: this will probably become a paid-users-only feature in the future.)""", doInviteLink(true))
   
   lazy val identityLink = new SystemProperty(IdentityLinkOID, LinkType, Optional,
       toProps(
@@ -65,6 +70,8 @@ When the email is sent, it will be replaced by a link that the recipient of the 
 
   override lazy val props = Seq(
     inviteLink,
+    
+    chromelessInviteLink,
     
     identityLink
   )
@@ -130,7 +137,7 @@ to add new Properties for any Person in your Space.
   val identityName = "identityName"
   val identityEmail = "identityEmail"
     
-  def doInviteLink(t:Thing, context:ContextBase):TypedValue = {
+  def doInviteLink(chromeless:Boolean)(t:Thing, context:ContextBase):TypedValue = {
     if (t.isAncestor(PersonOID)(context.state)) {
       // Get the Identity linked from this Person. If there isn't already one, make one.
 	  val identityProp = t.localProp(identityLink)
@@ -143,7 +150,9 @@ to add new Properties for any Person in your Space.
 	    
 	  val state = context.state
 	  // TODO: this surely belongs in a utility somewhere -- it constructs the full path to a Thing, plus some paths.
-	  val url = urlBase + "u/" + state.owner.toThingId + "/" + state.name + "/" + t.toThingId + "?" + identityParam + "=" + hash
+	  val url = urlBase + "u/" + state.owner.toThingId + "/" + state.name + "/" + t.toThingId + 
+	    "?" + identityParam + "=" + hash +
+	    (if (chromeless) "&cl=on" else "")
 	  val link = ExactlyOne(ExternalLinkType(url))
 	    
 	  TypedValue(link, ExternalLinkType)
