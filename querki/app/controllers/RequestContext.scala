@@ -40,8 +40,26 @@ case class RequestContext(
     val seq = queryParam(paramName)
     if (seq.isEmpty) None else Some(seq.head)
   }
+  def paramIs(paramName:String, value:String) = hasQueryParam(paramName) && firstQueryParam(paramName).map(_ == value).getOrElse(false)
   
-  def chromeless = hasQueryParam("cl")
+  val chromelessName = "cl"
+  def turningOn(name:String):Boolean = paramIs(name, "on")
+  def turningOff(name:String):Boolean = paramIs(name, "off")
+  // The chromeless param can either be set page-by-page, or be turned on or off.
+  // TODO: there's probably a general mechanism fighting to break out here.
+  def chromeless = {
+    !turningOff(chromelessName) && 
+      (hasQueryParam(chromelessName) || turningOn(chromelessName) || request.session.get(chromelessName).map(_ == "on").getOrElse(false))
+  }
+  
+  def allSessionUpdates:Seq[(String, String)] = {
+    if (turningOn(chromelessName))
+      sessionUpdates :+ (chromelessName -> "on")
+    else if (turningOff(chromelessName))
+      sessionUpdates :+ (chromelessName -> "off")
+    else
+      sessionUpdates
+  }
   
   val propStrName = "prop"
   def hasProp = hasQueryParam(propStrName)
@@ -55,10 +73,11 @@ case class RequestContext(
   }
   
   def updateSession(result:Result):Result = {
-    if (sessionUpdates.isEmpty)
+    val updates = allSessionUpdates
+    if (updates.isEmpty)
       result
     else {
-      val newSession = (request.session /: sessionUpdates) ((sess, update) => sess + (update._1 -> update._2))
+      val newSession = (request.session /: updates) ((sess, update) => sess + (update._1 -> update._2))
       result.withSession(newSession)
     }
   }
