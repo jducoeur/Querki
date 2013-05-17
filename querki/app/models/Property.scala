@@ -70,7 +70,7 @@ case class Property[VT, -RT](
   
   def validate(str:String) = pType.validate(str)
   import play.api.data.Form
-  def fromUser(form:Form[_]):FormFieldInfo = cType.fromUser(form, this, pType)
+  def fromUser(on:Option[Thing], form:Form[_]):FormFieldInfo = cType.fromUser(on, form, this, pType)
   // TODO: this clearly isn't correct. How are we actually going to handle more complex types?
   def toUser(v:PropValue):String = {
     val cv = castVal(v)
@@ -113,15 +113,27 @@ case class Property[VT, -RT](
   }  
 }
 
-case class DisplayPropVal(on:Option[Thing], prop: Property[_,_], v: Option[PropValue], inheritedVal:Option[PropValue] = None, inheritedFrom:Option[Thing] = None) {
-  def isInherited = v.isEmpty && inheritedVal.isDefined
-  def propId = prop.id.toString
-  def inputControlId = "v-" + propId
-  def collectionControlId = "coll-" + propId
+class FieldIds(t:Option[Thing], p:Property[_,_]) {
+  lazy val propId = p.id.toString
+  lazy val thingId = t.map(_.id.toString).getOrElse("")
+  lazy val suffix = "-" + propId + "-" + thingId  
+  
+  lazy val inputControlId = "v" + suffix
+  lazy val collectionControlId = "coll" + suffix
   // This is a hidden input field, which is a flag to tell the receiving code whether the
   // field is "empty" -- inherited or deleted, but with no local value:
-  def emptyControlId = "empty-" + propId
-  def hasInheritance = inheritedVal.isDefined
+  lazy val emptyControlId = "empty" + suffix
+}
+object FieldIds {
+  def apply(t:Option[Thing], p:Property[_,_]) = new FieldIds(t,p)
+}
+
+case class DisplayPropVal(on:Option[Thing], prop: Property[_,_], v: Option[PropValue], inheritedVal:Option[PropValue] = None, inheritedFrom:Option[Thing] = None) extends
+  FieldIds(on, prop)
+{
+  lazy val isInherited = v.isEmpty && inheritedVal.isDefined
+  
+  lazy val hasInheritance = inheritedVal.isDefined
 }
 
 object Property {

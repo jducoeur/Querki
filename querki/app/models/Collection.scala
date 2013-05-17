@@ -86,13 +86,13 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
   // TODO: this really doesn't belong here. We need to tease the HTTP/HTML specific
   // stuff out from the core concepts.
   // TODO: this will need refactoring, to get more complex on a per-Collection basis
-  def fromUser(form:Form[_], prop:Property[_,_], elemT:pType):FormFieldInfo = {
-    val fieldId = prop.id.toString
-    val empty = form("empty-" + fieldId).value map (_.toBoolean) getOrElse false
+  def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType):FormFieldInfo = {
+    val fieldIds = FieldIds(on, prop)
+    val empty = form(fieldIds.emptyControlId).value map (_.toBoolean) getOrElse false
     if (empty) {
       FormFieldInfo(prop, None, true, true)
     } else {
-      val formV = form("v-" + fieldId).value
+      val formV = form(fieldIds.inputControlId).value
       formV match {
     	// Normal case: pass it to the PType for parsing the value out:
         case Some(v) => {

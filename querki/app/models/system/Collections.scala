@@ -205,13 +205,13 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     
     import play.api.data.Form
     // TODO: this will want to be refactored with the default version in Collection.scala
-    override def fromUser(form:Form[_], prop:Property[_,_], elemT:pType):FormFieldInfo = {
-      val fieldId = prop.id.toString
-      val empty = form("empty-" + fieldId).value map (_.toBoolean) getOrElse false
+    override def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType):FormFieldInfo = {
+      val fieldIds = FieldIds(on, prop)
+      val empty = form(fieldIds.emptyControlId).value map (_.toBoolean) getOrElse false
       if (empty) {
         FormFieldInfo(prop, None, true, true)
       } else {
-        val oldListName = "coll-" + fieldId + "-item"
+        val oldListName = fieldIds.collectionControlId + "-item"
         val oldList = form(oldListName)
         val oldIndexes = oldList.indexes
         val oldRaw =
