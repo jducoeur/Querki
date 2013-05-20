@@ -7,6 +7,8 @@ import OIDs._
 
 import Thing._
 
+import identity.User
+
 /**
  * A Space is the Querki equivalent of a database -- a collection of related Things,
  * Properties and Types.
@@ -198,6 +200,21 @@ case class SpaceState(
     } else {
       allCandidates
     }
+  }
+  
+  // TODO: this needs to become real. For now, everything is world-readable.
+  def canRead(who:User):Boolean = {
+    true
+  }
+  
+  // TODO: this needs to become much more sophisticated. But for now, it's good enough
+  // to say that only the owner can edit:
+  def canCreateThings(who:User):Boolean = {
+    who.id == owner
+  }
+  
+  def canEdit(who:User, thingId:OID):Boolean = {
+    querki.access.AccessControl.canEdit(this, who, thingId)
   }
 }
 

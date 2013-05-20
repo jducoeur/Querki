@@ -285,7 +285,7 @@ The QL expression given in here must product a List of Links to Persons.
 	      case Some(previouslySentTo) => previouslySentTo ++ sentTo
 	      case None => resultingList
 	    } 
-	    val changeRequest = ChangeProps(req.requester.get.id, state.owner, state.id, t.toThingId, toProps(SentToOID -> fullSentTo)())
+	    val changeRequest = ChangeProps(req.requester.get, state.owner, state.id, t.toThingId, toProps(SentToOID -> fullSentTo)())
 	    SpaceManager.ask(changeRequest) { resp:ThingResponse =>
 	      resp match {
 	        case ThingFound(id, state) => Logger.info("Noted email recipients")

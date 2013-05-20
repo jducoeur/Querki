@@ -114,7 +114,7 @@ to add new Properties for any Person in your Space.
     val identity = Identity.getOrCreateByEmail(emailAddr, name)
     // ... then point the Person to it, so we can use it later...
     val req = context.request
-    val changeRequest = ChangeProps(req.requester.get.id, s.owner, s.id, t.toThingId, toProps(identityLink(identity.id))())
+    val changeRequest = ChangeProps(req.requester.get, s.owner, s.id, t.toThingId, toProps(identityLink(identity.id))())
     // TODO: eventually, all of this should get beefed up in various ways:
     // -- ChangeProps should carry the version stamp of t, so that race conditions can be rejected.
     // -- Ideally, we shouldn't send the email until the Identity has been fully established. Indeed, this whole
@@ -165,7 +165,7 @@ to add new Properties for any Person in your Space.
    * LOGIN HANDLER
    ***********************************************/
   
-  case class SpaceSpecificUser(identityId:OID, name:String, email:EmailAddress) extends User {
+  case class SpaceSpecificUser(identityId:OID, name:String, email:EmailAddress, spaceId:OID) extends User {
     val id = UnknownOID
     val identity = Identity(identityId, email)
     val identities = Seq(identity)
@@ -195,7 +195,7 @@ to add new Properties for any Person in your Space.
           // replacing it:
           newRc = rc.copy(
               sessionUpdates = rc.sessionUpdates ++ updates,
-              requester = Some(SpaceSpecificUser(identityId, name, email)))
+              requester = Some(SpaceSpecificUser(identityId, name, email, rc.state.get.id)))
         ) 
           yield newRc
           
@@ -207,7 +207,7 @@ to add new Properties for any Person in your Space.
           idName <- session.get(identityName);
           idEmail <- session.get(identityEmail)
           )
-          yield rc.copy(requester = Some(SpaceSpecificUser(OID(existingIdentity), idName, EmailAddress(idEmail))))
+          yield rc.copy(requester = Some(SpaceSpecificUser(OID(existingIdentity), idName, EmailAddress(idEmail), rc.state.get.id)))
         withIdentityOpt.getOrElse(rc)
       }
     }

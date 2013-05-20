@@ -136,10 +136,10 @@ object Application extends Controller {
         spaceId:String, 
         thingIdStr:Option[String] = None
       )(f: (RequestContext => Result)):EssentialAction = withUser(requireLogin) { rc =>
-    val requesterId = rc.requester map (_.id) getOrElse UnknownOID
+    val requester = rc.requester getOrElse User.Anonymous
     val thingId = thingIdStr map (ThingId(_))
     val ownerId = getUserByThingId(ownerIdStr)
-    askSpaceMgr[ThingResponse](GetThing(requesterId, ownerId, ThingId(spaceId), thingId)) {
+    askSpaceMgr[ThingResponse](GetThing(requester, ownerId, ThingId(spaceId), thingId)) {
       case ThingFound(id, state) => {
         val thingOpt = id match {
           case UnknownOID => None
@@ -343,10 +343,10 @@ object Application extends Controller {
             val props = Thing.toProps(propPairs:_*)()
             val spaceMsg = if (thing.isDefined) {
               // Editing an existing Thing
-              ModifyThing(user.id, rc.ownerId, ThingId(spaceId), thing.get.id.toThingId, OID(info.model), props)
+              ModifyThing(user, rc.ownerId, ThingId(spaceId), thing.get.id.toThingId, OID(info.model), props)
             } else {
               // Creating a new Thing
-              CreateThing(user.id, rc.ownerId, ThingId(spaceId), kind, OID(info.model), props)
+              CreateThing(user, rc.ownerId, ThingId(spaceId), kind, OID(info.model), props)
             }
             askSpaceMgr[ThingResponse](spaceMsg) {
               case ThingFound(thingId, state) => {
@@ -381,25 +381,34 @@ object Application extends Controller {
   /**
    * This is the AJAX-style call to change a single property value. As of this writing, I expect it to become
    * the dominant style before too long.
+   * 
+   * TODO: note that I've had to turn off requireLogin. That's mainly because the definition of "login" used for it is
+   * too stringent. We need to rewrite withSpace/withThing to cope with the late-parsed SpaceSpecificUser:
    */
-  def setProperty(ownerId:String, spaceId:String, thingId:String, propId:String, newVal:String) = withThing(true, ownerId, spaceId, thingId) { implicit rc =>
-    val thing = rc.thing.get
-    val propOpt = rc.state.get.prop(ThingId(propId))
-    propOpt match {
-      case Some(prop) => {
-        val request = ChangeProps(rc.requester.get.id, rc.ownerId, rc.state.get.id, thing.id, Thing.toProps(prop.id -> HtmlRenderer.propValFromUser(prop, newVal))())
-        askSpaceMgr[ThingResponse](request) {
-          case ThingFound(thingId, state) => {
-            Ok("Successfully changed to " + newVal)
-          }
-          case ThingFailed(msg) => {
-            Ok("Failed to change property: " + msg)
-          }
-        }
+  def setProperty(ownerId:String, spaceId:String, thingId:String, propId:String, newVal:String) = withThing(false, ownerId, spaceId, thingId) { implicit rc =>
+    rc.requester match {
+      case Some(requester) => {
+	    val thing = rc.thing.get
+	    val propOpt = rc.state.get.prop(ThingId(propId))
+	    propOpt match {
+	      case Some(prop) => {
+	        val request = ChangeProps(requester, rc.ownerId, rc.state.get.id, thing.id, Thing.toProps(prop.id -> HtmlRenderer.propValFromUser(prop, newVal))())
+	        askSpaceMgr[ThingResponse](request) {
+	          case ThingFound(thingId, state) => {
+	            Ok("Successfully changed to " + newVal)
+	          }
+	          case ThingFailed(msg) => {
+	            Logger.info("Failed to change property: " + msg); Ok("Failed to change property: " + msg)
+	          }
+	        }
+	      }
+	      case None => {
+	        Ok("Unknown property " + propId)
+	      }
+	    }        
       }
-      case None => {
-        Ok("Unknown property " + propId)
-      }
+      
+      case _ => Ok("You aren't logged in, so you can't change anything")
     }
   }
 
@@ -442,7 +451,7 @@ object Application extends Controller {
 	  }
 	  val attachProps = Thing.toProps(DisplayNameProp(filename))()
 	  askSpaceMgr[ThingResponse](
-	    CreateAttachment(user.id, rc.ownerId, state.id.toThingId, contents, MIMEType.JPEG, contents.size, OIDs.PhotoBaseOID, attachProps)) {
+	    CreateAttachment(user, rc.ownerId, state.id.toThingId, contents, MIMEType.JPEG, contents.size, OIDs.PhotoBaseOID, attachProps)) {
 	    case ThingFound(attachmentId, state2) => {
 	      Redirect(routes.Application.thing(ownerId, state.toThingId, attachmentId.toThingId))
 	    }
@@ -457,7 +466,7 @@ object Application extends Controller {
 
   def attachment(ownerIdStr:String, spaceId:String, thingIdStr:String) = withUser(false) { rc =>
     val ownerId = getUserByThingId(ownerIdStr)
-    askSpaceMgr[AttachmentResponse](GetAttachment(rc.requesterOID, ownerId, ThingId(spaceId), ThingId(thingIdStr))) {
+    askSpaceMgr[AttachmentResponse](GetAttachment(rc.requesterOrAnon, ownerId, ThingId(spaceId), ThingId(thingIdStr))) {
       case AttachmentContents(id, size, mime, content) => {
         Ok(content).as(mime)
       }

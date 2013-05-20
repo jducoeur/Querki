@@ -8,6 +8,7 @@ object Modules {
   val Stylesheet = new stylesheet.StylesheetModule(1)
   val Email = new email.EmailModule(2)
   val Person = new person.PersonModule(3)
+  val AccessControl = new querki.access.AccessControlModule(4)
   
   private var allModules = Seq.empty[Module]
   
@@ -28,6 +29,7 @@ object Modules {
     s = init(Stylesheet, s)
     s = init(Email, s)
     s = init(Person, s)
+    s = init(AccessControl, s)
     
     s
   }

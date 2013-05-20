@@ -31,6 +31,7 @@ case class RequestContext(
     thing:Option[Thing],
     error:Option[String] = None,
     sessionUpdates:Seq[(String,String)] = Seq.empty) {
+  def requesterOrAnon = requester getOrElse User.Anonymous
   def requesterOID = requester map (_.id) getOrElse UnknownOID  
   def ownerName = state map Application.ownerName getOrElse ""
   

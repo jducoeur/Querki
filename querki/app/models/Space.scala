@@ -23,6 +23,8 @@ import play.api.Play.current
 import Kind._
 import Thing._
 
+import identity.User
+
 import system._
 import system.OIDs._
 import system.SystemSpace._
@@ -90,22 +92,11 @@ class Space extends Actor {
   def name = spaceInfo.get[String]("name").get
   def owner = OID(spaceInfo.get[Long]("owner").get)
   
-  // TODO: this needs to become real. For now, everything is world-readable.
-  def canRead(who:OID):Boolean = {
-    true
-  }
+  def canRead(who:User):Boolean = state.canRead(who)
   
-  // TODO: this needs to become much more sophisticated. But for now, it's good enough
-  // to say that only the owner can edit:
-  def canCreateThings(who:OID):Boolean = {
-    who == owner
-  }
+  def canCreateThings(who:User):Boolean = state.canCreateThings(who)
   
-  // TODO: this needs to become much more sophisticated. But for now, it's good enough
-  // to say that only the owner can edit:
-  def canEdit(who:OID, thingId:OID):Boolean = {
-    who == owner
-  }
+  def canEdit(who:User, thingId:OID):Boolean = state.canEdit(who, thingId)
   
   def loadSpace() = {
     // TODO: we need to walk up the tree and load any ancestor Apps before we prep this Space
@@ -221,7 +212,7 @@ class Space extends Actor {
     }
   }
 
-  def createSomething(spaceThingId:ThingId, who:OID, modelId:OID, props:PropMap, kind:Kind)(
+  def createSomething(spaceThingId:ThingId, who:User, modelId:OID, props:PropMap, kind:Kind)(
       otherWork:OID => java.sql.Connection => Unit) = 
   {
     val spaceId = checkSpaceId(spaceThingId)
@@ -257,7 +248,7 @@ class Space extends Actor {
     }    
   }
   
-  def modifyThing(who:OID, owner:OID, spaceThingId:ThingId, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap)) = {
+  def modifyThing(who:User, owner:OID, spaceThingId:ThingId, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap)) = {
       val spaceId = checkSpaceId(spaceThingId)
       val oldThingOpt = state.anything(thingId)
       oldThingOpt map { oldThing =>
