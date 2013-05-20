@@ -51,6 +51,7 @@ class EmailModule(val moduleId:Short) extends modules.Module {
     val EmailBodyOID = moid(8)
     val EmailShowSendOID = moid(9)
     val SentToOID = moid(10)
+    val RecipientsOID = moid(11)
   }  
   import MOIDs._
   
@@ -122,6 +123,20 @@ something fancier than sending to specific people, see the Recipients property.
       toProps(
         setName("Sent To"),
         DisplayTextProp("The Persons that this mail has already been sent to. (This is set automatically.)")))
+  
+  lazy val recipientsProp = new SystemProperty(RecipientsOID, QLType, ExactlyOne,
+      toProps(
+        setName("Recipients"),
+        DisplayTextProp("""
+The Recipients property declares who will receive this email. It is a QL expression, and
+you should only modify it if you know what you are doing. By default, it simply defers to
+the contents of the Email To property -- for ordinary email, you should just list the people
+who are to receive this in Email To. But you can edit Recipients to be any other QL expression,
+which can make some problems much easier. For example, if you want to send the email to
+every Person listed in this Space, set Recipients to "Person._instances".
+            
+The QL expression given in here must product a List of Links to Persons.
+        		""")))
 
   override lazy val props = Seq(
     // The actual email-address property
@@ -141,7 +156,9 @@ something fancier than sending to specific people, see the Recipients property.
     
     showSendEmail,
     
-    sentToProp
+    sentToProp,
+    
+    recipientsProp
   )
   
   /***********************************************
@@ -157,6 +174,7 @@ something fancier than sending to specific people, see the Recipients property.
         emailSubject(""),
         emailBody(),
         sendEmail(),
+        recipientsProp("Email To"),
         showSendEmail("""Email successfully sent to:
 [[Send Email -> ""* ____ - [[Email Address]]""]]
 """),
@@ -164,7 +182,7 @@ something fancier than sending to specific people, see the Recipients property.
 **Subject**: [[Email Subject]]
 
 **To**: 
-[[Email To -> ""* ____ - [[Email Address]]""]]
+[[Recipients -> ""* ____ - [[Email Address]]""]]
             
 **Already Sent To**:
 [[Sent To -> ""* ____ - [[Email Address]]""]]
@@ -184,87 +202,99 @@ something fancier than sending to specific people, see the Recipients property.
     
   def doSendEmail(t:Thing, context:ContextBase) = {
     implicit val state = context.state
-    val recipients = t.getProp(emailTo)
-    val previouslySentToOpt = t.getPropOpt(sentToProp) 
+    val recipientsIndirect = t.getProp(recipientsProp)
+    val previouslySentToOpt = t.getPropOpt(sentToProp)
     
-    // Construct the email:
-    val props = System.getProperties()
-    props.setProperty("mail.host", smtpHost)
-    props.setProperty("mail.user", "querki")
-    props.setProperty("mail.transport.protocol", "smtp")
-    props.setProperty("mail.from", from)
-    props.setProperty("mail.debug", "true")
-    
-    val session = Session.getInstance(props, null)
-
-    session.setDebug(debug)
-    
-    def sendToPerson(person:Thing):Option[OID] = {
-      try {
-        // TODO: check if this person has already been sent this email
-        val name = person.displayName
-        val addrList = person.getProp(emailAddress)
-        val addr = addrList.first
-        // TBD: there must be a better way to do this. It's a nasty workaround for the fact
-        // that setRecipients() is invariant, I believe.
-        val toAddrs = Array(new InternetAddress(addr.addr, name).asInstanceOf[Address])
-        
-        val msg = new MimeMessage(session)
-        msg.setFrom(new InternetAddress(from))
-
-	    msg.setRecipients(Message.RecipientType.TO, toAddrs)
+    // Get the actual list of recipients:
+    val recipientParser = new QLParser(recipientsIndirect.first, t.thisAsContext(context.request))
+    val recipientContext = recipientParser.processMethod
+    if (recipientContext.value.pt != LinkType) {
+      ErrorValue("The Recipient property of an Email Message must return a collection of Links; instead, it produced " + recipientContext.value.pt.displayName)
+    } else {
+      val recipients = recipientContext.value.v
+      
+	    // Construct the email:
+	    val props = System.getProperties()
+	    props.setProperty("mail.host", smtpHost)
+	    props.setProperty("mail.user", "querki")
+	    props.setProperty("mail.transport.protocol", "smtp")
+	    props.setProperty("mail.from", from)
+	    props.setProperty("mail.debug", "true")
 	    
-	    val personContext = QLContext(TypedValue(ExactlyOne(ElemValue(person.id)), LinkType), context.request, Some(context))
+	    val session = Session.getInstance(props, null)
+	
+	    session.setDebug(debug)
 	    
-	    val subjectQL = t.getProp(emailSubject).first
-	    val subjectParser = new QLParser(subjectQL, personContext)
-	    val subject = subjectParser.process.plaintext
-	    msg.setSubject(subject)
+	    def sendToPerson(person:Thing):Option[OID] = {
+	      try {
+	        val name = person.displayName
+	        val addrList = person.getProp(emailAddress)
+	        if (addrList.isEmpty)
+	          None
+	        else {
+	          val addr = addrList.first
+	          // TBD: there must be a better way to do this. It's a nasty workaround for the fact
+	          // that setRecipients() is invariant, I believe.
+	          val toAddrs = Array(new InternetAddress(addr.addr, name).asInstanceOf[Address])
+	        
+	          val msg = new MimeMessage(session)
+	          msg.setFrom(new InternetAddress(from))
+	
+		      msg.setRecipients(Message.RecipientType.TO, toAddrs)
+		    
+		      val personContext = QLContext(TypedValue(ExactlyOne(ElemValue(person.id)), LinkType), context.request, Some(context))
+		    
+		      val subjectQL = t.getProp(emailSubject).first
+		      val subjectParser = new QLParser(subjectQL, personContext)
+		      val subject = subjectParser.process.plaintext
+		      msg.setSubject(subject)
+		    
+		      val bodyQL = t.getProp(emailBody).first
+		      val bodyParser = new QLParser(bodyQL, personContext)
+		      val body = bodyParser.process.display
+		      msg.setDataHandler(new DataHandler(new ByteArrayDataSource(body, "text/html")))
+		    
+		      msg.setHeader("X-Mailer", "Querki")
+		      msg.setSentDate(new java.util.Date())
+		    
+		      Logger.info("About to send the message")
+		      Transport.send(msg)
+	
+		      Some(person.id)
+	        }
+	      } catch {
+	        case error:Throwable => Logger.info("Got an error while sending email " + error.getClass()); None 
+	      }
+	    }
 	    
-	    val bodyQL = t.getProp(emailBody).first
-	    val bodyParser = new QLParser(bodyQL, personContext)
-	    val body = bodyParser.process.display
-	    msg.setDataHandler(new DataHandler(new ByteArrayDataSource(body, "text/html")))
+	    val sentTo = recipients.flatMap(LinkType) { personOID =>
+	      if (previouslySentToOpt.isDefined && previouslySentToOpt.get.contains(personOID))
+	        None
+	      else {
+	        val thing = state.anything(personOID)
+	        thing match {
+	          case Some(person) => sendToPerson(person)
+	          case None => None  // TODO: some kind of error here?
+	        }
+	      }
+	    }
+	    val resultingList = QList.makePropValue(sentTo.map(ElemValue(_)).toList)
 	    
-	    msg.setHeader("X-Mailer", "Querki")
-	    msg.setSentDate(new java.util.Date())
+	    val req = context.request
+	    val fullSentTo = previouslySentToOpt match {
+	      case Some(previouslySentTo) => previouslySentTo ++ sentTo
+	      case None => resultingList
+	    } 
+	    val changeRequest = ChangeProps(req.requester.get.id, state.owner, state.id, t.toThingId, toProps(SentToOID -> fullSentTo)())
+	    SpaceManager.ask(changeRequest) { resp:ThingResponse =>
+	      resp match {
+	        case ThingFound(id, state) => Logger.info("Noted email recipients")
+	        // TODO: what should we do in case of failure?
+	        case ThingFailed(msg) => Logger.error("Unable to record email recipients: " + msg)
+	      }
+	    }
 	    
-	    Logger.info("About to send the message")
-	    Transport.send(msg)
-
-	    Some(person.id)
-      } catch {
-        case error:Throwable => Logger.info("Got an error while sending email " + error.getClass()); None 
-      }
+	    TypedValue(resultingList, LinkType)
     }
-    
-    val sentTo = recipients.flatMap { personOID =>
-      if (previouslySentToOpt.isDefined && previouslySentToOpt.get.contains(personOID))
-        None
-      else {
-        val thing = state.anything(personOID)
-        thing match {
-          case Some(person) => sendToPerson(person)
-          case None => None  // TODO: some kind of error here?
-        }
-      }
-    }
-    val resultingList = QList.makePropValue(sentTo.map(ElemValue(_)).toList)
-    
-    val req = context.request
-    val fullSentTo = previouslySentToOpt match {
-      case Some(previouslySentTo) => previouslySentTo ++ sentTo
-      case None => resultingList
-    } 
-    val changeRequest = ChangeProps(req.requester.get.id, state.owner, state.id, t.toThingId, toProps(SentToOID -> fullSentTo)())
-    SpaceManager.ask(changeRequest) { resp:ThingResponse =>
-      resp match {
-        case ThingFound(id, state) => Logger.info("Noted email recipients")
-        // TODO: what should we do in case of failure?
-        case ThingFailed(msg) => Logger.error("Unable to record email recipients: " + msg)
-      }
-    }
-    
-    TypedValue(resultingList, LinkType)
   }
 }

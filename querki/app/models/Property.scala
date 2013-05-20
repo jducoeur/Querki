@@ -55,11 +55,8 @@ case class Property[VT, -RT](
   
   def isEmpty(v:PropValue) = cType.isEmpty(v)
   
-  def flatMap[T](v:PropValue)(cb:VT => Option[T]) = v.cv.flatMap { elem => 
-    val vt = pType.get(elem)
-    cb(vt)
-  }
-  
+  def flatMap[T](v:PropValue)(cb:VT => Option[T]) = v.flatMap(pType)(cb)
+
   def contains(v:PropValue, toCheck:VT):Boolean = v.cv.exists { elem =>
     val vt = pType.get(elem)
     vt == toCheck
@@ -176,7 +173,7 @@ object Property {
     
     def inheritedProps(thing:Option[Thing], model:Thing)(implicit state:SpaceState):PropList = {
       // Get the Model's PropList, and push its values into the inherited slots:
-      val raw = from(model)
+      val raw = from(model, thing)
       raw map { fromModel =>
         val (prop, v) = fromModel
         if (prop.first(NotInheritedProp))
@@ -190,10 +187,11 @@ object Property {
     
     // TODO: this is all pretty inefficient. We should be caching the PropLists,
     // especially for common models.
-    def from(thing:Thing)(implicit state:SpaceState):PropList = {
+    def from(thing:Thing, rootIn:Option[Thing] = None)(implicit state:SpaceState):PropList = {
+      val root = rootIn.getOrElse(thing)
       val inherited =
         if (thing.hasModel)
-          inheritedProps(Some(thing), thing.getModel)
+          inheritedProps(Some(root), thing.getModel)
         else
           TreeMap.empty[Property[_,_], DisplayPropVal]      
       
@@ -204,7 +202,7 @@ object Property {
           if (m.contains(prop))
             m(prop).copy(v = Some(value))
           else
-            DisplayPropVal(Some(thing), prop, Some(value))
+            DisplayPropVal(Some(root), prop, Some(value))
         m + (prop -> disp)
       }
     }
@@ -227,5 +225,6 @@ case class PropAndVal[VT](prop:Property[VT, _], v:PropValue) {
     QList.makePropValue((v.cv ++ others.map(ElemValue(_))).toList)
   }
   def contains(toCheck:VT):Boolean = prop.contains(v, toCheck)
+  def isEmpty:Boolean = v.isEmpty
 }
 
