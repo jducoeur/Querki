@@ -81,6 +81,7 @@ object OIDs {
   val EditMethodOID = sysId(42)
   val SectionMethodOID = sysId(43)
   val InstancesMethodOID = sysId(44)
+  val QLTypeOID = sysId(45)
 }
 
 /**

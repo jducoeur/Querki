@@ -109,6 +109,12 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    */
   protected def doFromUser(str:String):VT = doDeserialize(str)
   final def fromUser(str:String):ElemValue = ElemValue(doFromUser(str))
+  
+  /**
+   * If this Type implies special processing when named in a QL expression (other than simply returning
+   * the value of the property), override this method 
+   */
+  def qlApplyFromProp(context:ContextBase, prop:Property[VT,_], params:Option[Seq[QLPhrase]]):Option[TypedValue] = None
 }
 
 trait PTypeBuilder[VT, -RT] {

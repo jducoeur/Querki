@@ -339,4 +339,13 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
       case Error(msg, next) => { Logger.error("Couldn't parse qlText: " + msg); Wikitext("ERROR: Couldn't parse qlText: " + msg) }
     }
   }
+  
+  def processMethod:ContextBase = {
+    val parseResult = parseAll(qlPhrase, input.text)
+    parseResult match {
+      case Success(result, _) => processPhrase(result.ops, initialContext)
+      case Failure(msg, next) => { initialContext.next(ErrorValue("Syntax error: " + msg)) }
+      case Error(msg, next) => { initialContext.next(ErrorValue("ERROR in parsing QL field: " + msg)) }
+    }
+  }
 }

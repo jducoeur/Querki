@@ -108,6 +108,36 @@ object CommonInputRenderers {
         )) with PTypeBuilder[QLText,String] {
   }
   object TextType extends TextType(TextTypeOID)
+
+/**
+ * A QL field is sort of like inside-out QLText. It is processed very similarly,
+ * but whereas the "outer" layer of QLText is expected to be QText, with QL in
+ * subclauses, the outer layer of a QL field is QL, with wikitext in subclauses.
+ * 
+ * In other words, it is like QLText, but just the stuff inside the [[ ]] parts.
+ * 
+ * QL fields are also processed a bit differently. QLText is fully processed and
+ * rendered, producing QText. QL fields are essentially methods, which get *called*
+ * from other methods and from QLText. So the results are not turned directly into
+ * QText; instead, the resulting Context is fed back out to the caller.
+ */
+class QLType(tid:OID) extends TextTypeBase(tid,
+    toProps(
+      setName("Type QL")
+    )) with PTypeBuilder[QLText,String] 
+{
+  // TBD: in principle, we really want this to return a *context*, not a *value*. This is a special
+  // case of a growing concern: that we could be losing information by returning TypedValue from
+  // qlApply, and should actually be returning a full successor Context.
+  override def qlApplyFromProp(context:ContextBase, prop:Property[QLText,_], params:Option[Seq[QLPhrase]]):Option[TypedValue] = {
+    Some(prop.applyToIncomingThing(context) { (thing, context) =>
+      val qlPhraseText = thing.first(prop)(context.state)
+      val parser = new QLParser(qlPhraseText, context)
+      parser.processMethod.value
+    })
+  }
+}
+object QLType extends QLType(QLTypeOID)
   
   /**
    * The YesNo Type -- or Boolean, as us geeks think of it
@@ -320,5 +350,5 @@ class ExternalLinkType(tid:OID) extends SystemType[URL](tid,
 object ExternalLinkType extends ExternalLinkType(ExternalLinkTypeOID)
 
 object SystemTypes {
-  def all = Space.oidMap[PType[_]](IntType, TextType, YesNoType, NameType, LinkType, LargeTextType, PlainTextType, InternalMethodType, ExternalLinkType)  
+  def all = Space.oidMap[PType[_]](IntType, TextType, QLType, YesNoType, NameType, LinkType, LargeTextType, PlainTextType, InternalMethodType, ExternalLinkType)  
 }

@@ -99,17 +99,19 @@ case class Property[VT, -RT](
   }
   
   /**
-   * qlApply on a Property expects the input context to be a single Link. It returns the value
+   * By default, qlApply on a Property expects the input context to be a single Link. It returns the value
    * of this Property on that Link.
    * 
    * TODO: if this Property isn't defined on the target Thing or its ancestors, this should return None.
-   * So technically, this should be returning Optional.
+   * So technically, this should be returning Optional. Note that PType.qlApply() already does this.
    */
   override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
-    applyToIncomingThing(context) { (t, context) =>
+    // Give the Type first dibs at handling the call; otherwise, return the value of this property
+    // on the incoming thing.
+    pType.qlApplyFromProp(context, this, params).getOrElse(applyToIncomingThing(context) { (t, context) =>
       val result = t.getPropVal(this)(context.state)
       TypedValue(result, pType)
-    }
+    })
   }  
 }
 
