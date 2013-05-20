@@ -119,6 +119,34 @@ case class SpaceState(
     }
   }
   
+  def descendantsTyped[T <: Thing](root:OID, includeModels:Boolean, includeInstances:Boolean, map:Map[OID, T]):Iterable[Thing] = {
+    map.values.filter(_.isAncestor(root)(this))
+  }
+  
+  // TODO: this is pretty inefficient -- it is going to fully walk the tree for every object, with
+  // a lot of redundancy and no sensible snipping. We can probably do a lot to optimize it.
+  def descendants(root:OID, includeModels:Boolean, includeInstances:Boolean):Iterable[Thing] = {
+    val candidates = 
+      descendantsTyped(root, includeModels, includeInstances, types) ++
+      descendantsTyped(root, includeModels, includeInstances, spaceProps) ++
+      descendantsTyped(root, includeModels, includeInstances, things) ++
+      descendantsTyped(root, includeModels, includeInstances, colls)
+      
+    val stripModels =
+      if (includeModels)
+        candidates
+      else
+        candidates.filterNot(_.isModel(this))
+        
+    val stripInstances =
+      if (includeInstances)
+        stripModels
+      else
+        stripModels.filter(_.isModel(this))
+        
+     stripInstances
+  }
+  
   /**
    * Given a Link Property, return all of the appropriate candidates for that property to point to.
    * 

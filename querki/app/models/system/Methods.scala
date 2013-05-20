@@ -103,6 +103,36 @@ abstract class MetaMethod(tid:OID, p:PropFetcher) extends InternalMethod(tid, p)
   def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):TypedValue
 }
 
+/**
+ * This is a syntactically-loose method that you can use in *either* a dotted or normal place,
+ * but which really doesn't take any incoming context except for that one. It is intended mainly
+ * for beginning-of-phrase methods that intuitively seem like they should be dotted, and which
+ * are producing the initial context for the phrase.
+ * 
+ * TODO: there are some more-consistent abstractions fighting to break out here. I suspect that
+ * the division into the various kinds of methods is just plain wrong.
+ */
+abstract class SingleContextMethod(tid:OID, p:PropFetcher) extends MetaMethod(tid, p)
+{
+  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
+    fullyApply(context, context, params)
+  }
+}
+
+object InstancesMethod extends SingleContextMethod(InstancesMethodOID,
+    toProps(
+      setName("_instances"),
+      DisplayTextProp("Returns all of the non-Model Things that are based on this")))
+{
+  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):TypedValue = {
+    applyToIncomingThing(partialContext)(handleThing)
+  }
+  
+  def handleThing(t:Thing, context:ContextBase):TypedValue = {
+    TypedValue(QList.from(context.state.descendants(t.id, false, true).map(_.id), LinkType), LinkType)
+  }
+}
+
 object EditMethod extends MetaMethod(EditMethodOID, 
     toProps(
       setName("_edit"),

@@ -241,6 +241,13 @@ abstract class Thing(
   }
   
   /**
+   * Returns true iff this Thing has the IsModel flag set to true on it.
+   */
+  def isModel(implicit state:SpaceState):Boolean = {
+    ifSet(IsModelProp)
+  }
+  
+  /**
    * Returns true iff this Thing or any ancestor has the specified property defined on it.
    * Note that this ignores defaults.
    */

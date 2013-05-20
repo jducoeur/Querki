@@ -175,6 +175,15 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     def makePropValue(cv:implType):PropValue = QListPropValue(cv, this)
     private case class QListPropValue(cv:implType, coll:QList) extends PropValue
     
+    /**
+     * Given an incoming Iterable of RTs, this produces the corresponding QList of VTs.
+     * This should simplify a lot of the Scala-level code.
+     */
+    def from[RT,VT](in:Iterable[RT], builder:PTypeBuilder[VT,RT]):PropValue = {
+      val rawList = (List.empty[ElemValue] /: in)((list, next) => list :+ builder(next))
+      makePropValue(rawList)
+    }
+    
     // TODO: the stuff created here overlaps badly with the Javascript code in editThing.scala.html.
     // Rationalize the two, to eliminate all the duplication. In theory, the concept and structure
     // belongs here, and the details belong there.
