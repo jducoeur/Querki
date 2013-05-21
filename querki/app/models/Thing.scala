@@ -319,11 +319,17 @@ abstract class Thing(
    * 
    * This basic version returns a Link to this thing.
    * TODO: add a "self" method to always be able to do this.
-   * 
-   * TODO: add a Property to allow runtime Things to override this.
    */
   def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
-    TypedValue(ExactlyOne(LinkType(id)), LinkType)
+    val applyOpt = getPropOpt(ApplyMethod)(context.state)
+    applyOpt match {
+      case Some(apply) => {
+        val qlText = apply.first
+        val qlParser = new QLParser(qlText, context)
+        qlParser.processMethod.value
+      }
+      case None => TypedValue(ExactlyOne(LinkType(id)), LinkType)
+    }
   }  
   
   /**

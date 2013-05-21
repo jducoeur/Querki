@@ -205,3 +205,8 @@ It is optional -- you can leave it off.
     WikitextValue(wikitext)
   }
 }
+
+object ApplyMethod extends SystemProperty(ApplyMethodOID, QLType, Optional,
+    toProps(
+      setName("_apply"),
+      DisplayTextProp("If you set the _apply property, it will be run when you name this Thing in a QL expression.")))

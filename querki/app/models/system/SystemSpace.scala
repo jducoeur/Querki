@@ -82,6 +82,7 @@ object OIDs {
   val SectionMethodOID = sysId(43)
   val InstancesMethodOID = sysId(44)
   val QLTypeOID = sysId(45)
+  val ApplyMethodOID = sysId(46)
 }
 
 /**
@@ -115,7 +116,8 @@ object SystemSpace {
       AppliesToKindProp,
       EditMethod,
       SectionMethod,
-      InstancesMethod)
+      InstancesMethod,
+      ApplyMethod)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase)
