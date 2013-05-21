@@ -24,7 +24,7 @@ object AccessControl {
   def hasPermission(aclProp:Property[QLText,_], state:SpaceState, who:User, thingId:OID):Boolean = {
     who match {
       // HACK: just to allow invitees to edit RSVPs in the Wedding site:
-      case modules.Modules.Person.SpaceSpecificUser(_, _, _, spaceId) => (spaceId == state.id)
+      case modules.Modules.Person.SpaceSpecificUser(_, _, _, spaceId, _) => (spaceId == state.id)
       case _ => false
     }
   }

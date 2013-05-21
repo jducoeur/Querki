@@ -61,6 +61,9 @@ object HtmlValue {
 object WikitextValue {
   def apply(wikitext:Wikitext) = TypedValue(ExactlyOne(ParsedTextType(wikitext)), ParsedTextType)
 }
+object LinkValue {
+  def apply(target:OID) = TypedValue(ExactlyOne(LinkType(target)), LinkType)
+}
 
 abstract class ContextBase {
   def value:TypedValue

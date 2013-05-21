@@ -31,6 +31,7 @@ class PersonModule(val moduleId:Short) extends modules.Module {
     val InviteLinkCmdOID = moid(2)
     val IdentityLinkOID = moid(3)
     val ChromelessInviteLinkOID = moid(4)
+    val MeMethodOID = moid(5)
   }
   import MOIDs._
   
@@ -57,23 +58,43 @@ class PersonModule(val moduleId:Short) extends modules.Module {
   // The actual definition of this method is down below
   lazy val inviteLink = new SingleThingMethod(InviteLinkCmdOID, "Invite Link", """Place this command inside of an Email Message.
 When the email is sent, it will be replaced by a link that the recipient of the email can use to log into this Space as a Person.""", doInviteLink(false))
+
   lazy val chromelessInviteLink = new SingleThingMethod(ChromelessInviteLinkOID, "Plain Invite Link", """Place this command inside of an Email Message.
 When the email is sent, it will be replaced by a link that the recipient of the email can use to log into this Space as a Person.
 Unlike the ordinary Invite Link command, this one results in a page with no Querki menu bar, just your pages.
 (NOTE: this will probably become a paid-users-only feature in the future.)""", doInviteLink(true))
-  
+
   lazy val identityLink = new SystemProperty(IdentityLinkOID, LinkType, Optional,
       toProps(
         setName("Person to Identity Link"),
         InternalProp(true),
         DisplayTextProp("INTERNAL: points from a Space-scoped Person to a System-scoped Identity")))
 
+  lazy val meMethod = new InternalMethod(MeMethodOID,
+      toProps(
+        setName("_me"),
+        DisplayTextProp("If the current user is a Person in the current Space, return that Person")))
+  {
+    override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
+      val userOpt = context.request.requester
+      val personOpt = userOpt.flatMap { user =>
+        user match {
+          case SpaceSpecificUser(identityId, name, email, spaceId, personId) => Some(LinkValue(personId))
+          case _ => None
+        }
+      }
+      personOpt.getOrElse(TextValue("Unknown User"))
+    }
+  }
+
   override lazy val props = Seq(
     inviteLink,
     
     chromelessInviteLink,
     
-    identityLink
+    identityLink,
+    
+    meMethod
   )
   
   /***********************************************
@@ -136,6 +157,7 @@ to add new Properties for any Person in your Space.
   val identityParam = "identity"
   val identityName = "identityName"
   val identityEmail = "identityEmail"
+  val personParam = "person"
     
   def doInviteLink(chromeless:Boolean)(t:Thing, context:ContextBase):TypedValue = {
     if (t.isAncestor(PersonOID)(context.state)) {
@@ -165,7 +187,7 @@ to add new Properties for any Person in your Space.
    * LOGIN HANDLER
    ***********************************************/
   
-  case class SpaceSpecificUser(identityId:OID, name:String, email:EmailAddress, spaceId:OID) extends User {
+  case class SpaceSpecificUser(identityId:OID, name:String, email:EmailAddress, spaceId:OID, personId:OID) extends User {
     val id = UnknownOID
     val identity = Identity(identityId, email)
     val identities = Seq(identity)
@@ -190,12 +212,12 @@ to add new Properties for any Person in your Space.
           name = candidate.displayName;
           identityId = idProp.first;
           if Hasher.authenticate(candidate.id.toString + identityId.toString, EncryptedHash(idParam));
-          updates = Seq((identityParam -> identityId.toString), (identityName -> name), (identityEmail -> email.addr));
+          updates = Seq((identityParam -> identityId.toString), (identityName -> name), (identityEmail -> email.addr), (personParam -> candidate.id.toString));
           // TODO: if there is already a User in the RC, we should *add* to that User rather than
           // replacing it:
           newRc = rc.copy(
               sessionUpdates = rc.sessionUpdates ++ updates,
-              requester = Some(SpaceSpecificUser(identityId, name, email, rc.state.get.id)))
+              requester = Some(SpaceSpecificUser(identityId, name, email, rc.state.get.id, candidate.id)))
         ) 
           yield newRc
           
@@ -205,9 +227,10 @@ to add new Properties for any Person in your Space.
         val withIdentityOpt = for (
           existingIdentity <- session.get(identityParam);
           idName <- session.get(identityName);
-          idEmail <- session.get(identityEmail)
+          idEmail <- session.get(identityEmail);
+          personId <- session.get(personParam)
           )
-          yield rc.copy(requester = Some(SpaceSpecificUser(OID(existingIdentity), idName, EmailAddress(idEmail), rc.state.get.id)))
+          yield rc.copy(requester = Some(SpaceSpecificUser(OID(existingIdentity), idName, EmailAddress(idEmail), rc.state.get.id, OID(personId))))
         withIdentityOpt.getOrElse(rc)
       }
     }
