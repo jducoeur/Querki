@@ -81,7 +81,7 @@ class EmailModule(val moduleId:Short) extends modules.Module {
   
   // The actual definition of this method is down below
   lazy val sendEmail = new SingleThingMethod(EmailSendOID, "Send Email", """Invoke this method to actually send this email.
-      It will return a List of the Persons who the email was sent to this time.""", doSendEmail)
+      It will return a List of the Persons who the email was sent to this time.""", sendEmailIfAllowed)
   
   lazy val showSendEmail = new SystemProperty(EmailShowSendOID, TextType, ExactlyOne,
       toProps(
@@ -200,6 +200,14 @@ The QL expression given in here must product a List of Links to Persons.
    * METHOD CONTENTS
    ***********************************************/
     
+  import querki.access.AccessControl
+  def sendEmailIfAllowed(t:Thing, context:ContextBase) = {
+    if (AccessControl.canEdit(context.state, context.request.requesterOrAnon, t.id))
+      doSendEmail(t, context)
+    else
+      TextValue("You aren't allowed to send that email")
+  }
+  
   def doSendEmail(t:Thing, context:ContextBase) = {
     implicit val state = context.state
     val recipientsIndirect = t.getProp(recipientsProp)
