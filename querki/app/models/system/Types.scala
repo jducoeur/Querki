@@ -126,6 +126,9 @@ class QLType(tid:OID) extends TextTypeBase(tid,
       setName("Type QL")
     )) with PTypeBuilder[QLText,String] 
 {
+  override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem =
+    CommonInputRenderers.renderLargeText(prop, state, currentValue, v, this)
+
   // TBD: in principle, we really want this to return a *context*, not a *value*. This is a special
   // case of a growing concern: that we could be losing information by returning TypedValue from
   // qlApply, and should actually be returning a full successor Context.
