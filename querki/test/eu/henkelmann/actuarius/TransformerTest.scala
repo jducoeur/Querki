@@ -9,6 +9,8 @@ import org.junit.runner.RunWith
  * 
  * IMPORTANT: this source file must use Unix newlines, not DOS ones! The resulting
  * strings come out different, and the multi-line tests break if you use DOS encoding! 
+ * If it starts breaking when you run this in ScalaTest, then select the file in
+ * Package Explorer, and do File -> Convert Line Delimiters To -> Unix.
  */
 //@RunWith(classOf[JUnitRunner])
 class TransformerTest extends FlatSpec with ShouldMatchers with Transformer {
