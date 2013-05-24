@@ -36,6 +36,10 @@ trait PropValue {
     val vt = elemT.get(elem)
     cb(vt)
   }
+  
+  def rawList[VT](elemT:PType[VT]):List[VT] = {
+    (List.empty[VT] /: cv) ((list, elem) => list :+ elemT.get(elem))
+  }
 }
 
 /**

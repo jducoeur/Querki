@@ -1,4 +1,4 @@
-@(rc:RequestContext, model:Thing, candidateModels:Iterable[Thing], propsSoFar:Property.PropList, otherProps:Seq[Property[_,_]])
+@(rc:RequestContext, model:Thing, candidateModels:Iterable[Thing], propsSoFar:Seq[(Property[_,_], DisplayPropVal)], otherProps:Seq[Property[_,_]])
 
 @import language.existentials
 
@@ -226,7 +226,7 @@
 	  <fieldset>
 	    <input type="hidden" name="model" value="@model.id.toString">
 	    
-	    @defining(propsSoFar.zipWithIndex.toList.sortBy(_._2)) { allProps =>
+	    @defining(propsSoFar.zipWithIndex) { allProps =>
           @for(propPair <- allProps) {
             @showProp(propPair)
           }

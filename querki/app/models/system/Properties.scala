@@ -174,3 +174,11 @@ object InternalProp extends SystemProperty(InternalPropOID, YesNoType, Optional,
       setName("Internal Property"),
       AppliesToKindProp(Kind.Property),
       DisplayTextProp("If set, this Property is system-internal, and should not be visible to end users.")))
+
+// TODO: this should really only allow the properties that are defined on this Model:
+object InstanceEditPropsProp extends SystemProperty(InstanceEditPropsOID, LinkType, QList,
+    toProps(
+      setName("Properties to edit in Instances"),
+      LinkAllowAppsProp(true),
+      LinkKindProp(Kind.Property),
+      DisplayTextProp("If you add this to a Model, it specifies which Properties are worth editing in its Instances, and in what order.")))

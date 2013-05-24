@@ -192,7 +192,7 @@ object Property {
         if (thing.hasModel)
           inheritedProps(root, thing.getModel)
         else
-          TreeMap.empty[Property[_,_], DisplayPropVal]      
+          TreeMap.empty[Property[_,_], DisplayPropVal]
       
       (inherited /: thing.props.keys) { (m, propId) =>
         val prop = state.prop(propId)
@@ -229,5 +229,6 @@ case class PropAndVal[VT](prop:Property[VT, _], v:PropValue) {
   }
   def contains(toCheck:VT):Boolean = prop.contains(v, toCheck)
   def isEmpty:Boolean = v.isEmpty
+  def rawList:List[VT] = v.rawList(prop.pType)
 }
 

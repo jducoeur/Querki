@@ -247,17 +247,35 @@ object Application extends Controller {
   
   def showEditPage(rc: RequestContext, model:Thing, props:PropList, errorMsg:Option[String] = None) = {
     val state = rc.state.get
+    val propList = prepPropList(props, model, rc.state.get)
     val page = views.html.editThing(
         rc.copy(error = errorMsg),
         model,
         otherModels(state, model),
-        props,
+        propList,
         getOtherProps(state, model.kind, props)
       )
     if (errorMsg.isDefined)
       BadRequest(page)
     else
       Ok(page)    
+  }
+  
+  def prepPropList(propList:PropList, model:Thing, state:SpaceState):Seq[(Property[_,_], DisplayPropVal)] = {
+    val propsToEdit = model.getPropOpt(InstanceEditPropsProp)(state).map(_.rawList)
+    propsToEdit match {
+      // If the model specifies which properties we actually want to edit, then use just those, in that order:
+      case Some(editList) => {
+        val withOpts = (Seq.empty[(Property[_,_], Option[DisplayPropVal])] /: editList) { (list, oid) =>
+          val prop = state.prop(oid)
+          val v = propList.get(prop)
+          list :+ (prop, v)
+        }
+        withOpts.filter(_._2.isDefined).map(pair => (pair._1, pair._2.get))
+      }
+      // Otherwise, we default to doing it by name:
+      case None => propList.toList
+    }
   }
   
   def createThing(ownerId:String, spaceId:String, modelIdOpt:Option[String]) = withSpace(true, ownerId, spaceId) { implicit rc =>
