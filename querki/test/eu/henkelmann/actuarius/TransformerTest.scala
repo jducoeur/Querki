@@ -183,6 +183,22 @@ this is some styled text
 """
           )
     }
+        
+    it should "handle nested class divs" in {
+      apply("""{{ myClass :
+{{ myClass2 :
+this is some styled text
+}}
+}}"""
+          ) should equal (
+"""<div class="myClass">
+<div class="myClass2">
+<p>this is some styled text</p>
+</div>
+</div>
+"""
+          )
+    }
     
     it should "handle class spans" in {
       apply("""{{ myClass: here is some styled text!}} and unstyled""") should equal (

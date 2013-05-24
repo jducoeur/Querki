@@ -107,19 +107,16 @@ trait BlockParsers extends Parsers {
     
     /**
      * Represents a block that is contained in a div with a class tag, for styling.
+     * 
+     * Note that we are *not* handling this as a proper block, which means that we are
+     * being too forgiving about mismatched tags. But nested blocks were giving me trouble,
+     * and there really is no good reason for us to worry about it too much. 
      */
-    class ClassDivBlock(className:String, lines:List[MarkdownLine]) extends MarkdownBlock {
-        def addResult(level:Int, out:StringBuilder) {
-            //the block parser needs to recurse:
-            val fullLines = lines.map(line => line.fullLine)
-            val reader = BlockParsers.this.tokenizer.tokenize(fullLines)
-            //now apply the normal markdown parser to the new content
-            val innerBlocks = BlockParsers.this.applyBlocks(reader)
-            //wrap the resulting blocks in blockquote tags
-            out.append(indent(level)).append(deco.decorateClassDivOpen(className))
-            innerBlocks.foreach(block => block.addResult(level, out))
-            out.append(indent(level)).append(deco.decorateClassDivClose)
-        }      
+    class ClassDivBlockStart(className:String) extends MarkdownBlock {
+      def addResult(level:Int, out:StringBuilder) { out.append(indent(level)).append(deco.decorateClassDivOpen(className)) }      
+    }
+    class ClassDivBlockEnd extends MarkdownBlock {
+      def addResult(level:Int, out:StringBuilder) { out.append(indent(level)).append(deco.decorateClassDivClose) }      
     }
 
     /**
@@ -356,20 +353,15 @@ trait BlockParsers extends Parsers {
         case (start:ExtendedFencedCode) ~ lines ~ _ => new FencedCodeBlock(start.languageFormat, lines)
         case _ ~ lines ~ _ => new FencedCodeBlock("", lines)
     }
-      
-                                            //line(classOf[FencedCodeStart]) ~ 
-                                            //((not(line(classOf[FencedCodeEnd]))*) ~ 
-                                            //opt(line(classOf[FencedCodeEnd])) ^^ {
-    //    case start ~ lines ~ end => new CodeBlock(lines.map(_.fullLine))
-    //}
     
-    def classDivBlock:Parser[ClassDivBlock] =
-      line(classOf[ClassDivStartLine]) ~
-      (notLine(classOf[ClassDivEnd])*) ~
-      line(classOf[ClassDivEnd]) ^^ {
-      case start ~ contentBlock ~ end => new ClassDivBlock(start.className, contentBlock)
+    def classDivBlockStart:Parser[ClassDivBlockStart] =
+      line(classOf[ClassDivStartLine]) ^^ {
+      case start => new ClassDivBlockStart(start.className)
     }
-
+    def classDivBlockEnd:Parser[ClassDivBlockEnd] =
+      line(classOf[ClassDivEnd]) ^^ {
+      case end => new ClassDivBlockEnd
+    }
 
     /** a consecutive block of paragraph lines
      *  returns the content of the matched block wrapped in <p> tags
@@ -466,7 +458,8 @@ trait BlockParsers extends Parsers {
                 case l:ExtendedFencedCode => fencedCodeBlock(in)
                 case l:FencedCode => fencedCodeBlock(in)
                 case l:BlockQuoteLine => blockquote(in)
-                case l:ClassDivStartLine => classDivBlock(in)
+                case l:ClassDivStartLine => classDivBlockStart(in)
+                case l:ClassDivEnd => classDivBlockEnd(in)
                 case l:OItemStartLine => oList(in)
                 case l:UItemStartLine => uList(in)
                 case l:DItemStartLine => dList(in)
