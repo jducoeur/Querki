@@ -37,7 +37,7 @@ object RawHtmlType extends SystemType[Wikitext](OIDs.IllegalOID, () => Thing.emp
 
 // TODO: we've gotten rid of the explicit ct parameter, since it is contained in v.
 // Maybe we can do the same for pt?
-case class TypedValue(v:PropValue, pt:PType[_]) {
+case class TypedValue(v:PropValue, pt:PType[_], cut:Boolean = false) {
   def ct:Collection = v.coll
   
   def render(context:ContextBase):Wikitext = v.render(context, pt) 
@@ -49,7 +49,7 @@ object ErrorValue {
     } catch {
       case e:Exception => Logger.error(s"Displaying error $msg; stack trace:\n${e.getStackTraceString}")  
     }
-    TextValue(msg)
+    TypedValue(ExactlyOne(PlainTextType(msg)), PlainTextType, true)
   }
 }
 object TextValue {
@@ -63,6 +63,9 @@ object WikitextValue {
 }
 object LinkValue {
   def apply(target:OID) = TypedValue(ExactlyOne(LinkType(target)), LinkType)
+}
+object WarningValue {
+  def apply(msg:String) = TypedValue(ExactlyOne(TextType("{{_warning:" + msg + "}}")), TextType, true)
 }
 
 abstract class ContextBase {
@@ -139,6 +142,8 @@ abstract class ContextBase {
       this
     else
       parent.root
+      
+  def isCut = value.cut
 }
 
 /**
@@ -274,7 +279,14 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   
   def processPhrase(ops:Seq[QLStage], startContext:ContextBase):ContextBase = {
     logContext("processPhrase " + ops, startContext)
-    (startContext /: ops) { (context, stage) => processStage(stage, context) }
+    (startContext /: ops) { (context, stage) => 
+      if (context.isCut)
+        // Setting the "cut" flag means that we're just stopping processing here. Usually
+        // used for warnings:
+        context
+      else
+        processStage(stage, context) 
+    }
   }
   
   private def processPhrases(phrases:Seq[QLPhrase], context:ContextBase):Seq[ContextBase] = {

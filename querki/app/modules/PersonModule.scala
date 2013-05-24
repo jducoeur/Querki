@@ -83,7 +83,7 @@ Unlike the ordinary Invite Link command, this one results in a page with no Quer
           case _ => None
         }
       }
-      personOpt.getOrElse(TextValue("Unknown User"))
+      personOpt.getOrElse(WarningValue("Not logged into this Space"))
     }
   }
 

@@ -88,10 +88,10 @@ case class Property[VT, -RT](
         val thing = link.followLink(context)
         thing match {
           case Some(t) => action(t, context)
-          case None => ErrorValue("Couldn't find Thing from " + context.toString)
+          case None => WarningValue("Couldn't find Thing from " + context.toString)
         }
       }
-      case _ => ErrorValue("Can't apply a Property in a " + valType.displayName + " context!")
+      case _ => WarningValue("Can't apply a Property in a " + valType.displayName + " context!")
     }    
   }
   
