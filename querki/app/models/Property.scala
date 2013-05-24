@@ -173,7 +173,7 @@ object Property {
     
     def inheritedProps(thing:Option[Thing], model:Thing)(implicit state:SpaceState):PropList = {
       // Get the Model's PropList, and push its values into the inherited slots:
-      val raw = from(model, thing)
+      val raw = fromRec(model, thing)
       raw map { fromModel =>
         val (prop, v) = fromModel
         if (prop.first(NotInheritedProp))
@@ -187,11 +187,10 @@ object Property {
     
     // TODO: this is all pretty inefficient. We should be caching the PropLists,
     // especially for common models.
-    def from(thing:Thing, rootIn:Option[Thing] = None)(implicit state:SpaceState):PropList = {
-      val root = rootIn.getOrElse(thing)
+    def fromRec(thing:Thing, root:Option[Thing])(implicit state:SpaceState):PropList = {
       val inherited =
         if (thing.hasModel)
-          inheritedProps(Some(root), thing.getModel)
+          inheritedProps(root, thing.getModel)
         else
           TreeMap.empty[Property[_,_], DisplayPropVal]      
       
@@ -202,9 +201,13 @@ object Property {
           if (m.contains(prop))
             m(prop).copy(v = Some(value))
           else
-            DisplayPropVal(Some(root), prop, Some(value))
+            DisplayPropVal(root, prop, Some(value))
         m + (prop -> disp)
       }
+    }
+    
+    def from(thing:Thing)(implicit state:SpaceState):PropList = {
+      fromRec(thing, Some(thing))
     }
   }
 }
