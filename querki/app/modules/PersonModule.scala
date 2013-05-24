@@ -164,9 +164,9 @@ to add new Properties for any Person in your Space.
       // Get the Identity linked from this Person. If there isn't already one, make one.
 	  val identityProp = t.localProp(identityLink)
 	  val identityId = identityProp match {
-	    case Some(propAndVal) => propAndVal.first
+	    case Some(propAndVal) if (!propAndVal.isEmpty) => propAndVal.first
 	    // This will set identityProp, as well as getting the Identity's OID:
-	    case None => setIdentityId(t, context)
+	    case _ => setIdentityId(t, context)
 	  }
 	  val hash = idHash(t.id, identityId)
 	    
