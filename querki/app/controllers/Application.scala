@@ -316,6 +316,8 @@ object Application extends Controller {
         
         val kind = oldModel.kind
         
+        val makeAnother = rawForm("makeAnother").value.map(_ == "true").getOrElse(false)
+        
         def makeProps(propList:List[FormFieldInfo]):PropList = {
           val modelProps = PropList.inheritedProps(thing, oldModel)
           val nonEmpty = propList filterNot (_.isEmpty)
@@ -369,7 +371,10 @@ object Application extends Controller {
             askSpaceMgr[ThingResponse](spaceMsg) {
               case ThingFound(thingId, state) => {
                 val thing = state.anything(thingId).get
-                Redirect(routes.Application.thing(ownerName(state), state.toThingId, thing.toThingId))
+                if (makeAnother)
+                  showEditPage(rc, oldModel, PropList.inheritedProps(None, oldModel)(state))
+                else
+                  Redirect(routes.Application.thing(ownerName(state), state.toThingId, thing.toThingId))
               }
               case ThingFailed(msg) => {
                 showEditPage(rc, oldModel, makeProps(rawProps), Some(msg))

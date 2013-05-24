@@ -17,6 +17,7 @@
 @thing = @{ rc.thing }
 @space = @{ rc.state.get }
 @isEdit = @{ thing.isDefined }
+@isCreate = @{ !isEdit }
 
 @showInputControl(prop:Property[_,_], v:DisplayPropVal, i:Int) = {
   @HtmlRenderer.renderPropertyInput(space, prop, v)
@@ -215,6 +216,11 @@
         $(".sortableList").sortable({
           stop:onSortFinished
         });
+        
+        $("#submitAndAnother").click(function(evt) {
+          $("#makeAnother").val("true");
+          return true;
+        });
       });
     </script>
 		
@@ -225,6 +231,8 @@
 	@form(if (thing.isEmpty) { routes.Application.doCreateThing(rc.ownerName, space.toThingId) } else { routes.Application.doEditThing(rc.ownerName, space.toThingId, thing.get.toThingId) }, 'class -> "form-horizontal") {
 	  <fieldset>
 	    <input type="hidden" name="model" value="@model.id.toString">
+	    
+	    <input type="hidden" id="makeAnother" name="makeAnother" value="false">
 	    
 	    @defining(propsSoFar.zipWithIndex) { allProps =>
           @for(propPair <- allProps) {
@@ -247,7 +255,10 @@
 	  
 	    <div class="control-group">
 	      <div class="controls">
-	        <input id="mainSubmit" type="submit" value="@if(thing.isEmpty) { Create } else { Change }" class="btn btn-primary">
+	        <input id="mainSubmit" type="submit" value="Done" class="btn btn-primary">
+	        @if(isCreate) {
+	          <input id="submitAndAnother" type="submit" value="Done and Create Another" class="btn">
+	        }
 	      </div>
 	    </div>
 	  </fieldset>
