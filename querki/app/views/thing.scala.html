@@ -19,6 +19,16 @@
         // be universal. Later, we should add it back in as an optional user preference.
         //  window.location = "@routes.Application.editThing(rc.ownerName, space.toThingId, thing.toThingId)";
         });
+        
+        function showStatus(msg) {
+          $("#statusText").text(msg);
+          $("#statusLine").show();
+        }
+        
+        function finishStatus(msg) {
+          $("#statusText").text(msg);
+          $("#statusLine").show().delay(4000).hide("slow");
+        }
 
 		function updateValue(evt) {
 		  var target = $(evt.target);
@@ -32,19 +42,32 @@
 		  }
 	      jsRoutes.controllers.Application.setProperty("@space.owner.toThingId", "@space.id.toThingId", thingId, prop, v).ajax({
 	        success: function (result) {
-	          // TODO: we should probably have a status indicator
+	          finishStatus("Saved");
 	        },
 	        error: function (err) {
-	          alert("Error trying to save value: " + err);
+	          showStatus("Error trying to save. Please reload this page and try again.");
 	        }
 	      });
+	      showStatus("Saving...");
 		}
 				
 		$(".propEditor").change(updateValue);
 		$(".buttonset").buttonset();
       });
     </script>
+    
+    <style>
+      .statusLine {
+        display: none;
+        position: absolute;
+        left: 30px;
+        top: 40px;
+        z-index: 100;
+      }
+    </style>
 
+	<div id="statusLine" class="statusLine"><span id="statusText" class="label label-info">Status</span></div>
+	    
     @if(rc.hasProp) {
     
       @Html(thing.render(rc, rc.prop).display)
