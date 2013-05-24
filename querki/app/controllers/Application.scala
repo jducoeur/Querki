@@ -292,7 +292,7 @@ object Application extends Controller {
         val rawProps = info.fields map { propIdStr => 
           val propId = OID(propIdStr)
           val prop = state.prop(propId)
-          prop.fromUser(thing, rawForm)
+          HtmlRenderer.propValFromUser(prop, thing, rawForm)
         }
         val oldModel = state.anything(OID(info.model)).get
         

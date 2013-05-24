@@ -2,6 +2,8 @@ package querki.html
 
 import scala.xml._
 
+import play.api.Logger
+import play.api.data.Form
 import play.api.templates.Html
 
 import models._
@@ -35,6 +37,17 @@ object HtmlRenderer {
     handleSpecialized(prop, str).getOrElse(prop.cType.fromUser(str, prop, prop.pType))
   }
   
+  // TODO: refactor this with Collection.fromUser():
+  def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_]):FormFieldInfo = {
+    val fieldIds = FieldIds(on, prop)
+    val spec = for (
+      formV <- form(fieldIds.inputControlId).value;
+      specialized <- handleSpecializedForm(prop, formV)
+        )
+      yield specialized
+    spec.getOrElse(prop.cType.fromUser(on, form, prop, prop.pType))
+  }
+  
   /*********************************
    * INTERNALS
    *********************************/
@@ -56,6 +69,8 @@ object HtmlRenderer {
     // TODO: make this more data-driven. There should be a table of these.
     if (cType == Optional && pType == YesNoType)
       Some(renderOptYesNo(state, prop, currentValue))
+    else if (cType == Optional && pType == LinkType)
+      Some(renderOptLink(state, prop, currentValue))
     else
       None
   }
@@ -88,17 +103,51 @@ object HtmlRenderer {
     </div>
   }
   
+  def renderOptLink(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Elem = {
+    val pType = LinkType
+    val pair = currentValue.v.map(propVal => if (propVal.cv.isEmpty) (false, pType.default) else (true, propVal.first)).getOrElse((false, pType.default))
+    val isSet = pair._1
+    val v = pType.get(pair._2)
+    
+    val results = <select> 
+      <option value={UnknownOID.id.toString}>Nothing selected</option>
+      {
+      LinkType.renderInputXmlGuts(prop, state, currentValue, ElemValue(v))
+    } </select>
+    results
+  }
+  
   def handleSpecialized(prop:Property[_,_], newVal:String):Option[PropValue] = {
     if (prop.cType == Optional && prop.pType == YesNoType)
-      Some(handleYesNo(prop, newVal))
+      Some(handleOptional(prop, newVal, YesNoType, (_ == "maybe")))
+    else if (prop.cType == Optional && prop.pType == LinkType)
+      Some(handleOptional(prop, newVal, LinkType, (OID(_) == UnknownOID)))
     else
       None
   }
   
-  def handleYesNo(prop:Property[_,_], newVal:String):PropValue = {
-    newVal match {
-      case "maybe" => Optional.default(prop.pType)
-      case _ => Optional(YesNoType.fromUser(newVal))
-    }
+  def handleOptional(prop:Property[_,_], newVal:String, pType:PType[_], isEmpty:String => Boolean):PropValue = {
+    if (isEmpty(newVal))
+      Optional.default(pType)
+    else
+      Optional(pType.fromUser(newVal))
+  }
+  
+  // TODO: refactor this together with the above. It's going to require some fancy type math, though:
+  def handleSpecializedForm(prop:Property[_,_], newVal:String):Option[FormFieldInfo] = {
+    if (prop.cType == Optional && prop.pType == YesNoType)
+      Some(handleOptionalForm(prop, newVal, YesNoType, (_ == "maybe")))
+    else if (prop.cType == Optional && prop.pType == LinkType)
+      Some(handleOptionalForm(prop, newVal, LinkType, (OID(_) == UnknownOID)))
+    else
+      None
+  }
+  
+  def handleOptionalForm(prop:Property[_,_], newVal:String, pType:PType[_], isNone:String => Boolean):FormFieldInfo = {
+    if (isNone(newVal))
+      // This is a bit subtle: there *is* a value, which is "None"
+      FormFieldInfo(prop, Some(Optional.None), false, true)
+    else
+      FormFieldInfo(prop, Some(Optional(pType.fromUser(newVal))), false, true)
   }
 }
