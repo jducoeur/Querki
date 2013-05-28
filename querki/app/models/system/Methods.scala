@@ -280,3 +280,24 @@ It produces the first one that returns a non-empty result, or None iff all of th
     }
   }
 }
+
+object FirstMethod extends InternalMethod(FirstMethodOID,
+    toProps(
+      setName("_first"),
+      DisplayTextProp("""_first grabs just the first thing from the received context.
+          
+Often you have a List, and you just want the first item in the List. (Especially when you
+expect the list to only have one element in it.) Use _first to turn that List into an
+Optional instead.
+          """)))
+{
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+    val sourceColl = context.value.v
+    val result = 
+      if (sourceColl.isEmpty)
+        Optional.None
+      else
+        Optional(sourceColl.cv.head)
+    TypedValue(result, context.value.pt)
+  }
+}

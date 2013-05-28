@@ -86,6 +86,7 @@ object OIDs {
   val InstanceEditPropsOID = sysId(47)
   val RefsMethodOID = sysId(48)
   val OrMethodOID = sysId(49)
+  val FirstMethodOID = sysId(50)
 }
 
 /**
@@ -123,7 +124,8 @@ object SystemSpace {
       ApplyMethod,
       InstanceEditPropsProp,
       RefsMethod,
-      OrMethod)
+      OrMethod,
+      FirstMethod)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase)

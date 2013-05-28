@@ -1,5 +1,6 @@
 package models
 
+import play.api.Logger
 import play.api.templates.Html
 
 import language.implicitConversions
@@ -93,6 +94,16 @@ case class CompositeWikitext(left:Wikitext, right:Wikitext, insertNewline:Boolea
   def display = left.display + right.display
   def raw = left.raw + right.raw
   def plaintext = left.plaintext + right.plaintext
+  
+  // Icky! We need to keep adding QWikitexts together properly after this composite, though.
+  // TODO: this whole mechanism is pretty flawed, and needs to be replaced.
+  override def +(other:Wikitext, insertNewline:Boolean) = other match {
+    case QWikitext(otherGuts) => right match {
+      case _:QWikitext => CompositeWikitext(left, right + other, insertNewline)
+      case _ => CompositeWikitext(this, other, insertNewline)
+    }
+    case _ => CompositeWikitext(this, other, insertNewline)
+  } 
 }
 
 object Wikitext {
