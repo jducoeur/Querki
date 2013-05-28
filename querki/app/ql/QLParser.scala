@@ -200,6 +200,7 @@ case class UnQLText(text:String) extends QLTextPart
 sealed abstract class QLStage
 case class QLCall(name:String, methodName:Option[String], params:Option[Seq[QLPhrase]]) extends QLStage
 case class QLTextStage(contents:ParsedQLText) extends QLStage
+//case class QLPlainTextStage(text:String) extends QLStage
 case class QLPhrase(ops:Seq[QLStage])
 case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart
 case class QLLink(contents:ParsedQLText) extends QLTextPart
@@ -225,7 +226,9 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   def qlCall:Parser[QLCall] = name ~ opt("." ~> name) ~ opt("\\(\\s*".r ~> (rep1sep(qlPhrase, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
     case n ~ optMethod ~ optParams => QLCall(n, optMethod, optParams) }
   def qlTextStage:Parser[QLTextStage] = "\"\"" ~> qlText <~ "\"\"" ^^ { QLTextStage(_) }
-  def qlStage:Parser[QLStage] = qlCall | qlTextStage
+  // TODO: get this working properly, so we have properly plain text literals:
+//  def qlPlainTextStage:Parser[QLPlainTextStage] = "\"" ~> unQLTextRegex <~ "\"" ^^ { QLPlainTextStage(_) }
+  def qlStage:Parser[QLStage] = qlCall | qlTextStage // | qlPlainTextStage
   // TODO: phrase is going to get a *lot* more complex with time:
   def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, "\\s*->\\s*".r) ^^ { QLPhrase(_) }
   def qlExp:Parser[QLExp] = rep1sep(qlPhrase, "\\s*\\r?\\n|\\s*;\\s*".r) ^^ { QLExp(_) }
@@ -277,6 +280,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
     stage match {
       case name:QLCall => processCall(name, context)
       case subText:QLTextStage => processTextStage(subText, context)
+//      case QLPlainTextStage(text) => context.next(TextValue(text))
     }
   }
   

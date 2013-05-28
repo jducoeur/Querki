@@ -1,6 +1,7 @@
 package models.system
 
 import play.api.Logger
+import play.api.templates.Html
 
 import models._
 import Property._
@@ -299,5 +300,28 @@ Optional instead.
       else
         Optional(sourceColl.cv.head)
     TypedValue(result, context.value.pt)
+  }
+}
+
+
+object LinkButtonMethod extends InternalMethod(LinkButtonOID,
+    toProps(
+      setName("_linkButton"),
+      DisplayTextProp("""_linkButton(LABEL) receives a Link or External Link, and displays that
+link as a button. It expects one parameter, which will be the label of the button.
+          """)))
+{
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+    // TODO: This is a horrible hack! How do we get LinkType and ExternalLinkType to give up their URLs
+    // in a consistent and type-safe way?
+    val url = context.value.pt match {
+      case LinkType => LinkType.followLink(context).get.toThingId.toString()
+      case ExternalLinkType => ExternalLinkType.get(context.value.v.first).toExternalForm()
+    }
+    val label = paramsOpt match {
+      case Some(Seq(phrase)) => context.parser.get.processPhrase(phrase.ops, context).value.render(context)
+      case None => Wikitext("Link")
+    }
+    HtmlValue(Html("<a class=\"_linkButton\" href=\"" + url + "\">" + label.plaintext + "</a>"))
   }
 }
