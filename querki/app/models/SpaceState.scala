@@ -109,6 +109,16 @@ case class SpaceState(
     }
   }
   
+  /**
+   * Returns all of the conventional Things.
+   * 
+   * This is used mainly by _refs() so far.
+   * 
+   * TBD: this currently does not return Props, Types or Collections; it also does not search up the
+   * App tree. Should it?
+   */
+  def allThings:Iterable[Thing] = things.values
+  
   def allProps:Map[OID, Property[_,_]] = if (app.isEmpty) spaceProps else spaceProps ++ app.get.allProps
   
   def allModels:Iterable[ThingState] = {

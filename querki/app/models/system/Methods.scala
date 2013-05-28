@@ -210,3 +210,38 @@ object ApplyMethod extends SystemProperty(ApplyMethodOID, QLType, Optional,
     toProps(
       setName("_apply"),
       DisplayTextProp("If you set the _apply property, it will be run when you name this Thing in a QL expression.")))
+
+object RefsMethod extends MetaMethod(RefsMethodOID, 
+    toProps(
+      setName("_refs"),
+      DisplayTextProp("""Returns all of the Things that use this Property to point to this Thing.
+          
+Say that I have Thing A and Thing B, which are both of Model M. Property P is a Link to M.
+A.P is pointing to B. In that case, B -> P._refs would return A -- the Thing that is pointing
+to B using property P.
+          
+Note that this returns a List, since any number of Things could be pointing to this.""")))
+{
+  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):TypedValue = {
+    applyToIncomingThing(mainContext) { (mainThing, _) =>
+      applyToIncomingThing(partialContext) { (shouldBeProp, _) =>
+        shouldBeProp match {
+          case propErased:Property[_,_] if (propErased.pType == LinkType) => {
+            // EVIL: is there any decent way to get rid of this? I know that the PType is LinkType, so I know
+            // it's legit; can I tell that to Scala?
+            val prop = propErased.asInstanceOf[Property[OID,_]]
+            val results =
+              for (
+                candidateThing <- mainContext.state.allThings;
+                propAndVal <- candidateThing.getPropOpt(prop)(mainContext.state);
+                if propAndVal.contains(mainThing.id)
+              )
+                yield candidateThing.id;
+            TypedValue(QList.from(results, LinkType), LinkType)
+          }
+          case _ => ErrorValue("The _refs method can currently only be used on Properties")
+        } 
+      }
+    }
+  }  
+}
