@@ -369,12 +369,12 @@ object Application extends Controller {
               CreateThing(user, rc.ownerId, ThingId(spaceId), kind, OID(info.model), props)
             }
             askSpaceMgr[ThingResponse](spaceMsg) {
-              case ThingFound(thingId, state) => {
-                val thing = state.anything(thingId).get
+              case ThingFound(thingId, newState) => {
+                val thing = newState.anything(thingId).get
                 if (makeAnother)
-                  showEditPage(rc, oldModel, PropList.inheritedProps(None, oldModel)(state))
+                  showEditPage(rc.copy(state = Some(newState)), oldModel, PropList.inheritedProps(None, oldModel)(newState))
                 else
-                  Redirect(routes.Application.thing(ownerName(state), state.toThingId, thing.toThingId))
+                  Redirect(routes.Application.thing(ownerName(newState), newState.toThingId, thing.toThingId))
               }
               case ThingFailed(msg) => {
                 showEditPage(rc, oldModel, makeProps(rawProps), Some(msg))
