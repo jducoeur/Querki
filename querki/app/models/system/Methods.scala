@@ -245,3 +245,38 @@ Note that this returns a List, since any number of Things could be pointing to t
     }
   }  
 }
+
+object OrMethod extends InternalMethod(OrMethodOID,
+    toProps(
+      setName("_or"),
+      DisplayTextProp("""_or() is the short-circuiting "or" operator.
+          
+_or takes any number of parameters. It runs through each of them, applying the incoming context.
+It produces the first one that returns a non-empty result, or None iff all of them come out empty. 
+          """)))
+{
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+    paramsOpt match {
+      case Some(params) => {
+        val result = (Option.empty[TypedValue] /: params) { (current, phrase) =>
+          current match {
+            case Some(result) => Some(result)
+            case None => {
+              val oneResult = context.parser.get.processPhrase(phrase.ops, context)
+              if (oneResult.value.v.isEmpty)
+                None
+              else
+                Some(oneResult.value)  
+            }
+          }
+        }
+        // If we got nothing out, then produce an empty list of the incoming type
+        // TBD: this really isn't the correct type to produce -- ideally, the type should
+        // be the one that would be output by the various parameter phrases. How can we
+        // suss that?
+        result.getOrElse(EmptyValue(context.value.pt))
+      }
+      case None => WarningValue("The _or() operator is meaningless if you don't give it any parameters")
+    }
+  }
+}

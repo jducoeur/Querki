@@ -67,6 +67,9 @@ object LinkValue {
 object WarningValue {
   def apply(msg:String) = TypedValue(ExactlyOne(TextType("{{_warning:" + msg + "}}")), TextType, true)
 }
+object EmptyValue {
+  def apply(pType:PType[_]) = TypedValue(QList.empty, pType)
+}
 
 abstract class ContextBase {
   def value:TypedValue

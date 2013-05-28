@@ -183,6 +183,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       val rawList = (List.empty[ElemValue] /: in)((list, next) => list :+ builder(next))
       makePropValue(rawList)
     }
+    val empty = makePropValue(List.empty[ElemValue])
     
     // TODO: the stuff created here overlaps badly with the Javascript code in editThing.scala.html.
     // Rationalize the two, to eliminate all the duplication. In theory, the concept and structure
