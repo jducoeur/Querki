@@ -91,6 +91,9 @@ object OIDs {
   val IsEmptyOID = sysId(52)
   val IsNonEmptyOID = sysId(53)
   val PluralizeOID = sysId(54)
+  val FilterOID = sysId(55)
+  val BulletedOID = sysId(56)
+  val NotOID = sysId(57)
 }
 
 /**
@@ -133,10 +136,12 @@ object SystemSpace {
       LinkButtonMethod,
       IsEmptyMethod,
       IsNonEmptyMethod,
-      PluralizeMethod)
+      PluralizeMethod,
+      FilterMethod,
+      NotMethod)
       
   // Things:
-  val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase)
+  val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted)
   
   def init = {
     _state = Some(modules.Modules.initAllModules(initialSystemState))

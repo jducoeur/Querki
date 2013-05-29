@@ -41,6 +41,13 @@ case class TypedValue(v:PropValue, pt:PType[_], cut:Boolean = false) {
   def ct:Collection = v.coll
   
   def render(context:ContextBase):Wikitext = v.render(context, pt) 
+  
+  def firstTyped[VT](expectedType:PType[VT]):Option[VT] = {
+    if (expectedType == pt) {
+      Some(v.firstTyped(expectedType))
+    } else
+      None
+  }
 }
 object ErrorValue {
   def apply(msg:String) = {
@@ -126,6 +133,17 @@ abstract class ContextBase {
         cb(elemContext)
       }
     }
+  }
+  
+  /**
+   * Similar to ordinary map(), but produces a new Context with the result.
+   */
+  def flatMapAsContext[T <: ElemValue](cb:ContextBase => Option[T], resultType:PType[_]):ContextBase = {
+    val ct = value.ct
+    // TODO: this is an unfortunate cast. It's correct, but ick. Can we eliminate it?
+    val raw = flatMap(cb).asInstanceOf[ct.implType]
+    val propVal = ct.makePropValue(raw)
+    next(TypedValue(propVal, resultType))
   }
   
   override def toString = "Context(" + value.v + ")"

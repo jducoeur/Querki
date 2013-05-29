@@ -65,3 +65,8 @@ just upload a photograph, and you'll get one of these.
 """)),
     Kind.Attachment
     )
+
+object Bulleted extends ThingState(BulletedOID, systemOID, RootOID,
+    toProps(
+      setName("_bulleted"),
+      ApplyMethod("\"\"* ____\"\"")))

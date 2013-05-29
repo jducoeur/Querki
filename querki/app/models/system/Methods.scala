@@ -11,6 +11,8 @@ import ql._
 
 import OIDs._
 
+import YesNoType._
+
 /**
  * Internal methods -- functions defined in-code that can be assigned as properties -- should
  * inherit from this.
@@ -301,6 +303,22 @@ It produces the first one that returns a non-empty result, or None iff all of th
   }
 }
 
+object NotMethod extends InternalMethod(NotOID,
+    toProps(
+      setName("_not"),
+      DisplayTextProp("_or takes the parameter if one is given, or the received value if not. It returns True iff that it False, and False if it is anything else")))
+{
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+    val inVal = paramsOpt match {
+      case Some(params) if (params.length == 1) => {
+        context.parser.get.processPhrase(params(0).ops, context).value
+      }
+      case _ => context.value
+    }
+    !YesNoType.toBoolean(inVal)
+  }
+}
+
 object FirstMethod extends InternalMethod(FirstMethodOID,
     toProps(
       setName("_first"),
@@ -344,8 +362,6 @@ link as a button. It expects one parameter, which will be the label of the butto
     HtmlValue(Html("<a class=\"_linkButton\" href=\"" + url + "\">" + label.plaintext + "</a>"))
   }
 }
-
-import YesNoType._
 
 /**
  * TBD: is this the correct definition of _isEmpty and _isNonEmpty? It feels slightly off to me, to have it specifically depend
@@ -422,5 +438,42 @@ be needed for other languages in the long run.
       yield parser.processPhrase(phrase.ops, context.asCollection).value
       
     result.getOrElse(WarningValue("_pluralize requires exactly two parameters"))
+  }
+}
+
+/**
+ * TODO: properly speaking, this shouldn't assume QList -- it should work for any Collection!
+ */
+object FilterMethod extends InternalMethod(FilterOID,
+    toProps(
+      setName("_filter"),
+      DisplayTextProp("""
+    RECEIVED -> _filter(FILTER)
+          
+This function is how you take a List of things, and whittle them down to just the ones you want.
+          
+The FILTER should take a Thing, and produce a YesNo that says whether to include this Thing.
+That gets applied to each element of RECEIVED; if FILTER returns Yes, then it is included, otherwise not.
+          """)))
+{
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+    
+    // TODO: this is currently convoluted and hard to understand -- we're dissecting the list using
+    // flatMapAsContext(); yielding an Option saying whether to keep each one; stitching it back together
+    // as a Context, and then just using the TypedValue. Bleah.
+    def tryElem(parser:QLParser, phrase:QLPhrase)(elem:ContextBase):Option[ElemValue] = {
+      val passesYesNo = parser.processPhrase(phrase.ops, elem).value
+      for (bool <- passesYesNo.firstTyped(YesNoType) if (bool)) yield elem.value.v.first
+     }
+    
+    val result = for
+    (
+      params <- paramsOpt if params.length == 1;
+      phrase = params(0);
+      parser <- context.parser
+    )
+      yield context.flatMapAsContext(tryElem(parser, phrase), context.value.pt).value
+      
+    result.getOrElse(WarningValue("_filter requires exactly one parameter"))
   }
 }
