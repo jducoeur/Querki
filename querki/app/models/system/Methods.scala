@@ -389,3 +389,38 @@ object IsEmptyMethod extends ThingPropMethod(IsEmptyOID,
     return boolean2YesNoTypedValue(IsNonEmptyMethod.isEmpty(mainContext, mainThing, prop))
   }
 }
+
+object PluralizeMethod extends InternalMethod(PluralizeOID,
+    toProps(
+      setName("_pluralize"),
+      DisplayTextProp("""
+    RECEIVED -> _pluralize(SINGULAR,PLURAL)
+          
+Is a convenient method for choosing different text depending on a Property. The RECEIVED
+Context should usually be a List. If it contains a single element, _pluralize produces
+SINGULAR; if it contains multiple *or* zero elements, _pluralize produces PLURAL.
+         
+Note that this behaviour is pretty English-specific. We expect that other variations will
+be needed for other languages in the long run.
+          """)))
+{
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+    def chooseParam(params:Seq[QLPhrase]):QLPhrase = {
+      val received = context.value.v
+      if (received.isEmpty || received.size > 1)
+        params(1)
+      else
+        params(0)
+    }
+    
+    val result = for
+    (
+      params <- paramsOpt if params.length == 2;
+      phrase = chooseParam(params);
+      parser <- context.parser
+    )
+      yield parser.processPhrase(phrase.ops, context.asCollection).value
+      
+    result.getOrElse(WarningValue("_pluralize requires exactly two parameters"))
+  }
+}

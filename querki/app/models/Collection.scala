@@ -31,6 +31,7 @@ trait PropValue {
   def render(context:ContextBase, elemT:pType):Wikitext = coll.doRender(context)(cv, elemT)
   
   def isEmpty = coll.isEmpty(this)
+  def size = cv.size
   
   def flatMap[VT, T](elemT:PType[VT])(cb:VT => Option[T]) = cv.flatMap { elem => 
     val vt = elemT.get(elem)

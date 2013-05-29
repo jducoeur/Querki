@@ -90,6 +90,7 @@ object OIDs {
   val LinkButtonOID = sysId(51)
   val IsEmptyOID = sysId(52)
   val IsNonEmptyOID = sysId(53)
+  val PluralizeOID = sysId(54)
 }
 
 /**
@@ -131,7 +132,8 @@ object SystemSpace {
       FirstMethod,
       LinkButtonMethod,
       IsEmptyMethod,
-      IsNonEmptyMethod)
+      IsNonEmptyMethod,
+      PluralizeMethod)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase)
