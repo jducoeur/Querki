@@ -105,6 +105,33 @@ abstract class MetaMethod(tid:OID, p:PropFetcher) extends InternalMethod(tid, p)
 }
 
 /**
+ * This is a specialized but common category of Methods: ones that operate on a specific Property, on a
+ * specific Thing. They all expect the syntax "THING -> PROP._method".
+ */
+abstract class ThingPropMethod(tid:OID, p:PropFetcher) extends MetaMethod(tid, p)
+{
+  /**
+   * Concrete classes should define this method, which is the heart of things.
+   */
+  def applyToPropAndThing(mainContext:ContextBase, mainThing:Thing, 
+      partialContext:ContextBase, prop:Property[_,_],
+      params:Option[Seq[QLPhrase]]):TypedValue
+      
+  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):TypedValue = {
+    applyToIncomingThing(mainContext) { (mainThing, _) =>
+      applyToIncomingThing(partialContext) { (shouldBeProp, _) =>
+        shouldBeProp match {
+          case prop:Property[_,_] => {
+            applyToPropAndThing(mainContext, mainThing, partialContext, prop, params)
+          }
+          case _ => ErrorValue("The " + displayName + " method can only be used on Properties")
+        } 
+      }
+    }
+  }
+}
+
+/**
  * This is a syntactically-loose method that you can use in *either* a dotted or normal place,
  * but which really doesn't take any incoming context except for that one. It is intended mainly
  * for beginning-of-phrase methods that intuitively seem like they should be dotted, and which
@@ -134,30 +161,24 @@ object InstancesMethod extends SingleContextMethod(InstancesMethodOID,
   }
 }
 
-object EditMethod extends MetaMethod(EditMethodOID, 
+object EditMethod extends ThingPropMethod(EditMethodOID, 
     toProps(
       setName("_edit"),
       DisplayTextProp("Puts an editor for the specified Property into the page"),
       (AppliesToKindOID -> QList(ElemValue(Kind.Property)))
     )) 
 {
-  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):TypedValue = {
-    applyToIncomingThing(mainContext) { (mainThing, _) =>
-      applyToIncomingThing(partialContext) { (shouldBeProp, _) =>
-        shouldBeProp match {
-          case prop:Property[_,_] => {
-            val currentValue = mainThing.getDisplayPropVal(prop)(mainContext.state)
-            // TODO: conceptually, this is a bit off -- the rendering style shouldn't be hard-coded here. We
-            // probably need to have the Context contain the desire to render in HTML, and delegate to the
-            // HTML renderer indirectly. In other words, the Context should know the renderer to use, and pass
-            // that into here:
-            val inputControl = querki.html.HtmlRenderer.renderPropertyInput(mainContext.state, prop, currentValue)
-            HtmlValue(inputControl)
-          }
-          case _ => ErrorValue("The _edit method can only be used on Properties")
-        } 
-      }
-    }
+  def applyToPropAndThing(mainContext:ContextBase, mainThing:Thing, 
+    partialContext:ContextBase, prop:Property[_,_],
+    params:Option[Seq[QLPhrase]]):TypedValue =
+  {
+    val currentValue = mainThing.getDisplayPropVal(prop)(mainContext.state)
+    // TODO: conceptually, this is a bit off -- the rendering style shouldn't be hard-coded here. We
+    // probably need to have the Context contain the desire to render in HTML, and delegate to the
+    // HTML renderer indirectly. In other words, the Context should know the renderer to use, and pass
+    // that into here:
+    val inputControl = querki.html.HtmlRenderer.renderPropertyInput(mainContext.state, prop, currentValue)
+    HtmlValue(inputControl)    
   }
 }
 
@@ -212,7 +233,7 @@ object ApplyMethod extends SystemProperty(ApplyMethodOID, QLType, Optional,
       setName("_apply"),
       DisplayTextProp("If you set the _apply property, it will be run when you name this Thing in a QL expression.")))
 
-object RefsMethod extends MetaMethod(RefsMethodOID, 
+object RefsMethod extends ThingPropMethod(RefsMethodOID, 
     toProps(
       setName("_refs"),
       DisplayTextProp("""Returns all of the Things that use this Property to point to this Thing.
@@ -223,28 +244,26 @@ to B using property P.
           
 Note that this returns a List, since any number of Things could be pointing to this.""")))
 {
-  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):TypedValue = {
-    applyToIncomingThing(mainContext) { (mainThing, _) =>
-      applyToIncomingThing(partialContext) { (shouldBeProp, _) =>
-        shouldBeProp match {
-          case propErased:Property[_,_] if (propErased.pType == LinkType) => {
-            // EVIL: is there any decent way to get rid of this? I know that the PType is LinkType, so I know
-            // it's legit; can I tell that to Scala?
-            val prop = propErased.asInstanceOf[Property[OID,_]]
-            val results =
-              for (
-                candidateThing <- mainContext.state.allThings;
-                propAndVal <- candidateThing.getPropOpt(prop)(mainContext.state);
-                if propAndVal.contains(mainThing.id)
-              )
-                yield candidateThing.id;
-            TypedValue(QList.from(results, LinkType), LinkType)
-          }
-          case _ => ErrorValue("The _refs method can currently only be used on Properties")
-        } 
-      }
+  def applyToPropAndThing(mainContext:ContextBase, mainThing:Thing, 
+    partialContext:ContextBase, propErased:Property[_,_],
+    params:Option[Seq[QLPhrase]]):TypedValue =
+  {
+    if (propErased.pType == LinkType) {
+	  // EVIL: is there any decent way to get rid of this? I know that the PType is LinkType, so I know
+	  // it's legit; can I tell that to Scala?
+	  val prop = propErased.asInstanceOf[Property[OID,_]]
+	  val results =
+	    for (
+	      candidateThing <- mainContext.state.allThings;
+	      propAndVal <- candidateThing.getPropOpt(prop)(mainContext.state);
+	      if propAndVal.contains(mainThing.id)
+	    )
+	      yield candidateThing.id;
+	  TypedValue(QList.from(results, LinkType), LinkType)
+    } else {
+      WarningValue("_refs can only be applied to Links")
     }
-  }  
+  }
 }
 
 object OrMethod extends InternalMethod(OrMethodOID,
@@ -323,5 +342,50 @@ link as a button. It expects one parameter, which will be the label of the butto
       case None => Wikitext("Link")
     }
     HtmlValue(Html("<a class=\"_linkButton\" href=\"" + url + "\">" + label.plaintext + "</a>"))
+  }
+}
+
+import YesNoType._
+
+/**
+ * TBD: is this the correct definition of _isEmpty and _isNonEmpty? It feels slightly off to me, to have it specifically depend
+ * on the instance like this. But otherwise, we have problems because a property is essentially *always* non-Empty if it if defined,
+ * due to defaults.
+ * 
+ * Maybe the correct solution is a little more nuanced, that a property is considered "empty" if its value is the default?
+ */
+object IsNonEmptyMethod extends ThingPropMethod(IsNonEmptyOID,
+    toProps(
+      setName("_isNonEmpty"),
+      DisplayTextProp("THING -> PROP._isNonEmpty produces true iff PROP is defined on THING, and this instance contains at least one element")))
+{
+  def isEmpty(mainContext:ContextBase, mainThing:Thing, prop:Property[_,_]):Boolean = {
+    implicit val s = mainContext.state
+    val isEmpty = for (
+      propAndVal <- mainThing.localProp(prop)
+    )
+      yield propAndVal.isEmpty
+    
+    isEmpty.getOrElse(true)
+  }
+  
+  def applyToPropAndThing(mainContext:ContextBase, mainThing:Thing, 
+    partialContext:ContextBase, prop:Property[_,_],
+    params:Option[Seq[QLPhrase]]):TypedValue =
+  {
+    return boolean2YesNoTypedValue(!isEmpty(mainContext, mainThing, prop))
+  }
+}
+
+object IsEmptyMethod extends ThingPropMethod(IsEmptyOID,
+    toProps(
+      setName("_isEmpty"),
+      DisplayTextProp("THING -> PROP._isEmpty produces true iff PROP is not defined on THING, or this instance contains no elements")))
+{
+  def applyToPropAndThing(mainContext:ContextBase, mainThing:Thing, 
+    partialContext:ContextBase, prop:Property[_,_],
+    params:Option[Seq[QLPhrase]]):TypedValue =
+  {
+    return boolean2YesNoTypedValue(IsNonEmptyMethod.isEmpty(mainContext, mainThing, prop))
   }
 }

@@ -193,7 +193,21 @@ object QLType extends QLType(QLTypeOID)
         <input type="checkbox"/>
     }
   }
-  object YesNoType extends YesNoType(YesNoTypeOID)
+  object YesNoType extends YesNoType(YesNoTypeOID) {
+    val True = YesNoType(true)
+    val False = YesNoType(false)
+    
+    implicit def boolean2YesNo(raw:Boolean):ElemValue = {
+      if (raw)
+        YesNoType.True
+      else
+        YesNoType.False
+    }
+    
+    implicit def boolean2YesNoTypedValue(raw:Boolean):TypedValue = {
+      TypedValue(ExactlyOne(raw), YesNoType)
+    }
+  }
   
   /**
    * The Type for Display Names -- similar to Text, but not identical
