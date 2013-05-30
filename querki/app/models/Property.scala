@@ -81,18 +81,22 @@ case class Property[VT, -RT](
   def deserialize(str:String):PropValue = cType.deserialize(str, pType)
   
   def applyToIncomingThing(context:ContextBase)(action:(Thing, ContextBase) => TypedValue):TypedValue = {
-    val valType = context.value.pt
-    valType match {
-      case link:LinkType => {
-        val coll = context.value.ct
-        val thing = link.followLink(context)
-        thing match {
-          case Some(t) => action(t, context)
-          case None => WarningValue("Couldn't find Thing from " + context.toString)
+    if (context.isEmpty) {
+      WarningValue("Trying to apply property " + displayName + " to an empty context!")
+    } else {
+      val valType = context.value.pt
+      valType match {
+        case link:LinkType => {
+          val coll = context.value.ct
+          val thing = link.followLink(context)
+          thing match {
+            case Some(t) => action(t, context)
+            case None => WarningValue("Couldn't find Thing from " + context.toString)
+          }
         }
+        case _ => WarningValue("Can't apply a Property in a " + valType.displayName + " context!")
       }
-      case _ => WarningValue("Can't apply a Property in a " + valType.displayName + " context!")
-    }    
+    }
   }
   
   /**
@@ -105,11 +109,27 @@ case class Property[VT, -RT](
   override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
     // Give the Type first dibs at handling the call; otherwise, return the value of this property
     // on the incoming thing.
-    pType.qlApplyFromProp(context, this, params).getOrElse(applyToIncomingThing(context) { (t, context) =>
+    pType.qlApplyFromProp(context, context, this, params).getOrElse(applyToIncomingThing(context) { (t, context) =>
       val result = t.getPropVal(this)(context.state)
       TypedValue(result, pType)
     })
   }  
+  
+  override def partiallyApply(leftContext:ContextBase):QLFunction = {
+    def handleRemainder(mainContext:ContextBase, params:Option[Seq[QLPhrase]]):TypedValue = {
+      // Note that partial application ignores the incoming context if the type isn't doing anything clever. By
+      // and large, this syntax mainly exists for QL properties:
+      //
+      //   incomingContext -> definingThing.MyQLFunction(params)
+      //
+      // But we allow you to use partial application in general, since it sometimes feels natural.
+      pType.qlApplyFromProp(leftContext, mainContext, this, params).getOrElse(applyToIncomingThing(leftContext) { (t, context) =>
+        val result = t.getPropVal(this)(context.state)
+        TypedValue(result, pType)
+      })
+    }
+    new PartiallyAppliedFunction(leftContext, handleRemainder)
+  }
 }
 
 class FieldIds(t:Option[Thing], p:Property[_,_]) {

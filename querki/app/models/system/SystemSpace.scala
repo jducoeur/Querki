@@ -94,6 +94,7 @@ object OIDs {
   val FilterOID = sysId(55)
   val BulletedOID = sysId(56)
   val NotOID = sysId(57)
+  val RestMethodOID = sysId(58)
 }
 
 /**
@@ -133,6 +134,7 @@ object SystemSpace {
       RefsMethod,
       OrMethod,
       FirstMethod,
+      RestMethod,
       LinkButtonMethod,
       IsEmptyMethod,
       IsNonEmptyMethod,

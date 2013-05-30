@@ -72,11 +72,6 @@ class SingleThingMethod(tid:OID, name:String, desc:String, action:(Thing, Contex
   def handleThing(t:Thing, context:ContextBase):TypedValue = action(t, context)
 }
 
-class PartiallyAppliedFunction(partialContext:ContextBase, action:(ContextBase, Option[Seq[QLPhrase]]) => TypedValue) extends QLFunction {
-  def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
-    action(context, params)
-  }
-}
 /**
  * A MetaMethod is a Method that is intended to be dotted -- that is, it should be specified on the
  * right-hand side of a dot. _edit is the canonical example. Usually, these are methods on a Property,
@@ -85,6 +80,9 @@ class PartiallyAppliedFunction(partialContext:ContextBase, action:(ContextBase, 
  * TBD: this is a pretty weak version of partial application. At some point, let's see if we can
  * refactor this to be more general, powerful and correct. Also, the interaction of this and
  * PartiallyAppliedFunction is clearly too baroque, and can probably be simplified.
+ * 
+ * TODO: partial application has been lifted up into Property as a more general concept. This code
+ * is still correct, but should probably be refactored into that.
  */
 abstract class MetaMethod(tid:OID, p:PropFetcher) extends InternalMethod(tid, p)
 {
@@ -340,6 +338,24 @@ Optional instead.
   }
 }
 
+object RestMethod extends InternalMethod(RestMethodOID,
+    toProps(
+      setName("_rest"),
+      DisplayTextProp("""_rest produces everything but the first thing from the received context.
+          
+Often you have a List, and you want to slice off the first item (using _first). You then use _rest
+to handle everything else.
+          """)))
+{
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+    val sourceColl = context.value.v
+    if (sourceColl.isEmpty)
+      // Cut processing at this point:
+      TypedValue(QList.empty, context.value.pt, true)
+    else
+      TypedValue(QList.makePropValue(sourceColl.cv.tail.toList), context.value.pt)
+  }
+}
 
 object LinkButtonMethod extends InternalMethod(LinkButtonOID,
     toProps(

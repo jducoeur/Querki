@@ -132,12 +132,17 @@ class QLType(tid:OID) extends TextTypeBase(tid,
   // TBD: in principle, we really want this to return a *context*, not a *value*. This is a special
   // case of a growing concern: that we could be losing information by returning TypedValue from
   // qlApply, and should actually be returning a full successor Context.
-  override def qlApplyFromProp(context:ContextBase, prop:Property[QLText,_], params:Option[Seq[QLPhrase]]):Option[TypedValue] = {
-    Some(prop.applyToIncomingThing(context) { (thing, context) =>
-      val qlPhraseText = thing.first(prop)(context.state)
-      val parser = new QLParser(qlPhraseText, context)
-      parser.processMethod.value
-    })
+  override def qlApplyFromProp(definingContext:ContextBase, incomingContext:ContextBase, prop:Property[QLText,_], params:Option[Seq[QLPhrase]]):Option[TypedValue] = {
+    if (definingContext.isEmpty) {
+      Some(ErrorValue("""Trying to use QL Property """" + prop.displayName + """" in an empty context.
+This often means that you've invoked it recursively without saying which Thing it is defined in."""))
+    } else {
+      Some(prop.applyToIncomingThing(definingContext) { (thing, context) =>
+        val qlPhraseText = thing.first(prop)(context.state)
+        val parser = new QLParser(qlPhraseText, incomingContext)
+        parser.processMethod.value
+      })
+    }
   }
 }
 object QLType extends QLType(QLTypeOID)

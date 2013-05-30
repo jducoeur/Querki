@@ -89,6 +89,11 @@ abstract class ContextBase {
   def parser:Option[QLParser]
   def useCollection:Boolean = false
   
+  def depth:Int
+  // This might become a config param -- it is the maximum depth we will allow a call to be. For now, we're
+  // keeping it very tight, but it might eventually need to be over a thousand.
+  val maxDepth = 100
+  
   def isEmpty = value.v.isEmpty
   
   /**
@@ -151,9 +156,9 @@ abstract class ContextBase {
   /**
    * Convenience method to build the successor to this context, in typical chained situations.
    */
-  def next(v:TypedValue) = QLContext(v, request, Some(this), parser)
+  def next(v:TypedValue) = QLContext(v, request, Some(this), parser, depth + 1)
   
-  def asCollection = QLContext(value, request, Some(parent), parser, true)
+  def asCollection = QLContext(value, request, Some(parent), parser, depth + 1, true)
   
   /**
    * Returns the root of the context tree. Mainly so that parameters can start again with the same root.
@@ -170,7 +175,7 @@ abstract class ContextBase {
 /**
  * Represents the incoming "context" of a parsed QLText.
  */
-case class QLContext(value:TypedValue, request:RequestContext, parentIn:Option[ContextBase] = None, parser:Option[QLParser] = None, listIn:Boolean = false) extends ContextBase {
+case class QLContext(value:TypedValue, request:RequestContext, parentIn:Option[ContextBase] = None, parser:Option[QLParser] = None, depth:Int = 0, listIn:Boolean = false) extends ContextBase {
   def state = request.state.getOrElse(SystemSpace.State)
   def parent = parentIn match {
     case Some(p) => p
@@ -184,6 +189,7 @@ case class QLRequestContext(request:RequestContext) extends ContextBase {
   def value:TypedValue = throw new Exception("Can't use the contents of QLRequestContext!")  
   def parent:ContextBase = throw new Exception("QLRequestContext doesn't have a parent!")
   def parser:Option[QLParser] = throw new Exception("QLRequestContext doesn't have a parser!")
+  def depth:Int = 0
 }
 
 /**
@@ -197,6 +203,7 @@ case object EmptyContext extends ContextBase {
   def request:RequestContext = throw new Exception("Can't get the request of EmptyContext!")
   def parent:ContextBase = throw new Exception("EmptyContext doesn't have a parent!")
   def parser:Option[QLParser] = throw new Exception("Can't get a parser from EmptyContext!")
+  def depth:Int = 0
 }
 
 /**
@@ -207,6 +214,13 @@ case object EmptyContext extends ContextBase {
 trait QLFunction {
   def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue
 }
+
+class PartiallyAppliedFunction(partialContext:ContextBase, action:(ContextBase, Option[Seq[QLPhrase]]) => TypedValue) extends QLFunction {
+  def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
+    action(context, params)
+  }
+}
+
 class BogusFunction extends QLFunction {
   def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
     ErrorValue("It does not make sense to put this after a dot.")
@@ -215,9 +229,14 @@ class BogusFunction extends QLFunction {
 
 sealed abstract class QLTextPart
 case class UnQLText(text:String) extends QLTextPart
-sealed abstract class QLStage
-case class QLCall(name:String, methodName:Option[String], params:Option[Seq[QLPhrase]]) extends QLStage
-case class QLTextStage(contents:ParsedQLText) extends QLStage
+sealed abstract class QLStage(collFlag:Option[String]) {
+  def useCollection:Boolean = collFlag match {
+    case Some(_) => true
+    case None => false
+  }
+}
+case class QLCall(name:String, methodName:Option[String], params:Option[Seq[QLPhrase]], collFlag:Option[String]) extends QLStage(collFlag)
+case class QLTextStage(contents:ParsedQLText, collFlag:Option[String]) extends QLStage(collFlag)
 //case class QLPlainTextStage(text:String) extends QLStage
 case class QLPhrase(ops:Seq[QLStage])
 case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart
@@ -227,7 +246,7 @@ case class ParsedQLText(parts:Seq[QLTextPart])
 class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   
   // Add the parser to the context, so that methods can call back into it:
-  val initialContext = QLContext(ci.value, ci.request, Some(ci.parent), Some(this))
+  val initialContext = QLContext(ci.value, ci.request, Some(ci.parent), Some(this), ci.depth + 1)
   
   // Crude but useful debugging of the process tree. Could stand to be beefed up when I have time
   def logContext(msg:String, context:ContextBase) = {
@@ -241,9 +260,10 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   override val whiteSpace = "".r
   
   def unQLText:Parser[UnQLText] = unQLTextRegex ^^ { UnQLText(_) }
-  def qlCall:Parser[QLCall] = name ~ opt("." ~> name) ~ opt("\\(\\s*".r ~> (rep1sep(qlPhrase, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
-    case n ~ optMethod ~ optParams => QLCall(n, optMethod, optParams) }
-  def qlTextStage:Parser[QLTextStage] = "\"\"" ~> qlText <~ "\"\"" ^^ { QLTextStage(_) }
+  def qlCall:Parser[QLCall] = opt("\\*\\s*".r) ~ name ~ opt("." ~> name) ~ opt("\\(\\s*".r ~> (rep1sep(qlPhrase, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
+    case collFlag ~ n ~ optMethod ~ optParams => QLCall(n, optMethod, optParams, collFlag) }
+  def qlTextStage:Parser[QLTextStage] = (opt("\\*\\s*".r) <~ "\"\"") ~ qlText <~ "\"\"" ^^ {
+    case collFlag ~ text => QLTextStage(text, collFlag) }
   // TODO: get this working properly, so we have properly plain text literals:
 //  def qlPlainTextStage:Parser[QLPlainTextStage] = "\"" ~> unQLTextRegex <~ "\"" ^^ { QLPlainTextStage(_) }
   def qlStage:Parser[QLStage] = qlCall | qlTextStage // | qlPlainTextStage
@@ -293,7 +313,14 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
     context.next(tv)
   }
   
-  private def processStage(stage:QLStage, context:ContextBase):ContextBase = {
+  private def processStage(stage:QLStage, contextIn:ContextBase):ContextBase = {
+    val context = 
+      if (contextIn.depth > contextIn.maxDepth)
+        contextIn.next(WarningValue("Too many levels of calls -- you can only have up to " + contextIn.maxDepth + " calls in a phrase."));
+      else if (stage.useCollection) 
+        contextIn.asCollection 
+      else 
+        contextIn
     logContext("processStage " + stage, context)
     stage match {
       case name:QLCall => processCall(name, context)

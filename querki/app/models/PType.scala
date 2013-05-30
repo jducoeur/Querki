@@ -112,9 +112,16 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
   
   /**
    * If this Type implies special processing when named in a QL expression (other than simply returning
-   * the value of the property), override this method 
+   * the value of the property), override this method
+   * The guts of applying a QL function. Note that this allows two contexts, which is often relevant
+   * for these:
+   * 
+   *   incomingContext -> definingContext.prop(params)
+   *   
+   * If this isn't partially applied, the incomingContext is used for both. See Property for the main
+   * usage of this.
    */
-  def qlApplyFromProp(context:ContextBase, prop:Property[VT,_], params:Option[Seq[QLPhrase]]):Option[TypedValue] = None
+  def qlApplyFromProp(definingContext:ContextBase, incomingContext:ContextBase, prop:Property[VT,_], params:Option[Seq[QLPhrase]]):Option[TypedValue] = None
 }
 
 trait PTypeBuilder[VT, -RT] {
