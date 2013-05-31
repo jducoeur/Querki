@@ -493,3 +493,10 @@ That gets applied to each element of RECEIVED; if FILTER returns Yes, then it is
     result.getOrElse(WarningValue("_filter requires exactly one parameter"))
   }
 }
+
+object SpaceMethod extends SingleThingMethod(SpaceMethodOID, "_space", """
+    RECEIVED -> _space -> SPACE
+          
+This function produces the Space that the received Thing is contained in.
+          """,
+{ (thing, context) => LinkValue(thing.spaceId) })

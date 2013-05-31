@@ -95,6 +95,7 @@ object OIDs {
   val BulletedOID = sysId(56)
   val NotOID = sysId(57)
   val RestMethodOID = sysId(58)
+  val SpaceMethodOID = sysId(59)
 }
 
 /**
@@ -140,7 +141,8 @@ object SystemSpace {
       IsNonEmptyMethod,
       PluralizeMethod,
       FilterMethod,
-      NotMethod)
+      NotMethod,
+      SpaceMethod)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted)
