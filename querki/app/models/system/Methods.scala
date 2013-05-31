@@ -507,3 +507,26 @@ object ExternalRootsMethod extends SingleThingMethod(ExternalRootsOID, "_externa
 Pass in a link to a Space; this produces all of the "roots" -- the Things from its Apps -- used
 by that Space.""",
 { (thing, context) => TypedValue(QList.from(context.state.thingRoots, LinkType), LinkType) })
+
+object SortMethod extends InternalMethod(SortMethodOID,
+    toProps(
+      setName("_sort"),
+      DisplayTextProp("""
+    LIST -> _sort -> SORTED
+          
+With no parameters, _sort sorts the elements of the received List alphabetically by their Display Names.
+""")))
+{
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+    context.value.pt match {
+      case LinkType => {
+        val start = context.value.v.cv.toSeq
+        val asThings = start.map(elemV => context.state.anything(LinkType.get(elemV))).flatten
+        val sortedOIDs = asThings.sortWith((left, right) => left.displayName < right.displayName).map(_.id)
+        TypedValue(QList.from(sortedOIDs, LinkType), LinkType)
+      }
+      case _ => WarningValue("_sort can only currently be applied to Links.")
+    }
+    
+  }
+}
