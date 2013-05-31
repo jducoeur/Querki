@@ -532,3 +532,7 @@ With no parameters, _sort sorts the elements of the received List alphabetically
 
 object ChildrenMethod extends SingleThingMethod(ChildrenMethodOID, "_children", "This produces the immediate children of the received Model.",
 { (thing, context) => TypedValue(QList.from(context.state.children(thing).map(_.id), LinkType), LinkType) })
+
+object IsModelMethod extends SingleThingMethod(IsModelMethodOID, "_isModel", "This produces Yes if the received Thing is a Model.",
+{ (thing, context) => TypedValue(ExactlyOne(thing.isModel(context.state)), YesNoType) })
+

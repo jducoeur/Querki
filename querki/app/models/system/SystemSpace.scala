@@ -99,6 +99,8 @@ object OIDs {
   val ExternalRootsOID = sysId(60)
   val SortMethodOID = sysId(61)
   val ChildrenMethodOID = sysId(62)
+  val IsModelMethodOID = sysId(63)
+  val IfMethodOID = sysId(64)
 }
 
 /**
@@ -148,7 +150,8 @@ object SystemSpace {
       SpaceMethod,
       ExternalRootsMethod,
       SortMethod,
-      ChildrenMethod)
+      ChildrenMethod,
+      IsModelMethod)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted)
