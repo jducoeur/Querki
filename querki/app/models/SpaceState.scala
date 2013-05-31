@@ -161,6 +161,16 @@ case class SpaceState(
     (Set.empty[OID] /: allThings) ((set, t) => set + root(t))
   }
   
+  /**
+   * Returns all of the immediate children of this Thing.
+   * 
+   * TBD: for the moment, this only works for Things. It probably should work on other Kinds as well?
+   */
+  def children(t:Thing):Iterable[Thing] = {
+    val tid = t.id
+    things.values.filter(_.model == tid)
+  }
+  
   def descendantsTyped[T <: Thing](root:OID, includeModels:Boolean, includeInstances:Boolean, map:Map[OID, T]):Iterable[Thing] = {
     map.values.filter(_.isAncestor(root)(this))
   }
