@@ -151,7 +151,8 @@ object SystemSpace {
       ExternalRootsMethod,
       SortMethod,
       ChildrenMethod,
-      IsModelMethod)
+      IsModelMethod,
+      IfMethod)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted)

@@ -536,3 +536,35 @@ object ChildrenMethod extends SingleThingMethod(ChildrenMethodOID, "_children", 
 object IsModelMethod extends SingleThingMethod(IsModelMethodOID, "_isModel", "This produces Yes if the received Thing is a Model.",
 { (thing, context) => TypedValue(ExactlyOne(thing.isModel(context.state)), YesNoType) })
 
+// TODO: this will become clearer and easier to use once we introduce block-syntax parameters.
+object IfMethod extends InternalMethod(IfMethodOID,
+    toProps(
+      setName("_if"),
+      DisplayTextProp("""
+    RECEIVED -> _if(YESNO, IFCLAUSE, ELSECLAUSE) -> ...
+
+_if is one of the basic building blocks of programming. It applies the YESNO phrase to the received context.
+If the result is Yes, it applies the IFCLAUSE to the received context and produces that. Otherwise, if there
+is an ELSECLAUSE, it applies and produces that, or produces nothing if there is no ELSECLAUSE.
+          """)))
+{
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+    paramsOpt match {
+      case Some(params) if (params.length > 1) => {
+        val predicatePhrase = params(0)
+        val ifCase = params(1)
+        val predResult = context.parser.get.processPhrase(predicatePhrase.ops, context)
+        if (YesNoType.toBoolean(predResult.value)) {
+          context.parser.get.processPhrase(ifCase.ops, context).value
+        } else if (params.length > 2) {
+          val elseCase = params(2)
+          context.parser.get.processPhrase(elseCase.ops, context).value
+        } else {
+          // TODO: the type here is chosen arbitrarily, but it *should* be the same type as the ifCase.
+          EmptyValue(YesNoType)
+        }
+      }
+      case _ => WarningValue("_if requires at least two parameters.")
+    }
+  }
+}
