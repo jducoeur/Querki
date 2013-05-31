@@ -3,6 +3,8 @@ package models
 import language.existentials
 import system._
 
+import play.api.Logger
+
 import OIDs._
 
 import Thing._
@@ -110,6 +112,16 @@ case class SpaceState(
   }
   
   /**
+   * Returns true iff this Space has any thing with the given ID.
+   */
+  def contains(id:OID):Boolean = {
+    things.contains(id) ||
+    spaceProps.contains(id) ||
+    types.contains(id) ||
+    colls.contains(id)
+  }
+  
+  /**
    * Returns all of the conventional Things.
    * 
    * This is used mainly by _refs() so far.
@@ -118,6 +130,8 @@ case class SpaceState(
    * App tree. Should it?
    */
   def allThings:Iterable[Thing] = things.values
+  
+  def everythingLocal:Iterable[Thing] = things.values ++ spaceProps.values ++ types.values ++ colls.values
   
   def allProps:Map[OID, Property[_,_]] = if (app.isEmpty) spaceProps else spaceProps ++ app.get.allProps
   
@@ -129,6 +143,22 @@ case class SpaceState(
     } else {
       myModels ++ app.get.allModels
     }
+  }
+  
+  def root(t:Thing):OID = {
+    val modelId = t.model
+    if (contains(modelId))
+      root(t.getModel(this))
+    else
+      modelId
+  }
+  
+  /**
+   * Returns the set of external "roots" of the Things in this Space. Note that this list is composed entirely
+   * of Things *not* in this Space -- it is the ones we are inheriting from. 
+   */
+  def thingRoots:Iterable[OID] = {
+    (Set.empty[OID] /: allThings) ((set, t) => set + root(t))
   }
   
   def descendantsTyped[T <: Thing](root:OID, includeModels:Boolean, includeInstances:Boolean, map:Map[OID, T]):Iterable[Thing] = {

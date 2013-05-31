@@ -500,3 +500,10 @@ object SpaceMethod extends SingleThingMethod(SpaceMethodOID, "_space", """
 This function produces the Space that the received Thing is contained in.
           """,
 { (thing, context) => LinkValue(thing.spaceId) })
+
+object ExternalRootsMethod extends SingleThingMethod(ExternalRootsOID, "_externalRoots", """
+    SPACE -> _externalRoots -> ROOTS
+   
+Pass in a link to a Space; this produces all of the "roots" -- the Things from its Apps -- used
+by that Space.""",
+{ (thing, context) => TypedValue(QList.from(context.state.thingRoots, LinkType), LinkType) })
