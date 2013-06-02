@@ -391,6 +391,10 @@ object IsNonEmptyMethod extends ThingPropMethod(IsNonEmptyOID,
       setName("_isNonEmpty"),
       DisplayTextProp("THING -> PROP._isNonEmpty produces true iff PROP is defined on THING, and this instance contains at least one element")))
 {
+  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
+    boolean2YesNoTypedValue(!context.value.v.isEmpty)
+  }
+
   def isEmpty(mainContext:ContextBase, mainThing:Thing, prop:Property[_,_]):Boolean = {
     implicit val s = mainContext.state
     val isEmpty = for (
@@ -414,6 +418,10 @@ object IsEmptyMethod extends ThingPropMethod(IsEmptyOID,
       setName("_isEmpty"),
       DisplayTextProp("THING -> PROP._isEmpty produces true iff PROP is not defined on THING, or this instance contains no elements")))
 {
+  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
+    boolean2YesNoTypedValue(context.value.v.isEmpty)
+  }
+
   def applyToPropAndThing(mainContext:ContextBase, mainThing:Thing, 
     partialContext:ContextBase, prop:Property[_,_],
     params:Option[Seq[QLPhrase]]):TypedValue =
