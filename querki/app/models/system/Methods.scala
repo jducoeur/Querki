@@ -576,3 +576,28 @@ is an ELSECLAUSE, it applies and produces that, or produces nothing if there is 
     }
   }
 }
+
+object JoinMethod extends InternalMethod(JoinMethodOID,
+    toProps(
+      setName("_join"),
+      DisplayTextProp("""LIST -> _join(SEP) -> WIKITEXT
+
+_join takes the given LIST, and turns it into a single line. If you specify a SEP, like ',' or ';', that will
+be placed between the elements; otherwise, they will be directly squashed together.""")))
+{
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+    val sep = paramsOpt match {
+      case Some(params) if (params.length > 0) => {
+        val collContext = context.asCollection
+        val sepVal = context.parser.get.processPhrase(params(0).ops, collContext).value
+        val renderedSep = sepVal.pt.render(context)(sepVal.v.first)
+        renderedSep
+      }
+      case _ => Wikitext.empty
+    }
+    val elemT = context.value.pt
+    val renderedList = context.value.v.cv.map{elem => elemT.render(context)(elem)}
+    val result = (renderedList.head /: renderedList.tail) ((total, next) => total + sep + next)
+    WikitextValue(result)
+  }
+}
