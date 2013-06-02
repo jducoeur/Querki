@@ -82,7 +82,7 @@ case class Property[VT, -RT](
   
   def applyToIncomingThing(context:ContextBase)(action:(Thing, ContextBase) => TypedValue):TypedValue = {
     if (context.isEmpty) {
-      WarningValue("Trying to apply property " + displayName + " to an empty context!")
+      EmptyValue.untyped
     } else {
       val valType = context.value.pt
       valType match {

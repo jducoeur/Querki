@@ -76,6 +76,9 @@ object WarningValue {
 }
 object EmptyValue {
   def apply(pType:PType[_]) = TypedValue(QList.empty, pType)
+  // TODO: this is evil -- in the long run, we should eliminate this and think more carefully about what
+  // the correct type is in cases where it is being used:
+  def untyped = TypedValue(QList.empty, YesNoType)
 }
 
 abstract class ContextBase {
