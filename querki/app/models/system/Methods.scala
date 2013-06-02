@@ -580,24 +580,40 @@ is an ELSECLAUSE, it applies and produces that, or produces nothing if there is 
 object JoinMethod extends InternalMethod(JoinMethodOID,
     toProps(
       setName("_join"),
-      DisplayTextProp("""LIST -> _join(SEP) -> WIKITEXT
+      DisplayTextProp("""LIST -> _join(OPEN, SEP, CLOSE]) -> WIKITEXT
 
-_join takes the given LIST, and turns it into a single line. If you specify a SEP, like ',' or ';', that will
-be placed between the elements; otherwise, they will be directly squashed together.""")))
+_join takes the given LIST, and turns it into a single line. If there is only one parameter, it is SEP,
+which is placed between each pair of elements. If there are two, the first is OPEN, which is put at the
+beginning. If there are three, the last is CLOSE, which is put at the end.""")))
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
-    val sep = paramsOpt match {
-      case Some(params) if (params.length > 0) => {
-        val collContext = context.asCollection
-        val sepVal = context.parser.get.processPhrase(params(0).ops, collContext).value
-        val renderedSep = sepVal.pt.render(context)(sepVal.v.first)
-        renderedSep
-      }
-      case _ => Wikitext.empty
+    val (openPhrase, sepPhrase, closePhrase) = paramsOpt match {
+      case Some(params) if (params.length == 1) => (None, Some(params(0)), None)
+      case Some(params) if (params.length == 2) => (Some(params(0)), Some(params(1)), None)
+      case Some(params) if (params.length > 2) => (Some(params(0)), Some(params(1)), Some(params(2)))
+      case _ => (None, None, None)
     }
+    def renderParam(paramOpt:Option[QLPhrase]):Wikitext = {
+      paramOpt match {
+        case Some(param) => {
+          val collContext = context.asCollection
+          val paramVal = context.parser.get.processPhrase(param.ops, collContext).value
+          val renderedParam = paramVal.pt.render(context)(paramVal.v.first)
+          renderedParam
+        }
+        case _ => Wikitext.empty
+      }
+    }
+
     val elemT = context.value.pt
     val renderedList = context.value.v.cv.map{elem => elemT.render(context)(elem)}
-    val result = (renderedList.head /: renderedList.tail) ((total, next) => total + sep + next)
+    val result =
+      if (renderedList.isEmpty) {
+        Wikitext.empty
+      } else {
+        val sep = renderParam(sepPhrase)
+        renderParam(openPhrase) + (renderedList.head /: renderedList.tail) ((total, next) => total + sep + next) + renderParam(closePhrase)
+      }
     WikitextValue(result)
   }
 }
