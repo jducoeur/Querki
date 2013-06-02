@@ -172,6 +172,16 @@ object Application extends Controller {
   def index = withUser(false) { rc =>
     Ok(views.html.index(rc))
   }    
+  
+  // TODO: in the long run, we will want spidering of the main system pages, and allow users to
+  // choose to have their pages indexed. We're quite a ways from that, though.
+  def robots = Action { implicit request =>
+    Ok("""# For the time being, Querki requests that robots stay out. This will change eventually.
+        
+user-agent: *
+disallow: /
+""").as("text/plain")
+  }
 
   def spaces = withUser(true) { rc => 
     askSpaceMgr[ListMySpacesResponse](ListMySpaces(rc.requester.get.id)) { 

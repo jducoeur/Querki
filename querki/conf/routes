@@ -4,6 +4,7 @@
 
 # Home page
 GET     /                           controllers.Application.index
+GET     /robots.txt					controllers.Application.robots
 GET     /login                      controllers.Application.login
 GET     /spaces                     controllers.Application.spaces
 GET     /newSpace                   controllers.Application.newSpace
