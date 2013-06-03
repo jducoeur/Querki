@@ -18,3 +18,20 @@
 .ui-menu-item .ui-state-focus{
 	background: #285c00 url(images/ui-bg_highlight-hard_30_285c00_1x100.png) 50% 50% repeat-x;
 }
+
+/*
+ * Styles used in major Querki screens.
+ */
+ 
+.indent {
+  margin-left: 30px;
+}
+
+._thingTree p {
+  margin-bottom: 0px;
+}
+
+._modelInTree {
+  font-weight: bold;
+  font-size: larger;
+}

@@ -70,3 +70,23 @@ object Bulleted extends ThingState(BulletedOID, systemOID, RootOID,
     toProps(
       setName("_bulleted"),
       ApplyMethod("\"\"* ____\"\"")))
+
+object DisplayThingTree extends ThingState(DisplayThingTreeOID, systemOID, RootOID,
+    toProps(
+      setName("_displayThingTree"),
+      ApplyMethod("""""[[_if(_isModel, ""{{_modelInTree:"")]]____[[_if(_isModel, ""}}"")]]
+{{indent:[[_children -> 
+  _sort -> 
+  _displayThingTree]]
+}}
+""""")))
+
+object AllThings extends ThingState(AllThingsOID, systemOID, RootOID,
+    toProps(
+      setName("_allThings"),
+      ApplyMethod("""""{{_thingTree:
+[[_space ->
+  _externalRoots ->
+  _sort ->
+  _displayThingTree]]
+}}""""")))

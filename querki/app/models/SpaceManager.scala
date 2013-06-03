@@ -159,7 +159,7 @@ class SpaceManager extends Actor {
           """).on("sid" -> spaceId.raw, "shard" -> 1.toString, "name" -> name,
                   "display" -> display, "ownerId" -> owner.raw).executeUpdate()
       val initProps = Thing.toProps(Thing.setName(name), DisplayNameProp(display))()
-      Space.createThingInSql(spaceId, spaceId, RootOID, Kind.Space, initProps, State)
+      Space.createThingInSql(spaceId, spaceId, systemOID, Kind.Space, initProps, State)
     }
     val spaceActor = context.actorOf(Props[Space], name = Space.sid(spaceId))
     (spaceId, spaceActor)

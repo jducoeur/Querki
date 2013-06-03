@@ -102,6 +102,8 @@ object OIDs {
   val IsModelMethodOID = sysId(63)
   val IfMethodOID = sysId(64)
   val JoinMethodOID = sysId(65)
+  val DisplayThingTreeOID = sysId(66)
+  val AllThingsOID = sysId(67)
 }
 
 /**
@@ -157,7 +159,7 @@ object SystemSpace {
       JoinMethod)
       
   // Things:
-  val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted)
+  val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, DisplayThingTree, AllThings)
   
   def init = {
     _state = Some(modules.Modules.initAllModules(initialSystemState))
@@ -171,10 +173,7 @@ object SystemSpace {
     SpaceState(systemOID, RootOID,
       toProps(
         setName("System"),
-        DisplayTextProp("""
-This is the fundamental System Space. Everything else derives from it.
-""")
-        ), SystemUserOID, "System", None, SystemTypes.all, props, things, SystemCollections.all)    
+        DisplayTextProp("[[_allThings]]")), SystemUserOID, "System", None, SystemTypes.all, props, things, SystemCollections.all)    
   }
   
   // Note the intentional implication here: trying to access State before init has been
