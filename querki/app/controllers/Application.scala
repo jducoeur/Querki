@@ -372,8 +372,22 @@ disallow: /
             }
             val props = Thing.toProps(propPairs:_*)()
             val spaceMsg = if (thing.isDefined) {
-              // Editing an existing Thing
-              ModifyThing(user, rc.ownerId, ThingId(spaceId), thing.get.id.toThingId, OID(info.model), props)
+              if (oldModel.hasProp(OIDs.InstanceEditPropsOID)) {
+                // Editing an instance, so we only have a subset of the props, not the full list.
+                // NOTE: the reason this is separated from the next clause is because ChangeProps gives us
+                // no way to *delete* a property. We don't normally expect to do that in a limited-edit instance,
+                // but we certainly need to be able to in the general case.
+                // TODO: refactor these two clauses together. ModifyThing is inappropriate when InstanceEditProps is
+                // set, because it expects to be editing the *complete* list of properties, not just a subset.
+                // The right answer is probably to enhance the PropMap to be able to describe a deleted property,
+                // possibly with a constant pseudo-PropValue. Then have the editor keep track of the deleted
+                // properties, and send the deletions as a pro-active change when finished.
+                ChangeProps(user, rc.ownerId, ThingId(spaceId), thing.get.id.toThingId, props)
+              } else {
+                // Editing an existing Thing. If InstanceEditPropsOID isn't set, we're doing a full edit, and
+                // expect to have received the full list of properties.
+                ModifyThing(user, rc.ownerId, ThingId(spaceId), thing.get.id.toThingId, OID(info.model), props)
+              }
             } else {
               // Creating a new Thing
               CreateThing(user, rc.ownerId, ThingId(spaceId), kind, OID(info.model), props)
