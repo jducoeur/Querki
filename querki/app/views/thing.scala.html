@@ -50,10 +50,23 @@
 	      });
 	      showStatus("Saving...");
 		}
+		
+		$.fn.makeIconButton = function () {
+		  this.each(function () {
+		    var btn = $(this);
+		    btn.button({
+		      icons: {
+		        primary: btn.data("icon")
+		      },
+		      text: false
+		    });
+		  });
+		}
 				
 		$(".propEditor").change(updateValue);
 		$(".buttonset").buttonset();
 		$("._linkButton").button();
+		$("._iconButton").makeIconButton();
       });
     </script>
     

@@ -104,6 +104,7 @@ object OIDs {
   val JoinMethodOID = sysId(65)
   val DisplayThingTreeOID = sysId(66)
   val AllThingsOID = sysId(67)
+  val IconButtonOID = sysId(68)
 }
 
 /**
@@ -156,7 +157,8 @@ object SystemSpace {
       ChildrenMethod,
       IsModelMethod,
       IfMethod,
-      JoinMethod)
+      JoinMethod,
+      IconButtonMethod)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, DisplayThingTree, AllThings)
