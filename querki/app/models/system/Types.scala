@@ -292,7 +292,7 @@ object QLType extends QLType(QLTypeOID)
     val doDefault = UnknownOID
     
     def renderInputXmlGuts(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Iterable[Elem] = {
-      val candidates = state.linkCandidates(prop)
+      val candidates = state.linkCandidates(prop).toSeq.sortBy(_.displayName)
       candidates map { candidate =>
         if(candidate.id == v.elem) {
           <option value={candidate.id.toString} selected="selected">{candidate.displayName}</option>        
