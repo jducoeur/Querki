@@ -12,7 +12,6 @@ POST    /doNewSpace                 controllers.Application.doNewSpace
 
 GET     /u/:userName/               controllers.Application.userByName(userName)
 GET     /u/:userName/:spaceId/      controllers.Application.space(userName, spaceId)
-GET     /u/:userName/:spaceId/things  controllers.Application.things(userName, spaceId)
 
 GET     /u/:userName/:spaceId/createThing controllers.Application.createThing(userName, spaceId, model:Option[String])
 GET     /u/:userName/:spaceId/createProperty controllers.Application.createProperty(userName, spaceId)

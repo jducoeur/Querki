@@ -173,7 +173,7 @@ object SystemSpace {
     SpaceState(systemOID, RootOID,
       toProps(
         setName("System"),
-        DisplayTextProp("[[_allThings]]")), SystemUserOID, "System", None, SystemTypes.all, props, things, SystemCollections.all)    
+        DisplayTextProp("[[All Things]]")), SystemUserOID, "System", None, SystemTypes.all, props, things, SystemCollections.all)    
   }
   
   // Note the intentional implication here: trying to access State before init has been

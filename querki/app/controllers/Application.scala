@@ -193,10 +193,6 @@ disallow: /
     Ok(views.html.thing(rc))
   }
   
-  def things(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId) { implicit rc =>
-    Ok(views.html.things(rc))
-  }
-  
   def thing(ownerId:String, spaceId:String, thingId:String) = withThing(false, ownerId, spaceId, thingId) { implicit rc =>
     Ok(views.html.thing(rc))
   }

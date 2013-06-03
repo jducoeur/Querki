@@ -83,7 +83,8 @@ object DisplayThingTree extends ThingState(DisplayThingTreeOID, systemOID, RootO
 
 object AllThings extends ThingState(AllThingsOID, systemOID, RootOID,
     toProps(
-      setName("_allThings"),
+      setName("All Things"),
+      DisplayTextProp("[[All Things]]"),
       ApplyMethod("""""{{_thingTree:
 [[_space ->
   _externalRoots ->
