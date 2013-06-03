@@ -181,11 +181,9 @@ The QL expression given in here must product a List of Links to Persons.
         DisplayTextProp("""
 **Subject**: [[Email Subject]]
 
-**To**: 
-[[Recipients -> ""* ____ - [[Email Address -> ""Email address known""]]""]]
+**To**: [[Recipients -> _sort -> _join(""; "")]]
             
-**Already Sent To**:
-[[Sent To -> ""* ____ - [[Email Address -> ""Email address known""]]""]]
+**Already Sent To**: [[Sent To -> _sort ->  _join(""; "")]]
 
 **Body**:
 [[Email Body]]
