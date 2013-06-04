@@ -574,6 +574,19 @@ object ChildrenMethod extends SingleThingMethod(ChildrenMethodOID, "_children", 
 object IsModelMethod extends SingleThingMethod(IsModelMethodOID, "_isModel", "This produces Yes if the received Thing is a Model.",
 { (thing, context) => TypedValue(ExactlyOne(thing.isModel(context.state)), YesNoType) })
 
+// TODO: this is so full of abstraction breaks it isn't funny. Using routes here is inappropriate; indeed, the fact that we're referring
+// to Play at all in this level is inappropriate. This probably needs to be routed through the rendering system, so that it takes the
+// current rendering environment and produces a relative control appropriate within it. But it'll do for the short term.
+import controllers.routes
+object CreateInstanceLinkMethod extends SingleThingMethod(CreateInstanceLinkOID, "_createInstanceLink", "Given a received Model, this produces a Link to create an instance of that Model.",
+{ (thing, context) => 
+  implicit val req = context.request.request
+  TypedValue(
+    ExactlyOne(
+      ExternalLinkType(routes.Application.createThing(context.request.ownerId.toThingId, context.state.toThingId, Some(thing.toThingId)).absoluteURL())), 
+    ExternalLinkType)
+})
+
 // TODO: this will become clearer and easier to use once we introduce block-syntax parameters.
 object IfMethod extends InternalMethod(IfMethodOID,
     toProps(

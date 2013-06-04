@@ -74,7 +74,7 @@ object Bulleted extends ThingState(BulletedOID, systemOID, RootOID,
 object DisplayThingTree extends ThingState(DisplayThingTreeOID, systemOID, RootOID,
     toProps(
       setName("_displayThingTree"),
-      ApplyMethod("""""[[_if(_isModel, ""{{_modelInTree:"")]]____[[_if(_isModel, ""}}"")]]
+      ApplyMethod("""""[[_if(_isModel, ""{{_modelInTree:"")]]____[[_if(_isModel, ""}} [[_createInstanceLink -> _iconButton(""ui-icon-circle-plus"", ""Create an Instance"")]]"")]]
 {{indent:[[_children -> 
   _sort -> 
   _displayThingTree]]

@@ -36,7 +36,16 @@
 .buttonset .ui-helper-hidden-accessible {
   display: none;
 }
-	    
+
+/*
+ * jQuery, by default, generates preposterously large icon buttons, despite the fact that the
+ * icons themselves are only 16 x 16. So we'll simply slam our icon buttons to the size we want.
+ */
+._iconButton {
+   width: 20px !important;
+   height: 20px !important;
+   padding: 0px !important;
+}
 
 /*
  * Styles used in major Querki screens.
@@ -53,4 +62,5 @@
 ._modelInTree {
   font-weight: bold;
   font-size: larger;
+  line-height: 24px;
 }
