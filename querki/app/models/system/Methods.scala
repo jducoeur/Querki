@@ -405,7 +405,7 @@ hover text to display as a tooltip.""")))
   val numParams = 2
   
   def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem = {
-    <a class="_iconButton btn-mini" href={url} data-icon={params(0).raw}>{params(1).raw}</a>
+    <a class="_iconButton" href={url} data-icon={params(0).raw}>{params(1).raw}</a>
   }
 }
 

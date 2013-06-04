@@ -42,8 +42,8 @@
  * icons themselves are only 16 x 16. So we'll simply slam our icon buttons to the size we want.
  */
 ._iconButton {
-   width: 20px !important;
-   height: 20px !important;
+   width: 16px !important;
+   height: 16px !important;
    padding: 0px !important;
 }
 
@@ -63,4 +63,5 @@
   font-weight: bold;
   font-size: larger;
   line-height: 24px;
+  vertical-align: middle;
 }
