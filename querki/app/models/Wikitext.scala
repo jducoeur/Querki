@@ -17,6 +17,14 @@ object DisplayText {
 }
 
 trait Wikitext {
+  
+  def transform(builder: => Transformer)(str:String):String = {
+    val transformer = builder
+    transformer(str)
+  }
+  def transformDisplay = transform(new QuerkiTransformer) _
+  def transformRaw = transform(new RawTransformer) _
+  
   def display:DisplayText
   
   /**
@@ -26,11 +34,33 @@ trait Wikitext {
   def raw:DisplayText
   
   /**
+   * This should only be used internally, never to display to the user!
+   * 
+   * We do simple substitutions here, that aren't worth coding into the wikitext engine
+   * itself.
+   * 
+   * Octal 266 is Hex 182, aka the paragraph character. Enter on the numeric keypad as
+   * Alt-0182.
+   */
+  def internal:String
+  
+  /**
+   * Subclasses need to be clear about this. Iff this is set, then we preserve the exact content of
+   * this wikitext node, instead of passing it through Wikitexting.
+   */
+  def keepRaw:Boolean
+  
+  /**
    * This is the nearly raw, unprocessed text. It should only be used when we are *not* sending
    * to an HTML environment -- generally, when you want to process a text field for QL but not
    * for QText. Note that this does no XML escaping!
    */
   def plaintext:String
+  
+  /**
+   * Used to build composite wikitexts from smaller ones.
+   */
+  def contents:Seq[Wikitext] = Seq(this)
   
   /**
    * Wikitext can be concatenated just like strings.
@@ -39,18 +69,11 @@ trait Wikitext {
 }
 
 case class QWikitext(wiki:String) extends Wikitext {
-  def display = {
-    val transformer = new QuerkiTransformer()
-    DisplayText(transformer(internal))
-  }
-  /**
-   * Produces the "raw" string, with minimal markup. Use this for situations where you
-   * don't want to allow much Wikitext, such as display names.
-   */
-  def raw = {
-    val transformer = new RawTransformer()
-    DisplayText(transformer(internal))
-  }
+  val keepRaw = false
+  
+  def display = DisplayText(transformDisplay(internal))
+  def raw = DisplayText(transformRaw(internal))
+  
   /**
    * This should only be used internally, never to display to the user!
    * 
@@ -68,15 +91,6 @@ case class QWikitext(wiki:String) extends Wikitext {
    * for QText. Note that this does no XML escaping!
    */
   def plaintext = internal
-  
-  /**
-   * When we combine two QWikitexts, we want to actually build them into a new object with a
-   * combined string, so that the QText parser has everything to work with.
-   */
-  override def +(other:Wikitext, insertNewline:Boolean) = other match {
-    case QWikitext(otherGuts) => QWikitext(internal + (if (insertNewline) "\n" else "") + otherGuts)
-    case _ => CompositeWikitext(this, other, insertNewline)
-  } 
 }
 
 /**
@@ -87,28 +101,54 @@ case class HtmlWikitext(html:Html) extends Wikitext {
   private def str = html.toString
   def display = DisplayText(str)
   def raw = DisplayText(str)
+  def internal = html.toString
   def plaintext = str
+  val keepRaw = true
 }
 
 case class CompositeWikitext(left:Wikitext, right:Wikitext, insertNewline:Boolean) extends Wikitext {
-  def display = left.display + right.display
-  def raw = left.raw + right.raw
-  def plaintext = left.plaintext + right.plaintext
   
-  // Icky! We need to keep adding QWikitexts together properly after this composite, though.
-  // TODO: this whole mechanism is pretty flawed, and needs to be replaced.
-  override def +(other:Wikitext, insertNewline:Boolean) = other match {
-    case QWikitext(otherGuts) => right match {
-      case _:QWikitext => CompositeWikitext(left, right + other, insertNewline)
-      case _ => CompositeWikitext(this, other, insertNewline)
+  /**
+   * The flattened contents of all the Wikitexts that built this up. This winds up as a flat sequence of
+   * QWikitexts and HtmlWikitexts.
+   */
+  override def contents:Seq[Wikitext] = {
+    (left.contents :+ (if (insertNewline) Wikitext.nl else Wikitext.empty)) ++ right.contents
+  }
+  
+  case class ProcessState(str:String, map:Map[Int, Wikitext])
+  
+  def process(processor:String => String):String = {
+    val indexedContents = contents.zipWithIndex
+    // To begin with, we process everything where keepRaw == false, and replace the keepRaw == true...
+    val ProcessState(builtStr, substitutionMap) = (ProcessState("", Map.empty[Int, Wikitext]) /: indexedContents) { (state, textAndIndex) =>
+      val (text, index) = textAndIndex
+      if (text.keepRaw)
+        ProcessState(state.str + "(-+" + index + "+-)", state.map + (index -> text))
+      else
+        ProcessState(state.str + text.internal, state.map)
     }
-    case _ => CompositeWikitext(this, other, insertNewline)
-  } 
+    val processedStr = processor(builtStr)
+    // ... and now we substitute in the keepRaw == true entries:
+    val result = (processedStr /: substitutionMap) { (str, entry) =>
+      val (index, text) = entry
+      str.replaceAllLiterally("(-+" + index + "+-)", text.internal)
+    }
+    result
+  }
+  
+  def display = DisplayText(process(transformDisplay))
+  def raw = DisplayText(process(transformRaw))
+  def plaintext = process(str => str)
+  def internal = throw new Exception("Nothing should be calling CompositeWikitext.internal!")
+  
+  val keepRaw = false
 }
 
 object Wikitext {
   def apply(str:String):Wikitext = new QWikitext(str)
   val empty = Wikitext("")
+  val nl = Wikitext("\n")
 }
 
 class QuerkiTransformer extends Transformer with Decorator {

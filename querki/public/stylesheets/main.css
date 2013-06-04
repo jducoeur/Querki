@@ -20,6 +20,25 @@
 }
 
 /*
+ * Buttonset hack.
+ *
+ * There are well-known horrible conflicts between jQuery UI and Bootstrap. One of them causes
+ * a buttonset in a span (which is how we prefer to show optional YesNo buttons) to break, showing
+ * one button per line.
+ *
+ * I haven't yet nailed down the root cause, but the fact that .ui-helper-hidden-accessible is set
+ * to position: absolute has something to do with it. So we do this instead. It's a tad dangerous,
+ * and may break accessibility for these buttons, but for now we'll cope. Note that we're being
+ * deliberately minimalist here, and only making this change inside our buttonsets.
+ *
+ * TODO: revisit this, and figure out how to make the display not suck while being accessible.
+ */
+.buttonset .ui-helper-hidden-accessible {
+  display: none;
+}
+	    
+
+/*
  * Styles used in major Querki screens.
  */
  

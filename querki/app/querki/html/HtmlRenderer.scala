@@ -53,10 +53,12 @@ object HtmlRenderer {
    *********************************/
   
   def addEditorAttributes(elem:Elem, name:String, prop:String, id:String, thingOpt:Option[String]):Elem = {
+    val mergedClasses = elem.attribute("class").map(_ :+ Text(" propEditor")).getOrElse(Text("propEditor"))
+    
     val xml2 = elem %
     	Attribute("name", Text(name),
     	Attribute("data-prop", Text(prop),
-    	Attribute("class", Text("propEditor"),
+    	Attribute("class", mergedClasses,
     	Attribute("id", Text(id), Null))))
     val xml3 = thingOpt match {
       case Some(thing) => xml2 % Attribute("data-thing", Text(thing), Null)
@@ -94,13 +96,7 @@ object HtmlRenderer {
       addEditorAttributes(inputElem, name, prop.id.toThingId, id, currentValue.on.map(_.id.toThingId)) ++ <label for={id}>{label}</label>
     }
     
-    <div>
-      <div class="buttonset">
-        {oneButton("Yes", "true", (isSet && v))}
-        {oneButton("Maybe", "maybe", (!isSet))}
-        {oneButton("No", "false", (isSet && !v))}      
-      </div>
-    </div>
+      <span class="buttonset">{oneButton("Yes", "true", (isSet && v))}{oneButton("Maybe", "maybe", (!isSet))}{oneButton("No", "false", (isSet && !v))}</span>
   }
   
   def renderOptLink(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Elem = {
