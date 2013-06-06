@@ -28,7 +28,7 @@ trait PropValue {
   
   def serialize(elemT:pType):String = coll.doSerialize(cv, elemT)
   def first = coll.first(this)
-  def firstTyped[VT](elemT:PType[VT]) = elemT.get(first)
+  def firstTyped[VT](elemT:PType[VT]):Option[VT] = if (isEmpty) None else Some(elemT.get(first))
   def render(context:ContextBase, elemT:pType):Wikitext = coll.doRender(context)(cv, elemT)
   
   def isEmpty = coll.isEmpty(this)

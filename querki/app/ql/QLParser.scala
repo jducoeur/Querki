@@ -44,7 +44,7 @@ case class TypedValue(v:PropValue, pt:PType[_], cut:Boolean = false) {
   
   def firstTyped[VT](expectedType:PType[VT]):Option[VT] = {
     if (expectedType == pt) {
-      Some(v.firstTyped(expectedType))
+      v.firstTyped(expectedType)
     } else
       None
   }

@@ -518,7 +518,7 @@ That gets applied to each element of RECEIVED; if FILTER returns Yes, then it is
     def tryElem(parser:QLParser, phrase:QLPhrase)(elem:ContextBase):Option[ElemValue] = {
       val passesYesNo = parser.processPhrase(phrase.ops, elem).value
       for (bool <- passesYesNo.firstTyped(YesNoType) if (bool)) yield elem.value.v.first
-     }
+    }
     
     val result = for
     (

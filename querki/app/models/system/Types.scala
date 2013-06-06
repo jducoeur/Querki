@@ -215,7 +215,7 @@ object QLType extends QLType(QLTypeOID)
     
     def toBoolean(typed:TypedValue):Boolean = {
       typed match {
-        case TypedValue(propVal, YesNoType, _) => propVal.firstTyped(YesNoType)
+        case TypedValue(propVal, YesNoType, _) => propVal.firstTyped(YesNoType).getOrElse(false)
         case _ => false
       }
     }
