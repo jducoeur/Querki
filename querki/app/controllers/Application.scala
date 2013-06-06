@@ -229,7 +229,7 @@ disallow: /
     // TODO: sort alphabetically
     
     // Now, filter out ones that aren't applicable to the target Kind:
-    candidates filter { candidate =>
+    val propsToShow = candidates filter { candidate =>
       // TODO: this pattern -- "if this QList property exists, then do something to each value" -- seems
       // common. Find the right factoring for it:
       if (candidate.hasProp(AppliesToKindProp)) {
@@ -239,6 +239,8 @@ disallow: /
         true
       }
     }
+    
+    propsToShow.sortBy(_.displayName)
   }
 
   def otherModels(state:SpaceState, mainModel:Thing):Iterable[Thing] = {
