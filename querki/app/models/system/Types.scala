@@ -240,7 +240,7 @@ object QLType extends QLType(QLTypeOID)
     override protected def doFromUser(v:String):String = {
       if (v.length() == 0)
         throw new Exception("Names must have non-zero length")
-      else if (v.exists(c => !c.isLetterOrDigit && c != '-' && c != ' '))
+      else if (v.exists(c => !c.isLetterOrDigit && c != '-' && c != ' ' && c != '/'))
         throw new Exception("Names may only contain letters, digits, dashes and spaces")
       else
         toDisplay(v)

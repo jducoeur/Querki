@@ -16,18 +16,21 @@ GET     /u/:userName/:spaceId/      controllers.Application.space(userName, spac
 GET     /u/:userName/:spaceId/createThing controllers.Application.createThing(userName, spaceId, model:Option[String])
 GET     /u/:userName/:spaceId/createProperty controllers.Application.createProperty(userName, spaceId)
 POST    /u/:userName/:spaceId/createThing controllers.Application.doCreateThing(userName, spaceId, subCreate:Option[Boolean])
-POST    /u/:userName/:spaceId/:thingId/setProperty controllers.Application.setProperty(userName, spaceId, thingId, propId, newVal)
+POST    /u/:userName/:spaceId/setProperty controllers.Application.setProperty(userName, spaceId, thingId, propId, newVal)
+
+GET     /u/:userName/:spaceId/edit controllers.Application.editThing(userName, spaceId, thingId)
+POST    /u/:userName/:spaceId/edit controllers.Application.doEditThing(userName, spaceId, thingId)
 
 GET     /u/:userName/:spaceId/upload      controllers.Application.upload(userName, spaceId)
 POST    /u/:userName/:spaceId/upload      controllers.Application.doUpload(userName, spaceId)
 
+GET     /u/:userName/:spaceId/export controllers.Application.exportThing(userName, spaceId, thingId)
+
 GET     /u/:userName/:spaceId/a/:attachmentId controllers.Application.attachment(userName, spaceId, attachmentId)
 
-GET     /u/:userName/:spaceId/:thingId    controllers.Application.thing(userName, spaceId, thingId)
-GET     /u/:userName/:spaceId/:thingId/edit controllers.Application.editThing(userName, spaceId, thingId)
-POST    /u/:userName/:spaceId/:thingId/edit controllers.Application.doEditThing(userName, spaceId, thingId)
+# Note that Things can have slashes in their names!
+GET     /u/:userName/:spaceId/*thingId    controllers.Application.thing(userName, spaceId, thingId)
 
-GET     /u/:userName/:spaceId/:thingId/export controllers.Application.exportThing(userName, spaceId, thingId)
 
 POST    /dologin                    controllers.Application.dologin
 GET     /logout                     controllers.Application.logout

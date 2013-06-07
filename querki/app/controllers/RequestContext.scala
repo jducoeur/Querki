@@ -6,6 +6,17 @@ import models._
 import language.implicitConversions
 import identity.User
 
+class RequestHeaderParser(request:RequestHeader) {
+  def hasQueryParam(paramName:String) = request.queryString.contains(paramName)
+  def queryParam(paramName:String):Seq[String] = if (hasQueryParam(paramName)) request.queryString(paramName) else Seq.empty
+  def firstQueryParam(paramName:String):Option[String] = {
+    val seq = queryParam(paramName)
+    if (seq.isEmpty) None else Some(seq.head)
+  }
+  def paramIs(paramName:String, value:String) = hasQueryParam(paramName) && firstQueryParam(paramName).map(_ == value).getOrElse(false)
+  def isTrue(paramName:String) = paramIs(paramName, "true")  
+}
+
 /**
  * As Querki gets more complex, we're passing larger and larger bundles of information around.
  * So instead of trying to do that all in separate parameters, we're taking all the common
@@ -30,19 +41,11 @@ case class RequestContext(
     state:Option[SpaceState], 
     thing:Option[Thing],
     error:Option[String] = None,
-    sessionUpdates:Seq[(String,String)] = Seq.empty) {
+    sessionUpdates:Seq[(String,String)] = Seq.empty) extends RequestHeaderParser(request) {
   def requesterOrAnon = requester getOrElse User.Anonymous
   def requesterOID = requester map (_.id) getOrElse UnknownOID  
   def ownerName = state map Application.ownerName getOrElse ""
   
-  def hasQueryParam(paramName:String) = request.queryString.contains(paramName)
-  def queryParam(paramName:String):Seq[String] = if (hasQueryParam(paramName)) request.queryString(paramName) else Seq.empty
-  def firstQueryParam(paramName:String):Option[String] = {
-    val seq = queryParam(paramName)
-    if (seq.isEmpty) None else Some(seq.head)
-  }
-  def paramIs(paramName:String, value:String) = hasQueryParam(paramName) && firstQueryParam(paramName).map(_ == value).getOrElse(false)
-  def isTrue(paramName:String) = paramIs(paramName, "true")
   
   val chromelessName = "cl"
   def turningOn(name:String):Boolean = paramIs(name, "on")
