@@ -244,11 +244,17 @@ case class SpaceState(
     // Now, if they've specified a particular Model to be the limit of the candidate
     // tree -- essentially, they've specified what type you can link to -- filter for
     // that:
-    if (prop.hasProp(LinkModelProp)) {
+    val filteredByModel = if (prop.hasProp(LinkModelProp)) {
       val limit = prop.first(LinkModelProp)
       allCandidates filter (_.isAncestor(limit))
     } else {
       allCandidates
+    }
+    
+    if (prop.ifSet(LinkToModelsOnlyProp)) {
+      filteredByModel filter (_.isModel)
+    } else {
+      filteredByModel
     }
   }
   

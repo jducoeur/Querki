@@ -106,6 +106,7 @@ object OIDs {
   val AllThingsOID = sysId(67)
   val IconButtonOID = sysId(68)
   val CreateInstanceLinkOID = sysId(69)
+  val LinkToModelsOnlyOID = sysId(70)
 }
 
 /**
@@ -160,7 +161,8 @@ object SystemSpace {
       IfMethod,
       JoinMethod,
       IconButtonMethod,
-      CreateInstanceLinkMethod)
+      CreateInstanceLinkMethod,
+      LinkToModelsOnlyProp)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, DisplayThingTree, AllThings)

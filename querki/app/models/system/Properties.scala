@@ -151,8 +151,21 @@ say exactly what it can link *to*.
 Note that this is only enforced loosely, and you can't absolutely count upon this restriction
 always being true. But used properly, it will steer folks in the right direction.
 """),
-      AppliesToKindProp(Kind.Property)
+      AppliesToKindProp(Kind.Property),
+      LinkToModelsOnlyProp(true)
       ))
+
+// TODO: As it says, replace this with a more general Link Filter property. That will need bigger
+// refactorings, though: I started to build that, only to discover that SpaceState.linkCandidates
+// doesn't have all the request-context information needed to resolve a QL Expression.
+object LinkToModelsOnlyProp extends SystemProperty(LinkToModelsOnlyOID, YesNoType, ExactlyOne,
+    toProps(
+      setName("Link to Models Only"),
+      DisplayTextProp("""If set to true, this Link Property will only show Models as options to link to in the editor.
+          
+This is an advanced property, and something of a hack -- don't get too comfortable with it. In the medium term,
+it should get replaced by a more general LinkFilter property that lets you specify which Things to link to.
+          """)))
 
 object AppliesToKindProp extends SystemProperty(AppliesToKindOID, IntType, QList,
     toProps(
