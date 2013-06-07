@@ -19,7 +19,7 @@
 @isEdit = @{ thing.isDefined }
 @isCreate = @{ !isEdit }
 
-@isSubCreate = @{ rc.hasQueryParam("subCreate") }
+@isSubCreate = @{ rc.isTrue("subCreate") }
 
 @showInputControl(prop:Property[_,_], v:DisplayPropVal, i:Int) = {
   @HtmlRenderer.renderPropertyInput(space, prop, v)
@@ -164,7 +164,7 @@
           var list = $(this).parent().find("ul").first();
           var sizeField = viaField($(this), "size");
           var curSize = Number(sizeField.val());
-          var newField = templateField.clone();
+          var newField = templateField.clone(true);
           newField.attr("name", templateField.data("basename") + "[" + curSize + "]");
           newField.removeClass("inputTemplate");
           newField.show();
@@ -214,7 +214,7 @@
         var optionSelected = $("option:selected", this);
         if (optionSelected.hasClass("_createNewFromModel")) {
           var modelId = optionSelected.data("model");
-          $("#create-instance-iframe").attr("src", "@routes.Application.createThing(rc.ownerName, space.toThingId, None)" + "?cl&subCreate&model=" + modelId)
+          $("#create-instance-iframe").attr("src", "@routes.Application.createThing(rc.ownerName, space.toThingId, None)" + "?cl&subCreate=true&model=" + modelId)
 		  $("#create-instance-dialog").dialog("open");
 		  return false;          
         } 

@@ -189,10 +189,10 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     // Rationalize the two, to eliminate all the duplication. In theory, the concept and structure
     // belongs here, and the details belong there.
     def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
-      val inputTemplate = elemT.renderInput(prop, state, currentValue, elemT.default) %      
-    		  Attribute("class", Text("inputTemplate list-input-element"),
+      import querki.html.HtmlRenderer
+      val inputTemplate = HtmlRenderer.addClasses(elemT.renderInput(prop, state, currentValue, elemT.default), "inputTemplate list-input-element") %      
     		  Attribute("data-basename", Text(currentValue.collectionControlId + "-item"),
-    		  Null))
+    		  Null)
       <div class="coll-list-input">
         <ul id={currentValue.collectionControlId} class="sortableList">{
           if (currentValue.v.isDefined) {
@@ -200,11 +200,9 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
             cv.zipWithIndex.map { pair =>
               val (elemV, i) = pair
               val simplyRendered = elemT.renderInput(prop, state, currentValue, elemV)
-              val mergedClasses = simplyRendered.attribute("class").map(_ :+ Text(" list-input-element")).getOrElse(Text("list-input-element"))
-              val itemRendered = simplyRendered %
-                Attribute("class", mergedClasses,
+              val itemRendered = HtmlRenderer.addClasses(simplyRendered, "list-input-element") %
               	Attribute("id", Text(currentValue.collectionControlId + "-item[" + i + "]"), 
-              	Attribute("name", Text(currentValue.collectionControlId + "-item[" + i + "]"), Null)))
+              	Attribute("name", Text(currentValue.collectionControlId + "-item[" + i + "]"), Null))
               <li><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>{itemRendered}<button class="delete-item-button btn-mini">&nbsp;</button></li>
             }
           }

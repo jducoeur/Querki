@@ -52,14 +52,16 @@ object HtmlRenderer {
    * INTERNALS
    *********************************/
   
+  def addClasses(elem:Elem, addedClasses:String):Elem = {
+    val classAttr = elem.attribute("class").map(_ :+ Text(" " + addedClasses)).getOrElse(Text(addedClasses))
+    elem % Attribute("class", classAttr, Null)
+  }
+  
   def addEditorAttributes(elem:Elem, name:String, prop:String, id:String, thingOpt:Option[String]):Elem = {
-    val mergedClasses = elem.attribute("class").map(_ :+ Text(" propEditor")).getOrElse(Text("propEditor"))
-    
-    val xml2 = elem %
+    val xml2 = addClasses(elem, "propEditor") %
     	Attribute("name", Text(name),
     	Attribute("data-prop", Text(prop),
-    	Attribute("class", mergedClasses,
-    	Attribute("id", Text(id), Null))))
+    	Attribute("id", Text(id), Null)))
     val xml3 = thingOpt match {
       case Some(thing) => xml2 % Attribute("data-thing", Text(thing), Null)
       case None => xml2
