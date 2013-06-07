@@ -19,6 +19,8 @@
 @isEdit = @{ thing.isDefined }
 @isCreate = @{ !isEdit }
 
+@isSubCreate = @{ rc.hasQueryParam("subCreate") }
+
 @showInputControl(prop:Property[_,_], v:DisplayPropVal, i:Int) = {
   @HtmlRenderer.renderPropertyInput(space, prop, v)
 }
@@ -205,6 +207,23 @@
         var sortList = itemMoved.parent();
         renumberList(sortList);
       }
+       
+      var selectCreatingNew; 
+      function handleLinkSelectChanged(evt) {
+        selectCreatingNew = this;
+        var optionSelected = $("option:selected", this);
+        if (optionSelected.hasClass("_createNewFromModel")) {
+          var modelId = optionSelected.data("model");
+          $("#create-instance-iframe").attr("src", "@routes.Application.createThing(rc.ownerName, space.toThingId, None)" + "?cl&subCreate&model=" + modelId)
+		  $("#create-instance-dialog").dialog("open");
+		  return false;          
+        } 
+      }
+      
+      function onLinkCreated(newThingId, newDisplayName) {
+        $(selectCreatingNew).append('<option value="' + newThingId + '" selected="selected">' + newDisplayName + '</option>');
+        $("#create-instance-dialog").dialog("close");
+      }
     
       $(function() {
         $(".edit-button").editButton();
@@ -221,14 +240,37 @@
           $("#makeAnother").val("true");
           return true;
         });
+        
+        $("._linkSelect").change(handleLinkSelectChanged);
+		$("#create-instance-dialog").dialog({
+		    autoOpen:false,
+		    height: 800,
+		    width: 700,
+			modal: true,
+			buttons: {
+		      "Cancel": function () {
+			    $(this).dialog("close");
+			  }
+			},
+			close: function () {
+			}
+		});
       });
     </script>
-		
+    
+    <div id="create-instance-dialog" title="">
+      <iframe id="create-instance-iframe" src="" style="width: 95%; height: 95%"></iframe>
+    </div>
+    
 	<div class="page-header">
 	    <h1>@pageTitle</h1>
 	</div>
 	
-	@form(if (thing.isEmpty) { routes.Application.doCreateThing(rc.ownerName, space.toThingId) } else { routes.Application.doEditThing(rc.ownerName, space.toThingId, thing.get.toThingId) }, 'class -> "form-horizontal") {
+	@form(if (thing.isEmpty) { 
+	        routes.Application.doCreateThing(rc.ownerName, space.toThingId, Some(isSubCreate))
+	      } else { 
+	        routes.Application.doEditThing(rc.ownerName, space.toThingId, thing.get.toThingId) 
+	      }, 'class -> "form-horizontal") {
 	  <fieldset>
 	    <input type="hidden" name="model" value="@model.id.toString">
 	    
@@ -256,7 +298,7 @@
 	    <div class="control-group">
 	      <div class="controls">
 	        <input id="mainSubmit" type="submit" value="Done" class="btn btn-primary">
-	        @if(isCreate) {
+	        @if(isCreate && !isSubCreate) {
 	          <input id="submitAndAnother" type="submit" value="Done and Create Another" class="btn">
 	        }
 	      </div>

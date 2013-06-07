@@ -42,6 +42,7 @@ case class RequestContext(
     if (seq.isEmpty) None else Some(seq.head)
   }
   def paramIs(paramName:String, value:String) = hasQueryParam(paramName) && firstQueryParam(paramName).map(_ == value).getOrElse(false)
+  def isTrue(paramName:String) = paramIs(paramName, "true")
   
   val chromelessName = "cl"
   def turningOn(name:String):Boolean = paramIs(name, "on")

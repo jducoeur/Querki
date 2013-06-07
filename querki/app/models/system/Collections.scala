@@ -199,8 +199,10 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
             val cv = currentValue.v.get.cv
             cv.zipWithIndex.map { pair =>
               val (elemV, i) = pair
-              val itemRendered = elemT.renderInput(prop, state, currentValue, elemV) %
-                Attribute("class", Text("list-input-element"),
+              val simplyRendered = elemT.renderInput(prop, state, currentValue, elemV)
+              val mergedClasses = simplyRendered.attribute("class").map(_ :+ Text(" list-input-element")).getOrElse(Text("list-input-element"))
+              val itemRendered = simplyRendered %
+                Attribute("class", mergedClasses,
               	Attribute("id", Text(currentValue.collectionControlId + "-item[" + i + "]"), 
               	Attribute("name", Text(currentValue.collectionControlId + "-item[" + i + "]"), Null)))
               <li><span class="ui-icon ui-icon-arrowthick-2-n-s"></span>{itemRendered}<button class="delete-item-button btn-mini">&nbsp;</button></li>

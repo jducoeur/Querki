@@ -1,0 +1,16 @@
+@(rc:RequestContext, newThing:Thing)
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Created @newThing.displayName</title>
+        
+        <script>
+          window.parent.onLinkCreated("@newThing.id", "@newThing.displayName");
+        </script>
+    </head>
+    
+    <body>
+    
+    </body>
+</html>

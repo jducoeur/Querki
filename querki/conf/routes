@@ -15,7 +15,7 @@ GET     /u/:userName/:spaceId/      controllers.Application.space(userName, spac
 
 GET     /u/:userName/:spaceId/createThing controllers.Application.createThing(userName, spaceId, model:Option[String])
 GET     /u/:userName/:spaceId/createProperty controllers.Application.createProperty(userName, spaceId)
-POST    /u/:userName/:spaceId/createThing controllers.Application.doCreateThing(userName, spaceId)
+POST    /u/:userName/:spaceId/createThing controllers.Application.doCreateThing(userName, spaceId, subCreate:Option[Boolean])
 POST    /u/:userName/:spaceId/:thingId/setProperty controllers.Application.setProperty(userName, spaceId, thingId, propId, newVal)
 
 GET     /u/:userName/:spaceId/upload      controllers.Application.upload(userName, spaceId)

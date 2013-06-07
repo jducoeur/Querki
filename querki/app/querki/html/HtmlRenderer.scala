@@ -105,7 +105,7 @@ object HtmlRenderer {
     val isSet = pair._1
     val v = pType.get(pair._2)
     
-    val results = <select> 
+    val results = <select class="_linkSelect"> 
       <option value={UnknownOID.id.toString}>Nothing selected</option>
       {
       LinkType.renderInputXmlGuts(prop, state, currentValue, ElemValue(v))

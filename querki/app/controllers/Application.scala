@@ -301,7 +301,7 @@ disallow: /
         PropList.inheritedProps(None, UrProp)(rc.state.get))
   }
   
-  def doCreateThing(ownerId:String, spaceId:String) = editThingInternal(ownerId, spaceId, None)
+  def doCreateThing(ownerId:String, spaceId:String, subCreate:Option[Boolean]) = editThingInternal(ownerId, spaceId, None)
   
   def editThingInternal(ownerId:String, spaceId:String, thingIdStr:Option[String]) = withSpace(true, ownerId, spaceId, thingIdStr) { implicit rc =>
     implicit val request = rc.request
@@ -395,7 +395,9 @@ disallow: /
                 val thing = newState.anything(thingId).get
                 if (makeAnother)
                   showEditPage(rc.copy(state = Some(newState)), oldModel, PropList.inheritedProps(None, oldModel)(newState))
-                else
+                else if (rc.isTrue("subCreate")) {
+                  Ok(views.html.subCreate(rc, thing));
+                } else
                   Redirect(routes.Application.thing(ownerName(newState), newState.toThingId, thing.toThingId))
               }
               case ThingFailed(msg) => {
