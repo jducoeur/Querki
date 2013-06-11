@@ -112,6 +112,7 @@ object OIDs {
   val ShowUnknownOID = sysId(73)
   val TagsForPropertyOID = sysId(74)
   val SelfMethodOID = sysId(75)
+  val PropsOfTypeOID = sysId(76)
 }
 
 /**
@@ -171,7 +172,8 @@ object SystemSpace {
       TagRefsMethod,
       ShowUnknownProp,
       TagsForPropertyMethod,
-      SelfMethod)
+      SelfMethod,
+      PropsOfTypeMethod)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, DisplayThingTree, AllThings)
@@ -188,7 +190,17 @@ object SystemSpace {
     SpaceState(systemOID, RootOID,
       toProps(
         setName("System"),
-        DisplayTextProp("[[All Things]]"),
+        DisplayTextProp("""### Things in [[Display Name]]
+[[All Things]]
+            
+[[Tag Set -> 
+  _propsOfType ->
+  _sort ->
+  _section(
+    ""### Tags"", 
+    ""**____**: [[_tagsForProperty -> _sort -> _join("", "")]]
+"")]]
+"""),
         ShowUnknownProp(TagThing.defaultDisplayText)), 
       SystemUserOID, "System", None, SystemTypes.all, props, things, SystemCollections.all)    
   }

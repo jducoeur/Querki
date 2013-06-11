@@ -556,12 +556,20 @@ With no parameters, _sort sorts the elements of the received List alphabetically
 """)))
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+    // TODO: there is obviously a refactoring screaming to break free here, but it involves some fancy
+    // type math. How do we lift things so that we can do QList.from() an arbitrary PType? (Remember that
+    // it expects a PTypeBuilder, *and* requires that the input Iterable be of the expected RT.)
     context.value.pt match {
       case LinkType => {
         val start = context.value.v.cv.toSeq
         val asThings = start.map(elemV => context.state.anything(LinkType.get(elemV))).flatten
         val sortedOIDs = asThings.sortWith((left, right) => left.displayName < right.displayName).map(_.id)
         TypedValue(QList.from(sortedOIDs, LinkType), LinkType)
+      }
+      case TagSetType => {
+        val names = context.value.v.rawList(TagSetType)
+        val sorted = names.sorted
+        TypedValue(QList.from(sorted, TagSetType), TagSetType)
       }
       case _ => WarningValue("_sort can only currently be applied to Links.")
     }
@@ -732,3 +740,11 @@ of the property on the received Thing.""")))
     partialContext.value
   }
 }
+
+object PropsOfTypeMethod extends SingleThingMethod(PropsOfTypeOID, "_propsOfType", "This receives a Type, and produces all of the Properties in this Space with that Type",
+{ (thing, context) =>
+  thing match {
+    case pt:PType[_] => TypedValue(QList.from(context.state.propsOfType(pt), LinkFromThingBuilder), LinkType)
+    case _ => WarningValue("_propsOfType can only be used on a Type")
+  }
+})

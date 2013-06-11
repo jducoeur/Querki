@@ -299,6 +299,15 @@ abstract class Thing(
   }
   
   /**
+   * Show the default rendering for this Thing, if it has no DisplayTextProp defined.
+   * 
+   * This mainly exists so that the different Kinds can override it and do their own thing.
+   */
+  def renderDefault(implicit request:RequestContext):Wikitext = {
+    renderProps(request)
+  }
+  
+  /**
    * Every Thing can be rendered -- this returns a Wikitext string that will then be
    * displayed in-page.
    * 
@@ -310,7 +319,7 @@ abstract class Thing(
   def render(implicit request:RequestContext, prop:Option[Property[_,_]] = None):Wikitext = {
     implicit val state = request.state.get
     val opt = getPropOpt(prop.getOrElse(DisplayTextProp))
-    opt.map(pv => pv.render(thisAsContext)).getOrElse(renderProps)
+    opt.map(pv => pv.render(thisAsContext)).getOrElse(renderDefault)
   }
   
   /**

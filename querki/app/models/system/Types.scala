@@ -275,7 +275,13 @@ object QLType extends QLType(QLTypeOID)
       // Conceptually, toInternal isn't quite right here. We're using it instead of AsName
       // mostly because we want to preserve the *case* of the Tag:
       Wikitext("[" + v + "](" + toInternal(v) + ")")
-    }    
+    }
+    
+    override def renderProperty(prop:Property[_,_])(implicit request:controllers.RequestContext):Option[Wikitext] = {
+      val parser = new ql.QLParser(QLText("""These tags are currently being used:
+[[_tagsForProperty -> _sort -> _bulleted]]"""), prop.thisAsContext)
+      Some(parser.process)
+    }
   }
   
   /**

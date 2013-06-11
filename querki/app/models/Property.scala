@@ -37,11 +37,22 @@ case class Property[VT, -RT](
   override lazy val props:PropMap = propFetcher() + 
 		  CollectionProp(cType) +
 		  TypeProp(pType)
-  
+
+  /**
+   * This renders a provided value of this Property.
+   */
   def render(context:ContextBase)(v:PropValue) = {
     v.render(context, pType)
   }
   def renderedDefault = render(EmptyContext)(default)
+  
+  /**
+   * This renders the Property itself, if it has no DisplayText defined.
+   */
+  override def renderDefault(implicit request:controllers.RequestContext):Wikitext = {
+    val fromType = pType.renderProperty(this)
+    fromType.getOrElse(renderProps)
+  }
   
   def from(m:PropMap):PropValue = castVal(m(this))
   def fromOpt(m:PropMap):Option[PropValue] = m.get(this.id) map castVal

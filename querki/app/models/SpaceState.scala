@@ -165,6 +165,10 @@ case class SpaceState(
     everythingLocal.filter(_.hasProp(prop.id)(this))
   }
   
+  def propsOfType(pt:PType[_]):Iterable[Property[_,_]] = {
+    spaceProps.values.filter(_.pType == pt)
+  }
+  
   /**
    * Returns all of the immediate children of this Thing.
    * 

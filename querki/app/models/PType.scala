@@ -129,6 +129,11 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * This is mostly intended for use with Type Aliases.
    */
   def requiredColl:Option[Collection] = None
+  
+  /**
+   * Types can override this to provide default renderings when you look at a Property of this Type.
+   */
+  def renderProperty(prop:Property[_,_])(implicit request:controllers.RequestContext):Option[Wikitext] = None
 }
 
 trait PTypeBuilder[VT, -RT] {
