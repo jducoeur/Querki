@@ -19,7 +19,10 @@ case class AsOID(oid:OID) extends ThingId {
   override def toString() = "." + oid.toString
 }
 case class AsName(name:String) extends ThingId {
-  override def toString() = NameType.canonicalize(name)
+  // We are currently using toUrl for this, *not* canonicalize, because we want to preserve case
+  // in the URL. This does, however, mean that you can't casually compare the toString'ed versions
+  // of two AsNames and assume that they are equal!
+  override def toString() = NameType.toUrl(name)
 }
 object UnknownThingId extends AsOID(UnknownOID)
 object ThingId {

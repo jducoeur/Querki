@@ -185,7 +185,7 @@ object SystemSpace {
       toProps(
         setName("System"),
         DisplayTextProp("[[All Things]]"),
-        ShowUnknownProp("[[_tagRefs -> _bulleted]]")), 
+        ShowUnknownProp(TagThing.defaultDisplayText)), 
       SystemUserOID, "System", None, SystemTypes.all, props, things, SystemCollections.all)    
   }
   

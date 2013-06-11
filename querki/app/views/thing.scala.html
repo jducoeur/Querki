@@ -1,4 +1,4 @@
-@(rc:RequestContext, unknownName:Option[String] = None)
+@(rc:RequestContext)
 
 @import play.api.Logger
 
@@ -9,13 +9,7 @@
     case None => space
   }
 }
-@title = @{
-  rc.thing match {
-    case Some(t) => t.displayName
-    case None => unknownName.map(models.system.NameType.toDisplay(_)).getOrElse(space.displayName)
-  }
-}
-@isUnknown = @{ unknownName.isDefined }
+@title = @{ thing.displayName }
 
 @main(QuerkiTemplate.Thing, title, rc, true) {
 
@@ -102,11 +96,7 @@
 	    </div>
 	    }
 	
-	    @if(isUnknown) {
-	      @Html(space.renderUnknownName(rc, unknownName.get).display)
-	    } else {
-	      @Html(thing.render(rc).display)
-	    }
+        @Html(thing.render(rc).display)
 	  
 	  </div>
 	}

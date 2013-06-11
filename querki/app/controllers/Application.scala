@@ -202,9 +202,12 @@ disallow: /
   
   def thing(ownerId:String, spaceId:String, thingId:String) = withThing(false, ownerId, spaceId, thingId, Some({ 
     case (ThingFailed(UnknownName, _, stateOpt), rc) => {
-      Ok(views.html.thing(rc, Some(thingId)))
+      // We didn't find the requested Thing, so display a TagThing for it instead:
+      val rcWithName = rc.copy(thing = Some(TagThing(thingId, stateOpt.get)))
+      Ok(views.html.thing(rcWithName))
     }
   })) { implicit rc =>
+    // rc now has all the interesting information copied into it:
     Ok(views.html.thing(rc))
   }
   
@@ -427,7 +430,18 @@ disallow: /
     )
   }
   
-  def editThing(ownerId:String, spaceId:String, thingIdStr:String) = withSpace(true, ownerId, spaceId, Some(thingIdStr)) { implicit rc =>
+  def editThing(ownerId:String, spaceId:String, thingIdStr:String) = withSpace(true, ownerId, spaceId, Some(thingIdStr), Some({ 
+    case (ThingFailed(UnknownName, _, stateOpt), rc) => {
+      // We didn't find the requested Thing, so we're essentially doing a variant of Create instead.
+      // This happens normally when you "Edit" a Tag:
+      implicit val state = rc.state.get
+      val name = NameType.toDisplay(thingIdStr)
+      showEditPage(rc, SimpleThing, 
+          PropList.inheritedProps(None, SimpleThing) ++
+          PropList((NameProp -> DisplayPropVal(None, NameProp, Some(ExactlyOne(NameType(name))))),
+                   (DisplayTextProp -> DisplayPropVal(None, DisplayTextProp, Some(ExactlyOne(LargeTextType(TagThing.defaultDisplayText)))))))
+    }
+  })) { implicit rc =>
     implicit val state = rc.state.get
     val thing = rc.thing.get
     // TODO: security check that I'm allowed to edit this

@@ -235,6 +235,9 @@ object QLType extends QLType(QLTypeOID)
   {
     def toInternal(str:String) = str.replaceAll(" ", "-")
     def toDisplay(str:String) = str.replaceAll("-", " ")
+    // Note that this deliberately allows mixed-case, so that we can preserve Name case through
+    // the URL for Tags. (Since the desired case *only* exists in the URL.)
+    def toUrl = toInternal _
         
     def doDeserialize(v:String) = toDisplay(v)
     def doSerialize(v:String) = toInternal(v)
@@ -283,7 +286,7 @@ object QLType extends QLType(QLTypeOID)
   class LinkType(tid:OID) extends SystemType[OID](tid,
       toProps(
         setName("Type-Link")
-        )) with SimplePTypeBuilder[OID]
+        )) with SimplePTypeBuilder[OID] with NameableType
   {
     def doDeserialize(v:String) = OID(v)
     def doSerialize(v:OID) = v.toString
