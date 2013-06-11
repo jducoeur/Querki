@@ -718,3 +718,17 @@ tags that have been used in that Property so far.
     }    
   }
 }
+
+object SelfMethod extends SingleContextMethod(SelfMethodOID,
+    toProps(
+      setName("_self"),
+      DisplayTextProp("""*thing*._self simply produces *thing*.
+          
+This seems silly, but it is useful for overriding the usual _apply behavior. In particular,
+*property*._self is the way to get a link to the property itself, instead of fetching the value
+of the property on the received Thing.""")))
+{
+  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):TypedValue = {
+    partialContext.value
+  }
+}

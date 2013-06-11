@@ -111,6 +111,7 @@ object OIDs {
   val TagRefsOID = sysId(72)
   val ShowUnknownOID = sysId(73)
   val TagsForPropertyOID = sysId(74)
+  val SelfMethodOID = sysId(75)
 }
 
 /**
@@ -169,7 +170,8 @@ object SystemSpace {
       LinkToModelsOnlyProp,
       TagRefsMethod,
       ShowUnknownProp,
-      TagsForPropertyMethod)
+      TagsForPropertyMethod,
+      SelfMethod)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, DisplayThingTree, AllThings)
