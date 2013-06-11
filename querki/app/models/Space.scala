@@ -280,6 +280,10 @@ class Space extends Actor {
 	            val newThingState = t.copy(m = modelId, pf = () => newProps)
 	            updateState(state.copy(things = state.things + (thingId -> newThingState))) 
               }
+              case prop:Property[_,_] => {
+	            val newThingState = prop.copy(m = modelId, pf = () => newProps)
+	            updateState(state.copy(spaceProps = state.spaceProps + (thingId -> newThingState))) 
+              }
               case s:SpaceState => {
                 // TODO: handle changing the owner or apps of the Space. (Different messages?)
                 val rawName = NameProp.first(newProps)

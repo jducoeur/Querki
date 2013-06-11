@@ -161,6 +161,10 @@ case class SpaceState(
     (Set.empty[OID] /: allThings) ((set, t) => set + root(t))
   }
   
+  def thingsWithProp(prop:Property[_,_]):Iterable[Thing] = {
+    everythingLocal.filter(_.hasProp(prop.id)(this))
+  }
+  
   /**
    * Returns all of the immediate children of this Thing.
    * 
