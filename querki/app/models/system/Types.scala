@@ -221,22 +221,25 @@ object QLType extends QLType(QLTypeOID)
     }
   }
   
+  trait NameableType {
+    def getName(context:ContextBase)(v:ElemValue):String
+  }
+  
   /**
    * The Type for Display Names -- similar to Text, but not identical
    */
-  class NameType(tid:OID) extends SystemType[String](tid,
+  abstract class NameType(tid:OID, name:String) extends SystemType[String](tid,
       toProps(
-        setName("Type-Name")
-        )) with SimplePTypeBuilder[String]
+        setName(name)
+        )) with SimplePTypeBuilder[String] with NameableType
   {
     def toInternal(str:String) = str.replaceAll(" ", "-")
     def toDisplay(str:String) = str.replaceAll("-", " ")
         
     def doDeserialize(v:String) = toDisplay(v)
     def doSerialize(v:String) = toInternal(v)
-    def doRender(context:ContextBase)(v:String) = Wikitext(toDisplay(v))
     
-    override protected def doToUser(v:String):String = toDisplay(v)
+    override def doToUser(v:String):String = toDisplay(v)
     override protected def doFromUser(v:String):String = {
       if (v.length() == 0)
         throw new Exception("Names must have non-zero length")
@@ -251,10 +254,26 @@ object QLType extends QLType(QLTypeOID)
     }
     
     def canonicalize(str:String):String = toInternal(str).toLowerCase
+    
+    def getName(context:ContextBase)(v:ElemValue) = canonicalize(get(v))
 
     val doDefault = ""
   }
-  object NameType extends NameType(NameTypeOID)
+  object NameType extends NameType(NameTypeOID, "Type-Name") {
+    def doRender(context:ContextBase)(v:String) = Wikitext(toDisplay(v))    
+  }
+  object TagSetType extends NameType(TagSetOID, "Tag Set") {
+    override def requiredColl:Option[Collection] = Some(QList)
+    
+    // TODO: this should probably get refactored with LinkType? They're different ways of
+    // expressing the same concepts; it's just that Links are OID-based, whereas Names/Tags are
+    // name-based.
+    def doRender(context:ContextBase)(v:String) = {
+      // Conceptually, toInternal isn't quite right here. We're using it instead of AsName
+      // mostly because we want to preserve the *case* of the Tag:
+      Wikitext("[" + v + "](" + toInternal(v) + ")")
+    }    
+  }
   
   /**
    * The Type for Links to other Things
@@ -285,6 +304,12 @@ object QLType extends QLType(QLTypeOID)
         case None => "Bad Link: Thing " + v.toString + " not found"
       }
       Wikitext(text)
+    }
+    
+    def getName(context:ContextBase)(v:ElemValue) = {
+      val id = get(v)
+      val tOpt = follow(context)(id)
+      tOpt.map(thing => NameType.canonicalize(thing.displayName)).getOrElse(throw new Exception("Trying to get name from unknown OID " + id))
     }
     
     // TODO: define doFromUser()
@@ -321,6 +346,9 @@ object QLType extends QLType(QLTypeOID)
     }
   }
   object LinkType extends LinkType(LinkTypeOID)
+  object LinkFromThingBuilder extends PTypeBuilder[OID, Thing] {
+    def wrap(raw:Thing):OID = raw.id
+  }
 
   /**
    * The Type for Large Text -- stuff that we expect to take up more space on-screen
@@ -395,5 +423,5 @@ class ExternalLinkType(tid:OID) extends SystemType[URL](tid,
 object ExternalLinkType extends ExternalLinkType(ExternalLinkTypeOID)
 
 object SystemTypes {
-  def all = Space.oidMap[PType[_]](IntType, TextType, QLType, YesNoType, NameType, LinkType, LargeTextType, PlainTextType, InternalMethodType, ExternalLinkType)  
+  def all = Space.oidMap[PType[_]](IntType, TextType, QLType, YesNoType, NameType, TagSetType, LinkType, LargeTextType, PlainTextType, InternalMethodType, ExternalLinkType)  
 }

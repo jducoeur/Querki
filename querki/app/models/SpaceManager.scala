@@ -19,6 +19,8 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.Play.current
 import play.Configuration
 
+import SpaceError._
+
 class SpaceManager extends Actor {
   import models.system.SystemSpace
   import SystemSpace._
@@ -81,7 +83,7 @@ class SpaceManager extends Actor {
         // Now, let the Space Actor finish the process once it is ready:
         spaceActor.forward(req)
       } else {
-        sender ! ThingFailed(errorMsg.get)
+        sender ! errorMsg.get
       }
     }
 
@@ -98,7 +100,7 @@ class SpaceManager extends Actor {
           val spaceOpt = getSpaceByName(ownerId, spaceName)
           // TODO: the error clause below potentially leaks information about whether a
           // give space exists for an owner. Examine the various security paths holistically.
-          spaceOpt map getSpace map { _.forward(req) } getOrElse { sender ! ThingFailed("Not a legal path") }
+          spaceOpt map getSpace map { _.forward(req) } getOrElse { sender ! ThingFailed(UnknownPath, "Not a legal path") }
         }
       }
     }
@@ -113,17 +115,17 @@ class SpaceManager extends Actor {
     }
   }
   
-  private def legalSpaceName(ownerId:OID, name:String):Option[String] = {
+  private def legalSpaceName(ownerId:OID, name:String):Option[ThingFailed] = {
     def numWithName = DB.withTransaction { implicit conn =>
       SQL("""
           SELECT COUNT(*) AS c from Spaces WHERE owner = {ownerId} AND name = {name}
           """).on("ownerId" -> ownerId.raw, "name" -> NameType.canonicalize(name)).apply().headOption.get.get[Long]("c").get
     }
     if (!NameProp.validate(name))
-      Some("That's not a legal name for a Space")
+      Some(ThingFailed(IllegalName, "That's not a legal name for a Space"))
     else if (numWithName > 0) {
       Logger.info("numWithName = " + numWithName)
-      Some("You already have a Space with that name")
+      Some(ThingFailed(NameExists, "You already have a Space with that name"))
     } else
       None
   }

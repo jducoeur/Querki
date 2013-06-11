@@ -15,6 +15,8 @@ import identity.User
 
 import querki.html.HtmlRenderer
 
+import SpaceError._
+
 object Application extends Controller {
   
   case class UserForm(name:String, password:String)
@@ -134,7 +136,8 @@ object Application extends Controller {
         requireLogin:Boolean, 
         ownerIdStr:String,
         spaceId:String, 
-        thingIdStr:Option[String] = None
+        thingIdStr:Option[String] = None,
+        errorHandler:Option[PartialFunction[(ThingFailed, RequestContext), Result]] = None
       )(f: (RequestContext => Result)):EssentialAction = withUser(requireLogin) { rc =>
     val requester = rc.requester getOrElse User.Anonymous
     val thingId = thingIdStr map (ThingId(_))
@@ -145,8 +148,6 @@ object Application extends Controller {
           case UnknownOID => None
           case oid:OID => state.anything(oid)
         }
-        // TEMP:
-        Logger.info("Looking for " + spaceId + "/" + thingIdStr + ";  found " + id)
         if (thingIdStr.isDefined && thingOpt.isEmpty)
           doError(routes.Application.index, "That wasn't a valid path")
         else {
@@ -157,7 +158,12 @@ object Application extends Controller {
           updatedRC.updateSession(result)
         }
       }
-      case ThingFailed(msg) => doError(routes.Application.index, msg)
+      case err:ThingFailed => {
+        val ThingFailed(error, msg, stateOpt) = err
+        // TODO: refactor this with the above, and let the listeners get involved:
+        val filledRC = rc.copy(ownerId = ownerId, state = stateOpt, thing = None)
+        errorHandler.flatMap(_.lift((err, filledRC))).getOrElse(doError(routes.Application.index, msg))
+      }
     }     
   }
 
@@ -165,8 +171,9 @@ object Application extends Controller {
    * Convenience wrapper for withSpace -- use this for pages that are talking about
    * a specific Thing.
    */
-  def withThing(requireLogin:Boolean, ownerId:String, spaceId:String, thingIdStr:String) = { 
-    withSpace(requireLogin, ownerId, spaceId, Some(thingIdStr)) _
+  def withThing(requireLogin:Boolean, ownerId:String, spaceId:String, thingIdStr:String,
+        errorHandler:Option[PartialFunction[(ThingFailed, RequestContext), Result]] = None) = { 
+    withSpace(requireLogin, ownerId, spaceId, Some(thingIdStr), errorHandler) _
   }
   
   def index = withUser(false) { rc =>
@@ -193,7 +200,11 @@ disallow: /
     Ok(views.html.thing(rc))
   }
   
-  def thing(ownerId:String, spaceId:String, thingId:String) = withThing(false, ownerId, spaceId, thingId) { implicit rc =>
+  def thing(ownerId:String, spaceId:String, thingId:String) = withThing(false, ownerId, spaceId, thingId, Some({ 
+    case (ThingFailed(UnknownName, _, stateOpt), rc) => {
+      Ok(views.html.thing(rc, Some(thingId)))
+    }
+  })) { implicit rc =>
     Ok(views.html.thing(rc))
   }
   
@@ -210,7 +221,7 @@ disallow: /
         if (NameProp.validate(name)) {
           askSpaceMgr[ThingResponse](CreateSpace(requester.id, name)) {
             case ThingFound(_, state) => Redirect(routes.Application.space(requester.name, state.toThingId))
-            case ThingFailed(msg) => doError(routes.Application.newSpace, msg)
+            case ThingFailed(error, msg, stateOpt) => doError(routes.Application.newSpace, msg)
           }
         } else {
           doError(routes.Application.newSpace, "That's not a legal Space name")
@@ -249,6 +260,7 @@ disallow: /
       // For the time being, we're only allowing basic Properties. We might allow Properties to
       // serve as Models, but one thing at a time.
       case Kind.Property => Seq(UrProp)
+      case Kind.Space => Seq(SystemSpace.State)
       case _ => throw new Exception("Don't yet know how to create a Thing of kind " + mainModel.kind)
     }
   }
@@ -400,7 +412,7 @@ disallow: /
                 } else
                   Redirect(routes.Application.thing(ownerName(newState), newState.toThingId, thing.toThingId))
               }
-              case ThingFailed(msg) => {
+              case ThingFailed(error, msg, stateOpt) => {
                 showEditPage(rc, oldModel, makeProps(rawProps), Some(msg))
               }
             }
@@ -444,7 +456,7 @@ disallow: /
 	          case ThingFound(thingId, state) => {
 	            Ok("Successfully changed to " + newVal)
 	          }
-	          case ThingFailed(msg) => {
+	          case ThingFailed(error, msg, stateOpt) => {
 	            Logger.info("Failed to change property: " + msg); Ok("Failed to change property: " + msg)
 	          }
 	        }
@@ -502,7 +514,7 @@ disallow: /
 	    case ThingFound(attachmentId, state2) => {
 	      Redirect(routes.Application.thing(ownerId, state.toThingId, attachmentId.toThingId))
 	    }
-	    case ThingFailed(msg) => {
+	    case ThingFailed(error, msg, stateOpt) => {
           doError(routes.Application.upload(ownerId, spaceId), msg)
 	    }
 	  }

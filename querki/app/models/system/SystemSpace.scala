@@ -107,6 +107,9 @@ object OIDs {
   val IconButtonOID = sysId(68)
   val CreateInstanceLinkOID = sysId(69)
   val LinkToModelsOnlyOID = sysId(70)
+  val TagSetOID = sysId(71)
+  val TagRefsOID = sysId(72)
+  val ShowUnknownOID = sysId(73)
 }
 
 /**
@@ -162,7 +165,9 @@ object SystemSpace {
       JoinMethod,
       IconButtonMethod,
       CreateInstanceLinkMethod,
-      LinkToModelsOnlyProp)
+      LinkToModelsOnlyProp,
+      TagRefsMethod,
+      ShowUnknownProp)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, DisplayThingTree, AllThings)
@@ -179,7 +184,9 @@ object SystemSpace {
     SpaceState(systemOID, RootOID,
       toProps(
         setName("System"),
-        DisplayTextProp("[[All Things]]")), SystemUserOID, "System", None, SystemTypes.all, props, things, SystemCollections.all)    
+        DisplayTextProp("[[All Things]]"),
+        ShowUnknownProp("[[_tagRefs -> _bulleted]]")), 
+      SystemUserOID, "System", None, SystemTypes.all, props, things, SystemCollections.all)    
   }
   
   // Note the intentional implication here: trying to access State before init has been

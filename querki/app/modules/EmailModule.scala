@@ -296,7 +296,7 @@ The QL expression given in here must product a List of Links to Persons.
 	      resp match {
 	        case ThingFound(id, state) => Logger.info("Noted email recipients")
 	        // TODO: what should we do in case of failure?
-	        case ThingFailed(msg) => Logger.error("Unable to record email recipients: " + msg)
+	        case ThingFailed(error, msg, stateOpt) => Logger.error("Unable to record email recipients: " + msg)
 	      }
 	    }
 	    

@@ -195,3 +195,9 @@ object InstanceEditPropsProp extends SystemProperty(InstanceEditPropsOID, LinkTy
       LinkAllowAppsProp(true),
       LinkKindProp(Kind.Property),
       DisplayTextProp("If you add this to a Model, it specifies which Properties are worth editing in its Instances, and in what order.")))
+
+object ShowUnknownProp extends SystemProperty(ShowUnknownOID, QLType, ExactlyOne,
+    toProps(
+      setName("_showUnknownName"),
+      AppliesToKindProp(Kind.Space),
+      DisplayTextProp("This Property says what a Space should show when you ask to look at a Thing with an unknown name.")))

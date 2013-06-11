@@ -75,6 +75,8 @@ object HtmlRenderer {
       Some(renderOptYesNo(state, prop, currentValue))
     else if (cType == Optional && pType == LinkType)
       Some(renderOptLink(state, prop, currentValue))
+    else if (pType == TagSetType)
+      Some(renderTagSet(state, prop, currentValue))
     else
       None
   }
@@ -115,6 +117,13 @@ object HtmlRenderer {
     results
   }
   
+  def renderTagSet(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Elem = {
+    val currentV = currentValue.v
+    val rawList:Option[List[String]] = currentV.map(_.rawList(TagSetType))
+    val current = rawList.map(_.mkString(", ")).getOrElse("")
+    <input type="text" value={current}></input>
+  }
+  
   def handleSpecialized(prop:Property[_,_], newVal:String):Option[PropValue] = {
     if (prop.cType == Optional && prop.pType == YesNoType)
       Some(handleOptional(prop, newVal, YesNoType, (_ == "maybe")))
@@ -137,6 +146,8 @@ object HtmlRenderer {
       Some(handleOptionalForm(prop, newVal, YesNoType, (_ == "maybe")))
     else if (prop.cType == Optional && prop.pType == LinkType)
       Some(handleOptionalForm(prop, newVal, LinkType, (OID(_) == UnknownOID)))
+    else if (prop.pType == TagSetType)
+      Some(handleTagSet(prop, newVal))
     else
       None
   }
@@ -147,5 +158,11 @@ object HtmlRenderer {
       FormFieldInfo(prop, Some(Optional.None), false, true)
     else
       FormFieldInfo(prop, Some(Optional(pType.fromUser(newVal))), false, true)
+  }
+  
+  def handleTagSet(prop:Property[_,_], newVal:String):FormFieldInfo = {
+    val rawTags:Array[String] = newVal.split(',')
+    val newTags = rawTags.map(_.trim)
+    FormFieldInfo(prop, Some(QList.from(newTags, TagSetType)), false, true)
   }
 }

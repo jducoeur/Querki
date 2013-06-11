@@ -1,4 +1,4 @@
-@(rc:RequestContext)
+@(rc:RequestContext, unknownName:Option[String] = None)
 
 @import play.api.Logger
 
@@ -9,8 +9,15 @@
     case None => space
   }
 }
+@title = @{
+  rc.thing match {
+    case Some(t) => t.displayName
+    case None => unknownName.map(models.system.NameType.toDisplay(_)).getOrElse(space.displayName)
+  }
+}
+@isUnknown = @{ unknownName.isDefined }
 
-@main(QuerkiTemplate.Thing, thing.displayName, rc, true) {
+@main(QuerkiTemplate.Thing, title, rc, true) {
 
     <script>
       $(function() {
@@ -91,11 +98,15 @@
 
         @if(!rc.chromeless) {
 	    <div class="page-header">
-	      <h1>@thing.displayName</h1>
+	      <h1>@title</h1>
 	    </div>
 	    }
 	
-	    @Html(thing.render(rc).display)
+	    @if(isUnknown) {
+	      @Html(space.renderUnknownName(rc, unknownName.get).display)
+	    } else {
+	      @Html(thing.render(rc).display)
+	    }
 	  
 	  </div>
 	}

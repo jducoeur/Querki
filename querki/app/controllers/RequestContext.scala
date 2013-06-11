@@ -30,7 +30,8 @@ class RequestHeaderParser(request:RequestHeader) {
  * 
  * TODO: now that we've gotten into serious questions of rendering, this structure is being
  * passed around more and more. It is getting deep into models and ql, so it probably doesn't
- * belong in controllers per se.
+ * belong in controllers per se. Also, the "request" needs to be abstracted out, so that the
+ * internals don't have to know about it.
  * 
  * @param requester The validated User who is asking for this page, if any.
  */

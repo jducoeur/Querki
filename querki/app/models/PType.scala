@@ -36,33 +36,33 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * Each PType is required to implement this -- it is the deserializer for the
    * type.
    */
-  protected def doDeserialize(ser:String):VT
+  def doDeserialize(ser:String):VT
   final def deserialize(ser:String):ElemValue = ElemValue(doDeserialize(ser))
   
   /**
    * Also required for all PTypes, to serialize values of this type.
    */
-  protected def doSerialize(v:VT):String
+  def doSerialize(v:VT):String
   final def serialize(v:ElemValue):String = doSerialize(get(v))
   
   /**
    * Takes a value of this type, and turns it into displayable form. Querki
    * equivalent to toString.
    */
-  protected def doRender(context:ContextBase)(v:VT):Wikitext
+  def doRender(context:ContextBase)(v:VT):Wikitext
   final def render(context:ContextBase)(v:ElemValue):Wikitext = doRender(context)(get(v))
   
   /**
    * Also required for all PTypes -- the default value to fall back on.
    */
-  protected def doDefault:VT
+  def doDefault:VT
   final def default:ElemValue = ElemValue(doDefault)
   
   /**
    * Turns this value into an appropriate form for user editing. Currently that means
    * a String, although that's likely to get more interesting soon.
    */
-  protected def doToUser(v:VT):String = doSerialize(v)
+  def doToUser(v:VT):String = doSerialize(v)
   final def toUser(v:ElemValue):String = doToUser(get(v))
   
   /**
@@ -122,6 +122,13 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * usage of this.
    */
   def qlApplyFromProp(definingContext:ContextBase, incomingContext:ContextBase, prop:Property[VT,_], params:Option[Seq[QLPhrase]]):Option[TypedValue] = None
+  
+  /**
+   * Iff defined, this Type must *always* be used with the specified Collection.
+   * 
+   * This is mostly intended for use with Type Aliases.
+   */
+  def requiredColl:Option[Collection] = None
 }
 
 trait PTypeBuilder[VT, -RT] {

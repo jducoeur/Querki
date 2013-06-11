@@ -71,10 +71,17 @@ case class CreateProperty(id:OID, req:User, model:OID, pType:OID, cType:OID, pro
 
 case class GetThing(req:User, own:OID, space:ThingId, thing:Option[ThingId]) extends SpaceMessage(req, own, space)
 
+object SpaceError extends Enumeration {
+  type SpaceError = Value
+  
+  val CreateNotAllowed, IllegalName, ModifyNotAllowed, NameExists, SpaceNotFound, UnknownID, UnknownName, UnknownPath = Value
+}
+import SpaceError._
+
 // This is the most common response when you create/fetch any sort of Thing
 sealed trait ThingResponse
 case class ThingFound(id:OID, state:SpaceState) extends ThingResponse
-case class ThingFailed(msg:String) extends ThingResponse
+case class ThingFailed(error:SpaceError, msg:String, stateOpt:Option[SpaceState] = None) extends ThingResponse
 
 sealed trait AttachmentResponse
 case class AttachmentContents(id:OID, size:Int, mime:MIMEType, content:Array[Byte]) extends AttachmentResponse

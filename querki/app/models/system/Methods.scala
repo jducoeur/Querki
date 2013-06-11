@@ -660,3 +660,35 @@ beginning. If there are three, the last is CLOSE, which is put at the end.""")))
     WikitextValue(result)
   }
 }
+
+object TagRefsMethod extends InternalMethod(TagRefsOID,
+    toProps(
+      setName("_tagRefs"),
+      DisplayTextProp("This produces a List of all Things that have the received Thing or Name as a Tag")))
+{
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+    val elemT = context.value.pt
+    elemT match {
+      case nameable:NameableType => {
+        val allProps = context.state.allProps.values
+        val tagProps = allProps.filter(_.pType == TagSetType)
+        val name = nameable.getName(context)(context.value.v.first)
+        val candidates = context.state.allThings
+        
+        def hasThisTag(candidate:Thing):Boolean = {
+          tagProps.exists{ prop =>
+            val propAndVal = candidate.localProp(prop)
+            val candidateTags:Option[List[String]] = propAndVal.map(_.v.rawList(TagSetType))
+            val found = candidateTags.map(_.exists { candidateName =>
+              NameType.canonicalize(candidateName) == name
+            })
+            found.getOrElse(false)
+          }
+        }
+        
+        TypedValue(QList.from(candidates.filter(hasThisTag), LinkFromThingBuilder), LinkType)
+      }
+      case _ => WarningValue("_tagRefs can only be used with a Tag or Link")
+    }
+  }
+}

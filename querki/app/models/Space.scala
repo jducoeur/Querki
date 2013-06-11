@@ -29,6 +29,8 @@ import system._
 import system.OIDs._
 import system.SystemSpace._
 
+import SpaceError._
+
 import MIMEType.MIMEType
 
 /**
@@ -218,9 +220,9 @@ class Space extends Actor {
     val spaceId = checkSpaceId(spaceThingId)
     val name = NameProp.firstOpt(props)
     if (!canCreateThings(who))
-      sender ! ThingFailed("You are not allowed to create anything in this Space")
+      sender ! ThingFailed(CreateNotAllowed, "You are not allowed to create anything in this Space")
     else if (name.isDefined && state.anythingByName(name.get).isDefined)
-      sender ! ThingFailed("This Space already has a Thing with that name")
+      sender ! ThingFailed(NameExists, "This Space already has a Thing with that name")
     else DB.withTransaction { implicit conn =>
       val thingId = OID.next
       // TODO: add a history record
@@ -254,7 +256,7 @@ class Space extends Actor {
       oldThingOpt map { oldThing =>
         if (!canEdit(who, oldThing.id)) {
           Logger.info(who.toString + " can't edit -- requires " + owner.toString)
-          sender ! ThingFailed("You're not allowed to modify that")
+          sender ! ThingFailed(ModifyNotAllowed, "You're not allowed to modify that")
         } else {
 	      DB.withTransaction { implicit conn =>
 	        // TODO: compare properties, build a history record of the changes
@@ -303,7 +305,7 @@ class Space extends Actor {
           fetchSpaceInfo()
         }
       } getOrElse {
-        sender ! ThingFailed("Thing not found")
+        sender ! ThingFailed(UnknownPath, "Thing not found")
       }    
   }
   
@@ -369,14 +371,18 @@ class Space extends Actor {
     
     case GetThing(req, owner, space, thingIdOpt) => {
       if (!canRead(req))
-        sender ! ThingFailed("Space not found")
+        sender ! ThingFailed(SpaceNotFound, "Space not found")
       else if (thingIdOpt.isDefined) {
         val thingOpt = state.anything(thingIdOpt.get)
         if (thingOpt.isDefined) {
           sender ! ThingFound(thingOpt.get.id, state)
         } else {
-          // TODO: better error message!
-          sender ! ThingFailed("Thing not found")
+          thingIdOpt.get match {
+            // TODO: this potentially leaks information. It is frequently legal to see the Space if the name is unknown --
+            // that is how tags work -- but we should think through how to keep that properly controlled.
+            case AsName(name) => sender ! ThingFailed(UnknownName, "No Thing found with that name", Some(state))
+            case AsOID(id) => sender ! ThingFailed(UnknownID, "No Thing found with that id")
+          }
         }
       } else {
         // TODO: is this the most semantically appropriate response?

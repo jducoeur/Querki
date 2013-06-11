@@ -272,5 +272,15 @@ case class SpaceState(
   def canEdit(who:User, thingId:OID):Boolean = {
     querki.access.AccessControl.canEdit(this, who, thingId)
   }
+  
+  def renderUnknownName(implicit rc:controllers.RequestContext, name:String):Wikitext = {
+    import ql._
+    
+    implicit val s = this
+    val opt = getPropOpt(ShowUnknownProp)
+    val nameVal = TypedValue(ExactlyOne(NameType(name)), NameType)
+    val nameAsContext = QLContext(nameVal, rc)
+    opt.map(pv => pv.render(nameAsContext)).getOrElse(Wikitext("Unknown Name: " + name))    
+  }
 }
 
