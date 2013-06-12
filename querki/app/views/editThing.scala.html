@@ -150,6 +150,14 @@
           });
         }
         
+        $.fn.asManifest = function () {
+          this.each(function () {
+            $(this).manifest({
+		      marcoPolo:false
+		    });
+          });
+        }
+        
         function dataField(t, fieldName) {
           return "#" + t.data(fieldName);
         }
@@ -255,6 +263,8 @@
 			close: function () {
 			}
 		});
+		
+		$("._tagSetInput").asManifest();
       });
     </script>
     

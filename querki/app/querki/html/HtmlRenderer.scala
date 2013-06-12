@@ -39,13 +39,17 @@ object HtmlRenderer {
   
   // TODO: refactor this with Collection.fromUser():
   def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_]):FormFieldInfo = {
-    val fieldIds = FieldIds(on, prop)
-    val spec = for (
-      formV <- form(fieldIds.inputControlId).value;
-      specialized <- handleSpecializedForm(prop, formV)
-        )
-      yield specialized
-    spec.getOrElse(prop.cType.fromUser(on, form, prop, prop.pType))
+    if (prop.pType == TagSetType) {
+      handleTagSet(prop, on, form)
+    } else {
+      val fieldIds = FieldIds(on, prop)
+      val spec = for (
+        formV <- form(fieldIds.inputControlId).value;
+        specialized <- handleSpecializedForm(prop, formV)
+          )
+        yield specialized
+      spec.getOrElse(prop.cType.fromUser(on, form, prop, prop.pType))
+    }
   }
   
   /*********************************
@@ -121,7 +125,7 @@ object HtmlRenderer {
     val currentV = currentValue.v
     val rawList:Option[List[String]] = currentV.map(_.rawList(TagSetType))
     val current = rawList.map(_.mkString(", ")).getOrElse("")
-    <input type="text" value={current}></input>
+    <input class="_tagSetInput" type="text" value={current}></input>
   }
   
   def handleSpecialized(prop:Property[_,_], newVal:String):Option[PropValue] = {
@@ -146,8 +150,6 @@ object HtmlRenderer {
       Some(handleOptionalForm(prop, newVal, YesNoType, (_ == "maybe")))
     else if (prop.cType == Optional && prop.pType == LinkType)
       Some(handleOptionalForm(prop, newVal, LinkType, (OID(_) == UnknownOID)))
-    else if (prop.pType == TagSetType)
-      Some(handleTagSet(prop, newVal))
     else
       None
   }
@@ -160,9 +162,17 @@ object HtmlRenderer {
       FormFieldInfo(prop, Some(Optional(pType.fromUser(newVal))), false, true)
   }
   
-  def handleTagSet(prop:Property[_,_], newVal:String):FormFieldInfo = {
-    val rawTags:Array[String] = newVal.split(',')
-    val newTags = rawTags.map(_.trim)
-    FormFieldInfo(prop, Some(QList.from(newTags, TagSetType)), false, true)
+  // TODO: TagSets come from Manifest, and the end result is similar to QList.fromUser(). Figure out
+  // how to refactor these together, if possible.
+  def handleTagSet(prop:Property[_,_], on:Option[Thing], form:Form[_]):FormFieldInfo = {
+    val fieldIds = FieldIds(on, prop)
+    val oldListName = fieldIds.inputControlId + "_values"
+    val oldList = form(oldListName)
+    val oldIndexes = oldList.indexes
+    val oldRaw =
+      for (i <- oldIndexes;
+           v <- oldList("[" + i + "]").value)
+        yield v
+    FormFieldInfo(prop, Some(QList.from(oldRaw, TagSetType)), false, true)
   }
 }
