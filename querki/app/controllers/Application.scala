@@ -533,14 +533,16 @@ disallow: /
         prop <- space.prop(ThingId(propId))
       )
         yield TagsForPropertyMethod.fetchTags(space, prop).filter(_.toLowerCase().contains(lowerQ))
-    tagsOpt match {
-      case Some(tags) => {
-        // TODO: introduce better JSONification for the AJAX code:
-        val JSONtags = "[" + tags.map("\"" + _ + "\"").mkString(",") + "]"
-        Ok(JSONtags)
-      }
-      case _ => Ok("[]")
-    }
+        
+    val tagsOrThings =
+      if (tagsOpt.isDefined && !tagsOpt.get.isEmpty)
+        tagsOpt.get
+      else
+        space.allThings.toSeq.map(_.displayName).filter(_.toLowerCase().contains(lowerQ))
+        
+    // TODO: introduce better JSONification for the AJAX code:
+    val JSONtags = "[" + tagsOrThings.map("\"" + _ + "\"").mkString(",") + "]"
+    Ok(JSONtags)
   }
 
   def upload(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
