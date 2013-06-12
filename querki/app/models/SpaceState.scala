@@ -165,8 +165,8 @@ case class SpaceState(
     everythingLocal.filter(_.hasProp(prop.id)(this))
   }
   
-  def propsOfType(pt:PType[_]):Iterable[Property[_,_]] = {
-    spaceProps.values.filter(_.pType == pt)
+  def propsOfType[VT](pt:PType[VT]):Iterable[Property[VT,_]] = {
+    spaceProps.values.filter(_.pType == pt).map(_.confirmType(pt))
   }
   
   /**

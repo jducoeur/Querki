@@ -673,7 +673,7 @@ object TagRefsMethod extends InternalMethod(TagRefsOID,
     toProps(
       setName("_tagRefs"),
       DisplayTextProp("This produces a List of all Things that have the received Thing or Name as a Tag")))
-{
+{ 
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
     val elemT = context.value.pt
     elemT match {

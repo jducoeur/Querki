@@ -22,7 +22,8 @@ case class Property[VT, -RT](
     val pType:PType[VT] with PTypeBuilder[VT, RT], 
     val cType:Collection, 
     pf:PropFetcher)
-  extends Thing(i, s, m, Kind.Property, pf) {
+  extends Thing(i, s, m, Kind.Property, pf) 
+{
   def default = {
     // TODO: add the concept of the default meta-property, so you can set it
     // on a prop-by-prop basis
@@ -37,6 +38,19 @@ case class Property[VT, -RT](
   override lazy val props:PropMap = propFetcher() + 
 		  CollectionProp(cType) +
 		  TypeProp(pType)
+
+  /**
+   * This little method is a type-math workaround. We're often dealing with properties in contexts
+   * where we know the PType of the property (and thus, the VT) for external reasons, but the
+   * Scala compiler isn't smart enough to figure that out. So this provides a consistent way to
+   * do the cast safely, at runtime. 
+   */
+  def confirmType[PVT](pt:PType[PVT]):Property[PVT,_] = {
+    if (pt == pType)
+      this.asInstanceOf[Property[PVT,_]]
+    else
+      throw new Exception("confirmType called on wrong type! Expected " + pType + ", but received " + pt)
+  }
 
   /**
    * This renders a provided value of this Property.
@@ -70,7 +84,7 @@ case class Property[VT, -RT](
 
   def contains(v:PropValue, toCheck:VT):Boolean = v.cv.exists { elem =>
     val vt = pType.get(elem)
-    vt == toCheck
+    pType.matches(vt, toCheck)
   }
 
   def apply(raw:RT) = (this.id, cType(pType(raw)))

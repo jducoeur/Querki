@@ -430,14 +430,50 @@ disallow: /
     )
   }
   
+  // TODO: this doesn't feel like it belongs here at all. Think about refactoring. Indeed, there
+  // may well be a Tags Module fighting to break out...
+  def preferredModelForTag(implicit state:SpaceState, nameIn:String):Thing = {
+    val tagProps = state.propsOfType(TagSetType).filter(_.hasProp(OIDs.LinkModelOID))
+    val name = NameType.canonicalize(nameIn)
+    if (tagProps.isEmpty)
+      SimpleThing
+    else {
+      val candidates = state.allThings.toSeq
+    
+      // Find the first Tag Set property (if any) that is being used with this Tag:
+      val tagPropOpt = tagProps.find { prop =>
+        val definingThingOpt = candidates.find { thing =>
+          val propValOpt = thing.getPropOpt(prop)
+          propValOpt.map(_.contains(name)).getOrElse(false)
+        }
+        definingThingOpt.isDefined
+      }
+      
+      // Get the Link Model for that property:
+      val modelOpt = 
+        for (
+          tagProp <- tagPropOpt;
+          linkModelPropVal <- tagProp.getPropOpt(LinkModelProp);
+          modelId = linkModelPropVal.first;
+          model <- state.anything(modelId)
+          )
+          yield model
+
+      modelOpt.getOrElse(SimpleThing)
+    }
+  }
+  
   def editThing(ownerId:String, spaceId:String, thingIdStr:String) = withSpace(true, ownerId, spaceId, Some(thingIdStr), Some({ 
+    // TODO: can/should we refactor this out to a new Tags Module?
     case (ThingFailed(UnknownName, _, stateOpt), rc) => {
       // We didn't find the requested Thing, so we're essentially doing a variant of Create instead.
-      // This happens normally when you "Edit" a Tag:
+      // This happens normally when you "Edit" a Tag.
       implicit val state = rc.state.get
+      // If this Tag is used in a Tag Set Property with a Link Model, use that:
+      val model = preferredModelForTag(state, thingIdStr)
       val name = NameType.toDisplay(thingIdStr)
-      showEditPage(rc, SimpleThing, 
-          PropList.inheritedProps(None, SimpleThing) ++
+      showEditPage(rc, model, 
+          PropList.inheritedProps(None, model) ++
           PropList((NameProp -> DisplayPropVal(None, NameProp, Some(ExactlyOne(NameType(name))))),
                    (DisplayTextProp -> DisplayPropVal(None, DisplayTextProp, Some(ExactlyOne(LargeTextType(TagThing.defaultDisplayText)))))))
     }
