@@ -125,7 +125,7 @@ object HtmlRenderer {
     val currentV = currentValue.v
     val rawList:Option[List[String]] = currentV.map(_.rawList(TagSetType))
     val current = rawList.map(_.mkString(", ")).getOrElse("")
-    <input class="_tagSetInput" type="text" value={current}></input>
+    <input class="_tagSetInput" data-propid={prop.toThingId} type="text" value={current}></input>
   }
   
   def handleSpecialized(prop:Property[_,_], newVal:String):Option[PropValue] = {

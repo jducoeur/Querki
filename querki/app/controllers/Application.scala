@@ -521,6 +521,27 @@ disallow: /
     }
   }
 
+  /**
+   * AJAX call to fetch the existing tag values for the specified property.
+   */
+  def getTags(ownerId:String, spaceId:String, propId:String, q:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
+    implicit val space = rc.state.get
+    val lowerQ = q.toLowerCase()
+    val tagsOpt =
+      for
+      (
+        prop <- space.prop(ThingId(propId))
+      )
+        yield TagsForPropertyMethod.fetchTags(space, prop).filter(_.toLowerCase().contains(lowerQ))
+    tagsOpt match {
+      case Some(tags) => {
+        // TODO: introduce better JSONification for the AJAX code:
+        val JSONtags = "[" + tags.map("\"" + _ + "\"").mkString(",") + "]"
+        Ok(JSONtags)
+      }
+      case _ => Ok("[]")
+    }
+  }
 
   def upload(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
     Ok(views.html.upload(rc))

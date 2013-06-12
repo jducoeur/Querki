@@ -710,16 +710,20 @@ _tagsForProperty can be used on any Property whose Type is Tag Set. It produces 
 tags that have been used in that Property so far.
           """)))
 {
+  def fetchTags(space:SpaceState, propIn:Property[_,_]):Set[String] = {
+    implicit val s = space
+    val prop = propIn.confirmType(TagSetType)
+    val thingsWithProp = space.thingsWithProp(prop)
+    (Set.empty[String] /: thingsWithProp) { (set, thing) =>
+      set ++ thing.getProp(prop).rawList
+    }
+  }
+  
   def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):TypedValue = {
     applyToIncomingThing(partialContext) { (shouldBeProp, _) =>
       shouldBeProp match {
         case prop:Property[_,_] if (prop.pType == TagSetType) => {
-          implicit val space = partialContext.state
-          val thingsWithProp = space.thingsWithProp(prop)
-          val tags = (Set.empty[String] /: thingsWithProp) { (set, thing) =>
-            set ++ thing.getProp(prop).v.rawList(TagSetType)
-          }
-          TypedValue(QList.from(tags, TagSetType), TagSetType)
+          TypedValue(QList.from(fetchTags(partialContext.state, prop), TagSetType), TagSetType)
         }
         case _ => WarningValue("The _tagsForProperty method can only be used on Tag Set Properties")
       } 

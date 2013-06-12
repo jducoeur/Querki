@@ -152,8 +152,16 @@
         
         $.fn.asManifest = function () {
           this.each(function () {
+            var propId = $(this).data('propid');
             $(this).manifest({
-		      marcoPolo:false
+		      marcoPolo: {
+		        url: 'getTags?propId=' + propId,
+		        minChars: 3,
+		        formatData: function(data) { return data; },
+		        formatItem: function(data, $item) { return data; },
+		        formatNoResults: function(q, $item) { return "No existing tag with <b>" + q + "</b> found."; }
+		      },
+              formatDisplay: function (data, $item, $mpItem) { return data; }
 		    });
           });
         }

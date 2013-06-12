@@ -26,6 +26,8 @@ POST    /u/:userName/:spaceId/upload      controllers.Application.doUpload(userN
 
 GET     /u/:userName/:spaceId/export controllers.Application.exportThing(userName, spaceId, thingId)
 
+GET     /u/:userName/:spaceId/getTags     controllers.Application.getTags(userName, spaceId, propId, q)
+
 GET     /u/:userName/:spaceId/a/:attachmentId controllers.Application.attachment(userName, spaceId, attachmentId)
 
 # Note that Things can have slashes in their names!
