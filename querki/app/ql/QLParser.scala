@@ -378,6 +378,10 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
         def makeWikiLink(url:String):Wikitext = {
           Wikitext("[") + guts + Wikitext("](" + url + ")")
         }
+        // TODO: this mess needs refactoring. There's a common concept fighting to break
+        // out here, in which Types should declare what happens when they hit the
+        // ""__some text__"" construction. It is akin to the simple render() above; maybe
+        // an optional parameter for render()?
         context.value.pt match {
           case LinkType => {
             // TODO: this is evil. How should it be described instead?
@@ -390,6 +394,10 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
           case ExternalLinkType => {
             val url = ExternalLinkType.get(context.value.v.first)
             makeWikiLink(url.toExternalForm())
+          }
+          case UnknownNameType => {
+            val name = UnknownNameType.get(context.value.v.first)
+            makeWikiLink(NameType.toUrl(name))
           }
           // TODO: we ought to show some sort of error here?
           case _ => guts
