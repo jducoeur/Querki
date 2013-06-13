@@ -259,6 +259,12 @@ object QLType extends QLType(QLTypeOID)
     def canonicalize(str:String):String = toInternal(str).toLowerCase
     
     def getName(context:ContextBase)(v:ElemValue) = canonicalize(get(v))
+    
+    def nameToLink(context:ContextBase)(v:String) = {
+      // Conceptually, toInternal isn't quite right here. We're using it instead of AsName
+      // mostly because we want to preserve the *case* of the Tag:
+      Wikitext("[" + v + "](" + toUrl(v) + ")")
+    }
 
     val doDefault = ""
       
@@ -273,11 +279,7 @@ object QLType extends QLType(QLTypeOID)
     // TODO: this should probably get refactored with LinkType? They're different ways of
     // expressing the same concepts; it's just that Links are OID-based, whereas Names/Tags are
     // name-based.
-    def doRender(context:ContextBase)(v:String) = {
-      // Conceptually, toInternal isn't quite right here. We're using it instead of AsName
-      // mostly because we want to preserve the *case* of the Tag:
-      Wikitext("[" + v + "](" + toInternal(v) + ")")
-    }
+    def doRender(context:ContextBase)(v:String) = nameToLink(context)(v)
     
     override def renderProperty(prop:Property[_,_])(implicit request:controllers.RequestContext):Option[Wikitext] = {
       val parser = new ql.QLParser(QLText("""These tags are currently being used:

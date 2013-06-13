@@ -288,7 +288,8 @@ case class SpaceState(
     val opt = getPropOpt(ShowUnknownProp)
     val nameVal = TypedValue(ExactlyOne(NameType(name)), NameType)
     val nameAsContext = QLContext(nameVal, rc)
-    opt.map(pv => pv.render(nameAsContext)).getOrElse(Wikitext("Unknown Name: " + name))    
+    // TODO: the link below shouldn't be so hard-coded!
+    opt.map(pv => pv.render(nameAsContext)).getOrElse(Wikitext(NameType.toDisplay(name) + " doesn't exist yet. [Click here to create it.](edit?thingId=" + name + ")"))    
   }
 }
 

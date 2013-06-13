@@ -35,6 +35,13 @@ object RawHtmlType extends SystemType[Wikitext](OIDs.IllegalOID, () => Thing.emp
   val doDefault = Wikitext("")
 }
 
+/**
+ * This is a fake PType, used when we encounter a name we don't know.
+ */
+object UnknownNameType extends NameType(UnknownOID, "_unknownNameType") {
+  def doRender(context:ContextBase)(v:String) = nameToLink(context)(v)
+}
+
 // TODO: we've gotten rid of the explicit ct parameter, since it is contained in v.
 // Maybe we can do the same for pt?
 case class TypedValue(v:PropValue, pt:PType[_], cut:Boolean = false) {
@@ -310,7 +317,11 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
           case None => t.qlApply(context, params)
         }
       }
-      case None => ErrorValue("[UNKNOWN NAME: " + call.name + "]")
+      // They specified a name we don't know. Turn it into a raw NameType and pass it through. If it gets to
+      // the renderer, it will turn into a link to the undefined page, where they can create it.
+      //
+      // TBD: in principle, we might want to make this more Space-controllable. But it isn't obvious that we care. 
+      case None => TypedValue(ExactlyOne(UnknownNameType(call.name)), UnknownNameType)
     }
     logContext("processName got " + tv, context)
     context.next(tv)
