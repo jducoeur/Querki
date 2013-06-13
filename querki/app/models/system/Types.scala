@@ -37,7 +37,7 @@ object CommonInputRenderers {
   
   def renderLargeText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_]):Elem = {
     renderAnyText(prop, state, currentValue, v, elemT) { cv =>
-      <textarea rows="5" cols="50">{cv}</textarea>
+      <textarea class="_largeTextEdit" rows="2">{cv}</textarea>
     }
   }
   
