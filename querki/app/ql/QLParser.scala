@@ -360,8 +360,8 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
     phrases map (phrase => processPhrase(phrase.ops, context))
   }
 
-  def contextsToWikitext(contexts:Seq[ContextBase]):Wikitext = {
-    (Wikitext("") /: contexts) { (soFar, context) => soFar + context.value.render(context.parent) }
+  def contextsToWikitext(contexts:Seq[ContextBase], insertNewlines:Boolean = false):Wikitext = {
+    (Wikitext("") /: contexts) { (soFar, context) => soFar.+(context.value.render(context.parent), insertNewlines) }
   }
   
   /**
