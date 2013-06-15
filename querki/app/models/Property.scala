@@ -45,7 +45,7 @@ case class Property[VT, -RT](
    * Scala compiler isn't smart enough to figure that out. So this provides a consistent way to
    * do the cast safely, at runtime. 
    */
-  def confirmType[PVT](pt:PType[PVT]):Property[PVT,_] = {
+  def confirmType[PVT](pt:PType[PVT]):Property[PVT,_] = {    
     if (pt == pType)
       this.asInstanceOf[Property[PVT,_]]
     else

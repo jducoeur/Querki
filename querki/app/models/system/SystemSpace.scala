@@ -113,6 +113,7 @@ object OIDs {
   val TagsForPropertyOID = sysId(74)
   val SelfMethodOID = sysId(75)
   val PropsOfTypeOID = sysId(76)
+  val CodeMethodOID = sysId(77)
 }
 
 /**
@@ -173,7 +174,8 @@ object SystemSpace {
       ShowUnknownProp,
       TagsForPropertyMethod,
       SelfMethod,
-      PropsOfTypeMethod)
+      PropsOfTypeMethod,
+      CodeMethod)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, DisplayThingTree, AllThings)

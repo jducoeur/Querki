@@ -765,3 +765,93 @@ object PropsOfTypeMethod extends SingleThingMethod(PropsOfTypeOID, "_propsOfType
     case _ => WarningValue("_propsOfType can only be used on a Type")
   }
 })
+
+object CodeMethod extends SingleContextMethod(CodeMethodOID,
+    toProps(
+      setName("_code"),
+      DisplayTextProp("""_code() displays the raw code of a value or property, pretty flexibly.
+          
+You can give it as "TEXT -> _code" to display the TEXT.
+          
+You can give a property as a parameter -- "_code(PROP)" -- and it will display the value of the property on this Thing.
+          
+Or you can give a property on some other Thing -- "_code(THING.PROP)" -- to display the value of the property on that Thing.
+          """)))
+{
+  def encode(str:String):TypedValue = {
+    val escaped = scala.xml.Utility.escape(str)
+    HtmlValue(Html("<pre>" + escaped + "</pre>"))
+  }
+  
+  // TODO: this is horrible. Surely we can turn this into something cleaner with better use of the functional
+  // tools in the Scala toolbelt.
+  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, paramsOpt:Option[Seq[QLPhrase]]):TypedValue = {
+    implicit val space = partialContext.state
+    paramsOpt match {
+      case Some(params) => {
+        // TODO: the way we're handling this is horrible and hard-coded, and needs re-examination. The thing is,
+        // we *mostly* don't want to process this. Specifically, we don't want to process the last step of this.
+        // For the moment, we're hard-codedly checking the first stage of the phrase and using that, but it should
+        // probably process everything until the last stage, and return that stage.
+        val phrase = params.head
+        val stage = phrase.ops.head
+        stage match {
+          case QLTextStage(contents, _) => WarningValue("_code can't yet be used on literal text")
+          case QLCall(name, methodNameOpt, _, _) => {
+            methodNameOpt match {
+              case Some(methodName) => {
+                val strOpt = for (
+                  thing <- space.anythingByName(name);
+                  propThing <- space.anythingByName(methodName);
+                  propAndVal <- thing.getPropOpt(propThing.id)
+                )
+                  yield propAndVal.first
+                  
+                strOpt.flatMap {
+                  case QLText(str) => Some(encode(str))
+                  case _ => None
+                }.getOrElse(WarningValue("Couldn't resolve " + name + "." + methodName + " as a text property"))
+              }
+              case None => {
+                val propOpt = space.anythingByName(name)
+                propOpt match {
+                  case Some(propThing) => {
+                    propThing match {
+                      case prop:Property[_,_] => {
+                        applyToIncomingThing(mainContext) { (thing, _) =>
+                          val propAndVal = thing.getProp(prop)
+                          if (propAndVal.isEmpty)
+                            WarningValue("Trying to pass an empty value into _code")
+                          else {
+                            propAndVal.first match {
+                              case QLText(str) => encode(str)
+                              case _ => encode(propAndVal.first.toString)
+                            }
+                          }
+                        }
+                      }
+                      case _ => WarningValue("_code can only be used on properties") 
+                    }
+                  }
+                  case None => WarningValue("Unknown property " + name)
+                }
+              }
+            }
+          }
+        }
+      }
+      case None => {
+        val received = partialContext.value
+        if (received.pt.isInstanceOf[TextTypeBase]) {
+          val v = received.v.firstTyped(TextType)
+          v match {
+            case Some(str) => encode(str.text)
+            case None => WarningValue("No value passed in to _code")
+          }
+        } else {
+          WarningValue("_code can only be used with Text values")
+        }
+      }
+    }
+  }
+}
