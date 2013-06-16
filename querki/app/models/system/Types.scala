@@ -48,6 +48,14 @@ object CommonInputRenderers {
   }
 }
 
+/**
+ * This trait should be used by any type that can consider itself "code" -- in particular, that wants to be
+ * displayable in the _code() method. 
+ */
+trait CodeType {
+  def code(elem:ElemValue):String
+}
+
   /**
    * The Type for integers
    */
@@ -86,7 +94,7 @@ object CommonInputRenderers {
   case class QLText(text:String)
   
   abstract class TextTypeBase(oid:OID, pf:PropFetcher) extends SystemType[QLText](oid, pf
-      ) with PTypeBuilder[QLText,String]
+      ) with PTypeBuilder[QLText,String] with CodeType
   {
     def doDeserialize(v:String) = QLText(v)
     def doSerialize(v:QLText) = v.text
@@ -97,6 +105,8 @@ object CommonInputRenderers {
     
     val doDefault = QLText("")
     def wrap(raw:String):valType = QLText(raw)
+    
+    def code(elem:ElemValue):String = get(elem).text
   }
 
   /**

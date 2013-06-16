@@ -778,9 +778,26 @@ You can give a property as a parameter -- "_code(PROP)" -- and it will display t
 Or you can give a property on some other Thing -- "_code(THING.PROP)" -- to display the value of the property on that Thing.
           """)))
 {
-  def encode(str:String):TypedValue = {
-    val escaped = scala.xml.Utility.escape(str)
-    HtmlValue(Html("<pre>" + escaped + "</pre>"))
+  def encode(propVal:PropValue, pType:PType[_]):TypedValue = {
+    if (propVal.isEmpty)
+      WarningValue("_code got an empty input")
+    else {
+      pType match {
+        case codeType:CodeType => {
+          val str = codeType.code(propVal.first)
+          val escaped = scala.xml.Utility.escape(str)
+          HtmlValue(Html("<pre>" + escaped + "</pre>"))
+        }
+        case _ => WarningValue("_code doesn't work with type " + pType.displayName)
+      }
+    }
+  }
+  
+  def encodeThingAndProp(thing:Thing, prop:Thing)(implicit space:SpaceState):TypedValue = {
+    val propAndValOpt = thing.getPropOpt(prop.id)
+    propAndValOpt.map { propAndVal => 
+      encode(propAndVal.v, propAndVal.prop.pType)
+    }.getOrElse(WarningValue("Couldn't resolve " + thing.displayName + "." + prop.displayName + " as a property"))
   }
   
   // TODO: this is horrible. Surely we can turn this into something cleaner with better use of the functional
@@ -800,37 +817,20 @@ Or you can give a property on some other Thing -- "_code(THING.PROP)" -- to disp
           case QLCall(name, methodNameOpt, _, _) => {
             methodNameOpt match {
               case Some(methodName) => {
-                val strOpt = for (
+                val resultOpt = for (
                   thing <- space.anythingByName(name);
-                  propThing <- space.anythingByName(methodName);
-                  propAndVal <- thing.getPropOpt(propThing.id)
+                  propThing <- space.anythingByName(methodName)
                 )
-                  yield propAndVal.first
+                  yield encodeThingAndProp(thing, propThing)
                   
-                strOpt.flatMap {
-                  case QLText(str) => Some(encode(str))
-                  case _ => None
-                }.getOrElse(WarningValue("Couldn't resolve " + name + "." + methodName + " as a text property"))
+                resultOpt.getOrElse(WarningValue("Couldn't resolve " + name + "." + methodName + " as a property"))
               }
               case None => {
                 val propOpt = space.anythingByName(name)
                 propOpt match {
                   case Some(propThing) => {
-                    propThing match {
-                      case prop:Property[_,_] => {
-                        applyToIncomingThing(mainContext) { (thing, _) =>
-                          val propAndVal = thing.getProp(prop)
-                          if (propAndVal.isEmpty)
-                            WarningValue("Trying to pass an empty value into _code")
-                          else {
-                            propAndVal.first match {
-                              case QLText(str) => encode(str)
-                              case _ => encode(propAndVal.first.toString)
-                            }
-                          }
-                        }
-                      }
-                      case _ => WarningValue("_code can only be used on properties") 
+                    applyToIncomingThing(mainContext) { (thing, _) =>
+                      encodeThingAndProp(thing, propThing)
                     }
                   }
                   case None => WarningValue("Unknown property " + name)
@@ -841,16 +841,7 @@ Or you can give a property on some other Thing -- "_code(THING.PROP)" -- to disp
         }
       }
       case None => {
-        val received = partialContext.value
-        if (received.pt.isInstanceOf[TextTypeBase]) {
-          val v = received.v.firstTyped(TextType)
-          v match {
-            case Some(str) => encode(str.text)
-            case None => WarningValue("No value passed in to _code")
-          }
-        } else {
-          WarningValue("_code can only be used with Text values")
-        }
+        encode(partialContext.value.v, partialContext.value.pt)
       }
     }
   }

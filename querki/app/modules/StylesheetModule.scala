@@ -38,7 +38,7 @@ class StylesheetModule(val moduleId:Short) extends modules.Module {
   class CSSTextType(tid:OID) extends SystemType[String](tid,
     toProps(
         setName("Type-CSS"))
-    ) with SimplePTypeBuilder[String]
+    ) with SimplePTypeBuilder[String] with CodeType
   {
     // TODO: filter any Javascript-enabling keywords! This should go in doFromUser().
     
@@ -50,6 +50,8 @@ class StylesheetModule(val moduleId:Short) extends modules.Module {
     
     override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):scala.xml.Elem =
       CommonInputRenderers.renderLargeText(prop, state, currentValue, v, this)
+      
+    def code(elem:ElemValue):String = get(elem)
   }
   lazy val CSSTextType = new CSSTextType(CSSTextOID)  
   override lazy val types = Seq(CSSTextType)
