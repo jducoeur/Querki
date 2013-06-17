@@ -114,6 +114,7 @@ object OIDs {
   val SelfMethodOID = sysId(75)
   val PropsOfTypeOID = sysId(76)
   val CodeMethodOID = sysId(77)
+  val IsDefinedOID = sysId(78)
 }
 
 /**
@@ -175,7 +176,8 @@ object SystemSpace {
       TagsForPropertyMethod,
       SelfMethod,
       PropsOfTypeMethod,
-      CodeMethod)
+      CodeMethod,
+      IsDefinedMethod)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, DisplayThingTree, AllThings)
@@ -202,6 +204,8 @@ object SystemSpace {
     ""### Tags"", 
     ""**____**: [[_tagsForProperty -> _sort -> _join("", "")]]
 "")]]
+            
+[[How It Works -> _if(_isDefined, ""**____**"")]]
 """),
         ShowUnknownProp(TagThing.defaultDisplayText)), 
       SystemUserOID, "System", None, SystemTypes.all, props, things, SystemCollections.all)    

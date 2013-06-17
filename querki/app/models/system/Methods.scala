@@ -846,3 +846,13 @@ Or you can give a property on some other Thing -- "_code(THING.PROP)" -- to disp
     }
   }
 }
+
+object IsDefinedMethod extends SingleContextMethod(IsDefinedOID,
+    toProps(
+      setName("_isDefined"),
+      DisplayTextProp("_isDefined produces Yes if the name passed into it is a real Thing")))
+{
+  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, paramsOpt:Option[Seq[QLPhrase]]):TypedValue = {
+    partialContext.value.pt != UnknownNameType
+  }
+}
