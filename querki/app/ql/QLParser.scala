@@ -237,21 +237,40 @@ class BogusFunction extends QLFunction {
   }
 }
 
-sealed abstract class QLTextPart
-case class UnQLText(text:String) extends QLTextPart
+sealed abstract class QLTextPart {
+  def reconstructString:String
+}
+case class UnQLText(text:String) extends QLTextPart {
+  def reconstructString:String = text
+}
 sealed abstract class QLStage(collFlag:Option[String]) {
+  def reconstructString:String
   def useCollection:Boolean = collFlag match {
     case Some(_) => true
     case None => false
   }
 }
-case class QLCall(name:String, methodName:Option[String], params:Option[Seq[QLPhrase]], collFlag:Option[String]) extends QLStage(collFlag)
-case class QLTextStage(contents:ParsedQLText, collFlag:Option[String]) extends QLStage(collFlag)
+case class QLCall(name:String, methodName:Option[String], params:Option[Seq[QLPhrase]], collFlag:Option[String]) extends QLStage(collFlag) {
+  def reconstructString = name +
+    methodName.map(str => "." + str).getOrElse("") +
+    params.map("(" + _.map(_.reconstructString).mkString(", ") + ")").getOrElse("")
+}
+case class QLTextStage(contents:ParsedQLText, collFlag:Option[String]) extends QLStage(collFlag) {
+  def reconstructString = "\"\"" + contents.reconstructString + "\"\""
+}
 //case class QLPlainTextStage(text:String) extends QLStage
-case class QLPhrase(ops:Seq[QLStage])
-case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart
-case class QLLink(contents:ParsedQLText) extends QLTextPart
-case class ParsedQLText(parts:Seq[QLTextPart])
+case class QLPhrase(ops:Seq[QLStage]) {
+  def reconstructString = ops.map(_.reconstructString).mkString(" -> ")
+}
+case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart {
+  def reconstructString = "[[" + phrases.map(_.reconstructString).mkString + "]]"
+}
+case class QLLink(contents:ParsedQLText) extends QLTextPart {
+  def reconstructString = contents.reconstructString
+}
+case class ParsedQLText(parts:Seq[QLTextPart]) {
+  def reconstructString = parts.map(_.reconstructString).mkString
+}
 
 class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   

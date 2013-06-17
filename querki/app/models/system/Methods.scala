@@ -771,13 +771,19 @@ object CodeMethod extends SingleContextMethod(CodeMethodOID,
       setName("_code"),
       DisplayTextProp("""_code() displays the raw code of a value or property, pretty flexibly.
           
-You can give it as "TEXT -> _code" to display the TEXT.
+You can give it as "TEXT -> _code" to display the TEXT -- however, note that the TEXT will be processed as normal
+in this case. If you want to show some raw code, unprocessed, do it as "_code(TEXT)" instead.
           
 You can give a property as a parameter -- "_code(PROP)" -- and it will display the value of the property on this Thing.
           
 Or you can give a property on some other Thing -- "_code(THING.PROP)" -- to display the value of the property on that Thing.
           """)))
 {
+  def encodeString(str:String):TypedValue = {
+    val escaped = scala.xml.Utility.escape(str)
+    HtmlValue(Html("<pre>" + escaped + "</pre>"))    
+  }
+  
   def encode(propVal:PropValue, pType:PType[_]):TypedValue = {
     if (propVal.isEmpty)
       WarningValue("_code got an empty input")
@@ -785,8 +791,10 @@ Or you can give a property on some other Thing -- "_code(THING.PROP)" -- to disp
       pType match {
         case codeType:CodeType => {
           val str = codeType.code(propVal.first)
-          val escaped = scala.xml.Utility.escape(str)
-          HtmlValue(Html("<pre>" + escaped + "</pre>"))
+          encodeString(str)
+        }
+        case ParsedTextType => {
+          encodeString(propVal.firstTyped(ParsedTextType).map(_.plaintext).getOrElse(""))
         }
         case _ => WarningValue("_code doesn't work with type " + pType.displayName)
       }
@@ -813,7 +821,7 @@ Or you can give a property on some other Thing -- "_code(THING.PROP)" -- to disp
         val phrase = params.head
         val stage = phrase.ops.head
         stage match {
-          case QLTextStage(contents, _) => WarningValue("_code can't yet be used on literal text")
+          case QLTextStage(contents, _) => encodeString(contents.reconstructString)
           case QLCall(name, methodNameOpt, _, _) => {
             methodNameOpt match {
               case Some(methodName) => {
