@@ -803,11 +803,11 @@ If you have a parameter, and it doesn't work as either PROP or THING.PROP, then 
     }
   }
   
-  def encodeThingAndProp(thing:Thing, prop:Thing)(implicit space:SpaceState):TypedValue = {
+  def encodeThingAndProp(thing:Thing, prop:Thing)(implicit space:SpaceState):Option[TypedValue] = {
     val propAndValOpt = thing.getPropOpt(prop.id)
     propAndValOpt.map { propAndVal => 
       encode(propAndVal.v, propAndVal.prop.pType)
-    }.getOrElse(WarningValue("Couldn't resolve " + thing.displayName + "." + prop.displayName + " as a property"))
+    }
   }
   
   // TODO: this is horrible. Surely we can turn this into something cleaner with better use of the functional
@@ -829,9 +829,10 @@ If you have a parameter, and it doesn't work as either PROP or THING.PROP, then 
               case Some(methodName) => {
                 val resultOpt = for (
                   thing <- space.anythingByName(name);
-                  propThing <- space.anythingByName(methodName)
+                  propThing <- space.anythingByName(methodName);
+                  encoded <- encodeThingAndProp(thing, propThing)
                 )
-                  yield encodeThingAndProp(thing, propThing)
+                  yield encoded
                   
                 resultOpt.getOrElse(encodeString(phrase.reconstructString))
               }
@@ -840,7 +841,7 @@ If you have a parameter, and it doesn't work as either PROP or THING.PROP, then 
                 propOpt match {
                   case Some(propThing) => {
                     applyToIncomingThing(mainContext) { (thing, _) =>
-                      encodeThingAndProp(thing, propThing)
+                      encodeThingAndProp(thing, propThing).getOrElse(encodeString(phrase.reconstructString))
                     }
                   }
                   case None => encodeString(phrase.reconstructString)
