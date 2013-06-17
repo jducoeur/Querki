@@ -777,6 +777,8 @@ in this case. If you want to show some raw code, unprocessed, do it as "_code(TE
 You can give a property as a parameter -- "_code(PROP)" -- and it will display the value of the property on this Thing.
           
 Or you can give a property on some other Thing -- "_code(THING.PROP)" -- to display the value of the property on that Thing.
+          
+If you have a parameter, and it doesn't work as either PROP or THING.PROP, then it will display the parameter literally.
           """)))
 {
   def encodeString(str:String):TypedValue = {
@@ -831,7 +833,7 @@ Or you can give a property on some other Thing -- "_code(THING.PROP)" -- to disp
                 )
                   yield encodeThingAndProp(thing, propThing)
                   
-                resultOpt.getOrElse(WarningValue("Couldn't resolve " + name + "." + methodName + " as a property"))
+                resultOpt.getOrElse(encodeString(phrase.reconstructString))
               }
               case None => {
                 val propOpt = space.anythingByName(name)
@@ -841,7 +843,7 @@ Or you can give a property on some other Thing -- "_code(THING.PROP)" -- to disp
                       encodeThingAndProp(thing, propThing)
                     }
                   }
-                  case None => WarningValue("Unknown property " + name)
+                  case None => encodeString(phrase.reconstructString)
                 }
               }
             }

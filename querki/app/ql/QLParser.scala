@@ -251,12 +251,13 @@ sealed abstract class QLStage(collFlag:Option[String]) {
   }
 }
 case class QLCall(name:String, methodName:Option[String], params:Option[Seq[QLPhrase]], collFlag:Option[String]) extends QLStage(collFlag) {
-  def reconstructString = name +
+  def reconstructString = collFlag.getOrElse("") +
+    name +
     methodName.map(str => "." + str).getOrElse("") +
     params.map("(" + _.map(_.reconstructString).mkString(", ") + ")").getOrElse("")
 }
 case class QLTextStage(contents:ParsedQLText, collFlag:Option[String]) extends QLStage(collFlag) {
-  def reconstructString = "\"\"" + contents.reconstructString + "\"\""
+  def reconstructString = collFlag.getOrElse("") + "\"\"" + contents.reconstructString + "\"\""
 }
 //case class QLPlainTextStage(text:String) extends QLStage
 case class QLPhrase(ops:Seq[QLStage]) {
@@ -266,7 +267,7 @@ case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart {
   def reconstructString = "[[" + phrases.map(_.reconstructString).mkString + "]]"
 }
 case class QLLink(contents:ParsedQLText) extends QLTextPart {
-  def reconstructString = contents.reconstructString
+  def reconstructString = "__" + contents.reconstructString + "__"
 }
 case class ParsedQLText(parts:Seq[QLTextPart]) {
   def reconstructString = parts.map(_.reconstructString).mkString
