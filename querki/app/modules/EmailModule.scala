@@ -256,9 +256,26 @@ The QL expression given in here must product a List of Links to Persons.
 		      msg.setSubject(subject)
 		    
 		      val bodyQL = t.getProp(emailBody).first
+		      
+		      // Attach the HTML...
 		      val bodyParser = new QLParser(bodyQL, personContext)
-		      val body = bodyParser.process.display
-		      msg.setDataHandler(new DataHandler(new ByteArrayDataSource(body, "text/html")))
+	          val bodyWikitext = bodyParser.process
+		      val bodyHtml = bodyWikitext.display
+		      val bodyPartHtml = new MimeBodyPart()
+		      bodyPartHtml.setDataHandler(new DataHandler(new ByteArrayDataSource(bodyHtml, "text/html")))
+		      
+		      // ... and the plaintext...
+		      val bodyPlain = bodyWikitext.plaintext
+		      val bodyPartPlain = new MimeBodyPart()
+	          bodyPartPlain.setDataHandler(new DataHandler(new ByteArrayDataSource(bodyPlain, "text/plain")))
+	          
+	          // ... and set the body to the multipart:
+	          val multipart = new MimeMultipart("alternative")
+	          // IMPORTANT: these are in increasing order of importance, and Gmail will display the *last*
+	          // one by preference:
+	          multipart.addBodyPart(bodyPartPlain)
+	          multipart.addBodyPart(bodyPartHtml)
+	          msg.setContent(multipart)
 		    
 		      msg.setHeader("X-Mailer", "Querki")
 		      msg.setSentDate(new java.util.Date())
