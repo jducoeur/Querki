@@ -25,7 +25,7 @@ object NavSection {
     
     val spaceSection = rc.state map { state =>
       NavSection(truncateName(state.displayName), Seq(
-        NavLink("Space Home", routes.Application.space(owner, spaceId)),
+        NavLink("Space Home", routes.Application.thing(owner, spaceId, spaceId)),
         NavLink("Create a Thing", routes.Application.createThing(owner, spaceId, None), Some("createThing")),
         NavLink("Add a Property", routes.Application.createProperty(owner, spaceId)),
         NavLink("Upload a Photo", routes.Application.upload(owner, spaceId)),
