@@ -286,6 +286,7 @@
 	    <h1>@pageTitle</h1>
 	</div>
 	
+	<div class="row-fluid">
 	@form(if (thing.isEmpty) { 
 	        routes.Application.doCreateThing(rc.ownerName, space.toThingId, Some(isSubCreate))
 	      } else { 
@@ -305,7 +306,7 @@
         
         <div class="control-group">
           <input type="submit" class="control-label btn" value="Add a Property:">
-          <div class="controls">
+          <div class="controls" style="margin-left:auto">&nbsp;&nbsp;
             <select name="addedProperty">
               <option value="">Choose a Property</option>
               @for(prop <- otherProps) {
@@ -325,4 +326,5 @@
 	    </div>
 	  </fieldset>
 	}
+	</div>
 }
