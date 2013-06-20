@@ -48,23 +48,33 @@ case class RequestContext(
   def ownerName = state map Application.ownerName getOrElse ""
   
   
-  val chromelessName = "cl"
   def turningOn(name:String):Boolean = paramIs(name, "on")
   def turningOff(name:String):Boolean = paramIs(name, "off")
-  // The chromeless param can either be set page-by-page, or be turned on or off.
-  // TODO: there's probably a general mechanism fighting to break out here.
-  def chromeless = {
-    !turningOff(chromelessName) && 
-      (hasQueryParam(chromelessName) || turningOn(chromelessName) || request.session.get(chromelessName).map(_ == "on").getOrElse(false))
+  // Major session params can generally be turned on for one display, or as a "mode" in the cookies
+  def isOn(name:String) = {
+    !turningOff(name) && 
+      (hasQueryParam(name) || turningOn(name) || request.session.get(name).map(_ == "on").getOrElse(false))
+  }
+  
+  // TODO: these probably don't belong here in the long run:
+  val chromelessName = "cl"
+  def chromeless = isOn(chromelessName)
+    
+  private def updatesFor(updates:Seq[(String, String)], name:String) = {
+    if (turningOn(name))
+      updates :+ (name -> "on")
+    else if (turningOff(name))
+      updates :+ (name -> "off")
+    else
+      updates    
   }
   
   def allSessionUpdates:Seq[(String, String)] = {
-    if (turningOn(chromelessName))
-      sessionUpdates :+ (chromelessName -> "on")
-    else if (turningOff(chromelessName))
-      sessionUpdates :+ (chromelessName -> "off")
-    else
-      sessionUpdates
+    // TODO: rewrite this whole mechanism so that we look for each parameter that is "=on" or "=off",
+    // and make those adjustments:
+    val update1 = updatesFor(sessionUpdates, chromelessName)
+
+    update1
   }
   
   val propStrName = "prop"
