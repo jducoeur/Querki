@@ -284,12 +284,18 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   }
   
   val name = """[a-zA-Z_][\w-_ ]*[\w]""".r
-  val unQLTextRegex = """([^\[\"_]|\[(?!\[)|\"(?!\")|_(?!_))+""".r
+  // These two regexes are used in the unQLText production. Yes, they *could* be combined into one
+  // expression, and originally were. They were split because having them together apparently does
+  // something horrible to Java's Regex engine -- if you tried to feed it more than a page or so of
+  // matching text (that is, with no QL expressions), it would explode with a Stack Overflow error.
+  // Splitting them seems to cure that, knock on wood.
+  val unQLTextRegex = """[^\[\"_]+""".r
+  val partialDelimiterRegex = """(\[(?!\[)|\"(?!\")|_(?!_))+""".r
   // We don't want the RegexParser removing whitespace on our behalf. Note that we need to be
   // very careful about whitespace!
   override val whiteSpace = "".r
   
-  def unQLText:Parser[UnQLText] = unQLTextRegex ^^ { UnQLText(_) }
+  def unQLText:Parser[UnQLText] = (unQLTextRegex | partialDelimiterRegex) ^^ { UnQLText(_) }
   def qlCall:Parser[QLCall] = opt("\\*\\s*".r) ~ name ~ opt("." ~> name) ~ opt("\\(\\s*".r ~> (rep1sep(qlPhrase, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
     case collFlag ~ n ~ optMethod ~ optParams => QLCall(n, optMethod, optParams, collFlag) }
   def qlTextStage:Parser[QLTextStage] = (opt("\\*\\s*".r) <~ "\"\"") ~ qlText <~ "\"\"" ^^ {
@@ -440,12 +446,24 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   def parse = parseAll(qlText, input.text)
   
   def process:Wikitext = {
-    val parseResult = parse
-    parseResult match {
-      case Success(result, _) => processParseTree(result, initialContext)
-      case Failure(msg, next) => { Logger.warn(s"Couldn't parse qlText: $msg at ${next.pos}"); Wikitext("Couldn't parse qlText: " + msg) }
-      // TODO: we should probably do something more serious in case of Error:
-      case Error(msg, next) => { Logger.error("Couldn't parse qlText: " + msg); Wikitext("ERROR: Couldn't parse qlText: " + msg) }
+    try {
+      val parseResult = parse
+      parseResult match {
+        case Success(result, _) => processParseTree(result, initialContext)
+        case Failure(msg, next) => { Logger.warn(s"Couldn't parse qlText: $msg at ${next.pos}"); Wikitext("Couldn't parse qlText: " + msg) }
+        // TODO: we should probably do something more serious in case of Error:
+        case Error(msg, next) => { Logger.error("Couldn't parse qlText: " + msg); Wikitext("ERROR: Couldn't parse qlText: " + msg) }
+      }
+    } catch {
+      case overflow:java.lang.StackOverflowError => {
+        Logger.error("Stack overflow error while trying to parse this QLText:\n" + input.text)
+        overflow.printStackTrace()
+        Wikitext("We're sorry -- this thing is apparently more complex than Querki can currently cope with. Please contact Justin: this is a bug we need to fix.")
+      }
+      case error:Throwable => {
+        Logger.error("Error during QL Processing: " + error)
+        Wikitext("We're sorry -- there was an error while trying to display this thing.")
+      }
     }
   }
   
