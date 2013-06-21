@@ -171,8 +171,31 @@ class Space extends Actor {
              Map.empty[OID, Collection]
             )
       }
-      // TBD: note that it is a hard error if there aren't any Spaces found. We expect exactly one:
-      curState = spaceStream.head
+      
+      curState =
+        if (spaceStream.isEmpty) {
+          // This wants to be a Big Nasty Error!
+          Logger.error("Was unable to find/load Space " + id + "/" + name + ". INVESTIGATE THIS!")
+          
+          // In the meantime, we fall back on a plain Space Thing:
+          new SpaceState(
+            id,
+            systemState.id,
+            toProps(
+              setName(name),
+              DisplayTextProp("We were unable to load " + name + " properly. An error has been logged; our apologies.")
+              ),
+            owner,
+            name,
+            Some(systemState),
+            Map.empty[OID, PType[_]],
+            Map.empty[OID, Property[_,_]],
+            Map.empty[OID, ThingState],
+            // TODO (probably rather later): dynamic Collections
+            Map.empty[OID, Collection]
+            )
+        } else
+          spaceStream.head
       
       val props = getThings(Kind.Property) { (thingId, modelId, propMap) =>
         val typ = systemState.typ(TypeProp.first(propMap))
