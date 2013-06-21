@@ -445,6 +445,26 @@ class ExternalLinkType(tid:OID) extends SystemType[URL](tid,
 }
 object ExternalLinkType extends ExternalLinkType(ExternalLinkTypeOID)
 
+// This is a pure marker trait, indicating that this PropValue didn't load correctly yet:
+trait UnresolvedPropValue
+object UnresolvedProp extends ExactlyOne(UnknownOID) {
+   override def makePropValue(cv:implType):PropValue = UnresPropValue(cv, this)
+   private case class UnresPropValue(cv:implType, coll:ExactlyOne) extends PropValue with UnresolvedPropValue
+}
+// This pseudo-Type is used to store values from disk that we can't resolve yet. It is only
+// used at Space-load time:
+object UnresolvedPropType extends SystemType[String](UnknownOID,
+    toProps(
+      setName("UnresolvedProp")
+    )) with SimplePTypeBuilder[String]
+{
+  def doDeserialize(v:String) = v
+  def doSerialize(v:String) = v
+  def doRender(context:ContextBase)(v:String) = Wikitext("Unresolved property value!")
+  
+  val doDefault = ""
+}
+
 object SystemTypes {
   def all = Space.oidMap[PType[_]](IntType, TextType, QLType, YesNoType, NameType, TagSetType, LinkType, LargeTextType, PlainTextType, InternalMethodType, ExternalLinkType)  
 }

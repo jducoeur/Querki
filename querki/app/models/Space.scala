@@ -197,7 +197,7 @@ class Space extends Actor {
         } else
           spaceStream.head
       
-      val props = getThings(Kind.Property) { (thingId, modelId, propMap) =>
+      val loadedProps = getThings(Kind.Property) { (thingId, modelId, propMap) =>
         val typ = systemState.typ(TypeProp.first(propMap))
         // This cast is slightly weird, but safe and should be necessary. But I'm not sure
         // that the PTypeBuilder part is correct -- we may need to get the RT correct.
@@ -209,7 +209,7 @@ class Space extends Actor {
         val boundColl = coll.asInstanceOf[Collection]
         new Property(thingId, id, modelId, boundTyp, boundColl, () => propMap)
       }
-      curState = curState.copy(spaceProps = props)
+      curState = curState.copy(spaceProps = loadedProps)
       
       val things = getThings(Kind.Thing) { (thingId, modelId, propMap) =>
         new ThingState(thingId, id, modelId, () => propMap)        
@@ -221,6 +221,23 @@ class Space extends Actor {
       
       val allThings = things ++ attachments
       curState = curState.copy(things = allThings)
+      
+      // Now we do a second pass, to resolve anything left unresolved:
+      val fixedStateProps = curState.props.map { propPair =>
+        val (id, value) = propPair
+        value match {
+          case unres:UnresolvedPropValue => {
+            val propOpt = curState.prop(id)
+            val v = propOpt match {
+              case Some(prop) => prop.deserialize(value.firstTyped(UnresolvedPropType).get)
+              case None => value
+            }
+            (id, v)
+          }
+          case _ => propPair
+        }
+      }
+      curState = curState.copy(pf = () => fixedStateProps)
       
       _currentState = Some(curState)
     }    

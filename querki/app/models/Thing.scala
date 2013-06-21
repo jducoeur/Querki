@@ -87,9 +87,11 @@ object Thing {
       val (idStr, valStrAndColon) = propStr.splitAt(propStr.indexOf(':'))
       val valStr = unescape(valStrAndColon.drop(1))
       val id = OID(idStr)
-      // TODO: this needs to become propOpt!
-      val prop = space.prop(id).get
-      val v = prop.deserialize(valStr)
+      val propOpt = space.prop(id)
+      val v = propOpt match {
+        case Some(prop) => prop.deserialize(valStr)
+        case None => UnresolvedProp(UnresolvedPropType(valStr))
+      }
       (id, v)
     }
     toProps(propPairs:_*)()
