@@ -61,11 +61,16 @@ object Thing {
   def serializeProps(props:PropMap, space:SpaceState) = {
     val serializedProps = props.map { pair =>
       val (ptr, v) = pair
-      val prop = space.prop(ptr)
-      val oid = prop.id
-      oid.toString + 
-        ":" + 
-        Thing.escape(prop.serialize(prop.castVal(v)))
+      val propOpt = space.prop(ptr)
+      propOpt match {
+        case Some(prop) => {
+          val oid = prop.id
+          oid.toString + 
+            ":" + 
+            Thing.escape(prop.serialize(prop.castVal(v)))
+        }
+        case None => ""  // This is *very* weird
+      }
     }
     
     serializedProps.mkString("{", ";", "}")
@@ -82,7 +87,8 @@ object Thing {
       val (idStr, valStrAndColon) = propStr.splitAt(propStr.indexOf(':'))
       val valStr = unescape(valStrAndColon.drop(1))
       val id = OID(idStr)
-      val prop = space.prop(id)
+      // TODO: this needs to become propOpt!
+      val prop = space.prop(id).get
       val v = prop.deserialize(valStr)
       (id, v)
     }
@@ -139,8 +145,8 @@ abstract class Thing(
    * The Property as defined on *this* specific Thing.
    */
   def localProp(pid:OID)(implicit state:SpaceState):Option[PropAndVal[_]] = {
-    val ptr = state.prop(pid)
-    props.get(pid).map(v => ptr.pair(v))
+    val propOpt = state.prop(pid)
+    propOpt.flatMap(prop => props.get(pid).map(v => prop.pair(v)))
   }
   def localProp[VT, CT](prop:Property[VT, _]):Option[PropAndVal[VT]] = {
     prop.fromOpt(this.props) map prop.pair
@@ -156,7 +162,7 @@ abstract class Thing(
   def getProp(propId:OID)(implicit state:SpaceState):PropAndVal[_] = {
     // TODO: we're doing redundant lookups of the property. Rationalize this stack of calls.
     val prop = state.prop(propId)
-    if (prop.first(NotInheritedProp))
+    if (prop.isDefined && prop.get.first(NotInheritedProp))
       localOrDefault(propId)
     else
       localProp(propId).getOrElse(getModel.getProp(propId))
@@ -174,7 +180,7 @@ abstract class Thing(
   }
   
   def localOrDefault(propId:OID)(implicit state:SpaceState):PropAndVal[_] = {
-    val prop = state.prop(propId)
+    val prop = state.prop(propId).getOrElse(throw new Exception("Using localOrDefault on an unknown Property!"))
     localProp(propId).getOrElse(prop.defaultPair)
   }
   def localOrDefault[VT, CT](prop:Property[VT, _])(implicit state:SpaceState):PropAndVal[VT] = {
@@ -272,7 +278,9 @@ abstract class Thing(
   }
   
   def localProps(implicit state:SpaceState):Set[Property[_,_]] = {
-    props.keys.map(state.prop(_)).toSet    
+    val propOpts = props.keys.map(state.prop(_))
+    val validProps = propOpts.flatten
+    validProps.toSet    
   }
   
   /**
@@ -291,9 +299,14 @@ abstract class Thing(
   
   def renderProps(implicit request:RequestContext):Wikitext = {
     val listMap = props.map { entry =>
-      val prop = request.state.get.prop(entry._1)
-      val pv = prop.pair(entry._2)
-      "<dt>" + prop.displayName + "</dt><dd>" + pv.render(thisAsContext).raw + "</dd>"
+      val propOpt = request.state.get.prop(entry._1)
+      propOpt match {
+        case Some(prop) => {
+          val pv = prop.pair(entry._2)
+          "<dt>" + prop.displayName + "</dt><dd>" + pv.render(thisAsContext).raw + "</dd>"
+        }
+        case None => "<dt>" + entry._1 + "</dt><dd>Property not found!</dd>"
+      }
     }
     HtmlWikitext(Html(listMap.mkString("<dl>", "", "</dl>")))    
   }

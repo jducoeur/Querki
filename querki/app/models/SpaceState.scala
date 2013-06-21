@@ -49,8 +49,13 @@ case class SpaceState(
     lookup(this).get(tid).getOrElse(
           app.map(_.resolve(tid)(lookup)).getOrElse(throw new Exception("Couldn't find " + tid)))
   }
+  // TODO: this is what we should be using instead of the old resolve()..
+  def resolveOpt[T <: Thing](tid:OID)(lookup: (SpaceState) => Map[OID, T]):Option[T] = {
+    lookup(this).get(tid).orElse(
+          app.map(_.resolve(tid)(lookup)))
+  }
   def typ(ptr:OID) = resolve(ptr) (_.types)
-  def prop(ptr:OID) = resolve(ptr) (_.spaceProps)
+  def prop(ptr:OID) = resolveOpt(ptr) (_.spaceProps)
   def thing(ptr:OID) = resolve(ptr) (_.things)
   def coll(ptr:OID) = resolve(ptr) (_.colls)
   

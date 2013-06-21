@@ -240,14 +240,19 @@ object Property {
           TreeMap.empty[Property[_,_], DisplayPropVal]
       
       (inherited /: thing.props.keys) { (m, propId) =>
-        val prop = state.prop(propId)
-        val value = prop.from(thing.props)
-        val disp =
-          if (m.contains(prop))
-            m(prop).copy(v = Some(value))
-          else
-            DisplayPropVal(root, prop, Some(value))
-        m + (prop -> disp)
+        val propOpt = state.prop(propId)
+        propOpt match {
+          case Some(prop) => {
+            val value = prop.from(thing.props)
+            val disp =
+              if (m.contains(prop))
+                m(prop).copy(v = Some(value))
+              else
+                DisplayPropVal(root, prop, Some(value))
+            m + (prop -> disp)
+          }
+          case None => m
+        }
       }
     }
     

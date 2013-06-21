@@ -290,9 +290,17 @@ disallow: /
       // If the model specifies which properties we actually want to edit, then use just those, in that order:
       case Some(editList) => {
         val withOpts = (Seq.empty[(Property[_,_], Option[DisplayPropVal])] /: editList) { (list, oid) =>
-          val prop = state.prop(oid)
-          val v = propList.get(prop)
-          list :+ (prop, v)
+          val propOpt = state.prop(oid)
+          propOpt match {
+            case Some(prop) => {
+              val v = propList.get(prop)
+              list :+ (prop, v)
+            }
+            case None => {
+              Logger.warn("Was unable to find Property " + oid + " in prepPropList()")
+              list
+            }
+          }
         }
         withOpts.filter(_._2.isDefined).map(pair => (pair._1, pair._2.get))
       }
@@ -332,8 +340,14 @@ disallow: /
         val thing = rc.thing
         val rawProps = info.fields map { propIdStr => 
           val propId = OID(propIdStr)
-          val prop = state.prop(propId)
-          HtmlRenderer.propValFromUser(prop, thing, rawForm)
+          val propOpt = state.prop(propId)
+          propOpt match {
+            case Some(prop) => {
+              HtmlRenderer.propValFromUser(prop, thing, rawForm)              
+            }
+            // TODO: this means that an unknown property was specified. We should think about the right error path here:
+            case None => FormFieldInfo(UrProp, None, true, false)
+          }
         }
         val oldModel = state.anything(OID(info.model)).get
         
@@ -362,8 +376,11 @@ disallow: /
         else if (info.addedProperty.length > 0) {
           // User chose to add a Property; add that to the UI and continue:
           val propId = OID(info.addedProperty)
-          val prop = state.prop(propId)
-          val allProps = rawProps :+ FormFieldInfo(prop, Some(prop.default), false, true)
+          val propOpt = state.prop(propId)
+          val allProps = propOpt match {
+            case Some(prop) => rawProps :+ FormFieldInfo(prop, Some(prop.default), false, true)
+            case None => rawProps
+          }
           showEditPage(rc, oldModel, makeProps(allProps))
 //        } else if (info.newModel.length > 0) {
 //          // User is changing models. Replace the empty Properties with ones
