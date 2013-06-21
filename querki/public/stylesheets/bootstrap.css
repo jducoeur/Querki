@@ -3746,7 +3746,7 @@ input[type="submit"].btn.btn-mini {
   display: inline-block;
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
-  border-bottom: 6px solid #ffffff;
+  border-bottom: 6px solid #3a8104;
   position: absolute;
   top: -6px;
   left: 10px;
@@ -3759,7 +3759,7 @@ input[type="submit"].btn.btn-mini {
   top: auto;
 }
 .navbar-fixed-bottom .nav > li > .dropdown-menu:after {
-  border-top: 6px solid #ffffff;
+  border-top: 6px solid #3a8104;
   border-bottom: 0;
   bottom: -6px;
   top: auto;
@@ -4846,7 +4846,7 @@ a.thumbnail:focus {
   padding: 5px 0;
   margin: 2px 0 0;
   list-style: none;
-  background-color: #ffffff;
+  background-color: #3a8104;
   border: 1px solid #ccc;
   border: 1px solid rgba(0, 0, 0, 0.2);
   *border-right-width: 2px;
@@ -4880,7 +4880,7 @@ a.thumbnail:focus {
   clear: both;
   font-weight: normal;
   line-height: 20px;
-  color: #333333;
+  color: #ffffff;
   white-space: nowrap;
 }
 .dropdown-menu > li > a:hover,
@@ -4989,7 +4989,7 @@ a.thumbnail:focus {
   border-color: transparent;
   border-style: solid;
   border-width: 5px 0 5px 5px;
-  border-left-color: #cccccc;
+  border-left-color: #0e1e01;
   margin-top: 5px;
   margin-right: -10px;
 }

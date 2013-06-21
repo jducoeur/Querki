@@ -132,6 +132,16 @@
 	<style>
 		#querkiBar { margin: 0 0 0 0; }
 		
+		/*
+		 * Workaround for what seems to be a bug in Bootstrap's theming: this is the text color for the
+		 * links in the collapsed menus. Bootstrap produces this as grayDark, and I can't figure out how
+		 * to make it right. 
+		 */
+		.nav-collapse .nav > li > a, 
+		.nav-collapse .dropdown-menu a {
+		  color: #ffffff;
+		}
+		
 		body {
 		  margin: 0;
 		}
@@ -174,10 +184,11 @@
                           </ul>
                         </li>
                       }
-                      
+                    </ul>
+                    <ul class="nav pull-right">
                       @defining(NavSection.loginNav(rc)) { section =>
                         <li class="dropdown"><a data-target="#@section.title" href="#@section.title" class="dropdown-toggle" data-toggle="dropdown">@section.title <b class="caret"></b></a>
-                          <ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dLabel">@for(link <- section.links) {
+                          <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">@for(link <- section.links) {
                             <li><a href="@link.url" @link.idAttr>@link.display</a></li>}
                           </ul>
                         </li>
