@@ -223,21 +223,31 @@ class Space extends Actor {
       curState = curState.copy(things = allThings)
       
       // Now we do a second pass, to resolve anything left unresolved:
-      val fixedStateProps = curState.props.map { propPair =>
-        val (id, value) = propPair
-        value match {
-          case unres:UnresolvedPropValue => {
-            val propOpt = curState.prop(id)
-            val v = propOpt match {
-              case Some(prop) => prop.deserialize(value.firstTyped(UnresolvedPropType).get)
-              case None => value
+      def secondPassProps[T <: Thing](thing:T)(copier:(T, PropMap) => T):T = {
+        val fixedProps = thing.props.map { propPair =>
+          val (id, value) = propPair
+          value match {
+            case unres:UnresolvedPropValue => {
+              val propOpt = curState.prop(id)
+              val v = propOpt match {
+                case Some(prop) => prop.deserialize(value.firstTyped(UnresolvedPropType).get)
+                case None => value
+              }
+              (id, v)
             }
-            (id, v)
+            case _ => propPair
           }
-          case _ => propPair
         }
+        copier(thing, fixedProps)
       }
-      curState = curState.copy(pf = () => fixedStateProps)
+
+      curState = secondPassProps(curState)((state, props) => state.copy(pf = () => props))
+      
+      val fixedAllProps = curState.spaceProps.map{ propPair =>
+        val (id, prop) = propPair
+        (id, secondPassProps(prop)((p, metaProps) => p.copy(pf = () => metaProps)))
+      }.toSeq
+      curState = curState.copy(spaceProps = Map(fixedAllProps:_*))
       
       _currentState = Some(curState)
     }    
