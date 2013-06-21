@@ -60,6 +60,12 @@
         <script src="@routes.Assets.at("javascripts/jquery-ui-1.10.0.custom.js")"></script>
         <script src="@routes.Assets.at("javascripts/jquery.ui.menubar.js")"></script>
         <script src="@routes.Assets.at("javascripts/bootstrap.js")"></script>
+        <!-- This padding is needed for the top navbar. Bootstrap doc says to put it between the main and responsive CSS: -->
+        <style>
+          body {
+            padding-top: 40px;
+          }
+        </style>
         <script src="@routes.Assets.at("javascripts/bootstrap-responsive.js")"></script>
         <script src="@routes.Assets.at("javascripts/underscore-min.js")"></script>
         <script src="@routes.Assets.at("javascripts/jquery.autosize-min.js")"></script>
@@ -143,6 +149,46 @@
     <body>
 
 	    @if(!rc.chromeless) {
+	    
+	      <!-- Bootstrap menus -->
+	      <div class="container">
+	        <div class="navbar navbar-fixed-top">
+	          <div class="navbar-inner">
+	            <div class="container">
+	            
+	              <!-- This is the bit that takes over when we collapse a small screen -->
+                  <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                  </a>
+                  
+	              <a class="brand" href="@routes.Application.index">Querki</a>
+	              
+	              <div class="nav-collapse collapse">
+	                <ul class="nav">
+                      @for(section <- nav.sections) {
+                        <li class="dropdown"><a data-target="#@section.title" href="#@section.title" class="dropdown-toggle" data-toggle="dropdown">@section.title <b class="caret"></b></a>
+                          <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">@for(link <- section.links) {
+                            <li><a href="@link.url" @link.idAttr>@link.display</a></li>}
+                          </ul>
+                        </li>
+                      }
+                      
+                      @defining(NavSection.loginNav(rc)) { section =>
+                        <li class="dropdown"><a data-target="#@section.title" href="#@section.title" class="dropdown-toggle" data-toggle="dropdown">@section.title <b class="caret"></b></a>
+                          <ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dLabel">@for(link <- section.links) {
+                            <li><a href="@link.url" @link.idAttr>@link.display</a></li>}
+                          </ul>
+                        </li>
+                      }
+	                </ul>
+	              </div>
+	            </div>
+	          </div>
+	        </div>
+	      </div>
+<!--
 		    <ul id="querkiBar" class="menubar">
               @for(section <- nav.sections) {
                 <li><a href="#@section.title">@section.title</a>
@@ -152,6 +198,7 @@
                 </li>
               }
 			</ul>
+-->
 	    }
 	    
 	@createFormInSpace

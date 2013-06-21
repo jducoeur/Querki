@@ -6,7 +6,7 @@ import play.api.templates.Html
 import controllers._
 
 object NavSection {
-  object homeNav extends NavSections(Seq(querkiSection))
+  object homeNav extends NavSections(Seq())
   
   val maxNameDisplay = 25
     
@@ -17,6 +17,19 @@ object NavSection {
       val cutoff = Math.max(name.lastIndexOf(" ", maxNameDisplay), 10)
       (name take cutoff) + "..."
     }
+  }
+  
+  def loginNav(rc:RequestContext) = {
+    rc.requester map { user =>
+      NavSection("Logged in as " + user.name, Seq(
+        NavLink("Your Spaces", routes.Application.spaces),
+        NavLink("Log out", routes.Application.logout)
+      ))
+    } getOrElse {
+      NavSection("Not logged in", Seq(
+        NavLink("Log in", routes.Application.login)
+      ))
+    }    
   }
       
   def nav(rc:RequestContext) = {
@@ -60,15 +73,9 @@ object NavSection {
       ))
     }
     
-    val sections = Seq(querkiSection) ++ spaceSection ++ thingSection
-    NavSections(sections :+ loginSection)
+    val sections = Seq(spaceSection, thingSection).flatten
+    NavSections(sections)
   }
-  
-  val querkiSection = NavSection("Querki", Seq(
-      NavLink("Home", routes.Application.index),
-      NavLink("Your Spaces", routes.Application.spaces),
-      NavLink("Logout", routes.Application.logout)
-      ))
 }
 
 case class NavSections(sections:Seq[NavSection])
