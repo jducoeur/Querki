@@ -255,7 +255,18 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     def from[RT,VT](in:Iterable[RT], pt:PType[VT], builder:PTypeBuilder[VT,RT]):PropValue = {
       val rawList = (List.empty[ElemValue] /: in)((list, next) => list :+ builder(next))
       val sorted = rawList.sortWith(pt.comp)
-      makePropValue(sorted)
+      val deduped = ((List.empty[ElemValue], Option.empty[ElemValue]) /: sorted){ (state, next) =>
+        val (list, prevOpt) = state
+        prevOpt match {
+          case Some(prev) =>
+            if (pt.matches(prev, next))
+              state
+            else
+              (list :+ next, Some(next))
+          case None => (list :+ next, Some(next))
+        }
+      }
+      makePropValue(deduped._1)
     }
   }
   object QSet extends QSet(QSetOID)
