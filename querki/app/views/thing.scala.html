@@ -10,6 +10,11 @@
   }
 }
 @title = @{ thing.displayName }
+@user = @{ rc.requester }
+
+@canEdit = @{
+  user.isDefined && space.canEdit(user.get, thing)
+}
 
 @main(QuerkiTemplate.Thing, title, rc, true) {
 
@@ -92,7 +97,7 @@
 
         @if(!rc.chromeless) {
 	    <div class="page-header">
-	      <h1>@title</h1>
+	      <h1>@title @if(canEdit) { <a class="btn btn-mini btn-primary" title="Edit @title" href="@routes.Application.editThing(rc.ownerName, space.toThingId, thing.toThingId)"><i class="icon-edit icon-white"></i></a> }</h1>
 	    </div>
 	    }
 	
