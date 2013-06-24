@@ -275,6 +275,8 @@ object QLType extends QLType(QLTypeOID)
       // mostly because we want to preserve the *case* of the Tag:
       Wikitext("[" + v + "](" + toUrl(v) + ")")
     }
+    
+    override def doComp(left:String, right:String):Boolean = { left < right } 
 
     val doDefault = ""
       

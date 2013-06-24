@@ -66,6 +66,12 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
   final def toUser(v:ElemValue):String = doToUser(get(v))
   
   /**
+   * This compares two values. It is used to sort Collections.
+   */
+  def doComp(left:VT, right:VT):Boolean = { math.Ordering.String.lt(doToUser(left), doToUser(right)) } 
+  final def comp(left:ElemValue, right:ElemValue):Boolean = doComp(get(left), get(right))
+  
+  /**
    * The type unwrapper -- takes an opaque ElemValue and returns the underlying value.
    * This is a fundamentally unsafe operation, so it should always be performed in the
    * context of a Property.

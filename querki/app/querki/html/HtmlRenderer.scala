@@ -173,6 +173,6 @@ object HtmlRenderer {
       for (i <- oldIndexes;
            v <- oldList("[" + i + "]").value)
         yield v
-    FormFieldInfo(prop, Some(QList.from(oldRaw, TagSetType)), false, true)
+    FormFieldInfo(prop, Some(QSet.from(oldRaw, TagSetType, TagSetType)), false, true)
   }
 }
