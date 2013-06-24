@@ -544,22 +544,46 @@ disallow: /
   def getTags(ownerId:String, spaceId:String, propId:String, q:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
     implicit val space = rc.state.get
     val lowerQ = q.toLowerCase()
-    val tagsOpt =
-      for
+    val tagsOpt = for
       (
         prop <- space.prop(ThingId(propId))
       )
         yield TagsForPropertyMethod.fetchTags(space, prop).filter(_.toLowerCase().contains(lowerQ))
         
-    val tagsOrThings =
-      if (tagsOpt.isDefined && !tagsOpt.get.isEmpty)
-        tagsOpt.get
-      else
-        space.allThings.toSeq.map(_.displayName).filter(_.toLowerCase().contains(lowerQ))
+    val tagsSorted = tagsOpt.map(tags => tags.toList.sorted)
+    val thingsSorted = space.allThings.toSeq.map(_.displayName).filter(_.toLowerCase().contains(lowerQ)).sorted
+        
+    val tagsAndThings = 
+      tagsSorted match {
+        case Some(tags) => tags ++ (thingsSorted.toList.diff(tags))
+        case None => thingsSorted
+      }
         
     // TODO: introduce better JSONification for the AJAX code:
-    val JSONtags = "[" + tagsOrThings.map("\"" + _ + "\"").mkString(",") + "]"
+    val JSONtags = "[" + tagsAndThings.map("\"" + _ + "\"").mkString(",") + "]"
     Ok(JSONtags)
+  }
+
+  def getLinks(ownerId:String, spaceId:String, propId:String, q:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
+    implicit val space = rc.state.get
+    val lowerQ = q.toLowerCase()
+    
+    val propOpt = space.prop(ThingId(propId))
+    propOpt match {
+      case Some(prop) => {
+        val allThings = space.allThings.toSeq
+        // TODO: filter for Link Model, if applicable
+        val thingsSorted = allThings.map(_.displayName).filter(_.toLowerCase().contains(lowerQ)).sorted
+        
+        // TODO: introduce better JSONification for the AJAX code:
+        val JSONtags = "[" + thingsSorted.map("\"" + _ + "\"").mkString(",") + "]"
+        Ok(JSONtags)
+      }
+      case None => {
+        // TODO: introduce an error of some sort here?
+        Ok("[]")
+      }
+    }
   }
 
   def upload(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>

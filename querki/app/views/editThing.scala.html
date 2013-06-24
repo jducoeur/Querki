@@ -167,16 +167,32 @@
         $.fn.asManifest = function () {
           this.each(function () {
             var propId = $(this).data('propid');
-            $(this).manifest({
-		      marcoPolo: {
-		        url: 'getTags?propId=' + propId,
-		        minChars: 3,
-		        formatData: function(data) { return data; },
-		        formatItem: function(data, $item) { return data; },
-		        formatNoResults: function(q, $item) { return "No existing tag with <b>" + q + "</b> found."; }
-		      },
-              formatDisplay: function (data, $item, $mpItem) { return data; }
-		    });
+            var isNames = $(this).data('isnames');
+            if (isNames) {
+              $(this).manifest({
+	  	        marcoPolo: {
+		          url: 'getTags?propId=' + propId,
+		          minChars: 3,
+		          required: false,
+		          formatData: function(data) { return data; },
+		          formatItem: function(data, $item) { return data; },
+		          formatNoResults: function(q, $item) { return "No existing tag with <b>" + q + "</b> found."; }
+		        },
+                formatDisplay: function (data, $item, $mpItem) { return data; }
+		      });
+		    } else {
+              $(this).manifest({
+	  	        marcoPolo: {
+		          url: 'getLinks?propId=' + propId,
+		          minChars: 3,
+		          required: true,
+		          formatData: function(data) { return data; },
+		          formatItem: function(data, $item) { return data; },
+		          formatNoResults: function(q, $item) { return "No existing thing with <b>" + q + "</b> found."; }
+		        },
+                formatDisplay: function (data, $item, $mpItem) { return data; }
+		      });		    
+		    }
           });
         }
         

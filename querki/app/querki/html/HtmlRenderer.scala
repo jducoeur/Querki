@@ -79,7 +79,7 @@ object HtmlRenderer {
       Some(renderOptYesNo(state, prop, currentValue))
     else if (cType == Optional && pType == LinkType)
       Some(renderOptLink(state, prop, currentValue))
-    else if (pType == TagSetType)
+    else if (cType == QSet && (pType.isInstanceOf[NameType] || pType == LinkType))
       Some(renderTagSet(state, prop, currentValue))
     else
       None
@@ -124,8 +124,10 @@ object HtmlRenderer {
   def renderTagSet(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Elem = {
     val currentV = currentValue.v
     val rawList:Option[List[String]] = currentV.map(_.rawList(TagSetType))
+    // We treat names/tags and links a bit differently, although they look similar on the surface:
+    val isNameType = prop.pType.isInstanceOf[NameType]
     val current = rawList.map(_.mkString(", ")).getOrElse("")
-    <input class="_tagSetInput" data-propid={prop.toThingId} type="text" value={current}></input>
+    <input class="_tagSetInput" data-propid={prop.toThingId} data-isNames={isNameType.toString} type="text" value={current}></input>
   }
   
   def handleSpecialized(prop:Property[_,_], newVal:String):Option[PropValue] = {
