@@ -31,6 +31,16 @@
   }
 }
 
+@displayMenu(section:NavSection) = {
+  <li class="dropdown btn-group">
+    <button class="btn btn-primary"><a href="@section.titleLink.url">@section.titleLink.display</a></button>
+    <button class="btn btn-primary" data-target="#@section.titleLink.display" href="#@section.titleLink.display" class="dropdown-toggle" data-toggle="dropdown"><b class="caret"></b></button>
+    <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">@for(link <- section.links) {
+      <li><a href="@link.url" @link.idAttr>@link.display</a></li>}
+    </ul>
+  </li>
+}
+
 <!DOCTYPE html>
 
 @*********************
@@ -183,20 +193,12 @@
 	              <div class="nav-collapse collapse">
 	                <ul class="nav">
                       @for(section <- nav.sections) {
-                        <li class="dropdown"><a data-target="#@section.title" href="#@section.title" class="dropdown-toggle" data-toggle="dropdown">@section.title <b class="caret"></b></a>
-                          <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">@for(link <- section.links) {
-                            <li><a href="@link.url" @link.idAttr>@link.display</a></li>}
-                          </ul>
-                        </li>
+                        @displayMenu(section)
                       }
                     </ul>
                     <ul class="nav pull-right">
                       @defining(NavSection.loginNav(rc)) { section =>
-                        <li class="dropdown"><a data-target="#@section.title" href="#@section.title" class="dropdown-toggle" data-toggle="dropdown">@section.title <b class="caret"></b></a>
-                          <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">@for(link <- section.links) {
-                            <li><a href="@link.url" @link.idAttr>@link.display</a></li>}
-                          </ul>
-                        </li>
+                        @displayMenu(section)
                       }
 	                </ul>
 	              </div>
@@ -204,17 +206,6 @@
 	          </div>
 	        </div>
 	      </div>
-<!--
-		    <ul id="querkiBar" class="menubar">
-              @for(section <- nav.sections) {
-                <li><a href="#@section.title">@section.title</a>
-                  <ul>@for(link <- section.links) {
-                    <li><a href="@link.url" @link.idAttr>@link.display</a></li>}
-                  </ul>
-                </li>
-              }
-			</ul>
--->
 	    }
 	    
 	@createFormInSpace

@@ -21,12 +21,13 @@ object NavSection {
   
   def loginNav(rc:RequestContext) = {
     rc.requester map { user =>
-      NavSection("Logged in as " + user.name, Seq(
+      // TODO: the Logged in as should eventually link to my profile/account:
+      NavSection(NavLink("Logged in as " + user.name, routes.Application.spaces), Seq(
         NavLink("Your Spaces", routes.Application.spaces),
         NavLink("Log out", routes.Application.logout)
       ))
     } getOrElse {
-      NavSection("Not logged in", Seq(
+      NavSection(NavLink("Not logged in", routes.Application.login), Seq(
         NavLink("Log in", routes.Application.login)
       ))
     }    
@@ -37,7 +38,7 @@ object NavSection {
     val owner = rc.ownerName
     
     val spaceSection = rc.state map { state =>
-      NavSection(truncateName(state.displayName), Seq(
+      NavSection(NavLink(truncateName(state.displayName), routes.Application.thing(owner, spaceId, spaceId)), Seq(
         NavLink("Space Home", routes.Application.thing(owner, spaceId, spaceId)),
         NavLink("Create a Thing", routes.Application.createThing(owner, spaceId, None), Some("createThing")),
         NavLink("Add a Property", routes.Application.createProperty(owner, spaceId)),
@@ -54,22 +55,11 @@ object NavSection {
           case _ => None
         }
       }
-      NavSection(truncateName(thing.displayName), Seq(
+      NavSection(NavLink(truncateName(thing.displayName), routes.Application.thing(owner, spaceId, thingId)), Seq(
         NavLink("Edit", routes.Application.editThing(owner, spaceId, thingId)),
         NavLink("Create a " + thing.displayName, routes.Application.createThing(owner, spaceId, Some(thingId))),
         NavLink("Export", routes.Application.exportThing(owner, spaceId, thingId))
       ) ++ attachment)
-    }
-    
-    val loginSection = rc.requester map { user =>
-      NavSection("Logged in as " + user.name, Seq(
-        NavLink("Your Spaces", routes.Application.spaces),
-        NavLink("Log out", routes.Application.logout)
-      ))
-    } getOrElse {
-      NavSection("Not logged in", Seq(
-        NavLink("Log in", routes.Application.login)
-      ))
     }
     
     val sections = Seq(spaceSection, thingSection).flatten
@@ -79,7 +69,7 @@ object NavSection {
 
 case class NavSections(sections:Seq[NavSection])
 
-case class NavSection(val title:String, val links:Seq[NavLink])
+case class NavSection(val titleLink:NavLink, val links:Seq[NavLink])
 
 case class NavLink(display:String, url:Call, id:Option[String] = None) {
   def idAttr:Html = Html(id match {
