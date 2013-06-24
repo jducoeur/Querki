@@ -115,6 +115,8 @@ object OIDs {
   val PropsOfTypeOID = sysId(76)
   val CodeMethodOID = sysId(77)
   val IsDefinedOID = sysId(78)
+  val QSetOID = sysId(79)
+  val CommasMethodOID = sysId(80)
 }
 
 /**
@@ -180,7 +182,7 @@ object SystemSpace {
       IsDefinedMethod)
       
   // Things:
-  val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, DisplayThingTree, AllThings)
+  val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, Commas, DisplayThingTree, AllThings)
   
   def init = {
     _state = Some(modules.Modules.initAllModules(initialSystemState))

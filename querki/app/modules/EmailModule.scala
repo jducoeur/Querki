@@ -119,7 +119,7 @@ something fancier than sending to specific people, see the Recipients property.
         setName("Email Body"),
         DisplayTextProp("The Contents of the email")))
   
-  lazy val sentToProp = new SystemProperty(SentToOID, LinkType, QList,
+  lazy val sentToProp = new SystemProperty(SentToOID, LinkType, QSet,
       toProps(
         setName("Sent To"),
         DisplayTextProp("The Persons that this mail has already been sent to. (This is set automatically.)")))

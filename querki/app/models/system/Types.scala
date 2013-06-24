@@ -284,7 +284,7 @@ object QLType extends QLType(QLTypeOID)
     def doRender(context:ContextBase)(v:String) = Wikitext(toDisplay(v))    
   }
   object TagSetType extends NameType(TagSetOID, "Tag Set") {
-    override def requiredColl:Option[Collection] = Some(QList)
+    override def requiredColl:Option[Collection] = Some(QSet)
     
     // TODO: this should probably get refactored with LinkType? They're different ways of
     // expressing the same concepts; it's just that Links are OID-based, whereas Names/Tags are

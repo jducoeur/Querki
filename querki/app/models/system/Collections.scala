@@ -141,10 +141,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
   object Optional extends Optional(OptionalOID)
   
   
-  class QList(cid:OID) extends SystemCollection(cid,
-      toProps(
-        setName("List")
-        )) 
+  abstract class QListBase(cid:OID, pf:PropFetcher) extends SystemCollection(cid, pf) 
   {
     type implType = List[ElemValue]
     
@@ -172,8 +169,6 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     def doDefault(elemT:pType):implType = List.empty
     
     def wrap(elem:ElemValue):implType = List(elem)
-    def makePropValue(cv:implType):PropValue = QListPropValue(cv, this)
-    private case class QListPropValue(cv:implType, coll:QList) extends PropValue
     
     /**
      * Given an incoming Iterable of RTs, this produces the corresponding QList of VTs.
@@ -185,6 +180,8 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     }
     val empty = makePropValue(List.empty[ElemValue])
     
+    // TODO: this stuff is QList-specific. We'll want something different for QSet, but much of that is
+    // already in HtmlRenderer.
     // TODO: the stuff created here overlaps badly with the Javascript code in editThing.scala.html.
     // Rationalize the two, to eliminate all the duplication. In theory, the concept and structure
     // belongs here, and the details belong there.
@@ -233,7 +230,24 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       }
     }
   }
+  class QList(cid:OID) extends QListBase(cid,
+      toProps(
+        setName("List")
+        ))
+  {
+    def makePropValue(cv:implType):PropValue = QListPropValue(cv, this)
+    private case class QListPropValue(cv:implType, coll:QList) extends PropValue    
+  }
   object QList extends QList(QListOID)
+  
+  class QSet(cid:OID) extends QListBase(cid,
+      toProps(
+        setName("Set")))
+  {
+    def makePropValue(cv:implType):PropValue = QSetPropValue(cv, this)
+    private case class QSetPropValue(cv:implType, coll:QSet) extends PropValue    
+  }
+  object QSet extends QSet(QSetOID)
   
 /**
  * This is a special marker collection that is Unit -- that is, it is by definition empty.
@@ -267,5 +281,5 @@ class QUnit(cid:OID) extends SystemCollection(cid,
 object QUnit extends QUnit(QUnitOID)
     
 object SystemCollections {
-  def all = Space.oidMap[Collection](UrCollection, ExactlyOne, Optional, QList, QUnit)
+  def all = Space.oidMap[Collection](UrCollection, ExactlyOne, Optional, QList, QSet, QUnit)
 }

@@ -71,6 +71,11 @@ object Bulleted extends ThingState(BulletedOID, systemOID, RootOID,
       setName("_bulleted"),
       ApplyMethod("\"\"* ____\"\"")))
 
+object Commas extends ThingState(CommasMethodOID, systemOID, RootOID,
+    toProps(
+      setName("_commas"),
+      ApplyMethod("""_join("", "")""")))
+
 object DisplayThingTree extends ThingState(DisplayThingTreeOID, systemOID, RootOID,
     toProps(
       setName("_displayThingTree"),
