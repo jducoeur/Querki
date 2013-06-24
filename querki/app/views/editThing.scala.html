@@ -21,6 +21,14 @@
 
 @isSubCreate = @{ rc.isTrue("subCreate") }
 
+@cancelButton = {
+  @if(isCreate) {
+    <a class="cancelButton btn" href="@routes.Application.thing(rc.ownerName, space.toThingId, space.toThingId)">Cancel</a>
+  } else {
+    <a class="cancelButton btn" href="@routes.Application.thing(rc.ownerName, space.toThingId, thing.get.toThingId)">Cancel</a>
+  }
+}
+
 @showInputControl(prop:Property[_,_], v:DisplayPropVal, i:Int) = {
   @HtmlRenderer.renderPropertyInput(space, prop, v)
 }
@@ -62,6 +70,12 @@
 
 @main(QuerkiTemplate.Edit, pageTitle, rc) {
 
+    <style>
+      .cancelButton {
+        margin-left: 20px;
+      }
+    </style>
+    
     <script>
     
       // This is essentially a jQuery plugin for the concept of "Edit/Revert Buttons"
@@ -322,6 +336,7 @@
 	        @if(isCreate && !isSubCreate) {
 	          <input id="submitAndAnother" type="submit" value="Done and Create Another" class="btn">
 	        }
+	        @cancelButton
 	      </div>
 	    </div>
 	  </fieldset>
