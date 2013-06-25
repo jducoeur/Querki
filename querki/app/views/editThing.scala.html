@@ -169,35 +169,29 @@
             var propId = $(this).data('propid');
             var isNames = $(this).data('isnames');
             var current = $(this).data('current');
-            if (isNames) {
-              $(this).manifest({
-	  	        marcoPolo: {
-		          url: 'getTags?propId=' + propId,
-		          minChars: 3,
-		          required: false,
-		          formatData: function(data) { return data; },
-		          formatItem: function(data, $item) { return data.display; },
-		          formatNoResults: function(q, $item) { return "No existing tag with <b>" + q + "</b> found."; }
-		        },
-                formatDisplay: function (data, $item, $mpItem) { return data.display; },
-		        formatValue: function(data, $value, $item, $mpItem) { return data.id; },
-                values: current
-		      });
-		    } else {
-              $(this).manifest({
-	  	        marcoPolo: {
-		          url: 'getLinks?propId=' + propId,
-		          minChars: 3,
-		          required: true,
-		          formatData: function(data) { return data; },
-		          formatItem: function(data, $item) { return data.display; },
-		          formatNoResults: function(q, $item) { return "No existing thing with <b>" + q + "</b> found."; }
-		        },
-		        formatDisplay: function(data, $item, $mpItem) { return data.display; },
-		        formatValue: function(data, $value, $item, $mpItem) { return data.id; },
-		        values: current
-		      });		    
-		    }
+            
+            var entryPoint = 'getLinks';
+            var required = true;
+            var typeName = 'thing';
+            if (isNames) { 
+              entryPoint = 'getTags';
+              required = false;
+              typeName = 'tag';
+            }
+            
+            $(this).manifest({
+ 	          marcoPolo: {
+		        url: entryPoint + '?propId=' + propId,
+		        minChars: 3,
+		        required: required,
+		        formatData: function(data) { return data; },
+		        formatItem: function(data, $item) { return data.display; },
+		        formatNoResults: function(q, $item) { return "No existing " + typeName + " with <b>" + q + "</b> found."; }
+		      },
+              formatDisplay: function (data, $item, $mpItem) { return data.display; },
+		      formatValue: function(data, $value, $item, $mpItem) { return data.id; },
+              values: current
+		    });
           });
         }
         
