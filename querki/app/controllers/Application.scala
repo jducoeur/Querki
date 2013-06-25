@@ -583,10 +583,11 @@ disallow: /
             case None => allThings
           }
         
-        val thingsSorted = thingsFiltered.map(_.displayName).filter(_.toLowerCase().contains(lowerQ)).sorted
+        val thingsSorted = thingsFiltered.map(t => (t.displayName, t.id)).filter(_._1.toLowerCase().contains(lowerQ)).sortBy(_._1)
         
         // TODO: introduce better JSONification for the AJAX code:
-        val JSONtags = "[" + thingsSorted.map("\"" + _ + "\"").mkString(",") + "]"
+        val items = thingsSorted.map(item => "{\"display\":\"" + item._1 + "\", \"id\":\"" + item._2 + "\"}")
+        val JSONtags = "[" + items.mkString(",") + "]"
         Ok(JSONtags)
       }
       case None => {

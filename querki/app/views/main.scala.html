@@ -60,6 +60,12 @@
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/jquery-ui-1.10.0.custom.css")">
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/jquery.ui.menubar.css")">
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap.css")">
+        <!-- This padding is needed for the top navbar. Bootstrap doc says to put it between the main and responsive CSS: -->
+        <style>
+          body {
+            padding-top: 40px;
+          }
+        </style>
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap-responsive.css")">
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/manifest.css")">
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
@@ -70,13 +76,6 @@
         <script src="@routes.Assets.at("javascripts/jquery-ui-1.10.0.custom.js")"></script>
         <script src="@routes.Assets.at("javascripts/jquery.ui.menubar.js")"></script>
         <script src="@routes.Assets.at("javascripts/bootstrap.js")"></script>
-        <!-- This padding is needed for the top navbar. Bootstrap doc says to put it between the main and responsive CSS: -->
-        <style>
-          body {
-            padding-top: 40px;
-          }
-        </style>
-        <script src="@routes.Assets.at("javascripts/bootstrap-responsive.js")"></script>
         <script src="@routes.Assets.at("javascripts/underscore-min.js")"></script>
         <script src="@routes.Assets.at("javascripts/jquery.autosize-min.js")"></script>
         
