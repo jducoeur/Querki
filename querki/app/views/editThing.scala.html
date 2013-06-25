@@ -188,9 +188,20 @@
 		        formatItem: function(data, $item) { return data.display; },
 		        formatNoResults: function(q, $item) { return "No existing " + typeName + " with <b>" + q + "</b> found."; }
 		      },
-              formatDisplay: function (data, $item, $mpItem) { return data.display; },
-		      formatValue: function(data, $value, $item, $mpItem) { return data.id; },
-              values: current
+              formatDisplay: function (data, $item, $mpItem) {
+                if (_.isString(data))
+                  return data;
+                else 
+                  return data.display; 
+              },
+		      formatValue: function(data, $value, $item, $mpItem) {
+		        if (_.isString(data))
+		          return data;
+		        else 
+		          return data.id; 
+		      },
+              values: current,
+              required: required
 		    });
           });
         }
