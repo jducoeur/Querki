@@ -100,7 +100,7 @@ that an address be given, or allow a list of them, you will need to create a
 separate Property with the Email Address type.
 """)))
   
-  lazy val emailTo = new SystemProperty(EmailToOID, LinkType, QList,
+  lazy val emailTo = new SystemProperty(EmailToOID, LinkType, QSet,
         toProps(
           setName("Email To"),
           (LinkModelOID -> Optional(ElemValue(Person.MOIDs.PersonOID))),

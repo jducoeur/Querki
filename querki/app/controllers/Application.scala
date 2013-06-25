@@ -578,7 +578,7 @@ disallow: /
           linkModelPropOpt match {
             case Some(propAndVal) => {
               val targetModel = propAndVal.first
-              allThings.filter(_.model == targetModel)
+              allThings.filter(_.isAncestor(targetModel))
             }
             case None => allThings
           }
