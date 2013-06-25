@@ -572,8 +572,18 @@ disallow: /
     propOpt match {
       case Some(prop) => {
         val allThings = space.allThings.toSeq
-        // TODO: filter for Link Model, if applicable
-        val thingsSorted = allThings.map(_.displayName).filter(_.toLowerCase().contains(lowerQ)).sorted
+        
+        val linkModelPropOpt = prop.getPropOpt(LinkModelProp)
+        val thingsFiltered =
+          linkModelPropOpt match {
+            case Some(propAndVal) => {
+              val targetModel = propAndVal.first
+              allThings.filter(_.model == targetModel)
+            }
+            case None => allThings
+          }
+        
+        val thingsSorted = thingsFiltered.map(_.displayName).filter(_.toLowerCase().contains(lowerQ)).sorted
         
         // TODO: introduce better JSONification for the AJAX code:
         val JSONtags = "[" + thingsSorted.map("\"" + _ + "\"").mkString(",") + "]"
