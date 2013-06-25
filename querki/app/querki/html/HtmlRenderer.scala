@@ -30,7 +30,11 @@ object HtmlRenderer {
     val pType = prop.pType
     val rendered = renderSpecialized(cType, pType, state, prop, currentValue).getOrElse(cType.renderInput(prop, state, currentValue, pType))
     val xml3 = addEditorAttributes(rendered, currentValue.inputControlId, prop.id.toThingId, currentValue.inputControlId, currentValue.on.map(_.id.toThingId))
-    Html(xml3.toString)
+    // TODO: this is *very* suspicious, but we need to find a solution. RenderTagSet is trying to pass JSON structures in the
+    // value field, but for that to be JSON-legal, the attributes need to be single-quoted, and the strings in them double-quoted.
+    // That isn't the way things come out here, so we're kludging, but I worry about potential security holes...
+    val xmlFixedQuotes = xml3.toString.replace("\"", "\'").replace("&quot;", "\"")
+    Html(xmlFixedQuotes)
   }
   
   def propValFromUser(prop:Property[_,_], str:String):PropValue = {
@@ -39,7 +43,7 @@ object HtmlRenderer {
   
   // TODO: refactor this with Collection.fromUser():
   def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_]):FormFieldInfo = {
-    if (prop.pType == TagSetType) {
+    if (prop.cType == QSet && (prop.pType.isInstanceOf[NameType] || prop.pType == LinkType)) {
       handleTagSet(prop, on, form)
     } else {
       val fieldIds = FieldIds(on, prop)
@@ -123,11 +127,28 @@ object HtmlRenderer {
   
   def renderTagSet(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Elem = {
     val currentV = currentValue.v
-    val rawList:Option[List[String]] = currentV.map(_.rawList(TagSetType))
+    val pt = prop.pType
+    
+    def getKeyAndVal(elem:ElemValue):(String, String) = {
+      if (pt == LinkType) {
+        val oid = LinkType.get(elem)
+        // TODO: cheating! This should go through LinkType.follow, but we don't have a Context yet:
+        val tOpt = state.anything(oid)
+        val name = tOpt.map(_.displayName).getOrElse(oid.toThingId.toString)
+        (oid.toString, name)
+      } else if (pt.isInstanceOf[NameType]) {
+        val name = NameType.get(elem)
+        (name, name)
+      } else {
+        throw new Exception("renderTagSet got unexpected type " + pt)
+      }
+    }
+    val rawList = currentV.map(_.cv.map(getKeyAndVal(_)))
+    
     // We treat names/tags and links a bit differently, although they look similar on the surface:
     val isNameType = prop.pType.isInstanceOf[NameType]
-    val current = rawList.map(_.mkString(", ")).getOrElse("")
-    <input class="_tagSetInput" data-propid={prop.toThingId} data-isNames={isNameType.toString} type="text" value={current}></input>
+    val current = "[" + rawList.map(_.map(keyVal => "{\"display\":\"" + keyVal._2 + "\", \"id\":\"" + keyVal._1 + "\"}").mkString(", ")).getOrElse("") + "]"
+    <input class="_tagSetInput" data-propid={prop.toThingId} data-isNames={isNameType.toString} type="text" data-current={current}></input>
   }
   
   def handleSpecialized(prop:Property[_,_], newVal:String):Option[PropValue] = {
@@ -168,6 +189,7 @@ object HtmlRenderer {
   // how to refactor these together, if possible.
   def handleTagSet(prop:Property[_,_], on:Option[Thing], form:Form[_]):FormFieldInfo = {
     val fieldIds = FieldIds(on, prop)
+    val pt = prop.pType
     val oldListName = fieldIds.inputControlId + "_values"
     val oldList = form(oldListName)
     val oldIndexes = oldList.indexes
@@ -175,6 +197,8 @@ object HtmlRenderer {
       for (i <- oldIndexes;
            v <- oldList("[" + i + "]").value)
         yield v
-    FormFieldInfo(prop, Some(QSet.from(oldRaw, TagSetType, TagSetType)), false, true)
+    // TODO: some nasty abstraction breakage here. We shouldn't know that the internal is List:
+    val oldVals = oldRaw.map(pt.fromUser(_)).toList
+    FormFieldInfo(prop, Some(QSet.makePropValue(oldVals)), false, true)
   }
 }

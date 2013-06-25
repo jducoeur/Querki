@@ -560,7 +560,7 @@ disallow: /
       }
         
     // TODO: introduce better JSONification for the AJAX code:
-    val JSONtags = "[" + tagsAndThings.map("\"" + _ + "\"").mkString(",") + "]"
+    val JSONtags = "[" + tagsAndThings.map(name => "{\"display\":\"" + name + "\", \"id\":\"" + name + "\"}").mkString(",") + "]"
     Ok(JSONtags)
   }
 

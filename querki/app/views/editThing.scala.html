@@ -168,6 +168,7 @@
           this.each(function () {
             var propId = $(this).data('propid');
             var isNames = $(this).data('isnames');
+            var current = $(this).data('current');
             if (isNames) {
               $(this).manifest({
 	  	        marcoPolo: {
@@ -175,10 +176,12 @@
 		          minChars: 3,
 		          required: false,
 		          formatData: function(data) { return data; },
-		          formatItem: function(data, $item) { return data; },
+		          formatItem: function(data, $item) { return data.display; },
 		          formatNoResults: function(q, $item) { return "No existing tag with <b>" + q + "</b> found."; }
 		        },
-                formatDisplay: function (data, $item, $mpItem) { return data; }
+                formatDisplay: function (data, $item, $mpItem) { return data.display; },
+		        formatValue: function(data, $value, $item, $mpItem) { return data.id; },
+                values: current
 		      });
 		    } else {
               $(this).manifest({
@@ -191,7 +194,8 @@
 		          formatNoResults: function(q, $item) { return "No existing thing with <b>" + q + "</b> found."; }
 		        },
 		        formatDisplay: function(data, $item, $mpItem) { return data.display; },
-		        formatValue: function(data, $value, $item, $mpItem) { return data.id; }
+		        formatValue: function(data, $value, $item, $mpItem) { return data.id; },
+		        values: current
 		      });		    
 		    }
           });
