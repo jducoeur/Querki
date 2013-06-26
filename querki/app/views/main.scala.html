@@ -31,14 +31,23 @@
   }
 }
 
-@displayMenu(section:NavSection) = {
-  <li class="dropdown btn-group">
-    <button class="btn btn-primary"><a class="_menuSection" href="@section.titleLink.url">@section.titleLink.display</a></button>
-    <button class="btn btn-primary" data-target="#@section.titleLink.display" href="#@section.titleLink.display" class="dropdown-toggle" data-toggle="dropdown"><b class="caret"></b></button>
-    <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">@for(link <- section.links) {
+@displayNavLink(display:String, url:Call) = {
+  <li><a href="@url">@display</a></li>
+}
+
+@displayNavSection(title:String, links:Seq[NavLink]) = {
+  <li class="dropdown"><a data-target="#@title" href="#@title" class="dropdown-toggle" data-toggle="dropdown">@title <b class="caret"></b></a>
+    <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">@for(link <- links) {
       <li><a href="@link.url" @link.idAttr>@link.display</a></li>}
     </ul>
   </li>
+}
+
+@displayMenu(section:Navigable) = @{
+  section match {
+    case NavLink(display, url, id) => displayNavLink(display, url)
+    case NavSection(title, links) => displayNavSection(title, links)
+  }
 }
 
 <!DOCTYPE html>
