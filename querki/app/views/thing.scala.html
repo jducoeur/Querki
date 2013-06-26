@@ -38,15 +38,11 @@
 
 		function updateValue(evt) {
 		  var target = $(evt.target);
-		  var prop = target.data("prop");
+		  var prop = target.data("propid");
 		  var thingId = target.data("thing");
-		  var v;
-		  if (target.attr('type') == "checkbox") {
-		    v = target.prop('checked');
-		  } else {
-		    v = target.val();
-		  }
-	      jsRoutes.controllers.Application.setProperty("@space.owner.toThingId", "@space.id.toThingId", thingId, prop, v).ajax({
+		  var serialized = target.serialize();
+	      jsRoutes.controllers.Application.setProperty2("@space.owner.toThingId", "@space.id.toThingId", thingId).ajax({
+	        data: "addedProperty=&model=&field[0]=" + prop + "&" + serialized,
 	        success: function (result) {
 	          finishStatus("Saved");
 	        },

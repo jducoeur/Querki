@@ -324,9 +324,9 @@ disallow: /
         PropList.inheritedProps(None, UrProp)(rc.state.get))
   }
   
-  def doCreateThing(ownerId:String, spaceId:String, subCreate:Option[Boolean]) = editThingInternal(ownerId, spaceId, None)
+  def doCreateThing(ownerId:String, spaceId:String, subCreate:Option[Boolean]) = editThingInternal(ownerId, spaceId, None, false)
   
-  def editThingInternal(ownerId:String, spaceId:String, thingIdStr:Option[String]) = withSpace(true, ownerId, spaceId, thingIdStr) { implicit rc =>
+  def editThingInternal(ownerId:String, spaceId:String, thingIdStr:Option[String], partial:Boolean) = withSpace(true, ownerId, spaceId, thingIdStr) { implicit rc =>
     implicit val request = rc.request
     implicit val state = rc.state.get
     val user = rc.requester.get
@@ -349,7 +349,11 @@ disallow: /
             case None => FormFieldInfo(UrProp, None, true, false)
           }
         }
-        val oldModel = state.anything(OID(info.model)).get
+        val oldModel =
+          if (info.model.length() > 0)
+            state.anything(OID(info.model)).get
+          else
+            thing.map(_.getModel).getOrElse(throw new Exception("Trying to edit thing, but we don't know the model!"))
         
         val kind = oldModel.kind
         
@@ -369,7 +373,7 @@ disallow: /
           }
         }
         
-        val redisplayStr = rawForm("redisplay").value.get
+        val redisplayStr = rawForm("redisplay").value.getOrElse("")
         
         if (redisplayStr.length() > 0 && redisplayStr.toBoolean)
           showEditPage(rc, oldModel, makeProps(rawProps))
@@ -402,7 +406,7 @@ disallow: /
             }
             val props = Thing.toProps(propPairs:_*)()
             val spaceMsg = if (thing.isDefined) {
-              if (oldModel.hasProp(OIDs.InstanceEditPropsOID)) {
+              if (partial || oldModel.hasProp(OIDs.InstanceEditPropsOID)) {
                 // Editing an instance, so we only have a subset of the props, not the full list.
                 // NOTE: the reason this is separated from the next clause is because ChangeProps gives us
                 // no way to *delete* a property. We don't normally expect to do that in a limited-edit instance,
@@ -502,7 +506,7 @@ disallow: /
 	showEditPage(rc, model, PropList.from(thing))
   }
   
-  def doEditThing(ownerId:String, spaceId:String, thingIdStr:String) = editThingInternal(ownerId, spaceId, Some(thingIdStr))
+  def doEditThing(ownerId:String, spaceId:String, thingIdStr:String) = editThingInternal(ownerId, spaceId, Some(thingIdStr), false)
   
   /**
    * This is the AJAX-style call to change a single property value. As of this writing, I expect it to become
@@ -536,6 +540,14 @@ disallow: /
       
       case _ => Ok("You aren't logged in, so you can't change anything")
     }
+  }
+
+  /**
+   * This is essentially the interactive version of doEditThing. It expects to be called from AJAX, with a form that
+   * has been constructed to look like the traditional Editor window.
+   */
+  def setProperty2(ownerId:String, spaceId:String, thingId:String) = {
+    editThingInternal(ownerId, spaceId, Some(thingId), true)
   }
 
   /**
@@ -729,7 +741,8 @@ disallow: /
     Ok(
       Routes.javascriptRouter("jsRoutes")(
         routes.javascript.Application.testAjax,
-        routes.javascript.Application.setProperty
+        routes.javascript.Application.setProperty,
+        routes.javascript.Application.setProperty2
       )
     ).as("text/javascript")
   }

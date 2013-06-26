@@ -29,7 +29,7 @@ object HtmlRenderer {
     val cType = prop.cType
     val pType = prop.pType
     val rendered = renderSpecialized(cType, pType, state, prop, currentValue).getOrElse(cType.renderInput(prop, state, currentValue, pType))
-    val xml3 = addEditorAttributes(rendered, currentValue.inputControlId, prop.id.toThingId, currentValue.inputControlId, currentValue.on.map(_.id.toThingId))
+    val xml3 = addEditorAttributes(rendered, currentValue.inputControlId, prop.id, currentValue.inputControlId, currentValue.on.map(_.id.toThingId))
     // TODO: this is *very* suspicious, but we need to find a solution. RenderTagSet is trying to pass JSON structures in the
     // value field, but for that to be JSON-legal, the attributes need to be single-quoted, and the strings in them double-quoted.
     // That isn't the way things come out here, so we're kludging, but I worry about potential security holes...
@@ -65,11 +65,15 @@ object HtmlRenderer {
     elem % Attribute("class", classAttr, Null)
   }
   
-  def addEditorAttributes(elem:Elem, name:String, prop:String, id:String, thingOpt:Option[String]):Elem = {
+  def addEditorAttributes(elem:Elem, name:String, prop:OID, id:String, thingOpt:Option[String]):Elem = {
+    // If there is already a name specified, leave it in place. This is occasionally *very* important, as
+    // in renderOptionalYesNo -- that needs the usual name to be on the *buttons*, not on the wrapper:
+    val newName = elem.attribute("name").map(_.head.text).getOrElse(name)
     val xml2 = addClasses(elem, "propEditor") %
-    	Attribute("name", Text(name),
-    	Attribute("data-prop", Text(prop),
-    	Attribute("id", Text(id), Null)))
+    	Attribute("name", Text(newName),
+    	Attribute("data-prop", Text(prop.toThingId),
+    	Attribute("data-propId", Text(prop.toString),
+    	Attribute("id", Text(id), Null))))
     val xml3 = thingOpt match {
       case Some(thing) => xml2 % Attribute("data-thing", Text(thing), Null)
       case None => xml2
@@ -103,12 +107,12 @@ object HtmlRenderer {
           <input type="radio" value={value} />        
       }
       val id = currentValue.inputControlId + "-" + label
-      val name = currentValue.inputControlId + "-buttons"
+      val name = currentValue.inputControlId
       // Note that, to work for interactive controls, the special AJAX properties must be on the individual buttons!
-      addEditorAttributes(inputElem, name, prop.id.toThingId, id, currentValue.on.map(_.id.toThingId)) ++ <label for={id}>{label}</label>
+      addEditorAttributes(inputElem, name, prop.id, id, currentValue.on.map(_.id.toThingId)) ++ <label for={id}>{label}</label>
     }
     
-      <span class="buttonset">{oneButton("Yes", "true", (isSet && v))}{oneButton("Maybe", "maybe", (!isSet))}{oneButton("No", "false", (isSet && !v))}</span>
+      <span class="buttonset" name={currentValue.inputControlId + "-wrapper"}>{oneButton("Yes", "true", (isSet && v))}{oneButton("Maybe", "maybe", (!isSet))}{oneButton("No", "false", (isSet && !v))}</span>
   }
   
   def renderOptLink(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Elem = {
