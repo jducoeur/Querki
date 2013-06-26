@@ -31,22 +31,33 @@
   }
 }
 
-@displayNavLink(display:String, url:Call) = {
-  <li><a href="@url">@display</a></li>
+@displayNavLink(display:String, url:Call, idStr:String) = {
+  <li><a href="@url" @idStr>@display</a></li>
 }
 
-@displayNavSection(title:String, links:Seq[NavLink]) = {
+@displayNavDivider = {
+  <li class="divider"></li>
+}
+
+@displayNavSection(title:String, links:Seq[Navigable]) = {
   <li class="dropdown"><a data-target="#@title" href="#@title" class="dropdown-toggle" data-toggle="dropdown">@title <b class="caret"></b></a>
     <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">@for(link <- links) {
-      <li><a href="@link.url" @link.idAttr>@link.display</a></li>}
+      @displayNavigable(link)}
     </ul>
   </li>
 }
 
-@displayMenu(section:Navigable) = @{
+@displayNavigable(section:Navigable) = @{
   section match {
-    case NavLink(display, url, id) => displayNavLink(display, url)
+    case NavLink(display, url, id) => {
+      val idStr = id match {
+        case Some(i) => " id=" + i
+        case None => ""
+      }
+      displayNavLink(display, url, idStr)
+    }
     case NavSection(title, links) => displayNavSection(title, links)
+    case NavDivider => displayNavDivider
   }
 }
 
@@ -205,12 +216,12 @@
 	              <div class="nav-collapse collapse">
 	                <ul class="nav">
                       @for(section <- nav.sections) {
-                        @displayMenu(section)
+                        @displayNavigable(section)
                       }
                     </ul>
                     <ul class="nav pull-right">
                       @defining(NavSection.loginNav(rc)) { section =>
-                        @displayMenu(section)
+                        @displayNavigable(section)
                       }
 	                </ul>
 	              </div>

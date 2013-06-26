@@ -36,7 +36,8 @@ object NavSection {
     def spaceId = rc.state.get.toThingId
     val owner = rc.ownerName
     // For menu purposes, don't duplicate the space if it's the Thing:
-    val actualThing = rc.thing.flatMap(t => if (t.id == rc.state.get.id) None else Some(t))
+    val thingIsSpace = rc.thing.isDefined && (rc.thing.get.id == rc.state.get.id)
+    val actualThing = rc.thing.flatMap(t => if (thingIsSpace) None else Some(t))
     
     val spaceSection = rc.state map { state =>
       NavLink(truncateName(state.displayName), routes.Application.thing(owner, spaceId, spaceId))
@@ -64,12 +65,18 @@ object NavSection {
           case _ => None
         }
       }
+      def create:Option[NavLink] = {
+        if (thingIsSpace)
+          None
+        else
+          Some(NavLink("Create a " + thing.displayName, routes.Application.createThing(owner, spaceId, Some(thingId))))
+      }
       Seq(
-        NavLink("Edit " + thing.displayName, routes.Application.editThing(owner, spaceId, thingId)),
-        NavLink("Create a " + thing.displayName, routes.Application.createThing(owner, spaceId, Some(thingId)))
+        NavDivider,
+        NavLink("Edit " + thing.displayName, routes.Application.editThing(owner, spaceId, thingId))
         /*,
         NavLink("Export " + thing.displayName, routes.Application.exportThing(owner, spaceId, thingId))*/
-      ) ++ attachment
+      ) ++ create ++ attachment
     }
     val thingLinks = thingLinksOpt.getOrElse(Seq.empty[NavLink])
     val actionLinks = spaceLinks ++ thingLinks
@@ -88,11 +95,8 @@ trait Navigable
 
 case class NavSections(sections:Seq[Navigable])
 
-case class NavSection(val title:String, val links:Seq[NavLink]) extends Navigable
+case class NavSection(val title:String, val links:Seq[Navigable]) extends Navigable
 
-case class NavLink(display:String, url:Call, id:Option[String] = None) extends Navigable {
-  def idAttr:Html = Html(id match {
-    case Some(i) => " id=\"" + i + "\" "
-    case None => ""
-  })
-}
+case class NavLink(display:String, url:Call, id:Option[String] = None) extends Navigable
+
+case object NavDivider extends Navigable
