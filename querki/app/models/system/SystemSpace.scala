@@ -117,6 +117,7 @@ object OIDs {
   val IsDefinedOID = sysId(78)
   val QSetOID = sysId(79)
   val CommasMethodOID = sysId(80)
+  val FormLineMethodOID = sysId(81) 
 }
 
 /**
@@ -179,7 +180,8 @@ object SystemSpace {
       SelfMethod,
       PropsOfTypeMethod,
       CodeMethod,
-      IsDefinedMethod)
+      IsDefinedMethod,
+      FormLineMethod)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, Commas, DisplayThingTree, AllThings)

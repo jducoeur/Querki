@@ -867,3 +867,29 @@ object IsDefinedMethod extends SingleContextMethod(IsDefinedOID,
     partialContext.value.pt != UnknownNameType
   }
 }
+
+// TODO: this code is pretty damned Bootstrap-specific, which by definition is too HTML-specific. We should probably
+// replace it with something that is much more neutral -- simple label/control styles -- and have client-side code
+// that rewrites it appropriately for the UI in use.
+object FormLineMethod extends SingleContextMethod(FormLineMethodOID,
+    toProps(
+      setName("_formLine"),
+      DisplayTextProp("_formLine(LABEL,CONTROL) displays the LABEL/CONTROL pair as a standard full-width line. This is mainly for input forms.")))
+{
+  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, paramsOpt:Option[Seq[QLPhrase]]):TypedValue = {
+    paramsOpt match {
+      case Some(params) if (params.length == 2) => {
+        val context = partialContext
+        val label = context.parser.get.processPhrase(params(0).ops, context).value
+        val control = context.parser.get.processPhrase(params(1).ops, context).value
+        WikitextValue(
+          Wikitext("\n{{form-horizontal:\n{{control-group:\n{{control-label:\n") +
+          label.render(context) +
+          Wikitext("\n}}\n{{controls:\n") +
+          control.render(context) +
+          Wikitext("\n}}\n}}\n}}\n"))
+      }
+      case _ => WarningValue("_formLine requires two parameters")
+    }
+  }
+}
