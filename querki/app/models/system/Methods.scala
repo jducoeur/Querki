@@ -161,25 +161,64 @@ object InstancesMethod extends SingleContextMethod(InstancesMethodOID,
   }
 }
 
-object EditMethod extends ThingPropMethod(EditMethodOID, 
+abstract class EditMethodBase(id:OID, pf:PropFetcher) extends ThingPropMethod(id, pf)
+{
+  def cantEditFallback(mainContext:ContextBase, mainThing:Thing, 
+    partialContext:ContextBase, prop:Property[_,_],
+    params:Option[Seq[QLPhrase]]):TypedValue
+  
+  def applyToPropAndThing(mainContext:ContextBase, mainThing:Thing, 
+    partialContext:ContextBase, prop:Property[_,_],
+    params:Option[Seq[QLPhrase]]):TypedValue =
+  {
+    mainContext.request.requester match {
+      case Some(requester) if (mainContext.state.canEdit(requester, mainThing.id)) => {
+        val currentValue = mainThing.getDisplayPropVal(prop)(mainContext.state)
+	    // TODO: conceptually, this is a bit off -- the rendering style shouldn't be hard-coded here. We
+	    // probably need to have the Context contain the desire to render in HTML, and delegate to the
+	    // HTML renderer indirectly. In other words, the Context should know the renderer to use, and pass
+	    // that into here:
+	    val inputControl = querki.html.HtmlRenderer.renderPropertyInput(mainContext.state, prop, currentValue)
+	    HtmlValue(inputControl)    
+      }
+      case _ => cantEditFallback(mainContext, mainThing, partialContext, prop, params)
+    }
+  }
+}
+object EditMethod extends EditMethodBase(EditMethodOID, 
     toProps(
       setName("_edit"),
       DisplayTextProp("Puts an editor for the specified Property into the page"),
       (AppliesToKindOID -> QList(ElemValue(Kind.Property)))
     )) 
 {
-  def applyToPropAndThing(mainContext:ContextBase, mainThing:Thing, 
+  def cantEditFallback(mainContext:ContextBase, mainThing:Thing, 
     partialContext:ContextBase, prop:Property[_,_],
-    params:Option[Seq[QLPhrase]]):TypedValue =
-  {
-    val currentValue = mainThing.getDisplayPropVal(prop)(mainContext.state)
-    // TODO: conceptually, this is a bit off -- the rendering style shouldn't be hard-coded here. We
-    // probably need to have the Context contain the desire to render in HTML, and delegate to the
-    // HTML renderer indirectly. In other words, the Context should know the renderer to use, and pass
-    // that into here:
-    val inputControl = querki.html.HtmlRenderer.renderPropertyInput(mainContext.state, prop, currentValue)
-    HtmlValue(inputControl)    
-  }
+    params:Option[Seq[QLPhrase]]):TypedValue = {
+      // This user isn't allowed to edit, so simply render the property in its default form.
+      // For more control, user _editOrElse instead.
+      prop.qlApply(mainContext, params)    
+  }  
+}
+object EditOrElseMethod extends EditMethodBase(EditOrElseMethodOID, 
+    toProps(
+      setName("_editOrElse"),
+      DisplayTextProp("PROP._editOrElse(FALLBACK) shows an editor for property PROP if the user is allowed" +
+      		"to edit this thing; otherwise, it displays FALLBACK."),
+      (AppliesToKindOID -> QList(ElemValue(Kind.Property)))
+    )) 
+{
+  def cantEditFallback(mainContext:ContextBase, mainThing:Thing, 
+    partialContext:ContextBase, prop:Property[_,_],
+    paramsOpt:Option[Seq[QLPhrase]]):TypedValue = {
+      // This user isn't allowed to edit, so display the fallback
+      paramsOpt match {
+        case Some(params) if (params.length > 0) => {
+          mainContext.parser.get.processPhrase(params(0).ops, mainContext).value
+        }
+        case _ => WarningValue("_editOrElse requires a parameter")
+      }
+  }  
 }
 
 object SectionMethod extends InternalMethod(SectionMethodOID,

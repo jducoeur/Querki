@@ -181,11 +181,11 @@ The QL expression given in here must product a List of Links to Persons.
         DisplayTextProp("""
 [[_formLine(""**Subject**:"", Email Subject._edit)]]
 
-[[_formLine(""**Recipients**:"", Recipients._edit)]]
+[[_formLine(""**Recipients**:"", _code(Recipients))]]
 
-[[_formLine(""**Explicitly To**:"", Email To._edit)]]
+[[_formLine(""**Explicitly To**:"", Email To._editOrElse(Email To -> _commas))]]
             
-[[_formLine(""**Already Sent To**:"", Sent To._edit)]]
+[[_formLine(""**Already Sent To**:"", Sent To._editOrElse(Sent To -> _commas))]]
             
 [[_formLine(""**Body**:"", Email Body._edit)]]
     
