@@ -245,16 +245,11 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       toProps(
         setName("Set")))
   {
-    def makePropValue(cv:implType):PropValue = QSetPropValue(cv, this)
-    private case class QSetPropValue(cv:implType, coll:QSet) extends PropValue    
-    
-    /**
-     * Given an incoming Iterable of RTs, this produces the corresponding QList of VTs.
-     * This should simplify a lot of the Scala-level code.
-     */
-    def from[RT,VT](in:Iterable[RT], pt:PType[VT], builder:PTypeBuilder[VT,RT]):PropValue = {
-      val rawList = (List.empty[ElemValue] /: in)((list, next) => list :+ builder(next))
-      val sorted = rawList.sortWith(pt.comp)
+    // TODO: this *really* should be makePropValue -- it is Very Very Bad that it isn't. But
+    // that doesn't yet have a way of getting at the PType, which we need for comp() and matches().
+    // This may become less critical once ElemValue carries the PType.
+    def makeSetValue(rawList:implType, pt:PType[_], context:ContextBase):PropValue = {
+      val sorted = rawList.sortWith(pt.comp(context))
       val deduped = ((List.empty[ElemValue], Option.empty[ElemValue]) /: sorted){ (state, next) =>
         val (list, prevOpt) = state
         prevOpt match {
@@ -266,8 +261,11 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
           case None => (list :+ next, Some(next))
         }
       }
-      makePropValue(deduped._1)
+
+      QSetPropValue(deduped._1, this)
     }
+    def makePropValue(cv:implType):PropValue = QSetPropValue(cv, this)
+    private case class QSetPropValue(cv:implType, coll:QSet) extends PropValue    
   }
   object QSet extends QSet(QSetOID)
   

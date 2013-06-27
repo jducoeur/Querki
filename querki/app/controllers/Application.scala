@@ -17,6 +17,8 @@ import querki.html.HtmlRenderer
 
 import SpaceError._
 
+import ql.QLRequestContext
+
 object Application extends Controller {
   
   case class UserForm(name:String, password:String)
@@ -336,6 +338,8 @@ disallow: /
       // TODO: What can cause this?
       errors => doError(routes.Application.space(ownerId, spaceId), "Something went wrong"),
       info => {
+        val context = QLRequestContext(rc)
+        
         // Whether we're creating or editing depends on whether thing is specified:
         val thing = rc.thing
         val rawProps = info.fields map { propIdStr => 
@@ -343,7 +347,7 @@ disallow: /
           val propOpt = state.prop(propId)
           propOpt match {
             case Some(prop) => {
-              HtmlRenderer.propValFromUser(prop, thing, rawForm)              
+              HtmlRenderer.propValFromUser(prop, thing, rawForm, context)              
             }
             // TODO: this means that an unknown property was specified. We should think about the right error path here:
             case None => FormFieldInfo(UrProp, None, true, false)

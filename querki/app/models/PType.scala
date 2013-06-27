@@ -68,8 +68,8 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
   /**
    * This compares two values. It is used to sort Collections.
    */
-  def doComp(left:VT, right:VT):Boolean = { math.Ordering.String.lt(doToUser(left), doToUser(right)) } 
-  final def comp(left:ElemValue, right:ElemValue):Boolean = doComp(get(left), get(right))
+  def doComp(context:ContextBase)(left:VT, right:VT):Boolean = { math.Ordering.String.lt(doToUser(left), doToUser(right)) } 
+  final def comp(context:ContextBase)(left:ElemValue, right:ElemValue):Boolean = doComp(context)(get(left), get(right))
   
   /**
    * The type unwrapper -- takes an opaque ElemValue and returns the underlying value.

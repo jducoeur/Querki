@@ -276,7 +276,7 @@ object QLType extends QLType(QLTypeOID)
       Wikitext("[" + v + "](" + toUrl(v) + ")")
     }
     
-    override def doComp(left:String, right:String):Boolean = { left < right } 
+    override def doComp(context:ContextBase)(left:String, right:String):Boolean = { left < right } 
 
     val doDefault = ""
       
@@ -331,11 +331,19 @@ object QLType extends QLType(QLTypeOID)
       Wikitext(text)
     }
     
+    def getNameFromId(context:ContextBase)(id:OID) = {
+      val tOpt = follow(context)(id)
+      tOpt.map(thing => NameType.canonicalize(thing.displayName)).getOrElse(throw new Exception("Trying to get name from unknown OID " + id))      
+    }
     def getName(context:ContextBase)(v:ElemValue) = {
       val id = get(v)
-      val tOpt = follow(context)(id)
-      tOpt.map(thing => NameType.canonicalize(thing.displayName)).getOrElse(throw new Exception("Trying to get name from unknown OID " + id))
+      getNameFromId(context)(id)
     }
+    
+    // Links are sorted by their *display names*:
+    override def doComp(context:ContextBase)(left:OID, right:OID):Boolean = { 
+      NameType.doComp(context)(getNameFromId(context)(left), getNameFromId(context)(right))
+    } 
     
     // TODO: define doFromUser()
 

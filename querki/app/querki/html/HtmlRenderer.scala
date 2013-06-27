@@ -9,6 +9,8 @@ import play.api.templates.Html
 import models._
 import models.system._
 
+import ql.ContextBase
+
 /**
  * This is the top level object that knows about HTML. All rendering of Things into HTML,
  * and interpretation of HTML forms, should pass through here.
@@ -42,9 +44,9 @@ object HtmlRenderer {
   }
   
   // TODO: refactor this with Collection.fromUser():
-  def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_]):FormFieldInfo = {
+  def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_], context:ContextBase):FormFieldInfo = {
     if (prop.cType == QSet && (prop.pType.isInstanceOf[NameType] || prop.pType == LinkType)) {
-      handleTagSet(prop, on, form)
+      handleTagSet(prop, on, form, context)
     } else {
       val fieldIds = FieldIds(on, prop)
       val spec = for (
@@ -191,7 +193,7 @@ object HtmlRenderer {
   
   // TODO: TagSets come from Manifest, and the end result is similar to QList.fromUser(). Figure out
   // how to refactor these together, if possible.
-  def handleTagSet(prop:Property[_,_], on:Option[Thing], form:Form[_]):FormFieldInfo = {
+  def handleTagSet(prop:Property[_,_], on:Option[Thing], form:Form[_], context:ContextBase):FormFieldInfo = {
     val fieldIds = FieldIds(on, prop)
     val pt = prop.pType
     val oldListName = fieldIds.inputControlId + "_values"
@@ -203,6 +205,6 @@ object HtmlRenderer {
         yield v
     // TODO: some nasty abstraction breakage here. We shouldn't know that the internal is List:
     val oldVals = oldRaw.map(pt.fromUser(_)).toList
-    FormFieldInfo(prop, Some(QSet.makePropValue(oldVals)), false, true)
+    FormFieldInfo(prop, Some(QSet.makeSetValue(oldVals, pt, context)), false, true)
   }
 }
