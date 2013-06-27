@@ -36,7 +36,7 @@ object RawHtmlType extends SystemType[Wikitext](OIDs.IllegalOID, () => Thing.emp
  * This is a fake PType, used when we encounter a name we don't know.
  */
 object UnknownNameType extends NameType(UnknownOID, "_unknownNameType") {
-  def doRender(context:ContextBase)(v:String) = nameToLink(context)(v)
+  def doRender(context:ContextBase)(v:String) = Wikitext("{{_unknownName:") + nameToLink(context)(v) + Wikitext("}}")
 }
 
 // TODO: we've gotten rid of the explicit ct parameter, since it is contained in v.

@@ -65,3 +65,7 @@
   line-height: 24px;
   vertical-align: middle;
 }
+
+._unknownName a {
+  color: #bf5615;
+}
