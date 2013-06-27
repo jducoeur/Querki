@@ -1,16 +1,27 @@
+// ------------------------
+//
+// Common Querki Javascript
+//
+// This is where all sorts of utility code should eventually live.
+//
+// IMPORTANT: remember that this file is *not* processed by Play, so it can't access the Play variables
+// directly. Those need to come out of main.scala.html or other files that are Play-processed.
+//
+// ------------------------
+
 // This is an ugly global variable, but it's a useful state switch of whether to
 // allow things to live-update or not.
 var querkiLiveUpdate = true;
         
-        function showStatus(msg) {
-          $("#statusText").text(msg);
-          $("#statusLine").show();
-        }
+function showStatus(msg) {
+  $("#statusText").text(msg);
+  $("#statusLine").show();
+}
         
-        function finishStatus(msg) {
-          $("#statusText").text(msg);
-          $("#statusLine").show().delay(4000).hide("slow");
-        }
+function finishStatus(msg) {
+  $("#statusText").text(msg);
+  $("#statusLine").show().delay(4000).hide("slow");
+}
 
 (function( $ ) {
 
@@ -85,5 +96,10 @@ var querkiLiveUpdate = true;
         
 }( jQuery ));
 
-$(function() {
-});
+function finalSetup(ownerId, spaceId) {			
+  $("._tagSetInput").asManifest(ownerId, spaceId);
+  $(".controls ._largeTextEdit").addClass("span10");
+  $("._largeTextEdit").autosize();
+  $(".controls .mf_container").addClass("span10");
+  $(".controls input[type='text']").filter(".propEditor").addClass("span10");
+}

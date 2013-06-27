@@ -179,15 +179,57 @@ The QL expression given in here must product a List of Links to Persons.
 [[Send Email -> ""* ____ - [[Email Address]]""]]
 """),
         DisplayTextProp("""
-**Subject**: [[Email Subject]]
-
-**To**: [[Recipients -> _sort -> _join(""; "")]]
-            
-**Already Sent To**: [[Sent To -> _sort ->  _join(""; "")]]
-
+{{form-horizontal:
+{{control-group:
+{{control-label:
+**Subject**:
+}}
+{{controls:
+[[Email Subject._edit]]
+}}
+}}
+}}
+{{form-horizontal:
+{{control-group:
+{{control-label:
+**Recipients**: 
+}}
+{{controls:
+[[Recipients._edit]]
+}}
+}}
+}}
+{{form-horizontal:
+{{control-group:
+{{control-label:
+**Explicitly To**:
+}}
+{{controls:
+[[Email To._edit]]
+}}
+}}
+}}
+{{form-horizontal:
+{{control-group:
+{{control-label:
+**Already Sent To**:
+}}
+{{controls:
+[[Sent To._edit]]
+}}
+}}
+}}
+{{form-horizontal:
+{{control-group:
+{{control-label:
 **Body**:
-[[Email Body]]
-            
+}}
+{{controls:
+[[Email Body._edit]]
+}}
+}}
+}}
+    
 ------
             
 [**Click here to send this email**](?prop=Email+Results)
