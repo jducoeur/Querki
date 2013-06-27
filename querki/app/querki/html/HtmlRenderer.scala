@@ -152,7 +152,7 @@ object HtmlRenderer {
     // We treat names/tags and links a bit differently, although they look similar on the surface:
     val isNameType = prop.pType.isInstanceOf[NameType]
     val current = "[" + rawList.map(_.map(keyVal => "{\"display\":\"" + keyVal._2 + "\", \"id\":\"" + keyVal._1 + "\"}").mkString(", ")).getOrElse("") + "]"
-    <input class="_tagSetInput" data-propid={prop.toThingId} data-isNames={isNameType.toString} type="text" data-current={current}></input>
+    <input class="_tagSetInput" data-isNames={isNameType.toString} type="text" data-current={current}></input>
   }
   
   def handleSpecialized(prop:Property[_,_], newVal:String):Option[PropValue] = {
