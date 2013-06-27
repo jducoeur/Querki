@@ -78,6 +78,9 @@
     
     <script>
     
+      // Global switch, defined in querki-common.js. The Editor does not do live-update:
+      querkiLiveUpdate = false;
+    
       // This is essentially a jQuery plugin for the concept of "Edit/Revert Buttons"
       (function( $ ) {
         function inputElem(t) {

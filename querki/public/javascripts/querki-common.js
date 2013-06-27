@@ -1,3 +1,6 @@
+// This is an ugly global variable, but it's a useful state switch of whether to
+// allow things to live-update or not.
+var querkiLiveUpdate = true;
         
         function showStatus(msg) {
           $("#statusText").text(msg);
@@ -50,28 +53,31 @@
         values: current,
         required: required,
         onChange: function(type, data, $item) {
-          var myId = this.prop('name');
-	      var prop = this.data("propid");
-	      var thingId = this.data("thing");
-          var name = myId + "_values";
-          var values = this.manifest('values');
-          var wrapped = {};
-          wrapped[name] = values;
-          var serialized = $.param(wrapped);          
-          console.log(myId + " as an array is " + serialized);
+          if (querkiLiveUpdate) {
+            var myId = this.prop('name');
+	        var prop = this.data("propid");
+	        var thingId = this.data("thing");
+            var name = myId + "_values";
+            var values = this.manifest('values');
+            var wrapped = {};
+            wrapped[name] = values;
+            var serialized = $.param(wrapped);          
           
-          // TODO: this ought to be merged with the similar code in thing.scala.html, but note that this
-          // comes by the serialized form very differently:
-	      jsRoutes.controllers.Application.setProperty2(ownerId, spaceId, thingId).ajax({
-	        data: "addedProperty=&model=&field[0]=" + prop + "&" + serialized,
-	        success: function (result) {
-	          finishStatus("Saved");
-	        },
-	        error: function (err) {
-	          showStatus("Error trying to save. Please reload this page and try again.");
-	        }
-	      });
-	      showStatus("Saving...");
+            // TODO: this ought to be merged with the similar code in thing.scala.html, but note that this
+            // comes by the serialized form very differently. The problem is that "this" isn't what we
+            // need to serialize; instead, the form is composed of a bunch of hidden fields with names
+            // ending with "_values".
+	        jsRoutes.controllers.Application.setProperty2(ownerId, spaceId, thingId).ajax({
+	          data: "addedProperty=&model=&field[0]=" + prop + "&" + serialized,
+	          success: function (result) {
+	            finishStatus("Saved");
+	          },
+	          error: function (err) {
+	            showStatus("Error trying to save. Please reload this page and try again.");
+	          }
+	        });
+	        showStatus("Saving...");
+	      }
         }
 	  });
     });
