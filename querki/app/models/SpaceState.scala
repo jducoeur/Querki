@@ -264,11 +264,13 @@ case class SpaceState(
       allCandidates
     }
     
-    if (prop.ifSet(LinkToModelsOnlyProp)) {
+    val filteredAsModel = if (prop.ifSet(LinkToModelsOnlyProp)) {
       filteredByModel filter (_.isModel)
     } else {
       filteredByModel
     }
+    
+    filteredAsModel.filterNot(_.ifSet(InternalProp))
   }
   
   // TODO: this needs to become real. For now, everything is world-readable.

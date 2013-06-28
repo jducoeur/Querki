@@ -90,27 +90,32 @@ object Application extends Controller {
   // TODO: preserve the page request, and go there after they log in
   def onUnauthorized(request: RequestHeader) = Results.Redirect(routes.Application.login)
 
-  def withAuth(requireLogin:Boolean)(f: => User => Request[AnyContent] => Result):EssentialAction = {
+  // Fetch the User from the session, or User.Anonymous if they're not found.
+  def withAuth(f: => User => Request[AnyContent] => Result):EssentialAction = {
     val handler = { user:User =>
       Action(request => f(user)(request))
     }
-    if (requireLogin)
-      Security.Authenticated(userFromSession, onUnauthorized)(handler)
-    else {
-      // Note that forceUsername can never fail, it just returns empty string
-      Security.Authenticated(forceUser, onUnauthorized)(handler)
-    }
+    // Note that forceUsername can never fail, it just returns empty string
+    Security.Authenticated(forceUser, onUnauthorized)(handler)
   }
   
-  // Note that the requireLogin flag is critical, and subtle. This call and withAuth will
+  // TODO: we shouldn't be calling onUnauthorized directly! Instead, we should get a passed-in
+  // handler to deal with lack of authorization, because we want to do different things in the
+  // AJAX vs. page-view cases.
+  //
+  // Note that the requireLogin flag is critical, and subtle. This call will
   // *try* to get an authenticated user, but will only *require* it iff requireLogin is set.
   // This reflects the fact that there are many more or less public pages. It is the responsibility
   // of the caller to use this flag sensibly. Note that RequestContext.requester is guaranteed to
   // be set iff requireLogin is true.
-  def withUser(requireLogin:Boolean)(f: RequestContext => Result) = withAuth(requireLogin) { user => implicit request =>
-    // Iff requireLogin was false, we might not have a real user here, so massage it:
-    val userParam = if (user == User.Anonymous) None else Some(user)
-    f(RequestContext(request, userParam, UnknownOID, None, None))
+  def withUser(requireLogin:Boolean)(f: RequestContext => Result) = withAuth { user => implicit request =>
+    if (requireLogin && user == User.Anonymous) {
+      onUnauthorized(request)
+    } else {
+      // Iff requireLogin was false, we might not have a real user here, so massage it:
+      val userParam = if (user == User.Anonymous) None else Some(user)
+      f(RequestContext(request, userParam, UnknownOID, None, None))
+    }
   }
   
   /**
@@ -140,10 +145,22 @@ object Application extends Controller {
         spaceId:String, 
         thingIdStr:Option[String] = None,
         errorHandler:Option[PartialFunction[(ThingFailed, RequestContext), Result]] = None
-      )(f: (RequestContext => Result)):EssentialAction = withUser(requireLogin) { rc =>
+      )(f: (RequestContext => Result)):EssentialAction = withUser(false) { rc =>
     val requester = rc.requester getOrElse User.Anonymous
     val thingId = thingIdStr map (ThingId(_))
     val ownerId = getUserByThingId(ownerIdStr)
+    def withFilledRC(rc:RequestContext, stateOpt:Option[SpaceState], thingOpt:Option[Thing])(cb:RequestContext => Result):Result = {
+      val filledRC = rc.copy(ownerId = ownerId, state = stateOpt, thing = thingOpt)
+      // Give the listeners a chance to chime in:
+      val updatedRC = PageEventManager.requestReceived(filledRC)
+      val result =
+        // Okay, now we have enough information to check whether we have a Space-specific authorization:
+        if (requireLogin && updatedRC.requester.isEmpty)
+          onUnauthorized(updatedRC.request)
+        else
+          cb(updatedRC)
+      updatedRC.updateSession(result)
+    }
     askSpaceMgr[ThingResponse](GetThing(requester, ownerId, ThingId(spaceId), thingId)) {
       case ThingFound(id, state) => {
         val thingOpt = id match {
@@ -153,18 +170,12 @@ object Application extends Controller {
         if (thingIdStr.isDefined && thingOpt.isEmpty)
           doError(routes.Application.index, "That wasn't a valid path")
         else {
-          val filledRC = rc.copy(ownerId = ownerId, state = Some(state), thing = thingOpt)
-          // Give the listeners a chance to chime in:
-          val updatedRC = PageEventManager.requestReceived(filledRC)
-          val result = f(updatedRC)
-          updatedRC.updateSession(result)
+          withFilledRC(rc, Some(state), thingOpt)(f)
         }
       }
       case err:ThingFailed => {
         val ThingFailed(error, msg, stateOpt) = err
-        // TODO: refactor this with the above, and let the listeners get involved:
-        val filledRC = rc.copy(ownerId = ownerId, state = stateOpt, thing = None)
-        errorHandler.flatMap(_.lift((err, filledRC))).getOrElse(doError(routes.Application.index, msg))
+        withFilledRC(rc, stateOpt, None)(filledRC => errorHandler.flatMap(_.lift((err, filledRC))).getOrElse(doError(routes.Application.index, msg)))
       }
     }     
   }
@@ -430,9 +441,11 @@ disallow: /
               // Creating a new Thing
               CreateThing(user, rc.ownerId, ThingId(spaceId), kind, OID(info.model), props)
             }
+        
             askSpaceMgr[ThingResponse](spaceMsg) {
               case ThingFound(thingId, newState) => {
                 val thing = newState.anything(thingId).get
+        
                 if (makeAnother)
                   showEditPage(rc.copy(state = Some(newState)), oldModel, PropList.inheritedProps(None, oldModel)(newState))
                 else if (rc.isTrue("subCreate")) {

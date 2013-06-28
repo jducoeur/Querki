@@ -186,6 +186,7 @@ object InternalProp extends SystemProperty(InternalPropOID, YesNoType, Optional,
     toProps(
       setName("Internal Property"),
       AppliesToKindProp(Kind.Property),
+      NotInheritedProp(true),
       DisplayTextProp("If set, this Property is system-internal, and should not be visible to end users.")))
 
 // TODO: this should really only allow the properties that are defined on this Model:

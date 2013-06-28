@@ -26,7 +26,8 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
    */
   class UrCollection extends Collection(UrCollectionOID, systemOID, UrThing,
       toProps(
-        setName("Collection")
+        setName("Collection"),
+        InternalProp(true)
         )) 
   {
 	type implType = List[ElemValue]
@@ -277,7 +278,8 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
  */
 class QUnit(cid:OID) extends SystemCollection(cid,
   toProps(
-    setName("Always Empty")
+    setName("Always Empty"),
+    InternalProp(true)
   )) 
 {
   type implType = List[ElemValue]
