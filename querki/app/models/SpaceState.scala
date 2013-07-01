@@ -277,8 +277,8 @@ case class SpaceState(
     querki.access.AccessControl.canRead(this, who, thingId)
   }
   
-  def canCreateThings(who:User):Boolean = {
-    querki.access.AccessControl.canCreateThings(this, who)
+  def canCreate(who:User, modelId:OID):Boolean = {
+    querki.access.AccessControl.canCreate(this, who, modelId)
   }
   
   def canEdit(who:User, thingId:OID):Boolean = {

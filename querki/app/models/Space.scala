@@ -96,7 +96,7 @@ class Space extends Actor {
   
   def canRead(who:User, thingId:OID):Boolean = state.canRead(who, thingId)
   
-  def canCreateThings(who:User):Boolean = state.canCreateThings(who)
+  def canCreate(who:User, modelId:OID):Boolean = state.canCreate(who, modelId)
   
   def canEdit(who:User, thingId:OID):Boolean = state.canEdit(who, thingId)
   
@@ -269,8 +269,8 @@ class Space extends Actor {
   {
     val spaceId = checkSpaceId(spaceThingId)
     val name = NameProp.firstOpt(props)
-    if (!canCreateThings(who))
-      sender ! ThingFailed(CreateNotAllowed, "You are not allowed to create anything in this Space")
+    if (!canCreate(who, modelId))
+      sender ! ThingFailed(CreateNotAllowed, "You are not allowed to create that")
     else if (name.isDefined && state.anythingByName(name.get).isDefined)
       sender ! ThingFailed(NameExists, "This Space already has a Thing with that name")
     else DB.withTransaction { implicit conn =>

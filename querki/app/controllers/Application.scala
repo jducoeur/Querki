@@ -175,7 +175,10 @@ object Application extends Controller {
       }
       case err:ThingFailed => {
         val ThingFailed(error, msg, stateOpt) = err
-        withFilledRC(rc, stateOpt, None)(filledRC => errorHandler.flatMap(_.lift((err, filledRC))).getOrElse(doError(routes.Application.index, msg)))
+        if (stateOpt.isDefined)
+          withFilledRC(rc, stateOpt, None)(filledRC => errorHandler.flatMap(_.lift((err, filledRC))).getOrElse(doError(routes.Application.index, msg)))
+        else
+          onUnauthorized(rc.request)
       }
     }     
   }
@@ -685,6 +688,7 @@ disallow: /
 	}
   }
 
+  // TODO: this is broken from a security POV. It should be rewritten in terms of GetSpace!
   def attachment(ownerIdStr:String, spaceId:String, thingIdStr:String) = withUser(false) { rc =>
     val ownerId = getUserByThingId(ownerIdStr)
     askSpaceMgr[AttachmentResponse](GetAttachment(rc.requesterOrAnon, ownerId, ThingId(spaceId), ThingId(thingIdStr))) {

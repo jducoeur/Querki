@@ -59,8 +59,8 @@ object AccessControl {
     }
   }
   
-  def canCreateThings(state:SpaceState, who:User):Boolean = {
-    hasPermission(canCreateProp, state, who, UnknownOID, false, false)
+  def canCreate(state:SpaceState, who:User, modelId:OID):Boolean = {
+    hasPermission(canCreateProp, state, who, modelId, false, false)
   }
   
   def canRead(state:SpaceState, who:User, thingId:OID):Boolean = {
@@ -68,7 +68,7 @@ object AccessControl {
   }
   
   def canEdit(state:SpaceState, who:User, thingId:OID):Boolean = {
-    hasPermission(canEditProp, state, who, thingId, true, false)
+    hasPermission(canEditProp, state, who, thingId, false, false)
   }
 }
 
