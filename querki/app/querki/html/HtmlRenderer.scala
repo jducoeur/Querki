@@ -195,16 +195,23 @@ object HtmlRenderer {
   // how to refactor these together, if possible.
   def handleTagSet(prop:Property[_,_], on:Option[Thing], form:Form[_], context:ContextBase):FormFieldInfo = {
     val fieldIds = FieldIds(on, prop)
-    val pt = prop.pType
-    val oldListName = fieldIds.inputControlId + "_values"
-    val oldList = form(oldListName)
-    val oldIndexes = oldList.indexes
-    val oldRaw =
-      for (i <- oldIndexes;
-           v <- oldList("[" + i + "]").value)
-        yield v
-    // TODO: some nasty abstraction breakage here. We shouldn't know that the internal is List:
-    val oldVals = oldRaw.map(pt.fromUser(_)).toList
-    FormFieldInfo(prop, Some(QSet.makeSetValue(oldVals, pt, context)), false, true)
+    // TODO: this stuff testing for empty isn't really type-specific -- indeed, it is handling the button that is
+    // rendered in editThing.html. So it probably belongs at a higher level?
+    val empty = form(fieldIds.emptyControlId).value map (_.toBoolean) getOrElse false
+    if (empty) {
+      FormFieldInfo(prop, None, true, true)
+    } else {
+      val pt = prop.pType
+      val oldListName = fieldIds.inputControlId + "_values"
+      val oldList = form(oldListName)
+      val oldIndexes = oldList.indexes
+      val oldRaw =
+        for (i <- oldIndexes;
+             v <- oldList("[" + i + "]").value)
+          yield v
+      // TODO: some nasty abstraction breakage here. We shouldn't know that the internal is List:
+      val oldVals = oldRaw.map(pt.fromUser(_)).toList
+      FormFieldInfo(prop, Some(QSet.makeSetValue(oldVals, pt, context)), false, true)
+    }
   }
 }

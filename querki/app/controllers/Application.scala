@@ -592,38 +592,46 @@ disallow: /
     val JSONtags = "[" + tagsAndThings.map(name => "{\"display\":\"" + name + "\", \"id\":\"" + name + "\"}").mkString(",") + "]"
     Ok(JSONtags)
   }
+  
+  def getLinksFromSpace(spaceIn:SpaceState, prop:Property[_,_], lowerQ:String):Seq[(String,OID)] = {
+    implicit val space = spaceIn
+    
+    val thingsSorted = {
+      val allThings = space.allThings.toSeq
+    
+      val linkModelPropOpt = prop.getPropOpt(LinkModelProp)
+      val thingsFiltered =
+        linkModelPropOpt match {
+          case Some(propAndVal) => {
+            val targetModel = propAndVal.first
+            allThings.filter(_.isAncestor(targetModel))
+          }
+          case None => allThings
+        }
+    
+      thingsFiltered.map(t => (t.displayName, t.id)).filter(_._1.toLowerCase().contains(lowerQ)).sortBy(_._1)
+    }
+    
+    space.app match {
+      case Some(app) => thingsSorted ++ getLinksFromSpace(app, prop, lowerQ)
+      case None => thingsSorted
+    }
+  }
 
   def getLinks(ownerId:String, spaceId:String, propId:String, q:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
-    implicit val space = rc.state.get
     val lowerQ = q.toLowerCase()
-    
+    val space = rc.state.get
     val propOpt = space.prop(ThingId(propId))
-    propOpt match {
-      case Some(prop) => {
-        val allThings = space.allThings.toSeq
-        
-        val linkModelPropOpt = prop.getPropOpt(LinkModelProp)
-        val thingsFiltered =
-          linkModelPropOpt match {
-            case Some(propAndVal) => {
-              val targetModel = propAndVal.first
-              allThings.filter(_.isAncestor(targetModel))
-            }
-            case None => allThings
-          }
-        
-        val thingsSorted = thingsFiltered.map(t => (t.displayName, t.id)).filter(_._1.toLowerCase().contains(lowerQ)).sortBy(_._1)
-        
-        // TODO: introduce better JSONification for the AJAX code:
-        val items = thingsSorted.map(item => "{\"display\":\"" + item._1 + "\", \"id\":\"" + item._2 + "\"}")
-        val JSONtags = "[" + items.mkString(",") + "]"
-        Ok(JSONtags)
-      }
-      case None => {
-        // TODO: introduce an error of some sort here?
-        Ok("[]")
-      }
-    }
+    
+    val results = propOpt match {
+      case Some(prop) => getLinksFromSpace(space, prop, lowerQ)
+      case None => Seq.empty
+    } 
+    
+    // TODO: introduce better JSONification for the AJAX code:
+    val items = results.map(item => "{\"display\":\"" + item._1 + "\", \"id\":\"" + item._2 + "\"}")
+    val JSONtags = "[" + items.mkString(",") + "]"
+    Ok(JSONtags)
   }
 
   def upload(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>

@@ -123,6 +123,19 @@ trait Module {
    * supposed to be large.)  
    */
   def moid(localId:Short):OID = {
+    OIDs.sysId((moduleId << 16) + localId)
+  }
+  
+  /**
+   * The old, broken algorithm for calculating moids. This was a *horrible* bug, and wound
+   * up polluting the OID space for a couple dozen Things. The only saving grace is that this
+   * error winds up with the lower 16 bits empty, so the results can't collide with correctly-formed
+   * moids.
+   * 
+   * TODO: go through the existing Spaces, and rewrite all references to these old moids to new
+   * ones that are correct. This is going to be delicate work.
+   */
+  def oldMoid(localId:Short):OID = {
     OIDs.sysId(moduleId << 16 + localId)
   }
   
@@ -150,10 +163,17 @@ trait Module {
    * automatically.
    */
   def addSystemObjects(state:SpaceState):SpaceState = {
-    state.copy(
+//    play.api.Logger.info("----> addSystemObjects for module " + moduleId + "; props are " + props.map{prop => prop.id.toString + "/" + prop.displayName}.toList.sorted.mkString(", "))
+//    play.api.Logger.info("---->     keys start as " + state.spaceProps.keys.map(_.toString).toList.sorted.mkString(", "))
+//    
+    val result = state.copy(
       spaceProps = oidMap[Property[_,_]](props:_*) ++: state.spaceProps, 
       things = oidMap[ThingState](things:_*) ++: state.things,
       types = oidMap[PType[_]](types:_*) ++: state.types)
+//      
+//    play.api.Logger.info("---->     all props are now " + result.spaceProps.values.map(_.displayName).toList.sorted.mkString(", "))
+    
+    result
   }
   
 }

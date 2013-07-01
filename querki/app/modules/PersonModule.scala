@@ -27,11 +27,12 @@ import play.api.Logger
 class PersonModule(val moduleId:Short) extends modules.Module {
 
   object MOIDs {
-    val PersonOID = moid(1)
-    val InviteLinkCmdOID = moid(2)
-    val IdentityLinkOID = moid(3)
-    val ChromelessInviteLinkOID = moid(4)
-    val MeMethodOID = moid(5)
+    val PersonOID = oldMoid(1)
+    val InviteLinkCmdOID = oldMoid(2)
+    val IdentityLinkOID = oldMoid(3)
+    val ChromelessInviteLinkOID = oldMoid(4)
+    val MeMethodOID = oldMoid(5)
+    val SecurityPrincipalOID = oldMoid(6)
   }
   import MOIDs._
   
@@ -101,7 +102,12 @@ Unlike the ordinary Invite Link command, this one results in a page with no Quer
    * THINGS
    ***********************************************/
   
-  lazy val person = ThingState(PersonOID, systemOID, RootOID,
+  lazy val securityPrincipal = ThingState(SecurityPrincipalOID, systemOID, RootOID,
+      toProps(
+        setName("Security Principal"),
+        DisplayTextProp("""For internal use -- this the concept of a Thing that can be given permissions.""")))
+  
+  lazy val person = ThingState(PersonOID, systemOID, SecurityPrincipalOID,
       toProps(
         setName("Person"),
         IsModelProp(true),
@@ -115,6 +121,7 @@ to add new Properties for any Person in your Space.
 """)))
     
   override lazy val things = Seq(
+    securityPrincipal,
     // The Person Model
     person
   )

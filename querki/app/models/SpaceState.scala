@@ -273,15 +273,12 @@ case class SpaceState(
     filteredAsModel.filterNot(_.ifSet(InternalProp))
   }
   
-  // TODO: this needs to become real. For now, everything is world-readable.
-  def canRead(who:User):Boolean = {
-    true
+  def canRead(who:User, thingId:OID):Boolean = {
+    querki.access.AccessControl.canRead(this, who, thingId)
   }
   
-  // TODO: this needs to become much more sophisticated. But for now, it's good enough
-  // to say that only the owner can edit:
   def canCreateThings(who:User):Boolean = {
-    who.id == owner
+    querki.access.AccessControl.canCreateThings(this, who)
   }
   
   def canEdit(who:User, thingId:OID):Boolean = {

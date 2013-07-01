@@ -41,17 +41,17 @@ class EmailModule(val moduleId:Short) extends modules.Module {
   lazy val debug = Play.configuration.getBoolean(fullKey("debug")).getOrElse(false)
 
   object MOIDs {
-    val EmailTypeOID = moid(1)
-    val EmailPropOID = moid(2)
-    val EmailTemplateOID = moid(3)
-    val EmailToOID = moid(4)
-    val EmailSendOID = moid(5)
-    val EmailSubjectOID = moid(6)
+    val EmailTypeOID = oldMoid(1)
+    val EmailPropOID = oldMoid(2)
+    val EmailTemplateOID = oldMoid(3)
+    val EmailToOID = oldMoid(4)
+    val EmailSendOID = oldMoid(5)
+    val EmailSubjectOID = oldMoid(6)
 //    val EmailCcOID = moid(7)
-    val EmailBodyOID = moid(8)
-    val EmailShowSendOID = moid(9)
-    val SentToOID = moid(10)
-    val RecipientsOID = moid(11)
+    val EmailBodyOID = oldMoid(8)
+    val EmailShowSendOID = oldMoid(9)
+    val SentToOID = oldMoid(10)
+    val RecipientsOID = oldMoid(11)
   }  
   import MOIDs._
   

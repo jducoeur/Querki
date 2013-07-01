@@ -94,7 +94,7 @@ class Space extends Actor {
   def name = spaceInfo.get[String]("name").get
   def owner = OID(spaceInfo.get[Long]("owner").get)
   
-  def canRead(who:User):Boolean = state.canRead(who)
+  def canRead(who:User, thingId:OID):Boolean = state.canRead(who, thingId)
   
   def canCreateThings(who:User):Boolean = state.canCreateThings(who)
   
@@ -387,9 +387,6 @@ class Space extends Actor {
     }
     
     case GetAttachment(who, owner, space, attachId) => {
-      if (!canRead(who))
-        sender ! AttachmentFailed
-      else DB.withTransaction { implicit conn =>
         val attachOid = attachId match {
           case AsOID(oid) => oid
           // TODO: handle the case where this name is not recognized:
@@ -397,6 +394,9 @@ class Space extends Actor {
             state.anythingByName(name).get.id
           }
         }
+      if (!canRead(who, attachOid))
+        sender ! AttachmentFailed
+      else DB.withTransaction { implicit conn =>
         // TODO: this will throw an error if the specified attachment doesn't exist
         // Guard against that.
         val results = AttachSQL("""
@@ -424,7 +424,8 @@ class Space extends Actor {
     }
     
     case GetThing(req, owner, space, thingIdOpt) => {
-      if (!canRead(req))
+      val thingId = thingIdOpt.flatMap(state.anything(_)).map(_.id).getOrElse(UnknownOID)
+      if (!canRead(req, thingId))
         sender ! ThingFailed(SpaceNotFound, "Space not found")
       else if (thingIdOpt.isDefined) {
         val thingOpt = state.anything(thingIdOpt.get)
