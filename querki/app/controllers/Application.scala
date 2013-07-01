@@ -153,9 +153,10 @@ object Application extends Controller {
       val filledRC = rc.copy(ownerId = ownerId, state = stateOpt, thing = thingOpt)
       // Give the listeners a chance to chime in:
       val updatedRC = PageEventManager.requestReceived(filledRC)
+      val state = stateOpt.get
       val result =
         // Okay, now we have enough information to check whether we have a Space-specific authorization:
-        if (requireLogin && updatedRC.requester.isEmpty)
+        if ((requireLogin && updatedRC.requester.isEmpty) || !state.canRead(updatedRC.requester.getOrElse(User.Anonymous), thingOpt.map(_.id).getOrElse(state)))
           onUnauthorized(updatedRC.request)
         else
           cb(updatedRC)

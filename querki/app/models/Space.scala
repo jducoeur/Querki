@@ -394,9 +394,11 @@ class Space extends Actor {
             state.anythingByName(name).get.id
           }
         }
-      if (!canRead(who, attachOid))
-        sender ! AttachmentFailed
-      else DB.withTransaction { implicit conn =>
+      // NOTE: see note in GetThing below. 
+//      if (!canRead(who, attachOid))
+//        sender ! AttachmentFailed
+//      else 
+      DB.withTransaction { implicit conn =>
         // TODO: this will throw an error if the specified attachment doesn't exist
         // Guard against that.
         val results = AttachSQL("""
@@ -425,9 +427,13 @@ class Space extends Actor {
     
     case GetThing(req, owner, space, thingIdOpt) => {
       val thingId = thingIdOpt.flatMap(state.anything(_)).map(_.id).getOrElse(UnknownOID)
-      if (!canRead(req, thingId))
-        sender ! ThingFailed(SpaceNotFound, "Space not found")
-      else if (thingIdOpt.isDefined) {
+      // NOTE: Responsibility for this canRead() check has been pulled out to the Application level for now,
+      // by necessity. We don't even necessarily know *who* the requester is until Application gets the
+      // State back, because a locally-defined Identity requires the State.
+//      if (!canRead(req, thingId))
+//        sender ! ThingFailed(SpaceNotFound, "Space not found")
+//      else 
+      if (thingIdOpt.isDefined) {
         val thingOpt = state.anything(thingIdOpt.get)
         if (thingOpt.isDefined) {
           sender ! ThingFound(thingOpt.get.id, state)
