@@ -33,6 +33,7 @@ class PersonModule(val moduleId:Short) extends modules.Module {
     val ChromelessInviteLinkOID = oldMoid(4)
     val MeMethodOID = oldMoid(5)
     val SecurityPrincipalOID = oldMoid(6)
+    val ChromelessInvitesOID = moid(7)
   }
   import MOIDs._
   
@@ -63,7 +64,8 @@ When the email is sent, it will be replaced by a link that the recipient of the 
   lazy val chromelessInviteLink = new SingleThingMethod(ChromelessInviteLinkOID, "Plain Invite Link", """Place this command inside of an Email Message.
 When the email is sent, it will be replaced by a link that the recipient of the email can use to log into this Space as a Person.
 Unlike the ordinary Invite Link command, this one results in a page with no Querki menu bar, just your pages.
-(NOTE: this will probably become a paid-users-only feature in the future.)""", doInviteLink(true))
+(NOTE: this will probably become a paid-users-only feature in the future. Also, this method isn't usually what you want any more;
+instead, you usually want to set the Chromeless Invites property on your Space.)""", doInviteLink(true))
 
   lazy val identityLink = new SystemProperty(IdentityLinkOID, LinkType, Optional,
       toProps(
@@ -87,6 +89,12 @@ Unlike the ordinary Invite Link command, this one results in a page with no Quer
       personOpt.getOrElse(WarningValue("Not logged into this Space"))
     }
   }
+  
+  lazy val chromelessInvites = new SystemProperty(ChromelessInvitesOID, YesNoType, ExactlyOne,
+      toProps(
+        setName("Chromeless Invites"),
+        DisplayTextProp("If you set this to Yes on a Space or Thing, then Invite Links pointing to that will show up without Querki chrome." +
+        		"(NOTE: this will probably become a paid-users-only feature in the future.)")))
 
   override lazy val props = Seq(
     inviteLink,
@@ -95,7 +103,9 @@ Unlike the ordinary Invite Link command, this one results in a page with no Quer
     
     identityLink,
     
-    meMethod
+    meMethod,
+    
+    chromelessInvites
   )
   
   /***********************************************
@@ -167,7 +177,7 @@ to add new Properties for any Person in your Space.
   val identityEmail = "identityEmail"
   val personParam = "person"
     
-  def doInviteLink(chromeless:Boolean)(t:Thing, context:ContextBase):TypedValue = {
+  def doInviteLink(chromelessIn:Boolean)(t:Thing, context:ContextBase):TypedValue = {
     implicit val state = context.state
     val personOpt =
       for {
@@ -179,6 +189,7 @@ to add new Properties for any Person in your Space.
         
     personOpt match {
       case Some(person) => {
+        val chromeless = chromelessIn || t.ifSet(chromelessInvites) || state.ifSet(chromelessInvites)
         // Get the Identity linked from this Person. If there isn't already one, make one.
 	    val identityProp = person.localProp(identityLink)
 	    val identityId = identityProp match {
