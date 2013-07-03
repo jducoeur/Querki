@@ -168,27 +168,36 @@ to add new Properties for any Person in your Space.
   val personParam = "person"
     
   def doInviteLink(chromeless:Boolean)(t:Thing, context:ContextBase):TypedValue = {
-    if (t.isAncestor(PersonOID)(context.state)) {
-      // Get the Identity linked from this Person. If there isn't already one, make one.
-	  val identityProp = t.localProp(identityLink)
-	  val identityId = identityProp match {
-	    case Some(propAndVal) if (!propAndVal.isEmpty) => propAndVal.first
-	    // This will set identityProp, as well as getting the Identity's OID:
-	    case _ => setIdentityId(t, context)
-	  }
-	  val hash = idHash(t.id, identityId)
+    implicit val state = context.state
+    val personOpt =
+      for {
+        rootId <- context.root.value.firstTyped(LinkType);
+        rootThing <- state.anything(rootId);
+        if (rootThing.isAncestor(PersonOID))
+      }
+        yield rootThing
+        
+    personOpt match {
+      case Some(person) => {
+        // Get the Identity linked from this Person. If there isn't already one, make one.
+	    val identityProp = person.localProp(identityLink)
+	    val identityId = identityProp match {
+	      case Some(propAndVal) if (!propAndVal.isEmpty) => propAndVal.first
+  	      // This will set identityProp, as well as getting the Identity's OID:
+	      case _ => setIdentityId(person, context)
+	    }
+	    val hash = idHash(person.id, identityId)
 	    
-	  val state = context.state
-	  // TODO: this surely belongs in a utility somewhere -- it constructs the full path to a Thing, plus some paths.
-	  val url = urlBase + "u/" + state.owner.toThingId + "/" + state.name + "/" + t.toThingId + 
-	    "?" + identityParam + "=" + hash +
-	    (if (chromeless) "&cl=on" else "")
-	  val link = ExactlyOne(ExternalLinkType(url))
+	    // TODO: this surely belongs in a utility somewhere -- it constructs the full path to a Thing, plus some paths.
+	    val url = urlBase + "u/" + state.owner.toThingId + "/" + state.name + "/" + person.toThingId + 
+	      "?" + identityParam + "=" + hash +
+	      (if (chromeless) "&cl=on" else "")
+	    val link = ExactlyOne(ExternalLinkType(url))
 	    
-	  TypedValue(link, ExternalLinkType)
-	} else {
-	  TextValue("Invite Link is only defined when sending email")
-	}
+	    TypedValue(link, ExternalLinkType)  
+      }
+      case _ => WarningValue("Invite Link is only defined when sending email")
+    }
   }
   
   /***********************************************

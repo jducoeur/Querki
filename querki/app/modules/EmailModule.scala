@@ -249,7 +249,13 @@ The QL expression given in here must product a List of Links to Persons.
 	
 		      msg.setRecipients(Message.RecipientType.TO, toAddrs)
 		    
-		      val personContext = QLContext(TypedValue(ExactlyOne(ElemValue(person.id)), LinkType), context.request, Some(context))
+		      // TODO: this originally derived from the higher-level context of the Email itself. Really, it should do so.
+		      // But PersonModule needs to get at this Person object from the Context *somehow*, and for now it's easiest
+		      // to do so as context.root.
+		      // The right solution is probably to predefine a name binding, which gets passed into the new QLContext, and
+		      // use that in PersonModule. But first we need to introduce the idea of name bindings!
+		      // Once that is done, restore the incoming context as the parent of this one.
+		      val personContext = QLContext(TypedValue(ExactlyOne(ElemValue(person.id)), LinkType), context.request, None) //Some(context))
 		    
 		      val subjectQL = t.getProp(emailSubject).first
 		      val subjectParser = new QLParser(subjectQL, personContext)
