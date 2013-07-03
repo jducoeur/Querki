@@ -189,8 +189,10 @@ to add new Properties for any Person in your Space.
 	    val hash = idHash(person.id, identityId)
 	    
 	    // TODO: this surely belongs in a utility somewhere -- it constructs the full path to a Thing, plus some paths.
-	    val url = urlBase + "u/" + state.owner.toThingId + "/" + state.name + "/" + person.toThingId + 
-	      "?" + identityParam + "=" + hash +
+	    // Technically speaking, we are converting a Link to an ExternalLink, then adding params.
+	    val url = urlBase + "u/" + state.owner.toThingId + "/" + state.name + "/" + t.toThingId + 
+	      "?" + personParam + "=" + person.id.toThingId + "&" +
+	      identityParam + "=" + hash +
 	      (if (chromeless) "&cl=on" else "")
 	    val link = ExactlyOne(ExternalLinkType(url))
 	    
@@ -222,9 +224,13 @@ to add new Properties for any Person in your Space.
       val rcOpt =
         for (
           idParam <- rc.firstQueryParam(identityParam);
-          candidate <- rc.thing;
+          state <- rc.state;
+          // NOTE: this is messy for backward compatibility. The first clause is the current way things work: the candidate is
+          // the value of the "person" param. The orElse is the way it originally worked: the candidate is the Thing being pointed to.
+          // TODO: this should be deprecated and removed when the Wedding Site is done with, if not sooner.
+          candidate <- rc.firstQueryParam(personParam).flatMap(personThingId => state.anything(ThingId(personThingId))) orElse rc.thing;
           idProp <- candidate.localProp(identityLink);
-          emailPropVal <- candidate.getPropOpt(emailAddressProp)(rc.state.get);
+          emailPropVal <- candidate.getPropOpt(emailAddressProp)(state);
           email = emailPropVal.first;
           name = candidate.displayName;
           identityId = idProp.first;
@@ -234,7 +240,7 @@ to add new Properties for any Person in your Space.
           // replacing it:
           newRc = rc.copy(
               sessionUpdates = rc.sessionUpdates ++ updates,
-              requester = Some(SpaceSpecificUser(identityId, name, email, rc.state.get.id, candidate.id)))
+              requester = Some(SpaceSpecificUser(identityId, name, email, state.id, candidate.id)))
         ) 
           yield newRc
           
