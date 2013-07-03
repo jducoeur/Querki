@@ -142,6 +142,7 @@ to add new Properties for any Person in your Space.
     val identity = Identity.getOrCreateByEmail(emailAddr, name)
     // ... then point the Person to it, so we can use it later...
     val req = context.request
+    // TODO: we shouldn't do this again if the Person is already pointing to the Identity:
     val changeRequest = ChangeProps(req.requester.get, s.owner, s.id, t.toThingId, toProps(identityLink(identity.id))())
     // TODO: eventually, all of this should get beefed up in various ways:
     // -- ChangeProps should carry the version stamp of t, so that race conditions can be rejected.

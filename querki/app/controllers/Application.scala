@@ -251,7 +251,7 @@ disallow: /
   }
   
   def getOtherProps(state:SpaceState, kind:Kind.Kind, existing:PropList):Seq[Property[_,_]] = {
-    val existingProps = existing.keys
+    val existingProps = existing.keys                                                                                                  
     // This lists all of the visible properties that aren't in the existing list, and removes the
     // InternalProps:
     implicit val s = state
