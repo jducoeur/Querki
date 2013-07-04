@@ -598,6 +598,12 @@ Pass in a link to a Space; this produces all of the "roots" -- the Things from i
 by that Space.""",
 { (thing, context) => TypedValue(QList.from(context.state.thingRoots, LinkType), LinkType) })
 
+object AllPropsMethod extends SingleThingMethod(AllPropsMethodOID, "_allProps", """
+    SPACE -> _allProps -> PROPS
+    
+This receives a link to a Space, and produces all of the Properties defined in that Space.""",
+{ (thing, context) => TypedValue(QList.from(context.state.propList.toSeq.sortBy(_.displayName), LinkFromThingBuilder), LinkType) })
+
 object SortMethod extends InternalMethod(SortMethodOID,
     toProps(
       setName("_sort"),

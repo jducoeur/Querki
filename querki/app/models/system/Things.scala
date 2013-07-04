@@ -96,3 +96,15 @@ object AllThings extends ThingState(AllThingsOID, systemOID, RootOID,
   _sort ->
   _displayThingTree]]
 }}""""")))
+
+object AllProps extends ThingState(AllPropsThingOID, systemOID, RootOID,
+    toProps(
+      setName("All Properties"),
+      DisplayTextProp("[[All Properties]]"),
+      ApplyMethod("""""{{_thingTree:
+[[_space ->
+  _allProps ->
+  _bulleted]]
+}}
+""""")))
+

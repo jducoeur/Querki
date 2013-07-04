@@ -138,6 +138,7 @@ case class SpaceState(
   
   def everythingLocal:Iterable[Thing] = things.values ++ spaceProps.values ++ types.values ++ colls.values
   
+  def propList:Iterable[Property[_,_]] = spaceProps.values
   def allProps:Map[OID, Property[_,_]] = if (app.isEmpty) spaceProps else spaceProps ++ app.get.allProps
   
   def allModels:Iterable[ThingState] = {

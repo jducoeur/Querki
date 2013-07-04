@@ -119,6 +119,8 @@ object OIDs {
   val CommasMethodOID = sysId(80)
   val FormLineMethodOID = sysId(81) 
   val EditOrElseMethodOID = sysId(82)
+  val AllPropsMethodOID = sysId(83)
+  val AllPropsThingOID = sysId(84)
 }
 
 /**
@@ -183,10 +185,11 @@ object SystemSpace {
       CodeMethod,
       IsDefinedMethod,
       FormLineMethod,
-      EditOrElseMethod)
+      EditOrElseMethod,
+      AllPropsMethod)
       
   // Things:
-  val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, Commas, DisplayThingTree, AllThings)
+  val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, Commas, DisplayThingTree, AllThings, AllProps)
   
   def init = {
     _state = Some(modules.Modules.initAllModules(initialSystemState))
