@@ -286,8 +286,8 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
     val parseResult = parseAll(qlPhrase, input.text)
     parseResult match {
       case Success(result, _) => processPhrase(result.ops, initialContext)
-      case Failure(msg, next) => { initialContext.next(ErrorValue("Syntax error: " + msg)) }
-      case Error(msg, next) => { initialContext.next(ErrorValue("ERROR in parsing QL field: " + msg)) }
+      case Failure(msg, next) => { initialContext.next(WikitextValue(renderError(msg, next))) }
+      case Error(msg, next) => { initialContext.next(WikitextValue(renderError(msg, next))) }
     }
   }
 }
