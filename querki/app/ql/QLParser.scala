@@ -240,14 +240,28 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   
   def parse = parseAll(qlText, input.text)
   
+  def consumeReader[T](reader:scala.util.parsing.input.Reader[T]):String = {
+    reader.first.toString + (if (reader.atEnd) "" else consumeReader(reader.rest))
+  }
+  
+  // TODO: this really shouldn't be showing raw HTML. Redo this properly as Wikitext:
+  def renderError(msg:String, reader:scala.util.parsing.input.Reader[_]):Wikitext = {
+    val pos = reader.pos
+    val escapedMsg = "<b>Syntax error:</b> " + scala.xml.Utility.escape(msg)
+    val escapedError = scala.xml.Utility.escape(pos.longString)
+    HtmlWikitext(play.api.templates.Html(
+        "<p>" + escapedMsg + ":<p>\n" +
+        "<pre>" + escapedError + "</pre>\n"))
+  }
+  
   def process:Wikitext = {
     try {
       val parseResult = parse
       parseResult match {
         case Success(result, _) => processParseTree(result, initialContext)
-        case Failure(msg, next) => { Logger.warn(s"Couldn't parse qlText: $msg at ${next.pos}"); Wikitext("Couldn't parse qlText: " + msg) }
+        case Failure(msg, next) => { renderError(msg, next) }
         // TODO: we should probably do something more serious in case of Error:
-        case Error(msg, next) => { Logger.error("Couldn't parse qlText: " + msg); Wikitext("ERROR: Couldn't parse qlText: " + msg) }
+        case Error(msg, next) => { Logger.error("Couldn't parse qlText: " + msg); renderError(msg, next) }
       }
     } catch {
       case overflow:java.lang.StackOverflowError => {
