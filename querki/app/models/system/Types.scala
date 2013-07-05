@@ -149,7 +149,7 @@ This often means that you've invoked it recursively without saying which Thing i
     } else {
       Some(prop.applyToIncomingThing(definingContext) { (thing, context) =>
         val qlPhraseText = thing.first(prop)(context.state)
-        val parser = new QLParser(qlPhraseText, incomingContext)
+        val parser = new QLParser(qlPhraseText, incomingContext.forProperty(prop))
         parser.processMethod.value
       })
     }

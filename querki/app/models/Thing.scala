@@ -334,7 +334,7 @@ abstract class Thing(
   def render(implicit request:RequestContext, prop:Option[Property[_,_]] = None):Wikitext = {
     implicit val state = request.state.get
     val opt = getPropOpt(prop.getOrElse(DisplayTextProp))
-    opt.map(pv => pv.render(thisAsContext)).getOrElse(renderDefault)
+    opt.map(pv => pv.render(thisAsContext.forProperty(pv.prop))).getOrElse(renderDefault)
   }
   
   /**
@@ -349,7 +349,7 @@ abstract class Thing(
     applyOpt match {
       case Some(apply) => {
         val qlText = apply.first
-        val qlParser = new QLParser(qlText, context)
+        val qlParser = new QLParser(qlText, context.forProperty(apply.prop))
         qlParser.processMethod.value
       }
       case None => TypedValue(ExactlyOne(LinkType(id)), LinkType)

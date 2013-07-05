@@ -71,7 +71,7 @@ case class ParsedQLText(parts:Seq[QLTextPart]) {
 class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   
   // Add the parser to the context, so that methods can call back into it:
-  val initialContext = QLContext(ci.value, ci.request, Some(ci.parent), Some(this), ci.depth + 1)
+  val initialContext = QLContext(ci.value, ci.request, Some(ci.parent), Some(this), ci.depth + 1, ci.useCollection, ci.propOpt)
   
   // Crude but useful debugging of the process tree. Could stand to be beefed up when I have time
   def logContext(msg:String, context:ContextBase) = {
@@ -249,7 +249,11 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   // TODO: this really shouldn't be showing raw HTML. Redo this properly as Wikitext:
   def renderError(msg:String, reader:scala.util.parsing.input.Reader[_]):Wikitext = {
     val pos = reader.pos
-    val escapedMsg = s"<b>Syntax error in line ${pos.line}:</b> " + scala.xml.Utility.escape(msg)
+    val propStr = initialContext.getProp match {
+      case Some(prop) => " " + prop.displayName + ", "
+      case None => ""
+    }
+    val escapedMsg = s"<b>Syntax error in $propStr line ${pos.line}:</b> " + scala.xml.Utility.escape(msg)
     val escapedError = scala.xml.Utility.escape(pos.longString)
     HtmlWikitext(play.api.templates.Html(
         "<p>" + escapedMsg + ":<p>\n" +

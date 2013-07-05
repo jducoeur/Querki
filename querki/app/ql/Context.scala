@@ -16,6 +16,9 @@ abstract class ContextBase {
   def parser:Option[QLParser]
   def useCollection:Boolean = false
   
+  // The Property that we are currently rendering. Not always set, but we try to do so:
+  def propOpt:Option[Property[_,_]]
+  
   def depth:Int
   // This might become a config param -- it is the maximum depth we will allow a call to be. For now, we're
   // keeping it very tight, but it might eventually need to be over a thousand.
@@ -78,14 +81,29 @@ abstract class ContextBase {
     next(TypedValue(propVal, resultType))
   }
   
-  override def toString = "Context(" + value.v + ")"
+  override def toString = "Context(" + value.v + ")@" + this.hashCode()
   
   /**
    * Convenience method to build the successor to this context, in typical chained situations.
    */
   def next(v:TypedValue) = QLContext(v, request, Some(this), parser, depth + 1)
   
-  def asCollection = QLContext(value, request, Some(parent), parser, depth + 1, true)
+  def asCollection = QLContext(value, request, Some(this), parser, depth + 1, true)
+  
+  def forProperty(prop:Property[_,_]) = QLContext(value, request, Some(this), parser, depth + 1, useCollection, Some(prop))
+  
+  def getProp:Option[Property[_,_]] = {
+    propOpt match {
+      case Some(prop) => Some(prop)
+      case None => {
+        if (parent == this) {
+          None
+        } else {
+          parent.getProp
+        }
+      }
+    }
+  }
   
   /**
    * Returns the root of the context tree. Mainly so that parameters can start again with the same root.
@@ -102,7 +120,8 @@ abstract class ContextBase {
 /**
  * Represents the incoming "context" of a parsed QLText.
  */
-case class QLContext(value:TypedValue, request:RequestContext, parentIn:Option[ContextBase] = None, parser:Option[QLParser] = None, depth:Int = 0, listIn:Boolean = false) extends ContextBase {
+case class QLContext(value:TypedValue, request:RequestContext, parentIn:Option[ContextBase] = None, 
+                     parser:Option[QLParser] = None, depth:Int = 0, listIn:Boolean = false, propOpt:Option[Property[_,_]] = None) extends ContextBase {
   def state = request.state.getOrElse(SystemSpace.State)
   def parent = parentIn match {
     case Some(p) => p
@@ -117,6 +136,7 @@ case class QLRequestContext(request:RequestContext) extends ContextBase {
   def parent:ContextBase = throw new Exception("QLRequestContext doesn't have a parent!")
   def parser:Option[QLParser] = throw new Exception("QLRequestContext doesn't have a parser!")
   def depth:Int = 0
+  def propOpt = None
 }
 
 /**
@@ -131,4 +151,5 @@ case object EmptyContext extends ContextBase {
   def parent:ContextBase = throw new Exception("EmptyContext doesn't have a parent!")
   def parser:Option[QLParser] = throw new Exception("Can't get a parser from EmptyContext!")
   def depth:Int = 0
+  def propOpt = None
 }

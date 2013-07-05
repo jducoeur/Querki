@@ -213,7 +213,7 @@ The QL expression given in here must product a List of Links to Persons.
     val previouslySentToOpt = t.getPropOpt(sentToProp)
     
     // Get the actual list of recipients:
-    val recipientParser = new QLParser(recipientsIndirect.first, t.thisAsContext(context.request))
+    val recipientParser = new QLParser(recipientsIndirect.first, t.thisAsContext(context.request).forProperty(recipientsProp))
     val recipientContext = recipientParser.processMethod
     if (recipientContext.value.pt != LinkType) {
       ErrorValue("The Recipient property of an Email Message must return a collection of Links; instead, it produced " + recipientContext.value.pt.displayName)
@@ -258,14 +258,14 @@ The QL expression given in here must product a List of Links to Persons.
 		      val personContext = QLContext(TypedValue(ExactlyOne(ElemValue(person.id)), LinkType), context.request, None) //Some(context))
 		    
 		      val subjectQL = t.getProp(emailSubject).first
-		      val subjectParser = new QLParser(subjectQL, personContext)
+		      val subjectParser = new QLParser(subjectQL, personContext.forProperty(emailSubject))
 		      val subject = subjectParser.process.plaintext
 		      msg.setSubject(subject)
 		    
 		      val bodyQL = t.getProp(emailBody).first
 		      
 		      // Attach the HTML...
-		      val bodyParser = new QLParser(bodyQL, personContext)
+		      val bodyParser = new QLParser(bodyQL, personContext.forProperty(emailBody))
 	          val bodyWikitext = bodyParser.process
 		      val bodyHtml = bodyWikitext.display
 		      val bodyPartHtml = new MimeBodyPart()
