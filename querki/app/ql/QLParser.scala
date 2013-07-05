@@ -84,8 +84,8 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   // something horrible to Java's Regex engine -- if you tried to feed it more than a page or so of
   // matching text (that is, with no QL expressions), it would explode with a Stack Overflow error.
   // Splitting them seems to cure that, knock on wood.
-  val unQLTextRegex = """[^\[\"_]+""".r
-  val partialDelimiterRegex = """(\[(?!\[)|\"(?!\")|_(?!_))+""".r
+  val unQLTextRegex = """[^\[\]\"_]+""".r
+  val partialDelimiterRegex = """(\[(?!\[)|\"(?!\")|_(?!_)|\"\](?!\]))+""".r
   // We don't want the RegexParser removing whitespace on our behalf. Note that we need to be
   // very careful about whitespace!
   override val whiteSpace = "".r
@@ -93,7 +93,8 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   def unQLText:Parser[UnQLText] = (unQLTextRegex | partialDelimiterRegex) ^^ { UnQLText(_) }
   def qlCall:Parser[QLCall] = opt("\\*\\s*".r) ~ name ~ opt("." ~> name) ~ opt("\\(\\s*".r ~> (rep1sep(qlPhrase, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
     case collFlag ~ n ~ optMethod ~ optParams => QLCall(n, optMethod, optParams, collFlag) }
-  def qlTextStage:Parser[QLTextStage] = (opt("\\*\\s*".r) <~ "\"\"") ~ qlText <~ "\"\"" ^^ {
+  // Note that the failure() here only works because we specifically disallow "]]" in a Text!
+  def qlTextStage:Parser[QLTextStage] = (opt("\\*\\s*".r) <~ "\"\"") ~ qlText <~ ("\"\"" | failure("Reached the end of the QL expression, but missing the closing \"\" for a Text expression in it") ) ^^ {
     case collFlag ~ text => QLTextStage(text, collFlag) }
   // TODO: get this working properly, so we have properly plain text literals:
 //  def qlPlainTextStage:Parser[QLPlainTextStage] = "\"" ~> unQLTextRegex <~ "\"" ^^ { QLPlainTextStage(_) }
@@ -102,7 +103,8 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, "\\s*->\\s*".r) ^^ { QLPhrase(_) }
   def qlExp:Parser[QLExp] = rep1sep(qlPhrase, "\\s*\\r?\\n|\\s*;\\s*".r) ^^ { QLExp(_) }
   def qlLink:Parser[QLLink] = qlText ^^ { QLLink(_) }
-  def qlText:Parser[ParsedQLText] = rep(unQLText | "[[" ~> qlExp <~ "]]" | "__" ~> qlLink <~ ("__" | failure("Underscores must always be in pairs or sets of four"))) ^^ { ParsedQLText(_) }
+  def qlText:Parser[ParsedQLText] = rep(unQLText | "[[" ~> qlExp <~ "]]" | "__" ~> qlLink <~ ("__" | failure("Underscores must always be in pairs or sets of four"))) ^^ { 
+    ParsedQLText(_) }
   
   /**
    * Note that the output here is nominally a new Context, but the underlying type is
@@ -247,7 +249,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   // TODO: this really shouldn't be showing raw HTML. Redo this properly as Wikitext:
   def renderError(msg:String, reader:scala.util.parsing.input.Reader[_]):Wikitext = {
     val pos = reader.pos
-    val escapedMsg = "<b>Syntax error:</b> " + scala.xml.Utility.escape(msg)
+    val escapedMsg = s"<b>Syntax error in line ${pos.line}:</b> " + scala.xml.Utility.escape(msg)
     val escapedError = scala.xml.Utility.escape(pos.longString)
     HtmlWikitext(play.api.templates.Html(
         "<p>" + escapedMsg + ":<p>\n" +
