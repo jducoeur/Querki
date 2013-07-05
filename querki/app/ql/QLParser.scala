@@ -102,7 +102,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, "\\s*->\\s*".r) ^^ { QLPhrase(_) }
   def qlExp:Parser[QLExp] = rep1sep(qlPhrase, "\\s*\\r?\\n|\\s*;\\s*".r) ^^ { QLExp(_) }
   def qlLink:Parser[QLLink] = qlText ^^ { QLLink(_) }
-  def qlText:Parser[ParsedQLText] = rep(unQLText | "[[" ~> qlExp <~ "]]" | "__" ~> qlLink <~ "__") ^^ { ParsedQLText(_) }
+  def qlText:Parser[ParsedQLText] = rep(unQLText | "[[" ~> qlExp <~ "]]" | "__" ~> qlLink <~ ("__" | failure("Underscores must always be in pairs or sets of four"))) ^^ { ParsedQLText(_) }
   
   /**
    * Note that the output here is nominally a new Context, but the underlying type is
