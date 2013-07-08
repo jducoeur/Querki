@@ -14,6 +14,8 @@ import controllers.RequestContext
 
 import ql._
 
+import querki.values._
+
 /**
  * Enumeration of what sort of Thing this is. Note that this is an intentionally
  * exclusive set. That's mostly to make it reasonably easy to reason about stuff:

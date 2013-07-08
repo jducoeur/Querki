@@ -7,6 +7,8 @@ import models.system._
 import play.api.Logger
 import play.api.templates.Html
 
+import querki.values._
+
 /**
  * This is a fake PType, which exists so that we can persist embedded Texts in the pipeline.
  */
