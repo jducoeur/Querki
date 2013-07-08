@@ -13,6 +13,8 @@ import OIDs._
 
 import ql._
 
+import querki.values._
+
 abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, systemOID, RootOID, pf) {
   def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = 
     CommonInputRenderers.renderText(prop, state, currentValue, v, this)

@@ -5,6 +5,8 @@ import controllers.RequestContext
 import models._
 import models.system._
 
+import querki.values._
+
 abstract class ContextBase {
   def value:TypedValue
   def state:SpaceState

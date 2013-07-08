@@ -11,6 +11,8 @@ import system.SystemSpace._
 
 import ql._
 
+import querki.values._
+
 /**
  * A Property is a field that may exist on a Thing. It is, itself, a Thing with a
  * specific Type.

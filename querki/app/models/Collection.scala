@@ -11,6 +11,8 @@ import Thing._
 
 import ql._
 
+import querki.values._
+
 /**
  * The central representation of a value of a property.
  * 

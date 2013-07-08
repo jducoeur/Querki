@@ -14,6 +14,8 @@ import models.system.OIDs._
 
 import ql._
 
+import querki.values._
+
 import modules.Modules._
 
 import play.api.{Logger, Play}

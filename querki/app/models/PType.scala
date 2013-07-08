@@ -8,6 +8,8 @@ import Thing._
 
 import ql._
 
+import querki.values._
+
 /**
  * The value of a primitive Type. These are always considered "elements", since they
  * are always wrapped inside Collections.
@@ -20,7 +22,7 @@ import ql._
  * TODO: at some point, re-evaluate this. I have a suspicion that clever use of
  * Type Constraints might be able to work around the problems, but I'm not sure.
  */
-case class ElemValue(elem:Any)
+//case class ElemValue(elem:Any)
 
 /**
  * Properties have Types. There's nothing controversial here -- Types are usually

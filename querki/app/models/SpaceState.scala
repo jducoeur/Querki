@@ -11,6 +11,8 @@ import Thing._
 
 import identity.User
 
+import querki.values._
+
 /**
  * A Space is the Querki equivalent of a database -- a collection of related Things,
  * Properties and Types.

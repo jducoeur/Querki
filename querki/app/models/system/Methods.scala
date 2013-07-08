@@ -13,6 +13,8 @@ import OIDs._
 
 import YesNoType._
 
+import querki.values._
+
 /**
  * Internal methods -- functions defined in-code that can be assigned as properties -- should
  * inherit from this.

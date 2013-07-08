@@ -10,6 +10,8 @@ import Thing._
 import OIDs._
 import SystemSpace._
 
+import querki.values._
+
 class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
   extends Property[VT, RT](pid, systemOID, UrPropOID, t, c, p)
 

@@ -12,7 +12,9 @@ import Thing._
 import OIDs._
 
 import ql._
-  
+
+import querki.values._
+
 //////////////////////////////////////
 //
 // Collections
