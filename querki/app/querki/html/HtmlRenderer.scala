@@ -9,8 +9,6 @@ import play.api.templates.Html
 import models._
 import models.system._
 
-import ql.ContextBase
-
 import querki.values._
 
 /**

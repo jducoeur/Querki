@@ -17,7 +17,7 @@ import querki.html.HtmlRenderer
 
 import SpaceError._
 
-import ql.QLRequestContext
+import querki.values.QLRequestContext
 
 object Application extends Controller {
   

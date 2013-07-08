@@ -2,8 +2,6 @@ package querki.values
 
 import models._
 
-import ql.ContextBase
-
 /**
  * The central representation of a value of a property.
  * 

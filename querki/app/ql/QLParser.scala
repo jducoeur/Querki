@@ -8,6 +8,8 @@ import models.system._
 import models._
 import controllers.RequestContext
 
+import querki.values._
+
 // TODO: this should go away
 import play.api.Logger
 

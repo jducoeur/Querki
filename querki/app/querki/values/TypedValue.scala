@@ -1,4 +1,4 @@
-package ql
+package querki.values
 
 import models._
 import models.system._
