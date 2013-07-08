@@ -237,7 +237,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
      * Given an incoming Iterable of RTs, this produces the corresponding QList of VTs.
      * This should simplify a lot of the Scala-level code.
      */
-    def from[RT,VT](in:Iterable[RT], builder:PTypeBuilder[VT,RT]):PropValue = {
+    def from[RT,VT](in:Iterable[RT], builder:PTypeBuilderBase[VT,RT]):PropValue = {
       val rawList = (List.empty[ElemValue] /: in)((list, next) => list :+ builder(next))
       makePropValue(rawList)
     }

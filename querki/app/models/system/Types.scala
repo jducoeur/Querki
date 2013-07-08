@@ -381,7 +381,8 @@ object QLType extends QLType(QLTypeOID)
     }
   }
   object LinkType extends LinkType(LinkTypeOID)
-  object LinkFromThingBuilder extends PTypeBuilder[OID, Thing] {
+  object LinkFromThingBuilder extends PTypeBuilderBase[OID, Thing] {
+    def pType = LinkType
     def wrap(raw:Thing):OID = raw.id
   }
 

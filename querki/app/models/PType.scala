@@ -140,16 +140,18 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
   }
 }
 
-trait PTypeBuilder[VT, -RT] {
+trait PTypeBuilderBase[VT, -RT] {
+  
+  def pType:PType[VT]
   
   type rawType = RT
   
   def wrap(raw:RT):VT
   def apply(raw:RT):ElemValue = ElemValue(wrap(raw))  
 }
-trait SimplePTypeBuilder[VT] extends PTypeBuilder[VT, VT] {
-  def wrap(raw:VT) = raw
+trait PTypeBuilder[VT, -RT] extends PTypeBuilderBase[VT, RT] { this:PType[VT] =>
+  def pType = this
 }
-trait NullTypeBuilder[VT] extends PTypeBuilder[VT, Nothing] {
-  def wrap(raw:Nothing) = throw new Exception("Can't call NullTypeBuilder!")
+trait SimplePTypeBuilder[VT] extends PTypeBuilder[VT, VT] { this:PType[VT] =>
+  def wrap(raw:VT) = raw
 }
