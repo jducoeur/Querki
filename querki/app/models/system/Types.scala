@@ -319,8 +319,7 @@ object QLType extends QLType(QLTypeOID)
     def followLink(context:ContextBase):Option[Thing] = {
       // This should only be called if the valType is LinkType, and the Collection is
       // single-valued!
-      // TODO: Evil! ElemValue really ought to have its own mapping into the PType.
-      val oid = context.value.v.first.elem.asInstanceOf[OID]
+      val oid = get(context.value.v.first)
       follow(context)(oid)
     }
 

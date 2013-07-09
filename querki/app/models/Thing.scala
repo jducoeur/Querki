@@ -140,10 +140,19 @@ abstract class Thing(
     nameOpt map AsName getOrElse AsOID(id)
   }
 
+  /**
+   * DEPRECATED: use getModelOpt instead!
+   */
   def getModel(implicit state:SpaceState):Thing = { 
-    state.anything(model).getOrElse{ Logger.error("Unable to find Model for " + id); UrThing } 
+      state.anything(model).getOrElse{ Logger.error("Unable to find Model for " + id); throw new Exception("Trying to get unknown Model " + model + " for " + displayName) }
   }
-  def hasModel = true
+  def getModelOpt(implicit state:SpaceState):Option[Thing] = {
+    if (hasModel)
+      Some(getModel)
+    else
+      None
+  }
+  def hasModel = (model != UnknownOID)
   
   /**
    * The Property as defined on *this* specific Thing.
@@ -165,18 +174,22 @@ abstract class Thing(
    */
   def getProp(propId:OID)(implicit state:SpaceState):PropAndVal[_] = {
     // TODO: we're doing redundant lookups of the property. Rationalize this stack of calls.
-    val prop = state.prop(propId)
-    if (prop.isDefined && prop.get.first(NotInheritedProp))
-      localOrDefault(propId)
-    else
-      localProp(propId).getOrElse(getModel.getProp(propId))
+    val propOpt = state.prop(propId)
+    propOpt match {
+      case Some(prop) => 
+        if (prop.first(NotInheritedProp))
+          localOrDefault(propId)
+        else
+          localProp(propId).getOrElse(getModelOpt.map(_.getProp(propId)).getOrElse(prop.defaultPair))
+      case None => throw new Exception("Trying to look up unknown Property " + propId)
+    }
   }
   def getProp[VT, CT](prop:Property[VT, _])(implicit state:SpaceState):PropAndVal[VT] = {
     // TODO: we're doing redundant lookups of the property. Rationalize this stack of calls.
     if (prop.first(NotInheritedProp))
       localOrDefault(prop)
     else
-      localProp(prop).getOrElse(getModel.getProp(prop))
+      localProp(prop).getOrElse(getModelOpt.map(_.getProp(prop)).getOrElse(prop.defaultPair))
   }
   
   def localPropVal[VT, CT](prop:Property[VT, _]):Option[PropValue] = {
@@ -262,7 +275,7 @@ abstract class Thing(
    * Note that this ignores defaults.
    */
   def hasProp(propId:OID)(implicit state:SpaceState):Boolean = {
-    props.contains(propId) || getModel.hasProp(propId)
+    props.contains(propId) || getModelOpt.map(_.hasProp(propId)).getOrElse(false)
   }
   
   /**

@@ -183,7 +183,7 @@ case class DisplayPropVal(on:Option[Thing], prop: Property[_,_], v: Option[PropV
 }
 
 object Property {
-  def optTextProp(id:OID, text:String) = (id -> Optional(ElemValue(PlainText(text)))) 
+  def optTextProp(id:OID, text:String) = (id -> Optional(ElemValue(PlainText(text), new DelegatingType({PlainTextType})))) 
   /**
    * Convenience methods for meta-Properties
    */

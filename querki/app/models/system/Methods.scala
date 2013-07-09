@@ -191,7 +191,7 @@ object EditMethod extends EditMethodBase(EditMethodOID,
     toProps(
       setName("_edit"),
       DisplayTextProp("Puts an editor for the specified Property into the page"),
-      (AppliesToKindOID -> QList(ElemValue(Kind.Property)))
+      AppliesToKindProp(Kind.Property)
     )) 
 {
   def cantEditFallback(mainContext:ContextBase, mainThing:Thing, 
@@ -207,7 +207,7 @@ object EditOrElseMethod extends EditMethodBase(EditOrElseMethodOID,
       setName("_editOrElse"),
       DisplayTextProp("PROP._editOrElse(FALLBACK) shows an editor for property PROP if the user is allowed" +
       		"to edit this thing; otherwise, it displays FALLBACK."),
-      (AppliesToKindOID -> QList(ElemValue(Kind.Property)))
+      AppliesToKindProp(Kind.Property)
     )) 
 {
   def cantEditFallback(mainContext:ContextBase, mainThing:Thing, 

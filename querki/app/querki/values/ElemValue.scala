@@ -1,5 +1,7 @@
 package querki.values
 
+import models.PType
+
 /**
  * The value of a primitive Type. These are always considered "elements", since they
  * are always wrapped inside Collections.
@@ -8,8 +10,26 @@ package querki.values
  * typed, then the matrix composition of Collections and PTypes becomes impossible at
  * runtime. So ElemValues are fundamentally not typesafe, and should only be evaluated
  * in the context of their associated PTypes.
- * 
- * TODO: at some point, re-evaluate this. I have a suspicion that clever use of
- * Type Constraints might be able to work around the problems, but I'm not sure.
  */
-case class ElemValue(elem:Any)
+case class ElemValue(elem:Any, pType:PType[_]) {
+  lazy val myType = {
+    if (pType.isInstanceOf[models.DelegatingType[_]])
+      pType.asInstanceOf[models.DelegatingType[_]].realType
+    else
+      pType
+  }
+  
+  def get[VT](expectedType:PType[VT]):VT = {
+    if (expectedType == myType)
+      // Here is The One Great Evil Cast, checked as best we can at runtime. Let's see if we can eliminate
+      // all others.
+      elem.asInstanceOf[VT]
+    else {
+      try {
+        throw new Exception("Trying to cast ElemValue " + elem + ", of type " + myType.displayName + " to " + expectedType.displayName)
+      } catch {
+        case e:Exception => play.api.Logger.error("", e); throw e
+      }
+    }
+  }
+}

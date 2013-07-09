@@ -20,10 +20,7 @@ class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:
    */
   object UrProp extends Property(UrPropOID, systemOID, UrThing, TextType, ExactlyOne,
       toProps(
-        setName("Property"),
-        (PromptOID -> Optional.None),
-        (PlaceholderTextOID -> Optional.None),
-        (NotInheritedOID -> Optional(ElemValue(false)))
+        setName("Property")
         ))
   
   object NameProp extends SystemProperty(NameOID, NameType, ExactlyOne,
@@ -97,7 +94,7 @@ object NotInheritedProp extends SystemProperty(NotInheritedOID, YesNoType, Exact
     toProps(
       setName("Not Inherited"),
       // Need to define this explicitly, to break infinite loops in lookup:
-      (NotInheritedOID -> ExactlyOne(ElemValue(false))),
+      (NotInheritedOID -> ExactlyOne(ElemValue(false, new DelegatingType({YesNoType})))),
       AppliesToKindProp(Kind.Property)
       ))
 
@@ -172,7 +169,7 @@ it should get replaced by a more general LinkFilter property that lets you speci
 object AppliesToKindProp extends SystemProperty(AppliesToKindOID, IntType, QList,
     toProps(
       setName("Applies To"),
-      (AppliesToKindOID -> QList(ElemValue(Kind.Property))),
+      (AppliesToKindOID -> QList(ElemValue(Kind.Property, new DelegatingType(IntType)))),
       DisplayTextProp("""
 By default, a Property can be used on anything -- even when that is nonsensical. The
 result is that, when creating a new Thing, you get a messy list of lots of Properties,

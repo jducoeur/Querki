@@ -126,7 +126,7 @@ object HtmlRenderer {
     val results = <select class="_linkSelect"> 
       <option value={UnknownOID.id.toString}>Nothing selected</option>
       {
-      LinkType.renderInputXmlGuts(prop, state, currentValue, ElemValue(v))
+      LinkType.renderInputXmlGuts(prop, state, currentValue, ElemValue(v, LinkType))
     } </select>
     results
   }
@@ -143,7 +143,8 @@ object HtmlRenderer {
         val name = tOpt.map(_.displayName).getOrElse(oid.toThingId.toString)
         (oid.toString, name)
       } else if (pt.isInstanceOf[NameType]) {
-        val name = NameType.get(elem)
+        val nameType = pt.asInstanceOf[NameType]
+        val name = nameType.get(elem)
         (name, name)
       } else {
         throw new Exception("renderTagSet got unexpected type " + pt)

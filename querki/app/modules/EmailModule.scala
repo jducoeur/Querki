@@ -105,7 +105,7 @@ separate Property with the Email Address type.
   lazy val emailTo = new SystemProperty(EmailToOID, LinkType, QSet,
         toProps(
           setName("Email To"),
-          (LinkModelOID -> Optional(ElemValue(Person.MOIDs.PersonOID))),
+          (LinkModelOID -> Optional(ElemValue(Person.MOIDs.PersonOID, LinkType))),
           DisplayTextProp("""
 This is the raw list of people to send this email to. If you want to do
 something fancier than sending to specific people, see the Recipients property.
@@ -257,7 +257,7 @@ The QL expression given in here must product a List of Links to Persons.
 		      // The right solution is probably to predefine a name binding, which gets passed into the new QLContext, and
 		      // use that in PersonModule. But first we need to introduce the idea of name bindings!
 		      // Once that is done, restore the incoming context as the parent of this one.
-		      val personContext = QLContext(TypedValue(ExactlyOne(ElemValue(person.id)), LinkType), context.request, None) //Some(context))
+		      val personContext = QLContext(TypedValue(ExactlyOne(ElemValue(person.id, LinkType)), LinkType), context.request, None) //Some(context))
 		    
 		      val subjectQL = t.getProp(emailSubject).first
 		      val subjectParser = new QLParser(subjectQL, personContext.forProperty(emailSubject))
@@ -310,7 +310,7 @@ The QL expression given in here must product a List of Links to Persons.
 	        }
 	      }
 	    }
-	    val resultingList = QList.makePropValue(sentTo.map(ElemValue(_)).toList)
+	    val resultingList = QList.makePropValue(sentTo.map(ElemValue(_, LinkType)).toList)
 	    
 	    val req = context.request
 	    val fullSentTo = previouslySentToOpt match {

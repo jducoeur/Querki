@@ -25,7 +25,7 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * type.
    */
   def doDeserialize(ser:String):VT
-  final def deserialize(ser:String):ElemValue = ElemValue(doDeserialize(ser))
+  final def deserialize(ser:String):ElemValue = ElemValue(doDeserialize(ser), this)
   
   /**
    * Also required for all PTypes, to serialize values of this type.
@@ -44,7 +44,7 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * Also required for all PTypes -- the default value to fall back on.
    */
   def doDefault:VT
-  final def default:ElemValue = ElemValue(doDefault)
+  final def default:ElemValue = ElemValue(doDefault, this)
   
   /**
    * Turns this value into an appropriate form for user editing. Currently that means
@@ -64,7 +64,7 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * This is a fundamentally unsafe operation, so it should always be performed in the
    * context of a Property.
    */
-  def get(v:ElemValue):VT = v.elem.asInstanceOf[VT]
+  def get(v:ElemValue):VT = v.get(this)
   
   /**
    * Can this String value be legitimately interpreted as this type?
@@ -102,7 +102,7 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * validation.
    */
   protected def doFromUser(str:String):VT = doDeserialize(str)
-  final def fromUser(str:String):ElemValue = ElemValue(doFromUser(str))
+  final def fromUser(str:String):ElemValue = ElemValue(doFromUser(str), this)
   
   /**
    * If this Type implies special processing when named in a QL expression (other than simply returning
@@ -140,6 +140,27 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
   }
 }
 
+/**
+ * Late-resolving PType, used for those occasional cases that need late references to break circular cycles at
+ * the start of time. This should be used *very* sparingly! This basically wraps around a real PType, but
+ * late-resolves everything.
+ * 
+ * TBD: is this good enough? Do I need to deal with the fields in the signature as well? Could be painful if so --
+ * might have to refactor all the way down to Thing, to make those constructor fields into trait fields instead.
+ */
+class DelegatingType[VT](resolver: => PType[VT]) extends PType[VT](UnknownOID, UnknownOID, UnknownOID, () => emptyProps) {
+  lazy val realType:PType[VT] = resolver
+  
+  def doDeserialize(v:String) = realType.doDeserialize(v)
+  def doSerialize(v:VT) = realType.doSerialize(v)
+  def doRender(context:ContextBase)(v:VT) = realType.doRender(context)(v)
+  
+  def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = 
+    realType.renderInputXml(prop, state, currentValue, v)
+
+  lazy val doDefault = realType.doDefault
+}
+
 trait PTypeBuilderBase[VT, -RT] {
   
   def pType:PType[VT]
@@ -147,7 +168,7 @@ trait PTypeBuilderBase[VT, -RT] {
   type rawType = RT
   
   def wrap(raw:RT):VT
-  def apply(raw:RT):ElemValue = ElemValue(wrap(raw))  
+  def apply(raw:RT):ElemValue = ElemValue(wrap(raw), pType)  
 }
 trait PTypeBuilder[VT, -RT] extends PTypeBuilderBase[VT, RT] { this:PType[VT] =>
   def pType = this

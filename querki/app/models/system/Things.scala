@@ -17,7 +17,9 @@ import querki.values._
 object UrThing extends ThingState(RootOID, systemOID, RootOID,
     toProps(
       setName("Thing"),
-      (IsModelOID -> ExactlyOne(ElemValue(false)))
+      // TODO: once we rework the UI some more, we probably can and should remove this Optional from here.
+      // It is really only here to remind the Space author to think about whether something is a Model.
+      (IsModelOID -> ExactlyOne(ElemValue(false, new DelegatingType(YesNoType))))
       )) 
 {
   override def getProp(propId:OID)(implicit state:SpaceState):PropAndVal[_] = {

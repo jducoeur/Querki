@@ -152,5 +152,5 @@ class NameCollection extends Collection(IllegalOID, systemOID, systemOID, () => 
   private case class NamePropValue(cv:implType, coll:NameCollection) extends PropValue {}  
 }
 object NameCollection extends NameCollection {
-  def bootProp(oid:OID, v:Any) = (oid -> makePropValue(wrap(ElemValue(v))))
+  def bootProp(oid:OID, v:Any) = (oid -> makePropValue(wrap(ElemValue(v, new DelegatingType({models.system.NameType})))))
 }

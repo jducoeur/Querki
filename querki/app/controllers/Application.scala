@@ -288,17 +288,23 @@ disallow: /
   def showEditPage(rc: RequestContext, model:Thing, props:PropList, errorMsg:Option[String] = None) = {
     val state = rc.state.get
     val propList = prepPropList(props, model, rc.state.get)
-    val page = views.html.editThing(
+    try { 
+      val page = views.html.editThing(
         rc.copy(error = errorMsg),
         model,
         otherModels(state, model),
         propList,
         getOtherProps(state, model.kind, props)
       )
-    if (errorMsg.isDefined)
-      BadRequest(page)
-    else
-      Ok(page)    
+      if (errorMsg.isDefined)
+        BadRequest(page)
+      else
+        Ok(page)    
+    } catch {
+      case e:Error => Logger.error("Error while displaying Editor: " + e)
+      // TODO: put a real error message here:
+      BadRequest("Internal error!")
+    }
   }
   
   def prepPropList(propList:PropList, model:Thing, state:SpaceState):Seq[(Property[_,_], DisplayPropVal)] = {
