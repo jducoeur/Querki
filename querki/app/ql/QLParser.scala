@@ -87,7 +87,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   // matching text (that is, with no QL expressions), it would explode with a Stack Overflow error.
   // Splitting them seems to cure that, knock on wood.
   val unQLTextRegex = """[^\[\]\"_]+""".r
-  val partialDelimiterRegex = """(\[(?!\[)|\"(?!\")|_(?!_)|\"\](?!\]))+""".r
+  val partialDelimiterRegex = """(\[(?!\[)|\"(?!\")|_(?!_)|\](?!\]))+""".r
   // We don't want the RegexParser removing whitespace on our behalf. Note that we need to be
   // very careful about whitespace!
   override val whiteSpace = "".r
