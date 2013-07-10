@@ -12,21 +12,28 @@ import models.PType
  * in the context of their associated PTypes.
  */
 case class ElemValue(elem:Any, pType:PType[_]) {
-  lazy val myType = {
-    if (pType.isInstanceOf[models.DelegatingType[_]])
-      pType.asInstanceOf[models.DelegatingType[_]].realType
+  
+  /**
+   * Deal with "unwrapping" a DelegatingType, to make get() work:
+   */
+  def realType(declaringType:PType[_]):PType[_] = {
+    if (declaringType.isInstanceOf[models.DelegatingType[_]])
+      declaringType.asInstanceOf[models.DelegatingType[_]].realType
     else
-      pType
+      declaringType    
   }
   
+  lazy val myType = realType(pType)
+  
   def get[VT](expectedType:PType[VT]):VT = {
-    if (expectedType == myType)
+    val realExpected = realType(expectedType)
+    if (realExpected == myType)
       // Here is The One Great Evil Cast, checked as best we can at runtime. Let's see if we can eliminate
       // all others.
       elem.asInstanceOf[VT]
     else {
       try {
-        throw new Exception("Trying to cast ElemValue " + elem + ", of type " + myType.displayName + " to " + expectedType.displayName)
+        throw new Exception("Trying to cast ElemValue " + elem + ", of type " + myType + " to " + realExpected)
       } catch {
         case e:Exception => play.api.Logger.error("", e); throw e
       }

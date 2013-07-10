@@ -56,9 +56,11 @@ case class Property[VT, -RT](
 
   /**
    * This renders a provided value of this Property.
+   * 
+   * TODO: deprecate and remove this. PropValues can now self-render, since they now know their PType.
    */
   def render(context:ContextBase)(v:PropValue) = {
-    v.render(context, pType)
+    v.render(context)
   }
   def renderedDefault = render(EmptyContext)(default)
   

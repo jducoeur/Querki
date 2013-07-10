@@ -46,7 +46,8 @@ object UnknownNameType extends NameType(UnknownOID, "_unknownNameType") {
 case class TypedValue(v:PropValue, pt:PType[_], cut:Boolean = false) {
   def ct:Collection = v.coll
   
-  def render(context:ContextBase):Wikitext = v.render(context, pt) 
+  // TODO: this will merge with PropValue.render():
+  def render(context:ContextBase):Wikitext = v.render(context) 
   
   def firstTyped[VT](expectedType:PType[VT]):Option[VT] = {
     if (expectedType == pt) {
