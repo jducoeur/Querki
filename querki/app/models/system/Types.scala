@@ -460,8 +460,8 @@ object ExternalLinkType extends ExternalLinkType(ExternalLinkTypeOID)
 // This is a pure marker trait, indicating that this PropValue didn't load correctly yet:
 trait UnresolvedPropValue
 object UnresolvedProp extends ExactlyOne(UnknownOID) {
-   override def makePropValue(cv:implType):PropValue = UnresPropValue(cv, this)
-   private case class UnresPropValue(cv:implType, coll:ExactlyOne) extends PropValue with UnresolvedPropValue
+   override def makePropValue(cv:implType, pType:PType[_]):PropValue = UnresPropValue(cv, this, pType)
+   private case class UnresPropValue(cv:implType, coll:ExactlyOne, pType:PType[_]) extends PropValue with UnresolvedPropValue
 }
 // This pseudo-Type is used to store values from disk that we can't resolve yet. It is only
 // used at Space-load time:

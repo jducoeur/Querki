@@ -123,7 +123,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
     }
     // TBD: the asInstanceOf here is surprising -- I would have expected transformed to come out
     // as the right type simply by type signature. Can we get rid of it?
-    context.next(TypedValue(ct.makePropValue(transformed.asInstanceOf[ct.implType]), ParsedTextType))
+    context.next(TypedValue(ct.makePropValue(transformed.asInstanceOf[ct.implType], ParsedTextType), ParsedTextType))
   }
   
   private def processCall(call:QLCall, context:ContextBase):ContextBase = {

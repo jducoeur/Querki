@@ -81,7 +81,7 @@ abstract class ContextBase {
     val ct = value.ct
     // TODO: this is an unfortunate cast. It's correct, but ick. Can we eliminate it?
     val raw = flatMap(cb).asInstanceOf[ct.implType]
-    val propVal = ct.makePropValue(raw)
+    val propVal = ct.makePropValue(raw, resultType)
     next(TypedValue(propVal, resultType))
   }
   

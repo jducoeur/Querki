@@ -407,7 +407,7 @@ to handle everything else.
       // Cut processing at this point:
       TypedValue(QList.empty, context.value.pt, true)
     else
-      TypedValue(QList.makePropValue(sourceColl.cv.tail.toList), context.value.pt)
+      TypedValue(QList.makePropValue(sourceColl.cv.tail.toList, context.value.pt), context.value.pt)
   }
 }
 

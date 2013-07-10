@@ -33,7 +33,7 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
    * type.
    */
   protected def doDeserialize(ser:String, elemT:pType):implType
-  final def deserialize(ser:String, elemT:pType):PropValue = makePropValue(doDeserialize(ser,elemT))
+  final def deserialize(ser:String, elemT:pType):PropValue = makePropValue(doDeserialize(ser,elemT), elemT)
   
   /**
    * Also required for all Collections, to serialize values of this type.
@@ -51,14 +51,14 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
    * Also required for all Collections -- the default value to fall back on.
    */
   protected def doDefault(elemT:pType):implType
-  final def default(elemT:pType):PropValue = makePropValue(doDefault(elemT))
+  final def default(elemT:pType):PropValue = makePropValue(doDefault(elemT), elemT)
   
   /**
    * Convenience wrapper for creating in-code PropValues.
    */
   def wrap(elem:ElemValue):implType
-  def makePropValue(cv:implType):PropValue
-  def apply(elem:ElemValue):PropValue = makePropValue(wrap(elem))
+  def makePropValue(cv:implType, elemT:PType[_]):PropValue
+  def apply(elem:ElemValue):PropValue = makePropValue(wrap(elem), elem.pType)
   
   /**
    * Collections must implement this -- it builds the HTML representation of how to input this
@@ -142,15 +142,15 @@ class NameCollection extends Collection(IllegalOID, systemOID, systemOID, () => 
     List(elemT.default)
   }
   def wrap(elem:ElemValue):implType = List(elem)
-  def makePropValue(cv:implType):PropValue = NamePropValue(cv, NameCollection.this)
+  def makePropValue(cv:implType, elemT:PType[_]):PropValue = NamePropValue(cv, NameCollection.this, elemT)
     
   def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
     val v = currentValue.v.map(_.first).getOrElse(elemT.default)
     elemT.renderInput(prop, state, currentValue, v)
   }
 
-  private case class NamePropValue(cv:implType, coll:NameCollection) extends PropValue {}  
+  private case class NamePropValue(cv:implType, coll:NameCollection, pType:PType[_]) extends PropValue {}  
 }
 object NameCollection extends NameCollection {
-  def bootProp(oid:OID, v:Any) = (oid -> makePropValue(wrap(ElemValue(v, new DelegatingType({models.system.NameType})))))
+  def bootProp(oid:OID, v:Any) = (oid -> apply(ElemValue(v, new DelegatingType({models.system.NameType}))))
 }

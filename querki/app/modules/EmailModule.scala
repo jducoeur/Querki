@@ -310,7 +310,7 @@ The QL expression given in here must product a List of Links to Persons.
 	        }
 	      }
 	    }
-	    val resultingList = QList.makePropValue(sentTo.map(ElemValue(_, LinkType)).toList)
+	    val resultingList = QList.makePropValue(sentTo.map(ElemValue(_, LinkType)).toList, LinkType)
 	    
 	    val req = context.request
 	    val fullSentTo = previouslySentToOpt match {

@@ -161,6 +161,20 @@ class DelegatingType[VT](resolver: => PType[VT]) extends PType[VT](UnknownOID, U
   lazy val doDefault = realType.doDefault
 }
 
+/**
+ * Marker type, used to signify "no real type" in empty collections.
+ */
+object UnknownType extends PType[Unit](UnknownOID, UnknownOID, UnknownOID, () => emptyProps) {
+  def doDeserialize(v:String) = throw new Exception("Trying to use UnknownType!")
+  def doSerialize(v:Unit) = throw new Exception("Trying to use UnknownType!")
+  def doRender(context:ContextBase)(v:Unit) = throw new Exception("Trying to use UnknownType!")
+  
+  def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = 
+    throw new Exception("Trying to use UnknownType!")
+
+  lazy val doDefault = throw new Exception("Trying to use UnknownType!")
+}
+
 trait PTypeBuilderBase[VT, -RT] {
   
   def pType:PType[VT]

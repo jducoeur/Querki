@@ -17,7 +17,7 @@ case class PropAndVal[VT](prop:Property[VT, _], v:PropValue) {
   def first = prop.first(v)
   def flatMap[T](cb:VT => Option[T]) = prop.flatMap(v)(cb)
   def ++(others:Iterable[VT]):PropValue = {
-    QList.makePropValue((v.cv ++ others.map(ElemValue(_, prop.pType))).toList)
+    QList.makePropValue((v.cv ++ others.map(ElemValue(_, prop.pType))).toList, prop.pType)
   }
   def contains(toCheck:VT):Boolean = prop.contains(v, toCheck)
   def isEmpty:Boolean = v.isEmpty
