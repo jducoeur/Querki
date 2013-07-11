@@ -42,7 +42,7 @@ abstract class ContextBase {
       List(cb(this))
     } else {
       value.v.cv map { elem =>
-        val elemContext = next(TypedValue(ExactlyOne(elem)))
+        val elemContext = next(ExactlyOne(elem))
         cb(elemContext)
       }
     }
@@ -68,7 +68,7 @@ abstract class ContextBase {
       }
     } else {
       value.v.cv flatMap { elem =>
-        val elemContext = next(TypedValue(ExactlyOne(elem)))
+        val elemContext = next(ExactlyOne(elem))
         cb(elemContext)
       }
     }
@@ -82,7 +82,7 @@ abstract class ContextBase {
     // TODO: this is an unfortunate cast. It's correct, but ick. Can we eliminate it?
     val raw = flatMap(cb).asInstanceOf[ct.implType]
     val propVal = ct.makePropValue(raw, resultType)
-    next(TypedValue(propVal))
+    next(propVal)
   }
   
   override def toString = "Context(" + value.v + ")@" + this.hashCode()

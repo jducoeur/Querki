@@ -10,14 +10,18 @@ import models._
  * Property itself -- this is used for intermediate values that aren't actually from Properties --
  * but it could incorporate the actual PType.
  */
-trait PropValue {
+trait PropValue extends TypedValue {
   type cType = coll.implType
   
   def pType:PType[_]
   
   val coll:Collection
   def cv:cType
-    
+
+  // TODO: remove these. They are simply aliases to deal with old users of TypedValue:
+  def ct:Collection = coll
+  def pt = pType
+  
   // TODO: this doesn't need to take elemT any more:
   def serialize(elemT:PType[_]):String = coll.doSerialize(cv, elemT)
   def first = coll.first(this)

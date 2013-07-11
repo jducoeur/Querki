@@ -159,7 +159,7 @@ object InstancesMethod extends SingleContextMethod(InstancesMethodOID,
   }
   
   def handleThing(t:Thing, context:ContextBase):TypedValue = {
-    TypedValue(QList.from(context.state.descendants(t.id, false, true).map(_.id), LinkType))
+    QList.from(context.state.descendants(t.id, false, true).map(_.id), LinkType)
   }
 }
 
@@ -313,7 +313,7 @@ Note that this returns a List, since any number of Things could be pointing to t
 	      if propAndVal.contains(mainThing.id)
 	    )
 	      yield candidateThing.id;
-	  TypedValue(QList.from(results, LinkType))
+	  QList.from(results, LinkType)
     } else {
       WarningValue("_refs can only be applied to Links")
     }
@@ -388,7 +388,7 @@ Optional instead.
         Optional.None
       else
         Optional(sourceColl.cv.head)
-    TypedValue(result)
+    result
   }
 }
 
@@ -406,9 +406,9 @@ to handle everything else.
     if (sourceColl.isEmpty)
       // Cut processing at this point:
       // TODO: can/should we preserve the source PType?
-      new TypedValue(QList.empty) with CutProcessing
+      EmptyListCut()
     else
-      TypedValue(QList.makePropValue(sourceColl.cv.tail.toList, context.value.pt))
+      QList.makePropValue(sourceColl.cv.tail.toList, context.value.pt)
   }
 }
 
@@ -571,7 +571,7 @@ That gets applied to each element of RECEIVED; if FILTER returns Yes, then it is
       val passesYesNo = parser.processPhrase(phrase.ops, elem).value
       // TODO: I think this crashes if passesYesNo doesn't return a YesNo! It should
       // fail more gracefully. This is a good illustration of why firstTyped is evil.
-      for (bool <- passesYesNo.firstTyped(YesNoType) if (bool)) yield elem.value.v.first
+      for (bool <- passesYesNo.firstAs(YesNoType) if (bool)) yield elem.value.v.first
     }
     
     val result = for
@@ -598,13 +598,13 @@ object ExternalRootsMethod extends SingleThingMethod(ExternalRootsOID, "_externa
    
 Pass in a link to a Space; this produces all of the "roots" -- the Things from its Apps -- used
 by that Space.""",
-{ (thing, context) => TypedValue(QList.from(context.state.thingRoots, LinkType)) })
+{ (thing, context) => QList.from(context.state.thingRoots, LinkType) })
 
 object AllPropsMethod extends SingleThingMethod(AllPropsMethodOID, "_allProps", """
     SPACE -> _allProps -> PROPS
     
 This receives a link to a Space, and produces all of the Properties defined in that Space.""",
-{ (thing, context) => TypedValue(QList.from(context.state.propList.toSeq.sortBy(_.displayName), LinkFromThingBuilder)) })
+{ (thing, context) => QList.from(context.state.propList.toSeq.sortBy(_.displayName), LinkFromThingBuilder) })
 
 object SortMethod extends InternalMethod(SortMethodOID,
     toProps(
@@ -624,12 +624,12 @@ With no parameters, _sort sorts the elements of the received List alphabetically
         val start = context.value.v.cv.toSeq
         val asThings = start.map(elemV => context.state.anything(LinkType.get(elemV))).flatten
         val sortedOIDs = asThings.sortWith((left, right) => left.displayName < right.displayName).map(_.id)
-        TypedValue(QList.from(sortedOIDs, LinkType))
+        QList.from(sortedOIDs, LinkType)
       }
       case TagSetType => {
         val names = context.value.v.rawList(TagSetType)
         val sorted = names.sorted
-        TypedValue(QList.from(sorted, TagSetType))
+        QList.from(sorted, TagSetType)
       }
       case _ => WarningValue("_sort can only currently be applied to Links.")
     }
@@ -637,10 +637,10 @@ With no parameters, _sort sorts the elements of the received List alphabetically
 }
 
 object ChildrenMethod extends SingleThingMethod(ChildrenMethodOID, "_children", "This produces the immediate children of the received Model.",
-{ (thing, context) => TypedValue(QList.from(context.state.children(thing).map(_.id), LinkType)) })
+{ (thing, context) => QList.from(context.state.children(thing).map(_.id), LinkType) })
 
 object IsModelMethod extends SingleThingMethod(IsModelMethodOID, "_isModel", "This produces Yes if the received Thing is a Model.",
-{ (thing, context) => TypedValue(ExactlyOne(thing.isModel(context.state))) })
+{ (thing, context) => ExactlyOne(thing.isModel(context.state)) })
 
 // TODO: this is so full of abstraction breaks it isn't funny. Using routes here is inappropriate; indeed, the fact that we're referring
 // to Play at all in this level is inappropriate. This probably needs to be routed through the rendering system, so that it takes the
@@ -649,9 +649,8 @@ import controllers.routes
 object CreateInstanceLinkMethod extends SingleThingMethod(CreateInstanceLinkOID, "_createInstanceLink", "Given a received Model, this produces a Link to create an instance of that Model.",
 { (thing, context) => 
   implicit val req = context.request.request
-  TypedValue(
-    ExactlyOne(
-      ExternalLinkType(routes.Application.createThing(context.request.ownerId.toThingId, context.state.toThingId, Some(thing.toThingId)).absoluteURL())))
+  ExactlyOne(
+    ExternalLinkType(routes.Application.createThing(context.request.ownerId.toThingId, context.state.toThingId, Some(thing.toThingId)).absoluteURL()))
 })
 
 // TODO: this will become clearer and easier to use once we introduce block-syntax parameters.
@@ -753,7 +752,7 @@ object TagRefsMethod extends InternalMethod(TagRefsOID,
           }
         }
         
-        TypedValue(QList.from(candidates.filter(hasThisTag), LinkFromThingBuilder))
+        QList.from(candidates.filter(hasThisTag), LinkFromThingBuilder)
       }
       case _ => WarningValue("_tagRefs can only be used with a Tag or Link")
     }
@@ -782,7 +781,7 @@ tags that have been used in that Property so far.
     applyToIncomingThing(partialContext) { (shouldBeProp, _) =>
       shouldBeProp match {
         case prop:Property[_,_] if (prop.pType == TagSetType) => {
-          TypedValue(QList.from(fetchTags(partialContext.state, prop), TagSetType))
+          QList.from(fetchTags(partialContext.state, prop), TagSetType)
         }
         case _ => WarningValue("The _tagsForProperty method can only be used on Tag Set Properties")
       } 
@@ -807,7 +806,7 @@ of the property on the received Thing.""")))
 object PropsOfTypeMethod extends SingleThingMethod(PropsOfTypeOID, "_propsOfType", "This receives a Type, and produces all of the Properties in this Space with that Type",
 { (thing, context) =>
   thing match {
-    case pt:PType[_] => TypedValue(QList.from(context.state.propsOfType(pt), LinkFromThingBuilder))
+    case pt:PType[_] => QList.from(context.state.propsOfType(pt), LinkFromThingBuilder)
     case _ => WarningValue("_propsOfType can only be used on a Type")
   }
 })

@@ -120,7 +120,7 @@ abstract class Thing(
 {
   lazy val props:PropMap = propFetcher()
   
-  def thisAsContext(implicit request:RequestContext) = QLContext(TypedValue(ExactlyOne(LinkType(this.id))), request)
+  def thisAsContext(implicit request:RequestContext) = QLContext(ExactlyOne(LinkType(this.id)), request)
   
   def displayName:String = {
     val localName = localProp(DisplayNameProp) orElse localProp(NameProp)
@@ -367,7 +367,7 @@ abstract class Thing(
         val qlParser = new QLParser(qlText, context.forProperty(apply.prop))
         qlParser.processMethod.value
       }
-      case None => TypedValue(ExactlyOne(LinkType(id)))
+      case None => ExactlyOne(LinkType(id))
     }
   }  
   

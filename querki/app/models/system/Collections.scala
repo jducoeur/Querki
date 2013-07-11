@@ -84,7 +84,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     }
 
     def makePropValue(cv:implType, elemT:PType[_]):PropValue = ExactlyOnePropValue(cv, this, elemT)
-    private case class ExactlyOnePropValue(cv:implType, coll:ExactlyOne, pType:PType[_]) extends PropValue
+    protected case class ExactlyOnePropValue(cv:implType, coll:ExactlyOne, pType:PType[_]) extends PropValue
   }
   object ExactlyOne extends ExactlyOne(ExactlyOneOID)
   object ExactlyOneProps {
@@ -231,7 +231,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
         ))
   {
     def makePropValue(cv:implType, elemT:PType[_]):PropValue = QListPropValue(cv, this, elemT)
-    private case class QListPropValue(cv:implType, coll:QList, pType:PType[_]) extends PropValue    
+    protected case class QListPropValue(cv:implType, coll:QList, pType:PType[_]) extends PropValue    
     
     /**
      * Given an incoming Iterable of RTs, this produces the corresponding QList of VTs.

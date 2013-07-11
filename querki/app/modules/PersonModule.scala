@@ -183,7 +183,7 @@ to add new Properties for any Person in your Space.
     implicit val state = context.state
     val personOpt =
       for {
-        rootId <- context.root.value.firstTyped(LinkType);
+        rootId <- context.root.value.firstAs(LinkType);
         rootThing <- state.anything(rootId);
         if (rootThing.isAncestor(PersonOID))
       }
@@ -207,9 +207,7 @@ to add new Properties for any Person in your Space.
 	      "?" + personParam + "=" + person.id.toThingId + "&" +
 	      identityParam + "=" + hash +
 	      (if (chromeless) "&cl=on" else "")
-	    val link = ExactlyOne(ExternalLinkType(url))
-	    
-	    TypedValue(link)  
+	    ExactlyOne(ExternalLinkType(url))
       }
       case _ => WarningValue("Invite Link is only defined when sending email")
     }

@@ -48,21 +48,15 @@ object UnknownNameType extends NameType(UnknownOID, "_unknownNameType") {
  */
 trait CutProcessing
 
-case class TypedValue(v:PropValue) {
-  def ct:Collection = v.coll
+trait TypedValue {
+  // All of these are actually defined in PropValue:
+  def ct:Collection
+  def pt:PType[_]
+  def render(context:ContextBase):Wikitext
+  def firstAs[VT](elemT:PType[VT]):Option[VT]
   
-  // TODO: remove this alias
-  def pt = v.pType
-  
-  // TODO: this will merge with PropValue.render():
-  def render(context:ContextBase):Wikitext = v.render(context) 
-  
-  def firstTyped[VT](expectedType:PType[VT]):Option[VT] = {
-    if (expectedType == pt) {
-      v.firstTyped(expectedType)
-    } else
-      None
-  }
+  // Obsolete leftover from the old TypedValue -- was a wrapper around PropValue
+  def v = this.asInstanceOf[PropValue]
   
   // We are cutting iff the constructor mixed in CutProcessing:
   def cut = this.isInstanceOf[CutProcessing]
@@ -73,7 +67,12 @@ object ErrorTextType extends TextTypeBase(UnknownOID,
     Thing.setName("Error Text")
   )) with PTypeBuilder[QLText,String] {
 }
-class WarningValue(msg:String) extends TypedValue(ExactlyOne(ErrorTextType("{{_warning:" + msg + "}}"))) with CutProcessing
+object ExactlyOneCut extends ExactlyOne(UnknownOID) {
+  override def makePropValue(cv:implType, elemT:PType[_]):PropValue = new ExactlyOnePropValue(cv, this, elemT) with CutProcessing
+}
+object EmptyListCut extends QList(UnknownOID) {
+  def apply() = new QListPropValue(List.empty, this, UnknownType) with CutProcessing  
+}
 
 object ErrorValue {
   def apply(msg:String) = {
@@ -82,27 +81,27 @@ object ErrorValue {
     } catch {
       case e:Exception => Logger.error(s"Displaying error $msg; stack trace:\n${e.getStackTraceString}")  
     }
-    new WarningValue(msg)
+    WarningValue(msg)
   }
 }
 object TextValue {
-  def apply(msg:String) = TypedValue(ExactlyOne(PlainTextType(msg)))
+  def apply(msg:String) = ExactlyOne(PlainTextType(msg))
 }
 object HtmlValue {
-  def apply(html:Html) = TypedValue(ExactlyOne(RawHtmlType(HtmlWikitext(html))))
+  def apply(html:Html) = ExactlyOne(RawHtmlType(HtmlWikitext(html)))
 }
 object WikitextValue {
-  def apply(wikitext:Wikitext) = TypedValue(ExactlyOne(ParsedTextType(wikitext)))
+  def apply(wikitext:Wikitext) = ExactlyOne(ParsedTextType(wikitext))
 }
 object LinkValue {
-  def apply(target:OID) = TypedValue(ExactlyOne(LinkType(target)))
+  def apply(target:OID) = ExactlyOne(LinkType(target))
 }
 object WarningValue {
-  def apply(msg:String) = new WarningValue(msg)
+  def apply(msg:String) = ExactlyOneCut(ErrorTextType("{{_warning:" + msg + "}}"))
 }
 object EmptyValue {
   // TODO: do something with this?
-  def apply(pType:PType[_]) = TypedValue(QList.empty)
+  def apply(pType:PType[_]) = QList.empty
   // TODO: do we need this?
-  def untyped = TypedValue(QList.empty)
+  def untyped = QList.empty
 }

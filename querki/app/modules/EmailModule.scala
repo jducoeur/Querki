@@ -257,7 +257,7 @@ The QL expression given in here must product a List of Links to Persons.
 		      // The right solution is probably to predefine a name binding, which gets passed into the new QLContext, and
 		      // use that in PersonModule. But first we need to introduce the idea of name bindings!
 		      // Once that is done, restore the incoming context as the parent of this one.
-		      val personContext = QLContext(TypedValue(ExactlyOne(ElemValue(person.id, LinkType))), context.request, None) //Some(context))
+		      val personContext = QLContext(ExactlyOne(ElemValue(person.id, LinkType)), context.request, None) //Some(context))
 		    
 		      val subjectQL = t.getProp(emailSubject).first
 		      val subjectParser = new QLParser(subjectQL, personContext.forProperty(emailSubject))
@@ -326,7 +326,7 @@ The QL expression given in here must product a List of Links to Persons.
 	      }
 	    }
 	    
-	    TypedValue(resultingList)
+	    resultingList
     }
   }
 }
