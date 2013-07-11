@@ -186,7 +186,8 @@ abstract class Thing(
   }
   def getProp[VT, CT](prop:Property[VT, _])(implicit state:SpaceState):PropAndVal[VT] = {
     // TODO: we're doing redundant lookups of the property. Rationalize this stack of calls.
-    if (prop.first(NotInheritedProp))
+    // Note: the != here is because NotInheritedProp gets into an infinite loop otherwise:
+    if (this != NotInheritedProp && prop.first(NotInheritedProp))
       localOrDefault(prop)
     else
       localProp(prop).getOrElse(getModelOpt.map(_.getProp(prop)).getOrElse(prop.defaultPair))
@@ -238,22 +239,22 @@ abstract class Thing(
    * inappropriate.
    */
   def first[VT](prop:Property[VT, _])(implicit state:SpaceState):VT = {
-    prop.first(getPropVal(prop))
+    getProp(prop).first
   }
   
   def localFirst[VT](prop:Property[VT, _])(implicit state:SpaceState):Option[VT] = {
-    localPropVal(prop) map (prop.first(_))
+    localProp(prop) map (_.first)
   }
   
   /**
    * Returns the first value of the specified Property *or* a given default.
    */
   def firstOr[VT](prop:Property[VT, _], default:VT)(implicit state:SpaceState):VT = {
-    val cv = getPropVal(prop)
-    if (prop.isEmpty(cv))
+    val cv = getProp(prop)
+    if (cv.isEmpty)
       default
     else
-      prop.first(cv)  
+      cv.first
   }
   
   /**

@@ -74,6 +74,16 @@ trait QValue {
   def isEmpty = cType.isEmpty(this)
   def size = cv.size
   
+  /**********************
+   * CASTING METHODS
+   * 
+   * These methods take a PType parameter mainly so that they can use the underlying VT. In
+   * principle, we shouldn't be doing anything with that elemT parameter, but we *should*
+   * be checking that it matches the actual PType of this QValue. (Using the same definition
+   * of "matching" as in ElemValue.)
+   * 
+   * TODO: do that pType matches elemT check in all of these!
+   **********************/
   def flatMap[VT, T](elemT:PType[VT])(cb:VT => Option[T]) = cv.flatMap { elem => 
     val vt = elemT.get(elem)
     cb(vt)
@@ -81,6 +91,11 @@ trait QValue {
   
   def rawList[VT](elemT:PType[VT]):List[VT] = {
     (List.empty[VT] /: cv) ((list, elem) => list :+ elemT.get(elem))
+  }
+  
+  def contains[VT](elemT:PType[VT], toCheck:VT):Boolean = cv.exists { elem =>
+    val vt = elemT.get(elem)
+    elemT.matches(vt, toCheck)
   }
 }
 

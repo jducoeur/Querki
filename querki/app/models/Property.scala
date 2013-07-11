@@ -53,16 +53,6 @@ case class Property[VT, -RT](
     else
       throw new Exception("confirmType called on wrong type! Expected " + pType + ", but received " + pt)
   }
-
-  /**
-   * This renders a provided value of this Property.
-   * 
-   * TODO: deprecate and remove this. PropValues can now self-render, since they now know their PType.
-   */
-  def render(context:ContextBase)(v:QValue) = {
-    v.render(context)
-  }
-  def renderedDefault = render(EmptyContext)(default)
   
   /**
    * This renders the Property itself, if it has no DisplayText defined.
@@ -80,16 +70,6 @@ case class Property[VT, -RT](
    */
   def first(m:PropMap):VT = pType.get(cType.first(from(m)))
   def firstOpt(m:PropMap):Option[VT] = fromOpt(m) map cType.first map pType.get
-  def first(v:QValue):VT = pType.get(cType.first(v))
-  
-  def isEmpty(v:QValue) = cType.isEmpty(v)
-  
-  def flatMap[T](v:QValue)(cb:VT => Option[T]) = v.flatMap(pType)(cb)
-
-  def contains(v:QValue, toCheck:VT):Boolean = v.cv.exists { elem =>
-    val vt = pType.get(elem)
-    pType.matches(vt, toCheck)
-  }
 
   def apply(raw:RT) = (this.id, cType(pType(raw)))
   def apply() = (this.id, cType.default(pType))
