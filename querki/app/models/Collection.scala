@@ -113,9 +113,9 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
    * NOTE: this will throw an exception if you call it on an empty collection! It is the
    * equivalent of Option.get
    */
-  final def first(v:PropValue):ElemValue = v.cv.head
+  final def first(v:TypedValue):ElemValue = v.cv.head
   
-  final def isEmpty(v:PropValue):Boolean = v.cv.isEmpty
+  final def isEmpty(v:TypedValue):Boolean = v.cv.isEmpty
   
   implicit def toIterable(v:implType):Iterable[ElemValue] = v.asInstanceOf[Iterable[ElemValue]]
 }
@@ -149,7 +149,7 @@ class NameCollection extends Collection(IllegalOID, systemOID, systemOID, () => 
     elemT.renderInput(prop, state, currentValue, v)
   }
 
-  private case class NamePropValue(cv:implType, coll:NameCollection, pType:PType[_]) extends PropValue {}  
+  private case class NamePropValue(cv:implType, cType:NameCollection, pType:PType[_]) extends PropValue {}  
 }
 object NameCollection extends NameCollection {
   def bootProp(oid:OID, v:Any) = (oid -> apply(ElemValue(v, new DelegatingType({models.system.NameType}))))

@@ -337,7 +337,7 @@ It produces the first one that returns a non-empty result, or None iff all of th
             case Some(result) => Some(result)
             case None => {
               val oneResult = context.parser.get.processPhrase(phrase.ops, context)
-              if (oneResult.value.v.isEmpty)
+              if (oneResult.value.isEmpty)
                 None
               else
                 Some(oneResult.value)  
@@ -348,7 +348,7 @@ It produces the first one that returns a non-empty result, or None iff all of th
         // TBD: this really isn't the correct type to produce -- ideally, the type should
         // be the one that would be output by the various parameter phrases. How can we
         // suss that?
-        result.getOrElse(EmptyValue(context.value.pt))
+        result.getOrElse(EmptyValue(context.value.pType))
       }
       case None => WarningValue("The _or() operator is meaningless if you don't give it any parameters")
     }
@@ -382,7 +382,7 @@ Optional instead.
           """)))
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
-    val sourceColl = context.value.v
+    val sourceColl = context.value
     val result = 
       if (sourceColl.isEmpty)
         Optional.None
@@ -402,13 +402,13 @@ to handle everything else.
           """)))
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
-    val sourceColl = context.value.v
+    val sourceColl = context.value
     if (sourceColl.isEmpty)
       // Cut processing at this point:
       // TODO: can/should we preserve the source PType?
       EmptyListCut()
     else
-      QList.makePropValue(sourceColl.cv.tail.toList, context.value.pt)
+      QList.makePropValue(sourceColl.cv.tail.toList, context.value.pType)
   }
 }
 
@@ -423,9 +423,9 @@ abstract class ButtonBase(tid:OID, pf:PropFetcher) extends InternalMethod(tid, p
       case Some(params) if (params.length == numParams) => {
         // TODO: This is a horrible hack! How do we get LinkType and ExternalLinkType to give up their URLs
         // in a consistent and type-safe way?
-        val url = context.value.pt match {
+        val url = context.value.pType match {
           case LinkType => LinkType.followLink(context).get.toThingId.toString()
-          case ExternalLinkType => ExternalLinkType.get(context.value.v.first).toExternalForm()
+          case ExternalLinkType => ExternalLinkType.get(context.value.first).toExternalForm()
         }
         
         val paramTexts = params.map(phrase => context.parser.get.processPhrase(phrase.ops, context).value.render(context))
@@ -477,7 +477,7 @@ object IsNonEmptyMethod extends ThingPropMethod(IsNonEmptyOID,
       DisplayTextProp("THING -> PROP._isNonEmpty produces true iff PROP is defined on THING, and this instance contains at least one element")))
 {
   override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
-    boolean2YesNoTypedValue(!context.value.v.isEmpty)
+    boolean2YesNoTypedValue(!context.value.isEmpty)
   }
 
   def isEmpty(mainContext:ContextBase, mainThing:Thing, prop:Property[_,_]):Boolean = {
@@ -504,7 +504,7 @@ object IsEmptyMethod extends ThingPropMethod(IsEmptyOID,
       DisplayTextProp("THING -> PROP._isEmpty produces true iff PROP is not defined on THING, or this instance contains no elements")))
 {
   override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
-    boolean2YesNoTypedValue(context.value.v.isEmpty)
+    boolean2YesNoTypedValue(context.value.isEmpty)
   }
 
   def applyToPropAndThing(mainContext:ContextBase, mainThing:Thing, 
@@ -531,7 +531,7 @@ be needed for other languages in the long run.
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
     def chooseParam(params:Seq[QLPhrase]):QLPhrase = {
-      val received = context.value.v
+      val received = context.value
       if (received.isEmpty || received.size > 1)
         params(1)
       else
@@ -571,7 +571,7 @@ That gets applied to each element of RECEIVED; if FILTER returns Yes, then it is
       val passesYesNo = parser.processPhrase(phrase.ops, elem).value
       // TODO: I think this crashes if passesYesNo doesn't return a YesNo! It should
       // fail more gracefully. This is a good illustration of why firstTyped is evil.
-      for (bool <- passesYesNo.firstAs(YesNoType) if (bool)) yield elem.value.v.first
+      for (bool <- passesYesNo.firstAs(YesNoType) if (bool)) yield elem.value.first
     }
     
     val result = for
@@ -580,7 +580,7 @@ That gets applied to each element of RECEIVED; if FILTER returns Yes, then it is
       phrase = params(0);
       parser <- context.parser
     )
-      yield context.flatMapAsContext(tryElem(parser, phrase), context.value.pt).value
+      yield context.flatMapAsContext(tryElem(parser, phrase), context.value.pType).value
       
     result.getOrElse(WarningValue("_filter requires exactly one parameter"))
   }
@@ -619,15 +619,15 @@ With no parameters, _sort sorts the elements of the received List alphabetically
     // TODO: there is obviously a refactoring screaming to break free here, but it involves some fancy
     // type math. How do we lift things so that we can do QList.from() an arbitrary PType? (Remember that
     // it expects a PTypeBuilder, *and* requires that the input Iterable be of the expected RT.)
-    context.value.pt match {
+    context.value.pType match {
       case LinkType => {
-        val start = context.value.v.cv.toSeq
+        val start = context.value.cv.toSeq
         val asThings = start.map(elemV => context.state.anything(LinkType.get(elemV))).flatten
         val sortedOIDs = asThings.sortWith((left, right) => left.displayName < right.displayName).map(_.id)
         QList.from(sortedOIDs, LinkType)
       }
       case TagSetType => {
-        val names = context.value.v.rawList(TagSetType)
+        val names = context.value.rawList(TagSetType)
         val sorted = names.sorted
         QList.from(sorted, TagSetType)
       }
@@ -707,15 +707,15 @@ beginning. If there are three, the last is CLOSE, which is put at the end.""")))
         case Some(param) => {
           val collContext = context.asCollection
           val paramVal = context.parser.get.processPhrase(param.ops, collContext).value
-          val renderedParam = paramVal.pt.render(context)(paramVal.v.first)
+          val renderedParam = paramVal.pType.render(context)(paramVal.first)
           renderedParam
         }
         case _ => Wikitext.empty
       }
     }
 
-    val elemT = context.value.pt
-    val renderedList = context.value.v.cv.map{elem => elemT.render(context)(elem)}
+    val elemT = context.value.pType
+    val renderedList = context.value.cv.map{elem => elemT.render(context)(elem)}
     val result =
       if (renderedList.isEmpty) {
         Wikitext.empty
@@ -733,12 +733,12 @@ object TagRefsMethod extends InternalMethod(TagRefsOID,
       DisplayTextProp("This produces a List of all Things that have the received Thing or Name as a Tag")))
 { 
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
-    val elemT = context.value.pt
+    val elemT = context.value.pType
     elemT match {
       case nameable:NameableType => {
         val allProps = context.state.allProps.values
         val tagProps = allProps.filter(_.pType == TagSetType)
-        val name = nameable.getName(context)(context.value.v.first)
+        val name = nameable.getName(context)(context.value.first)
         val candidates = context.state.allThings
         
         def hasThisTag(candidate:Thing):Boolean = {
@@ -831,7 +831,7 @@ If you have a parameter, and it doesn't work as either PROP or THING.PROP, then 
     HtmlValue(Html("<pre>" + escaped + "</pre>"))    
   }
   
-  def encode(propVal:PropValue, pType:PType[_]):TypedValue = {
+  def encode(propVal:TypedValue, pType:PType[_]):TypedValue = {
     if (propVal.isEmpty)
       WarningValue("_code got an empty input")
     else {
@@ -897,7 +897,7 @@ If you have a parameter, and it doesn't work as either PROP or THING.PROP, then 
         }
       }
       case None => {
-        encode(partialContext.value.v, partialContext.value.pt)
+        encode(partialContext.value, partialContext.value.pType)
       }
     }
   }
@@ -909,7 +909,7 @@ object IsDefinedMethod extends SingleContextMethod(IsDefinedOID,
       DisplayTextProp("_isDefined produces Yes if the name passed into it is a real Thing")))
 {
   def fullyApply(mainContext:ContextBase, partialContext:ContextBase, paramsOpt:Option[Seq[QLPhrase]]):TypedValue = {
-    partialContext.value.pt != UnknownNameType
+    partialContext.value.pType != UnknownNameType
   }
 }
 

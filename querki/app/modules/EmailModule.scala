@@ -217,10 +217,10 @@ The QL expression given in here must product a List of Links to Persons.
     // Get the actual list of recipients:
     val recipientParser = new QLParser(recipientsIndirect.first, t.thisAsContext(context.request).forProperty(recipientsProp))
     val recipientContext = recipientParser.processMethod
-    if (recipientContext.value.pt != LinkType) {
-      ErrorValue("The Recipient property of an Email Message must return a collection of Links; instead, it produced " + recipientContext.value.pt.displayName)
+    if (recipientContext.value.pType != LinkType) {
+      ErrorValue("The Recipient property of an Email Message must return a collection of Links; instead, it produced " + recipientContext.value.pType.displayName)
     } else {
-      val recipients = recipientContext.value.v
+      val recipients = recipientContext.value
       
 	    // Construct the email:
 	    val props = System.getProperties()

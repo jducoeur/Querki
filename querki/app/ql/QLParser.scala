@@ -115,7 +115,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
    */
   private def processTextStage(text:QLTextStage, context:ContextBase):ContextBase = {
     logContext("processTextStage " + text, context)
-    val ct = context.value.ct
+    val ct = context.value.cType
     // For each element of the incoming context, recurse in and process the embedded Text
     // in that context.
     val transformed = context.map { elemContext =>
@@ -207,21 +207,21 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
         // out here, in which Types should declare what happens when they hit the
         // ""__some text__"" construction. It is akin to the simple render() above; maybe
         // an optional parameter for render()?
-        context.value.pt match {
+        context.value.pType match {
           case LinkType => {
             // TODO: this is evil. How should it be described instead?
-            val l = LinkType.follow(context)(LinkType.get(context.value.v.first))
+            val l = LinkType.follow(context)(LinkType.get(context.value.first))
             l match {
               case Some(thing) => makeWikiLink(thing.toThingId)
               case None => guts
             }
           }
           case ExternalLinkType => {
-            val url = ExternalLinkType.get(context.value.v.first)
+            val url = ExternalLinkType.get(context.value.first)
             makeWikiLink(url.toExternalForm())
           }
           case UnknownNameType => {
-            val name = UnknownNameType.get(context.value.v.first)
+            val name = UnknownNameType.get(context.value.first)
             makeWikiLink(NameType.toUrl(name))
           }
           // TODO: we ought to show some sort of error here?

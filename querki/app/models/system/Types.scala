@@ -226,7 +226,7 @@ object QLType extends QLType(QLTypeOID)
     }
     
     def toBoolean(typed:TypedValue):Boolean = {
-      if (typed.pt == YesNoType)
+      if (typed.pType == YesNoType)
         typed.firstAs(YesNoType).getOrElse(false)
       else
         false
@@ -319,7 +319,7 @@ object QLType extends QLType(QLTypeOID)
     def followLink(context:ContextBase):Option[Thing] = {
       // This should only be called if the valType is LinkType, and the Collection is
       // single-valued!
-      val oid = get(context.value.v.first)
+      val oid = get(context.value.first)
       follow(context)(oid)
     }
 
@@ -461,7 +461,7 @@ object ExternalLinkType extends ExternalLinkType(ExternalLinkTypeOID)
 trait UnresolvedPropValue
 object UnresolvedProp extends ExactlyOne(UnknownOID) {
    override def makePropValue(cv:implType, pType:PType[_]):PropValue = UnresPropValue(cv, this, pType)
-   private case class UnresPropValue(cv:implType, coll:ExactlyOne, pType:PType[_]) extends PropValue with UnresolvedPropValue
+   private case class UnresPropValue(cv:implType, cType:ExactlyOne, pType:PType[_]) extends PropValue with UnresolvedPropValue
 }
 // This pseudo-Type is used to store values from disk that we can't resolve yet. It is only
 // used at Space-load time:

@@ -28,7 +28,7 @@ abstract class ContextBase {
   // keeping it very tight, but it might eventually need to be over a thousand.
   val maxDepth = 100
   
-  def isEmpty = value.v.isEmpty
+  def isEmpty = value.isEmpty
   
   /**
    * Maps the given function to each element in this context.
@@ -41,7 +41,7 @@ abstract class ContextBase {
     if (useCollection) {
       List(cb(this))
     } else {
-      value.v.cv map { elem =>
+      value.cv map { elem =>
         val elemContext = next(ExactlyOne(elem))
         cb(elemContext)
       }
@@ -67,7 +67,7 @@ abstract class ContextBase {
         case None => List.empty[T]
       }
     } else {
-      value.v.cv flatMap { elem =>
+      value.cv flatMap { elem =>
         val elemContext = next(ExactlyOne(elem))
         cb(elemContext)
       }
@@ -78,14 +78,14 @@ abstract class ContextBase {
    * Similar to ordinary map(), but produces a new Context with the result.
    */
   def flatMapAsContext[T <: ElemValue](cb:ContextBase => Option[T], resultType:PType[_]):ContextBase = {
-    val ct = value.ct
+    val ct = value.cType
     // TODO: this is an unfortunate cast. It's correct, but ick. Can we eliminate it?
     val raw = flatMap(cb).asInstanceOf[ct.implType]
     val propVal = ct.makePropValue(raw, resultType)
     next(propVal)
   }
   
-  override def toString = "Context(" + value.v + ")@" + this.hashCode()
+  override def toString = "Context(" + value + ")@" + this.hashCode()
   
   /**
    * Convenience method to build the successor to this context, in typical chained situations.

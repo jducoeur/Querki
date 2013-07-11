@@ -84,7 +84,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     }
 
     def makePropValue(cv:implType, elemT:PType[_]):PropValue = ExactlyOnePropValue(cv, this, elemT)
-    protected case class ExactlyOnePropValue(cv:implType, coll:ExactlyOne, pType:PType[_]) extends PropValue
+    protected case class ExactlyOnePropValue(cv:implType, cType:ExactlyOne, pType:PType[_]) extends PropValue
   }
   object ExactlyOne extends ExactlyOne(ExactlyOneOID)
   object ExactlyOneProps {
@@ -130,7 +130,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     
     def wrap(elem:ElemValue):implType = List(elem)
     def makePropValue(cv:implType, elemT:PType[_]):PropValue = OptionalPropValue(cv, this, elemT)    
-    private case class OptionalPropValue(cv:implType, coll:Optional, pType:PType[_]) extends PropValue
+    private case class OptionalPropValue(cv:implType, cType:Optional, pType:PType[_]) extends PropValue
     
     def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
       // TODO: what should we do here? Has custom rendering become unnecessary here? Does the appearance of the
@@ -231,7 +231,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
         ))
   {
     def makePropValue(cv:implType, elemT:PType[_]):PropValue = QListPropValue(cv, this, elemT)
-    protected case class QListPropValue(cv:implType, coll:QList, pType:PType[_]) extends PropValue    
+    protected case class QListPropValue(cv:implType, cType:QList, pType:PType[_]) extends PropValue    
     
     /**
      * Given an incoming Iterable of RTs, this produces the corresponding QList of VTs.
@@ -268,7 +268,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       QSetPropValue(deduped._1, this, pt)
     }
     def makePropValue(cv:implType, elemT:PType[_]):PropValue = QSetPropValue(cv, this, elemT)
-    private case class QSetPropValue(cv:implType, coll:QSet, pType:PType[_]) extends PropValue    
+    private case class QSetPropValue(cv:implType, cType:QSet, pType:PType[_]) extends PropValue    
   }
   object QSet extends QSet(QSetOID)
   
@@ -296,7 +296,7 @@ class QUnit(cid:OID) extends SystemCollection(cid,
     
   def wrap(elem:ElemValue):implType = Nil
   def makePropValue(cv:implType, elemT:PType[_]):PropValue = UnitPropValue(cv, this, elemT)    
-  private case class UnitPropValue(cv:implType, coll:QUnit, pType:PType[_]) extends PropValue
+  private case class UnitPropValue(cv:implType, cType:QUnit, pType:PType[_]) extends PropValue
     
   def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
     <i>Defined</i>

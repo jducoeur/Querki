@@ -49,17 +49,39 @@ object UnknownNameType extends NameType(UnknownOID, "_unknownNameType") {
 trait CutProcessing
 
 trait TypedValue {
-  // All of these are actually defined in PropValue:
-  def ct:Collection
-  def pt:PType[_]
-  def render(context:ContextBase):Wikitext
-  def firstAs[VT](elemT:PType[VT]):Option[VT]
-  
-  // Obsolete leftover from the old TypedValue -- was a wrapper around PropValue
-  def v = this.asInstanceOf[PropValue]
-  
   // We are cutting iff the constructor mixed in CutProcessing:
   def cut = this.isInstanceOf[CutProcessing]
+  
+  val cType:Collection
+  type cType = cType.implType
+  def cv:cType
+  
+  def pType:PType[_]
+  
+  // TODO: this doesn't need to take elemT any more:
+  def serialize(elemT:PType[_]):String = cType.doSerialize(cv, elemT)
+  def first = cType.first(this)
+  // DEPRECATED: in favor of firstAs()
+  def firstTyped[VT](elemT:PType[VT]):Option[VT] = if (isEmpty) None else Some(elemT.get(first))
+  def firstAs[VT](elemT:PType[VT]):Option[VT] = {
+    if (isEmpty)
+      None
+    else
+      first.getOpt(elemT)
+  }
+  def render(context:ContextBase):Wikitext = cType.doRender(context)(cv, pType)
+  
+  def isEmpty = cType.isEmpty(this)
+  def size = cv.size
+  
+  def flatMap[VT, T](elemT:PType[VT])(cb:VT => Option[T]) = cv.flatMap { elem => 
+    val vt = elemT.get(elem)
+    cb(vt)
+  }
+  
+  def rawList[VT](elemT:PType[VT]):List[VT] = {
+    (List.empty[VT] /: cv) ((list, elem) => list :+ elemT.get(elem))
+  }
 }
 
 object ErrorTextType extends TextTypeBase(UnknownOID,

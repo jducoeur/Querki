@@ -113,10 +113,10 @@ case class Property[VT, -RT](
     if (context.isEmpty) {
       EmptyValue.untyped
     } else {
-      val valType = context.value.pt
+      val valType = context.value.pType
       valType match {
         case link:LinkType => {
-          val coll = context.value.ct
+          val coll = context.value.cType
           val thing = link.followLink(context)
           thing match {
             case Some(t) => action(t, context)

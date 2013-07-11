@@ -11,39 +11,4 @@ import models._
  * but it could incorporate the actual PType.
  */
 trait PropValue extends TypedValue {
-  type cType = coll.implType
-  
-  def pType:PType[_]
-  
-  val coll:Collection
-  def cv:cType
-
-  // TODO: remove these. They are simply aliases to deal with old users of TypedValue:
-  def ct:Collection = coll
-  def pt = pType
-  
-  // TODO: this doesn't need to take elemT any more:
-  def serialize(elemT:PType[_]):String = coll.doSerialize(cv, elemT)
-  def first = coll.first(this)
-  // DEPRECATED: in favor of firstAs()
-  def firstTyped[VT](elemT:PType[VT]):Option[VT] = if (isEmpty) None else Some(elemT.get(first))
-  def firstAs[VT](elemT:PType[VT]):Option[VT] = {
-    if (isEmpty)
-      None
-    else
-      first.getOpt(elemT)
-  }
-  def render(context:ContextBase):Wikitext = coll.doRender(context)(cv, pType)
-  
-  def isEmpty = coll.isEmpty(this)
-  def size = cv.size
-  
-  def flatMap[VT, T](elemT:PType[VT])(cb:VT => Option[T]) = cv.flatMap { elem => 
-    val vt = elemT.get(elem)
-    cb(vt)
-  }
-  
-  def rawList[VT](elemT:PType[VT]):List[VT] = {
-    (List.empty[VT] /: cv) ((list, elem) => list :+ elemT.get(elem))
-  }
 }
