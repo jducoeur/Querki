@@ -34,8 +34,8 @@ case class Property[VT, -RT](
   def defaultPair:PropAndVal[VT] = PropAndVal(this, default)
   // EVIL but arguably necessary. This is where we are trying to confine the cast from something
   // we get out of the PropMap (which is a bit undertyped) to match the associated Property.
-  def castVal(v:TypedValue) = v.asInstanceOf[TypedValue]
-  def pair(v:TypedValue) = PropAndVal(this, castVal(v))
+  def castVal(v:QValue) = v.asInstanceOf[QValue]
+  def pair(v:QValue) = PropAndVal(this, castVal(v))
 
   override lazy val props:PropMap = propFetcher() + 
 		  CollectionProp(cType) +
@@ -59,7 +59,7 @@ case class Property[VT, -RT](
    * 
    * TODO: deprecate and remove this. PropValues can now self-render, since they now know their PType.
    */
-  def render(context:ContextBase)(v:TypedValue) = {
+  def render(context:ContextBase)(v:QValue) = {
     v.render(context)
   }
   def renderedDefault = render(EmptyContext)(default)
@@ -72,21 +72,21 @@ case class Property[VT, -RT](
     fromType.getOrElse(renderProps)
   }
   
-  def from(m:PropMap):TypedValue = castVal(m(this))
-  def fromOpt(m:PropMap):Option[TypedValue] = m.get(this.id) map castVal
+  def from(m:PropMap):QValue = castVal(m(this))
+  def fromOpt(m:PropMap):Option[QValue] = m.get(this.id) map castVal
   
   /**
    * Convenience method to fetch the value of this property in this map.
    */
   def first(m:PropMap):VT = pType.get(cType.first(from(m)))
   def firstOpt(m:PropMap):Option[VT] = fromOpt(m) map cType.first map pType.get
-  def first(v:TypedValue):VT = pType.get(cType.first(v))
+  def first(v:QValue):VT = pType.get(cType.first(v))
   
-  def isEmpty(v:TypedValue) = cType.isEmpty(v)
+  def isEmpty(v:QValue) = cType.isEmpty(v)
   
-  def flatMap[T](v:TypedValue)(cb:VT => Option[T]) = v.flatMap(pType)(cb)
+  def flatMap[T](v:QValue)(cb:VT => Option[T]) = v.flatMap(pType)(cb)
 
-  def contains(v:TypedValue, toCheck:VT):Boolean = v.cv.exists { elem =>
+  def contains(v:QValue, toCheck:VT):Boolean = v.cv.exists { elem =>
     val vt = pType.get(elem)
     pType.matches(vt, toCheck)
   }
@@ -98,7 +98,7 @@ case class Property[VT, -RT](
   import play.api.data.Form
   def fromUser(on:Option[Thing], form:Form[_]):FormFieldInfo = cType.fromUser(on, form, this, pType)
   // TODO: this clearly isn't correct. How are we actually going to handle more complex types?
-  def toUser(v:TypedValue):String = {
+  def toUser(v:QValue):String = {
     val cv = castVal(v)
     if (cType.isEmpty(cv))
       ""
@@ -106,10 +106,10 @@ case class Property[VT, -RT](
       pType.toUser(cType.first(cv))
   }
   
-  def serialize(v:TypedValue):String = v.serialize(pType)
-  def deserialize(str:String):TypedValue = cType.deserialize(str, pType)
+  def serialize(v:QValue):String = v.serialize(pType)
+  def deserialize(str:String):QValue = cType.deserialize(str, pType)
   
-  def applyToIncomingThing(context:ContextBase)(action:(Thing, ContextBase) => TypedValue):TypedValue = {
+  def applyToIncomingThing(context:ContextBase)(action:(Thing, ContextBase) => QValue):QValue = {
     if (context.isEmpty) {
       EmptyValue.untyped
     } else {
@@ -135,7 +135,7 @@ case class Property[VT, -RT](
    * TODO: if this Property isn't defined on the target Thing or its ancestors, this should return None.
    * So technically, this should be returning Optional. Note that PType.qlApply() already does this.
    */
-  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
     // Give the Type first dibs at handling the call; otherwise, return the value of this property
     // on the incoming thing.
     pType.qlApplyFromProp(context, context, this, params).getOrElse(applyToIncomingThing(context) { (t, context) =>
@@ -144,7 +144,7 @@ case class Property[VT, -RT](
   }  
   
   override def partiallyApply(leftContext:ContextBase):QLFunction = {
-    def handleRemainder(mainContext:ContextBase, params:Option[Seq[QLPhrase]]):TypedValue = {
+    def handleRemainder(mainContext:ContextBase, params:Option[Seq[QLPhrase]]):QValue = {
       // Note that partial application ignores the incoming context if the type isn't doing anything clever. By
       // and large, this syntax mainly exists for QL properties:
       //
@@ -174,7 +174,7 @@ object FieldIds {
   def apply(t:Option[Thing], p:Property[_,_]) = new FieldIds(t,p)
 }
 
-case class DisplayPropVal(on:Option[Thing], prop: Property[_,_], v: Option[TypedValue], inheritedVal:Option[TypedValue] = None, inheritedFrom:Option[Thing] = None) extends
+case class DisplayPropVal(on:Option[Thing], prop: Property[_,_], v: Option[QValue], inheritedVal:Option[QValue] = None, inheritedFrom:Option[Thing] = None) extends
   FieldIds(on, prop)
 {
   lazy val isInherited = v.isEmpty && inheritedVal.isDefined

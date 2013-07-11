@@ -44,7 +44,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       throw new Error("Trying to default root collection!")    
 	def wrap(elem:ElemValue):implType =
 	  throw new Error("Trying to wrap root collection!")    
-	def makePropValue(cv:implType, pType:PType[_]):TypedValue =
+	def makePropValue(cv:implType, pType:PType[_]):QValue =
 	  throw new Error("Trying to makePropValue root collection!")    
     def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem =
 	  throw new Error("Trying to render input on root collection!")    
@@ -83,8 +83,8 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       elemT.renderInput(prop, state, currentValue, v)
     }
 
-    def makePropValue(cv:implType, elemT:PType[_]):TypedValue = ExactlyOnePropValue(cv, this, elemT)
-    protected case class ExactlyOnePropValue(cv:implType, cType:ExactlyOne, pType:PType[_]) extends TypedValue
+    def makePropValue(cv:implType, elemT:PType[_]):QValue = ExactlyOnePropValue(cv, this, elemT)
+    protected case class ExactlyOnePropValue(cv:implType, cType:ExactlyOne, pType:PType[_]) extends QValue
   }
   object ExactlyOne extends ExactlyOne(ExactlyOneOID)
   object ExactlyOneProps {
@@ -129,8 +129,8 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     def doDefault(elemT:pType):implType = Nil
     
     def wrap(elem:ElemValue):implType = List(elem)
-    def makePropValue(cv:implType, elemT:PType[_]):TypedValue = OptionalPropValue(cv, this, elemT)    
-    private case class OptionalPropValue(cv:implType, cType:Optional, pType:PType[_]) extends TypedValue
+    def makePropValue(cv:implType, elemT:PType[_]):QValue = OptionalPropValue(cv, this, elemT)    
+    private case class OptionalPropValue(cv:implType, cType:Optional, pType:PType[_]) extends QValue
     
     def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
       // TODO: what should we do here? Has custom rendering become unnecessary here? Does the appearance of the
@@ -139,7 +139,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       elemT.renderInput(prop, state, currentValue, v)
     }
 
-    val None:TypedValue = makePropValue(Nil, UnknownType)
+    val None:QValue = makePropValue(Nil, UnknownType)
   }
   object Optional extends Optional(OptionalOID)
   
@@ -230,14 +230,14 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
         setName("List")
         ))
   {
-    def makePropValue(cv:implType, elemT:PType[_]):TypedValue = QListPropValue(cv, this, elemT)
-    protected case class QListPropValue(cv:implType, cType:QList, pType:PType[_]) extends TypedValue    
+    def makePropValue(cv:implType, elemT:PType[_]):QValue = QListPropValue(cv, this, elemT)
+    protected case class QListPropValue(cv:implType, cType:QList, pType:PType[_]) extends QValue    
     
     /**
      * Given an incoming Iterable of RTs, this produces the corresponding QList of VTs.
      * This should simplify a lot of the Scala-level code.
      */
-    def from[RT,VT](in:Iterable[RT], builder:PTypeBuilderBase[VT,RT]):TypedValue = {
+    def from[RT,VT](in:Iterable[RT], builder:PTypeBuilderBase[VT,RT]):QValue = {
       val rawList = (List.empty[ElemValue] /: in)((list, next) => list :+ builder(next))
       makePropValue(rawList, builder.pType)
     }
@@ -251,7 +251,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     // TODO: this *really* should be makePropValue -- it is Very Very Bad that it isn't. But
     // that doesn't yet have a way of getting at the PType, which we need for comp() and matches().
     // This may become less critical once ElemValue carries the PType.
-    def makeSetValue(rawList:implType, pt:PType[_], context:ContextBase):TypedValue = {
+    def makeSetValue(rawList:implType, pt:PType[_], context:ContextBase):QValue = {
       val sorted = rawList.sortWith(pt.comp(context))
       val deduped = ((List.empty[ElemValue], Option.empty[ElemValue]) /: sorted){ (state, next) =>
         val (list, prevOpt) = state
@@ -267,8 +267,8 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
 
       QSetPropValue(deduped._1, this, pt)
     }
-    def makePropValue(cv:implType, elemT:PType[_]):TypedValue = QSetPropValue(cv, this, elemT)
-    private case class QSetPropValue(cv:implType, cType:QSet, pType:PType[_]) extends TypedValue    
+    def makePropValue(cv:implType, elemT:PType[_]):QValue = QSetPropValue(cv, this, elemT)
+    private case class QSetPropValue(cv:implType, cType:QSet, pType:PType[_]) extends QValue    
   }
   object QSet extends QSet(QSetOID)
   
@@ -295,8 +295,8 @@ class QUnit(cid:OID) extends SystemCollection(cid,
   def doDefault(elemT:pType):implType = Nil
     
   def wrap(elem:ElemValue):implType = Nil
-  def makePropValue(cv:implType, elemT:PType[_]):TypedValue = UnitPropValue(cv, this, elemT)    
-  private case class UnitPropValue(cv:implType, cType:QUnit, pType:PType[_]) extends TypedValue
+  def makePropValue(cv:implType, elemT:PType[_]):QValue = UnitPropValue(cv, this, elemT)    
+  private case class UnitPropValue(cv:implType, cType:QUnit, pType:PType[_]) extends QValue
     
   def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
     <i>Defined</i>

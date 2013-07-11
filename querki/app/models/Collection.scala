@@ -33,7 +33,7 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
    * type.
    */
   protected def doDeserialize(ser:String, elemT:pType):implType
-  final def deserialize(ser:String, elemT:pType):TypedValue = makePropValue(doDeserialize(ser,elemT), elemT)
+  final def deserialize(ser:String, elemT:pType):QValue = makePropValue(doDeserialize(ser,elemT), elemT)
   
   /**
    * Also required for all Collections, to serialize values of this type.
@@ -51,14 +51,14 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
    * Also required for all Collections -- the default value to fall back on.
    */
   protected def doDefault(elemT:pType):implType
-  final def default(elemT:pType):TypedValue = makePropValue(doDefault(elemT), elemT)
+  final def default(elemT:pType):QValue = makePropValue(doDefault(elemT), elemT)
   
   /**
    * Convenience wrapper for creating in-code PropValues.
    */
   def wrap(elem:ElemValue):implType
-  def makePropValue(cv:implType, elemT:PType[_]):TypedValue
-  def apply(elem:ElemValue):TypedValue = makePropValue(wrap(elem), elem.pType)
+  def makePropValue(cv:implType, elemT:PType[_]):QValue
+  def apply(elem:ElemValue):QValue = makePropValue(wrap(elem), elem.pType)
   
   /**
    * Collections must implement this -- it builds the HTML representation of how to input this
@@ -103,7 +103,7 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
   /**
    * TODO: this needs to become much more sophisticated, but it's a start.
    */
-  def fromUser(newVal:String, prop:Property[_,_], elemT:pType):TypedValue = {
+  def fromUser(newVal:String, prop:Property[_,_], elemT:pType):QValue = {
     apply(elemT.fromUser(newVal))
   }
   
@@ -113,9 +113,9 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
    * NOTE: this will throw an exception if you call it on an empty collection! It is the
    * equivalent of Option.get
    */
-  final def first(v:TypedValue):ElemValue = v.cv.head
+  final def first(v:QValue):ElemValue = v.cv.head
   
-  final def isEmpty(v:TypedValue):Boolean = v.cv.isEmpty
+  final def isEmpty(v:QValue):Boolean = v.cv.isEmpty
   
   implicit def toIterable(v:implType):Iterable[ElemValue] = v.asInstanceOf[Iterable[ElemValue]]
 }
@@ -142,14 +142,14 @@ class NameCollection extends Collection(IllegalOID, systemOID, systemOID, () => 
     List(elemT.default)
   }
   def wrap(elem:ElemValue):implType = List(elem)
-  def makePropValue(cv:implType, elemT:PType[_]):TypedValue = NamePropValue(cv, NameCollection.this, elemT)
+  def makePropValue(cv:implType, elemT:PType[_]):QValue = NamePropValue(cv, NameCollection.this, elemT)
     
   def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
     val v = currentValue.v.map(_.first).getOrElse(elemT.default)
     elemT.renderInput(prop, state, currentValue, v)
   }
 
-  private case class NamePropValue(cv:implType, cType:NameCollection, pType:PType[_]) extends TypedValue {}  
+  private case class NamePropValue(cv:implType, cType:NameCollection, pType:PType[_]) extends QValue {}  
 }
 object NameCollection extends NameCollection {
   def bootProp(oid:OID, v:Any) = (oid -> apply(ElemValue(v, new DelegatingType({models.system.NameType}))))

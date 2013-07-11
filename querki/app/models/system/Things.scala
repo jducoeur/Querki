@@ -28,7 +28,7 @@ object UrThing extends ThingState(RootOID, systemOID, RootOID,
     localOrDefault(propId)
   }
     
-  override def getPropVal[VT, CT](prop:Property[VT, _])(implicit state:SpaceState):TypedValue = {
+  override def getPropVal[VT, CT](prop:Property[VT, _])(implicit state:SpaceState):QValue = {
     localPropVal(prop).getOrElse(prop.default)
   }
   

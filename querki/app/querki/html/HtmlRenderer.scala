@@ -39,7 +39,7 @@ object HtmlRenderer {
     Html(xmlFixedQuotes)
   }
   
-  def propValFromUser(prop:Property[_,_], str:String):TypedValue = {
+  def propValFromUser(prop:Property[_,_], str:String):QValue = {
     handleSpecialized(prop, str).getOrElse(prop.cType.fromUser(str, prop, prop.pType))
   }
   
@@ -158,7 +158,7 @@ object HtmlRenderer {
     <input class="_tagSetInput" data-isNames={isNameType.toString} type="text" data-current={current}></input>
   }
   
-  def handleSpecialized(prop:Property[_,_], newVal:String):Option[TypedValue] = {
+  def handleSpecialized(prop:Property[_,_], newVal:String):Option[QValue] = {
     if (prop.cType == Optional && prop.pType == YesNoType)
       Some(handleOptional(prop, newVal, YesNoType, (_ == "maybe")))
     else if (prop.cType == Optional && prop.pType == LinkType)
@@ -167,7 +167,7 @@ object HtmlRenderer {
       None
   }
   
-  def handleOptional(prop:Property[_,_], newVal:String, pType:PType[_], isEmpty:String => Boolean):TypedValue = {
+  def handleOptional(prop:Property[_,_], newVal:String, pType:PType[_], isEmpty:String => Boolean):QValue = {
     if (isEmpty(newVal))
       Optional.default(pType)
     else

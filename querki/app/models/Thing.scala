@@ -33,21 +33,21 @@ object Kind {
 }
 
 object Thing {
-  type PropMap = Map[OID, TypedValue]
+  type PropMap = Map[OID, QValue]
   type PropFetcher = () => PropMap
   
   // A couple of convenience methods for the hard-coded Things in System:
-  def toProps(pairs:(OID,TypedValue)*):PropFetcher = () => {
-    (Map.empty[OID, TypedValue] /: pairs) { (m:Map[OID, TypedValue], pair:(OID, TypedValue)) =>
+  def toProps(pairs:(OID,QValue)*):PropFetcher = () => {
+    (Map.empty[OID, QValue] /: pairs) { (m:Map[OID, QValue], pair:(OID, QValue)) =>
       m + (pair._1 -> pair._2)
     }
   }
   
-  def emptyProps = Map.empty[OID, TypedValue]
+  def emptyProps = Map.empty[OID, QValue]
   
   // NOTE: don't try to make this more concise -- it causes chicken-and-egg problems in system
   // initialization:
-  def setName(str:String):(OID,TypedValue) = bootProp(NameOID, str)
+  def setName(str:String):(OID,QValue) = bootProp(NameOID, str)
 //    (NameOID -> ExactlyOne(ElemValue(str)))
 //    (NameOID -> PropValue(Some(ElemValue(str))))
 
@@ -192,7 +192,7 @@ abstract class Thing(
       localProp(prop).getOrElse(getModelOpt.map(_.getProp(prop)).getOrElse(prop.defaultPair))
   }
   
-  def localPropVal[VT, CT](prop:Property[VT, _]):Option[TypedValue] = {
+  def localPropVal[VT, CT](prop:Property[VT, _]):Option[QValue] = {
     prop.fromOpt(props)
   }
   
@@ -208,7 +208,7 @@ abstract class Thing(
    * If you have the actual Property object you're looking for, this returns its value
    * on this object in a typesafe way.
    */
-  def getPropVal[VT, CT](prop:Property[VT, _])(implicit state:SpaceState):TypedValue = {
+  def getPropVal[VT, CT](prop:Property[VT, _])(implicit state:SpaceState):QValue = {
     val local = localPropVal(prop)
     if (local.isDefined)
       local.get
@@ -359,7 +359,7 @@ abstract class Thing(
    * This basic version returns a Link to this thing.
    * TODO: add a "self" method to always be able to do this.
    */
-  def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
+  def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
     val applyOpt = getPropOpt(ApplyMethod)(context.state)
     applyOpt match {
       case Some(apply) => {

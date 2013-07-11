@@ -27,7 +27,7 @@ class InternalMethod(tid:OID, p:PropFetcher) extends SystemProperty(tid, Interna
    * TBD: we probably want to lift out some common patterns, but we'll have to see what
    * those look like.
    */
-  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
     // By default, we just pass the incoming context right through:
     context.value
   }
@@ -50,13 +50,13 @@ class InternalMethod(tid:OID, p:PropFetcher) extends SystemProperty(tid, Interna
  * TBD: action really ought to be a separate parameter list, but for some reason I'm having trouble
  * instantiating it that way. Figure out the syntax and do that.
  */
-class SingleThingMethod(tid:OID, name:String, desc:String, action:(Thing, ContextBase) => TypedValue) extends InternalMethod(tid,
+class SingleThingMethod(tid:OID, name:String, desc:String, action:(Thing, ContextBase) => QValue) extends InternalMethod(tid,
     toProps(
       setName(name),
       DisplayTextProp(desc)
     ))
 {
-  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
     try {
       applyToIncomingThing(context)(handleThing)
     } catch {
@@ -71,7 +71,7 @@ class SingleThingMethod(tid:OID, name:String, desc:String, action:(Thing, Contex
    * 
    * Pure side-effecting methods should typically just return the value from the context.
    */
-  def handleThing(t:Thing, context:ContextBase):TypedValue = action(t, context)
+  def handleThing(t:Thing, context:ContextBase):QValue = action(t, context)
 }
 
 /**
@@ -88,12 +88,12 @@ class SingleThingMethod(tid:OID, name:String, desc:String, action:(Thing, Contex
  */
 abstract class MetaMethod(tid:OID, p:PropFetcher) extends InternalMethod(tid, p)
 {
-  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
     ErrorValue(displayName + " can not be applied on its own; you need to use this on the right-hand side of a dot, as PropertyName." + displayName)
   }
   
   override def partiallyApply(leftContext:ContextBase):QLFunction = {
-    def handleRemainder(mainContext:ContextBase, params:Option[Seq[QLPhrase]]):TypedValue = {
+    def handleRemainder(mainContext:ContextBase, params:Option[Seq[QLPhrase]]):QValue = {
       fullyApply(mainContext, leftContext, params)
     }
     new PartiallyAppliedFunction(leftContext, handleRemainder)
@@ -103,7 +103,7 @@ abstract class MetaMethod(tid:OID, p:PropFetcher) extends InternalMethod(tid, p)
    * The actual Method must implement this. It takes both contexts -- the partial context that we were
    * dotted to and the main incoming context -- and does the usual sorts of things with them.
    */
-  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):TypedValue
+  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):QValue
 }
 
 /**
@@ -117,9 +117,9 @@ abstract class ThingPropMethod(tid:OID, p:PropFetcher) extends MetaMethod(tid, p
    */
   def applyToPropAndThing(mainContext:ContextBase, mainThing:Thing, 
       partialContext:ContextBase, prop:Property[_,_],
-      params:Option[Seq[QLPhrase]]):TypedValue
+      params:Option[Seq[QLPhrase]]):QValue
       
-  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):TypedValue = {
+  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):QValue = {
     applyToIncomingThing(mainContext) { (mainThing, _) =>
       applyToIncomingThing(partialContext) { (shouldBeProp, _) =>
         shouldBeProp match {
@@ -144,7 +144,7 @@ abstract class ThingPropMethod(tid:OID, p:PropFetcher) extends MetaMethod(tid, p
  */
 abstract class SingleContextMethod(tid:OID, p:PropFetcher) extends MetaMethod(tid, p)
 {
-  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
     fullyApply(context, context, params)
   }
 }
@@ -154,11 +154,11 @@ object InstancesMethod extends SingleContextMethod(InstancesMethodOID,
       setName("_instances"),
       DisplayTextProp("Returns all of the non-Model Things that are based on this")))
 {
-  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):TypedValue = {
+  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):QValue = {
     applyToIncomingThing(partialContext)(handleThing)
   }
   
-  def handleThing(t:Thing, context:ContextBase):TypedValue = {
+  def handleThing(t:Thing, context:ContextBase):QValue = {
     QList.from(context.state.descendants(t.id, false, true).map(_.id), LinkType)
   }
 }
@@ -167,11 +167,11 @@ abstract class EditMethodBase(id:OID, pf:PropFetcher) extends ThingPropMethod(id
 {
   def cantEditFallback(mainContext:ContextBase, mainThing:Thing, 
     partialContext:ContextBase, prop:Property[_,_],
-    params:Option[Seq[QLPhrase]]):TypedValue
+    params:Option[Seq[QLPhrase]]):QValue
   
   def applyToPropAndThing(mainContext:ContextBase, mainThing:Thing, 
     partialContext:ContextBase, prop:Property[_,_],
-    params:Option[Seq[QLPhrase]]):TypedValue =
+    params:Option[Seq[QLPhrase]]):QValue =
   {
     mainContext.request.requester match {
       case Some(requester) if (mainContext.state.canEdit(requester, mainThing.id)) => {
@@ -196,7 +196,7 @@ object EditMethod extends EditMethodBase(EditMethodOID,
 {
   def cantEditFallback(mainContext:ContextBase, mainThing:Thing, 
     partialContext:ContextBase, prop:Property[_,_],
-    params:Option[Seq[QLPhrase]]):TypedValue = {
+    params:Option[Seq[QLPhrase]]):QValue = {
       // This user isn't allowed to edit, so simply render the property in its default form.
       // For more control, user _editOrElse instead.
       prop.qlApply(mainContext, params)    
@@ -212,7 +212,7 @@ object EditOrElseMethod extends EditMethodBase(EditOrElseMethodOID,
 {
   def cantEditFallback(mainContext:ContextBase, mainThing:Thing, 
     partialContext:ContextBase, prop:Property[_,_],
-    paramsOpt:Option[Seq[QLPhrase]]):TypedValue = {
+    paramsOpt:Option[Seq[QLPhrase]]):QValue = {
       // This user isn't allowed to edit, so display the fallback
       paramsOpt match {
         case Some(params) if (params.length > 0) => {
@@ -240,7 +240,7 @@ It is optional -- you can leave it off.
           """)
     )) 
 {
-  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     paramsOpt match {
       case Some(params) if (params.length > 0) => {
         val header = params(0)
@@ -252,7 +252,7 @@ It is optional -- you can leave it off.
     }
   }  
   
-  def buildSection(context:ContextBase, header:QLPhrase, detailsOpt:Option[QLPhrase], emptyOpt:Option[QLPhrase]):TypedValue = {
+  def buildSection(context:ContextBase, header:QLPhrase, detailsOpt:Option[QLPhrase], emptyOpt:Option[QLPhrase]):QValue = {
     val parser = context.parser.get
     val wikitext = if (context.isEmpty) {
       parser.contextsToWikitext(emptyOpt.map(empty => Seq(parser.processPhrase(empty.ops, context.root))).getOrElse(Seq.empty))
@@ -300,7 +300,7 @@ Note that this returns a List, since any number of Things could be pointing to t
 {
   def applyToPropAndThing(mainContext:ContextBase, mainThing:Thing, 
     partialContext:ContextBase, propErased:Property[_,_],
-    params:Option[Seq[QLPhrase]]):TypedValue =
+    params:Option[Seq[QLPhrase]]):QValue =
   {
     if (propErased.pType == LinkType) {
 	  // EVIL: is there any decent way to get rid of this? I know that the PType is LinkType, so I know
@@ -329,10 +329,10 @@ _or takes any number of parameters. It runs through each of them, applying the i
 It produces the first one that returns a non-empty result, or None iff all of them come out empty. 
           """)))
 {
-  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     paramsOpt match {
       case Some(params) => {
-        val result = (Option.empty[TypedValue] /: params) { (current, phrase) =>
+        val result = (Option.empty[QValue] /: params) { (current, phrase) =>
           current match {
             case Some(result) => Some(result)
             case None => {
@@ -360,7 +360,7 @@ object NotMethod extends InternalMethod(NotOID,
       setName("_not"),
       DisplayTextProp("_or takes the parameter if one is given, or the received value if not. It returns True iff that it False, and False if it is anything else")))
 {
-  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     val inVal = paramsOpt match {
       case Some(params) if (params.length == 1) => {
         context.parser.get.processPhrase(params(0).ops, context).value
@@ -381,7 +381,7 @@ expect the list to only have one element in it.) Use _first to turn that List in
 Optional instead.
           """)))
 {
-  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     val sourceColl = context.value
     val result = 
       if (sourceColl.isEmpty)
@@ -401,7 +401,7 @@ Often you have a List, and you want to slice off the first item (using _first). 
 to handle everything else.
           """)))
 {
-  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     val sourceColl = context.value
     if (sourceColl.isEmpty)
       // Cut processing at this point:
@@ -418,7 +418,7 @@ abstract class ButtonBase(tid:OID, pf:PropFetcher) extends InternalMethod(tid, p
   
   def numParams:Int
   
-  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     paramsOpt match {
       case Some(params) if (params.length == numParams) => {
         // TODO: This is a horrible hack! How do we get LinkType and ExternalLinkType to give up their URLs
@@ -476,8 +476,8 @@ object IsNonEmptyMethod extends ThingPropMethod(IsNonEmptyOID,
       setName("_isNonEmpty"),
       DisplayTextProp("THING -> PROP._isNonEmpty produces true iff PROP is defined on THING, and this instance contains at least one element")))
 {
-  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
-    boolean2YesNoTypedValue(!context.value.isEmpty)
+  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
+    boolean2YesNoQValue(!context.value.isEmpty)
   }
 
   def isEmpty(mainContext:ContextBase, mainThing:Thing, prop:Property[_,_]):Boolean = {
@@ -492,9 +492,9 @@ object IsNonEmptyMethod extends ThingPropMethod(IsNonEmptyOID,
   
   def applyToPropAndThing(mainContext:ContextBase, mainThing:Thing, 
     partialContext:ContextBase, prop:Property[_,_],
-    params:Option[Seq[QLPhrase]]):TypedValue =
+    params:Option[Seq[QLPhrase]]):QValue =
   {
-    return boolean2YesNoTypedValue(!isEmpty(mainContext, mainThing, prop))
+    return boolean2YesNoQValue(!isEmpty(mainContext, mainThing, prop))
   }
 }
 
@@ -503,15 +503,15 @@ object IsEmptyMethod extends ThingPropMethod(IsEmptyOID,
       setName("_isEmpty"),
       DisplayTextProp("THING -> PROP._isEmpty produces true iff PROP is not defined on THING, or this instance contains no elements")))
 {
-  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
-    boolean2YesNoTypedValue(context.value.isEmpty)
+  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
+    boolean2YesNoQValue(context.value.isEmpty)
   }
 
   def applyToPropAndThing(mainContext:ContextBase, mainThing:Thing, 
     partialContext:ContextBase, prop:Property[_,_],
-    params:Option[Seq[QLPhrase]]):TypedValue =
+    params:Option[Seq[QLPhrase]]):QValue =
   {
-    return boolean2YesNoTypedValue(IsNonEmptyMethod.isEmpty(mainContext, mainThing, prop))
+    return boolean2YesNoQValue(IsNonEmptyMethod.isEmpty(mainContext, mainThing, prop))
   }
 }
 
@@ -529,7 +529,7 @@ Note that this behaviour is pretty English-specific. We expect that other variat
 be needed for other languages in the long run.
           """)))
 {
-  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     def chooseParam(params:Seq[QLPhrase]):QLPhrase = {
       val received = context.value
       if (received.isEmpty || received.size > 1)
@@ -562,11 +562,11 @@ The FILTER should take a Thing, and produce a YesNo that says whether to include
 That gets applied to each element of RECEIVED; if FILTER returns Yes, then it is included, otherwise not.
           """)))
 {
-  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     
     // TODO: this is currently convoluted and hard to understand -- we're dissecting the list using
     // flatMapAsContext(); yielding an Option saying whether to keep each one; stitching it back together
-    // as a Context, and then just using the TypedValue. Bleah.
+    // as a Context, and then just using the QValue. Bleah.
     def tryElem(parser:QLParser, phrase:QLPhrase)(elem:ContextBase):Option[ElemValue] = {
       val passesYesNo = parser.processPhrase(phrase.ops, elem).value
       // TODO: I think this crashes if passesYesNo doesn't return a YesNo! It should
@@ -615,7 +615,7 @@ object SortMethod extends InternalMethod(SortMethodOID,
 With no parameters, _sort sorts the elements of the received List alphabetically by their Display Names.
 """)))
 {
-  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     // TODO: there is obviously a refactoring screaming to break free here, but it involves some fancy
     // type math. How do we lift things so that we can do QList.from() an arbitrary PType? (Remember that
     // it expects a PTypeBuilder, *and* requires that the input Iterable be of the expected RT.)
@@ -665,7 +665,7 @@ If the result is Yes, it applies the IFCLAUSE to the received context and produc
 is an ELSECLAUSE, it applies and produces that, or produces nothing if there is no ELSECLAUSE.
           """)))
 {
-  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     paramsOpt match {
       case Some(params) if (params.length > 1) => {
         val predicatePhrase = params(0)
@@ -695,7 +695,7 @@ _join takes the given LIST, and turns it into a single line. If there is only on
 which is placed between each pair of elements. If there are two, the first is OPEN, which is put at the
 beginning. If there are three, the last is CLOSE, which is put at the end.""")))
 {
-  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     val (openPhrase, sepPhrase, closePhrase) = paramsOpt match {
       case Some(params) if (params.length == 1) => (None, Some(params(0)), None)
       case Some(params) if (params.length == 2) => (Some(params(0)), Some(params(1)), None)
@@ -732,7 +732,7 @@ object TagRefsMethod extends InternalMethod(TagRefsOID,
       setName("_tagRefs"),
       DisplayTextProp("This produces a List of all Things that have the received Thing or Name as a Tag")))
 { 
-  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):TypedValue = {
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     val elemT = context.value.pType
     elemT match {
       case nameable:NameableType => {
@@ -777,7 +777,7 @@ tags that have been used in that Property so far.
     }
   }
   
-  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):TypedValue = {
+  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):QValue = {
     applyToIncomingThing(partialContext) { (shouldBeProp, _) =>
       shouldBeProp match {
         case prop:Property[_,_] if (prop.pType == TagSetType) => {
@@ -798,7 +798,7 @@ This seems silly, but it is useful for overriding the usual _apply behavior. In 
 *property*._self is the way to get a link to the property itself, instead of fetching the value
 of the property on the received Thing.""")))
 {
-  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):TypedValue = {
+  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):QValue = {
     partialContext.value
   }
 }
@@ -826,12 +826,12 @@ Or you can give a property on some other Thing -- "_code(THING.PROP)" -- to disp
 If you have a parameter, and it doesn't work as either PROP or THING.PROP, then it will display the parameter literally.
           """)))
 {
-  def encodeString(str:String):TypedValue = {
+  def encodeString(str:String):QValue = {
     val escaped = scala.xml.Utility.escape(str)
     HtmlValue(Html("<pre>" + escaped + "</pre>"))    
   }
   
-  def encode(propVal:TypedValue, pType:PType[_]):TypedValue = {
+  def encode(propVal:QValue, pType:PType[_]):QValue = {
     if (propVal.isEmpty)
       WarningValue("_code got an empty input")
     else {
@@ -848,7 +848,7 @@ If you have a parameter, and it doesn't work as either PROP or THING.PROP, then 
     }
   }
   
-  def encodeThingAndProp(thing:Thing, prop:Thing)(implicit space:SpaceState):Option[TypedValue] = {
+  def encodeThingAndProp(thing:Thing, prop:Thing)(implicit space:SpaceState):Option[QValue] = {
     val propAndValOpt = thing.getPropOpt(prop.id)
     propAndValOpt.map { propAndVal => 
       encode(propAndVal.v, propAndVal.prop.pType)
@@ -857,7 +857,7 @@ If you have a parameter, and it doesn't work as either PROP or THING.PROP, then 
   
   // TODO: this is horrible. Surely we can turn this into something cleaner with better use of the functional
   // tools in the Scala toolbelt.
-  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, paramsOpt:Option[Seq[QLPhrase]]):TypedValue = {
+  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, paramsOpt:Option[Seq[QLPhrase]]):QValue = {
     implicit val space = partialContext.state
     paramsOpt match {
       case Some(params) => {
@@ -908,7 +908,7 @@ object IsDefinedMethod extends SingleContextMethod(IsDefinedOID,
       setName("_isDefined"),
       DisplayTextProp("_isDefined produces Yes if the name passed into it is a real Thing")))
 {
-  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, paramsOpt:Option[Seq[QLPhrase]]):TypedValue = {
+  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, paramsOpt:Option[Seq[QLPhrase]]):QValue = {
     partialContext.value.pType != UnknownNameType
   }
 }
@@ -921,7 +921,7 @@ object FormLineMethod extends SingleContextMethod(FormLineMethodOID,
       setName("_formLine"),
       DisplayTextProp("_formLine(LABEL,CONTROL) displays the LABEL/CONTROL pair as a standard full-width line. This is mainly for input forms.")))
 {
-  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, paramsOpt:Option[Seq[QLPhrase]]):TypedValue = {
+  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, paramsOpt:Option[Seq[QLPhrase]]):QValue = {
     paramsOpt match {
       case Some(params) if (params.length == 2) => {
         val context = partialContext

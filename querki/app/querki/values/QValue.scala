@@ -48,7 +48,7 @@ object UnknownNameType extends NameType(UnknownOID, "_unknownNameType") {
  */
 trait CutProcessing
 
-trait TypedValue {
+trait QValue {
   // We are cutting iff the constructor mixed in CutProcessing:
   def cut = this.isInstanceOf[CutProcessing]
   
@@ -90,7 +90,7 @@ object ErrorTextType extends TextTypeBase(UnknownOID,
   )) with PTypeBuilder[QLText,String] {
 }
 object ExactlyOneCut extends ExactlyOne(UnknownOID) {
-  override def makePropValue(cv:implType, elemT:PType[_]):TypedValue = new ExactlyOnePropValue(cv, this, elemT) with CutProcessing
+  override def makePropValue(cv:implType, elemT:PType[_]):QValue = new ExactlyOnePropValue(cv, this, elemT) with CutProcessing
 }
 object EmptyListCut extends QList(UnknownOID) {
   def apply() = new QListPropValue(List.empty, this, UnknownType) with CutProcessing  

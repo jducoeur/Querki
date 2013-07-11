@@ -142,9 +142,9 @@ class QLType(tid:OID) extends TextTypeBase(tid,
     CommonInputRenderers.renderLargeText(prop, state, currentValue, v, this)
 
   // TBD: in principle, we really want this to return a *context*, not a *value*. This is a special
-  // case of a growing concern: that we could be losing information by returning TypedValue from
+  // case of a growing concern: that we could be losing information by returning QValue from
   // qlApply, and should actually be returning a full successor Context.
-  override def qlApplyFromProp(definingContext:ContextBase, incomingContext:ContextBase, prop:Property[QLText,_], params:Option[Seq[QLPhrase]]):Option[TypedValue] = {
+  override def qlApplyFromProp(definingContext:ContextBase, incomingContext:ContextBase, prop:Property[QLText,_], params:Option[Seq[QLPhrase]]):Option[QValue] = {
     if (definingContext.isEmpty) {
       Some(ErrorValue("""Trying to use QL Property """" + prop.displayName + """" in an empty context.
 This often means that you've invoked it recursively without saying which Thing it is defined in."""))
@@ -221,11 +221,11 @@ object QLType extends QLType(QLTypeOID)
         YesNoType.False
     }
     
-    implicit def boolean2YesNoTypedValue(raw:Boolean):TypedValue = {
+    implicit def boolean2YesNoQValue(raw:Boolean):QValue = {
       ExactlyOne(raw)
     }
     
-    def toBoolean(typed:TypedValue):Boolean = {
+    def toBoolean(typed:QValue):Boolean = {
       if (typed.pType == YesNoType)
         typed.firstAs(YesNoType).getOrElse(false)
       else
@@ -460,8 +460,8 @@ object ExternalLinkType extends ExternalLinkType(ExternalLinkTypeOID)
 // This is a pure marker trait, indicating that this PropValue didn't load correctly yet:
 trait UnresolvedPropValue
 object UnresolvedProp extends ExactlyOne(UnknownOID) {
-   override def makePropValue(cv:implType, pType:PType[_]):TypedValue = UnresPropValue(cv, this, pType)
-   private case class UnresPropValue(cv:implType, cType:ExactlyOne, pType:PType[_]) extends TypedValue with UnresolvedPropValue
+   override def makePropValue(cv:implType, pType:PType[_]):QValue = UnresPropValue(cv, this, pType)
+   private case class UnresPropValue(cv:implType, cType:ExactlyOne, pType:PType[_]) extends QValue with UnresolvedPropValue
 }
 // This pseudo-Type is used to store values from disk that we can't resolve yet. It is only
 // used at Space-load time:

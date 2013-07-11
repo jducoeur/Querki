@@ -10,7 +10,7 @@ import ql.QLParser
 import querki.values._
 
 abstract class ContextBase {
-  def value:TypedValue
+  def value:QValue
   def state:SpaceState
   def request:RequestContext
   // Parent matters at rendering time -- we render the final context in the context of its parent.
@@ -90,7 +90,7 @@ abstract class ContextBase {
   /**
    * Convenience method to build the successor to this context, in typical chained situations.
    */
-  def next(v:TypedValue) = QLContext(v, request, Some(this), parser, depth + 1)
+  def next(v:QValue) = QLContext(v, request, Some(this), parser, depth + 1)
   
   def asCollection = QLContext(value, request, Some(this), parser, depth + 1, true)
   
@@ -124,7 +124,7 @@ abstract class ContextBase {
 /**
  * Represents the incoming "context" of a parsed QLText.
  */
-case class QLContext(value:TypedValue, request:RequestContext, parentIn:Option[ContextBase] = None, 
+case class QLContext(value:QValue, request:RequestContext, parentIn:Option[ContextBase] = None, 
                      parser:Option[QLParser] = None, depth:Int = 0, listIn:Boolean = false, propOpt:Option[Property[_,_]] = None) extends ContextBase {
   def state = request.state.getOrElse(SystemSpace.State)
   def parent = parentIn match {
@@ -136,7 +136,7 @@ case class QLContext(value:TypedValue, request:RequestContext, parentIn:Option[C
 
 case class QLRequestContext(request:RequestContext) extends ContextBase {
   def state = request.state.getOrElse(SystemSpace.State)
-  def value:TypedValue = throw new Exception("Can't use the contents of QLRequestContext!")  
+  def value:QValue = throw new Exception("Can't use the contents of QLRequestContext!")  
   def parent:ContextBase = throw new Exception("QLRequestContext doesn't have a parent!")
   def parser:Option[QLParser] = throw new Exception("QLRequestContext doesn't have a parser!")
   def depth:Int = 0
@@ -149,7 +149,7 @@ case class QLRequestContext(request:RequestContext) extends ContextBase {
  * any sophisticated properties, but can be used for PlainText and the like.
  */
 case object EmptyContext extends ContextBase {
-  def value:TypedValue = throw new Exception("Can't use the contents of EmptyContext!")
+  def value:QValue = throw new Exception("Can't use the contents of EmptyContext!")
   def state:SpaceState = throw new Exception("Can't use the space of EmptyContext!")
   def request:RequestContext = throw new Exception("Can't get the request of EmptyContext!")
   def parent:ContextBase = throw new Exception("EmptyContext doesn't have a parent!")

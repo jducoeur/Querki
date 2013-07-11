@@ -80,7 +80,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
         setName("_me"),
         DisplayTextProp("If the current user is a Person in the current Space, return that Person")))
   {
-    override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
+    override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
       val userOpt = context.request.requester
       val personOpt = userOpt.flatMap { user =>
         user match {
@@ -179,7 +179,7 @@ to add new Properties for any Person in your Space.
   val identityEmail = "identityEmail"
   val personParam = "person"
     
-  def doInviteLink(chromelessIn:Boolean)(t:Thing, context:ContextBase):TypedValue = {
+  def doInviteLink(chromelessIn:Boolean)(t:Thing, context:ContextBase):QValue = {
     implicit val state = context.state
     val personOpt =
       for {

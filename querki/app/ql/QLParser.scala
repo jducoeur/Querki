@@ -19,17 +19,17 @@ import play.api.Logger
  * when a method returns a partially-applied function.
  */
 trait QLFunction {
-  def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue
+  def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue
 }
 
-class PartiallyAppliedFunction(partialContext:ContextBase, action:(ContextBase, Option[Seq[QLPhrase]]) => TypedValue) extends QLFunction {
-  def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
+class PartiallyAppliedFunction(partialContext:ContextBase, action:(ContextBase, Option[Seq[QLPhrase]]) => QValue) extends QLFunction {
+  def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
     action(context, params)
   }
 }
 
 class BogusFunction extends QLFunction {
-  def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):TypedValue = {
+  def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
     ErrorValue("It does not make sense to put this after a dot.")
   }
 }
