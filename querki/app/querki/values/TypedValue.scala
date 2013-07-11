@@ -43,8 +43,11 @@ object UnknownNameType extends NameType(UnknownOID, "_unknownNameType") {
 
 // TODO: we've gotten rid of the explicit ct parameter, since it is contained in v.
 // Maybe we can do the same for pt?
-case class TypedValue(v:PropValue, pt:PType[_], cut:Boolean = false) {
+case class TypedValue(v:PropValue, cut:Boolean = false) {
   def ct:Collection = v.coll
+  
+  // TODO: remove this alias
+  def pt = v.pType
   
   // TODO: this will merge with PropValue.render():
   def render(context:ContextBase):Wikitext = v.render(context) 
@@ -63,27 +66,27 @@ object ErrorValue {
     } catch {
       case e:Exception => Logger.error(s"Displaying error $msg; stack trace:\n${e.getStackTraceString}")  
     }
-    TypedValue(ExactlyOne(PlainTextType(msg)), PlainTextType, true)
+    TypedValue(ExactlyOne(PlainTextType(msg)), true)
   }
 }
 object TextValue {
-  def apply(msg:String) = TypedValue(ExactlyOne(PlainTextType(msg)), PlainTextType)
+  def apply(msg:String) = TypedValue(ExactlyOne(PlainTextType(msg)))
 }
 object HtmlValue {
-  def apply(html:Html) = TypedValue(ExactlyOne(RawHtmlType(HtmlWikitext(html))), RawHtmlType)
+  def apply(html:Html) = TypedValue(ExactlyOne(RawHtmlType(HtmlWikitext(html))))
 }
 object WikitextValue {
-  def apply(wikitext:Wikitext) = TypedValue(ExactlyOne(ParsedTextType(wikitext)), ParsedTextType)
+  def apply(wikitext:Wikitext) = TypedValue(ExactlyOne(ParsedTextType(wikitext)))
 }
 object LinkValue {
-  def apply(target:OID) = TypedValue(ExactlyOne(LinkType(target)), LinkType)
+  def apply(target:OID) = TypedValue(ExactlyOne(LinkType(target)))
 }
 object WarningValue {
-  def apply(msg:String) = TypedValue(ExactlyOne(TextType("{{_warning:" + msg + "}}")), TextType, true)
+  def apply(msg:String) = TypedValue(ExactlyOne(TextType("{{_warning:" + msg + "}}")), true)
 }
 object EmptyValue {
-  def apply(pType:PType[_]) = TypedValue(QList.empty, pType)
-  // TODO: this is evil -- in the long run, we should eliminate this and think more carefully about what
-  // the correct type is in cases where it is being used:
-  def untyped = TypedValue(QList.empty, YesNoType)
+  // TODO: do something with this?
+  def apply(pType:PType[_]) = TypedValue(QList.empty)
+  // TODO: do we need this?
+  def untyped = TypedValue(QList.empty)
 }

@@ -209,7 +209,7 @@ to add new Properties for any Person in your Space.
 	      (if (chromeless) "&cl=on" else "")
 	    val link = ExactlyOne(ExternalLinkType(url))
 	    
-	    TypedValue(link, ExternalLinkType)  
+	    TypedValue(link)  
       }
       case _ => WarningValue("Invite Link is only defined when sending email")
     }

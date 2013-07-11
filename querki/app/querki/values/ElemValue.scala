@@ -39,4 +39,15 @@ case class ElemValue(elem:Any, pType:PType[_]) {
       }
     }
   }
+  
+  def getOpt[VT](expectedType:PType[VT]):Option[VT] = {
+    val realExpected = realType(expectedType)
+    if (realExpected == myType)
+      // Here is The One Great Evil Cast, checked as best we can at runtime. Let's see if we can eliminate
+      // all others.
+      Some(elem.asInstanceOf[VT])
+    else {
+      None
+    }
+  }
 }

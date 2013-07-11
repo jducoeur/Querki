@@ -123,7 +123,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
     }
     // TBD: the asInstanceOf here is surprising -- I would have expected transformed to come out
     // as the right type simply by type signature. Can we get rid of it?
-    context.next(TypedValue(ct.makePropValue(transformed.asInstanceOf[ct.implType], ParsedTextType), ParsedTextType))
+    context.next(TypedValue(ct.makePropValue(transformed.asInstanceOf[ct.implType], ParsedTextType)))
   }
   
   private def processCall(call:QLCall, context:ContextBase):ContextBase = {
@@ -136,7 +136,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
         val methodOpt = call.methodName.flatMap(context.state.anythingByName(_))
         methodOpt match {
           case Some(method) => {
-            val partialFunction = method.partiallyApply(context.next(TypedValue(ExactlyOne(LinkType(t.id)), LinkType)))
+            val partialFunction = method.partiallyApply(context.next(TypedValue(ExactlyOne(LinkType(t.id)))))
             partialFunction.qlApply(context, params)
           }
           case None => t.qlApply(context, params)
@@ -146,7 +146,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
       // the renderer, it will turn into a link to the undefined page, where they can create it.
       //
       // TBD: in principle, we might want to make this more Space-controllable. But it isn't obvious that we care. 
-      case None => TypedValue(ExactlyOne(UnknownNameType(call.name)), UnknownNameType)
+      case None => TypedValue(ExactlyOne(UnknownNameType(call.name)))
     }
     logContext("processName got " + tv, context)
     context.next(tv)

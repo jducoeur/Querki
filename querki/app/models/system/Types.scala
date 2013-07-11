@@ -222,12 +222,12 @@ object QLType extends QLType(QLTypeOID)
     }
     
     implicit def boolean2YesNoTypedValue(raw:Boolean):TypedValue = {
-      TypedValue(ExactlyOne(raw), YesNoType)
+      TypedValue(ExactlyOne(raw))
     }
     
     def toBoolean(typed:TypedValue):Boolean = {
       typed match {
-        case TypedValue(propVal, YesNoType, _) => propVal.firstTyped(YesNoType).getOrElse(false)
+        case TypedValue(propVal, _) if (propVal.pType == YesNoType) => propVal.firstTyped(YesNoType).getOrElse(false)
         case _ => false
       }
     }

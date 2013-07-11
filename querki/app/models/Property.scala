@@ -140,7 +140,7 @@ case class Property[VT, -RT](
     // on the incoming thing.
     pType.qlApplyFromProp(context, context, this, params).getOrElse(applyToIncomingThing(context) { (t, context) =>
       val result = t.getPropVal(this)(context.state)
-      TypedValue(result, pType)
+      TypedValue(result)
     })
   }  
   
@@ -154,7 +154,7 @@ case class Property[VT, -RT](
       // But we allow you to use partial application in general, since it sometimes feels natural.
       pType.qlApplyFromProp(leftContext, mainContext, this, params).getOrElse(applyToIncomingThing(leftContext) { (t, context) =>
         val result = t.getPropVal(this)(context.state)
-        TypedValue(result, pType)
+        TypedValue(result)
       })
     }
     new PartiallyAppliedFunction(leftContext, handleRemainder)
