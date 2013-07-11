@@ -34,8 +34,8 @@ case class Property[VT, -RT](
   def defaultPair:PropAndVal[VT] = PropAndVal(this, default)
   // EVIL but arguably necessary. This is where we are trying to confine the cast from something
   // we get out of the PropMap (which is a bit undertyped) to match the associated Property.
-  def castVal(v:PropValue) = v.asInstanceOf[PropValue]
-  def pair(v:PropValue) = PropAndVal(this, castVal(v))
+  def castVal(v:TypedValue) = v.asInstanceOf[TypedValue]
+  def pair(v:TypedValue) = PropAndVal(this, castVal(v))
 
   override lazy val props:PropMap = propFetcher() + 
 		  CollectionProp(cType) +
@@ -59,7 +59,7 @@ case class Property[VT, -RT](
    * 
    * TODO: deprecate and remove this. PropValues can now self-render, since they now know their PType.
    */
-  def render(context:ContextBase)(v:PropValue) = {
+  def render(context:ContextBase)(v:TypedValue) = {
     v.render(context)
   }
   def renderedDefault = render(EmptyContext)(default)
@@ -72,21 +72,21 @@ case class Property[VT, -RT](
     fromType.getOrElse(renderProps)
   }
   
-  def from(m:PropMap):PropValue = castVal(m(this))
-  def fromOpt(m:PropMap):Option[PropValue] = m.get(this.id) map castVal
+  def from(m:PropMap):TypedValue = castVal(m(this))
+  def fromOpt(m:PropMap):Option[TypedValue] = m.get(this.id) map castVal
   
   /**
    * Convenience method to fetch the value of this property in this map.
    */
   def first(m:PropMap):VT = pType.get(cType.first(from(m)))
   def firstOpt(m:PropMap):Option[VT] = fromOpt(m) map cType.first map pType.get
-  def first(v:PropValue):VT = pType.get(cType.first(v))
+  def first(v:TypedValue):VT = pType.get(cType.first(v))
   
-  def isEmpty(v:PropValue) = cType.isEmpty(v)
+  def isEmpty(v:TypedValue) = cType.isEmpty(v)
   
-  def flatMap[T](v:PropValue)(cb:VT => Option[T]) = v.flatMap(pType)(cb)
+  def flatMap[T](v:TypedValue)(cb:VT => Option[T]) = v.flatMap(pType)(cb)
 
-  def contains(v:PropValue, toCheck:VT):Boolean = v.cv.exists { elem =>
+  def contains(v:TypedValue, toCheck:VT):Boolean = v.cv.exists { elem =>
     val vt = pType.get(elem)
     pType.matches(vt, toCheck)
   }
@@ -98,7 +98,7 @@ case class Property[VT, -RT](
   import play.api.data.Form
   def fromUser(on:Option[Thing], form:Form[_]):FormFieldInfo = cType.fromUser(on, form, this, pType)
   // TODO: this clearly isn't correct. How are we actually going to handle more complex types?
-  def toUser(v:PropValue):String = {
+  def toUser(v:TypedValue):String = {
     val cv = castVal(v)
     if (cType.isEmpty(cv))
       ""
@@ -106,8 +106,8 @@ case class Property[VT, -RT](
       pType.toUser(cType.first(cv))
   }
   
-  def serialize(v:PropValue):String = v.serialize(pType)
-  def deserialize(str:String):PropValue = cType.deserialize(str, pType)
+  def serialize(v:TypedValue):String = v.serialize(pType)
+  def deserialize(str:String):TypedValue = cType.deserialize(str, pType)
   
   def applyToIncomingThing(context:ContextBase)(action:(Thing, ContextBase) => TypedValue):TypedValue = {
     if (context.isEmpty) {
@@ -174,7 +174,7 @@ object FieldIds {
   def apply(t:Option[Thing], p:Property[_,_]) = new FieldIds(t,p)
 }
 
-case class DisplayPropVal(on:Option[Thing], prop: Property[_,_], v: Option[PropValue], inheritedVal:Option[PropValue] = None, inheritedFrom:Option[Thing] = None) extends
+case class DisplayPropVal(on:Option[Thing], prop: Property[_,_], v: Option[TypedValue], inheritedVal:Option[TypedValue] = None, inheritedFrom:Option[Thing] = None) extends
   FieldIds(on, prop)
 {
   lazy val isInherited = v.isEmpty && inheritedVal.isDefined

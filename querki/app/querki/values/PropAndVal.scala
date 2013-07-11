@@ -7,7 +7,7 @@ import models.system.QList
 /**
  * A convenient wrapper for passing a value around in a way that can be fetched.
  */
-case class PropAndVal[VT](prop:Property[VT, _], v:PropValue) {
+case class PropAndVal[VT](prop:Property[VT, _], v:TypedValue) {
   def render(context:ContextBase) = prop.render(context)(v)
   def renderPlain = render(EmptyContext)
   def renderOr(context:ContextBase)(other: => Wikitext) = if (prop.isEmpty(v)) other else render(context)
@@ -16,7 +16,7 @@ case class PropAndVal[VT](prop:Property[VT, _], v:PropValue) {
   def split() = (prop, v)
   def first = prop.first(v)
   def flatMap[T](cb:VT => Option[T]) = prop.flatMap(v)(cb)
-  def ++(others:Iterable[VT]):PropValue = {
+  def ++(others:Iterable[VT]):TypedValue = {
     QList.makePropValue((v.cv ++ others.map(ElemValue(_, prop.pType))).toList, prop.pType)
   }
   def contains(toCheck:VT):Boolean = prop.contains(v, toCheck)
