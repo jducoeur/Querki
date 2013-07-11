@@ -406,7 +406,7 @@ to handle everything else.
     if (sourceColl.isEmpty)
       // Cut processing at this point:
       // TODO: can/should we preserve the source PType?
-      TypedValue(QList.empty, true)
+      new TypedValue(QList.empty) with CutProcessing
     else
       TypedValue(QList.makePropValue(sourceColl.cv.tail.toList, context.value.pt))
   }

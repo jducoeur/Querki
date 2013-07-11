@@ -41,9 +41,14 @@ object UnknownNameType extends NameType(UnknownOID, "_unknownNameType") {
   def doRender(context:ContextBase)(v:String) = Wikitext("{{_unknownName:") + nameToLink(context)(v) + Wikitext("}}")
 }
 
-// TODO: we've gotten rid of the explicit ct parameter, since it is contained in v.
-// Maybe we can do the same for pt?
-case class TypedValue(v:PropValue, cut:Boolean = false) {
+/**
+ * Marker trait, to indicate that we should stop processing at this value. Mix it
+ * into the returned value to indicate that we should stop. This is probably a stopgap,
+ * but it's okay for now.
+ */
+trait CutProcessing
+
+case class TypedValue(v:PropValue) {
   def ct:Collection = v.coll
   
   // TODO: remove this alias
@@ -58,7 +63,18 @@ case class TypedValue(v:PropValue, cut:Boolean = false) {
     } else
       None
   }
+  
+  // We are cutting iff the constructor mixed in CutProcessing:
+  def cut = this.isInstanceOf[CutProcessing]
 }
+
+object ErrorTextType extends TextTypeBase(UnknownOID,
+  Thing.toProps(
+    Thing.setName("Error Text")
+  )) with PTypeBuilder[QLText,String] {
+}
+class WarningValue(msg:String) extends TypedValue(ExactlyOne(ErrorTextType("{{_warning:" + msg + "}}"))) with CutProcessing
+
 object ErrorValue {
   def apply(msg:String) = {
     try {
@@ -66,7 +82,7 @@ object ErrorValue {
     } catch {
       case e:Exception => Logger.error(s"Displaying error $msg; stack trace:\n${e.getStackTraceString}")  
     }
-    TypedValue(ExactlyOne(PlainTextType(msg)), true)
+    new WarningValue(msg)
   }
 }
 object TextValue {
@@ -82,7 +98,7 @@ object LinkValue {
   def apply(target:OID) = TypedValue(ExactlyOne(LinkType(target)))
 }
 object WarningValue {
-  def apply(msg:String) = TypedValue(ExactlyOne(TextType("{{_warning:" + msg + "}}")), true)
+  def apply(msg:String) = new WarningValue(msg)
 }
 object EmptyValue {
   // TODO: do something with this?
