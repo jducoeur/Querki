@@ -16,6 +16,12 @@
   user.isDefined && space.canEdit(user.get, thing)
 }
 
+@modelOpt = @{ thing.getModelOpt(space) }
+
+@linkTo(t:Thing) = {
+  <a href="@routes.Application.thing(rc.ownerId.toThingId, space.toThingId, t.toThingId)">@t.displayName</a>
+}
+
 @main(QuerkiTemplate.Thing, title, rc, true) {
 
     <script>
@@ -84,7 +90,13 @@
 
         @if(!rc.chromeless) {
 	    <div class="page-header">
-	      <h1>@title @if(canEdit) { <a class="btn btn-mini btn-primary" title="Edit @title" href="@routes.Application.editThing(rc.ownerName, space.toThingId, thing.toThingId)"><i class="icon-edit icon-white"></i></a> }</h1>
+	      <h1 class="_defaultTitle">@title @if(canEdit) { <a class="btn btn-mini btn-primary" title="Edit @title" href="@routes.Application.editThing(rc.ownerName, space.toThingId, thing.toThingId)"><i class="icon-edit icon-white"></i></a> }</h1>
+	      @modelOpt match { 
+	        case Some(model) => {
+	          <p class="_smallSubtitle">(@linkTo(model))</p>
+	        }
+	        case _ => {}
+	      }
 	    </div>
 	    }
 	

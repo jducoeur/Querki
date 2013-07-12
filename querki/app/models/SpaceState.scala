@@ -74,7 +74,6 @@ case class SpaceState(
   def coll(ptr:ThingId) = resolve(ptr) (_.colls)
   
   def anything(oid:OID):Option[Thing] = {
-    // TODO: this should do something more sensible if the OID isn't found at all:
     things.get(oid).orElse(
       spaceProps.get(oid).orElse(
         types.get(oid).orElse(

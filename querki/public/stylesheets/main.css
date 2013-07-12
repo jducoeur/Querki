@@ -69,3 +69,12 @@
 ._unknownName a {
   color: #bf5615;
 }
+
+._defaultTitle {
+  margin-bottom: 0px;
+}
+
+._smallSubtitle {
+  margin-top: 0px;
+  font-size: x-small;
+}

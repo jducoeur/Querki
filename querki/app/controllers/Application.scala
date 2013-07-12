@@ -228,6 +228,8 @@ disallow: /
       Ok(views.html.thing(rcWithName))
     }
   })) { implicit rc =>
+    // Uncomment this to see details of the Thing we're displaying:
+    //QLog.spewThing(rc.thing.getOrElse(rc.state.get))
     // rc now has all the interesting information copied into it:
     Ok(views.html.thing(rc))
   }

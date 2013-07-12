@@ -120,7 +120,6 @@ class StylesheetModule(val moduleId:Short) extends modules.Module {
     
     def stylesheetsForThing(state:SpaceState, thing:Thing):String = {
       implicit val s = state
-      Logger.info("Prepping Stylesheet for " + thing.displayName)
       val parentStylesheetStr = if (thing.hasModel) stylesheetsForThing(state, thing.getModel) else ""
       val localStylesheetOpt =
         for (propVal <- thing.getPropOpt(StylesheetProp);
