@@ -74,6 +74,10 @@ trait QValue {
   def isEmpty = cType.isEmpty(this)
   def size = cv.size
   
+  // Returns the raw Iterable of ElemValues. Not often the right things to do, unless you
+  // specifically don't care about type.
+  def elems = cv
+  
   /**********************
    * CASTING METHODS
    * 

@@ -35,7 +35,7 @@ object HtmlRenderer {
     // TODO: this is *very* suspicious, but we need to find a solution. RenderTagSet is trying to pass JSON structures in the
     // value field, but for that to be JSON-legal, the attributes need to be single-quoted, and the strings in them double-quoted.
     // That isn't the way things come out here, so we're kludging, but I worry about potential security holes...
-    val xmlFixedQuotes = xml3.toString.replace("\"", "\'").replace("&quot;", "\"")
+    val xmlFixedQuotes = xml3.toString.replace("\'", "&#39;").replace("\"", "\'").replace("&quot;", "\"")
     Html(xmlFixedQuotes)
   }
   

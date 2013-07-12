@@ -15,7 +15,7 @@ import models.system.QList
  * handling things in a way that makes the Scala compiler happier for simple operations.
  * 
  * TBD: is there a better way to do this? Can we construct a variant of QValue that carries its
- * own VT?
+ * own VT? Or make this wrapper no longer require the Property, just carry the VT itself?
  */
 case class PropAndVal[VT](prop:Property[VT, _], v:QValue) {
   def render(context:ContextBase) = v.render(context)

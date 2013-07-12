@@ -305,7 +305,6 @@ class Space extends Actor {
       val oldThingOpt = state.anything(thingId)
       oldThingOpt map { oldThing =>
         if (!canEdit(who, oldThing.id)) {
-          Logger.info(who.toString + " can't edit -- requires " + owner.toString)
           sender ! ThingFailed(ModifyNotAllowed, "You're not allowed to modify that")
         } else {
 	      DB.withTransaction { implicit conn =>

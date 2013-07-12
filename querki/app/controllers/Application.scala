@@ -19,6 +19,8 @@ import SpaceError._
 
 import querki.values.QLRequestContext
 
+import querki.util.QLog
+
 object Application extends Controller {
   
   case class UserForm(name:String, password:String)
@@ -168,6 +170,8 @@ object Application extends Controller {
           case UnknownOID => None
           case oid:OID => state.anything(oid)
         }
+        // Log what we got back -- turn this on as needed:
+        //QLog.spewThing(thingOpt.getOrElse(state))
         if (thingIdStr.isDefined && thingOpt.isEmpty)
           doError(routes.Application.index, "That wasn't a valid path")
         else {
