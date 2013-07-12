@@ -524,10 +524,11 @@ disallow: /
       // If this Tag is used in a Tag Set Property with a Link Model, use that:
       val model = preferredModelForTag(state, thingIdStr)
       val name = NameType.toDisplay(thingIdStr)
+      val defaultText = state.getPropOpt(ShowUnknownProp).map(_.v).getOrElse(ExactlyOne(LargeTextType(TagThing.defaultDisplayText)))
       showEditPage(rc, model, 
           PropList.inheritedProps(None, model) ++
           PropList((NameProp -> DisplayPropVal(None, NameProp, Some(ExactlyOne(NameType(name))))),
-                   (DisplayTextProp -> DisplayPropVal(None, DisplayTextProp, Some(ExactlyOne(LargeTextType(TagThing.defaultDisplayText)))))))
+                   (DisplayTextProp -> DisplayPropVal(None, DisplayTextProp, Some(defaultText)))))
     }
   })) { implicit rc =>
     implicit val state = rc.state.get
