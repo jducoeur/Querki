@@ -21,6 +21,14 @@
 
 @isSubCreate = @{ rc.isTrue("subCreate") }
 
+@isForeign = @{ thing.get.spaceId != space.id }
+
+@canEdit = @{
+  // Disable if you are trying to edit something in the wrong Space.
+  // At least, for now -- eventually, this will be legal, but will be copy-then-edit. 
+  !isEdit || !isForeign
+}
+
 @cancelButton = {
   @if(isCreate) {
     <a class="cancelButton btn" href="@routes.Application.thing(rc.ownerName, space.toThingId, space.toThingId)">Cancel</a>
@@ -62,8 +70,11 @@
 }
 
 @pageTitle = @{
+  // TODO: the hardcoded System below should be the name of the Space this thing is from:
   if (isEdit)
-    "Editing " + thing.get.displayName
+    "Editing " +
+    (if (isForeign) "System::" else "") +
+    thing.get.displayName
   else
     "Create a " + model.displayName
 }
@@ -284,6 +295,10 @@
 	    <h1>@pageTitle @cancelButton</h1>
 	</div>
 	
+	@if(!canEdit) {
+	  <div class="alert">@thing.get.displayName is not in this Space. It is not yet legal to edit it. You may want to make a local Model from it, and use that instead.</div>
+	}
+	
 	<div class="row-fluid">
 	@form(if (thing.isEmpty) { 
 	        routes.Application.doCreateThing(rc.ownerName, space.toThingId, Some(isSubCreate))
@@ -316,7 +331,7 @@
 	  
 	    <div class="control-group">
 	      <div class="controls">
-	        <input id="mainSubmit" type="submit" value="Done" class="btn btn-primary">
+	        <input id="mainSubmit" type="submit" value="Done" class="btn btn-primary" @if(!canEdit) { disabled="disabled" }>
 	        @if(isCreate && !isSubCreate) {
 	          <input id="submitAndAnother" type="submit" value="Done and Create Another" class="btn">
 	        }
