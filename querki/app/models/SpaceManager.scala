@@ -156,6 +156,8 @@ class SpaceManager extends Actor {
             content mediumblob NOT NULL,
             PRIMARY KEY (id))
           """).executeUpdate()
+      val initProps = Thing.toProps(Thing.setName(name), DisplayNameProp(display))()
+      Space.createThingInSql(spaceId, spaceId, systemOID, Kind.Space, initProps, State)
     }
     DB.withTransaction(dbName(System)) { implicit conn =>
       SQL("""
@@ -164,8 +166,6 @@ class SpaceManager extends Actor {
           ({sid}, {shard}, {name}, {display}, {ownerId}, 0)
           """).on("sid" -> spaceId.raw, "shard" -> 1.toString, "name" -> name,
                   "display" -> display, "ownerId" -> owner.raw).executeUpdate()
-      val initProps = Thing.toProps(Thing.setName(name), DisplayNameProp(display))()
-      Space.createThingInSql(spaceId, spaceId, systemOID, Kind.Space, initProps, State)
     }
     val spaceActor = context.actorOf(Props[Space], name = Space.sid(spaceId))
     (spaceId, spaceActor)
