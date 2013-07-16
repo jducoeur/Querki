@@ -69,10 +69,11 @@ object OID {
           """)
       val stream = nextQuery.apply()
       val localId =  stream.headOption.map(row => row.get[Int]("nextId").get).get
+      val shardId =  stream.headOption.map(row => row.get[Int]("shard").get).get
       SQL("""
           UPDATE OIDNexter SET nextId = {next} WHERE nextId = {old}
           """).on("next" -> (localId + 1).toString, "old" -> localId).executeUpdate()
-      OID(1, localId)
+      OID(shardId, localId)
     }
   }
   
