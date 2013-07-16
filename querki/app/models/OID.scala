@@ -63,7 +63,7 @@ object OID {
   // transaction -- inefficient, but it'll work.
   // TODO: eventually, this needs to become shard-smart. But that's a ways off yet.
   def next(kind:ShardKind) = {
-    DB.withTransaction { implicit conn =>
+    DB.withTransaction(dbName(kind)) { implicit conn =>
       val nextQuery = SQL("""
           select * from OIDNexter
           """)

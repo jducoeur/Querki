@@ -11,7 +11,8 @@ object ShardKind extends Enumeration {
   val System, Test, User = Value
   
   /**
-   * Fetch the configuration-system name of this shard.
+   * Fetch the configuration-system name of this shard. Pass the result of this into
+   * DB.withConnection().
    */
   def dbName(kind:ShardKind):String = {
     kind match {

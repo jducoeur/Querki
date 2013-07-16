@@ -6,7 +6,9 @@ import play.api.db._
 import play.api.mvc._
 import play.api.Play.current
 import models._
+
 import querki.db.ShardKind
+import ShardKind._
 
 trait User {
   def id:OID
@@ -58,7 +60,7 @@ object User {
     val name = system.NameType.canonicalize(rawName)
     val idOpt = idByNameCache.get(name).orElse {
       // Don't have it cached, so fetch the ID and cache it:
-      val fromDB = DB.withConnection { implicit conn =>
+      val fromDB = DB.withConnection(dbName(System)) { implicit conn =>
         val personQuery = SQL("""
           select id from User where name={name}
           """).on("name" -> name)
@@ -73,7 +75,7 @@ object User {
   }
   
   def getName(id:OID):String = {
-    DB.withConnection { implicit conn =>
+    DB.withConnection(dbName(System)) { implicit conn =>
       val personQuery = SQL("""
           select name from User where id={id}
           """).on("id" -> id.raw)
@@ -102,7 +104,7 @@ object IdentityKind {
 
 object Identity {
   def getOrCreateByEmail(email:EmailAddress, name:String):Identity = {
-    DB.withConnection { implicit conn =>
+    DB.withConnection(dbName(System)) { implicit conn =>
       val identityQuery = SQL("""
           SELECT * FROM Identity 
            WHERE email={email}

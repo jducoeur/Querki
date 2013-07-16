@@ -3,7 +3,9 @@ package models
 import language.postfixOps
 import system._
 import OIDs._
+
 import querki.db.ShardKind
+import ShardKind._
 
 import scala.concurrent.duration._
 import scala.concurrent.Future
@@ -55,7 +57,7 @@ class SpaceManager extends Actor {
         sender ! MySpaces(Seq((AsName("System"), AsOID(systemOID), State.name)))
       else {
         // TODO: this involves DB access, so should be async using the Actor DSL
-        val results = DB.withConnection { implicit conn =>
+        val results = DB.withConnection(dbName(System)) { implicit conn =>
           val spaceStream = SQL("""
               select id, name, display from Spaces
               where owner = {owner}
@@ -108,7 +110,7 @@ class SpaceManager extends Actor {
   }
   
   private def getSpaceByName(ownerId:OID, name:String):Option[OID] = {
-    DB.withTransaction { implicit conn =>
+    DB.withTransaction(dbName(System)) { implicit conn =>
       val rowOption = SQL("""
           SELECT id from Spaces WHERE owner = {ownerId} AND name = {name}
           """).on("ownerId" -> ownerId.raw, "name" -> NameType.canonicalize(name))().headOption
@@ -117,7 +119,7 @@ class SpaceManager extends Actor {
   }
   
   private def legalSpaceName(ownerId:OID, name:String):Option[ThingFailed] = {
-    def numWithName = DB.withTransaction { implicit conn =>
+    def numWithName = DB.withTransaction(dbName(System)) { implicit conn =>
       SQL("""
           SELECT COUNT(*) AS c from Spaces WHERE owner = {ownerId} AND name = {name}
           """).on("ownerId" -> ownerId.raw, "name" -> NameType.canonicalize(name)).apply().headOption.get.get[Long]("c").get
@@ -135,10 +137,9 @@ class SpaceManager extends Actor {
     val name = NameType.canonicalize(display)
     val spaceId = OID.next(ShardKind.User)
     Logger.info("Creating new Space with OID " + Space.thingTable(spaceId))
-    // Why the replace() here? It looks to me like the .on() function always
-    // surrounds its parameter with quotes, and I don't think that works in
-    // the table name. Sad.
-    DB.withTransaction { implicit conn =>
+    // NOTE: we have to do this as two separate Transactions, because part goes into the User DB and
+    // part into System. That's unfortunate, but kind of a consequence of the architecture.
+    DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
       SpaceSQL(spaceId, """
           CREATE TABLE {tname} (
             id bigint NOT NULL,
@@ -155,6 +156,8 @@ class SpaceManager extends Actor {
             content mediumblob NOT NULL,
             PRIMARY KEY (id))
           """).executeUpdate()
+    }
+    DB.withTransaction(dbName(System)) { implicit conn =>
       SQL("""
           INSERT INTO Spaces
           (id, shard, name, display, owner, size) VALUES

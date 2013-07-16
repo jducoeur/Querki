@@ -26,6 +26,7 @@ import Thing._
 import identity.User
 
 import querki.db.ShardKind
+import ShardKind._
 
 import system._
 import system.OIDs._
@@ -83,7 +84,7 @@ class Space extends Actor {
    * have reason to believe the Spaces record has been changed. 
    */
   def fetchSpaceInfo() = {
-    _currentSpaceInfo = Some(DB.withTransaction { implicit conn =>
+    _currentSpaceInfo = Some(DB.withTransaction(dbName(System)) { implicit conn =>
       SQL("""
           select * from Spaces where id = {id}
           """).on("id" -> id.raw).apply().headOption.get
@@ -104,7 +105,7 @@ class Space extends Actor {
   
   def loadSpace() = {
     // TODO: we need to walk up the tree and load any ancestor Apps before we prep this Space
-    DB.withTransaction { implicit conn =>
+    DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
       // The stream of all of the Things in this Space:
       val stateStream = SpaceSQL("""
           select * from {tname}
@@ -275,7 +276,7 @@ class Space extends Actor {
       sender ! ThingFailed(CreateNotAllowed, "You are not allowed to create that")
     else if (name.isDefined && state.anythingByName(name.get).isDefined)
       sender ! ThingFailed(NameExists, "This Space already has a Thing with that name")
-    else DB.withTransaction { implicit conn =>
+    else DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
       val thingId = OID.next(ShardKind.User)
       // TODO: add a history record
       Space.createThingInSql(thingId, spaceId, modelId, kind, props, state)
@@ -309,7 +310,7 @@ class Space extends Actor {
         if (!canEdit(who, oldThing.id)) {
           sender ! ThingFailed(ModifyNotAllowed, "You're not allowed to modify that")
         } else {
-	      DB.withTransaction { implicit conn =>
+	      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
 	        // TODO: compare properties, build a history record of the changes
 	        val thingId = oldThing.id
 	        val newProps = pf(oldThing)
@@ -399,7 +400,7 @@ class Space extends Actor {
 //      if (!canRead(who, attachOid))
 //        sender ! AttachmentFailed
 //      else 
-      DB.withTransaction { implicit conn =>
+      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
         // TODO: this will throw an error if the specified attachment doesn't exist
         // Guard against that.
         val results = AttachSQL("""
