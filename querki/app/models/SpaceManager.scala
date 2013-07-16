@@ -3,6 +3,7 @@ package models
 import language.postfixOps
 import system._
 import OIDs._
+import querki.db.ShardKind
 
 import scala.concurrent.duration._
 import scala.concurrent.Future
@@ -132,7 +133,7 @@ class SpaceManager extends Actor {
   
   private def createSpace(owner:OID, display:String) = {
     val name = NameType.canonicalize(display)
-    val spaceId = OID.next
+    val spaceId = OID.next(ShardKind.User)
     Logger.info("Creating new Space with OID " + Space.thingTable(spaceId))
     // Why the replace() here? It looks to me like the .on() function always
     // surrounds its parameter with quotes, and I don't think that works in

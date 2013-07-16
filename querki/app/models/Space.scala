@@ -25,6 +25,8 @@ import Thing._
 
 import identity.User
 
+import querki.db.ShardKind
+
 import system._
 import system.OIDs._
 import system.SystemSpace._
@@ -274,7 +276,7 @@ class Space extends Actor {
     else if (name.isDefined && state.anythingByName(name.get).isDefined)
       sender ! ThingFailed(NameExists, "This Space already has a Thing with that name")
     else DB.withTransaction { implicit conn =>
-      val thingId = OID.next
+      val thingId = OID.next(ShardKind.User)
       // TODO: add a history record
       Space.createThingInSql(thingId, spaceId, modelId, kind, props, state)
       kind match {

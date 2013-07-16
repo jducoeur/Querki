@@ -6,6 +6,7 @@ import play.api.db._
 import play.api.mvc._
 import play.api.Play.current
 import models._
+import querki.db.ShardKind
 
 trait User {
   def id:OID
@@ -109,7 +110,7 @@ object Identity {
           """).on("email" -> email.addr, "kind" -> IdentityKind.SimpleEmail)
       val stream = identityQuery.apply()
       stream.headOption.map(row => Identity(OID(row.get[Long]("id").get), email)).getOrElse {
-        val identityId = OID.next
+        val identityId = OID.next(ShardKind.System)
         SQL("""
             INSERT INTO Identity
             (id, name, kind, email) VALUES

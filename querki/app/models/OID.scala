@@ -5,6 +5,8 @@ import anorm._
 import play.api.db._
 import play.api.Play.current
 
+import querki.db.ShardKind._
+
 /**
  * By and large, we internally use ThingPtrs. This is an abstract "pointer" to a Thing.
  * It can be either an OID or a hard reference. (Note that Thing derives from ThingPtr.)
@@ -60,7 +62,7 @@ object OID {
   // we're using MySQL before we bother trying that. For now, we'll just use a
   // transaction -- inefficient, but it'll work.
   // TODO: eventually, this needs to become shard-smart. But that's a ways off yet.
-  def next = {
+  def next(kind:ShardKind) = {
     DB.withTransaction { implicit conn =>
       val nextQuery = SQL("""
           select * from OIDNexter
