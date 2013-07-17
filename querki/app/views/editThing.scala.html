@@ -29,6 +29,15 @@
   !isEdit || !isForeign
 }
 
+@propsInSpace(s:SpaceState) = {
+  <optgroup label="Properties in @s.displayName">
+    @for(prop <- s.propList.toSeq.sortBy(_.displayName)) {
+      <option value="@prop.id.toString">@prop.displayName</option>
+    }
+  </optgroup>
+  @{s.app.map(propsInSpace(_))}
+}
+
 @cancelButton = {
   @if(isCreate) {
     <a class="cancelButton btn" href="@routes.Application.thing(rc.ownerName, space.toThingId, space.toThingId)">Cancel</a>
@@ -347,9 +356,7 @@
           <p class="offset1">
             <select id="_propChooser" data-placeholder="Choose a Property...">
               <option value="">Choose a Property...</option>
-              @for(prop <- otherProps) {
-                <option value="@prop.id.toString">@prop.displayName</option>
-              }
+              @propsInSpace(space)
             </select>
           </p>
           <p class="offset1">
