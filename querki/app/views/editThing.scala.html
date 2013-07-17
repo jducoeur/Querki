@@ -252,6 +252,11 @@
         $(selectCreatingNew).append('<option value="' + newThingId + '" selected="selected">' + newDisplayName + '</option>');
         $("#create-instance-dialog").dialog("close");
       }
+      
+      function beginAddProperty() {
+        $("#_addPropertyButtonGroup").hide();
+        $("#_addPropertyBox").fadeIn();
+      }
     
       $(function() {
         $(".edit-button").editButton();
@@ -268,6 +273,8 @@
           $("#makeAnother").val("true");
           return true;
         });
+        
+        $("#_addPropertyButton").click(beginAddProperty);
         
         $("._linkSelect").change(handleLinkSelectChanged);
 		$("#create-instance-dialog").dialog({
@@ -327,6 +334,29 @@
               }
             </select>
           </div>
+        </div>
+        
+        <div id="_addPropertyButtonGroup" class="control-group">
+          <div class="controls">
+            <a href="#" id="_addPropertyButton" class="btn btn-info"><i class="icon-plus"></i> Add a Property</a>
+          </div>
+        </div>
+        
+        <div id="_addPropertyBox" class="well" style="display:none">
+          <p>Choose a property from this list of existing properties, or press "Create a New Property" to do something different.</p>
+          <p class="offset1">
+            <select id="_propChooser" data-placeholder="Choose a Property...">
+              <option value="">Choose a Property...</option>
+              @for(prop <- otherProps) {
+                <option value="@prop.id.toString">@prop.displayName</option>
+              }
+            </select>
+          </p>
+          <p class="offset1">
+            <a href="#" id="_addExistingPropertyButton" class="btn btn-info">Add</a>
+          </p>
+          <hr>
+          <a href=""#" id="_createPropertyButton" class="btn btn-info">Create a New Property</a>
         </div>
 	  
 	    <div class="control-group">
