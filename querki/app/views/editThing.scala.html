@@ -266,6 +266,10 @@
         $("#_addPropertyButtonGroup").hide();
         $("#_addPropertyBox").fadeIn();
       }
+      
+      function handlePropChoice(evt) {
+        
+      }
     
       $(function() {
         $(".edit-button").editButton();
@@ -284,6 +288,8 @@
         });
         
         $("#_addPropertyButton").click(beginAddProperty);
+        
+        $("#_propChooser").change(handlePropChoice);
         
         $("._linkSelect").change(handleLinkSelectChanged);
 		$("#create-instance-dialog").dialog({
@@ -353,16 +359,24 @@
         
         <div id="_addPropertyBox" class="well" style="display:none">
           <p>Choose a property from this list of existing properties, or press "Create a New Property" to do something different.</p>
-          <p class="offset1">
-            <select id="_propChooser" data-placeholder="Choose a Property...">
-              <option value="">Choose a Property...</option>
-              @propsInSpace(space)
-            </select>
-          </p>
-          <p class="offset1">
-            <a href="#" id="_addExistingPropertyButton" class="btn btn-info">Add</a>
-          </p>
-          <hr>
+          <div class="span12">
+            <div class="span3">
+              <p class="offset1">
+                <select id="_propChooser" data-placeholder="Choose a Property...">
+                  <option value="">Choose a Property...</option>
+                  @propsInSpace(space)
+                </select>
+              </p>
+              <p class="offset1">
+                <a href="#" id="_addExistingPropertyButton" class="btn btn-info">Add</a>
+              </p>
+            </div>
+            <div class="span9">
+              <p>THIS IS SOME PLACEHOLDER TEXT. PUT PROP INFO HERE!</p>
+            </div>
+          </div>
+          
+          <hr/>
           <a href=""#" id="_createPropertyButton" class="btn btn-info">Create a New Property</a>
         </div>
 	  
