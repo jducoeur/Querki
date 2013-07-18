@@ -39,14 +39,13 @@ object Application extends Controller {
      ((name:String) => Some(name))
   )
   
-  case class NewThingForm(fields:List[String], addedProperty:String, model:String)
+  case class NewThingForm(fields:List[String], model:String)
   val newThingForm = Form(
     mapping(
       "field" -> list(text),
-      "addedProperty" -> text,
       "model" -> text
-    )((field, addedProperty, model) => NewThingForm(field, addedProperty, model))
-     ((info:NewThingForm) => Some((info.fields, info.addedProperty, info.model)))
+    )((field, model) => NewThingForm(field, model))
+     ((info:NewThingForm) => Some((info.fields, info.model)))
   )
   
   /**
@@ -406,17 +405,8 @@ disallow: /
         
         val redisplayStr = rawForm("redisplay").value.getOrElse("")
         
-        if (redisplayStr.length() > 0 && redisplayStr.toBoolean)
+        if (redisplayStr.length() > 0 && redisplayStr.toBoolean) {
           showEditPage(rc, oldModel, makeProps(rawProps))
-        else if (info.addedProperty.length > 0) {
-          // User chose to add a Property; add that to the UI and continue:
-          val propId = OID(info.addedProperty)
-          val propOpt = state.prop(propId)
-          val allProps = propOpt match {
-            case Some(prop) => rawProps :+ FormFieldInfo(prop, Some(prop.default), false, true)
-            case None => rawProps
-          }
-          showEditPage(rc, oldModel, makeProps(allProps))
 //        } else if (info.newModel.length > 0) {
 //          // User is changing models. Replace the empty Properties with ones
 //          // appropriate to the new model, and continue:
