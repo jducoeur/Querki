@@ -594,9 +594,6 @@ disallow: /
    * Note that canRead is applied automatically for the Thing, up in withSpace().
    */
   def getPropertyDisplay(ownerId:String, spaceId:String, thingId:String, prop:String) = withThing(true, ownerId, spaceId, thingId) { implicit rc =>
-    
-    Logger.info("----> thing: " + rc.thing + "; prop: " + rc.prop) 
-    
     val resultOpt = for (
       thing <- rc.thing;
       prop <- rc.prop;
@@ -605,6 +602,20 @@ disallow: /
       yield wikitext.display.toString
     
     Ok(resultOpt.getOrElse("Couldn't find that property value!"))
+  }
+  
+  /**
+   * Fetch the standard property-editor HTML for the specified property.
+   */
+  def getPropertyEditor(ownerId:String, spaceId:String, thingId:String, prop:String, i:Int) = withThing(true, ownerId, spaceId, thingId) { implicit rc =>
+    val resultOpt = for {
+      thing <- rc.thing;
+      prop <- rc.prop;
+      propVal = DisplayPropVal(Some(thing), prop, None)
+    }
+      yield views.html.showPropertyTemplate(rc, prop, propVal, i).toString.trim()
+      
+    Ok(resultOpt.getOrElse("Couldn't create that property editor!"))
   }
 
   /**
@@ -809,7 +820,8 @@ disallow: /
         routes.javascript.Application.testAjax,
         routes.javascript.Application.setProperty,
         routes.javascript.Application.setProperty2,
-        routes.javascript.Application.getPropertyDisplay
+        routes.javascript.Application.getPropertyDisplay,
+        routes.javascript.Application.getPropertyEditor
       )
     ).as("text/javascript")
   }

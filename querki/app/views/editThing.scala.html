@@ -224,8 +224,7 @@
         }
         
       }( jQuery ));
-              
-        
+      
       function renumberList(sortList) {
         var allItems = sortList.children("li");
         var templateField = sortList.parent().find(".inputTemplate").first();
@@ -262,51 +261,101 @@
         $("#create-instance-dialog").dialog("close");
       }
       
+      // **************************************
+      //
+      // Adding Properties to the list
+      //
+      
+      // We need to keep track of the number of properties, so that we can give the right index if we add a new one:
+      var numPropsShown = @{propsSoFar.size};                      
+      
       function beginAddProperty() {
         $("#_addPropertyButtonGroup").hide();
         $("#_addPropertyBox").fadeIn();
       }
       
+      function closeAddProperty() {
+        $("#_addPropertyBox").hide();
+        $("#_addPropertyButtonGroup").show();      
+      }
+      
+      function doAddProperty() {
+        var propSelect = $("option:selected", $("#_propChooser"));
+        var propId = propSelect.val();
+        if (propId.length > 0) {
+		  // TODO: nasty abstraction break here. Do we need a Javascript library for generating ThingIds?
+          var propThingId = "." + propId;
+          numPropsShown = numPropsShown + 1;
+	      jsRoutes.controllers.Application.getPropertyEditor("@space.owner.toThingId", "@space.id.toThingId", "@thing.get.id.toThingId", propThingId, numPropsShown).ajax({
+	        success: function (result) {
+	          var newElem = $(result);
+	          newElem.insertBefore("#_addPropertyButtonGroup");
+	          setupClasses(newElem);
+	          closeAddProperty();
+	        },
+	        error: function (err) {
+	          showStatus("Unable to fetch property renderer!");
+	        }
+	      });
+        } else {
+          // TODO: weird situation here...
+        }
+      }
+      
       function handlePropChoice(evt) {
         var propSelect = $("option:selected", this);
         var propId = propSelect.val();
+        var propName = propSelect.text();
         if (propId.length > 0) {
 		  // TODO: nasty abstraction break here. Do we need a Javascript library for generating ThingIds?
           var propThingId = "." + propId;
 	      jsRoutes.controllers.Application.getPropertyDisplay("@space.owner.toThingId", "@space.id.toThingId", propThingId, "Display-Text").ajax({
 	        success: function (result) {
-	          $("#_propInfo").html(result);
+	          $("#_propInfo").html("<p><b>" + propName + "</b></p>" + result);
+	          $("#_addExistingPropertyButton").removeProp("disabled");
 	        },
 	        error: function (err) {
 	          showStatus("Unable to fetch property info!");
+	          $("#_addExistingPropertyButton").prop("disabled", "disabled");
 	        }
 	      });
         } else {
           $("#_propInfo").text(" ");
+          $("#_addExistingPropertyButton").prop("disabled", "disabled");
         }
       }
     
       $(function() {
-        $(".edit-button").editButton();
-        $(".revert-button").revertButton();
-        $(".trash-button").trashButton();
-        $(".add-item-button").addListItemButton();
-        $(".delete-item-button").deleteListItemButton();
-        $(".inputTemplate").hide();
-        $(".sortableList").sortable({
+        $("#_addPropertyButton").click(beginAddProperty);
+        $("#_cancelAddPropertyButton").click(closeAddProperty);
+        $("#_propChooser").change(handlePropChoice);
+        $("#_addExistingPropertyButton").prop("disabled", "disabled");
+        $("#_addExistingPropertyButton").click(doAddProperty);
+      });
+      
+      // **************************************
+      
+      function setupClasses(root) {
+        root.find(".edit-button").editButton();
+        root.find(".revert-button").revertButton();
+        root.find(".trash-button").trashButton();
+        root.find(".add-item-button").addListItemButton();
+        root.find(".delete-item-button").deleteListItemButton();
+        root.find(".inputTemplate").hide();
+        root.find(".sortableList").sortable({
           stop:onSortFinished
-        });
+        });      
+        root.find("._linkSelect").change(handleLinkSelectChanged);
+      }
+      
+      $(function() {
+        setupClasses($('body'));
         
         $("#submitAndAnother").click(function(evt) {
           $("#makeAnother").val("true");
           return true;
         });
         
-        $("#_addPropertyButton").click(beginAddProperty);
-        
-        $("#_propChooser").change(handlePropChoice);
-        
-        $("._linkSelect").change(handleLinkSelectChanged);
 		$("#create-instance-dialog").dialog({
 		    autoOpen:false,
 		    height: 800,
@@ -383,16 +432,17 @@
                 </select>
               </p>
               <p class="offset1">
-                <a href="#" id="_addExistingPropertyButton" class="btn btn-info">Add</a>
+                <input type="button" value="Add" id="_addExistingPropertyButton" class="btn btn-info">
+                <input type="button" value="Cancel" id="_cancelAddPropertyButton" class="btn">
               </p>
             </div>
-            <div class="span9">
-              <p id="_propInfo">THIS IS SOME PLACEHOLDER TEXT. PUT PROP INFO HERE!</p>
+            <div class="span8">
+              <p id="_propInfo">&nbsp;</p>
             </div>
           </div>
           
           <hr/>
-          <a href=""#" id="_createPropertyButton" class="btn btn-info">Create a New Property</a>
+          <input type="button" value="Create a New Property" id="_createPropertyButton" class="btn btn-info">
         </div>
 	  
 	    <div class="control-group">
