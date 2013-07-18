@@ -18,6 +18,7 @@ GET     /u/:userName/:spaceId/createProperty controllers.Application.createPrope
 POST    /u/:userName/:spaceId/createThing controllers.Application.doCreateThing(userName, spaceId, subCreate:Option[Boolean])
 POST    /u/:userName/:spaceId/setProperty controllers.Application.setProperty(userName, spaceId, thingId, propId, newVal)
 POST    /u/:userName/:spaceId/setProperty2 controllers.Application.setProperty2(userName, spaceId, thingId)
+GET		/u/:userName/:spaceId/getPropertyDisplay controllers.Application.getPropertyDisplay(userName, spaceId, thingId, prop)
 
 GET     /u/:userName/:spaceId/edit controllers.Application.editThing(userName, spaceId, thingId)
 POST    /u/:userName/:spaceId/edit controllers.Application.doEditThing(userName, spaceId, thingId)

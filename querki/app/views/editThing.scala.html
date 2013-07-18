@@ -268,7 +268,22 @@
       }
       
       function handlePropChoice(evt) {
-        
+        var propSelect = $("option:selected", this);
+        var propId = propSelect.val();
+        if (propId.length > 0) {
+		  // TODO: nasty abstraction break here. Do we need a Javascript library for generating ThingIds?
+          var propThingId = "." + propId;
+	      jsRoutes.controllers.Application.getPropertyDisplay("@space.owner.toThingId", "@space.id.toThingId", propThingId, "Display-Text").ajax({
+	        success: function (result) {
+	          $("#_propInfo").html(result);
+	        },
+	        error: function (err) {
+	          showStatus("Unable to fetch property info!");
+	        }
+	      });
+        } else {
+          $("#_propInfo").text(" ");
+        }
       }
     
       $(function() {
@@ -372,7 +387,7 @@
               </p>
             </div>
             <div class="span9">
-              <p>THIS IS SOME PLACEHOLDER TEXT. PUT PROP INFO HERE!</p>
+              <p id="_propInfo">THIS IS SOME PLACEHOLDER TEXT. PUT PROP INFO HERE!</p>
             </div>
           </div>
           

@@ -548,6 +548,8 @@ disallow: /
    * 
    * TODO: note that I've had to turn off requireLogin. That's mainly because the definition of "login" used for it is
    * too stringent. We need to rewrite withSpace/withThing to cope with the late-parsed SpaceSpecificUser:
+   * 
+   * DEPRECATED. Can we remove this?
    */
   def setProperty(ownerId:String, spaceId:String, thingId:String, propId:String, newVal:String) = withThing(false, ownerId, spaceId, thingId) { implicit rc =>
     rc.requester match {
@@ -582,6 +584,27 @@ disallow: /
    */
   def setProperty2(ownerId:String, spaceId:String, thingId:String) = {
     editThingInternal(ownerId, spaceId, Some(thingId), true)
+  }
+  
+  /**
+   * Fetch the value of a single property, in HTML-displayable form, via AJAX.
+   * 
+   * This is used by the Editor to get the display text for properties, but is likely to be broadly useful in the long run.
+   * 
+   * Note that canRead is applied automatically for the Thing, up in withSpace().
+   */
+  def getPropertyDisplay(ownerId:String, spaceId:String, thingId:String, prop:String) = withThing(true, ownerId, spaceId, thingId) { implicit rc =>
+    
+    Logger.info("----> thing: " + rc.thing + "; prop: " + rc.prop) 
+    
+    val resultOpt = for (
+      thing <- rc.thing;
+      prop <- rc.prop;
+      wikitext = thing.render(rc, Some(prop))
+        )
+      yield wikitext.display.toString
+    
+    Ok(resultOpt.getOrElse("Couldn't find that property value!"))
   }
 
   /**
@@ -785,7 +808,8 @@ disallow: /
       Routes.javascriptRouter("jsRoutes")(
         routes.javascript.Application.testAjax,
         routes.javascript.Application.setProperty,
-        routes.javascript.Application.setProperty2
+        routes.javascript.Application.setProperty2,
+        routes.javascript.Application.getPropertyDisplay
       )
     ).as("text/javascript")
   }
