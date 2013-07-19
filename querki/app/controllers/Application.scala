@@ -597,11 +597,11 @@ disallow: /
   /**
    * Fetch the standard property-editor HTML for the specified property.
    */
-  def getPropertyEditor(ownerId:String, spaceId:String, thingId:String, prop:String, i:Int) = withThing(true, ownerId, spaceId, thingId) { implicit rc =>
+  def getPropertyEditor(ownerId:String, spaceId:String, thingId:String, prop:String, i:Int) = withSpace(true, ownerId, spaceId, if (thingId.length() > 0) Some(thingId) else None) 
+  { implicit rc =>
     val resultOpt = for {
-      thing <- rc.thing;
       prop <- rc.prop;
-      propVal = DisplayPropVal(Some(thing), prop, None)
+      propVal = DisplayPropVal(rc.thing, prop, None)
     }
       yield views.html.showPropertyTemplate(rc, prop, propVal, i).toString.trim()
       

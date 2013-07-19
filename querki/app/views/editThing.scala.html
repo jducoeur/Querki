@@ -296,7 +296,7 @@
 		  // TODO: nasty abstraction break here. Do we need a Javascript library for generating ThingIds?
           var propThingId = "." + propId;
           numPropsShown = numPropsShown + 1;
-	      jsRoutes.controllers.Application.getPropertyEditor("@space.owner.toThingId", "@space.id.toThingId", "@thing.get.id.toThingId", propThingId, numPropsShown).ajax({
+	      jsRoutes.controllers.Application.getPropertyEditor("@space.owner.toThingId", "@space.id.toThingId", '@thing.map(_.id.toThingId).getOrElse("")', propThingId, numPropsShown).ajax({
 	        success: function (result) {
 	          var newElem = $(result);
 	          newElem.insertBefore("#_addPropertyButtonGroup");
@@ -445,6 +445,13 @@
           
           <div id="_createNewPropertyBox" style="display:none;">
             <p>Describe the new property to create, or press "Add an Existing Property" to use one that already exists.</p>
+            <select id="_newPropType">
+              <option value="">Choose the Property's type...</option>
+              @for(aType <- space.allTypes.values.filterNot(_.ifSet(InternalProp)(space)).toSeq.sortBy(_.displayName)) {
+                <option value="@aType.id.toThingId.toString">@aType.displayName</option>
+              }
+            </select>
+            <hr/>
             <p><input type="button" value="Add an Existing Property instead" id="_returnToExistingButton" class="btn btn-info"></p>
           </div>
         </div>
