@@ -101,6 +101,7 @@
           }
         </style>
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap-responsive.css")">
+        <link type="text/css" rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/jquery.selectboxit/3.6.0/jquery.selectBoxIt.css" />
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/manifest.css")">
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
         
@@ -110,6 +111,7 @@
         <script src="@routes.Assets.at("javascripts/jquery-ui-1.10.0.custom.js")"></script>
         <script src="@routes.Assets.at("javascripts/jquery.ui.menubar.js")"></script>
         <script src="@routes.Assets.at("javascripts/bootstrap.js")"></script>
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery.selectboxit/3.6.0/jquery.selectBoxIt.min.js"></script>
         <script src="@routes.Assets.at("javascripts/underscore-min.js")"></script>
         <script src="@routes.Assets.at("javascripts/jquery.autosize-min.js")"></script>
         <script src="@routes.Assets.at("javascripts/querki-common.js")"></script>
@@ -118,15 +120,17 @@
 
         @PageEventManager.addHeaders(rc, template)
 
-        <link rel="shortcut icon" href="@routes.Assets.at("images/favicon.ico")">
+        <link rel="shortcut icon" href="@routes.Assets.at("images/Capital.png")">
         
 		<script>
 		$(function() {
 		    // Bootstrap and jQuery UI both have conflicting .button functions. This is a
 		    // Bootstrap function to turn it into "btn" instead. See:
 		    // https://github.com/twitter/bootstrap/issues/6094
-		    var btn = $.fn.button.noConflict()
-		    $.fn.btn = btn
+//		    var btn = $.fn.button //.noConflict()
+//		    $.fn.btn = btn
+			// At this point, we are now preferring Bootstrap buttons instead, and disabling
+			// the jQuery UI ones.
 		    
 			$("#querkiBar").menubar({
 				autoExpand: false,
@@ -171,7 +175,7 @@
 				});
 			}
 			
-			finalSetup("@ownerId", "@spaceId");
+			finalSetup("@ownerId", "@spaceId", $('body'));
 		});
 		</script>
 		
@@ -228,7 +232,7 @@
                     <span class="icon-bar"></span>
                   </a>
                   
-	              <a class="brand" href="@routes.Application.index"><img src="@routes.Assets.at("images/Logo-Draft-White.png")"></a>
+	              <a class="brand" href="@routes.Application.index"><img src="@routes.Assets.at("images/logo-menubar.png")"></a>
 	              
 	              <div class="nav-collapse collapse">
 	                <ul class="nav">

@@ -9,6 +9,7 @@
 
 @import models.system._
 @import models.system.SystemSpace._
+@import models.system.OIDs.UrPropOID
 
 @import models.Property._
 
@@ -27,6 +28,17 @@
   // Disable if you are trying to edit something in the wrong Space.
   // At least, for now -- eventually, this will be legal, but will be copy-then-edit. 
   !isEdit || !isForeign
+}
+        
+@createCall(prop:Property[_,_], accessor:String) = {
+  @defining(FieldIds(None, prop)) { fieldIds =>
+        create("@{prop.id.toString}", "@{fieldIds.inputControlId}", @{accessor}());
+  }
+}
+
+@collExp(coll:Collection) = { data-collection="@{coll.id.toString}" }
+@collForType(aType:PType[_]) = @{
+  aType.requiredColl.map(collExp(_)).getOrElse("")
 }
 
 @propsInSpace(s:SpaceState) = {
@@ -57,13 +69,19 @@
     "revert-button"
 }
 
+@setTooltip(prop:Property[_,_]) = {
+  @defining(prop.getPropOpt(PropSummary)(space)) { summaryOpt =>
+    @if(summaryOpt.isDefined) { title="@{summaryOpt.get.render(prop.thisAsContext(rc)).raw}" }
+  }
+}
+
 @showProperty(prop:Property[_,_], v:DisplayPropVal, i:Int) = {
-  <div class="control-group @{if(v.isInherited) "inherited"}">
-    <label class="control-label">@Html(prop.getProp(PromptProp)(space).renderPlainOr(prop.getProp(NameProp)(space).renderPlain).raw)
+  <div id="propGroup-@i" class="control-group @{if(v.isInherited) "inherited"}">
+    <label class="control-label _withTooltip" @setTooltip(prop)>@Html(prop.getProp(PromptProp)(space).renderPlainOr(prop.getProp(NameProp)(space).renderPlain).raw)
       @if(v.hasInheritance) {
         &nbsp;&nbsp;<button data-empty="@v.emptyControlId" data-model-name="@v.inheritedFrom.get.displayName" data-edits="@v.inputControlId" class="@editButtonClass(v) btn-mini">&nbsp;</button>
       } else {
-        &nbsp;&nbsp;<button data-empty="@v.emptyControlId" data-edits="@v.inputControlId" class="trash-button btn-mini">&nbsp;</button>      
+        &nbsp;&nbsp;<button data-group="propGroup-@i" data-empty="@v.emptyControlId" data-edits="@v.inputControlId" class="trash-button btn-mini">&nbsp;</button>      
       }
     </label>
     <div class="controls">
@@ -115,12 +133,8 @@
         }
         
         function setButton(t, icon, title, cb) {
-	      t.button({
-	        icons: {
-	          primary: icon
-	        },
-	        text: false
-	      });
+		  t.html("<i class='" + icon + "'></i>");
+		  t.addClass("btn");
 	      t.attr("title", title);
 	      t.off("click");
 	      t.on("click", cb);          
@@ -134,7 +148,7 @@
 	        $inp.val("");
 	        $inp.attr("disabled", "disabled");
 	        setEmpty($(this), "true");
-	        setButton($(this), "ui-icon-pencil", "Edit", handleEditButton);   
+	        setButton($(this), "icon-pencil", "Edit", handleEditButton);   
           });
         }
       
@@ -145,20 +159,19 @@
 	        var modelName = $(this).data("model-name");
 	        $inp.attr("title", "Overriding " + modelName + "; click the Revert button to go back to the model's value");
 	        setEmpty($(this), "false");
-	        setButton($(this), "ui-icon-trash", "Revert", handleRevertButton);   
+	        setButton($(this), "icon-remove", "Revert", handleRevertButton);   
           });
         }
     
         $.fn.trashButton = function () {
           this.each(function () {
-	        setButton($(this), "ui-icon-trash", "Remove", handleTrashButton);   
+	        setButton($(this), "icon-trash", "Remove", handleTrashButton);   
           });
         }
         
         function handleTrashButton(evt) {
-          setEmpty($(this), "true");      
-          $("#redisplay").val("true");
-          $("#mainSubmit").submit();
+          var propGroup = viaField($(this), "group");
+          propGroup.remove();
         }
       
         function handleEditButton(evt) {
@@ -177,13 +190,13 @@
         
         $.fn.addListItemButton = function () {
           this.each(function () {
-            setButton($(this), "ui-icon-circle-plus", "Add Item", handleAddListItem);
+            setButton($(this), "icon-plus-sign", "Add Item", handleAddListItem);
           });
         }
         
         $.fn.deleteListItemButton = function () {
           this.each(function () {
-            setButton($(this), "ui-icon-circle-minus", "Delete Item", handleDeleteListItem);
+            setButton($(this), "icon-remove-sign", "Delete Item", handleDeleteListItem);
           });
         }
 
@@ -205,10 +218,10 @@
           newField.attr("name", templateField.data("basename") + "[" + curSize + "]");
           newField.removeClass("inputTemplate");
           newField.show();
-          var newLi = $("<li><span class=\"ui-icon ui-icon-arrowthick-2-n-s\"></span></li>");
+          var newLi = $("<li><span class=\"icon-move\"></span></li>");
           newLi.append(newField);
           var delButton = $("<button class=\"delete-item-button btn-mini\">&nbsp;</button>");
-          setButton(delButton, "ui-icon-circle-minus", "Delete Item", handleDeleteListItem);
+          setButton(delButton, "icon-remove-sign", "Delete Item", handleDeleteListItem);
           newLi.append(delButton);
           list.append(newLi);
           sizeField.val(curSize + 1);
@@ -289,24 +302,29 @@
         $("#_addExistingPropertyBox").show();
       }
       
+      function addPropertyGuts(propThingId) {
+        numPropsShown = numPropsShown + 1;
+	    jsRoutes.controllers.Application.getPropertyEditor("@space.owner.toThingId", "@space.id.toThingId", '@thing.map(_.id.toThingId).getOrElse("")', propThingId, numPropsShown).ajax({
+	      success: function (result) {
+	        var newElem = $(result);
+	        newElem.insertBefore("#_addPropertyButtonGroup");
+	        setupClasses(newElem);
+            finalSetup("@space.owner.toThingId", "@space.toThingId", newElem);
+	        closeAddProperty();
+	      },
+	      error: function (err) {
+	        showStatus("Unable to fetch property renderer!");
+	      }
+	    });      
+      }
+      
       function doAddProperty() {
         var propSelect = $("option:selected", $("#_propChooser"));
         var propId = propSelect.val();
         if (propId.length > 0) {
 		  // TODO: nasty abstraction break here. Do we need a Javascript library for generating ThingIds?
           var propThingId = "." + propId;
-          numPropsShown = numPropsShown + 1;
-	      jsRoutes.controllers.Application.getPropertyEditor("@space.owner.toThingId", "@space.id.toThingId", '@thing.map(_.id.toThingId).getOrElse("")', propThingId, numPropsShown).ajax({
-	        success: function (result) {
-	          var newElem = $(result);
-	          newElem.insertBefore("#_addPropertyButtonGroup");
-	          setupClasses(newElem);
-	          closeAddProperty();
-	        },
-	        error: function (err) {
-	          showStatus("Unable to fetch property renderer!");
-	        }
-	      });
+          addPropertyGuts(propThingId);
         } else {
           // TODO: weird situation here...
         }
@@ -322,27 +340,126 @@
 	      jsRoutes.controllers.Application.getPropertyDisplay("@space.owner.toThingId", "@space.id.toThingId", propThingId, "Display-Text").ajax({
 	        success: function (result) {
 	          $("#_propInfo").html("<p><b>" + propName + "</b></p>" + result);
-	          $("#_addExistingPropertyButton").removeProp("disabled");
+	          $("#_addExistingPropertyButton").prop("disabled", false);
 	        },
 	        error: function (err) {
 	          showStatus("Unable to fetch property info!");
-	          $("#_addExistingPropertyButton").prop("disabled", "disabled");
+	          $("#_addExistingPropertyButton").prop("disabled", true);
 	        }
 	      });
         } else {
           $("#_propInfo").text(" ");
-          $("#_addExistingPropertyButton").prop("disabled", "disabled");
+          $("#_addExistingPropertyButton").prop("disabled", true);
+        }
+      }
+      
+      function newPropName() { return $("#_newPropName").val(); }
+      function newPropTypeSelection() { return $("#_newPropType :selected"); }
+      function newPropType() { return newPropTypeSelection().val(); }
+      function newPropLinkModel() { return $("#_newPropLinkModel :selected").val(); }
+      function newPropColl() { return $("#_newPropColl .active").val(); }
+      function newPropSummary() { return $("#_newPropSummary").val(); }
+      function newPropDetails() { return $("#_newPropDetails").val(); }
+      
+      function createIsLegal() {
+        if (newPropName().length > 0 &&
+            newPropType().length > 0) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+      
+      function checkCreateButton() {
+        if (createIsLegal()) {
+          $("#_createNewPropertyButton").prop("disabled", false);
+        } else {
+          $("#_createNewPropertyButton").prop("disabled", true);
+        }
+      }
+      
+      function createPropertyFields() {
+        var fieldNum = 0;
+        var result = {}
+        
+        function create(propId, inputId, propVal) {
+          if (propVal.length > 0) {
+            var fieldNumName = "field[" + fieldNum + "]";
+            result[fieldNumName] = propId;
+            fieldNum = fieldNum + 1;
+            result[inputId] = propVal;
+          }
+        }
+        
+        @createCall(NameProp, "newPropName")
+        @createCall(TypeProp, "newPropType")
+        @createCall(CollectionProp, "newPropColl")
+        @createCall(PropSummary, "newPropSummary")
+        @createCall(PropDetails, "newPropDetails")
+        @createCall(LinkModelProp, "newPropLinkModel")
+        
+        var serialized = $.param(result);
+        return serialized;
+      }
+      
+      function doCreateProperty() {
+        if (!createIsLegal())
+          return false;
+          
+        jsRoutes.controllers.Application.doCreateThing("@space.owner.toThingId", "@space.id.toThingId").ajax({
+          data: "API=true&model=@{UrPropOID.toString}&" + createPropertyFields(),
+	      success: function (result) {
+	        addPropertyGuts(result);
+	      },
+	      error: function (err) {
+	        alert("Error: " + err);
+	      }
+	    });
+      }
+      
+      function checkIfLinkType() {
+        var propType = newPropType();
+        if (propType == "@NameType.id.toString" || propType == "@TagSetType.id.toString" || propType == "@LinkType.id.toString") {
+          $("#_newPropLinkModel").show();
+        } else {
+          $("#_newPropLinkModel").hide();        
+        }
+      }
+      
+      function checkTypeCollection() {
+        var typeColl = newPropTypeSelection().data("collection");
+        if (typeof typeColl === "undefined") {
+          $("#_newPropColl button").prop("disabled", false);
+          $("#_newPropOne").addClass("active");
+        } else {
+          // The selected Type has a required Collection, so disable the rest:
+          $("#_newPropColl button").each(function () {
+            var anOption = $(this);
+            if (anOption.val() == typeColl) {
+              anOption.prop("disabled", false);
+              anOption.addClass("active");
+            } else {
+              anOption.prop("disabled", true);
+              anOption.removeClass("active");
+            }
+          });
         }
       }
     
       $(function() {
         $("#_addPropertyButton").click(beginAddProperty);
         $("#_cancelAddPropertyButton").click(closeAddProperty);
+        $("#_cancelCreatePropertyButton").click(closeAddProperty);
         $("#_propChooser").change(handlePropChoice);
         $("#_addExistingPropertyButton").prop("disabled", "disabled");
         $("#_addExistingPropertyButton").click(doAddProperty);
         $("#_createPropertyButton").click(showCreateProperty);
         $("#_returnToExistingButton").click(showAddProperty);
+        $("#_createNewPropertyButton").prop("disabled", true);
+        $("#_createNewPropertyButton").click(doCreateProperty);
+        $("#_newPropType, #_newPropName").change(checkCreateButton);
+        $("#_newPropType").change(checkIfLinkType);
+        $("#_newPropType").change(checkTypeCollection);
       });
       
       // **************************************
@@ -424,7 +541,7 @@
         <div id="_addPropertyBox" class="well container" style="display:none; clear:both">
           <div id="_addExistingPropertyBox">
             <p>Choose a property from this list of existing properties, or press "Create a New Property" to do something different.</p>
-            <div class="span3">
+            <div class="span4">
               <p class="offset1">
                 <select id="_propChooser" data-placeholder="Choose a Property...">
                   <option value="">Choose a Property...</option>
@@ -438,19 +555,38 @@
               <hr/>
               <p><input type="button" value="Create a New Property instead" id="_createPropertyButton" class="btn btn-info"></p>
             </div>
-            <div class="span8">
+            <div class="span7">
               <p id="_propInfo">&nbsp;</p>
             </div>
           </div>
           
           <div id="_createNewPropertyBox" style="display:none;">
             <p>Describe the new property to create, or press "Add an Existing Property" to use one that already exists.</p>
+            <p><input type="text" id="_newPropName" placeholder="Name (required)..."></p>
             <select id="_newPropType">
-              <option value="">Choose the Property's type...</option>
-              @for(aType <- space.allTypes.values.filterNot(_.ifSet(InternalProp)(space)).toSeq.sortBy(_.displayName)) {
-                <option value="@aType.id.toThingId.toString">@aType.displayName</option>
-              }
+                <option value="">Choose the Property's type (required)...</option>
+                @for(aType <- space.allTypes.values.filterNot(_.ifSet(InternalProp)(space)).toSeq.sortBy(_.displayName)) {
+                  <option value="@aType.id.toString" @collForType(aType)>@aType.displayName</option>
+                }
             </select>
+            <select id="_newPropLinkModel" style="display:none;">
+                <option value="">Link to which Model? (optional)...</option>
+                @for(aModel <- space.allModels.toSeq.sortBy(_.displayName)) {
+                  <option value="@aModel.id.toString">@aModel.displayName</option>
+                }
+            </select>
+		    <div id="_newPropColl" class="btn-group offset1" data-toggle="buttons-radio">
+			    <button id="_newPropOne" type="button" class="btn btn-primary active" value="@{ExactlyOne.id.toString}">Exactly One</button>
+			    <button id="_newPropOptional" type="button" class="btn btn-primary" value="@{Optional.id.toString}">Optional</button>
+			    <button id="_newPropList" type="button" class="btn btn-primary" value="@{QList.id.toString}">List</button>
+			    <button id="_newPropSet" type="button" class="btn btn-primary" value="@{QSet.id.toString}">Set</button>
+			</div>
+			<p><input type="text" id="_newPropSummary" class="span8" placeholder="One-line summary (optional)..."></p>
+			<p><textarea id="_newPropDetails" class="_largeTextEdit span8" placeholder="Detailed description (optional)..."></textarea></p>
+            <p class="offset1">
+                <input type="button" value="Create" id="_createNewPropertyButton" class="btn btn-info">
+                <input type="button" value="Cancel" id="_cancelCreatePropertyButton" class="btn">
+            </p>
             <hr/>
             <p><input type="button" value="Add an Existing Property instead" id="_returnToExistingButton" class="btn btn-info"></p>
           </div>

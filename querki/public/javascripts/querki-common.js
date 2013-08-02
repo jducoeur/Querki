@@ -96,10 +96,17 @@ function finishStatus(msg) {
         
 }( jQuery ));
 
-function finalSetup(ownerId, spaceId) {			
-  $("._tagSetInput").asManifest(ownerId, spaceId);
-  $(".controls ._largeTextEdit").addClass("span10");
-  $("._largeTextEdit").autosize();
-  $(".controls .mf_container").addClass("span10");
-  $(".controls input[type='text']").filter(".propEditor").addClass("span10");
+function finalSetup(ownerId, spaceId, root) {
+  // For now, we're specifically omitting selects inside list editors, because they aren't rendering right.
+  // TODO: Fix this!
+  // TODO: SelectBoxIt is nice in principle, but I keep hitting annoying edge cases. So disabling it for now.
+  //$("select").filter(":not(.sortableList select)").selectBoxIt();
+  
+  root.find("._withTooltip").tooltip({ delay: 250 });
+  
+  root.find("._tagSetInput").asManifest(ownerId, spaceId);
+  root.find(".controls ._largeTextEdit").addClass("span10");
+  root.find("._largeTextEdit").autosize();
+  root.find(".controls .mf_container").addClass("span10");
+  root.find(".controls input[type='text']").filter(".propEditor").addClass("span10");
 }

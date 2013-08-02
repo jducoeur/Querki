@@ -109,6 +109,7 @@ class SpaceManager extends Actor {
     }
   }
   
+  // TODO: this should be cached!!!!
   private def getSpaceByName(ownerId:OID, name:String):Option[OID] = {
     DB.withTransaction(dbName(System)) { implicit conn =>
       val rowOption = SQL("""

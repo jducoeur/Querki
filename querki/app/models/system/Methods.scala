@@ -446,7 +446,7 @@ link as a button. It expects one parameter, which will be the label of the butto
   val numParams = 1
   
   def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem = {
-    <a class="_linkButton" href={url}>{params(0).raw}</a>
+    <a class="btn btn-primary" href={url}>{params(0).raw}</a>
   }
 }
 
@@ -460,7 +460,7 @@ hover text to display as a tooltip.""")))
   val numParams = 2
   
   def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem = {
-    <a class="_iconButton" href={url} data-icon={params(0).raw}>{params(1).raw}</a>
+    <a class="btn btn-mini btn-primary" href={url} title={params(1).raw}><i class={params(0).raw + " icon-white"}></i></a>
   }
 }
 

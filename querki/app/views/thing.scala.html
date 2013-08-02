@@ -36,7 +36,12 @@
 	      var target = $(evt.target);
 	      var prop = target.data("propid");
 	      var thingId = target.data("thing");
-	      var serialized = target.serialize();
+	      var serialized;
+	      if (target.hasClass("radioBtn")) {
+	        serialized = target.prop("name") + "=" + target.prop("value");
+	      } else {
+	        serialized = target.serialize();
+	      }
 	      console.log("Serialized value is " + serialized);
 	      jsRoutes.controllers.Application.setProperty2("@space.owner.toThingId", "@space.id.toThingId", thingId).ajax({
 	        data: "addedProperty=&model=&field[0]=" + prop + "&" + serialized,
@@ -49,23 +54,9 @@
 	      });
 	      showStatus("Saving...");
         }
-		
-		$.fn.makeIconButton = function () {
-		  this.each(function () {
-		    var btn = $(this);
-		    btn.button({
-		      icons: {
-		        primary: btn.data("icon")
-		      },
-		      text: false
-		    });
-		  });
-		}
 				
 		$(".propEditor").change(updateValue);
-		$(".buttonset").buttonset();
-		$("._linkButton").button();
-		$("._iconButton").makeIconButton();
+		$(".propEditor .radioBtn").click(updateValue);
       });
     </script>
     

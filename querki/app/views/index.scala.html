@@ -7,21 +7,18 @@
 
 @main(QuerkiTemplate.Index, "Welcome to Querki", rc) {
 	
+    <div class="hero-unit">
+      <h1>Welcome to <img src="@routes.Assets.at("images/logo-green.png")"></h1>
+
 	@user match {
 	  case None => {
-	    <div class="hero-unit">
-	      <h1>Welcome to Querki!</h1>
-
 		  <a href="/login" class="btn btn-primary btn-large">Log In</a>
-		</div>
 	  }
       case Some(u) => {
-	    <div class="hero-unit">
-	      <h1>Welcome back, @{u.name}! (#@u.id)</h1>
-
 		  <a href="/spaces" class="btn btn-primary">Show my Spaces</a>
-		</div>
 	  }
 	}
+	
+	</div>
 
 }

@@ -63,7 +63,7 @@ trait CodeType {
    */
   class IntType(tid:OID) extends SystemType[Int](tid,
       toProps(
-        setName("Type-Whole-Number")
+        setName("Whole Number Type")
         )) with SimplePTypeBuilder[Int]
   {
     def doDeserialize(v:String) = java.lang.Integer.parseInt(v)
@@ -116,7 +116,7 @@ trait CodeType {
    */
   class TextType(tid:OID) extends TextTypeBase(tid,
       toProps(
-        setName("Type-Text")
+        setName("Text Type")
         )) with PTypeBuilder[QLText,String] {
   }
   object TextType extends TextType(TextTypeOID)
@@ -135,7 +135,7 @@ trait CodeType {
  */
 class QLType(tid:OID) extends TextTypeBase(tid,
     toProps(
-      setName("Type QL")
+      setName("QL Expression Type")
     )) with PTypeBuilder[QLText,String] 
 {
   override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem =
@@ -164,7 +164,7 @@ object QLType extends QLType(QLTypeOID)
    */
   class YesNoType(tid:OID) extends SystemType[Boolean](tid,
       toProps(
-        setName("Type-YesNo")
+        setName("YesNo Type")
         )) with SimplePTypeBuilder[Boolean]
   {
     // It turns out that Java's parseBoolean is both too tolerant of nonsense, and
@@ -258,6 +258,8 @@ object QLType extends QLType(QLTypeOID)
     override protected def doFromUser(v:String):String = {
       if (v.length() == 0)
         throw new Exception("Names must have non-zero length")
+      else if (v.length() > 254)
+        throw new Exception("Names should not be excessively long")
       else if (v.exists(c => !c.isLetterOrDigit && c != '-' && c != ' ' && c != '/'))
         throw new Exception("Names may only contain letters, digits, dashes and spaces")
       else
@@ -284,10 +286,10 @@ object QLType extends QLType(QLTypeOID)
       
     override def matches(left:String, right:String):Boolean = equalNames(left, right)
   }
-  object NameType extends NameType(NameTypeOID, "Type-Name") {
+  object NameType extends NameType(NameTypeOID, "Name Type") {
     def doRender(context:ContextBase)(v:String) = Wikitext(toDisplay(v))    
   }
-  object TagSetType extends NameType(TagSetOID, "Tag Set") {
+  object TagSetType extends NameType(TagSetOID, "Tag Set Type") {
     override def requiredColl:Option[Collection] = Some(QSet)
     
     // TODO: this should probably get refactored with LinkType? They're different ways of
@@ -309,7 +311,7 @@ object QLType extends QLType(QLTypeOID)
    */
   class LinkType(tid:OID) extends SystemType[OID](tid,
       toProps(
-        setName("Type-Link")
+        setName("Link Type")
         )) with SimplePTypeBuilder[OID] with NameableType
   {
     def doDeserialize(v:String) = OID(v)
@@ -390,7 +392,7 @@ object QLType extends QLType(QLTypeOID)
    */
   class LargeTextType(tid:OID) extends TextTypeBase(tid,
       toProps(
-        setName("Type-Large-Text")
+        setName("Large Text Type")
         )) with PTypeBuilder[QLText,String] {
     override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem =
       CommonInputRenderers.renderLargeText(prop, state, currentValue, v, this)
@@ -412,7 +414,7 @@ case class PlainText(text:String) {
   
 abstract class PlainTextType(tid:OID) extends SystemType[PlainText](tid,
     toProps(
-      setName("Plain-Text")
+      setName("Plain Text Type")
     )) with PTypeBuilder[PlainText,String]
 {
   def doDeserialize(v:String) = PlainText(v)
@@ -428,7 +430,7 @@ object PlainTextType extends PlainTextType(PlainTextOID)
 
 class InternalMethodType(tid:OID) extends SystemType[String](tid,
     toProps(
-      setName("Internal Method")
+      setName("Internal Method Type")
     )) with SimplePTypeBuilder[String]
 {
   def boom = throw new Exception("InternalMethodType cannot be used conventionally. It simply wraps code.")
@@ -445,7 +447,7 @@ object InternalMethodType extends InternalMethodType(InternalMethodOID)
 import java.net.URL
 class ExternalLinkType(tid:OID) extends SystemType[URL](tid,
     toProps(
-      setName("URL")
+      setName("URL Type")
     )) with PTypeBuilder[URL, String]
 {
   def doDeserialize(v:String) = new URL(v)

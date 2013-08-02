@@ -58,6 +58,16 @@ class Space extends Actor {
   import models.system.SystemSpace.{State => systemState, _} 
   
   def id = OID(self.path.name)
+  /**
+   * TODO: now that I understand Akka better, this is probably better reimplemented as a
+   * local parameter of the Receive function. That is, we should start in a Loading
+   * state, stashing incoming messages to begin with, and do each DB load (from Spaces
+   * and then from the Space table) as its own message, with a DBLoader child Actor
+   * driving the load process. Only once we have constructed the SpaceState do we
+   * become(ready(state)), and each mutation does a become(ready(newState)). That
+   * eliminates this var, and is more true to Akka style. (It also provides us with
+   * a clearer approach for dealing with sending out "Loading" indications.) 
+   */
   var _currentState:Option[SpaceState] = None
   // This should return okay any time after preStart:
   def state = {
@@ -76,6 +86,9 @@ class Space extends Actor {
 
   /**
    * This is a var instead of a lazy val, because the name can change at runtime.
+   * 
+   * TODO: bundle this into the overall state parameter, as described in _currentState.
+   * Is there any info here that isn't part of the SpaceState?
    */
   var _currentSpaceInfo:Option[SqlRow] = None
   /**
@@ -358,6 +371,9 @@ class Space extends Actor {
 	        }
 	        sender ! ThingFound(thingId, state)
 	      }
+	      // TODO: this seems ridiculously over-conservative. Is there any reason to do this other than
+	      // when we get a modify on the SpaceState? It does explain why I'm seeing those extra selects in
+	      // the log.
           fetchSpaceInfo()
         }
       } getOrElse {

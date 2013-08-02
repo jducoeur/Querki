@@ -104,17 +104,17 @@ object HtmlRenderer {
     def oneButton(label:String, value:String, checked:Boolean):NodeSeq = {
       def inputElem = {
         if (checked)
-          <input type="radio" checked="checked" value={value} />
+          <button type="button" class="radioBtn btn btn-primary active" value={value}>{label}</button>
         else
-          <input type="radio" value={value} />        
+          <button type="button" class="radioBtn btn btn-primary" value={value}>{label}</button>
       }
       val id = currentValue.inputControlId + "-" + label
       val name = currentValue.inputControlId
       // Note that, to work for interactive controls, the special AJAX properties must be on the individual buttons!
-      addEditorAttributes(inputElem, name, prop.id, id, currentValue.on.map(_.id.toThingId)) ++ <label for={id}>{label}</label>
+      addEditorAttributes(inputElem, name, prop.id, id, currentValue.on.map(_.id.toThingId)) // ++ <label for={id}>{label}</label>
     }
     
-      <span class="buttonset" name={currentValue.inputControlId + "-wrapper"}>{oneButton("Yes", "true", (isSet && v))}{oneButton("Maybe", "maybe", (!isSet))}{oneButton("No", "false", (isSet && !v))}</span>
+      <span class="btn-group" data-toggle="buttons-radio" name={currentValue.inputControlId + "-wrapper"}>{oneButton("Yes", "true", (isSet && v))}{oneButton("Maybe", "maybe", (!isSet))}{oneButton("No", "false", (isSet && !v))}</span>
   }
   
   def renderOptLink(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Elem = {

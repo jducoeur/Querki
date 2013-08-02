@@ -83,7 +83,7 @@ object Commas extends ThingState(CommasMethodOID, systemOID, RootOID,
 object DisplayThingTree extends ThingState(DisplayThingTreeOID, systemOID, RootOID,
     toProps(
       setName("_displayThingTree"),
-      ApplyMethod("""""[[_if(_isModel, ""{{_modelInTree: [[_createInstanceLink -> _iconButton(""ui-icon-plus"", ""Create an Instance"")]] "")]]____[[_if(_isModel, ""}}"")]]
+      ApplyMethod("""""[[_if(_isModel, ""{{_modelInTree:"")]]____[[_if(_isModel, "" [[_createInstanceLink -> _iconButton(""icon-plus-sign"", ""Create an Instance"")]]}}"")]]
 {{indent:[[_children -> 
   _sort -> 
   _displayThingTree]]

@@ -352,9 +352,14 @@ disallow: /
         PropList.inheritedProps(None, UrProp)(rc.state.get))
   }
   
-  def doCreateThing(ownerId:String, spaceId:String, subCreate:Option[Boolean]) = editThingInternal(ownerId, spaceId, None, false)
+  def doCreateThing(ownerId:String, spaceId:String, subCreate:Option[Boolean]) = {
+    editThingInternal(ownerId, spaceId, None, false)
+  }
   
-  def editThingInternal(ownerId:String, spaceId:String, thingIdStr:Option[String], partial:Boolean) = withSpace(true, ownerId, spaceId, thingIdStr) { implicit rc =>
+  def editThingInternal(ownerId:String, spaceId:String, thingIdStr:Option[String], partial:Boolean, 
+      successCb:Option[(SpaceState, Thing, OID) => SimpleResult[_]] = None,
+      errorCb:Option[(String, Thing, List[FormFieldInfo]) => SimpleResult[_]] = None) = 
+  withSpace(true, ownerId, spaceId, thingIdStr) { implicit rc =>
     implicit val request = rc.request
     implicit val state = rc.state.get
     val user = rc.requester.get
@@ -365,7 +370,7 @@ disallow: /
       errors => doError(routes.Application.space(ownerId, spaceId), "Something went wrong"),
       info => {
         val context = QLRequestContext(rc)
-        
+    
         // Whether we're creating or editing depends on whether thing is specified:
         val thing = rc.thing
         val rawProps = info.fields map { propIdStr => 
@@ -387,7 +392,12 @@ disallow: /
         
         val kind = oldModel.kind
         
-        val makeAnother = rawForm("makeAnother").value.map(_ == "true").getOrElse(false)
+        def formFlag(fieldName:String):Boolean = {
+          rawForm(fieldName).value.map(_ == "true").getOrElse(false)
+        }
+        
+        val makeAnother = formFlag("makeAnother")        
+        val fromAPI = formFlag("API")
         
         def makeProps(propList:List[FormFieldInfo]):PropList = {
           val modelProps = PropList.inheritedProps(thing, oldModel)
@@ -450,24 +460,44 @@ disallow: /
         
             askSpaceMgr[ThingResponse](spaceMsg) {
               case ThingFound(thingId, newState) => {
-                val thing = newState.anything(thingId).get
-        
-                if (makeAnother)
-                  showEditPage(rc.copy(state = Some(newState)), oldModel, PropList.inheritedProps(None, oldModel)(newState))
-                else if (rc.isTrue("subCreate")) {
-                  Ok(views.html.subCreate(rc, thing));
-                } else
-                  Redirect(routes.Application.thing(ownerName(newState), newState.toThingId, thing.toThingId))
+                // TODO: the default pathway described here really ought to be in the not-yet-used callback, and get it out of here.
+                // Indeed, all of this should be refactored:
+                successCb.map(cb => cb(newState, oldModel, thingId)).getOrElse {
+                  val thing = newState.anything(thingId).get
+                  
+                  if (makeAnother)
+                    showEditPage(rc.copy(state = Some(newState)), oldModel, PropList.inheritedProps(None, oldModel)(newState))
+                  else if (rc.isTrue("subCreate")) {
+                    Ok(views.html.subCreate(rc, thing));
+                  } else if (fromAPI) {
+                    // In the AJAX case, we just send back the OID of the Thing:
+                    Ok(thingId.toThingId.toString)
+                  } else {
+                    Redirect(routes.Application.thing(ownerName(newState), newState.toThingId, thing.toThingId))
+                  }
+                }
               }
               case ThingFailed(error, msg, stateOpt) => {
-                showEditPage(rc, oldModel, makeProps(rawProps), Some(msg))
+                errorCb.map(cb => cb(msg, oldModel, rawProps)).getOrElse {
+                  if (fromAPI) {
+                    NotAcceptable(msg)
+                  } else {
+                    showEditPage(rc, oldModel, makeProps(rawProps), Some(msg))
+                  }
+                }
               }
             }
           } else {
             // One or more values didn't parse against their PTypes. Give an error and continue:
             val badProps = illegalVals.map { info => info.prop.displayName }
             val errorMsg = "Illegal values for " + badProps.mkString
-            showEditPage(rc, oldModel, makeProps(rawProps), Some(errorMsg))
+            errorCb.map(cb => cb(errorMsg, oldModel, rawProps)).getOrElse {
+              if (fromAPI) {
+                NotAcceptable(errorMsg)
+              } else {
+                showEditPage(rc, oldModel, makeProps(rawProps), Some(errorMsg))
+              }
+            }
           }
         }
       }      
@@ -811,7 +841,8 @@ disallow: /
         routes.javascript.Application.setProperty,
         routes.javascript.Application.setProperty2,
         routes.javascript.Application.getPropertyDisplay,
-        routes.javascript.Application.getPropertyEditor
+        routes.javascript.Application.getPropertyEditor,
+        routes.javascript.Application.doCreateThing
       )
     ).as("text/javascript")
   }
