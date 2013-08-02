@@ -123,6 +123,7 @@ object OIDs {
   val AllPropsThingOID = sysId(84)
   val PropSummaryOID = sysId(85)
   val PropDetailsOID = sysId(86)
+  val CountMethodOID = sysId(87)
 }
 
 /**
@@ -190,7 +191,8 @@ object SystemSpace {
       EditOrElseMethod,
       AllPropsMethod,
       PropSummary,
-      PropDetails)
+      PropDetails,
+      CountMethod)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, Commas, DisplayThingTree, AllThings, AllProps)

@@ -913,6 +913,16 @@ object IsDefinedMethod extends SingleContextMethod(IsDefinedOID,
   }
 }
 
+object CountMethod extends SingleContextMethod(CountMethodOID,
+    toProps(
+      setName("_count"),
+      DisplayTextProp("_count produces the number of elements in the received Collection")))
+{
+  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, paramsOpt:Option[Seq[QLPhrase]]):QValue = {
+    ExactlyOne(IntType(partialContext.value.cv.size))
+  }
+}
+
 // TODO: this code is pretty damned Bootstrap-specific, which by definition is too HTML-specific. We should probably
 // replace it with something that is much more neutral -- simple label/control styles -- and have client-side code
 // that rewrites it appropriately for the UI in use.
