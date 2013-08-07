@@ -36,6 +36,8 @@ import SpaceError._
 
 import MIMEType.MIMEType
 
+import querki.evolutions.Evolutions
+
 /**
  * The Actor that encapsulates a Space.
  * 
@@ -109,6 +111,7 @@ class Space extends Actor {
   }
   def name = spaceInfo.get[String]("name").get
   def owner = OID(spaceInfo.get[Long]("owner").get)
+  def version = spaceInfo.get[Int]("version").get
   
   def canRead(who:User, thingId:OID):Boolean = state.canRead(who, thingId)
   
@@ -117,6 +120,11 @@ class Space extends Actor {
   def canEdit(who:User, thingId:OID):Boolean = state.canEdit(who, thingId)
   
   def loadSpace() = {
+    
+    // NOTE: this can take a long time! This is the point where we evolve the Space to the
+    // current version:
+    Evolutions.checkEvolution(id, version)
+    
     // TODO: we need to walk up the tree and load any ancestor Apps before we prep this Space
     DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
       // The stream of all of the Things in this Space:
@@ -482,6 +490,8 @@ object Space {
   def historyTable(id:OID) = "h" + sid(id)
   // The name of the Space's Attachments Table
   def attachTable(id:OID) = "a" + sid(id)
+  // The name of a backup for the Thing Table
+  def backupTable(id:OID, version:Int) = thingTable(id) + "_Backup" + version
 
   /**
    * A Map of Things, suitable for passing into a SpaceState.
@@ -492,11 +502,17 @@ object Space {
   
   /**
    * The intent here is to use this with queries that use the thingTable. You can't use
-   * on()-style parameters for table names, so we need to work around that.
+   * on()-style parameters for table names (because on() quotes the params in a way that makes
+   * MySQL choke), so we need to work around that.
    * 
    * You can always use this in place of ordinary SQL(); it is simply a no-op for ordinary queries.
+   * 
+   * If you need to use the {bname} parameter, you must pass in a version number.
    */
-  def SpaceSQL(spaceId:OID, query:String):SqlQuery = SQL(query.replace("{tname}", thingTable(spaceId)))
+  def SpaceSQL(spaceId:OID, query:String, version:Int = 0):SqlQuery = {
+    val replQuery = query.replace("{tname}", thingTable(spaceId)).replace("{bname}", backupTable(spaceId, version))
+    SQL(replQuery)
+  }
   def createThingInSql(thingId:OID, spaceId:OID, modelId:OID, kind:Int, props:PropMap, serialContext:SpaceState)(implicit conn:java.sql.Connection) = {
     SpaceSQL(spaceId, """
         INSERT INTO {tname}
