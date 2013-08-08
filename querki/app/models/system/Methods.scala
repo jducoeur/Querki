@@ -616,14 +616,37 @@ With no parameters, _sort sorts the elements of the received List alphabetically
 """)))
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
-    // TODO: there is obviously a refactoring screaming to break free here, but it involves some fancy
-    // type math. How do we lift things so that we can do QList.from() an arbitrary PType? (Remember that
-    // it expects a PTypeBuilder, *and* requires that the input Iterable be of the expected RT.)
+    
+    implicit val s = context.state
+    implicit val rc = context.request
+
+    // TODO: this is awfully inefficient -- we're recomputing the processPhrase repeatedly during
+    // the sort process. We should probably instead map the parameter over the list, and then
+    // sort using the results:
+    def thingSortFunc(left:Thing, right:Thing):Boolean = {
+      val sortResult =
+        for (
+            params <- paramsOpt;
+            leftResult = context.parser.get.processPhrase(params(0).ops, left.thisAsContext).value;
+            rightResult = context.parser.get.processPhrase(params(0).ops, right.thisAsContext).value;
+            if (leftResult.pType == rightResult.pType);
+            // If the two values are equal, fall through to the default:
+            if (!leftResult.pType.matches(leftResult.first, rightResult.first))
+          )
+          yield leftResult.pType.comp(context)(leftResult.first, rightResult.first)
+          
+      // Default to sorting by displayName if anything doesn't work correctly:
+      sortResult.getOrElse(left.displayName < right.displayName)
+    }
+    
     context.value.pType match {
       case LinkType => {
         val start = context.value.cv.toSeq
         val asThings = start.map(elemV => context.state.anything(LinkType.get(elemV))).flatten
-        val sortedOIDs = asThings.sortWith((left, right) => left.displayName < right.displayName).map(_.id)
+        val sortedOIDs = asThings.sortWith(thingSortFunc).map(_.id)
+        // TODO: there is obviously a refactoring screaming to break free here, but it involves some fancy
+        // type math. How do we lift things so that we can do QList.from() an arbitrary PType? (Remember that
+        // it expects a PTypeBuilder, *and* requires that the input Iterable be of the expected RT.)
         QList.from(sortedOIDs, LinkType)
       }
       case TagSetType => {

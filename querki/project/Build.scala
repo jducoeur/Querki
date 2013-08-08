@@ -17,7 +17,8 @@ object ApplicationBuild extends Build {
       "org.scalatest" %% "scalatest" % "2.0.M5b" % "test",
       "javax.mail" % "javax.mail-api" % "1.5.0",
       "com.sun.mail" % "smtp" % "1.5.0",
-      "com.sun.mail" % "mailapi" % "1.5.0"
+      "com.sun.mail" % "mailapi" % "1.5.0",
+      "com.github.nscala-time" %% "nscala-time" % "0.4.2"
     )
     
     val main = play.Project(appName, appVersion, appDependencies).settings(

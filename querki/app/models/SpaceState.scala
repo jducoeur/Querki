@@ -5,6 +5,8 @@ import system._
 
 import play.api.Logger
 
+import com.github.nscala_time.time.Imports._
+
 import OIDs._
 
 import Thing._
@@ -33,13 +35,14 @@ case class SpaceState(
     pf:PropFetcher,
     owner:OID,
     name:String,
+    mt:DateTime,
     // TODO: in principle, this is a List[SpaceState] -- there can be multiple ancestors:
     app:Option[SpaceState],
     types:Map[OID, PType[_]],
     spaceProps:Map[OID, Property[_,_]],
     things:Map[OID, ThingState],
     colls:Map[OID, Collection]) 
-  extends Thing(s, s, m, Kind.Space, pf) 
+  extends Thing(s, s, m, Kind.Space, pf, mt) 
 {
   // Walks up the App tree, looking for the specified Thing of the implied type:
   // IMPORTANT: note that the OID and ThingId versions of these methods are inconsistent in their

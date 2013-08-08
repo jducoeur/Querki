@@ -20,6 +20,9 @@ import anorm._
 import play.api.db._
 import play.api.Play.current
 
+// nscala-time
+import com.github.nscala_time.time.Imports._
+
 import Kind._
 import Thing._
 
@@ -37,6 +40,8 @@ import SpaceError._
 import MIMEType.MIMEType
 
 import querki.evolutions.Evolutions
+
+import modules.time.TimeModule._
 
 /**
  * The Actor that encapsulates a Space.
@@ -143,7 +148,7 @@ class Space extends Actor {
       
       // Now load each kind. We do this in order, although in practice it shouldn't
       // matter too much so long as Space comes last:
-      def getThingStream[T <: Thing](kind:Int)(builder:(OID, OID, PropMap) => T):Stream[T] = {
+      def getThingStream[T <: Thing](kind:Int)(builder:(OID, OID, PropMap, DateTime) => T):Stream[T] = {
         streamsByKind.get(kind).getOrElse(Stream.Empty).map({ row =>
           // This is a critical catch, where we log load-time errors. But we don't want to
           // raise them to the user, so objects that fail to load are (for the moment) quietly
@@ -153,7 +158,13 @@ class Space extends Actor {
           // But they should generally be considered internal errors.
           try {
             val propMap = Thing.deserializeProps(row.get[String]("props").get, curState)
-            Some(builder(OID(row.get[Long]("id").get), OID(row.get[Long]("model").get), propMap))
+            val modTime = row.get[DateTime]("modified").get
+            Some(
+              builder(
+                OID(row.get[Long]("id").get), 
+                OID(row.get[Long]("model").get), 
+                propMap,
+                modTime))
           } catch {
             case error:Exception => {
               // TODO: this should go to a more serious error log, that we pay attention to. It
@@ -165,7 +176,7 @@ class Space extends Actor {
         }).flatten
       }
       
-      def getThings[T <: Thing](kind:Int)(builder:(OID, OID, PropMap) => T):Map[OID, T] = {
+      def getThings[T <: Thing](kind:Int)(builder:(OID, OID, PropMap, DateTime) => T):Map[OID, T] = {
         val tStream = getThingStream(kind)(builder)
         (Map.empty[OID, T] /: tStream) { (m, t) =>
           try {
@@ -179,13 +190,14 @@ class Space extends Actor {
         }
       }
       
-      val spaceStream = getThingStream(Kind.Space) { (thingId, modelId, propMap) =>
+      val spaceStream = getThingStream(Kind.Space) { (thingId, modelId, propMap, modTime) =>
         new SpaceState(
              thingId,
              modelId,
              () => propMap,
              owner,
              name,
+             modTime,
              Some(systemState),
              // TODO: dynamic PTypes
              Map.empty[OID, PType[_]],
@@ -211,6 +223,7 @@ class Space extends Actor {
               ),
             owner,
             name,
+            modules.time.TimeModule.epoch,
             Some(systemState),
             Map.empty[OID, PType[_]],
             Map.empty[OID, Property[_,_]],
@@ -221,7 +234,7 @@ class Space extends Actor {
         } else
           spaceStream.head
       
-      val loadedProps = getThings(Kind.Property) { (thingId, modelId, propMap) =>
+      val loadedProps = getThings(Kind.Property) { (thingId, modelId, propMap, modTime) =>
         val typ = systemState.typ(TypeProp.first(propMap))
         // This cast is slightly weird, but safe and should be necessary. But I'm not sure
         // that the PTypeBuilder part is correct -- we may need to get the RT correct.
@@ -231,16 +244,16 @@ class Space extends Actor {
         // TODO: this feels wrong. coll.implType should be good enough, since it is viewable
         // as Iterable[ElemValue] by definition, but I can't figure out how to make that work.
         val boundColl = coll.asInstanceOf[Collection]
-        new Property(thingId, id, modelId, boundTyp, boundColl, () => propMap)
+        new Property(thingId, id, modelId, boundTyp, boundColl, () => propMap, modTime)
       }
       curState = curState.copy(spaceProps = loadedProps)
       
-      val things = getThings(Kind.Thing) { (thingId, modelId, propMap) =>
-        new ThingState(thingId, id, modelId, () => propMap)        
+      val things = getThings(Kind.Thing) { (thingId, modelId, propMap, modTime) =>
+        new ThingState(thingId, id, modelId, () => propMap, modTime)        
       }
       
-      val attachments = getThings(Kind.Attachment) { (thingId, modelId, propMap) =>
-        new ThingState(thingId, id, modelId, () => propMap, Kind.Attachment)        
+      val attachments = getThings(Kind.Attachment) { (thingId, modelId, propMap, modTime) =>
+        new ThingState(thingId, id, modelId, () => propMap, modTime, Kind.Attachment)        
       }
       
       val allThings = things ++ attachments
@@ -301,9 +314,12 @@ class Space extends Actor {
       val thingId = OID.next(ShardKind.User)
       // TODO: add a history record
       Space.createThingInSql(thingId, spaceId, modelId, kind, props, state)
+      // TBD: this isn't quite right -- we really should be taking the DB's definition of the timestamp
+      // instead:
+      val modTime = DateTime.now
       kind match {
         case Kind.Thing | Kind.Attachment => {
-          val thing = ThingState(thingId, spaceId, modelId, () => props, kind)
+          val thing = ThingState(thingId, spaceId, modelId, () => props, modTime, kind)
           updateState(state.copy(things = state.things + (thingId -> thing)))
         }
         case Kind.Property => {
@@ -312,7 +328,7 @@ class Space extends Actor {
 //          val boundTyp = typ.asInstanceOf[PType[typ.valType] with PTypeBuilder[typ.valType, Any]]
           val boundTyp = typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]]
           val boundColl = coll.asInstanceOf[Collection]
-          val thing = Property(thingId, spaceId, modelId, boundTyp, boundColl, () => props)
+          val thing = Property(thingId, spaceId, modelId, boundTyp, boundColl, () => props, modTime)
           updateState(state.copy(spaceProps = state.spaceProps + (thingId -> thing)))          
         }
         case _ => throw new Exception("Got a request to create a thing of kind " + kind + ", but don't know how yet!")
@@ -346,15 +362,17 @@ class Space extends Actor {
 	          """
 	          ).on("thingId" -> thingId.raw,
 	               "modelId" -> modelId.raw,
-	               "props" -> Thing.serializeProps(newProps, state)).executeUpdate()    
+	               "props" -> Thing.serializeProps(newProps, state)).executeUpdate()
+	        // TODO: in principle, this should come from the DB's timestamp:
+	        val modTime = DateTime.now
 	        // TODO: this needs a clause for each Kind you can get:
             oldThing match {
               case t:ThingState => {
-	            val newThingState = t.copy(m = modelId, pf = () => newProps)
+	            val newThingState = t.copy(m = modelId, pf = () => newProps, mt = modTime)
 	            updateState(state.copy(things = state.things + (thingId -> newThingState))) 
               }
               case prop:Property[_,_] => {
-	            val newThingState = prop.copy(m = modelId, pf = () => newProps)
+	            val newThingState = prop.copy(m = modelId, pf = () => newProps, mt = modTime)
 	            updateState(state.copy(spaceProps = state.spaceProps + (thingId -> newThingState))) 
               }
               case s:SpaceState => {
@@ -374,7 +392,7 @@ class Space extends Actor {
                        "thingId" -> thingId.raw,
                        "displayName" -> newDisplay).executeUpdate()
                 }
-                updateState(state.copy(m = modelId, pf = () => newProps, name = newName))
+                updateState(state.copy(m = modelId, pf = () => newProps, name = newName, mt = modTime))
               }
 	        }
 	        sender ! ThingFound(thingId, state)

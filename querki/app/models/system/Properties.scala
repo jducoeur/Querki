@@ -13,7 +13,7 @@ import SystemSpace._
 import querki.values._
 
 class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
-  extends Property[VT, RT](pid, systemOID, UrPropOID, t, c, p)
+  extends Property[VT, RT](pid, systemOID, UrPropOID, t, c, p, modules.time.TimeModule.epoch)
 
   /**
    * The root Property, from which all others derive.
@@ -24,7 +24,7 @@ class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:
         (DisplayTextOID -> Optional(LargeTextType("""[[Property Summary -> ""**____**""]]
             |
             |[[Property Details]]""".stripMargin)))
-        ))
+        ), modules.time.TimeModule.epoch)
   
   object NameProp extends SystemProperty(NameOID, NameType, ExactlyOne,
       toProps(

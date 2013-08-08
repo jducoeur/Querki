@@ -3,6 +3,8 @@ package models
 import play.api._
 import play.api.templates.Html
 
+import com.github.nscala_time.time.Imports._
+
 import models.system._
 import models.system.OIDs._
 import models.system.SystemSpace
@@ -116,7 +118,8 @@ abstract class Thing(
     val spaceId:OID, 
     val model:OID, 
     val kind:Kind.Kind,
-    val propFetcher: PropFetcher) extends QLFunction
+    val propFetcher: PropFetcher,
+    val modTime:DateTime) extends QLFunction
 {
   lazy val props:PropMap = propFetcher()
   
@@ -403,5 +406,5 @@ abstract class Thing(
  * 
  * Note that Models are basically just ordinary Things.
  */
-case class ThingState(i:OID, s:OID, m:OID, pf: PropFetcher, k:Kind.Kind = Kind.Thing) 
-  extends Thing(i, s, m, k, pf) {}
+case class ThingState(i:OID, s:OID, m:OID, pf: PropFetcher, mt:DateTime = modules.time.TimeModule.epoch, k:Kind.Kind = Kind.Thing) 
+  extends Thing(i, s, m, k, pf, mt) {}

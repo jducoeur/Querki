@@ -321,8 +321,7 @@ object QLType extends QLType(QLTypeOID)
     def followLink(context:ContextBase):Option[Thing] = {
       // This should only be called if the valType is LinkType, and the Collection is
       // single-valued!
-      val oid = get(context.value.first)
-      follow(context)(oid)
+      context.value.firstTyped(this).flatMap(follow(context)(_))
     }
 
     def doRender(context:ContextBase)(v:OID) = {

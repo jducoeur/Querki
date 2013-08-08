@@ -9,6 +9,7 @@ object Modules {
   val Email = new email.EmailModule(2)
   val Person = new person.PersonModule(3)
   val AccessControl = new querki.access.AccessControlModule(4)
+  val Time = new time.TimeModule(5)
   
   private var allModules = Seq.empty[Module]
   
@@ -30,6 +31,7 @@ object Modules {
     s = init(Email, s)
     s = init(Person, s)
     s = init(AccessControl, s)
+    s = init(Time, s)
     
     s
   }

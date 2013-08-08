@@ -9,6 +9,8 @@ import system._
 import system.OIDs._
 import system.SystemSpace._
 
+import com.github.nscala_time.time.Imports._
+
 import ql._
 
 import querki.values._
@@ -23,8 +25,9 @@ case class Property[VT, -RT](
     m:OID, 
     val pType:PType[VT] with PTypeBuilder[VT, RT], 
     val cType:Collection, 
-    pf:PropFetcher)
-  extends Thing(i, s, m, Kind.Property, pf) 
+    pf:PropFetcher,
+    mt:DateTime)
+  extends Thing(i, s, m, Kind.Property, pf, mt) 
 {
   def default = {
     // TODO: add the concept of the default meta-property, so you can set it

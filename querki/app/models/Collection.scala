@@ -9,6 +9,8 @@ import system.OIDs._
 
 import Thing._
 
+import modules.time.TimeModule
+
 import ql._
 
 import querki.values._
@@ -22,8 +24,12 @@ import querki.values._
  * required to be strictly monadic, but they probably all are. By being rigorous
  * and consistent about this, we make it much easier to write QL safely -- each
  * QL step is basically a flatMap.
+ * 
+ * TODO: for the time being, we're not bothering with modTime on Collections, since they
+ * can't be user-created yet. When we add user-defined Collections, we'll need to make it
+ * possible to fetch the timestamp at load time, as usual.
  */
-abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s, m, Kind.Collection, pf) {
+abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s, m, Kind.Collection, pf, TimeModule.epoch) {
   
   type pType = PType[_]
   type implType <: Iterable[ElemValue]
