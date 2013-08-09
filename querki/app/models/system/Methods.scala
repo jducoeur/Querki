@@ -358,7 +358,7 @@ It produces the first one that returns a non-empty result, or None iff all of th
 object NotMethod extends InternalMethod(NotOID,
     toProps(
       setName("_not"),
-      DisplayTextProp("_or takes the parameter if one is given, or the received value if not. It returns True iff that it False, and False if it is anything else")))
+      DisplayTextProp("_not takes the parameter if one is given, or the received value if not. It returns True iff that it False, and False if it is anything else")))
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     val inVal = paramsOpt match {
@@ -610,9 +610,11 @@ object SortMethod extends InternalMethod(SortMethodOID,
     toProps(
       setName("_sort"),
       DisplayTextProp("""
-    LIST -> _sort -> SORTED
+    LIST -> _sort(EXP) -> SORTED
           
 With no parameters, _sort sorts the elements of the received List alphabetically by their Display Names.
+If a parameter is given, it is applied to each element in LIST, and the results are used to sort the
+elements. This may produce strange results if EXP is not defined on all the elements!
 """)))
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
@@ -969,5 +971,15 @@ object FormLineMethod extends SingleContextMethod(FormLineMethodOID,
       }
       case _ => WarningValue("_formLine requires two parameters")
     }
+  }
+}
+
+object ReverseMethod extends SingleContextMethod(ReverseMethodOID,
+    toProps(
+      setName("_reverse"),
+      DisplayTextProp("_reverse produces the same Collection it receives, as a List, in reverse order")))
+{
+  def fullyApply(mainContext:ContextBase, partialContext:ContextBase, paramsOpt:Option[Seq[QLPhrase]]):QValue = {
+    QList.makePropValue(partialContext.value.cv.toSeq.reverse.toList, partialContext.value.pType)
   }
 }
