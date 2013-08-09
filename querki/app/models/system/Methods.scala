@@ -629,9 +629,11 @@ elements. This may produce strange results if EXP is not defined on all the elem
       val sortResult =
         for (
             params <- paramsOpt;
-            leftResult = context.parser.get.processPhrase(params(0).ops, left.thisAsContext).value;
-            rightResult = context.parser.get.processPhrase(params(0).ops, right.thisAsContext).value;
-            if (leftResult.pType == rightResult.pType);
+            leftResult = context.parser.get.processPhrase(params(0).ops, context.next(ExactlyOne(LinkType(left)))).value;
+            rightResult = context.parser.get.processPhrase(params(0).ops, context.next(ExactlyOne(LinkType(right)))).value;
+            // Note that we have to compare their *classes*, so that _desc -- which produces a separate pseudo-Type each time
+            // -- can work:
+            if (leftResult.pType.getClass() == rightResult.pType.getClass());
             // If the two values are equal, fall through to the default:
             if (!leftResult.pType.matches(leftResult.first, rightResult.first))
           )
@@ -644,6 +646,7 @@ elements. This may produce strange results if EXP is not defined on all the elem
     context.value.pType match {
       case LinkType => {
         val start = context.value.cv.toSeq
+        // TODO: we probably don't need to translate these to Things any more:
         val asThings = start.map(elemV => context.state.anything(LinkType.get(elemV))).flatten
         val sortedOIDs = asThings.sortWith(thingSortFunc).map(_.id)
         // TODO: there is obviously a refactoring screaming to break free here, but it involves some fancy
@@ -657,6 +660,33 @@ elements. This may produce strange results if EXP is not defined on all the elem
         QList.from(sorted, TagSetType)
       }
       case _ => WarningValue("_sort can only currently be applied to Links.")
+    }
+  }
+}
+
+/**
+ * A pseudo-Type, which exists solely for the _desc method. This is a DelegatingType that is exactly like the one
+ * it wraps around, except that it has a reversed sort order.
+ */
+class DescendingType[VT](baseType: PType[VT]) extends DelegatingType[VT](baseType) {
+  override def doComp(context:ContextBase)(left:VT, right:VT):Boolean = !realType.doComp(context)(left, right)
+}
+
+object DescMethod extends InternalMethod(DescMethodOID,
+    toProps(
+      setName("_desc"),
+      DisplayTextProp("""LIST -> _sort(_desc(EXP)) -> SORTED
+          |
+          |_desc returns the given EXP, tweaked so that the values in it have the reversed sort order from
+          |what they would normally have. It is usually used inside of _sort, to reverse the sort order.""".stripMargin)))
+{
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+    paramsOpt match {
+      case Some(params) => {
+        val innerRes = context.parser.get.processPhrase(params(0).ops, context).value;
+        innerRes.cType.makePropValue(innerRes.cv, new DescendingType(innerRes.pType))
+      }
+      case None => WarningValue("_desc is meaningless without a parameter")
     }
   }
 }

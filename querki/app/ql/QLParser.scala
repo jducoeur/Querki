@@ -277,6 +277,10 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
         overflow.printStackTrace()
         Wikitext("We're sorry -- this thing is apparently more complex than Querki can currently cope with. Please contact Justin: this is a bug we need to fix.")
       }
+      case error:Exception => {
+        Logger.error("Error during QL Processing: " + error, error)
+        Wikitext("We're sorry -- there was an error while trying to display this thing.")
+      }
       case error:Throwable => {
         Logger.error("Error during QL Processing: " + error)
         Wikitext("We're sorry -- there was an error while trying to display this thing.")
