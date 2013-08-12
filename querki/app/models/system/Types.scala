@@ -429,7 +429,8 @@ object PlainTextType extends PlainTextType(PlainTextOID)
 
 class InternalMethodType(tid:OID) extends SystemType[String](tid,
     toProps(
-      setName("Internal Method Type")
+      setName("Internal Method Type"),
+      InternalProp(true)
     )) with SimplePTypeBuilder[String]
 {
   def boom = throw new Exception("InternalMethodType cannot be used conventionally. It simply wraps code.")
