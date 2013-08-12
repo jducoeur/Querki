@@ -58,7 +58,9 @@ class InlineParsersTest extends FlatSpec with ShouldMatchers with InlineParsers{
         ("""[link text](  http://example.com  "link title"  )""",
          """<a href="http://example.com" title="link title">link text</a>"""),
         ("""[link text](  http://example.com  "li)nk" title"  )""",
-         """<a href="http://example.com" title="li)nk&quot; title">link text</a>""")
+         """<a href="http://example.com" title="li)nk&quot; title">link text</a>"""),
+        ("""[_localName](_localName)""",
+         """<a href="_localName">_localName</a>""")
     )
 
     val fastLinkTests = List(

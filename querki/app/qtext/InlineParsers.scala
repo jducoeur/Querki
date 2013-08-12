@@ -122,8 +122,12 @@ trait InlineParsers extends BaseParsers {
      */
     val specialInlineChars = Set(' ', '`', '<', '[', '*', '_', '!', '{', '}')
     /** Chars that may indicate the start of a special markdown inline sequence or the end of a link text.
+     *  
+     *  NOTE: this is a significant change from Actuarius, which is over-conservative about legal characters.
+     *  In particular, it was failing on underscore, which is an important and common character in Querki names.
+     *  We want to err on the side of allowing legal characters inside links.
      */
-    val specialLinkInlineChars = specialInlineChars + ']'
+    val specialLinkInlineChars = Set(' ', '`', '<', '[', ']') 
 
     /** Hand rolled parser that parses a chunk of special inline markdown (like links or emphasis)
      * based on a one char lookahead.
