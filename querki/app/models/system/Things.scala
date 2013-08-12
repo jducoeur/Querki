@@ -96,7 +96,7 @@ object AllThings extends ThingState(AllThingsOID, systemOID, RootOID,
       setName("All Things"),
       DisplayTextProp("[[All Things]]"),
       ApplyMethod("""""{{_thingTree:
-[[_space ->
+[[_currentSpace ->
   _externalRoots ->
   _sort ->
   _displayThingTree]]
@@ -107,7 +107,7 @@ object AllProps extends ThingState(AllPropsThingOID, systemOID, RootOID,
       setName("All Properties"),
       DisplayTextProp("[[All Properties]]"),
       ApplyMethod("""""{{_thingTree:
-[[_space ->
+[[_currentSpace ->
   _allProps ->
   _bulleted]]
 }}

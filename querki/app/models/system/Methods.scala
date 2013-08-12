@@ -604,7 +604,13 @@ object AllPropsMethod extends SingleThingMethod(AllPropsMethodOID, "_allProps", 
     SPACE -> _allProps -> PROPS
     
 This receives a link to a Space, and produces all of the Properties defined in that Space.""",
-{ (thing, context) => QList.from(context.state.propList.toSeq.sortBy(_.displayName), LinkFromThingBuilder) })
+{ (thing, context) => 
+  thing match {
+    case s:SpaceState => QList.from(s.propList.toSeq.sortBy(_.displayName), LinkFromThingBuilder) 
+    case _ => WarningValue("_allProps must be used with a Space")
+  }
+  
+})
 
 object SortMethod extends InternalMethod(SortMethodOID,
     toProps(
@@ -1013,3 +1019,27 @@ object ReverseMethod extends SingleContextMethod(ReverseMethodOID,
     QList.makePropValue(partialContext.value.cv.toSeq.reverse.toList, partialContext.value.pType)
   }
 }
+
+object OIDMethod extends SingleThingMethod(OIDMethodOID, "_oid", """THING -> _oid -> Text
+    |
+    |This function produces the unique Object ID (which will generally be a period followed by some letters and numbers)
+    |of the received Thing.""".stripMargin,
+{ (thing, context) => TextValue(thing.id.toThingId) })
+
+object KindMethod extends SingleThingMethod(KindMethodOID, "_kind", """THING -> _kind -> Number
+    |
+    |This function produces the Number that represents the "kind"
+    |of the received Thing. The Kinds are:
+    |
+    |* Normal Thing: 0
+    |* Type: 1
+    |* Property: 2
+    |* Space: 3
+    |* Collection: 4
+    |* Attachment: 5""".stripMargin,
+{ (thing, context) => ExactlyOne(IntType(thing.kind)) })
+
+object CurrentSpaceMethod extends SingleThingMethod(CurrentSpaceMethodOID, "_currentSpace", """THING -> _currentSpace -> SPACE
+    |
+    |This function produces the Space that we are currently displaying. (Generally, the one in the URL.)""".stripMargin,
+{ (thing, context) => LinkValue(context.root.state) })
