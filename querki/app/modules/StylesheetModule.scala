@@ -39,7 +39,7 @@ class StylesheetModule(val moduleId:Short) extends modules.Module {
    */
   class CSSTextType(tid:OID) extends SystemType[String](tid,
     toProps(
-        setName("Type-CSS"))
+        setName("CSS Type"))
     ) with SimplePTypeBuilder[String] with CodeType
   {
     // TODO: filter any Javascript-enabling keywords! This should go in doFromUser().
@@ -67,9 +67,18 @@ class StylesheetModule(val moduleId:Short) extends modules.Module {
    */
   lazy val StylesheetProp = new SystemProperty(StylesheetOID, LinkType, Optional,
     toProps(
-      setName("Stylesheet"),
+      setName("Stylesheet Link"),
       LinkModelProp(StylesheetBase),
-      AppliesToKindProp(Kind.Thing)
+      AppliesToKindProp(Kind.Thing),
+      PropSummary("Describes how to render Things when displaying them in the browser"),
+      PropDetails("""If you add the Stylesheet Link Property to a Thing, it should point to a
+          |Stylesheet whose CSS describes some page layout. That CSS will be used when displaying
+          |this Thing.
+          |
+          |If you set a Stylesheet on a Model, it will be used for all Instances of that Model.
+          |
+          |If you set a Stylesheet on a Space, it will be used for all Things in that Space. This
+          |is the easiest way to style the entire Space.""".stripMargin)
       ))
 
   /**
@@ -78,7 +87,23 @@ class StylesheetModule(val moduleId:Short) extends modules.Module {
    */
   lazy val CSSProp = new SystemProperty(CSSOID, CSSTextType, Optional,
     toProps(
-      setName("CSS")
+      setName("CSS"),
+      InternalProp(true),
+      PropSummary("The actual CSS for a Stylesheet"),
+      PropDetails("""This is the main property on a Stylesheet. It can contain more or less
+          |any arbitrary CSS, with just a few security-related exceptions.
+          |
+          |For the time being, we're not providing any fancy UI for making it easier to write
+          |CSS. This will likely happen someday, but for now, you should only use this property
+          |if you are comfortable with CSS and know what you are doing. (We recommend editing
+          |the Stylesheet in one tab, and having a page that uses it in another -- this makes it
+          |quick and easy to check your work as you go.)
+          |
+          |Note that Querki is based on Twitter Bootstrap -- you can assume that all Bootstrap
+          |styles are already available.
+          |
+          |You should not usually add this Property to Things. Instead, create a
+          |Stylesheet, and edit the CSS Property on that.""".stripMargin)
       ))
 
   /**
@@ -94,7 +119,22 @@ class StylesheetModule(val moduleId:Short) extends modules.Module {
     toProps(
       setName("Google Font Name"),
       // TODO: in fact, this only applies to Stylesheets:
-      AppliesToKindProp(Kind.Thing)
+      AppliesToKindProp(Kind.Thing),
+      PropSummary("The name of a Google Font to use in these styles"),
+      PropDetails("""Google provides a [large number of webfonts](http://www.google.com/fonts/) for public use.
+          |We find them useful, so we've made them available through Querki.
+          |
+          |To use a Google font, just add this Property to your Stylesheet, and set it to the name of the
+          |font you would like to use. You may then use it as a font in the Stylesheet's CSS like any other.
+          |
+          |For example, if you add Google's 'Tangerine' font to your stylesheet, you can then say something like
+          |    p {
+          |      font-family: 'Tangerine', serif;
+          |    }
+          |to use that font for all normal paragraphs.
+          |
+          |NOTE: this feature is experimental, and likely to change. In the future, we will probably add the
+          |ability to list multiple fonts instead of just one.""".stripMargin)
       ))
   
   override lazy val props = Seq(

@@ -87,58 +87,70 @@ class EmailModule(val moduleId:Short) extends modules.Module {
   
   lazy val showSendEmail = new SystemProperty(EmailShowSendOID, TextType, ExactlyOne,
       toProps(
-        setName("Email Results")
+        setName("Email Results"),
+        InternalProp(true),
+        PropSummary("Internal property, used in the process of sending email. Do not mess with this!")
       ))
   
   lazy val emailAddress = new SystemProperty(EmailPropOID, EmailAddressType, Optional,
       toProps(
         setName("Email Address"),
-        DisplayTextProp("""
-This Property represents the general notion of something that can have an email
-address. It is available on Person, but you can reuse it wherever you like.
-          
-Note, however, that this Property is one optional address. If you want to require
-that an address be given, or allow a list of them, you will need to create a
-separate Property with the Email Address type.
-""")))
+        PropSummary("An email address for a Person"),
+        PropDetails("""This Property represents the general notion of something that can have an email
+            |address. It is available on Person, but you can reuse it wherever you like. In theory, you can
+            |send email to anything that has an Email Address property.
+            |
+            |Note, however, that this Property is one optional address. If you want to require
+            |that an address be given, or allow a list of them, you will need to create a
+            |separate Property with the Email Address type.""".stripMargin)))
   
   lazy val emailTo = new SystemProperty(EmailToOID, LinkType, QSet,
         toProps(
           setName("Email To"),
+          InternalProp(true),
           (LinkModelOID -> Optional(ElemValue(Person.MOIDs.PersonOID, LinkType))),
-          DisplayTextProp("""
-This is the raw list of people to send this email to. If you want to do
-something fancier than sending to specific people, see the Recipients property.
-""")))
+          PropSummary("Who should this email be sent to?"),
+          PropDetails("""This is the raw list of people to send this email to. It should point to one or more
+              |Person Things, each of which should have an Email Address set.
+              |
+              |If you want to do something fancier than sending to specific people, see the Recipients property.""".stripMargin)))
 
   lazy val emailSubject = new SystemProperty(EmailSubjectOID, TextType, ExactlyOne,
       toProps(
         setName("Email Subject"),
-        DisplayTextProp("The title of the email")))
+        InternalProp(true),
+        PropSummary("The title of the email")))
 
   lazy val emailBody = new SystemProperty(EmailBodyOID, LargeTextType, ExactlyOne,
       toProps(
         setName("Email Body"),
-        DisplayTextProp("The Contents of the email")))
+        InternalProp(true),
+        PropSummary("The Contents of the email"),
+        PropDetails("""The contents of the email may contain more or less arbitrary wikitext; these will be
+            |rendered in the HTML version of the email pretty much the same as they would be in the browser.
+            |The email will also contain the raw wikitext, as the "plaintext" version.""".stripMargin)))
   
   lazy val sentToProp = new SystemProperty(SentToOID, LinkType, QSet,
       toProps(
         setName("Sent To"),
-        DisplayTextProp("The Persons that this mail has already been sent to. (This is set automatically.)")))
+        InternalProp(true),
+        PropSummary("The Persons that this mail has already been sent to."),
+        PropDetails("""This Property is set automatically when the email is sent. You usually should not modify
+            |it by hand, but it is sometimes useful to do so before sending or resending the email, since the
+            |email will *not* be sent to anyone in this set.""".stripMargin)))
   
   lazy val recipientsProp = new SystemProperty(RecipientsOID, QLType, ExactlyOne,
       toProps(
         setName("Recipients"),
-        DisplayTextProp("""
-The Recipients property declares who will receive this email. It is a QL expression, and
-you should only modify it if you know what you are doing. By default, it simply defers to
-the contents of the Email To property -- for ordinary email, you should just list the people
-who are to receive this in Email To. But you can edit Recipients to be any other QL expression,
-which can make some problems much easier. For example, if you want to send the email to
-every Person listed in this Space, set Recipients to "Person._instances".
-            
-The QL expression given in here must product a List of Links to Persons.
-        		""")))
+        PropSummary("Who will this email be sent to?"),
+        PropDetails("""The Recipients property declares who will receive this email. It is a QL expression, and
+            |you should only modify it if you know what you are doing. By default, it simply defers to
+            |the contents of the Email To property -- for ordinary email, you should just list the people
+            |who are to receive this in Email To. But you can edit Recipients to be any other QL expression,
+            |which can make some problems much easier. For example, if you want to send the email to
+            |every Person listed in this Space, set Recipients to "Person._instances".
+            |
+            |The QL expression given in here must produce a List of Links to Persons.""".stripMargin)))
 
   override lazy val props = Seq(
     // The actual email-address property

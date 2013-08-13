@@ -161,6 +161,7 @@ object SystemSpace {
       LinkAllowAppsProp,
       LinkModelProp,
       AppliesToKindProp,
+      InternalProp,
       EditMethod,
       SectionMethod,
       InstancesMethod,

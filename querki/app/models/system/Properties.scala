@@ -21,6 +21,7 @@ class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:
   object UrProp extends Property(UrPropOID, systemOID, UrThing, TextType, ExactlyOne,
       toProps(
         setName("Property"),
+        (PropSummaryOID -> Optional(TextType("The root Property, from which all others derive."))),
         (DisplayTextOID -> Optional(LargeTextType("""[[Property Summary -> ""**____**""]]
             |
             |[[Property Details]]""".stripMargin)))
@@ -310,6 +311,7 @@ object ShowUnknownProp extends SystemProperty(ShowUnknownOID, LargeTextType, Exa
 object PropSummary extends SystemProperty(PropSummaryOID, TextType, Optional,
     toProps(
       setName("Property Summary"),
+      (NotInheritedOID -> ExactlyOne(YesNoType(true))),
       AppliesToKindProp(Kind.Property),
       (PropSummaryOID -> Optional(TextType("This is an optional one-line description of a Property."))),
       (PropDetailsOID -> Optional(LargeTextType("""When you define a Property, you may add this Summary as
@@ -323,6 +325,7 @@ object PropSummary extends SystemProperty(PropSummaryOID, TextType, Optional,
 object PropDetails extends SystemProperty(PropDetailsOID, LargeTextType, Optional,
     toProps(
       setName("Property Details"),
+      (NotInheritedOID -> ExactlyOne(YesNoType(true))),
       AppliesToKindProp(Kind.Property),
       (PropSummaryOID -> Optional(TextType("This is an optional detailed description of a Property."))),
       (PropDetailsOID -> Optional(LargeTextType("""When you define a Property, you may add whatever description

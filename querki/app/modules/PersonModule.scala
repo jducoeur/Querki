@@ -95,8 +95,16 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
   lazy val chromelessInvites = new SystemProperty(ChromelessInvitesOID, YesNoType, ExactlyOne,
       toProps(
         setName("Chromeless Invites"),
-        DisplayTextProp("If you set this to Yes on a Space or Thing, then Invite Links pointing to that will show up without Querki chrome." +
-        		"(NOTE: this will probably become a paid-users-only feature in the future.)")))
+        PropSummary("Should invitees to this Space see it unadorned with Querki chrome?"),
+        DisplayTextProp("""If you set this to Yes on a Space or Thing, then Invite Links pointing
+            |to that will show up without Querki chrome. That is, when they join, they'll just see your
+            |pages, with no top menu or Querki footer.
+            |
+            |This feature is mainly intended for "white-labeling" Spaces, so that they don't look
+            |as Querki-ish. We make it available for Spaces that care a great deal about how they look.
+            |(It was originally designed for wedding invitations.)
+            |
+            |NOTE: this will probably become a paid-users-only feature in the future.""".stripMargin)))
 
   override lazy val props = Seq(
     inviteLink,

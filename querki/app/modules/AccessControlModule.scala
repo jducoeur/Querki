@@ -127,25 +127,25 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
   lazy val canEditCustomProp = new SystemProperty(CanEditCustomOID, QLType, Optional,
       toProps(
         setName("Who Can Edit Custom"),
-        DisplayTextProp("This property says who else can edit this Thing")))
+        PropSummary("Who else can edit this Thing")))
 
   lazy val canReadProp = new SystemProperty(CanReadPropOID, LinkType, QSet,
       toProps(
         setName("Who Can Read"),
         (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
-        DisplayTextProp("This property says who else can read Things in this Space")))
+        PropSummary("Who else can read Things in this Space")))
 
   lazy val canEditProp = new SystemProperty(CanEditPropOID, LinkType, QSet,
       toProps(
         setName("Who Can Edit"),
         (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
-        DisplayTextProp("This property says who else can edit Things in this Space")))
+        PropSummary("Who else can edit Things in this Space")))
 
   lazy val canCreateProp = new SystemProperty(CanCreatePropOID, LinkType, QSet,
       toProps(
         setName("Who Can Create"),
         (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
-        DisplayTextProp("This property says who else can make new Things in this Space")))
+        PropSummary("Who else can make new Things in this Space")))
 
   override lazy val props = Seq(
 //    canEditCustomProp,
