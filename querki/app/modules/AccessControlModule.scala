@@ -83,9 +83,9 @@ class AccessControlModule(val moduleId:Short) extends modules.Module {
     val PublicTagOID = moid(2)
     val MembersTagOID = moid(3)
     val OwnerTagOID = moid(4)
-    val CanCreatePropOID = moid(4)
     val CanReadPropOID = moid(5)
     val CanEditPropOID = moid(6)
+    val CanCreatePropOID = moid(7)
   }
   import MOIDs._
   
