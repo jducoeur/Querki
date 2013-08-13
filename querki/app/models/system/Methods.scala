@@ -1043,3 +1043,34 @@ object CurrentSpaceMethod extends SingleThingMethod(CurrentSpaceMethodOID, "_cur
     |
     |This function produces the Space that we are currently displaying. (Generally, the one in the URL.)""".stripMargin,
 { (thing, context) => LinkValue(context.root.state) })
+
+object IsMethod extends InternalMethod(IsMethodOID,
+    toProps(
+      setName("_is"),
+      DisplayTextProp("""    THING -> _is(THING) -> Yes or No
+    |
+    |This function produces Yes iff the parameter matches the passed-in THING, and No otherwise. It is almost always used
+    |inside _if(). For instance, to check whether a Property is of Text Type:
+    |    MyProp.Property Type -> _if(_is(Text Type), ...)""".stripMargin)))
+{ 
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+    paramsOpt match {
+      case Some(params) => {
+        val contextValOpt = context.value.firstAs(LinkType)
+        contextValOpt match {
+          case Some(contextOid) => {
+            val paramValOpt = context.parser.get.processPhrase(params(0).ops, context).value.firstAs(LinkType)
+            paramValOpt match {
+              case Some(paramOid) => {
+                ExactlyOne(contextOid == paramOid)
+              }
+              case _ => WarningValue("Parameter of _is didn't produce a Thing")
+            }
+          }
+          case None => WarningValue("_is didn't receive a Thing value")
+        }
+      }
+      case None => WarningValue("_is is meaningless without a parameter")
+    }
+  }
+}
