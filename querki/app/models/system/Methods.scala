@@ -227,17 +227,21 @@ object SectionMethod extends InternalMethod(SectionMethodOID,
     toProps(
       setName("_section"),
       DisplayTextProp("""_section is intended for the common case where you want to display a section
-on the page if and only if a specific List is non-empty. It looks like this:
-    My List -> _section(HEADER, DETAILS, EMPTY)
-Each of the parameters can be any QL phrase, although they are usually just text blocks. They are
-treated as follows:
-          
-* HEADER is shown first, if the incoming List is non-empty. It gets the entire List as its Context.
-* DETAILS is shown after the header. It is repeated for each element in the List, just as it would
-if you fed a List into a normal text block.
-* EMPTY is shown if and only if the List is empty. This lets you show something else if appropriate.
-It is optional -- you can leave it off.
-          """)
+          |on the page if and only if a specific List is non-empty. It looks like this:
+          |    My List -> _section(HEADER, DETAILS, EMPTY)
+          |Each of the parameters can be any QL phrase, although they are often just text blocks. They are
+          |treated as follows:
+          |
+          |* HEADER is shown first, if the incoming List is non-empty. It gets the entire List as its Context.
+          |* DETAILS is shown after the header. It is repeated for each element in the List, just as it would
+          |if you fed a List into a normal text block.
+          |* EMPTY is shown if and only if the List is empty. This lets you show something else if appropriate.
+          |It is optional -- you can leave it off.
+          |
+          |Note that the generated wikitext will have the HEADER on a separate line from the DETAILS. This is
+          |usually what you want. It means that, for example, if you start the HEADER with "###", it will show
+          |up as a true header, separate from the DETAILS, but if it is just something like "Contents:", the
+          |HEADER and DETAILS will run together, since it joins ordinary text lines together.""".stripMargin)
     )) 
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
@@ -272,9 +276,9 @@ It is optional -- you can leave it off.
       // Which implies, of course, that what we *should* be producing here is a Tuple of (Header, List[Details]). Hmm --
       // let's revisit this once we have Tuples implemented.
       processedDetails match {
-        // Note that we intentionally always put a newline between the header and details, and between each details entry.
-        // TODO: this should probably be exposed as an optional parameter in the _section() method.
-        case Some(details) => processedHeader.+(parser.contextsToWikitext(details, true), true)
+        // Note that there is automatically a newline inserted between the Header and Details. Most of the time, this
+        // produces exactly the right result:
+        case Some(details) => processedHeader + parser.contextsToWikitext(details, true)
         case None => processedHeader
       }
     }
