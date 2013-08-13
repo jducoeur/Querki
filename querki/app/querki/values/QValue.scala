@@ -17,7 +17,9 @@ object ParsedTextType extends SystemType[Wikitext](OIDs.IllegalOID, () => Thing.
   def doDeserialize(v:String) = throw new Exception("Can't deserialize ParsedText!")
   def doSerialize(v:Wikitext) = throw new Exception("Can't serialize ParsedText!")
   def doRender(context:ContextBase)(v:Wikitext) = v
-    
+  
+  override def doDebugRender(context:ContextBase)(v:Wikitext) = v.contents.map(_.internal).mkString
+  
   val doDefault = Wikitext("")
   def wrap(raw:String):valType = Wikitext(raw)
 }
@@ -73,6 +75,10 @@ trait QValue {
   
   def isEmpty = cType.isEmpty(this)
   def size = cv.size
+  
+  def debugRender(context:ContextBase) = {
+    cType.getClass().getSimpleName() + "[" + pType.getClass().getSimpleName() + "]" + "(" + cType.debugRender(context)(cv, pType) + ")"
+  }
   
   // Returns the raw Iterable of ElemValues. Not often the right things to do, unless you
   // specifically don't care about type.

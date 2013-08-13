@@ -36,6 +36,8 @@ class BogusFunction extends QLFunction {
 
 sealed abstract class QLTextPart {
   def reconstructString:String
+  
+  override def toString = reconstructString
 }
 case class UnQLText(text:String) extends QLTextPart {
   def reconstructString:String = text
@@ -46,6 +48,8 @@ sealed abstract class QLStage(collFlag:Option[String]) {
     case Some(_) => true
     case None => false
   }
+  
+  override def toString = reconstructString
 }
 case class QLCall(name:String, methodName:Option[String], params:Option[Seq[QLPhrase]], collFlag:Option[String]) extends QLStage(collFlag) {
   def reconstructString = collFlag.getOrElse("") +
@@ -76,8 +80,28 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   val initialContext = QLContext(ci.value, ci.request, Some(ci.parent), Some(this), ci.depth + 1, ci.useCollection, ci.propOpt)
   
   // Crude but useful debugging of the process tree. Could stand to be beefed up when I have time
-  def logContext(msg:String, context:ContextBase) = {
-    //Logger.info(msg + ": " + context)
+  // Note that this is fundamentally not threadsafe, because of logDepth!
+  // Note that the indentation doesn't work across multiple QLParsers!
+  // TODO: we could make indentation work across parsers (and fix thread-safety) if we stuffed the indentation level into the
+  // Context, and had logContext actually transform the context. This may imply that we want to make
+  // this mechanism more broadly available -- possibly even a method on the context itself...
+  var logDepth = 0
+  def indent = "  " * logDepth
+  // Turn this to true to produce voluminous output from the QL processing pipeline
+  // TODO: this should come from Config!
+  val doLogContext = false
+  def logContext(msg:String, context:ContextBase)(processor: => ContextBase):ContextBase = {
+    if (doLogContext) {
+      Logger.info(indent + msg + ": " + context.debugRender + " =")
+      Logger.info(indent + "{")
+      logDepth = logDepth + 1
+    }
+    val result = processor
+    if (doLogContext) {
+      logDepth = logDepth - 1
+      Logger.info(indent + "} = " + result.debugRender)
+    }
+    result
   }
   
   val name = """[a-zA-Z_][\w-_ ]*[\w]""".r
@@ -114,42 +138,43 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
    * render it, which just returns the already-computed Wikitext.
    */
   private def processTextStage(text:QLTextStage, context:ContextBase):ContextBase = {
-    logContext("processTextStage " + text, context)
-    val ct = context.value.cType
-    // For each element of the incoming context, recurse in and process the embedded Text
-    // in that context.
-    val transformed = context.map { elemContext =>
-      ParsedTextType(processParseTree(text.contents, elemContext))
+    logContext("processTextStage " + text, context) {
+	    val ct = context.value.cType
+	    // For each element of the incoming context, recurse in and process the embedded Text
+	    // in that context.
+	    val transformed = context.map { elemContext =>
+	      ParsedTextType(processParseTree(text.contents, elemContext))
+	    }
+	    // TBD: the asInstanceOf here is surprising -- I would have expected transformed to come out
+	    // as the right type simply by type signature. Can we get rid of it?
+	    context.next(ct.makePropValue(transformed.asInstanceOf[ct.implType], ParsedTextType))
     }
-    // TBD: the asInstanceOf here is surprising -- I would have expected transformed to come out
-    // as the right type simply by type signature. Can we get rid of it?
-    context.next(ct.makePropValue(transformed.asInstanceOf[ct.implType], ParsedTextType))
   }
   
   private def processCall(call:QLCall, context:ContextBase):ContextBase = {
-    logContext("processName " + call, context)
-    val thing = context.state.anythingByName(call.name)
-    val tv = thing match {
-      case Some(t) => {
-        // If there are parameters to the call, they are a collection of phrases.
-        val params = call.params
-        val methodOpt = call.methodName.flatMap(context.state.anythingByName(_))
-        methodOpt match {
-          case Some(method) => {
-            val partialFunction = method.partiallyApply(context.next(ExactlyOne(LinkType(t.id))))
-            partialFunction.qlApply(context, params)
-          }
-          case None => t.qlApply(context, params)
-        }
-      }
-      // They specified a name we don't know. Turn it into a raw NameType and pass it through. If it gets to
-      // the renderer, it will turn into a link to the undefined page, where they can create it.
-      //
-      // TBD: in principle, we might want to make this more Space-controllable. But it isn't obvious that we care. 
-      case None => ExactlyOne(UnknownNameType(call.name))
+    logContext("processName " + call, context) {
+	    val thing = context.state.anythingByName(call.name)
+	    val tv = thing match {
+	      case Some(t) => {
+	        // If there are parameters to the call, they are a collection of phrases.
+	        val params = call.params
+	        val methodOpt = call.methodName.flatMap(context.state.anythingByName(_))
+	        methodOpt match {
+	          case Some(method) => {
+	            val partialFunction = method.partiallyApply(context.next(ExactlyOne(LinkType(t.id))))
+	            partialFunction.qlApply(context, params)
+	          }
+	          case None => t.qlApply(context, params)
+	        }
+	      }
+	      // They specified a name we don't know. Turn it into a raw NameType and pass it through. If it gets to
+	      // the renderer, it will turn into a link to the undefined page, where they can create it.
+	      //
+	      // TBD: in principle, we might want to make this more Space-controllable. But it isn't obvious that we care. 
+	      case None => ExactlyOne(UnknownNameType(call.name))
+	    }
+	    context.next(tv)
     }
-    logContext("processName got " + tv, context)
-    context.next(tv)
   }
   
   private def processStage(stage:QLStage, contextIn:ContextBase):ContextBase = {
@@ -160,28 +185,29 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
         contextIn.asCollection 
       else 
         contextIn
-    logContext("processStage " + stage, context)
-    stage match {
-      case name:QLCall => processCall(name, context)
-      case subText:QLTextStage => processTextStage(subText, context)
-//      case QLPlainTextStage(text) => context.next(TextValue(text))
+    logContext("processStage " + stage, context) {
+	    stage match {
+	      case name:QLCall => processCall(name, context)
+	      case subText:QLTextStage => processTextStage(subText, context)
+//        case QLPlainTextStage(text) => context.next(TextValue(text))
+	    }
     }
   }
   
   def processPhrase(ops:Seq[QLStage], startContext:ContextBase):ContextBase = {
-    logContext("processPhrase " + ops, startContext)
-    (startContext /: ops) { (context, stage) => 
-      if (context.isCut)
-        // Setting the "cut" flag means that we're just stopping processing here. Usually
-        // used for warnings:
-        context
-      else
-        processStage(stage, context) 
+    logContext("processPhrase " + ops, startContext) {
+	    (startContext /: ops) { (context, stage) => 
+	      if (context.isCut)
+	        // Setting the "cut" flag means that we're just stopping processing here. Usually
+	        // used for warnings:
+	        context
+	      else
+	        processStage(stage, context) 
+	    }
     }
   }
   
   private def processPhrases(phrases:Seq[QLPhrase], context:ContextBase):Seq[ContextBase] = {
-    logContext("processPhrases " + phrases, context)
     phrases map (phrase => processPhrase(phrase.ops, context))
   }
 
@@ -232,7 +258,6 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   }
   
   private def processParseTree(parseTree:ParsedQLText, context:ContextBase):Wikitext = {
-    logContext("processParseTree " + parseTree, context)
     (Wikitext("") /: parseTree.parts) { (soFar, nextPart) =>
       soFar + (nextPart match {
         case UnQLText(t) => Wikitext(t)

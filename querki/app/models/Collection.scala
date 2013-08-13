@@ -54,6 +54,11 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
   def doRender(context:ContextBase)(v:implType, elemT:pType):Wikitext
   
   /**
+   * Takes a value of this type, and renders it for showing in debug messages.
+   */
+  def debugRender(context:ContextBase)(v:implType, elemT:pType):String = v.map(elemT.debugRender(context)(_)).mkString(", ")
+  
+  /**
    * Also required for all Collections -- the default value to fall back on.
    */
   protected def doDefault(elemT:pType):implType

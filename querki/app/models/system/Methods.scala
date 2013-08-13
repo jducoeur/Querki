@@ -573,8 +573,6 @@ That gets applied to each element of RECEIVED; if FILTER returns Yes, then it is
     // as a Context, and then just using the QValue. Bleah.
     def tryElem(parser:QLParser, phrase:QLPhrase)(elem:ContextBase):Option[ElemValue] = {
       val passesYesNo = parser.processPhrase(phrase.ops, elem).value
-      // TODO: I think this crashes if passesYesNo doesn't return a YesNo! It should
-      // fail more gracefully. This is a good illustration of why firstTyped is evil.
       for (bool <- passesYesNo.firstAs(YesNoType) if (bool)) yield elem.value.first
     }
     

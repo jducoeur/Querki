@@ -87,6 +87,8 @@ abstract class ContextBase {
   
   override def toString = "Context(" + value + ")@" + this.hashCode()
   
+  def debugRender = "Context@" + this.hashCode() + "(" + value.debugRender(this) + ")"
+  
   /**
    * Convenience method to build the successor to this context, in typical chained situations.
    */

@@ -332,6 +332,13 @@ object QLType extends QLType(QLTypeOID)
       }
       Wikitext(text)
     }
+    override def doDebugRender(context:ContextBase)(v:OID) = {
+      val target = follow(context)(v)
+      target match {
+        case Some(t) => t.displayName + "(" + t.id.toThingId + ")"
+        case None => "???"
+      }      
+    }
     
     def getNameFromId(context:ContextBase)(id:OID) = {
       val tOpt = follow(context)(id)

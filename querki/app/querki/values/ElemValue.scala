@@ -50,4 +50,6 @@ case class ElemValue(elem:Any, pType:PType[_]) {
       None
     }
   }
+  
+  override def toString = elem.toString
 }

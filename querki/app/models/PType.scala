@@ -43,6 +43,12 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
   final def render(context:ContextBase)(v:ElemValue):Wikitext = doRender(context)(get(v))
   
   /**
+   * Takes a value of this type, and renders it for showing in debug messages.
+   */
+  def doDebugRender(context:ContextBase)(v:VT) = v.toString
+  final def debugRender(context:ContextBase)(v:ElemValue):String = doDebugRender(context)(get(v))
+  
+  /**
    * Also required for all PTypes -- the default value to fall back on.
    */
   def doDefault:VT
