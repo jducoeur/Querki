@@ -82,8 +82,9 @@ class EmailModule(val moduleId:Short) extends modules.Module {
    ***********************************************/
   
   // The actual definition of this method is down below
-  lazy val sendEmail = new SingleThingMethod(EmailSendOID, "Send Email", """Invoke this method to actually send this email.
-      It will return a List of the Persons who the email was sent to this time.""", sendEmailIfAllowed)
+  lazy val sendEmail = new SingleThingMethod(EmailSendOID, "Send Email", "Send this email message",
+      """Invoke this method to actually send this email.
+      |It will return a List of the Persons who the email was sent to this time.""".stripMargin, sendEmailIfAllowed)
   
   lazy val showSendEmail = new SystemProperty(EmailShowSendOID, TextType, ExactlyOne,
       toProps(

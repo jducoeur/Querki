@@ -60,10 +60,12 @@ class PersonModule(val moduleId:Short) extends modules.Module {
    ***********************************************/
 
   // The actual definition of this method is down below
-  lazy val inviteLink = new SingleThingMethod(InviteLinkCmdOID, "Invite Link", """Place this command inside of an Email Message.
+  lazy val inviteLink = new SingleThingMethod(InviteLinkCmdOID, "Invite Link", "Generate a Link to invite someone to join this Space.", 
+      """Place this command inside of an Email Message.
 When the email is sent, it will be replaced by a link that the recipient of the email can use to log into this Space as a Person.""", doInviteLink(false))
 
-  lazy val chromelessInviteLink = new SingleThingMethod(ChromelessInviteLinkOID, "Plain Invite Link", """Place this command inside of an Email Message.
+  lazy val chromelessInviteLink = new SingleThingMethod(ChromelessInviteLinkOID, "Plain Invite Link", "Generate a Link to join this Space, with no Querki menus and such.", 
+      """Place this command inside of an Email Message.
 When the email is sent, it will be replaced by a link that the recipient of the email can use to log into this Space as a Person.
 Unlike the ordinary Invite Link command, this one results in a page with no Querki menu bar, just your pages.
 (NOTE: this will probably become a paid-users-only feature in the future. Also, this method isn't usually what you want any more;

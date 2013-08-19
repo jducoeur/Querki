@@ -50,10 +50,11 @@ class InternalMethod(tid:OID, p:PropFetcher) extends SystemProperty(tid, Interna
  * TBD: action really ought to be a separate parameter list, but for some reason I'm having trouble
  * instantiating it that way. Figure out the syntax and do that.
  */
-class SingleThingMethod(tid:OID, name:String, desc:String, action:(Thing, ContextBase) => QValue) extends InternalMethod(tid,
+class SingleThingMethod(tid:OID, name:String, summary:String, details:String, action:(Thing, ContextBase) => QValue) extends InternalMethod(tid,
     toProps(
       setName(name),
-      DisplayTextProp(desc)
+      PropSummary(summary),
+      PropDetails(details)
     ))
 {
   override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
@@ -152,7 +153,19 @@ abstract class SingleContextMethod(tid:OID, p:PropFetcher) extends MetaMethod(ti
 object InstancesMethod extends SingleContextMethod(InstancesMethodOID,
     toProps(
       setName("_instances"),
-      DisplayTextProp("Returns all of the non-Model Things that are based on this")))
+      PropSummary("Returns all of the non-Model Things that are based on this"),
+      PropDetails("""A Model is sort of like the concept of a Thing: "Person" or "CD" or "Recipe".
+          |
+          |An Instance is an actual Thing based on one of those Models: "Joe" or "In Through the Out Door" or "Macaroni and Cheese".
+          |
+          |Most of the time, when using Querki, you want to create one or more Models that describe the *kinds*
+          |of Things you're interested in, and then create a bunch of Instances of each Model.
+          |
+          |So _instances looks like this:
+          |    MODEL -> _instances -> LIST OF INSTANCES
+          |That is, it receives a *Model*, and produces the Instances that come from that Model.
+          |
+          |If you have sub-Models under *Model* (that add more Properties, for example), this will include those as well.""".stripMargin)))
 {
   def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):QValue = {
     applyToIncomingThing(partialContext)(handleThing)
@@ -190,7 +203,26 @@ abstract class EditMethodBase(id:OID, pf:PropFetcher) extends ThingPropMethod(id
 object EditMethod extends EditMethodBase(EditMethodOID, 
     toProps(
       setName("_edit"),
-      DisplayTextProp("Puts an editor for the specified Property into the page"),
+      PropSummary("Puts an editor for the specified Property into the page"),
+      PropDetails("""Sometimes, you want to make it easy to edit a Thing, without having to go into the Editor
+          |page. For instance, there may be a single button, or a few fields, that should be more easily editable
+          |directly when you are looking at the Thing. That is when you use _edit.
+          |
+          |Use it like this:
+          |    THING -> PROPERTY._edit
+          |This means "put an edit control for the PROPERTY on THING right here".
+          |
+          |There isn't yet a way to say what particular *kind* of edit control is used -- there is a default control
+          |depending on PROPERTY. For instance, if it is a Large Text Property, a big resizeable text input will be
+          |shown. If it is an Optional Yes or No Property, a trio of Yes/Maybe/No buttons will be displayed. (Later,
+          |we will undoubtedly add ways to control this more precisely.)
+          |
+          |The edit control will display the current contents of PROPERTY when it is shown. Changes take place immediately,
+          |with no "save" button or anything like that. (Later, we plan to make a Save button optional, but that still
+          |needs to be designed.)
+          |
+          |If the current user isn't allowed to edit this Thing, _edit instead displays the ordinary, rendered value of
+          |the Property. If you want to do something else in this case, use [[_editOrElse._self]] instead.""".stripMargin),
       AppliesToKindProp(Kind.Property)
     )) 
 {
@@ -205,8 +237,11 @@ object EditMethod extends EditMethodBase(EditMethodOID,
 object EditOrElseMethod extends EditMethodBase(EditOrElseMethodOID, 
     toProps(
       setName("_editOrElse"),
-      DisplayTextProp("PROP._editOrElse(FALLBACK) shows an editor for property PROP if the user is allowed" +
-      		"to edit this thing; otherwise, it displays FALLBACK."),
+      PropSummary("Like [[_edit._self]], but you can say what to show if the user can't edit this Property"),
+      PropDetails("""See [[_edit._self]] for the full details of how edit control works. This is just like that,
+          |but with an additional parameter:
+          |    THING -> PROPERTY._editOrElse(FALLBACK)
+          |If the current user isn't allowed to edit THING, then FALLBACK is produced instead.""".stripMargin),
       AppliesToKindProp(Kind.Property)
     )) 
 {
@@ -226,7 +261,8 @@ object EditOrElseMethod extends EditMethodBase(EditOrElseMethodOID,
 object SectionMethod extends InternalMethod(SectionMethodOID,
     toProps(
       setName("_section"),
-      DisplayTextProp("""_section is intended for the common case where you want to display a section
+      PropSummary("Display a List as a Header, followed by its contents"),
+      PropDetails("""_section is intended for the common case where you want to display a section
           |on the page if and only if a specific List is non-empty. It looks like this:
           |    My List -> _section(HEADER, DETAILS, EMPTY)
           |Each of the parameters can be any QL phrase, although they are often just text blocks. They are
@@ -238,10 +274,10 @@ object SectionMethod extends InternalMethod(SectionMethodOID,
           |* EMPTY is shown if and only if the List is empty. This lets you show something else if appropriate.
           |It is optional -- you can leave it off.
           |
-          |Note that the generated wikitext will have the HEADER on a separate line from the DETAILS. This is
+          |Note that the generated QText will have the HEADER on a separate line from the DETAILS. This is
           |usually what you want. It means that, for example, if you start the HEADER with "###", it will show
           |up as a true header, separate from the DETAILS, but if it is just something like "Contents:", the
-          |HEADER and DETAILS will run together, since it joins ordinary text lines together.""".stripMargin)
+          |HEADER and DETAILS will run together, since QText joins ordinary text lines together.""".stripMargin)
     )) 
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
@@ -289,18 +325,60 @@ object SectionMethod extends InternalMethod(SectionMethodOID,
 object ApplyMethod extends SystemProperty(ApplyMethodOID, QLType, Optional,
     toProps(
       setName("_apply"),
-      DisplayTextProp("If you set the _apply property, it will be run when you name this Thing in a QL expression.")))
+      PropSummary("A QL Expression that will be run when you name this Thing."),
+      PropDetails("""_apply is an advanced function, and most users will not use it directly. But it is probably
+          |the most important Property in Querki, and advanced users may want to play with it.
+          |
+          |One of Querki's design goals was that it should Just Work. This is reflected, more than anywhere else,
+          |in the fact that you can just say:
+          |[[_code(""[[My Thing]]"")]]
+          |and it shows up as a pointer to *My Thing*.
+          |
+          |That seems obvious, but consider -- you can also say:
+          |[[_code(""[[My Property]]"")]]
+          |and what you get isn't a pointer to *My Property* -- instead, you get the *value* of My Property on the
+          |Thing you're looking at.
+          |
+          |Moreover, you can say:
+          |[[_code(""[[All Things]]"")]]
+          |on a page, and what you get is a listing of all of the Things in this Space! So what the heck is going on
+          |here?
+          |
+          |The secret behind the magic is the _apply method. _apply is a Property that is defined on *every* Thing.
+          |(More or less -- system-defined Things use a closely-related built-in mechanism.) It defines exactly
+          |"What should happen when I name this Thing?" So _apply on Properties displays the value of the Property
+          |on the received Thing; _apply on All Things is this QL Expression:
+          |[[_code(All Things._apply)]]
+          |And _apply for Thing (the Model that everything is based on) simply produces a pointer to this thing.
+          |
+          |You can define _apply for your own Things as well -- indeed, the way you usually write your own serious
+          |Methods is to define a Thing that just has an _apply Property, and then you can use the Method just like
+          |the system-defined ones, by name.
+          |
+          |The QL Expression in the _apply Property will receive whatever is passed in, and should produce whatever
+          |you want to pass out. It is currently completely unstructured and untyped. However, note that we will
+          |probably be moving towards more structure in the future, and you should always try to be consistent:
+          |as with any QL Expression, you should expect to receive a specific Type, and always produce a specific Type.""".stripMargin)))
 
 object RefsMethod extends ThingPropMethod(RefsMethodOID, 
     toProps(
       setName("_refs"),
-      DisplayTextProp("""Returns all of the Things that use this Property to point to this Thing.
-          
-Say that I have Thing A and Thing B, which are both of Model M. Property P is a Link to M.
-A.P is pointing to B. In that case, B -> P._refs would return A -- the Thing that is pointing
-to B using property P.
-          
-Note that this returns a List, since any number of Things could be pointing to this.""")))
+      PropSummary("""Returns all of the Things that use this Property to point to this Thing."""),
+      PropDetails("""    THING -> PROPERTY._refs -> REFERRING THINGS
+          |Say that my Space is listing my CD collection. I have a Model *Album* for individual discs,
+          |and Model *Artist* for performers. Album has a Property *Artists*, which is a Set of Links
+          |to Artist -- basically, the list of performers on this particular CD.
+          |
+          |In this case, *Artist* is likely to want to say something like:
+          |_code(""[[Artists._refs -> _bulleted]]"")
+          |That is, based on the Artist we're looking at (which is always the initial Context passed into
+          |a QL Expression), get all the Things that refer to this Artist using the *Artists* Property,
+          |and display them as a bullet list.
+          |
+          |This method is enormously useful -- most Models that get pointed to like this will probably
+          |want to use it.
+          |
+          |Note that this always returns a List, since any number of Things could be pointing to this.""".stripMargin)))
 {
   def applyToPropAndThing(mainContext:ContextBase, mainThing:Thing, 
     partialContext:ContextBase, propErased:Property[_,_],
@@ -327,11 +405,14 @@ Note that this returns a List, since any number of Things could be pointing to t
 object OrMethod extends InternalMethod(OrMethodOID,
     toProps(
       setName("_or"),
-      DisplayTextProp("""_or() is the short-circuiting "or" operator.
-          
-_or takes any number of parameters. It runs through each of them, applying the incoming context.
-It produces the first one that returns a non-empty result, or None iff all of them come out empty. 
-          """)))
+      PropSummary("""The short-circuiting "or" operator."""),
+      PropDetails("""    RECEIVED -> _or(CLAUSE1, CLAUSE2, ...) -> RESULT
+          |_or takes any number of parameters. It runs through each of them, applying the incoming context.
+          |It produces the first one that returns a non-empty result, or None iff all of them come out empty. 
+          |
+          |IMPORTANT: this method is going to change in the future! We will likely enhance it so that it does
+          |the obvious thing if the clauses return a single True/False result. (Or if there is a single parameter,
+          |or'ing together the results from that.)""".stripMargin)))
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     paramsOpt match {
@@ -362,7 +443,12 @@ It produces the first one that returns a non-empty result, or None iff all of th
 object NotMethod extends InternalMethod(NotOID,
     toProps(
       setName("_not"),
-      DisplayTextProp("_not takes the parameter if one is given, or the received value if not. It returns True iff that it False, and False if it is anything else")))
+      PropSummary("Returns the reverse of the received value, or the parameter"),
+      PropDetails("""    TRUE/FALSE -> _not -> FALSE/TRUE
+          |or
+          |    RECEIVED -> _not(TRUE/FALSE) -> FALSE/TRUE
+          |
+          |_not takes the parameter if one is given, or the received value if not. It returns True iff that it False, and False if it is anything else""".stripMargin)))
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     val inVal = paramsOpt match {
@@ -378,12 +464,13 @@ object NotMethod extends InternalMethod(NotOID,
 object FirstMethod extends InternalMethod(FirstMethodOID,
     toProps(
       setName("_first"),
-      DisplayTextProp("""_first grabs just the first thing from the received context.
-          
-Often you have a List, and you just want the first item in the List. (Especially when you
-expect the list to only have one element in it.) Use _first to turn that List into an
-Optional instead.
-          """)))
+      PropSummary("""Grabs just the first thing from the received context."""),
+      PropDetails("""    LIST -> _first -> OPTIONAL
+          |Often you have a List, and you just want the first item in the List. (Especially when you
+          |expect the list to only have one element in it.) Use _first to turn that List into an
+          |Optional instead.
+          |
+          |If LIST is empty, this produces None. If LIST has elements, this produces Optional(first element).""".stripMargin)))
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     val sourceColl = context.value
@@ -399,11 +486,13 @@ Optional instead.
 object RestMethod extends InternalMethod(RestMethodOID,
     toProps(
       setName("_rest"),
-      DisplayTextProp("""_rest produces everything but the first thing from the received context.
-          
-Often you have a List, and you want to slice off the first item (using _first). You then use _rest
-to handle everything else.
-          """)))
+      PropSummary("""Produces everything but the first thing from the received context."""),
+      PropDetails("""    LIST -> _rest -> LIST
+          |Often you have a List, and you want to slice off the first item (using _first). You then use _rest
+          |to handle everything else.
+          |
+          |_rest currently isn't useful very often. As the QL language gets more powerful, it will
+          |become a useful tool, although mainly for fairly advanced programmers.""".stripMargin)))
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     val sourceColl = context.value
@@ -443,9 +532,10 @@ abstract class ButtonBase(tid:OID, pf:PropFetcher) extends InternalMethod(tid, p
 object LinkButtonMethod extends ButtonBase(LinkButtonOID,
     toProps(
       setName("_linkButton"),
-      DisplayTextProp("""_linkButton(LABEL) receives a Link or External Link, and displays that
-link as a button. It expects one parameter, which will be the label of the button.
-          """)))
+      PropSummary("Displays a button that goes to a linked page when you press it."),
+      PropDetails("""    LINK -> _linkButton(LABEL)
+          |_linkButton receives a Link or External Link, and displays that
+          |link as a button. It expects one parameter, which will be the label of the button.""".stripMargin)))
 {
   val numParams = 1
   
@@ -457,9 +547,14 @@ link as a button. It expects one parameter, which will be the label of the butto
 object IconButtonMethod extends ButtonBase(IconButtonOID,
     toProps(
       setName("_iconButton"),
-      DisplayTextProp("""_iconButton(ICON, TOOLTIP) receives a Link or External Link, and displays that
-link as a button. The first parameter identifies the icon to use for the button; the second is the
-hover text to display as a tooltip.""")))
+      PropSummary("Displays a button showing an icon, that goes to a linked page when you press it."),
+      PropDetails("""    LINK -> _iconButton(ICON, TOOLTIP)
+          |_iconButton receives a Link or External Link, and displays that
+          |link as a button. The first parameter identifies the icon to use for the button; the second is the
+          |hover text to display as a tooltip. Both parameters are required.
+          |
+          |For icons, you may use anything from the [Bootstrap Glyphicon](http://getbootstrap.com/2.3.2/base-css.html#icons) set.
+          |Just use the name of the icon (in double-double quotes) in the parameter.""".stripMargin)))
 {
   val numParams = 2
   
@@ -478,7 +573,16 @@ hover text to display as a tooltip.""")))
 object IsNonEmptyMethod extends ThingPropMethod(IsNonEmptyOID,
     toProps(
       setName("_isNonEmpty"),
-      DisplayTextProp("THING -> PROP._isNonEmpty produces true iff PROP is defined on THING, and this instance contains at least one element")))
+      PropSummary("Tests whether the provided value is non-empty"),
+      PropDetails("""    THING -> PROP._isNonEmpty
+          |or
+          |    RECEIVED -> _isNonEmpty
+          |The first form produces true iff PROP is defined on THING, and this instance contains at least one element.
+          |
+          |The second form produces true iff RECEIVED contains at least one element.
+          |
+          |This is usually used on a List, Set or Optional, but you *can* use it on an ExactlyOne value. (In which
+          |case it will always produce True.)""".stripMargin)))
 {
   override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
     boolean2YesNoQValue(!context.value.isEmpty)
@@ -505,7 +609,16 @@ object IsNonEmptyMethod extends ThingPropMethod(IsNonEmptyOID,
 object IsEmptyMethod extends ThingPropMethod(IsEmptyOID,
     toProps(
       setName("_isEmpty"),
-      DisplayTextProp("THING -> PROP._isEmpty produces true iff PROP is not defined on THING, or this instance contains no elements")))
+      PropSummary("Tests whether the provided value is empty"),
+      PropDetails("""    THING -> PROP._isEmpty
+          |or
+          |    RECEIVED -> _isEmpty
+          |The first form produces true iff PROP is not defined on THING, or the value is empty.
+          |
+          |The second form produces true iff RECEIVED is empty.
+          |
+          |This is usually used on a List, Set or Optional, but you *can* use it on an ExactlyOne value. (In which
+          |case it will always produce False.)""".stripMargin)))
 {
   override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
     boolean2YesNoQValue(context.value.isEmpty)
@@ -522,16 +635,14 @@ object IsEmptyMethod extends ThingPropMethod(IsEmptyOID,
 object PluralizeMethod extends InternalMethod(PluralizeOID,
     toProps(
       setName("_pluralize"),
-      DisplayTextProp("""
-    RECEIVED -> _pluralize(SINGULAR,PLURAL)
-          
-Is a convenient method for choosing different text depending on a Property. The RECEIVED
-Context should usually be a List. If it contains a single element, _pluralize produces
-SINGULAR; if it contains multiple *or* zero elements, _pluralize produces PLURAL.
-         
-Note that this behaviour is pretty English-specific. We expect that other variations will
-be needed for other languages in the long run.
-          """)))
+      PropSummary("Produces the right word depending on how many elements are in a collection."),
+      DisplayTextProp("""    RECEIVED -> _pluralize(SINGULAR,PLURAL)
+          |This is a convenient method for choosing different text depending on a Property. The RECEIVED
+          |Context should usually be a List. If it contains a single element, _pluralize produces
+          |SINGULAR; if it contains multiple *or* zero elements, _pluralize produces PLURAL.
+    	  |
+          |Note that this behaviour is pretty English-specific. We expect that other variations will
+          |be needed for other languages in the long run.""".stripMargin)))
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     def chooseParam(params:Seq[QLPhrase]):QLPhrase = {
@@ -557,14 +668,15 @@ be needed for other languages in the long run.
 object FilterMethod extends InternalMethod(FilterOID,
     toProps(
       setName("_filter"),
-      DisplayTextProp("""
-    RECEIVED -> _filter(FILTER)
-          
-This function is how you take a List of things, and whittle them down to just the ones you want.
-          
-The FILTER should take a Thing, and produce a YesNo that says whether to include this Thing.
-That gets applied to each element of RECEIVED; if FILTER returns Yes, then it is included, otherwise not.
-          """)))
+      PropSummary("Filter out non-matching elements of a collection"),
+      DisplayTextProp("""    RECEIVED -> _filter(FILTER)
+          |This function is how you take a List of things, and whittle them down to just the ones you want.
+          |
+          |The FILTER should take a Thing, and produce a YesNo that says whether to include this Thing.
+          |That gets applied to each element of RECEIVED; if FILTER returns Yes, then it is included, otherwise not.
+    	  |
+          |This is one of the most commonly-useful functions in Querki. It is how you usually say, "I only want *some*
+          |of the elements in this List or Set".""".stripMargin)))
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     
@@ -588,24 +700,25 @@ That gets applied to each element of RECEIVED; if FILTER returns Yes, then it is
   }
 }
 
-object SpaceMethod extends SingleThingMethod(SpaceMethodOID, "_space", """
-    RECEIVED -> _space -> SPACE
-          
-This function produces the Space that the received Thing is contained in.
-          """,
+object SpaceMethod extends SingleThingMethod(SpaceMethodOID, "_space", "What Space is this Thing in?", 
+    """    RECEIVED -> _space -> SPACE
+    |
+    |This function produces the Space that the received Thing is contained in.""".stripMargin,
 { (thing, context) => LinkValue(thing.spaceId) })
 
-object ExternalRootsMethod extends SingleThingMethod(ExternalRootsOID, "_externalRoots", """
-    SPACE -> _externalRoots -> ROOTS
-   
-Pass in a link to a Space; this produces all of the "roots" -- the Things from its Apps -- used
-by that Space.""",
+object ExternalRootsMethod extends SingleThingMethod(ExternalRootsOID, "_externalRoots", "What are the ancestor Things for this Space?", 
+    """    SPACE -> _externalRoots -> ROOTS
+    |
+    |Pass in a link to a Space; this produces all of the "roots" -- the Things from its Apps -- used
+    |by that Space.
+    |
+    |User code will rarely care about this function, but it is part of how the [[All Things._self]] display works.""".stripMargin,
 { (thing, context) => QList.from(context.state.thingRoots, LinkType) })
 
-object AllPropsMethod extends SingleThingMethod(AllPropsMethodOID, "_allProps", """
-    SPACE -> _allProps -> PROPS
-    
-This receives a link to a Space, and produces all of the Properties defined in that Space.""",
+object AllPropsMethod extends SingleThingMethod(AllPropsMethodOID, "_allProps", "What are the Properties in this Space?", 
+    """    SPACE -> _allProps -> PROPS
+    |
+    |This receives a link to a Space, and produces all of the Properties defined in that Space.""".stripMargin,
 { (thing, context) => 
   thing match {
     case s:SpaceState => QList.from(s.propList.toSeq.sortBy(_.displayName), LinkFromThingBuilder) 
@@ -617,13 +730,36 @@ This receives a link to a Space, and produces all of the Properties defined in t
 object SortMethod extends InternalMethod(SortMethodOID,
     toProps(
       setName("_sort"),
-      DisplayTextProp("""
-    LIST -> _sort(EXP) -> SORTED
-          
-With no parameters, _sort sorts the elements of the received List alphabetically by their Display Names.
-If a parameter is given, it is applied to each element in LIST, and the results are used to sort the
-elements. This may produce strange results if EXP is not defined on all the elements!
-""")))
+      PropSummary("Sort the received list"),
+      PropDetails("""    LIST -> _sort -> SORTED
+          |or
+          |    LIST -> _sort(EXP) -> SORTED
+          |With no parameters (the first form), _sort sorts the elements of the received List alphabetically by their Display Names.
+          |This is what you want most of the time. However, note that many methods that return Lists are sorted to begin with,
+          |so you often don't even need to bother. (Sets of Links are always sorted by Display Name.)
+          |
+          |If a parameter is given (the second form), it is applied to each element in LIST, and the results are used to sort the
+          |elements. The sort order is whatever is natural for the returned elements -- usually alphabetical, but might be, for example,
+          |numeric if the results are numeric. It is essential that EXP return the same type for all elements, and it should return
+          |ExactlyOne value. (If it returns a List, only the first will be used. The behaviour is undefined if it returns a Set, or None.)
+          |
+          |At the moment, _sort is mainly designed for Links -- that is, pointers to Things -- since that is what 95% of use cases require. 
+          |We plan to make it more general, when folks come up with use cases that need it.
+          |
+          |Most of the time, you will want EXP to simply be the name of a Property. For example, this:
+          |
+          |    My Stuff._instance -> _sort(Title)
+          |
+          |Produces all of the Instances of the "My Stuff" Model, sorted based on the "Title" Property. But it's possible to get much fancier if you need to:
+          |EXP can be any QL Expression that receives a Link and produces a consistent Type.
+          |
+          |If you need to reverse the order of the sort, use the [[_desc]] method inside of it.
+          |
+          |If two or more elements being sorted have the same sort value, they will be sorted by Display Name.
+          |
+          |There is currently no way to define your own customized sort order. It'll probably happen someday, but will depend on user
+          |demand. It is likely that we will add the ability to sort by multiple keys (sort on Property A, then Property B if those are
+          |identical) in the not-too-distant future -- yell if this proves important for you.""".stripMargin)))
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     
@@ -683,10 +819,12 @@ class DescendingType[VT](baseType: PType[VT]) extends DelegatingType[VT](baseTyp
 object DescMethod extends InternalMethod(DescMethodOID,
     toProps(
       setName("_desc"),
-      DisplayTextProp("""LIST -> _sort(_desc(EXP)) -> SORTED
+      PropSummary("Sort this list in descending order"),
+      PropDetails("""    LIST -> _sort(_desc(EXP)) -> SORTED
           |
           |_desc returns the given EXP, tweaked so that the values in it have the reversed sort order from
-          |what they would normally have. It is usually used inside of _sort, to reverse the sort order.""".stripMargin)))
+          |what they would normally have. It is usually used inside of _sort, to reverse the sort order, which
+          |is normally in ascending order.""".stripMargin)))
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     paramsOpt match {
@@ -700,16 +838,24 @@ object DescMethod extends InternalMethod(DescMethodOID,
 }
 
 object ChildrenMethod extends SingleThingMethod(ChildrenMethodOID, "_children", "This produces the immediate children of the received Model.",
+    """    MODEL -> _children -> LIST OF CHILDREN
+    |This produces all of the Things that list MODEL as their Model. It includes both other Models, and Instances.""".stripMargin,
 { (thing, context) => QList.from(context.state.children(thing).map(_.id), LinkType) })
 
 object IsModelMethod extends SingleThingMethod(IsModelMethodOID, "_isModel", "This produces Yes if the received Thing is a Model.",
+    """    THING -> _isModel -> Yes or No""".stripMargin,
 { (thing, context) => ExactlyOne(thing.isModel(context.state)) })
 
 // TODO: this is so full of abstraction breaks it isn't funny. Using routes here is inappropriate; indeed, the fact that we're referring
 // to Play at all in this level is inappropriate. This probably needs to be routed through the rendering system, so that it takes the
 // current rendering environment and produces a relative control appropriate within it. But it'll do for the short term.
 import controllers.routes
-object CreateInstanceLinkMethod extends SingleThingMethod(CreateInstanceLinkOID, "_createInstanceLink", "Given a received Model, this produces a Link to create an instance of that Model.",
+object CreateInstanceLinkMethod extends SingleThingMethod(CreateInstanceLinkOID, "_createInstanceLink", 
+    "Given a received Model, this produces a Link to create an instance of that Model.",
+    """    MODEL -> _createInstanceLink -> _linkButton(LABEL)
+    |This is how you implement a "Create" button. _createInstanceLink takes a MODEL, and produces an External Link to the page to create a new Instance of it.
+    |
+    |You will usually then feed this into, eg, _linkButton or _iconButton as a way to display the Link.""".stripMargin,
 { (thing, context) => 
   implicit val req = context.request.request
   ExactlyOne(
@@ -720,13 +866,15 @@ object CreateInstanceLinkMethod extends SingleThingMethod(CreateInstanceLinkOID,
 object IfMethod extends InternalMethod(IfMethodOID,
     toProps(
       setName("_if"),
-      DisplayTextProp("""
-    RECEIVED -> _if(YESNO, IFCLAUSE, ELSECLAUSE) -> ...
-
-_if is one of the basic building blocks of programming. It applies the YESNO phrase to the received context.
-If the result is Yes, it applies the IFCLAUSE to the received context and produces that. Otherwise, if there
-is an ELSECLAUSE, it applies and produces that, or produces nothing if there is no ELSECLAUSE.
-          """)))
+      PropSummary("Choose what to produce, as directed"),
+      DisplayTextProp("""    RECEIVED -> _if(YESNO, IFCLAUSE, ELSECLAUSE) -> ...
+          |_if is one of the basic building blocks of programming. It applies the YESNO phrase to the received context.
+          |If the result is Yes, it applies the IFCLAUSE to the received context and produces that. Otherwise, if there
+          |is an ELSECLAUSE, it applies and produces that, or produces None if there is no ELSECLAUSE.
+          |
+          |The syntax of _if is likely to evolve in the future, to something more like most programming languages. For now,
+          |though, note that IFCLAUSE and ELSECLAUSE are *inside* the parentheses, rather than after them as most languages
+          |have it.""".stripMargin)))
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     paramsOpt match {
@@ -752,11 +900,30 @@ is an ELSECLAUSE, it applies and produces that, or produces nothing if there is 
 object JoinMethod extends InternalMethod(JoinMethodOID,
     toProps(
       setName("_join"),
-      DisplayTextProp("""LIST -> _join(OPEN, SEP, CLOSE]) -> WIKITEXT
-
-_join takes the given LIST, and turns it into a single line. If there is only one parameter, it is SEP,
-which is placed between each pair of elements. If there are two, the first is OPEN, which is put at the
-beginning. If there are three, the last is CLOSE, which is put at the end.""")))
+      PropSummary("Combine a list of Text values together"),
+      DisplayTextProp("""    LIST -> _join(OPEN, SEP, CLOSE) -> QTEXT
+          |_join takes the given LIST, and turns it into a single line. For example, if My List was "Cat", "Dog", "Horse",
+          |then
+          |    My List -> _join
+          |would come out as "CatDogHorse".
+          |
+          |Of course, that probably isn't what you want -- most of the time, you want some separators at the beginning,
+          |middle and end. Those are the parameters; how many parameters you give define how they are used. If there is
+          |only one, then it is SEP, the separator in between elements. So
+          |    My List -> _join(", ")
+          |would come out as "Cat, Dog, Horse" -- more reasonable.
+          |
+          |If there are two parameters, then they are OPEN and SEP. So for example, if I wanted to include dashes at the
+          |beginning, that would be:
+          |    My List -> _join("-- ", ", ")
+          |which would come out as "-- Cat, Dog, Horse". And if I wanted parentheses around the entire list, I'd use all
+          |three parameters -- OPEN, SEP and CLOSE -- as:
+          |    My List -> _join("(", ", ", ")")
+          |to get "(Cat, Dog, Horse)".
+          |
+          |Note that you can use _join with anything, not just Text -- if the received values aren't Text, then they will
+          |be rendered into their default forms before getting combined. But at the end of _join, what you get back is
+          |one big block of QText. You can't do any further processing on the elements after this.""".stripMargin)))
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     val (openPhrase, sepPhrase, closePhrase) = paramsOpt match {
@@ -793,7 +960,16 @@ beginning. If there are three, the last is CLOSE, which is put at the end.""")))
 object TagRefsMethod extends InternalMethod(TagRefsOID,
     toProps(
       setName("_tagRefs"),
-      DisplayTextProp("This produces a List of all Things that have the received Thing or Name as a Tag")))
+      PropSummary("Produces a List of all Things that have the received Thing or Name as a Tag"),
+      PropDetails("""    NAME -> _tagRefs -> THINGS
+          |_tagRefs is usually the right way to answer the question "what points to this?" For example, if I wanted to
+          |show a bullet list of everything that points to the current Thing, I would simply say:
+          |    _tagRefs -> _bulleted
+          |_tagRefs is designed to receive a "name" (which is what a Tag is). If you send it a Thing, then it will use
+          |the Name of that Thing.
+          |
+          |NOTE: _tagRefs and _refs are closely related concepts. They currently work differently, but we might
+          |at some point combine them for simplicity.""".stripMargin)))
 { 
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     val elemT = context.value.pType
@@ -825,11 +1001,21 @@ object TagRefsMethod extends InternalMethod(TagRefsOID,
 object TagsForPropertyMethod extends SingleContextMethod(TagsForPropertyOID,
     toProps(
       setName("_tagsForProperty"),
-      DisplayTextProp("""My Tags Property._tagsForProperty -> ... all tags...
-          
-_tagsForProperty can be used on any Property whose Type is Tag Set. It produces a list of all of the
-tags that have been used in that Property so far.
-          """)))
+      PropSummary("Show all the Tags that are defined for this Property"),
+      // TODO: this isn't displaying properly. Why not? It looks like the "" nested inside of the indirect
+      // Property is causing the problem -- I am getting a syntax error *claiming* to be in Display Text,
+      // pointing at the first "":
+      PropDetails("""    TAG PROPERTY._tagsForProperty -> LIST OF TAGS
+          |_tagsForProperty can be used on any Property whose Type is Tag Set. It produces a list of all of the
+          |tags that have been used in that Property so far.
+          |
+          |Typically, you then feed the results of this to _tagRefs, to get the Things that use that Tag. For example,
+          |if I had a list of Wines, each of which had a tag giving its "Wine Color", I could say:
+          |_code(""[[Wine Color._tagsForProperty -> ""* ____: [[_tagRefs -> _commas]]""]]"")
+          |to produce a list like:
+          |* Red: Pinot Noir, Shiraz
+          |* White: Pinot Gris, Chardonnay
+          |""".stripMargin)))
 {
   def fetchTags(space:SpaceState, propIn:Property[_,_]):Set[String] = {
     implicit val s = space
@@ -855,11 +1041,16 @@ tags that have been used in that Property so far.
 object SelfMethod extends SingleContextMethod(SelfMethodOID,
     toProps(
       setName("_self"),
-      DisplayTextProp("""*thing*._self simply produces *thing*.
-          
-This seems silly, but it is useful for overriding the usual _apply behavior. In particular,
-*property*._self is the way to get a link to the property itself, instead of fetching the value
-of the property on the received Thing.""")))
+      PropSummary("Get a Link to this Thing"),
+      PropDetails("""*thing*._self simply produces *thing*.
+          |
+          |This seems silly, but it is useful for overriding the usual _apply behavior. In particular,
+          |*property*._self is the way to get a link to the property itself, instead of fetching the value
+          |of the property on the received Thing.
+          |
+          |More formally, _self is the way to override the usual [[_apply]] behaviour on a Thing, to get a
+          |Link to that Thing. It is never necessary for ordinary Things, but frequently useful when _apply
+          |has been defined on it.""".stripMargin)))
 {
   def fullyApply(mainContext:ContextBase, partialContext:ContextBase, params:Option[Seq[QLPhrase]]):QValue = {
     partialContext.value
@@ -867,6 +1058,7 @@ of the property on the received Thing.""")))
 }
 
 object PropsOfTypeMethod extends SingleThingMethod(PropsOfTypeOID, "_propsOfType", "This receives a Type, and produces all of the Properties in this Space with that Type",
+    """    TYPE -> _propsOfType -> LIST OF PROPS""".stripMargin,
 { (thing, context) =>
   thing match {
     case pt:PType[_] => QList.from(context.state.propsOfType(pt), LinkFromThingBuilder)
@@ -877,17 +1069,22 @@ object PropsOfTypeMethod extends SingleThingMethod(PropsOfTypeOID, "_propsOfType
 object CodeMethod extends SingleContextMethod(CodeMethodOID,
     toProps(
       setName("_code"),
-      DisplayTextProp("""_code() displays the raw code of a value or property, pretty flexibly.
-          
-You can give it as "TEXT -> _code" to display the TEXT -- however, note that the TEXT will be processed as normal
-in this case. If you want to show some raw code, unprocessed, do it as "_code(TEXT)" instead.
-          
-You can give a property as a parameter -- "_code(PROP)" -- and it will display the value of the property on this Thing.
-          
-Or you can give a property on some other Thing -- "_code(THING.PROP)" -- to display the value of the property on that Thing.
-          
-If you have a parameter, and it doesn't work as either PROP or THING.PROP, then it will display the parameter literally.
-          """)))
+      PropSummary("Display a block of QL code"),
+      PropDetails("""_code() displays the raw code of a value or property, pretty flexibly.
+          |
+          |You can give it as "TEXT -> _code" to display the TEXT -- however, note that the TEXT will be processed as normal
+          |in this case. If you want to show some raw code, unprocessed, do it as "_code(TEXT)" instead.
+          |
+          |You can give a property as a parameter -- "_code(PROP)" -- and it will display the value of the property on this Thing.
+          |
+          |Or you can give a property on some other Thing -- "_code(THING.PROP)" -- to display the value of the property on that Thing.
+          |
+          |If you have a parameter, and it doesn't work as either PROP or THING.PROP, then it will display the parameter literally.
+          |
+          |The results are displayed in an inset block, in monospaced type, so that it looks "codish".
+          |
+          |_code is, frankly, a bit persnickety at this point, and not always easy to use for complicated examples. It should be
+          |considered a work in progress.""".stripMargin)))
 {
   def encodeString(str:String):QValue = {
     val escaped = scala.xml.Utility.escape(str)
@@ -969,7 +1166,10 @@ If you have a parameter, and it doesn't work as either PROP or THING.PROP, then 
 object IsDefinedMethod extends SingleContextMethod(IsDefinedOID,
     toProps(
       setName("_isDefined"),
-      DisplayTextProp("_isDefined produces Yes if the name passed into it is a real Thing")))
+      PropSummary("Produces Yes if the name passed into it is a real Thing"),
+      PropDetails("""    NAME -> _isDefined -> YES or NO
+          |You typically use _isDefined with a Tag Property. It is simply a way to ask "is there actually something
+          |with this name?", so that you can handle it differently depending on whether there is or not.""".stripMargin)))
 {
   def fullyApply(mainContext:ContextBase, partialContext:ContextBase, paramsOpt:Option[Seq[QLPhrase]]):QValue = {
     partialContext.value.pType != UnknownNameType
@@ -979,7 +1179,10 @@ object IsDefinedMethod extends SingleContextMethod(IsDefinedOID,
 object CountMethod extends SingleContextMethod(CountMethodOID,
     toProps(
       setName("_count"),
-      DisplayTextProp("_count produces the number of elements in the received Collection")))
+      PropSummary("Produces the number of elements in the received Collection"),
+      PropDetails("""    LIST -> _count -> NUMBER
+          |This is pretty much as simple as it sounds. It is most often used in the header of a _section, like this:
+          |    My List -> _section(""Items: ([[_count]])"", _commas)""".stripMargin)))
 {
   def fullyApply(mainContext:ContextBase, partialContext:ContextBase, paramsOpt:Option[Seq[QLPhrase]]):QValue = {
     ExactlyOne(IntType(partialContext.value.cv.size))
@@ -1022,13 +1225,18 @@ object ReverseMethod extends SingleContextMethod(ReverseMethodOID,
   }
 }
 
-object OIDMethod extends SingleThingMethod(OIDMethodOID, "_oid", """THING -> _oid -> Text
+object OIDMethod extends SingleThingMethod(OIDMethodOID, "_oid", "Get the unique global id of this Thing", 
+    """    THING -> _oid -> Text
     |
     |This function produces the unique Object ID (which will generally be a period followed by some letters and numbers)
-    |of the received Thing.""".stripMargin,
+    |of the received Thing.
+    |
+    |Each Thing in Querki has an Object ID. In most cases, it can be used in place of the Thing's name, and it is never
+    |ambiguous -- it always refers to one specific Thing.""".stripMargin,
 { (thing, context) => TextValue(thing.id.toThingId) })
 
-object KindMethod extends SingleThingMethod(KindMethodOID, "_kind", """THING -> _kind -> Number
+object KindMethod extends SingleThingMethod(KindMethodOID, "_kind", "What kind of Thing is this?", 
+    """THING -> _kind -> Number
     |
     |This function produces the Number that represents the "kind"
     |of the received Thing. The Kinds are:
@@ -1041,7 +1249,8 @@ object KindMethod extends SingleThingMethod(KindMethodOID, "_kind", """THING -> 
     |* Attachment: 5""".stripMargin,
 { (thing, context) => ExactlyOne(IntType(thing.kind)) })
 
-object CurrentSpaceMethod extends SingleThingMethod(CurrentSpaceMethodOID, "_currentSpace", """THING -> _currentSpace -> SPACE
+object CurrentSpaceMethod extends SingleThingMethod(CurrentSpaceMethodOID, "_currentSpace", "What Space are we looking at?", 
+    """THING -> _currentSpace -> SPACE
     |
     |This function produces the Space that we are currently displaying. (Generally, the one in the URL.)""".stripMargin,
 { (thing, context) => LinkValue(context.root.state) })

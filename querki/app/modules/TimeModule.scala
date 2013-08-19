@@ -78,7 +78,8 @@ class TimeModule(val moduleId:Short) extends modules.Module {
    * PROPERTIES
    ***********************************************/
   
-  lazy val modTimeMethod = new SingleThingMethod(ModifiedTimeMethodOID, "_modTime", """THING -> _modTime -> Date and Time
+  lazy val modTimeMethod = new SingleThingMethod(ModifiedTimeMethodOID, "_modTime", "When was this Thing last changed?", 
+      """THING -> _modTime -> Date and Time
       |This method can receive any Thing; it produces the Date and Time when that Thing was last changed.""",
       {(t:Thing, _:ContextBase) => ExactlyOne(QDateTime(t.modTime)) })
 
