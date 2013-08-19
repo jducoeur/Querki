@@ -669,7 +669,7 @@ object FilterMethod extends InternalMethod(FilterOID,
     toProps(
       setName("_filter"),
       PropSummary("Filter out non-matching elements of a collection"),
-      DisplayTextProp("""    RECEIVED -> _filter(FILTER)
+      PropDetails("""    RECEIVED -> _filter(FILTER)
           |This function is how you take a List of things, and whittle them down to just the ones you want.
           |
           |The FILTER should take a Thing, and produce a YesNo that says whether to include this Thing.

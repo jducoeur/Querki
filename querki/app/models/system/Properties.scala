@@ -22,7 +22,11 @@ class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:
       toProps(
         setName("Property"),
         (PropSummaryOID -> Optional(TextType("The root Property, from which all others derive."))),
-        (DisplayTextOID -> Optional(LargeTextType("""[[Property Summary -> ""**____**""]]
+        (DisplayTextOID -> Optional(LargeTextType("""[[Property Summary -> ""**____** -- ""]]
+            |[[_if(Property Type -> _is(Internal Method Type), 
+            |  ""**METHOD**"",
+            |  ""Collection: [[Property Collection]] Type: [[Property Type]]"")]]
+            |
             |
             |[[Property Details]]""".stripMargin)))
         ), modules.time.TimeModule.epoch)
