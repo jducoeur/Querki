@@ -110,13 +110,18 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   // something horrible to Java's Regex engine -- if you tried to feed it more than a page or so of
   // matching text (that is, with no QL expressions), it would explode with a Stack Overflow error.
   // Splitting them seems to cure that, knock on wood.
-  val unQLTextRegex = """[^\[\]\"_]+""".r
+  val unQLTextRegex = """[^\[\]\"_\\]+""".r
   val partialDelimiterRegex = """(\[(?!\[)|\"(?!\")|_(?!_)|\](?!\]))+""".r
   // We don't want the RegexParser removing whitespace on our behalf. Note that we need to be
   // very careful about whitespace!
   override val whiteSpace = "".r
   
-  def unQLText:Parser[UnQLText] = (unQLTextRegex | partialDelimiterRegex) ^^ { UnQLText(_) }
+  def unQLText:Parser[UnQLText] = (unQLTextRegex | 
+      // You can use backslash to escape the "special" QL syntax delimiters:
+      "\\\\".r ~> ("\"\"".r | "\\[\\[".r | "\\]\\]".r | "____".r | "__".r) |
+      // If we haven't use the backslash for that, then just eat it as a normal character:
+      "\\\\".r | 
+      partialDelimiterRegex) ^^ { UnQLText(_) }
   def qlCall:Parser[QLCall] = opt("\\*\\s*".r) ~ name ~ opt("." ~> name) ~ opt("\\(\\s*".r ~> (rep1sep(qlPhrase, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
     case collFlag ~ n ~ optMethod ~ optParams => QLCall(n, optMethod, optParams, collFlag) }
   // Note that the failure() here only works because we specifically disallow "]]" in a Text!

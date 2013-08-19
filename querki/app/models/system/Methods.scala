@@ -1010,8 +1010,8 @@ object TagsForPropertyMethod extends SingleContextMethod(TagsForPropertyOID,
           |tags that have been used in that Property so far.
           |
           |Typically, you then feed the results of this to _tagRefs, to get the Things that use that Tag. For example,
-          |if I had a list of Wines, each of which had a tag giving its "Wine Color", I could say:
-          |_code(""[[Wine Color._tagsForProperty -> ""* ____: [[_tagRefs -> _commas]]""]]"")
+          |if I had a list of Wines, using a Tag Set Property giving its "Wine Color", I could say:
+          |    \[[Wine Color._tagsForProperty -> \""* \____: \[[_tagRefs -> _commas\]]\""\]]
           |to produce a list like:
           |* Red: Pinot Noir, Shiraz
           |* White: Pinot Gris, Chardonnay
@@ -1182,7 +1182,7 @@ object CountMethod extends SingleContextMethod(CountMethodOID,
       PropSummary("Produces the number of elements in the received Collection"),
       PropDetails("""    LIST -> _count -> NUMBER
           |This is pretty much as simple as it sounds. It is most often used in the header of a _section, like this:
-          |    My List -> _section(""Items: ([[_count]])"", _commas)""".stripMargin)))
+          |    \[[My List -> _section(\""Items: (\[[_count\]])\"", _commas)\]]""".stripMargin)))
 {
   def fullyApply(mainContext:ContextBase, partialContext:ContextBase, paramsOpt:Option[Seq[QLPhrase]]):QValue = {
     ExactlyOne(IntType(partialContext.value.cv.size))
