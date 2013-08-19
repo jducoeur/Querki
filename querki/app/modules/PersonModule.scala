@@ -75,12 +75,18 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
       toProps(
         setName("Person to Identity Link"),
         InternalProp(true),
-        DisplayTextProp("INTERNAL: points from a Space-scoped Person to a System-scoped Identity")))
+        PropSummary("INTERNAL: points from a Space-scoped Person to a System-scoped Identity")))
 
   lazy val meMethod = new InternalMethod(MeMethodOID,
       toProps(
         setName("_me"),
-        DisplayTextProp("If the current user is a Person in the current Space, return that Person")))
+        PropSummary("If the current user is a Person in the current Space, return that Person"),
+        PropDetails("""_me is the usual way to customize a Space based on who is looking at it. If the page is being viewed by
+            |a logged-in User, *and* they are a Member of this Space, it produces their Person record. If the viewer isn't
+            |logged in, or isn't a Member, this will produce a Warning.
+            |
+            |NOTE: the high concept of _me is important, and will be continuing, but the details are likely to evolve a great
+            |deal, to make it more usable. So don't get too invested in the current behaviour.""".stripMargin)))
   {
     override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
       val userOpt = context.request.requester
@@ -98,7 +104,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
       toProps(
         setName("Chromeless Invites"),
         PropSummary("Should invitees to this Space see it unadorned with Querki chrome?"),
-        DisplayTextProp("""If you set this to Yes on a Space or Thing, then Invite Links pointing
+        PropDetails("""If you set this to Yes on a Space or Thing, then Invite Links pointing
             |to that will show up without Querki chrome. That is, when they join, they'll just see your
             |pages, with no top menu or Querki footer.
             |

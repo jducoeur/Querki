@@ -1195,7 +1195,10 @@ object CountMethod extends SingleContextMethod(CountMethodOID,
 object FormLineMethod extends SingleContextMethod(FormLineMethodOID,
     toProps(
       setName("_formLine"),
-      DisplayTextProp("_formLine(LABEL,CONTROL) displays the LABEL/CONTROL pair as a standard full-width line. This is mainly for input forms.")))
+      PropSummary("Display a label/control pair for an input form"),
+      PropDetails("""_formLine(LABEL,CONTROL) displays the LABEL/CONTROL pair as a standard full-width line. 
+          |
+          |This is mainly for input forms, and is pretty persnickety at this point. It is not recommend for general use yet.""".stripMargin)))
 {
   def fullyApply(mainContext:ContextBase, partialContext:ContextBase, paramsOpt:Option[Seq[QLPhrase]]):QValue = {
     paramsOpt match {
@@ -1218,7 +1221,18 @@ object FormLineMethod extends SingleContextMethod(FormLineMethodOID,
 object ReverseMethod extends SingleContextMethod(ReverseMethodOID,
     toProps(
       setName("_reverse"),
-      DisplayTextProp("_reverse produces the same Collection it receives, as a List, in reverse order")))
+      PropSummary("Produces the same Collection it receives, as a List, in reverse order"),
+      PropDetails("""    LIST -> _reverse -> REVERSED LIST
+          |
+          |This does exactly what it sounds like: it produces the same list, in reversed order.
+          |
+          |_reverse can technically be used on any Collection, but is only useful for Lists. However,
+          |it can be useful after sorting a Set:
+          |
+          |    SET -> _sort -> _reverse
+          |
+          |You can't _reverse a Set itself (Sets have their own intrinsic order), but _sort always
+          |produces a List.""".stripMargin)))
 {
   def fullyApply(mainContext:ContextBase, partialContext:ContextBase, paramsOpt:Option[Seq[QLPhrase]]):QValue = {
     QList.makePropValue(partialContext.value.cv.toSeq.reverse.toList, partialContext.value.pType)
@@ -1258,7 +1272,8 @@ object CurrentSpaceMethod extends SingleThingMethod(CurrentSpaceMethodOID, "_cur
 object IsMethod extends InternalMethod(IsMethodOID,
     toProps(
       setName("_is"),
-      DisplayTextProp("""    THING -> _is(THING) -> Yes or No
+      PropSummary("Allows you to test whether you have a specific Thing"),
+      PropDetails("""    THING -> _is(THING) -> Yes or No
     |
     |This function produces Yes iff the parameter matches the passed-in THING, and No otherwise. It is almost always used
     |inside _if(). For instance, to check whether a Property is of Text Type:
