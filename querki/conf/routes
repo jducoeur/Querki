@@ -23,6 +23,7 @@ GET     /u/:userName/:spaceId/getPropertyEditor controllers.Application.getPrope
 
 GET     /u/:userName/:spaceId/edit controllers.Application.editThing(userName, spaceId, thingId)
 POST    /u/:userName/:spaceId/edit controllers.Application.doEditThing(userName, spaceId, thingId)
+GET     /u/:userName/:spaceId/view controllers.Application.viewThing(userName, spaceId, thingId)
 
 GET     /u/:userName/:spaceId/upload      controllers.Application.upload(userName, spaceId)
 POST    /u/:userName/:spaceId/upload      controllers.Application.doUpload(userName, spaceId)

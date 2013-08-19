@@ -74,7 +74,8 @@ object NavSection {
       }
       Seq(
         NavDivider,
-        NavLink("Edit " + thing.displayName, routes.Application.editThing(owner, spaceId, thingId))
+        NavLink("Edit " + thing.displayName, routes.Application.editThing(owner, spaceId, thingId)),
+        NavLink("View Source", routes.Application.viewThing(owner, spaceId, thingId))
         /*,
         NavLink("Export " + thing.displayName, routes.Application.exportThing(owner, spaceId, thingId))*/
       ) ++ create ++ attachment

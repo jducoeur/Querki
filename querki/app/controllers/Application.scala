@@ -561,6 +561,12 @@ disallow: /
   }
   
   def doEditThing(ownerId:String, spaceId:String, thingIdStr:String) = editThingInternal(ownerId, spaceId, Some(thingIdStr), false)
+
+  // TODO: this should really have its own security property, Can View Source, which should default to Can Read. But for now,
+  // we'll make do with Can Read, which is implicit in withThing:
+  def viewThing(ownerId:String, spaceId:String, thingIdStr:String) = withThing(true, ownerId, spaceId, thingIdStr) { implicit rc =>
+    Ok(views.html.viewSource(rc))
+  }
   
   /**
    * This is the AJAX-style call to change a single property value. As of this writing, I expect it to become
