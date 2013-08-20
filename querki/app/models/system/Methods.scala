@@ -1249,19 +1249,45 @@ object OIDMethod extends SingleThingMethod(OIDMethodOID, "_oid", "Get the unique
     |ambiguous -- it always refers to one specific Thing.""".stripMargin,
 { (thing, context) => TextValue(thing.id.toThingId) })
 
-object KindMethod extends SingleThingMethod(KindMethodOID, "_kind", "What kind of Thing is this?", 
-    """THING -> _kind -> Number
-    |
-    |This function produces the Number that represents the "kind"
-    |of the received Thing. The Kinds are:
-    |
-    |* Normal Thing: 0
-    |* Type: 1
-    |* Property: 2
-    |* Space: 3
-    |* Collection: 4
-    |* Attachment: 5""".stripMargin,
-{ (thing, context) => ExactlyOne(IntType(thing.kind)) })
+object KindMethod extends InternalMethod(KindMethodOID,
+    toProps(
+      setName("_kind"), 
+      PropSummary("What kind of Thing is this?"), 
+      PropDetails("""There are two ways to use _kind:
+          |    THING -> _kind -> Number
+          |
+          |This function produces the Number that represents the "kind"
+          |of the received Thing. The Kinds are:
+          |
+          |* Thing: 0
+          |* Type: 1
+          |* Property: 2
+          |* Space: 3
+          |* Collection: 4
+          |* Attachment: 5
+          |
+          |By and large, though, you should never use these numbers directly. Instead, use
+          |the second form of this method:
+          |    _kind(KIND) -> Number
+          |The KIND parameter should be exactly one of the above names.
+          |
+          |So for example, you can test whether the incoming Thing is a Property by saying:
+          |    ... -> _if(_equals(_kind, _kind(Property)), ...)
+          |""".stripMargin)))
+{ 
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+    // If there is a parameter, this will produce its value:
+    val paramResult = for (
+      params <- paramsOpt;
+      param = params(0);
+      QLCall(kindName, _, _, _) = param.ops(0)
+        )
+      yield Kind.fromName(kindName).map(kind => ExactlyOne(IntType(kind))).getOrElse(WarningValue("Unknown Kind: " + kindName))
+      
+    // If not, produce the incoming Thing's value:
+    paramResult.getOrElse(applyToIncomingThing(context) { (thing, context) => ExactlyOne(IntType(thing.kind)) })
+  }
+}
 
 object CurrentSpaceMethod extends SingleThingMethod(CurrentSpaceMethodOID, "_currentSpace", "What Space are we looking at?", 
     """THING -> _currentSpace -> SPACE
@@ -1297,6 +1323,35 @@ object IsMethod extends InternalMethod(IsMethodOID,
         }
       }
       case None => WarningValue("_is is meaningless without a parameter")
+    }
+  }
+}
+
+object EqualsMethod extends InternalMethod(EqualsMethodOID,
+    toProps(
+      setName("_equals"),
+      PropSummary("Do these parameters match?"),
+      PropDetails("""    _equals(EXP1, EXP2) -> YES OR NO
+          |_equals produces Yes iff the expressions in the two parameters match each other. The definition
+          |of "match" is type-dependent, but by and large is similar to == in most programming languages.
+          |
+          |Note that we are likely to enhance this method in the future, to do more, but this is the
+          |important core functionality.""".stripMargin)))
+{  
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+    paramsOpt match {
+      case Some(params) if (params.length > 1) => {
+        val first = context.parser.get.processPhrase(params(0).ops, context).value
+        val second = context.parser.get.processPhrase(params(1).ops, context).value
+        if (first.size == second.size) {
+          val pt = first.pType
+          val pairs = first.cv.zip(second.cv)
+          pairs.forall(pair => pt.matches(pair._1, pair._2))
+        } else {
+          false
+        }
+      }
+      case _ => WarningValue("_equals requires two parameters")
     }
   }
 }

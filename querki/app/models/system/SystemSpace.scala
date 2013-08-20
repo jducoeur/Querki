@@ -130,6 +130,7 @@ object OIDs {
   val KindMethodOID = sysId(91)
   val CurrentSpaceMethodOID = sysId(92)
   val IsMethodOID = sysId(93)
+  val EqualsMethodOID = sysId(94)
 }
 
 /**
@@ -205,7 +206,8 @@ object SystemSpace {
       OIDMethod,
       KindMethod,
       CurrentSpaceMethod,
-      IsMethod)
+      IsMethod,
+      EqualsMethod)
       
   // Things:
   val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, Commas, DisplayThingTree, AllThings, AllProps)

@@ -32,6 +32,19 @@ object Kind {
   val Space = 3
   val Collection = 4
   val Attachment = 5
+  
+  def fromName(name:String):Option[Kind] = {
+    val lower = name.toLowerCase()
+    lower match {
+      case "thing" => Some(Thing)
+      case "type" => Some(Type)
+      case "property" => Some(Property)
+      case "space" => Some(Space)
+      case "collection" => Some(Collection)
+      case "attachment" => Some(Attachment)
+      case _ => None
+    }
+  }
 }
 
 object Thing {
