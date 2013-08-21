@@ -598,6 +598,30 @@ object ShowLinkMethod extends InternalMethod(ShowLinkMethodOID,
   }
 }
 
+object PropLinkMethod extends ThingPropMethod(PropLinkMethodOID, 
+    toProps(
+      setName("_propLink"),
+      PropSummary("""Produces a Link to a specific Property on a Thing."""),
+      PropDetails("""    THING -> PROPERTY._propLink -> EXTERNAL LINK
+          |A common pattern in Querki is to provide alternate "views" for a Thing -- different ways of displaying it.
+          |Typically, you do this by creating another Large Text Property (separate from Display Text), which contains
+          |the alternate view, and then linking to that somewhere. This method makes it easy to do so: feed the THING
+          |and PROPERTY into _propLink, and the result is an EXTERNAL LINK which you can then pass to _showLink,
+          |_linkButton or _iconButton.
+          |
+          |NOTE: this currently only works for Things in the local Space, and probably does *not* work correctly in
+          |sub-Spaces yet.
+          |
+          |NOTE: this does not check that the specified PROPERTY is actually a Text Property, so be careful!""".stripMargin)))
+{
+  def applyToPropAndThing(mainContext:ContextBase, mainThing:Thing, 
+    partialContext:ContextBase, propErased:Property[_,_],
+    params:Option[Seq[QLPhrase]]):QValue =
+  {
+    ExactlyOne(ExternalLinkType(mainThing.toThingId + "?prop=" + propErased.toThingId))
+  }
+}
+
 /**
  * TBD: is this the correct definition of _isEmpty and _isNonEmpty? It feels slightly off to me, to have it specifically depend
  * on the instance like this. But otherwise, we have problems because a property is essentially *always* non-Empty if it if defined,

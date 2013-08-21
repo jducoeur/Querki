@@ -249,7 +249,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
           }
           case ExternalLinkType => {
             val url = ExternalLinkType.get(context.value.first)
-            makeWikiLink(url.toExternalForm())
+            makeWikiLink(url.url)
           }
           case UnknownNameType => {
             val name = UnknownNameType.get(context.value.first)

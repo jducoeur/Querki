@@ -466,22 +466,29 @@ class InternalMethodType(tid:OID) extends SystemType[String](tid,
 }
 object InternalMethodType extends InternalMethodType(InternalMethodOID)
 
-import java.net.URL
-class ExternalLinkType(tid:OID) extends SystemType[URL](tid,
+// Why not java.net.URL? Because it just plain can't cope with simply relative URLs -- it always wants
+// to wind up with an absolute URL. But that's silly: we frequently want a relative URL, and specifically
+// *don't* want to be encoding the whole damned thing here.
+case class QURL(url:String) {
+  val legalChars = """\w\d\-\._\~:/\?#\[\]@!$&'\(\)\*\+,;="""
+  if (!url.matches(s"[$legalChars]*"))
+    throw new Exception("Not a legal URL!")
+}
+class ExternalLinkType(tid:OID) extends SystemType[QURL](tid,
     toProps(
       setName("URL Type")
-    )) with PTypeBuilder[URL, String] with URLableType
+    )) with PTypeBuilder[QURL, String] with URLableType
 {
-  def doDeserialize(v:String) = new URL(v)
-  def doSerialize(v:URL) = v.toExternalForm()
-  def doRender(context:ContextBase)(v:URL) = Wikitext("[" + v.toExternalForm() + "](" + v.toExternalForm() + ")")
+  def doDeserialize(v:String) = QURL(v)
+  def doSerialize(v:QURL) = v.url
+  def doRender(context:ContextBase)(v:QURL) = Wikitext("[" + v.url + "](" + v.url + ")")
   
   def getURL(context:ContextBase)(elem:ElemValue):Option[String] = {
-    elem.getOpt(this).map(_.toExternalForm())
+    elem.getOpt(this).map(_.url)
   }
   
-  val doDefault = new URL("http:///")
-  override def wrap(raw:String):valType = new URL(raw)
+  val doDefault = new QURL("")
+  override def wrap(raw:String):valType = new QURL(raw)
 }
 object ExternalLinkType extends ExternalLinkType(ExternalLinkTypeOID)
 
