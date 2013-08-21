@@ -305,6 +305,13 @@ object QLType extends QLType(QLTypeOID)
   }
   
   /**
+   * Represents a Type that you can turn into a URL.
+   */
+  trait URLableType {
+    def getURL(context:ContextBase)(v:ElemValue):Option[String]
+  }
+  
+  /**
    * The Type for Links to other Things
    * 
    * TODO: This Type, and its associated Properties, may want to become a Module.
@@ -312,7 +319,7 @@ object QLType extends QLType(QLTypeOID)
   class LinkType(tid:OID) extends SystemType[OID](tid,
       toProps(
         setName("Link Type")
-        )) with SimplePTypeBuilder[OID] with NameableType
+        )) with SimplePTypeBuilder[OID] with NameableType with URLableType
   {
     def doDeserialize(v:String) = OID(v)
     def doSerialize(v:OID) = v.toString
@@ -347,6 +354,14 @@ object QLType extends QLType(QLTypeOID)
     def getName(context:ContextBase)(v:ElemValue) = {
       val id = get(v)
       getNameFromId(context)(id)
+    }
+    
+    def getURL(context:ContextBase)(elem:ElemValue):Option[String] = {
+      for (
+        v <- elem.getOpt(this);
+        thing <- follow(context)(v)
+          )
+        yield thing.toThingId.toString()
     }
     
     // Links are sorted by their *display names*:
@@ -455,11 +470,15 @@ import java.net.URL
 class ExternalLinkType(tid:OID) extends SystemType[URL](tid,
     toProps(
       setName("URL Type")
-    )) with PTypeBuilder[URL, String]
+    )) with PTypeBuilder[URL, String] with URLableType
 {
   def doDeserialize(v:String) = new URL(v)
   def doSerialize(v:URL) = v.toExternalForm()
   def doRender(context:ContextBase)(v:URL) = Wikitext("[" + v.toExternalForm() + "](" + v.toExternalForm() + ")")
+  
+  def getURL(context:ContextBase)(elem:ElemValue):Option[String] = {
+    elem.getOpt(this).map(_.toExternalForm())
+  }
   
   val doDefault = new URL("http:///")
   override def wrap(raw:String):valType = new URL(raw)

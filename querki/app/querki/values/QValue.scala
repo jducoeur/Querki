@@ -138,7 +138,7 @@ object HtmlValue {
   def apply(html:Html) = ExactlyOne(RawHtmlType(HtmlWikitext(html)))
 }
 object WikitextValue {
-  def apply(wikitext:Wikitext) = ExactlyOne(ParsedTextType(wikitext))
+  def apply(wikitext:Wikitext):QValue = ExactlyOne(ParsedTextType(wikitext))
 }
 object LinkValue {
   def apply(target:OID) = ExactlyOne(LinkType(target))

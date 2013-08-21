@@ -514,15 +514,18 @@ abstract class ButtonBase(tid:OID, pf:PropFetcher) extends InternalMethod(tid, p
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     paramsOpt match {
       case Some(params) if (params.length == numParams) => {
-        // TODO: This is a horrible hack! How do we get LinkType and ExternalLinkType to give up their URLs
-        // in a consistent and type-safe way?
-        val url = context.value.pType match {
-          case LinkType => LinkType.followLink(context).get.toThingId.toString()
-          case ExternalLinkType => ExternalLinkType.get(context.value.first).toExternalForm()
+        val urlOpt = context.value.pType match {
+          case pt:URLableType => pt.getURL(context)(context.value.first)
+          case _ => None
         }
         
-        val paramTexts = params.map(phrase => context.parser.get.processPhrase(phrase.ops, context).value.render(context))
-        HtmlValue(Html(generateButton(url, paramTexts).toString))        
+        urlOpt match {
+          case Some(url) => {
+            val paramTexts = params.map(phrase => context.parser.get.processPhrase(phrase.ops, context).value.render(context))
+            HtmlValue(Html(generateButton(url, paramTexts).toString))            
+          }
+          case None => WarningValue(displayName + " didn't receive a valid Link")
+        }
       }
       case None => WarningValue(displayName + " requires " + numParams + " parameters.")
     }
@@ -560,6 +563,38 @@ object IconButtonMethod extends ButtonBase(IconButtonOID,
   
   def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem = {
     <a class="btn btn-mini btn-primary" href={url} title={params(1).raw}><i class={params(0).raw + " icon-white"}></i></a>
+  }
+}
+
+object ShowLinkMethod extends InternalMethod(ShowLinkMethodOID,
+    toProps(
+      setName("_showLink"),
+      PropSummary("Displays a Link or External Link as a normal HTML link."),
+      PropDetails("""    LINK -> _showLink(LABEL)
+          |This is the most normal way to display a Link or External Link with a chosen label. The
+          |label may be any expression you choose.
+          |
+          |The default behaviour of a Link, if you don't do anything with it, is effectively
+          |"_showLink(Display Text)".""".stripMargin)))
+{
+  override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+    paramsOpt match {
+      case Some(params) if (params.length > 0) => {
+        val urlOpt = context.value.pType match {
+          case pt:URLableType => pt.getURL(context)(context.value.first)
+          case _ => None
+        }
+        
+        urlOpt match {
+          case Some(url) => {
+            val label = context.parser.get.processPhrase(params(0).ops, context).value.render(context)
+            WikitextValue(QWikitext("[") + label + QWikitext(s"]($url)"))            
+          }
+          case None => WarningValue(displayName + " didn't receive a valid Link")
+        }
+      }
+      case None => WarningValue(displayName + " requires a label parameter.")
+    }
   }
 }
 
