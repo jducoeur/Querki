@@ -1,4 +1,4 @@
-package identity
+package querki.identity
 
 import anorm._
 import play.api._

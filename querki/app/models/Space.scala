@@ -26,7 +26,7 @@ import com.github.nscala_time.time.Imports._
 import Kind._
 import Thing._
 
-import identity.User
+import querki.identity.User
 
 import querki.db.ShardKind
 import ShardKind._

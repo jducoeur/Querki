@@ -11,7 +11,7 @@ import OIDs._
 
 import Thing._
 
-import identity.User
+import querki.identity.User
 
 import querki.values._
 

@@ -12,7 +12,7 @@ import querki.values._
 
 import modules.Modules._
 
-import identity.User
+import querki.identity.User
 
 import play.api.Logger
 

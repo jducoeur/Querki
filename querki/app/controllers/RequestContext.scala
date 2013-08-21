@@ -4,7 +4,7 @@ import play.api.mvc._
 import models._
 
 import language.implicitConversions
-import identity.User
+import querki.identity.User
 
 class RequestHeaderParser(request:RequestHeader) {
   def hasQueryParam(paramName:String) = request.queryString.contains(paramName)

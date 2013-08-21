@@ -4,7 +4,7 @@ import language.implicitConversions
 import Kind._
 import Thing._
 
-import identity.User
+import querki.identity.User
 
 import system._
 

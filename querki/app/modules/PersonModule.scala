@@ -10,7 +10,7 @@ import ql._
 
 import querki.values._
 
-import identity._
+import querki.identity._
 
 import modules._
 // TODO: Hmm. This is a Module-boundaries break. I think we need an interface layer:
