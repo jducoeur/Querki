@@ -564,7 +564,7 @@ disallow: /
 
   // TODO: this should really have its own security property, Can View Source, which should default to Can Read. But for now,
   // we'll make do with Can Read, which is implicit in withThing:
-  def viewThing(ownerId:String, spaceId:String, thingIdStr:String) = withThing(true, ownerId, spaceId, thingIdStr) { implicit rc =>
+  def viewThing(ownerId:String, spaceId:String, thingIdStr:String) = withThing(false, ownerId, spaceId, thingIdStr) { implicit rc =>
     Ok(views.html.viewSource(rc))
   }
   
