@@ -243,7 +243,8 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
             // TODO: this is evil. How should it be described instead?
             val l = LinkType.follow(context)(LinkType.get(context.value.first))
             l match {
-              case Some(thing) => makeWikiLink(thing.toThingId)
+              // TODO: also evil. We need to refactor the various ways we build these links!
+              case Some(thing) => makeWikiLink(LinkType.pathAdjustments(context) + thing.toThingId)
               case None => guts
             }
           }
