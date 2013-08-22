@@ -105,8 +105,25 @@ trait QValue {
   
   def contains[VT](elemT:PType[VT], toCheck:VT):Boolean = cv.exists { elem =>
     val vt = elemT.get(elem)
-    elemT.matches(vt, toCheck)
+    elemT.doMatches(vt, toCheck)
   }
+  
+  def indexOf(toCheck:ElemValue):Option[Int] = {
+    val pt = toCheck.pType
+    if (pt != pType) {
+      None
+    } else {
+      val index = cv.toList.indexWhere { elem =>
+        pt.matches(elem, toCheck)
+      }
+      index match {
+        case -1 => None
+        case n:Int => Some(n)
+      }
+    }
+  }
+  
+  def elemAt(index:Int):ElemValue = cv.toList(index)
 }
 
 object ErrorTextType extends TextTypeBase(UnknownOID,

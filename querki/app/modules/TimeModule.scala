@@ -68,7 +68,7 @@ class TimeModule(val moduleId:Short) extends modules.Module {
     val defaultRenderFormat = DateTimeFormat.mediumDateTime
     def doRender(context:ContextBase)(v:DateTime) = Wikitext(defaultRenderFormat.print(v))
     override def doComp(context:ContextBase)(left:DateTime, right:DateTime):Boolean = { left < right } 
-    override def matches(left:DateTime, right:DateTime):Boolean = { left.millis == right.millis }
+    override def doMatches(left:DateTime, right:DateTime):Boolean = { left.millis == right.millis }
     val doDefault = TimeModule.epoch
   }
   lazy val QDateTime = new QDateTime(DateTimeTypeOID)

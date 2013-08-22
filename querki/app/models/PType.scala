@@ -141,9 +141,9 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * The PType-math version of ==; this is here so that specific PTypes can override it.
    */
   def matches(left:ElemValue, right:ElemValue):Boolean = {
-    matches(get(left), get(right))
+    doMatches(get(left), get(right))
   }
-  def matches(left:VT, right:VT):Boolean = {
+  def doMatches(left:VT, right:VT):Boolean = {
     left == right
   }
 }

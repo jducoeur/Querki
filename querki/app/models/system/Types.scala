@@ -284,7 +284,7 @@ object QLType extends QLType(QLTypeOID)
 
     val doDefault = ""
       
-    override def matches(left:String, right:String):Boolean = equalNames(left, right)
+    override def doMatches(left:String, right:String):Boolean = equalNames(left, right)
   }
   object NameType extends NameType(NameTypeOID, "Name Type") {
     def doRender(context:ContextBase)(v:String) = Wikitext(toDisplay(v))    
