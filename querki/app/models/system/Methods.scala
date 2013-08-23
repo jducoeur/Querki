@@ -298,14 +298,7 @@ object SectionMethod extends InternalMethod(SectionMethodOID,
       parser.contextsToWikitext(emptyOpt.map(empty => Seq(parser.processPhrase(empty.ops, context.root))).getOrElse(Seq.empty))
     } else {
       val processedHeader = parser.contextsToWikitext(Seq(parser.processPhrase(header.ops, context.asCollection)))
-      // TODO: this pattern is directly adapted from processTextStage. It almost certainly should be refactored out as a
-      // higher-level operation of some flavor:
-      val processedDetails = detailsOpt.map{details =>
-        // We apply the Details Phrase to each element of the incoming context, separately:
-        context.map { elemContext =>
-          parser.processPhrase(details.ops, elemContext)
-        }.toSeq
-      }
+      val processedDetails = detailsOpt.map(details => Seq(parser.processPhrase(details.ops, context)))
       // TODO: why are we transforming this to Wikitext this early? Is there any reason to? Shouldn't we just turn all
       // of this into a new List Context and pass it on through? Conceptually that would be more correct. The only problem
       // is that the Header and Details potentially produce different Types, so they might not fit neatly into a single List.

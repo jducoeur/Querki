@@ -138,8 +138,8 @@ case class QLContext(value:QValue, request:RequestContext, parentIn:Option[Conte
 
 case class QLRequestContext(request:RequestContext) extends ContextBase {
   def state = request.state.getOrElse(SystemSpace.State)
-  def value:QValue = throw new Exception("Can't use the contents of QLRequestContext!")  
-  def parent:ContextBase = throw new Exception("QLRequestContext doesn't have a parent!")
+  def value:QValue = EmptyValue.untyped
+  def parent:ContextBase = this
   def parser:Option[QLParser] = throw new Exception("QLRequestContext doesn't have a parser!")
   def depth:Int = 0
   def propOpt = None
