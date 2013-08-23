@@ -206,7 +206,7 @@ class EmailModule(val moduleId:Short) extends modules.Module {
     
 ------
             
-[**Click here to send this email**](?prop=Email+Results)
+**[Click here to send this email](?prop=Email+Results)**
 """)))
   )
   
