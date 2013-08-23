@@ -104,7 +104,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
     result
   }
   
-  val name = """[a-zA-Z_][\w-_ ]*[\w]""".r
+  val name = """[a-zA-Z_][\w-_/ ]*[\w]""".r
   // These two regexes are used in the unQLText production. Yes, they *could* be combined into one
   // expression, and originally were. They were split because having them together apparently does
   // something horrible to Java's Regex engine -- if you tried to feed it more than a page or so of
