@@ -333,9 +333,7 @@ object QLType extends QLType(QLTypeOID)
     
     def pathAdjustments(context:ContextBase):String = {
       // Find the Thing that we're actually rendering...
-      Logger.info("----> In pathAdjustments; root is " + context.root)
       val rootThingOpt = followLink(context.root)
-      Logger.info("----> rootThing is " + rootThingOpt)
       val adjustmentsOpt = rootThingOpt.map { rootThing =>
         val name = rootThing.toThingId.toString()
         val slashes = name.count(_ == '/')
