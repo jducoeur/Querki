@@ -19,13 +19,17 @@ import steps._
  * it's putting a lot of dangerous work inside the Space's preload. In the medium term, we might
  * refactor Space load to be more step-wise, with evolution as an early step in that process. (This
  * would also allow us to show progress messages as it is happening.)
+ * 
+ * To add a Step, simply create it in querki.evolutions.steps (make sure its version is set!), and
+ * add it to stepList below.
  */
 object Evolutions {
   // All Steps must be registered in this list.
   // NOTE: for the moment, we are *not* tolerant of gaps in the numeric sequence. We might need to
   // make this more robust at some point.
   private val stepList:Seq[Step] = Seq(
-    Step2
+    Step2,
+    Step3
   )
   
   private val steps:Map[Int, Step] = Map(stepList.map(step => (step.version, step)):_*)
