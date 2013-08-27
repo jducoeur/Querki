@@ -568,6 +568,10 @@ disallow: /
     Ok(views.html.viewSource(rc))
   }
   
+//  def deleteThing(ownerId:String, spaceId:String, thingId:String) = withThing(true, ownerId, spaceId, thingId) { implicit rc =>
+//    
+//  }
+  
   /**
    * This is the AJAX-style call to change a single property value. As of this writing, I expect it to become
    * the dominant style before too long.

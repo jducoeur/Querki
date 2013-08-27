@@ -74,12 +74,18 @@ just upload a photograph, and you'll get one of these.
 object Bulleted extends ThingState(BulletedOID, systemOID, RootOID,
     toProps(
       setName("_bulleted"),
-      ApplyMethod("\"\"* ____\"\"")))
+      ApplyMethod("\"\"* ____\"\""),
+      DisplayTextProp("""    LIST -> _bulleted
+          |This method takes a LIST, and render its elements as a bullet list, one per line. It is simply syntactic sugar for
+          |    LIST -> \""* \____\"" """.stripMargin)))
 
 object Commas extends ThingState(CommasMethodOID, systemOID, RootOID,
     toProps(
       setName("_commas"),
-      ApplyMethod("""_join("", "")""")))
+      ApplyMethod("""_join("", "")"""),
+      DisplayTextProp("""    LIST -> _commas
+          |This method takes a LIST, and render its elements comma-separated. It is simply syntactic sugar for
+          |    LIST -> _join(\"", \"")""".stripMargin)))
 
 object DisplayThingTree extends ThingState(DisplayThingTreeOID, systemOID, RootOID,
     toProps(

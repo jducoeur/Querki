@@ -231,7 +231,7 @@ object SystemSpace {
         DisplayTextProp("""### Things in [[Display Name]]
 [[All Things]]
             
-[[Tag Set -> 
+[[Tag Set Type -> 
   _propsOfType ->
   _sort ->
   _section(
