@@ -33,6 +33,8 @@ GET     /u/:userName/:spaceId/export controllers.Application.exportThing(userNam
 GET     /u/:userName/:spaceId/getTags     controllers.Application.getTags(userName, spaceId, propId, q)
 GET     /u/:userName/:spaceId/getLinks    controllers.Application.getLinks(userName, spaceId, propId, q)
 
+POST    /u/:userName/:spaceId/search      controllers.Application.search(userName, spaceId)
+
 GET     /u/:userName/:spaceId/a/:attachmentId controllers.Application.attachment(userName, spaceId, attachmentId)
 
 # Note that Things can have slashes in their names!

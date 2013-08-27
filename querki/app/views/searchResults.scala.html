@@ -1,0 +1,16 @@
+@(rc:RequestContext, results:querki.search.SearchResults)
+
+@import querki.search._
+
+@title = @{ "Search Results for " + results.request }
+
+@main(QuerkiTemplate.Thing, title, rc, true) {
+  <h1>@title</h1>
+  
+  @for(result <- results.results.sortBy(_.score).reverse) {
+    <p><b><a href="@routes.Application.thing(rc.ownerName, rc.state.get.toThingId, result.thing.toThingId)">@result.thing.displayName</a></b> (@result.prop.displayName)</p>
+    <div class="well">
+      @Html(result.text)
+    </div>
+  }
+}

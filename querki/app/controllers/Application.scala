@@ -48,6 +48,13 @@ object Application extends Controller {
      ((info:NewThingForm) => Some((info.fields, info.model)))
   )
   
+  val searchForm = Form(
+    mapping(
+      "searchInput" -> nonEmptyText
+    )((searchInput) => searchInput)
+     ((searchInput:String) => Some(searchInput))
+  )
+  
   /**
    * Standard error handler. Iff you get an error and the correct response is to redirect to
    * another page, use this. The only exception is iff you need to preserve data, and thus want
@@ -571,6 +578,18 @@ disallow: /
 //  def deleteThing(ownerId:String, spaceId:String, thingId:String) = withThing(true, ownerId, spaceId, thingId) { implicit rc =>
 //    
 //  }
+  
+  def search(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId) { implicit rc =>
+    implicit val request = rc.request
+    searchForm.bindFromRequest.fold(
+      errors => { doError(routes.Application.space(ownerId, spaceId), "That wasn't a legal search") },
+      searchInput => {
+        import querki.search._
+        val resultsOpt = Search.search(rc, searchInput)
+        resultsOpt.map(results => Ok(views.html.searchResults(rc, results))).getOrElse(doError(routes.Application.space(ownerId, spaceId), "That wasn't a legal search"))
+      }
+    )
+  }
   
   /**
    * This is the AJAX-style call to change a single property value. As of this writing, I expect it to become
