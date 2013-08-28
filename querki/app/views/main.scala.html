@@ -47,8 +47,12 @@
   }
 }
 
-@displayNavLink(display:String, url:Call, idStr:String) = {
-  <li><a href="@url" @idStr>@display</a></li>
+@displayNavLink(display:String, url:Call, idStr:String, enabled:Boolean) = {
+  @if(enabled) {
+    <li><a href="@url" @idStr>@display</a></li>
+  } else {
+    <li class="disabled"><a>@display</a></li>  
+  }
 }
 
 @displayNavDivider = {
@@ -65,12 +69,12 @@
 
 @displayNavigable(section:Navigable) = @{
   section match {
-    case NavLink(display, url, id) => {
+    case NavLink(display, url, id, enabled) => {
       val idStr = id match {
         case Some(i) => " id=" + i
         case None => ""
       }
-      displayNavLink(display, url, idStr)
+      displayNavLink(display, url, idStr, enabled)
     }
     case NavSection(title, links) => displayNavSection(title, links)
     case NavDivider => displayNavDivider
@@ -177,6 +181,30 @@
 				});
 			}
 			
+			@if(thing.isDefined) {
+				$("#deleteThing").on("click", function(evt) {
+				  $("#delete-dialog").dialog("open");
+				  return false;
+				});
+			
+				$("#delete-dialog").dialog({
+				  autoOpen:false,
+				  height: 200,
+				  width: 350,
+				  modal: true,
+				  buttons: {
+				    "Delete": function () {
+		              window.location = "@routes.Application.deleteThing(rc.ownerName, space.get.toThingId, thing.get.toThingId)";
+				    },
+				    "Cancel": function () {
+				      $(this).dialog("close");
+				    }
+				  },
+				  close: function () {
+				  }
+				});		
+			}
+			
 			finalSetup("@ownerId", "@spaceId", $('body'));
 		});
 		</script>
@@ -260,6 +288,12 @@
 	    }
 	    
 	@createFormInSpace
+	
+	@if(thing.isDefined) {
+      <div id="delete-dialog" title="Confirm Delete">
+        <p><b>Are you sure you want to delete @{thing.get.displayName}? There is currently no way to get it back!</b></p>
+      </div>	
+	}
 
 	<!-- This container stuff is likely to go into a lower-level, Space-rendering template -->
 	<div class="guts container-fluid">

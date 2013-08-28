@@ -575,9 +575,10 @@ disallow: /
     Ok(views.html.viewSource(rc))
   }
   
-//  def deleteThing(ownerId:String, spaceId:String, thingId:String) = withThing(true, ownerId, spaceId, thingId) { implicit rc =>
-//    
-//  }
+  def deleteThing(ownerId:String, spaceId:String, thingId:String) = withThing(true, ownerId, spaceId, thingId) { implicit rc =>
+    // TODO:
+    Ok("")
+  }
   
   def search(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId) { implicit rc =>
     implicit val request = rc.request

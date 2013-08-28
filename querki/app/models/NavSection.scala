@@ -31,6 +31,15 @@ object NavSection {
       ))
     }    
   }
+  
+  def deletable(t:Thing):Boolean = {
+    t match {
+      case pt:PType[_] => false
+      case coll:Collection => false
+      case prop:Property[_,_] => false
+      case _ => true
+    }
+  }
       
   def nav(rc:RequestContext) = {
     def spaceId = rc.state.get.toThingId
@@ -75,7 +84,9 @@ object NavSection {
       Seq(
         NavDivider,
         NavLink("Edit " + thing.displayName, routes.Application.editThing(owner, spaceId, thingId)),
-        NavLink("View Source", routes.Application.viewThing(owner, spaceId, thingId))
+        NavLink("View Source", routes.Application.viewThing(owner, spaceId, thingId)),
+        // Note that the following route is bogus: we actually navigate in Javascript, after verifying they want to delete:
+        NavLink("Delete " + thing.displayName, routes.Application.thing(owner, spaceId, thingId), Some("deleteThing"), deletable(thing))
         /*,
         NavLink("Export " + thing.displayName, routes.Application.exportThing(owner, spaceId, thingId))*/
       ) ++ create ++ attachment
@@ -99,6 +110,6 @@ case class NavSections(sections:Seq[Navigable])
 
 case class NavSection(val title:String, val links:Seq[Navigable]) extends Navigable
 
-case class NavLink(display:String, url:Call, id:Option[String] = None) extends Navigable
+case class NavLink(display:String, url:Call, id:Option[String] = None, enabled:Boolean = true) extends Navigable
 
 case object NavDivider extends Navigable
