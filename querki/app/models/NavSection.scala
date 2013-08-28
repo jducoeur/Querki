@@ -81,12 +81,10 @@ object NavSection {
       }
       Seq(
         NavDivider,
-        NavLink("Edit " + thing.displayName, routes.Application.editThing(owner, spaceId, thingId)),
-        NavLink("View Source", routes.Application.viewThing(owner, spaceId, thingId)),
+        NavLink("Edit " + thing.displayName, routes.Application.editThing(owner, spaceId, thingId), None, rc.state.get.canEdit(rc.requesterOrAnon, thing.id)),
+        NavLink("View Source", routes.Application.viewThing(owner, spaceId, thingId), None, rc.state.get.canRead(rc.requesterOrAnon, thing.id)),
         // Note that the following route is bogus: we actually navigate in Javascript, after verifying they want to delete:
         NavLink("Delete " + thing.displayName, routes.Application.thing(owner, spaceId, thingId), Some("deleteThing"), deletable(thing))
-        /*,
-        NavLink("Export " + thing.displayName, routes.Application.exportThing(owner, spaceId, thingId))*/
       ) ++ create ++ attachment
     }
     val thingLinks = thingLinksOpt.getOrElse(Seq.empty[NavLink])
