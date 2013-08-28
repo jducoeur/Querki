@@ -134,7 +134,7 @@ class Space extends Actor {
     DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
       // The stream of all of the Things in this Space:
       val stateStream = SpaceSQL("""
-          select * from {tname}
+          select * from {tname} where deleted = FALSE
           """)()
       // Split the stream, dividing it by Kind:
       val streamsByKind = stateStream.groupBy(_.get[Int]("kind").get)
@@ -407,6 +407,33 @@ class Space extends Actor {
       }    
   }
   
+  def deleteThing(who:User, spaceThingId:ThingId, thingId:ThingId) = {
+    val spaceId = checkSpaceId(spaceThingId)
+    val oldThingOpt = state.anything(thingId)
+    oldThingOpt map { oldThing =>
+      // TODO: eventually we will allow you to delete Properties, but we're nowhere near
+      // ready to cope with all the potential error conditions yet.
+      if (!oldThing.isInstanceOf[ThingState] || !canEdit(who, oldThing.id)) {
+        sender ! ThingFailed(ModifyNotAllowed, "You're not allowed to delete that")
+      } else {
+        val thingId = oldThing.id
+        DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+	      // TODO: add a history record
+	      Space.SpaceSQL(spaceId, """
+	        UPDATE {tname}
+	        SET deleted = TRUE
+	        WHERE id = {thingId}
+	        """
+	      ).on("thingId" -> thingId.raw).executeUpdate()
+        }
+        updateState(state.copy(things = state.things - thingId)) 
+        sender ! ThingFound(thingId, state)
+      }
+    } getOrElse {
+      sender ! ThingFailed(UnknownPath, "Thing not found")
+    }
+  }
+  
   def receive = {
     case req:CreateSpace => {
       sender ! ThingFound(UnknownOID, state)
@@ -426,7 +453,7 @@ class Space extends Actor {
         ).on("thingId" -> thingId.raw,
              "mime" -> mime,
              "size" -> size,
-             "content" -> content).executeUpdate()        
+             "content" -> content).executeUpdate()       
       }
     }
     
@@ -460,13 +487,15 @@ class Space extends Actor {
     }
     
     case ChangeProps(who, owner, spaceThingId, thingId, changedProps) => {
-      Logger.info("In ModifyThing")
       modifyThing(who, owner, spaceThingId, thingId, None, (_.props ++ changedProps))
     }
     
     case ModifyThing(who, owner, spaceThingId, thingId, modelId, newProps) => {
-      Logger.info("In ModifyThing")
       modifyThing(who, owner, spaceThingId, thingId, Some(modelId), (_ => newProps))
+    }
+    
+    case DeleteThing(who, owner, spaceThingId, thingId) => {
+      deleteThing(who, spaceThingId, thingId)
     }
     
     case GetThing(req, owner, space, thingIdOpt) => {

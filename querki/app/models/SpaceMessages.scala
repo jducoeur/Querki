@@ -74,6 +74,8 @@ case class CreateProperty(id:OID, req:User, model:OID, pType:OID, cType:OID, pro
 
 case class GetThing(req:User, own:OID, space:ThingId, thing:Option[ThingId]) extends SpaceMessage(req, own, space)
 
+case class DeleteThing(req:User, own:OID, space:ThingId, thing:ThingId) extends SpaceMessage(req, own, space)
+
 object SpaceError extends Enumeration {
   type SpaceError = Value
   

@@ -576,8 +576,17 @@ disallow: /
   }
   
   def deleteThing(ownerId:String, spaceId:String, thingId:String) = withThing(true, ownerId, spaceId, thingId) { implicit rc =>
-    // TODO:
-    Ok("")
+    val thing = rc.thing.get
+    val displayName = thing.displayName
+    val deleteMsg = DeleteThing(rc.requester.get, rc.ownerId, rc.state.get.toThingId, thing.toThingId)
+    askSpaceMgr[ThingResponse](deleteMsg) {
+      case ThingFound(thingId, newState) => {
+        Redirect(routes.Application.space(ownerId, spaceId)).flashing("info" -> (displayName + " deleted."))
+      }
+      case ThingFailed(error, msg, stateOpt) => {
+        doError(routes.Application.space(ownerId, spaceId), msg)
+      }
+    }
   }
   
   def search(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId) { implicit rc =>

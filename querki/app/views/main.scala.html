@@ -12,6 +12,9 @@
   val flash = rc.request.flash
   flash.get("error") orElse rc.error
 }
+@infoMsg = @{
+  rc.request.flash.get("info")
+}
 @requester = @{ rc.requester }
 
 @ownerId = @{
@@ -303,13 +306,23 @@
 		  @errors match {
 			case None => {}
 			case Some(msg) => { 
-		      <div class="alert">
+		      <div class="alert alert-error">
 		        <button type="button" class="close" data-dismiss="alert">x</button>
 		        <strong>Error:</strong> @msg
 		      </div>
 			}
 	      }
-
+	      
+		  @infoMsg match {
+			case None => {}
+			case Some(msg) => { 
+		      <div class="alert alert-info">
+		        <button type="button" class="close" data-dismiss="alert">x</button>
+		        @msg
+		      </div>
+			}
+	      }
+	      
           @content
 	
 		</div><!--/span12-->
