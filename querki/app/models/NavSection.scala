@@ -34,10 +34,8 @@ object NavSection {
   
   def deletable(t:Thing):Boolean = {
     t match {
-      case pt:PType[_] => false
-      case coll:Collection => false
-      case prop:Property[_,_] => false
-      case _ => true
+      case ts:ThingState => true
+      case _ => false
     }
   }
       
