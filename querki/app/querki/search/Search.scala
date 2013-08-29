@@ -25,8 +25,8 @@ object Search {
         // *rendered* view of this Thing. But that's challenging, so this should probably become Can View Source for now.
         if (!space.canRead(requester, t.id))
           Seq()
-        else if (t.displayName.contains(searchStr)) {
-          Seq(SearchResult(t, DisplayNameProp, 1.0, DisplayText(t.displayName)))
+        else if (t.displayName.toLowerCase().contains(searchComp)) {
+          Seq(SearchResult(t, DisplayNameProp, 1.0, DisplayText(t.displayName), List(t.displayName.toLowerCase().indexOf(searchComp))))
         } else {
           // For now, we're only going to deal with Text types.
           // TODO: cope with Links, Tags, and things like that!
@@ -39,8 +39,18 @@ object Search {
                 val firstVal = propValue.firstAs(textType)
                 firstVal.flatMap { qtext => 
                   val propComp = qtext.text.toLowerCase()
-                  if (propComp.contains(searchComp))
-                    Some(SearchResult(t, space.prop(propId).get, 0.5, QWikitext(qtext.text).display))
+                  if (propComp.contains(searchComp)) {
+                    
+                    def matchLocs(start:Int):List[Int] = {
+                      val i = propComp.indexOf(searchComp, start)
+                      if (i == -1)
+                        Nil
+                      else
+                        i :: matchLocs(i + 1)
+                    }
+
+                    Some(SearchResult(t, space.prop(propId).get, 0.5, qtext.text, matchLocs(0)))
+                  }
                   else
                     None
                 }
