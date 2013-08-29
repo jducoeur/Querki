@@ -78,3 +78,8 @@
   margin-top: 0px;
   font-size: x-small;
 }
+
+._warning {
+  font-weight: bold;
+  background-color: #FAD2DF;
+}

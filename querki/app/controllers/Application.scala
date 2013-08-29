@@ -648,7 +648,7 @@ disallow: /
   /**
    * Fetch the value of a single property, in HTML-displayable form, via AJAX.
    * 
-   * This is used by the Editor to get the display text for properties, but is likely to be broadly useful in the long run.
+   * This is used by the Editor to get the Default View for properties, but is likely to be broadly useful in the long run.
    * 
    * Note that canRead is applied automatically for the Thing, up in withSpace().
    */

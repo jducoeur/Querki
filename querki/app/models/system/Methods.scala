@@ -568,7 +568,7 @@ object ShowLinkMethod extends InternalMethod(ShowLinkMethodOID,
           |label may be any expression you choose.
           |
           |The default behaviour of a Link, if you don't do anything with it, is effectively
-          |"_showLink(Display Text)".""".stripMargin)))
+          |"_showLink(Default View)".""".stripMargin)))
 {
   override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     paramsOpt match {
@@ -597,7 +597,7 @@ object PropLinkMethod extends ThingPropMethod(PropLinkMethodOID,
       PropSummary("""Produces a Link to a specific Property on a Thing."""),
       PropDetails("""    THING -> PROPERTY._propLink -> EXTERNAL LINK
           |A common pattern in Querki is to provide alternate "views" for a Thing -- different ways of displaying it.
-          |Typically, you do this by creating another Large Text Property (separate from Display Text), which contains
+          |Typically, you do this by creating another Large Text Property (separate from Default View), which contains
           |the alternate view, and then linking to that somewhere. This method makes it easy to do so: feed the THING
           |and PROPERTY into _propLink, and the result is an EXTERNAL LINK which you can then pass to _showLink,
           |_linkButton or _iconButton.
@@ -1055,7 +1055,7 @@ object TagsForPropertyMethod extends SingleContextMethod(TagsForPropertyOID,
       setName("_tagsForProperty"),
       PropSummary("Show all the Tags that are defined for this Property"),
       // TODO: this isn't displaying properly. Why not? It looks like the "" nested inside of the indirect
-      // Property is causing the problem -- I am getting a syntax error *claiming* to be in Display Text,
+      // Property is causing the problem -- I am getting a syntax error *claiming* to be in Default View,
       // pointing at the first "":
       PropDetails("""    TAG PROPERTY._tagsForProperty -> LIST OF TAGS
           |_tagsForProperty can be used on any Property whose Type is Tag Set. It produces a list of all of the
@@ -1395,7 +1395,9 @@ object EqualsMethod extends InternalMethod(EqualsMethodOID,
       case Some(params) if (params.length > 1) => {
         val first = context.parser.get.processPhrase(params(0).ops, context).value
         val second = context.parser.get.processPhrase(params(1).ops, context).value
-        if (first.size == second.size) {
+        if (first.pType != second.pType) {
+          WarningValue("The parameters to _equals must be the same Type: got _equals(" + first.pType.displayName + ", " + second.pType.displayName + ")")
+        } else if (first.size == second.size) {
           val pt = first.pType
           val pairs = first.cv.zip(second.cv)
           pairs.forall(pair => pt.matches(pair._1, pair._2))

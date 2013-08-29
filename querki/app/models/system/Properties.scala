@@ -42,12 +42,13 @@ class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:
         		|excessively long.""".stripMargin)
         ))
   
+  // TODO: the name DisplayTextProp still need to be renamed to DefaultViewProp:
   object DisplayTextProp extends SystemProperty(DisplayTextOID, LargeTextType, Optional,
       toProps(
-        setName("Display Text"),
+        setName("Default View"),
         (PropSummaryOID -> ExactlyOne(TextType("How this Thing will be displayed"))),
-        (PropDetailsOID -> ExactlyOne(LargeTextType("""Display Text is one of the most important Properties in Querki,
-        		|and nearly every Thing has one. The Display Text describes how this Thing will show up when you
+        (PropDetailsOID -> ExactlyOne(LargeTextType("""Default View is one of the most important Properties in Querki,
+        		|and nearly every Thing has one. The Default View describes how this Thing will usually show up when you
         		|look at it as a web page. It can say almost anything you like, but usually consists of a mix of
         		|text and QL expressions. (Where a "QL Expression" is anything inside double-square-brackets.)""".stripMargin)))
         ))
@@ -151,7 +152,7 @@ object NotInheritedProp extends SystemProperty(NotInheritedOID, YesNoType, Exact
           |
           |When we say that they "inherit", we mean that the lower-level Things (the Instances) pick up default
           |values of their Properties from their higher-level ancestors (the Models). So for instance, if the Model
-          |defines a Display Text, the Instance will use that Display Text unless it redefines it.
+          |defines a Default View, the Instance will use that Default View unless it redefines it.
           |
           |This is almost always the right way for things to work, but a very few Properties are different: they
           |must be defined on each individual Thing they apply to, and should *not* be inherited. For example, the
