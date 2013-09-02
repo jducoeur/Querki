@@ -9,7 +9,15 @@
 
 
 # In practice, email is the most important key to most identities:
-CREATE INDEX identity_by_email ON TABLE Identity (email);
+CREATE INDEX identity_by_email ON Identity (email);
+
+# But we are also allowing login by name:
+CREATE INDEX identity_by_name ON Identity (name);
+
+# Note that neither of the above can be unique, sadly, because duplication of the name
+# identifiers with different Identity Kinds is entirely legal, and pretty common.
+# So we have to enforce uniqueness in the Identity creation code instead. Eventually,
+# we might do so in stored procedures.
 
 
 # Add the column for passwords:
@@ -19,18 +27,18 @@ ALTER TABLE Identity ADD COLUMN authentication varchar(255) DEFAULT NULL;
 # Migrate the system logins from config to the DB. Note that you need to generate and fill in the
 # passwords by hand for these "bootstrap" identities:
 INSERT INTO Identity (id, name, userId, kind, email, authentication)
-  VALUES (-systemIdentityOID-, "systemUser", 9, -loginKind-, "systemUser@querki.net", -systemPassword-);
+  VALUES (97, "systemUser", 9, 2, "systemUser@querki.net", -systemPassword-);
 INSERT INTO Identity (id, name, userId, kind, email, authentication)
-  VALUES (-markIdentityOID-, "mark", 11, -loginKind-, "mark@querki.net", -markPassword-);
+  VALUES (98, "mark", 11, 2, "mark@querki.net", -markPassword-);
 INSERT INTO Identity (id, name, userId, kind, email, authentication)
-  VALUES (-jducoeurIdentityOID-, "jducoeur", 31, -loginKind-, "justin@querki.net", -jducoeurPassword-);
+  VALUES (99, "jducoeur", 31, 2, "justin@querki.net", -jducoeurPassword-);
 
 
 # Introduce the idea of user "levels", for administration and such:
 ALTER TABLE User ADD COLUMN level tinyint;
-UPDATE User SET level=-superadmin- WHERE id=9;
-UPDATE User SET level=-admin- WHERE id=11;
-UPDATE User SET level=-permanent- WHERE id=31;
+UPDATE User SET level=100 WHERE id=9;
+UPDATE User SET level=10 WHERE id=11;
+UPDATE User SET level=4 WHERE id=31;
 
 
 # Keep track of when people joined:

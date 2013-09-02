@@ -842,7 +842,7 @@ disallow: /
     userForm.bindFromRequest.fold(
       errors => doError(routes.Application.login, "I didn't understand that"),
       form => {
-        val userOpt = User.checkLogin(form.name, form.password)
+        val userOpt = User.checkQuerkiLogin(form.name, form.password)
         userOpt match {
           case Some(user) => Redirect(routes.Application.index).withSession(user.toSession:_*)
           case None => doError(routes.Application.login, "I don't know who you are")

@@ -10,6 +10,10 @@ import models._
 import querki.db.ShardKind
 import ShardKind._
 
+import querki.util._
+
+import modules.email.EmailAddress
+
 trait User {
   def id:OID
   // TODO: this should be Option[String]!
@@ -29,6 +33,20 @@ trait User {
 }
 
 case class FullUser(id:OID, name:String, identities:Seq[Identity] = Seq.empty) extends User
+
+object UserLevel {
+  type UserLevel = Int
+  
+  val UnknownUserLevel = 0
+  val PendingUser = 1
+  val FreeUser = 2
+  val PaidUser = 3
+  val PermanentUser = 4
+  
+  val AdminUser = 10
+  
+  val SuperadminUser = 100
+}
 
 object User {
   val userIdSessionParam = "userId"
@@ -84,20 +102,54 @@ object User {
     }    
   }
   
-  // TODO: this should go through the DB fairly soon:
-  def checkLogin(rawName:String, passwordEntered:String):Option[User] = {
-    val name = system.NameType.canonicalize(rawName)
-    val pwdOpt = Play.configuration.getString("querki.test.password." + name)
-    pwdOpt map { pwd => if (passwordEntered == pwd) get(name) else None } getOrElse None    
+  def checkQuerkiLogin(email:EmailAddress, passwordEntered:String):Option[User] = {
+    DB.withConnection(dbName(System)) { implicit conn =>
+      val identityQuery = SQL("""
+          SELECT Identity.id, Identity.name, userId, User.level, authentication FROM Identity
+            JOIN User ON User.id=userId
+            WHERE email={email};
+          """).on("email" -> email.addr.toLowerCase())()
+      identityQuery.headOption.flatMap { row =>
+        val auth = row.get[String]("authentication").get
+        if (Hasher.authenticate(passwordEntered, EncryptedHash(auth))) {
+          Some(FullUser(OID(row.get[Long]("userId").get), row.get[String]("name").get,
+            Seq(Identity(OID(row.get[Long]("id").get), email))))
+        } else {
+          None
+        }
+      }
+    }
+  }
+  
+  def checkQuerkiLogin(login:String, passwordEntered:String):Option[User] = {
+    if (login.contains("@")) {
+      checkQuerkiLogin(EmailAddress(login), passwordEntered)
+    } else {
+      DB.withConnection(dbName(System)) { implicit conn =>
+        val identityQuery = SQL("""
+            SELECT Identity.id, Identity.name, userId, User.level, authentication, email FROM Identity
+              JOIN User ON User.id=userId
+              WHERE Identity.name={name};
+            """).on("name" -> login.toLowerCase())()
+        identityQuery.headOption.flatMap { row =>
+          val auth = row.get[String]("authentication").get
+          if (Hasher.authenticate(passwordEntered, EncryptedHash(auth))) {
+            Some(FullUser(OID(row.get[Long]("userId").get), row.get[String]("name").get,
+              Seq(Identity(OID(row.get[Long]("id").get), EmailAddress(row.get[String]("email").get)))))
+          } else {
+            None
+          }
+        }
+      }
+    }
   }
 }
-
-import modules.email.EmailAddress
 
 case class Identity(id:OID, email:EmailAddress)
 
 object IdentityKind {
   val SimpleEmail = 1
+  val QuerkiLogin = 2
   
   type IdentityKind = Int
 }

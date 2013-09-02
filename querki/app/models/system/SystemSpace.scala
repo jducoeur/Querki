@@ -133,6 +133,9 @@ object OIDs {
   val EqualsMethodOID = sysId(94)
   val ShowLinkMethodOID = sysId(95)
   val PropLinkMethodOID = sysId(96)
+  val SystemIdentityOID = sysId(97)
+  val TestIdentityOID = sysId(98)
+  val PrototypeIdentityOID = sysId(99)
 }
 
 /**
