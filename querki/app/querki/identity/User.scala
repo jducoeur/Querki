@@ -5,6 +5,7 @@ import play.api._
 import play.api.db._
 import play.api.mvc._
 import play.api.Play.current
+
 import models._
 
 import querki.db.ShardKind
@@ -13,26 +14,6 @@ import ShardKind._
 import querki.util._
 
 import modules.email.EmailAddress
-
-trait User {
-  def id:OID
-  // TODO: this should be Option[String]!
-  def name:String
-  def identities:Seq[Identity]
-   
-  def toSession:Seq[(String, String)] = {
-    Seq(
-      (Security.username -> name),
-      (User.userIdSessionParam -> id.toString)
-    )
-  }
-  
-  // TODO: we'll need to cope with users who don't have a name, since that's a
-  // paid-user feature. In that case, return a ThingId'ized id.
-  def toThingId = AsName(name)
-}
-
-case class FullUser(id:OID, name:String, identities:Seq[Identity] = Seq.empty) extends User
 
 object UserLevel {
   type UserLevel = Int
@@ -43,18 +24,46 @@ object UserLevel {
   val PaidUser = 3
   val PermanentUser = 4
   
+  val SpaceSpecific = 5
+  
   val AdminUser = 10
   
   val SuperadminUser = 100
 }
 
+import UserLevel._
+
+trait User {
+  def id:OID
+  // TODO: this should be Option[String]!
+  def name:String
+  def identities:Seq[Identity]
+  def level:UserLevel
+   
+  def toSession:Seq[(String, String)] = {
+    Seq(
+      (Security.username -> name),
+      (User.userIdSessionParam -> id.toString),
+      (User.levelSessionParam -> level.toString)
+    )
+  }
+  
+  // TODO: we'll need to cope with users who don't have a name, since that's a
+  // paid-user feature. In that case, return a ThingId'ized id.
+  def toThingId = AsName(name)
+}
+
+case class FullUser(id:OID, name:String, identities:Seq[Identity] = Seq.empty, level:UserLevel = UnknownUserLevel) extends User
+
 object User {
   val userIdSessionParam = "userId"
+  val levelSessionParam = "lvl"
     
   object Anonymous extends User {
     val id = UnknownOID
     val name = ""
     val identities = Seq.empty
+    val level = UnknownUserLevel
   }
   
   /**
@@ -64,7 +73,8 @@ object User {
    * TODO: this really ought to age out. I don't expect entries to be removed often -- indeed, I
    * expect users to release names quite rarely -- but we should be able to cope with it.
    * 
-   * TODO: this isn't sufficiently thread-safe! This is probably a good place to use an Agent.
+   * TODO: this isn't sufficiently thread-safe! This is probably a good place to use an Agent,
+   * as soon as we upgrade to the current version of Akka.
    */
   private val idByNameCache = collection.mutable.Map.empty[String, OID]
   
@@ -80,7 +90,12 @@ object User {
    */
   def get(request:RequestHeader) = {
     val username = request.session.get(Security.username)
-    username.map(FullUser(request.session.get(userIdSessionParam).map(OID(_)).getOrElse(UnknownOID), _))
+    username.map(
+      FullUser(
+        request.session.get(userIdSessionParam).map(OID(_)).getOrElse(UnknownOID), 
+        _,
+        Seq.empty,
+        request.session.get(levelSessionParam).map(_.toInt).getOrElse(UnknownUserLevel)))
   }
   
   def get(rawName:String) = {
@@ -126,7 +141,8 @@ object User {
         val auth = row.get[String]("authentication").get
         if (Hasher.authenticate(passwordEntered, EncryptedHash(auth))) {
           Some(FullUser(OID(row.get[Long]("userId").get), row.get[String]("name").get,
-            Seq(Identity(OID(row.get[Long]("id").get), email))))
+            Seq(Identity(OID(row.get[Long]("id").get), email)),
+            row.get[Int]("level").get))
         } else {
           None
         }
@@ -148,7 +164,8 @@ object User {
           val auth = row.get[String]("authentication").get
           if (Hasher.authenticate(passwordEntered, EncryptedHash(auth))) {
             Some(FullUser(OID(row.get[Long]("userId").get), row.get[String]("name").get,
-              Seq(Identity(OID(row.get[Long]("id").get), EmailAddress(row.get[String]("email").get)))))
+              Seq(Identity(OID(row.get[Long]("id").get), EmailAddress(row.get[String]("email").get))),
+              row.get[Int]("level").get))
           } else {
             None
           }

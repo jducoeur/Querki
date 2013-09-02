@@ -237,6 +237,7 @@ to add new Properties for any Person in your Space.
     val id = UnknownOID
     val identity = Identity(identityId, email)
     val identities = Seq(identity)
+    val level = UserLevel.SpaceSpecific
   }
   
   /**
