@@ -63,8 +63,17 @@ object User {
    * 
    * TODO: this really ought to age out. I don't expect entries to be removed often -- indeed, I
    * expect users to release names quite rarely -- but we should be able to cope with it.
+   * 
+   * TODO: this isn't sufficiently thread-safe! This is probably a good place to use an Agent.
    */
   private val idByNameCache = collection.mutable.Map.empty[String, OID]
+  
+  /**
+   * Same thing, other direction.
+   * 
+   * TODO: same as idByNameCache
+   */
+  private val nameByIdCache = collection.mutable.Map.empty[OID, String]
   
   /**
    * If we find the username in the current session, return a populated Some(User); otherwise, None.
@@ -83,7 +92,6 @@ object User {
           select id from User where name={name}
           """).on("name" -> name)
         val stream = personQuery.apply()
-        // TODO: need to cope 
         stream.headOption.map(row => OID(row.get[Long]("id").get))
       }
       fromDB.map(idByNameCache(name) = _)
@@ -91,15 +99,20 @@ object User {
     }
     idOpt.map(FullUser(_, name))
   }
-  
+ 
+  // TODO: this is fundamentally evil -- it should be returning Option[String].
   def getName(id:OID):String = {
-    DB.withConnection(dbName(System)) { implicit conn =>
-      val personQuery = SQL("""
-          select name from User where id={id}
-          """).on("id" -> id.raw)
-      val stream = personQuery.apply()
-      stream.headOption.map(row => row.get[String]("name").get) getOrElse ("UNKNOWN USER")
-    }    
+    nameByIdCache.get(id).getOrElse {
+      val fromDB = DB.withConnection(dbName(System)) { implicit conn =>
+        val personQuery = SQL("""
+            select name from User where id={id}
+            """).on("id" -> id.raw)
+        val stream = personQuery.apply()
+        stream.headOption.map(row => row.get[String]("name").get) getOrElse ("UNKNOWN USER")
+      }
+      nameByIdCache(id) = fromDB
+      fromDB
+    }
   }
   
   def checkQuerkiLogin(email:EmailAddress, passwordEntered:String):Option[User] = {
