@@ -54,6 +54,10 @@ import akka.util.Timeout
  */
 trait Requester { this:Actor =>
   
+  implicit class RequestableActorRef(a:ActorRef) {
+    def request(msg:Any)(handler:Actor.Receive) = doRequest(a, msg)(handler)
+  }
+  
   /**
    * The response from request() will be wrapped up in here and looped around. You shouldn't need to
    * use this directly. 
@@ -76,7 +80,7 @@ trait Requester { this:Actor =>
    * which will be run if the operation fails for some reason. (Most often, because we didn't receive a
    * response within the timeout window.)
    */
-  def request(otherActor:ActorRef, msg:Any)(handler:Actor.Receive) = {
+  def doRequest(otherActor:ActorRef, msg:Any)(handler:Actor.Receive) = {
     val originalSender = sender
     val f = otherActor ask msg
     import context.dispatcher

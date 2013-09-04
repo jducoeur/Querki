@@ -29,7 +29,7 @@ class MyRequester extends Actor with Requester with ActorLogging {
   
   def receive = handleResponses orElse {
     case Start(trans) => {
-      request(trans, Stringify(4)) {
+      trans.request(Stringify(4)) {
         case Stringified(str) => {
           results += str
           sender ! results
@@ -38,15 +38,15 @@ class MyRequester extends Actor with Requester with ActorLogging {
     }
     
     case StartMessy(trans) => {
-      request(trans, Stringify(5)) {
+      trans.request(Stringify(5)) {
         case Stringified(str) => {
           results += str
           
-          request(trans, Stringify(6)) {
+          trans.request(Stringify(6)) {
             case Stringified(str) => {
               results += str
               
-              request(trans, UnknownMessage) {
+              trans.request(UnknownMessage) {
                 case e:AskTimeoutException => {
                   sender ! results
                 }
