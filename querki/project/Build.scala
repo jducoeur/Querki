@@ -18,7 +18,8 @@ object ApplicationBuild extends Build {
       "javax.mail" % "javax.mail-api" % "1.5.0",
       "com.sun.mail" % "smtp" % "1.5.0",
       "com.sun.mail" % "mailapi" % "1.5.0",
-      "com.github.nscala-time" %% "nscala-time" % "0.4.2"
+      "com.github.nscala-time" %% "nscala-time" % "0.4.2",
+      "com.typesafe.akka" %% "akka-testkit" % "2.1.0"
     )
     
     val main = play.Project(appName, appVersion, appDependencies).settings(
