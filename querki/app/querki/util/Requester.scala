@@ -77,11 +77,12 @@ trait Requester { this:Actor =>
    * response within the timeout window.)
    */
   def request(otherActor:ActorRef, msg:Any)(handler:Actor.Receive) = {
+    val originalSender = sender
     val f = otherActor ask msg
     import context.dispatcher
     f.onComplete {
-      case Success(resp) => self ! RequestedResponse(resp, handler) 
-      case Failure(thrown) => self ! RequestedResponse(thrown, handler) 
+      case Success(resp) => self.tell(RequestedResponse(resp, handler), originalSender) 
+      case Failure(thrown) => self.tell(RequestedResponse(thrown, handler), originalSender) 
     }
   }
 }
