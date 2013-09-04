@@ -26,7 +26,7 @@ import akka.util.Timeout
  * def receive = {
  *   ...
  *   case MyMessage(a, b) => {
- *     otherActor request MyRequest(b) {
+ *     otherActor.request(MyRequest(b)) {
  *       case OtherResponse(c) => ...
  *     }
  *   }
@@ -35,10 +35,15 @@ import akka.util.Timeout
  * While OtherResponse is lexically part of MyRequest, it actually *runs* during receive, just like
  * any other incoming message, so it isn't prone to the threading problems that ask is.
  * 
+ * Note that point-free style does *not* work, unfortunately -- because request has multiple parameter
+ * lists, my attempts to use this point-free get confused about what the block belongs to. I don't know
+ * if there's a way to fix that.
+ * 
  * How does this work? Under the hood, it actually does use ask, but in a very specific and constrained
  * way. We send the message off using ask, and then hook the resulting Future. When the Future completes,
  * we wrap the response and the handler together in a RequestedResponse message, and loop that back
- * around as a message to the local Actor.
+ * around as a message to the local Actor. Note that the original sender is preserved, so the callback
+ * can use it without problems.
  * 
  * Unfortunately, this does demand a bit of extra complicity on the Actor's part. In order to use this,
  * you must mix in this trait and add one clause to your receive:
