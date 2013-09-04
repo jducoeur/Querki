@@ -46,19 +46,17 @@ class MyRequester extends Actor with Requester with ActorLogging {
         case Stringified(str) => {
           results += str
           
-          requestOrFail(trans, Stringify(6)) {
+          request(trans, Stringify(6)) {
             case Stringified(str) => {
               results += str
-              requestOrFail(trans, UnknownMessage) {
-                case _ => throw new Exception("Blah! Shouldn't have gotten here!")
-              } {
+              
+              request(trans, UnknownMessage) {
                 case e:AskTimeoutException => {
                   starter ! results
                 }
+                case _ => throw new Exception("Blah! Shouldn't have gotten here!")
               }
             }
-          } {
-            case UnknownMessage => // We don't actually expect this
           }
         }
       }

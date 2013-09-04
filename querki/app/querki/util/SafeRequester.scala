@@ -76,20 +76,12 @@ trait Requester { this:Actor =>
    * which will be run if the operation fails for some reason. (Most often, because we didn't receive a
    * response within the timeout window.)
    */
-  def doRequest(otherActor:ActorRef, msg:Any)(handler:Actor.Receive)(failHandler:Option[Actor.Receive]) = {
+  def request(otherActor:ActorRef, msg:Any)(handler:Actor.Receive) = {
     val f = otherActor ask msg
     import context.dispatcher
     f.onComplete {
       case Success(resp) => self ! RequestedResponse(resp, handler) 
-      case Failure(thrown) => failHandler.map(h => self ! RequestedResponse(thrown, h))
+      case Failure(thrown) => self ! RequestedResponse(thrown, handler) 
     }
-  }
-  
-  def request(otherActor:ActorRef, msg:Any)(handler:Actor.Receive) = {
-    doRequest(otherActor, msg)(handler)(None)
-  }
-  
-  def requestOrFail(otherActor:ActorRef, msg:Any)(handler:Actor.Receive)(failHandler:Actor.Receive) = {
-    doRequest(otherActor, msg)(handler)(Some(failHandler))
   }
 }
