@@ -109,4 +109,33 @@ function finalSetup(ownerId, spaceId, root) {
   root.find("._largeTextEdit").autosize();
   root.find(".controls .mf_container").addClass("span10");
   root.find(".controls input[type='text']").filter(".propEditor").addClass("span10");
+
+  
+  function updateValue(evt) {
+    if (querkiLiveUpdate) {
+      var target = $(evt.target);
+      var prop = target.data("propid");
+      var thingId = target.data("thing");
+      var serialized;
+      if (target.hasClass("radioBtn")) {
+        serialized = target.prop("name") + "=" + target.prop("value");
+      } else {
+        serialized = target.serialize();
+      }
+      console.log("Serialized value is " + serialized);
+      jsRoutes.controllers.Application.setProperty2(ownerId, spaceId, thingId).ajax({
+        data: "addedProperty=&model=&field[0]=" + prop + "&" + serialized,
+        success: function (result) {
+          finishStatus("Saved");
+        },
+        error: function (err) {
+          showStatus("Error trying to save. Please reload this page and try again.");
+        }
+      });
+      showStatus("Saving...");
+    }
+  }
+
+  root.find(".propEditor").change(updateValue);
+  root.find(".propEditor .radioBtn").click(updateValue);
 }

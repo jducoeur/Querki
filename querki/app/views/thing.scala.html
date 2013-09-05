@@ -31,47 +31,9 @@
         // be universal. Later, we should add it back in as an optional user preference.
         //  window.location = "@routes.Application.editThing(rc.ownerName, space.toThingId, thing.toThingId)";
         });
-		
-        function updateValue(evt) {
-	      var target = $(evt.target);
-	      var prop = target.data("propid");
-	      var thingId = target.data("thing");
-	      var serialized;
-	      if (target.hasClass("radioBtn")) {
-	        serialized = target.prop("name") + "=" + target.prop("value");
-	      } else {
-	        serialized = target.serialize();
-	      }
-	      console.log("Serialized value is " + serialized);
-	      jsRoutes.controllers.Application.setProperty2("@space.owner.toThingId", "@space.id.toThingId", thingId).ajax({
-	        data: "addedProperty=&model=&field[0]=" + prop + "&" + serialized,
-	        success: function (result) {
-	          finishStatus("Saved");
-	        },
-	        error: function (err) {
-	          showStatus("Error trying to save. Please reload this page and try again.");
-	        }
-	      });
-	      showStatus("Saving...");
-        }
-				
-		$(".propEditor").change(updateValue);
-		$(".propEditor .radioBtn").click(updateValue);
       });
     </script>
     
-    <style>
-      .statusLine {
-        display: none;
-        position: absolute;
-        left: 30px;
-        top: 40px;
-        z-index: 100;
-      }
-    </style>
-
-	<div id="statusLine" class="statusLine"><span id="statusText" class="label label-info">Status</span></div>
-	    
     @if(rc.hasProp) {
     
       @Html(thing.render(rc, rc.prop).display)

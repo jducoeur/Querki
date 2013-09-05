@@ -61,7 +61,8 @@ object NavSection {
         NavLink("Add a Property", routes.Application.createProperty(owner, spaceId)),
         NavLink("Upload a Photo", routes.Application.upload(owner, spaceId)),
         NavLink("Show all Things", routes.Application.thing(owner, spaceId, "All+Things")),
-        NavLink("Show all Properties", routes.Application.thing(owner, spaceId, "All+Properties"))
+        NavLink("Show all Properties", routes.Application.thing(owner, spaceId, "All+Properties")),
+        NavLink("Sharing and Security", routes.Application.sharing(owner, spaceId))
       )
     }
     val spaceLinks = spaceLinksOpt.getOrElse(Seq.empty[NavLink])

@@ -1,0 +1,25 @@
+@(rc:RequestContext)
+
+@import querki.html.HtmlRenderer
+@import modules.Modules
+
+@space = @{ rc.state.get }
+
+@pageTitle = @{
+  "Sharing and Security for " + space.displayName
+}
+
+@main(QuerkiTemplate.View, pageTitle, rc) {
+  <div class="page-header">
+	<h1 class="_defaultTitle">@pageTitle <a class="cancelButton btn" href="@routes.Application.thing(rc.ownerName, space.toThingId, space.toThingId)">Done</a></h1>
+  </div>
+	
+  <div class="row-fluid">
+    <div class="control-group">
+      <label class="control-label">Invitation Message</label>
+      <div class="controls">
+        @HtmlRenderer.renderPropertyInput(space, Modules.Person.inviteText, space.getDisplayPropVal(Modules.Person.inviteText)(space))
+      </div>
+    </div>
+  </div>
+}

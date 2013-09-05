@@ -825,6 +825,10 @@ disallow: /
       }
     }    
   }
+  
+  def sharing(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
+    Ok(views.html.sharing(rc))
+  }
 
   // TODO: that onUnauthorized will infinite-loop if it's ever invoked. What should we do instead?
   def login = 

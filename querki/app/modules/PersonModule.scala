@@ -36,6 +36,7 @@ class PersonModule(val moduleId:Short) extends modules.Module {
     val MeMethodOID = oldMoid(5)
     val SecurityPrincipalOID = oldMoid(6)
     val ChromelessInvitesOID = moid(7)
+    val InviteTextOID = moid(8)
   }
   import MOIDs._
   
@@ -113,6 +114,17 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
             |(It was originally designed for wedding invitations.)
             |
             |NOTE: this will probably become a paid-users-only feature in the future.""".stripMargin)))
+  
+  lazy val inviteText = new SystemProperty(InviteTextOID, LargeTextType, ExactlyOne,
+      toProps(
+        setName("Space Invitation Text"),
+        AppliesToKindProp(Kind.Space),
+        PropSummary("The text to use when inviting people to join your Space"),
+        PropDetails("""This is the content of the invitation email, to go along with the standard Querki
+            |invitation text.
+            |
+            |This is included in the Sharing and Security page, so you don't usually need to do anything
+            |directly with it.""".stripMargin)))
 
   override lazy val props = Seq(
     inviteLink,
@@ -123,7 +135,9 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
     
     meMethod,
     
-    chromelessInvites
+    chromelessInvites,
+    
+    inviteText
   )
   
   /***********************************************

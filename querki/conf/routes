@@ -29,6 +29,8 @@ GET     /u/:userName/:spaceId/delete  controllers.Application.deleteThing(userNa
 GET     /u/:userName/:spaceId/upload      controllers.Application.upload(userName, spaceId)
 POST    /u/:userName/:spaceId/upload      controllers.Application.doUpload(userName, spaceId)
 
+GET     /u/:userName/:spaceId/_sharing    controllers.Application.sharing(userName, spaceId)
+
 GET     /u/:userName/:spaceId/export controllers.Application.exportThing(userName, spaceId, thingId)
 
 GET     /u/:userName/:spaceId/getTags     controllers.Application.getTags(userName, spaceId, propId, q)
