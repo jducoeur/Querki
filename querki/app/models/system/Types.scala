@@ -104,10 +104,28 @@ trait CodeType {
       val parser = new QLParser(v, context)
       parser.process
     }
-    
     val doDefault = QLText("")
     def wrap(raw:String):valType = QLText(raw)
-    
+
+    // TBD: in principle, we really want this to return a *context*, not a *value*. This is a special
+    // case of a growing concern: that we could be losing information by returning QValue from
+    // qlApply, and should actually be returning a full successor Context.
+    // TODO: merge this with the fairly-similar code in QLType
+    override def qlApplyFromProp(definingContext:ContextBase, incomingContext:ContextBase, prop:Property[QLText,_], params:Option[Seq[QLPhrase]]):Option[QValue] = {
+      if (definingContext.isEmpty) {
+        Some(WarningValue("""Trying to use Text Property """" + prop.displayName + """" in an empty context.
+This often means that you've invoked it recursively without saying which Thing it is defined in."""))
+      } else {
+        Some(incomingContext.flatMapAsValue { elemContext:ContextBase =>
+          prop.applyToIncomingThing(definingContext) { (thing, context) =>
+            val qlPhraseText = thing.first(prop)(definingContext.state)
+            val parser = new QLParser(qlPhraseText, elemContext)
+            WikitextValue(parser.process)
+          }
+        })
+      }
+    }
+      
     def code(elem:ElemValue):String = get(elem).text
   }
 
@@ -156,6 +174,7 @@ This often means that you've invoked it recursively without saying which Thing i
       })
     }
   }
+  
 }
 object QLType extends QLType(QLTypeOID)
   

@@ -9,6 +9,8 @@ import ql.QLParser
 
 import querki.values._
 
+import play.api.Logger
+
 abstract class ContextBase {
   def value:QValue
   def state:SpaceState
@@ -83,14 +85,6 @@ abstract class ContextBase {
     val raw = flatMap(cb).asInstanceOf[ct.implType]
     val propVal = ct.makePropValue(raw, resultType)
     next(propVal)
-  }
-  
-  def flatMapAsValue[T <: ElemValue](cb:ContextBase => QValue, resultType:PType[_]):QValue = {
-    val ct = value.cType
-    val qvs = map(cb)
-    // TODO: this is an unfortunate cast. It's correct, but ick. Can we eliminate it?
-    val raw = qvs.map(_.first).asInstanceOf[ct.implType]
-    ct.makePropValue(raw, resultType)
   }
   
   override def toString = "Context(" + value + ")@" + this.hashCode()
