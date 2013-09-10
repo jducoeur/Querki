@@ -342,14 +342,18 @@ object QLType extends QLType(QLTypeOID)
       
       adjustmentsOpt.getOrElse("")
     }
+    
+    def makeWikiLink(context:ContextBase, thing:Thing, display:Wikitext):Wikitext = {
+      Wikitext("[") + display + Wikitext("](" + pathAdjustments(context) + thing.toThingId + ")")
+    }
 
     def doRender(context:ContextBase)(v:OID) = {
       val target = follow(context)(v)
       val text = target match {
-        case Some(t) => "[" + t.displayName + "](" + pathAdjustments(context) + t.toThingId + ")"
-        case None => "Bad Link: Thing " + v.toString + " not found"
+        case Some(t) => makeWikiLink(context, t, Wikitext(t.displayName))
+        case None => Wikitext("Bad Link: Thing " + v.toString + " not found")
       }
-      Wikitext(text)
+      text
     }
     override def doDebugRender(context:ContextBase)(v:OID) = {
       val target = follow(context)(v)

@@ -13,13 +13,28 @@
   <div class="page-header">
 	<h1 class="_defaultTitle">@pageTitle <a class="cancelButton btn" href="@routes.Application.thing(rc.ownerName, space.toThingId, space.toThingId)">Done</a></h1>
   </div>
-	
-  <div class="row-fluid">
-    <div class="control-group">
-      <label class="control-label">Invitation Message</label>
-      <div class="controls">
-        @HtmlRenderer.renderPropertyInput(space, Modules.Person.inviteText, space.getDisplayPropVal(Modules.Person.inviteText)(space))
-      </div>
+  
+  <div class="row">
+    <div class="span3">
+      <ul class="nav nav-list affix">
+        <li class="nav-header">Sharing</li>
+        <li><a href="#sendInvitations">Send Invitations</a></li>
+        <li class="divider"></li>
+        <li class="nav-header">Security</li>
+      </ul>
     </div>
+	
+	<div class="span9">
+      <section id="sendInvitations">
+        <h2>Send Invitations to Join this Space</h2>
+        <div class="control-group">
+          <label class="control-label">Invitation Message</label>
+          <div class="controls">
+            @HtmlRenderer.renderPropertyInput(space, Modules.Person.inviteText, space.getDisplayPropVal(Modules.Person.inviteText)(space))
+          </div>
+        </div>
+      </section>
+    </div>
+  
   </div>
 }

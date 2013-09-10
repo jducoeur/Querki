@@ -231,6 +231,8 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
       // There is content, so turn it into a link to the context Thing:
       case _ => {
         val guts = processParseTree(contents, context)
+        // TODO: this could still stand deeper refactoring with LinkType.makeWikiLink, which
+        // only copes with Links per se:
         def makeWikiLink(url:String):Wikitext = {
           Wikitext("[") + guts + Wikitext("](" + url + ")")
         }
@@ -243,8 +245,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
             // TODO: this is evil. How should it be described instead?
             val l = LinkType.follow(context)(LinkType.get(context.value.first))
             l match {
-              // TODO: also evil. We need to refactor the various ways we build these links!
-              case Some(thing) => makeWikiLink(LinkType.pathAdjustments(context) + thing.toThingId)
+              case Some(thing) => LinkType.makeWikiLink(context, thing, guts)
               case None => guts
             }
           }

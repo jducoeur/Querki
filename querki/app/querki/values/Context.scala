@@ -85,6 +85,14 @@ abstract class ContextBase {
     next(propVal)
   }
   
+  def flatMapAsValue[T <: ElemValue](cb:ContextBase => QValue, resultType:PType[_]):QValue = {
+    val ct = value.cType
+    val qvs = map(cb)
+    // TODO: this is an unfortunate cast. It's correct, but ick. Can we eliminate it?
+    val raw = qvs.map(_.first).asInstanceOf[ct.implType]
+    ct.makePropValue(raw, resultType)
+  }
+  
   override def toString = "Context(" + value + ")@" + this.hashCode()
   
   def debugRender = "Context@" + this.hashCode() + "(" + value.debugRender(this) + ")"

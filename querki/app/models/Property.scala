@@ -121,9 +121,17 @@ case class Property[VT, -RT](
   override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
     // Give the Type first dibs at handling the call; otherwise, return the value of this property
     // on the incoming thing.
-    pType.qlApplyFromProp(context, context, this, params).getOrElse(applyToIncomingThing(context) { (t, context) =>
-      t.getPropVal(this)(context.state)
-    })
+    pType.qlApplyFromProp(context, context, this, params).getOrElse(
+          applyToIncomingThing(context) { (t, innerContext) =>
+            t.getPropVal(this)(innerContext.state)
+          })
+        
+//      context.flatMapAsValue({ elemContext:ContextBase =>
+//          applyToIncomingThing(elemContext) { (t, innerContext) =>
+//            t.getPropVal(this)(innerContext.state)
+//          }
+//        },
+//        context.value.pType))
   }  
   
   override def partiallyApply(leftContext:ContextBase):QLFunction = {

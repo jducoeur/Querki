@@ -4,8 +4,7 @@ import java.security._
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
-//import play.api.Play
-//import play.api.Play.current
+import play.api.libs.Crypto
 
 /**
  * Wraps around part of a hash, to make stringifying easier. The stringifier code is
@@ -55,6 +54,18 @@ object EncryptedHash {
   }
 }
 
+case class SignedHash(signature:String, salt:String, msg:String) {
+  override def toString = signature + "-" + salt + "-" + msg
+}
+object SignedHash {
+  def apply(str:String):SignedHash = {
+    str.split('-') match {
+      case Array(signature, salt, msg, _*) => SignedHash(signature, salt, msg)
+      case _ => throw new Exception("Bad signature string: " + str)
+    }
+  }
+}
+
 /**
  * This is a hash-generation service, adapted from this page:
  * 
@@ -98,4 +109,22 @@ object Hasher {
    * Does the provided original match the hash information?
    */
   def authenticate(original:String, hash:EncryptedHash):Boolean = hash.hash.equals(doCalcHash(hash.salt.raw, original).hash)
+  
+  /**
+   * Sign the given string, with some salt for good measure.
+   * 
+   * NOTE: this currently only works when the Play app is running!
+   */
+  def sign(original:String):SignedHash = {
+    val salt = HashInfo(makeSalt).toString
+    val withSalt = salt + "-" + original
+    val sig = Crypto.sign(withSalt)
+    SignedHash(sig, salt, original)
+  }
+  
+  def checkSignature(hash:SignedHash):Boolean = {
+    val withSalt = hash.salt + "-" + hash.msg
+    val sig = Crypto.sign(withSalt)
+    (sig == hash.signature) 
+  }
 }
