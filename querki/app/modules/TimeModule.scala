@@ -7,7 +7,7 @@ import models.system._
 
 import Thing._
 
-import querki.values.ContextBase
+import querki.values.QLContext
 
 object TimeModule {
 
@@ -66,8 +66,8 @@ class TimeModule(val moduleId:Short) extends modules.Module {
     def doDeserialize(v:String) = new DateTime(v.toLong)
     def doSerialize(v:DateTime) = v.millis.toString
     val defaultRenderFormat = DateTimeFormat.mediumDateTime
-    def doRender(context:ContextBase)(v:DateTime) = Wikitext(defaultRenderFormat.print(v))
-    override def doComp(context:ContextBase)(left:DateTime, right:DateTime):Boolean = { left < right } 
+    def doRender(context:QLContext)(v:DateTime) = Wikitext(defaultRenderFormat.print(v))
+    override def doComp(context:QLContext)(left:DateTime, right:DateTime):Boolean = { left < right } 
     override def doMatches(left:DateTime, right:DateTime):Boolean = { left.millis == right.millis }
     val doDefault = TimeModule.epoch
   }
@@ -81,7 +81,7 @@ class TimeModule(val moduleId:Short) extends modules.Module {
   lazy val modTimeMethod = new SingleThingMethod(ModifiedTimeMethodOID, "_modTime", "When was this Thing last changed?", 
       """THING -> _modTime -> Date and Time
       |This method can receive any Thing; it produces the Date and Time when that Thing was last changed.""",
-      {(t:Thing, _:ContextBase) => ExactlyOne(QDateTime(t.modTime)) })
+      {(t:Thing, _:QLContext) => ExactlyOne(QDateTime(t.modTime)) })
 
   override lazy val props = Seq(
     modTimeMethod

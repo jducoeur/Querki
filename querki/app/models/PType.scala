@@ -39,14 +39,14 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * Takes a value of this type, and turns it into displayable form. Querki
    * equivalent to toString.
    */
-  def doRender(context:ContextBase)(v:VT):Wikitext
-  final def render(context:ContextBase)(v:ElemValue):Wikitext = doRender(context)(get(v))
+  def doRender(context:QLContext)(v:VT):Wikitext
+  final def render(context:QLContext)(v:ElemValue):Wikitext = doRender(context)(get(v))
   
   /**
    * Takes a value of this type, and renders it for showing in debug messages.
    */
-  def doDebugRender(context:ContextBase)(v:VT) = v.toString
-  final def debugRender(context:ContextBase)(v:ElemValue):String = doDebugRender(context)(get(v))
+  def doDebugRender(context:QLContext)(v:VT) = v.toString
+  final def debugRender(context:QLContext)(v:ElemValue):String = doDebugRender(context)(get(v))
   
   /**
    * Also required for all PTypes -- the default value to fall back on.
@@ -64,8 +64,8 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
   /**
    * This compares two values. It is used to sort Collections.
    */
-  def doComp(context:ContextBase)(left:VT, right:VT):Boolean = { math.Ordering.String.lt(doToUser(left), doToUser(right)) } 
-  final def comp(context:ContextBase)(left:ElemValue, right:ElemValue):Boolean = doComp(context)(get(left), get(right))
+  def doComp(context:QLContext)(left:VT, right:VT):Boolean = { math.Ordering.String.lt(doToUser(left), doToUser(right)) } 
+  final def comp(context:QLContext)(left:ElemValue, right:ElemValue):Boolean = doComp(context)(get(left), get(right))
   
   /**
    * The type unwrapper -- takes an opaque ElemValue and returns the underlying value.
@@ -123,7 +123,7 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * If this isn't partially applied, the incomingContext is used for both. See Property for the main
    * usage of this.
    */
-  def qlApplyFromProp(definingContext:ContextBase, incomingContext:ContextBase, prop:Property[VT,_], params:Option[Seq[QLPhrase]]):Option[QValue] = None
+  def qlApplyFromProp(definingContext:QLContext, incomingContext:QLContext, prop:Property[VT,_], params:Option[Seq[QLPhrase]]):Option[QValue] = None
   
   /**
    * Iff defined, this Type must *always* be used with the specified Collection.
@@ -161,7 +161,7 @@ class DelegatingType[VT](resolver: => PType[VT]) extends PType[VT](UnknownOID, U
   
   def doDeserialize(v:String) = realType.doDeserialize(v)
   def doSerialize(v:VT) = realType.doSerialize(v)
-  def doRender(context:ContextBase)(v:VT) = realType.doRender(context)(v)
+  def doRender(context:QLContext)(v:VT) = realType.doRender(context)(v)
   
   def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = 
     realType.renderInputXml(prop, state, currentValue, v)
@@ -175,7 +175,7 @@ class DelegatingType[VT](resolver: => PType[VT]) extends PType[VT](UnknownOID, U
 object UnknownType extends PType[Unit](UnknownOID, UnknownOID, UnknownOID, () => emptyProps) {
   def doDeserialize(v:String) = throw new Exception("Trying to use UnknownType!")
   def doSerialize(v:Unit) = throw new Exception("Trying to use UnknownType!")
-  def doRender(context:ContextBase)(v:Unit) = throw new Exception("Trying to use UnknownType!")
+  def doRender(context:QLContext)(v:Unit) = throw new Exception("Trying to use UnknownType!")
   
   def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = 
     throw new Exception("Trying to use UnknownType!")

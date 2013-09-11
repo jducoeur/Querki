@@ -51,12 +51,12 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
    * Takes a value of this type, and turns it into displayable form. Querki
    * equivalent to toString.
    */
-  def doRender(context:ContextBase)(v:implType, elemT:pType):Wikitext
+  def doRender(context:QLContext)(v:implType, elemT:pType):Wikitext
   
   /**
    * Takes a value of this type, and renders it for showing in debug messages.
    */
-  def debugRender(context:ContextBase)(v:implType, elemT:pType):String = v.map(elemT.debugRender(context)(_)).mkString(", ")
+  def debugRender(context:QLContext)(v:implType, elemT:pType):String = v.map(elemT.debugRender(context)(_)).mkString(", ")
   
   /**
    * Also required for all Collections -- the default value to fall back on.
@@ -146,7 +146,7 @@ class NameCollection extends Collection(IllegalOID, systemOID, systemOID, () => 
 
   def doSerialize(v:implType, elemT:pType):String = elemT.serialize(v.head)
 
-  def doRender(context:ContextBase)(v:implType, elemT:pType):Wikitext = {
+  def doRender(context:QLContext)(v:implType, elemT:pType):Wikitext = {
     elemT.render(context)(v.head)
   }
   def doDefault(elemT:pType):implType = {

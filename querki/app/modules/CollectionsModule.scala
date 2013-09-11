@@ -29,7 +29,7 @@ class CollectionsModule(val moduleId:Short) extends modules.Module {
         		|Given a THING, and a LIST that contains that THING, this returns the *previous* THING to that
         		|in the LIST. It returns None iff the THING is not in the LIST, or if it is the beginning of the LIST.""".stripMargin)))
   {
-    override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+    override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
       paramsOpt match {
         case Some(params) if (params.length > 0) => {
           val thing = context.value.first
@@ -58,7 +58,7 @@ class CollectionsModule(val moduleId:Short) extends modules.Module {
         		|Given a THING, and a LIST that contains that THING, this returns the *next* THING to that
         		|in the LIST. It returns None iff the THING is not in the LIST, or if it is the end of the LIST.""".stripMargin)))
   {
-    override def qlApply(context:ContextBase, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+    override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
       paramsOpt match {
         case Some(params) if (params.length > 0) => {
           val thing = context.value.first

@@ -69,7 +69,7 @@ class EmailModule(val moduleId:Short) extends modules.Module {
     def doDeserialize(v:String) = EmailAddress(v)
     def doSerialize(v:EmailAddress) = v.addr
     // TODO: in the long run, this probably should render as a clickable URL?
-    def doRender(context:ContextBase)(v:EmailAddress) = Wikitext(v.addr)
+    def doRender(context:QLContext)(v:EmailAddress) = Wikitext(v.addr)
     
     val doDefault = EmailAddress("")
     def wrap(raw:String):valType = EmailAddress(raw)
@@ -215,14 +215,14 @@ class EmailModule(val moduleId:Short) extends modules.Module {
    ***********************************************/
     
   import querki.access.AccessControl
-  def sendEmailIfAllowed(t:Thing, context:ContextBase) = {
+  def sendEmailIfAllowed(t:Thing, context:QLContext) = {
     if (AccessControl.canEdit(context.state, context.request.requesterOrAnon, t.id))
       doSendEmail(t, context)
     else
       TextValue("You aren't allowed to send that email")
   }
   
-  def doSendEmail(t:Thing, context:ContextBase) = {
+  def doSendEmail(t:Thing, context:QLContext) = {
     implicit val state = context.state
     val recipientsIndirect = t.getProp(recipientsProp)
     val previouslySentToOpt = t.getPropOpt(sentToProp)

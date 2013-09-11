@@ -68,7 +68,7 @@ trait CodeType {
   {
     def doDeserialize(v:String) = java.lang.Integer.parseInt(v)
     def doSerialize(v:Int) = v.toString
-    def doRender(context:ContextBase)(v:Int) = Wikitext(v.toString)
+    def doRender(context:QLContext)(v:Int) = Wikitext(v.toString)
 
     val doDefault = 0
     
@@ -100,7 +100,7 @@ trait CodeType {
   {
     def doDeserialize(v:String) = QLText(v)
     def doSerialize(v:QLText) = v.text
-    def doRender(context:ContextBase)(v:QLText) = {
+    def doRender(context:QLContext)(v:QLText) = {
       val parser = new QLParser(v, context)
       parser.process
     }
@@ -111,12 +111,12 @@ trait CodeType {
     // case of a growing concern: that we could be losing information by returning QValue from
     // qlApply, and should actually be returning a full successor Context.
     // TODO: merge this with the fairly-similar code in QLType
-    override def qlApplyFromProp(definingContext:ContextBase, incomingContext:ContextBase, prop:Property[QLText,_], params:Option[Seq[QLPhrase]]):Option[QValue] = {
+    override def qlApplyFromProp(definingContext:QLContext, incomingContext:QLContext, prop:Property[QLText,_], params:Option[Seq[QLPhrase]]):Option[QValue] = {
       if (definingContext.isEmpty) {
         Some(WarningValue("""Trying to use Text Property """" + prop.displayName + """" in an empty context.
 This often means that you've invoked it recursively without saying which Thing it is defined in."""))
       } else {
-        Some(incomingContext.flatMapAsValue { elemContext:ContextBase =>
+        Some(incomingContext.flatMapAsValue { elemContext:QLContext =>
           prop.applyToIncomingThing(definingContext) { (thing, context) =>
             val qlPhraseText = thing.first(prop)(definingContext.state)
             val parser = new QLParser(qlPhraseText, elemContext)
@@ -162,7 +162,7 @@ class QLType(tid:OID) extends TextTypeBase(tid,
   // TBD: in principle, we really want this to return a *context*, not a *value*. This is a special
   // case of a growing concern: that we could be losing information by returning QValue from
   // qlApply, and should actually be returning a full successor Context.
-  override def qlApplyFromProp(definingContext:ContextBase, incomingContext:ContextBase, prop:Property[QLText,_], params:Option[Seq[QLPhrase]]):Option[QValue] = {
+  override def qlApplyFromProp(definingContext:QLContext, incomingContext:QLContext, prop:Property[QLText,_], params:Option[Seq[QLPhrase]]):Option[QValue] = {
     if (definingContext.isEmpty) {
       Some(ErrorValue("""Trying to use QL Property """" + prop.displayName + """" in an empty context.
 This often means that you've invoked it recursively without saying which Thing it is defined in."""))
@@ -218,7 +218,7 @@ object QLType extends QLType(QLTypeOID)
       }
     }
     def doSerialize(v:Boolean) = v.toString
-    def doRender(context:ContextBase)(v:Boolean) = Wikitext(v.toString())
+    def doRender(context:QLContext)(v:Boolean) = Wikitext(v.toString())
     
     val doDefault = false
     
@@ -253,7 +253,7 @@ object QLType extends QLType(QLTypeOID)
   }
   
   trait NameableType {
-    def getName(context:ContextBase)(v:ElemValue):String
+    def getName(context:QLContext)(v:ElemValue):String
   }
   
   /**
@@ -291,22 +291,22 @@ object QLType extends QLType(QLTypeOID)
     
     def canonicalize(str:String):String = toInternal(str).toLowerCase
     
-    def getName(context:ContextBase)(v:ElemValue) = canonicalize(get(v))
+    def getName(context:QLContext)(v:ElemValue) = canonicalize(get(v))
     
-    def nameToLink(context:ContextBase)(v:String) = {
+    def nameToLink(context:QLContext)(v:String) = {
       // Conceptually, toInternal isn't quite right here. We're using it instead of AsName
       // mostly because we want to preserve the *case* of the Tag:
       Wikitext("[" + v + "](" + toUrl(v) + ")")
     }
     
-    override def doComp(context:ContextBase)(left:String, right:String):Boolean = { left < right } 
+    override def doComp(context:QLContext)(left:String, right:String):Boolean = { left < right } 
 
     val doDefault = ""
       
     override def doMatches(left:String, right:String):Boolean = equalNames(left, right)
   }
   object NameType extends NameType(NameTypeOID, "Name Type") {
-    def doRender(context:ContextBase)(v:String) = Wikitext(toDisplay(v))    
+    def doRender(context:QLContext)(v:String) = Wikitext(toDisplay(v))    
   }
   object TagSetType extends NameType(TagSetOID, "Tag Set Type") {
     override def requiredColl:Option[Collection] = Some(QSet)
@@ -314,7 +314,7 @@ object QLType extends QLType(QLTypeOID)
     // TODO: this should probably get refactored with LinkType? They're different ways of
     // expressing the same concepts; it's just that Links are OID-based, whereas Names/Tags are
     // name-based.
-    def doRender(context:ContextBase)(v:String) = nameToLink(context)(v)
+    def doRender(context:QLContext)(v:String) = nameToLink(context)(v)
     
     override def renderProperty(prop:Property[_,_])(implicit request:controllers.RequestContext):Option[Wikitext] = {
       val parser = new ql.QLParser(QLText("""These tags are currently being used:
@@ -327,7 +327,7 @@ object QLType extends QLType(QLTypeOID)
    * Represents a Type that you can turn into a URL.
    */
   trait URLableType {
-    def getURL(context:ContextBase)(v:ElemValue):Option[String]
+    def getURL(context:QLContext)(v:ElemValue):Option[String]
   }
   
   /**
@@ -343,14 +343,14 @@ object QLType extends QLType(QLTypeOID)
     def doDeserialize(v:String) = OID(v)
     def doSerialize(v:OID) = v.toString
     
-    def follow(context:ContextBase)(v:OID) = context.state.anything(v)
-    def followLink(context:ContextBase):Option[Thing] = {
+    def follow(context:QLContext)(v:OID) = context.state.anything(v)
+    def followLink(context:QLContext):Option[Thing] = {
       // This should only be called if the valType is LinkType, and the Collection is
       // single-valued!
       context.value.firstTyped(this).flatMap(follow(context)(_))
     }
     
-    def pathAdjustments(context:ContextBase):String = {
+    def pathAdjustments(context:QLContext):String = {
       // Find the Thing that we're actually rendering...
       val rootThingOpt = followLink(context.root)
       val adjustmentsOpt = rootThingOpt.map { rootThing =>
@@ -362,11 +362,11 @@ object QLType extends QLType(QLTypeOID)
       adjustmentsOpt.getOrElse("")
     }
     
-    def makeWikiLink(context:ContextBase, thing:Thing, display:Wikitext):Wikitext = {
+    def makeWikiLink(context:QLContext, thing:Thing, display:Wikitext):Wikitext = {
       Wikitext("[") + display + Wikitext("](" + pathAdjustments(context) + thing.toThingId + ")")
     }
 
-    def doRender(context:ContextBase)(v:OID) = {
+    def doRender(context:QLContext)(v:OID) = {
       val target = follow(context)(v)
       val text = target match {
         case Some(t) => makeWikiLink(context, t, Wikitext(t.displayName))
@@ -374,7 +374,7 @@ object QLType extends QLType(QLTypeOID)
       }
       text
     }
-    override def doDebugRender(context:ContextBase)(v:OID) = {
+    override def doDebugRender(context:QLContext)(v:OID) = {
       val target = follow(context)(v)
       target match {
         case Some(t) => t.displayName + "(" + t.id.toThingId + ")"
@@ -382,16 +382,16 @@ object QLType extends QLType(QLTypeOID)
       }      
     }
     
-    def getNameFromId(context:ContextBase)(id:OID) = {
+    def getNameFromId(context:QLContext)(id:OID) = {
       val tOpt = follow(context)(id)
       tOpt.map(thing => NameType.canonicalize(thing.displayName)).getOrElse(throw new Exception("Trying to get name from unknown OID " + id))      
     }
-    def getName(context:ContextBase)(v:ElemValue) = {
+    def getName(context:QLContext)(v:ElemValue) = {
       val id = get(v)
       getNameFromId(context)(id)
     }
     
-    def getURL(context:ContextBase)(elem:ElemValue):Option[String] = {
+    def getURL(context:QLContext)(elem:ElemValue):Option[String] = {
       for (
         v <- elem.getOpt(this);
         thing <- follow(context)(v)
@@ -400,7 +400,7 @@ object QLType extends QLType(QLTypeOID)
     }
     
     // Links are sorted by their *display names*:
-    override def doComp(context:ContextBase)(left:OID, right:OID):Boolean = { 
+    override def doComp(context:QLContext)(left:OID, right:OID):Boolean = { 
       NameType.doComp(context)(getNameFromId(context)(left), getNameFromId(context)(right))
     } 
     
@@ -477,7 +477,7 @@ abstract class PlainTextType(tid:OID) extends SystemType[PlainText](tid,
   def doSerialize(v:PlainText) = v.text
   // TODO: this is probably incorrect, but may be taken care of by context? How do we make sure this
   // doesn't actually get any internal Wikitext rendered?
-  def doRender(context:ContextBase)(v:PlainText) = Wikitext(v.text)
+  def doRender(context:QLContext)(v:PlainText) = Wikitext(v.text)
     
   val doDefault = PlainText("")
   override def wrap(raw:String):valType = PlainText(raw)
@@ -494,7 +494,7 @@ class InternalMethodType(tid:OID) extends SystemType[String](tid,
   def doDeserialize(v:String) = boom
   def doSerialize(v:String) = boom
 
-  def doRender(context:ContextBase)(v:String) = Wikitext("Internal Method")
+  def doRender(context:QLContext)(v:String) = Wikitext("Internal Method")
     
   val doDefault = ""
   override def wrap(raw:String):valType = boom 
@@ -516,9 +516,9 @@ class ExternalLinkType(tid:OID) extends SystemType[QURL](tid,
 {
   def doDeserialize(v:String) = QURL(v)
   def doSerialize(v:QURL) = v.url
-  def doRender(context:ContextBase)(v:QURL) = Wikitext("[" + v.url + "](" + v.url + ")")
+  def doRender(context:QLContext)(v:QURL) = Wikitext("[" + v.url + "](" + v.url + ")")
   
-  def getURL(context:ContextBase)(elem:ElemValue):Option[String] = {
+  def getURL(context:QLContext)(elem:ElemValue):Option[String] = {
     elem.getOpt(this).map(_.url)
   }
   
@@ -542,7 +542,7 @@ object UnresolvedPropType extends SystemType[String](UnknownOID,
 {
   def doDeserialize(v:String) = v
   def doSerialize(v:String) = v
-  def doRender(context:ContextBase)(v:String) = Wikitext("Unresolved property value!")
+  def doRender(context:QLContext)(v:String) = Wikitext("Unresolved property value!")
   
   val doDefault = ""
 }

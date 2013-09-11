@@ -16,9 +16,9 @@ object ParsedTextType extends SystemType[Wikitext](OIDs.IllegalOID, () => Thing.
 {
   def doDeserialize(v:String) = throw new Exception("Can't deserialize ParsedText!")
   def doSerialize(v:Wikitext) = throw new Exception("Can't serialize ParsedText!")
-  def doRender(context:ContextBase)(v:Wikitext) = v
+  def doRender(context:QLContext)(v:Wikitext) = v
   
-  override def doDebugRender(context:ContextBase)(v:Wikitext) = v.contents.map(_.internal).mkString
+  override def doDebugRender(context:QLContext)(v:Wikitext) = v.contents.map(_.internal).mkString
   
   val doDefault = Wikitext("")
   def wrap(raw:String):valType = Wikitext(raw)
@@ -31,7 +31,7 @@ object RawHtmlType extends SystemType[Wikitext](OIDs.IllegalOID, () => Thing.emp
 {
   def doDeserialize(v:String) = throw new Exception("Can't deserialize ParsedText!")
   def doSerialize(v:Wikitext) = throw new Exception("Can't serialize ParsedText!")
-  def doRender(context:ContextBase)(v:Wikitext) = v
+  def doRender(context:QLContext)(v:Wikitext) = v
     
   val doDefault = Wikitext("")
 }
@@ -40,7 +40,7 @@ object RawHtmlType extends SystemType[Wikitext](OIDs.IllegalOID, () => Thing.emp
  * This is a fake PType, used when we encounter a name we don't know.
  */
 object UnknownNameType extends NameType(UnknownOID, "_unknownNameType") {
-  def doRender(context:ContextBase)(v:String) = Wikitext("{{_unknownName:") + nameToLink(context)(v) + Wikitext("}}")
+  def doRender(context:QLContext)(v:String) = Wikitext("{{_unknownName:") + nameToLink(context)(v) + Wikitext("}}")
 }
 
 /**
@@ -71,12 +71,12 @@ trait QValue {
     else
       first.getOpt(elemT)
   }
-  def render(context:ContextBase):Wikitext = cType.doRender(context)(cv, pType)
+  def render(context:QLContext):Wikitext = cType.doRender(context)(cv, pType)
   
   def isEmpty = cType.isEmpty(this)
   def size = cv.size
   
-  def debugRender(context:ContextBase) = {
+  def debugRender(context:QLContext) = {
     cType.getClass().getSimpleName() + "[" + pType.getClass().getSimpleName() + "]" + "(" + cType.debugRender(context)(cv, pType) + ")"
   }
   

@@ -92,7 +92,7 @@ case class Property[VT, -RT](
   def serialize(v:QValue):String = v.serialize(pType)
   def deserialize(str:String):QValue = cType.deserialize(str, pType)
   
-  def applyToIncomingThing(context:ContextBase)(action:(Thing, ContextBase) => QValue):QValue = {
+  def applyToIncomingThing(context:QLContext)(action:(Thing, QLContext) => QValue):QValue = {
     if (context.isEmpty) {
       EmptyValue.untyped
     } else {
@@ -118,7 +118,7 @@ case class Property[VT, -RT](
    * TODO: if this Property isn't defined on the target Thing or its ancestors, this should return None.
    * So technically, this should be returning Optional. Note that PType.qlApply() already does this.
    */
-  override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
+  override def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
     // Give the Type first dibs at handling the call; otherwise, return the value of this property
     // on the incoming thing.
     pType.qlApplyFromProp(context, context, this, params).getOrElse(
@@ -127,8 +127,8 @@ case class Property[VT, -RT](
       })
   }  
   
-  override def partiallyApply(leftContext:ContextBase):QLFunction = {
-    def handleRemainder(mainContext:ContextBase, params:Option[Seq[QLPhrase]]):QValue = {
+  override def partiallyApply(leftContext:QLContext):QLFunction = {
+    def handleRemainder(mainContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {
       // Note that partial application ignores the incoming context if the type isn't doing anything clever. By
       // and large, this syntax mainly exists for QL properties:
       //

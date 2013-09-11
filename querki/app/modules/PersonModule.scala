@@ -89,7 +89,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
             |NOTE: the high concept of _me is important, and will be continuing, but the details are likely to evolve a great
             |deal, to make it more usable. So don't get too invested in the current behaviour.""".stripMargin)))
   {
-    override def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
+    override def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
       val userOpt = context.request.requester
       val personOpt = userOpt.flatMap { user =>
         user match {
@@ -176,7 +176,7 @@ to add new Properties for any Person in your Space.
    * Find the Identity that goes with this Person's email address, or create one if there
    * isn't already one.
    */
-  private def setIdentityId(t:Thing, context:ContextBase):OID = {
+  private def setIdentityId(t:Thing, context:QLContext):OID = {
     implicit val s = context.state
     val emailAddr = t.first(emailAddressProp)
     val name = t.first(NameProp)
@@ -209,7 +209,7 @@ to add new Properties for any Person in your Space.
   val identityEmail = "identityEmail"
   val personParam = "person"
     
-  def doInviteLink(chromelessIn:Boolean)(t:Thing, context:ContextBase):QValue = {
+  def doInviteLink(chromelessIn:Boolean)(t:Thing, context:QLContext):QValue = {
     implicit val state = context.state
     val personOpt =
       for {

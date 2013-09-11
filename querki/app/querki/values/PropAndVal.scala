@@ -18,9 +18,9 @@ import models.system.QList
  * own VT? Or make this wrapper no longer require the Property, just carry the VT itself?
  */
 case class PropAndVal[VT](prop:Property[VT, _], v:QValue) {
-  def render(context:ContextBase) = v.render(context)
+  def render(context:QLContext) = v.render(context)
   def renderPlain = render(EmptyContext)
-  def renderOr(context:ContextBase)(other: => Wikitext) = if (v.isEmpty) other else render(context)
+  def renderOr(context:QLContext)(other: => Wikitext) = if (v.isEmpty) other else render(context)
   def renderPlainOr(other: => Wikitext) = renderOr(EmptyContext)(other)
   def renderPlainIfDefined = if (!v.isEmpty) renderPlain else Wikitext("")
   // TODO: Evil! This really should just be v.firstAs, returning an Option:

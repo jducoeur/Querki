@@ -376,7 +376,7 @@ abstract class Thing(
    * This basic version returns a Link to this thing.
    * TODO: add a "self" method to always be able to do this.
    */
-  def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
+  def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
     val applyOpt = getPropOpt(ApplyMethod)(context.state)
     applyOpt match {
       case Some(apply) => {
@@ -396,7 +396,7 @@ abstract class Thing(
    * Partial application is nonsensical for most Things; it is mainly intended for methods
    * on properties.
    */
-  def partiallyApply(context:ContextBase):QLFunction = {
+  def partiallyApply(context:QLContext):QLFunction = {
     new BogusFunction
   }
 

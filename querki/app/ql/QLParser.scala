@@ -19,17 +19,17 @@ import play.api.Logger
  * when a method returns a partially-applied function.
  */
 trait QLFunction {
-  def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue
+  def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue
 }
 
-class PartiallyAppliedFunction(partialContext:ContextBase, action:(ContextBase, Option[Seq[QLPhrase]]) => QValue) extends QLFunction {
-  def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
+class PartiallyAppliedFunction(partialContext:QLContext, action:(QLContext, Option[Seq[QLPhrase]]) => QValue) extends QLFunction {
+  def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
     action(context, params)
   }
 }
 
 class BogusFunction extends QLFunction {
-  def qlApply(context:ContextBase, params:Option[Seq[QLPhrase]] = None):QValue = {
+  def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
     ErrorValue("It does not make sense to put this after a dot.")
   }
 }
@@ -74,7 +74,7 @@ case class ParsedQLText(parts:Seq[QLTextPart]) {
   def reconstructString = parts.map(_.reconstructString).mkString
 }
 
-class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
+class QLParser(val input:QLText, ci:QLContext) extends RegexParsers {
   
   // Add the parser to the context, so that methods can call back into it:
   val initialContext = QLContext(ci.value, ci.requestOpt, Some(ci.parent), Some(this), ci.depth + 1, ci.useCollection, ci.propOpt)
@@ -90,7 +90,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
   // Turn this to true to produce voluminous output from the QL processing pipeline
   // TODO: this should come from Config!
   val doLogContext = false
-  def logContext(msg:String, context:ContextBase)(processor: => ContextBase):ContextBase = {
+  def logContext(msg:String, context:QLContext)(processor: => QLContext):QLContext = {
     if (doLogContext) {
       Logger.info(indent + msg + ": " + context.debugRender + " =")
       Logger.info(indent + "{")
@@ -142,7 +142,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
    * ParsedTextType. So far, you can't *do* anything with that afterwards other than
    * render it, which just returns the already-computed Wikitext.
    */
-  private def processTextStage(text:QLTextStage, context:ContextBase):ContextBase = {
+  private def processTextStage(text:QLTextStage, context:QLContext):QLContext = {
     logContext("processTextStage " + text, context) {
 	    val ct = context.value.cType
 	    // For each element of the incoming context, recurse in and process the embedded Text
@@ -156,7 +156,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
     }
   }
   
-  private def processCall(call:QLCall, context:ContextBase):ContextBase = {
+  private def processCall(call:QLCall, context:QLContext):QLContext = {
     logContext("processName " + call, context) {
 	    val thing = context.state.anythingByName(call.name)
 	    val tv = thing match {
@@ -182,7 +182,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
     }
   }
   
-  private def processStage(stage:QLStage, contextIn:ContextBase):ContextBase = {
+  private def processStage(stage:QLStage, contextIn:QLContext):QLContext = {
     val context = 
       if (contextIn.depth > contextIn.maxDepth)
         contextIn.next(WarningValue("Too many levels of calls -- you can only have up to " + contextIn.maxDepth + " calls in a phrase."));
@@ -199,7 +199,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
     }
   }
   
-  def processPhrase(ops:Seq[QLStage], startContext:ContextBase):ContextBase = {
+  def processPhrase(ops:Seq[QLStage], startContext:QLContext):QLContext = {
     logContext("processPhrase " + ops, startContext) {
 	    (startContext /: ops) { (context, stage) => 
 	      if (context.isCut)
@@ -212,11 +212,11 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
     }
   }
   
-  private def processPhrases(phrases:Seq[QLPhrase], context:ContextBase):Seq[ContextBase] = {
+  private def processPhrases(phrases:Seq[QLPhrase], context:QLContext):Seq[QLContext] = {
     phrases map (phrase => processPhrase(phrase.ops, context))
   }
 
-  def contextsToWikitext(contexts:Seq[ContextBase], insertNewlines:Boolean = false):Wikitext = {
+  def contextsToWikitext(contexts:Seq[QLContext], insertNewlines:Boolean = false):Wikitext = {
     (Wikitext("") /: contexts) { (soFar, context) => soFar.+(context.value.render(context.parent), insertNewlines) }
   }
   
@@ -224,7 +224,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
    * This deals with QText that contains "__stuff__" or "____", both of which render as
    * links to the incoming context. (Or simply the value of the context, if it's not a Link.)
    */
-  private def linkToWikitext(contents:ParsedQLText, context:ContextBase):Wikitext = {
+  private def linkToWikitext(contents:ParsedQLText, context:QLContext):Wikitext = {
     contents.parts.length match {
       // Just four underscores, which means render the context right here:
       case 0 => context.value.render(context)
@@ -264,7 +264,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
     }
   }
   
-  private def processParseTree(parseTree:ParsedQLText, context:ContextBase):Wikitext = {
+  private def processParseTree(parseTree:ParsedQLText, context:QLContext):Wikitext = {
     (Wikitext("") /: parseTree.parts) { (soFar, nextPart) =>
       soFar + (nextPart match {
         case UnQLText(t) => Wikitext(t)
@@ -320,7 +320,7 @@ class QLParser(val input:QLText, ci:ContextBase) extends RegexParsers {
     }
   }
   
-  def processMethod:ContextBase = {
+  def processMethod:QLContext = {
     val parseResult = parseAll(qlPhrase, input.text)
     parseResult match {
       case Success(result, _) => processPhrase(result.ops, initialContext)

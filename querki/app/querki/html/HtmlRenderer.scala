@@ -44,7 +44,7 @@ object HtmlRenderer {
   }
   
   // TODO: refactor this with Collection.fromUser():
-  def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_], context:ContextBase):FormFieldInfo = {
+  def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_], context:QLContext):FormFieldInfo = {
     if (prop.cType == QSet && (prop.pType.isInstanceOf[NameType] || prop.pType == LinkType)) {
       handleTagSet(prop, on, form, context)
     } else {
@@ -194,7 +194,7 @@ object HtmlRenderer {
   
   // TODO: TagSets come from Manifest, and the end result is similar to QList.fromUser(). Figure out
   // how to refactor these together, if possible.
-  def handleTagSet(prop:Property[_,_], on:Option[Thing], form:Form[_], context:ContextBase):FormFieldInfo = {
+  def handleTagSet(prop:Property[_,_], on:Option[Thing], form:Form[_], context:QLContext):FormFieldInfo = {
     val fieldIds = FieldIds(on, prop)
     // TODO: this stuff testing for empty isn't really type-specific -- indeed, it is handling the button that is
     // rendered in editThing.html. So it probably belongs at a higher level?
