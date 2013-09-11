@@ -13,12 +13,26 @@ import play.api.Logger
 
 trait ContextBase {
   def value:QValue
-  def state:SpaceState
-  def request:RequestContext
+  def state:SpaceState = request.state.getOrElse(SystemSpace.State)
+  def requestOpt:Option[RequestContext]
+  def request:RequestContext = {
+    requestOpt match {
+      case Some(r) => r
+      case None => throw new Exception("Attempting to fetch the RequestContext from a Context that doesn't have one!")
+    }
+  }
+  def parentOpt:Option[ContextBase]
   // Parent matters at rendering time -- we render the final context in the context of its parent.
   // This matter most when (as often), the last context is a Text; it needs to be rendered correctly
   // in its parent context.
-  def parent:ContextBase
+  // Note that, if this Context is the root, we just use it as the "parent". Be careful of possible loops!
+  // You can not simply walk up this tree!
+  def parent:ContextBase = {
+    parentOpt match {
+      case Some(p) => p
+      case None => this
+    }
+  }
   def parser:Option[QLParser]
   def useCollection:Boolean = false
   
@@ -106,20 +120,19 @@ trait ContextBase {
   /**
    * Convenience method to build the successor to this context, in typical chained situations.
    */
-  def next(v:QValue) = QLContext(v, request, Some(this), parser, depth + 1)
+  def next(v:QValue) = QLContext(v, requestOpt, Some(this), parser, depth + 1)
   
-  def asCollection = QLContext(value, request, Some(this), parser, depth + 1, true)
+  def asCollection = QLContext(value, requestOpt, Some(this), parser, depth + 1, true)
   
-  def forProperty(prop:Property[_,_]) = QLContext(value, request, Some(this), parser, depth + 1, useCollection, Some(prop))
+  def forProperty(prop:Property[_,_]) = QLContext(value, requestOpt, Some(this), parser, depth + 1, useCollection, Some(prop))
   
   def getProp:Option[Property[_,_]] = {
     propOpt match {
       case Some(prop) => Some(prop)
       case None => {
-        if (parent == this) {
-          None
-        } else {
-          parent.getProp
+        parentOpt match {
+          case Some(p) => parent.getProp
+          case None => None
         }
       }
     }
@@ -128,11 +141,12 @@ trait ContextBase {
   /**
    * Returns the root of the context tree. Mainly so that parameters can start again with the same root.
    */
-  def root:ContextBase = 
-    if (parent == this)
-      this
-    else
-      parent.root
+  def root:ContextBase = {
+    parentOpt match {
+      case Some(p) => p.root
+      case None => this
+    }
+  }
       
   def isCut = value.cut
 }
@@ -140,36 +154,16 @@ trait ContextBase {
 /**
  * Represents the incoming "context" of a parsed QLText.
  */
-case class QLContext(value:QValue, request:RequestContext, parentIn:Option[ContextBase] = None, 
+case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:Option[ContextBase] = None, 
                      parser:Option[QLParser] = None, depth:Int = 0, listIn:Boolean = false, propOpt:Option[Property[_,_]] = None) extends ContextBase {
-  def state = request.state.getOrElse(SystemSpace.State)
-  def parent = parentIn match {
-    case Some(p) => p
-    case None => this
-  }
   override def useCollection = listIn
 }
 
-case class QLRequestContext(request:RequestContext) extends ContextBase {
-  def state = request.state.getOrElse(SystemSpace.State)
-  def value:QValue = EmptyValue.untyped
-  def parent:ContextBase = this
-  def parser:Option[QLParser] = throw new Exception("QLRequestContext doesn't have a parser!")
-  def depth:Int = 0
-  def propOpt = None
+/**
+ * Convenience wrapper, for cases where all you have is the request.
+ */
+object QLRequestContext {
+  def apply(request:RequestContext) = QLContext(EmptyValue.untyped, Some(request))
 }
 
-/**
- * This should only be used in cases where we really don't have a context -- generally,
- * displaying outside of a proper page display in a Space. It is unlikely to work for
- * any sophisticated properties, but can be used for PlainText and the like.
- */
-case object EmptyContext extends ContextBase {
-  def value:QValue = throw new Exception("Can't use the contents of EmptyContext!")
-  def state:SpaceState = throw new Exception("Can't use the space of EmptyContext!")
-  def request:RequestContext = throw new Exception("Can't get the request of EmptyContext!")
-  def parent:ContextBase = throw new Exception("EmptyContext doesn't have a parent!")
-  def parser:Option[QLParser] = throw new Exception("Can't get a parser from EmptyContext!")
-  def depth:Int = 0
-  def propOpt = None
-}
+object EmptyContext extends QLContext(EmptyValue.untyped, None)

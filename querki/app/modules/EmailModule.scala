@@ -270,7 +270,7 @@ class EmailModule(val moduleId:Short) extends modules.Module {
 		      // The right solution is probably to predefine a name binding, which gets passed into the new QLContext, and
 		      // use that in PersonModule. But first we need to introduce the idea of name bindings!
 		      // Once that is done, restore the incoming context as the parent of this one.
-		      val personContext = QLContext(ExactlyOne(ElemValue(person.id, LinkType)), context.request, None) //Some(context))
+		      val personContext = QLContext(ExactlyOne(ElemValue(person.id, LinkType)), context.requestOpt, None) //Some(context))
 		    
 		      val subjectQL = t.getProp(emailSubject).first
 		      val subjectParser = new QLParser(subjectQL, personContext.forProperty(emailSubject))

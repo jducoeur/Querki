@@ -298,7 +298,7 @@ case class SpaceState(
     implicit val s = this
     val opt = getPropOpt(ShowUnknownProp)
     val nameVal = ExactlyOne(NameType(name))
-    val nameAsContext = QLContext(nameVal, rc)
+    val nameAsContext = QLContext(nameVal, Some(rc))
     // TODO: the link below shouldn't be so hard-coded!
     opt.map(pv => pv.render(nameAsContext)).getOrElse(Wikitext(NameType.toDisplay(name) + " doesn't exist yet. [Click here to create it.](edit?thingId=" + name + ")"))    
   }
