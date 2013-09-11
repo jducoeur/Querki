@@ -11,7 +11,7 @@ import querki.values._
 
 import play.api.Logger
 
-abstract class ContextBase {
+trait ContextBase {
   def value:QValue
   def state:SpaceState
   def request:RequestContext
@@ -85,6 +85,18 @@ abstract class ContextBase {
     val raw = flatMap(cb).asInstanceOf[ct.implType]
     val propVal = ct.makePropValue(raw, resultType)
     next(propVal)
+  }
+  
+  def flatMapAsValue[T <: ElemValue](cb:ContextBase => QValue):QValue = {
+    if (isEmpty) {
+      EmptyValue.untyped
+    } else {
+      val ct = value.cType
+      val qvs = map(cb)
+      // TODO: this is an unfortunate cast. It's correct, but ick. Can we eliminate it?
+      val raw = qvs.flatten(_.cv).asInstanceOf[ct.implType]
+      ct.makePropValue(raw, qvs.head.pType)
+    }
   }
   
   override def toString = "Context(" + value + ")@" + this.hashCode()
