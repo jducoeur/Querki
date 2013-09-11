@@ -76,8 +76,9 @@ case class ParsedQLText(parts:Seq[QLTextPart]) {
 
 class QLParser(val input:QLText, ci:QLContext) extends RegexParsers {
   
-  // Add the parser to the context, so that methods can call back into it:
-  val initialContext = QLContext(ci.value, ci.requestOpt, Some(ci.parent), Some(this), ci.depth + 1, ci.useCollection, ci.propOpt)
+  // Add the parser to the context, so that methods can call back into it. Note that we are treating this as essentially
+  // a modification, rather than another level of depth:
+  val initialContext = ci.copy(parser = Some(this))
   
   // Crude but useful debugging of the process tree. Could stand to be beefed up when I have time
   // Note that this is fundamentally not threadsafe, because of logDepth!

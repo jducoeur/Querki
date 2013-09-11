@@ -112,11 +112,11 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
   /**
    * Convenience method to build the successor to this context, in typical chained situations.
    */
-  def next(v:QValue) = QLContext(v, requestOpt, Some(this), parser, depth + 1)
+  def next(v:QValue) = copy(value = v, parentOpt = Some(this), depth = depth + 1)
   
-  def asCollection = QLContext(value, requestOpt, Some(this), parser, depth + 1, true)
+  def asCollection = copy(parentOpt = Some(this), depth = depth + 1, useCollection = true)
   
-  def forProperty(prop:Property[_,_]) = QLContext(value, requestOpt, Some(this), parser, depth + 1, useCollection, Some(prop))
+  def forProperty(prop:Property[_,_]) = copy(parentOpt = Some(this), depth = depth + 1, propOpt = Some(prop))
   
   def getProp:Option[Property[_,_]] = {
     propOpt match {
