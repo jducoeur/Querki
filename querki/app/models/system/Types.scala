@@ -68,7 +68,7 @@ trait CodeType {
   {
     def doDeserialize(v:String) = java.lang.Integer.parseInt(v)
     def doSerialize(v:Int) = v.toString
-    def doRender(context:QLContext)(v:Int) = Wikitext(v.toString)
+    def doRender(context:QLContext)(v:Int, displayOpt:Option[Wikitext] = None) = Wikitext(v.toString)
 
     val doDefault = 0
     
@@ -100,7 +100,7 @@ trait CodeType {
   {
     def doDeserialize(v:String) = QLText(v)
     def doSerialize(v:QLText) = v.text
-    def doRender(context:QLContext)(v:QLText) = {
+    def doRender(context:QLContext)(v:QLText, displayOpt:Option[Wikitext] = None) = {
       val parser = new QLParser(v, context)
       parser.process
     }
@@ -218,7 +218,7 @@ object QLType extends QLType(QLTypeOID)
       }
     }
     def doSerialize(v:Boolean) = v.toString
-    def doRender(context:QLContext)(v:Boolean) = Wikitext(v.toString())
+    def doRender(context:QLContext)(v:Boolean, displayOpt:Option[Wikitext] = None) = Wikitext(v.toString())
     
     val doDefault = false
     
@@ -306,7 +306,7 @@ object QLType extends QLType(QLTypeOID)
     override def doMatches(left:String, right:String):Boolean = equalNames(left, right)
   }
   object NameType extends NameType(NameTypeOID, "Name Type") {
-    def doRender(context:QLContext)(v:String) = Wikitext(toDisplay(v))    
+    def doRender(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext(toDisplay(v))    
   }
   object TagSetType extends NameType(TagSetOID, "Tag Set Type") {
     override def requiredColl:Option[Collection] = Some(QSet)
@@ -314,7 +314,7 @@ object QLType extends QLType(QLTypeOID)
     // TODO: this should probably get refactored with LinkType? They're different ways of
     // expressing the same concepts; it's just that Links are OID-based, whereas Names/Tags are
     // name-based.
-    def doRender(context:QLContext)(v:String) = nameToLink(context)(v)
+    def doRender(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = nameToLink(context)(v)
     
     override def renderProperty(prop:Property[_,_])(implicit request:controllers.RequestContext):Option[Wikitext] = {
       val parser = new ql.QLParser(QLText("""These tags are currently being used:
@@ -366,7 +366,7 @@ object QLType extends QLType(QLTypeOID)
       Wikitext("[") + display + Wikitext("](" + pathAdjustments(context) + thing.toThingId + ")")
     }
 
-    def doRender(context:QLContext)(v:OID) = {
+    def doRender(context:QLContext)(v:OID, displayOpt:Option[Wikitext] = None) = {
       val target = follow(context)(v)
       val text = target match {
         case Some(t) => makeWikiLink(context, t, Wikitext(t.displayName))
@@ -477,7 +477,7 @@ abstract class PlainTextType(tid:OID) extends SystemType[PlainText](tid,
   def doSerialize(v:PlainText) = v.text
   // TODO: this is probably incorrect, but may be taken care of by context? How do we make sure this
   // doesn't actually get any internal Wikitext rendered?
-  def doRender(context:QLContext)(v:PlainText) = Wikitext(v.text)
+  def doRender(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None) = Wikitext(v.text)
     
   val doDefault = PlainText("")
   override def wrap(raw:String):valType = PlainText(raw)
@@ -494,7 +494,7 @@ class InternalMethodType(tid:OID) extends SystemType[String](tid,
   def doDeserialize(v:String) = boom
   def doSerialize(v:String) = boom
 
-  def doRender(context:QLContext)(v:String) = Wikitext("Internal Method")
+  def doRender(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext("Internal Method")
     
   val doDefault = ""
   override def wrap(raw:String):valType = boom 
@@ -516,7 +516,7 @@ class ExternalLinkType(tid:OID) extends SystemType[QURL](tid,
 {
   def doDeserialize(v:String) = QURL(v)
   def doSerialize(v:QURL) = v.url
-  def doRender(context:QLContext)(v:QURL) = Wikitext("[" + v.url + "](" + v.url + ")")
+  def doRender(context:QLContext)(v:QURL, displayOpt:Option[Wikitext] = None) = Wikitext("[" + v.url + "](" + v.url + ")")
   
   def getURL(context:QLContext)(elem:ElemValue):Option[String] = {
     elem.getOpt(this).map(_.url)
@@ -542,7 +542,7 @@ object UnresolvedPropType extends SystemType[String](UnknownOID,
 {
   def doDeserialize(v:String) = v
   def doSerialize(v:String) = v
-  def doRender(context:QLContext)(v:String) = Wikitext("Unresolved property value!")
+  def doRender(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext("Unresolved property value!")
   
   val doDefault = ""
 }

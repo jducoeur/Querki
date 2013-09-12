@@ -46,7 +46,7 @@ class StylesheetModule(val moduleId:Short) extends modules.Module {
     
     def doDeserialize(v:String) = v
     def doSerialize(v:String) = v
-    def doRender(context:QLContext)(v:String) = Wikitext(v)
+    def doRender(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext(v)
 
     val doDefault = ""
     

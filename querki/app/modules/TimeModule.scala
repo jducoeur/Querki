@@ -66,7 +66,8 @@ class TimeModule(val moduleId:Short) extends modules.Module {
     def doDeserialize(v:String) = new DateTime(v.toLong)
     def doSerialize(v:DateTime) = v.millis.toString
     val defaultRenderFormat = DateTimeFormat.mediumDateTime
-    def doRender(context:QLContext)(v:DateTime) = Wikitext(defaultRenderFormat.print(v))
+    // TODO: if there is a displayOpt, use that as the formatting template
+    def doRender(context:QLContext)(v:DateTime, displayOpt:Option[Wikitext] = None) = Wikitext(defaultRenderFormat.print(v))
     override def doComp(context:QLContext)(left:DateTime, right:DateTime):Boolean = { left < right } 
     override def doMatches(left:DateTime, right:DateTime):Boolean = { left.millis == right.millis }
     val doDefault = TimeModule.epoch

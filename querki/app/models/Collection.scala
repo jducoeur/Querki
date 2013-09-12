@@ -147,7 +147,7 @@ class NameCollection extends Collection(IllegalOID, systemOID, systemOID, () => 
   def doSerialize(v:implType, elemT:pType):String = elemT.serialize(v.head)
 
   def doRender(context:QLContext)(v:implType, elemT:pType):Wikitext = {
-    elemT.render(context)(v.head)
+    elemT.wikify(context)(v.head)
   }
   def doDefault(elemT:pType):implType = {
     List(elemT.default)

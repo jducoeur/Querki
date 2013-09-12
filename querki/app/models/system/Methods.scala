@@ -989,7 +989,7 @@ object JoinMethod extends InternalMethod(JoinMethodOID,
         case Some(param) => {
           val collContext = context.asCollection
           val paramVal = context.parser.get.processPhrase(param.ops, collContext).value
-          val renderedParam = paramVal.pType.render(context)(paramVal.first)
+          val renderedParam = paramVal.pType.wikify(context)(paramVal.first)
           renderedParam
         }
         case _ => Wikitext.empty
@@ -997,7 +997,7 @@ object JoinMethod extends InternalMethod(JoinMethodOID,
     }
 
     val elemT = context.value.pType
-    val renderedList = context.value.cv.map{elem => elemT.render(context)(elem)}
+    val renderedList = context.value.cv.map{elem => elemT.wikify(context)(elem)}
     val result =
       if (renderedList.isEmpty) {
         Wikitext.empty

@@ -71,7 +71,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       elemT.serialize(v.head)
     }
     def doRender(context:QLContext)(v:implType, elemT:pType):Wikitext = {
-      elemT.render(context)(v.head)
+      elemT.wikify(context)(v.head)
     }
     def doDefault(elemT:pType):implType = {
       List(elemT.default)
@@ -121,7 +121,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     
     def doRender(context:QLContext)(v:implType, elemT:pType):Wikitext = {
       v match {
-        case List(elem) => elemT.render(context)(elem)
+        case List(elem) => elemT.wikify(context)(elem)
         case Nil => Wikitext("")
       }
     }
@@ -164,7 +164,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     }
     
     def doRender(context:QLContext)(v:implType, elemT:pType):Wikitext = {
-      val renderedElems = v.map(elem => elemT.render(context)(elem))
+      val renderedElems = v.map(elem => elemT.wikify(context)(elem))
       // Concatenate the rendered elements, with newlines in-between:
       (Wikitext.empty /: renderedElems) ((soFar, next) => soFar.+(next, true))
     }
