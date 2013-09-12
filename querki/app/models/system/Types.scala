@@ -293,10 +293,9 @@ object QLType extends QLType(QLTypeOID)
     
     def getName(context:QLContext)(v:ElemValue) = canonicalize(get(v))
     
-    def nameToLink(context:QLContext)(v:String) = {
-      // Conceptually, toInternal isn't quite right here. We're using it instead of AsName
-      // mostly because we want to preserve the *case* of the Tag:
-      Wikitext("[" + v + "](" + toUrl(v) + ")")
+    def nameToLink(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = {
+      val display = displayOpt.getOrElse(Wikitext(v))
+      Wikitext("[") + display + Wikitext("](" + toUrl(v) + ")")
     }
     
     override def doComp(context:QLContext)(left:String, right:String):Boolean = { left < right } 
@@ -369,7 +368,10 @@ object QLType extends QLType(QLTypeOID)
     def doWikify(context:QLContext)(v:OID, displayOpt:Option[Wikitext] = None) = {
       val target = follow(context)(v)
       val text = target match {
-        case Some(t) => makeWikiLink(context, t, Wikitext(t.displayName))
+        case Some(t) => {
+          val display = displayOpt.getOrElse(Wikitext(t.displayName))
+          makeWikiLink(context, t, display)
+        }
         case None => Wikitext("Bad Link: Thing " + v.toString + " not found")
       }
       text
@@ -516,7 +518,10 @@ class ExternalLinkType(tid:OID) extends SystemType[QURL](tid,
 {
   def doDeserialize(v:String) = QURL(v)
   def doSerialize(v:QURL) = v.url
-  def doWikify(context:QLContext)(v:QURL, displayOpt:Option[Wikitext] = None) = Wikitext("[" + v.url + "](" + v.url + ")")
+  def doWikify(context:QLContext)(v:QURL, displayOpt:Option[Wikitext] = None) = {
+    val display = displayOpt.getOrElse(Wikitext(v.url))
+    Wikitext("[") + display + Wikitext("](" + v.url + ")")
+  }
   
   def getURL(context:QLContext)(elem:ElemValue):Option[String] = {
     elem.getOpt(this).map(_.url)

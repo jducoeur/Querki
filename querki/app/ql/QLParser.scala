@@ -223,46 +223,21 @@ class QLParser(val input:QLText, ci:QLContext) extends RegexParsers {
   
   /**
    * This deals with QText that contains "__stuff__" or "____", both of which render as
-   * links to the incoming context. (Or simply the value of the context, if it's not a Link.)
+   * the value of the received context.
+   * 
+   * The key notion here is that the wikify() method takes an optional "displayOpt" parameter.
+   * If specified, this says how to display the passed-in value. It doesn't make sense for all
+   * Types, but it is always *syntactically* legal, and is provided as a tool for any Type that
+   * wants to avail itself of this notion.
    */
   private def linkToWikitext(contents:ParsedQLText, context:QLContext):Wikitext = {
-    contents.parts.length match {
-      // Just four underscores, which means render the context right here:
-      case 0 => context.value.wikify(context)
-      // There is content, so turn it into a link to the context Thing:
-      case _ => {
-        val guts = processParseTree(contents, context)
-        // TODO: this could still stand deeper refactoring with LinkType.makeWikiLink, which
-        // only copes with Links per se:
-        def makeWikiLink(url:String):Wikitext = {
-          Wikitext("[") + guts + Wikitext("](" + url + ")")
-        }
-        // TODO: this mess needs refactoring. There's a common concept fighting to break
-        // out here, in which Types should declare what happens when they hit the
-        // ""__some text__"" construction. It is akin to the simple render() above; maybe
-        // an optional parameter for render()?
-        context.value.pType match {
-          case LinkType => {
-            // TODO: this is evil. How should it be described instead?
-            val l = LinkType.follow(context)(LinkType.get(context.value.first))
-            l match {
-              case Some(thing) => LinkType.makeWikiLink(context, thing, guts)
-              case None => guts
-            }
-          }
-          case ExternalLinkType => {
-            val url = ExternalLinkType.get(context.value.first)
-            makeWikiLink(url.url)
-          }
-          case UnknownNameType => {
-            val name = UnknownNameType.get(context.value.first)
-            makeWikiLink(NameType.toUrl(name))
-          }
-          // TODO: we ought to show some sort of error here?
-          case _ => guts
-        }        
-      }
+    val guts = contents.parts.length match {
+      // Just four underscores, which means we don't do anything special for the display:
+      case 0 => None
+      // There is content, so pass that down as the display:
+      case _ => Some(processParseTree(contents, context))
     }
+    context.value.wikify(context, guts)      
   }
   
   private def processParseTree(parseTree:ParsedQLText, context:QLContext):Wikitext = {

@@ -40,7 +40,9 @@ object RawHtmlType extends SystemType[Wikitext](OIDs.IllegalOID, () => Thing.emp
  * This is a fake PType, used when we encounter a name we don't know.
  */
 object UnknownNameType extends NameType(UnknownOID, "_unknownNameType") {
-  def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext("{{_unknownName:") + nameToLink(context)(v) + Wikitext("}}")
+  def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = {
+    Wikitext("{{_unknownName:") + nameToLink(context)(v, displayOpt) + Wikitext("}}")
+  }
 }
 
 /**
