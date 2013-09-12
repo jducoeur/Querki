@@ -51,7 +51,7 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
    * Takes a value of this type, and turns it into displayable form. Querki
    * equivalent to toString.
    */
-  def doWikify(context:QLContext)(v:implType, elemT:pType):Wikitext
+  def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext
   
   /**
    * Takes a value of this type, and renders it for showing in debug messages.
@@ -146,8 +146,8 @@ class NameCollection extends Collection(IllegalOID, systemOID, systemOID, () => 
 
   def doSerialize(v:implType, elemT:pType):String = elemT.serialize(v.head)
 
-  def doWikify(context:QLContext)(v:implType, elemT:pType):Wikitext = {
-    elemT.wikify(context)(v.head)
+  def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = {
+    elemT.wikify(context)(v.head, displayOpt)
   }
   def doDefault(elemT:pType):implType = {
     List(elemT.default)

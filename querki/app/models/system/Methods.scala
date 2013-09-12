@@ -469,7 +469,7 @@ object FirstMethod extends InternalMethod(FirstMethodOID,
     val sourceColl = context.value
     val result = 
       if (sourceColl.isEmpty)
-        Optional.None
+        Optional.QNone
       else
         Optional(sourceColl.cv.head)
     result

@@ -38,7 +38,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       throw new Error("Trying to deserialize root collection!")
     def doSerialize(v:implType, elemT:pType):String = 
       throw new Error("Trying to serialize root collection!")
-    def doWikify(context:QLContext)(ser:implType, elemT:pType):Wikitext = 
+    def doWikify(context:QLContext)(ser:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = 
       throw new Error("Trying to render root collection!")
     def doDefault(elemT:pType):implType = 
       throw new Error("Trying to default root collection!")    
@@ -70,8 +70,8 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     def doSerialize(v:implType, elemT:pType):String = {
       elemT.serialize(v.head)
     }
-    def doWikify(context:QLContext)(v:implType, elemT:pType):Wikitext = {
-      elemT.wikify(context)(v.head)
+    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = {
+      elemT.wikify(context)(v.head, displayOpt)
     }
     def doDefault(elemT:pType):implType = {
       List(elemT.default)
@@ -119,9 +119,9 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       }
     }
     
-    def doWikify(context:QLContext)(v:implType, elemT:pType):Wikitext = {
+    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = {
       v match {
-        case List(elem) => elemT.wikify(context)(elem)
+        case List(elem) => elemT.wikify(context)(elem, displayOpt)
         case Nil => Wikitext("")
       }
     }
@@ -139,7 +139,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       elemT.renderInput(prop, state, currentValue, v)
     }
 
-    val None:QValue = makePropValue(Nil, UnknownType)
+    val QNone:QValue = makePropValue(Nil, UnknownType)
   }
   object Optional extends Optional(OptionalOID)
   
@@ -163,8 +163,8 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
         mkString("[", "," ,"]")
     }
     
-    def doWikify(context:QLContext)(v:implType, elemT:pType):Wikitext = {
-      val renderedElems = v.map(elem => elemT.wikify(context)(elem))
+    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = {
+      val renderedElems = v.map(elem => elemT.wikify(context)(elem, displayOpt))
       // Concatenate the rendered elements, with newlines in-between:
       (Wikitext.empty /: renderedElems) ((soFar, next) => soFar.+(next, true))
     }
@@ -290,7 +290,7 @@ class QUnit(cid:OID) extends SystemCollection(cid,
     
   def doSerialize(v:implType, elemT:pType):String = ""
     
-  def doWikify(context:QLContext)(v:implType, elemT:pType):Wikitext = Wikitext("")
+  def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = Wikitext("")
     
   def doDefault(elemT:pType):implType = Nil
     

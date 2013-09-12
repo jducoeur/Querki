@@ -155,7 +155,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
         IsModelProp(true),
         // TODO: this is a fugly declaration, and possibly unsafe -- do we have any
         // assurance that modules.Modules.Email has been constructed before this?
-        (modules.Modules.Email.MOIDs.EmailPropOID -> Optional.None),
+        (modules.Modules.Email.MOIDs.EmailPropOID -> Optional.QNone),
         DisplayTextProp("""
 This represents a Person who is using Querki or can be invited to it. You can create a Person in
 your Space, and compose an email to invite them to use the Space; you can also create a new Model

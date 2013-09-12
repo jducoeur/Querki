@@ -187,7 +187,7 @@ object HtmlRenderer {
   def handleOptionalForm(prop:Property[_,_], newVal:String, pType:PType[_], isNone:String => Boolean):FormFieldInfo = {
     if (isNone(newVal))
       // This is a bit subtle: there *is* a value, which is "None"
-      FormFieldInfo(prop, Some(Optional.None), false, true)
+      FormFieldInfo(prop, Some(Optional.QNone), false, true)
     else
       FormFieldInfo(prop, Some(Optional(pType.fromUser(newVal))), false, true)
   }
