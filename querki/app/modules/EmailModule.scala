@@ -69,7 +69,7 @@ class EmailModule(val moduleId:Short) extends modules.Module {
     def doDeserialize(v:String) = EmailAddress(v)
     def doSerialize(v:EmailAddress) = v.addr
     // TODO: in the long run, this probably should render as a clickable URL?
-    def doRender(context:QLContext)(v:EmailAddress, displayOpt:Option[Wikitext] = None) = Wikitext(v.addr)
+    def doWikify(context:QLContext)(v:EmailAddress, displayOpt:Option[Wikitext] = None) = Wikitext(v.addr)
     
     val doDefault = EmailAddress("")
     def wrap(raw:String):valType = EmailAddress(raw)

@@ -16,7 +16,7 @@ object ParsedTextType extends SystemType[Wikitext](OIDs.IllegalOID, () => Thing.
 {
   def doDeserialize(v:String) = throw new Exception("Can't deserialize ParsedText!")
   def doSerialize(v:Wikitext) = throw new Exception("Can't serialize ParsedText!")
-  def doRender(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None) = v
+  def doWikify(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None) = v
   
   override def doDebugRender(context:QLContext)(v:Wikitext) = v.contents.map(_.internal).mkString
   
@@ -31,7 +31,7 @@ object RawHtmlType extends SystemType[Wikitext](OIDs.IllegalOID, () => Thing.emp
 {
   def doDeserialize(v:String) = throw new Exception("Can't deserialize ParsedText!")
   def doSerialize(v:Wikitext) = throw new Exception("Can't serialize ParsedText!")
-  def doRender(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None) = v
+  def doWikify(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None) = v
     
   val doDefault = Wikitext("")
 }
@@ -40,7 +40,7 @@ object RawHtmlType extends SystemType[Wikitext](OIDs.IllegalOID, () => Thing.emp
  * This is a fake PType, used when we encounter a name we don't know.
  */
 object UnknownNameType extends NameType(UnknownOID, "_unknownNameType") {
-  def doRender(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext("{{_unknownName:") + nameToLink(context)(v) + Wikitext("}}")
+  def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext("{{_unknownName:") + nameToLink(context)(v) + Wikitext("}}")
 }
 
 /**

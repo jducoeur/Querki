@@ -39,13 +39,13 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * Takes a value of this type, and turns it into displayable form. Querki
    * equivalent to toString.
    */
-  def doRender(context:QLContext)(v:VT, displayOpt:Option[Wikitext] = None):Wikitext
+  def doWikify(context:QLContext)(v:VT, displayOpt:Option[Wikitext] = None):Wikitext
   /**
    * Take a value of this type and turn it into a Wikitext. Formerly called "render", but that conflicts
    * in weird signature ways with Thing.render. (It appears that you can't have multiple overloads with
    * default values, even if the previous parameters differentiate between the overloads.)
    */
-  final def wikify(context:QLContext)(v:ElemValue, displayOpt:Option[Wikitext] = None):Wikitext = doRender(context)(get(v), displayOpt)
+  final def wikify(context:QLContext)(v:ElemValue, displayOpt:Option[Wikitext] = None):Wikitext = doWikify(context)(get(v), displayOpt)
   
   /**
    * Takes a value of this type, and renders it for showing in debug messages.
@@ -166,7 +166,7 @@ class DelegatingType[VT](resolver: => PType[VT]) extends PType[VT](UnknownOID, U
   
   def doDeserialize(v:String) = realType.doDeserialize(v)
   def doSerialize(v:VT) = realType.doSerialize(v)
-  def doRender(context:QLContext)(v:VT, displayOpt:Option[Wikitext] = None) = realType.doRender(context)(v)
+  def doWikify(context:QLContext)(v:VT, displayOpt:Option[Wikitext] = None) = realType.doWikify(context)(v)
   
   def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = 
     realType.renderInputXml(prop, state, currentValue, v)
@@ -180,7 +180,7 @@ class DelegatingType[VT](resolver: => PType[VT]) extends PType[VT](UnknownOID, U
 object UnknownType extends PType[Unit](UnknownOID, UnknownOID, UnknownOID, () => emptyProps) {
   def doDeserialize(v:String) = throw new Exception("Trying to use UnknownType!")
   def doSerialize(v:Unit) = throw new Exception("Trying to use UnknownType!")
-  def doRender(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None) = throw new Exception("Trying to use UnknownType!")
+  def doWikify(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None) = throw new Exception("Trying to use UnknownType!")
   
   def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = 
     throw new Exception("Trying to use UnknownType!")
