@@ -218,7 +218,7 @@ class QLParser(val input:QLText, ci:QLContext) extends RegexParsers {
   }
 
   def contextsToWikitext(contexts:Seq[QLContext], insertNewlines:Boolean = false):Wikitext = {
-    (Wikitext("") /: contexts) { (soFar, context) => soFar.+(context.value.render(context.parent), insertNewlines) }
+    (Wikitext("") /: contexts) { (soFar, context) => soFar.+(context.value.wikify(context.parent), insertNewlines) }
   }
   
   /**
@@ -228,7 +228,7 @@ class QLParser(val input:QLText, ci:QLContext) extends RegexParsers {
   private def linkToWikitext(contents:ParsedQLText, context:QLContext):Wikitext = {
     contents.parts.length match {
       // Just four underscores, which means render the context right here:
-      case 0 => context.value.render(context)
+      case 0 => context.value.wikify(context)
       // There is content, so turn it into a link to the context Thing:
       case _ => {
         val guts = processParseTree(contents, context)

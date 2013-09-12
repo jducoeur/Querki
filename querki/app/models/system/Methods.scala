@@ -514,7 +514,7 @@ abstract class ButtonBase(tid:OID, pf:PropFetcher) extends InternalMethod(tid, p
         
         urlOpt match {
           case Some(url) => {
-            val paramTexts = params.map(phrase => context.parser.get.processPhrase(phrase.ops, context).value.render(context))
+            val paramTexts = params.map(phrase => context.parser.get.processPhrase(phrase.ops, context).value.wikify(context))
             HtmlValue(Html(generateButton(url, paramTexts).toString))            
           }
           case None => WarningValue(displayName + " didn't receive a valid Link")
@@ -580,7 +580,7 @@ object ShowLinkMethod extends InternalMethod(ShowLinkMethodOID,
         
         urlOpt match {
           case Some(url) => {
-            val label = context.parser.get.processPhrase(params(0).ops, context).value.render(context)
+            val label = context.parser.get.processPhrase(params(0).ops, context).value.wikify(context)
             WikitextValue(QWikitext("[") + label + QWikitext(s"]($url)"))            
           }
           case None => WarningValue(displayName + " didn't receive a valid Link")
@@ -1260,9 +1260,9 @@ object FormLineMethod extends SingleContextMethod(FormLineMethodOID,
         val control = context.parser.get.processPhrase(params(1).ops, context).value
         WikitextValue(
           Wikitext("\n{{form-horizontal:\n{{control-group:\n{{control-label:\n") +
-          label.render(context) +
+          label.wikify(context) +
           Wikitext("\n}}\n{{controls:\n") +
-          control.render(context) +
+          control.wikify(context) +
           Wikitext("\n}}\n}}\n}}\n"))
       }
       case _ => WarningValue("_formLine requires two parameters")

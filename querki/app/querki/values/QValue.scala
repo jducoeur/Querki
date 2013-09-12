@@ -71,7 +71,7 @@ trait QValue {
     else
       first.getOpt(elemT)
   }
-  def render(context:QLContext):Wikitext = cType.doWikify(context)(cv, pType)
+  def wikify(context:QLContext):Wikitext = cType.doWikify(context)(cv, pType)
   
   def isEmpty = cType.isEmpty(this)
   def size = cv.size

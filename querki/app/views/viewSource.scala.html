@@ -26,7 +26,7 @@
   @if(v.pType.isInstanceOf[TextTypeBase]) {
     <pre><code>@v.pType.toUser(v.first)</code></pre>
   } else {
-    @Html(v.render(QLRequestContext(rc)).display)
+    @Html(v.wikify(QLRequestContext(rc)).display)
   }
 }
 
