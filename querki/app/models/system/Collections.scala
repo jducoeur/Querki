@@ -38,7 +38,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       throw new Error("Trying to deserialize root collection!")
     def doSerialize(v:implType, elemT:pType):String = 
       throw new Error("Trying to serialize root collection!")
-    def doRender(context:QLContext)(ser:implType, elemT:pType):Wikitext = 
+    def doWikify(context:QLContext)(ser:implType, elemT:pType):Wikitext = 
       throw new Error("Trying to render root collection!")
     def doDefault(elemT:pType):implType = 
       throw new Error("Trying to default root collection!")    
@@ -70,7 +70,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     def doSerialize(v:implType, elemT:pType):String = {
       elemT.serialize(v.head)
     }
-    def doRender(context:QLContext)(v:implType, elemT:pType):Wikitext = {
+    def doWikify(context:QLContext)(v:implType, elemT:pType):Wikitext = {
       elemT.wikify(context)(v.head)
     }
     def doDefault(elemT:pType):implType = {
@@ -119,7 +119,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       }
     }
     
-    def doRender(context:QLContext)(v:implType, elemT:pType):Wikitext = {
+    def doWikify(context:QLContext)(v:implType, elemT:pType):Wikitext = {
       v match {
         case List(elem) => elemT.wikify(context)(elem)
         case Nil => Wikitext("")
@@ -163,7 +163,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
         mkString("[", "," ,"]")
     }
     
-    def doRender(context:QLContext)(v:implType, elemT:pType):Wikitext = {
+    def doWikify(context:QLContext)(v:implType, elemT:pType):Wikitext = {
       val renderedElems = v.map(elem => elemT.wikify(context)(elem))
       // Concatenate the rendered elements, with newlines in-between:
       (Wikitext.empty /: renderedElems) ((soFar, next) => soFar.+(next, true))
@@ -290,7 +290,7 @@ class QUnit(cid:OID) extends SystemCollection(cid,
     
   def doSerialize(v:implType, elemT:pType):String = ""
     
-  def doRender(context:QLContext)(v:implType, elemT:pType):Wikitext = Wikitext("")
+  def doWikify(context:QLContext)(v:implType, elemT:pType):Wikitext = Wikitext("")
     
   def doDefault(elemT:pType):implType = Nil
     
