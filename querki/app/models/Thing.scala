@@ -304,7 +304,16 @@ abstract class Thing(
     else
       None
   }
+  // TODO: fix the duplication of these two methods. It appears that the compiler occasionally is choosing
+  // the less-powerful OID version of getPropOpt instead of the one I want, presumably through the implicit
+  // conversion of Property to OID.
   def getPropOpt[VT](prop:Property[VT, _])(implicit state:SpaceState):Option[PropAndVal[VT]] = {
+    if (hasProp(prop))
+      Some(getProp(prop))
+    else
+      None
+  }
+  def getPropOptTyped[VT](prop:Property[VT, _])(implicit state:SpaceState):Option[PropAndVal[VT]] = {
     if (hasProp(prop))
       Some(getProp(prop))
     else

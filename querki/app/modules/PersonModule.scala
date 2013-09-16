@@ -1,5 +1,11 @@
 package modules.person
 
+// For talking to the SpaceManager:
+import akka.pattern._
+import akka.util.Timeout
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
 import models._
 import models.Space.oidMap
 import models.Thing._
@@ -52,7 +58,9 @@ class PersonModule(val moduleId:Short) extends modules.Module {
    * EXTERNAL REFS
    ***********************************************/
 
-  lazy val emailAddressProp = Modules.Email.emailAddress
+  lazy val Email = modules.Modules.Email
+  lazy val emailAddressProp = Email.emailAddress
+  lazy val emailAddressOID = Email.MOIDs.EmailPropOID
   
   lazy val urlBase = Config.getString("querki.app.urlRoot")
   
@@ -310,11 +318,47 @@ to add new Properties for any Person in your Space.
   /**
    * Invite some people to join this Space. rc.state must be established (and authentication dealt with) before
    * we get here.
+   * 
+   * TODO: restructure this to be Async!
    */
   def inviteMembers(rc:RequestContext, invitees:Seq[EmailAddress]):InvitationResult = {
-    implicit val state = rc.state.get
+    val state = rc.state.get
     
-    // TODO
-    InvitationResult(Seq(), Seq())
+    // Filter out any of these email addresses that have already been invited:
+    val currentMembers = state.descendants(PersonOID, false, true)
+    // TODO: this is doing an n^2 check of whether the email addresses already exist. Rewrite to be less
+    // inefficient using a Set:
+    val currentEmails = currentMembers.flatMap(_.getPropOptTyped(emailAddressProp)(state)).map(_.first).toSeq
+    val (existingEmails, newEmails) = invitees.partition(newEmail => currentEmails.exists(oldEmail => modules.Modules.Email.EmailAddressType.doMatches(newEmail, oldEmail)))
+    
+    // Create Person records for all the new ones:
+    // TODO: add a CreateThings message that allows me to do multi-create:
+    // TODO: this is an icky side-effectful way of getting the current state:
+    var updatedState = state
+    val people = newEmails.map { address =>
+      val propMap = Map(emailAddressOID -> ExactlyOne(modules.Modules.Email.EmailAddressType(address.addr)))
+      val msg = CreateThing(rc.requester.get, rc.ownerId, state.toThingId, Kind.Thing, PersonOID, propMap)
+      implicit val timeout = Timeout(5 seconds)
+      val future = SpaceManager.ref ? msg
+      // TODO: EEEEVIL! This code is quick and dirty but wrong. This should all be Async, using SpaceManager.ask:
+      Await.result(future, 5 seconds) match {
+        case ThingFound(id, newState) => { updatedState = newState; newState.anything(id).get }
+        case err => throw new Exception("Error trying to create an invitee: " + err) // TODO: improve this error path!
+      }
+    }
+    
+    implicit val finalState = updatedState
+    val newRc = rc.copy(state = Some(updatedState))
+    val context = updatedState.thisAsContext(rc)
+    val subjectQL = QLText(rc.ownerName + " has invited you to join the Space " + state.displayName)
+    val inviteLink = QLText("""
+      |------
+      |
+      |Click here to accept the invitation.""".stripMargin)
+    val bodyQL = state.getPropOpt(inviteText).flatMap(_.firstOpt).getOrElse(QLText("")) + inviteLink
+    // TODO: we probably should test that sentTo includes everyone we expected:
+    val sentTo = Email.sendToPeople(context, people, subjectQL, bodyQL)
+    
+    InvitationResult(newEmails, existingEmails)
   }
 }

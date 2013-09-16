@@ -47,6 +47,7 @@ case class RequestContext(
   def requesterOID = requester map (_.id) getOrElse UnknownOID  
   def ownerName = state map Application.ownerName getOrElse ""
   
+  def isOwner = requester.isDefined && (requester.get.id == ownerId) 
   
   def turningOn(name:String):Boolean = paramIs(name, "on")
   def turningOff(name:String):Boolean = paramIs(name, "off")

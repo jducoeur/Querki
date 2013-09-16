@@ -767,10 +767,25 @@ disallow: /
         // TODO: this ought to reuse errorForm, to leave the invitees filled-in, but I'm not yet clear on how to do that:
         doError(routes.Application.sharing(ownerId, spaceId), errorMsg) 
       },
-      info => {
+      emailStrs => {
         val context = QLRequestContext(rc)
         
-        Redirect(routes.Application.sharing(ownerId, spaceId)).flashing("info" -> ("I think that was: " + info))
+        val invitees = emailStrs.map(modules.email.EmailAddress(_))
+        val result = modules.Modules.Person.inviteMembers(rc, invitees)
+        
+        val resultMsg = (
+          if (result.invited.length > 0)
+            "Sent invitations to " + result.invited.map(_.addr).mkString(", ") + ". "
+          else
+            ""
+        ) + (
+          if (result.alreadyInvited.length > 0)
+            "Already invited: " + result.alreadyInvited.map(_.addr).mkString(", ")
+          else
+            ""
+        )
+        
+        Redirect(routes.Application.sharing(ownerId, spaceId)).flashing("info" -> resultMsg)
       }
     )
   }

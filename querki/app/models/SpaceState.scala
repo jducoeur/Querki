@@ -183,8 +183,6 @@ case class SpaceState(
   
   /**
    * Returns all of the immediate children of this Thing.
-   * 
-   * TBD: for the moment, this only works for Things. It probably should work on other Kinds as well?
    */
   def children(t:Thing):Iterable[Thing] = {
     val tid = t.id

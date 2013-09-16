@@ -23,8 +23,9 @@ case class PropAndVal[VT](prop:Property[VT, _], v:QValue) {
   def renderOr(context:QLContext)(other: => Wikitext) = if (v.isEmpty) other else render(context)
   def renderPlainOr(other: => Wikitext) = renderOr(EmptyContext)(other)
   def renderPlainIfDefined = if (!v.isEmpty) renderPlain else Wikitext("")
-  // TODO: Evil! This really should just be v.firstAs, returning an Option:
+  // TODO: Evil! Deprecated in favor of firstOpt:
   def first = v.firstAs(prop.pType).get
+  def firstOpt = v.firstAs(prop.pType)
   def flatMap[T](cb:VT => Option[T]) = v.flatMap(prop.pType)(cb)
   // TODO: Evil! This should be smarter about how it combines Collections, instead of forcing things to QList.
   // In particular, combining two QSets should wind up with QSet semantics:

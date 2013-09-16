@@ -73,6 +73,8 @@ class EmailModule(val moduleId:Short) extends modules.Module {
     
     val doDefault = EmailAddress("")
     def wrap(raw:String):valType = EmailAddress(raw)
+    
+    override def doMatches(left:EmailAddress, right:EmailAddress):Boolean = left.addr.equalsIgnoreCase(right.addr)
   }
   lazy val EmailAddressType = new EmailAddressType(EmailTypeOID)
   override lazy val types = Seq(EmailAddressType)
@@ -220,6 +222,24 @@ class EmailModule(val moduleId:Short) extends modules.Module {
       doSendEmail(t, context)
     else
       TextValue("You aren't allowed to send that email")
+  }
+  
+  def sendToPeople(context:QLContext, people:Seq[Thing], subjectQL:QLText, bodyQL:QLText)(implicit state:SpaceState):Seq[OID] = {
+    // Construct the email:
+    val props = System.getProperties()
+    props.setProperty("mail.host", smtpHost)
+    props.setProperty("mail.user", "querki")
+    props.setProperty("mail.transport.protocol", "smtp")
+    props.setProperty("mail.from", from)
+    props.setProperty("mail.debug", "true")
+	    
+    val session = Session.getInstance(props, null)
+	
+    session.setDebug(debug)
+
+    people.flatMap { person =>
+      sendToPerson(context, person, session, subjectQL, bodyQL, from)
+    }
   }
 	
 	def sendToPerson(context:QLContext, person:Thing, session:Session, subjectQL:QLText, bodyQL:QLText, from:String)(implicit state:SpaceState):Option[OID] = {

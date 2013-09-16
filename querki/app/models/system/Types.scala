@@ -93,7 +93,9 @@ trait CodeType {
    * allowed and what needs processing before display. This is mainly to ensure that, eg,
    * raw HTML doesn't get through when it's not allowed.
    */
-  case class QLText(text:String)
+  case class QLText(text:String) {
+    def +(other:QLText) = QLText(text + other.text)
+  }
   
   abstract class TextTypeBase(oid:OID, pf:PropFetcher) extends SystemType[QLText](oid, pf
       ) with PTypeBuilder[QLText,String] with CodeType
