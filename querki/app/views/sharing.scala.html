@@ -1,5 +1,8 @@
 @(rc:RequestContext)
 
+@import helper._
+@import helper.twitterBootstrap._
+
 @import querki.html.HtmlRenderer
 @import modules.Modules
 
@@ -10,6 +13,16 @@
 }
 
 @main(QuerkiTemplate.View, pageTitle, rc) {
+
+  <script>
+     $(function() {
+       $("#invitees").manifest({
+         marcoPolo: false,
+         valuesName: "invitees"
+       });
+     });
+  </script>
+
   <div class="page-header">
 	<h1 class="_defaultTitle">@pageTitle <a class="cancelButton btn" href="@routes.Application.thing(rc.ownerName, space.toThingId, space.toThingId)">Done</a></h1>
   </div>
@@ -26,13 +39,35 @@
 	
 	<div class="span9">
       <section id="sendInvitations">
-        <h2>Send Invitations to Join this Space</h2>
-        <div class="control-group">
-          <label class="control-label">Invitation Message</label>
-          <div class="controls">
-            @HtmlRenderer.renderPropertyInput(space, Modules.Person.inviteText, space.getDisplayPropVal(Modules.Person.inviteText)(space))
+          <h2>Send Invitations to Join this Space</h2>
+          
+          <p>Use this form to invite people to become Members of this Space. The Invitation Message may contain the usual Querki Text formatting,
+          including [[]]-style expressions; however, links may not yet work quite the way you expect.</p>
+          
+          <p>Specify invitees by email address. Don't use this form to resend an invitation (if you send this to someone who is already invited,
+          it will be ignored); instead, resend the invitation to them using the list of invitees below.</p>
+          
+          <div class="control-group">
+            <label class="control-label">Invitation Message</label>
+            <div class="controls">
+              @HtmlRenderer.renderPropertyInput(space, Modules.Person.inviteText, space.getDisplayPropVal(Modules.Person.inviteText)(space))
+            </div>
           </div>
-        </div>
+        
+	    @form(routes.Application.inviteMembers(rc.ownerName, space.toThingId.toString), 'class -> "") {
+          <div class="control-group">
+            <label class="control-label">Who to Invite (enter email addresses, comma-separated)</label>
+            <div class="controls">
+              <input type="text" id="invitees" name="inviteesRaw">
+            </div>
+          </div>
+          
+          <div class="control-group">
+            <div class="controls">
+              <input type="submit" value="Invite Members">
+            </div>
+          </div>
+        }
       </section>
     </div>
   

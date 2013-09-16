@@ -300,4 +300,21 @@ to add new Properties for any Person in your Space.
       }
     }
   }
+  
+  /*************************************************************
+   * INVITATION MANAGEMENT
+   *************************************************************/
+  
+  case class InvitationResult(invited:Seq[EmailAddress], alreadyInvited:Seq[EmailAddress])
+  
+  /**
+   * Invite some people to join this Space. rc.state must be established (and authentication dealt with) before
+   * we get here.
+   */
+  def inviteMembers(rc:RequestContext, invitees:Seq[EmailAddress]):InvitationResult = {
+    implicit val state = rc.state.get
+    
+    // TODO
+    InvitationResult(Seq(), Seq())
+  }
 }

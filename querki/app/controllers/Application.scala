@@ -55,6 +55,13 @@ object Application extends Controller {
      ((searchInput:String) => Some(searchInput))
   )
   
+  val inviteForm = Form(
+    mapping(
+      "invitees" -> list(email)
+    )((invitees) => invitees)
+     ((invitees:List[String]) => Some(invitees))
+  )
+  
   /**
    * Standard error handler. Iff you get an error and the correct response is to redirect to
    * another page, use this. The only exception is iff you need to preserve data, and thus want
@@ -746,6 +753,19 @@ disallow: /
 
   def upload(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
     Ok(views.html.upload(rc))
+  }
+  
+  def inviteMembers(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
+    implicit val request = rc.request
+    val rawForm = inviteForm.bindFromRequest
+    rawForm.fold(
+      errors => doError(routes.Application.sharing(ownerId, spaceId), "Something went wrong"),
+      info => {
+        val context = QLRequestContext(rc)
+        
+        Redirect(routes.Application.sharing(ownerId, spaceId)).flashing("info" -> ("I think that was: " + info))
+      }
+    )
   }
   
   // TODO: I think this function is the straw that breaks the camel's back when it comes to code structure.
