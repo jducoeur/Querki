@@ -759,7 +759,14 @@ disallow: /
     implicit val request = rc.request
     val rawForm = inviteForm.bindFromRequest
     rawForm.fold(
-      errors => doError(routes.Application.sharing(ownerId, spaceId), "Something went wrong"),
+      errorForm => {
+        // NOTE: the theoretically-correct error message would be retrived this way, but it's unhelpful:
+        //Logger.info("----> errors: " + errorForm.errors.map(error => play.api.i18n.Messages(error.message, error.args: _*)));
+        // TODO: internationalize this message:
+        val errorMsg = "Not a valid email address: " + errorForm.errors.flatMap(error => errorForm(error.key).value).mkString(", ")
+        // TODO: this ought to reuse errorForm, to leave the invitees filled-in, but I'm not yet clear on how to do that:
+        doError(routes.Application.sharing(ownerId, spaceId), errorMsg) 
+      },
       info => {
         val context = QLRequestContext(rc)
         
