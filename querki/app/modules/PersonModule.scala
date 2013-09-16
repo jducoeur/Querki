@@ -336,7 +336,7 @@ to add new Properties for any Person in your Space.
     // TODO: this is an icky side-effectful way of getting the current state:
     var updatedState = state
     val people = newEmails.map { address =>
-      val propMap = Map(emailAddressOID -> ExactlyOne(modules.Modules.Email.EmailAddressType(address.addr)))
+      val propMap = Thing.toProps(emailAddressProp(address.addr))()
       val msg = CreateThing(rc.requester.get, rc.ownerId, state.toThingId, Kind.Thing, PersonOID, propMap)
       implicit val timeout = Timeout(5 seconds)
       val future = SpaceManager.ref ? msg
