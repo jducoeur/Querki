@@ -336,7 +336,15 @@ to add new Properties for any Person in your Space.
     // TODO: this is an icky side-effectful way of getting the current state:
     var updatedState = state
     val people = newEmails.map { address =>
-      val propMap = Thing.toProps(emailAddressProp(address.addr))()
+      // Create a Display Name. No, we're not going to worry about uniqueness -- Display Names are allowed
+      // to be duplicated:
+      val prefix = address.addr.takeWhile(_ != '@')
+      val displayName = "Invitee " + prefix
+      
+      val propMap = 
+        Thing.toProps(
+          emailAddressProp(address.addr),
+          DisplayNameProp(displayName))()
       val msg = CreateThing(rc.requester.get, rc.ownerId, state.toThingId, Kind.Thing, PersonOID, propMap)
       implicit val timeout = Timeout(5 seconds)
       val future = SpaceManager.ref ? msg
