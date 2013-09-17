@@ -154,7 +154,8 @@ object TextValue {
   def apply(msg:String) = ExactlyOne(PlainTextType(msg))
 }
 object HtmlValue {
-  def apply(html:Html) = ExactlyOne(RawHtmlType(HtmlWikitext(html)))
+  def apply(html:Html):QValue = ExactlyOne(RawHtmlType(HtmlWikitext(html)))
+  def apply(str:String):QValue = apply(Html(str))
 }
 object WikitextValue {
   def apply(wikitext:Wikitext):QValue = ExactlyOne(ParsedTextType(wikitext))

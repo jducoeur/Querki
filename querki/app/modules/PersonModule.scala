@@ -43,6 +43,7 @@ class PersonModule(val moduleId:Short) extends modules.Module {
     val SecurityPrincipalOID = oldMoid(6)
     val ChromelessInvitesOID = moid(7)
     val InviteTextOID = moid(8)
+    val SpaceInviteOID = moid(9)
   }
   import MOIDs._
   
@@ -61,6 +62,8 @@ class PersonModule(val moduleId:Short) extends modules.Module {
   lazy val Email = modules.Modules.Email
   lazy val emailAddressProp = Email.emailAddress
   lazy val emailAddressOID = Email.MOIDs.EmailPropOID
+  
+  lazy val AccessControl = modules.Modules.AccessControl
   
   lazy val urlBase = Config.getString("querki.app.urlRoot")
   
@@ -134,6 +137,18 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
             |This is included in the Sharing and Security page, so you don't usually need to do anything
             |directly with it.""".stripMargin)))
 
+  lazy val spaceInvite = new SingleContextMethod(SpaceInviteOID,
+      toProps(
+        setName("_spaceInvitation"), 
+        PropSummary("Generate a Link to invite someone to join this Space."), 
+        PropDetails("""This is intended for internal use only. It is used to generate
+            |the link that is sent to invitees to your Space""".stripMargin)))
+  {
+    def fullyApply(mainContext:QLContext, partialContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {
+      HtmlValue("<b>Click here</b> to accept the invitation.")
+    }
+  }  
+
   override lazy val props = Seq(
     inviteLink,
     
@@ -145,7 +160,9 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
     
     chromelessInvites,
     
-    inviteText
+    inviteText,
+    
+    spaceInvite
   )
   
   /***********************************************
@@ -344,7 +361,8 @@ to add new Properties for any Person in your Space.
       val propMap = 
         Thing.toProps(
           emailAddressProp(address.addr),
-          DisplayNameProp(displayName))()
+          DisplayNameProp(displayName),
+          AccessControl.canReadProp(AccessControl.ownerTag))()
       val msg = CreateThing(rc.requester.get, rc.ownerId, state.toThingId, Kind.Thing, PersonOID, propMap)
       implicit val timeout = Timeout(5 seconds)
       val future = SpaceManager.ref ? msg
@@ -360,9 +378,10 @@ to add new Properties for any Person in your Space.
     val context = updatedState.thisAsContext(rc)
     val subjectQL = QLText(rc.ownerName + " has invited you to join the Space " + state.displayName)
     val inviteLink = QLText("""
+      |
       |------
       |
-      |Click here to accept the invitation.""".stripMargin)
+      |[[_spaceInvitation]]""".stripMargin)
     val bodyQL = state.getPropOpt(inviteText).flatMap(_.firstOpt).getOrElse(QLText("")) + inviteLink
     // TODO: we probably should test that sentTo includes everyone we expected:
     val sentTo = Email.sendToPeople(context, people, subjectQL, bodyQL)
