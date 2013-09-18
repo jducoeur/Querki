@@ -54,13 +54,13 @@ object EncryptedHash {
   }
 }
 
-case class SignedHash(signature:String, salt:String, msg:String) {
-  override def toString = signature + "-" + salt + "-" + msg
+case class SignedHash(signature:String, salt:String, msg:String, sep:Char) {
+  override def toString = signature + sep + salt + sep + msg
 }
 object SignedHash {
-  def apply(str:String):SignedHash = {
-    str.split('-') match {
-      case Array(signature, salt, msg, _*) => SignedHash(signature, salt, msg)
+  def apply(str:String, sep:Char):SignedHash = {
+    str.split(sep) match {
+      case Array(signature, salt, msg, _*) => SignedHash(signature, salt, msg, sep)
       case _ => throw new Exception("Bad signature string: " + str)
     }
   }
@@ -113,13 +113,18 @@ object Hasher {
   /**
    * Sign the given string, with some salt for good measure.
    * 
-   * NOTE: this currently only works when the Play app is running!
+   * sep is the character to use as the separator between the elements of the
+   * signed result. Choose a separator that makes sense for your problem domain:
+   * it should be a character that you are sure won't be in the original value.
+   * 
+   * NOTE: this currently only works when the Play app is running! We should think about
+   * whether that's a fatal weakness for testing.
    */
-  def sign(original:String):SignedHash = {
+  def sign(original:String, sep:Char):SignedHash = {
     val salt = HashInfo(makeSalt).toString
     val withSalt = salt + "-" + original
     val sig = Crypto.sign(withSalt)
-    SignedHash(sig, salt, original)
+    SignedHash(sig, salt, original, sep)
   }
   
   def checkSignature(hash:SignedHash):Boolean = {

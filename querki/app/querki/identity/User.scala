@@ -55,6 +55,8 @@ trait User {
 
 case class FullUser(id:OID, name:String, identities:Seq[Identity] = Seq.empty, level:UserLevel = UnknownUserLevel) extends User
 
+// TODO: given that this is full of methods that shouldn't be synchronous, this should
+// probably be implemented behind some worker actors instead.
 object User {
   val userIdSessionParam = "userId"
   val levelSessionParam = "lvl"
@@ -98,6 +100,7 @@ object User {
         request.session.get(levelSessionParam).map(_.toInt).getOrElse(UnknownUserLevel)))
   }
   
+  // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
   def get(rawName:String) = {
     val name = system.NameType.canonicalize(rawName)
     val idOpt = idByNameCache.get(name).orElse {
@@ -115,7 +118,10 @@ object User {
     idOpt.map(FullUser(_, name))
   }
  
-  // TODO: this is fundamentally evil -- it should be returning Option[String].
+  // Note that this assumes that the ID identifies a valid user.
+  // TODO: the uses of this ought to be re-examined. This is really "getHandle", which is sometimes
+  // correct, but often not -- we should sometimes be giving the display name of the identity.
+  // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
   def getName(id:OID):String = {
     nameByIdCache.get(id).getOrElse {
       val fromDB = DB.withConnection(dbName(System)) { implicit conn =>
@@ -123,13 +129,14 @@ object User {
             select name from User where id={id}
             """).on("id" -> id.raw)
         val stream = personQuery.apply()
-        stream.headOption.map(row => row.get[String]("name").get) getOrElse ("UNKNOWN USER")
+        stream.headOption.map(row => row.get[String]("name").get) getOrElse (id.toThingId.toString)
       }
       nameByIdCache(id) = fromDB
       fromDB
     }
   }
   
+  // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
   def checkQuerkiLogin(email:EmailAddress, passwordEntered:String):Option[User] = {
     DB.withConnection(dbName(System)) { implicit conn =>
       val identityQuery = SQL("""
@@ -150,6 +157,7 @@ object User {
     }
   }
   
+  // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
   def checkQuerkiLogin(login:String, passwordEntered:String):Option[User] = {
     if (login.contains("@")) {
       checkQuerkiLogin(EmailAddress(login), passwordEntered)
@@ -185,6 +193,7 @@ object IdentityKind {
 }
 
 object Identity {
+  // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
   def getOrCreateByEmail(email:EmailAddress, name:String):Identity = {
     DB.withConnection(dbName(System)) { implicit conn =>
       val identityQuery = SQL("""

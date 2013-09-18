@@ -49,9 +49,11 @@ class PersonModule(val moduleId:Short) extends modules.Module {
   
   override def init = {
     PageEventManager.requestReceived += IdentityLoginChecker
+    PageEventManager.requestReceived += InviteLoginChecker
   }
   
   override def term = {
+    PageEventManager.requestReceived -= InviteLoginChecker
     PageEventManager.requestReceived -= IdentityLoginChecker
   }
 
@@ -137,18 +139,6 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
             |This is included in the Sharing and Security page, so you don't usually need to do anything
             |directly with it.""".stripMargin)))
 
-  lazy val spaceInvite = new SingleContextMethod(SpaceInviteOID,
-      toProps(
-        setName("_spaceInvitation"), 
-        PropSummary("Generate a Link to invite someone to join this Space."), 
-        PropDetails("""This is intended for internal use only. It is used to generate
-            |the link that is sent to invitees to your Space""".stripMargin)))
-  {
-    def fullyApply(mainContext:QLContext, partialContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {
-      HtmlValue("<b>Click here</b> to accept the invitation.")
-    }
-  }  
-
   override lazy val props = Seq(
     inviteLink,
     
@@ -233,6 +223,7 @@ to add new Properties for any Person in your Space.
   val identityName = "identityName"
   val identityEmail = "identityEmail"
   val personParam = "person"
+  val inviteParam = "invite"
     
   def doInviteLink(chromelessIn:Boolean)(t:Thing, context:QLContext):QValue = {
     implicit val state = context.state
@@ -329,6 +320,49 @@ to add new Properties for any Person in your Space.
   /*************************************************************
    * INVITATION MANAGEMENT
    *************************************************************/
+
+  // TODO: this belongs in a utility library somewhere:
+  def encodeURL(url:String):String = java.net.URLEncoder.encode(url, "UTF-8")
+  def decodeURL(url:String):String = java.net.URLDecoder.decode(url, "UTF-8")
+  
+  lazy val spaceInvite = new SingleContextMethod(SpaceInviteOID,
+      toProps(
+        setName("_spaceInvitation"), 
+        InternalProp(true),
+        PropSummary("Generate a Link to invite someone to join this Space."), 
+        PropDetails("""This is intended for internal use only. It is used to generate
+            |the link that is sent to invitees to your Space""".stripMargin)))
+  {
+    def fullyApply(mainContext:QLContext, partialContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {
+      implicit val state = mainContext.state
+      
+      // TODO: we're using EmailModule to inject the Person as the root context. That's ghastly, and
+      // no longer necessary: add a backdoor to add the Person as an annotation instead.
+      val inviteOpt =
+        for {
+          rootId <- mainContext.root.value.firstAs(LinkType);
+          person <- state.anything(rootId);
+          if (person.isAncestor(PersonOID));
+          emailPropOpt <- person.getPropOptTyped(emailAddressProp);
+          email <- emailPropOpt.firstOpt;
+          rc <- mainContext.requestOpt;
+          // This is the value that we're going to use to identify this person when they
+          // click on the link. We need to include the email address, to guard against it
+          // being changed in the Person record after the email is sent. (Which could be
+          // used as a spam vector, I suspect.)
+          idString = person.id.toString + ":" + email.addr;
+          signed = Hasher.sign(idString, Email.emailSepChar);
+          encoded = encodeURL(signed.toString);
+          // TODO: this surely belongs in a utility somewhere -- it constructs the full path to a Thing, plus some paths.
+	      // Technically speaking, we are converting a Link to an ExternalLink, then adding params.
+	      url = urlBase + "u/" + rc.ownerName + "/" + state.toThingId +
+	        "/?" + inviteParam + "=" + encoded
+        }
+        yield HtmlValue(s"""<b><a href="$url">Click here</a></b> to accept the invitation.""")
+        
+      inviteOpt.getOrElse(WarningValue("This appears to be an incorrect use of _spaceInvitation."))
+    }
+  }
   
   case class InvitationResult(invited:Seq[EmailAddress], alreadyInvited:Seq[EmailAddress])
   
@@ -339,19 +373,19 @@ to add new Properties for any Person in your Space.
    * TODO: restructure this to be Async!
    */
   def inviteMembers(rc:RequestContext, invitees:Seq[EmailAddress]):InvitationResult = {
-    val state = rc.state.get
+    val originalState = rc.state.get
     
     // Filter out any of these email addresses that have already been invited:
-    val currentMembers = state.descendants(PersonOID, false, true)
+    val currentMembers = originalState.descendants(PersonOID, false, true)
     // TODO: this is doing an n^2 check of whether the email addresses already exist. Rewrite to be less
     // inefficient using a Set:
-    val currentEmails = currentMembers.flatMap(_.getPropOptTyped(emailAddressProp)(state)).map(_.first).toSeq
+    val currentEmails = currentMembers.flatMap(_.getPropOptTyped(emailAddressProp)(originalState)).map(_.first).toSeq
     val (existingEmails, newEmails) = invitees.partition(newEmail => currentEmails.exists(oldEmail => modules.Modules.Email.EmailAddressType.doMatches(newEmail, oldEmail)))
     
     // Create Person records for all the new ones:
     // TODO: add a CreateThings message that allows me to do multi-create:
     // TODO: this is an icky side-effectful way of getting the current state:
-    var updatedState = state
+    var updatedState = originalState
     val people = newEmails.map { address =>
       // Create a Display Name. No, we're not going to worry about uniqueness -- Display Names are allowed
       // to be duplicated:
@@ -363,7 +397,7 @@ to add new Properties for any Person in your Space.
           emailAddressProp(address.addr),
           DisplayNameProp(displayName),
           AccessControl.canReadProp(AccessControl.ownerTag))()
-      val msg = CreateThing(rc.requester.get, rc.ownerId, state.toThingId, Kind.Thing, PersonOID, propMap)
+      val msg = CreateThing(rc.requester.get, rc.ownerId, updatedState.toThingId, Kind.Thing, PersonOID, propMap)
       implicit val timeout = Timeout(5 seconds)
       val future = SpaceManager.ref ? msg
       // TODO: EEEEVIL! This code is quick and dirty but wrong. This should all be Async, using SpaceManager.ask:
@@ -375,17 +409,56 @@ to add new Properties for any Person in your Space.
     
     implicit val finalState = updatedState
     val newRc = rc.copy(state = Some(updatedState))
-    val context = updatedState.thisAsContext(rc)
-    val subjectQL = QLText(rc.ownerName + " has invited you to join the Space " + state.displayName)
+    val context = updatedState.thisAsContext(newRc)
+    val subjectQL = QLText(rc.ownerName + " has invited you to join the Space " + updatedState.displayName)
     val inviteLink = QLText("""
       |
       |------
       |
       |[[_spaceInvitation]]""".stripMargin)
-    val bodyQL = state.getPropOpt(inviteText).flatMap(_.firstOpt).getOrElse(QLText("")) + inviteLink
+    val bodyQL = updatedState.getPropOpt(inviteText).flatMap(_.firstOpt).getOrElse(QLText("")) + inviteLink
     // TODO: we probably should test that sentTo includes everyone we expected:
     val sentTo = Email.sendToPeople(context, people, subjectQL, bodyQL)
     
     InvitationResult(newEmails, existingEmails)
+  }
+  
+  /**
+   * This is called via callbacks when we are beginning to render a page. It looks to see whether the
+   * URL is an invitation to join this Space, and goes to the Invitation workflow if so.
+   */
+  object InviteLoginChecker extends Contributor[RequestContext,RequestContext] {
+    def notify(rc:RequestContext, sender:Publisher[RequestContext, RequestContext]):RequestContext = {
+      val rcOpt =
+        for (
+          encodedInvite <- rc.firstQueryParam(inviteParam);
+          state <- rc.state;
+          hash = SignedHash(encodedInvite, Email.emailSepChar);
+          if (Hasher.checkSignature(hash));
+          SignedHash(_, _, msg, _) = hash;
+          Array(personId, emailAddr, _*) = msg.split(":")
+//          // NOTE: this is messy for backward compatibility. The first clause is the current way things work: the candidate is
+//          // the value of the "person" param. The orElse is the way it originally worked: the candidate is the Thing being pointed to.
+//          // TODO: this should be deprecated and removed when the Wedding Site is done with, if not sooner.
+//          candidate <- rc.firstQueryParam(personParam).flatMap(personThingId => state.anything(ThingId(personThingId))) orElse rc.thing;
+//          idProp <- candidate.localProp(identityLink);
+//          emailPropVal <- candidate.getPropOpt(emailAddressProp)(state);
+//          email = emailPropVal.first;
+//          name = candidate.displayName;
+//          identityId = idProp.first;
+//          if Hasher.authenticate(candidate.id.toString + identityId.toString, EncryptedHash(idParam));
+//          updates = Seq((identityParam -> identityId.toString), (identityName -> name), (identityEmail -> email.addr), (personParam -> candidate.id.toString));
+//          // TODO: if there is already a User in the RC, we should *add* to that User rather than
+//          // replacing it:
+//          newRc = rc.copy(
+//              sessionUpdates = rc.sessionUpdates ++ updates,
+//              requester = Some(SpaceSpecificUser(identityId, name, email, state.id, candidate.id)))
+        ) 
+          yield "It worked: got person " + personId + " for address " + emailAddr
+          
+      Logger.info("----> Hash result: " + rcOpt.getOrElse("It failed!"))
+
+      rc
+    }
   }
 }

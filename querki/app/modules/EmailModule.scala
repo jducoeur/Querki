@@ -57,6 +57,12 @@ class EmailModule(val moduleId:Short) extends modules.Module {
   }  
   import MOIDs._
   
+  /**
+   * The character that we use to separate strings involving email addresses. Chosen mostly
+   * because it is not a legal character in email addresses.
+   */
+  val emailSepChar = ';'
+  
   /******************************************
    * TYPES
    ******************************************/
