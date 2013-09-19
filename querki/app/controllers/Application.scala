@@ -171,7 +171,9 @@ object Application extends Controller {
       val state = stateOpt.get
       val result =
         // Okay, now we have enough information to check whether we have a Space-specific authorization:
-        if ((requireLogin && updatedRC.requester.isEmpty) || !state.canRead(updatedRC.requester.getOrElse(User.Anonymous), thingOpt.map(_.id).getOrElse(state)))
+        if (updatedRC.redirectTo.isDefined)
+          Redirect(updatedRC.redirectTo.get)
+        else if ((requireLogin && updatedRC.requester.isEmpty) || !state.canRead(updatedRC.requester.getOrElse(User.Anonymous), thingOpt.map(_.id).getOrElse(state)))
           onUnauthorized(updatedRC.request)
         else
           cb(updatedRC)
@@ -788,6 +790,10 @@ disallow: /
         Redirect(routes.Application.sharing(ownerId, spaceId)).flashing("info" -> resultMsg)
       }
     )
+  }
+  
+  def handleInvite(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId) { implicit rc =>
+    Ok(views.html.handleInvite(rc))
   }
   
   // TODO: I think this function is the straw that breaks the camel's back when it comes to code structure.

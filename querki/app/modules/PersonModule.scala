@@ -28,6 +28,7 @@ import controllers.{Contributor, PageEventManager, Publisher, RequestContext}
 
 import play.api.Logger
 
+  
 // TODO: this Module should formally depend on the Email Module. Probably --
 // it isn't entirely clear whether statically described Properties really
 // require initialization-order dependencies. But I believe that the Person
@@ -434,31 +435,19 @@ to add new Properties for any Person in your Space.
           encodedInvite <- rc.firstQueryParam(inviteParam);
           state <- rc.state;
           hash = SignedHash(encodedInvite, Email.emailSepChar);
+          // TODO: we should do something smarter if this fails:
           if (Hasher.checkSignature(hash));
           SignedHash(_, _, msg, _) = hash;
-          Array(personId, emailAddr, _*) = msg.split(":")
-//          // NOTE: this is messy for backward compatibility. The first clause is the current way things work: the candidate is
-//          // the value of the "person" param. The orElse is the way it originally worked: the candidate is the Thing being pointed to.
-//          // TODO: this should be deprecated and removed when the Wedding Site is done with, if not sooner.
-//          candidate <- rc.firstQueryParam(personParam).flatMap(personThingId => state.anything(ThingId(personThingId))) orElse rc.thing;
-//          idProp <- candidate.localProp(identityLink);
-//          emailPropVal <- candidate.getPropOpt(emailAddressProp)(state);
-//          email = emailPropVal.first;
-//          name = candidate.displayName;
-//          identityId = idProp.first;
-//          if Hasher.authenticate(candidate.id.toString + identityId.toString, EncryptedHash(idParam));
-//          updates = Seq((identityParam -> identityId.toString), (identityName -> name), (identityEmail -> email.addr), (personParam -> candidate.id.toString));
-//          // TODO: if there is already a User in the RC, we should *add* to that User rather than
-//          // replacing it:
-//          newRc = rc.copy(
-//              sessionUpdates = rc.sessionUpdates ++ updates,
-//              requester = Some(SpaceSpecificUser(identityId, name, email, state.id, candidate.id)))
-        ) 
-          yield "It worked: got person " + personId + " for address " + emailAddr
-          
-      Logger.info("----> Hash result: " + rcOpt.getOrElse("It failed!"))
-
-      rc
+          Array(personIdStr, emailAddrStr, _*) = msg.split(":");
+          personId = OID(personIdStr);
+          emailAddr = EmailAddress(emailAddrStr);
+          updates = Map((personParam -> personIdStr), (identityEmail -> emailAddrStr))
+        )
+          yield rc.copy(sessionUpdates = rc.sessionUpdates ++ updates,
+              redirectTo = Some(controllers.routes.Application.handleInvite(rc.ownerName, rc.state.get.toThingId)))
+              
+      // This gets picked up in Application.withSpace(), and redirected as necessary.
+      rcOpt.getOrElse(rc)
     }
   }
 }

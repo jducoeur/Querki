@@ -1,0 +1,26 @@
+@(rc:RequestContext)
+
+@import helper._
+@import helper.twitterBootstrap._
+
+@title = @{ s"You've been invited to join ${rc.state.get.displayName}!" }
+
+@main(QuerkiTemplate.Login, title, rc) {
+
+	<div class="page-header">
+	  <h1>@title</h1>
+	</div>
+	
+	<div class="row-fluid">
+	  <div class="span6">
+	    <p>If you already have a Querki login and password, please give them here. If don't have one, but you were sent an email invitation to a specific
+	    Querki Space, please go that that email and click one of the links in that -- that link should log you in to Querki.</p>
+	
+	    @form(routes.Application.dologin) {
+	      <input type="text" name="name" id="name" value="" placeholder="Email Address">
+	      <input type="password" name="password" value="" placeholder="Password">
+	      <input type="submit" value="Log in" class="btn btn-primary">
+	    }
+	  </div>
+	</div>
+}
