@@ -1,4 +1,4 @@
-@(rc:RequestContext, spaces:Seq[(AsName,AsOID,String)])
+@(rc:RequestContext, spaces:Seq[(AsName,AsOID,String,ThingId)])
 
 @user = @{ rc.requester.get }
 
@@ -11,7 +11,7 @@
     <div class="well">
     	<ul>
         @for(space <- spaces) {
-            <li><a href="/u/@user.toThingId/@space._1/">@space._3</a> (<a href="/u/@user.id.toThingId/@space._2/">Hard link</a>)</li>
+            <li><a href="/u/@space._4/@space._1/">@space._3</a> (<a href="/u/@space._4/@space._2/">Hard link</a>)</li>
         }
         </ul>
     </div>

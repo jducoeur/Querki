@@ -33,6 +33,7 @@ case class PropAndVal[VT](prop:Property[VT, _], v:QValue) {
     QList.makePropValue((v.cv ++ others.map(ElemValue(_, prop.pType))).toList, prop.pType)
   }
   def contains(toCheck:VT):Boolean = v.contains(prop.pType, toCheck)
+  def exists(check:VT => Boolean):Boolean = v.exists(prop.pType, check)
   def isEmpty:Boolean = v.isEmpty
   def rawList:List[VT] = v.rawList(prop.pType)
 }

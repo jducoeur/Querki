@@ -169,7 +169,7 @@
 				      if (modelId && (modelId.length > 0)) {
 				        // TBD: Bit of an abstraction break here -- the Javascript needs to know the URL syntax for
 				        // model creation. Can we do this better somehow? 
-				        window.location = "@routes.Application.createThing(rc.ownerName, space.get.toThingId, None)" + "?model=" + modelId;
+				        window.location = "@routes.Application.createThing(rc.ownerHandle, space.get.toThingId, None)" + "?model=" + modelId;
 				      } else {
 				        // TODO: The Create button should really be disabled unless a legit option
 				        // is picked; not quite sure how to do that in jQuery UI. 
@@ -197,7 +197,7 @@
 				  modal: true,
 				  buttons: {
 				    "Delete": function () {
-		              window.location = "@routes.Application.deleteThing(rc.ownerName, space.get.toThingId, thing.get.toThingId)";
+		              window.location = "@routes.Application.deleteThing(rc.ownerHandle, space.get.toThingId, thing.get.toThingId)";
 				    },
 				    "Cancel": function () {
 				      $(this).dialog("close");
@@ -289,7 +289,7 @@
                       }
 	                </ul>
 	                @if(space.isDefined) {
-                      @form(routes.Application.search(rc.ownerName, space.get.toThingId), 'class -> "navbar-search pull-right") {	                
+                      @form(routes.Application.search(rc.ownerHandle, space.get.toThingId), 'class -> "navbar-search pull-right") {	                
                         <input id="searchInput" name="searchInput" type="text" class="search-query" placeholder="Search">
                       }
                     }

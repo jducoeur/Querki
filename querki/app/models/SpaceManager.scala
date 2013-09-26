@@ -54,19 +54,25 @@ class SpaceManager extends Actor {
     case req:ListMySpaces => {
       //val results = spaceCache.values.filter(_.owner == req.owner).map(space => (space.id, space.name)).toSeq
       if (req.owner == SystemUserOID)
-        sender ! MySpaces(Seq((AsName("System"), AsOID(systemOID), State.name)))
+        sender ! MySpaces(Seq((AsName("System"), AsOID(systemOID), State.name, AsName("systemUser"))))
       else {
         // TODO: this involves DB access, so should be async using the Actor DSL
+        // Note that Spaces are now indexed by Identity, so we need to indirect
+        // through that table. (Since our parameter is User OID.)
         val results = DB.withConnection(dbName(System)) { implicit conn =>
           val spaceStream = SQL("""
-              select id, name, display from Spaces
-              where owner = {owner}
+              SELECT Spaces.id, Spaces.name, display, Identity.handle FROM Spaces
+                JOIN Identity ON userid={owner}
+              WHERE owner = Identity.id
               """).on("owner" -> req.owner.raw)()
           spaceStream.force.map { row =>
             val id = OID(row.get[Long]("id").get)
             val name = row.get[String]("name").get
             val display = row.get[String]("display").get
-            (AsName(name), AsOID(id), display)
+            // TODO: this is clearly wrong -- eventually, we will allow handle to be NULL. So we need to also
+            // fetch Identity.id, and ThingId that if we don't find a handle:
+            val ownerHandle = row.get[String]("handle").get
+            (AsName(name), AsOID(id), display, AsName(ownerHandle))
           }
         }
         sender ! MySpaces(results)

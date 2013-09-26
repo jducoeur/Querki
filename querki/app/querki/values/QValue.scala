@@ -110,6 +110,11 @@ trait QValue {
     elemT.doMatches(vt, toCheck)
   }
   
+  def exists[VT](elemT:PType[VT], check:VT => Boolean):Boolean = cv.exists { elem =>
+    val vt = elemT.get(elem)
+    check(vt)
+  }
+  
   def indexOf(toCheck:ElemValue):Option[Int] = {
     val pt = toCheck.pType
     if (pt != pType) {

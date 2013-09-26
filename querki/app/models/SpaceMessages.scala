@@ -40,7 +40,8 @@ sealed trait SpaceMgrMsg
 
 case class ListMySpaces(owner:OID) extends SpaceMgrMsg
 sealed trait ListMySpacesResponse
-case class MySpaces(spaces:Seq[(AsName,AsOID,String)]) extends ListMySpacesResponse
+// TODO: spaces really need a structure here, instead of this unwieldy tuple:
+case class MySpaces(spaces:Seq[(AsName,AsOID,String,ThingId)]) extends ListMySpacesResponse
 
 // This responds eventually with a ThingFound:
 case class CreateSpace(owner:OID, name:String) extends SpaceMgrMsg

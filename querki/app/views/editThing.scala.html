@@ -52,9 +52,9 @@
 
 @cancelButton = {
   @if(isCreate) {
-    <a class="cancelButton btn" href="@routes.Application.thing(rc.ownerName, space.toThingId, space.toThingId)">Cancel</a>
+    <a class="cancelButton btn" href="@routes.Application.thing(rc.ownerHandle, space.toThingId, space.toThingId)">Cancel</a>
   } else {
-    <a class="cancelButton btn" href="@routes.Application.thing(rc.ownerName, space.toThingId, thing.get.toThingId)">Cancel</a>
+    <a class="cancelButton btn" href="@routes.Application.thing(rc.ownerHandle, space.toThingId, thing.get.toThingId)">Cancel</a>
   }
 }
 
@@ -263,7 +263,7 @@
         var optionSelected = $("option:selected", this);
         if (optionSelected.hasClass("_createNewFromModel")) {
           var modelId = optionSelected.data("model");
-          $("#create-instance-iframe").attr("src", "@routes.Application.createThing(rc.ownerName, space.toThingId, None)" + "?cl&subCreate=true&model=" + modelId)
+          $("#create-instance-iframe").attr("src", "@routes.Application.createThing(rc.ownerHandle, space.toThingId, None)" + "?cl&subCreate=true&model=" + modelId)
 		  $("#create-instance-dialog").dialog("open");
 		  return false;          
         } 
@@ -516,9 +516,9 @@
 	
 	<div class="row-fluid">
 	@form(if (thing.isEmpty) { 
-	        routes.Application.doCreateThing(rc.ownerName, space.toThingId, Some(isSubCreate))
+	        routes.Application.doCreateThing(rc.ownerHandle, space.toThingId, Some(isSubCreate))
 	      } else { 
-	        routes.Application.doEditThing(rc.ownerName, space.toThingId, thing.get.toThingId) 
+	        routes.Application.doEditThing(rc.ownerHandle, space.toThingId, thing.get.toThingId) 
 	      }, 'class -> "form-horizontal") {
 	  <fieldset>
 	    <input type="hidden" name="model" value="@model.id.toString">

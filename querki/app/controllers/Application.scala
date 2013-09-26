@@ -80,6 +80,7 @@ object Application extends Controller {
   
   def getUser(username:String):Option[User] = User.get(username)
   
+  // DEPRECATED. Delete this once I'm sure that it is unused:
   def getUserByThingId(thingIdStr:String):OID = {
     val thingId = ThingId(thingIdStr)
     thingId match {
@@ -94,7 +95,22 @@ object Application extends Controller {
     }
   }
   
+  def getIdentityByThingId(thingIdStr:String):OID = {
+    val thingId = ThingId(thingIdStr)
+    thingId match {
+      case AsOID(oid) => oid
+      case AsName(name) => {
+        if (name.length() == 0) UnknownOID
+        else {
+          val userOpt = User.getIdentity(name)
+          userOpt getOrElse UnknownOID
+        }
+      }
+    }
+  }
+  
   def ownerName(state:SpaceState) = User.getName(state.owner)
+  def ownerHandle(state:SpaceState) = User.getHandle(state.owner)
   
   def userFromSession(request:RequestHeader) = User.get(request)
   // Workaround to deal with the fact that Security.Authenticated has to get a non-empty
@@ -163,7 +179,7 @@ object Application extends Controller {
       )(f: (RequestContext => Result)):EssentialAction = withUser(false) { rc =>
     val requester = rc.requester getOrElse User.Anonymous
     val thingId = thingIdStr map (ThingId(_))
-    val ownerId = getUserByThingId(ownerIdStr)
+    val ownerId = getIdentityByThingId(ownerIdStr)
     def withFilledRC(rc:RequestContext, stateOpt:Option[SpaceState], thingOpt:Option[Thing])(cb:RequestContext => Result):Result = {
       val filledRC = rc.copy(ownerId = ownerId, state = stateOpt, thing = thingOpt)
       // Give the listeners a chance to chime in:
@@ -489,7 +505,7 @@ disallow: /
                     // In the AJAX case, we just send back the OID of the Thing:
                     Ok(thingId.toThingId.toString)
                   } else {
-                    Redirect(routes.Application.thing(ownerName(newState), newState.toThingId, thing.toThingId))
+                    Redirect(routes.Application.thing(ownerHandle(newState), newState.toThingId, thing.toThingId))
                   }
                 }
               }

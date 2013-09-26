@@ -24,7 +24,7 @@
   </script>
 
   <div class="page-header">
-	<h1 class="_defaultTitle">@pageTitle <a class="cancelButton btn" href="@routes.Application.thing(rc.ownerName, space.toThingId, space.toThingId)">Done</a></h1>
+	<h1 class="_defaultTitle">@pageTitle <a class="cancelButton btn" href="@routes.Application.thing(rc.ownerHandle, space.toThingId, space.toThingId)">Done</a></h1>
   </div>
   
   <div class="row">
@@ -54,7 +54,7 @@
             </div>
           </div>
         
-	    @form(routes.Application.inviteMembers(rc.ownerName, space.toThingId.toString), 'class -> "") {
+	    @form(routes.Application.inviteMembers(rc.ownerHandle, space.toThingId.toString), 'class -> "") {
           <div class="control-group">
             <label class="control-label">Who to Invite (enter email addresses, comma-separated)</label>
             <div class="controls">

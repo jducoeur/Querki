@@ -38,6 +38,7 @@ class RequestHeaderParser(request:RequestHeader) {
 case class RequestContext(
     request:Request[AnyContent], 
     requester:Option[User], 
+    // Note that this is an *identity*
     ownerId:OID, 
     state:Option[SpaceState], 
     thing:Option[Thing],
@@ -46,6 +47,7 @@ case class RequestContext(
     redirectTo:Option[Call] = None) extends RequestHeaderParser(request) {
   def requesterOrAnon = requester getOrElse User.Anonymous
   def requesterOID = requester map (_.id) getOrElse UnknownOID  
+  def ownerHandle = state map Application.ownerHandle getOrElse ""
   def ownerName = state map Application.ownerName getOrElse ""
   
   def isOwner = requester.isDefined && (requester.get.id == ownerId) 

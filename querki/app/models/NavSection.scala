@@ -41,7 +41,7 @@ object NavSection {
       
   def nav(rc:RequestContext) = {
     def spaceId = rc.state.get.toThingId
-    val owner = rc.ownerName
+    val owner = rc.ownerHandle
     // For menu purposes, don't duplicate the space if it's the Thing:
     val thingIsSpace = rc.thing.isDefined && (rc.thing.get.id == rc.state.get.id)
     val actualThing = rc.thing.flatMap(t => if (thingIsSpace) None else Some(t))
