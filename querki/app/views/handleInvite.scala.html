@@ -1,11 +1,11 @@
-@(rc:RequestContext)
+@(rc:RequestContext, signupForm:Form[Application.SignupInfo])
 
 @import helper._
 @import helper.twitterBootstrap._
 
 @title = @{ s"You've been invited to join ${rc.state.get.displayName}!" }
 
-@main(QuerkiTemplate.Login, title, rc) {
+@main(QuerkiTemplate.Login, title, rc, forms=Seq(signupForm)) {
 
 	<div class="page-header">
 	  <h1>@title</h1>
@@ -25,8 +25,27 @@
 	  
 	  <div class="span6">
 	    <p>If you aren't yet a Querki member, sign up here -- it only takes a minute!</p>
+	    @form(routes.Application.signup(rc.ownerHandle, rc.state.get.toThingId)) {
+          @inputText(
+            signupForm("email"), 
+            '_label -> "Your Email Address",
+            '_showConstraints -> false
+          )
 	    
+          @inputPassword(
+            signupForm("password"), 
+            '_label -> "Password",
+            '_showConstraints -> false
+          )
 	    
+          @inputText(
+            signupForm("handle"), 
+            '_label -> "The Querki login you would like (letters and numbers only)",
+            '_showConstraints -> false
+          )
+	    
+	      <input type="submit" value="Sign up" class="btn btn-primary">
+	    }
 	  </div>
 	</div>
 }

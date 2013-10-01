@@ -32,6 +32,7 @@ POST    /u/:userName/:spaceId/upload      controllers.Application.doUpload(userN
 GET     /u/:userName/:spaceId/_sharing    controllers.Application.sharing(userName, spaceId)
 POST    /u/:userName/:spaceId/_inviteMembers controllers.Application.inviteMembers(userName, spaceId)
 GET     /u/:userName/:spaceId/_handleInvite controllers.Application.handleInvite(userName, spaceId)
+POST    /u/:userName/:spaceId/_signup     controllers.Application.signup(userName, spaceId)
 
 GET     /u/:userName/:spaceId/export controllers.Application.exportThing(userName, spaceId, thingId)
 

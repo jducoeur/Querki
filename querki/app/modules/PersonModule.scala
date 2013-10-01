@@ -443,7 +443,7 @@ to add new Properties for any Person in your Space.
           emailAddr = EmailAddress(emailAddrStr);
           updates = Map((personParam -> personIdStr), (identityEmail -> emailAddrStr))
         )
-          yield rc.copy(sessionUpdates = rc.sessionUpdates ++ updates,
+          yield rc.copy(sessionUpdates = rc.sessionUpdates ++ rc.returnToHereUpdate ++ updates,
               redirectTo = Some(controllers.routes.Application.handleInvite(rc.ownerHandle, rc.state.get.toThingId)))
               
       // This gets picked up in Application.withSpace(), and redirected as necessary.

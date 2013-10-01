@@ -60,6 +60,11 @@ case class RequestContext(
       (hasQueryParam(name) || turningOn(name) || request.session.get(name).map(_ == "on").getOrElse(false))
   }
   
+  // Mechanism for returning to this request after a redirect. Add this to the sessionUpdates if you
+  // will want to come back here.
+  val returnToParam = "returnTo"
+  def returnToHereUpdate = Map((returnToParam -> request.path))
+  
   // TODO: these probably don't belong here in the long run:
   val chromelessName = "cl"
   def chromeless = isOn(chromelessName)

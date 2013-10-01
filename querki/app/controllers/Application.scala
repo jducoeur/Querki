@@ -62,6 +62,18 @@ object Application extends Controller {
      ((invitees:List[String]) => Some(invitees))
   )
   
+  // TODO: SignupInfo and its related form are actually written according to the Play
+  // examples, now that I understand what this is all supposed to look like. The other
+  // input forms should be rewritten similarly as we have time.
+  case class SignupInfo(email:String, password:String, handle:String)
+  val signupForm = Form(
+    mapping(
+      "email" -> email,
+      "password" -> nonEmptyText,
+      "handle" -> nonEmptyText
+    )(SignupInfo.apply)(SignupInfo.unapply)
+  )
+  
   /**
    * Standard error handler. Iff you get an error and the correct response is to redirect to
    * another page, use this. The only exception is iff you need to preserve data, and thus want
@@ -812,7 +824,20 @@ disallow: /
   }
   
   def handleInvite(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId) { implicit rc =>
-    Ok(views.html.handleInvite(rc))
+    Ok(views.html.handleInvite(rc, signupForm))
+  }
+  
+  def signup(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId) { implicit rc =>
+    implicit val request = rc.request
+    val rawForm = signupForm.bindFromRequest
+    rawForm.fold(
+      errorForm => {
+        BadRequest(views.html.handleInvite(rc, errorForm))
+      },
+      info => {
+        Ok(views.html.handleInvite(rc, rawForm))
+      }
+    )
   }
   
   // TODO: I think this function is the straw that breaks the camel's back when it comes to code structure.

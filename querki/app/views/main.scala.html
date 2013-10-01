@@ -1,4 +1,4 @@
-@(template:QuerkiTemplate.QuerkiTemplate, title: String, rc:RequestContext, addStyles:Boolean = false)(content: Html)
+@(template:QuerkiTemplate.QuerkiTemplate, title: String, rc:RequestContext, addStyles:Boolean = false, forms:Seq[Form[_]] = Seq.empty)(content: Html)
 
 @import models.system._
 @import play.api.Logger
@@ -8,13 +8,23 @@
 @space = @{ rc.state }
 @thing = @{ rc.thing }
 @nav = @{ NavSection.nav(rc) }
+
+@formErrors = @{
+  val formsWithErrors = forms.filter(_.hasErrors)
+  if (formsWithErrors.isEmpty)
+    None
+  else
+    Some(formsWithErrors.flatMap(errorForm => errorForm.errors.map(error => "'" + errorForm(error.key).value.getOrElse("") + "' is not a legal value")).mkString(", "))
+}
+
 @errors = @{
   val flash = rc.request.flash
-  flash.get("error") orElse rc.error
+  flash.get("error") orElse rc.error orElse formErrors
 }
 @infoMsg = @{
   rc.request.flash.get("info")
 }
+
 @requester = @{ rc.requester }
 
 @ownerId = @{
