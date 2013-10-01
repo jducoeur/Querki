@@ -19,3 +19,14 @@ UPDATE Spaces SET owner=97 WHERE owner=9;
 UPDATE Spaces SET owner=98 WHERE owner=11;
 # jducoeur:
 UPDATE Spaces SET owner=99 WHERE owner=31;
+
+# Table to keep track of which Spaces I am a Member of. Note that this is
+# basically just a join table, so I haven't bothered with synthetic IDs.
+CREATE TABLE SpaceMembership (
+  identityId bigint NOT NULL,
+  spaceId bigint NOT NULL,
+  membershipState tinyint DEFAULT 0,
+  lastAccess datetime DEFAULT NULL,
+  nickname VARCHAR(255) DEFAULT NULL,
+  PRIMARY KEY (identityId, spaceId)
+);
