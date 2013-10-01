@@ -4,6 +4,7 @@ import language.existentials
 import play.api._
 import play.api.data._
 import play.api.data.Forms._
+import play.api.data.validation.Constraints._
 import play.api.libs.concurrent.Promise
 import play.api.mvc._
 import models._
@@ -70,7 +71,7 @@ object Application extends Controller {
     mapping(
       "email" -> email,
       "password" -> nonEmptyText,
-      "handle" -> nonEmptyText
+      "handle" -> (text verifying pattern("""[a-zA-Z0-9]+""".r, error="A handle can only contain letters and numbers"))
     )(SignupInfo.apply)(SignupInfo.unapply)
   )
   
