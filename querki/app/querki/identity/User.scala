@@ -120,19 +120,18 @@ object User {
   private val nameByIdCache = collection.mutable.Map.empty[OID, String]
   
   /**
-   * The in-memory cache of Users. We use this *really* frequently, so it's helpful to have it
-   * cached.
+   * TODO: RE-ADD CACHING
    * 
-   * TODO: these caches, together, probably aren't quite thread-safe. And the resulting code
-   * is too incestuous.
+   * Note that caching needs to fundamentally change, though. We should really have a single master
+   * cache of *all* of the looked-up Users, which is probably controlled by getUser(). But that gets
+   * indexed by a bunch of little caches of pointers into it by various keys, which correspond to the
+   * query being passed into getUser(). Odds are that the cache is itself essentially a parameter to
+   * getUser().
    * 
-   * TODO: this needs mechanisms for signaling when an entry is obsolete, that work cross-cluster.
-   * Really, this cache is a bit dangerous, and may need to be replaced by something
-   * very different. (Eg, hidden behind an Actor that gets queried.)
+   * This is going to be a hassle, so don't be half-assed about it: better to do it right once, than
+   * spend a bunch of effort on an optimization we don't need yet. Make sure it winds up thread-safe,
+   * which is not a small issue, and deal with making all of this properly asynchronous while we're at it.
    */
-  private var userByIdCache = Map.empty[OID, User]
-  private var idByEmailCache = Map.empty[String, OID]
-  private var userByIdentityCache = Map.empty[OID, OID]
   
   private def getUser(query:Sql, checkOpt:Option[User => Boolean] = None):Option[User] = {
     // TODO: check the cache? Or should that be done at the semantic levels below?
@@ -147,11 +146,6 @@ object User {
         val user = FullUser(row.oid("userId"), row.string("name"),
           Seq(Identity(identityOID, email, row.string("authentication"), row.string("handle"), row.string("name"), IdentityKind.QuerkiLogin)),
           row.int("level"))
-          
-        // TODO: Stuff it into the cache? Or should that be done at the semantic levels below?
-        userByIdCache = userByIdCache + (user.id -> user)
-        idByEmailCache = idByEmailCache + (email.addr -> user.id)
-        userByIdentityCache = userByIdentityCache + (identityOID -> user.id)
         
         // If this is conditional -- for example, if this is login, and we need to authenticate --
         // then do the check before returning the found user
@@ -192,13 +186,9 @@ object User {
   def get(request:RequestHeader) = {
     val username = request.session.get(Security.username)
     username.flatMap(loadByHandle(_, None))
-//      FullUser(
-//        request.session.get(userIdSessionParam).map(OID(_)).getOrElse(UnknownOID), 
-//        _,
-//        Seq.empty,
-//        request.session.get(levelSessionParam).map(_.toInt).getOrElse(UnknownUserLevel)))
   }
   
+  // DEPRECATED -- can this be removed?
   // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
   def get(rawName:String) = {
     val name = system.NameType.canonicalize(rawName)
@@ -220,24 +210,6 @@ object User {
   // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
   def getIdentity(rawHandle:String) = {
     loadByHandle(rawHandle, None).flatMap(_.identityByHandle(rawHandle)).map(_.id)
-//    val handle = system.NameType.canonicalize(rawHandle)
-//    val personQuery = userLoadSqlWhere("""handle={name} and kind={loginKind}""").on("handle" -> handle, "loginKind" -> IdentityKind.QuerkiLogin)
-//    getUser(personQuery).flatMap(_.identityByHandle(handle)).map(_.id)
-//    
-//    
-//    val idOpt = idByNameCache.get(name).orElse {
-//      // Don't have it cached, so fetch the ID and cache it:
-//      val fromDB = DB.withConnection(dbName(System)) { implicit conn =>
-//        val personQuery = SQL("""
-//          select id from Identity where handle={name} and kind={loginKind}
-//          """).on("name" -> name, "loginKind" -> IdentityKind.QuerkiLogin)
-//        val stream = personQuery.apply()
-//        stream.headOption.map(row => OID(row.get[Long]("id").get))
-//      }
-//      fromDB.map(idByNameCache(name) = _)
-//      fromDB
-//    }
-//    idOpt
   }
 
   /**
@@ -250,19 +222,6 @@ object User {
     // TODO: check the userByIdentityCache
     val query = userLoadSqlWhere("Identity.id={id}").on("id" -> id.raw)
     getUser(query).flatMap(_.identityById(id)).map(_.handle).getOrElse(id.toThingId.toString)
-//    
-//    
-//    nameByIdCache.get(id).getOrElse {
-//      val fromDB = DB.withConnection(dbName(System)) { implicit conn =>
-//        val personQuery = SQL("""
-//            select handle from Identity where id={id}
-//            """).on("id" -> id.raw)
-//        val stream = personQuery.apply()
-//        stream.headOption.map(row => row.get[String]("handle").get) getOrElse (id.toThingId.toString)
-//      }
-//      nameByIdCache(id) = fromDB
-//      fromDB
-//    }
   }
   
   // Note that this assumes that the ID identifies a valid Identity.
@@ -270,14 +229,6 @@ object User {
   def getName(id:OID):String = {
     val query = userLoadSqlWhere("id={id}").on("id" -> id.raw)
     getUser(query).flatMap(_.identityById(id)).map(_.name).getOrElse(id.toThingId.toString)
-//    
-//    DB.withConnection(dbName(System)) { implicit conn =>
-//      val personQuery = SQL("""
-//          select name from Identity where id={id}
-//          """).on("id" -> id.raw)
-//      val stream = personQuery.apply()
-//      stream.headOption.map(row => row.get[String]("name").get) getOrElse (id.toThingId.toString)
-//    }
   }
   
   // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
@@ -289,25 +240,6 @@ object User {
         identityOpt.map(identity => Hasher.authenticate(passwordEntered, EncryptedHash(identity.auth))).getOrElse(false) 
       })
     )
-//    
-//    
-//    DB.withConnection(dbName(System)) { implicit conn =>
-//      val identityQuery = SQL("""
-//          SELECT Identity.id, Identity.name, userId, User.level, authentication FROM Identity
-//            JOIN User ON User.id=userId
-//            WHERE email={email};
-//          """).on("email" -> email.addr.toLowerCase())()
-//      identityQuery.headOption.flatMap { row =>
-//        val auth = row.get[String]("authentication").get
-//        if (Hasher.authenticate(passwordEntered, EncryptedHash(auth))) {
-//          Some(FullUser(OID(row.get[Long]("userId").get), row.get[String]("name").get,
-//            Seq(Identity(OID(row.get[Long]("id").get), email)),
-//            row.get[Int]("level").get))
-//        } else {
-//          None
-//        }
-//      }
-//    }
   }
   
   // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
@@ -322,27 +254,6 @@ object User {
           identityOpt.map(identity => Hasher.authenticate(passwordEntered, EncryptedHash(identity.auth))).getOrElse(false) 
         })
       )
-//      
-//      
-//      
-//      
-//      DB.withConnection(dbName(System)) { implicit conn =>
-//        val identityQuery = SQL("""
-//            SELECT Identity.id, Identity.name, userId, User.level, authentication, email FROM Identity
-//              JOIN User ON User.id=userId
-//              WHERE Identity.handle={handle};
-//            """).on("handle" -> login.toLowerCase())()
-//        identityQuery.headOption.flatMap { row =>
-//          val auth = row.get[String]("authentication").get
-//          if (Hasher.authenticate(passwordEntered, EncryptedHash(auth))) {
-//            Some(FullUser(OID(row.get[Long]("userId").get), row.get[String]("name").get,
-//              Seq(Identity(OID(row.get[Long]("id").get), EmailAddress(row.get[String]("email").get))),
-//              row.get[Int]("level").get))
-//          } else {
-//            None
-//          }
-//        }
-//      }
     }
   }
 }

@@ -169,6 +169,9 @@ object Application extends Controller {
    * 
    * TBD: Why the ridiculous return signature? Because I am getting cryptic errors about withSpace
    * being recursive otherwise.
+   * 
+   * TODO: this is fundamentally broken at the moment. withUser() is potentially long-running -- it can
+   * involve DB lookups -- so we need to think about how to restructure things accordingly.
    */
   def withSpace(
         requireLogin:Boolean, 
