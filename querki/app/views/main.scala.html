@@ -14,7 +14,7 @@
   if (formsWithErrors.isEmpty)
     None
   else
-    Some(formsWithErrors.flatMap(errorForm => errorForm.errors.map(error => "'" + errorForm(error.key).value.getOrElse("") + "' is not a legal value")).mkString(", "))
+    Some(formsWithErrors.flatMap(errorForm => errorForm.errors.map(error => "'" + errorForm(error.key).value.getOrElse("") + "' is not a legal value")).mkString(", ") + " (see below)")
 }
 
 @errors = @{

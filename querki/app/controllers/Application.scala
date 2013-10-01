@@ -70,7 +70,7 @@ object Application extends Controller {
   val signupForm = Form(
     mapping(
       "email" -> email,
-      "password" -> nonEmptyText,
+      "password" -> (nonEmptyText verifying minLength(6)),
       "handle" -> (text verifying pattern("""[a-zA-Z0-9]+""".r, error="A handle can only contain letters and numbers"))
     )(SignupInfo.apply)(SignupInfo.unapply)
   )
