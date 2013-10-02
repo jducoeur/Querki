@@ -266,13 +266,13 @@ object User {
   // some of these exceptions are routine user-input problems like a duplicate email address, while others are
   // serious internal exceptions. Figure out how we want to handle them differently.
   def createProvisional(info:SignupInfo):Try[User] = Try {
-    DB.withTransaction(dbName(System)) { implicit conn =>
-      // Note that both of these will either return None or throw an exception:
-      val existingOpt = loadByHandle(info.handle, 
-          Some({_ => throw new PublicException("User.handleExists", info.handle)}))
-      val emailOpt = loadByEmail(EmailAddress(info.email), 
-          Some({_ => throw new PublicException("User.emailExists", info.email)}))
+    // Note that both of these will either return None or throw an exception:
+    val existingOpt = loadByHandle(info.handle, 
+        Some({_ => throw new PublicException("User.handleExists", info.handle)}))
+    val emailOpt = loadByEmail(EmailAddress(info.email), 
+        Some({_ => throw new PublicException("User.emailExists", info.email)}))
       
+    DB.withTransaction(dbName(System)) { implicit conn =>
       // Okay, seems to be legit
       val userId = OID.next(System)
       // TODO: we should have a standardized utility to deal with this
@@ -282,9 +282,11 @@ object User {
             (id, level, join_date)
             VALUES
             ({userId}, {level}, {now})
-          """).on("userId" -> userId.raw, "level" -> UserLevel.PendingUser, "now" -> timestamp)
-      if (!userInsert.execute)
-        throw new Exception("Unable to create new User!")
+          """).on("userId" -> userId.raw, "level" -> UserLevel.PendingUser, "now" -> timestamp.toDate())
+      // TBD: we *should* be checking the return value here, but it is spuriously returning false. Why?
+      userInsert.execute
+//      if (!userInsert.execute)
+//        throw new Exception("Unable to create new User!")
       val identityId = OID.next(System)
       val identityInsert = SQL("""
           INSERT Identity
@@ -294,16 +296,19 @@ object User {
           """).on(
             "identityId" -> identityId.raw,
             "display" -> info.display,
+            "userId" -> userId.raw,
             "kind" -> IdentityKind.QuerkiLogin,
             "handle" -> info.handle,
             "email" -> info.email,
             "authentication" -> Hasher.calcHash(info.password).toString)
-      if (!identityInsert.execute)
-        throw new Exception("Unable to create new Identity!")
-      
-      // Finally, make sure that things load correctly
-      checkQuerkiLogin(info.handle, info.password).getOrElse(throw new Exception("Unable to load newly-created Identity!"))
+        identityInsert.execute
+//      if (!identityInsert.execute)
+//        throw new Exception("Unable to create new Identity!")
     }
+    
+    // Finally, make sure that things load correctly
+    // TBD: this fails if I try to do it in the same transaction. Why?
+    checkQuerkiLogin(info.handle, info.password).getOrElse(throw new Exception("Unable to load newly-created Identity!"))
   }
 }
 
