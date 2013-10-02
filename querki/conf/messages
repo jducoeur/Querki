@@ -1,0 +1,2 @@
+User.handleExists=Handle {0} is already in use. Please try another.
+User.emailExists=Email address {0} is already in use. If you already have a Querki account, please sign in with that.

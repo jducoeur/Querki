@@ -1,4 +1,4 @@
-@(rc:RequestContext, signupForm:Form[Application.SignupInfo])
+@(rc:RequestContext, signupForm:Form[querki.identity.SignupInfo])
 
 @import helper._
 @import helper.twitterBootstrap._
@@ -24,7 +24,7 @@
 	  </div>
 	  
 	  <div class="span6">
-	    <p>If you aren't yet a Querki member, sign up here -- it only takes a minute!</p>
+	    <p>If you aren't yet a Querki member, sign up here -- it only takes a minute! All fields are required.</p>
 	    @form(routes.Application.signup(rc.ownerHandle, rc.state.get.toThingId)) {
           @inputText(
             signupForm("email"), 
@@ -41,6 +41,12 @@
           @inputText(
             signupForm("handle"), 
             '_label -> "The Querki login you would like (letters and numbers only)",
+            '_showConstraints -> false
+          )
+	    
+          @inputText(
+            signupForm("display"), 
+            '_label -> "Your name as you would like it to be displayed",
             '_showConstraints -> false
           )
 	    

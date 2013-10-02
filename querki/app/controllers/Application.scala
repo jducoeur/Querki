@@ -1,6 +1,9 @@
 package controllers
 
 import language.existentials
+
+import scala.util._
+
 import play.api._
 import play.api.data._
 import play.api.data.Forms._
@@ -12,7 +15,7 @@ import Property._
 import system._
 import models.system._
 import models.system.SystemSpace._
-import querki.identity.User
+import querki.identity._
 
 import querki.html.HtmlRenderer
 
@@ -20,7 +23,7 @@ import SpaceError._
 
 import querki.values.QLRequestContext
 
-import querki.util.QLog
+import querki.util._
 
 object Application extends Controller {
   
@@ -66,12 +69,12 @@ object Application extends Controller {
   // TODO: SignupInfo and its related form are actually written according to the Play
   // examples, now that I understand what this is all supposed to look like. The other
   // input forms should be rewritten similarly as we have time.
-  case class SignupInfo(email:String, password:String, handle:String)
   val signupForm = Form(
     mapping(
       "email" -> email,
       "password" -> (nonEmptyText verifying minLength(6)),
-      "handle" -> (text verifying pattern("""[a-zA-Z0-9]+""".r, error="A handle can only contain letters and numbers"))
+      "handle" -> (text verifying pattern("""[a-zA-Z0-9]+""".r, error="A handle can only contain letters and numbers")),
+      "display" -> nonEmptyText
     )(SignupInfo.apply)(SignupInfo.unapply)
   )
   
@@ -836,7 +839,19 @@ disallow: /
         BadRequest(views.html.handleInvite(rc, errorForm))
       },
       info => {
-        Ok(views.html.handleInvite(rc, rawForm))
+        val result = User.createProvisional(info)
+        result match {
+          case Success(user) => {
+            Redirect(routes.Application.index).withSession(user.toSession:_*)
+          }
+          case Failure(error) => {
+            val msg = error match {
+              case err:PublicException => err.display(request)
+              case _ => Logger.error("Internal Error during signup", error); "Something went wrong; please try again"
+            }
+            BadRequest(views.html.handleInvite(rc.withError(msg), rawForm))
+          }
+        }
       }
     )
   }

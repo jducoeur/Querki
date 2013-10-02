@@ -106,6 +106,8 @@ case class RequestContext(
       result.withSession(newSession)
     }
   }
+  
+  def withError(err:String) = copy(error = Some(err))
 }
 object RequestContext {
   implicit def rc2Space(rc:RequestContext) = rc.state
