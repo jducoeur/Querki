@@ -60,6 +60,8 @@ case class RequestContext(
       (hasQueryParam(name) || turningOn(name) || request.session.get(name).map(_ == "on").getOrElse(false))
   }
   
+  def sessionCookie(name:String) = request.session.get(name)
+  
   // Mechanism for returning to this request after a redirect. Add this to the sessionUpdates if you
   // will want to come back here.
   val returnToParam = "returnTo"

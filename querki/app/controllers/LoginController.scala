@@ -80,7 +80,16 @@ object LoginController extends ApplicationBase {
   }
   
   def handleInvite(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId) { implicit rc =>
-    Ok(views.html.handleInvite(rc, signupForm))
+    // This cookie gets set in PersonModule.InviteLoginChecker. If it isn't set, somebody is trying to sneak
+    // in through the back door:
+    val emailOpt = rc.sessionCookie(modules.Modules.Person.identityEmail)
+    emailOpt match {
+      case Some(email) => {
+        val startForm = SignupInfo(email, "", "", "")
+        Ok(views.html.handleInvite(rc, signupForm.fill(startForm)))
+      }
+      case None => doError(routes.Application.index, "For now, you can only sign up for Querki through an invitation. Try again soon.")
+    }
   }
   
   def signup(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId) { implicit rc =>
