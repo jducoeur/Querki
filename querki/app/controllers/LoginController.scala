@@ -88,8 +88,13 @@ object LoginController extends ApplicationBase {
         // Okay, it's a legitimate invitation. Is this a signed-in user?
         rc.requester match {
           case Some(user) => {
-            // Yes. Okay, go to joining the space:
-            Ok(views.html.joinSpace(rc))
+            // Yes. Am I already a member of this Space?
+            if (querki.access.AccessControl.isMember(user, rc.state.get)) {
+              Redirect(routes.Application.thing(ownerId, spaceId, spaceId))
+            } else {
+              // Not yet. Okay, go to joining the space:
+              Ok(views.html.joinSpace(rc))
+            }
           }
           case None => {
             // Nope. Let them sign up for Querki. This will loop through to signup, below:
