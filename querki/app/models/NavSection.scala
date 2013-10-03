@@ -23,11 +23,11 @@ object NavSection {
     rc.requester map { user =>
       NavSection("Logged in as " + user.name, Seq(
         NavLink("Your Spaces", routes.Application.spaces),
-        NavLink("Log out", routes.Application.logout)
+        NavLink("Log out", routes.LoginController.logout)
       ))
     } getOrElse {
       NavSection("Not logged in", Seq(
-        NavLink("Log in", routes.Application.login)
+        NavLink("Log in", routes.LoginController.login)
       ))
     }    
   }

@@ -5,7 +5,7 @@
 # Home page
 GET     /                           controllers.Application.index
 GET     /robots.txt					controllers.Application.robots
-GET     /login                      controllers.Application.login
+GET     /login                      controllers.LoginController.login
 GET     /spaces                     controllers.Application.spaces
 GET     /newSpace                   controllers.Application.newSpace
 POST    /doNewSpace                 controllers.Application.doNewSpace
@@ -30,9 +30,9 @@ GET     /u/:userName/:spaceId/upload      controllers.Application.upload(userNam
 POST    /u/:userName/:spaceId/upload      controllers.Application.doUpload(userName, spaceId)
 
 GET     /u/:userName/:spaceId/_sharing    controllers.Application.sharing(userName, spaceId)
-POST    /u/:userName/:spaceId/_inviteMembers controllers.Application.inviteMembers(userName, spaceId)
-GET     /u/:userName/:spaceId/_handleInvite controllers.Application.handleInvite(userName, spaceId)
-POST    /u/:userName/:spaceId/_signup     controllers.Application.signup(userName, spaceId)
+POST    /u/:userName/:spaceId/_inviteMembers controllers.LoginController.inviteMembers(userName, spaceId)
+GET     /u/:userName/:spaceId/_handleInvite controllers.LoginController.handleInvite(userName, spaceId)
+POST    /u/:userName/:spaceId/_signup     controllers.LoginController.signup(userName, spaceId)
 
 GET     /u/:userName/:spaceId/export controllers.Application.exportThing(userName, spaceId, thingId)
 
@@ -47,8 +47,8 @@ GET     /u/:userName/:spaceId/a/:attachmentId controllers.Application.attachment
 GET     /u/:userName/:spaceId/*thingId    controllers.Application.thing(userName, spaceId, thingId)
 
 
-POST    /dologin                    controllers.Application.dologin
-GET     /logout                     controllers.Application.logout
+POST    /dologin                    controllers.LoginController.dologin
+GET     /logout                     controllers.LoginController.logout
 
 # AJAX test stuff:
 GET     /showTestAjax               controllers.Application.showTestAjax

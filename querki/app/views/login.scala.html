@@ -12,7 +12,7 @@
 	<p>If you have a Querki login and password, please give them here. If don't have one, but you were sent an email invitation to a specific
 	Querki Space, please go that that email and click one of the links in that -- that link should log you in to Querki.</p>
 	
-	@form(routes.Application.dologin, 'class -> "form-inline") {
+	@form(routes.LoginController.dologin, 'class -> "form-inline") {
 	  <input type="text" name="name" id="name" value="" placeholder="Email Address">
 	  <input type="password" name="password" value="" placeholder="Password">
 	  <input type="submit" value="Log in" class="btn btn-primary">

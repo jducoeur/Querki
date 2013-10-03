@@ -6,6 +6,8 @@ import models._
 
 object QLog {
   
+  def error(message: => String, error: => Throwable) = Logger.error(message, error)
+  
   def spew(msg:String) = Logger.info("----> " + msg)
 
   def spewThing(t:Thing) = {

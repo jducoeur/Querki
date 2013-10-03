@@ -444,7 +444,7 @@ to add new Properties for any Person in your Space.
           updates = Map((personParam -> personIdStr), (identityEmail -> emailAddrStr))
         )
           yield rc.copy(sessionUpdates = rc.sessionUpdates ++ rc.returnToHereUpdate ++ updates,
-              redirectTo = Some(controllers.routes.Application.handleInvite(rc.ownerHandle, rc.state.get.toThingId)))
+              redirectTo = Some(controllers.routes.LoginController.handleInvite(rc.ownerHandle, rc.state.get.toThingId)))
               
       // This gets picked up in Application.withSpace(), and redirected as necessary.
       rcOpt.getOrElse(rc)

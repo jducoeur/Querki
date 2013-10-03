@@ -54,7 +54,7 @@
             </div>
           </div>
         
-	    @form(routes.Application.inviteMembers(rc.ownerHandle, space.toThingId.toString), 'class -> "") {
+	    @form(routes.LoginController.inviteMembers(rc.ownerHandle, space.toThingId.toString), 'class -> "") {
           <div class="control-group">
             <label class="control-label">Who to Invite (enter email addresses, comma-separated)</label>
             <div class="controls">
