@@ -22,6 +22,21 @@ import play.api.Logger
 object AccessControl {
   import modules.Modules.AccessControl._
   
+  // TBD: this checks whether this person is a Member based on the Person records in the Space. Should we use
+  // the SpaceMembership table instead? In general, there is a worrying semantic duplication here. We should
+  // probably clarify the meaning of the Person record vs. the row in SpaceMembership.
+  def isMember(who:User, state:SpaceState):Boolean = {
+    implicit val s = state
+    val members = state.descendants(modules.Modules.Person.person.id, false, true)
+    members.exists { person =>
+      val personIdentityOpt = person.getPropOpt(modules.Modules.Person.identityLink)
+      personIdentityOpt.map { personIdentity =>
+        val oid = personIdentity.first
+        who.hasIdentity(oid)
+      }.getOrElse(false)
+    }
+  }
+  
   // TODO: this needs to become *much* more complete. But it's a start -- for the given permission,
   // we check whether it is defined on the Thing; if not, whether it is defined on the Space; and if
   // not, we use the provided default.
@@ -32,7 +47,7 @@ object AccessControl {
       implicit val s = state
       val (isLocalUser, whoId) = who match {
         case modules.Modules.Person.SpaceSpecificUser(_, _, _, spaceId, localId) => ((spaceId == state.id), localId)
-        case _ => (false, who.id)        
+        case _ => (isMember(who, state), who.id)        
       }
       
       val thingPermsOpt =
