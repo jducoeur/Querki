@@ -90,6 +90,7 @@ object LoginController extends ApplicationBase {
           case Some(user) => {
             // Yes. Am I already a member of this Space?
             if (querki.access.AccessControl.isMember(user, rc.state.get)) {
+              // Yes. Okay, just go the Space, since there's nothing to do here:
               Redirect(routes.Application.thing(ownerId, spaceId, spaceId))
             } else {
               // Not yet. Okay, go to joining the space:
@@ -158,8 +159,9 @@ object LoginController extends ApplicationBase {
       Action { implicit request =>
         if (user == User.Anonymous)
           Ok(views.html.login(RequestContext(request, None, UnknownOID, None, None)))
-        else
-          Redirect(routes.Application.index) 
+        else {
+          Redirect(routes.Application.index)
+        }
       }
     }
   
@@ -170,8 +172,14 @@ object LoginController extends ApplicationBase {
       form => {
         val userOpt = User.checkQuerkiLogin(form.name, form.password)
         userOpt match {
-          case Some(user) => Redirect(routes.Application.index).withSession(user.toSession:_*)
-          case None => doError(routes.LoginController.login, "I don't know who you are")
+          case Some(user) => {
+            val redirectOpt = rc.sessionCookie(rc.returnToParam)
+		    redirectOpt match {
+		      case Some(redirect) => Redirect(redirect).withSession(user.toSession:_*)
+		      case None => Redirect(routes.Application.index).withSession(user.toSession:_*)
+		    }
+          }
+          case None => doError(routes.LoginController.login, "Login failed. Please try again.")
         }
       }
     )

@@ -52,7 +52,7 @@ object Application extends ApplicationBase {
 
   def index = withUser(false) { rc =>
     Ok(views.html.index(rc))
-  }    
+ }    
   
   // TODO: in the long run, we will want spidering of the main system pages, and allow users to
   // choose to have their pages indexed. We're quite a ways from that, though.
