@@ -85,8 +85,18 @@ object LoginController extends ApplicationBase {
     val emailOpt = rc.sessionCookie(modules.Modules.Person.identityEmail)
     emailOpt match {
       case Some(email) => {
-        val startForm = SignupInfo(email, "", "", "")
-        Ok(views.html.handleInvite(rc, signupForm.fill(startForm)))
+        // Okay, it's a legitimate invitation. Is this a signed-in user?
+        rc.requester match {
+          case Some(user) => {
+            // Yes. Okay, go to joining the space:
+            Ok(views.html.joinSpace(rc))
+          }
+          case None => {
+            // Nope. Let them sign up for Querki. This will loop through to signup, below:
+            val startForm = SignupInfo(email, "", "", "")
+            Ok(views.html.handleInvite(rc, signupForm.fill(startForm)))
+          }
+        }
       }
       case None => doError(routes.Application.index, "For now, you can only sign up for Querki through an invitation. Try again soon.")
     }
@@ -100,21 +110,41 @@ object LoginController extends ApplicationBase {
         BadRequest(views.html.handleInvite(rc, errorForm))
       },
       info => {
-        val result = User.createProvisional(info)
-        result match {
-          case Success(user) => {
-            Redirect(routes.Application.index).withSession(user.toSession:_*)
-          }
-          case Failure(error) => {
-            val msg = error match {
-              case err:PublicException => err.display(request)
-              case _ => QLog.error("Internal Error during signup", error); "Something went wrong; please try again"
-            }
-            BadRequest(views.html.handleInvite(rc.withError(msg), rawForm))
-          }
-        }
+        // Make sure we have a Person in a Space in the cookies -- that is required for a legitimate request
+    	val personOpt = rc.sessionCookie(modules.Modules.Person.personParam)
+    	personOpt match {
+    	  case Some(personId) => {
+	    	val result = User.createProvisional(info)
+	        result match {
+	          case Success(user) => {
+	            // TODO: go to join space!
+	            // We're now logged in, so start a new session. But preserve the personParam for the next step:
+	            Redirect(routes.LoginController.joinSpace(ownerId, spaceId)).withSession(user.toSession :+ (modules.Modules.Person.personParam -> personId):_*)
+	          }
+	          case Failure(error) => {
+	            val msg = error match {
+	              case err:PublicException => err.display(request)
+	              case _ => QLog.error("Internal Error during signup", error); "Something went wrong; please try again"
+	            }
+	            BadRequest(views.html.handleInvite(rc.withError(msg), rawForm))
+	          }
+	        }    	    
+    	  }
+    	  case None => doError(routes.Application.index, "For now, you can only sign up for Querki through an invitation. Try again soon.")
+    	}
       }
     )
+  }
+  
+  def joinSpace(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
+    val joinOpt = modules.Modules.Person.acceptInvitation(rc) {
+      case ThingFound(id, state) => Redirect(routes.Application.thing(ownerId, spaceId, spaceId))
+      case ThingFailed(error, msg, stateOpt) => doError(routes.Application.index, "Something went wrong adding you to the Space -- sorry!")
+    }
+    joinOpt match {
+      case Some(f) => Async { f }
+      case None => doError(routes.Application.index, "Something went wrong during joining -- sorry!")
+    }
   }
   
   // TODO: that onUnauthorized will infinite-loop if it's ever invoked. What should we do instead?

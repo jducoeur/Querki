@@ -5,6 +5,7 @@ import akka.pattern._
 import akka.util.Timeout
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.concurrent.Future
 
 import models._
 import models.Space.oidMap
@@ -449,5 +450,28 @@ to add new Properties for any Person in your Space.
       // This gets picked up in Application.withSpace(), and redirected as necessary.
       rcOpt.getOrElse(rc)
     }
+  }
+  
+  /**
+   * This checks all the preconditions, and sends a request off to the SpaceManager to attach the
+   * local Person record to the Identity. If it all succeeds, this will eventually produce a ThingFound(personId, state).
+   */
+  def acceptInvitation[B](rc:RequestContext)(cb:ThingResponse => B):Option[Future[B]] = {
+    for (
+      personIdStr <- rc.sessionCookie(personParam);
+      personId = OID(personIdStr);
+      state <- rc.state;
+      person <- state.anything(personId);
+      user <- rc.requester;
+      // TODO: currently, we're just taking the first identity, arbitrarily. But in the long run, I should be able
+      // to choose which of my identities is joining this Space:
+      identity <- user.identityBy(_ => true);
+      membershipResult = User.addSpaceMembership(identity.id, state.id);
+      changeRequest = ChangeProps(SystemUser, state.owner, state.id, person.toThingId, 
+          toProps(
+            identityLink(identity.id),
+            DisplayNameProp(identity.name))())
+    )
+      yield SpaceManager.ask[ThingResponse, B](changeRequest)(cb)
   }
 }

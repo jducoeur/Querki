@@ -74,6 +74,19 @@ trait User {
 
 case class FullUser(id:OID, name:String, identities:Seq[Identity] = Seq.empty, level:UserLevel = UnknownUserLevel) extends User
 
+// Internal System User. This should be used for making internal changes to Spaces that are *not* under the
+// aegis of the requesting user. 
+//
+// USE WITH EXTREME CAUTION! Don't mess with this if you don't understand it! The SystemUser has essentially
+// unlimited rights, so should only be invoked when we are intentionally doing something on the user's
+// behalf that they cannot do themselves. That automatically requires a security audit.
+case object SystemUser extends User {
+  val id = models.system.OIDs.SystemUserOID
+  val name = "SystemUser"
+  val identities = Seq.empty
+  val level = AdminUser
+}
+
 object SqlHelpers {
   /**
    * A simple pimped type to make SqlRow slightly less unpleasant to use.
@@ -231,7 +244,7 @@ object User {
   // Note that this assumes that the ID identifies a valid Identity.
   // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
   def getName(id:OID):String = {
-    val query = userLoadSqlWhere("id={id}").on("id" -> id.raw)
+    val query = userLoadSqlWhere("Identity.id={id}").on("id" -> id.raw)
     getUser(query).flatMap(_.identityById(id)).map(_.name).getOrElse(id.toThingId.toString)
   }
   
@@ -310,6 +323,20 @@ object User {
     // TBD: this fails if I try to do it in the same transaction. Why?
     checkQuerkiLogin(info.handle, info.password).getOrElse(throw new Exception("Unable to load newly-created Identity!"))
   }
+  
+  
+  def addSpaceMembership(identityId:OID, spaceId:OID):Boolean = {
+    DB.withConnection(dbName(System)) { implicit conn =>
+      val insert = SQL("""
+          INSERT SpaceMembership
+            (identityId, spaceId)
+            VALUES
+            ({identityId}, {spaceId})
+          """).on("identityId" -> identityId.raw, "spaceId" -> spaceId.raw)
+      insert.execute
+    }
+  }
+  
 }
 
 object IdentityKind {

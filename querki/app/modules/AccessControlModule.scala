@@ -26,7 +26,7 @@ object AccessControl {
   // we check whether it is defined on the Thing; if not, whether it is defined on the Space; and if
   // not, we use the provided default.
   def hasPermission(aclProp:Property[OID,_], state:SpaceState, who:User, thingId:OID, default:Boolean, publicAllowed:Boolean):Boolean = {
-    if (who.hasIdentity(state.owner))
+    if (who.hasIdentity(state.owner) || who.id == SystemUserOID)
       true
     else {
       implicit val s = state
