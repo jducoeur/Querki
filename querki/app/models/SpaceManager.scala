@@ -54,12 +54,12 @@ class SpaceManager extends Actor {
     case req:ListMySpaces => {
       //val results = spaceCache.values.filter(_.owner == req.owner).map(space => (space.id, space.name)).toSeq
       if (req.owner == SystemUserOID)
-        sender ! MySpaces(Seq((AsName("System"), AsOID(systemOID), State.name, AsName("systemUser"))))
+        sender ! MySpaces(Seq(SpaceDetails(AsName("System"), systemOID, State.name, AsName("systemUser"))), Seq.empty)
       else {
         // TODO: this involves DB access, so should be async using the Actor DSL
         // Note that Spaces are now indexed by Identity, so we need to indirect
         // through that table. (Since our parameter is User OID.)
-        val results = DB.withConnection(dbName(System)) { implicit conn =>
+        val mySpaces = DB.withConnection(dbName(System)) { implicit conn =>
           val spaceStream = SQL("""
               SELECT Spaces.id, Spaces.name, display, Identity.handle FROM Spaces
                 JOIN Identity ON userid={owner}
@@ -72,10 +72,32 @@ class SpaceManager extends Actor {
             // TODO: this is clearly wrong -- eventually, we will allow handle to be NULL. So we need to also
             // fetch Identity.id, and ThingId that if we don't find a handle:
             val ownerHandle = row.get[String]("handle").get
-            (AsName(name), AsOID(id), display, AsName(ownerHandle))
+            SpaceDetails(AsName(name), id, display, AsName(ownerHandle))
           }
         }
-        sender ! MySpaces(results)
+        val memberOf = DB.withConnection(dbName(System)) { implicit conn =>
+          // Note that this gets a bit convoluted, by necessity. We are coming in through a User;
+          // translating that to Identities; getting all of the Spaces that those Identities are members of;
+          // then getting the Identities that own those Spaces so we can get their handles. Hence the
+          // need to alias the Identity table.
+          val spaceStream = SQL("""
+              SELECT Spaces.id, Spaces.name, display, OwnerIdentity.handle FROM Spaces
+                JOIN Identity AS RequesterIdentity ON userid={owner}
+                JOIN SpaceMembership ON identityId=RequesterIdentity.id
+                JOIN Identity AS OwnerIdentity ON OwnerIdentity.id=Spaces.owner
+              WHERE Spaces.id = SpaceMembership.spaceId
+              """).on("owner" -> req.owner.raw)()
+          spaceStream.force.map { row =>
+            val id = OID(row.get[Long]("id").get)
+            val name = row.get[String]("name").get
+            val display = row.get[String]("display").get
+            // TODO: this is clearly wrong -- eventually, we will allow handle to be NULL. So we need to also
+            // fetch Identity.id, and ThingId that if we don't find a handle:
+            val ownerHandle = row.get[String]("handle").get
+            SpaceDetails(AsName(name), id, display, AsName(ownerHandle))
+          }
+        }
+        sender ! MySpaces(mySpaces, memberOf)
       }
     }
 

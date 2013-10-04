@@ -123,7 +123,6 @@ object LoginController extends ApplicationBase {
 	    	val result = User.createProvisional(info)
 	        result match {
 	          case Success(user) => {
-	            // TODO: go to join space!
 	            // We're now logged in, so start a new session. But preserve the personParam for the next step:
 	            Redirect(routes.LoginController.joinSpace(ownerId, spaceId)).withSession(user.toSession :+ (modules.Modules.Person.personParam -> personId):_*)
 	          }

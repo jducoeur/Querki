@@ -38,10 +38,15 @@ object ThingId {
 
 sealed trait SpaceMgrMsg
 
+// TBD: this arguably doesn't belong to SpaceManager. There is no serious reason why it needs to
+// go through SpaceManager, since it doesn't get routed to a Space, and so efficiency, if nothing
+// else, argues for having something else resposible for it. Indeed, it isn't even strictly
+// clear that it needs to go through a separate Actor at all -- we *could* deal with this
+// at the tip.
 case class ListMySpaces(owner:OID) extends SpaceMgrMsg
 sealed trait ListMySpacesResponse
-// TODO: spaces really need a structure here, instead of this unwieldy tuple:
-case class MySpaces(spaces:Seq[(AsName,AsOID,String,ThingId)]) extends ListMySpacesResponse
+case class SpaceDetails(handle:ThingId, id:OID, display:String, ownerHandle:ThingId)
+case class MySpaces(ownedByMe:Seq[SpaceDetails], memberOf:Seq[SpaceDetails]) extends ListMySpacesResponse
 
 // This responds eventually with a ThingFound:
 case class CreateSpace(owner:OID, name:String) extends SpaceMgrMsg

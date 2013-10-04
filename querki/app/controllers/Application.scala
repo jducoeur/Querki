@@ -66,7 +66,7 @@ disallow: /
 
   def spaces = withUser(true) { rc => 
     askSpaceMgr[ListMySpacesResponse](ListMySpaces(rc.requester.get.id)) { 
-      case MySpaces(list) => Ok(views.html.spaces(rc, list))
+      case MySpaces(mySpaces, memberOf) => Ok(views.html.spaces(rc, mySpaces, memberOf))
     }
   }
     
@@ -661,17 +661,18 @@ disallow: /
     Ok(export).as(MIMEType.JSON)
   }
 
-  def userByName(userName:String) = {
-    // TBD: Note that, for now at least, this simply returns my own spaces. I'm leery about
-    // allowing people to see each other's spaces too casually.
-    // TBD: is this the appropriate response to, say, "http://querki.net/jducoeur/"? Or
-    // should this show the profile page instead?
-    withUser(true) { rc => 
-      askSpaceMgr[ListMySpacesResponse](ListMySpaces(rc.requester.get.id)) { 
-        case MySpaces(list) => Ok(views.html.spaces(rc, list))
-      }
-    }    
-  }
+  // TODO: this should be replaced by a profile page.
+//  def userByName(userName:String) = {
+//    // TBD: Note that, for now at least, this simply returns my own spaces. I'm leery about
+//    // allowing people to see each other's spaces too casually.
+//    // TBD: is this the appropriate response to, say, "http://querki.net/jducoeur/"? Or
+//    // should this show the profile page instead?
+//    withUser(true) { rc => 
+//      askSpaceMgr[ListMySpacesResponse](ListMySpaces(rc.requester.get.id)) { 
+//        case MySpaces(list) => Ok(views.html.spaces(rc, list))
+//      }
+//    }    
+//  }
   
   def sharing(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
     Ok(views.html.sharing(rc))

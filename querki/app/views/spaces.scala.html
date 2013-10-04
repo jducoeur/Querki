@@ -1,4 +1,6 @@
-@(rc:RequestContext, spaces:Seq[(AsName,AsOID,String,ThingId)])
+@(rc:RequestContext, mySpaces:Seq[SpaceDetails], memberOf:Seq[SpaceDetails])
+
+@import models.SpaceDetails
 
 @user = @{ rc.requester.get }
 
@@ -8,12 +10,24 @@
 	  <h1>Your Spaces</h1>
 	</div>
 	
-    <div class="well">
-    	<ul>
-        @for(space <- spaces) {
-            <li><a href="/u/@space._4/@space._1/">@space._3</a> (<a href="/u/@space._4/@space._2/">Hard link</a>)</li>
-        }
-        </ul>
+	<div class="row-fluid">
+	  <div class="span6">
+		<h3>Spaces You Own</h3>
+		<ul>
+	    @for(space <- mySpaces) {
+	        <li><a href="/u/@space.ownerHandle/@space.handle/">@space.display</a></li>
+	    }
+	    </ul>
+      </div>
+      
+	  <div class="span6">
+		<h3>Spaces You are a Member of</h3>
+		<ul>
+	    @for(space <- memberOf) {
+	        <li><a href="/u/@space.ownerHandle/@space.handle/">@space.display</a></li>
+	    }
+	    </ul>
+      </div>
     </div>
     
     <p><a href="/newSpace" class="btn btn-primary">Create a new Space</a></p>
