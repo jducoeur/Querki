@@ -65,8 +65,12 @@ class ApplicationBase extends Controller {
   // return something:
   def forceUser(request: RequestHeader) = userFromSession(request) orElse Some(User.Anonymous)
 
-  // TODO: preserve the page request, and go there after they log in
-  def onUnauthorized(request: RequestHeader) = Results.Redirect(routes.LoginController.login)
+  def onUnauthorized(request: RequestHeader) = {
+    // Send them over to the login page, but record that we want to return to this page
+    // once they do log in:
+    val rc = new RequestHeaderParser(request, returnToHere = true)
+    rc.updateSession(Redirect(routes.LoginController.login))
+  }
 
   // Fetch the User from the session, or User.Anonymous if they're not found.
   def withAuth(f: => User => Request[AnyContent] => Result):EssentialAction = {

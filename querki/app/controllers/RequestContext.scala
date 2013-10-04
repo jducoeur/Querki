@@ -6,7 +6,9 @@ import models._
 import language.implicitConversions
 import querki.identity.User
 
-class RequestHeaderParser(request:RequestHeader) {
+class RequestHeaderParser(request:RequestHeader,
+    sessionUpdates:Seq[(String,String)] = Seq.empty,
+    returnToHere:Boolean = false) {
   def hasQueryParam(paramName:String) = request.queryString.contains(paramName)
   def queryParam(paramName:String):Seq[String] = if (hasQueryParam(paramName)) request.queryString(paramName) else Seq.empty
   def firstQueryParam(paramName:String):Option[String] = {
@@ -15,6 +17,28 @@ class RequestHeaderParser(request:RequestHeader) {
   }
   def paramIs(paramName:String, value:String) = hasQueryParam(paramName) && firstQueryParam(paramName).map(_ == value).getOrElse(false)
   def isTrue(paramName:String) = paramIs(paramName, "true")  
+  
+  // Mechanism for returning to this request after a redirect. Add this to the sessionUpdates if you
+  // will want to come back here.
+  val returnToParam = "returnTo"
+  def returnToHereUpdate = Map((returnToParam -> request.path))
+  
+  def updateSession(result:Result):Result = {
+    // TODO: the "allSessionUpdates" below was mainly to support the old chromeless mechanism, which is currently
+    // deprecated. We may want to reintroduce something similar eventually, but not now.
+    val updates = 
+      if (returnToHere)
+        sessionUpdates ++ returnToHereUpdate
+      else
+        sessionUpdates //allSessionUpdates
+    if (updates.isEmpty)
+      result
+    else {
+      val newSession = (request.session /: updates) ((sess, update) => sess + (update._1 -> update._2))
+      result.withSession(newSession)
+    }
+  }
+  
 }
 
 /**
@@ -44,7 +68,7 @@ case class RequestContext(
     thing:Option[Thing],
     error:Option[String] = None,
     sessionUpdates:Seq[(String,String)] = Seq.empty,
-    redirectTo:Option[Call] = None) extends RequestHeaderParser(request) {
+    redirectTo:Option[Call] = None) extends RequestHeaderParser(request, sessionUpdates) {
   def requesterOrAnon = requester getOrElse User.Anonymous
   def requesterOID = requester map (_.id) getOrElse UnknownOID  
   def ownerHandle = state map Application.ownerHandle getOrElse ""
@@ -62,10 +86,7 @@ case class RequestContext(
   
   def sessionCookie(name:String) = request.session.get(name)
   
-  // Mechanism for returning to this request after a redirect. Add this to the sessionUpdates if you
-  // will want to come back here.
-  val returnToParam = "returnTo"
-  def returnToHereUpdate = Map((returnToParam -> request.path))
+  def returningToHere = copy(sessionUpdates = sessionUpdates ++ returnToHereUpdate)
   
   // TODO: these probably don't belong here in the long run:
   val chromelessName = "cl"
@@ -97,16 +118,6 @@ case class RequestContext(
     // TBD: I should be able to write this as a for comprehension, but I'm doing
     // something wrong in the syntax. Fix it:
     state.flatMap(space => propStr.flatMap(id => space.prop(ThingId(id))))
-  }
-  
-  def updateSession(result:Result):Result = {
-    val updates = allSessionUpdates
-    if (updates.isEmpty)
-      result
-    else {
-      val newSession = (request.session /: updates) ((sess, update) => sess + (update._1 -> update._2))
-      result.withSession(newSession)
-    }
   }
   
   def withError(err:String) = copy(error = Some(err))
