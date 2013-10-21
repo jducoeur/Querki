@@ -88,7 +88,12 @@ disallow: /
   }
   
   def newSpace = withUser(true) { rc =>
-    Ok(views.html.newSpace(rc))
+    if (rc.requesterOrAnon.canOwnSpaces) {
+      Ok(views.html.newSpace(rc))
+    } else {
+      // TODO: internationalize this error message
+      doError(routes.Application.index, "You aren't yet allowed to create Spaces")
+    }
   }
   
   def doNewSpace = withUser(true) { rc =>

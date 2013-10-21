@@ -70,6 +70,12 @@ trait User {
   
   def identityByHandle(handle:String) = identityBy(_.handle.equalsIgnoreCase(handle))
   def identityById(identityId:OID) = identityBy(_.id == identityId)
+  
+  /**
+   * This defines whether this User is allowed to own Spaces or not. Basically, Pending Users aren't
+   * allowed to create or receive Spaces.
+   */
+  def canOwnSpaces = level >= FreeUser
 }
 
 case class FullUser(id:OID, name:String, identities:Seq[Identity] = Seq.empty, level:UserLevel = UnknownUserLevel) extends User

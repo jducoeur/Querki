@@ -1,6 +1,7 @@
 @(rc:RequestContext, mySpaces:Seq[SpaceDetails], memberOf:Seq[SpaceDetails])
 
 @import models.SpaceDetails
+@import querki.identity.UserLevel._
 
 @user = @{ rc.requester.get }
 
@@ -30,5 +31,7 @@
       </div>
     </div>
     
-    <p><a href="/newSpace" class="btn btn-primary">Create a new Space</a></p>
+    @if(rc.requesterOrAnon.canOwnSpaces) {
+      <p><a href="/newSpace" class="btn btn-primary">Create a new Space</a></p>
+    }
 }
