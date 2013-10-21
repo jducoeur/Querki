@@ -76,6 +76,8 @@ trait User {
    * allowed to create or receive Spaces.
    */
   def canOwnSpaces = level >= FreeUser
+  
+  def isAdmin = (level == AdminUser || level == SuperadminUser)
 }
 
 case class FullUser(id:OID, name:String, identities:Seq[Identity] = Seq.empty, level:UserLevel = UnknownUserLevel) extends User
@@ -154,7 +156,18 @@ object User {
    * This is going to be a hassle, so don't be half-assed about it: better to do it right once, than
    * spend a bunch of effort on an optimization we don't need yet. Make sure it winds up thread-safe,
    * which is not a small issue, and deal with making all of this properly asynchronous while we're at it.
+   * 
+   * TBD: is this the right way to do it? Or should we instead be caching at a higher semantic level?
+   * That might actually make more sense. Do some profiling of how we are using these records, to see.
    */
+  
+  private def rowToUser(row:SqlRow):User = {
+    val email = EmailAddress(row.string("email"))
+    val identityOID = row.oid("id")
+    FullUser(row.oid("userId"), row.string("name"),
+      Seq(Identity(identityOID, email, row.string("authentication"), row.string("handle"), row.string("name"), IdentityKind.QuerkiLogin)),
+      row.int("level"))
+  }
   
   private def getUser(query:Sql, checkOpt:Option[User => Boolean] = None):Option[User] = {
     // TODO: check the cache? Or should that be done at the semantic levels below?
@@ -163,12 +176,13 @@ object User {
     DB.withConnection(dbName(System)) { implicit conn =>
       val result = query()
       result.headOption.flatMap { row =>
-        val email = EmailAddress(row.string("email"))
-        val identityOID = row.oid("id")
-        // Create the User record
-        val user = FullUser(row.oid("userId"), row.string("name"),
-          Seq(Identity(identityOID, email, row.string("authentication"), row.string("handle"), row.string("name"), IdentityKind.QuerkiLogin)),
-          row.int("level"))
+//        val email = EmailAddress(row.string("email"))
+//        val identityOID = row.oid("id")
+//        // Create the User record
+        val user = rowToUser(row)
+//          FullUser(row.oid("userId"), row.string("name"),
+//          Seq(Identity(identityOID, email, row.string("authentication"), row.string("handle"), row.string("name"), IdentityKind.QuerkiLogin)),
+//          row.int("level"))
         
         // If this is conditional -- for example, if this is login, and we need to authenticate --
         // then do the check before returning the found user
@@ -199,6 +213,22 @@ object User {
     val handle = system.NameType.canonicalize(rawHandle)
     val personQuery = userLoadSqlWhere("""handle={handle} and kind={loginKind}""").on("handle" -> handle, "loginKind" -> IdentityKind.QuerkiLogin)
     getUser(personQuery, checkOpt)
+  }
+  
+  /**
+   * WARNING: this should only be called in the context of an admin call!
+   */
+  def getAllForAdmin(requester:User):Seq[User] = {
+    // Belt and suspenders: double-check that the requester is authorized for this
+    if (requester.isAdmin) {
+      val userQuery = userLoadSqlWhere("""User.level != 0""")
+      DB.withConnection(dbName(System)) { implicit conn =>
+        val result = userQuery()
+        result.map { rowToUser(_) }
+      }
+    } else {
+      Seq.empty
+    }
   }
   
   /**

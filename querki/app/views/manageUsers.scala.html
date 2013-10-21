@@ -1,0 +1,19 @@
+@(rc:RequestContext, users:Seq[querki.identity.User])
+
+@import helper._
+@import helper.twitterBootstrap._
+
+@pageTitle = @{
+  "ADMIN: Manage Users"
+}
+
+@main(QuerkiTemplate.View, pageTitle, rc) {
+
+  <div class="page-header">
+	<h1 class="_defaultTitle">@pageTitle <a class="cancelButton btn" href="@routes.Application.index">Done</a></h1>
+  </div>
+  
+  <div class="row">
+
+  </div>
+}

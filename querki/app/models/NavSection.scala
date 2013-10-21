@@ -95,8 +95,16 @@ object NavSection {
         None
       else
         Some(NavSection("Actions", actionLinks))
+        
+    val adminSection =
+      if (rc.requesterOrAnon.isAdmin) {
+        Some(NavSection("Admin", Seq(
+          NavLink("Manage Users", routes.AdminController.manageUsers)
+        )))
+      } else
+        None
     
-    val sections = Seq(spaceSection, thingSection, actionSection).flatten
+    val sections = Seq(spaceSection, thingSection, actionSection, adminSection).flatten
     NavSections(sections)
   }
 }

@@ -52,6 +52,9 @@ GET     /u/:userName/:spaceId/*thingId    controllers.Application.thing(userName
 POST    /dologin                    controllers.LoginController.dologin
 GET     /logout                     controllers.LoginController.logout
 
+# Admin functionality
+GET     /admin/manageUsers          controllers.AdminController.manageUsers
+
 # AJAX test stuff:
 GET     /showTestAjax               controllers.Application.showTestAjax
 POST    /testAjax                   controllers.Application.testAjax(i1, i2)
