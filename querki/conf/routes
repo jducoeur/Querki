@@ -54,6 +54,8 @@ GET     /logout                     controllers.LoginController.logout
 
 # Admin functionality
 GET     /admin/manageUsers          controllers.AdminController.manageUsers
+GET     /admin/upgradePendingUser   controllers.AdminController.upgradePendingUser(userId)
+GET     /adminJs                    controllers.AdminController.javascriptRoutes
 
 # AJAX test stuff:
 GET     /showTestAjax               controllers.Application.showTestAjax

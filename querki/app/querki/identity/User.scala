@@ -99,6 +99,18 @@ trait User {
   def canOwnSpaces = level >= FreeUser
   
   def isAdmin = (level == AdminUser || level == SuperadminUser)
+  
+  /**
+   * If you have a function that is high-security, and should not be accessible by non-Admins, wrap the guts
+   * of the function in this. It is effectively a runtime assertion, but the expense is worth it for a bit
+   * of security protection against logic bugs.
+   */
+  def requireAdmin[T](f: => T):T = {
+    if (isAdmin)
+      f
+    else
+      throw new InternalException("Illegal attempt to call a function that requires admin rights. Caller is " + toThingId)
+  }
 }
 
 case class FullUser(id:OID, name:String, identities:Seq[Identity] = Seq.empty, level:UserLevel = UnknownUserLevel) extends User
@@ -239,16 +251,11 @@ object User {
   /**
    * WARNING: this should only be called in the context of an admin call!
    */
-  def getAllForAdmin(requester:User):Seq[User] = {
-    // Belt and suspenders: double-check that the requester is authorized for this
-    if (requester.isAdmin) {
-      val userQuery = userLoadSqlWhere("""User.level != 0""")
-      DB.withConnection(dbName(System)) { implicit conn =>
-        val result = userQuery()
-        result.map(rowToUser(_)).force
-      }
-    } else {
-      Seq.empty
+  def getAllForAdmin(requester:User):Seq[User] = requester.requireAdmin {
+    val userQuery = userLoadSqlWhere("""User.level != 0""")
+    DB.withConnection(dbName(System)) { implicit conn =>
+      val result = userQuery()
+      result.map(rowToUser(_)).force
     }
   }
   
@@ -394,6 +401,19 @@ object User {
     }
   }
   
+  def changeUserLevel(userId:OID, requester:User, level:UserLevel):Option[User] = requester.requireAdmin {
+    DB.withConnection(dbName(System)) { implicit conn =>
+      val update = SQL("""
+          UPDATE User
+             SET level={lv}
+           WHERE id={userId}
+          """).on("lv" -> level, "userId" -> userId.raw)
+      update.executeUpdate
+      
+      val userQuery = userLoadSqlWhere("""User.id={userId}""").on("userId" -> userId.raw)
+      getUser(userQuery)
+    }
+  }
 }
 
 object IdentityKind {

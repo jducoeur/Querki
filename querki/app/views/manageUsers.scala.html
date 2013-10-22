@@ -22,6 +22,29 @@
 
 @main(QuerkiTemplate.View, pageTitle, rc) {
 
+  <script type="text/javascript" src='@routes.AdminController.javascriptRoutes()'></script>
+  <script>
+  
+      function upgradePending(userId) {
+        adminJsRoutes.controllers.AdminController.upgradePendingUser(userId).ajax({
+	      success: function (result) {
+	        showStatus("Upgraded");
+	      },
+	      error: function (err) {
+	        showStatus("Error in upgrading!");
+	      }
+	    });      
+      }
+
+      $(function() {
+        $(".upgradeButton").click(function() {
+          var userId = $(this).data("userid");
+          upgradePending(userId);
+        })
+      });
+  
+  </script>
+
   <div class="page-header">
 	<h1 class="_defaultTitle">@pageTitle <a class="cancelButton btn" href="@routes.Application.index">Done</a></h1>
   </div>
@@ -38,7 +61,11 @@
           <tr class="@userDisplayClass(user)">
             <td>@identity.handle</td>
             <td>@identity.email</td>
-            <td>@user.levelName</td>
+            <td>@user.levelName
+            @if(user.level == PendingUser) { 
+              <input type="button" class="btn upgradeButton" value="Upgrade" title="Click to upgrade @identity.handle to Full (Free) User Status" data-userid="@user.id.toString"/>
+            }
+            </td>
           </tr>
         }
       }</tbody>
