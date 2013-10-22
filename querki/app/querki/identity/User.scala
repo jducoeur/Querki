@@ -31,6 +31,17 @@ object UserLevel {
   val AdminUser = 10
   
   val SuperadminUser = 100
+  
+  def levelName(level:UserLevel) = level match {
+    case PendingUser => "pending"
+    case FreeUser => "free"
+    case PaidUser => "paid"
+    case PermanentUser => "permanent"
+    case AdminUser => "admin"
+    case SuperadminUser => "superadmin"
+      
+    case _ => "Unknown: " + level.toString
+  }
 }
 
 import UserLevel._
@@ -43,6 +54,8 @@ trait User {
   def name:String
   def identities:Seq[Identity]
   def level:UserLevel
+  
+  def levelName:String = UserLevel.levelName(level)
   
   // TODO: this probably needs to be rethought. It is what we current use for Security.username,
   // but won't exist for non-login accounts. So we need to be able to do other things for those.
@@ -70,6 +83,14 @@ trait User {
   
   def identityByHandle(handle:String) = identityBy(_.handle.equalsIgnoreCase(handle))
   def identityById(identityId:OID) = identityBy(_.id == identityId)
+  
+  // TODO: this is a bit crude so far, and doesn't cope with the notion that I might have
+  // multiple logins. But it's a useful shortcut to start.
+  // WARNING: should only be used by Admin!!!
+  def loginIdentity = identityBy(_.kind == IdentityKind.QuerkiLogin)
+  // TODO: this is a rough and ready concept of "give me the most interesting identity for this User".
+  // WARNING: should only be used by Admin!!!
+  def mainIdentity = loginIdentity getOrElse identityBy(_ => true).get
   
   /**
    * This defines whether this User is allowed to own Spaces or not. Basically, Pending Users aren't
@@ -224,7 +245,7 @@ object User {
       val userQuery = userLoadSqlWhere("""User.level != 0""")
       DB.withConnection(dbName(System)) { implicit conn =>
         val result = userQuery()
-        result.map { rowToUser(_) }
+        result.map(rowToUser(_)).force
       }
     } else {
       Seq.empty
