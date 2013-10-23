@@ -262,6 +262,15 @@ class EmailModule(val moduleId:Short) extends modules.Module {
 	    
 	      val msg = new MimeMessage(session)
 	      msg.setFrom(new InternetAddress(from))
+	      
+	      // Note that emails are sent with the ReplyTo set to whoever asked for this email to be generated.
+	      // You are responsible for your own emails.
+	      // TODO: This will need to get more intelligent about the identity to use for the ReplyTo: it should
+	      // use the requester's Identity that is being used for *this* Space. Right now, we're potentially
+	      // leaking the wrong email address. But it'll do to start.
+	      val requesterIdentity = context.request.requesterOrAnon.mainIdentity
+	      val replyAddrs = Array(new InternetAddress(requesterIdentity.email.addr, requesterIdentity.name).asInstanceOf[Address])
+	      msg.setReplyTo(replyAddrs)
 	
 	      msg.setRecipients(Message.RecipientType.TO, toAddrs)
 	    
