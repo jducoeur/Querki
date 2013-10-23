@@ -680,7 +680,10 @@ disallow: /
 //  }
   
   def sharing(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
-    Ok(views.html.sharing(rc))
+    if (rc.isOwner)
+      Ok(views.html.sharing(rc))
+    else
+      doError(routes.Application.index, "Only the owner of the Space is currently allowed to manage its security")
   }
 
   /**
