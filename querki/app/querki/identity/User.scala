@@ -14,6 +14,7 @@ import querki.db.ShardKind
 import ShardKind._
 
 import querki.util._
+import SqlHelpers._
 
 import modules.email.EmailAddress
 
@@ -127,21 +128,6 @@ case object SystemUser extends User {
   val identities = Seq.empty
   val level = AdminUser
 }
-
-object SqlHelpers {
-  /**
-   * A simple pimped type to make SqlRow slightly less unpleasant to use.
-   * 
-   * Note that these methods will all throw exceptions if the column isn't found! This is not designed
-   * to be gentle if the code and DB have somehow gotten out of sync.
-   */
-  implicit class EnhancedSqlRow(row:SqlRow) {
-    def string(name:String) = row.get[String](name).get
-    def oid(name:String) = OID(row.get[Long](name).get)
-    def int(name:String) = row.get[Int](name).get
-  }
-}
-import SqlHelpers._
 
 // TODO: given that this is full of methods that shouldn't be synchronous, this should
 // probably be implemented behind some worker actors instead.
@@ -414,6 +400,7 @@ object User {
       getUser(userQuery)
     }
   }
+
 }
 
 object IdentityKind {

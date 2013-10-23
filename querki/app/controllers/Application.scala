@@ -103,8 +103,8 @@ disallow: /
       errors => doError(routes.Application.newSpace, "You have to specify a legal space name"),
       name => {
         if (NameProp.validate(name)) {
-          askSpaceMgr[ThingResponse](CreateSpace(requester.id, name)) {
-            case ThingFound(_, state) => Redirect(routes.Application.space(requester.name, state.toThingId))
+          askSpaceMgr[ThingResponse](CreateSpace(requester, name)) {
+            case ThingFound(_, state) => Redirect(routes.Application.space(requester.mainIdentity.handle, state.toThingId))
             case ThingFailed(error, msg, stateOpt) => doError(routes.Application.newSpace, msg)
           }
         } else {

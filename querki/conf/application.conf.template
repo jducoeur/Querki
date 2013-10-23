@@ -29,6 +29,12 @@ querki {
   security {
     hashIterations : 20000
   }
+
+  # These are configuration parameters that are deliberately public-visible.
+  # BE CAREFUL HERE -- nothing at all private should go into this section!!!  
+  public {
+    maxSpaces : 2
+  }
 }
 
 # Secret key

@@ -1,6 +1,8 @@
 package models
 
 import language.postfixOps
+import scala.util._
+
 import system._
 import OIDs._
 
@@ -23,6 +25,11 @@ import play.api.Play.current
 import play.Configuration
 
 import SpaceError._
+
+import querki.identity.User
+
+import querki.util._
+import querki.util.SqlHelpers._
 
 class SpaceManager extends Actor {
   import models.system.SystemSpace
@@ -106,13 +113,18 @@ class SpaceManager extends Actor {
       // space creation, to avoid the just-barely-possible race condition of creating the
       // same name in two different sessions simultaneously. Extraordinarily unlikely, but
       // we should fix this.
-      val errorMsg = legalSpaceName(req.owner, req.name)
+      val errorMsg = legalSpaceName(req.requester, req.name)
       if (errorMsg.isEmpty) {
-        // TODO: check that the owner hasn't run out of spaces he can create
-        // TODO: this involves DB access, so should be async using the Actor DSL
-        val (spaceId, spaceActor) = createSpace(req.owner, req.name)
-        // Now, let the Space Actor finish the process once it is ready:
-        spaceActor.forward(req)
+        // check that the owner hasn't run out of spaces he can create
+        canCreateSpaces(req.requester) match {
+          case Failure(error) => sender ! ThingFailed(CreateNotAllowed, error.getMessage())
+          case _ => {
+            // TODO: this involves DB access, so should be async using the Actor DSL
+            val (spaceId, spaceActor) = createSpace(req.requester.mainIdentity.id, req.name)
+            // Now, let the Space Actor finish the process once it is ready:
+            spaceActor.forward(req)
+          }
+        }
       } else {
         sender ! errorMsg.get
       }
@@ -147,11 +159,13 @@ class SpaceManager extends Actor {
     }
   }
   
-  private def legalSpaceName(ownerId:OID, name:String):Option[ThingFailed] = {
+  private def legalSpaceName(owner:User, name:String):Option[ThingFailed] = {
     def numWithName = DB.withTransaction(dbName(System)) { implicit conn =>
       SQL("""
-          SELECT COUNT(*) AS c from Spaces WHERE owner = {ownerId} AND name = {name}
-          """).on("ownerId" -> ownerId.raw, "name" -> NameType.canonicalize(name)).apply().headOption.get.get[Long]("c").get
+          SELECT COUNT(*) AS c from Spaces 
+            JOIN Identity on userId={owner}
+           WHERE owner = Identity.id AND Spaces.name = {name}
+          """).on("owner" -> owner.id.raw, "name" -> NameType.canonicalize(name)).apply().headOption.get.get[Long]("c").get
     }
     if (!NameProp.validate(name))
       Some(ThingFailed(IllegalName, "That's not a legal name for a Space"))
@@ -160,6 +174,34 @@ class SpaceManager extends Actor {
       Some(ThingFailed(NameExists, "You already have a Space with that name"))
     } else
       None
+  }
+  
+  lazy val maxSpaces = Config.getInt("querki.public.maxSpaces", 5)
+  
+  /**
+   * This is the general check of whether this User is currently allowed to create more Spaces.
+   * 
+   * TODO: the messages in here *should* be PublicExceptions. But we can't do that until ThingFailed can take one of those.
+   */
+  def canCreateSpaces(owner:User):Try[Boolean] = Try {
+    if (owner.isAdmin)
+      // The limit only applies to normal users
+      true
+    else if (!owner.canOwnSpaces)
+      throw new Exception("You are not allowed to create Spaces until you are upgraded to being a full Querki User. We will send you an email when that happens.")
+    else DB.withConnection(dbName(System)) { implicit conn =>
+      val sql = SQL("""
+              SELECT COUNT(*) AS count FROM Spaces
+                JOIN Identity ON userid={owner}
+              WHERE owner = Identity.id
+              """).on("owner" -> owner.id.raw)
+      val row = sql().headOption
+      val numOwned = row.map(_.long("count")).getOrElse(throw new InternalException("Didn't get any rows back in canCreateSpaces!"))
+      if (numOwned < maxSpaces)
+        true
+      else
+        throw new Exception(s"You are only allowed to create $maxSpaces Spaces at this time. This limit will be raised in the future.")  
+    }
   }
   
   private def createSpace(owner:OID, display:String) = {

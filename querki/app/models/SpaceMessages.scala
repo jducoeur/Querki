@@ -49,7 +49,7 @@ case class SpaceDetails(handle:ThingId, id:OID, display:String, ownerHandle:Thin
 case class MySpaces(ownedByMe:Seq[SpaceDetails], memberOf:Seq[SpaceDetails]) extends ListMySpacesResponse
 
 // This responds eventually with a ThingFound:
-case class CreateSpace(owner:OID, name:String) extends SpaceMgrMsg
+case class CreateSpace(requester:User, name:String) extends SpaceMgrMsg
 
 /**
  * The base class for message that get routed to a Space. Note that owner is only relevant if
@@ -92,6 +92,8 @@ import SpaceError._
 // This is the most common response when you create/fetch any sort of Thing
 sealed trait ThingResponse
 case class ThingFound(id:OID, state:SpaceState) extends ThingResponse
+// TODO: this shouldn't be an error String, it should be a PublicException, which then gets internationalized against
+// the request:
 case class ThingFailed(error:SpaceError, msg:String, stateOpt:Option[SpaceState] = None) extends ThingResponse
 
 sealed trait AttachmentResponse
