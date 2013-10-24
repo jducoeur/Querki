@@ -32,6 +32,8 @@
       <ul class="nav nav-list affix">
         <li class="nav-header">Sharing</li>
         <li><a href="#sendInvitations">Send Invitations</a></li>
+        <li><a href="#invitees">Outstanding Invitations</a></li>
+        <li><a href="#members">Members</a></li>
         <li class="divider"></li>
         <li class="nav-header">Security</li>
       </ul>
@@ -72,6 +74,34 @@
           </div>
         }
       </section>
+      
+      <section id="invitees">
+        <h2>Outstanding Invitations</h2>
+        
+        <p>The following invitations have been sent but not yet accepted.</p>
+        
+        <table class="table table-hover">
+          @for(invitee <- space.descendants(modules.Modules.Person.MOIDs.PersonOID, false, true).filterNot(_.hasProp(modules.Modules.Person.identityLink)(space));
+               propVal <- invitee.getPropOpt(modules.Modules.Email.emailAddress)(space);
+               emailAddr <- propVal.firstOpt;
+               addr = emailAddr.addr) {
+            <tr class="warning"><td>@addr</td></tr>
+          }
+        </table>
+      </section>
+
+      <section id="members">
+        <h2>Members</h2>
+        
+        <p>The following people are members of this Space.</p>
+        
+        <table class="table table-hover">
+          @for(member <- space.descendants(modules.Modules.Person.MOIDs.PersonOID, false, true).filter(_.hasProp(modules.Modules.Person.identityLink)(space))) {
+            <tr class="info"><td>@member.displayName</td></tr>
+          }
+        </table>
+      </section>
+      
     </div>
   
   </div>
