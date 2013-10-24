@@ -302,3 +302,26 @@ case class SpaceState(
   }
 }
 
+object SpaceState {
+  /**
+   * Extra functionality that is sometimes useful to consider as part of the state, but isn't
+   * really part of the core concept. Factored out to keep the main SpaceState interface and dependencies decently clean.
+   * 
+   * By and large, if you find yourself tempted to add new dependencies to SpaceState, consider putting them
+   * here instead.
+   */
+  implicit class SpaceStateExtras(state:SpaceState) {
+    /**
+     * All the people who have been invited into this Space.
+     */
+    def people:Iterable[Thing] = state.descendants(modules.Modules.Person.MOIDs.PersonOID, false, true)
+    /**
+     * All the people who have been invited into this Space who have not yet accepted.
+     */
+    def invitees:Iterable[Thing] = people.filterNot(_.hasProp(modules.Modules.Person.identityLink)(state))
+    /**
+     * All the people who have joined this Space.
+     */
+    def members:Iterable[Thing] = people.filter(_.hasProp(modules.Modules.Person.identityLink)(state))
+  }
+}

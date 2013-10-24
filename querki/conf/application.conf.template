@@ -33,7 +33,10 @@ querki {
   # These are configuration parameters that are deliberately public-visible.
   # BE CAREFUL HERE -- nothing at all private should go into this section!!!  
   public {
-    maxSpaces : 2
+    # How many Spaces a normal user is allowed to own
+    maxSpaces : 5
+    # How many Members you can have in a Space
+    maxMembersPerSpace : 500
   }
 }
 

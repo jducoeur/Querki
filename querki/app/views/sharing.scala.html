@@ -6,6 +6,8 @@
 @import querki.html.HtmlRenderer
 @import modules.Modules
 
+@import models.SpaceState._
+
 @space = @{ rc.state.get }
 
 @pageTitle = @{
@@ -81,7 +83,7 @@
         <p>The following invitations have been sent but not yet accepted.</p>
         
         <table class="table table-hover">
-          @for(invitee <- space.descendants(modules.Modules.Person.MOIDs.PersonOID, false, true).filterNot(_.hasProp(modules.Modules.Person.identityLink)(space));
+          @for(invitee <- space.invitees;
                propVal <- invitee.getPropOpt(modules.Modules.Email.emailAddress)(space);
                emailAddr <- propVal.firstOpt;
                addr = emailAddr.addr) {
@@ -96,7 +98,7 @@
         <p>The following people are members of this Space.</p>
         
         <table class="table table-hover">
-          @for(member <- space.descendants(modules.Modules.Person.MOIDs.PersonOID, false, true).filter(_.hasProp(modules.Modules.Person.identityLink)(space))) {
+          @for(member <- space.members) {
             <tr class="info"><td>@member.displayName</td></tr>
           }
         </table>

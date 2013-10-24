@@ -44,6 +44,8 @@ object LoginController extends ApplicationBase {
     )(SignupInfo.apply)(SignupInfo.unapply)
   )
   
+  lazy val maxMembers = Config.getInt("querki.public.maxMembersPerSpace", 100)
+  
   def inviteMembers(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
     implicit val request = rc.request
     val rawForm = inviteForm.bindFromRequest
@@ -57,22 +59,29 @@ object LoginController extends ApplicationBase {
         doError(routes.Application.sharing(ownerId, spaceId), errorMsg) 
       },
       emailStrs => {
-        val context = QLRequestContext(rc)
-        
-        val invitees = emailStrs.map(modules.email.EmailAddress(_))
-        val result = modules.Modules.Person.inviteMembers(rc, invitees)
-        
-        val resultMsg = (
-          if (result.invited.length > 0)
-            "Sent invitations to " + result.invited.map(_.addr).mkString(", ") + ". "
-          else
-            ""
-        ) + (
-          if (result.alreadyInvited.length > 0)
-            "Already invited: " + result.alreadyInvited.map(_.addr).mkString(", ")
-          else
-            ""
-        )
+        val nCurrentMembers = rc.state.get.people.size
+        // TODO: internationalize these messages!
+        val resultMsg =
+	        if (!rc.requesterOrAnon.isAdmin && (nCurrentMembers + emailStrs.size) > maxMembers) {
+	          s"Sorry: at the moment you are limited to $maxMembers members per Space, and this would make more than that."
+	        } else {
+	          val context = QLRequestContext(rc)
+	        
+	          val invitees = emailStrs.map(modules.email.EmailAddress(_))
+	          val result = modules.Modules.Person.inviteMembers(rc, invitees)
+	        
+	          (
+	            if (result.invited.length > 0)
+	              "Sent invitations to " + result.invited.map(_.addr).mkString(", ") + ". "
+	            else
+	              ""
+	          ) + (
+	            if (result.alreadyInvited.length > 0)
+	              "Already invited: " + result.alreadyInvited.map(_.addr).mkString(", ")
+	            else
+	              ""
+	          )
+	        }
         
         Redirect(routes.Application.sharing(ownerId, spaceId)).flashing("info" -> resultMsg)
       }
