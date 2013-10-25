@@ -475,3 +475,23 @@ to add new Properties for any Person in your Space.
       yield SpaceManager.ask[ThingResponse, B](changeRequest)(cb)
   }
 }
+
+object PersonModule {
+  import modules.Modules.Person._
+  
+  /**
+   * Additional features of User, specifically for interacting with Person.
+   */
+  implicit class UserPersonEnhancements(user:User) {
+    def hasPerson(personId:OID)(implicit state:SpaceState):Boolean = {
+      val idOpt = for (
+        person <- state.anything(personId);
+        identityVal <- person.getPropOpt(identityLink);
+        identityId <- identityVal.firstOpt
+          )
+        yield identityId
+        
+      idOpt.map(user.hasIdentity(_)).getOrElse(false)
+    }
+  }
+}

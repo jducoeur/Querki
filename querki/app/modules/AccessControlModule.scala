@@ -11,6 +11,7 @@ import ql._
 import querki.values._
 
 import modules.Modules._
+import modules.person.PersonModule._
 
 import querki.identity.User
 
@@ -63,7 +64,7 @@ object AccessControl {
           true
         else if (isLocalUser && perms.contains(MOIDs.MembersTagOID))
           true
-        else if (perms.exists(who.hasIdentity(_)))
+        else if (perms.exists(who.hasPerson(_)))
           true
         else
           // *NOT* default. If the properly exists, and is left unset, then we
