@@ -290,6 +290,10 @@ case class SpaceState(
     querki.access.AccessControl.canEdit(this, who, thingId)
   }
   
+  def canChangePropertyValue(who:User, propId:OID):Boolean = {
+    querki.access.AccessControl.canChangePropertyValue(this, who, propId)
+  }
+  
   def renderUnknownName(implicit rc:controllers.RequestContext, name:String):Wikitext = {
     import ql._
     

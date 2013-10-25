@@ -78,6 +78,28 @@ trait QValue {
   def isEmpty = cType.isEmpty(this)
   def size = cv.size
   
+  /**
+   * Returns true iff these two QValues are equivalent.
+   * 
+   * TODO: this is probably subject to the same subclassing problems as == in Scala. Think it through
+   * more carefully, and see if this logic makes sense in terms of subclassing.
+   * 
+   * TODO: this is current very strict in terms of matching cTypes, probably moreso than it needs to be.
+   * Re-examine how we can loosen this while keeping it accurate.
+   */
+  def matches(other:QValue):Boolean = {
+    if (other.cType != cType || other.pType != pType)
+      false
+    else if (cv.size != other.cv.size)
+      false
+    else {
+      val pairs = cv.zip(other.cv)
+      pairs.forall { pair =>
+        pType.matches(pair._1, pair._2)
+      }
+    }
+  }
+  
   def debugRender(context:QLContext) = {
     cType.getClass().getSimpleName() + "[" + pType.getClass().getSimpleName() + "]" + "(" + cType.debugRender(context)(cv, pType) + ")"
   }

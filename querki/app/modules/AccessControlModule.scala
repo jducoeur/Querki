@@ -8,6 +8,7 @@ import models.system.OIDs._
 
 import ql._
 
+import querki.util._
 import querki.values._
 
 import modules.Modules._
@@ -88,6 +89,22 @@ object AccessControl {
   def canEdit(state:SpaceState, who:User, thingId:OID):Boolean = {
     hasPermission(canEditProp, state, who, thingId, false, false)
   }
+  
+  def canChangePropertyValue(state:SpaceState, who:User, propId:OID):Boolean = {
+    implicit val s = state
+    // TODO: for the time being, this is very simplistic: if the property is a permission,
+    // then only the owner can change it. Otherwise, let it through. Later, we should
+    // figure out how to expose field-level edit permissions to the UI.
+    val hasPermissionOpt = for (
+      prop <- state.prop(propId);
+      permissionVal <- prop.getPropOpt(isPermissionProp);
+      isPermission <- permissionVal.firstOpt;
+      if isPermission
+        )
+      yield who.hasIdentity(state.owner)
+      
+    hasPermissionOpt.getOrElse(true)
+  }
 }
 
 class AccessControlModule(val moduleId:Short) extends modules.Module {
@@ -102,6 +119,7 @@ class AccessControlModule(val moduleId:Short) extends modules.Module {
     val CanReadPropOID = moid(5)
     val CanEditPropOID = moid(6)
     val CanCreatePropOID = moid(7)
+    val IsPermissionOID = moid(8)
   }
   import MOIDs._
   
@@ -140,31 +158,41 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
    * PROPERTIES
    ***********************************************/
   
+  lazy val isPermissionProp = new SystemProperty(IsPermissionOID, YesNoType, ExactlyOne,
+      toProps(
+        setName("_isPermission"),
+        PropSummary("This Property is a Permission")))
+  
   lazy val canEditCustomProp = new SystemProperty(CanEditCustomOID, QLType, Optional,
       toProps(
         setName("Who Can Edit Custom"),
+        isPermissionProp(true),
         PropSummary("Who else can edit this Thing")))
 
   lazy val canReadProp = new SystemProperty(CanReadPropOID, LinkType, QSet,
       toProps(
         setName("Who Can Read"),
+        isPermissionProp(true),
         (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
         PropSummary("Who else can read Things in this Space")))
 
   lazy val canEditProp = new SystemProperty(CanEditPropOID, LinkType, QSet,
       toProps(
         setName("Who Can Edit"),
+        isPermissionProp(true),
         (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
         PropSummary("Who else can edit Things in this Space")))
 
   lazy val canCreateProp = new SystemProperty(CanCreatePropOID, LinkType, QSet,
       toProps(
         setName("Who Can Create"),
+        isPermissionProp(true),
         (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
         PropSummary("Who else can make new Things in this Space")))
 
   override lazy val props = Seq(
 //    canEditCustomProp,
+    isPermissionProp,
     canCreateProp,
     canEditProp,
     canReadProp

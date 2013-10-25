@@ -2,6 +2,7 @@ package models
 
 import scala.concurrent.duration._
 import scala.concurrent.Future
+import scala.util._
 
 import akka.actor._
 import akka.pattern.ask
@@ -16,7 +17,7 @@ import play.api.libs.concurrent._
 import play.Configuration
 
 // Database imports:
-import anorm._
+import anorm.{Success=>AnormSuccess,_}
 import play.api.db._
 import play.api.Play.current
 
@@ -42,6 +43,8 @@ import MIMEType.MIMEType
 import querki.evolutions.Evolutions
 
 import modules.time.TimeModule._
+
+import querki.util._
 
 /**
  * The Actor that encapsulates a Space.
@@ -123,6 +126,31 @@ class Space extends Actor {
   def canCreate(who:User, modelId:OID):Boolean = state.canCreate(who, modelId)
   
   def canEdit(who:User, thingId:OID):Boolean = state.canEdit(who, thingId)
+  
+  def changedProperties(oldProps:PropMap, newProps:PropMap):Seq[OID] = {
+    val allIds = oldProps.keySet ++ newProps.keySet
+    allIds.toSeq.filterNot { propId =>
+      val matchesOpt = for (
+        oldVal <- oldProps.get(propId);
+        newVal <- newProps.get(propId)
+          )
+        yield oldVal.matches(newVal)
+        
+      matchesOpt.getOrElse(false)
+    }
+  }
+  
+  // This gets pretty convoluted, but we have to check whether the requester is actually allowed to change the specified
+  // properties. (At the least, we specifically do *not* allow any Tom, Dick and Harry to change permissions!)
+  // TODO: Note that this is not fully implemented in AccessControlModule yet. We'll need to flesh it out further there
+  // before we generalize this feature.
+  def canChangeProperties(who:User, oldProps:PropMap, newProps:PropMap):Try[Boolean] = {
+    val failedProp = changedProperties(oldProps, newProps).find(!state.canChangePropertyValue(who, _))
+    failedProp match {
+      case Some(propId) => Failure(new Exception("You're not allowed to edit property " + state.anything(propId).get.displayName))
+      case None => Success(true)
+    }
+  }
   
   def loadSpace() = {
     
@@ -306,9 +334,12 @@ class Space extends Actor {
   {
     val spaceId = checkSpaceId(spaceThingId)
     val name = NameProp.firstOpt(props)
+    val canChangeTry = canChangeProperties(who, Map.empty, props)
     if (!canCreate(who, modelId))
       sender ! ThingFailed(CreateNotAllowed, "You are not allowed to create that")
-    else if (name.isDefined && state.anythingByName(name.get).isDefined)
+    else if (canChangeTry.isFailure) {
+      canChangeTry.recover { case ex:Throwable => sender ! ThingFailed(CreateNotAllowed, ex.getMessage()) }
+    } else if (name.isDefined && state.anythingByName(name.get).isDefined)
       sender ! ThingFailed(NameExists, "This Space already has a Thing with that name")
     else DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
       val thingId = OID.next(ShardKind.User)
@@ -344,13 +375,16 @@ class Space extends Actor {
       val spaceId = checkSpaceId(spaceThingId)
       val oldThingOpt = state.anything(thingId)
       oldThingOpt map { oldThing =>
-        if (!canEdit(who, oldThing.id)) {
+        val thingId = oldThing.id
+        val newProps = pf(oldThing)
+        val canChangeTry = canChangeProperties(who, oldThing.props, newProps)
+        if (!canEdit(who, thingId)) {
           sender ! ThingFailed(ModifyNotAllowed, "You're not allowed to modify that")
+        } else if (canChangeTry.isFailure) {
+          canChangeTry.recover { case ex:Throwable => sender ! ThingFailed(ModifyNotAllowed, ex.getMessage()) }
         } else {
 	      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
 	        // TODO: compare properties, build a history record of the changes
-	        val thingId = oldThing.id
-	        val newProps = pf(oldThing)
 	        val modelId = modelIdOpt match {
 	          case Some(m) => m
 	          case None => oldThing.model
