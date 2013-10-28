@@ -379,10 +379,20 @@ to add new Properties for any Person in your Space.
     
     // Filter out any of these email addresses that have already been invited:
     val currentMembers = originalState.descendants(PersonOID, false, true)
-    // TODO: this is doing an n^2 check of whether the email addresses already exist. Rewrite to be less
-    // inefficient using a Set:
-    val currentEmails = currentMembers.flatMap(_.getPropOptTyped(emailAddressProp)(originalState)).map(_.first).toSeq
-    val (existingEmails, newEmails) = invitees.partition(newEmail => currentEmails.exists(oldEmail => modules.Modules.Email.EmailAddressType.doMatches(newEmail, oldEmail)))
+    // This is a Map[address,Person] of all the members of this Space:
+    // TODO: make this smarter! Should work for *all* addresses of the members, not just the ones in the Person
+    // records! Sadly, that probably means a DB lookup.
+    // TODO: the use of toLowerCase in this method is an abstraction break, as is the fact that we're digging
+    // into EmailAddress.addr. Instead, the Email PType should provide enough machinery to be able to do this
+    // properly, by extending matches() with some proper comparators.
+    val currentEmails = currentMembers.
+      map(member => (member.getPropOptTyped(emailAddressProp)(originalState) -> member)).
+      filter(_._1.isDefined).
+      map(entry => (entry._1.get.first.addr.toLowerCase(), entry._2)).
+      toMap
+    val (existingEmails, newEmails) = invitees.partition(newEmail => currentEmails.contains(newEmail.addr.toLowerCase()))
+    
+    val existingPeople = existingEmails.flatMap(email => currentEmails.get(email.addr.toLowerCase()))
     
     // Create Person records for all the new ones:
     // TODO: add a CreateThings message that allows me to do multi-create:
@@ -420,7 +430,7 @@ to add new Properties for any Person in your Space.
       |[[_spaceInvitation]]""".stripMargin)
     val bodyQL = updatedState.getPropOpt(inviteText).flatMap(_.firstOpt).getOrElse(QLText("")) + inviteLink
     // TODO: we probably should test that sentTo includes everyone we expected:
-    val sentTo = Email.sendToPeople(context, people, subjectQL, bodyQL)
+    val sentTo = Email.sendToPeople(context, people ++ existingPeople, subjectQL, bodyQL)
     
     InvitationResult(newEmails, existingEmails)
   }

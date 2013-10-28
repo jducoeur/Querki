@@ -72,12 +72,12 @@ object LoginController extends ApplicationBase {
 	        
 	          (
 	            if (result.invited.length > 0)
-	              "Sent invitations to " + result.invited.map(_.addr).mkString(", ") + ". "
+	               result.invited.map(_.addr).mkString("Sent invitations to ", ", ", ". ")
 	            else
 	              ""
 	          ) + (
 	            if (result.alreadyInvited.length > 0)
-	              "Already invited: " + result.alreadyInvited.map(_.addr).mkString(", ")
+	               result.alreadyInvited.map(_.addr).mkString("Resent to ", ", ", ".") 
 	            else
 	              ""
 	          )
