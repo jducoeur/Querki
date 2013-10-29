@@ -10,6 +10,8 @@
   "ADMIN: Manage Users"
 }
 
+@requester = @{ rc.requesterOrAnon }
+
 @userDisplayClass(user:User) = @{
   if (user.isAdmin) {
     "info"
@@ -35,11 +37,26 @@
 	      }
 	    });      
       }
+  
+      function makeAdmin(userId) {
+        adminJsRoutes.controllers.AdminController.makeAdmin(userId).ajax({
+	      success: function (result) {
+	        showStatus("Upgraded");
+	      },
+	      error: function (err) {
+	        showStatus("Error in upgrading!");
+	      }
+	    });      
+      }
 
       $(function() {
         $(".upgradeButton").click(function() {
           var userId = $(this).data("userid");
           upgradePending(userId);
+        })
+        $(".adminButton").click(function() {
+          var userId = $(this).data("userid");
+          makeAdmin(userId);
         })
       });
   
@@ -60,10 +77,13 @@
         @defining(user.mainIdentity) { identity =>
           <tr class="@userDisplayClass(user)">
             <td>@identity.handle</td>
-            <td>@identity.email</td>
+            <td>@identity.email.addr</td>
             <td>@user.levelName
             @if(user.level == PendingUser) { 
               <input type="button" class="btn upgradeButton" value="Upgrade" title="Click to upgrade @identity.handle to Full (Free) User Status" data-userid="@user.id.toString"/>
+            }
+            @if((requester.level == SuperadminUser) && (!user.isAdmin) && (user.level != PendingUser)) {
+              <input type="button" class="btn btn-danger adminButton" value="Make Admin" title="Click to make @identity.handle a system administrator" data-userid="@user.id.toString"/>            
             }
             </td>
           </tr>
