@@ -167,10 +167,12 @@ case class SpaceState(
   
   /**
    * Returns the set of external "roots" of the Things in this Space. Note that this list is composed entirely
-   * of Things *not* in this Space -- it is the ones we are inheriting from. 
+   * of Things *not* in this Space -- it is the ones we are inheriting from. Note also that it omits anything that
+   * has the InternalProp flag set.
    */
   def thingRoots:Iterable[OID] = {
-    (Set.empty[OID] /: allThings) ((set, t) => set + root(t))
+    ((Set.empty[OID] /: allThings) ((set, t) => set + root(t))).
+      filterNot(oid => anything(oid).map(_.ifSet(InternalProp)(this)).getOrElse(false))
   }
   
   def thingsWithProp(prop:Property[_,_]):Iterable[Thing] = {

@@ -48,9 +48,11 @@
   <div class="row-fluid">
     <dl>
     @for(prop <- thing.localProps(space)) {
-      @defining(thing.getPropOpt(prop)(space)) { propOpt =>
-        @if(propOpt.isDefined) {
-          @showProperty(prop, propOpt.get.v)
+      @if(!prop.ifSet(InternalProp)(space)) {
+        @defining(thing.getPropOpt(prop)(space)) { propOpt =>
+          @if(propOpt.isDefined) {
+            @showProperty(prop, propOpt.get.v)
+          }
         }
       }
     }

@@ -107,6 +107,7 @@ class EmailModule(val moduleId:Short) extends modules.Module {
   lazy val emailAddress = new SystemProperty(EmailPropOID, EmailAddressType, Optional,
       toProps(
         setName("Email Address"),
+        InternalProp(true),
         PropSummary("An email address for a Person"),
         PropDetails("""This Property represents the general notion of something that can have an email
             |address. It is available on Person, but you can reuse it wherever you like. In theory, you can

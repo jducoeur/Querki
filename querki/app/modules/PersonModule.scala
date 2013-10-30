@@ -169,6 +169,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
   lazy val person = ThingState(PersonOID, systemOID, SecurityPrincipalOID,
       toProps(
         setName("Person"),
+        InternalProp(true),
         IsModelProp(true),
         // TODO: this is a fugly declaration, and possibly unsafe -- do we have any
         // assurance that modules.Modules.Email has been constructed before this?
