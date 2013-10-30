@@ -37,6 +37,23 @@ object AdminController extends ApplicationBase {
   def upgradePendingUser(userIdStr:String) = withAdmin { rc =>
     val userId = OID(userIdStr)
     val newUserOpt = User.changeUserLevel(userId, rc.requesterOrAnon, UserLevel.FreeUser)
+    
+    newUserOpt.map { newUser =>
+      // TODO: these strings should be internationalized
+      // TODO: re-examine this email when we get to Beta.
+      val subject = Wikitext("Welcome to full membership in Querki!")
+      val body = Wikitext(s"""Your Querki account, ${newUser.mainIdentity.handle}, has been approved for all features. 
+        |This means that you can now create Spaces of your own, and share them with your friends. Go to the "Your Spaces"
+        |page (which you can get to by clicking on "Logged in as ${newUser.mainIdentity.name}" in the upper-right-hand corner)
+        |to create a new Space.
+        |
+        |Remember, Querki is still in "Alpha", which means that there are still some bugs, and lots of features are yet to be
+        |implemented. But we hope there is enough there now for you to find it useful.
+        |
+        |Have fun, and please contact us if you need any help!""".stripMargin)
+      modules.email.EmailModule.sendSystemEmail(newUser.mainIdentity, subject, body)
+    }
+    
     Ok(newUserOpt.map(_.level.toString).getOrElse(UserLevel.PendingUser.toString))
   }
   

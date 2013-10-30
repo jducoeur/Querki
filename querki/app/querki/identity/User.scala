@@ -125,8 +125,11 @@ case class FullUser(id:OID, name:String, identities:Seq[Identity] = Seq.empty, l
 case object SystemUser extends User {
   val id = models.system.OIDs.SystemUserOID
   val name = "SystemUser"
-  val identities = Seq.empty
-  val level = AdminUser
+  lazy val email = EmailAddress(Config.getString("querki.mail.systemFrom", "querki@querki.net"))
+  // TODO: the presence of a reference to models.system here is suspicious. Does this indicate that SystemUser
+  // doesn't belong in this file? Likely so.
+  val identities = Seq(Identity(models.system.OIDs.SystemIdentityOID, email, "", "systemUser", name, IdentityKind.QuerkiLogin))
+  val level = SuperadminUser
 }
 
 // TODO: given that this is full of methods that shouldn't be synchronous, this should

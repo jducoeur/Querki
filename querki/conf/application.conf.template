@@ -23,6 +23,8 @@ querki {
   mail {
     smtpHost : SMTP HOST
     from : EMAIL ADDRESS TO SEND FROM
+    systemFrom : EMAIL ADDRESS SYSTEM EMAILS COME FROM
+    systemName : DISPLAY NAME OF SYSTEM EMAILS
     debug : false
   }
   

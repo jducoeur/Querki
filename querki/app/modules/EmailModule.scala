@@ -1,5 +1,7 @@
 package modules.email
 
+import scala.util._
+
 import javax.activation.DataHandler
 import javax.mail._
 import javax.mail.internet._
@@ -14,6 +16,7 @@ import models.system.OIDs._
 
 import ql._
 
+import querki.identity._
 import querki.values._
 
 import modules.Modules._
@@ -230,8 +233,7 @@ class EmailModule(val moduleId:Short) extends modules.Module {
       TextValue("You aren't allowed to send that email")
   }
   
-  def sendToPeople(context:QLContext, people:Seq[Thing], subjectQL:QLText, bodyQL:QLText)(implicit state:SpaceState):Seq[OID] = {
-    // Construct the email:
+  private def createSession():Session = {
     val props = System.getProperties()
     props.setProperty("mail.host", smtpHost)
     props.setProperty("mail.user", "querki")
@@ -242,82 +244,94 @@ class EmailModule(val moduleId:Short) extends modules.Module {
     val session = Session.getInstance(props, null)
 	
     session.setDebug(debug)
-
+    
+    session
+  }
+  
+  def sendToPeople(context:QLContext, people:Seq[Thing], subjectQL:QLText, bodyQL:QLText)(implicit state:SpaceState):Seq[OID] = {
+    val session = createSession()
+    
     people.flatMap { person =>
       sendToPerson(context, person, session, subjectQL, bodyQL, from)
     }
   }
+  
+  /**
+   * The guts of actually sending email. Note that this can be invoked from a number of different circumstances,
+   * some user-initiated and some not.
+   */
+  private def sendInternal(session:Session, from:String, 
+      recipientEmail:EmailAddress, recipientName:String, requester:Identity, 
+      subject:Wikitext, body:Wikitext):Try[Unit] = 
+  Try {
+	val msg = new MimeMessage(session)
+	msg.setFrom(new InternetAddress(from))
+
+	val replyAddrs = Array(new InternetAddress(requester.email.addr, requester.name).asInstanceOf[Address])
+	msg.setReplyTo(replyAddrs)
+
+    // TBD: there must be a better way to do this. It's a nasty workaround for the fact
+	// that setRecipients() is invariant, I believe.
+	val toAddrs = Array(new InternetAddress(recipientEmail.addr, recipientName).asInstanceOf[Address])	
+	msg.setRecipients(Message.RecipientType.TO, toAddrs)
 	
-	def sendToPerson(context:QLContext, person:Thing, session:Session, subjectQL:QLText, bodyQL:QLText, from:String)(implicit state:SpaceState):Option[OID] = {
-	  try {
-	    val name = person.displayName
-	    val addrList = person.getProp(emailAddress)
-	    if (addrList.isEmpty)
-	      None
-	    else {
-	      val addr = addrList.first
-	      // TBD: there must be a better way to do this. It's a nasty workaround for the fact
-	      // that setRecipients() is invariant, I believe.
-	      val toAddrs = Array(new InternetAddress(addr.addr, name).asInstanceOf[Address])
-	    
-	      val msg = new MimeMessage(session)
-	      msg.setFrom(new InternetAddress(from))
-	      
-	      // Note that emails are sent with the ReplyTo set to whoever asked for this email to be generated.
-	      // You are responsible for your own emails.
-	      // TODO: This will need to get more intelligent about the identity to use for the ReplyTo: it should
-	      // use the requester's Identity that is being used for *this* Space. Right now, we're potentially
-	      // leaking the wrong email address. But it'll do to start.
-	      val requesterIdentity = context.request.requesterOrAnon.mainIdentity
-	      val replyAddrs = Array(new InternetAddress(requesterIdentity.email.addr, requesterIdentity.name).asInstanceOf[Address])
-	      msg.setReplyTo(replyAddrs)
+	msg.setSubject(subject.plaintext)
 	
-	      msg.setRecipients(Message.RecipientType.TO, toAddrs)
+	// Attach the HTML...
+	val bodyHtml = body.display
+	val bodyPartHtml = new MimeBodyPart()
+	bodyPartHtml.setDataHandler(new DataHandler(new ByteArrayDataSource(bodyHtml, "text/html")))      
+	// ... and the plaintext...
+	val bodyPlain = body.plaintext
+	val bodyPartPlain = new MimeBodyPart()
+	bodyPartPlain.setDataHandler(new DataHandler(new ByteArrayDataSource(bodyPlain, "text/plain")))
+	// ... and set the body to the multipart:
+	val multipart = new MimeMultipart("alternative")
+	// IMPORTANT: these are in increasing order of importance, and Gmail will display the *last*
+	// one by preference:
+	multipart.addBodyPart(bodyPartPlain)
+	multipart.addBodyPart(bodyPartHtml)
+	msg.setContent(multipart)
 	    
-	      // TODO: this originally derived from the higher-level context of the Email itself. Really, it should do so.
-	      // But PersonModule needs to get at this Person object from the Context *somehow*, and for now it's easiest
-	      // to do so as context.root.
-	      // The right solution is probably to predefine a name binding, which gets passed into the new QLContext, and
-	      // use that in PersonModule. But first we need to introduce the idea of name bindings!
-	      // Once that is done, restore the incoming context as the parent of this one.
-	      val personContext = QLContext(ExactlyOne(ElemValue(person.id, LinkType)), context.requestOpt, None) //Some(context))
+	msg.setHeader("X-Mailer", "Querki")
+	msg.setSentDate(new java.util.Date())
 	    
-	      val subjectParser = new QLParser(subjectQL, personContext.forProperty(emailSubject))
-	      val subject = subjectParser.process.plaintext
-	      msg.setSubject(subject)
-	    
-	      // Attach the HTML...
-	      val bodyParser = new QLParser(bodyQL, personContext.forProperty(emailBody))
-	      val bodyWikitext = bodyParser.process
-	      val bodyHtml = bodyWikitext.display
-	      val bodyPartHtml = new MimeBodyPart()
-	      bodyPartHtml.setDataHandler(new DataHandler(new ByteArrayDataSource(bodyHtml, "text/html")))
-	      
-	      // ... and the plaintext...
-	      val bodyPlain = bodyWikitext.plaintext
-	      val bodyPartPlain = new MimeBodyPart()
-	      bodyPartPlain.setDataHandler(new DataHandler(new ByteArrayDataSource(bodyPlain, "text/plain")))
-	      
-	      // ... and set the body to the multipart:
-	      val multipart = new MimeMultipart("alternative")
-	      // IMPORTANT: these are in increasing order of importance, and Gmail will display the *last*
-	      // one by preference:
-	      multipart.addBodyPart(bodyPartPlain)
-	      multipart.addBodyPart(bodyPartHtml)
-	      msg.setContent(multipart)
-	    
-	      msg.setHeader("X-Mailer", "Querki")
-	      msg.setSentDate(new java.util.Date())
-	    
-	      Logger.info("About to send the message")
-	      Transport.send(msg)
+	Transport.send(msg)
+  }
 	
-	      Some(person.id)
-	    }
-	  } catch {
-	    case error:Throwable => Logger.info("Got an error while sending email " + error.getClass()); None 
-	  }
-	}
+  def sendToPerson(context:QLContext, person:Thing, session:Session, subjectQL:QLText, bodyQL:QLText, from:String)(implicit state:SpaceState):Option[OID] = {
+    val name = person.displayName
+    val addrList = person.getProp(emailAddress)
+    if (addrList.isEmpty)
+      None
+    else {
+      val addr = addrList.first
+	      	    
+      // TODO: this originally derived from the higher-level context of the Email itself. Really, it should do so.
+      // But PersonModule needs to get at this Person object from the Context *somehow*, and for now it's easiest
+      // to do so as context.root.
+      // The right solution is probably to predefine a name binding, which gets passed into the new QLContext, and
+      // use that in PersonModule. But first we need to introduce the idea of name bindings!
+      // Once that is done, restore the incoming context as the parent of this one.
+      val personContext = QLContext(ExactlyOne(ElemValue(person.id, LinkType)), context.requestOpt, None) //Some(context))
+    
+      val subjectParser = new QLParser(subjectQL, personContext.forProperty(emailSubject))
+      val subject = subjectParser.process	    
+      val bodyParser = new QLParser(bodyQL, personContext.forProperty(emailBody))
+      val body = bodyParser.process
+      
+      // Note that emails are sent with the ReplyTo set to whoever asked for this email to be generated.
+      // You are responsible for your own emails.
+      // TODO: This will need to get more intelligent about the identity to use for the ReplyTo: it should
+      // use the requester's Identity that is being used for *this* Space. Right now, we're potentially
+      // leaking the wrong email address. But it'll do to start.
+      val result = sendInternal(session, from, addr, name, context.request.requesterOrAnon.mainIdentity, subject, body)
+      result match {
+        case Success(_) => Some(person.id)
+        case Failure(ex) => Logger.error("Got an error while sending email ", ex); None 
+      }
+    }
+  }
   
   def doSendEmail(t:Thing, context:QLContext) = {
     implicit val state = context.state
@@ -376,5 +390,25 @@ class EmailModule(val moduleId:Short) extends modules.Module {
 	    
 	    resultingList
     }
+  }
+}
+
+object EmailModule {
+  import modules.Modules.Email._
+    
+  /**
+   * Sends an "official" email in the name of Querki itself.
+   * 
+   * USE WITH CAUTION! This should only be used for significant emails that do not come from a
+   * specific person. Excessive use of these could get us labeled as spammers, which we don't want.
+   * 
+   * TODO: in the long run, this should wind up mostly subsumed under a more-general Notifications
+   * system, which will include, eg, system-displayed notifications and social network messages,
+   * with the user controlling where his notifications go.  
+   */
+  def sendSystemEmail(recipient:Identity, subject:Wikitext, body:Wikitext):Try[Unit] = {
+    val session = createSession()
+    
+    sendInternal(session, from, recipient.email, recipient.name, SystemUser.mainIdentity, subject, body)
   }
 }

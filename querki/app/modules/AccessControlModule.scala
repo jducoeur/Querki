@@ -43,6 +43,7 @@ object AccessControl {
   // we check whether it is defined on the Thing; if not, whether it is defined on the Space; and if
   // not, we use the provided default.
   def hasPermission(aclProp:Property[OID,_], state:SpaceState, who:User, thingId:OID, default:Boolean, publicAllowed:Boolean):Boolean = {
+    // TODO: this really ought to be who.isSuperadmin, instead of SystemUserOID?
     if (who.hasIdentity(state.owner) || who.id == SystemUserOID)
       true
     else {
