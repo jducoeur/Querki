@@ -50,13 +50,13 @@ class PersonModule(val moduleId:Short) extends modules.Module {
   import MOIDs._
   
   override def init = {
-    PageEventManager.requestReceived += IdentityLoginChecker
+    //PageEventManager.requestReceived += IdentityLoginChecker
     PageEventManager.requestReceived += InviteLoginChecker
   }
   
   override def term = {
     PageEventManager.requestReceived -= InviteLoginChecker
-    PageEventManager.requestReceived -= IdentityLoginChecker
+    //PageEventManager.requestReceived -= IdentityLoginChecker
   }
 
   /***********************************************
@@ -266,6 +266,10 @@ to add new Properties for any Person in your Space.
    * LOGIN HANDLER
    ***********************************************/
   
+  /**
+   * DEPRECATED -- this is just in the way now, and we shouldn't ever use it again, since it has been replaced by
+   * the newer and more robust approach.  Kill it.
+   */
   case class SpaceSpecificUser(identityId:OID, name:String, email:EmailAddress, spaceId:OID, personId:OID) extends User {
     val id = UnknownOID
     val identity = Identity(identityId, email, "", "", name, IdentityKind.SimpleEmail)
@@ -279,6 +283,10 @@ to add new Properties for any Person in your Space.
    * 
    * TODO: make this Identity Space-specific! It should be possible to have different Persons in the
    * Session for different Spaces.
+   * 
+   * DEPRECATED: this mechanism has been disabled, and I believe should simply be deleted at this point.
+   * It turns out to have never worked with non-Public Spaces, and has been superceded by the new
+   * relationship between Identities and Spaces.
    */
   object IdentityLoginChecker extends Contributor[RequestContext,RequestContext] {
     def notify(rc:RequestContext, sender:Publisher[RequestContext, RequestContext]):RequestContext = {
@@ -445,18 +453,18 @@ to add new Properties for any Person in your Space.
       val rcOpt =
         for (
           encodedInvite <- rc.firstQueryParam(inviteParam);
-          state <- rc.state;
+          spaceId <- rc.spaceIdOpt;
+          ownerHandle <- rc.reqOwnerHandle;
           hash = SignedHash(encodedInvite, Email.emailSepChar);
           // TODO: we should do something smarter if this fails:
           if (Hasher.checkSignature(hash));
           SignedHash(_, _, msg, _) = hash;
           Array(personIdStr, emailAddrStr, _*) = msg.split(":");
-          personId = OID(personIdStr);
           emailAddr = EmailAddress(emailAddrStr);
           updates = Map((personParam -> personIdStr), (identityEmail -> emailAddrStr))
         )
           yield rc.copy(sessionUpdates = rc.sessionUpdates ++ rc.returnToHereUpdate ++ updates,
-              redirectTo = Some(controllers.routes.LoginController.handleInvite(rc.ownerHandle, rc.state.get.toThingId)))
+              redirectTo = Some(controllers.routes.LoginController.handleInvite(ownerHandle, spaceId)))
               
       // This gets picked up in Application.withSpace(), and redirected as necessary.
       rcOpt.getOrElse(rc)

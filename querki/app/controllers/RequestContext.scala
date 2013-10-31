@@ -68,7 +68,9 @@ case class RequestContext(
     thing:Option[Thing],
     error:Option[String] = None,
     sessionUpdates:Seq[(String,String)] = Seq.empty,
-    redirectTo:Option[Call] = None) extends RequestHeaderParser(request, sessionUpdates) {
+    redirectTo:Option[Call] = None,
+    spaceIdOpt:Option[String] = None,
+    reqOwnerHandle:Option[String] = None) extends RequestHeaderParser(request, sessionUpdates) {
   def requesterOrAnon = requester getOrElse User.Anonymous
   def requesterOID = requester map (_.id) getOrElse UnknownOID  
   def ownerHandle = state map Application.ownerHandle getOrElse ""

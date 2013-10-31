@@ -6,6 +6,7 @@ import play.api.mvc._
 import models._
 
 import querki.identity._
+import querki.util._
 
 class ApplicationBase extends Controller {
   
@@ -129,48 +130,58 @@ class ApplicationBase extends Controller {
         ownerIdStr:String,
         spaceId:String, 
         thingIdStr:Option[String] = None,
-        errorHandler:Option[PartialFunction[(ThingFailed, RequestContext), Result]] = None
-      )(f: (RequestContext => Result)):EssentialAction = withUser(false) { rc =>
-    val requester = rc.requester getOrElse User.Anonymous
+        errorHandler:Option[PartialFunction[(ThingFailed, RequestContext), Result]] = None,
+        // This is a pretty rare parameter. It should only be used if we want to execute this function
+        // even if the requester does not have read access to this Space. (As during invitation handling.)
+        allowAnyone:Boolean = false
+      )(f: (RequestContext => Result)):EssentialAction = withUser(false) { originalRC =>
+    val requester = originalRC.requester getOrElse User.Anonymous
     val thingId = thingIdStr map (ThingId(_))
     val ownerId = getIdentityByThingId(ownerIdStr)
-    def withFilledRC(rc:RequestContext, stateOpt:Option[SpaceState], thingOpt:Option[Thing])(cb:RequestContext => Result):Result = {
-      val filledRC = rc.copy(ownerId = ownerId, state = stateOpt, thing = thingOpt)
-      // Give the listeners a chance to chime in:
-      val updatedRC = PageEventManager.requestReceived(filledRC)
-      val state = stateOpt.get
-      val result =
-        // Okay, now we have enough information to check whether we have a Space-specific authorization:
-        if (updatedRC.redirectTo.isDefined)
-          Redirect(updatedRC.redirectTo.get)
-        else if ((requireLogin && updatedRC.requester.isEmpty) || !state.canRead(updatedRC.requester.getOrElse(User.Anonymous), thingOpt.map(_.id).getOrElse(state)))
-          onUnauthorized(updatedRC.request)
-        else
-          cb(updatedRC)
-      updatedRC.updateSession(result)
+    // Give the listeners a chance to chime in. Note that this is where things like invitation
+    // management come into play. This needs to happen *BEFORE* we try to fetch the Space, because
+    // an invitation might be to someone who isn't allowed to read the Space. Things should
+    // hook requestReceived iff they just need the raw request, and don't need to be able to
+    // read the Space.
+    val rcWithPath = originalRC.copy(spaceIdOpt = Some(spaceId), reqOwnerHandle = Some(ownerIdStr))
+    val updatedRC = PageEventManager.requestReceived(rcWithPath)
+    if (updatedRC.redirectTo.isDefined) {
+      updatedRC.updateSession(Redirect(updatedRC.redirectTo.get))      
+    } else {
+	    def withFilledRC(rc:RequestContext, stateOpt:Option[SpaceState], thingOpt:Option[Thing])(cb:RequestContext => Result):Result = {
+	      val filledRC = updatedRC.copy(ownerId = ownerId, state = stateOpt, thing = thingOpt)
+	      val state = stateOpt.get
+	      val result =
+	        if ((requireLogin && filledRC.requester.isEmpty) || 
+	            (!allowAnyone && !state.canRead(filledRC.requester.getOrElse(User.Anonymous), thingOpt.map(_.id).getOrElse(state))))
+	          onUnauthorized(filledRC.request)
+	        else
+	          cb(filledRC)
+	      result
+	    }
+	    askSpaceMgr[ThingResponse](GetThing(requester, ownerId, ThingId(spaceId), thingId)) {
+	      case ThingFound(id, state) => {
+	        val thingOpt = id match {
+	          case UnknownOID => None
+	          case oid:OID => state.anything(oid)
+	        }
+	        // Log what we got back -- turn this on as needed:
+	        //QLog.spewThing(thingOpt.getOrElse(state))
+	        if (thingIdStr.isDefined && thingOpt.isEmpty)
+	          doError(routes.Application.index, "That wasn't a valid path")
+	        else {
+	          withFilledRC(updatedRC, Some(state), thingOpt)(f)
+	        }
+	      }
+	      case err:ThingFailed => {
+	        val ThingFailed(error, msg, stateOpt) = err
+	        if (stateOpt.isDefined)
+	          withFilledRC(updatedRC, stateOpt, None)(filledRC => errorHandler.flatMap(_.lift((err, filledRC))).getOrElse(doError(routes.Application.index, msg)))
+	        else
+	          onUnauthorized(updatedRC.request)
+	      }
+	    }     
     }
-    askSpaceMgr[ThingResponse](GetThing(requester, ownerId, ThingId(spaceId), thingId)) {
-      case ThingFound(id, state) => {
-        val thingOpt = id match {
-          case UnknownOID => None
-          case oid:OID => state.anything(oid)
-        }
-        // Log what we got back -- turn this on as needed:
-        //QLog.spewThing(thingOpt.getOrElse(state))
-        if (thingIdStr.isDefined && thingOpt.isEmpty)
-          doError(routes.Application.index, "That wasn't a valid path")
-        else {
-          withFilledRC(rc, Some(state), thingOpt)(f)
-        }
-      }
-      case err:ThingFailed => {
-        val ThingFailed(error, msg, stateOpt) = err
-        if (stateOpt.isDefined)
-          withFilledRC(rc, stateOpt, None)(filledRC => errorHandler.flatMap(_.lift((err, filledRC))).getOrElse(doError(routes.Application.index, msg)))
-        else
-          onUnauthorized(rc.request)
-      }
-    }     
   }
 
   /**

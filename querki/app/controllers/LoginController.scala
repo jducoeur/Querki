@@ -88,7 +88,7 @@ object LoginController extends ApplicationBase {
     )
   }
   
-  def handleInvite(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId) { implicit rc =>
+  def handleInvite(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId, allowAnyone = true) { implicit rc =>
     // This cookie gets set in PersonModule.InviteLoginChecker. If it isn't set, somebody is trying to sneak
     // in through the back door:
     val emailOpt = rc.sessionCookie(modules.Modules.Person.identityEmail)
@@ -117,7 +117,31 @@ object LoginController extends ApplicationBase {
     }
   }
   
-  def signup(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId) { implicit rc =>
+  // TODO: can we factor this together with dologin in a sensible way? The trick is that we want to finish login by showing
+  // joinSpace...
+  def joinlogin(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId, allowAnyone = true) { implicit rc =>
+    implicit val request = rc.request
+    userForm.bindFromRequest.fold(
+      errors => doError(Call(request.method, request.path), "I didn't understand that"),
+      form => {
+        val userOpt = User.checkQuerkiLogin(form.name, form.password)
+        userOpt match {
+          case Some(user) => {
+            // Yes. Am I already a member of this Space?
+            if (querki.access.AccessControl.isMember(user, rc.state.get)) {
+              // Yes. Okay, just go the Space, since there's nothing to do here:
+              Redirect(routes.Application.thing(ownerId, spaceId, spaceId)).withSession(user.toSession:_*)
+            } else {
+              Ok(views.html.joinSpace(rc)).withSession(Session(request.session.data ++ user.toSession))
+            }
+          }
+          case None => doError(Call(request.method, request.path), "Login failed. Please try again.")
+        }
+      }
+    )
+  }
+    
+  def signup(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId, allowAnyone = true) { implicit rc =>
     implicit val request = rc.request
     val rawForm = signupForm.bindFromRequest
     rawForm.fold(
@@ -150,7 +174,7 @@ object LoginController extends ApplicationBase {
     )
   }
   
-  def joinSpace(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
+  def joinSpace(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId, allowAnyone = true) { implicit rc =>
     val joinOpt = modules.Modules.Person.acceptInvitation(rc) {
       case ThingFound(id, state) => Redirect(routes.Application.thing(ownerId, spaceId, spaceId))
       case ThingFailed(error, msg, stateOpt) => doError(routes.Application.index, "Something went wrong adding you to the Space -- sorry!")
