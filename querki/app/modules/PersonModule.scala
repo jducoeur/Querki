@@ -388,7 +388,7 @@ to add new Properties for any Person in your Space.
     // properly, by extending matches() with some proper comparators.
     val currentEmails = currentMembers.
       map(member => (member.getPropOptTyped(emailAddressProp)(originalState) -> member)).
-      filter(_._1.isDefined).
+      filter(pair => (pair._1.isDefined && !pair._1.get.isEmpty)).
       map(entry => (entry._1.get.first.addr.toLowerCase(), entry._2)).
       toMap
     val (existingEmails, newEmails) = invitees.partition(newEmail => currentEmails.contains(newEmail.addr.toLowerCase()))
