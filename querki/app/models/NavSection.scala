@@ -21,7 +21,7 @@ object NavSection {
   
   def loginNav(rc:RequestContext) = {
     rc.requester map { user =>
-      NavSection("Logged in as " + user.name, Seq(
+      NavSection("Logged in as " + truncateName(user.name), Seq(
         NavLink("Your Spaces", routes.Application.spaces),
         NavLink("Log out", routes.LoginController.logout)
       ))

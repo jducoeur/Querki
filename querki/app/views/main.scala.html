@@ -72,12 +72,18 @@
   <li class="divider"></li>
 }
 
+@strippedTitle(title:String) = @{
+  title.filter(c => c.isLetterOrDigit || c == ' ')
+}
+
 @displayNavSection(title:String, links:Seq[Navigable]) = {
-  <li class="dropdown"><a data-target="#@title" href="#@title" class="dropdown-toggle" data-toggle="dropdown">@title <b class="caret"></b></a>
-    <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">@for(link <- links) {
-      @displayNavigable(link)}
-    </ul>
-  </li>
+  @defining(strippedTitle(title)) { stripped =>
+    <li class="dropdown"><a data-target="#@stripped" href="#@stripped" class="dropdown-toggle" data-toggle="dropdown">@title <b class="caret"></b></a>
+      <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">@for(link <- links) {
+        @displayNavigable(link)}
+      </ul>
+    </li>
+  }
 }
 
 @displayNavigable(section:Navigable) = @{

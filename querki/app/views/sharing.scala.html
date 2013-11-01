@@ -103,7 +103,7 @@
         
         <table class="table table-hover">
           @for(member <- space.members) {
-            <tr class="info"><td>@member.displayName</td></tr>
+            <tr class="info"><td>@member.unsafeDisplayName</td></tr>
           }
         </table>
       </section>

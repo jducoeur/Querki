@@ -147,6 +147,15 @@ abstract class Thing(
     }
   }
   
+  def unsafeDisplayName:String = {
+    val localName = localProp(DisplayNameProp) orElse localProp(NameProp)
+    if (localName.isEmpty)
+      id.toString
+    else {
+      localName.get.renderPlain.plaintext
+    }    
+  }
+  
   def canonicalName:Option[String] = {
     NameProp.firstOpt(props)
   }

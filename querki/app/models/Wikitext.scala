@@ -53,7 +53,8 @@ trait Wikitext {
   /**
    * This is the nearly raw, unprocessed text. It should only be used when we are *not* sending
    * to an HTML environment -- generally, when you want to process a text field for QL but not
-   * for QText. Note that this does no XML escaping!
+   * for QText. (Or being used relatively directly from Play, when we know that it will be doing
+   * the escaping.) Note that this does no XML escaping!
    */
   def plaintext:String
   
