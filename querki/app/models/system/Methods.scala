@@ -176,8 +176,11 @@ object InstancesMethod extends SingleContextMethod(InstancesMethodOID,
   }
 }
 
+import querki.html.RenderSpecialization._
 abstract class EditMethodBase(id:OID, pf:PropFetcher) extends ThingPropMethod(id, pf)
 {
+  val specialization:RenderSpecialization = Unspecialized
+  
   def cantEditFallback(mainContext:QLContext, mainThing:Thing, 
     partialContext:QLContext, prop:Property[_,_],
     params:Option[Seq[QLPhrase]]):QValue
@@ -193,7 +196,7 @@ abstract class EditMethodBase(id:OID, pf:PropFetcher) extends ThingPropMethod(id
 	    // probably need to have the Context contain the desire to render in HTML, and delegate to the
 	    // HTML renderer indirectly. In other words, the Context should know the renderer to use, and pass
 	    // that into here:
-	    val inputControl = querki.html.HtmlRenderer.renderPropertyInput(mainContext.state, prop, currentValue)
+	    val inputControl = querki.html.HtmlRenderer.renderPropertyInput(mainContext.state, prop, currentValue, specialization)
 	    HtmlValue(inputControl)    
       }
       case _ => cantEditFallback(mainContext, mainThing, partialContext, prop, params)

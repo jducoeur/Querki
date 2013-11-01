@@ -113,7 +113,7 @@ function finalSetup(ownerId, spaceId, root) {
   
   function updateValue(evt) {
     if (querkiLiveUpdate) {
-      var target = $(evt.target);
+      var target = $(this); //$(evt.target);
       var prop = target.data("propid");
       var thingId = target.data("thing");
       var serialized;

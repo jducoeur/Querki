@@ -11,6 +11,7 @@ object Modules {
   val AccessControl = new querki.access.AccessControlModule(4)
   val Time = new time.TimeModule(5)
   val Collections = new collections.CollectionsModule(6)
+  val Rendering = new render.RenderingModule(7)
   
   private var allModules = Seq.empty[Module]
   
@@ -34,6 +35,7 @@ object Modules {
     s = init(AccessControl, s)
     s = init(Time, s)
     s = init(Collections, s)
+    s = init(Rendering, s)
     
     s
   }

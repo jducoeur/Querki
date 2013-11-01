@@ -11,6 +11,13 @@ import models.system._
 
 import querki.values._
 
+object RenderSpecialization extends Enumeration {
+  type RenderSpecialization = Value
+  
+  val Unspecialized, PickList = Value
+}
+import RenderSpecialization._
+
 /**
  * This is the top level object that knows about HTML. All rendering of Things into HTML,
  * and interpretation of HTML forms, should pass through here.
@@ -27,10 +34,10 @@ object HtmlRenderer {
    * PUBLIC API
    *********************************/
   
-  def renderPropertyInput(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Html = {
+  def renderPropertyInput(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal, specialization:RenderSpecialization = Unspecialized):Html = {
     val cType = prop.cType
     val pType = prop.pType
-    val rendered = renderSpecialized(cType, pType, state, prop, currentValue).getOrElse(cType.renderInput(prop, state, currentValue, pType))
+    val rendered = renderSpecialized(cType, pType, state, prop, currentValue, specialization).getOrElse(cType.renderInput(prop, state, currentValue, pType))
     val xml3 = addEditorAttributes(rendered, currentValue.inputControlId, prop.id, currentValue.inputControlId, currentValue.on.map(_.id.toThingId))
     // TODO: this is *very* suspicious, but we need to find a solution. RenderTagSet is trying to pass JSON structures in the
     // value field, but for that to be JSON-legal, the attributes need to be single-quoted, and the strings in them double-quoted.
@@ -83,15 +90,18 @@ object HtmlRenderer {
     xml3
   }
   
-  def renderSpecialized(cType:Collection, pType:PType[_], state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Option[Elem] = {
+  def renderSpecialized(cType:Collection, pType:PType[_], state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal, specialization:RenderSpecialization):Option[Elem] = {
     // TODO: make this more data-driven. There should be a table of these.
     if (cType == Optional && pType == YesNoType)
       Some(renderOptYesNo(state, prop, currentValue))
     else if (cType == Optional && pType == LinkType)
       Some(renderOptLink(state, prop, currentValue))
-    else if (cType == QSet && (pType.isInstanceOf[NameType] || pType == LinkType))
-      Some(renderTagSet(state, prop, currentValue))
-    else
+    else if (cType == QSet && (pType.isInstanceOf[NameType] || pType == LinkType)) {
+      if (specialization == PickList)
+        Some(renderPickList(state, prop, currentValue))
+      else
+        Some(renderTagSet(state, prop, currentValue))
+    } else
       None
   }
   
@@ -131,7 +141,7 @@ object HtmlRenderer {
     results
   }
   
-  def renderTagSet(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Elem = {
+  def getTagSetNames(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Option[Iterable[(String,String)]] = {
     val currentV = currentValue.v
     val pt = prop.pType
     
@@ -150,12 +160,71 @@ object HtmlRenderer {
         throw new Exception("renderTagSet got unexpected type " + pt)
       }
     }
-    val rawList = currentV.map(_.cv.map(getKeyAndVal(_)))
+    currentV.map(_.cv.map(getKeyAndVal(_)))    
+  }
+  
+  def renderTagSet(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Elem = {
+    val rawList = getTagSetNames(state, prop, currentValue)
     
     // We treat names/tags and links a bit differently, although they look similar on the surface:
     val isNameType = prop.pType.isInstanceOf[NameType]
     val current = "[" + rawList.map(_.map(keyVal => "{\"display\":\"" + keyVal._2 + "\", \"id\":\"" + keyVal._1 + "\"}").mkString(", ")).getOrElse("") + "]"
     <input class="_tagSetInput" data-isNames={isNameType.toString} type="text" data-current={current}></input>
+  }
+  
+  /**
+   * This is an alternate renderer for Tag/List Sets.
+   */
+  def renderPickList(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Elem = {
+    implicit val s = state
+    val instancesOpt = for (
+        propAndVal <- prop.getPropOpt(LinkModelProp);
+        modelOID <- propAndVal.firstOpt
+        )
+      yield state.descendants(modelOID, false, true)
+      
+    instancesOpt match {
+      case Some(allInstances) => {
+        val sortedInstances = allInstances.toSeq.sortBy(_.displayName).zipWithIndex
+        val rawList = getTagSetNames(state, prop, currentValue)
+        val currentMap = rawList.map(_.toMap)
+        val isNameType = prop.pType.isInstanceOf[NameType]
+        
+        val listName = currentValue.inputControlId + "_values"
+        
+        def isListed(item:Thing):Boolean = {
+          currentMap match {
+            case Some(map) => {
+              if (isNameType) {
+                val name = for (
+                    propAndVal <- item.getPropOpt(NameProp);
+                    name <- propAndVal.firstOpt
+                      )
+                  yield name
+                name.map(map.contains(_)).getOrElse(false)
+              } else {
+                map.contains(item.id.toString)
+              }
+            }
+            case None => false
+          }
+        }
+    
+        <form><ul> {
+          sortedInstances.map { pair =>
+            val (instance, index) = pair
+            <li>{
+            if (isListed(instance))
+              Seq(<input name={s"$listName[$index]"} value={instance.id.toString} type="checkbox" checked="checked"></input>, Text(" " + instance.displayName))
+            else
+              Seq(<input name={s"$listName[$index]"} value={instance.id.toString} type="checkbox"></input>, Text(" " + instance.displayName))
+            }</li>
+          }
+        } </ul></form>
+      }
+      // TODO: we need a better way to specify this warning
+      case None => <p class="warning">Can't display a Pick List for a Set that doesn't have a Link Model!</p>
+    }
   }
   
   def handleSpecialized(prop:Property[_,_], newVal:String):Option[QValue] = {
