@@ -7,6 +7,7 @@ import models.system._
 import ql._
 
 import querki.html.RenderSpecialization._
+import querki.util._
 import querki.values._
 
 class RenderingModule(val moduleId:Short) extends modules.Module {
@@ -23,6 +24,8 @@ class RenderingModule(val moduleId:Short) extends modules.Module {
   /**
    * This is probably badly factored -- in the long run, I suspect this should actually be a param to _edit instead.
    * But this will do to start.
+   * 
+   * TODO: this is weirdly incestuous with HtmlRenderer. Think about how the factoring should really work.
    */
   lazy val editAsPicklistMethod = new EditMethodBase(EditAsPickListOID, 
     toProps(
@@ -44,7 +47,23 @@ class RenderingModule(val moduleId:Short) extends modules.Module {
         prop.qlApply(mainContext, params)    
     }  
     
-    override val specialization:RenderSpecialization = PickList
+    override def specialization(mainContext:QLContext, mainThing:Thing, 
+      partialContext:QLContext, prop:Property[_,_],
+      paramsOpt:Option[Seq[QLPhrase]]):Set[RenderSpecialization] = 
+    {
+      // This is basically saying "if there is one parameter, and it is the token 'withAdd'"
+      // TODO: all of this should go behind a better-built parameter wrapper.
+      val hasAddOpt = for (
+        params <- paramsOpt;
+        if (params.length > 0);
+        param = params(0);
+        QLCall(addName, _, _, _) = param.ops(0);
+        if (addName.toLowerCase() == "withadd")
+          )
+        yield true
+        
+      hasAddOpt.map(_ => Set(PickList, WithAdd)).getOrElse(Set(PickList))
+    }
   }
   
   override lazy val props = Seq(

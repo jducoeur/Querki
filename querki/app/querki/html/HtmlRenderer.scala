@@ -14,7 +14,7 @@ import querki.values._
 object RenderSpecialization extends Enumeration {
   type RenderSpecialization = Value
   
-  val Unspecialized, PickList = Value
+  val Unspecialized, PickList, WithAdd = Value
 }
 import RenderSpecialization._
 
@@ -34,7 +34,7 @@ object HtmlRenderer {
    * PUBLIC API
    *********************************/
   
-  def renderPropertyInput(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal, specialization:RenderSpecialization = Unspecialized):Html = {
+  def renderPropertyInput(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization] = Set(Unspecialized)):Html = {
     val cType = prop.cType
     val pType = prop.pType
     val rendered = renderSpecialized(cType, pType, state, prop, currentValue, specialization).getOrElse(cType.renderInput(prop, state, currentValue, pType))
@@ -90,15 +90,15 @@ object HtmlRenderer {
     xml3
   }
   
-  def renderSpecialized(cType:Collection, pType:PType[_], state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal, specialization:RenderSpecialization):Option[Elem] = {
+  def renderSpecialized(cType:Collection, pType:PType[_], state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):Option[Elem] = {
     // TODO: make this more data-driven. There should be a table of these.
     if (cType == Optional && pType == YesNoType)
       Some(renderOptYesNo(state, prop, currentValue))
     else if (cType == Optional && pType == LinkType)
       Some(renderOptLink(state, prop, currentValue))
     else if (cType == QSet && (pType.isInstanceOf[NameType] || pType == LinkType)) {
-      if (specialization == PickList)
-        Some(renderPickList(state, prop, currentValue))
+      if (specialization.contains(PickList))
+        Some(renderPickList(state, prop, currentValue, specialization))
       else
         Some(renderTagSet(state, prop, currentValue))
     } else
@@ -173,18 +173,19 @@ object HtmlRenderer {
   }
   
   /**
-   * This is an alternate renderer for Tag/List Sets.
+   * This is an alternate renderer for Tag/List Sets. It displays a list of *all* of the candidate Things
+   * (defined by the Link Model), and lets you choose them by checkboxes. A primitive first cut, but useful.
    */
-  def renderPickList(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Elem = {
+  def renderPickList(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):Elem = {
     implicit val s = state
     val instancesOpt = for (
         propAndVal <- prop.getPropOpt(LinkModelProp);
         modelOID <- propAndVal.firstOpt
         )
-      yield state.descendants(modelOID, false, true)
+      yield (modelOID, state.descendants(modelOID, false, true))
       
     instancesOpt match {
-      case Some(allInstances) => {
+      case Some((modelOID, allInstances)) => {
         val sortedInstances = allInstances.toSeq.sortBy(_.displayName).zipWithIndex
         val rawList = getTagSetNames(state, prop, currentValue)
         val currentMap = rawList.map(_.toMap)
@@ -220,7 +221,14 @@ object HtmlRenderer {
               Seq(<input name={s"$listName[$index]"} value={instance.id.toString} type="checkbox"></input>, Text(" " + instance.displayName))
             }</li>
           }
-        } </ul></form>
+        } </ul> {
+          if (specialization.contains(WithAdd)) {
+            <div class="input-append">
+              <input type="text" class="_quickCreateProp" placeholder="New Item Name" data-model={modelOID.toString} data-propid={models.system.OIDs.NameOID.toString}></input>
+              <button type="button" class="btn _quickCreate">Add</button>
+            </div>
+          }
+        } </form>
       }
       // TODO: we need a better way to specify this warning
       case None => <p class="warning">Can't display a Pick List for a Set that doesn't have a Link Model!</p>

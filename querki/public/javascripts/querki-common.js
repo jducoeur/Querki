@@ -113,7 +113,7 @@ function finalSetup(ownerId, spaceId, root) {
   
   function updateValue(evt) {
     if (querkiLiveUpdate) {
-      var target = $(this); //$(evt.target);
+      var target = $(this);
       var prop = target.data("propid");
       var thingId = target.data("thing");
       var serialized;
@@ -138,4 +138,25 @@ function finalSetup(ownerId, spaceId, root) {
 
   root.find(".propEditor").change(updateValue);
   root.find(".propEditor .radioBtn").click(updateValue);
+  
+  function quickCreate(evt) {
+    var button = $(this);
+    var target = button.siblings("._quickCreateProp");
+    var modelId = target.data("model");
+    var prop = target.data("propid");
+    var createVal = target.val();
+    jsRoutes.controllers.Application.doCreateThing(ownerId, spaceId).ajax({
+      data: "API=true&model=" + modelId + "&field[0]=" + prop + "&v-" + prop + "-=" + createVal,
+      success: function (result) {
+        finishStatus("Added");
+      },
+      error: function (err) {
+        showStatus("Error trying to add: " + err);
+      }
+    });
+    showStatus("Creating...");
+    evt.stopPropagation();
+  }
+  root.find("._quickCreate").click(quickCreate);
+  root.find("._quickCreateProp").change(function(evt) { evt.stopPropagation(); });
 }
