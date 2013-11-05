@@ -164,9 +164,7 @@ function finalSetup(ownerId, spaceId, root) {
   }
   
   // Note that quickCreate is intentionally crafted to be somewhat reusable:
-  function quickCreate(evt) {
-    var button = $(this);
-    var target = button.siblings("._quickCreateProp");
+  function doQuickCreate(target) {
     var modelId = target.data("model");
     var prop = target.data("propid");
     var createVal = target.val();
@@ -186,9 +184,22 @@ function finalSetup(ownerId, spaceId, root) {
       }
     });
     showStatus("Creating...");
-    evt.stopPropagation();
+  }
+  function quickCreate(evt) {
+    var button = $(this);
+    var target = button.siblings("._quickCreateProp");
+    doQuickCreate(target);
+    evt.stopPropagation();  
   }
   root.find("._quickCreate").click(quickCreate);
   root.find("._quickCreateProp").change(function(evt) { evt.stopPropagation(); });
+  root.find("._quickCreateProp").keydown(function (e) {
+    var keyCode = e.keyCode || e.which;
+
+    if (keyCode == 13) {
+      doQuickCreate($(this));
+      return false;
+    }
+  });
   // ----------------------------
 }
