@@ -110,10 +110,7 @@ function finalSetup(ownerId, spaceId, root) {
   root.find(".mf_container").addClass("span10");
   root.find(".controls input[type='text']").filter(".propEditor").addClass("span10");
 
-  
-  function updateValue(evt) {
-    if (querkiLiveUpdate) {
-      var target = $(this);
+  function doUpdateValue(target, successCb, failureCb) {
       var prop = target.data("propid");
       var thingId = target.data("thing");
       var serialized;
@@ -127,28 +124,62 @@ function finalSetup(ownerId, spaceId, root) {
         data: "addedProperty=&model=&field[0]=" + prop + "&" + serialized,
         success: function (result) {
           finishStatus("Saved");
+          if (typeof(successCb) != "undefined") {
+            successCb();
+          }
         },
         error: function (err) {
           showStatus("Error trying to save. Please reload this page and try again.");
         }
       });
-      showStatus("Saving...");
+      showStatus("Saving...");  
+  }
+  
+  function updateValue(evt) {
+    if (querkiLiveUpdate) {
+      var target = $(this);
+      doUpdateValue(target);
     }
   }
 
   root.find(".propEditor").change(updateValue);
   root.find(".propEditor .radioBtn").click(updateValue);
   
+  // --------------------------
+  // Pick List Management
+  //
+  // TODO: this code is horribly incestuous with HtmlRenderer. How can we modularize all of
+  // this stuff more appropriately?
+  function addToList(target, newId) {
+    var master = target.parents(".propEditor");
+    var basename = master.prop("name");
+    var currentElems = master.find("ul li");
+    var currentNum = currentElems.length;
+    // TODO: ack, horror -- newId, returned from doCreateThing, is a ThingId, but the input field needs a plain OID.
+    // Need to iron this inconsistency out, and choose the paradigm for which you use when.
+    var thingId = newId.substring(1);
+    
+    master.append("<input type='hidden' name='" + basename + "_values[" + currentNum + "]' value='" + thingId + "'></input>");
+    doUpdateValue(master, function () { location.reload(true); });
+  }
+  
+  // Note that quickCreate is intentionally crafted to be somewhat reusable:
   function quickCreate(evt) {
     var button = $(this);
     var target = button.siblings("._quickCreateProp");
     var modelId = target.data("model");
     var prop = target.data("propid");
     var createVal = target.val();
+    var addtolist = target.data("addtolist");
     jsRoutes.controllers.Application.doCreateThing(ownerId, spaceId).ajax({
       data: "API=true&model=" + modelId + "&field[0]=" + prop + "&v-" + prop + "-=" + createVal,
       success: function (result) {
         finishStatus("Added");
+        // TODO: this is horrible coupling. I'd really like to keep quickCreate and addToList separate.
+        // How can we get that to work in the JS environment?
+        if (addtolist) {
+          addToList(target, result);
+        }
       },
       error: function (err) {
         showStatus("Error trying to add: " + err);
@@ -159,4 +190,5 @@ function finalSetup(ownerId, spaceId, root) {
   }
   root.find("._quickCreate").click(quickCreate);
   root.find("._quickCreateProp").change(function(evt) { evt.stopPropagation(); });
+  // ----------------------------
 }

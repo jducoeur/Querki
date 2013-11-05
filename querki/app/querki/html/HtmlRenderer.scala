@@ -211,7 +211,7 @@ object HtmlRenderer {
           }
         }
     
-        <form><ul> {
+        <form><ul class="_listContent"> {
           sortedInstances.map { pair =>
             val (instance, index) = pair
             <li>{
@@ -224,7 +224,7 @@ object HtmlRenderer {
         } </ul> {
           if (specialization.contains(WithAdd)) {
             <div class="input-append">
-              <input type="text" class="_quickCreateProp" placeholder="New Item Name" data-model={modelOID.toString} data-propid={models.system.OIDs.NameOID.toString}></input>
+              <input type="text" class="_quickCreateProp" placeholder="New Item Name" data-model={modelOID.toString} data-propid={models.system.OIDs.NameOID.toString} data-addtolist="true"></input>
               <button type="button" class="btn _quickCreate">Add</button>
             </div>
           }
