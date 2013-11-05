@@ -184,7 +184,7 @@ class SpaceManager extends Actor {
    * TODO: the messages in here *should* be PublicExceptions. But we can't do that until ThingFailed can take one of those.
    */
   def canCreateSpaces(owner:User):Try[Boolean] = Try {
-    if (owner.isAdmin)
+    if (owner.isAdmin || owner.level == querki.identity.UserLevel.PermanentUser)
       // The limit only applies to normal users
       true
     else if (!owner.canOwnSpaces)
