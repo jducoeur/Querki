@@ -649,12 +649,14 @@ disallow: /
 
   // TODO: this is broken from a security POV. It should be rewritten in terms of GetSpace!
   def attachment(ownerIdStr:String, spaceId:String, thingIdStr:String) = withUser(false) { rc =>
-    val ownerId = getUserByThingId(ownerIdStr)
-    askSpaceMgr[AttachmentResponse](GetAttachment(rc.requesterOrAnon, ownerId, ThingId(spaceId), ThingId(thingIdStr))) {
+    val ownerId = getIdentityByThingId(ownerIdStr)
+    askSpaceMgr[ThingResponse](GetAttachment(rc.requesterOrAnon, ownerId, ThingId(spaceId), ThingId(thingIdStr))) {
       case AttachmentContents(id, size, mime, content) => {
         Ok(content).as(mime)
       }
-      case AttachmentFailed() => BadRequest
+      // TODO: this should probably include the error message in some form? As it is, you get a blank page
+      // if you try to download and it fails:
+      case ThingFailed(err, _, _) => BadRequest
     }     
   }
   

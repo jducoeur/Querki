@@ -95,8 +95,5 @@ case class ThingFound(id:OID, state:SpaceState) extends ThingResponse
 // TODO: this shouldn't be an error String, it should be a PublicException, which then gets internationalized against
 // the request:
 case class ThingFailed(error:SpaceError, msg:String, stateOpt:Option[SpaceState] = None) extends ThingResponse
-
-sealed trait AttachmentResponse
-case class AttachmentContents(id:OID, size:Int, mime:MIMEType, content:Array[Byte]) extends AttachmentResponse
-case class AttachmentFailed() extends AttachmentResponse
+case class AttachmentContents(id:OID, size:Int, mime:MIMEType, content:Array[Byte]) extends ThingResponse
 

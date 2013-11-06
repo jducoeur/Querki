@@ -143,7 +143,10 @@ class SpaceManager extends Actor {
           val spaceOpt = getSpaceByName(ownerId, spaceName)
           // TODO: the error clause below potentially leaks information about whether a
           // give space exists for an owner. Examine the various security paths holistically.
-          spaceOpt map getSpace map { _.forward(req) } getOrElse { sender ! ThingFailed(UnknownPath, "Not a legal path") }
+          spaceOpt match {
+            case Some(spaceId) => getSpace(spaceId).forward(req)
+            case None => sender ! ThingFailed(UnknownPath, "Not a legal path")
+          }
         }
       }
     }

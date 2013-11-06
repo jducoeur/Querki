@@ -509,10 +509,7 @@ class Space extends Actor {
         val results = AttachSQL("""
             SELECT mime, size, content FROM {tname} where id = {id}
             """).on("id" -> attachOid.raw)().map {
-          // TODO: we really, really must not hardcode this type below. This is some sort of
-          // serious Anorm driver failure, I think. As it stands, it's going to crash when we
-          // move to MySQL:
-          case Row(mime:MIMEType, size:Int, content:Array[Byte]) => {
+          case Row(mime:MIMEType, size:Int, Some(content:Array[Byte])) => {
             AttachmentContents(attachOid, size, mime, content)
           }
         }.head
