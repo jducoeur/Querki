@@ -7,6 +7,8 @@ import language.implicitConversions
 
 import eu.henkelmann.actuarius.{Decorator, Transformer}
 
+import querki.util._
+
 case class DisplayText(val str:String) {
   override def toString() = str
   
@@ -156,6 +158,10 @@ class QuerkiTransformer extends Transformer with Decorator {
     override def deco() = this
     // We no longer allow XML in QText. However, internal systems can inject HTML by using a
     override def allowVerbatimXml():Boolean = false
+    // We use <div> instead of a real <p>, because it turns out that older versions of IE (specifically IE9)
+    // do not permit <form>s inside of <p> -- and restructure the HTML to prevent it, breaking our forms.
+    override def decorateParagraphOpen():String = """<div class="para">"""
+    override def decorateParagraphClose():String = """</div>"""
 }
 
 class RawTransformer extends Transformer with Decorator {

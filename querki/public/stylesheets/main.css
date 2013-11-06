@@ -1,4 +1,15 @@
 /*
+ * Our standard "paragraph" style. We use divs of this instead of <p>, to work around
+ * idiosyncracies of nesting forms inside of <p>. These choices are taken from inspection
+ * of how Chrome handles <p>, but aren't sacred.
+ */
+
+.para {
+    margin-top: 0px;
+    margin-bottom: 10px;
+}
+
+/*
  * Menu tweaks for Querki. The existing menubar doesn't work quite right in our theme, so
  * I have a few modifications to make it look correct.
  *
@@ -55,7 +66,8 @@
   margin-left: 30px;
 }
 
-._thingTree p {
+._thingTree .para {
+  margin-top: 0px;
   margin-bottom: 0px;
 }
 
