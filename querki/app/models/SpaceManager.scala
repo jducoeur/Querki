@@ -135,7 +135,6 @@ class SpaceManager extends Actor {
     // Is there a better way to do this?
     case req:SpaceMessage => {
       Logger.info("SpaceMgr got " + req)
-      Logger.info("Config message is " + replyMsg)
       // TODO: cope with messages in name style instead
       req match {
         case SpaceMessage(_, _, AsOID(spaceId)) => getSpace(spaceId).forward(req)

@@ -509,7 +509,17 @@ class Space extends Actor {
         val results = AttachSQL("""
             SELECT mime, size, content FROM {tname} where id = {id}
             """).on("id" -> attachOid.raw)().map {
+          // Note: this weird duplication is a historical artifact, due to the fact
+          // that some of the attachment tables have "content" as a nullable column,
+          // and some don't. We may eventually want to evolve everything into
+          // consistency...
+          case Row(Some(mime:MIMEType), Some(size:Int), Some(content:Array[Byte])) => {
+            AttachmentContents(attachOid, size, mime, content)
+          }
           case Row(mime:MIMEType, size:Int, Some(content:Array[Byte])) => {
+            AttachmentContents(attachOid, size, mime, content)
+          }
+          case Row(mime:MIMEType, size:Int, content:Array[Byte]) => {
             AttachmentContents(attachOid, size, mime, content)
           }
         }.head
