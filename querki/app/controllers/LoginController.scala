@@ -184,6 +184,15 @@ object LoginController extends ApplicationBase {
       case None => doError(routes.Application.index, "Something went wrong during joining -- sorry!")
     }
   }
+
+  def userByName(userName:String) = withUser(true) { rc =>
+    val pairOpt = User.getIdentity(ThingId(userName))
+    pairOpt match {
+      case Some((identity, level)) => Ok(views.html.profile(rc, identity, level))
+      case None => doError(routes.Application.index, "That isn't a legal path")
+    }
+    
+  }
   
   // TODO: that onUnauthorized will infinite-loop if it's ever invoked. What should we do instead?
   def login = 

@@ -8,7 +8,9 @@ import play.api.db._
 import play.api.mvc._
 import play.api.Play.current
 
-import models._
+import models.{OID,UnknownOID}
+import models.{ThingId,AsOID,AsName}
+import models.system
 
 import querki.db.ShardKind
 import ShardKind._
@@ -34,7 +36,7 @@ object UserLevel {
   val SuperadminUser = 100
   
   def levelName(level:UserLevel) = level match {
-    case PendingUser => "pending"
+    case PendingUser => "invited"
     case FreeUser => "free"
     case PaidUser => "paid"
     case PermanentUser => "permanent"
@@ -276,11 +278,40 @@ object User {
     }
     idOpt.map(FullUser(_, name))
   }
+  
+  /**
+   * Global method to fetch an Identity (and a bit of User info) from a ThingId.
+   */
+  def getIdentity(thingId:ThingId):Option[(Identity, UserLevel)] = {
+    thingId match {
+      case AsOID(id) => { 
+        for (
+          user <- getUserForIdentity(id);
+          identity <- user.identityById(id)
+            )
+          yield (identity, user.level)
+      }
+      case AsName(handle) => {
+        for (
+          user <- loadByHandle(handle, None);
+          identity <- user.identityByHandle(handle)
+            )
+          yield (identity, user.level)
+      }
+    }
+  }
  
   // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
   def getIdentity(rawHandle:String) = {
     loadByHandle(rawHandle, None).flatMap(_.identityByHandle(rawHandle)).map(_.id)
   }
+  
+  private def getUserForIdentity(id:OID):Option[User] = {
+    val query = userLoadSqlWhere("Identity.id={id}").on("id" -> id.raw)
+    getUser(query)
+  }
+  
+  private def getIdentity(id:OID):Option[Identity] = getUserForIdentity(id).flatMap(_.identityById(id))
 
   /**
    * Fetched the handle for the Identity matching the given OID. If there isn't one, simply
@@ -289,16 +320,13 @@ object User {
    */
   // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
   def getHandle(id:OID):String = {
-    // TODO: check the userByIdentityCache
-    val query = userLoadSqlWhere("Identity.id={id}").on("id" -> id.raw)
-    getUser(query).flatMap(_.identityById(id)).map(_.handle).getOrElse(id.toThingId.toString)
+    getIdentity(id).map(_.handle).getOrElse(id.toThingId.toString)
   }
   
   // Note that this assumes that the ID identifies a valid Identity.
   // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
   def getName(id:OID):String = {
-    val query = userLoadSqlWhere("Identity.id={id}").on("id" -> id.raw)
-    getUser(query).flatMap(_.identityById(id)).map(_.name).getOrElse(id.toThingId.toString)
+    getIdentity(id).map(_.name).getOrElse(id.toThingId.toString)
   }
   
   // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.

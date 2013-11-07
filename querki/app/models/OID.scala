@@ -82,3 +82,29 @@ object OID {
 }
 
 object UnknownOID extends OID(-1)
+
+/**
+ * ThingId deals with the fact that we sometimes are passing OIDs around in messages, and
+ * sometimes OIDs. This provides an abstraction that lets you use either in a sensible way.
+ */
+sealed trait ThingId
+case class AsOID(oid:OID) extends ThingId {
+  override def toString() = "." + oid.toString
+}
+case class AsName(name:String) extends ThingId {
+  // We are currently using toUrl for this, *not* canonicalize, because we want to preserve case
+  // in the URL. This does, however, mean that you can't casually compare the toString'ed versions
+  // of two AsNames and assume that they are equal!
+  override def toString() = system.NameType.toUrl(name)
+}
+object UnknownThingId extends AsOID(UnknownOID)
+object ThingId {
+  def apply(str:String):ThingId = {
+    str(0) match {
+      case '.' => AsOID(OID(str.substring(1)))
+      case _ => AsName(str)
+    }
+  }
+  
+  implicit def thingId2Str(id:ThingId) = id.toString()
+}

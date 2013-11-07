@@ -10,32 +10,6 @@ import system._
 
 import MIMEType.MIMEType
 
-/**
- * ThingId deals with the fact that we sometimes are passing OIDs around in messages, and
- * sometimes OIDs. This provides an abstraction that lets you use either in a sensible way.
- */
-sealed trait ThingId
-case class AsOID(oid:OID) extends ThingId {
-  override def toString() = "." + oid.toString
-}
-case class AsName(name:String) extends ThingId {
-  // We are currently using toUrl for this, *not* canonicalize, because we want to preserve case
-  // in the URL. This does, however, mean that you can't casually compare the toString'ed versions
-  // of two AsNames and assume that they are equal!
-  override def toString() = NameType.toUrl(name)
-}
-object UnknownThingId extends AsOID(UnknownOID)
-object ThingId {
-  def apply(str:String):ThingId = {
-    str(0) match {
-      case '.' => AsOID(OID(str.substring(1)))
-      case _ => AsName(str)
-    }
-  }
-  
-  implicit def thingId2Str(id:ThingId) = id.toString()
-}
-
 sealed trait SpaceMgrMsg
 
 // TBD: this arguably doesn't belong to SpaceManager. There is no serious reason why it needs to
@@ -90,10 +64,11 @@ object SpaceError extends Enumeration {
 import SpaceError._
 
 // This is the most common response when you create/fetch any sort of Thing
-sealed trait ThingResponse
+sealed trait SpaceResponse
+sealed trait ThingResponse extends SpaceResponse
 case class ThingFound(id:OID, state:SpaceState) extends ThingResponse
 // TODO: this shouldn't be an error String, it should be a PublicException, which then gets internationalized against
 // the request:
 case class ThingFailed(error:SpaceError, msg:String, stateOpt:Option[SpaceState] = None) extends ThingResponse
-case class AttachmentContents(id:OID, size:Int, mime:MIMEType, content:Array[Byte]) extends ThingResponse
+case class AttachmentContents(id:OID, size:Int, mime:MIMEType, content:Array[Byte]) extends SpaceResponse
 

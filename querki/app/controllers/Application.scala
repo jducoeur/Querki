@@ -650,13 +650,14 @@ disallow: /
   // TODO: this is broken from a security POV. It should be rewritten in terms of GetSpace!
   def attachment(ownerIdStr:String, spaceId:String, thingIdStr:String) = withUser(false) { rc =>
     val ownerId = getIdentityByThingId(ownerIdStr)
-    askSpaceMgr[ThingResponse](GetAttachment(rc.requesterOrAnon, ownerId, ThingId(spaceId), ThingId(thingIdStr))) {
+    askSpaceMgr[SpaceResponse](GetAttachment(rc.requesterOrAnon, ownerId, ThingId(spaceId), ThingId(thingIdStr))) {
       case AttachmentContents(id, size, mime, content) => {
         Ok(content).as(mime)
       }
       // TODO: this should probably include the error message in some form? As it is, you get a blank page
       // if you try to download and it fails:
       case ThingFailed(err, _, _) => BadRequest
+      case ThingFound(_, _) => QLog.error("Application.attachment somehow got a ThingFound back!"); BadRequest
     }     
   }
   
@@ -667,19 +668,6 @@ disallow: /
     val export = thing.export
     Ok(export).as(MIMEType.JSON)
   }
-
-  // TODO: this should be replaced by a profile page.
-//  def userByName(userName:String) = {
-//    // TBD: Note that, for now at least, this simply returns my own spaces. I'm leery about
-//    // allowing people to see each other's spaces too casually.
-//    // TBD: is this the appropriate response to, say, "http://querki.net/jducoeur/"? Or
-//    // should this show the profile page instead?
-//    withUser(true) { rc => 
-//      askSpaceMgr[ListMySpacesResponse](ListMySpaces(rc.requester.get.id)) { 
-//        case MySpaces(list) => Ok(views.html.spaces(rc, list))
-//      }
-//    }    
-//  }
   
   def sharing(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
     if (rc.isOwner)

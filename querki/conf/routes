@@ -10,8 +10,9 @@ GET     /spaces                     controllers.Application.spaces
 GET     /newSpace                   controllers.Application.newSpace
 POST    /doNewSpace                 controllers.Application.doNewSpace
 
-# TODO: this will get replaced by a proper profile page.
-# GET     /u/:userName/               controllers.Application.userByName(userName)
+# User Profile functions
+GET     /u/:userName                controllers.LoginController.userByName(userName)
+
 GET     /u/:userName/:spaceId/      controllers.Application.space(userName, spaceId)
 
 GET     /u/:userName/:spaceId/createThing controllers.Application.createThing(userName, spaceId, model:Option[String])

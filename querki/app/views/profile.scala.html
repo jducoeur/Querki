@@ -1,0 +1,26 @@
+@(rc:RequestContext, identity:querki.identity.Identity, level:querki.identity.UserLevel.UserLevel)
+
+@import querki.identity.UserLevel
+
+@requester = @{ rc.requesterOrAnon }
+@userName = @{ identity.name }
+@lookingAtSelf = @{ requester.hasIdentity(identity.id) }
+@title = @{ "Profile for " + userName }
+
+@main(QuerkiTemplate.Profile, title, rc) {
+
+	<div class="page-header">
+	  <h1>@title</h1>
+	</div>
+
+    @if(lookingAtSelf) {
+	  <div class="row-fluid">
+	    <h3>Basic Information</h3>
+	    <p><b>Handle:</b> @identity.handle</p>
+	    <p><b>Email:</b> @identity.email.addr</p>
+	    <p><b>Status:</b> @UserLevel.levelName(level)</p>
+	  
+	    <h3>Change Your Password</h3>
+      </div>
+    }
+}
