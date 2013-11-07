@@ -38,10 +38,19 @@ object LoginController extends ApplicationBase {
   val signupForm = Form(
     mapping(
       "email" -> email,
-      "password" -> (nonEmptyText verifying minLength(6)),
+      "password" -> (nonEmptyText verifying minLength(8)),
       "handle" -> (text verifying pattern("""[a-zA-Z0-9]+""".r, error="A handle can only contain letters and numbers")),
       "display" -> nonEmptyText
     )(SignupInfo.apply)(SignupInfo.unapply)
+  )
+  
+  case class PasswordChangeInfo(password:String, newPassword:String, newPasswordAgain:String)
+  val passwordChangeForm = Form(
+    mapping(
+      "password" -> nonEmptyText,
+      "newPassword" -> (nonEmptyText verifying minLength(8)),
+      "newPasswordAgain" -> (nonEmptyText verifying minLength(8))
+    )(PasswordChangeInfo.apply)(PasswordChangeInfo.unapply)
   )
   
   lazy val maxMembers = Config.getInt("querki.public.maxMembersPerSpace", 100)
@@ -188,10 +197,37 @@ object LoginController extends ApplicationBase {
   def userByName(userName:String) = withUser(true) { rc =>
     val pairOpt = User.getIdentity(ThingId(userName))
     pairOpt match {
-      case Some((identity, level)) => Ok(views.html.profile(rc, identity, level))
+      case Some((identity, level)) => {
+        val initialPasswordForm = PasswordChangeInfo("", "", "")
+        Ok(views.html.profile(rc, identity, level, passwordChangeForm.fill(initialPasswordForm)))
+      }
       case None => doError(routes.Application.index, "That isn't a legal path")
     }
-    
+  }
+  
+  def changePassword(handle:String) = withUser(true) { rc =>
+    implicit val request = rc.request
+    val rawForm = passwordChangeForm.bindFromRequest
+    rawForm.fold(
+      errorForm => doError(routes.LoginController.userByName(handle), "That was not a legal password"),
+      info => {
+        val checkedLogin = User.checkQuerkiLogin(handle, info.password)
+        checkedLogin match {
+          case Some(user) => {
+            if (info.newPassword == info.newPasswordAgain) {
+              val identity = user.identityByHandle(handle).get
+              val newUser = User.changePassword(rc.requesterOrAnon, identity, info.newPassword)
+              Redirect(routes.LoginController.userByName(handle)).flashing("info" -> "Password changed")
+            } else {
+              doError(routes.LoginController.userByName(handle), "The passwords didn't match")
+            }
+          }
+          case _ => {
+            doError(routes.LoginController.userByName(handle), "The current password was incorrect. Please try again.")
+          }
+        }
+      }
+    )
   }
   
   // TODO: that onUnauthorized will infinite-loop if it's ever invoked. What should we do instead?

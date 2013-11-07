@@ -330,7 +330,7 @@ object User {
   }
   
   // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
-  def checkQuerkiLogin(email:EmailAddress, passwordEntered:String):Option[User] = {
+  private def checkQuerkiLoginByEmail(email:EmailAddress, passwordEntered:String):Option[User] = {
     loadByEmail(
       email, 
       Some({ user:User => 
@@ -343,7 +343,7 @@ object User {
   // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
   def checkQuerkiLogin(login:String, passwordEntered:String):Option[User] = {
     if (login.contains("@")) {
-      checkQuerkiLogin(EmailAddress(login), passwordEntered)
+      checkQuerkiLoginByEmail(EmailAddress(login), passwordEntered)
     } else {
       loadByHandle(
         login, 
@@ -405,6 +405,24 @@ object User {
     checkQuerkiLogin(info.handle, info.password).getOrElse(throw new Exception("Unable to load newly-created Identity!"))
   }
   
+  def changePassword(requester:User, identity:Identity, newPassword:String):Try[User] = Try {
+    if (!requester.isAdmin && !requester.hasIdentity(identity.id))
+      throw new Exception("Illegal attempt to change password!")
+    
+    DB.withTransaction(dbName(System)) { implicit conn =>
+      val update = SQL("""
+          UPDATE Identity
+             SET authentication = {authentication}
+           WHERE id = {id}
+          """).on(
+            "authentication" -> Hasher.calcHash(newPassword).toString,
+            "id" -> identity.id.raw
+              )
+       update.executeUpdate
+    }
+    
+    checkQuerkiLogin(identity.handle, newPassword).getOrElse(throw new Exception("Unable to load newly-created Identity!"))
+  }
   
   def addSpaceMembership(identityId:OID, spaceId:OID):Boolean = {
     DB.withConnection(dbName(System)) { implicit conn =>

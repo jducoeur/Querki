@@ -12,6 +12,7 @@ POST    /doNewSpace                 controllers.Application.doNewSpace
 
 # User Profile functions
 GET     /u/:userName                controllers.LoginController.userByName(userName)
+POST    /u/:userName/_changePassword controllers.LoginController.changePassword(userName)
 
 GET     /u/:userName/:spaceId/      controllers.Application.space(userName, spaceId)
 
