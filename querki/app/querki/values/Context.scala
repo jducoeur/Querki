@@ -84,6 +84,10 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
   
   /**
    * Similar to ordinary map(), but produces a new Context with the result.
+   * 
+   * TODO: this is fundamentally suspicious. What if ct is ExactlyOne, and cb returns None? We'll
+   * wind up with an empty ExactlyOne, which violates the invariants. See collect, below, for a
+   * more sensible approach.
    */
   def flatMapAsContext[T <: ElemValue](cb:QLContext => Option[T], resultType:PType[_]):QLContext = {
     val ct = value.cType
@@ -92,16 +96,29 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
     val propVal = ct.makePropValue(raw, resultType)
     next(propVal)
   }
-  
-  def flatMapAsValue[T <: ElemValue](cb:QLContext => QValue):QValue = {
+
+  /**
+   * Given a function that takes a single-element context and produces a QValue, this runs that
+   * over all of the elements in this context, and collects the results into a single QValue.
+   * 
+   * This needs the PType of the expected result, so that it can set the results up correctly
+   * if they are empty.
+   * 
+   * Note that the result is *always* a List at this point, since that's the easy and usually-safe
+   * answer. This is not monadically correct, though, and at some point we may need to make this
+   * fancier for more interesting types. (The general problem is that we are multiplying two
+   * Collections -- the incoming Collection times the results of the callback -- and I'm not
+   * experienced enough with category theory to get this right yet.)
+   */
+  def collect(pt:PType[_])(cb:QLContext => QValue):QValue = {
     if (isEmpty) {
-      EmptyValue.untyped
+      EmptyValue(pt)
     } else {
-      val ct = value.cType
       val qvs = map(cb)
-      // TODO: this is an unfortunate cast. It's correct, but ick. Can we eliminate it?
-      val raw = qvs.flatten(_.cv).asInstanceOf[ct.implType]
-      ct.makePropValue(raw, qvs.head.pType)
+      val raw = qvs.flatten(_.cv)
+      if (!raw.isEmpty && (!raw.head.matchesType(pt)))
+        throw new Exception("Context.collect expected type " + pt + " but got " + raw.head.pType)
+      QList.makePropValue(raw, pt)
     }
   }
   

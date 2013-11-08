@@ -123,6 +123,19 @@ trait QValue {
     cb(vt)
   }
   
+  /**
+   * The primary transformer from one QValue to another. Takes a function that transforms the underlying
+   * data types, and does the unwrapping, transforming of each element, and re-wrapping.
+   */
+  def map[VT, DT, RT](sourceType:PType[VT], destType:PType[DT] with PTypeBuilder[DT, RT])(cb:VT => RT):QValue = {
+    val iter = cv.map { elem => 
+      val vt = sourceType.get(elem)
+      val result = cb(vt)
+      destType(result)
+    }
+    cType.makePropValue(iter, destType)
+  }
+  
   def rawList[VT](elemT:PType[VT]):List[VT] = {
     (List.empty[VT] /: cv) ((list, elem) => list :+ elemT.get(elem))
   }
@@ -161,7 +174,7 @@ object ErrorTextType extends TextTypeBase(UnknownOID,
   )) with PTypeBuilder[QLText,String] {
 }
 object ExactlyOneCut extends ExactlyOne(UnknownOID) {
-  override def makePropValue(cv:implType, elemT:PType[_]):QValue = new ExactlyOnePropValue(cv, this, elemT) with CutProcessing
+  override def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = new ExactlyOnePropValue(cv.toList, this, elemT) with CutProcessing
 }
 object EmptyListCut extends QList(UnknownOID) {
   def apply() = new QListPropValue(List.empty, this, UnknownType) with CutProcessing  

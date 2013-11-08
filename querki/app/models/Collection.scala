@@ -68,7 +68,7 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
    * Convenience wrapper for creating in-code PropValues.
    */
   def wrap(elem:ElemValue):implType
-  def makePropValue(cv:implType, elemT:PType[_]):QValue
+  def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue
   def apply(elem:ElemValue):QValue = makePropValue(wrap(elem), elem.pType)
   
   /**
@@ -153,7 +153,7 @@ class NameCollection extends Collection(IllegalOID, systemOID, systemOID, () => 
     List(elemT.default)
   }
   def wrap(elem:ElemValue):implType = List(elem)
-  def makePropValue(cv:implType, elemT:PType[_]):QValue = NamePropValue(cv, NameCollection.this, elemT)
+  def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = NamePropValue(cv.toList, NameCollection.this, elemT)
     
   def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
     val v = currentValue.v.map(_.first).getOrElse(elemT.default)

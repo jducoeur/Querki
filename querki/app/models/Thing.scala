@@ -272,6 +272,19 @@ abstract class Thing(
   }
   
   /**
+   * The good, safe way to retrieve the value of a Property, and transform it into something else.
+   * Will *always* return a QValue, which will be empty iff the property isn't defined or the value
+   * is empty.
+   */
+  def map[VT, DT, RT](prop:Property[VT, _], destType:PType[DT] with PTypeBuilder[DT, RT])(cb:VT => RT)(implicit state:SpaceState):QValue = {
+    val propAndValOpt = getPropOpt(prop)
+    propAndValOpt match {
+      case Some(propAndVal) => propAndVal.map(destType)(cb)
+      case None => prop.default
+    }
+  }
+  
+  /**
    * Returns the first value of the specified Property *or* a given default.
    */
   def firstOr[VT](prop:Property[VT, _], default:VT)(implicit state:SpaceState):VT = {

@@ -13,6 +13,7 @@ import OIDs._
 
 import ql._
 
+import querki.util._
 import querki.values._
 
 //////////////////////////////////////
@@ -44,7 +45,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       throw new Error("Trying to default root collection!")    
 	def wrap(elem:ElemValue):implType =
 	  throw new Error("Trying to wrap root collection!")    
-	def makePropValue(cv:implType, pType:PType[_]):QValue =
+	def makePropValue(cv:Iterable[ElemValue], pType:PType[_]):QValue =
 	  throw new Error("Trying to makePropValue root collection!")    
     def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem =
 	  throw new Error("Trying to render input on root collection!")    
@@ -83,7 +84,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       elemT.renderInput(prop, state, currentValue, v)
     }
 
-    def makePropValue(cv:implType, elemT:PType[_]):QValue = ExactlyOnePropValue(cv, this, elemT)
+    def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = ExactlyOnePropValue(cv.toList, this, elemT)
     protected case class ExactlyOnePropValue(cv:implType, cType:ExactlyOne, pType:PType[_]) extends QValue
   }
   object ExactlyOne extends ExactlyOne(ExactlyOneOID)
@@ -129,7 +130,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     def doDefault(elemT:pType):implType = Nil
     
     def wrap(elem:ElemValue):implType = List(elem)
-    def makePropValue(cv:implType, elemT:PType[_]):QValue = OptionalPropValue(cv, this, elemT)    
+    def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = OptionalPropValue(cv.toList, this, elemT)    
     private case class OptionalPropValue(cv:implType, cType:Optional, pType:PType[_]) extends QValue
     
     def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
@@ -230,7 +231,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
         setName("List")
         ))
   {
-    def makePropValue(cv:implType, elemT:PType[_]):QValue = QListPropValue(cv, this, elemT)
+    def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = QListPropValue(cv.toList, this, elemT)
     protected case class QListPropValue(cv:implType, cType:QList, pType:PType[_]) extends QValue    
     
     /**
@@ -267,7 +268,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
 
       QSetPropValue(deduped._1, this, pt)
     }
-    def makePropValue(cv:implType, elemT:PType[_]):QValue = QSetPropValue(cv, this, elemT)
+    def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = QSetPropValue(cv.toList, this, elemT)
     private case class QSetPropValue(cv:implType, cType:QSet, pType:PType[_]) extends QValue    
   }
   object QSet extends QSet(QSetOID)
@@ -295,7 +296,7 @@ class QUnit(cid:OID) extends SystemCollection(cid,
   def doDefault(elemT:pType):implType = Nil
     
   def wrap(elem:ElemValue):implType = Nil
-  def makePropValue(cv:implType, elemT:PType[_]):QValue = UnitPropValue(cv, this, elemT)    
+  def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = UnitPropValue(cv.toList, this, elemT)    
   private case class UnitPropValue(cv:implType, cType:QUnit, pType:PType[_]) extends QValue
     
   def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {

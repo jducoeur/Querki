@@ -13,6 +13,7 @@ import OIDs._
 
 import ql._
 
+import querki.util._
 import querki.values._
 
 abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, systemOID, RootOID, pf) {
@@ -118,11 +119,15 @@ trait CodeType {
         Some(WarningValue("""Trying to use Text Property """" + prop.displayName + """" in an empty context.
 This often means that you've invoked it recursively without saying which Thing it is defined in."""))
       } else {
-        Some(incomingContext.flatMapAsValue { elemContext:QLContext =>
+        Some(incomingContext.collect(ParsedTextType) { elemContext:QLContext =>
           prop.applyToIncomingThing(definingContext) { (thing, context) =>
-            val qlPhraseText = thing.first(prop)(definingContext.state)
-            val parser = new QLParser(qlPhraseText, elemContext)
-            WikitextValue(parser.process)
+            implicit val s = definingContext.state
+            // In other words, map over all the text values in this property, parsing all of them
+            // and passing the resulting collection along the pipeline:
+            thing.map(prop, ParsedTextType) { qlText =>
+              val parser = new QLParser(qlText, elemContext)
+              parser.process
+            }
           }
         })
       }
@@ -537,7 +542,7 @@ object ExternalLinkType extends ExternalLinkType(ExternalLinkTypeOID)
 // This is a pure marker trait, indicating that this PropValue didn't load correctly yet:
 trait UnresolvedPropValue
 object UnresolvedProp extends ExactlyOne(UnknownOID) {
-   override def makePropValue(cv:implType, pType:PType[_]):QValue = UnresPropValue(cv, this, pType)
+   override def makePropValue(cv:Iterable[ElemValue], pType:PType[_]):QValue = UnresPropValue(cv.toList, this, pType)
    private case class UnresPropValue(cv:implType, cType:ExactlyOne, pType:PType[_]) extends QValue with UnresolvedPropValue
 }
 // This pseudo-Type is used to store values from disk that we can't resolve yet. It is only

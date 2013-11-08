@@ -25,15 +25,19 @@ case class ElemValue(elem:Any, pType:PType[_]) {
   
   lazy val myType = realType(pType)
   
-  def get[VT](expectedType:PType[VT]):VT = {
+  def matchesType[VT](expectedType:PType[VT]):Boolean = {
     val realExpected = realType(expectedType)
-    if (realExpected == myType)
+    realExpected == myType
+  }
+  
+  def get[VT](expectedType:PType[VT]):VT = {    
+    if (matchesType(expectedType))
       // Here is The One Great Evil Cast, checked as best we can at runtime. Let's see if we can eliminate
       // all others.
       elem.asInstanceOf[VT]
     else {
       try {
-        throw new Exception("Trying to cast ElemValue " + elem + ", of type " + myType + " to " + realExpected)
+        throw new Exception("Trying to cast ElemValue " + elem + ", of type " + myType + " to " + realType(expectedType))
       } catch {
         case e:Exception => play.api.Logger.error("", e); throw e
       }

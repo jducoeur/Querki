@@ -27,6 +27,7 @@ case class PropAndVal[VT](prop:Property[VT, _], v:QValue) {
   def first = v.firstAs(prop.pType).get
   def firstOpt = v.firstAs(prop.pType)
   def flatMap[T](cb:VT => Option[T]) = v.flatMap(prop.pType)(cb)
+  def map[DT, RT](destType:PType[DT] with PTypeBuilder[DT, RT])(cb:VT => RT) = v.map(prop.pType, destType)(cb)
   // TODO: Evil! This should be smarter about how it combines Collections, instead of forcing things to QList.
   // In particular, combining two QSets should wind up with QSet semantics:
   def ++(others:Iterable[VT]):QValue = {
