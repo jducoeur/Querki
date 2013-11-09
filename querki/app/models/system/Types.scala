@@ -351,9 +351,8 @@ object QLType extends QLType(QLTypeOID)
     
     def follow(context:QLContext)(v:OID) = context.state.anything(v)
     def followLink(context:QLContext):Option[Thing] = {
-      // This should only be called if the valType is LinkType, and the Collection is
-      // single-valued!
-      context.value.firstTyped(this).flatMap(follow(context)(_))
+      // This only works if the valType is LinkType; otherwise, it will return None
+      context.value.firstAs(this).flatMap(follow(context)(_))
     }
     
     def pathAdjustments(context:QLContext):String = {
@@ -364,7 +363,7 @@ object QLType extends QLType(QLTypeOID)
         val slashes = name.count(_ == '/')
         "../" * slashes
       }
-      
+
       adjustmentsOpt.getOrElse("")
     }
     

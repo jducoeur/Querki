@@ -11,8 +11,13 @@ import querki.values._
 
 import play.api.Logger
 
+// TODO: this trait probably belongs with QLog
+trait DebugRenderable {
+  def debugRender:String
+}
+
 case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:Option[QLContext] = None, 
-                     parser:Option[QLParser] = None, depth:Int = 0, useCollection:Boolean = false, propOpt:Option[Property[_,_]] = None)
+                     parser:Option[QLParser] = None, depth:Int = 0, useCollection:Boolean = false, propOpt:Option[Property[_,_]] = None) extends DebugRenderable
 {
   // This might become a config param -- it is the maximum depth we will allow a call to be. For now, we're
   // keeping it very tight, but it might eventually need to be over a thousand.

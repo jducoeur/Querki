@@ -7,6 +7,7 @@ import language.implicitConversions
 
 import eu.henkelmann.actuarius.{Decorator, Transformer}
 
+import querki.values.DebugRenderable
 import querki.util._
 
 case class DisplayText(val str:String) {
@@ -18,7 +19,7 @@ object DisplayText {
   implicit def displayText2String(disp:DisplayText) = disp.str
 }
 
-trait Wikitext {
+trait Wikitext extends DebugRenderable {
   
   def transform(builder: => Transformer)(str:String):String = {
     val transformer = builder
@@ -69,6 +70,8 @@ trait Wikitext {
    * Wikitext can be concatenated just like strings.
    */
   def +(other:Wikitext, insertNewline:Boolean = false):Wikitext = new CompositeWikitext(this, other, insertNewline)
+  
+  def debugRender = plaintext
 }
 
 case class QWikitext(wiki:String) extends Wikitext {

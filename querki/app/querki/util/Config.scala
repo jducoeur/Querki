@@ -30,6 +30,7 @@ object Config {
   
   def getInt(key:String, default:Int*):Int = getTyped(key, default, (_.getInt(key)), (_.toInt))
   def getString(key:String, default:String*) = getTyped(key, default, (_.getString(key)), (_.toString()))
+  def getBoolean(key:String, default:Boolean*) = getTyped(key, default, (_.getBoolean(key)), (_.toBoolean))
   
   /***********************************
    * MOCKUPS FOR TESTING

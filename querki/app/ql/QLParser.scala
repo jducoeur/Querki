@@ -8,6 +8,7 @@ import models.system._
 import models._
 import controllers.RequestContext
 
+import querki.util._
 import querki.values._
 
 // TODO: this should go away
@@ -86,12 +87,16 @@ class QLParser(val input:QLText, ci:QLContext) extends RegexParsers {
   // TODO: we could make indentation work across parsers (and fix thread-safety) if we stuffed the indentation level into the
   // Context, and had logContext actually transform the context. This may imply that we want to make
   // this mechanism more broadly available -- possibly even a method on the context itself...
+  // TODO: this mechanism can, and probably should, be removed from here and moved into QLog. Context has
+  // become central enough to the system that making it more globally visible would be a win. If we remove
+  // the constraint that RT must derive from DebugRenderable (make that optional and test with isInstanceOf),
+  // then this could be used everywhere, to very good effect. It would become an enormously powerful (if
+  // nearly overwhelming) spew for tracking the passage of a parse through the system.
   var logDepth = 0
   def indent = "  " * logDepth
   // Turn this to true to produce voluminous output from the QL processing pipeline
-  // TODO: this should come from Config!
-  val doLogContext = false
-  def logContext(msg:String, context:QLContext)(processor: => QLContext):QLContext = {
+  val doLogContext = Config.getBoolean("querki.test.logContexts", false)
+  def logContext[RT <: DebugRenderable](msg:String, context:QLContext)(processor: => RT):RT = {
     if (doLogContext) {
       Logger.info(indent + msg + ": " + context.debugRender + " =")
       Logger.info(indent + "{")
@@ -100,6 +105,7 @@ class QLParser(val input:QLText, ci:QLContext) extends RegexParsers {
     val result = processor
     if (doLogContext) {
       logDepth = logDepth - 1
+      
       Logger.info(indent + "} = " + result.debugRender)
     }
     result
@@ -231,13 +237,15 @@ class QLParser(val input:QLText, ci:QLContext) extends RegexParsers {
    * wants to avail itself of this notion.
    */
   private def linkToWikitext(contents:ParsedQLText, context:QLContext):Wikitext = {
-    val guts = contents.parts.length match {
-      // Just four underscores, which means we don't do anything special for the display:
-      case 0 => None
-      // There is content, so pass that down as the display:
-      case _ => Some(processParseTree(contents, context))
+    logContext("linkToWikitext " + contents, context) {
+      val guts = contents.parts.length match {
+        // Just four underscores, which means we don't do anything special for the display:
+        case 0 => None
+        // There is content, so pass that down as the display:
+        case _ => Some(processParseTree(contents, context))
+      }
+      context.value.wikify(context, guts)
     }
-    context.value.wikify(context, guts)      
   }
   
   private def processParseTree(parseTree:ParsedQLText, context:QLContext):Wikitext = {
