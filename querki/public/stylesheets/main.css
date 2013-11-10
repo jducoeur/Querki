@@ -1,4 +1,15 @@
 /*
+ * Miscellaneous style tweaks.
+ */
+ 
+.btn-primary {
+  background-color: #37A807;
+}
+.btn-primary.active {
+  background-color: #0B5703;
+}
+
+/*
  * Our standard "paragraph" style. We use divs of this instead of <p>, to work around
  * idiosyncracies of nesting forms inside of <p>. These choices are taken from inspection
  * of how Chrome handles <p>, but aren't sacred.
