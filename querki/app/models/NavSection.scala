@@ -9,6 +9,8 @@ object NavSection {
   object homeNav extends NavSections(Seq())
   
   val maxNameDisplay = 25
+  
+  val emptyCall = Call("GET", "#")
     
   def truncateName(name:String) = {
     if (name.length < maxNameDisplay)
@@ -58,7 +60,7 @@ object NavSection {
     
     val spaceLinksOpt = rc.state map { state =>
       Seq(
-        NavLink("Create any Thing", routes.Application.createThing(owner, spaceId, None), Some("createThing")),
+        NavLink("Create any Thing", emptyCall, Some("createThing")),
         NavLink("Add a Property", routes.Application.createProperty(owner, spaceId)),
         NavLink("Upload a Photo", routes.Application.upload(owner, spaceId)),
         NavLink("Show all Things", routes.Application.thing(owner, spaceId, "All+Things")),
