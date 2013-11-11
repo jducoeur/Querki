@@ -337,7 +337,7 @@
         if (propId.length > 0) {
 		  // TODO: nasty abstraction break here. Do we need a Javascript library for generating ThingIds?
           var propThingId = "." + propId;
-	      jsRoutes.controllers.Application.getPropertyDisplay("@space.owner.toThingId", "@space.id.toThingId", propThingId, "Display-Text").ajax({
+	      jsRoutes.controllers.Application.getPropertyDisplay("@space.owner.toThingId", "@space.id.toThingId", propThingId, "@PropDetails.id.toThingId").ajax({
 	        success: function (result) {
 	          $("#_propInfo").html("<p><b>" + propName + "</b></p>" + result);
 	          $("#_addExistingPropertyButton").prop("disabled", false);

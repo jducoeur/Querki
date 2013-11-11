@@ -13,6 +13,7 @@ import Thing._
 
 import querki.identity.User
 
+import querki.util._
 import querki.values._
 
 /**
