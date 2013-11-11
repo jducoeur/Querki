@@ -200,6 +200,18 @@ this is some styled text
           )
     }
     
+    it should "handle multiple-class divs" in {
+      apply("""{{ myClass myClass2  myClass3 :
+this is some styled text
+}}"""
+          ) should equal (
+"""<div class="myClass myClass2 myClass3">
+<p>this is some styled text</p>
+</div>
+"""
+          )
+    }
+    
     it should "handle class spans" in {
       apply("""{{ myClass: here is some styled text!}} and unstyled""") should equal (
             """<p><span class="myClass"> here is some styled text!</span> and unstyled</p>

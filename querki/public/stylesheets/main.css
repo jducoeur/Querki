@@ -20,6 +20,10 @@
     margin-bottom: 10px;
 }
 
+.well .para:last-child {
+  margin-bottom: 0px;
+}
+
 /*
  * Menu tweaks for Querki. The existing menubar doesn't work quite right in our theme, so
  * I have a few modifications to make it look correct.
