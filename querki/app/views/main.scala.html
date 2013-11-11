@@ -41,14 +41,21 @@
   }
 }
 
+@createOptGroups(s:SpaceState) = {
+        <optgroup label="Models in @s.displayName">
+          @for(model <- s.models.toSeq.sortBy(_.displayName)) {
+            <option value="@model.toThingId">@model.displayName</option>
+          }
+        </optgroup>
+  @s.app.map { app => @createOptGroups(app) }
+}
+
 @createForm(s:SpaceState) = {
     <div id="create-dialog" title="Create a Thing">
       <p>Choose which kind of Thing to create:</p>
         <select name="newModel" id="newModel">
           <option value="">Choose a Model</option>
-          @for(model <- s.allModels) {
-            <option value="@model.toThingId">@model.displayName</option>
-          }
+          @createOptGroups(s)
         </select>
     </div>
 }
