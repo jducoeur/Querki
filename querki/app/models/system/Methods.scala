@@ -369,7 +369,7 @@ object RefsMethod extends ThingPropMethod(RefsMethodOID,
           |to Artist -- basically, the list of performers on this particular CD.
           |
           |In this case, *Artist* is likely to want to say something like:
-          |_code(""[[Artists._refs -> _bulleted]]"")
+          |[[_code(""[[Artists._refs -> _bulleted]]"")]]
           |That is, based on the Artist we're looking at (which is always the initial Context passed into
           |a QL Expression), get all the Things that refer to this Artist using the *Artists* Property,
           |and display them as a bullet list.
