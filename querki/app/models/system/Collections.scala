@@ -186,7 +186,8 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       val inputTemplate = HtmlRenderer.addClasses(elemT.renderInput(prop, state, currentValue, elemT.default), "inputTemplate list-input-element") %      
     		  Attribute("data-basename", Text(currentValue.collectionControlId + "-item"),
     		  Null)
-      <div class="coll-list-input">
+      val addButtonId = currentValue.collectionControlId + "-addButton"
+      <div class="coll-list-input" data-delegate-disable-to={addButtonId}>
         <ul id={currentValue.collectionControlId} class="sortableList">{
           if (currentValue.v.isDefined) {
             val cv = currentValue.v.get.cv
@@ -200,7 +201,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
             }
           }
         }</ul>
-        <button class="add-item-button btn-mini" data-size={currentValue.collectionControlId + "-size"}>&nbsp;</button>
+        <button class="add-item-button btn-mini" id={addButtonId} data-size={currentValue.collectionControlId + "-size"}>&nbsp;</button>
         <input type="hidden" id={currentValue.collectionControlId + "-size"} value={currentValue.v.map(_.cv.size).getOrElse(0).toString}/>
         {inputTemplate}
       </div>

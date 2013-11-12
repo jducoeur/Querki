@@ -139,6 +139,21 @@
 	      t.off("click");
 	      t.on("click", cb);          
         }
+        
+        function disablingControl(mainInput) {
+          var controlName = mainInput.data("delegate-disable-to");
+          if (_.isUndefined(controlName)) {
+            return mainInput;
+          } else {
+            var delegatee = $("#" + controlName);
+            if (_.isUndefined(delegatee)) {
+              control.log("ERROR: couldn't find delegatee " + controlName);
+              return mainInput;
+            } else {
+              return delegatee;
+            }
+          }
+        }
       
         $.fn.editButton = function () {
           this.each(function () {
@@ -146,7 +161,7 @@
 	        $inp = inputElem($(this));
 	        $inp.attr("title", "Inherited from " + modelName + "; click the Edit button to change");
 	        $inp.val("");
-	        $inp.attr("disabled", "disabled");
+	        disablingControl($inp).attr("disabled", "disabled");
 	        setEmpty($(this), "true");
 	        setButton($(this), "icon-pencil", "Edit", handleEditButton);   
           });
@@ -155,7 +170,7 @@
         $.fn.revertButton = function () {
           this.each(function () {
 	        var $inp = inputElem($(this));
-	        $inp.removeAttr("disabled");
+	        disablingControl($inp).removeAttr("disabled");
 	        var modelName = $(this).data("model-name");
 	        $inp.attr("title", "Overriding " + modelName + "; click the Revert button to go back to the model's value");
 	        setEmpty($(this), "false");
