@@ -73,8 +73,8 @@ case class RequestContext(
     reqOwnerHandle:Option[String] = None) extends RequestHeaderParser(request, sessionUpdates) {
   def requesterOrAnon = requester getOrElse User.Anonymous
   def requesterOID = requester map (_.id) getOrElse UnknownOID  
-  def ownerHandle = state map Application.ownerHandle getOrElse ""
-  def ownerName = state map Application.ownerName getOrElse ""
+  def ownerHandle = state.map(_.ownerHandle).getOrElse(ownerId.toThingId.toString)
+  def ownerName = state.map(_.ownerName).getOrElse(ownerId.toThingId.toString)
   
   def isOwner = requesterOrAnon.hasIdentity(ownerId)
   

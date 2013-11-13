@@ -311,23 +311,7 @@ object User {
     getUser(query)
   }
   
-  private def getIdentity(id:OID):Option[Identity] = getUserForIdentity(id).flatMap(_.identityById(id))
-
-  /**
-   * Fetched the handle for the Identity matching the given OID. If there isn't one, simply
-   * returns the input parameter, ThingId'ed. So it always returns *something* that at least
-   * *looks* like a valid ThingId.
-   */
-  // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
-  def getHandle(id:OID):String = {
-    getIdentity(id).map(_.handle).getOrElse(id.toThingId.toString)
-  }
-  
-  // Note that this assumes that the ID identifies a valid Identity.
-  // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
-  def getName(id:OID):String = {
-    getIdentity(id).map(_.name).getOrElse(id.toThingId.toString)
-  }
+  def getIdentity(id:OID):Option[Identity] = getUserForIdentity(id).flatMap(_.identityById(id))
   
   // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
   private def checkQuerkiLoginByEmail(email:EmailAddress, passwordEntered:String):Option[User] = {

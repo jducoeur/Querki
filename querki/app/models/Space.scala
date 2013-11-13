@@ -232,7 +232,8 @@ class Space extends Actor {
              Map.empty[OID, Property[_,_]],
              Map.empty[OID, ThingState],
              // TODO (probably rather later): dynamic Collections
-             Map.empty[OID, Collection]
+             Map.empty[OID, Collection],
+             None
             )
       }
       
@@ -257,7 +258,8 @@ class Space extends Actor {
             Map.empty[OID, Property[_,_]],
             Map.empty[OID, ThingState],
             // TODO (probably rather later): dynamic Collections
-            Map.empty[OID, Collection]
+            Map.empty[OID, Collection],
+            None
             )
         } else
           spaceStream.head
@@ -313,6 +315,9 @@ class Space extends Actor {
         (id, secondPassProps(prop)((p, metaProps) => p.copy(pf = () => metaProps)))
       }.toSeq
       curState = curState.copy(spaceProps = Map(fixedAllProps:_*))
+      
+      // BLOCKING, but useful: make the owner visible, so that we can, eg, write URLs
+      curState = curState.copy(ownerIdentity = querki.identity.User.getIdentity(owner))
       
       _currentState = Some(curState)
     }    

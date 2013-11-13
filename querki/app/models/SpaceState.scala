@@ -42,7 +42,8 @@ case class SpaceState(
     types:Map[OID, PType[_]],
     spaceProps:Map[OID, Property[_,_]],
     things:Map[OID, ThingState],
-    colls:Map[OID, Collection]) 
+    colls:Map[OID, Collection],
+    ownerIdentity:Option[querki.identity.Identity]) 
   extends Thing(s, s, m, Kind.Space, pf, mt) 
 {
   // Walks up the App tree, looking for the specified Thing of the implied type:
@@ -333,5 +334,8 @@ object SpaceState {
      * All the people who have joined this Space.
      */
     def members:Iterable[Thing] = people.filter(_.hasProp(modules.Modules.Person.identityLink)(state))
+    
+    def ownerName:String = state.ownerIdentity.map(_.name).getOrElse(state.owner.toThingId)
+    def ownerHandle:String = state.ownerIdentity.map(_.handle).getOrElse(state.owner.toThingId)
   }
 }

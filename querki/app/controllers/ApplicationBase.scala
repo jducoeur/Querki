@@ -57,9 +57,6 @@ class ApplicationBase extends Controller {
     }
   }
   
-  def ownerName(state:SpaceState) = User.getName(state.owner)
-  def ownerHandle(state:SpaceState) = User.getHandle(state.owner)
-  
   def userFromSession(request:RequestHeader) = User.get(request)
   // Workaround to deal with the fact that Security.Authenticated has to get a non-empty
   // result in order to let things through. So if a registered user is *optional*, we need to
