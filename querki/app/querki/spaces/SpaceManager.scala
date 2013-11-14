@@ -7,8 +7,8 @@ import models.{AsName, AsOID, OID}
 import models.{Kind, Thing}
 import models.system.{DisplayNameProp, NameProp, NameType}
 import models.system.OIDs._
-import models.{CreateSpace, ListMySpaces, MySpaces, SpaceDetails, SpaceMessage, SpaceMgrMsg, ThingFailed}
-import models.SpaceError._
+import messages._
+import SpaceError._
 
 import querki.db.ShardKind
 import ShardKind._

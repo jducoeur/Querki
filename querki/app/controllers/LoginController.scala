@@ -11,6 +11,7 @@ import play.api.mvc._
 import models._
 
 import querki.identity._
+import querki.spaces.messages.{ThingFailed, ThingFound}
 import querki.util._
 import querki.values.QLRequestContext
 

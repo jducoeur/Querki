@@ -7,6 +7,7 @@ import models._
 
 import querki.identity._
 import querki.spaces.SpaceManager
+import querki.spaces.messages._
 import querki.util._
 
 class ApplicationBase extends Controller {

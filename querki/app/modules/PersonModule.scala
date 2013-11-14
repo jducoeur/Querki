@@ -15,6 +15,7 @@ import models.system.OIDs._
 import ql._
 
 import querki.spaces.SpaceManager
+import querki.spaces.messages.{ChangeProps, CreateThing, ThingFailed, ThingFound, ThingResponse}
 import querki.values._
 
 import querki.identity._

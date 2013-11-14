@@ -17,6 +17,7 @@ import ql._
 
 import querki.identity._
 import querki.spaces.SpaceManager
+import querki.spaces.messages.{ChangeProps, ThingFailed, ThingFound, ThingResponse}
 import querki.values._
 
 import modules.Modules._

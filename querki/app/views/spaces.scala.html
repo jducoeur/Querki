@@ -1,6 +1,5 @@
-@(rc:PlayRequestContext, mySpaces:Seq[SpaceDetails], memberOf:Seq[SpaceDetails])
+@(rc:PlayRequestContext, mySpaces:Seq[querki.spaces.messages.SpaceDetails], memberOf:Seq[querki.spaces.messages.SpaceDetails])
 
-@import models.SpaceDetails
 @import querki.identity.UserLevel._
 
 @user = @{ rc.requester.get }

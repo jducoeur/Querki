@@ -1,14 +1,14 @@
-package models
+package querki.spaces.messages
 
 import language.implicitConversions
+
+import models.{Kind, MIMEType, SpaceState, Thing}
 import Kind._
+import MIMEType.MIMEType
 import Thing._
+import models.{AsOID, OID, ThingId, UnknownOID}
 
 import querki.identity.User
-
-import system._
-
-import MIMEType.MIMEType
 
 sealed trait SpaceMgrMsg
 

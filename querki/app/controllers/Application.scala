@@ -19,6 +19,7 @@ import querki.identity._
 
 import querki.html.HtmlRenderer
 
+import querki.spaces.messages._
 import SpaceError._
 
 import querki.values.QLRequestContext

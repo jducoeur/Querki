@@ -24,10 +24,10 @@ import play.api.Play.current
 // nscala-time
 import com.github.nscala_time.time.Imports._
 
-import models.{Kind, MIMEType, SpaceError, SpaceState}
+import models.{Kind, MIMEType, SpaceState}
 import models.{AsOID, AsName, OID, ThingId, UnknownOID}
 import models.{Collection, Property, PType, PTypeBuilder, Thing, ThingState}
-import models.{AttachmentContents, ChangeProps, CreateAttachment, CreateSpace, CreateThing, DeleteThing, GetAttachment, GetThing, ModifyThing, ThingFound, ThingFailed}
+import messages._
 
 import Kind._
 import Thing._
@@ -42,6 +42,7 @@ import system._
 import system.OIDs._
 import system.SystemSpace._
 
+import messages._
 import SpaceError._
 
 import MIMEType.MIMEType
