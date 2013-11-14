@@ -63,14 +63,14 @@ trait Sequencer[Evt] extends Publisher[Evt, Evt] {
 /**
  * An event saying that a particular kind of Page is about to be displayed.
  */
-case class HtmlEvent(rc:RequestContext, template:QuerkiTemplate)
+case class HtmlEvent(rc:PlayRequestContext, template:QuerkiTemplate)
 
 /**
  * A Publisher of page-display events.
  */
 class PageAggregator extends Aggregator[HtmlEvent,String] {
   import play.api.templates.Html
-  def apply(rc:RequestContext, template:QuerkiTemplate):Html = {
+  def apply(rc:PlayRequestContext, template:QuerkiTemplate):Html = {
     Html(collect(HtmlEvent(rc, template)) mkString("\n"))
   }
 }
@@ -82,8 +82,8 @@ class PageAggregator extends Aggregator[HtmlEvent,String] {
  * However, note that there are some fairly serious inversion-of-control issues here, so use
  * this with caution, lest horribly hard-to-debug problems enter in!
  */
-class RequestUpdater extends Sequencer[RequestContext] {
-  def apply(rc:RequestContext):RequestContext = {
+class RequestUpdater extends Sequencer[PlayRequestContext] {
+  def apply(rc:PlayRequestContext):PlayRequestContext = {
     update(rc)
   }
 }

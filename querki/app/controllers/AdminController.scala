@@ -8,7 +8,7 @@ import models._
 
 object AdminController extends ApplicationBase {
   
-  def withAdmin(f: RequestContext => Result) = {
+  def withAdmin(f: PlayRequestContext => Result) = {
     withUser(true) { rc =>
       if (rc.requesterOrAnon.isAdmin)
         f(rc)
@@ -17,7 +17,7 @@ object AdminController extends ApplicationBase {
     }
   } 
 
-  def withSuperadmin(f: RequestContext => Result) = {
+  def withSuperadmin(f: PlayRequestContext => Result) = {
     withUser(true) { rc =>
       if (rc.requesterOrAnon.level == UserLevel.SuperadminUser)
         f(rc)

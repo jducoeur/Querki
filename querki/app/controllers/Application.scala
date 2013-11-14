@@ -149,7 +149,7 @@ disallow: /
     }
   }
   
-  def showEditPage(rc: RequestContext, model:Thing, props:PropList, errorMsg:Option[String] = None) = {
+  def showEditPage(rc: PlayRequestContext, model:Thing, props:PropList, errorMsg:Option[String] = None) = {
     val state = rc.state.get
     val propList = prepPropList(props, model, rc.state.get)
     try { 

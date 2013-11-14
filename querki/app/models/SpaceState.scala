@@ -301,7 +301,7 @@ case class SpaceState(
     querki.access.AccessControl.canChangePropertyValue(this, who, propId)
   }
   
-  def renderUnknownName(implicit rc:controllers.RequestContext, name:String):Wikitext = {
+  def renderUnknownName(implicit rc:RequestContext, name:String):Wikitext = {
     import ql._
     
     implicit val s = this

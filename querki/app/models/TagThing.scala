@@ -1,10 +1,10 @@
 package models
 
-import controllers.RequestContext
-
 import models.system.NameType
 
 import modules.time.TimeModule
+
+import querki.values.RequestContext
 
 /**
  * This is essentially a pseudo-Thing, produced when you navigate to an unknown Name. It basically

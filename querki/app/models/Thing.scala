@@ -12,8 +12,6 @@ import models.system.SystemSpace._
 
 import NameCollection.bootProp
 
-import controllers.RequestContext
-
 import ql._
 
 import querki.values._

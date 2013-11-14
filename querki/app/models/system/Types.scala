@@ -322,7 +322,7 @@ object QLType extends QLType(QLTypeOID)
     // name-based.
     def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = nameToLink(context)(v)
     
-    override def renderProperty(prop:Property[_,_])(implicit request:controllers.RequestContext):Option[Wikitext] = {
+    override def renderProperty(prop:Property[_,_])(implicit request:RequestContext):Option[Wikitext] = {
       val parser = new ql.QLParser(QLText("""These tags are currently being used:
 [[_tagsForProperty -> _sort -> _bulleted]]"""), prop.thisAsContext)
       Some(parser.process)

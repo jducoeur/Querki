@@ -25,7 +25,7 @@ import modules.email.EmailAddress
 
 import querki.util._
 
-import controllers.{Contributor, PageEventManager, Publisher, RequestContext}
+import controllers.{Contributor, PageEventManager, Publisher, PlayRequestContext}
 
 import play.api.Logger
 
@@ -50,13 +50,11 @@ class PersonModule(val moduleId:Short) extends modules.Module {
   import MOIDs._
   
   override def init = {
-    //PageEventManager.requestReceived += IdentityLoginChecker
     PageEventManager.requestReceived += InviteLoginChecker
   }
   
   override def term = {
     PageEventManager.requestReceived -= InviteLoginChecker
-    //PageEventManager.requestReceived -= IdentityLoginChecker
   }
 
   /***********************************************
@@ -276,58 +274,7 @@ to add new Properties for any Person in your Space.
     val identities = Seq(identity)
     val level = UserLevel.SpaceSpecific
   }
-  
-  /**
-   * This is called via callbacks when we are beginning to render a page. It looks to see whether the
-   * URL or the Session contains a space-specific Identity that we should be using as the "user".
-   * 
-   * TODO: make this Identity Space-specific! It should be possible to have different Persons in the
-   * Session for different Spaces.
-   * 
-   * DEPRECATED: this mechanism has been disabled, and I believe should simply be deleted at this point.
-   * It turns out to have never worked with non-Public Spaces, and has been superceded by the new
-   * relationship between Identities and Spaces.
-   */
-  object IdentityLoginChecker extends Contributor[RequestContext,RequestContext] {
-    def notify(rc:RequestContext, sender:Publisher[RequestContext, RequestContext]):RequestContext = {
-      val rcOpt =
-        for (
-          idParam <- rc.firstQueryParam(identityParam);
-          state <- rc.state;
-          // NOTE: this is messy for backward compatibility. The first clause is the current way things work: the candidate is
-          // the value of the "person" param. The orElse is the way it originally worked: the candidate is the Thing being pointed to.
-          // TODO: this should be deprecated and removed when the Wedding Site is done with, if not sooner.
-          candidate <- rc.firstQueryParam(personParam).flatMap(personThingId => state.anything(ThingId(personThingId))) orElse rc.thing;
-          idProp <- candidate.localProp(identityLink);
-          emailPropVal <- candidate.getPropOpt(emailAddressProp)(state);
-          email = emailPropVal.first;
-          name = candidate.displayName;
-          identityId = idProp.first;
-          if Hasher.authenticate(candidate.id.toString + identityId.toString, EncryptedHash(idParam));
-          updates = Seq((identityParam -> identityId.toString), (identityName -> name), (identityEmail -> email.addr), (personParam -> candidate.id.toString));
-          // TODO: if there is already a User in the RC, we should *add* to that User rather than
-          // replacing it:
-          newRc = rc.copy(
-              sessionUpdates = rc.sessionUpdates ++ updates,
-              requester = Some(SpaceSpecificUser(identityId, name, email, state.id, candidate.id)))
-        ) 
-          yield newRc
-          
-      rcOpt.getOrElse {
-        // Okay, the URL doesn't have an Identity login. Does the session already have one?
-        val session = rc.request.session
-        val withIdentityOpt = for (
-          existingIdentity <- session.get(identityParam);
-          idName <- session.get(identityName);
-          idEmail <- session.get(identityEmail);
-          personId <- session.get(personParam)
-          )
-          yield rc.copy(requester = Some(SpaceSpecificUser(OID(existingIdentity), idName, EmailAddress(idEmail), rc.state.get.id, OID(personId))))
-        withIdentityOpt.getOrElse(rc)
-      }
-    }
-  }
-  
+
   /*************************************************************
    * INVITATION MANAGEMENT
    *************************************************************/
@@ -429,7 +376,7 @@ to add new Properties for any Person in your Space.
     }
     
     implicit val finalState = updatedState
-    val newRc = rc.copy(state = Some(updatedState))
+    val newRc = rc.withUpdatedState(updatedState)
     val context = updatedState.thisAsContext(newRc)
     val subjectQL = QLText(rc.ownerName + " has invited you to join the Space " + updatedState.displayName)
     val inviteLink = QLText("""
@@ -444,12 +391,15 @@ to add new Properties for any Person in your Space.
     InvitationResult(newEmails, existingEmails)
   }
   
+  import controllers.PlayRequestContext
   /**
    * This is called via callbacks when we are beginning to render a page. It looks to see whether the
    * URL is an invitation to join this Space, and goes to the Invitation workflow if so.
+   * 
+   * TODO: this is dependent on PlayRequestContext, which means that it really belongs in controllers!
    */
-  object InviteLoginChecker extends Contributor[RequestContext,RequestContext] {
-    def notify(rc:RequestContext, sender:Publisher[RequestContext, RequestContext]):RequestContext = {
+  object InviteLoginChecker extends Contributor[PlayRequestContext,PlayRequestContext] {
+    def notify(rc:PlayRequestContext, sender:Publisher[PlayRequestContext, PlayRequestContext]):PlayRequestContext = {
       val rcOpt =
         for (
           encodedInvite <- rc.firstQueryParam(inviteParam);
@@ -474,8 +424,10 @@ to add new Properties for any Person in your Space.
   /**
    * This checks all the preconditions, and sends a request off to the SpaceManager to attach the
    * local Person record to the Identity. If it all succeeds, this will eventually produce a ThingFound(personId, state).
+   * 
+   * TODO: this depends on Play, so it should be in controllers!
    */
-  def acceptInvitation[B](rc:RequestContext)(cb:ThingResponse => B):Option[Future[B]] = {
+  def acceptInvitation[B](rc:PlayRequestContext)(cb:ThingResponse => B):Option[Future[B]] = {
     for (
       personIdStr <- rc.sessionCookie(personParam);
       personId = OID(personIdStr);

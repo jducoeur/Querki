@@ -6,9 +6,14 @@ import models._
 import language.implicitConversions
 import querki.identity.User
 
-class RequestHeaderParser(request:RequestHeader,
-    sessionUpdates:Seq[(String,String)] = Seq.empty,
-    returnToHere:Boolean = false) {
+import querki.values.RequestContext
+
+trait RequestHeaderParser 
+{
+  val request:RequestHeader
+  val sessionUpdates:Seq[(String,String)]
+  val returnToHere:Boolean
+    
   def hasQueryParam(paramName:String) = request.queryString.contains(paramName)
   def queryParam(paramName:String):Seq[String] = if (hasQueryParam(paramName)) request.queryString(paramName) else Seq.empty
   def firstQueryParam(paramName:String):Option[String] = {
@@ -38,45 +43,37 @@ class RequestHeaderParser(request:RequestHeader,
       result.withSession(newSession)
     }
   }
-  
 }
 
+case class SimpleRequestHeaderParser(request:RequestHeader, sessionUpdates:Seq[(String,String)], returnToHere:Boolean)
+  extends RequestHeaderParser
+
 /**
- * As Querki gets more complex, we're passing larger and larger bundles of information around.
- * So instead of trying to do that all in separate parameters, we're taking all the common
- * parts and building up this RequestContext object.
+ * The Play-specific version of a RequestContext.
  * 
- * This initially gets filled by the request itself; as things process, this may get replaced
- * by more-filled versions.
- * 
- * This object is a bit squishy semantically, but the high concept is that it should encapsulate
- * all the data that we *typically* pass around into *most* page renders.
- * 
- * TODO: now that we've gotten into serious questions of rendering, this structure is being
- * passed around more and more. It is getting deep into models and ql, so it probably doesn't
- * belong in controllers per se. Also, the "request" needs to be abstracted out, so that the
- * internals don't have to know about it.
- * 
- * @param requester The validated User who is asking for this page, if any.
+ * Everything that knows about HTTP specifically should go in here. This deliberately belongs up in controllers,
+ * at the Play level, and should not generally be exposed anywhere else. (There is some old cruft pointing to it
+ * from the lower levels -- those should be considered refactoring targets.)
  */
-case class RequestContext(
+case class PlayRequestContext(
     request:Request[AnyContent], 
-    requester:Option[User], 
+    override val requester:Option[User], 
     // Note that this is an *identity*
-    ownerId:OID, 
-    state:Option[SpaceState], 
-    thing:Option[Thing],
+    override val ownerId:OID, 
+    override val state:Option[SpaceState], 
+    override val thing:Option[Thing],
     error:Option[String] = None,
     sessionUpdates:Seq[(String,String)] = Seq.empty,
     redirectTo:Option[Call] = None,
     spaceIdOpt:Option[String] = None,
-    reqOwnerHandle:Option[String] = None) extends RequestHeaderParser(request, sessionUpdates) {
-  def requesterOrAnon = requester getOrElse User.Anonymous
-  def requesterOID = requester map (_.id) getOrElse UnknownOID  
-  def ownerHandle = state.map(_.ownerHandle).getOrElse(ownerId.toThingId.toString)
-  def ownerName = state.map(_.ownerName).getOrElse(ownerId.toThingId.toString)
+    reqOwnerHandle:Option[String] = None) 
+  extends RequestContext(requester, ownerId, state, thing)
+  with RequestHeaderParser
+{
+  // NOTE: this may be wrong, but at the moment is the way the logic works
+  val returnToHere:Boolean = false
   
-  def isOwner = requesterOrAnon.hasIdentity(ownerId)
+  def withUpdatedState(newState:SpaceState):RequestContext = copy(state = Some(newState))
   
   def turningOn(name:String):Boolean = paramIs(name, "on")
   def turningOff(name:String):Boolean = paramIs(name, "off")
@@ -89,6 +86,8 @@ case class RequestContext(
   def sessionCookie(name:String) = request.session.get(name)
   
   def returningToHere = copy(sessionUpdates = sessionUpdates ++ returnToHereUpdate)
+
+  def withError(err:String) = copy(error = Some(err))
   
   // TODO: these probably don't belong here in the long run:
   val chromelessName = "cl"
@@ -120,10 +119,5 @@ case class RequestContext(
     // TBD: I should be able to write this as a for comprehension, but I'm doing
     // something wrong in the syntax. Fix it:
     state.flatMap(space => propStr.flatMap(id => space.prop(ThingId(id))))
-  }
-  
-  def withError(err:String) = copy(error = Some(err))
-}
-object RequestContext {
-  implicit def rc2Space(rc:RequestContext) = rc.state
+  }  
 }

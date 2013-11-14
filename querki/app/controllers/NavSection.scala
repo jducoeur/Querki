@@ -1,9 +1,8 @@
-package models
+package controllers
 
 import play.api.mvc.Call
-import play.api.templates.Html
-
-import controllers._
+import models.Thing
+import models.ThingState
 
 object NavSection {
   object homeNav extends NavSections(Seq())
@@ -21,7 +20,7 @@ object NavSection {
     }
   }
   
-  def loginNav(rc:RequestContext) = {
+  def loginNav(rc:PlayRequestContext) = {
     rc.requester map { user =>
       NavSection("Logged in as " + truncateName(user.name), Seq(
         NavLink("Your Spaces", routes.Application.spaces),
@@ -42,7 +41,7 @@ object NavSection {
     }
   }
       
-  def nav(rc:RequestContext) = {
+  def nav(rc:PlayRequestContext) = {
     def spaceId = rc.state.get.toThingId
     val owner = rc.ownerHandle
     // For menu purposes, don't duplicate the space if it's the Thing:
@@ -73,7 +72,7 @@ object NavSection {
       val thingId = thing.toThingId
       def attachment:Option[NavLink] = {
         thing.kind match {
-          case Kind.Attachment => Some(NavLink("Download", routes.Application.attachment(owner, spaceId, thingId)))
+          case models.Kind.Attachment => Some(NavLink("Download", routes.Application.attachment(owner, spaceId, thingId)))
           case _ => None
         }
       }

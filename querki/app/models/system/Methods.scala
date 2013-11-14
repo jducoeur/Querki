@@ -915,9 +915,15 @@ object CreateInstanceLinkMethod extends SingleThingMethod(CreateInstanceLinkOID,
     |
     |You will usually then feed this into, eg, _linkButton or _iconButton as a way to display the Link.""".stripMargin,
 { (thing, context) => 
-  implicit val req = context.request.request
-  ExactlyOne(
-    ExternalLinkType(routes.Application.createThing(context.request.ownerId.toThingId, context.state.toThingId, Some(thing.toThingId)).absoluteURL()))
+  import controllers.PlayRequestContext
+  context.request match {
+    case PlayRequestContext(request, _, _, _, _, _, _, _, _, _) => {
+      implicit val req = request
+      ExactlyOne(
+        ExternalLinkType(routes.Application.createThing(context.request.ownerId.toThingId, context.state.toThingId, Some(thing.toThingId)).absoluteURL()))
+    }
+    case _ => WarningValue("_createInstanceLink does not currently work outside of Play")
+  }
 })
 
 // TODO: this will become clearer and easier to use once we introduce block-syntax parameters.

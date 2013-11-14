@@ -1,11 +1,11 @@
 package querki.search
 
-import controllers.RequestContext
-
 import models._
 import models.system._
 
 import querki.identity.User
+
+import querki.values.RequestContext
 
 object Search {
   def search(rc:RequestContext, searchStr:String):Option[SearchResults] = {

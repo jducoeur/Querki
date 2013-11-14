@@ -66,7 +66,7 @@ class ApplicationBase extends Controller {
   def onUnauthorized(request: RequestHeader) = {
     // Send them over to the login page, but record that we want to return to this page
     // once they do log in:
-    val rc = new RequestHeaderParser(request, returnToHere = true)
+    val rc = SimpleRequestHeaderParser(request, Seq.empty, true)
     rc.updateSession(Redirect(routes.LoginController.login))
   }
 
@@ -88,13 +88,13 @@ class ApplicationBase extends Controller {
   // This reflects the fact that there are many more or less public pages. It is the responsibility
   // of the caller to use this flag sensibly. Note that RequestContext.requester is guaranteed to
   // be set iff requireLogin is true.
-  def withUser(requireLogin:Boolean)(f: RequestContext => Result) = withAuth { user => implicit request =>
+  def withUser(requireLogin:Boolean)(f: PlayRequestContext => Result) = withAuth { user => implicit request =>
     if (requireLogin && user == User.Anonymous) {
       onUnauthorized(request)
     } else {
       // Iff requireLogin was false, we might not have a real user here, so massage it:
       val userParam = if (user == User.Anonymous) None else Some(user)
-      f(RequestContext(request, userParam, UnknownOID, None, None))
+      f(PlayRequestContext(request, userParam, UnknownOID, None, None))
     }
   }
   
@@ -127,11 +127,11 @@ class ApplicationBase extends Controller {
         ownerIdStr:String,
         spaceId:String, 
         thingIdStr:Option[String] = None,
-        errorHandler:Option[PartialFunction[(ThingFailed, RequestContext), Result]] = None,
+        errorHandler:Option[PartialFunction[(ThingFailed, PlayRequestContext), Result]] = None,
         // This is a pretty rare parameter. It should only be used if we want to execute this function
         // even if the requester does not have read access to this Space. (As during invitation handling.)
         allowAnyone:Boolean = false
-      )(f: (RequestContext => Result)):EssentialAction = withUser(false) { originalRC =>
+      )(f: (PlayRequestContext => Result)):EssentialAction = withUser(false) { originalRC =>
     val requester = originalRC.requester getOrElse User.Anonymous
     val thingId = thingIdStr map (ThingId(_))
     val ownerId = getIdentityByThingId(ownerIdStr)
@@ -145,7 +145,7 @@ class ApplicationBase extends Controller {
     if (updatedRC.redirectTo.isDefined) {
       updatedRC.updateSession(Redirect(updatedRC.redirectTo.get))      
     } else {
-	    def withFilledRC(rc:RequestContext, stateOpt:Option[SpaceState], thingOpt:Option[Thing])(cb:RequestContext => Result):Result = {
+	    def withFilledRC(rc:PlayRequestContext, stateOpt:Option[SpaceState], thingOpt:Option[Thing])(cb:PlayRequestContext => Result):Result = {
 	      val filledRC = updatedRC.copy(ownerId = ownerId, state = stateOpt, thing = thingOpt)
 	      val state = stateOpt.get
 	      val result =
@@ -186,7 +186,7 @@ class ApplicationBase extends Controller {
    * a specific Thing.
    */
   def withThing(requireLogin:Boolean, ownerId:String, spaceId:String, thingIdStr:String,
-        errorHandler:Option[PartialFunction[(ThingFailed, RequestContext), Result]] = None) = { 
+        errorHandler:Option[PartialFunction[(ThingFailed, PlayRequestContext), Result]] = None) = { 
     withSpace(requireLogin, ownerId, spaceId, Some(thingIdStr), errorHandler) _
   }
 }

@@ -1,7 +1,5 @@
 package querki.values
 
-import controllers.RequestContext
-
 import models._
 import models.system._
 
