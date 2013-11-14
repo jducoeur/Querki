@@ -3,6 +3,8 @@ package modules
 import models._
 import models.system.OIDs
 
+import querki.values.SpaceState
+
 object Modules {
   
   val Stylesheet = new stylesheet.StylesheetModule(1)

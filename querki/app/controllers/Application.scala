@@ -22,9 +22,8 @@ import querki.html.HtmlRenderer
 import querki.spaces.messages._
 import SpaceError._
 
-import querki.values.QLRequestContext
-
 import querki.util._
+import querki.values._
 
 object Application extends ApplicationBase {
   

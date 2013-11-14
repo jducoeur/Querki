@@ -6,7 +6,7 @@ import models._
 import language.implicitConversions
 import querki.identity.User
 
-import querki.values.RequestContext
+import querki.values.{RequestContext, SpaceState}
 
 trait RequestHeaderParser 
 {

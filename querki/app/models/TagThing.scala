@@ -1,10 +1,10 @@
 package models
 
-import models.system.NameType
+import models.system.{ExactlyOne, NameType, ShowUnknownProp}
 
 import modules.time.TimeModule
 
-import querki.values.RequestContext
+import querki.values.{QLContext, RequestContext, SpaceState}
 
 /**
  * This is essentially a pseudo-Thing, produced when you navigate to an unknown Name. It basically
@@ -16,7 +16,14 @@ case class TagThing(name:String, space:SpaceState) extends Thing(UnknownOID, spa
   override def canonicalName = Some(name)
   
   override def render(implicit rc:RequestContext, prop:Option[Property[_,_]] = None):Wikitext = {
-    space.renderUnknownName(rc, name)
+    import ql._
+    
+    implicit val s = space
+    val opt = getPropOpt(ShowUnknownProp)
+    val nameVal = ExactlyOne(NameType(name))
+    val nameAsContext = QLContext(nameVal, Some(rc))
+    // TODO: the link below shouldn't be so hard-coded!
+    opt.map(pv => pv.render(nameAsContext)).getOrElse(Wikitext(NameType.toDisplay(name) + " doesn't exist yet. [Click here to create it.](edit?thingId=" + name + ")"))    
   }
 }
 object TagThing {

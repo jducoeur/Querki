@@ -9,6 +9,7 @@ import querki.identity._
 import querki.spaces.SpaceManager
 import querki.spaces.messages._
 import querki.util._
+import querki.values.SpaceState
 
 class ApplicationBase extends Controller {
   

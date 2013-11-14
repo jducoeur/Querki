@@ -7,6 +7,8 @@ import models._
 import Property._
 import Thing._
 
+import querki.values.SpaceState
+
 /**
  * The Object IDs of the core System objects. These are collected here to avoid accidental
  * namespace contention -- when you add an object, you add a value to the end of this table.

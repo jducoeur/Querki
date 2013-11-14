@@ -1,15 +1,15 @@
-package models
+package querki.values
 
 import language.existentials
-import system._
 
-import play.api.Logger
+import models.{Collection, Property, PType, Thing, ThingState}
+import models.{Kind}
+import models.{AsName, AsOID, OID, ThingId}
+import models.system._
 
 import com.github.nscala_time.time.Imports._
 
-import OIDs._
-
-import Thing._
+import Thing.PropFetcher
 
 import querki.identity.User
 
@@ -247,7 +247,7 @@ case class SpaceState(
     implicit val s = this
     
     // First, filter the candidates based on LinkKind:
-    val allCandidates = if (prop.hasProp(LinkKindOID)) {
+    val allCandidates = if (prop.hasProp(LinkKindProp)) {
       val allowedKinds = prop.getPropVal(LinkKindProp).cv
       def fetchKind(wrappedVal:ElemValue):Iterable[Thing] = {
         val kind = LinkKindProp.pType.get(wrappedVal)
@@ -299,17 +299,6 @@ case class SpaceState(
   
   def canChangePropertyValue(who:User, propId:OID):Boolean = {
     querki.access.AccessControl.canChangePropertyValue(this, who, propId)
-  }
-  
-  def renderUnknownName(implicit rc:RequestContext, name:String):Wikitext = {
-    import ql._
-    
-    implicit val s = this
-    val opt = getPropOpt(ShowUnknownProp)
-    val nameVal = ExactlyOne(NameType(name))
-    val nameAsContext = QLContext(nameVal, Some(rc))
-    // TODO: the link below shouldn't be so hard-coded!
-    opt.map(pv => pv.render(nameAsContext)).getOrElse(Wikitext(NameType.toDisplay(name) + " doesn't exist yet. [Click here to create it.](edit?thingId=" + name + ")"))    
   }
 }
 

@@ -24,7 +24,7 @@ import play.api.Play.current
 // nscala-time
 import com.github.nscala_time.time.Imports._
 
-import models.{Kind, MIMEType, SpaceState}
+import models.{Kind, MIMEType}
 import models.{AsOID, AsName, OID, ThingId, UnknownOID}
 import models.{Collection, Property, PType, PTypeBuilder, Thing, ThingState}
 import messages._
@@ -52,6 +52,7 @@ import querki.evolutions.Evolutions
 import modules.time.TimeModule._
 
 import querki.util._
+import querki.values.SpaceState
 
 /**
  * The Actor that encapsulates a Space.

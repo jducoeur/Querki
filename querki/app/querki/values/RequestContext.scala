@@ -2,7 +2,6 @@ package querki.values
 
 import models.OID
 import models.UnknownOID
-import models.SpaceState
 import models.Thing
 
 import querki.identity.User
