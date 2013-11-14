@@ -54,6 +54,8 @@ import modules.time.TimeModule._
 import querki.util._
 import querki.values.SpaceState
 
+import PersistMessages._
+
 /**
  * The Actor that encapsulates a Space.
  * 
@@ -70,7 +72,7 @@ import querki.values.SpaceState
  * to get the name. Note that this has *nothing* to do with the Space's Display Name, which
  * is user-defined. (And unique only to that user.)
  */
-class Space extends Actor {
+private [spaces] class Space(persister:ActorRef) extends Actor with Requester {
   
   import context._
   import models.system.SystemSpace.{State => systemState, _} 
@@ -328,6 +330,15 @@ class Space extends Actor {
       curState = curState.copy(ownerIdentity = querki.identity.User.getIdentity(owner))
       
       _currentState = Some(curState)
+      
+      // TEMP: just as a proof of concept. This is entirely wrong in the long run: we should be using
+      // FSM and Requester instead of blocking here:
+      val persistFuture = persister ? Load
+      val result = scala.concurrent.Await.result(persistFuture, scala.concurrent.duration.Duration(5, "seconds"))
+      result match {
+        case Loaded(state) => QLog.spew("Got the state!")
+        case _ => QLog.error("Got an error!")
+      }
     }    
   }
   
@@ -481,7 +492,7 @@ class Space extends Actor {
     }
   }
   
-  def receive = {
+  def receive = handleResponses orElse {
     case req:CreateSpace => {
       sender ! ThingFound(UnknownOID, state)
     }

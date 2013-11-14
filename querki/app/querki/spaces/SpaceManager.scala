@@ -57,7 +57,16 @@ class SpaceManager extends Actor {
     val childOpt = context.children find (_.path.name == sid)
     childOpt match {
       case Some(child) => child
-      case None => context.actorOf(Props[Space], sid)
+      case None => {
+        // Note that we create the Space and its Persister together. In unit-testing, we will replace
+        // the Persister with a mock version.
+        //
+        // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
+        // with "Props(classOf(Space), ...)". See:
+        //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
+        val persister = context.actorOf(Props(new SpacePersister(spaceId)), sid + "-persist")
+        context.actorOf(Props(new Space(persister)), sid)
+      }
     }
   }
   
