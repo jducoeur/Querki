@@ -1,10 +1,14 @@
-package models
+package querki.spaces
 
 import language.postfixOps
 import scala.util._
 
-import system._
-import OIDs._
+import models.{AsName, AsOID, OID}
+import models.{Kind, Thing}
+import models.system.{DisplayNameProp, NameProp, NameType}
+import models.system.OIDs._
+import models.{CreateSpace, ListMySpaces, MySpaces, SpaceDetails, SpaceMessage, SpaceMgrMsg, ThingFailed}
+import models.SpaceError._
 
 import querki.db.ShardKind
 import ShardKind._
@@ -23,8 +27,6 @@ import play.api.libs.concurrent._
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.Play.current
 import play.Configuration
-
-import SpaceError._
 
 import querki.identity.User
 

@@ -6,6 +6,7 @@ import play.api.mvc._
 import models._
 
 import querki.identity._
+import querki.spaces.SpaceManager
 import querki.util._
 
 class ApplicationBase extends Controller {

@@ -16,6 +16,7 @@ import models.system.OIDs._
 import ql._
 
 import querki.identity._
+import querki.spaces.SpaceManager
 import querki.values._
 
 import modules.Modules._
