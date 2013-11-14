@@ -307,5 +307,5 @@ class QUnit(cid:OID) extends SystemCollection(cid,
 object QUnit extends QUnit(QUnitOID)
     
 object SystemCollections {
-  def all = Space.oidMap[Collection](UrCollection, ExactlyOne, Optional, QList, QSet, QUnit)
+  def all = OIDMap[Collection](UrCollection, ExactlyOne, Optional, QList, QSet, QUnit)
 }

@@ -51,8 +51,6 @@ object Modules {
   }
 }
 
-import models.Space.oidMap
-
 /**
  * Represents a "plug-in" part of the system.
  * 
@@ -173,9 +171,9 @@ trait Module {
 //    play.api.Logger.info("---->     keys start as " + state.spaceProps.keys.map(_.toString).toList.sorted.mkString(", "))
 //    
     val result = state.copy(
-      spaceProps = oidMap[Property[_,_]](props:_*) ++: state.spaceProps, 
-      things = oidMap[ThingState](things:_*) ++: state.things,
-      types = oidMap[PType[_]](types:_*) ++: state.types)
+      spaceProps = OIDMap[Property[_,_]](props:_*) ++: state.spaceProps, 
+      things = OIDMap[ThingState](things:_*) ++: state.things,
+      types = OIDMap[PType[_]](types:_*) ++: state.types)
 //      
 //    play.api.Logger.info("---->     all props are now " + result.spaceProps.values.map(_.displayName).toList.sorted.mkString(", "))
     

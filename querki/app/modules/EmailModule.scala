@@ -9,7 +9,6 @@ import javax.mail.util.ByteArrayDataSource
 import com.sun.mail.smtp._
 
 import models._
-import models.Space.oidMap
 import models.Thing._
 import models.system._
 import models.system.OIDs._

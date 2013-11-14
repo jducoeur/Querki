@@ -28,6 +28,8 @@ import SpaceError._
 
 import querki.identity.User
 
+import querki.spaces._
+
 import querki.util._
 import querki.util.SqlHelpers._
 

@@ -6,7 +6,9 @@ import play.api.db._
 import play.api.Play.current
 
 import models._
-import models.Space.SpaceSQL
+
+import querki.spaces.Space
+import Space.SpaceSQL
 
 import querki.db.ShardKind._
 

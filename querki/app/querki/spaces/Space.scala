@@ -1,4 +1,4 @@
-package models
+package querki.spaces
 
 import scala.concurrent.duration._
 import scala.concurrent.Future
@@ -24,6 +24,11 @@ import play.api.Play.current
 // nscala-time
 import com.github.nscala_time.time.Imports._
 
+import models.{Kind, MIMEType, SpaceError, SpaceState}
+import models.{AsOID, AsName, OID, ThingId, UnknownOID}
+import models.{Collection, Property, PType, PTypeBuilder, Thing, ThingState}
+import models.{AttachmentContents, ChangeProps, CreateAttachment, CreateSpace, CreateThing, DeleteThing, GetAttachment, GetThing, ModifyThing, ThingFound, ThingFailed}
+
 import Kind._
 import Thing._
 
@@ -32,6 +37,7 @@ import querki.identity.User
 import querki.db.ShardKind
 import ShardKind._
 
+import models.system
 import system._
 import system.OIDs._
 import system.SystemSpace._
@@ -585,13 +591,6 @@ object Space {
   def attachTable(id:OID) = "a" + sid(id)
   // The name of a backup for the Thing Table
   def backupTable(id:OID, version:Int) = thingTable(id) + "_Backup" + version
-
-  /**
-   * A Map of Things, suitable for passing into a SpaceState.
-   */
-  def oidMap[T <: Thing](items:T*):Map[OID,T] = {
-    (Map.empty[OID,T] /: items) ((m, i) => m + (i.id -> i))
-  }
   
   /**
    * The intent here is to use this with queries that use the thingTable. You can't use

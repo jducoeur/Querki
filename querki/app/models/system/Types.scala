@@ -559,5 +559,5 @@ object UnresolvedPropType extends SystemType[String](UnknownOID,
 }
 
 object SystemTypes {
-  def all = Space.oidMap[PType[_]](IntType, TextType, QLType, YesNoType, NameType, TagSetType, LinkType, LargeTextType, PlainTextType, InternalMethodType, ExternalLinkType)  
+  def all = OIDMap[PType[_]](IntType, TextType, QLType, YesNoType, NameType, TagSetType, LinkType, LargeTextType, PlainTextType, InternalMethodType, ExternalLinkType)  
 }

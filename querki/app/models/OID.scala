@@ -81,6 +81,12 @@ object OID {
   implicit def OID2ThingId(oid:OID):ThingId = oid.toThingId
 }
 
+object OIDMap {
+  def apply[T <: Thing](items:T*):Map[OID, T] = {
+    (Map.empty[OID,T] /: items) ((m, i) => m + (i.id -> i))
+  }
+}
+
 object UnknownOID extends OID(-1)
 
 /**

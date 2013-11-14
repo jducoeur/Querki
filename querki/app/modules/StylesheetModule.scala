@@ -4,7 +4,6 @@ import play.api.Logger
 import play.api.templates.Html
 
 import models._
-import models.Space.oidMap
 import models.system._
 // We need this because some of these objects were originally created in System,
 // and their OIDs live there:

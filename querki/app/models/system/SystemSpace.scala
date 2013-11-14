@@ -146,13 +146,12 @@ object OIDs {
 object SystemSpace {
   
   import OIDs._
-  import Space.oidMap
 
   // The Types and Collections need to be defined separately, in Types.scala, to avoid initialization loop
   // errors on startup. This means we have to be careful to keep these lists in synch!
   
   // Properties:
-  val props = oidMap[Property[_,_]](
+  val props = OIDMap[Property[_,_]](
       UrProp, 
       NameProp, 
       DisplayTextProp, 
@@ -217,7 +216,7 @@ object SystemSpace {
       PropLinkMethod)
       
   // Things:
-  val things = oidMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, Commas, DisplayThingTree, AllThings, AllProps)
+  val things = OIDMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, Commas, DisplayThingTree, AllThings, AllProps)
   
   def init = {
     _state = Some(modules.Modules.initAllModules(initialSystemState))

@@ -8,7 +8,6 @@ import scala.concurrent.duration._
 import scala.concurrent.Future
 
 import models._
-import models.Space.oidMap
 import models.Thing._
 import models.system._
 import models.system.OIDs._
