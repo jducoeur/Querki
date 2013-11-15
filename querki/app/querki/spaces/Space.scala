@@ -159,8 +159,7 @@ private [spaces] class Space(persister:ActorRef) extends Actor with Requester {
     }
   }
 
-  def createSomething(spaceThingId:ThingId, who:User, modelId:OID, props:PropMap, kind:Kind)(
-      otherWork:OID => java.sql.Connection => Unit) = 
+  def createSomething(spaceThingId:ThingId, who:User, modelId:OID, props:PropMap, kind:Kind, attachmentInfo:Option[AttachmentInfo]) = 
   {
     val spaceId = checkSpaceId(spaceThingId)
     val name = NameProp.firstOpt(props)
@@ -171,33 +170,28 @@ private [spaces] class Space(persister:ActorRef) extends Actor with Requester {
       canChangeTry.recover { case ex:Throwable => sender ! ThingFailed(CreateNotAllowed, ex.getMessage()) }
     } else if (name.isDefined && state.anythingByName(name.get).isDefined)
       sender ! ThingFailed(NameExists, "This Space already has a Thing with that name")
-    else DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
-      val thingId = OID.next(ShardKind.User)
-      // TODO: add a history record
-      Space.createThingInSql(thingId, spaceId, modelId, kind, props, state)
-      // TBD: this isn't quite right -- we really should be taking the DB's definition of the timestamp
-      // instead:
-      val modTime = DateTime.now
-      kind match {
-        case Kind.Thing | Kind.Attachment => {
-          val thing = ThingState(thingId, spaceId, modelId, () => props, modTime, kind)
-          updateState(state.copy(things = state.things + (thingId -> thing)))
-        }
-        case Kind.Property => {
-          val typ = state.typ(TypeProp.first(props))
-          val coll = state.coll(CollectionProp.first(props))
-//          val boundTyp = typ.asInstanceOf[PType[typ.valType] with PTypeBuilder[typ.valType, Any]]
-          val boundTyp = typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]]
-          val boundColl = coll.asInstanceOf[Collection]
-          val thing = Property(thingId, spaceId, modelId, boundTyp, boundColl, () => props, modTime)
-          updateState(state.copy(spaceProps = state.spaceProps + (thingId -> thing)))          
-        }
-        case _ => throw new Exception("Got a request to create a thing of kind " + kind + ", but don't know how yet!")
-      }
-      // This callback intentionally takes place inside the transaction:
-      otherWork(thingId)(conn)
+    else {
+      persister.request(Create(state, modelId, kind, props, attachmentInfo)) {
+        case Changed(thingId, modTime) => {
+          kind match {
+            case Kind.Thing | Kind.Attachment => {
+              val thing = ThingState(thingId, spaceId, modelId, () => props, modTime, kind)
+              updateState(state.copy(things = state.things + (thingId -> thing)))
+            }
+            case Kind.Property => {
+              val typ = state.typ(TypeProp.first(props))
+              val coll = state.coll(CollectionProp.first(props))
+              val boundTyp = typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]]
+              val boundColl = coll.asInstanceOf[Collection]
+              val thing = Property(thingId, spaceId, modelId, boundTyp, boundColl, () => props, modTime)
+              updateState(state.copy(spaceProps = state.spaceProps + (thingId -> thing)))          
+            }
+            case _ => throw new Exception("Got a request to create a thing of kind " + kind + ", but don't know how yet!")
+          }
         
-      sender ! ThingFound(thingId, state)
+          sender ! ThingFound(thingId, state)
+        }
+      }
     }    
   }
   
@@ -223,7 +217,7 @@ private [spaces] class Space(persister:ActorRef) extends Actor with Requester {
           oldThing match {
             case t:ThingState => {
               persister.request(Change(state, thingId, modelId, newProps, None)) {
-                case Changed(modTime) => {
+                case Changed(_, modTime) => {
 	              val newThingState = t.copy(m = modelId, pf = () => newProps, mt = modTime)
 	              updateState(state.copy(things = state.things + (thingId -> newThingState))) 
                   sender ! ThingFound(thingId, state)
@@ -232,7 +226,7 @@ private [spaces] class Space(persister:ActorRef) extends Actor with Requester {
             }
             case prop:Property[_,_] => {
               persister.request(Change(state, thingId, modelId, newProps, None)) {
-                case Changed(modTime) => {
+                case Changed(_, modTime) => {
 	              val newThingState = prop.copy(m = modelId, pf = () => newProps, mt = modTime)
 	              updateState(state.copy(spaceProps = state.spaceProps + (thingId -> newThingState)))
 	              sender ! ThingFound(thingId, state)
@@ -252,7 +246,7 @@ private [spaces] class Space(persister:ActorRef) extends Actor with Requester {
                 None
               }
               persister.request(Change(state, thingId, modelId, newProps, spaceChange)) {
-                case Changed(modTime) => {
+                case Changed(_, modTime) => {
                   updateState(state.copy(m = modelId, pf = () => newProps, name = newName, mt = modTime))
 	              sender ! ThingFound(thingId, state)
                 }
@@ -290,21 +284,11 @@ private [spaces] class Space(persister:ActorRef) extends Actor with Requester {
     }
 
     case CreateThing(who, owner, spaceId, kind, modelId, props) => {
-      createSomething(spaceId, who, modelId, props, kind) { thingId => implicit conn => Unit }
+      createSomething(spaceId, who, modelId, props, kind, None)
     }
     
     case CreateAttachment(who, owner, spaceId, content, mime, size, modelId, props) => {
-      createSomething(spaceId, who, modelId, props, Kind.Attachment) { thingId => implicit conn =>
-      	AttachSQL("""
-          INSERT INTO {tname}
-          (id, mime, size, content) VALUES
-          ({thingId}, {mime}, {size}, {content})
-        """
-        ).on("thingId" -> thingId.raw,
-             "mime" -> mime,
-             "size" -> size,
-             "content" -> content).executeUpdate()       
-      }
+      createSomething(spaceId, who, modelId, props, Kind.Attachment, Some(AttachmentInfo(content, mime, size)))
     }
     
     case GetAttachment(who, owner, space, attachId) => {

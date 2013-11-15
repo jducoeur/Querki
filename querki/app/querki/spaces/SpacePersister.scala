@@ -12,6 +12,7 @@ import play.api.Play.current
 
 import models.{OID}
 import models.{Collection, Property, PType, PTypeBuilder, Kind, Thing, ThingState}
+import models.Kind._
 import models.Thing._
 import models.system.{CollectionProp, DisplayTextProp, TypeProp, UnresolvedPropType, UnresolvedPropValue}
 import models.system.SystemSpace.{State => systemState}
@@ -290,7 +291,7 @@ private [spaces] class SpacePersister(val id:OID) extends Actor {
                
         // TODO: in principle, this should come from the DB's timestamp:
         val modTime = DateTime.now
-        sender ! Changed(modTime)
+        sender ! Changed(thingId, modTime)
       }
       
       spaceChangeOpt map { spaceChange =>
@@ -306,6 +307,34 @@ private [spaces] class SpacePersister(val id:OID) extends Actor {
                "thingId" -> thingId.raw,
                "displayName" -> spaceChange.newDisplay).executeUpdate()          
         }
+      }
+    }
+    
+    /***************************/
+    
+    case Create(state:SpaceState, modelId:OID, kind:Kind, props:PropMap, attachmentInfo:Option[AttachmentInfo]) => {
+      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+        val thingId = OID.next(ShardKind.User)
+        // TODO: add a history record
+        Space.createThingInSql(thingId, id, modelId, kind, props, state)
+        // TBD: this isn't quite right -- we really should be taking the DB's definition of the timestamp
+        // instead:
+        val modTime = DateTime.now
+      
+        attachmentInfo.map { info =>
+          val AttachmentInfo(content, mime, size) = info
+          AttachSQL("""
+            INSERT INTO {tname}
+            (id, mime, size, content) VALUES
+            ({thingId}, {mime}, {size}, {content})
+          """
+          ).on("thingId" -> thingId.raw,
+               "mime" -> mime,
+               "size" -> size,
+               "content" -> content).executeUpdate()       
+        }
+        
+        sender ! Changed(thingId, modTime)
       }
     }
   }

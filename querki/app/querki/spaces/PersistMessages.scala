@@ -3,6 +3,8 @@ package querki.spaces
 import org.joda.time.DateTime
 
 import models.{OID}
+import models.Kind.Kind
+import models.MIMEType.MIMEType
 import models.Thing.PropMap
 
 import querki.values.SpaceState
@@ -35,10 +37,16 @@ private [spaces] object PersistMessages {
    */
   case class Change(state:SpaceState, thingId:OID, modelId:OID, props:PropMap, spaceChange:Option[SpaceChange])
   
+  case class AttachmentInfo(content:Array[Byte], mime:MIMEType, size:Int)
+  /**
+   * Command to create a new Thing. attachmentInfo should be given if the Kind is Attachment.
+   */
+  case class Create(state:SpaceState, modelId:OID, kind:Kind, props:PropMap, attachmentInfo:Option[AttachmentInfo])
+  
   /**
    * Response from a Change() or Create().
    */
-  case class Changed(timestamp:DateTime)
+  case class Changed(thingId:OID, timestamp:DateTime)
   
   /**
    * The general error response when things go wrong. This probably needs to become more

@@ -55,8 +55,10 @@ class SpaceManager extends Actor {
         // Note that we create the Space and its Persister together. In unit-testing, we will replace
         // the Persister with a mock version.
         //
-        // TODO: this should be replaced with a mid-level SpaceHandler, which actually "owns" this
-        // specific Space and its associated Actors. That would keep the SpaceManager simpler.
+        // TODO: the persister probably ought to be owned by the Space itself -- that makes more sense
+        // from a supervision POV. Pass a persister *factory* into the Space, so that we have the
+        // necessary flexibility. (That might become a good general mechanism: SpaceManager itself
+        // could take the same factory, for higher-level testing.)
         //
         // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
         // with "Props(classOf(Space), ...)". See:
