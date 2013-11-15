@@ -1,5 +1,7 @@
 package querki.spaces
 
+import models.{OID}
+
 import querki.values.SpaceState
 
 /**
@@ -17,6 +19,11 @@ private [spaces] object PersistMessages {
    * Response sent when the Persister successfully has loaded the Space.
    */
   case class Loaded(state:SpaceState)
+
+  /**
+   * Command to delete the Thing with the specified OID. Fire-and-forget, with no response.
+   */
+  case class Delete(thingId:OID)
   
   /**
    * The general error response when things go wrong. This probably needs to become more

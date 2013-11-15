@@ -44,8 +44,13 @@ import PersistMessages._
  * The Persister does not maintain its own State. Instead, it works hand-in-glove with the
  * Space itself to manage that.
  * 
- * Write requests are, by and large, best-effort. The medium-term plan is that, if this throws
- * any exceptions, it should result in killing the Space.
+ * Write requests are, by and large, best-effort.
+ * 
+ * TODO: The medium-term plan is that, if this throws any exceptions, it should result in
+ * killing the Space. This should be mediated through the SpaceManager, probably, or there
+ * might be a mid-level Actor between the SpaceManager and Space/SpacePersister, which
+ * manages the whole hive of Actors for this Space. (That might be the better architecture,
+ * now that I think of it.)
  */
 private [spaces] class SpacePersister(val id:OID) extends Actor {
 
@@ -83,8 +88,10 @@ private [spaces] class SpacePersister(val id:OID) extends Actor {
 
   
   def receive = {
+    
+    /***************************/
+    
     case Load => {
-	    
 	    // NOTE: this can take a long time! This is the point where we evolve the Space to the
 	    // current version:
 	    Evolutions.checkEvolution(id, version)
@@ -252,6 +259,20 @@ private [spaces] class SpacePersister(val id:OID) extends Actor {
 	      
 	      sender ! Loaded(curState)
 	    }
+    }
+    
+    /***************************/
+    
+    case Delete(thingId) => {
+      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+	    // TODO: add a history record
+	    SpaceSQL("""
+	      UPDATE {tname}
+	      SET deleted = TRUE
+	      WHERE id = {thingId}
+	      """
+	    ).on("thingId" -> thingId.raw).executeUpdate()
+      }      
     }
   }
   

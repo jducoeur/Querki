@@ -40,12 +40,6 @@ class SpaceManager extends Actor {
   import SystemSpace._
   import Space._
   
-  // TODO: Add the local cache of Space States. This will require a bit of rethink about what
-  // gets done in the Space Actor, and what belongs to the SpaceState itself, so that all
-  // non-mutating operations can just got through the State.
-  // TODO: this cache needs to age properly.
-  // TODO: this needs a cap of how many states we will try to cache.
-  
   // TEMP:
   val replyMsg = Play.configuration.getString("querki.test.replyMsg").get
   
@@ -60,6 +54,9 @@ class SpaceManager extends Actor {
       case None => {
         // Note that we create the Space and its Persister together. In unit-testing, we will replace
         // the Persister with a mock version.
+        //
+        // TODO: this should be replaced with a mid-level SpaceHandler, which actually "owns" this
+        // specific Space and its associated Actors. That would keep the SpaceManager simpler.
         //
         // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
         // with "Props(classOf(Space), ...)". See:
