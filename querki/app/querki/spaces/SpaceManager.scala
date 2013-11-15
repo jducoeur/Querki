@@ -43,6 +43,9 @@ class SpaceManager extends Actor {
   // TEMP:
   val replyMsg = Play.configuration.getString("querki.test.replyMsg").get
   
+  // TEMP: this should be passed into SpaceManager:
+  val persistenceFactory = new DBSpacePersistenceFactory
+  
   def getSpace(spaceId:OID):ActorRef = {
     val sid = Space.sid(spaceId)
  	// TODO: this *should* be using context.child(), but that doesn't exist in Akka
@@ -52,19 +55,10 @@ class SpaceManager extends Actor {
     childOpt match {
       case Some(child) => child
       case None => {
-        // Note that we create the Space and its Persister together. In unit-testing, we will replace
-        // the Persister with a mock version.
-        //
-        // TODO: the persister probably ought to be owned by the Space itself -- that makes more sense
-        // from a supervision POV. Pass a persister *factory* into the Space, so that we have the
-        // necessary flexibility. (That might become a good general mechanism: SpaceManager itself
-        // could take the same factory, for higher-level testing.)
-        //
         // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
         // with "Props(classOf(Space), ...)". See:
         //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-        val persister = context.actorOf(Props(new SpacePersister(spaceId)), sid + "-persist")
-        context.actorOf(Props(new Space(persister)), sid)
+        context.actorOf(Props(new Space(persistenceFactory)), sid)
       }
     }
   }

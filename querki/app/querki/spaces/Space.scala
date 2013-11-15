@@ -49,12 +49,19 @@ import PersistMessages._
  * to get the name. Note that this has *nothing* to do with the Space's Display Name, which
  * is user-defined. (And unique only to that user.)
  */
-private [spaces] class Space(persister:ActorRef) extends Actor with Requester {
+private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends Actor with Requester {
   
   import context._
   import models.system.SystemSpace.{State => systemState, _} 
   
   def id = OID(self.path.name)
+  
+  /**
+   * This is the Actor that manages all persistence (DB) operations. We do things this
+   * way so that it can be stubbed out for testing.
+   */
+  lazy val persister = persistenceFactory.getSpacePersister(id)
+  
   /**
    * TODO: now that I understand Akka better, this is probably better reimplemented as a
    * local parameter of the Receive function. That is, we should start in a Loading
@@ -78,8 +85,6 @@ private [spaces] class Space(persister:ActorRef) extends Actor with Requester {
     _currentState = Some(newState)
   }
   
-//  def AttachSQL(query:String) = Space.AttachSQL(id, query)
-
   def canRead(who:User, thingId:OID):Boolean = state.canRead(who, thingId)
   def canCreate(who:User, modelId:OID):Boolean = state.canCreate(who, modelId)
   def canEdit(who:User, thingId:OID):Boolean = state.canEdit(who, thingId)
