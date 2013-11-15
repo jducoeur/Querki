@@ -221,11 +221,11 @@ class SpaceManager extends Actor {
   private def createSpace(owner:OID, display:String) = {
     val name = NameType.canonicalize(display)
     val spaceId = OID.next(ShardKind.User)
-    Logger.info("Creating new Space with OID " + Space.thingTable(spaceId))
+    Logger.info("Creating new Space with OID " + SpacePersister.thingTable(spaceId))
     // NOTE: we have to do this as two separate Transactions, because part goes into the User DB and
     // part into System. That's unfortunate, but kind of a consequence of the architecture.
     DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
-      SpaceSQL(spaceId, """
+      SpacePersister.SpaceSQL(spaceId, """
           CREATE TABLE {tname} (
             id bigint NOT NULL,
             model bigint NOT NULL,
@@ -233,7 +233,7 @@ class SpaceManager extends Actor {
             props MEDIUMTEXT NOT NULL,
             PRIMARY KEY (id))
           """).executeUpdate()
-      AttachSQL(spaceId, """
+      SpacePersister.AttachSQL(spaceId, """
           CREATE TABLE {tname} (
             id bigint NOT NULL,
             mime varchar(127) NOT NULL,
@@ -242,7 +242,7 @@ class SpaceManager extends Actor {
             PRIMARY KEY (id))
           """).executeUpdate()
       val initProps = Thing.toProps(Thing.setName(name), DisplayNameProp(display))()
-      Space.createThingInSql(spaceId, spaceId, systemOID, Kind.Space, initProps, State)
+      SpacePersister.createThingInSql(spaceId, spaceId, systemOID, Kind.Space, initProps, State)
     }
     DB.withTransaction(dbName(System)) { implicit conn =>
       SQL("""

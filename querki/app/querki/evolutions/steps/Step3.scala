@@ -2,7 +2,7 @@ package querki.evolutions.steps
 
 import java.sql.Connection
 
-import querki.spaces.Space.SpaceSQL
+import querki.spaces.SpacePersister.SpaceSQL
 
 import querki.evolutions._
 

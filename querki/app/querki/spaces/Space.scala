@@ -104,7 +104,7 @@ private [spaces] class Space(persister:ActorRef) extends Actor with Requester {
     _currentState = Some(newState)
   }
   
-  def AttachSQL(query:String) = Space.AttachSQL(id, query)
+//  def AttachSQL(query:String) = Space.AttachSQL(id, query)
 
   def canRead(who:User, thingId:OID):Boolean = state.canRead(who, thingId)
   def canCreate(who:User, modelId:OID):Boolean = state.canCreate(who, modelId)
@@ -299,32 +299,9 @@ private [spaces] class Space(persister:ActorRef) extends Actor with Requester {
             state.anythingByName(name).get.id
           }
         }
-      // NOTE: see note in GetThing below. 
-//      if (!canRead(who, attachOid))
-//        sender ! AttachmentFailed
-//      else 
-      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
-        // TODO: this will throw an error if the specified attachment doesn't exist
-        // Guard against that.
-        val results = AttachSQL("""
-            SELECT mime, size, content FROM {tname} where id = {id}
-            """).on("id" -> attachOid.raw)().map {
-          // Note: this weird duplication is a historical artifact, due to the fact
-          // that some of the attachment tables have "content" as a nullable column,
-          // and some don't. We may eventually want to evolve everything into
-          // consistency...
-          case Row(Some(mime:MIMEType), Some(size:Int), Some(content:Array[Byte])) => {
-            AttachmentContents(attachOid, size, mime, content)
-          }
-          case Row(mime:MIMEType, size:Int, Some(content:Array[Byte])) => {
-            AttachmentContents(attachOid, size, mime, content)
-          }
-          case Row(mime:MIMEType, size:Int, content:Array[Byte]) => {
-            AttachmentContents(attachOid, size, mime, content)
-          }
-        }.head
-        sender ! results
-      }
+        
+        // No need for further intervention -- the Persister will respond directly:
+        persister.forward(LoadAttachment(attachOid))
     }
     
     case ChangeProps(who, owner, spaceThingId, thingId, changedProps) => {
@@ -372,39 +349,4 @@ object Space {
   def sid(id:OID) = id.toString
   // The OID of the Space, based on the sid
   def oid(sid:String) = OID(sid)
-  // The name of the Space's Thing Table
-  def thingTable(id:OID) = "s" + sid(id)
-  // The name of the Space's History Table
-  def historyTable(id:OID) = "h" + sid(id)
-  // The name of the Space's Attachments Table
-  def attachTable(id:OID) = "a" + sid(id)
-  // The name of a backup for the Thing Table
-  def backupTable(id:OID, version:Int) = thingTable(id) + "_Backup" + version
-  
-  /**
-   * The intent here is to use this with queries that use the thingTable. You can't use
-   * on()-style parameters for table names (because on() quotes the params in a way that makes
-   * MySQL choke), so we need to work around that.
-   * 
-   * You can always use this in place of ordinary SQL(); it is simply a no-op for ordinary queries.
-   * 
-   * If you need to use the {bname} parameter, you must pass in a version number.
-   */
-  def SpaceSQL(spaceId:OID, query:String, version:Int = 0):SqlQuery = {
-    val replQuery = query.replace("{tname}", thingTable(spaceId)).replace("{bname}", backupTable(spaceId, version))
-    SQL(replQuery)
-  }
-  def createThingInSql(thingId:OID, spaceId:OID, modelId:OID, kind:Int, props:PropMap, serialContext:SpaceState)(implicit conn:java.sql.Connection) = {
-    SpaceSQL(spaceId, """
-        INSERT INTO {tname}
-        (id, model, kind, props) VALUES
-        ({thingId}, {modelId}, {kind}, {props})
-        """
-        ).on("thingId" -> thingId.raw,
-             "modelId" -> modelId.raw,
-             "kind" -> kind,
-             "props" -> Thing.serializeProps(props, serialContext)).executeUpdate()    
-  }
-  
-  def AttachSQL(spaceId:OID, query:String):SqlQuery = SQL(query.replace("{tname}", attachTable(spaceId)))
 }

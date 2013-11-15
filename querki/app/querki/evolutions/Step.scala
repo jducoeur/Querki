@@ -7,8 +7,8 @@ import play.api.Play.current
 
 import models._
 
-import querki.spaces.Space
-import Space.SpaceSQL
+import querki.spaces.SpacePersister
+import querki.spaces.SpacePersister.SpaceSQL
 
 import querki.db.ShardKind._
 
@@ -68,7 +68,7 @@ trait Step {
 }
   
 case class SpaceInfo(id:OID, version:Int) {
-  def thingTable = Space.thingTable(id)
+  def thingTable = SpacePersister.thingTable(id)
 }
 object SpaceInfo {
   def apply(row:SqlRow):SpaceInfo = SpaceInfo(OID(row.get[Long]("id").get), row.get[Int]("version").get)

@@ -4,7 +4,7 @@ import anorm._
 import play.api.db._
 
 import models._
-import querki.spaces.Space.SpaceSQL
+import querki.spaces.SpacePersister.SpaceSQL
 
 import querki.evolutions._
 

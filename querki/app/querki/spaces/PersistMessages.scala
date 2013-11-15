@@ -49,6 +49,11 @@ private [spaces] object PersistMessages {
   case class Changed(thingId:OID, timestamp:DateTime)
   
   /**
+   * Command to load an attachment. Responds with SpaceMessages.AttachmentContents.
+   */
+  case class LoadAttachment(attachId:OID)
+  
+  /**
    * The general error response when things go wrong. This probably needs to become more
    * complex as we go along.
    */
