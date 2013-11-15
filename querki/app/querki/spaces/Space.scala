@@ -10,22 +10,6 @@ import scala.concurrent.Await
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
-import play.api.libs.concurrent.Execution.Implicits._
-
-import play.api._
-import play.api.Configuration
-import play.api.Play
-import play.api.Play.current
-import play.api.libs.concurrent._
-import play.Configuration
-
-// Database imports:
-import anorm.{Success=>AnormSuccess,_}
-import play.api.db._
-import play.api.Play.current
-
-// nscala-time
-import com.github.nscala_time.time.Imports.DateTime
 
 import models.{Kind, MIMEType}
 import models.{AsOID, AsName, OID, ThingId, UnknownOID}
@@ -33,26 +17,16 @@ import models.{Collection, Property, PType, PTypeBuilder, Thing, ThingState}
 import messages._
 
 import Kind._
-import Thing._
+import Thing.PropMap
 
 import querki.identity.User
 
-import querki.db.ShardKind
-import ShardKind._
-
-import models.system
-import system._
-import system.OIDs._
-import system.SystemSpace._
+import models.system.{CollectionProp, DisplayNameProp, NameProp, NameType, TypeProp}
 
 import messages._
 import SpaceError._
 
 import MIMEType.MIMEType
-
-import querki.evolutions.Evolutions
-
-import modules.time.TimeModule._
 
 import querki.util._
 import querki.values.SpaceState
