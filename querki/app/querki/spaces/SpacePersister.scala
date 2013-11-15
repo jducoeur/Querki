@@ -274,6 +274,40 @@ private [spaces] class SpacePersister(val id:OID) extends Actor {
 	    ).on("thingId" -> thingId.raw).executeUpdate()
       }      
     }
+    
+    /***************************/
+    
+    case Change(state, thingId, modelId, props, spaceChangeOpt) => {
+      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+        SpaceSQL("""
+          UPDATE {tname}
+          SET model = {modelId}, props = {props}
+          WHERE id = {thingId}
+          """
+          ).on("thingId" -> thingId.raw,
+               "modelId" -> modelId.raw,
+               "props" -> Thing.serializeProps(props, state)).executeUpdate()
+               
+        // TODO: in principle, this should come from the DB's timestamp:
+        val modTime = DateTime.now
+        sender ! Changed(modTime)
+      }
+      
+      spaceChangeOpt map { spaceChange =>
+        // In principle, this ought to be in the same transaction, but we
+        // don't currently have a mechanism for cross-DB transactions:
+        DB.withTransaction(dbName(ShardKind.System)) {implicit conn =>
+          SQL("""
+            UPDATE Spaces
+            SET name = {newName}, display = {displayName}
+            WHERE id = {thingId}
+            """
+          ).on("newName" -> spaceChange.newName, 
+               "thingId" -> thingId.raw,
+               "displayName" -> spaceChange.newDisplay).executeUpdate()          
+        }
+      }
+    }
   }
   
 }

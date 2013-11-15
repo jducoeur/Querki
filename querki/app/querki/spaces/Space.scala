@@ -4,6 +4,9 @@ import scala.concurrent.duration._
 import scala.concurrent.Future
 import scala.util._
 
+// TODO: kill this!
+import scala.concurrent.Await
+
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
@@ -22,7 +25,7 @@ import play.api.db._
 import play.api.Play.current
 
 // nscala-time
-import com.github.nscala_time.time.Imports._
+import com.github.nscala_time.time.Imports.DateTime
 
 import models.{Kind, MIMEType}
 import models.{AsOID, AsName, OID, ThingId, UnknownOID}
@@ -136,7 +139,7 @@ private [spaces] class Space(persister:ActorRef) extends Actor with Requester {
     // TEMP: just as a proof of concept. This is entirely wrong in the long run: we should be using
     // FSM and Requester instead of blocking here:
     val persistFuture = persister ? Load
-    val result = scala.concurrent.Await.result(persistFuture, scala.concurrent.duration.Duration(5, "seconds"))
+    val result = Await.result(persistFuture, scala.concurrent.duration.Duration(5, "seconds"))
     result match {
       case Loaded(state) => {
         _currentState = Some(state)
@@ -199,7 +202,7 @@ private [spaces] class Space(persister:ActorRef) extends Actor with Requester {
   }
   
   def modifyThing(who:User, owner:OID, spaceThingId:ThingId, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap)) = {
-      val spaceId = checkSpaceId(spaceThingId)
+      checkSpaceId(spaceThingId)
       val oldThingOpt = state.anything(thingId)
       oldThingOpt map { oldThing =>
         val thingId = oldThing.id
@@ -210,59 +213,53 @@ private [spaces] class Space(persister:ActorRef) extends Actor with Requester {
         } else if (canChangeTry.isFailure) {
           canChangeTry.recover { case ex:Throwable => sender ! ThingFailed(ModifyNotAllowed, ex.getMessage()) }
         } else {
-	      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
-	        // TODO: compare properties, build a history record of the changes
-	        val modelId = modelIdOpt match {
-	          case Some(m) => m
-	          case None => oldThing.model
-	        }
-	        Space.SpaceSQL(spaceId, """
-	          UPDATE {tname}
-	          SET model = {modelId}, props = {props}
-	          WHERE id = {thingId}
-	          """
-	          ).on("thingId" -> thingId.raw,
-	               "modelId" -> modelId.raw,
-	               "props" -> Thing.serializeProps(newProps, state)).executeUpdate()
-	        // TODO: in principle, this should come from the DB's timestamp:
-	        val modTime = DateTime.now
-	        // TODO: this needs a clause for each Kind you can get:
-            oldThing match {
-              case t:ThingState => {
-	            val newThingState = t.copy(m = modelId, pf = () => newProps, mt = modTime)
-	            updateState(state.copy(things = state.things + (thingId -> newThingState))) 
-              }
-              case prop:Property[_,_] => {
-	            val newThingState = prop.copy(m = modelId, pf = () => newProps, mt = modTime)
-	            updateState(state.copy(spaceProps = state.spaceProps + (thingId -> newThingState))) 
-              }
-              case s:SpaceState => {
-                // TODO: handle changing the owner or apps of the Space. (Different messages?)
-                val rawName = NameProp.first(newProps)
-                val newName = NameType.canonicalize(rawName)
-                val oldName = NameProp.first(oldThing.props)
-                val oldDisplay = DisplayNameProp.firstOpt(oldThing.props) map (_.raw.toString) getOrElse rawName
-                val newDisplay = DisplayNameProp.firstOpt(newProps) map (_.raw.toString) getOrElse rawName
-                if (!NameType.equalNames(newName, oldName) || !(oldDisplay.contentEquals(newDisplay))) {
-                  SQL("""
-                    UPDATE Spaces
-                    SET name = {newName}, display = {displayName}
-                    WHERE id = {thingId}
-                    """
-                  ).on("newName" -> newName, 
-                       "thingId" -> thingId.raw,
-                       "displayName" -> newDisplay).executeUpdate()
-                }
-                updateState(state.copy(m = modelId, pf = () => newProps, name = newName, mt = modTime))
-              }
-	        }
-	        sender ! ThingFound(thingId, state)
+          // TODO: compare properties, build a history record of the changes
+	      val modelId = modelIdOpt match {
+	        case Some(m) => m
+	        case None => oldThing.model
 	      }
-//	      // TODO: this seems ridiculously over-conservative. Is there any reason to do this other than
-//	      // when we get a modify on the SpaceState? It does explain why I'm seeing those extra selects in
-//	      // the log.
-//          fetchSpaceInfo()
-        }
+	        
+	      // TODO: this needs a clause for each Kind you can get:
+          oldThing match {
+            case t:ThingState => {
+              persister.request(Change(state, thingId, modelId, newProps, None)) {
+                case Changed(modTime) => {
+	              val newThingState = t.copy(m = modelId, pf = () => newProps, mt = modTime)
+	              updateState(state.copy(things = state.things + (thingId -> newThingState))) 
+                  sender ! ThingFound(thingId, state)
+                }
+              }
+            }
+            case prop:Property[_,_] => {
+              persister.request(Change(state, thingId, modelId, newProps, None)) {
+                case Changed(modTime) => {
+	              val newThingState = prop.copy(m = modelId, pf = () => newProps, mt = modTime)
+	              updateState(state.copy(spaceProps = state.spaceProps + (thingId -> newThingState)))
+	              sender ! ThingFound(thingId, state)
+                }
+              }
+            }
+            case s:SpaceState => {
+              // TODO: handle changing the owner or apps of the Space. (Different messages?)
+              val rawName = NameProp.first(newProps)
+              val newName = NameType.canonicalize(rawName)
+              val oldName = NameProp.first(oldThing.props)
+              val oldDisplay = DisplayNameProp.firstOpt(oldThing.props) map (_.raw.toString) getOrElse rawName
+              val newDisplay = DisplayNameProp.firstOpt(newProps) map (_.raw.toString) getOrElse rawName
+              val spaceChange = if (!NameType.equalNames(newName, oldName) || !(oldDisplay.contentEquals(newDisplay))) {
+                Some(SpaceChange(newName, newDisplay))
+              } else {
+                None
+              }
+              persister.request(Change(state, thingId, modelId, newProps, spaceChange)) {
+                case Changed(modTime) => {
+                  updateState(state.copy(m = modelId, pf = () => newProps, name = newName, mt = modTime))
+	              sender ! ThingFound(thingId, state)
+                }
+              }
+            }
+	      }
+	    }
       } getOrElse {
         sender ! ThingFailed(UnknownPath, "Thing not found")
       }    
@@ -279,15 +276,6 @@ private [spaces] class Space(persister:ActorRef) extends Actor with Requester {
       } else {
         val thingId = oldThing.id
         persister ! Delete(thingId)
-//        DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
-//	      // TODO: add a history record
-//	      Space.SpaceSQL(spaceId, """
-//	        UPDATE {tname}
-//	        SET deleted = TRUE
-//	        WHERE id = {thingId}
-//	        """
-//	      ).on("thingId" -> thingId.raw).executeUpdate()
-//        }
         updateState(state.copy(things = state.things - thingId)) 
         sender ! ThingFound(thingId, state)
       }
