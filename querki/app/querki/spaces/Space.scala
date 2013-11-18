@@ -328,4 +328,9 @@ object Space {
   def sid(id:OID) = id.toString
   // The OID of the Space, based on the sid
   def oid(sid:String) = OID(sid)
+  
+  // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
+  // with "Props(classOf(Space), ...)". See:
+  //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
+  def actorProps(persistenceFactory:SpacePersistenceFactory):Props = Props(new Space(persistenceFactory))
 }

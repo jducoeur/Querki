@@ -410,5 +410,4 @@ object SpacePersister {
   }
   
   def AttachSQL(spaceId:OID, query:String):SqlQuery = SQL(query.replace("{tname}", attachTable(spaceId)))
-  
 }

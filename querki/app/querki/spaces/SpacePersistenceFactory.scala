@@ -10,6 +10,7 @@ import models.OID
  */
 trait SpacePersistenceFactory {
   def getSpacePersister(spaceId:OID)(implicit context:ActorContext):ActorRef
+  def getSpaceManagerPersister(implicit context:ActorContext):ActorRef
 }
 
 class DBSpacePersistenceFactory extends SpacePersistenceFactory {
@@ -18,5 +19,12 @@ class DBSpacePersistenceFactory extends SpacePersistenceFactory {
     // with "Props(classOf(Space), ...)". See:
     //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
     context.actorOf(Props(new SpacePersister(spaceId)), SpacePersister.sid(spaceId) + "-persist")
+  }
+  
+  // TBD: this might actually want to be a *pool* of persistence workers. There is no real reason
+  // to have only one persister for SpaceManager, and strong reason to have a hive of them. Keep
+  // an eye on this, and consider turning this into a worker pool with a router in front.
+  def getSpaceManagerPersister(implicit context:ActorContext):ActorRef = {
+    context.actorOf(Props[SpaceManagerPersister], "space-manager-persist")    
   }
 }

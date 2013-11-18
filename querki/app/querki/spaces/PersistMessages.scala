@@ -14,6 +14,12 @@ import querki.values.SpaceState
  * case classes are what matter.
  */
 private [spaces] object PersistMessages {
+  
+  // =====================================
+  //
+  // Space Persistence
+  //
+  
   /**
    * Request from the Space to the Persister, send when the Space is booted. Persister should
    * respond with Loaded.
@@ -52,6 +58,13 @@ private [spaces] object PersistMessages {
    * Command to load an attachment. Responds with SpaceMessages.AttachmentContents.
    */
   case class LoadAttachment(attachId:OID)
+  
+  // =====================================
+  //
+  // Space Manager Persistence
+  //
+  
+  
   
   /**
    * The general error response when things go wrong. This probably needs to become more
