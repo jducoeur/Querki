@@ -21,6 +21,10 @@ import ShardKind._
  * up, listing or creating Spaces, happens in here, while the SpaceManager itself mostly
  * does routing to the Spaces. This is appropriate, since SpaceManager is a key bottleneck,
  * so we want to keep it fast and high-reliability.
+ * 
+ * IMPORTANT: we create a *pool* of SpaceManagerPersisters to work with the SpaceManager.
+ * This means that it is very important to keep this class stateless! You have no way of
+ * knowing, in principle, which persister any given message will go to.
  */
 private [spaces] class SpaceManagerPersister extends Actor {
 

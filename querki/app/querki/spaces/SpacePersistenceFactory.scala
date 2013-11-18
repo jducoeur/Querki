@@ -1,6 +1,8 @@
 package querki.spaces
 
 import akka.actor.{ActorContext, ActorRef, Props}
+import akka.actor.SupervisorStrategy._
+import akka.routing.{DefaultResizer, FromConfig, SmallestMailboxRouter}
 
 import models.OID
 
@@ -20,11 +22,16 @@ class DBSpacePersistenceFactory extends SpacePersistenceFactory {
     //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
     context.actorOf(Props(new SpacePersister(spaceId)), SpacePersister.sid(spaceId) + "-persist")
   }
-  
-  // TBD: this might actually want to be a *pool* of persistence workers. There is no real reason
-  // to have only one persister for SpaceManager, and strong reason to have a hive of them. Keep
-  // an eye on this, and consider turning this into a worker pool with a router in front.
+
+  // Note that we actually create a *pool* of persistence routers for this job, because it is important,
+  // central, and relatively time-consuming.
   def getSpaceManagerPersister(implicit context:ActorContext):ActorRef = {
-    context.actorOf(Props[SpaceManagerPersister], "space-manager-persist")    
+    // TODO: this really ought to be defined in config, but there doesn't appear to be a way in 2.1.4
+    // to define the supervisorStrategy with FromConfig() yet. So for now, we do it by hand:
+    context.actorOf(Props[SpaceManagerPersister].withRouter(
+        SmallestMailboxRouter(supervisorStrategy = stoppingStrategy,
+            resizer = Some(DefaultResizer(lowerBound = 2, upperBound = 10)))), 
+      "space-manager-persist")
+//    context.actorOf(Props[SpaceManagerPersister].withRouter(FromConfig(supervisorStrategy = stoppingStrategy)), "space-manager-persist")    
   }
 }

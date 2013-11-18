@@ -44,6 +44,22 @@ querki {
   }
 }
 
+akka {
+  actor {
+    deployment {
+      # space-manager-persist is a pool of workers that deal with the DB
+      # operations at the SpaceManager level.
+      /SpaceManager/space-manager-persist {
+        router = smallest-mailbox
+        resizer {
+          lower-bound = 2
+          upper-bound = 10
+        }
+      }
+    }
+  }
+}
+
 # Secret key
 # ~~~~~
 # The secret key is used to secure cryptographics functions.

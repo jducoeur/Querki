@@ -66,19 +66,19 @@ class SpaceManager extends Actor {
     // This is entirely a DB operation, so just have the Persister deal with it:
     case req @ ListMySpaces(owner) => persister.forward(req)
 
-    case req:CreateSpace => {
+    case req @ CreateSpace(requester, name) => {
       // TODO: technically, the legal name check should happen in the same transactions as
       // space creation, to avoid the just-barely-possible race condition of creating the
       // same name in two different sessions simultaneously. Extraordinarily unlikely, but
       // we should fix this.
-      val errorMsg = legalSpaceName(req.requester, req.name)
+      val errorMsg = legalSpaceName(requester, name)
       if (errorMsg.isEmpty) {
         // check that the owner hasn't run out of spaces he can create
-        canCreateSpaces(req.requester) match {
+        canCreateSpaces(requester) match {
           case Failure(error) => sender ! ThingFailed(CreateNotAllowed, error.getMessage())
           case _ => {
             // TODO: this involves DB access, so should be async using the Actor DSL
-            val (spaceId, spaceActor) = createSpace(req.requester.mainIdentity.id, req.name)
+            val (spaceId, spaceActor) = createSpace(requester.mainIdentity.id, req.name)
             // Now, let the Space Actor finish the process once it is ready:
             spaceActor.forward(req)
           }
