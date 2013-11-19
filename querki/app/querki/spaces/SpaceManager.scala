@@ -69,23 +69,23 @@ class SpaceManager extends Actor with Requester {
     case req @ ListMySpaces(owner) => persister.forward(req)
 
     case req @ CreateSpace(requester, display) => {
-      checkLegalSpaceCreation(requester,display) match {
-        case Failure(error:PublicException) => sender ! ThingError(error)
-        case Failure(ex) => { QLog.error("Error during CreateSpace", ex); sender ! ThingError(UnexpectedPublicException) }
-        case Success(u) => {
+      Tryer 
+        { checkLegalSpaceCreation(requester,display) } 
+        { unit =>
           val userMaxSpaces = {
             if (requester.isAdmin || requester.level == querki.identity.UserLevel.PermanentUser)
               Int.MaxValue
             else
               maxSpaces
           }
+          
           persister.request(CreateSpacePersist(requester.mainIdentity.id, userMaxSpaces, NameType.canonicalize(display), display)) {
             case err:ThingError => sender ! err
             // Now, let the Space Actor finish the process once it is ready:
             case Changed(spaceId, _) => getSpace(spaceId).forward(req)
           }
-        }
-      }
+        }  
+        { sender ! ThingError(_) }
     }
 
     // TODO: CRITICAL: we need a pseudo-Space for System!
@@ -122,7 +122,7 @@ class SpaceManager extends Actor with Requester {
   // Any checks we can make without needing to go to the DB should go here. Note that we
   // intentionally don't do any legality checking on the name yet -- since it is a display name,
   // we're pretty liberal about what's allowed.
-  private def checkLegalSpaceCreation(owner:User, display:String):Try[Unit] = Try {
+  private def checkLegalSpaceCreation(owner:User, display:String):Unit = {
     if (!owner.canOwnSpaces)
       throw new PublicException("Space.create.pendingUser")
   }

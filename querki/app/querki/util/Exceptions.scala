@@ -1,5 +1,7 @@
 package querki.util
 
+import scala.util._
+
 import play.api.i18n.Messages
 import play.api.mvc.RequestHeader
 
@@ -17,3 +19,27 @@ object UnexpectedPublicException extends PublicException("General")
  * Represents an internal error that should *not* be shown to end users.
  */
 case class InternalException(message:String) extends Exception(message)
+
+/**
+ * This captures the common pattern we want to encourage, using Try and PublicException. Note
+ * that while this can return a value, it is particularly useful in Actors, where the real action
+ * is side-effectful (usually sending messages) and it returns Unit.
+ * 
+ * Basically, this takes three blocks. The first does the actual calculation. The second does something
+ * with the result if it succeeds. The third does something with the resulting PublicException if it
+ * fails.
+ * 
+ * TBD: this is almost *too* concise: it is arguably hard to distinguish the success and failure cases,
+ * especially since you don't actually have to declare any of the types. We may actually want some
+ * syntactic glue to clarify.
+ */
+object Tryer {
+  def apply[T, R](func: => T)(succ:T => R)(fail:PublicException => R):R = {
+    val t = Try { func }
+    t match {
+      case Failure(ex:PublicException) => fail(ex)
+      case Failure(error) => { QLog.error("Internal error", error); fail(UnexpectedPublicException) }
+      case Success(v) => succ(v)
+    }
+  }
+}

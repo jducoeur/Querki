@@ -85,7 +85,9 @@ private [spaces] class SpaceManagerPersister extends Actor {
         sender ! MySpaces(mySpaces, memberOf)
     }
     
-    case CreateSpacePersist(owner, userMaxSpaces, name, display) => Try {
+    // =========================================
+    
+    case CreateSpacePersist(owner, userMaxSpaces, name, display) => Tryer {
       DB.withTransaction(dbName(System)) { implicit conn =>
         val numWithName = SQL("""
           SELECT COUNT(*) AS c from Spaces 
@@ -141,10 +143,8 @@ private [spaces] class SpaceManagerPersister extends Actor {
       }
       
       Changed(spaceId, DateTime.now)      
-    } match {
-      case Failure(ex:PublicException) => sender ! ThingError(ex)
-      case Failure(error) => { QLog.error("Unexpected exception", error); sender ! ThingError(UnexpectedPublicException) }
-      case Success(msg) => sender ! msg
-    }
+    } 
+    { sender ! _ }
+    { sender ! ThingError(_) }
   }
 }
