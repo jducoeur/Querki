@@ -35,7 +35,9 @@ import querki.spaces._
 import querki.util._
 import querki.util.SqlHelpers._
 
-class SpaceManager extends Actor {
+import PersistMessages._
+
+class SpaceManager extends Actor with Requester {
   import models.system.SystemSpace
   import SystemSpace._
   import Space._
@@ -62,7 +64,7 @@ class SpaceManager extends Actor {
     }
   }
   
-  def receive = {
+  def receive = handleResponses orElse {
     // This is entirely a DB operation, so just have the Persister deal with it:
     case req @ ListMySpaces(owner) => persister.forward(req)
 
@@ -77,12 +79,11 @@ class SpaceManager extends Actor {
             else
               maxSpaces
           }
-          createSpace(requester.mainIdentity.id, userMaxSpaces, NameType.canonicalize(display), display) match {
-            case Failure(error:PublicException) => sender ! ThingError(error)
-            case Failure(ex) => { QLog.error("Error during CreateSpace", ex); sender ! ThingError(UnexpectedPublicException) }
+          persister.request(CreateSpacePersist(requester.mainIdentity.id, userMaxSpaces, NameType.canonicalize(display), display)) {
+            case err:ThingError => sender ! err
             // Now, let the Space Actor finish the process once it is ready:
-            case Success(spaceId) => getSpace(spaceId).forward(req)
-          }       
+            case Changed(spaceId, _) => getSpace(spaceId).forward(req)
+          }
         }
       }
     }
@@ -127,64 +128,6 @@ class SpaceManager extends Actor {
   }
   
   lazy val maxSpaces = Config.getInt("querki.public.maxSpaces", 5)
-  
-  private def createSpace(owner:OID, userMaxSpaces:Int, name:String, display:String):Try[OID] = Try {
-    
-    DB.withTransaction(dbName(System)) { implicit conn =>
-      val numWithName = SQL("""
-          SELECT COUNT(*) AS c from Spaces 
-           WHERE owner = {owner} AND name = {name}
-          """).on("owner" -> owner.raw, "name" -> name).apply().headOption.get.get[Long]("c").get
-      if (numWithName > 0) {
-        throw new PublicException("Space.create.alreadyExists", name)
-      }
-      
-      if (userMaxSpaces < Int.MaxValue) {
-        val sql = SQL("""
-                SELECT COUNT(*) AS count FROM Spaces
-                WHERE owner = {owner}
-                """).on("owner" -> owner.id.raw)
-        val row = sql().headOption
-        val numOwned = row.map(_.long("count")).getOrElse(throw new InternalException("Didn't get any rows back in canCreateSpaces!"))
-        if (numOwned >= maxSpaces)
-          throw new PublicException("Space.create.maxSpaces", userMaxSpaces)
-      }
-    }
-    
-    val spaceId = OID.next(ShardKind.User)
-    
-    // NOTE: we have to do this as two separate Transactions, because part goes into the User DB and
-    // part into System. That's unfortunate, but kind of a consequence of the architecture.
-    DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
-      SpacePersister.SpaceSQL(spaceId, """
-          CREATE TABLE {tname} (
-            id bigint NOT NULL,
-            model bigint NOT NULL,
-            kind int NOT NULL,
-            props MEDIUMTEXT NOT NULL,
-            PRIMARY KEY (id))
-          """).executeUpdate()
-      SpacePersister.AttachSQL(spaceId, """
-          CREATE TABLE {tname} (
-            id bigint NOT NULL,
-            mime varchar(127) NOT NULL,
-            size int NOT NULL,
-            content mediumblob NOT NULL,
-            PRIMARY KEY (id))
-          """).executeUpdate()
-      val initProps = Thing.toProps(Thing.setName(name), DisplayNameProp(display))()
-      SpacePersister.createThingInSql(spaceId, spaceId, systemOID, Kind.Space, initProps, State)
-    }
-    DB.withTransaction(dbName(System)) { implicit conn =>
-      SQL("""
-          INSERT INTO Spaces
-          (id, shard, name, display, owner, size) VALUES
-          ({sid}, {shard}, {name}, {display}, {ownerId}, 0)
-          """).on("sid" -> spaceId.raw, "shard" -> 1.toString, "name" -> name,
-                  "display" -> display, "ownerId" -> owner.raw).executeUpdate()
-    }
-    spaceId
-  }
 }
 
 object SpaceManager {

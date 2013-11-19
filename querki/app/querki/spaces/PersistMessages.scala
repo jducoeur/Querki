@@ -64,7 +64,17 @@ private [spaces] object PersistMessages {
   // Space Manager Persistence
   //
   
-  
+  /**
+   * Command to create a new Space. Note that ownerId should be an *Identity*.
+   * 
+   * userMaxSpaces is the maximum number of Spaces this owner is allowed to have; this will be
+   * checked before creation.
+   * 
+   * name is the canonical name of the Space; display is the display name.
+   * 
+   * This will return either a Changed(), or ThingError.
+   */
+  case class CreateSpacePersist(ownerId:OID, userMaxSpaces:Int, name:String, display:String)
   
   /**
    * The general error response when things go wrong. This probably needs to become more
