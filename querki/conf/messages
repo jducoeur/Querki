@@ -1,2 +1,9 @@
+General=Unexpected error. The details have been logged, and we will look into it. Sorry for the inconvenience.
+
 User.handleExists=Handle {0} is already in use. Please try another.
 User.emailExists=Email address {0} is already in use. If you already have a Querki account, please sign in with that.
+
+Space.create.alreadyExists=You already have a Space with the name {0}. Please choose a different name.
+Space.create.illegalName={0} is not a legal name for a Space. Space names should consist of just letters, digits and spaces.
+Space.create.maxSpaces=You are only allowed to create {0} Spaces at this time. This limit will be raised in the future.
+Space.create.pendingUser=You are not allowed to create Spaces until you are upgraded to being a full Querki User. We will send you an email when that happens.

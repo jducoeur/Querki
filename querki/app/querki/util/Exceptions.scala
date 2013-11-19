@@ -8,9 +8,10 @@ import play.api.mvc.RequestHeader
  * internationalize the message properly. All exceptions that are to be shown to users should use this!
  */
 case class PublicException(msgName:String, params:Any*) extends Exception {
-  def display(req:RequestHeader) = Messages(msgName, params:_*)
+  def display(implicit req:RequestHeader) = Messages(msgName, params:_*)
   override def getMessage = "BUG: Trying to display a PublicException without the Request. Use display() instead."
 }
+object UnexpectedPublicException extends PublicException("General")
 
 /**
  * Represents an internal error that should *not* be shown to end users.

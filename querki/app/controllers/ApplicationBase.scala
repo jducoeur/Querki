@@ -19,7 +19,7 @@ class ApplicationBase extends Controller {
    * to simply redisplay the current page; in that case, set the error in the RequestContext before
    * constructing the page.
    */
-  def doError(redirectTo:Call, errorMsg:String) = {
+  def doError(redirectTo:Call, errorMsg:String):PlainResult = {
     // TODO: figure out a better way to do this, and make it configurable:
     try {
       throw new Exception("Got error; redirecting: " + errorMsg)
@@ -28,6 +28,8 @@ class ApplicationBase extends Controller {
     }
     Redirect(redirectTo).flashing("error" -> errorMsg)
   }
+  
+  def doError(redirectTo:Call, ex:PublicException)(implicit req:RequestHeader):PlainResult = doError(redirectTo, ex.display)
   
   def getUser(username:String):Option[User] = User.get(username)
   

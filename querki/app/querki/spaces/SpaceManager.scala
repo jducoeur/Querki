@@ -20,7 +20,7 @@ import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
 
-import anorm._
+import anorm.{Success=>AnormSuccess,_}
 import play.api._
 import play.api.db._
 import play.api.libs.concurrent._
@@ -66,25 +66,24 @@ class SpaceManager extends Actor {
     // This is entirely a DB operation, so just have the Persister deal with it:
     case req @ ListMySpaces(owner) => persister.forward(req)
 
-    case req @ CreateSpace(requester, name) => {
-      // TODO: technically, the legal name check should happen in the same transactions as
-      // space creation, to avoid the just-barely-possible race condition of creating the
-      // same name in two different sessions simultaneously. Extraordinarily unlikely, but
-      // we should fix this.
-      val errorMsg = legalSpaceName(requester, name)
-      if (errorMsg.isEmpty) {
-        // check that the owner hasn't run out of spaces he can create
-        canCreateSpaces(requester) match {
-          case Failure(error) => sender ! ThingFailed(CreateNotAllowed, error.getMessage())
-          case _ => {
-            // TODO: this involves DB access, so should be async using the Actor DSL
-            val (spaceId, spaceActor) = createSpace(requester.mainIdentity.id, req.name)
-            // Now, let the Space Actor finish the process once it is ready:
-            spaceActor.forward(req)
+    case req @ CreateSpace(requester, display) => {
+      checkLegalSpaceCreation(requester,display) match {
+        case Failure(error:PublicException) => sender ! ThingError(error)
+        case Failure(ex) => { QLog.error("Error during CreateSpace", ex); sender ! ThingError(UnexpectedPublicException) }
+        case Success(u) => {
+          val userMaxSpaces = {
+            if (requester.isAdmin || requester.level == querki.identity.UserLevel.PermanentUser)
+              Int.MaxValue
+            else
+              maxSpaces
           }
+          createSpace(requester.mainIdentity.id, userMaxSpaces, NameType.canonicalize(display), display) match {
+            case Failure(error:PublicException) => sender ! ThingError(error)
+            case Failure(ex) => { QLog.error("Error during CreateSpace", ex); sender ! ThingError(UnexpectedPublicException) }
+            // Now, let the Space Actor finish the process once it is ready:
+            case Success(spaceId) => getSpace(spaceId).forward(req)
+          }       
         }
-      } else {
-        sender ! errorMsg.get
       }
     }
 
@@ -119,55 +118,41 @@ class SpaceManager extends Actor {
     }
   }
   
-  private def legalSpaceName(owner:User, name:String):Option[ThingFailed] = {
-    def numWithName = DB.withTransaction(dbName(System)) { implicit conn =>
-      SQL("""
-          SELECT COUNT(*) AS c from Spaces 
-            JOIN Identity on userId={owner}
-           WHERE owner = Identity.id AND Spaces.name = {name}
-          """).on("owner" -> owner.id.raw, "name" -> NameType.canonicalize(name)).apply().headOption.get.get[Long]("c").get
-    }
-    if (!NameProp.validate(name))
-      Some(ThingFailed(IllegalName, "That's not a legal name for a Space"))
-    else if (numWithName > 0) {
-      Logger.info("numWithName = " + numWithName)
-      Some(ThingFailed(NameExists, "You already have a Space with that name"))
-    } else
-      None
+  // Any checks we can make without needing to go to the DB should go here. Note that we
+  // intentionally don't do any legality checking on the name yet -- since it is a display name,
+  // we're pretty liberal about what's allowed.
+  private def checkLegalSpaceCreation(owner:User, display:String):Try[Unit] = Try {
+    if (!owner.canOwnSpaces)
+      throw new PublicException("Space.create.pendingUser")
   }
   
   lazy val maxSpaces = Config.getInt("querki.public.maxSpaces", 5)
   
-  /**
-   * This is the general check of whether this User is currently allowed to create more Spaces.
-   * 
-   * TODO: the messages in here *should* be PublicExceptions. But we can't do that until ThingFailed can take one of those.
-   */
-  def canCreateSpaces(owner:User):Try[Boolean] = Try {
-    if (owner.isAdmin || owner.level == querki.identity.UserLevel.PermanentUser)
-      // The limit only applies to normal users
-      true
-    else if (!owner.canOwnSpaces)
-      throw new Exception("You are not allowed to create Spaces until you are upgraded to being a full Querki User. We will send you an email when that happens.")
-    else DB.withConnection(dbName(System)) { implicit conn =>
-      val sql = SQL("""
-              SELECT COUNT(*) AS count FROM Spaces
-                JOIN Identity ON userid={owner}
-              WHERE owner = Identity.id
-              """).on("owner" -> owner.id.raw)
-      val row = sql().headOption
-      val numOwned = row.map(_.long("count")).getOrElse(throw new InternalException("Didn't get any rows back in canCreateSpaces!"))
-      if (numOwned < maxSpaces)
-        true
-      else
-        throw new Exception(s"You are only allowed to create $maxSpaces Spaces at this time. This limit will be raised in the future.")  
+  private def createSpace(owner:OID, userMaxSpaces:Int, name:String, display:String):Try[OID] = Try {
+    
+    DB.withTransaction(dbName(System)) { implicit conn =>
+      val numWithName = SQL("""
+          SELECT COUNT(*) AS c from Spaces 
+           WHERE owner = {owner} AND name = {name}
+          """).on("owner" -> owner.raw, "name" -> name).apply().headOption.get.get[Long]("c").get
+      if (numWithName > 0) {
+        throw new PublicException("Space.create.alreadyExists", name)
+      }
+      
+      if (userMaxSpaces < Int.MaxValue) {
+        val sql = SQL("""
+                SELECT COUNT(*) AS count FROM Spaces
+                WHERE owner = {owner}
+                """).on("owner" -> owner.id.raw)
+        val row = sql().headOption
+        val numOwned = row.map(_.long("count")).getOrElse(throw new InternalException("Didn't get any rows back in canCreateSpaces!"))
+        if (numOwned >= maxSpaces)
+          throw new PublicException("Space.create.maxSpaces", userMaxSpaces)
+      }
     }
-  }
-  
-  private def createSpace(owner:OID, display:String) = {
-    val name = NameType.canonicalize(display)
+    
     val spaceId = OID.next(ShardKind.User)
-    Logger.info("Creating new Space with OID " + SpacePersister.thingTable(spaceId))
+    
     // NOTE: we have to do this as two separate Transactions, because part goes into the User DB and
     // part into System. That's unfortunate, but kind of a consequence of the architecture.
     DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
@@ -198,8 +183,7 @@ class SpaceManager extends Actor {
           """).on("sid" -> spaceId.raw, "shard" -> 1.toString, "name" -> name,
                   "display" -> display, "ownerId" -> owner.raw).executeUpdate()
     }
-    val spaceActor = context.actorOf(Props[Space], name = Space.sid(spaceId))
-    (spaceId, spaceActor)
+    spaceId
   }
 }
 

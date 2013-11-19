@@ -106,6 +106,7 @@ disallow: /
           askSpaceMgr[ThingResponse](CreateSpace(requester, name)) {
             case ThingFound(_, state) => Redirect(routes.Application.space(requester.mainIdentity.handle, state.toThingId))
             case ThingFailed(error, msg, stateOpt) => doError(routes.Application.newSpace, msg)
+            case ThingError(ex, _) => doError(routes.Application.newSpace, ex)
           }
         } else {
           doError(routes.Application.newSpace, "That's not a legal Space name")

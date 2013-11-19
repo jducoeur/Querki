@@ -10,6 +10,7 @@ import models.{AsOID, OID, ThingId, UnknownOID}
 
 import querki.identity.User
 import querki.values.SpaceState
+import querki.util.PublicException
 
 sealed trait SpaceMgrMsg
 
@@ -68,8 +69,8 @@ import SpaceError._
 sealed trait SpaceResponse
 sealed trait ThingResponse extends SpaceResponse
 case class ThingFound(id:OID, state:SpaceState) extends ThingResponse
-// TODO: this shouldn't be an error String, it should be a PublicException, which then gets internationalized against
-// the request:
+// DEPRECATED: uses of ThingFailed should be replaced by ThingError:
 case class ThingFailed(error:SpaceError, msg:String, stateOpt:Option[SpaceState] = None) extends ThingResponse
+case class ThingError(ex:PublicException, stateOpt:Option[SpaceState] = None) extends ThingResponse
 case class AttachmentContents(id:OID, size:Int, mime:MIMEType, content:Array[Byte]) extends SpaceResponse
 
