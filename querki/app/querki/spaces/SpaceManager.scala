@@ -93,29 +93,16 @@ class SpaceManager extends Actor with Requester {
     // Is there a better way to do this?
     case req:SpaceMessage => {
       Logger.info("SpaceMgr got " + req)
-      // TODO: cope with messages in name style instead
       req match {
         case SpaceMessage(_, _, AsOID(spaceId)) => getSpace(spaceId).forward(req)
         case SpaceMessage(_, ownerId, AsName(spaceName)) => {
-          val spaceOpt = getSpaceByName(ownerId, spaceName)
-          // TODO: the error clause below potentially leaks information about whether a
-          // give space exists for an owner. Examine the various security paths holistically.
-          spaceOpt match {
-            case Some(spaceId) => getSpace(spaceId).forward(req)
-            case None => sender ! ThingFailed(UnknownPath, "Not a legal path")
+          persister.request(GetSpaceByName(ownerId, NameType.canonicalize(spaceName))) {
+            // TODO: this should be cached!!!!
+            case SpaceId(spaceId) => getSpace(spaceId).forward(req)
+            case err:ThingError => sender ! err
           }
         }
       }
-    }
-  }
-  
-  // TODO: this should be cached!!!!
-  private def getSpaceByName(ownerId:OID, name:String):Option[OID] = {
-    DB.withTransaction(dbName(System)) { implicit conn =>
-      val rowOption = SQL("""
-          SELECT id from Spaces WHERE owner = {ownerId} AND name = {name}
-          """).on("ownerId" -> ownerId.raw, "name" -> NameType.canonicalize(name))().headOption
-      rowOption.map(row => OID(row.get[Long]("id").get))
     }
   }
   

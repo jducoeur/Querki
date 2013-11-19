@@ -7,3 +7,5 @@ Space.create.alreadyExists=You already have a Space with the name {0}. Please ch
 Space.create.illegalName={0} is not a legal name for a Space. Space names should consist of just letters, digits and spaces.
 Space.create.maxSpaces=You are only allowed to create {0} Spaces at this time. This limit will be raised in the future.
 Space.create.pendingUser=You are not allowed to create Spaces until you are upgraded to being a full Querki User. We will send you an email when that happens.
+
+Thing.find.noSuch=That path does not point to a Thing that you are allowed to see.

@@ -77,6 +77,15 @@ private [spaces] object PersistMessages {
   case class CreateSpacePersist(ownerId:OID, userMaxSpaces:Int, name:String, display:String)
   
   /**
+   * Command to fetch a Space by its path. OwnerId should be an Identity.
+   * 
+   * This will return either a SpaceId(), or ThingError.
+   */
+  case class GetSpaceByName(ownerId:OID, name:String)
+  
+  case class SpaceId(id:OID)
+  
+  /**
    * The general error response when things go wrong. This probably needs to become more
    * complex as we go along.
    */

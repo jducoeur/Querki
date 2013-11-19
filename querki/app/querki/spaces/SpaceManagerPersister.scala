@@ -146,5 +146,18 @@ private [spaces] class SpaceManagerPersister extends Actor {
     } 
     { sender ! _ }
     { sender ! ThingError(_) }
+    
+    case GetSpaceByName(ownerId:OID, name:String) => {
+      val result = DB.withTransaction(dbName(System)) { implicit conn =>
+        val rowOption = SQL("""
+            SELECT id from Spaces WHERE owner = {ownerId} AND name = {name}
+            """).on("ownerId" -> ownerId.raw, "name" -> name)().headOption
+        rowOption.map(row => OID(row.get[Long]("id").get))
+      }
+      result match {
+        case Some(id) => sender ! SpaceId(id)
+        case None => sender ! ThingError(new PublicException("Thing.find.noSuch"))
+      }
+    }
   }
 }
