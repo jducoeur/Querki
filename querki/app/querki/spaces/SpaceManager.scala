@@ -52,16 +52,8 @@ class SpaceManager extends Actor with Requester {
   
   def getSpace(spaceId:OID):ActorRef = {
     val sid = Space.sid(spaceId)
- 	// TODO: this *should* be using context.child(), but that doesn't exist in Akka
-    // 2.0.2, so we have to wait until we have access to 2.1.0:
-    //val childOpt = context.child(sid)
-    val childOpt = context.children find (_.path.name == sid)
-    childOpt match {
-      case Some(child) => child
-      case None => {
-        context.actorOf(Space.actorProps(persistenceFactory), sid)
-      }
-    }
+    // Fetch the existing Space Actor, or fire it up:
+    context.child(sid).getOrElse(context.actorOf(Space.actorProps(persistenceFactory), sid))
   }
   
   def receive = handleResponses orElse {
