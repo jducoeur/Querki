@@ -58,10 +58,13 @@ case class GetThing(req:User, own:OID, space:ThingId, thing:Option[ThingId]) ext
 
 case class DeleteThing(req:User, own:OID, space:ThingId, thing:ThingId) extends SpaceMessage(req, own, space)
 
-object SpaceError extends Enumeration {
-  type SpaceError = Value
-  
-  val CreateNotAllowed, IllegalName, ModifyNotAllowed, NameExists, SpaceNotFound, UnknownID, UnknownName, UnknownPath = Value
+object SpaceError {  
+  val CreateNotAllowed = "Space.createThing.notAllowed"
+  val ModifyNotAllowed = "Space.modifyThing.notAllowed"
+  val NameExists = "Space.createThing.nameExists"
+  val UnknownID = "Thing.find.unknownId"
+  val UnknownName = "Thing.find.unknownName"
+  val UnknownPath = "Thing.find.noSuch"
 }
 import SpaceError._
 
@@ -69,8 +72,6 @@ import SpaceError._
 sealed trait SpaceResponse
 sealed trait ThingResponse extends SpaceResponse
 case class ThingFound(id:OID, state:SpaceState) extends ThingResponse
-// DEPRECATED: uses of ThingFailed should be replaced by ThingError:
-case class ThingFailed(error:SpaceError, msg:String, stateOpt:Option[SpaceState] = None) extends ThingResponse
 case class ThingError(ex:PublicException, stateOpt:Option[SpaceState] = None) extends ThingResponse
 case class AttachmentContents(id:OID, size:Int, mime:MIMEType, content:Array[Byte]) extends SpaceResponse
 

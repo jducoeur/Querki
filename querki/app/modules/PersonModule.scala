@@ -15,7 +15,7 @@ import models.system.OIDs._
 import ql._
 
 import querki.spaces.SpaceManager
-import querki.spaces.messages.{ChangeProps, CreateThing, ThingFailed, ThingFound, ThingResponse}
+import querki.spaces.messages.{ChangeProps, CreateThing, ThingError, ThingFound, ThingResponse}
 import querki.values._
 
 import querki.identity._
@@ -210,7 +210,7 @@ to add new Properties for any Person in your Space.
     SpaceManager.ask(changeRequest) { resp:ThingResponse =>
       resp match {
         case ThingFound(id, state) => Logger.info("Added identity " + identity.id + " to Person " + t.toThingId)
-        case ThingFailed(error, msg, stateOpt) => Logger.error("Unable to add identity " + identity.id + " to Person " + t.toThingId + ": " + msg)
+        case ThingError(error, stateOpt) => Logger.error("Unable to add identity " + identity.id + " to Person " + t.toThingId + ": " + error.msgName)
       }
     }
     // ... and finally, return it so we can use it now:

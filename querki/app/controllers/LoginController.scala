@@ -11,7 +11,7 @@ import play.api.mvc._
 import models._
 
 import querki.identity._
-import querki.spaces.messages.{ThingFailed, ThingFound}
+import querki.spaces.messages.{ThingError, ThingFound}
 import querki.util._
 import querki.values.QLRequestContext
 
@@ -187,7 +187,7 @@ object LoginController extends ApplicationBase {
   def joinSpace(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId, allowAnyone = true) { implicit rc =>
     val joinOpt = modules.Modules.Person.acceptInvitation(rc) {
       case ThingFound(id, state) => Redirect(routes.Application.thing(ownerId, spaceId, spaceId))
-      case ThingFailed(error, msg, stateOpt) => doError(routes.Application.index, "Something went wrong adding you to the Space -- sorry!")
+      case ThingError(error, stateOpt) => doError(routes.Application.index, error)
     }
     joinOpt match {
       case Some(f) => Async { f }

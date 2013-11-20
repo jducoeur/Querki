@@ -75,7 +75,7 @@ disallow: /
   }
   
   def thing(ownerId:String, spaceId:String, thingId:String) = withThing(false, ownerId, spaceId, thingId, Some({ 
-    case (ThingFailed(UnknownName, _, stateOpt), rc) => {
+    case (ThingError(error, stateOpt), rc) if (error.msgName == UnknownName) => {
       // We didn't find the requested Thing, so display a TagThing for it instead:
       val rcWithName = rc.copy(thing = Some(TagThing(thingId, stateOpt.get)))
       Ok(views.html.thing(rcWithName))
@@ -87,7 +87,7 @@ disallow: /
     Ok(views.html.thing(rc))
   }
   
-  def newSpace = withUser(true) { rc =>
+  def newSpace = withUser(true) { implicit rc =>
     if (rc.requesterOrAnon.canOwnSpaces) {
       Ok(views.html.newSpace(rc))
     } else {
@@ -96,7 +96,7 @@ disallow: /
     }
   }
   
-  def doNewSpace = withUser(true) { rc =>
+  def doNewSpace = withUser(true) { implicit rc =>
     implicit val request = rc.request
     val requester = rc.requester.get
     newSpaceForm.bindFromRequest.fold(
@@ -105,7 +105,6 @@ disallow: /
         if (NameProp.validate(name)) {
           askSpaceMgr[ThingResponse](CreateSpace(requester, name)) {
             case ThingFound(_, state) => Redirect(routes.Application.space(requester.mainIdentity.handle, state.toThingId))
-            case ThingFailed(error, msg, stateOpt) => doError(routes.Application.newSpace, msg)
             case ThingError(ex, _) => doError(routes.Application.newSpace, ex)
           }
         } else {
@@ -337,14 +336,15 @@ disallow: /
                   }
                 }
               }
-              case ThingFailed(error, msg, stateOpt) => {
+              case ThingError(error, stateOpt) => {
+                val msg = error.display
                 errorCb.map(cb => cb(msg, oldModel, rawProps)).getOrElse {
                   if (fromAPI) {
                     NotAcceptable(msg)
                   } else {
                     showEditPage(rc, oldModel, makeProps(rawProps), Some(msg))
                   }
-                }
+                }                
               }
             }
           } else {
@@ -399,7 +399,7 @@ disallow: /
   
   def editThing(ownerId:String, spaceId:String, thingIdStr:String) = withSpace(true, ownerId, spaceId, Some(thingIdStr), Some({ 
     // TODO: can/should we refactor this out to a new Tags Module?
-    case (ThingFailed(UnknownName, _, stateOpt), rc) => {
+    case (ThingError(error, stateOpt), rc) if (error.msgName == UnknownName) => {
       // We didn't find the requested Thing, so we're essentially doing a variant of Create instead.
       // This happens normally when you "Edit" a Tag.
       implicit val state = rc.state.get
@@ -436,8 +436,8 @@ disallow: /
       case ThingFound(thingId, newState) => {
         Redirect(routes.Application.space(ownerId, spaceId)).flashing("info" -> (displayName + " deleted."))
       }
-      case ThingFailed(error, msg, stateOpt) => {
-        doError(routes.Application.space(ownerId, spaceId), msg)
+      case ThingError(error, stateOpt) => {
+        doError(routes.Application.space(ownerId, spaceId), error)
       }
     }
   }
@@ -452,42 +452,6 @@ disallow: /
         resultsOpt.map(results => Ok(views.html.searchResults(rc, results))).getOrElse(doError(routes.Application.space(ownerId, spaceId), "That wasn't a legal search"))
       }
     )
-  }
-  
-  /**
-   * This is the AJAX-style call to change a single property value. As of this writing, I expect it to become
-   * the dominant style before too long.
-   * 
-   * TODO: note that I've had to turn off requireLogin. That's mainly because the definition of "login" used for it is
-   * too stringent. We need to rewrite withSpace/withThing to cope with the late-parsed SpaceSpecificUser:
-   * 
-   * DEPRECATED. Can we remove this?
-   */
-  def setProperty(ownerId:String, spaceId:String, thingId:String, propId:String, newVal:String) = withThing(false, ownerId, spaceId, thingId) { implicit rc =>
-    rc.requester match {
-      case Some(requester) => {
-	    val thing = rc.thing.get
-	    val propOpt = rc.state.get.prop(ThingId(propId))
-	    propOpt match {
-	      case Some(prop) => {
-	        val request = ChangeProps(requester, rc.ownerId, rc.state.get.id, thing.id, Thing.toProps(prop.id -> HtmlRenderer.propValFromUser(prop, newVal))())
-	        askSpaceMgr[ThingResponse](request) {
-	          case ThingFound(thingId, state) => {
-	            Ok("Successfully changed to " + newVal)
-	          }
-	          case ThingFailed(error, msg, stateOpt) => {
-	            Logger.info("Failed to change property: " + msg); Ok("Failed to change property: " + msg)
-	          }
-	        }
-	      }
-	      case None => {
-	        Ok("Unknown property " + propId)
-	      }
-	    }        
-      }
-      
-      case _ => Ok("You aren't logged in, so you can't change anything")
-    }
   }
 
   /**
@@ -606,7 +570,7 @@ disallow: /
   //
   // A better solution is probably to use 2.10's Try monad pretty rigorously. Say that askSpaceMgr returns
   // a monadic response, that composes by calling the next step in the chain. If you get ThingFound, we
-  // continue; if you get ThingFailed, we fail the Try with an error. Done right, and all of this can
+  // continue; if you get ThingError, we fail the Try with an error. Done right, and all of this can
   // become a nice for() statement, and will be much easier to reason about in the long run. That will
   // have to wait until we have 2.10 going, though.
   //
@@ -639,8 +603,8 @@ disallow: /
 	    case ThingFound(attachmentId, state2) => {
 	      Redirect(routes.Application.thing(ownerId, state.toThingId, attachmentId.toThingId))
 	    }
-	    case ThingFailed(error, msg, stateOpt) => {
-          doError(routes.Application.upload(ownerId, spaceId), msg)
+	    case ThingError(error, stateOpt) => {
+          doError(routes.Application.upload(ownerId, spaceId), error)
 	    }
 	  }
 	} getOrElse {
@@ -657,7 +621,7 @@ disallow: /
       }
       // TODO: this should probably include the error message in some form? As it is, you get a blank page
       // if you try to download and it fails:
-      case ThingFailed(err, _, _) => BadRequest
+      case ThingError(err, _) => BadRequest
       case ThingFound(_, _) => QLog.error("Application.attachment somehow got a ThingFound back!"); BadRequest
     }     
   }
@@ -699,7 +663,6 @@ disallow: /
     Ok(
       Routes.javascriptRouter("jsRoutes")(
         routes.javascript.Application.testAjax,
-        routes.javascript.Application.setProperty,
         routes.javascript.Application.setProperty2,
         routes.javascript.Application.getPropertyDisplay,
         routes.javascript.Application.getPropertyEditor,

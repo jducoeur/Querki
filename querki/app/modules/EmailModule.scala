@@ -17,7 +17,7 @@ import ql._
 
 import querki.identity._
 import querki.spaces.SpaceManager
-import querki.spaces.messages.{ChangeProps, ThingFailed, ThingFound, ThingResponse}
+import querki.spaces.messages.{ChangeProps, ThingError, ThingFound, ThingResponse}
 import querki.values._
 
 import modules.Modules._
@@ -386,7 +386,7 @@ class EmailModule(val moduleId:Short) extends modules.Module {
 	      resp match {
 	        case ThingFound(id, state) => Logger.info("Noted email recipients")
 	        // TODO: what should we do in case of failure?
-	        case ThingFailed(error, msg, stateOpt) => Logger.error("Unable to record email recipients: " + msg)
+	        case ThingError(error, stateOpt) => Logger.error("Unable to record email recipients: " + error.msgName)
 	      }
 	    }
 	    

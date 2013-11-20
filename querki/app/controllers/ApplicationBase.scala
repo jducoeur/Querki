@@ -29,7 +29,7 @@ class ApplicationBase extends Controller {
     Redirect(redirectTo).flashing("error" -> errorMsg)
   }
   
-  def doError(redirectTo:Call, ex:PublicException)(implicit req:RequestHeader):PlainResult = doError(redirectTo, ex.display)
+  def doError(redirectTo:Call, ex:PublicException)(implicit rc:PlayRequestContext):PlainResult = doError(redirectTo, ex.display(rc.request))
   
   def getIdentityByThingId(thingIdStr:String):OID = {
     val thingId = ThingId(thingIdStr)
@@ -115,7 +115,7 @@ class ApplicationBase extends Controller {
         ownerIdStr:String,
         spaceId:String, 
         thingIdStr:Option[String] = None,
-        errorHandler:Option[PartialFunction[(ThingFailed, PlayRequestContext), Result]] = None,
+        errorHandler:Option[PartialFunction[(ThingResponse, PlayRequestContext), Result]] = None,
         // This is a pretty rare parameter. It should only be used if we want to execute this function
         // even if the requester does not have read access to this Space. (As during invitation handling.)
         allowAnyone:Boolean = false
@@ -158,12 +158,13 @@ class ApplicationBase extends Controller {
 	          withFilledRC(updatedRC, Some(state), thingOpt)(f)
 	        }
 	      }
-	      case err:ThingFailed => {
-	        val ThingFailed(error, msg, stateOpt) = err
+	      case err @ ThingError(error, stateOpt) => {
 	        if (stateOpt.isDefined)
-	          withFilledRC(updatedRC, stateOpt, None)(filledRC => errorHandler.flatMap(_.lift((err, filledRC))).getOrElse(doError(routes.Application.index, msg)))
+	          withFilledRC(updatedRC, stateOpt, None) { implicit filledRC =>
+	            errorHandler.flatMap(_.lift((err, filledRC))).getOrElse(doError(routes.Application.index, error))
+	          }
 	        else
-	          onUnauthorized(updatedRC.request)
+	          onUnauthorized(updatedRC.request)	        
 	      }
 	    }     
     }
@@ -174,7 +175,7 @@ class ApplicationBase extends Controller {
    * a specific Thing.
    */
   def withThing(requireLogin:Boolean, ownerId:String, spaceId:String, thingIdStr:String,
-        errorHandler:Option[PartialFunction[(ThingFailed, PlayRequestContext), Result]] = None) = { 
+        errorHandler:Option[PartialFunction[(ThingResponse, PlayRequestContext), Result]] = None) = { 
     withSpace(requireLogin, ownerId, spaceId, Some(thingIdStr), errorHandler) _
   }
 }

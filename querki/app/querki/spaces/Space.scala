@@ -144,11 +144,11 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
     val name = NameProp.firstOpt(props)
     val canChangeTry = canChangeProperties(who, Map.empty, props)
     if (!canCreate(who, modelId))
-      sender ! ThingFailed(CreateNotAllowed, "You are not allowed to create that")
+      sender ! ThingError(new PublicException(CreateNotAllowed))
     else if (canChangeTry.isFailure) {
-      canChangeTry.recover { case ex:Throwable => sender ! ThingFailed(CreateNotAllowed, ex.getMessage()) }
+      canChangeTry.recover { case ex:Throwable => sender ! ThingError(new PublicException(CreateNotAllowed)) }
     } else if (name.isDefined && state.anythingByName(name.get).isDefined)
-      sender ! ThingFailed(NameExists, "This Space already has a Thing with that name")
+      sender ! ThingError(new PublicException(NameExists, name.get))
     else {
       persister.request(Create(state, modelId, kind, props, attachmentInfo)) {
         case Changed(thingId, modTime) => {
@@ -182,9 +182,9 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
         val newProps = pf(oldThing)
         val canChangeTry = canChangeProperties(who, oldThing.props, newProps)
         if (!canEdit(who, thingId)) {
-          sender ! ThingFailed(ModifyNotAllowed, "You're not allowed to modify that")
+          sender ! ThingError(new PublicException(ModifyNotAllowed))
         } else if (canChangeTry.isFailure) {
-          canChangeTry.recover { case ex:Throwable => sender ! ThingFailed(ModifyNotAllowed, ex.getMessage()) }
+          canChangeTry.recover { case ex:Throwable => sender ! ThingError(new PublicException(ModifyNotAllowed)) }
         } else {
           // TODO: compare properties, build a history record of the changes
 	      val modelId = modelIdOpt match {
@@ -234,7 +234,7 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
 	      }
 	    }
       } getOrElse {
-        sender ! ThingFailed(UnknownPath, "Thing not found")
+        sender ! ThingError(new PublicException(UnknownPath))
       }    
   }
   
@@ -245,7 +245,7 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
       // TODO: eventually we will allow you to delete Properties, but we're nowhere near
       // ready to cope with all the potential error conditions yet.
       if (!oldThing.isInstanceOf[ThingState] || !canEdit(who, oldThing.id)) {
-        sender ! ThingFailed(ModifyNotAllowed, "You're not allowed to delete that")
+        sender ! ThingError(new PublicException(ModifyNotAllowed))
       } else {
         val thingId = oldThing.id
         persister ! Delete(thingId)
@@ -253,7 +253,7 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
         sender ! ThingFound(thingId, state)
       }
     } getOrElse {
-      sender ! ThingFailed(UnknownPath, "Thing not found")
+      sender ! ThingError(new PublicException(UnknownPath))
     }
   }
   
@@ -301,7 +301,7 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
       // by necessity. We don't even necessarily know *who* the requester is until Application gets the
       // State back, because a locally-defined Identity requires the State.
 //      if (!canRead(req, thingId))
-//        sender ! ThingFailed(SpaceNotFound, "Space not found")
+//        sender ! ThingError(SpaceNotFound, "Space not found")
 //      else 
       if (thingIdOpt.isDefined) {
         val thingOpt = state.anything(thingIdOpt.get)
@@ -311,8 +311,8 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
           thingIdOpt.get match {
             // TODO: this potentially leaks information. It is frequently legal to see the Space if the name is unknown --
             // that is how tags work -- but we should think through how to keep that properly controlled.
-            case AsName(name) => sender ! ThingFailed(UnknownName, "No Thing found with that name", Some(state))
-            case AsOID(id) => sender ! ThingFailed(UnknownID, "No Thing found with that id")
+            case AsName(name) => sender ! ThingError(new PublicException(UnknownName), Some(state))
+            case AsOID(id) => sender ! ThingError(new PublicException(UnknownID))
           }
         }
       } else {
