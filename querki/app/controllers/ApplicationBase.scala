@@ -31,23 +31,6 @@ class ApplicationBase extends Controller {
   
   def doError(redirectTo:Call, ex:PublicException)(implicit req:RequestHeader):PlainResult = doError(redirectTo, ex.display)
   
-  def getUser(username:String):Option[User] = User.get(username)
-  
-  // DEPRECATED. Delete this once I'm sure that it is unused:
-  def getUserByThingId(thingIdStr:String):OID = {
-    val thingId = ThingId(thingIdStr)
-    thingId match {
-      case AsOID(oid) => oid
-      case AsName(name) => {
-        if (name.length() == 0) UnknownOID
-        else {
-          val userOpt = getUser(name)
-          userOpt map (_.id) getOrElse UnknownOID
-        }
-      }
-    }
-  }
-  
   def getIdentityByThingId(thingIdStr:String):OID = {
     val thingId = ThingId(thingIdStr)
     thingId match {

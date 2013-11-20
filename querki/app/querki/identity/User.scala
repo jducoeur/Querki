@@ -260,25 +260,6 @@ object User {
     username.flatMap(loadByHandle(_, None))
   }
   
-  // DEPRECATED -- can this be removed?
-  // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
-  def get(rawName:String) = {
-    val name = system.NameType.canonicalize(rawName)
-    val idOpt = idByNameCache.get(name).orElse {
-      // Don't have it cached, so fetch the ID and cache it:
-      val fromDB = DB.withConnection(dbName(System)) { implicit conn =>
-        val personQuery = SQL("""
-          select id from User where name={name}
-          """).on("name" -> name)
-        val stream = personQuery.apply()
-        stream.headOption.map(row => OID(row.get[Long]("id").get))
-      }
-      fromDB.map(idByNameCache(name) = _)
-      fromDB
-    }
-    idOpt.map(FullUser(_, name))
-  }
-  
   /**
    * Global method to fetch an Identity (and a bit of User info) from a ThingId.
    */
