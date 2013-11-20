@@ -50,6 +50,14 @@ class SpaceManager extends Actor with Requester {
    */
   lazy val persister = persistenceFactory.getSpaceManagerPersister
   
+  // Cache of the mapping from Space Name to OID.
+  // TODO: in the long-term architecture, we should *always* be putting stuff into this cache,
+  // even when the original lookup wasn't by name. This cache will also be fully distributed.
+  // TODO: expire entries from this cache, at least on inactivity.
+  // TODO: forcibly expire this cache on Space Name change.
+  private case class SpaceInfo(id:OID, name:String)
+  private var spaceNameCache:Map[String,SpaceInfo] = Map.empty
+  
   def getSpace(spaceId:OID):ActorRef = {
     val sid = Space.sid(spaceId)
     // Fetch the existing Space Actor, or fire it up:
@@ -80,18 +88,23 @@ class SpaceManager extends Actor with Requester {
         { sender ! ThingError(_) }
     }
 
-    // TODO: CRITICAL: we need a pseudo-Space for System!
-    // This clause is a pure forwarder for messages to a particular Space.
-    // Is there a better way to do this?
+    // TODO: we need a pseudo-Space for System!
     case req:SpaceMessage => {
-      Logger.info("SpaceMgr got " + req)
       req match {
         case SpaceMessage(_, _, AsOID(spaceId)) => getSpace(spaceId).forward(req)
         case SpaceMessage(_, ownerId, AsName(spaceName)) => {
-          persister.request(GetSpaceByName(ownerId, NameType.canonicalize(spaceName))) {
-            // TODO: this should be cached!!!!
-            case SpaceId(spaceId) => getSpace(spaceId).forward(req)
-            case err:ThingError => sender ! err
+          val canonName = NameType.canonicalize(spaceName)
+          spaceNameCache.get(canonName) match {
+            case Some(SpaceInfo(spaceId, name)) => getSpace(spaceId).forward(req)
+            case None => {
+	          persister.request(GetSpaceByName(ownerId, canonName)) {
+	            case SpaceId(spaceId) => {
+	              getSpace(spaceId).forward(req)
+	              spaceNameCache = spaceNameCache + (canonName -> SpaceInfo(spaceId, canonName))
+	            }
+	            case err:ThingError => sender ! err
+	          }
+            }
           }
         }
       }
