@@ -37,13 +37,10 @@ import querki.util.SqlHelpers._
 
 import PersistMessages._
 
-class SpaceManager extends Actor with Requester {
+class SpaceManager(persistenceFactory:SpacePersistenceFactory) extends Actor with Requester {
   import models.system.SystemSpace
   import SystemSpace._
   import Space._
-  
-  // TEMP: this should be passed into SpaceManager:
-  val persistenceFactory = new DBSpacePersistenceFactory
   
   /**
    * This Actor deals with all DB-style operations for the SpaceManager.
@@ -126,7 +123,9 @@ object SpaceManager {
   // I don't love having to hold a static reference like this, but Play's statelessness
   // probably requires that. Should we instead be holding a Path, and looking it up
   // each time?
-  lazy val ref = Akka.system.actorOf(Props[SpaceManager], name="SpaceManager")
+  var _ref:Option[ActorRef] = None
+  def setSpaceManager(r:ActorRef) = { _ref = Some(r) }
+  def ref = _ref.get
   
   // This is probably over-broad -- we're going to need the timeout to push through to
   // the ultimate callers.
