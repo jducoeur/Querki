@@ -57,6 +57,7 @@ trait User {
   def name:String
   def identities:Seq[Identity]
   def level:UserLevel
+  def tosVersion:Int
   
   def levelName:String = UserLevel.levelName(level)
   
@@ -116,7 +117,7 @@ trait User {
   }
 }
 
-case class FullUser(id:OID, name:String, identities:Seq[Identity] = Seq.empty, level:UserLevel = UnknownUserLevel) extends User
+case class FullUser(id:OID, name:String, identities:Seq[Identity] = Seq.empty, level:UserLevel = UnknownUserLevel, tosVersion:Int = 0) extends User
 
 // Internal System User. This should be used for making internal changes to Spaces that are *not* under the
 // aegis of the requesting user. 
@@ -132,6 +133,7 @@ case object SystemUser extends User {
   // doesn't belong in this file? Likely so.
   val identities = Seq(Identity(models.system.OIDs.SystemIdentityOID, email, "", "systemUser", name, IdentityKind.QuerkiLogin))
   val level = SuperadminUser
+  val tosVersion = -1
 }
 
 // TODO: given that this is full of methods that shouldn't be synchronous, this should
@@ -145,6 +147,7 @@ object User {
     val name = ""
     val identities = Seq.empty
     val level = UnknownUserLevel
+    val tosVersion = -1
   }
   
   /**
@@ -190,7 +193,8 @@ object User {
     val identityOID = row.oid("id")
     FullUser(row.oid("userId"), row.string("name"),
       Seq(Identity(identityOID, email, row.string("authentication"), row.string("handle"), row.string("name"), IdentityKind.QuerkiLogin)),
-      row.int("level"))
+      row.int("level"),
+      row.int("tosVersion"))
   }
   
   private def getUser(query:Sql, checkOpt:Option[User => Boolean] = None):Option[User] = {
@@ -224,7 +228,7 @@ object User {
   }
   
   def userLoadSqlWhere(whereClause:String) = SQL("""
-        SELECT Identity.id, Identity.name, userId, User.level, authentication, email, handle FROM Identity
+        SELECT Identity.id, Identity.name, userId, User.level, authentication, email, handle, User.tosVersion FROM Identity
           JOIN User ON User.id=userId
         WHERE """ + whereClause + ";")
   

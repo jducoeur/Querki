@@ -48,7 +48,6 @@ object AccessControl {
     else {
       implicit val s = state
       val (isLocalUser, whoId) = who match {
-        case modules.Modules.Person.SpaceSpecificUser(_, _, _, spaceId, localId) => ((spaceId == state.id), localId)
         case _ => (isMember(who, state), who.id)        
       }
       

@@ -44,21 +44,22 @@ querki {
   }
 }
 
-akka {
-  actor {
-    deployment {
-      # space-manager-persist is a pool of workers that deal with the DB
-      # operations at the SpaceManager level.
-      /SpaceManager/space-manager-persist {
-        router = smallest-mailbox
-        resizer {
-          lower-bound = 2
-          upper-bound = 10
-        }
-      }
-    }
-  }
-}
+#akka {
+#  actor {
+#    deployment {
+# In principle, the SpaceManagerPersister should be defined here in config. In practice, I'm
+# not clear on how to do that in Akka 2.1.4 while giving a supervisor strategy. So for now,
+# it's happening in code.
+#      /SpaceManager/space-manager-persist {
+#        router = smallest-mailbox
+#        resizer {
+#          lower-bound = 2
+#          upper-bound = 10
+#        }
+#      }
+#    }
+#  }
+#}
 
 # Secret key
 # ~~~~~

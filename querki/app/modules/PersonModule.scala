@@ -100,18 +100,18 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
             |a logged-in User, *and* they are a Member of this Space, it produces their Person record. If the viewer isn't
             |logged in, or isn't a Member, this will produce a Warning.
             |
+            |TODO: this specifically does *not* currently work for the Owner of the Space. This is a bug, and we have to
+            |figure out how to address it.
+            |
             |NOTE: the high concept of _me is important, and will be continuing, but the details are likely to evolve a great
             |deal, to make it more usable. So don't get too invested in the current behaviour.""".stripMargin)))
   {
     override def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
+      import PersonModule.UserPersonEnhancements
       val userOpt = context.request.requester
-      val personOpt = userOpt.flatMap { user =>
-        user match {
-          case SpaceSpecificUser(identityId, name, email, spaceId, personId) => Some(LinkValue(personId))
-          case _ => None
-        }
-      }
-      personOpt.getOrElse(WarningValue("Not logged into this Space"))
+      implicit val state = context.state
+      val personOpt = userOpt.flatMap(_.localPerson)
+      personOpt.map(person => LinkValue(person)).getOrElse(WarningValue("You are not a member of this Space"))
     }
   }
   
@@ -261,21 +261,6 @@ to add new Properties for any Person in your Space.
     }
   }
   
-  /***********************************************
-   * LOGIN HANDLER
-   ***********************************************/
-  
-  /**
-   * DEPRECATED -- this is just in the way now, and we shouldn't ever use it again, since it has been replaced by
-   * the newer and more robust approach.  Kill it.
-   */
-  case class SpaceSpecificUser(identityId:OID, name:String, email:EmailAddress, spaceId:OID, personId:OID) extends User {
-    val id = UnknownOID
-    val identity = Identity(identityId, email, "", "", name, IdentityKind.SimpleEmail)
-    val identities = Seq(identity)
-    val level = UserLevel.SpaceSpecific
-  }
-
   /*************************************************************
    * INVITATION MANAGEMENT
    *************************************************************/
@@ -450,6 +435,7 @@ to add new Properties for any Person in your Space.
 
 object PersonModule {
   import modules.Modules.Person._
+  import modules.Modules.Person.MOIDs._
   
   /**
    * Additional features of User, specifically for interacting with Person.
@@ -464,6 +450,13 @@ object PersonModule {
         yield identityId
         
       idOpt.map(user.hasIdentity(_)).getOrElse(false)
+    }
+    
+    def localPerson(implicit state:SpaceState):Option[Thing] = {
+      state.
+        descendants(PersonOID, false, true).
+        filter(person => hasPerson(person.id)).
+        headOption
     }
   }
 }

@@ -14,6 +14,7 @@ object Modules {
   val Time = new time.TimeModule(5)
   val Collections = new collections.CollectionsModule(6)
   val Rendering = new render.RenderingModule(7)
+  val TOS = new querki.system.TOSModule(8)
   
   private var allModules = Seq.empty[Module]
   
@@ -38,6 +39,7 @@ object Modules {
     s = init(Time, s)
     s = init(Collections, s)
     s = init(Rendering, s)
+    s = init(TOS, s)
     
     s
   }
