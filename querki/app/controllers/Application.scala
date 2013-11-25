@@ -526,15 +526,16 @@ disallow: /
     val thingsSorted = {
       val allThings = space.allThings.toSeq
     
-      val linkModelPropOpt = prop.getPropOpt(LinkModelProp)
-      val thingsFiltered =
-        linkModelPropOpt match {
-          case Some(propAndVal) => {
-            val targetModel = propAndVal.first
-            allThings.filter(_.isAncestor(targetModel))
-          }
-          case None => allThings
-        }
+      // Filter the options if there is a valid Link Model:
+      val thingsFiltered = {
+        val filteredOpt = for (
+          linkModelProp <- prop.getPropOpt(LinkModelProp);
+          targetModel <- linkModelProp.firstOpt
+            )
+          yield allThings.filter(_.isAncestor(targetModel))
+          
+        filteredOpt.getOrElse(allThings)
+      }
     
       thingsFiltered.map(t => (t.displayName, t.id)).filter(_._1.toLowerCase().contains(lowerQ)).sortBy(_._1)
     }
