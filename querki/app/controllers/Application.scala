@@ -388,7 +388,7 @@ disallow: /
         for (
           tagProp <- tagPropOpt;
           linkModelPropVal <- tagProp.getPropOpt(LinkModelProp);
-          modelId = linkModelPropVal.first;
+          modelId <- linkModelPropVal.firstOpt;
           model <- state.anything(modelId)
           )
           yield model
