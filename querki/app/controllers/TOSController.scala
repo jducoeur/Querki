@@ -36,7 +36,7 @@ object TOSController extends ApplicationBase {
       // TODO: use redirectTo to return to where we were before this started.
       Tryer[querki.identity.User, PlainResult]
         { TOSModule.recordAccept(rc.requesterOrAnon, rawForm.data("version").toInt) }
-        { user => Redirect(routes.Application.index)}
+        { user => rc.returnToPreviousOr(routes.Application.index) }
         { ex => doError(routes.TOSController.showTOS, ex) }
     } else {
       doError(routes.TOSController.showTOS, "Please accept the terms and conditions")

@@ -134,7 +134,7 @@ class ApplicationBase extends Controller {
       updatedRC.updateSession(Redirect(updatedRC.redirectTo.get))      
     } else {
 	    def withFilledRC(rc:PlayRequestContext, stateOpt:Option[SpaceState], thingOpt:Option[Thing])(cb:PlayRequestContext => Result):Result = {
-	      val filledRC = updatedRC.copy(ownerId = ownerId, state = stateOpt, thing = thingOpt)
+	      val filledRC = rc.copy(ownerId = ownerId, state = stateOpt, thing = thingOpt)
 	      val state = stateOpt.get
 	      val result =
 	        if ((requireLogin && filledRC.requester.isEmpty) || 

@@ -39,8 +39,7 @@ class TOSModule(val moduleId:Short) extends modules.Module {
         if (user.tosVersion != noTOSUserVersion);
         if (user.tosVersion != currentVersion.version)
           )
-        // TODO: in theory, this should add a returnToHereUpdate:
-        yield rc.copy(redirectTo = Some(controllers.routes.TOSController.showTOS))
+        yield rc.copy(sessionUpdates = rc.sessionUpdates ++ rc.returnToHereUpdate, redirectTo = Some(controllers.routes.TOSController.showTOS))
         
       newRCOpt.getOrElse(rc)
     }

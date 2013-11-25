@@ -110,6 +110,21 @@ case class PlayRequestContext(
     update1
   }
   
+  /**
+   * This looks for a previously-set returnToHere. If found, it redirects there; otherwise, it redirects to the
+   * specified other Call.
+   */
+  def returnToPreviousOr(other: Call):PlainResult = {
+    val redirectOpt = sessionCookie(returnToParam)
+    redirectOpt match {
+      case Some(redirect) => {
+        val session = request.session - returnToParam
+        Results.Redirect(redirect).withSession(session)
+      }
+      case None => Results.Redirect(other)
+    }    
+  }
+  
   val propStrName = "prop"
   def hasProp = hasQueryParam(propStrName)
   def propStr = firstQueryParam(propStrName)
