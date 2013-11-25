@@ -10,6 +10,9 @@ GET     /spaces                     controllers.Application.spaces
 GET     /newSpace                   controllers.Application.newSpace
 POST    /doNewSpace                 controllers.Application.doNewSpace
 
+GET     /TOS                        controllers.TOSController.showTOS
+POST    /TOS                        controllers.TOSController.handleTOS
+
 # User Profile functions
 GET     /u/:userName                controllers.LoginController.userByName(userName)
 POST    /u/:userName/_changePassword controllers.LoginController.changePassword(userName)

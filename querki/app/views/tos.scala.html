@@ -1,0 +1,30 @@
+@(rc:PlayRequestContext, tosForm:Form[TOSController.TOSForm])
+
+@import helper._
+
+@import querki.system.TOSModule
+
+@main(QuerkiTemplate.SpaceList, "Terms of Service", rc) {
+
+	<h1>Querki Terms of Service</h1>
+	
+	<p>Please read and agree to the following agreement in order to use Querki.</p>
+
+	<div class="row-fluid">
+    @form(routes.TOSController.handleTOS) {
+      
+      <div class="well offset1 span10">
+        @Html(TOSModule.current)
+      </div>
+      
+      <div class="span12">
+      <p><input type="checkbox" id="agreed" name="agreed"> I agree to the above Terms and Conditions.</p>
+      <input type="hidden" id="version" name="version" value="@TOSModule.currentVersion.version">
+      
+      <input type="submit" value="Submit" class="btn btn-primary">
+      </div>
+    }	
+    </div>
+
+        
+}

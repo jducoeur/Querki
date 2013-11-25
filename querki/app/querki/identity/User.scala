@@ -15,6 +15,8 @@ import models.system
 import querki.db.ShardKind
 import ShardKind._
 
+import querki.system.TOSModule.noTOSUserVersion
+
 import querki.util._
 import SqlHelpers._
 
@@ -133,7 +135,7 @@ case object SystemUser extends User {
   // doesn't belong in this file? Likely so.
   val identities = Seq(Identity(models.system.OIDs.SystemIdentityOID, email, "", "systemUser", name, IdentityKind.QuerkiLogin))
   val level = SuperadminUser
-  val tosVersion = -1
+  val tosVersion = noTOSUserVersion
 }
 
 // TODO: given that this is full of methods that shouldn't be synchronous, this should
@@ -147,7 +149,7 @@ object User {
     val name = ""
     val identities = Seq.empty
     val level = UnknownUserLevel
-    val tosVersion = -1
+    val tosVersion = noTOSUserVersion
   }
   
   /**
@@ -241,6 +243,11 @@ object User {
     val handle = system.NameType.canonicalize(rawHandle)
     val personQuery = userLoadSqlWhere("""handle={handle} and kind={loginKind}""").on("handle" -> handle, "loginKind" -> IdentityKind.QuerkiLogin)
     getUser(personQuery, checkOpt)
+  }
+  
+  private def loadByUserId(userId:OID):Option[User] = {      
+    val userQuery = userLoadSqlWhere("""User.id={userId}""").on("userId" -> userId.raw)
+    getUser(userQuery)    
   }
   
   /**
@@ -414,11 +421,22 @@ object User {
           """).on("lv" -> level, "userId" -> userId.raw)
       update.executeUpdate
       
-      val userQuery = userLoadSqlWhere("""User.id={userId}""").on("userId" -> userId.raw)
-      getUser(userQuery)
+      loadByUserId(userId)
     }
   }
 
+  def setTOSVersion(userId:OID, version:Int) = {
+    DB.withConnection(dbName(System)) { implicit conn =>
+      val update = SQL("""
+          UPDATE User
+             SET tosVersion={v}
+           WHERE id={userId}
+          """).on("v" -> version, "userId" -> userId.raw)
+      update.executeUpdate
+      
+      loadByUserId(userId)
+    }
+  }
 }
 
 object IdentityKind {
