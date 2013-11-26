@@ -65,7 +65,9 @@ trait QValue {
   
   // TODO: this doesn't need to take elemT any more:
   def serialize(elemT:PType[_]):String = cType.doSerialize(cv, elemT)
+  // DEPRECATED: in favor of firstOpt
   def first = cType.first(this)
+  def firstOpt = cType.firstOpt(this)
   // DEPRECATED: in favor of firstAs()
   def firstTyped[VT](elemT:PType[VT]):Option[VT] = if (isEmpty) None else Some(elemT.get(first))
   def firstAs[VT](elemT:PType[VT]):Option[VT] = {

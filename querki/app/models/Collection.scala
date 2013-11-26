@@ -121,10 +121,11 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
   /**
    * Returns the head of the collection.
    * 
-   * NOTE: this will throw an exception if you call it on an empty collection! It is the
-   * equivalent of Option.get
+   * DEPRECATED: this will throw an exception if you call it on an empty collection! It is the
+   * equivalent of Option.get. Use firstOpt instead.
    */
   final def first(v:QValue):ElemValue = v.cv.head
+  final def firstOpt(v:QValue):Option[ElemValue] = if (isEmpty(v)) None else Some(v.cv.head)
   
   final def isEmpty(v:QValue):Boolean = v.cv.isEmpty
   
