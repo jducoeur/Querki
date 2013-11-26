@@ -5,7 +5,9 @@ import org.scalatest.matchers.ShouldMatchers
 
 import models.{Thing, ThingState, Wikitext}
 import models.Thing._
-import models.system.{QLText}
+import models.system.{ExactlyOne, Optional, QList, QSet}
+import Optional.QNone
+import models.system.{ExternalLinkType, QLText}
 import models.system.OIDs.{PageOID}
 
 import ql.QLParser
@@ -17,6 +19,18 @@ class CommonMethodSpace extends TestSpace {
   val world = new TestWorld
   
   /***********************************************
+   * PROPERTIES
+   ***********************************************/
+  
+  lazy val optURLProp = new TestProperty(toid(), ExternalLinkType, Optional, 
+    toProps(
+      setName("My Optional URL")))
+  
+  override lazy val props = Seq(
+    optURLProp
+  )
+
+  /***********************************************
    * THINGS
    ***********************************************/
 
@@ -27,9 +41,20 @@ class CommonMethodSpace extends TestSpace {
   lazy val sandbox = ThingState(toid(), spaceId, PageOID, 
     toProps(
       setName("Sandbox")))
+      
+  lazy val withUrl = ThingState(toid(), spaceId, PageOID,
+    toProps(
+      setName("With URL"),
+      optURLProp("http://www.google.com/")))
+  lazy val withoutUrl = ThingState(toid(), spaceId, PageOID,
+    toProps(
+      setName("Without URL"),
+      optURLProp()))
         
   override lazy val things = Seq(
-    sandbox
+    sandbox,
+    withUrl,
+    withoutUrl
   )
 }
 
@@ -41,10 +66,13 @@ class MethodTests
   /***********************************************
    * COMMON METHODS
    ***********************************************/
-  
-  override def beforeAll() = { }
-  
-  def normalSpaceState = new CommonMethodSpace().state
+
+  // Just for efficiency, we create the CommonSpace once -- it is immutable, and good enough for
+  // most purposes:
+  var _commonSpace:CommonMethodSpace = null
+  override def beforeAll() = { 
+    _commonSpace = new CommonMethodSpace
+  }
   
   def processQText(context:QLContext, text:String):String = {
     val qt = QLText(text)
@@ -54,7 +82,7 @@ class MethodTests
   }
   
   def commonSpaceAndThing(f: CommonMethodSpace => Thing):(SpaceState, Thing) = {
-    val space = new CommonMethodSpace
+    val space = _commonSpace
     val thing = f(space)
     (space.state, thing)
   }
@@ -69,10 +97,19 @@ class MethodTests
    * TESTS
    ***********************************************/
   
+  // === _linkButton ===
   "_linkButton" should {
     "work with a Link to Thing" in {
       processQText(commonThingAsContext(_.sandbox), """[[_linkButton(""hello"")]]""") should 
         equal ("""<a class="btn btn-primary" href="Sandbox">hello</a>""")
+    }
+    "work with an external URL" in {
+      processQText(commonThingAsContext(_.withUrl), """[[My Optional URL -> _linkButton(""hello"")]]""") should
+        equal ("""<a class="btn btn-primary" href="http://www.google.com/">hello</a>""")
+    }
+    "quietly ignore an empty context" in {
+      processQText(commonThingAsContext(_.withoutUrl), """[[My Optional URL -> _linkButton(""hello"")]]""") should
+        equal ("")      
     }
   }
 }

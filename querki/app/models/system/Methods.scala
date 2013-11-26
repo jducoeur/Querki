@@ -514,7 +514,7 @@ abstract class ButtonBase(tid:OID, pf:PropFetcher) extends InternalMethod(tid, p
     paramsOpt match {
       case Some(params) if (params.length == numParams) => {
         val urlOpt = context.value.pType match {
-          case pt:URLableType => pt.getURL(context)(context.value.first)
+          case pt:URLableType => context.value.firstOpt.flatMap(pt.getURL(context)(_))
           case _ => None
         }
         
@@ -523,7 +523,9 @@ abstract class ButtonBase(tid:OID, pf:PropFetcher) extends InternalMethod(tid, p
             val paramTexts = params.map(phrase => context.parser.get.processPhrase(phrase.ops, context).value.wikify(context))
             HtmlValue(Html(generateButton(url, paramTexts).toString))            
           }
-          case None => WarningValue(displayName + " didn't receive a valid Link")
+          // Nothing incoming, so cut.
+          // TODO: there is probably a general pattern to pull out here, of "cut processing if the input is empty"
+          case None => EmptyValue(RawHtmlType)
         }
       }
       case None => WarningValue(displayName + " requires " + numParams + " parameters.")

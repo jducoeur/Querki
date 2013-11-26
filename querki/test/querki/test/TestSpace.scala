@@ -3,11 +3,11 @@ package querki.test
 import java.util.concurrent.atomic.AtomicInteger
 
 import models.{OID, OIDMap}
-import models.{Property, PType, ThingState}
+import models.{Collection, Property, PType, PTypeBuilder, ThingState}
 import models.Thing._
 
 import models.system.{NameType, SystemSpace}
-import models.system.OIDs.{systemOID}
+import models.system.OIDs.{systemOID, UrPropOID}
 
 import querki.values._
 
@@ -46,7 +46,10 @@ class TestWorld {
  * bits you need.
  */
 trait TestSpace {
-  
+
+  class TestProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
+    extends Property[VT, RT](pid, spaceId, UrPropOID, t, c, p, modules.time.TimeModule.epoch)
+
   /**
    * The World for this Test. Concrete classes must instantiate this.
    */
