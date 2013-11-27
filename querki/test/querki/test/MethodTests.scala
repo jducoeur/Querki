@@ -16,6 +16,21 @@ import querki.values.{QLContext, SpaceState}
 
 class MethodTests extends QuerkiTests
 {
+  // === _filter ===
+  "_filter" should {
+    "work with _equals" in {
+      class testSpace extends CommonSpace {
+        val linkTarget = new SimpleTestThing("Link Target")
+        val pointer1 = new SimpleTestThing("Pointer 1", singleLinkProp(linkTarget))
+        val pointer2 = new SimpleTestThing("Pointer 2", singleLinkProp(sandbox))
+        val wrapper = new SimpleTestThing("Wrapper", listLinksProp(pointer1, pointer2))
+      }
+      
+      processQText(thingAsContext[testSpace](new testSpace, _.wrapper), """[[My List of Links -> _filter(_equals(Single Link, Link Target))]]""") should
+        equal ("\n[Pointer 1](Pointer-1)")      
+    }
+  }
+  
   // === _linkButton ===
   "_linkButton" should {
     "work with a Link to Thing" in {

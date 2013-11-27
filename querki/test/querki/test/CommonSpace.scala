@@ -3,7 +3,7 @@ package querki.test
 import models.ThingState
 import models.Kind
 import models.system.{ExternalLinkType, LinkType}
-import models.system.{Optional, QList}
+import models.system.{ExactlyOne, Optional, QList}
 import models.system.OIDs.PageOID
 
 /**
@@ -26,10 +26,13 @@ class CommonSpace extends TestSpace {
   
   lazy val optURLProp = new TestProperty(ExternalLinkType, Optional, "My Optional URL")
   
+  lazy val singleLinkProp = new TestProperty(LinkType, ExactlyOne, "Single Link")
+  
   override lazy val props = Seq(
     listLinksProp,
     listURLProp,
-    optURLProp
+    optURLProp,
+    singleLinkProp
   )
 
   /***********************************************
