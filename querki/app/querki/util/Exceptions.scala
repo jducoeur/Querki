@@ -5,12 +5,23 @@ import scala.util._
 import play.api.i18n.Messages
 import play.api.mvc.RequestHeader
 
+import controllers.PlayRequestContext
+import querki.values.RequestContext
+
 /**
  * Represents an error that is intended to be displayed to end users. Intentionally forces you to
  * internationalize the message properly. All exceptions that are to be shown to users should use this!
  */
 case class PublicException(msgName:String, params:Any*) extends Exception {
-  def display(implicit req:RequestHeader) = Messages(msgName, params:_*)
+  def display(implicit req:RequestHeader):String = Messages(msgName, params:_*)
+  def display(rc:Option[RequestContext]):String = {
+    rc match {
+      case Some(prc:PlayRequestContext) => display(prc.request)
+      // This will default to the system default language.
+      // TODO: we should have a concept of Lang available in RequestContext itself!
+      case _ => Messages(msgName, params:_*)
+    }
+  }
   override def getMessage = "BUG: Trying to display a PublicException without the Request. Use display() instead."
 }
 object UnexpectedPublicException extends PublicException("General")

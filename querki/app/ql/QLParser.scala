@@ -170,12 +170,17 @@ class QLParser(val input:QLText, ci:QLContext) extends RegexParsers {
 	        // If there are parameters to the call, they are a collection of phrases.
 	        val params = call.params
 	        val methodOpt = call.methodName.flatMap(context.state.anythingByName(_))
-	        methodOpt match {
-	          case Some(method) => {
-	            val partialFunction = method.partiallyApply(context.next(ExactlyOne(LinkType(t.id))))
-	            partialFunction.qlApply(context, params)
+	        try {
+	          methodOpt match {
+	            case Some(method) => {
+	              val partialFunction = method.partiallyApply(context.next(ExactlyOne(LinkType(t.id))))
+	              partialFunction.qlApply(context, params)
+	            }
+	            case None => t.qlApply(context, params)
 	          }
-	          case None => t.qlApply(context, params)
+	        } catch {
+	          case ex:PublicException => WarningValue(ex.display(context.requestOpt))
+	          case error:Exception => QLog.error("Error during QL Processing", error); WarningValue(UnexpectedPublicException.display(context.requestOpt))
 	        }
 	      }
 	      // They specified a name we don't know. Turn it into a raw NameType and pass it through. If it gets to

@@ -91,13 +91,12 @@ class MethodTests extends QuerkiTests
       processQText(thingAsContext[testSpace](space, _.wrapper), """[[My List of Links -> _sort]]""") should
         equal (listOfLinkText(pointer2, pointer1, linkTarget))
     }
-    // Note that this one has a _sort parameter that is nonsense. Originally, this would throw an exception; now,
-    // it defaults back to the usual sort. It *should* give a warning, though.
-    "cope with a filter that returns empty" in {
+    "warn if the sort transform returns empty" in {
       val space = new testSpace
       import space._
+      // This is a fairly ridiculous clause, but should produce a decent warning:
       processQText(thingAsContext[testSpace](space, _.wrapper), """[[My List of Links -> _sort(_filter(_isEmpty))]]""") should
-        equal (listOfLinkText(pointer2, pointer1, linkTarget))
+        equal (expectedWarning("Methods._sort.illegalEmpty"))
     }
   }
 }

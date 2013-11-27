@@ -13,6 +13,7 @@ import OIDs._
 
 import YesNoType._
 
+import querki.util._
 import querki.values._
 
 /**
@@ -843,11 +844,10 @@ object SortMethod extends InternalMethod(SortMethodOID,
       val sortResult =
         for (
             params <- paramsOpt;
-            // TODO: if either side, when processed, returns Empty, this will silently fail and fall through to an
-            // ordinary sort. It should preferably throw a Warning instead, but we need to allow qlApply to cope with
-            // throws first.
-            leftResult <- context.parser.get.processPhrase(params(0).ops, context.next(ExactlyOne(LinkType(left)))).value.firstOpt;
-            rightResult <- context.parser.get.processPhrase(params(0).ops, context.next(ExactlyOne(LinkType(right)))).value.firstOpt;
+            leftCalc = context.parser.get.processPhrase(params(0).ops, context.next(ExactlyOne(LinkType(left)))).value;
+            leftResult <- leftCalc.firstOpt orElse { throw new PublicException("Methods._sort.illegalEmpty") };
+            rightCalc = context.parser.get.processPhrase(params(0).ops, context.next(ExactlyOne(LinkType(right)))).value;
+            rightResult <- rightCalc.firstOpt orElse { throw new PublicException("Methods._sort.illegalEmpty") };
             // Note that we have to compare their *classes*, so that _desc -- which produces a separate pseudo-Type each time
             // -- can work:
             if (leftResult.pType.getClass() == rightResult.pType.getClass());

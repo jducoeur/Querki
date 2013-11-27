@@ -55,4 +55,6 @@ class QuerkiTests
     }
     lines.mkString
   }
+  
+  def expectedWarning(warningName:String):String = s"{{_warning:$warningName}}"
 }

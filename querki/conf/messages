@@ -16,3 +16,5 @@ Space.modifyThing.notAllowed=You are not allowed to modify that
 Thing.find.noSuch=That path does not point to a Thing that you are allowed to see.
 Thing.find.unknownId=No Thing found with that id
 Thing.find.unknownName=No Thing found with that name
+
+Methods._sort.illegalEmpty=The parameter to _sort must return a non-Empty value.
