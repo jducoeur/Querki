@@ -843,15 +843,18 @@ object SortMethod extends InternalMethod(SortMethodOID,
       val sortResult =
         for (
             params <- paramsOpt;
-            leftResult = context.parser.get.processPhrase(params(0).ops, context.next(ExactlyOne(LinkType(left)))).value;
-            rightResult = context.parser.get.processPhrase(params(0).ops, context.next(ExactlyOne(LinkType(right)))).value;
+            // TODO: if either side, when processed, returns Empty, this will silently fail and fall through to an
+            // ordinary sort. It should preferably throw a Warning instead, but we need to allow qlApply to cope with
+            // throws first.
+            leftResult <- context.parser.get.processPhrase(params(0).ops, context.next(ExactlyOne(LinkType(left)))).value.firstOpt;
+            rightResult <- context.parser.get.processPhrase(params(0).ops, context.next(ExactlyOne(LinkType(right)))).value.firstOpt;
             // Note that we have to compare their *classes*, so that _desc -- which produces a separate pseudo-Type each time
             // -- can work:
             if (leftResult.pType.getClass() == rightResult.pType.getClass());
             // If the two values are equal, fall through to the default:
-            if (!leftResult.pType.matches(leftResult.first, rightResult.first))
+            if (!leftResult.pType.matches(leftResult, rightResult))
           )
-          yield leftResult.pType.comp(context)(leftResult.first, rightResult.first)
+          yield leftResult.pType.comp(context)(leftResult, rightResult)
           
       // Default to sorting by displayName if anything doesn't work correctly:
       sortResult.getOrElse(left.displayName < right.displayName)

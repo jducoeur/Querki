@@ -4,7 +4,7 @@ import org.scalatest.{WordSpec, BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
 
 import models.{Thing}
-import models.system.QLText
+import models.system.{NameType, QLText}
 
 import ql.QLParser
 
@@ -41,4 +41,18 @@ class QuerkiTests
   }
   
   def commonThingAsContext(f: CommonSpace => Thing):QLContext = thingAsContext(_commonSpace, f)
+  
+  /**
+   * Given a list of expected Things that comes out at the end of a QL expression, this is the
+   * wikitext for their rendered Links. Convenient, but only works in the ordinary case, where the
+   * name is simple, and the Name and Display Name match.
+   */
+  def listOfLinkText(things:Thing*):String = {
+    val lines = things.map { t =>
+      val display = t.displayName
+      val name = display.replace(" ", "-")
+      "\n[" + display + "](" + name + ")" 
+    }
+    lines.mkString
+  }
 }

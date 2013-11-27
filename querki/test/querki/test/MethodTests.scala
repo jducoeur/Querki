@@ -75,4 +75,29 @@ class MethodTests extends QuerkiTests
         equal ("\n[Sandbox](Sandbox)\n[With URL](With-URL)")
     }
   }
+  
+  // === _sort ===
+  "_sort" should {
+    class testSpace extends CommonSpace {
+      val linkTarget = new SimpleTestThing("Link Target")
+      val pointer1 = new SimpleTestThing("First Thing")
+      val pointer2 = new SimpleTestThing("Another Thing")
+      val wrapper = new SimpleTestThing("Wrapper", listLinksProp(linkTarget, pointer1, pointer2))
+    }
+    
+    "sort by name by default" in {
+      val space = new testSpace
+      import space._
+      processQText(thingAsContext[testSpace](space, _.wrapper), """[[My List of Links -> _sort]]""") should
+        equal (listOfLinkText(pointer2, pointer1, linkTarget))
+    }
+    // Note that this one has a _sort parameter that is nonsense. Originally, this would throw an exception; now,
+    // it defaults back to the usual sort. It *should* give a warning, though.
+    "cope with a filter that returns empty" in {
+      val space = new testSpace
+      import space._
+      processQText(thingAsContext[testSpace](space, _.wrapper), """[[My List of Links -> _sort(_filter(_isEmpty))]]""") should
+        equal (listOfLinkText(pointer2, pointer1, linkTarget))
+    }
+  }
 }
