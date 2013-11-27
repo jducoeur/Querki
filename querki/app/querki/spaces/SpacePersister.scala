@@ -11,7 +11,7 @@ import play.api.db._
 import play.api.Play.current
 
 import models.{OID}
-import models.{Collection, Property, PType, PTypeBuilder, Kind, Thing, ThingState}
+import models.{Attachment, Collection, Property, PType, PTypeBuilder, Kind, Thing, ThingState}
 import models.Kind._
 import models.MIMEType.MIMEType
 import models.Thing._
@@ -224,7 +224,7 @@ private [spaces] class SpacePersister(val id:OID) extends Actor {
 	      }
 	      
 	      val attachments = getThings(Kind.Attachment) { (thingId, modelId, propMap, modTime) =>
-	        new ThingState(thingId, id, modelId, () => propMap, modTime, Kind.Attachment)        
+	        new Attachment(thingId, id, modelId, () => propMap, modTime)        
 	      }
 	      
 	      val allThings = things ++ attachments

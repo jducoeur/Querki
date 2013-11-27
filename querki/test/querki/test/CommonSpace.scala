@@ -1,6 +1,6 @@
 package querki.test
 
-import models.ThingState
+import models.{Attachment, ThingState}
 import models.Kind
 import models.system.{ExternalLinkType, LinkType}
 import models.system.{ExactlyOne, Optional, QList}
@@ -42,7 +42,7 @@ class CommonSpace extends TestSpace {
   /**
    * A simple imitation "photograph".
    */
-  val photo = ThingState(toid(), spaceId, PageOID, makePropFetcher("My Photo", Seq.empty), modules.time.TimeModule.epoch, Kind.Attachment)
+  val photo = new Attachment(toid(), spaceId, PageOID, makePropFetcher("My Photo", Seq.empty))
   registerThing(photo)
 
   /**

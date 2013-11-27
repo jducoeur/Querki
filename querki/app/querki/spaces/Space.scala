@@ -13,7 +13,7 @@ import akka.util.Timeout
 
 import models.{Kind, MIMEType}
 import models.{AsOID, AsName, OID, ThingId, UnknownOID}
-import models.{Collection, Property, PType, PTypeBuilder, Thing, ThingState}
+import models.{Attachment, Collection, Property, PType, PTypeBuilder, Thing, ThingState}
 import messages._
 
 import Kind._
@@ -153,9 +153,13 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
       persister.request(Create(state, modelId, kind, props, attachmentInfo)) {
         case Changed(thingId, modTime) => {
           kind match {
-            case Kind.Thing | Kind.Attachment => {
+            case Kind.Thing => {
               val thing = ThingState(thingId, spaceId, modelId, () => props, modTime, kind)
               updateState(state.copy(things = state.things + (thingId -> thing)))
+            }
+            case Kind.Attachment => {
+              val thing = new Attachment(thingId, spaceId, modelId, () => props, modTime)
+              updateState(state.copy(things = state.things + (thingId -> thing)))              
             }
             case Kind.Property => {
               val typ = state.typ(TypeProp.first(props))
@@ -194,6 +198,15 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
 	        
 	      // TODO: this needs a clause for each Kind you can get:
           oldThing match {
+            case t:Attachment => {
+              persister.request(Change(state, thingId, modelId, newProps, None)) {
+                case Changed(_, modTime) => {
+	              val newThingState = t.copy(m = modelId, pf = () => newProps, mt = modTime)
+	              updateState(state.copy(things = state.things + (thingId -> newThingState))) 
+                  sender ! ThingFound(thingId, state)
+                }
+              }              
+            }
             case t:ThingState => {
               persister.request(Change(state, thingId, modelId, newProps, None)) {
                 case Changed(_, modTime) => {
