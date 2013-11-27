@@ -752,7 +752,10 @@ object FilterMethod extends InternalMethod(FilterOID,
     // as a Context, and then just using the QValue. Bleah.
     def tryElem(parser:QLParser, phrase:QLPhrase)(elem:QLContext):Option[ElemValue] = {
       val passesYesNo = parser.processPhrase(phrase.ops, elem).value
-      for (bool <- passesYesNo.firstAs(YesNoType) if (bool)) yield elem.value.first
+      for (
+        bool <- passesYesNo.firstAs(YesNoType) if (bool);
+        theElem <- elem.value.firstOpt
+      ) yield theElem
     }
     
     val result = for
