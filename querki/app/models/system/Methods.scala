@@ -568,7 +568,6 @@ object IconButtonMethod extends ButtonBase(IconButtonOID,
 }
 
 // TODO: this is very similar to _linkButton, and should be refactored.
-// TODO: this ought to be able to cope with a List, Set, etc -- it shouldn't use firstOpt.
 object ShowLinkMethod extends InternalMethod(ShowLinkMethodOID,
     toProps(
       setName("_showLink"),
@@ -598,12 +597,6 @@ object ShowLinkMethod extends InternalMethod(ShowLinkMethodOID,
                 case None => Optional.Empty(ParsedTextType)
               }
             }
-//            // Note that, if getURL fails, this might throw an exception down in makePropValue. I suspect that
-//            // getURL should be returning Try[String], not Option[String]
-//            val urls = context.value.cv.flatMap(pt.getURL(context)(_))
-//            val label = context.parser.get.processPhrase(params(0).ops, context).value.wikify(context)
-//            val wikitexts = urls.map { url => ParsedTextType(QWikitext("[") + label + QWikitext(s"]($url)")) }
-//            context.value.cType.makePropValue(wikitexts, ParsedTextType)
           }
           case _ => WarningValue(displayName + " can only be used with Link types")
         }

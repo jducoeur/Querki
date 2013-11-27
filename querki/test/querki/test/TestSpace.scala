@@ -7,7 +7,7 @@ import models.{Collection, Property, PType, PTypeBuilder, ThingState}
 import models.Thing._
 
 import models.system.{NameType, SystemSpace}
-import models.system.OIDs.{systemOID, UrPropOID}
+import models.system.OIDs.{PageOID, systemOID, UrPropOID}
 
 import querki.values._
 
@@ -47,9 +47,29 @@ class TestWorld {
  */
 trait TestSpace {
 
-  class TestProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
+  // ================================
+  //
+  // COMMON TEST CLASSES
+  //
+  // These are several simplifications of the usual classes for defining Things. You
+  // are not obligated to use them, but they will often be good enough, and much more
+  // concise than using the full versions.
+  //
+  
+  def makePropFetcher(name:String, pairs:Seq[(OID,QValue)]) = {
+    toProps((pairs :+ setName(name)):_*)
+  }
+  
+  class TestPropertyBase[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
     extends Property[VT, RT](pid, spaceId, UrPropOID, t, c, p, modules.time.TimeModule.epoch)
+  class TestProperty[VT, -RT](t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, name:String, pairs:(OID,QValue)*)
+    extends TestPropertyBase(toid(), t, c, makePropFetcher(name, pairs))
+  
+  class SimpleTestThing(name:String, pairs:(OID, QValue)*)
+    extends ThingState(toid(), spaceId, PageOID, makePropFetcher(name, pairs))
 
+  // ================================
+  
   /**
    * The World for this Test. Concrete classes must instantiate this.
    */

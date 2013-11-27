@@ -7,7 +7,7 @@ import models.{Thing, ThingState, Wikitext}
 import models.Thing._
 import models.system.{ExactlyOne, Optional, QList, QSet}
 import Optional.QNone
-import models.system.{ExternalLinkType, QLText}
+import models.system.{ExternalLinkType, LinkType, QLText}
 import models.system.OIDs.{PageOID}
 
 import ql.QLParser
@@ -22,15 +22,13 @@ class CommonMethodSpace extends TestSpace {
    * PROPERTIES
    ***********************************************/
   
-  lazy val listURLProp = new TestProperty(toid(), ExternalLinkType, QList,
-    toProps(
-      setName("My List of URLs")))
+  lazy val listLinksProp = new TestProperty(LinkType, QList, "My List of Links")
+  lazy val listURLProp = new TestProperty(ExternalLinkType, QList, "My List of URLs")
   
-  lazy val optURLProp = new TestProperty(toid(), ExternalLinkType, Optional, 
-    toProps(
-      setName("My Optional URL")))
+  lazy val optURLProp = new TestProperty(ExternalLinkType, Optional, "My Optional URL")
   
   override lazy val props = Seq(
+    listLinksProp,
     listURLProp,
     optURLProp
   )
@@ -43,22 +41,19 @@ class CommonMethodSpace extends TestSpace {
    * The generic "sandbox" Thing, which serves as a useful default if you don't
    * care much about the details.
    */
-  lazy val sandbox = ThingState(toid(), spaceId, PageOID, 
-    toProps(
-      setName("Sandbox")))
+  lazy val sandbox = new SimpleTestThing("Sandbox")
       
-  lazy val withUrl = ThingState(toid(), spaceId, PageOID,
-    toProps(
-      setName("With URL"),
+  lazy val withLinks = new SimpleTestThing("With Links", listLinksProp(sandbox.id, withUrl.id))
+      
+  lazy val withUrl = new SimpleTestThing("With URL",
       optURLProp("http://www.google.com/"),
-      listURLProp("http://www.google.com/", "http://www.querki.net/")))
-  lazy val withoutUrl = ThingState(toid(), spaceId, PageOID,
-    toProps(
-      setName("Without URL"),
-      optURLProp()))
+      listURLProp("http://www.google.com/", "http://www.querki.net/"))
+  
+  lazy val withoutUrl = new SimpleTestThing("Without URL", optURLProp())
         
   override lazy val things = Seq(
     sandbox,
+    withLinks,
     withUrl,
     withoutUrl
   )
@@ -137,6 +132,10 @@ class MethodTests
       // Note that a List result will have newlines in the QText, intentionally:
       processQText(commonThingAsContext(_.withUrl), """[[My List of URLs -> _showLink(""hello"")]]""") should
         equal ("\n[hello](http://www.google.com/)\n[hello](http://www.querki.net/)")      
+    }
+    "work with a list of Links" in {
+      processQText(commonThingAsContext(_.withLinks), """[[My List of Links -> _showLink(Name)]]""") should
+        equal ("\n[Sandbox](Sandbox)\n[With URL](With-URL)")
     }
   }
 }
