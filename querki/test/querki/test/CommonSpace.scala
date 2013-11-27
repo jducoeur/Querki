@@ -1,7 +1,10 @@
 package querki.test
 
+import models.ThingState
+import models.Kind
 import models.system.{ExternalLinkType, LinkType}
 import models.system.{Optional, QList}
+import models.system.OIDs.PageOID
 
 /**
  * A generic Space, with a grab-bag of helpful components, for using in various tests.
@@ -32,6 +35,12 @@ class CommonSpace extends TestSpace {
   /***********************************************
    * THINGS
    ***********************************************/
+  
+  /**
+   * A simple imitation "photograph".
+   */
+  val photo = ThingState(toid(), spaceId, PageOID, makePropFetcher("My Photo", Seq.empty), modules.time.TimeModule.epoch, Kind.Attachment)
+  registerThing(photo)
 
   /**
    * The generic "sandbox" Thing, which serves as a useful default if you don't

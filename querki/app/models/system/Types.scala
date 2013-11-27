@@ -368,7 +368,15 @@ object QLType extends QLType(QLTypeOID)
     }
     
     def makeWikiLink(context:QLContext, thing:Thing, display:Wikitext):Wikitext = {
-      Wikitext("[") + display + Wikitext("](" + pathAdjustments(context) + thing.toThingId + ")")
+      thing.kind match {
+        // If it's an attachment, render it in-place
+        // TODO: this is WRONG! It's implicitly assuming that the only attachment type is picture. To fix this,
+        // we need to include at least the attachment's MIME type as a real property value, that we can check here,
+        // and quite possibly we should have a whole separate class tree for the various attachment kinds, so they
+        // can specify their own behaviour.
+        case Kind.Attachment => Wikitext("![") + display + Wikitext("](a/" + pathAdjustments(context) + thing.toThingId + ")")
+        case _ => Wikitext("[") + display + Wikitext("](" + pathAdjustments(context) + thing.toThingId + ")")
+      }
     }
 
     def doWikify(context:QLContext)(v:OID, displayOpt:Option[Wikitext] = None) = {

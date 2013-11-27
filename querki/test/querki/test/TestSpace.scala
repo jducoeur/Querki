@@ -3,7 +3,7 @@ package querki.test
 import java.util.concurrent.atomic.AtomicInteger
 
 import models.{OID, OIDMap}
-import models.{Collection, Property, PType, PTypeBuilder, ThingState}
+import models.{Collection, Property, PType, PTypeBuilder, Thing, ThingState}
 import models.Thing._
 
 import models.system.{NameType, SystemSpace}
@@ -65,11 +65,11 @@ trait TestSpace {
   class TestProperty[VT, -RT](t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, name:String, pairs:(OID,QValue)*)
     extends TestPropertyBase(toid(), t, c, makePropFetcher(name, pairs))
   
+  def registerThing(t:ThingState) = { things = things :+ t }
   class TestThing(pid:OID, name:String, pairs:(OID, QValue)*)
     extends ThingState(pid, spaceId, PageOID, makePropFetcher(name, pairs)) 
   {
-    val testSpace:TestSpace = TestSpace.this 
-    testSpace.things = testSpace.things :+ this
+    registerThing(this)
   }
   class SimpleTestThing(name:String, pairs:(OID, QValue)*)
     extends TestThing(toid, name, pairs:_*)
