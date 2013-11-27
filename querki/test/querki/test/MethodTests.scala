@@ -22,11 +22,16 @@ class CommonMethodSpace extends TestSpace {
    * PROPERTIES
    ***********************************************/
   
+  lazy val listURLProp = new TestProperty(toid(), ExternalLinkType, QList,
+    toProps(
+      setName("My List of URLs")))
+  
   lazy val optURLProp = new TestProperty(toid(), ExternalLinkType, Optional, 
     toProps(
       setName("My Optional URL")))
   
   override lazy val props = Seq(
+    listURLProp,
     optURLProp
   )
 
@@ -45,7 +50,8 @@ class CommonMethodSpace extends TestSpace {
   lazy val withUrl = ThingState(toid(), spaceId, PageOID,
     toProps(
       setName("With URL"),
-      optURLProp("http://www.google.com/")))
+      optURLProp("http://www.google.com/"),
+      listURLProp("http://www.google.com/", "http://www.querki.net/")))
   lazy val withoutUrl = ThingState(toid(), spaceId, PageOID,
     toProps(
       setName("Without URL"),
@@ -126,6 +132,11 @@ class MethodTests
     "quietly ignore an empty context" in {
       processQText(commonThingAsContext(_.withoutUrl), """[[My Optional URL -> _showLink(""hello"")]]""") should
         equal ("")      
+    }
+    "work with a list of external URLs" in {
+      // Note that a List result will have newlines in the QText, intentionally:
+      processQText(commonThingAsContext(_.withUrl), """[[My List of URLs -> _showLink(""hello"")]]""") should
+        equal ("\n[hello](http://www.google.com/)\n[hello](http://www.querki.net/)")      
     }
   }
 }

@@ -107,11 +107,8 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
    * This needs the PType of the expected result, so that it can set the results up correctly
    * if they are empty.
    * 
-   * Note that the result is *always* a List at this point, since that's the easy and usually-safe
-   * answer. This is not monadically correct, though, and at some point we may need to make this
-   * fancier for more interesting types. (The general problem is that we are multiplying two
-   * Collections -- the incoming Collection times the results of the callback -- and I'm not
-   * experienced enough with category theory to get this right yet.)
+   * Note that we try to return the same Collection as the incoming, but deliberately don't try
+   * if the results of the function return the wrong ordinal amount.
    */
   def collect(pt:PType[_])(cb:QLContext => QValue):QValue = {
     if (isEmpty) {
@@ -121,7 +118,16 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
       val raw = qvs.flatten(_.cv)
       if (!raw.isEmpty && (!raw.head.matchesType(pt)))
         throw new Exception("Context.collect expected type " + pt + " but got " + raw.head.pType)
-      QList.makePropValue(raw, pt)
+      val newCT = 
+        // HACK: How should this work correctly? There seems to be a general concept trying to break out.
+        // In general, collect (and many of these operations) are very monadically evil, but
+        // we've consciously decided to live with that.
+        value.cType match {
+          case ExactlyOne => if (raw.isEmpty) Optional else ExactlyOne
+          case Optional => if (raw.size > 1) QList else Optional
+          case _ => value.cType
+        }
+      newCT.makePropValue(raw, pt)
     }
   }
   

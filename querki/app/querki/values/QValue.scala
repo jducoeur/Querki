@@ -121,6 +121,8 @@ trait QValue {
    * 
    * TODO: do that pType matches elemT check in all of these!
    **********************/
+  // TODO: this isn't really flatMap, and shouldn't be named flatMap. Can we make things more
+  // properly monadic?
   def flatMap[VT, T](elemT:PType[VT])(cb:VT => Option[T]) = cv.flatMap { elem => 
     val vt = elemT.get(elem)
     cb(vt)
@@ -169,6 +171,13 @@ trait QValue {
   }
   
   def elemAt(index:Int):ElemValue = cv.toList(index)
+}
+
+object QValue {
+  def make[DT, RT](cType:Collection, pType:PType[DT] with PTypeBuilder[DT, RT], vals:RT*):QValue = {
+    val iter = vals.map(pType(_))
+    cType.makePropValue(iter, pType)
+  }
 }
 
 object ErrorTextType extends TextTypeBase(UnknownOID,

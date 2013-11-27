@@ -568,6 +568,7 @@ object IconButtonMethod extends ButtonBase(IconButtonOID,
 }
 
 // TODO: this is very similar to _linkButton, and should be refactored.
+// TODO: this ought to be able to cope with a List, Set, etc -- it shouldn't use firstOpt.
 object ShowLinkMethod extends InternalMethod(ShowLinkMethodOID,
     toProps(
       setName("_showLink"),
@@ -582,17 +583,29 @@ object ShowLinkMethod extends InternalMethod(ShowLinkMethodOID,
   override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
     paramsOpt match {
       case Some(params) if (params.length > 0) => {
-        val urlOpt = context.value.pType match {
-          case pt:URLableType => context.value.firstOpt.flatMap(pt.getURL(context)(_))
-          case _ => None
-        }
-        
-        urlOpt match {
-          case Some(url) => {
-            val label = context.parser.get.processPhrase(params(0).ops, context).value.wikify(context)
-            WikitextValue(QWikitext("[") + label + QWikitext(s"]($url)"))            
+        context.value.pType match {
+          case pt:URLableType => {
+            context.collect(ParsedTextType) { elemContext =>
+              val wikitextOpt = for (
+                elemV <- elemContext.value.firstOpt;
+                url <- pt.getURL(elemContext)(elemV);
+                label = elemContext.parser.get.processPhrase(params(0).ops, elemContext).value.wikify(elemContext)
+                  )
+                yield QWikitext("[") + label + QWikitext(s"]($url)")
+              
+              wikitextOpt match {
+                case Some(wikitext) => QValue.make(ExactlyOne, ParsedTextType, wikitext)
+                case None => Optional.Empty(ParsedTextType)
+              }
+            }
+//            // Note that, if getURL fails, this might throw an exception down in makePropValue. I suspect that
+//            // getURL should be returning Try[String], not Option[String]
+//            val urls = context.value.cv.flatMap(pt.getURL(context)(_))
+//            val label = context.parser.get.processPhrase(params(0).ops, context).value.wikify(context)
+//            val wikitexts = urls.map { url => ParsedTextType(QWikitext("[") + label + QWikitext(s"]($url)")) }
+//            context.value.cType.makePropValue(wikitexts, ParsedTextType)
           }
-          case None => EmptyValue(ParsedTextType)
+          case _ => WarningValue(displayName + " can only be used with Link types")
         }
       }
       case None => WarningValue(displayName + " requires a label parameter.")

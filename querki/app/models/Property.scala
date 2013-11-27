@@ -74,7 +74,7 @@ case class Property[VT, -RT](
   def first(m:PropMap):VT = pType.get(cType.first(from(m)))
   def firstOpt(m:PropMap):Option[VT] = fromOpt(m) map cType.first map pType.get
 
-  def apply(raw:RT) = (this.id, cType(pType(raw)))
+  def apply(raws:RT*) = (this.id, QValue.make(cType, pType, raws:_*))
   def apply() = (this.id, cType.default(pType))
   
   def validate(str:String) = pType.validate(str)

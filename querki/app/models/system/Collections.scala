@@ -141,6 +141,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     }
 
     val QNone:QValue = makePropValue(Nil, UnknownType)
+    def Empty(elemT:pType):QValue = makePropValue(Nil, elemT) 
   }
   object Optional extends Optional(OptionalOID)
   
