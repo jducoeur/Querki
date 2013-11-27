@@ -567,6 +567,7 @@ object IconButtonMethod extends ButtonBase(IconButtonOID,
   }
 }
 
+// TODO: this is very similar to _linkButton, and should be refactored.
 object ShowLinkMethod extends InternalMethod(ShowLinkMethodOID,
     toProps(
       setName("_showLink"),
@@ -582,7 +583,7 @@ object ShowLinkMethod extends InternalMethod(ShowLinkMethodOID,
     paramsOpt match {
       case Some(params) if (params.length > 0) => {
         val urlOpt = context.value.pType match {
-          case pt:URLableType => pt.getURL(context)(context.value.first)
+          case pt:URLableType => context.value.firstOpt.flatMap(pt.getURL(context)(_))
           case _ => None
         }
         
@@ -591,7 +592,7 @@ object ShowLinkMethod extends InternalMethod(ShowLinkMethodOID,
             val label = context.parser.get.processPhrase(params(0).ops, context).value.wikify(context)
             WikitextValue(QWikitext("[") + label + QWikitext(s"]($url)"))            
           }
-          case None => WarningValue(displayName + " didn't receive a valid Link")
+          case None => EmptyValue(ParsedTextType)
         }
       }
       case None => WarningValue(displayName + " requires a label parameter.")

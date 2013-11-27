@@ -112,4 +112,20 @@ class MethodTests
         equal ("")      
     }
   }
+  
+  // === _showLink ===
+  "_showLink" should {
+    "work with a Link to Thing" in {
+      processQText(commonThingAsContext(_.sandbox), """[[_showLink(""hello"")]]""") should 
+        equal ("""[hello](Sandbox)""")
+    }
+    "work with an external URL" in {
+      processQText(commonThingAsContext(_.withUrl), """[[My Optional URL -> _showLink(""hello"")]]""") should
+        equal ("""[hello](http://www.google.com/)""")
+    }
+    "quietly ignore an empty context" in {
+      processQText(commonThingAsContext(_.withoutUrl), """[[My Optional URL -> _showLink(""hello"")]]""") should
+        equal ("")      
+    }
+  }
 }
