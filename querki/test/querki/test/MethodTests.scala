@@ -41,22 +41,14 @@ class CommonMethodSpace extends TestSpace {
    * The generic "sandbox" Thing, which serves as a useful default if you don't
    * care much about the details.
    */
-  lazy val sandbox = new SimpleTestThing("Sandbox")
-      
-  lazy val withLinks = new SimpleTestThing("With Links", listLinksProp(sandbox.id, withUrl.id))
-      
-  lazy val withUrl = new SimpleTestThing("With URL",
+  val sandbox = new SimpleTestThing("Sandbox")
+     
+  lazy val withUrlOID = toid()
+  val withUrl = new TestThing(withUrlOID, "With URL",
       optURLProp("http://www.google.com/"),
       listURLProp("http://www.google.com/", "http://www.querki.net/"))
   
-  lazy val withoutUrl = new SimpleTestThing("Without URL", optURLProp())
-        
-  override lazy val things = Seq(
-    sandbox,
-    withLinks,
-    withUrl,
-    withoutUrl
-  )
+  val withoutUrl = new SimpleTestThing("Without URL", optURLProp())
 }
 
 class MethodTests 
@@ -82,17 +74,18 @@ class MethodTests
     wikitext.plaintext
   }
   
-  def commonSpaceAndThing(f: CommonMethodSpace => Thing):(SpaceState, Thing) = {
-    val space = _commonSpace
+  def spaceAndThing[S <: CommonMethodSpace](space:S, f: S => Thing):(SpaceState, Thing) = {
     val thing = f(space)
     (space.state, thing)
   }
   
-  def commonThingAsContext(f: CommonMethodSpace => Thing):QLContext = {
-    val (state, thing) = commonSpaceAndThing(f)
+  def thingAsContext[S <: CommonMethodSpace](space:S, f: S => Thing):QLContext = {
+    val (state, thing) = spaceAndThing(space, f)
     val rc = SimpleTestRequestContext(state, thing)
     thing.thisAsContext(rc)
   }
+  
+  def commonThingAsContext(f: CommonMethodSpace => Thing):QLContext = thingAsContext(_commonSpace, f)
   
   /***********************************************
    * TESTS
@@ -134,7 +127,11 @@ class MethodTests
         equal ("\n[hello](http://www.google.com/)\n[hello](http://www.querki.net/)")      
     }
     "work with a list of Links" in {
-      processQText(commonThingAsContext(_.withLinks), """[[My List of Links -> _showLink(Name)]]""") should
+      class testSpace extends CommonMethodSpace {
+        val withLinks = new SimpleTestThing("With Links", listLinksProp(sandbox.id, withUrlOID))
+      }
+      
+      processQText(thingAsContext[testSpace](new testSpace, _.withLinks), """[[My List of Links -> _showLink(Name)]]""") should
         equal ("\n[Sandbox](Sandbox)\n[With URL](With-URL)")
     }
   }

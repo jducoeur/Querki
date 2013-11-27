@@ -65,9 +65,15 @@ trait TestSpace {
   class TestProperty[VT, -RT](t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, name:String, pairs:(OID,QValue)*)
     extends TestPropertyBase(toid(), t, c, makePropFetcher(name, pairs))
   
+  class TestThing(pid:OID, name:String, pairs:(OID, QValue)*)
+    extends ThingState(pid, spaceId, PageOID, makePropFetcher(name, pairs)) 
+  {
+    val testSpace:TestSpace = TestSpace.this 
+    testSpace.things = testSpace.things :+ this
+  }
   class SimpleTestThing(name:String, pairs:(OID, QValue)*)
-    extends ThingState(toid(), spaceId, PageOID, makePropFetcher(name, pairs))
-
+    extends TestThing(toid, name, pairs:_*)
+  
   // ================================
   
   /**
@@ -125,7 +131,7 @@ trait TestSpace {
   /**
    * The Things (usually Models, but not necessarily) introduced by this Test, if any.
    */
-  lazy val things:Seq[ThingState] = Seq.empty
+  var things:Seq[ThingState] = Seq.empty
   
   /**
    * The *INITIAL* state of this Space for the test. If you plan to evolve the State, the test
