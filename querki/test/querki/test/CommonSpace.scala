@@ -4,7 +4,11 @@ import models.{Attachment, ThingState}
 import models.Kind
 import models.system.{ExternalLinkType, LinkType}
 import models.system.{ExactlyOne, Optional, QList}
+import models.system.{IsModelProp}
 import models.system.OIDs.PageOID
+
+import querki.identity.{User}
+import querki.identity.UserLevel._
 
 /**
  * A generic Space, with a grab-bag of helpful components, for using in various tests.
@@ -38,6 +42,15 @@ class CommonSpace extends TestSpace {
   /***********************************************
    * THINGS
    ***********************************************/
+
+  // Some Members and non-Members
+  val member1 = member("Some Member", "memberHandle", PaidUser)
+  val member2 = member("Another Member", "member2Handle", PaidUser)
+  val nonMember:User = userAs("Non-Member", "nonMemberHandle", PaidUser)
+  
+  // A simple default Model and Instance.
+  val testModel = new SimpleTestThing("My Model", IsModelProp(true))
+  val instance = new TestThing("My Instance", testModel) 
   
   /**
    * A simple imitation "photograph".

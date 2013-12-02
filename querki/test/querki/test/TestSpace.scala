@@ -5,11 +5,14 @@ import java.util.concurrent.atomic.AtomicInteger
 import models.{OID, OIDMap}
 import models.{Collection, Property, PType, PTypeBuilder, Thing, ThingState}
 import models.Thing._
-
 import models.system.{NameType, SystemSpace}
 import models.system.OIDs.{PageOID, systemOID, UrPropOID}
 
+import modules.Modules.Person
+
 import querki.values._
+import querki.identity.{FullUser, Identity, IdentityKind, User, UserLevel}
+import querki.identity.UserLevel._
 
 /**
  * This class represents the overall "world state" for a test. It usually works with at
@@ -34,6 +37,8 @@ class TestWorld {
    */
   def nextOID():OID = testOID(_currentLocal.incrementAndGet())
 }
+
+case class SpaceMember(user:User, person:ThingState)
 
 /**
  * This trait is used to build little Test Spaces for unit and functional testing.
@@ -66,10 +71,20 @@ trait TestSpace {
     extends TestPropertyBase(toid(), t, c, makePropFetcher(name, pairs))
   
   def registerThing(t:ThingState) = { things = things :+ t }
-  class TestThing(pid:OID, name:String, pairs:(OID, QValue)*)
-    extends ThingState(pid, spaceId, PageOID, makePropFetcher(name, pairs)) 
+  class TestThingBase(pid:OID, name:String, model:OID, pairs:(OID, QValue)*)
+    extends ThingState(pid, spaceId, model, makePropFetcher(name, pairs)) 
   {
     registerThing(this)
+  }
+  class TestThing(pid:OID, name:String, model:OID, pairs:(OID, QValue)*)
+    extends TestThingBase(pid, name, model, pairs:_*)
+  {
+    def this(pid:OID, name:String, pairs:(OID, QValue)*) = {
+      this(pid, name, PageOID, pairs:_*)
+    }
+    def this(name:String, model:OID, pairs:(OID, QValue)*) = {
+      this(toid(), name, model, pairs:_*)
+    }
   }
   class SimpleTestThing(name:String, pairs:(OID, QValue)*)
     extends TestThing(toid, name, pairs:_*)
@@ -103,11 +118,26 @@ trait TestSpace {
     SystemSpace.State
   }
   
+  def userAs(name:String, handle:String, level:UserLevel):User = 
+    FullUser(
+      toid(), 
+      name, 
+      Seq(Identity(toid(), modules.email.EmailAddress(""), "", handle, name, IdentityKind.QuerkiLogin)),
+      level)
+      
   /**
-   * The OID of this Space's Owner. Currently just a made-up value; override this if
-   * you care. (This might get improved later, for testing security.)
+   * Define a Member of this Space. Note that this *must* only be used in the Space's constructor, since
+   * it registers the Member into the Space as a side-effect.
+   * 
+   * For now, we only have one basic class of Member. Later, we'll have to get into groups/roles/etc.
    */
-  lazy val ownerId:OID = toid()
+  def member(name:String, handle:String, level:UserLevel):SpaceMember = {
+    val user = userAs(name, handle, level)
+    val person = new TestThing(name, Person.person, Person.identityLink(user.mainIdentity.id))
+    SpaceMember(user, person)
+  }
+
+  lazy val owner:User = userAs("Owner Guy", "ownerHandle", PaidUser)
   
   lazy val spaceName = "Test Space"
   
@@ -115,9 +145,11 @@ trait TestSpace {
    * The props of the Space itself. If you need these to be anything interesting, override
    * this and set it to what you want.
    */
-  val sProps:PropFetcher =
+  lazy val otherSpaceProps:Seq[(OID, QValue)] = Seq.empty
+  
+  lazy val sProps:PropFetcher =
     toProps(
-      setName(spaceName)
+      (otherSpaceProps :+ setName(spaceName)):_*
     )
 
   /**
@@ -142,7 +174,7 @@ trait TestSpace {
       toid(),    // This Space's OID
       app.id,    // This Space's Model
       sProps,    // This Space's own props
-      ownerId,   // This Space's Owner
+      owner.mainIdentity.id,   // This Space's Owner
       spaceName, // This Space's Name
       modules.time.TimeModule.epoch, // This Space's last-modified time
       Some(app), // This Space's App

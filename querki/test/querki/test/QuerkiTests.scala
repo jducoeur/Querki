@@ -17,10 +17,11 @@ class QuerkiTests
 {
   // Just for efficiency, we create the CommonSpace once -- it is immutable, and good enough for
   // most purposes:
-  var _commonSpace:CommonSpace = null
+  lazy val commonSpace = new CommonSpace
   override def beforeAll() = { 
-    _commonSpace = new CommonSpace
+    commonSpace
   }
+  def commonState = commonSpace.state
   
   def processQText(context:QLContext, text:String):String = {
     val qt = QLText(text)
@@ -40,7 +41,7 @@ class QuerkiTests
     thing.thisAsContext(rc)
   }
   
-  def commonThingAsContext(f: CommonSpace => Thing):QLContext = thingAsContext(_commonSpace, f)
+  def commonThingAsContext(f: CommonSpace => Thing):QLContext = thingAsContext(commonSpace, f)
   
   /**
    * Given a list of expected Things that comes out at the end of a QL expression, this is the

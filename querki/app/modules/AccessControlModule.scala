@@ -85,8 +85,51 @@ object AccessControl {
     hasPermission(canReadProp, state, who, thingId, true, true)    
   }
   
-  def canEdit(state:SpaceState, who:User, thingId:OID):Boolean = {
-    hasPermission(canEditProp, state, who, thingId, false, false)
+  def canEdit(state:SpaceState, who:User, thingIdIn:OID):Boolean = {
+    // Sadly, Edit turns out to be more complex than Create and Read -- simple inheritance of the value,
+    // while conceptually elegant, doesn't actually work in practice. So we need to juggle two properties
+    // instead.
+//    hasPermission(canEditProp, state, who, thingIdIn, false, false)
+    // TODO: refactor this with the hasPermission() method above.
+    // TODO: this really ought to be who.isSuperadmin, instead of SystemUserOID?
+    val thingId = { if (thingIdIn == UnknownOID) state.id else thingIdIn}
+    if (who.hasIdentity(state.owner) || who.id == SystemUserOID)
+      true
+    else {
+      implicit val s = state
+      val (isLocalUser, whoId) = who match {
+        case _ => (isMember(who, state), who.id)        
+      }
+      
+      val thing = state.anything(thingId)
+      
+      // We check Who Can Edit on the Thing itself...
+      val thingPermsOpt = thing.flatMap(_.localProp(canEditProp))
+       
+      def checkPerms(perms:PropAndVal[OID]):Boolean = {
+        /* if (publicAllowed && perms.contains(MOIDs.PublicTagOID))
+          true
+        else */ if (isLocalUser && perms.contains(MOIDs.MembersTagOID))
+          true
+        else if (perms.exists(who.hasPerson(_)))
+          true
+        else
+          // *NOT* default. If the properly exists, and is left unset, then we
+          // always default to false!
+          false          
+      }
+      
+      // TODO: wow, that's a horror. Can we turn this into a well-behaved for comprehension or something?
+      // Would Scalaz's "|" (or) operator help?
+      thingPermsOpt.map(checkPerms(_)).getOrElse(
+        thing.flatMap(_.getModelOpt.flatMap(_.getPropOpt(canEditChildrenProp)).map(checkPerms(_))).getOrElse(
+          if (thingId == state.id)
+            // Don't consider the Space to be its own child:
+            false 
+          else
+            state.getPropOpt(canEditChildrenProp).map(checkPerms(_)).getOrElse(
+              false)))
+    }    
   }
   
   def canChangePropertyValue(state:SpaceState, who:User, propId:OID):Boolean = {
@@ -119,6 +162,7 @@ class AccessControlModule(val moduleId:Short) extends modules.Module {
     val CanEditPropOID = moid(6)
     val CanCreatePropOID = moid(7)
     val IsPermissionOID = moid(8)
+    val CanEditChildrenPropOID = moid(9)
   }
   import MOIDs._
   
@@ -180,7 +224,27 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         setName("Who Can Edit"),
         isPermissionProp(true),
         (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
-        PropSummary("Who else can edit Things in this Space")))
+        PropSummary("Who else can edit Things in this Space"),
+        PropDetails("""Note that this Property is *not* inherited, unlike most. If you want to
+            |say who can edit Things made from this Model, use [[Who Can Edit Children._self]] instead.""".stripMargin)))
+
+  lazy val canEditChildrenProp = new SystemProperty(CanEditChildrenPropOID, LinkType, QSet,
+      toProps(
+        setName("Who Can Edit Children"),
+        isPermissionProp(true),
+        (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
+        PropSummary("Who else can edit children of this Thing"),
+        PropDetails("""This Property is useful on Models and Spaces, and works as follows.
+            |
+            |When you set this Property on a **Model**, it says who is allowed to edit the Things made from
+            |that Model. That is, if I have a Model named *CD*, setting this Property on it says who can
+            |edit the CDs.
+            |
+            |When you set this Property on a **Space**, it says who is generally allowed to edit Things in
+            |the Space.
+            |
+            |Note that this differs from the ordinary [[Who Can Edit._self]] Property, which says who can
+            |edit *this* specific Thing.""".stripMargin)))
 
   lazy val canCreateProp = new SystemProperty(CanCreatePropOID, LinkType, QSet,
       toProps(
@@ -194,6 +258,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
     isPermissionProp,
     canCreateProp,
     canEditProp,
+    canEditChildrenProp,
     canReadProp
   )
 }
