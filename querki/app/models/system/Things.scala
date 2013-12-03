@@ -48,11 +48,7 @@ object Page extends ThingState(PageOID, systemOID, RootOID,
     toProps(
       setName("Simple-Page"),
       IsModelProp(true),
-      DisplayTextProp("""
-This is the basic Page Thing. Use it as your Model for *basic* Pages without real structure.
-            
-Use the **DisplayText** property to indicate what to show on the page. You can put anything in there.
-""")))
+      DisplayTextProp(Optional.QNone)))
 
 object SimpleThing extends ThingState(SimpleThingOID, systemOID, RootOID,
     toProps(

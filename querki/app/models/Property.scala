@@ -76,6 +76,7 @@ case class Property[VT, -RT](
 
   def apply(raws:RT*) = (this.id, QValue.make(cType, pType, raws:_*))
   def apply() = (this.id, cType.default(pType))
+  def apply(qv:QValue) = (this.id, qv)
   
   def validate(str:String) = pType.validate(str)
   import play.api.data.Form

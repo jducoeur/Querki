@@ -346,6 +346,14 @@ abstract class Thing(
     validProps.toSet    
   }
   
+  def localPropsAndVals(implicit state:SpaceState):Iterable[PropAndVal[_]] = {
+    for (
+      entry <- props;
+      prop <- state.prop(entry._1)
+        )
+      yield prop.pair(entry._2)
+  }
+  
   /**
    * Lists all of the Properties defined on this Thing and its ancestors.
    */
@@ -394,8 +402,14 @@ abstract class Thing(
    */
   def render(implicit request:RequestContext, prop:Option[Property[_,_]] = None):Wikitext = {
     implicit val state = request.state.get
-    val opt = getPropOpt(prop.getOrElse(DisplayTextProp))
-    opt.map(pv => pv.render(thisAsContext.forProperty(pv.prop))).getOrElse(renderDefault)
+    val actualProp = prop.getOrElse(DisplayTextProp)
+    val renderedOpt = for (
+      pv <- getPropOpt(actualProp);
+      if (!pv.isEmpty)
+        )
+      yield pv.render(thisAsContext.forProperty(pv.prop))
+    
+    renderedOpt.getOrElse(renderDefault)
   }
   
   /**
