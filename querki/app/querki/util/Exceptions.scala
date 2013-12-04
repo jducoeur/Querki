@@ -54,3 +54,45 @@ object Tryer {
     }
   }
 }
+
+// Trying to get a version of this that works with an ordinary Try. Still a project in-progress.
+//object RichTry {
+//  class TryHandler[T, R](t:Try[T], succ:Option[T => R] = None, fail:Option[PublicException => R] = None) {
+//    def onSucc(f:T => R) = new TryHandler(t, Some(f), fail)
+//    def onFail(f:PublicException => R) = new TryHandler(t, succ, Some(f))
+//    
+//    def result:R = {
+//      t match {
+//        case Failure(ex:PublicException) if (fail.isDefined) => fail.get(ex)
+//        case Failure(error) if (fail.isDefined) => { QLog.error("Internal error", error); fail.get(UnexpectedPublicException) }
+//        case Success(v) if (succ.isDefined) => succ.get(v)
+//        case _ => throw new Exception("Incompletely defined TryTrans")
+//      }    
+//    }
+//  }
+//  
+//  implicit class TryWrapper[T, R](t:Try[T]) {
+//    def onSucc(f:T => R) = new TryHandler[T, R](t, Some(f), None)
+//    def onFail(f:PublicException => R) = new TryHandler[T, R](t, None, Some(f))    
+//  }
+//}
+
+class TryTrans[T, R](func: => T, succ:Option[T => R] = None, fail:Option[PublicException => R] = None) {
+  type TRet = R
+  def onSucc(f:T => R) = new TryTrans(func, Some(f), fail)
+  def onFail(f:PublicException => R) = new TryTrans(func, succ, Some(f))
+  
+  def result:R = {
+    val t = Try { func }
+    t match {
+      case Failure(ex:PublicException) if (fail.isDefined) => fail.get(ex)
+      case Failure(error) if (fail.isDefined) => { QLog.error("Internal error", error); fail.get(UnexpectedPublicException) }
+      case Success(v) if (succ.isDefined) => succ.get(v)
+      case _ => throw new Exception("Incompletely defined TryTrans")
+    }    
+  }
+}
+
+object TryTrans {
+  def apply[T, R](func: => T) = new TryTrans[T, R](func)
+}

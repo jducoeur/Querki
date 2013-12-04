@@ -102,14 +102,15 @@ disallow: /
     newSpaceForm.bindFromRequest.fold(
       errors => doError(routes.Application.newSpace, "You have to specify a legal space name"),
       name => {
-        if (NameProp.validate(name)) {
-          askSpaceMgr[ThingResponse](CreateSpace(requester, name)) {
-            case ThingFound(_, state) => Redirect(routes.Application.space(requester.mainIdentity.handle, state.toThingId))
-            case ThingError(ex, _) => doError(routes.Application.newSpace, ex)
-          }
-        } else {
-          doError(routes.Application.newSpace, "That's not a legal Space name")
-        }
+        TryTrans[Unit, Result] { NameProp.validate(name) }.
+          onSucc { _ =>
+            askSpaceMgr[ThingResponse](CreateSpace(requester, name)) {
+              case ThingFound(_, state) => Redirect(routes.Application.space(requester.mainIdentity.handle, state.toThingId))
+              case ThingError(ex, _) => doError(routes.Application.newSpace, ex)
+            }
+          }.
+          onFail { doError(routes.Application.newSpace, _) }.
+          result
       }
     )
   }
@@ -261,7 +262,17 @@ disallow: /
         def makeProps(propList:List[FormFieldInfo]):PropList = {
           val modelProps = PropList.inheritedProps(thing, oldModel)
           val nonEmpty = propList filterNot (_.isEmpty)
-          (modelProps /: nonEmpty) { (m, fieldInfo) =>
+          // Iff there are props whose submitted values are invalid, set them back to the
+          // previous value, or the default if there wasn't one.
+          val repaired = propList filterNot (_.isValid) map { info =>
+            val prop = info.prop
+            val oldValOpt = thing.flatMap(_.localPropVal(prop))
+            oldValOpt match {
+              case Some(v) => FormFieldInfo(prop, Some(v), false, true)
+              case None => FormFieldInfo(prop, Some(prop.default), false, true)
+            }
+          }
+          (modelProps /: (nonEmpty ++ repaired)) { (m, fieldInfo) =>
             val prop = fieldInfo.prop
             val disp =
               if (m.contains(prop))
@@ -286,12 +297,12 @@ disallow: /
 //          showEditPage(rc, model, makeProps(rawProps))
         } else {
           // User has submitted a creation/change. Is it legal?
-          val filledProps = rawProps.filterNot(_.isEmpty)
-          val illegalVals = filledProps.filterNot(_.isValid)
+          val illegalVals = rawProps.filterNot(_.isValid)
           if (illegalVals.isEmpty) {
+            val filledProps = rawProps.filterNot(_.isEmpty)
             // Everything parses, anyway, so send it on to the Space for processing:
             val propPairs = filledProps.map { pair =>
-              val FormFieldInfo(prop, value, _, _) = pair
+              val FormFieldInfo(prop, value, _, _, _, _) = pair
               (prop.id, value.get)
             }
             val props = Thing.toProps(propPairs:_*)()
@@ -349,8 +360,10 @@ disallow: /
             }
           } else {
             // One or more values didn't parse against their PTypes. Give an error and continue:
-            val badProps = illegalVals.map { info => info.prop.displayName }
-            val errorMsg = "Illegal values for " + badProps.mkString
+            val badProps = illegalVals.map { info => 
+              info.prop.displayName + info.error.map(": " + _.display).getOrElse("")
+            }
+            val errorMsg = "Illegal values -- " + badProps.mkString(", ")
             errorCb.map(cb => cb(errorMsg, oldModel, rawProps)).getOrElse {
               if (fromAPI) {
                 NotAcceptable(errorMsg)

@@ -80,16 +80,17 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
   def get(v:ElemValue):VT = v.get(this)
   
   /**
-   * Can this String value be legitimately interpreted as this type?
+   * Can this String value be legitimately interpreted as this type? This either passes, or
+   * throws an Exception, preferably a useful PublicException.
    * 
    * This is closely related to doFromUser -- iff something can be parsed by doFromUser, it
    * should validate cleanly. It is intended for UI use.
+   * 
+   * IMPORTANT: this can throw Exceptions, and specifically PublicExceptions! Calls must be
+   * wrapped in a Tryer!
    */
-  final def validate(v:String):Boolean = try {
-    val dummy = doFromUser(v)
-    true
-  } catch {
-    case _:Exception => false
+  final def validate(v:String):Unit = {
+    doFromUser(v)
   }
   
   /**

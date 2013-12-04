@@ -67,7 +67,12 @@ trait CodeType {
         setName("Whole Number Type")
         )) with SimplePTypeBuilder[Int]
   {
-    def doDeserialize(v:String) = java.lang.Integer.parseInt(v)
+    def doDeserialize(v:String) = try {
+      java.lang.Integer.parseInt(v)
+    } catch {
+      case ex:java.lang.NumberFormatException => throw new PublicException("Types.Number.badFormat")
+    }
+    
     def doSerialize(v:Int) = v.toString
     def doWikify(context:QLContext)(v:Int, displayOpt:Option[Wikitext] = None) = Wikitext(v.toString)
 
@@ -283,11 +288,11 @@ object QLType extends QLType(QLTypeOID)
     override def doToUser(v:String):String = toDisplay(v)
     override protected def doFromUser(v:String):String = {
       if (v.length() == 0)
-        throw new Exception("Names must have non-zero length")
+        throw new PublicException("Types.Name.empty")
       else if (v.length() > 254)
-        throw new Exception("Names should not be excessively long")
+        throw new PublicException("Types.Name.tooLong")
       else if (v.exists(c => !c.isLetterOrDigit && c != '-' && c != ' ' && c != '/'))
-        throw new Exception("Names may only contain letters, digits, dashes and spaces")
+        throw new PublicException("Types.Name.badChars")
       else
         toDisplay(v)
     }

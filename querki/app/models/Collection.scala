@@ -13,6 +13,7 @@ import modules.time.TimeModule
 
 import ql._
 
+import querki.util._
 import querki.values._
 
 /**
@@ -97,10 +98,10 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
       formV match {
     	// Normal case: pass it to the PType for parsing the value out:
         case Some(v) => {
-          if (elemT.validate(v))
-            FormFieldInfo(prop, Some(apply(elemT.fromUser(v))), false, true)
-          else
-            FormFieldInfo(prop, None, true, false)
+          TryTrans { elemT.validate(v) }.
+            onSucc { _ => FormFieldInfo(prop, Some(apply(elemT.fromUser(v))), false, true, Some(v)) }.
+            onFail { ex => FormFieldInfo(prop, None, true, false, Some(v), Some(ex)) }.
+            result
         }
         // There was no field value found. In this case, we take the default. That
         // seems strange, but this case is entirely valid in the case of a checkbox.
