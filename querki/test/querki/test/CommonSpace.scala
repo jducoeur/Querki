@@ -25,19 +25,12 @@ class CommonSpace extends TestSpace {
    * PROPERTIES
    ***********************************************/
   
-  lazy val listLinksProp = new TestProperty(LinkType, QList, "My List of Links")
-  lazy val listURLProp = new TestProperty(ExternalLinkType, QList, "My List of URLs")
+  val listLinksProp = new TestProperty(LinkType, QList, "My List of Links")
+  val listURLProp = new TestProperty(ExternalLinkType, QList, "My List of URLs")
   
-  lazy val optURLProp = new TestProperty(ExternalLinkType, Optional, "My Optional URL")
+  val optURLProp = new TestProperty(ExternalLinkType, Optional, "My Optional URL")
   
-  lazy val singleLinkProp = new TestProperty(LinkType, ExactlyOne, "Single Link")
-  
-  override lazy val props = Seq(
-    listLinksProp,
-    listURLProp,
-    optURLProp,
-    singleLinkProp
-  )
+  val singleLinkProp = new TestProperty(LinkType, ExactlyOne, "Single Link")
 
   /***********************************************
    * THINGS

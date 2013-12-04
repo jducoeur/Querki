@@ -65,8 +65,12 @@ trait TestSpace {
     toProps((pairs :+ setName(name)):_*)
   }
   
+  def registerProp(p:Property[_,_]) = { props = props :+ p }
   class TestPropertyBase[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
     extends Property[VT, RT](pid, spaceId, UrPropOID, t, c, p, modules.time.TimeModule.epoch)
+  {
+    registerProp(this)
+  }
   class TestProperty[VT, -RT](t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, name:String, pairs:(OID,QValue)*)
     extends TestPropertyBase(toid(), t, c, makePropFetcher(name, pairs))
   
@@ -159,7 +163,7 @@ trait TestSpace {
   /**
    * The Properties introduced by this Test, if any.
    */
-  lazy val props:Seq[Property[_,_]] = Seq.empty
+  var props:Seq[Property[_,_]] = Seq.empty
   /**
    * The Things (usually Models, but not necessarily) introduced by this Test, if any.
    */

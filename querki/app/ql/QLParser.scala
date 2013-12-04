@@ -60,6 +60,9 @@ case class QLCall(name:String, methodName:Option[String], params:Option[Seq[QLPh
 case class QLTextStage(contents:ParsedQLText, collFlag:Option[String]) extends QLStage(collFlag) {
   def reconstructString = collFlag.getOrElse("") + "\"\"" + contents.reconstructString + "\"\""
 }
+case class QLBinding(name:String) extends QLStage(None) {
+  def reconstructString = "$" + name
+}
 //case class QLPlainTextStage(text:String) extends QLStage
 case class QLPhrase(ops:Seq[QLStage]) {
   def reconstructString = ops.map(_.reconstructString).mkString(" -> ")
@@ -135,7 +138,8 @@ class QLParser(val input:QLText, ci:QLContext) extends RegexParsers {
     case collFlag ~ text => QLTextStage(text, collFlag) }
   // TODO: get this working properly, so we have properly plain text literals:
 //  def qlPlainTextStage:Parser[QLPlainTextStage] = "\"" ~> unQLTextRegex <~ "\"" ^^ { QLPlainTextStage(_) }
-  def qlStage:Parser[QLStage] = qlCall | qlTextStage // | qlPlainTextStage
+  def qlBinding:Parser[QLBinding] = "\\s*\\$".r ~> name ^^ { QLBinding(_) } 
+  def qlStage:Parser[QLStage] = qlBinding | qlCall | qlTextStage // | qlPlainTextStage
   // TODO: phrase is going to get a *lot* more complex with time:
   def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, "\\s*->\\s*".r) ^^ { QLPhrase(_) }
   def qlExp:Parser[QLExp] = rep1sep(qlPhrase, "\\s*\\r?\\n|\\s*;\\s*".r) ^^ { QLExp(_) }
@@ -193,6 +197,22 @@ class QLParser(val input:QLText, ci:QLContext) extends RegexParsers {
     }
   }
   
+  private def processInternalBinding(binding:QLBinding, context:QLContext):QLContext = {
+    if (binding.name == "_context") {
+      initialContext
+    } else
+      context.next(WarningValue("$" + binding.name + " is not a valid bound name"))
+  }
+  
+  private def processBinding(binding:QLBinding, context:QLContext):QLContext = {
+    logContext("processBinding " + binding, context) {
+      if (binding.name.startsWith("_"))
+        processInternalBinding(binding, context)
+      else
+        context.next(WarningValue("Only internal bindings, starting with $_, are allowed at the moment."))
+    }
+  }
+  
   private def processStage(stage:QLStage, contextIn:QLContext):QLContext = {
     val context = 
       if (contextIn.depth > contextIn.maxDepth)
@@ -205,6 +225,7 @@ class QLParser(val input:QLText, ci:QLContext) extends RegexParsers {
 	    stage match {
 	      case name:QLCall => processCall(name, context)
 	      case subText:QLTextStage => processTextStage(subText, context)
+	      case binding:QLBinding => processBinding(binding, context)
 //        case QLPlainTextStage(text) => context.next(TextValue(text))
 	    }
     }

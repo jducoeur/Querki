@@ -1208,6 +1208,7 @@ object CodeMethod extends SingleContextMethod(CodeMethodOID,
         val stage = phrase.ops.head
         stage match {
           case QLTextStage(contents, _) => encodeString(contents.reconstructString)
+          case QLBinding(_) => WarningValue("It is meaningless to call _code on a Binding.")
           case QLCall(name, methodNameOpt, _, _) => {
             methodNameOpt match {
               case Some(methodName) => {
