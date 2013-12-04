@@ -130,7 +130,7 @@ This often means that you've invoked it recursively without saying which Thing i
             // In other words, map over all the text values in this property, parsing all of them
             // and passing the resulting collection along the pipeline:
             thing.map(prop, ParsedTextType) { qlText =>
-              val parser = new QLParser(qlText, elemContext)
+              val parser = new QLParser(qlText, elemContext, params)
               parser.process
             }
           }
@@ -162,10 +162,13 @@ This often means that you've invoked it recursively without saying which Thing i
  * rendered, producing QText. QL fields are essentially methods, which get *called*
  * from other methods and from QLText. So the results are not turned directly into
  * QText; instead, the resulting Context is fed back out to the caller.
+ * 
+ * The public Name for this is now Function, because really, that's what it is. It
+ * now is getting powerful enough to be worth the name.
  */
 class QLType(tid:OID) extends TextTypeBase(tid,
     toProps(
-      setName("QL Expression Type")
+      setName("Function")
     )) with PTypeBuilder[QLText,String] 
 {
   override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem =
@@ -181,7 +184,7 @@ This often means that you've invoked it recursively without saying which Thing i
     } else {
       Some(prop.applyToIncomingThing(definingContext) { (thing, context) =>
         val qlPhraseText = thing.first(prop)(context.state)
-        val parser = new QLParser(qlPhraseText, incomingContext.forProperty(prop))
+        val parser = new QLParser(qlPhraseText, incomingContext.forProperty(prop), params)
         parser.processMethod.value
       })
     }

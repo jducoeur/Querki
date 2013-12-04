@@ -77,7 +77,7 @@ case class ParsedQLText(parts:Seq[QLTextPart]) {
   def reconstructString = parts.map(_.reconstructString).mkString
 }
 
-class QLParser(val input:QLText, ci:QLContext) extends RegexParsers {
+class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None) extends RegexParsers {
   
   // Add the parser to the context, so that methods can call back into it. Note that we are treating this as essentially
   // a modification, rather than another level of depth:
@@ -200,8 +200,22 @@ class QLParser(val input:QLText, ci:QLContext) extends RegexParsers {
   private def processInternalBinding(binding:QLBinding, context:QLContext):QLContext = {
     if (binding.name == "_context") {
       initialContext
-    } else
-      context.next(WarningValue("$" + binding.name + " is not a valid bound name"))
+    } else {
+      try {
+        val rawParamNum = Integer.parseInt(binding.name.substring(1))
+        val paramNum = rawParamNum - 1
+        val resultOpt = for (
+          params <- paramsOpt;
+          phrase = params(paramNum)
+            )
+          yield processPhrase(phrase.ops, context)
+        
+        resultOpt.getOrElse(context.next(WarningValue("No parameters passed in")))
+      } catch {
+        case ex:NumberFormatException => context.next(WarningValue("$" + binding.name + " is not a valid bound name"))
+        case ex:IndexOutOfBoundsException => context.next(WarningValue("Not enough parameters passed in"))
+      }
+    }
   }
   
   private def processBinding(binding:QLBinding, context:QLContext):QLContext = {

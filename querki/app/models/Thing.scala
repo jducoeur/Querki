@@ -424,7 +424,7 @@ abstract class Thing(
     applyOpt match {
       case Some(apply) => {
         val qlText = apply.first
-        val qlParser = new QLParser(qlText, context.forProperty(apply.prop))
+        val qlParser = new QLParser(qlText, context.forProperty(apply.prop), params)
         qlParser.processMethod.value
       }
       case None => ExactlyOne(LinkType(id))
