@@ -138,6 +138,7 @@ object OIDs {
   val SystemIdentityOID = sysId(97)
   val TestIdentityOID = sysId(98)
   val PrototypeIdentityOID = sysId(99)
+  val NonEmptyPlainTextOID = sysId(100)
 }
 
 /**

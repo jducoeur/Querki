@@ -487,9 +487,9 @@ case class PlainText(text:String) {
   }
 }
   
-abstract class PlainTextType(tid:OID) extends SystemType[PlainText](tid,
+abstract class PlainTextType(tid:OID, name:String) extends SystemType[PlainText](tid,
     toProps(
-      setName("Plain Text Type")
+      setName(name)
     )) with PTypeBuilder[PlainText,String]
 {
   def doDeserialize(v:String) = PlainText(v)
@@ -501,7 +501,17 @@ abstract class PlainTextType(tid:OID) extends SystemType[PlainText](tid,
   val doDefault = PlainText("")
   override def wrap(raw:String):valType = PlainText(raw)
 }
-object PlainTextType extends PlainTextType(PlainTextOID)
+object PlainTextType extends PlainTextType(PlainTextOID, "Plain Text Type")
+
+object NonEmptyPlainTextType extends PlainTextType(NonEmptyPlainTextOID, "Non-Empty Plain Text Type")
+{
+    override protected def doFromUser(v:String):PlainText = {
+      if (v.length() == 0)
+        throw new PublicException("Types.Name.empty")
+      else
+        PlainText(v)
+    }  
+}
 
 class InternalMethodType(tid:OID) extends SystemType[String](tid,
     toProps(
@@ -570,5 +580,7 @@ object UnresolvedPropType extends SystemType[String](UnknownOID,
 }
 
 object SystemTypes {
-  def all = OIDMap[PType[_]](IntType, TextType, QLType, YesNoType, NameType, TagSetType, LinkType, LargeTextType, PlainTextType, InternalMethodType, ExternalLinkType)  
+  def all = OIDMap[PType[_]](
+      IntType, TextType, QLType, YesNoType, NameType, TagSetType, LinkType, LargeTextType, PlainTextType, InternalMethodType, ExternalLinkType,
+      NonEmptyPlainTextType)  
 }

@@ -168,7 +168,7 @@ object NotInheritedProp extends SystemProperty(NotInheritedOID, YesNoType, Exact
  * has a number of restrictions, the DisplayNameProp does not. It is used to list a Thing
  * by preference when it is set.
  */
-object DisplayNameProp extends SystemProperty(DisplayNameOID, PlainTextType, Optional,
+object DisplayNameProp extends SystemProperty(DisplayNameOID, NonEmptyPlainTextType, Optional,
     toProps(
       setName("Display Name"),
       PropSummary("How to show this Thing's Name"),
