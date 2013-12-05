@@ -86,10 +86,13 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * This is closely related to doFromUser -- iff something can be parsed by doFromUser, it
    * should validate cleanly. It is intended for UI use.
    * 
+   * Types may override this, especially if their validation is related to the Property.
+   * (Typically because they interact with other meta-Properties on this one.)
+   * 
    * IMPORTANT: this can throw Exceptions, and specifically PublicExceptions! Calls must be
    * wrapped in a Tryer!
    */
-  final def validate(v:String):Unit = {
+  def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = {
     doFromUser(v)
   }
   

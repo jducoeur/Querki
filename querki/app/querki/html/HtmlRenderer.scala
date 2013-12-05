@@ -61,7 +61,7 @@ object HtmlRenderer {
         specialized <- handleSpecializedForm(prop, formV)
           )
         yield specialized
-      spec.getOrElse(prop.cType.fromUser(on, form, prop, prop.pType))
+      spec.getOrElse(prop.cType.fromUser(on, form, prop, prop.pType, context.state))
     }
   }
   

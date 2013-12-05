@@ -78,9 +78,9 @@ case class Property[VT, -RT](
   def apply() = (this.id, cType.default(pType))
   def apply(qv:QValue) = (this.id, qv)
   
-  def validate(str:String) = pType.validate(str)
+  def validate(str:String, state:SpaceState) = pType.validate(str, this, state)
   import play.api.data.Form
-  def fromUser(on:Option[Thing], form:Form[_]):FormFieldInfo = cType.fromUser(on, form, this, pType)
+  def fromUser(on:Option[Thing], form:Form[_], state:SpaceState):FormFieldInfo = cType.fromUser(on, form, this, pType, state)
   // TODO: this clearly isn't correct. How are we actually going to handle more complex types?
   def toUser(v:QValue):String = {
     val cv = castVal(v)

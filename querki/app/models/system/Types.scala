@@ -51,6 +51,17 @@ object CommonInputRenderers {
   }
 }
 
+object TextTypeUtils {
+  def validateText(v:String, prop:Property[_,_], state:SpaceState):Unit = {
+    for (
+      minLengthVal <- prop.getPropOpt(MinTextLengthProp)(state);
+      minLength <- minLengthVal.firstOpt
+      if (v.length() < minLength)
+        )
+      throw new PublicException("Types.Text.tooShort", prop.displayName, minLength)
+  }  
+}
+
 /**
  * This trait should be used by any type that can consider itself "code" -- in particular, that wants to be
  * displayable in the _code() method. 
@@ -114,6 +125,8 @@ trait CodeType {
     }
     val doDefault = QLText("")
     def wrap(raw:String):valType = QLText(raw)
+    
+    override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = TextTypeUtils.validateText(v, prop, state)
 
     // TBD: in principle, we really want this to return a *context*, not a *value*. This is a special
     // case of a growing concern: that we could be losing information by returning QValue from
@@ -487,9 +500,9 @@ case class PlainText(text:String) {
   }
 }
   
-abstract class PlainTextType(tid:OID, name:String) extends SystemType[PlainText](tid,
+abstract class PlainTextType(tid:OID) extends SystemType[PlainText](tid,
     toProps(
-      setName(name)
+      setName("Plain Text Type")
     )) with PTypeBuilder[PlainText,String]
 {
   def doDeserialize(v:String) = PlainText(v)
@@ -497,21 +510,13 @@ abstract class PlainTextType(tid:OID, name:String) extends SystemType[PlainText]
   // TODO: this is probably incorrect, but may be taken care of by context? How do we make sure this
   // doesn't actually get any internal Wikitext rendered?
   def doWikify(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None) = Wikitext(v.text)
-    
+
+  override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = TextTypeUtils.validateText(v, prop, state)
+  
   val doDefault = PlainText("")
   override def wrap(raw:String):valType = PlainText(raw)
 }
-object PlainTextType extends PlainTextType(PlainTextOID, "Plain Text Type")
-
-object NonEmptyPlainTextType extends PlainTextType(NonEmptyPlainTextOID, "Non-Empty Plain Text Type")
-{
-    override protected def doFromUser(v:String):PlainText = {
-      if (v.length() == 0)
-        throw new PublicException("Types.Name.empty")
-      else
-        PlainText(v)
-    }  
-}
+object PlainTextType extends PlainTextType(PlainTextOID)
 
 class InternalMethodType(tid:OID) extends SystemType[String](tid,
     toProps(
@@ -581,6 +586,5 @@ object UnresolvedPropType extends SystemType[String](UnknownOID,
 
 object SystemTypes {
   def all = OIDMap[PType[_]](
-      IntType, TextType, QLType, YesNoType, NameType, TagSetType, LinkType, LargeTextType, PlainTextType, InternalMethodType, ExternalLinkType,
-      NonEmptyPlainTextType)  
+      IntType, TextType, QLType, YesNoType, NameType, TagSetType, LinkType, LargeTextType, PlainTextType, InternalMethodType, ExternalLinkType)  
 }

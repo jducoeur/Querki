@@ -211,7 +211,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     
     import play.api.data.Form
     // TODO: this will want to be refactored with the default version in Collection.scala
-    override def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType):FormFieldInfo = {
+    override def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo = {
       val fieldIds = FieldIds(on, prop)
       val empty = form(fieldIds.emptyControlId).value map (_.toBoolean) getOrElse false
       if (empty) {

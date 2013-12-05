@@ -102,7 +102,7 @@ disallow: /
     newSpaceForm.bindFromRequest.fold(
       errors => doError(routes.Application.newSpace, "You have to specify a legal space name"),
       name => {
-        TryTrans[Unit, Result] { NameProp.validate(name) }.
+        TryTrans[Unit, Result] { NameProp.validate(name, State) }.
           onSucc { _ =>
             askSpaceMgr[ThingResponse](CreateSpace(requester, name)) {
               case ThingFound(_, state) => Redirect(routes.Application.space(requester.mainIdentity.handle, state.toThingId))

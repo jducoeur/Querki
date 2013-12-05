@@ -168,9 +168,10 @@ object NotInheritedProp extends SystemProperty(NotInheritedOID, YesNoType, Exact
  * has a number of restrictions, the DisplayNameProp does not. It is used to list a Thing
  * by preference when it is set.
  */
-object DisplayNameProp extends SystemProperty(DisplayNameOID, NonEmptyPlainTextType, Optional,
+object DisplayNameProp extends SystemProperty(DisplayNameOID, PlainTextType, Optional,
     toProps(
       setName("Display Name"),
+      MinTextLengthProp(1),
       PropSummary("How to show this Thing's Name"),
       PropDetails("""Most Things in Querki have a Name. (It isn't strictly required, but strongly encouraged most
           |of the time.) In general, when we list a Thing, we show its Name. However, if you want to display
@@ -340,3 +341,11 @@ object PropDetails extends SystemProperty(PropDetailsOID, LargeTextType, Optiona
     	  |It is entirely optional -- put something in here if it makes sense. In general, the more complex the
           |Space, and the more people who will be using it, the wiser it becomes to give Details for all of your
           |Properties. If this Space is simple and just for you, it usually isn't necessary.""".stripMargin)))))
+
+object MinTextLengthProp extends SystemProperty(MinTextLengthOID, IntType, ExactlyOne,
+    toProps(
+      setName("Minimum Text Length"),
+      AppliesToKindProp(Kind.Property),
+      PropSummary("The minimum length allowed in this Text, Large Text or PlainText Property"),
+      PropDetails("""If you add this meta-Property to your Text Property, it defines
+          |the minimum length that will be accepted in user-entered text.""".stripMargin)))
