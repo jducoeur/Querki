@@ -845,9 +845,9 @@ object SortMethod extends InternalMethod(SortMethodOID,
         for (
             params <- paramsOpt;
             leftCalc = context.parser.get.processPhrase(params(0).ops, context.next(ExactlyOne(LinkType(left)))).value;
-            leftResult <- leftCalc.firstOpt orElse { throw new PublicException("Methods._sort.illegalEmpty") };
+            leftResult <- leftCalc.firstOpt orElse { Some(leftCalc.pType.default) };
             rightCalc = context.parser.get.processPhrase(params(0).ops, context.next(ExactlyOne(LinkType(right)))).value;
-            rightResult <- rightCalc.firstOpt orElse { throw new PublicException("Methods._sort.illegalEmpty") };
+            rightResult <- rightCalc.firstOpt orElse { Some(rightCalc.pType.default) };
             // Note that we have to compare their *classes*, so that _desc -- which produces a separate pseudo-Type each time
             // -- can work:
             if (leftResult.pType.getClass() == rightResult.pType.getClass());

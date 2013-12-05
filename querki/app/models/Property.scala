@@ -95,7 +95,7 @@ case class Property[VT, -RT](
   
   def applyToIncomingThing(context:QLContext)(action:(Thing, QLContext) => QValue):QValue = {
     if (context.isEmpty) {
-      EmptyValue.untyped
+      EmptyValue(pType)
     } else {
       val valType = context.value.pType
       valType match {

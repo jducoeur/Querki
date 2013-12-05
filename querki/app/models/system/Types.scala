@@ -120,10 +120,13 @@ trait CodeType {
     // qlApply, and should actually be returning a full successor Context.
     // TODO: merge this with the fairly-similar code in QLType
     override def qlApplyFromProp(definingContext:QLContext, incomingContext:QLContext, prop:Property[QLText,_], params:Option[Seq[QLPhrase]]):Option[QValue] = {
-      if (definingContext.isEmpty) {
-        Some(WarningValue("""Trying to use Text Property """" + prop.displayName + """" in an empty context.
-This often means that you've invoked it recursively without saying which Thing it is defined in."""))
-      } else {
+      // TBD: in a perfect world, this would be a true Warning: legal, but with a warning on the side. Unfortunately, doing it
+      // like this gets in the way of perfectly legit ordinary situations, and violates the general Querki data model, that
+      // passing None to a Stage usually results in None. (That is, it violates ordinary map semantics.)
+//      if (definingContext.isEmpty) {
+//        Some(WarningValue("""Trying to use Text Property """" + prop.displayName + """" in an empty context.
+//This often means that you've invoked it recursively without saying which Thing it is defined in."""))
+//      } else {
         Some(incomingContext.collect(ParsedTextType) { elemContext:QLContext =>
           prop.applyToIncomingThing(definingContext) { (thing, context) =>
             implicit val s = definingContext.state
@@ -135,7 +138,7 @@ This often means that you've invoked it recursively without saying which Thing i
             }
           }
         })
-      }
+//      }
     }
       
     def code(elem:ElemValue):String = get(elem).text

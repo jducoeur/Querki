@@ -221,7 +221,7 @@ object WarningValue {
 }
 object EmptyValue {
   // TODO: do something with this?
-  def apply(pType:PType[_]) = QList.empty
+  def apply(pType:PType[_]) = QList.empty(pType)
   // TODO: do we need this?
   def untyped = QList.empty
 }

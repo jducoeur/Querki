@@ -21,5 +21,3 @@ Types.Name.empty=Names must have non-zero length
 Types.Name.tooLong=Names should not be excessively long
 Types.Name.badChars=Names may only contain letters, digits, dashes and spaces
 Types.Number.badFormat=Numbers should only contain digits
-
-Methods._sort.illegalEmpty=The parameter to _sort must return a non-Empty value.

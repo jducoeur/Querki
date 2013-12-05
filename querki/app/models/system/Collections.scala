@@ -176,7 +176,8 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     def wrap(elem:ElemValue):implType = List(elem)
     
     val empty = makePropValue(List.empty[ElemValue], UnknownType)
-    
+    def empty(elemT:pType):QValue = makePropValue(List.empty[ElemValue], elemT)   
+
     // TODO: this stuff is QList-specific. We'll want something different for QSet, but much of that is
     // already in HtmlRenderer.
     // TODO: the stuff created here overlaps badly with the Javascript code in editThing.scala.html.
