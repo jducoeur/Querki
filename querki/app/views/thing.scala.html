@@ -11,6 +11,7 @@
 }
 @title = @{ thing.displayName }
 @user = @{ rc.requester }
+@rawThingId = @{ thing.id.toThingId.toString }
 
 @canEdit = @{
   user.isDefined && space.canEdit(user.get, thing)
@@ -46,7 +47,9 @@
 	      <h1 class="_defaultTitle">@title @if(canEdit) { <a class="btn btn-mini btn-primary" title="Edit @title" href="@routes.Application.editThing(rc.ownerHandle, space.toThingId, thing.toThingId)"><i class="icon-edit icon-white"></i></a> }</h1>
 	      @modelOpt match { 
 	        case Some(model) => {
-	          <p class="_smallSubtitle">(@linkTo(model))</p>
+	          <p class="_smallSubtitle">(<a href="@routes.Application.thing(rc.ownerId.toThingId, space.toThingId, rawThingId)">@rawThingId</a>, 
+	            Model: @linkTo(model))
+	          </p>
 	        }
 	        case _ => {}
 	      }
