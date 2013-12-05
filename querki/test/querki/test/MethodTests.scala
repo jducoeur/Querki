@@ -7,7 +7,7 @@ import models.{Thing, ThingState, Wikitext}
 import models.Thing._
 import models.system.{ExactlyOne, Optional, QList, QSet}
 import Optional.QNone
-import models.system.{ExternalLinkType, LinkType, QLText}
+import models.system.{ExternalLinkType, LargeTextType, LinkType, QLText}
 import models.system.OIDs.{PageOID}
 
 import ql.QLParser
@@ -97,6 +97,49 @@ class MethodTests extends QuerkiTests
       // This is a fairly ridiculous clause, but should produce a decent warning:
       processQText(thingAsContext[testSpace](space, _.wrapper), """[[My List of Links -> _sort(_filter(_isEmpty))]]""") should
         equal (expectedWarning("Methods._sort.illegalEmpty"))
+    }
+    
+    "sort by direct Display Text Properties" in {
+      class TSpace extends CommonSpace {
+        val sortingProp = new TestProperty(LargeTextType, Optional, "Prop to Sort")
+        
+        val theModel = new SimpleTestThing("Sorting Model")
+        val thing1 = new TestThing("Thing 1", theModel, sortingProp("Kazam!"))
+        val thing2 = new TestThing("Thing 2", theModel, sortingProp("Check!"))
+        val thing3 = new TestThing("Thing 3", theModel, sortingProp("Wild!"))
+        val thing4 = new TestThing("Thing 4", theModel, sortingProp("Floobity!"))
+        val thing5 = new TestThing("Thing 5", theModel, sortingProp("Alphabetical!"))
+      }
+      val space = new TSpace
+      
+      processQText(thingAsContext[TSpace](space, _.theModel), """[[Sorting Model._instances -> _sort(Prop to Sort) -> ""[[Name]]: [[Prop to Sort]]""]]""") should
+        equal ("\nThing 5: Alphabetical!\nThing 2: Check!\nThing 4: Floobity!\nThing 1: Kazam!\nThing 3: Wild!")      
+    }
+    
+    "sort by indirect Display Text Properties" in {
+      class TSpace extends CommonSpace {
+        val sortingProp = new TestProperty(LargeTextType, Optional, "Prop to Sort")
+        
+        val theModel = new SimpleTestThing("Sorting Model")
+        val thing1 = new TestThing("Thing 1", theModel, sortingProp("Kazam!"))
+        val thing2 = new TestThing("Thing 2", theModel, sortingProp("Check!"))
+        val thing3 = new TestThing("Thing 3", theModel, sortingProp("Wild!"))
+        val thing4 = new TestThing("Thing 4", theModel, sortingProp("Floobity!"))
+        val thing5 = new TestThing("Thing 5", theModel, sortingProp("Alphabetical!"))
+        
+        val refProp = new TestProperty(LinkType, ExactlyOne, "Reference")
+        
+        val refModel = new SimpleTestThing("Referring Model")
+        val ref1 = new TestThing("Reference 1", refModel, refProp(thing1))
+        val ref2 = new TestThing("Reference 2", refModel, refProp(thing2))
+        val ref3 = new TestThing("Reference 3", refModel, refProp(thing3))
+        val ref4 = new TestThing("Reference 4", refModel, refProp(thing4))
+        val ref5 = new TestThing("Reference 5", refModel, refProp(thing5))
+      }
+      val space = new TSpace
+      
+      processQText(thingAsContext[TSpace](space, _.theModel), """[[Referring Model._instances -> _sort(Reference -> Prop to Sort, ""Unknown"") -> ""[[Name]]: [[Reference -> Prop to Sort]]""]]""") should
+        equal ("\nReference 5: Alphabetical!\nReference 2: Check!\nReference 4: Floobity!\nReference 1: Kazam!\nReference 3: Wild!")      
     }
   }
 }

@@ -19,6 +19,7 @@ object ParsedTextType extends SystemType[Wikitext](OIDs.IllegalOID, () => Thing.
   def doSerialize(v:Wikitext) = throw new Exception("Can't serialize ParsedText!")
   def doWikify(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None) = v
   
+  override def doComp(context:QLContext)(left:Wikitext, right:Wikitext):Boolean = { left.plaintext < right.plaintext } 
   override def doDebugRender(context:QLContext)(v:Wikitext) = v.contents.map(_.internal).mkString
   
   val doDefault = Wikitext("")
