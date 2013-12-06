@@ -136,15 +136,35 @@ abstract class Thing(
   
   def thisAsContext(implicit request:RequestContext) = QLContext(ExactlyOne(LinkType(this.id)), Some(request))
   
-  def displayName:String = {
+  /**
+   * The Display Name of this Thing, rendered as a String.
+   * 
+   * IMPORTANT: what gets returned from here has already been HTML-processed, and should *not*
+   * be re-escaped!
+   */
+  def displayName:String = displayNameText.toString
+  
+  /**
+   * The Display Name of this Thing. This is the underlying form of access, and should
+   * be used to get at it as Html or HtmlWikitext. It has already been HTML-neutered, and
+   * is the safest and most flexible way to use this name.
+   */
+  def displayNameText:DisplayText = {
     val localName = localProp(DisplayNameProp) orElse localProp(NameProp)
     if (localName.isEmpty)
-      id.toString
+      DisplayText(id.toString)
     else {
       localName.get.renderPlain.raw
-    }
+    }    
   }
   
+  /**
+   * The *literal* Display Name of this Thing, exactly as typed.
+   * 
+   * IMPORTANT: this value has *NOT* been HTML-escaped. It must only be used in an environment that
+   * will do the escaping sometime later! Do not use this casually -- always test the environment that
+   * you will be using it in!
+   */
   def unsafeDisplayName:String = {
     val localName = localProp(DisplayNameProp) orElse localProp(NameProp)
     if (localName.isEmpty)

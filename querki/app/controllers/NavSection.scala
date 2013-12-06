@@ -117,6 +117,12 @@ case class NavSections(sections:Seq[Navigable])
 
 case class NavSection(val title:String, val links:Seq[Navigable]) extends Navigable
 
+/**
+ * Represents a single link to be shown in a menu.
+ * 
+ * IMPORTANT: the display is taken as literal HTML, and is not further escaped! Be very sure that anything
+ * you use for the display parameter has been properly HTML-neutered! 
+ */
 case class NavLink(display:String, url:Call, id:Option[String] = None, enabled:Boolean = true) extends Navigable
 
 case object NavDivider extends Navigable

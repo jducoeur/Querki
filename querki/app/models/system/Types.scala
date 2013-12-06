@@ -399,7 +399,7 @@ object QLType extends QLType(QLTypeOID)
       val target = follow(context)(v)
       val text = target match {
         case Some(t) => {
-          val display = displayOpt.getOrElse(Wikitext(t.displayName))
+          val display = displayOpt.getOrElse(t.displayNameText.htmlWikitext)
           makeWikiLink(context, t, display)
         }
         case None => Wikitext("Bad Link: Thing " + v.toString + " not found")

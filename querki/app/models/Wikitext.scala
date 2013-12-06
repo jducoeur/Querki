@@ -14,6 +14,9 @@ case class DisplayText(val str:String) {
   override def toString() = str
   
   def +(other:DisplayText) = new DisplayText(str + other.str)
+  // Since a DisplayText is already HTML-neutered, it is safe to encode as HTML:
+  def html = Html(str)
+  def htmlWikitext = HtmlWikitext(html)
 }
 object DisplayText {
   implicit def displayText2String(disp:DisplayText) = disp.str

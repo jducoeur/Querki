@@ -39,7 +39,7 @@
   
   <dl>
   @for(result <- results.results.sortBy(_.score).reverse) {
-    <dt><b><a href="@routes.Application.thing(rc.ownerHandle, rc.state.get.toThingId, result.thing.toThingId)">@result.thing.displayName</a></b> (@result.prop.displayName)</dt>
+    <dt><b><a href="@routes.Application.thing(rc.ownerHandle, rc.state.get.toThingId, result.thing.toThingId)">@result.thing.displayNameText.html</a></b> (@result.prop.displayNameText.html)</dt>
     <dd><pre><code>@boldfaceResult(result)</code></pre></dd>
   }
   </dl>

@@ -25,8 +25,8 @@ object Search {
         // *rendered* view of this Thing. But that's challenging, so this should probably become Can View Source for now.
         if (!space.canRead(requester, t.id))
           Seq()
-        else if (t.displayName.toLowerCase().contains(searchComp)) {
-          Seq(SearchResult(t, DisplayNameProp, 1.0, DisplayText(t.displayName), List(t.displayName.toLowerCase().indexOf(searchComp))))
+        else if (t.unsafeDisplayName.toLowerCase().contains(searchComp)) {
+          Seq(SearchResult(t, DisplayNameProp, 1.0, t.unsafeDisplayName, List(t.unsafeDisplayName.toLowerCase().indexOf(searchComp))))
         } else {
           // For now, we're only going to deal with Text types.
           // TODO: cope with Links, Tags, and things like that!

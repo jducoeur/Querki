@@ -3,10 +3,10 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Created @newThing.displayName</title>
+        <title>Created @Html(newThing.displayName)</title>
         
         <script>
-          window.parent.onLinkCreated("@newThing.id", "@newThing.displayName");
+          window.parent.onLinkCreated("@newThing.id", "@Html(newThing.displayName)");
         </script>
     </head>
     

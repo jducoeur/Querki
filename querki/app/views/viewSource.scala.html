@@ -31,7 +31,7 @@
 }
 
 @linkTo(t:Thing) = {
-  <a href="@routes.Application.thing(rc.ownerId.toThingId, space.toThingId, t.toThingId)">@t.displayName</a>
+  <a href="@routes.Application.thing(rc.ownerId.toThingId, space.toThingId, t.toThingId)">@Html(t.displayName)</a>
 }
 
 @showProperty(prop:Property[_,_], v:QValue) = {
@@ -41,7 +41,7 @@
 
 @main(QuerkiTemplate.View, pageTitle, rc) {
   <div class="page-header">
-	<h1 class="_defaultTitle">@pageTitle <a class="cancelButton btn" href="@routes.Application.thing(rc.ownerHandle, space.toThingId, thing.toThingId)">Done</a></h1>
+	<h1 class="_defaultTitle">@Html(pageTitle) <a class="cancelButton btn" href="@routes.Application.thing(rc.ownerHandle, space.toThingId, thing.toThingId)">Done</a></h1>
     <p class="_smallSubtitle">(@linkTo(space.anything(thing.model).get))</p>
   </div>
 	

@@ -71,9 +71,9 @@
 
 @displayNavLink(display:String, url:Call, idStr:String, enabled:Boolean) = {
   @if(enabled) {
-    <li><a href="@url" @idStr>@display</a></li>
+    <li><a href="@url" @idStr>@Html(display)</a></li>
   } else {
-    <li class="disabled"><a>@display</a></li>  
+    <li class="disabled"><a>@Html(display)</a></li>  
   }
 }
 
@@ -123,7 +123,7 @@
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         
-        <title>@title</title>
+        <title>@Html(title)</title>
         <!-- TODO: we need to make this CSS responsive! But that may require jQuery Mobile... -->
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/jquery-ui-1.10.0.custom.css")">
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/jquery.ui.menubar.css")">
@@ -328,7 +328,7 @@
 	
 	@if(thing.isDefined) {
       <div id="delete-dialog" title="Confirm Delete">
-        <p><b>Are you sure you want to delete @{thing.get.displayName}? There is currently no way to get it back!</b></p>
+        <p><b>Are you sure you want to delete @Html(thing.get.displayName)? There is currently no way to get it back!</b></p>
       </div>	
 	}
 

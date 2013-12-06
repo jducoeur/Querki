@@ -73,7 +73,7 @@
 
 @setTooltip(prop:Property[_,_]) = {
   @defining(prop.getPropOpt(PropSummary)(space)) { summaryOpt =>
-    @if(summaryOpt.isDefined) { title="@{summaryOpt.get.render(prop.thisAsContext(rc)).raw}" }
+    @if(summaryOpt.isDefined) { title="@Html(summaryOpt.get.render(prop.thisAsContext(rc)).raw)" }
   }
 }
 
@@ -81,7 +81,7 @@
   <div id="propGroup-@i" class="control-group @{if(v.isInherited) "inherited"}">
     <label class="control-label _withTooltip" @setTooltip(prop)>@Html(prop.getProp(PromptProp)(space).renderPlainOr(prop.getProp(NameProp)(space).renderPlain).raw)
       @if(v.hasInheritance) {
-        &nbsp;&nbsp;<button data-empty="@v.emptyControlId" data-model-name="@v.inheritedFrom.get.displayName" data-edits="@v.inputControlId" class="@editButtonClass(v) btn-mini">&nbsp;</button>
+        &nbsp;&nbsp;<button data-empty="@v.emptyControlId" data-model-name="@Html(v.inheritedFrom.get.displayName)" data-edits="@v.inputControlId" class="@editButtonClass(v) btn-mini">&nbsp;</button>
       } else {
         &nbsp;&nbsp;<button data-group="propGroup-@i" data-empty="@v.emptyControlId" data-edits="@v.inputControlId" class="trash-button btn-mini">&nbsp;</button>      
       }
@@ -524,7 +524,7 @@
     </div>
     
 	<div class="page-header">
-	    <h1>@pageTitle @cancelButton</h1>
+	    <h1>@Html(pageTitle) @cancelButton</h1>
 	</div>
 	
 	@if(!canEdit) {
