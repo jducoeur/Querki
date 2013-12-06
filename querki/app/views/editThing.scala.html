@@ -161,7 +161,6 @@
           this.each(function () {
 	        var modelName = $(this).data("model-name");
 	        $inp = inputElem($(this));
-	        $inp.attr("title", "Inherited from " + modelName + "; click the Edit button to change");
 	        $inp.val("");
 	        disablingControl($inp).attr("disabled", "disabled");
 	        setEmpty($(this), "true");
@@ -174,7 +173,6 @@
 	        var $inp = inputElem($(this));
 	        disablingControl($inp).removeAttr("disabled");
 	        var modelName = $(this).data("model-name");
-	        $inp.attr("title", "Overriding " + modelName + "; click the Revert button to go back to the model's value");
 	        setEmpty($(this), "false");
 	        setButton($(this), "icon-remove", "Revert", handleRevertButton);   
           });
