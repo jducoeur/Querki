@@ -513,14 +513,15 @@ disallow: /
   def getTags(ownerId:String, spaceId:String, propId:String, q:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
     implicit val space = rc.state.get
     val lowerQ = q.toLowerCase()
+    val propOpt = space.prop(ThingId(propId))
     val tagsOpt = for
       (
-        prop <- space.prop(ThingId(propId))
+        prop <- propOpt
       )
         yield TagsForPropertyMethod.fetchTags(space, prop).filter(_.toLowerCase().contains(lowerQ))
         
     val tagsSorted = tagsOpt.map(tags => tags.toList.sorted)
-    val thingsSorted = space.allThings.toSeq.map(_.displayName).filter(_.toLowerCase().contains(lowerQ)).sorted
+    val thingsSorted = propOpt.map(prop => getLinksFromSpace(space, prop, lowerQ)).getOrElse(Seq.empty).map(_._1)
         
     val tagsAndThings = 
       tagsSorted match {
