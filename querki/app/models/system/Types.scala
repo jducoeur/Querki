@@ -54,9 +54,9 @@ object CommonInputRenderers {
 object TextTypeUtils {
   def validateText(v:String, prop:Property[_,_], state:SpaceState):Unit = {
     for (
-      minLengthVal <- prop.getPropOpt(MinTextLengthProp)(state);
+      minLengthVal <- prop.getPropOpt(modules.Modules.Types.MinTextLengthProp)(state);
       minLength <- minLengthVal.firstOpt
-      if (v.length() < minLength)
+      if (v.trim().length() < minLength)
         )
       throw new PublicException("Types.Text.tooShort", prop.displayName, minLength)
   }  

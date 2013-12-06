@@ -16,6 +16,7 @@ object Modules {
   val Rendering = new render.RenderingModule(7)
   val TOS = new querki.system.TOSModule(8)
   val Logic = new querki.logic.LogicModule(9)
+  val Types = new querki.types.TypesModule(10)
   
   private var allModules = Seq.empty[Module]
   
@@ -42,6 +43,7 @@ object Modules {
     s = init(Rendering, s)
     s = init(TOS, s)
     s = init(Logic, s)
+    s = init(Types, s)
     
     s
   }
