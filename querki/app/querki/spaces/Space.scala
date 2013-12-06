@@ -114,6 +114,31 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
     }
   }
   
+  /**
+   * When we load the Space, make sure that the Owner has a matching Person record, so they show up
+   * as a Member. This will mainly affect newly-created Spaces.
+   * 
+   * TBD: all these internal imports are a bad smell. This probably belongs elsewhere, but where?
+   */
+  def checkOwnerIsMember() = {
+    import models.Thing._
+    import modules.Modules.Person.{identityLink, person}
+    import modules.person.PersonModule._
+    import querki.identity.SystemUser
+    
+    state.ownerIdentity.foreach { identity =>
+      if (identity.localPerson(state).isEmpty) {
+        createSomething(id, SystemUser, person.id, 
+          toProps(
+            setName(identity.handle),
+            DisplayNameProp(identity.name),
+            identityLink(identity.id))(),
+          Kind.Thing,
+          None)
+      }
+    }
+  }
+  
   def loadSpace() = {
     // TEMP: just as a proof of concept. This is entirely wrong in the long run: we should be using
     // FSM and Requester instead of blocking here:
@@ -122,6 +147,7 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
     result match {
       case Loaded(state) => {
         _currentState = Some(state)
+        checkOwnerIsMember()
       }
       case _ => QLog.error("Got an error!")
     }

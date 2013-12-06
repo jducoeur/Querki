@@ -173,11 +173,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
         // TODO: this is a fugly declaration, and possibly unsafe -- do we have any
         // assurance that modules.Modules.Email has been constructed before this?
         (modules.Modules.Email.MOIDs.EmailPropOID -> Optional.QNone),
-        DisplayTextProp("""
-This represents a Person who is using Querki or can be invited to it. You can create a Person in
-your Space, and compose an email to invite them to use the Space; you can also create a new Model
-to add new Properties for any Person in your Space.
-""")))
+        DisplayTextProp("""This represents a Member of this Space.""")))
     
   override lazy val things = Seq(
     securityPrincipal,
@@ -437,26 +433,48 @@ object PersonModule {
   import modules.Modules.Person._
   import modules.Modules.Person.MOIDs._
   
+  def getPersonIdentity(person:Thing)(implicit state:SpaceState):Option[OID] = {
+    for (
+      identityVal <- person.getPropOpt(identityLink);
+      identityId <- identityVal.firstOpt
+        )
+      yield identityId    
+  }
+  
   /**
    * Additional features of User, specifically for interacting with Person.
    */
   implicit class UserPersonEnhancements(user:User) {
     def hasPerson(personId:OID)(implicit state:SpaceState):Boolean = {
-      val idOpt = for (
-        person <- state.anything(personId);
-        identityVal <- person.getPropOpt(identityLink);
-        identityId <- identityVal.firstOpt
-          )
-        yield identityId
-        
+      state.anything(personId).map(hasPerson(_)).getOrElse(false)
+    }
+    def hasPerson(person:Thing)(implicit state:SpaceState):Boolean = {
+      val idOpt = getPersonIdentity(person)
       idOpt.map(user.hasIdentity(_)).getOrElse(false)
     }
     
     def localPerson(implicit state:SpaceState):Option[Thing] = {
       state.
         descendants(PersonOID, false, true).
-        filter(person => hasPerson(person.id)).
+        filter(person => hasPerson(person)).
         headOption
     }
+  }
+  
+  /**
+   * Additional features of Identity, specifically for interacting with Person.
+   */
+  implicit class IdentityPersonEnhancements(identity:Identity) {
+    def isPerson(person:Thing)(implicit state:SpaceState):Boolean = {
+      val idOpt = getPersonIdentity(person)
+      idOpt.map(_ == identity.id).getOrElse(false)
+    }
+    
+    def localPerson(implicit state:SpaceState):Option[Thing] = {
+      state.
+        descendants(PersonOID, false, true).
+        filter(person => isPerson(person)).
+        headOption
+    }    
   }
 }

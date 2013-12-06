@@ -13,6 +13,8 @@ class PersonTest extends QuerkiTests {
       val person = commonState.anything(personId)
       assert(person.isDefined)
       assert(commonSpace.member1.user.hasPerson(personId))
+      
+      assert(commonSpace.member1.user.mainIdentity.isPerson(person.get))
     }
   }
 
