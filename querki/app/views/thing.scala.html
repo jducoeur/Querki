@@ -2,6 +2,8 @@
 
 @import play.api.Logger
 
+@import models.system.IsModelProp
+
 @space = @{ rc.state.get }
 @thing = @{
   rc.thing match {
@@ -44,7 +46,10 @@
 
         @if(!rc.chromeless) {
 	    <div class="page-header">
-	      <h1 class="_defaultTitle">@Html(title) @if(canEdit) { <a class="btn btn-mini btn-primary" title="Edit @Html(title)" href="@routes.Application.editThing(rc.ownerHandle, space.toThingId, thing.toThingId)"><i class="icon-edit icon-white"></i></a> }</h1>
+	      <h1 class="_defaultTitle">@Html(title) 
+	        @if(canEdit) { <a class="btn btn-mini btn-primary" title="Edit @Html(title)" href="@routes.Application.editThing(rc.ownerHandle, space.toThingId, thing.toThingId)"><i class="icon-edit icon-white"></i></a> }
+	        @if(thing.ifSet(IsModelProp)(space)) { <a class="btn btn-mini btn-primary" title="Create a @Html(title)" href="@routes.Application.createThing(rc.ownerHandle, space.toThingId, Some(thing.toThingId))"><i class="icon-plus-sign icon-white"></i></a> }
+	      </h1>
 	      @modelOpt match { 
 	        case Some(model) => {
 	          <p class="_smallSubtitle">(<a href="@routes.Application.thing(rc.ownerId.toThingId, space.toThingId, rawThingId)">@rawThingId</a>, 
