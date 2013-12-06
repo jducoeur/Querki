@@ -394,7 +394,7 @@ abstract class Thing(
       propOpt match {
         case Some(prop) => {
           val pv = prop.pair(entry._2)
-          "<dt>" + prop.displayName + "</dt><dd>" + pv.render(thisAsContext).raw + "</dd>"
+          "<dt>" + prop.displayName + "</dt><dd>" + pv.render(thisAsContext).display + "</dd>"
         }
         case None => "<dt>" + entry._1 + "</dt><dd>Property not found!</dd>"
       }
