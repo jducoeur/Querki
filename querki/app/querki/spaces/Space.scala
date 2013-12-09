@@ -246,55 +246,18 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
               persister.request(Change(state, thingId, modelId, newProps, None)) {
                 case Changed(_, modTime) => {
                   // If the Type has changed, alter the Property itself accordingly:
-                  val newTypeOpt =
-                    for (
-                      newPropVal <- newProps.get(TypeProp);
-                      newTypeId <- newPropVal.firstTyped(LinkType);
-                      newType <- state.typ(newTypeId.toThingId)
-                        )
-                      yield newType
-                  // TBD: same ugly cast as we have in SpacePersister. Is there a way around this?
-                  val newType = newTypeOpt.getOrElse(prop.pType).asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]]
-	              val changedTypes:Boolean = (newType.id != prop.pType.id)
-                    
-                  val serializedValues:Map[Thing, String] = {
-                    if (changedTypes) {
-                      // Save off all of the existing property values in serialized form:
-                      for (
-                        (usingThingId, usingThing) <- state.things;
-                        if (usingThing.props.contains(thingId));
-                        oldPropAndVal <- usingThing.getPropOpt(thingId)(state);
-                        oldVal = oldPropAndVal.v
-                          )
-                        yield (usingThing -> prop.serialize(oldVal))
-                    } else
-                      Map.empty
-                  }
+                  val typeChange = PropTypeMigrator.prepChange(state, prop, newProps)
 	              
 	              val newProp = {
-                    if (changedTypes)
-                      prop.copy(pType = newType, m = modelId, pf = () => newProps, mt = modTime)
+                    if (typeChange.typeChanged)
+                      prop.copy(pType = typeChange.newType, m = modelId, pf = () => newProps, mt = modTime)
                     else
                       prop.copy(m = modelId, pf = () => newProps, mt = modTime)
                   }
                   
 	              updateState(state.copy(spaceProps = state.spaceProps + (thingId -> newProp)))
 	              
-	              if (changedTypes) {
-	                // Now, run through all of the previously-serialized values, and rebuild them with the new Type:
-	                serializedValues.foreach { oldPair =>
-	                  val (usingThing, serialized) = oldPair
-	                  val usingThingId = usingThing.id
-	                  val newV = newProp.deserialize(serialized)
-	                  val usingProps = usingThing.props + (thingId.id -> newV)
-	                  usingThing match {
-	                    case t:Attachment => updateState(state.copy(things = state.things + (usingThingId -> t.copy(pf = () => usingProps))))
-	                    case t:ThingState => updateState(state.copy(things = state.things + (usingThingId -> t.copy(pf = () => usingProps))))
-	                    case p:Property[_,_] => updateState(state.copy(spaceProps = state.spaceProps + (usingThingId -> p.copy(pf = () => usingProps))))
-	                    case s:SpaceState => updateState(state.copy(pf = () => usingProps))
-	                  }
-	                }
-	              }
+	              typeChange.finish(newProp, state, updateState)
 	              
 	              sender ! ThingFound(thingId, state)
                 }
