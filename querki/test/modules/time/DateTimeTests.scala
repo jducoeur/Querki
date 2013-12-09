@@ -1,0 +1,37 @@
+package modules.time
+
+import com.github.nscala_time.time.Imports._
+
+import models.system.{ExactlyOne}
+
+import querki.test._
+
+import modules.Modules.Time._
+
+class DateTimeTests extends QuerkiTests {
+  "DateTime" should {
+    
+    val jodaTime1 = new DateTime(2013, 3, 15, 10, 30)
+    
+    class TSpace extends CommonSpace {
+      val dateProp = new TestProperty(QDateTime, ExactlyOne, "DateTime Prop")
+      
+      val theModel = new SimpleTestThing("DateTime Model")
+      val thing1 = new TestThing("Thing 1", theModel, dateProp(jodaTime1))
+    }
+    
+    "wikify in default format" in {
+      val space = new TSpace
+      
+      processQText(thingAsContext[TSpace](space, _.thing1), """[[DateTime Prop]]""") should 
+        equal ("""Mar 15, 2013 10:30:00 AM""")      
+    }
+    
+    "wikify in custom format" in {
+      val space = new TSpace
+      
+      processQText(thingAsContext[TSpace](space, _.thing1), """[[DateTime Prop -> ""__MMM dd, hh:mm a__""]]""") should 
+        equal ("""Mar 15, 10:30 AM""")      
+    }
+  }
+}
