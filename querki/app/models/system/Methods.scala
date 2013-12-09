@@ -824,7 +824,7 @@ object SortMethod extends InternalMethod(SortMethodOID,
           |Produces all of the Instances of the "My Stuff" Model, sorted based on the "Title" Property. But it's possible to get much fancier if you need to:
           |EXP can be any QL Expression that receives a Link and produces a consistent Type.
           |
-          |If you need to reverse the order of the sort, use the [[_desc]] method inside of it.
+          |If you need to reverse the order of the sort, use the [[_desc._self]] method inside of it.
           |
           |If two or more elements being sorted have the same sort value, they will be sorted by Display Name.
           |
@@ -844,18 +844,19 @@ object SortMethod extends InternalMethod(SortMethodOID,
       val sortResult =
         for (
             params <- paramsOpt;
+            // This may return a wrapped Delegating Type. (Eg, DescendingType.)
             leftCalc = context.parser.get.processPhrase(params(0).ops, context.next(ExactlyOne(LinkType(left)))).value;
+            // IMPORTANT: leftResult is the ElemValue, and its pType may *not* be the same as leftCalc! The ElemValue
+            // is the real element, which is likely to be of the underlying PType, without any _desc wrapper:
             leftResult <- leftCalc.firstOpt orElse { Some(leftCalc.pType.default) };
             rightCalc = context.parser.get.processPhrase(params(0).ops, context.next(ExactlyOne(LinkType(right)))).value;
             rightResult <- rightCalc.firstOpt orElse { Some(rightCalc.pType.default) };
-            // Note that we have to compare their *classes*, so that _desc -- which produces a separate pseudo-Type each time
-            // -- can work:
-            if (leftResult.pType.getClass() == rightResult.pType.getClass());
+            if (leftResult.pType.realType == rightResult.pType.realType);
             // If the two values are equal, fall through to the default:
-            if (!leftResult.pType.matches(leftResult, rightResult))
+            if (!leftCalc.pType.matches(leftResult, rightResult))
           )
-          yield leftResult.pType.comp(context)(leftResult, rightResult)
-          
+          yield leftCalc.pType.comp(context)(leftResult, rightResult)
+
       // Default to sorting by displayName if anything doesn't work correctly:
       sortResult.getOrElse(left.displayName < right.displayName)
     }

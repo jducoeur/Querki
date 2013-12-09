@@ -13,20 +13,10 @@ import models.PType
  */
 case class ElemValue(elem:Any, pType:PType[_]) {
   
-  /**
-   * Deal with "unwrapping" a DelegatingType, to make get() work:
-   */
-  def realType(declaringType:PType[_]):PType[_] = {
-    if (declaringType.isInstanceOf[models.DelegatingType[_]])
-      declaringType.asInstanceOf[models.DelegatingType[_]].realType
-    else
-      declaringType    
-  }
-  
-  lazy val myType = realType(pType)
+  lazy val myType = pType.realType
   
   def matchesType[VT](expectedType:PType[VT]):Boolean = {
-    val realExpected = realType(expectedType)
+    val realExpected = expectedType.realType
     realExpected == myType
   }
   
@@ -37,7 +27,7 @@ case class ElemValue(elem:Any, pType:PType[_]) {
       elem.asInstanceOf[VT]
     else {
       try {
-        throw new Exception("Trying to cast ElemValue " + elem + ", of type " + myType + " to " + realType(expectedType))
+        throw new Exception("Trying to cast ElemValue " + elem + ", of type " + myType + " to " + expectedType.realType)
       } catch {
         case e:Exception => play.api.Logger.error("", e); throw e
       }
@@ -45,7 +35,7 @@ case class ElemValue(elem:Any, pType:PType[_]) {
   }
   
   def getOpt[VT](expectedType:PType[VT]):Option[VT] = {
-    val realExpected = realType(expectedType)
+    val realExpected = expectedType.realType
     if (realExpected == myType)
       // Here is The One Great Evil Cast, checked as best we can at runtime. Let's see if we can eliminate
       // all others.

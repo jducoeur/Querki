@@ -92,6 +92,14 @@ class MethodTests extends QuerkiTests
         equal (listOfLinkText(pointer2, pointer1, linkTarget))
     }
     
+    "sort by name with _desc" in {
+      val space = new testSpace
+      import space._
+      
+      processQText(thingAsContext[testSpace](space, _.wrapper), """[[My List of Links -> _sort(_desc(Name))]]""") should
+        equal (listOfLinkText(linkTarget, pointer1, pointer2))
+    }
+    
     "sort by direct Display Text Properties" in {
       class TSpace extends CommonSpace {
         val sortingProp = new TestProperty(LargeTextType, Optional, "Prop to Sort")

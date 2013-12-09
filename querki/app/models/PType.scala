@@ -155,6 +155,11 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
   def doMatches(left:VT, right:VT):Boolean = {
     left == right
   }
+  
+  /**
+   * The PType that underlies this one. Mainly here to support the DelegatingType mechanism.
+   */
+  lazy val realType:PType[VT] = this
 }
 
 /**
@@ -166,16 +171,23 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
  * might have to refactor all the way down to Thing, to make those constructor fields into trait fields instead.
  */
 class DelegatingType[VT](resolver: => PType[VT]) extends PType[VT](UnknownOID, UnknownOID, UnknownOID, () => emptyProps) {
-  lazy val realType:PType[VT] = resolver
+  /**
+   * Note that this is intentionally recursive, so it works with multiple layers of wrapping.
+   */
+  override lazy val realType:PType[VT] = resolver.realType
   
   def doDeserialize(v:String) = realType.doDeserialize(v)
   def doSerialize(v:VT) = realType.doSerialize(v)
   def doWikify(context:QLContext)(v:VT, displayOpt:Option[Wikitext] = None) = realType.doWikify(context)(v)
   
+  override def doMatches(left:VT, right:VT) = realType.doMatches(left, right)
+  
   def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = 
     realType.renderInputXml(prop, state, currentValue, v)
 
   lazy val doDefault = realType.doDefault
+  
+  override def toString = super.toString + ": " + realType.toString()
 }
 
 /**
