@@ -3,7 +3,7 @@ package querki.spaces
 import models.{Attachment, Property, PType, PTypeBuilder, Thing, ThingState}
 import models.Thing.PropMap
 
-import models.system.{IsTextType, LinkType, TypeProp}
+import models.system.{CollectionProp, IsTextType, LinkType, TypeProp}
 
 import querki.util._
 import querki.values._
@@ -46,10 +46,11 @@ object PropTypeMigrator {
    * This will throw a PublicException iff the change is *not* legal.
    */
   def checkLegalChange(state:SpaceState, oldThing:Thing, newProps:PropMap):Unit = {
+    implicit val s = state
     oldThing match {
       case prop:Property[_,_] => {
         for (
-          oldTypeVal <- oldThing.getPropOpt(TypeProp)(state);
+          oldTypeVal <- oldThing.getPropOpt(TypeProp);
           oldTypeId <- oldTypeVal.firstOpt;
           newPropVal <- newProps.get(TypeProp);
           newTypeId <- newPropVal.firstTyped(LinkType);
@@ -59,6 +60,15 @@ object PropTypeMigrator {
           if (!isLegalTypeChange(oldType, newType))
             )
           throw new PublicException("Space.modifyThing.illegalTypeChange", oldType.displayName, newType.displayName)
+        
+        for (
+          oldCollVal <- oldThing.getPropOpt(CollectionProp);
+          oldCollId <- oldCollVal.firstOpt;
+          newCollVal <- newProps.get(CollectionProp);
+          newCollId <- newCollVal.firstTyped(LinkType);
+          if (oldCollId != newCollId)
+            )
+          throw new PublicException("Space.modifyThing.illegalCollectionChange")
       }
       case _ =>
     }
