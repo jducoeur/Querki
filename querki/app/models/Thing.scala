@@ -298,7 +298,7 @@ abstract class Thing(
     val propAndValOpt = getPropOpt(prop)
     propAndValOpt match {
       case Some(propAndVal) => propAndVal.map(destType)(cb)
-      case None => prop.default
+      case None => Optional.Empty(destType)
     }
   }
   
