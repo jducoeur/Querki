@@ -3,8 +3,9 @@ package querki.spaces
 import models.{Attachment, Property, PType, PTypeBuilder, Thing, ThingState}
 import models.Thing.PropMap
 
-import models.system.{LinkType, TypeProp}
+import models.system.{IsTextType, LinkType, TypeProp}
 
+import querki.util._
 import querki.values._
 
 case class TypeChangeInfo(typeChanged:Boolean, newType:PType[Any] with PTypeBuilder[Any, Any], serializedValues:Map[Thing, String],
@@ -36,6 +37,33 @@ case class TypeChangeInfo(typeChanged:Boolean, newType:PType[Any] with PTypeBuil
  * Property. This is a sufficient big and complex problem as to demand its own class.
  */
 object PropTypeMigrator {
+  
+  private def isLegalTypeChange(oldType:PType[_], newType:PType[_]):Boolean = {
+    oldType.isInstanceOf[IsTextType] && newType.isInstanceOf[IsTextType]
+  }
+  
+  /**
+   * This will throw a PublicException iff the change is *not* legal.
+   */
+  def checkLegalChange(state:SpaceState, oldThing:Thing, newProps:PropMap):Unit = {
+    oldThing match {
+      case prop:Property[_,_] => {
+        for (
+          oldTypeVal <- oldThing.getPropOpt(TypeProp)(state);
+          oldTypeId <- oldTypeVal.firstOpt;
+          newPropVal <- newProps.get(TypeProp);
+          newTypeId <- newPropVal.firstTyped(LinkType);
+          if (oldTypeId != newTypeId);
+          oldType <- state.typ(oldTypeId.toThingId);
+          newType <- state.typ(newTypeId.toThingId);
+          if (!isLegalTypeChange(oldType, newType))
+            )
+          throw new PublicException("Space.modifyThing.illegalTypeChange", oldType.displayName, newType.displayName)
+      }
+      case _ =>
+    }
+  }
+  
   def prepChange(state:SpaceState, prop:Property[_,_], newProps:PropMap):TypeChangeInfo = {
     val propId = prop.id
     val newTypeOpt =

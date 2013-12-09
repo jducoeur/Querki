@@ -106,11 +106,11 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
   // properties. (At the least, we specifically do *not* allow any Tom, Dick and Harry to change permissions!)
   // TODO: Note that this is not fully implemented in AccessControlModule yet. We'll need to flesh it out further there
   // before we generalize this feature.
-  def canChangeProperties(who:User, oldProps:PropMap, newProps:PropMap):Try[Boolean] = {
-    val failedProp = changedProperties(oldProps, newProps).find(!state.canChangePropertyValue(who, _))
+  def canChangeProperties(who:User, oldThingOpt:Option[Thing], newProps:PropMap):Unit = {
+    val failedProp = changedProperties(oldThingOpt.map(_.props).getOrElse(Map.empty), newProps).find(!state.canChangePropertyValue(who, _))
     failedProp match {
-      case Some(propId) => Failure(new Exception("You're not allowed to edit property " + state.anything(propId).get.displayName))
-      case None => Success(true)
+      case Some(propId) => throw new PublicException("Space.modifyThing.propNotAllowed", state.anything(propId).get.displayName)
+      case _ => oldThingOpt.map(PropTypeMigrator.checkLegalChange(state, _, newProps))
     }
   }
   
@@ -168,11 +168,15 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
   {
     val spaceId = checkSpaceId(spaceThingId)
     val name = NameProp.firstOpt(props)
-    val canChangeTry = canChangeProperties(who, Map.empty, props)
+    val canChangeTry = 
+      TryTrans[Unit, Boolean] { canChangeProperties(who, None, props) }.
+        onSucc { _ => true }.
+        onFail { ex => sender ! ThingError(ex); false }.
+        result
     if (!canCreate(who, modelId))
       sender ! ThingError(new PublicException(CreateNotAllowed))
-    else if (canChangeTry.isFailure) {
-      canChangeTry.recover { case ex:Throwable => sender ! ThingError(new PublicException(CreateNotAllowed)) }
+    else if (!canChangeTry) {
+      // We've already sent the error at this point
     } else if (name.isDefined && state.anythingByName(name.get).isDefined)
       sender ! ThingError(new PublicException(NameExists, name.get))
     else {
@@ -210,11 +214,15 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
       oldThingOpt map { oldThing =>
         val thingId = oldThing.id
         val newProps = pf(oldThing)
-        val canChangeTry = canChangeProperties(who, oldThing.props, newProps)
+        val canChangeTry = 
+          TryTrans[Unit, Boolean] { canChangeProperties(who, Some(oldThing), newProps) }.
+            onSucc { _ => true }.
+            onFail { ex => sender ! ThingError(ex); false }.
+            result
         if (!canEdit(who, thingId)) {
           sender ! ThingError(new PublicException(ModifyNotAllowed))
-        } else if (canChangeTry.isFailure) {
-          canChangeTry.recover { case ex:Throwable => sender ! ThingError(new PublicException(ModifyNotAllowed)) }
+        } else if (!canChangeTry) {
+          // Error already sent
         } else {
           // TODO: compare properties, build a history record of the changes
 	      val modelId = modelIdOpt match {

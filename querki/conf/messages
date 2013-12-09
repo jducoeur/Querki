@@ -12,6 +12,8 @@ Space.createThing.nameExists=This Space already has a Thing with the name {0}
 Space.createThing.notAllowed=You are not allowed to create that
 
 Space.modifyThing.notAllowed=You are not allowed to modify that
+Space.modifyThing.propNotAllowed=You're not allowed to edit property {0}
+Space.modifyThing.illegalTypeChange=You are not currently allowed to change a Property from {0} to {1}
 
 Thing.find.noSuch=That path does not point to a Thing that you are allowed to see.
 Thing.find.unknownId=No Thing found with that id

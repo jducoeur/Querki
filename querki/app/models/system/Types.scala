@@ -114,8 +114,13 @@ trait CodeType {
     def +(other:QLText) = QLText(text + other.text)
   }
   
+  /**
+   * Trivial marker trait, that simply identifies the "Text Types" that are similarly serializable.
+   */
+  trait IsTextType
+  
   abstract class TextTypeBase(oid:OID, pf:PropFetcher) extends SystemType[QLText](oid, pf
-      ) with PTypeBuilder[QLText,String] with CodeType
+      ) with PTypeBuilder[QLText,String] with CodeType with IsTextType
   {
     def doDeserialize(v:String) = QLText(v)
     def doSerialize(v:QLText) = v.text
@@ -503,7 +508,7 @@ case class PlainText(text:String) {
 abstract class PlainTextType(tid:OID) extends SystemType[PlainText](tid,
     toProps(
       setName("Plain Text Type")
-    )) with PTypeBuilder[PlainText,String]
+    )) with PTypeBuilder[PlainText,String] with IsTextType
 {
   def doDeserialize(v:String) = PlainText(v)
   def doSerialize(v:PlainText) = v.text
