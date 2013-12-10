@@ -75,6 +75,7 @@ case class QLLink(contents:ParsedQLText) extends QLTextPart {
 case class ParsedQLText(parts:Seq[QLTextPart]) {
   def reconstructString = parts.map(_.reconstructString).mkString
 }
+case class QLSpace(text:String)
 
 class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None) extends RegexParsers {
   
@@ -124,6 +125,10 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
   // We don't want the RegexParser removing whitespace on our behalf. Note that we need to be
   // very careful about whitespace!
   override val whiteSpace = "".r
+
+  // Comments are defined in here. Note that a comment is defined as everything from "//"
+  // to the end of the line *or* a "]]", so that we can put them at the end of an expression.
+  def qlSpace:Parser[QLSpace] = "(\\s*(//([^\n\\]]|(\\]?!\\]))*)?\\s*)*".r ^^ { QLSpace(_) }
   
   def unQLText:Parser[UnQLText] = (unQLTextRegex | 
       // You can use backslash to escape the "special" QL syntax delimiters:
@@ -138,9 +143,8 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
     case collFlag ~ text => QLTextStage(text, collFlag) }
   def qlBinding:Parser[QLBinding] = "\\s*\\$".r ~> name ^^ { QLBinding(_) } 
   def qlStage:Parser[QLStage] = qlBinding | qlCall | qlTextStage
-  // TODO: phrase is going to get a *lot* more complex with time:
-  def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, "(\\s*(//[^\n]*)?\\s*)*->(\\s*(//[^\n]*)?\\s*)*".r) ^^ { QLPhrase(_) }
-  def qlExp:Parser[QLExp] = rep1sep(qlPhrase, "\\s*\\r?\\n|\\s*;\\s*".r) ^^ { QLExp(_) }
+  def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, qlSpace ~ "->".r ~ qlSpace) ^^ { QLPhrase(_) }
+  def qlExp:Parser[QLExp] = opt(qlSpace) ~> repsep(qlPhrase, "\\s*\\r?\\n|\\s*;\\s*".r) <~ opt(qlSpace) ^^ { QLExp(_) }
   def qlLink:Parser[QLLink] = qlText ^^ { QLLink(_) }
   def qlText:Parser[ParsedQLText] = rep(unQLText | "[[" ~> qlExp <~ "]]" | "__" ~> qlLink <~ ("__" | failure("Underscores must always be in pairs or sets of four"))) ^^ { 
     ParsedQLText(_) }
