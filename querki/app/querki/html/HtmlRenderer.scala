@@ -107,7 +107,7 @@ object HtmlRenderer {
   
   def renderOptYesNo(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Elem = {
     val pType = YesNoType
-    val pair = currentValue.v.map(propVal => if (propVal.cv.isEmpty) (false, pType.default) else (true, propVal.first)).getOrElse((false, pType.default))
+    val pair = currentValue.effectiveV.map(propVal => if (propVal.cv.isEmpty) (false, pType.default) else (true, propVal.first)).getOrElse((false, pType.default))
     val isSet = pair._1
     val v = pType.get(pair._2)
     
@@ -129,7 +129,7 @@ object HtmlRenderer {
   
   def renderOptLink(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Elem = {
     val pType = LinkType
-    val pair = currentValue.v.map(propVal => if (propVal.cv.isEmpty) (false, pType.default) else (true, propVal.first)).getOrElse((false, pType.default))
+    val pair = currentValue.effectiveV.map(propVal => if (propVal.cv.isEmpty) (false, pType.default) else (true, propVal.first)).getOrElse((false, pType.default))
     val isSet = pair._1
     val v = pType.get(pair._2)
     
@@ -142,7 +142,7 @@ object HtmlRenderer {
   }
   
   def getTagSetNames(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Option[Iterable[(String,String)]] = {
-    val currentV = currentValue.v
+    val currentV = currentValue.effectiveV
     val pt = prop.pType
     
     def getKeyAndVal(elem:ElemValue):(String, String) = {

@@ -171,6 +171,7 @@ object NotInheritedProp extends SystemProperty(NotInheritedOID, YesNoType, Exact
 object DisplayNameProp extends SystemProperty(DisplayNameOID, PlainTextType, Optional,
     toProps(
       setName("Display Name"),
+      NotInheritedProp(true),
       modules.Modules.Types.MinTextLengthProp(1),
       PropSummary("How to show this Thing's Name"),
       PropDetails("""Most Things in Querki have a Name. (It isn't strictly required, but strongly encouraged most

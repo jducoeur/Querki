@@ -165,6 +165,8 @@ case class DisplayPropVal(on:Option[Thing], prop: Property[_,_], v: Option[QValu
   lazy val isInherited = v.isEmpty && inheritedVal.isDefined
   
   lazy val hasInheritance = inheritedVal.isDefined
+  
+  lazy val effectiveV = v.orElse(inheritedVal)
 }
 
 object Property {

@@ -80,7 +80,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     def wrap(elem:ElemValue):implType = List(elem)
     
     def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
-      val v = currentValue.v.flatMap(_.firstOpt).getOrElse(elemT.default)
+      val v = currentValue.effectiveV.flatMap(_.firstOpt).getOrElse(elemT.default)
       elemT.renderInput(prop, state, currentValue, v)
     }
 
@@ -136,7 +136,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
       // TODO: what should we do here? Has custom rendering become unnecessary here? Does the appearance of the
       // trash button eliminate the need for anything fancy for Optional properties?
-      val v = currentValue.v.flatMap(_.firstOpt).getOrElse(elemT.default)
+      val v = currentValue.effectiveV.flatMap(_.firstOpt).getOrElse(elemT.default)
       elemT.renderInput(prop, state, currentValue, v)
     }
 
@@ -191,8 +191,8 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       val addButtonId = currentValue.collectionControlId + "-addButton"
       <div class="coll-list-input" data-delegate-disable-to={addButtonId}>
         <ul id={currentValue.collectionControlId} class="sortableList">{
-          if (currentValue.v.isDefined) {
-            val cv = currentValue.v.get.cv
+          currentValue.effectiveV.map { v =>
+            val cv = v.cv
             cv.zipWithIndex.map { pair =>
               val (elemV, i) = pair
               val simplyRendered = elemT.renderInput(prop, state, currentValue, elemV)
@@ -201,7 +201,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
               	Attribute("name", Text(currentValue.collectionControlId + "-item[" + i + "]"), Null))
               <li><span class="icon-move"></span>{itemRendered}<button class="delete-item-button btn-mini">&nbsp;</button></li>
             }
-          }
+          }.getOrElse(NodeSeq.Empty)
         }</ul>
         <button class="add-item-button btn-mini" id={addButtonId} data-size={currentValue.collectionControlId + "-size"}>&nbsp;</button>
         <input type="hidden" id={currentValue.collectionControlId + "-size"} value={currentValue.v.map(_.cv.size).getOrElse(0).toString}/>
