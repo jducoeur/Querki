@@ -63,7 +63,6 @@ case class QLTextStage(contents:ParsedQLText, collFlag:Option[String]) extends Q
 case class QLBinding(name:String) extends QLStage(None) {
   def reconstructString = "$" + name
 }
-//case class QLPlainTextStage(text:String) extends QLStage
 case class QLPhrase(ops:Seq[QLStage]) {
   def reconstructString = ops.map(_.reconstructString).mkString(" -> ")
 }
@@ -113,7 +112,8 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
     result
   }
   
-  val name = """[a-zA-Z_][\w-_/ ]*[\w]""".r
+  // Note that we allow *one* slash in a name, but not pairs:
+  val name = """[a-zA-Z_]([\w-_ ]|/?!/)*[\w]""".r
   // These two regexes are used in the unQLText production. Yes, they *could* be combined into one
   // expression, and originally were. They were split because having them together apparently does
   // something horrible to Java's Regex engine -- if you tried to feed it more than a page or so of
@@ -136,12 +136,10 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
   // Note that the failure() here only works because we specifically disallow "]]" in a Text!
   def qlTextStage:Parser[QLTextStage] = (opt("\\*\\s*".r) <~ "\"\"") ~ qlText <~ ("\"\"" | failure("Reached the end of the QL expression, but missing the closing \"\" for a Text expression in it") ) ^^ {
     case collFlag ~ text => QLTextStage(text, collFlag) }
-  // TODO: get this working properly, so we have properly plain text literals:
-//  def qlPlainTextStage:Parser[QLPlainTextStage] = "\"" ~> unQLTextRegex <~ "\"" ^^ { QLPlainTextStage(_) }
   def qlBinding:Parser[QLBinding] = "\\s*\\$".r ~> name ^^ { QLBinding(_) } 
-  def qlStage:Parser[QLStage] = qlBinding | qlCall | qlTextStage // | qlPlainTextStage
+  def qlStage:Parser[QLStage] = qlBinding | qlCall | qlTextStage
   // TODO: phrase is going to get a *lot* more complex with time:
-  def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, "\\s*->\\s*".r) ^^ { QLPhrase(_) }
+  def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, "(\\s*(//[^\n]*)?\\s*)*->(\\s*(//[^\n]*)?\\s*)*".r) ^^ { QLPhrase(_) }
   def qlExp:Parser[QLExp] = rep1sep(qlPhrase, "\\s*\\r?\\n|\\s*;\\s*".r) ^^ { QLExp(_) }
   def qlLink:Parser[QLLink] = qlText ^^ { QLLink(_) }
   def qlText:Parser[ParsedQLText] = rep(unQLText | "[[" ~> qlExp <~ "]]" | "__" ~> qlLink <~ ("__" | failure("Underscores must always be in pairs or sets of four"))) ^^ { 

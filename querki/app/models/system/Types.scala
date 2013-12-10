@@ -315,6 +315,8 @@ object QLType extends QLType(QLTypeOID)
         throw new PublicException("Types.Name.empty")
       else if (v.length() > 254)
         throw new PublicException("Types.Name.tooLong")
+      // TODO: this should forbid double-slashes, since "//" is a comment in QL. Possibly
+      // we should unify this with the QLParser.name regex?
       else if (v.exists(c => !c.isLetterOrDigit && c != '-' && c != ' ' && c != '/'))
         throw new PublicException("Types.Name.badChars")
       else

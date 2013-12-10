@@ -14,6 +14,22 @@ class QLTests extends QuerkiTests {
     }
   }
   
+  "Arrows" should {
+    "work inline" in {
+      processQText(commonThingAsContext(_.sandbox), """[[My Model._instances -> _sort]]""".stripMargin) should equal (listOfLinkText(commonSpace.instance))              
+    }
+    
+    "work at end of line" in {
+      processQText(commonThingAsContext(_.sandbox), """[[My Model._instances -> 
+          | _sort]]""".stripMargin) should equal (listOfLinkText(commonSpace.instance))              
+    }
+    
+    "work at start of line" in {
+      processQText(commonThingAsContext(_.sandbox), """[[My Model._instances 
+          |-> _sort]]""".stripMargin) should equal (listOfLinkText(commonSpace.instance))              
+    }
+  }
+  
   "Ordinary references" should {
     "return through the initial context" in {
       processQText(commonThingAsContext(_.withUrl), "[[My Optional URL]]") should
@@ -131,4 +147,44 @@ class QLTests extends QuerkiTests {
         equal ("Wrong value!")            
     }
   }
+  
+  "Comments" should {
+    "work as the whole body" in {
+      processQText(commonThingAsContext(_.sandbox), "[[// This is a comment, which does nothing]]") should
+        equal ("")
+    }
+    
+    "work at the beginning of a line" in {
+      processQText(commonThingAsContext(_.sandbox), """[[My Model._instances ->
+          |// This is a comment
+          |  _sort]]""".stripMargin) should equal (listOfLinkText(commonSpace.instance))        
+    }
+    
+    "work indented" in {
+      processQText(commonThingAsContext(_.sandbox), """[[My Model._instances ->
+          |  // This is a comment
+          |  _sort]]""".stripMargin) should equal (listOfLinkText(commonSpace.instance))        
+    }
+    
+    "work after an arrow" in {
+      processQText(commonThingAsContext(_.sandbox), """[[My Model._instances -> // This is a comment
+          |  _sort]]""".stripMargin) should equal (listOfLinkText(commonSpace.instance))        
+    }
+    
+    "work before an arrow" in {
+      processQText(commonThingAsContext(_.sandbox), """[[My Model._instances // This is a comment
+          |  -> _sort]]""".stripMargin) should equal (listOfLinkText(commonSpace.instance))
+    }
+    
+    "work at the beginning of the expression" in {
+      processQText(commonThingAsContext(_.sandbox), """[[// This is a comment
+          |My Model._instances ->
+          |  _sort]]""".stripMargin) should equal (listOfLinkText(commonSpace.instance))        
+    }
+    
+    "work at the end of the expression" in {
+      processQText(commonThingAsContext(_.sandbox), """[[My Model._instances ->
+          |  _sort
+          |// This is a comment]]""".stripMargin) should equal (listOfLinkText(commonSpace.instance))        
+    }  }
 }
