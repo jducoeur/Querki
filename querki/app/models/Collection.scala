@@ -85,32 +85,7 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
   }
 
   import play.api.data.Form
-  // TODO: this really doesn't belong here. We need to tease the HTTP/HTML specific
-  // stuff out from the core concepts.
-  // TODO: this will need refactoring, to get more complex on a per-Collection basis
-  def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo = {
-    val fieldIds = FieldIds(on, prop)
-    val empty = form(fieldIds.emptyControlId).value map (_.toBoolean) getOrElse false
-    if (empty) {
-      FormFieldInfo(prop, None, true, true)
-    } else {
-      val formV = form(fieldIds.inputControlId).value
-      formV match {
-    	// Normal case: pass it to the PType for parsing the value out:
-        case Some(v) => {
-          TryTrans { elemT.validate(v, prop, state) }.
-            onSucc { _ => FormFieldInfo(prop, Some(apply(elemT.fromUser(v))), false, true, Some(v)) }.
-            onFail { ex => FormFieldInfo(prop, None, true, false, Some(v), Some(ex)) }.
-            result
-        }
-        // There was no field value found. In this case, we take the default. That
-        // seems strange, but this case is entirely valid in the case of a checkbox.
-        // IMPORTANT / TODO: this code is horribly specific to the weird edge case of
-        // checkboxes! I don't love it, and it needs heavy testing!
-        case None => FormFieldInfo(prop, Some(apply(elemT.default)), false, true)
-      }
-    }
-  }
+  def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo
   
   /**
    * TODO: this needs to become much more sophisticated, but it's a start.
@@ -141,7 +116,7 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
  * which causes looping. In particular, we need a Collection for the initial PropValues
  * to point to.
  */
-class NameCollection extends Collection(IllegalOID, systemOID, systemOID, () => emptyProps) {
+class NameCollection extends system.SingleElementBase(IllegalOID, () => emptyProps) {
   type implType = List[ElemValue]
 
   def doDeserialize(ser:String, elemT:pType):implType = List(elemT.deserialize(ser))

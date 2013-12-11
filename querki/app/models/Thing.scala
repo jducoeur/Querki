@@ -144,15 +144,23 @@ abstract class Thing(
    */
   def displayName:String = displayNameText.toString
   
+  def lookupDisplayName:Option[PropAndVal[_]] = {
+    val dispOpt = localProp(DisplayNameProp)
+    if (dispOpt.isEmpty || dispOpt.get.isEmpty)
+      localProp(NameProp)
+    else
+      dispOpt
+  }
+  
   /**
    * The Display Name of this Thing. This is the underlying form of access, and should
    * be used to get at it as Html or HtmlWikitext. It has already been HTML-neutered, and
    * is the safest and most flexible way to use this name.
    */
   def displayNameText:DisplayText = {
-    val localName = localProp(DisplayNameProp) orElse localProp(NameProp)
+    val localName = lookupDisplayName
     if (localName.isEmpty)
-      DisplayText(id.toString)
+      DisplayText(id.toThingId.toString)
     else {
       localName.get.renderPlain.raw
     }    
@@ -166,7 +174,7 @@ abstract class Thing(
    * you will be using it in!
    */
   def unsafeDisplayName:String = {
-    val localName = localProp(DisplayNameProp) orElse localProp(NameProp)
+    val localName = lookupDisplayName
     if (localName.isEmpty)
       id.toString
     else {

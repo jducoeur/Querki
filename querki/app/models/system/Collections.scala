@@ -5,6 +5,9 @@ import scala.xml._
 
 import play.api.Logger
 
+// TODO: solely for fromUser, which really should get moved elsewhere:
+import play.api.data.Form
+
 import models._
 
 import Thing._
@@ -48,9 +51,45 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
 	def makePropValue(cv:Iterable[ElemValue], pType:PType[_]):QValue =
 	  throw new Error("Trying to makePropValue root collection!")    
     def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem =
-	  throw new Error("Trying to render input on root collection!")    
+	  throw new Error("Trying to render input on root collection!")
+	def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo =
+	  throw new Error("Trying to fromUser on root collection!")
   }
   object UrCollection extends UrCollection
+  
+abstract class SingleElementBase(cid:OID, pf:PropFetcher) extends SystemCollection(cid, pf)
+{
+  // TODO: this really doesn't belong here. We need to tease the HTTP/HTML specific
+  // stuff out from the core concepts.
+  // TODO: this will need refactoring, to get more complex on a per-Collection basis
+  def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo = {
+    val fieldIds = FieldIds(on, prop)
+    val empty = form(fieldIds.emptyControlId).value map (_.toBoolean) getOrElse false
+    if (empty) {
+      FormFieldInfo(prop, None, true, true)
+    } else {
+      val formV = form(fieldIds.inputControlId).value
+      formV match {
+    	// Normal case: pass it to the PType for parsing the value out:
+        case Some(v) => {
+          rawInterpretation(v, prop, elemT).getOrElse {
+            TryTrans { elemT.validate(v, prop, state) }.
+              onSucc { _ => FormFieldInfo(prop, Some(apply(elemT.fromUser(v))), false, true, Some(v)) }.
+              onFail { ex => FormFieldInfo(prop, None, true, false, Some(v), Some(ex)) }.
+              result
+          }
+        }
+        // There was no field value found. In this case, we take the default. That
+        // seems strange, but this case is entirely valid in the case of a checkbox.
+        // IMPORTANT / TODO: this code is horribly specific to the weird edge case of
+        // checkboxes! I don't love it, and it needs heavy testing!
+        case None => FormFieldInfo(prop, Some(apply(elemT.default)), false, true)
+      }
+    }
+  }
+  
+  def rawInterpretation(v:String, prop:Property[_,_], elemT:pType):Option[FormFieldInfo] = None
+}
   
   /**
    * ExactlyOne is essentially Some -- it is quite intentionally Optional without the choice of None.
@@ -60,7 +99,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
    * 
    * TODO: rewrite ExactlyOne and Optional to be based on an actual Iterable with the right semantics.
    */
-  class ExactlyOne(cid:OID) extends SystemCollection(cid,
+  class ExactlyOne(cid:OID) extends SingleElementBase(cid,
     ExactlyOneProps.fetchProps) 
   {
     type implType = List[ElemValue]
@@ -96,12 +135,22 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
     }    
   }
   
-  class Optional(cid:OID) extends SystemCollection(cid,
+  class Optional(cid:OID) extends SingleElementBase(cid,
       toProps(
         setName("Optional")
         )) 
   {
     type implType = List[ElemValue]
+    
+    override def rawInterpretation(v:String, prop:Property[_,_], elemT:pType):Option[FormFieldInfo] = {
+      // If the input was empty, that's QNone.
+      // TODO: this isn't good enough for the long run -- we'll have to do something more
+      // sophisticated when we get to complex Types. But it's a start.
+      if (v.length() == 0)
+        Some(FormFieldInfo(prop, Some(QNone), false, true))
+      else
+        None
+    }
     
     def doDeserialize(ser:String, elemT:pType):implType = {
       ser match {
@@ -305,6 +354,9 @@ class QUnit(cid:OID) extends SystemCollection(cid,
   def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
     <i>Defined</i>
   }
+
+  def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo =
+	throw new Error("Trying to fromUser on Unit!")
 }
 object QUnit extends QUnit(QUnitOID)
     
