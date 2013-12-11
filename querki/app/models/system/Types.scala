@@ -17,24 +17,27 @@ import querki.util._
 import querki.values._
 
 abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, systemOID, RootOID, pf) {
-  def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = 
-    CommonInputRenderers.renderText(prop, state, currentValue, v, this)
+  def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = {
+    // TBD: this is smelly -- the fact that we need to know here how to render Optional is a nasty abstraction
+    // break. But in general, rendering probably doesn't belong here: ultimately, rendering depends on the
+    // Collection/Type matrix, and there doesn't seem to be a nice clean division of responsibilities...
+    val renderedBlank = for (
+      ev <- currentValue.effectiveV;
+      if (displayEmptyAsBlank && ev.cType == Optional && ev.isEmpty)
+        )
+      yield CommonInputRenderers.renderBlank(prop, state, currentValue, this)
+      
+    renderedBlank.getOrElse(CommonInputRenderers.renderText(prop, state, currentValue, v, this))
+  }
+  
+  // Iff a Type wants to render QNone as blank text instead of the default value, set this to true
+  val displayEmptyAsBlank:Boolean = false
 }
 
 object CommonInputRenderers {
   def renderAnyText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_])(doRender: (String) => Elem):Elem = {
     val str = elemT.toUser(v)
     val xml = doRender(str)
-    // TODO: how should placeholder work in the new world? The placeholder should happen at the
-    // collection-input level? Or am I mis-thinking that? There is only one text-input field, even
-    // for a list, after all.
-//    val placeholder:String =
-//      if (currentValue.hasInheritance)
-//        currentValue.inheritedVal.get
-//      else
-//        prop.getProp(PlaceholderTextProp)(state).renderPlainIfDefined.raw
-//    val xml2 = xml % Attribute("placeholder", Text(placeholder), Null)
-//    xml2
     xml
   }
   
@@ -48,6 +51,10 @@ object CommonInputRenderers {
     renderAnyText(prop, state, currentValue, v, elemT) { cv =>
       <input type="text" value={cv}/>
     }
+  }
+  
+  def renderBlank(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):Elem = {
+    renderText(prop, state, currentValue, TextType(""), TextType)
   }
 }
 
@@ -78,6 +85,8 @@ trait CodeType {
         setName("Whole Number Type")
         )) with SimplePTypeBuilder[Int]
   {
+    override val displayEmptyAsBlank:Boolean = true
+    
     def doDeserialize(v:String) = try {
       java.lang.Integer.parseInt(v)
     } catch {
