@@ -2,7 +2,7 @@ package querki.test
 
 import models.{Attachment, ThingState}
 import models.Kind
-import models.system.{ExternalLinkType, LinkType}
+import models.system.{ExternalLinkType, LinkType, TextType}
 import models.system.{ExactlyOne, Optional, QList}
 import models.system.{IsModelProp}
 import models.system.OIDs.PageOID
@@ -31,6 +31,8 @@ class CommonSpace extends TestSpace {
   val optURLProp = new TestProperty(ExternalLinkType, Optional, "My Optional URL")
   
   val singleLinkProp = new TestProperty(LinkType, ExactlyOne, "Single Link")
+  
+  val optTextProp = new TestProperty(TextType, Optional, "My Optional Text")
 
   /***********************************************
    * THINGS
@@ -43,7 +45,7 @@ class CommonSpace extends TestSpace {
   
   // A simple default Model and Instance.
   val testModel = new SimpleTestThing("My Model", IsModelProp(true))
-  val instance = new TestThing("My Instance", testModel) 
+  val instance = new TestThing("My Instance", testModel, optTextProp("Hello world")) 
   
   /**
    * A simple imitation "photograph".

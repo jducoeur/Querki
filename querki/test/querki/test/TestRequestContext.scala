@@ -1,6 +1,6 @@
 package querki.test
 
-import models.{Thing}
+import models.{OID, Thing}
 
 import querki.identity.{Identity, IdentityKind, User}
 import querki.identity.UserLevel._
@@ -16,9 +16,9 @@ case object BasicTestUser extends User {
   val tosVersion = noTOSUserVersion  
 }
 
-case class SimpleTestRequestContext(s:SpaceState, t:Thing) extends RequestContext(
-    Some(BasicTestUser),
-    BasicTestUser.id,
+case class SimpleTestRequestContext(o:OID, s:SpaceState, t:Thing)(implicit requester:User = BasicTestUser) extends RequestContext(
+    Some(requester),
+    o,
     Some(s),
     Some(t))
 {

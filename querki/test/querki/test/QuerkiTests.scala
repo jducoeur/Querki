@@ -8,6 +8,8 @@ import models.system.{NameType, QLText}
 
 import ql.QLParser
 
+import querki.identity.User
+
 import querki.values.{QLContext, SpaceState}
 
 class QuerkiTests 
@@ -35,13 +37,17 @@ class QuerkiTests
     (space.state, thing)
   }
   
-  def thingAsContext[S <: CommonSpace](space:S, f: S => Thing):QLContext = {
+  /**
+   * Note that, by default, requests are made by the BasicTestUser, who has nothing to do with this Space.
+   * To make the request in the name of the owner or a member instead, set an implicit User in the test.
+   */
+  def thingAsContext[S <: CommonSpace](space:S, f: S => Thing)(implicit requester:User = BasicTestUser):QLContext = {
     val (state, thing) = spaceAndThing(space, f)
-    val rc = SimpleTestRequestContext(state, thing)
+    val rc = SimpleTestRequestContext(space.owner.mainIdentity.id, state, thing)
     thing.thisAsContext(rc)
   }
   
-  def commonThingAsContext(f: CommonSpace => Thing):QLContext = thingAsContext(commonSpace, f)
+  def commonThingAsContext(f: CommonSpace => Thing)(implicit requester:User = BasicTestUser):QLContext = thingAsContext(commonSpace, f)
   
   /**
    * Given a list of expected Things that comes out at the end of a QL expression, this is the
