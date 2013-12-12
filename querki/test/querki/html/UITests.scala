@@ -42,5 +42,16 @@ class UITests extends QuerkiTests {
       assert(classes.toString.contains("myClass"))
       assert(classes.toString.contains("otherClass"))
     }
+    
+    "add classes to a text" in {
+      processQText(commonThingAsContext(_.instance), """[[""hello world"" -> _class(""myClass otherClass"")]]""") should
+        equal ("""<div class="para myClass otherClass">hello world</div>""")
+    }
+    
+    "add classes to a bullet list" in {
+      processQText(commonThingAsContext(_.instance), """[[""* hello
+          |* world"" -> _class(""myClass otherClass"")]]""".stripMargin) should
+        equal ("<ul class=\"myClass otherClass\">\n<li>hello</li>\n<li>world</li>\n</ul>")
+    }
   }
 }
