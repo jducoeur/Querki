@@ -26,5 +26,6 @@ Types.Name.badChars=Names may only contain letters, digits, and spaces
 Types.Number.badFormat=Numbers should only contain digits
 Types.Text.tooShort={0} must be at least {1} characters long, not counting spaces at the beginning and end
 
-UI.class.htmlRequired=The _class function only works with raw HTML values, such as those produced by _edit, or Text blocks
+UI.class.htmlRequired=The _class function only works with raw HTML values (such as those produced by _edit) or Text blocks
 UI.class.classRequired=The _class function requires one parameter, a Text containing the names of the classes to inject: _class(""myClassName"")
+UI.class.notWellFormed=The text received by _class was not well-formed XML. For the time being, _class can only cope with a single HTML element, not multiple paragraphs.

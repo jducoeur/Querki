@@ -6,7 +6,7 @@ import play.api.templates.Html
 
 import models.{HtmlWikitext}
 import models.Thing._
-import models.system.{InternalMethod, PropSummary}
+import models.system.{InternalMethod, PropDetails, PropSummary}
 
 import modules.Module
 
@@ -28,7 +28,21 @@ class UIModule(val moduleId:Short) extends Module {
   lazy val classMethod = new InternalMethod(ClassMethodOID,
       toProps(
         setName("_class"),
-        PropSummary("Add an class tag to the received HTML value")
+        PropSummary("Add a class tag to the received HTML value"),
+        PropDetails("""Usually, to add HTML classes to something (to make them look pretty via CSS), you use the
+            |\{\{class:...\}\} mechanism. But that *wraps* the text, inside of a div or span, and while that is
+            |usually good enough, sometimes it doesn't do everything you need. So _class provides an alternate way
+            |to do this via QL -- given an HTML block, this adds the class to *that* block, instead of wrapping it
+            |in another.
+            |
+            |This is mainly intended for use with _edit, to do something like this:
+            |[[_code(""[[My Thing -> My Prop._edit -> _class(""myClass"")]]"")]]
+            |This will create an Edit input for My Prop, with myClass attached so you can control its display.
+            |
+            |This can also be used to add a class to a given text block:
+            |[[_code(""[[""Hello world"" -> _class(""myClass"")]]"")]]
+            |This will create a paragraph for "hello world" as usual, but will attach "myClass" as a class on that
+            |paragraph. (This is less often necessary, but occasionally helpful.)""".stripMargin)
           ))
   {
     override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
@@ -54,20 +68,23 @@ class UIModule(val moduleId:Short) extends Module {
         HtmlWikitext(newHtml)        
       }
       
-      v.pType match {
-        case RawHtmlType => {
-	      v.map(RawHtmlType, RawHtmlType) { wikitext =>
-	        wikitext match {
-	          case HtmlWikitext(html) => processHtml(html)
+      try {
+	      v.pType match {
+	        case RawHtmlType => {
+		      v.map(RawHtmlType, RawHtmlType) { wikitext =>
+		        wikitext match {
+		          case HtmlWikitext(html) => processHtml(html)
+		        }
+		      }          
 	        }
-	      }          
-        }
-        
-        case ParsedTextType => {
-	      v.map(ParsedTextType, RawHtmlType) { wikitext => processHtml(wikitext.display.html) }          
-        }
+	        
+	        case ParsedTextType => {
+		      v.map(ParsedTextType, RawHtmlType) { wikitext => processHtml(wikitext.display.html) }          
+	        }
+	      }
+      } catch {
+        case ex:org.xml.sax.SAXParseException => throw new PublicException("UI.class.notWellFormed")
       }
-
     }
   }
 

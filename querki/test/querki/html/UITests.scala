@@ -53,5 +53,12 @@ class UITests extends QuerkiTests {
           |* world"" -> _class(""myClass otherClass"")]]""".stripMargin) should
         equal ("<ul class=\"myClass otherClass\">\n<li>hello</li>\n<li>world</li>\n</ul>")
     }
+    
+    "not yet add classes to a multiparagraph text" in {
+      processQText(commonThingAsContext(_.instance), """[[""hello
+          |
+          |world"" -> _class(""myClass otherClass"")]]""".stripMargin) should
+        equal (expectedWarning("UI.class.notWellFormed"))
+    }
   }
 }
