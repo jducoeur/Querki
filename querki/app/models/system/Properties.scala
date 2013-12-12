@@ -342,3 +342,14 @@ object PropDetails extends SystemProperty(PropDetailsOID, LargeTextType, Optiona
     	  |It is entirely optional -- put something in here if it makes sense. In general, the more complex the
           |Space, and the more people who will be using it, the wiser it becomes to give Details for all of your
           |Properties. If this Space is simple and just for you, it usually isn't necessary.""".stripMargin)))))
+
+object DeprecatedProp extends SystemProperty(DeprecatedOID, YesNoType, ExactlyOne,
+    toProps(
+      setName("Deprecated"),
+      PropSummary("True iff this Thing is Deprecated."),
+      PropDetails("""This is a marker flag that you can put on a Thing to say that it is on its way out, and shouldn't
+          |be used any more.
+          |
+          |The exact meaning of Deprecated depends on the situation, but Querki will tend to hide Things marked as
+          |Deprecated. If you see somewhere that a Deprecated Thing is visible and shouldn't be, please log a bug
+          |report about it.""".stripMargin)))

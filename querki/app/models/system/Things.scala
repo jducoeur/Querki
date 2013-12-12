@@ -44,16 +44,17 @@ object UrThing extends ThingState(RootOID, systemOID, RootOID,
 }
   
 
-object Page extends ThingState(PageOID, systemOID, RootOID,
-    toProps(
-      setName("Simple-Page"),
-      IsModelProp(true),
-      DisplayTextProp(Optional.QNone)))
-
 object SimpleThing extends ThingState(SimpleThingOID, systemOID, RootOID,
     toProps(
       setName("Simple-Thing"),
-      IsModelProp(true)))
+      IsModelProp(true),
+      DisplayTextProp(Optional.QNone)))
+
+object Page extends ThingState(PageOID, systemOID, SimpleThingOID,
+    toProps(
+      setName("Simple-Page"),
+      IsModelProp(true),
+      DeprecatedProp(true)))
 
 object PhotoBase extends ThingState(PhotoBaseOID, systemOID, RootOID,
     toProps(

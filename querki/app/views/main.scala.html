@@ -45,7 +45,7 @@
 
 @createOptGroups(s:SpaceState) = {
         <optgroup label="Models in @s.displayName">
-          @for(model <- s.models.toSeq.sortBy(_.displayName)) {
+          @for(model <- s.models.toSeq.filterNot(_.ifSet(DeprecatedProp)(s)).sortBy(_.displayName)) {
             <option value="@model.toThingId">@model.displayName</option>
           }
         </optgroup>
