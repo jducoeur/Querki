@@ -36,6 +36,10 @@ class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:
         setName("Name"),
         placeholderText("Name..."),
         NotInheritedProp(true),
+        // Name does *not* show up unless you explicitly ask for it.
+        // TODO: we'll eventually want to get more subtle about this, and show Name on Things that
+        // have Never Derive Name set. But that's an edge case...
+        NotDisplayedInInstancesProp(true),
         PropSummary("The name of this Thing"),
         PropDetails("""Names should consist mainly of letters and numbers; they may also include dashes
         		|and spaces. They should usually start with a letter, and they shouldn't be
@@ -162,6 +166,19 @@ object NotInheritedProp extends SystemProperty(NotInheritedOID, YesNoType, Exact
           |So you can use the *Not Inherited* flag to indicate that this Property should not be inherited from
           |Models to Things. This is a very advanced Property, and not intended for ordinary use.""".stripMargin)
       ))
+
+object NotDisplayedInInstancesProp extends SystemProperty(NotDisplayedInInstancesOID, YesNoType, ExactlyOne,
+    toProps(
+      setName("Not Displayed In Instances"),
+      AppliesToKindProp(Kind.Property),
+      PropSummary("This Property isn't even shown on children"),
+      PropDetails("""This extremely advanced Property is sort of the more-powerful enhancement to Not Inherited.
+          |If set on a Property, it means having that Property on a Model does *not* imply that that Property
+          |will be shown in the Editor for its instances.
+          |
+          |This is a pretty serious breakage of the usual Querki model, and should usually only be used on
+          |generated Properties.""".stripMargin)
+        ))
 
 /**
  * If set, this is the display name of the specified object. Whereas the primary NameProp
@@ -346,6 +363,7 @@ object PropDetails extends SystemProperty(PropDetailsOID, LargeTextType, Optiona
 object DeprecatedProp extends SystemProperty(DeprecatedOID, YesNoType, ExactlyOne,
     toProps(
       setName("Deprecated"),
+      NotInheritedProp(true),
       PropSummary("True iff this Thing is Deprecated."),
       PropDetails("""This is a marker flag that you can put on a Thing to say that it is on its way out, and shouldn't
           |be used any more.

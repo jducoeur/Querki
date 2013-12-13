@@ -338,6 +338,8 @@ object QLType extends QLType(QLTypeOID)
     
     def canonicalize(str:String):String = toInternal(str).toLowerCase
     
+    def makeLegal(str:String):String = str.filter(c => c.isLetterOrDigit || c == ' ' || c == '-')
+    
     def getName(context:QLContext)(v:ElemValue) = canonicalize(get(v))
     
     def nameToLink(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = {

@@ -18,6 +18,7 @@ object Modules {
   val Logic = new querki.logic.LogicModule(9)
   val Types = new querki.types.TypesModule(10)
   val UI = new querki.html.UIModule(11)
+  val DeriveName = new querki.types.DeriveNameModule(12)
   
   private var allModules = Seq.empty[Module]
   
@@ -46,6 +47,7 @@ object Modules {
     s = init(Logic, s)
     s = init(Types, s)
     s = init(UI, s)
+    s = init(DeriveName, s)
     
     s
   }

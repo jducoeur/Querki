@@ -2,9 +2,10 @@ package querki.system
 
 import scala.util.Try
 
-import controllers.{Contributor, PageEventManager, PlayRequestContext, Publisher}
+import controllers.{PageEventManager, PlayRequestContext}
 
 import querki.identity.User
+import querki.util._
 
 /**
  * Terms of Service manager. This is a Module mostly for lifecycle management, to plug into the

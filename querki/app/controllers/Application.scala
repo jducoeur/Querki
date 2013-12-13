@@ -151,8 +151,10 @@ disallow: /
   }
   
   def showEditPage(rc: PlayRequestContext, model:Thing, props:PropList, errorMsg:Option[String] = None) = {
-    val state = rc.state.get
-    val propList = prepPropList(props, model, rc.state.get)
+    implicit val state = rc.state.get
+    val propList = prepPropList(props, model, rc.state.get).
+      // If the name is being derived, don't show it in the Editor UI:
+      filter(querki.types.DeriveNameModule.filterNameIfDerived(state, model, props, _))
     try { 
       val page = views.html.editThing(
         rc.copy(error = errorMsg),

@@ -48,7 +48,9 @@ object SimpleThing extends ThingState(SimpleThingOID, systemOID, RootOID,
     toProps(
       setName("Simple-Thing"),
       IsModelProp(true),
-      DisplayTextProp(Optional.QNone)))
+      DisplayTextProp(Optional.QNone),
+      DisplayNameProp(Optional.QNone),
+      modules.Modules.DeriveName.DeriveNameProp(modules.Modules.DeriveName.deriveInitially)))
 
 object Page extends ThingState(PageOID, systemOID, SimpleThingOID,
     toProps(

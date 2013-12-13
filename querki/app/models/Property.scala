@@ -179,13 +179,13 @@ object Property {
   
   implicit object PropNameOrdering extends Ordering[Property[_,_]] {
     def compare(a:Property[_,_], b:Property[_,_]) = {
-      if (a eq NameProp) {
-        if (b eq NameProp)
+      if (a eq DisplayNameProp) {
+        if (b eq DisplayNameProp)
           0
         else
           // Name always displays first
           -1
-      } else if (b eq NameProp)
+      } else if (b eq DisplayNameProp)
         1
       else
         a.displayName compare b.displayName
@@ -207,16 +207,19 @@ object Property {
     
     def inheritedProps(thing:Option[Thing], model:Thing)(implicit state:SpaceState):PropList = {
       // Get the Model's PropList, and push its values into the inherited slots:
-      val raw = fromRec(model, thing)
-      raw map { fromModel =>
+      val raw = fromRec(model, thing)   
+      (TreeMap.empty[Property[_,_], DisplayPropVal] /: raw) { (result, fromModel) =>
         val (prop, v) = fromModel
-        if (prop.first(NotInheritedProp))
-          (prop, DisplayPropVal(thing, prop, None))
+        if (prop.first(NotDisplayedInInstancesProp))
+          // Being defined on the Model doesn't matter for this Property:
+          result
+        else if (prop.first(NotInheritedProp))
+          result + (prop -> DisplayPropVal(thing, prop, None))
         else if (v.v.isDefined)
-          (prop, DisplayPropVal(thing, prop, None, v.v, Some(model)))
+          result + (prop -> DisplayPropVal(thing, prop, None, v.v, Some(model)))
         else
-          fromModel
-      }      
+          result + fromModel        
+      }   
     }
     
     // TODO: this is all pretty inefficient. We should be caching the PropLists,

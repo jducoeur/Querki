@@ -164,9 +164,11 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
     }
   }
 
-  def createSomething(spaceThingId:ThingId, who:User, modelId:OID, props:PropMap, kind:Kind, attachmentInfo:Option[AttachmentInfo]) = 
+  def createSomething(spaceThingId:ThingId, who:User, modelId:OID, propsIn:PropMap, kind:Kind, attachmentInfo:Option[AttachmentInfo]) = 
   {
     val spaceId = checkSpaceId(spaceThingId)
+    // Give listeners a chance to make alterations
+    val props = SpaceChangeManager.thingChanges(ThingChangeRequest(state, Some(modelId), None, propsIn)).newProps
     val name = NameProp.firstOpt(props)
     val canChangeTry = 
       TryTrans[Unit, Boolean] { canChangeProperties(who, None, props) }.
@@ -213,7 +215,8 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
       val oldThingOpt = state.anything(thingId)
       oldThingOpt map { oldThing =>
         val thingId = oldThing.id
-        val newProps = pf(oldThing)
+        val rawNewProps = pf(oldThing)
+        val newProps = SpaceChangeManager.thingChanges(ThingChangeRequest(state, modelIdOpt, Some(oldThing), rawNewProps)).newProps
         val canChangeTry = 
           TryTrans[Unit, Boolean] { canChangeProperties(who, Some(oldThing), newProps) }.
             onSucc { _ => true }.

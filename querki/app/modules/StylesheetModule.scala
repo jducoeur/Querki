@@ -12,6 +12,7 @@ import models.Thing._
 
 import ql._
 
+import querki.util._
 import querki.values._
 
 // This is for the PageEventManager and related classes:

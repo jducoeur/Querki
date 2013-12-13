@@ -16,6 +16,7 @@ import ql._
 
 import querki.spaces.SpaceManager
 import querki.spaces.messages.{ChangeProps, CreateThing, ThingError, ThingFound, ThingResponse}
+import querki.util._
 import querki.values._
 
 import querki.identity._
@@ -26,7 +27,7 @@ import modules.email.EmailAddress
 
 import querki.util._
 
-import controllers.{Contributor, PageEventManager, Publisher, PlayRequestContext}
+import controllers.{PageEventManager, PlayRequestContext}
 
 import play.api.Logger
 
