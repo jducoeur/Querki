@@ -137,6 +137,19 @@ abstract class Thing(
   def thisAsContext(implicit request:RequestContext) = QLContext(ExactlyOne(LinkType(this.id)), Some(request))
   
   /**
+   * The Name of this Thing, if there is one set.
+   * 
+   * IMPORTANT: only use this if you know what you're doing. Usually, you want displayName instead.
+   */
+  def linkName:Option[String] = {
+    for (
+      nameVal <- localProp(NameProp);
+      plaintext <- nameVal.firstOpt 
+        )
+      yield plaintext
+  }
+  
+  /**
    * The Display Name of this Thing, rendered as a String.
    * 
    * IMPORTANT: what gets returned from here has already been HTML-processed, and should *not*

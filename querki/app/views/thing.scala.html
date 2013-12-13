@@ -25,6 +25,14 @@
   <a href="@routes.Application.thing(rc.ownerId.toThingId, space.toThingId, t.toThingId)">@t.displayNameText.html</a>
 }
 
+@nameAsWell = @{
+  val linkNameOpt = thing.linkName
+  linkNameOpt match {
+    case Some(linkName) => Html(s""", Link Name: <a href="${routes.Application.thing(rc.ownerId.toThingId, space.toThingId, thing.toThingId)}">${linkName}</a>""")
+    case None => Html("")
+  }
+}
+
 @main(QuerkiTemplate.Thing, title, rc, true) {
 
     <script>
@@ -52,7 +60,7 @@
 	      </h1>
 	      @modelOpt match { 
 	        case Some(model) => {
-	          <p class="_smallSubtitle">(<a href="@routes.Application.thing(rc.ownerId.toThingId, space.toThingId, rawThingId)">@rawThingId</a>, 
+	          <p class="_smallSubtitle">(OID: <a href="@routes.Application.thing(rc.ownerId.toThingId, space.toThingId, rawThingId)">@rawThingId</a>@nameAsWell, 
 	            Model: @linkTo(model))
 	          </p>
 	        }
