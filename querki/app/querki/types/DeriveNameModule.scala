@@ -72,36 +72,49 @@ class DeriveNameModule(val moduleId:Short) extends Module {
 
     // This is called whenever we get a Create or Modify request.
     def notify(evt:ThingChangeRequest, sender:Publisher[ThingChangeRequest,ThingChangeRequest]):ThingChangeRequest = {
-      val newDisplayNameOpt = for (
-        newDisplayNameVal <- evt.newProps.get(DisplayNameOID);
-        name <- newDisplayNameVal.firstTyped(PlainTextType)
-          )
-        yield name.text;
-      
-      newDisplayNameOpt match {
-        case Some(displayName) => {
-          implicit val s = evt.state
-          val flag = deriveFlag(evt)
-          flag match {
-            case DeriveInitiallyOID => {
-              val oldNameOpt = evt.thingOpt.flatMap(_.getPropOpt(NameProp)).flatMap(_.firstOpt)
-              if (oldNameOpt.isDefined && oldNameOpt.get.length() > 0)
-                // There's an existing Name, but we have to fill it back in, since it gets dropped from the Editor
-                // in this case:
-                evt.copy(newProps = evt.newProps + NameProp(oldNameOpt.get))
-              else
-                // Only derive the new Name iff it's currently empty
-                updateWithDerived(evt, displayName)
-            }
-            
-            case DeriveAlwaysOID => updateWithDerived(evt, displayName)
-            
-            case DeriveNeverOID => evt
-          }          
+      evt.thingOpt match {
+        // Don't even try this on Spaces -- it's too dangerous:
+        case Some(SpaceState(_, _, _, _, spaceName, _, _, _, _, _, _, _)) => {
+          if (evt.newProps.contains(NameOID))
+            evt
+          else
+            evt.copy(newProps = evt.newProps + NameProp(spaceName))
         }
-        
-        // If there's no Display Name, don't do anything
-        case None => evt
+        case _ => {
+	      val newDisplayNameOpt = for (
+	        newDisplayNameVal <- evt.newProps.get(DisplayNameOID);
+	        name <- newDisplayNameVal.firstTyped(PlainTextType)
+	          )
+	        yield name.text;
+	      
+	      newDisplayNameOpt match {
+	        case Some(displayName) => {
+	          implicit val s = evt.state
+	          val flag = deriveFlag(evt)
+	          flag match {
+	            case DeriveInitiallyOID => {
+	              val oldNameOpt = evt.thingOpt.flatMap(_.getPropOpt(NameProp)).flatMap(_.firstOpt)
+	              if (oldNameOpt.isDefined && oldNameOpt.get.length() > 0)
+	                // There's an existing Name, but we have to fill it back in, since it gets dropped from the Editor
+	                // in this case:
+	                evt.copy(newProps = evt.newProps + NameProp(oldNameOpt.get))
+	              else
+	                // Only derive the new Name iff it's currently empty
+	                updateWithDerived(evt, displayName)
+	            }
+	            
+	            case DeriveAlwaysOID => updateWithDerived(evt, displayName)
+	            
+	            case DeriveNeverOID => evt
+	            
+	            case _ => evt
+	          }          
+	        }
+	        
+	        // If there's no Display Name, don't do anything
+	        case None => evt
+	      }          
+        }
       }
     }
   }
