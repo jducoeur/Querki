@@ -424,7 +424,7 @@ disallow: /
       val defaultText = state.getPropOpt(ShowUnknownProp).map(_.v).getOrElse(ExactlyOne(LargeTextType(TagThing.defaultDisplayText)))
       showEditPage(rc, model, 
           PropList.inheritedProps(None, model) ++
-          PropList((NameProp -> DisplayPropVal(None, NameProp, Some(ExactlyOne(NameType(name))))),
+          PropList((DisplayNameProp -> DisplayPropVal(None, DisplayNameProp, Some(ExactlyOne(PlainTextType(name))))),
                    (DisplayTextProp -> DisplayPropVal(None, DisplayTextProp, Some(defaultText)))))
     }
   })) { implicit rc =>

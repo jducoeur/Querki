@@ -19,7 +19,7 @@ case class TagThing(name:String, space:SpaceState) extends Thing(UnknownOID, spa
     import ql._
     
     implicit val s = space
-    val opt = getPropOpt(ShowUnknownProp)
+    val opt = space.getPropOpt(ShowUnknownProp)
     val nameVal = ExactlyOne(NameType(name))
     val nameAsContext = QLContext(nameVal, Some(rc))
     // TODO: the link below shouldn't be so hard-coded!
