@@ -93,7 +93,15 @@ object UnknownOID extends OID(-1)
  * ThingId deals with the fact that we sometimes are passing OIDs around in messages, and
  * sometimes OIDs. This provides an abstraction that lets you use either in a sensible way.
  */
-sealed trait ThingId
+sealed trait ThingId {
+  /**
+   * This totally shouldn't be necessary, but Play apparently fails to properly escape Unicode *sometimes*,
+   * so we have to do it by hand. Use this when your ThingId is getting rendered as "???????" in the URL that
+   * shows up in the browser. (Initial evidence says that ThingId works fine from play templates, but fails
+   * when used in Redirects from code.)
+   */
+  def encoded = java.net.URLEncoder.encode(toString, "UTF-8")
+}
 case class AsOID(oid:OID) extends ThingId {
   override def toString() = "." + oid.toString
 }

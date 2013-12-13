@@ -345,7 +345,7 @@ disallow: /
                     // In the AJAX case, we just send back the OID of the Thing:
                     Ok(thingId.toThingId.toString)
                   } else {
-                    Redirect(routes.Application.thing(newState.ownerHandle, newState.toThingId, thing.toThingId))
+                    Redirect(routes.Application.thing(newState.ownerHandle, newState.toThingId, thing.toThingId.encoded))
                   }
                 }
               }
