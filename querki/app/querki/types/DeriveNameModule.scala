@@ -81,6 +81,13 @@ class DeriveNameModule(val moduleId:Short) extends Module {
             evt.copy(newProps = evt.newProps + NameProp(spaceName))
         }
         case _ => {
+          implicit val s = evt.state
+          val oldNameOpt = evt.thingOpt.flatMap(_.getPropOpt(NameProp)).flatMap(_.firstOpt)
+          val existingNameOpt = evt.newProps.get(NameProp).flatMap(_.firstTyped(NameType)).orElse(oldNameOpt)
+          // The fallback default: make sure that evt contains a sensible Name if possible. Since it may not be showing in the
+          // Editor, we have to fill it back in from the existing Name in many cases:
+          def evtWithExistingName = existingNameOpt.map(existingName => evt.copy(newProps = evt.newProps + NameProp(existingName))).getOrElse(evt)
+          
 	      val newDisplayNameOpt = for (
 	        newDisplayNameVal <- evt.newProps.get(DisplayNameOID);
 	        name <- newDisplayNameVal.firstTyped(PlainTextType)
@@ -89,15 +96,11 @@ class DeriveNameModule(val moduleId:Short) extends Module {
 	      
 	      newDisplayNameOpt match {
 	        case Some(displayName) => {
-	          implicit val s = evt.state
 	          val flag = deriveFlag(evt)
 	          flag match {
 	            case DeriveInitiallyOID => {
-	              val oldNameOpt = evt.thingOpt.flatMap(_.getPropOpt(NameProp)).flatMap(_.firstOpt)
-	              if (oldNameOpt.isDefined && oldNameOpt.get.length() > 0)
-	                // There's an existing Name, but we have to fill it back in, since it gets dropped from the Editor
-	                // in this case:
-	                evt.copy(newProps = evt.newProps + NameProp(oldNameOpt.get))
+	              if (existingNameOpt.isDefined && existingNameOpt.get.length() > 0)
+	                evtWithExistingName
 	              else
 	                // Only derive the new Name iff it's currently empty
 	                updateWithDerived(evt, displayName)
@@ -105,14 +108,14 @@ class DeriveNameModule(val moduleId:Short) extends Module {
 	            
 	            case DeriveAlwaysOID => updateWithDerived(evt, displayName)
 	            
-	            case DeriveNeverOID => evt
+	            case DeriveNeverOID => evtWithExistingName
 	            
-	            case _ => evt
+	            case _ => evtWithExistingName
 	          }          
 	        }
 	        
 	        // If there's no Display Name, don't do anything
-	        case None => evt
+	        case None => evtWithExistingName
 	      }          
         }
       }
@@ -191,6 +194,12 @@ class DeriveNameModule(val moduleId:Short) extends Module {
 object DeriveNameModule {
   import modules.Modules.DeriveName._
   
+  import models.system.OIDs.UrPropOID
+  
+  private def isProperty(model:Thing)(implicit state:SpaceState):Boolean = {
+    model.id == UrPropOID || model.isAncestor(UrPropOID)
+  }
+  
   /**
    * Used from the Editor UI, and intended to be used in a filter of Properties. Strips out NameProp unless
    * we aren't deriving it.
@@ -198,7 +207,7 @@ object DeriveNameModule {
   def filterNameIfDerived(state:SpaceState, model:Thing, props:PropList, propPair:(Property[_,_], DisplayPropVal)):Boolean = {
     implicit val s = state
     val (prop, displayPropVal) = propPair
-    if (prop == NameProp) {
+    if (prop == NameProp && !isProperty(model)) {
       val derivedVal:OID = {
         val localVal:Option[OID] = props.get(DeriveNameProp).flatMap(_.v).flatMap(_.firstTyped(LinkType))
         localVal.getOrElse(model.firstOr(DeriveNameProp, deriveInitially.id))

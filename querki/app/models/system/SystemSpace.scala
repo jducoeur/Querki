@@ -140,7 +140,6 @@ object OIDs {
   val PrototypeIdentityOID = sysId(99)
 //  val MinTextLengthOID = sysId(100)
   val DeprecatedOID = sysId(101)
-  val NotDisplayedInInstancesOID = sysId(102)
 }
 
 /**
@@ -219,8 +218,7 @@ object SystemSpace {
       EqualsMethod,
       ShowLinkMethod,
       PropLinkMethod,
-      DeprecatedProp,
-      NotDisplayedInInstancesProp)
+      DeprecatedProp)
       
   // Things:
   val things = OIDMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, Commas, DisplayThingTree, AllThings, AllProps)

@@ -183,9 +183,17 @@ object Property {
         if (b eq DisplayNameProp)
           0
         else
-          // Name always displays first
+          // Display Name always displays first
           -1
       } else if (b eq DisplayNameProp)
+        1
+      else if (a eq NameProp) {
+        if (b eq NameProp)
+          0
+        else
+          // Name always displays next
+          -1
+      } else if (b eq NameProp)
         1
       else
         a.displayName compare b.displayName
@@ -205,15 +213,21 @@ object Property {
       apply(pairs:_*)
     }
     
+    def isProperty(thing:Option[Thing])(implicit state:SpaceState):Boolean = {
+      thing.map(_.isAncestor(UrPropOID)).getOrElse(false)
+    }
+    
     def inheritedProps(thing:Option[Thing], model:Thing)(implicit state:SpaceState):PropList = {
       // Get the Model's PropList, and push its values into the inherited slots:
       val raw = fromRec(model, thing)   
       (TreeMap.empty[Property[_,_], DisplayPropVal] /: raw) { (result, fromModel) =>
         val (prop, v) = fromModel
-        if (prop.first(NotDisplayedInInstancesProp))
-          // Being defined on the Model doesn't matter for this Property:
+        if (prop == NameProp && !isProperty(thing)) {
+          // We don't inherit even the existence of NameProp, *except* for Properties.
+          // TBD: we might generalize this concept of "use the Name Property primarily" into a
+          // meta-Property, but let's see if we care first.
           result
-        else if (prop.first(NotInheritedProp))
+        } else if (prop.first(NotInheritedProp))
           result + (prop -> DisplayPropVal(thing, prop, None))
         else if (v.v.isDefined)
           result + (prop -> DisplayPropVal(thing, prop, None, v.v, Some(model)))
