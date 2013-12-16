@@ -42,6 +42,23 @@ class QLTests extends QuerkiTests {
     }
   }
   
+  "Display names" should {
+    "work with backticks" in {
+      processQText(commonThingAsContext(_.sandbox), """[[`My name is "interesting"!`]]""") should
+        equal ("""[My name is &quot;interesting&quot;!](Interesting-Display-Name)""")
+    }
+    
+    "work normally if the name is simple" in {
+      class TSpace extends CommonSpace {
+        val nameThing = new SimpleTestThing("NameProp name", DisplayNameProp("My Display Name"))
+      }
+      val space = new TSpace
+      
+      processQText(thingAsContext[TSpace](space, (_.nameThing)), "[[My Display Name]]") should
+        equal ("""[My Display Name](NameProp-name)""")      
+    }
+  }
+  
   "$context references" should {
     "work trivially" in {
       class TSpace extends CommonSpace {

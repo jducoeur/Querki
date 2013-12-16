@@ -58,7 +58,7 @@ class RenderingModule(val moduleId:Short) extends modules.Module {
         if (params.length > 0);
         param = params(0);
         QLCall(addName, _, _, _) = param.ops(0);
-        if (addName.toLowerCase() == "withadd")
+        if (addName.name.toLowerCase() == "withadd")
           )
         yield true
         

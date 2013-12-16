@@ -87,10 +87,16 @@ case class SpaceState(
               app.flatMap(_.anything(oid)))))))
   }
   
-  def thingWithName[T <: Thing](name:String, things:Map[OID, T]):Option[T] = {
+  private def thingWithName[T <: Thing](name:String, things:Map[OID, T]):Option[T] = {
     things.values.find { thing =>
       val thingNameOpt = thing.canonicalName
       thingNameOpt.isDefined && NameType.equalNames(thingNameOpt.get, name)
+    }
+  }
+  
+  private def thingWithDisplayName[T <: Thing](name:String, things:Map[OID, T]):Option[T] = {
+    things.values.find { thing =>
+      thing.unsafeDisplayName.toLowerCase() == name
     }
   }
   
@@ -101,8 +107,15 @@ case class SpaceState(
     if (tryName == NameType.toInternal(name)) Some(this) else None
   }
   
-  // TBD: should this try recognizing Display Names as well? I've confused myself that way once
-  // or twice.
+  def anythingByDisplayName(rawName:String):Option[Thing] = {
+    val name = rawName.toLowerCase()
+    thingWithDisplayName(name, things).orElse(
+      thingWithDisplayName(name, spaceProps).orElse(
+        thingWithDisplayName(name, types).orElse(
+          thingWithDisplayName(name, colls).orElse(
+            app.flatMap(_.anythingByDisplayName(rawName))))))
+  }
+  
   // TBD: changed this to look up the app stack. That's clearly right sometimes, like in QL.
   // Is it always right?
   def anythingByName(rawName:String):Option[Thing] = {
@@ -112,7 +125,7 @@ case class SpaceState(
         thingWithName(name, types).orElse(
           thingWithName(name, colls).orElse(
             spaceByName(name).orElse(
-              app.flatMap(_.anythingByName(rawName)))))))
+              app.flatMap(_.anythingByName(rawName))))))).orElse(anythingByDisplayName(rawName))
   }
   
   def anything(thingId:ThingId):Option[Thing] = {

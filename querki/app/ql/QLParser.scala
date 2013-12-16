@@ -34,6 +34,15 @@ class BogusFunction extends QLFunction {
   }
 }
 
+sealed abstract class QLName(val name:String) {
+  def reconstructString:String
+}
+case class QLSafeName(n:String) extends QLName(n) {
+  def reconstructString:String = n
+}
+case class QLDisplayName(n:String) extends QLName(n) {
+  def reconstructString:String = "`" + n + "`"
+}
 sealed abstract class QLTextPart {
   def reconstructString:String
   
@@ -51,9 +60,9 @@ sealed abstract class QLStage(collFlag:Option[String]) {
   
   override def toString = reconstructString
 }
-case class QLCall(name:String, methodName:Option[String], params:Option[Seq[QLPhrase]], collFlag:Option[String]) extends QLStage(collFlag) {
+case class QLCall(name:QLName, methodName:Option[String], params:Option[Seq[QLPhrase]], collFlag:Option[String]) extends QLStage(collFlag) {
   def reconstructString = collFlag.getOrElse("") +
-    name +
+    name.reconstructString +
     methodName.map(str => "." + str).getOrElse("") +
     params.map("(" + _.map(_.reconstructString).mkString(", ") + ")").getOrElse("")
 }
@@ -136,7 +145,10 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
       // If we haven't use the backslash for that, then just eat it as a normal character:
       "\\\\".r | 
       partialDelimiterRegex) ^^ { UnQLText(_) }
-  def qlCall:Parser[QLCall] = opt("\\*\\s*".r) ~ name ~ opt("." ~> name) ~ opt("\\(\\s*".r ~> (rep1sep(qlPhrase, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
+  def qlSafeName[QLSafeName] = name ^^ { QLSafeName(_) }
+  def qlDisplayName[QLDisplayName] = "`" ~> "[^`]*".r <~ "`" ^^ { QLDisplayName(_) }
+  def qlName:Parser[QLName] = qlSafeName | qlDisplayName
+  def qlCall:Parser[QLCall] = opt("\\*\\s*".r) ~ qlName ~ opt("." ~> name) ~ opt("\\(\\s*".r ~> (rep1sep(qlPhrase, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
     case collFlag ~ n ~ optMethod ~ optParams => QLCall(n, optMethod, optParams, collFlag) }
   // Note that the failure() here only works because we specifically disallow "]]" in a Text!
   def qlTextStage:Parser[QLTextStage] = (opt("\\*\\s*".r) <~ "\"\"") ~ qlText <~ ("\"\"" | failure("Reached the end of the QL expression, but missing the closing \"\" for a Text expression in it") ) ^^ {
@@ -170,7 +182,7 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
   
   private def processCall(call:QLCall, context:QLContext):QLContext = {
     logContext("processName " + call, context) {
-	    val thing = context.state.anythingByName(call.name)
+	    val thing = context.state.anythingByName(call.name.name)
 	    val tv = thing match {
 	      case Some(t) => {
 	        // If there are parameters to the call, they are a collection of phrases.
@@ -193,7 +205,7 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
 	      // the renderer, it will turn into a link to the undefined page, where they can create it.
 	      //
 	      // TBD: in principle, we might want to make this more Space-controllable. But it isn't obvious that we care. 
-	      case None => ExactlyOne(UnknownNameType(call.name))
+	      case None => ExactlyOne(UnknownNameType(call.name.name))
 	    }
 	    context.next(tv)
     }

@@ -4,7 +4,7 @@ import models.{Attachment, ThingState}
 import models.Kind
 import models.system.{ExternalLinkType, LinkType, TextType}
 import models.system.{ExactlyOne, Optional, QList}
-import models.system.{IsModelProp}
+import models.system.{DisplayNameProp, IsModelProp}
 import models.system.OIDs.PageOID
 
 import querki.identity.{User}
@@ -45,7 +45,9 @@ class CommonSpace extends TestSpace {
   
   // A simple default Model and Instance.
   val testModel = new SimpleTestThing("My Model", IsModelProp(true))
-  val instance = new TestThing("My Instance", testModel, optTextProp("Hello world")) 
+  val instance = new TestThing("My Instance", testModel, 
+      optTextProp("Hello world")) 
+  val withDisplayName = new SimpleTestThing("Interesting Display Name", DisplayNameProp("""My name is "interesting"!"""))
   
   /**
    * A simple imitation "photograph".

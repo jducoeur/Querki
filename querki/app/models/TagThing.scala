@@ -12,8 +12,8 @@ import querki.values.{QLContext, RequestContext, SpaceState}
  */
 case class TagThing(name:String, space:SpaceState) extends Thing(UnknownOID, space.id, UnknownOID, Kind.Thing, () => Thing.emptyProps, TimeModule.epoch) {
 
-  override def displayName = NameType.toDisplay(name)
-  override def canonicalName = Some(name)
+  override lazy val displayName = NameType.toDisplay(name)
+  override lazy val canonicalName = Some(name)
   
   override def render(implicit rc:RequestContext, prop:Option[Property[_,_]] = None):Wikitext = {
     import ql._

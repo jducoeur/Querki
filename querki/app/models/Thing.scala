@@ -141,7 +141,7 @@ abstract class Thing(
    * 
    * IMPORTANT: only use this if you know what you're doing. Usually, you want displayName instead.
    */
-  def linkName:Option[String] = {
+  lazy val linkName:Option[String] = {
     for (
       nameVal <- localProp(NameProp);
       plaintext <- nameVal.firstOpt 
@@ -155,7 +155,7 @@ abstract class Thing(
    * IMPORTANT: what gets returned from here has already been HTML-processed, and should *not*
    * be re-escaped!
    */
-  def displayName:String = displayNameText.toString
+  lazy val displayName:String = displayNameText.toString
   
   def lookupDisplayName:Option[PropAndVal[_]] = {
     val dispOpt = localProp(DisplayNameProp)
@@ -170,7 +170,7 @@ abstract class Thing(
    * be used to get at it as Html or HtmlWikitext. It has already been HTML-neutered, and
    * is the safest and most flexible way to use this name.
    */
-  def displayNameText:DisplayText = {
+  lazy val displayNameText:DisplayText = {
     val localName = lookupDisplayName
     if (localName.isEmpty)
       DisplayText(id.toThingId.toString)
@@ -186,7 +186,7 @@ abstract class Thing(
    * will do the escaping sometime later! Do not use this casually -- always test the environment that
    * you will be using it in!
    */
-  def unsafeDisplayName:String = {
+  lazy val unsafeDisplayName:String = {
     val localName = lookupDisplayName
     if (localName.isEmpty)
       id.toString
@@ -195,11 +195,11 @@ abstract class Thing(
     }    
   }
   
-  def canonicalName:Option[String] = {
+  lazy val canonicalName:Option[String] = {
     NameProp.firstOpt(props)
   }
   
-  def toThingId:ThingId = {
+  lazy val toThingId:ThingId = {
     val nameOpt = canonicalName
     nameOpt map AsName getOrElse AsOID(id)
   }

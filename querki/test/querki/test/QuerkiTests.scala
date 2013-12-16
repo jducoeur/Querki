@@ -51,13 +51,12 @@ class QuerkiTests
   
   /**
    * Given a list of expected Things that comes out at the end of a QL expression, this is the
-   * wikitext for their rendered Links. Convenient, but only works in the ordinary case, where the
-   * name is simple, and the Name and Display Name match.
+   * wikitext for their rendered Links.
    */
   def listOfLinkText(things:Thing*):String = {
     val lines = things.map { t =>
       val display = t.displayName
-      val name = display.replace(" ", "-")
+      val name = t.canonicalName.map(NameType.toUrl(_)).getOrElse(display)
       "\n[" + display + "](" + name + ")" 
     }
     lines.mkString

@@ -1211,10 +1211,11 @@ object CodeMethod extends SingleContextMethod(CodeMethodOID,
           case QLTextStage(contents, _) => encodeString(contents.reconstructString)
           case QLBinding(_) => WarningValue("It is meaningless to call _code on a Binding.")
           case QLCall(name, methodNameOpt, _, _) => {
+            val thingName = name.name
             methodNameOpt match {
               case Some(methodName) => {
                 val resultOpt = for (
-                  thing <- space.anythingByName(name);
+                  thing <- space.anythingByName(thingName);
                   propThing <- space.anythingByName(methodName);
                   encoded <- encodeThingAndProp(thing, propThing)
                 )
@@ -1223,7 +1224,7 @@ object CodeMethod extends SingleContextMethod(CodeMethodOID,
                 resultOpt.getOrElse(encodeString(phrase.reconstructString))
               }
               case None => {
-                val propOpt = space.anythingByName(name)
+                val propOpt = space.anythingByName(thingName)
                 propOpt match {
                   case Some(propThing) => {
                     applyToIncomingThing(mainContext) { (thing, _) =>
@@ -1363,7 +1364,7 @@ object KindMethod extends InternalMethod(KindMethodOID,
       param = params(0);
       QLCall(kindName, _, _, _) = param.ops(0)
         )
-      yield Kind.fromName(kindName).map(kind => ExactlyOne(IntType(kind))).getOrElse(WarningValue("Unknown Kind: " + kindName))
+      yield Kind.fromName(kindName.name).map(kind => ExactlyOne(IntType(kind))).getOrElse(WarningValue("Unknown Kind: " + kindName))
       
     // If not, produce the incoming Thing's value:
     paramResult.getOrElse(applyToIncomingThing(context) { (thing, context) => ExactlyOne(IntType(thing.kind)) })
