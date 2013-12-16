@@ -1852,21 +1852,17 @@ $.Widget.prototype = {
           }
 
           switch (key.which) {
+            // FORKED by jducoeur: changed DELETE and BACKSPACE
             // Remove the selected item.
-            case self.keys.BACKSPACE:
             case self.keys.DELETE:
               var $selected = self._selected();
 
-              if ($selected.length) {
-                self.remove($selected);
-              }
-              else {
-                self._selectPrev();
-              }
+              self.remove($selected);
 
               break;
 
             // Select the previous item.
+            case self.keys.BACKSPACE:
             case self.keys.LEFT:
             case self.keys.UP:
               self._selectPrev();
