@@ -61,6 +61,8 @@ function finishStatus(msg) {
 		  else 
 		    return data.id; 
 		},
+		// Use Enter as the separator to create new items, as well as the default comma:
+	    separator: [13, ','],
         values: current,
         required: required,
         onChange: function(type, data, $item) {
