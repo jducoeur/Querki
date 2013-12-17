@@ -861,9 +861,10 @@ object SortMethod extends InternalMethod(SortMethodOID,
       sortResult.getOrElse(left.displayName < right.displayName)
     }
     
-    context.value.pType match {
+    val start = context.value.cv.toSeq
+    val pType = context.value.pType
+    pType match {
       case LinkType => {
-        val start = context.value.cv.toSeq
         // TODO: we probably don't need to translate these to Things any more:
         val asThings = start.map(elemV => context.state.anything(LinkType.get(elemV))).flatten
         val sortedOIDs = asThings.sortWith(thingSortFunc).map(_.id)
@@ -872,12 +873,10 @@ object SortMethod extends InternalMethod(SortMethodOID,
         // it expects a PTypeBuilder, *and* requires that the input Iterable be of the expected RT.)
         QList.from(sortedOIDs, LinkType)
       }
-      case TagSetType => {
-        val names = context.value.rawList(TagSetType)
-        val sorted = names.sorted
-        QList.from(sorted, TagSetType)
+      case _ => {
+        val sorted = start.sortWith(pType.comp(context))
+        QList.makePropValue(sorted, pType)
       }
-      case _ => WarningValue("_sort can only currently be applied to Links.")
     }
   }
 }
@@ -1056,17 +1055,30 @@ object TagRefsMethod extends InternalMethod(TagRefsOID,
     elemT match {
       case nameable:NameableType => {
         val allProps = context.state.allProps.values
-        val tagProps = allProps.filter(_.pType == TagSetType)
+        val tagProps = allProps.filter(prop => prop.pType == TagSetType || prop.pType == NewTagSetType)
         val name = nameable.getName(context)(context.value.first)
+        val thingOpt = elemT match {
+          case LinkType => LinkType.followLink(context)
+          case _ => None
+        }
+        val namePt = thingOpt.map(thing => PlainText(thing.unsafeDisplayName)).getOrElse(PlainText(name))
         val candidates = context.state.allThings
         
         def hasThisTag(candidate:Thing):Boolean = {
           tagProps.exists{ prop =>
             val propAndVal = candidate.localProp(prop)
-            val candidateTags:Option[List[String]] = propAndVal.map(_.v.rawList(TagSetType))
-            val found = candidateTags.map(_.exists { candidateName =>
-              NameType.canonicalize(candidateName) == name
-            })
+            val found = prop.pType match {
+              case TagSetType => {
+	            val candidateTags:Option[List[String]] = propAndVal.map(_.v.rawList(TagSetType))
+	            candidateTags.map(_.exists { candidateName =>
+	              NameType.canonicalize(candidateName) == name
+	            })
+              }
+              case NewTagSetType => {
+	            val candidateTags:Option[List[PlainText]] = propAndVal.map(_.v.rawList(NewTagSetType))
+	            candidateTags.map(_.exists { candidateName => NewTagSetType.equalNames(candidateName, namePt) })                
+              }
+            }
             found.getOrElse(false)
           }
         }
@@ -1099,11 +1111,20 @@ object TagsForPropertyMethod extends SingleContextMethod(TagsForPropertyOID,
 {
   def fetchTags(space:SpaceState, propIn:Property[_,_]):Set[String] = {
     implicit val s = space
-    val prop = propIn.confirmType(TagSetType)
-    val thingsWithProp = space.thingsWithProp(prop)
-    (Set.empty[String] /: thingsWithProp) { (set, thing) =>
-      set ++ thing.getProp(prop).rawList
-    }
+    val thingsWithProp = space.thingsWithProp(propIn)
+    if (propIn.pType == TagSetType) {
+      val prop = propIn.confirmType(TagSetType)
+      (Set.empty[String] /: thingsWithProp) { (set, thing) =>
+        set ++ thing.getProp(prop).rawList
+      }
+    } else if (propIn.pType == NewTagSetType) {
+      val prop = propIn.confirmType(NewTagSetType)
+      (Set.empty[String] /: thingsWithProp) { (set, thing) =>
+        set ++ thing.getProp(prop).rawList.map(_.text)
+      }      
+    } else
+      // TODO: should this be a PublicException?
+      throw new Exception("Trying to fetchTags on a non-Tag Property!")
   }
   
   def fullyApply(mainContext:QLContext, partialContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {

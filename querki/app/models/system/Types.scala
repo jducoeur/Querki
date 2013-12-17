@@ -518,23 +518,49 @@ case class PlainText(text:String) {
   }
 }
   
-abstract class PlainTextType(tid:OID) extends SystemType[PlainText](tid,
+abstract class PlainTextType(tid:OID, actualName:String) extends SystemType[PlainText](tid,
     toProps(
-      setName("Plain Text Type")
+      setName(actualName)
     )) with PTypeBuilder[PlainText,String] with IsTextType
 {
   def doDeserialize(v:String) = PlainText(v)
   def doSerialize(v:PlainText) = v.text
-  // TODO: this is probably incorrect, but may be taken care of by context? How do we make sure this
-  // doesn't actually get any internal Wikitext rendered?
+  
   def doWikify(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None) = Wikitext(v.text)
-
+  
   override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = TextTypeUtils.validateText(v, prop, state)
   
   val doDefault = PlainText("")
   override def wrap(raw:String):valType = PlainText(raw)
 }
-object PlainTextType extends PlainTextType(PlainTextOID)
+object PlainTextType extends PlainTextType(PlainTextOID, "Plain Text Type")
+
+object NewTagSetType extends PlainTextType(NewTagSetOID, "New Tag Set Type") with NameableType {
+  override def requiredColl:Option[Collection] = Some(QSet)
+ 
+  def equalNames(str1:PlainText, str2:PlainText):Boolean = {
+    str1.text.toLowerCase.contentEquals(str2.text.toLowerCase())
+  }
+  
+  def getName(context:QLContext)(v:ElemValue):String = get(v).text
+  
+  override def doWikify(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None) = {
+    val display = displayOpt.getOrElse(Wikitext(v.text))
+    // NOTE: yes, there is danger of Javascript injection here. We deal with that at the QText layer,
+    // since that danger is there in ordinary QText as well.
+    Wikitext("[") + display + Wikitext(s"](${SafeUrl(v.text)})") 
+  }
+  
+  override def doComp(context:QLContext)(left:PlainText, right:PlainText):Boolean = { left.text < right.text } 
+      
+  override def doMatches(left:PlainText, right:PlainText):Boolean = equalNames(left, right)
+    
+  override def renderProperty(prop:Property[_,_])(implicit request:RequestContext):Option[Wikitext] = {
+    val parser = new ql.QLParser(QLText("""These tags are currently being used:
+[[_tagsForProperty -> _sort -> _bulleted]]"""), prop.thisAsContext)
+    Some(parser.process)
+  }
+}
 
 class InternalMethodType(tid:OID) extends SystemType[String](tid,
     toProps(
@@ -604,5 +630,5 @@ object UnresolvedPropType extends SystemType[String](UnknownOID,
 
 object SystemTypes {
   def all = OIDMap[PType[_]](
-      IntType, TextType, QLType, YesNoType, NameType, TagSetType, LinkType, LargeTextType, PlainTextType, InternalMethodType, ExternalLinkType)  
+      IntType, TextType, QLType, YesNoType, NameType, TagSetType, LinkType, LargeTextType, PlainTextType, InternalMethodType, ExternalLinkType, NewTagSetType)  
 }

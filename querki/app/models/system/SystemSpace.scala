@@ -140,6 +140,7 @@ object OIDs {
   val PrototypeIdentityOID = sysId(99)
 //  val MinTextLengthOID = sysId(100)
   val DeprecatedOID = sysId(101)
+  val NewTagSetOID = sysId(102)
 }
 
 /**

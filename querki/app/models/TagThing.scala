@@ -4,6 +4,7 @@ import models.system.{ExactlyOne, NameType, ShowUnknownProp}
 
 import modules.time.TimeModule
 
+import querki.util.SafeUrl
 import querki.values.{QLContext, RequestContext, SpaceState}
 
 /**
@@ -23,7 +24,7 @@ case class TagThing(name:String, space:SpaceState) extends Thing(UnknownOID, spa
     val nameVal = ExactlyOne(NameType(name))
     val nameAsContext = QLContext(nameVal, Some(rc))
     // TODO: the link below shouldn't be so hard-coded!
-    opt.map(pv => pv.render(nameAsContext)).getOrElse(Wikitext(NameType.toDisplay(name) + " doesn't exist yet. [Click here to create it.](edit?thingId=" + name + ")"))    
+    opt.map(pv => pv.render(nameAsContext)).getOrElse(Wikitext(NameType.toDisplay(name) + " doesn't exist yet. [Click here to create it.](edit?thingId=" + SafeUrl(name) + ")"))    
   }
 }
 object TagThing {

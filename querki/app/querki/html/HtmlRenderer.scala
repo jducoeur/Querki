@@ -52,7 +52,7 @@ object HtmlRenderer {
   
   // TODO: refactor this with Collection.fromUser():
   def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_], context:QLContext):FormFieldInfo = {
-    if (prop.cType == QSet && (prop.pType.isInstanceOf[NameType] || prop.pType == LinkType)) {
+    if (prop.cType == QSet && (prop.pType.isInstanceOf[NameType] || prop.pType == LinkType || prop.pType == NewTagSetType)) {
       handleTagSet(prop, on, form, context)
     } else {
       val fieldIds = FieldIds(on, prop)
@@ -96,7 +96,7 @@ object HtmlRenderer {
       Some(renderOptYesNo(state, prop, currentValue))
     else if (cType == Optional && pType == LinkType)
       Some(renderOptLink(state, prop, currentValue))
-    else if (cType == QSet && (pType.isInstanceOf[NameType] || pType == LinkType)) {
+    else if (cType == QSet && (pType.isInstanceOf[NameType] || pType == LinkType || pType == NewTagSetType)) {
       if (specialization.contains(PickList))
         Some(renderPickList(state, prop, currentValue, specialization))
       else
@@ -146,29 +146,38 @@ object HtmlRenderer {
     val pt = prop.pType
     
     def getKeyAndVal(elem:ElemValue):(String, String) = {
-      if (pt == LinkType) {
-        val oid = LinkType.get(elem)
-        // TODO: cheating! This should go through LinkType.follow, but we don't have a Context yet:
-        val tOpt = state.anything(oid)
-        val name = tOpt.map(_.displayName).getOrElse(oid.toThingId.toString)
-        (oid.toString, name)
-      } else if (pt.isInstanceOf[NameType]) {
-        val nameType = pt.asInstanceOf[NameType]
-        val name = nameType.get(elem)
-        (name, name)
-      } else {
-        throw new Exception("renderTagSet got unexpected type " + pt)
+      pt match {
+        case linkType:LinkType => {
+          val oid = linkType.get(elem)
+          // TODO: cheating! This should go through LinkType.follow, but we don't have a Context yet:
+          val tOpt = state.anything(oid)
+          val name = tOpt.map(_.displayName).getOrElse(oid.toThingId.toString)
+          (oid.toString, name)
+        }
+        case nameType:NameType => {
+          val name = nameType.get(elem)
+          (name, name)          
+        }
+        case NewTagSetType => {
+          val name = NewTagSetType.get(elem).text
+          (name, name)                    
+        }
+        case _ => throw new Exception("renderTagSet got unexpected type " + pt)
       }
     }
     currentV.map(_.cv.map(getKeyAndVal(_)))    
+  }
+  
+  def JSONescape(str:String):String = {
+    str.replace("\\", "\\\\").replace("\"", "\\\"")
   }
   
   def renderTagSet(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Elem = {
     val rawList = getTagSetNames(state, prop, currentValue)
     
     // We treat names/tags and links a bit differently, although they look similar on the surface:
-    val isNameType = prop.pType.isInstanceOf[NameType]
-    val current = "[" + rawList.map(_.map(keyVal => "{\"display\":\"" + keyVal._2 + "\", \"id\":\"" + keyVal._1 + "\"}").mkString(", ")).getOrElse("") + "]"
+    val isNameType = prop.pType.isInstanceOf[NameType] || prop.pType == NewTagSetType
+    val current = "[" + rawList.map(_.map(keyVal => "{\"display\":\"" + JSONescape(keyVal._2) + "\", \"id\":\"" + JSONescape(keyVal._1) + "\"}").mkString(", ")).getOrElse("") + "]"
     <input class="_tagSetInput" data-isNames={isNameType.toString} type="text" data-current={current}></input>
   }
   
