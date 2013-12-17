@@ -1,6 +1,6 @@
 package models
 
-import models.system.{ExactlyOne, NameType, ShowUnknownProp}
+import models.system.{ExactlyOne, NameType, PlainTextType, ShowUnknownProp}
 
 import modules.time.TimeModule
 
@@ -13,7 +13,7 @@ import querki.values.{QLContext, RequestContext, SpaceState}
  */
 case class TagThing(name:String, space:SpaceState) extends Thing(UnknownOID, space.id, UnknownOID, Kind.Thing, () => Thing.emptyProps, TimeModule.epoch) {
 
-  override lazy val displayName = NameType.toDisplay(name)
+  override lazy val displayName = name
   override lazy val canonicalName = Some(name)
   
   override def render(implicit rc:RequestContext, prop:Option[Property[_,_]] = None):Wikitext = {
@@ -21,10 +21,10 @@ case class TagThing(name:String, space:SpaceState) extends Thing(UnknownOID, spa
     
     implicit val s = space
     val opt = space.getPropOpt(ShowUnknownProp)
-    val nameVal = ExactlyOne(NameType(name))
+    val nameVal = ExactlyOne(PlainTextType(name))
     val nameAsContext = QLContext(nameVal, Some(rc))
     // TODO: the link below shouldn't be so hard-coded!
-    opt.map(pv => pv.render(nameAsContext)).getOrElse(Wikitext(NameType.toDisplay(name) + " doesn't exist yet. [Click here to create it.](edit?thingId=" + SafeUrl(name) + ")"))    
+    opt.map(pv => pv.render(nameAsContext)).getOrElse(Wikitext(name + " doesn't exist yet. [Click here to create it.](edit?thingId=" + SafeUrl(name) + ")"))    
   }
 }
 object TagThing {

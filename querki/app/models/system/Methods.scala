@@ -1085,7 +1085,7 @@ object TagRefsMethod extends InternalMethod(TagRefsOID,
         
         QList.from(candidates.filter(hasThisTag), LinkFromThingBuilder)
       }
-      case _ => WarningValue("_tagRefs can only be used with a Tag or Link")
+      case _ => WarningValue("_tagRefs can only be used with a Tag or Link, not " + elemT.displayName)
     }
   }
 }

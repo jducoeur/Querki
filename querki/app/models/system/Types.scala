@@ -521,10 +521,12 @@ case class PlainText(text:String) {
 abstract class PlainTextType(tid:OID, actualName:String) extends SystemType[PlainText](tid,
     toProps(
       setName(actualName)
-    )) with PTypeBuilder[PlainText,String] with IsTextType
+    )) with PTypeBuilder[PlainText,String] with IsTextType with NameableType 
 {
   def doDeserialize(v:String) = PlainText(v)
   def doSerialize(v:PlainText) = v.text
+  
+  def getName(context:QLContext)(v:ElemValue):String = get(v).text
   
   def doWikify(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None) = Wikitext(v.text)
   
@@ -535,14 +537,12 @@ abstract class PlainTextType(tid:OID, actualName:String) extends SystemType[Plai
 }
 object PlainTextType extends PlainTextType(PlainTextOID, "Plain Text Type")
 
-object NewTagSetType extends PlainTextType(NewTagSetOID, "New Tag Set Type") with NameableType {
+object NewTagSetType extends PlainTextType(NewTagSetOID, "New Tag Set Type") {
   override def requiredColl:Option[Collection] = Some(QSet)
  
   def equalNames(str1:PlainText, str2:PlainText):Boolean = {
     str1.text.toLowerCase.contentEquals(str2.text.toLowerCase())
   }
-  
-  def getName(context:QLContext)(v:ElemValue):String = get(v).text
   
   override def doWikify(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None) = {
     val display = displayOpt.getOrElse(Wikitext(v.text))
