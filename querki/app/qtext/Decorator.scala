@@ -40,15 +40,21 @@ trait Decorator {
     def decorateStrong(text:String):String = "<strong>" + text + "</strong>"
     /** Used to print link elements (default: <a href...)
      */
+    def javascriptNeutralized(url:String):String = {
+      if (url.toLowerCase().startsWith("javascript:"))
+        "Illegal-URL"
+      else
+        url
+    }
     def decorateLink(text:String, url:String, title:Option[String]):String = title match {
-        case None    => "<a href=\"" + url + "\">" + text + "</a>"
-        case Some(t) => "<a href=\"" + url + "\" title=\"" + t + "\">" + text + "</a>"
+        case None    => "<a href=\"" + javascriptNeutralized(url) + "\">" + text + "</a>"
+        case Some(t) => "<a href=\"" + javascriptNeutralized(url) + "\" title=\"" + t + "\">" + text + "</a>"
     }
     /** Used to print image elements (default: <img ...)
      */
     def decorateImg(alt:String, src:String, title:Option[String]):String = title match {
-        case None    => "<img src=\"" + src + "\" alt=\"" + alt + "\" />"
-        case Some(t) => "<img src=\"" + src + "\" alt=\"" + alt + "\" title=\"" + t + "\" />"
+        case None    => "<img src=\"" + javascriptNeutralized(src) + "\" alt=\"" + alt + "\" />"
+        case Some(t) => "<img src=\"" + javascriptNeutralized(src) + "\" alt=\"" + alt + "\" title=\"" + t + "\" />"
     }
     /**used to print a horizontal ruler defaults to "<hr />\n" */
     def decorateRuler():String = "<hr />\n"
