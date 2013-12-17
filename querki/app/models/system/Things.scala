@@ -58,7 +58,7 @@ object Page extends ThingState(PageOID, systemOID, SimpleThingOID,
       IsModelProp(true),
       DeprecatedProp(true)))
 
-object PhotoBase extends ThingState(PhotoBaseOID, systemOID, RootOID,
+object PhotoBase extends ThingState(PhotoBaseOID, systemOID, SimpleThingOID,
     toProps(
       setName("Photograph-Base"),
       IsModelProp(true),
