@@ -147,7 +147,7 @@ class StylesheetModule(val moduleId:Short) extends modules.Module {
    * THINGS
    ***********************************************/
 
-  lazy val StylesheetBase = new ThingState(StylesheetBaseOID, systemOID, RootOID,
+  lazy val StylesheetBase = new ThingState(StylesheetBaseOID, systemOID, SimpleThingOID,
     toProps(
       setName("Stylesheet"),
       IsModelProp(true),
