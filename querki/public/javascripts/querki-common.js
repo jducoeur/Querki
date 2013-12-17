@@ -109,7 +109,6 @@ function finalSetup(ownerId, spaceId, root) {
   root.find("._tagSetInput").asManifest(ownerId, spaceId);
   root.find(".controls ._largeTextEdit").addClass("span10");
   root.find("._largeTextEdit").autosize();
-  root.find(".mf_container").addClass("span10");
   root.find(".controls input[type='text']").filter(".propEditor").addClass("span10");
 
   function doUpdateValue(target, successCb, failureCb) {

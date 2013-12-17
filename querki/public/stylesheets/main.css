@@ -25,6 +25,19 @@
 }
 
 /*
+ * Tweak for Manifest -- make the width of the Manifest itself always fill the box you give
+ * it. Then we can use {{}} operators to control that box.
+ */
+.para .mf_container {
+  width: 100%;
+}
+
+/* Equivalent of the span10 for the rest of the controls. */
+.controls .mf_container {
+  width: 83%;
+}
+
+/*
  * Menu tweaks for Querki. The existing menubar doesn't work quite right in our theme, so
  * I have a few modifications to make it look correct.
  *
