@@ -383,14 +383,16 @@ disallow: /
   // may well be a Tags Module fighting to break out...
   def preferredModelForTag(implicit state:SpaceState, nameIn:String):Thing = {
     val tagProps = state.propsOfType(TagSetType).filter(_.hasProp(OIDs.LinkModelOID))
+    val newTagProps = state.propsOfType(NewTagSetType).filter(_.hasProp(OIDs.LinkModelOID))
     val name = NameType.canonicalize(nameIn)
-    if (tagProps.isEmpty)
+    val plainName = PlainText(nameIn)
+    if (tagProps.isEmpty && newTagProps.isEmpty)
       SimpleThing
     else {
       val candidates = state.allThings.toSeq
     
       // Find the first Tag Set property (if any) that is being used with this Tag:
-      val tagPropOpt = tagProps.find { prop =>
+      val tagPropOpt:Option[Property[_,_]] = tagProps.find { prop =>
         val definingThingOpt = candidates.find { thing =>
           val propValOpt = thing.getPropOpt(prop)
           propValOpt.map(_.contains(name)).getOrElse(false)
@@ -398,10 +400,20 @@ disallow: /
         definingThingOpt.isDefined
       }
       
+      val newTagPropOpt:Option[Property[_,_]] = newTagProps.find { prop =>
+        val definingThingOpt = candidates.find { thing =>
+          val propValOpt = thing.getPropOpt(prop)
+          propValOpt.map(_.contains(plainName)).getOrElse(false)
+        }
+        definingThingOpt.isDefined
+      }
+      
+      val definingPropOpt = newTagPropOpt orElse tagPropOpt
+      
       // Get the Link Model for that property:
       val modelOpt = 
         for (
-          tagProp <- tagPropOpt;
+          tagProp <- definingPropOpt;
           linkModelPropVal <- tagProp.getPropOpt(LinkModelProp);
           modelId <- linkModelPropVal.firstOpt;
           model <- state.anything(modelId)

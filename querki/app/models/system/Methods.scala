@@ -1070,9 +1070,7 @@ object TagRefsMethod extends InternalMethod(TagRefsOID,
             val found = prop.pType match {
               case TagSetType => {
 	            val candidateTags:Option[List[String]] = propAndVal.map(_.v.rawList(TagSetType))
-	            candidateTags.map(_.exists { candidateName =>
-	              NameType.canonicalize(candidateName) == name
-	            })
+	            candidateTags.map(_.exists { candidateName => NameType.equalNames(candidateName, name) })
               }
               case NewTagSetType => {
 	            val candidateTags:Option[List[PlainText]] = propAndVal.map(_.v.rawList(NewTagSetType))

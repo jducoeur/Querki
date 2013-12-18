@@ -15,6 +15,7 @@ case class TagThing(name:String, space:SpaceState) extends Thing(UnknownOID, spa
 
   override lazy val displayName = name
   override lazy val canonicalName = Some(name)
+  override lazy val toThingId:ThingId = new AsDisplayName(name)
   
   override def render(implicit rc:RequestContext, prop:Option[Property[_,_]] = None):Wikitext = {
     import ql._

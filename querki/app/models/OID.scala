@@ -111,6 +111,10 @@ case class AsName(name:String) extends ThingId {
   // of two AsNames and assume that they are equal!
   override def toString() = system.NameType.toUrl(name)
 }
+// This is a bit of a hack, to work around certain cases where we need to *not* Urlify 
+class AsDisplayName(name:String) extends AsName(name) {
+  override def toString() = name
+}
 object UnknownThingId extends AsOID(UnknownOID)
 object ThingId {
   def apply(str:String):ThingId = {
