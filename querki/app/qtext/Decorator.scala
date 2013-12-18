@@ -41,10 +41,12 @@ trait Decorator {
     /** Used to print link elements (default: <a href...)
      */
     def javascriptNeutralized(url:String):String = {
-      if (url.toLowerCase().startsWith("javascript:"))
-        "Illegal-URL"
+      // Basically, if this has anything that looks like an unapproved URI scheme, force it to relative:
+      val urlLower = url.toLowerCase()
+      if (!(urlLower.startsWith("http:") || urlLower.startsWith("https:")) && urlLower.matches("^[a-z0-9+\\.\\-]*:.*"))
+        "./" + url
       else
-        url
+        url  
     }
     def decorateLink(text:String, url:String, title:Option[String]):String = title match {
         case None    => "<a href=\"" + javascriptNeutralized(url) + "\">" + text + "</a>"
