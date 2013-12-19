@@ -476,7 +476,10 @@ object QLType extends QLType(QLTypeOID)
       linkModel match {
         case Some(propAndVal) => {
           val model = state.anything(propAndVal.first).get
-          realOptions :+ <option class="_createNewFromModel" data-model={model.toThingId} value={UnknownOID.id.toString}>Create a New {model.displayName}</option>
+          if (model.ifSet(NoCreateThroughLinkProp)(state))
+            realOptions
+          else
+            realOptions :+ <option class="_createNewFromModel" data-model={model.toThingId} value={UnknownOID.id.toString}>Create a New {model.displayName}</option>
         }
         case _ => realOptions
       }

@@ -358,3 +358,17 @@ object DeprecatedProp extends SystemProperty(DeprecatedOID, YesNoType, ExactlyOn
           |The exact meaning of Deprecated depends on the situation, but Querki will tend to hide Things marked as
           |Deprecated. If you see somewhere that a Deprecated Thing is visible and shouldn't be, please log a bug
           |report about it.""".stripMargin)))
+
+object NoCreateThroughLinkProp extends SystemProperty(NoCreateThroughLinkOID, YesNoType, ExactlyOne,
+    toProps(
+      setName("No Create Through Link Model"),
+      NotInheritedProp(true),
+      PropSummary("Set this to prevent new instances from being created accidentally."),
+      PropDetails("""When you create a Link Property in the Editor, you can set the "Link Model" -- the sort of Thing
+          |that this Property points to. The Editor then lets you choose from all of the existing Instances of that
+          |Model, and also lets you create a new one.
+          |
+          |Sometimes, though, you don't want to create any new ones from the Editor. In particular, if you've already
+          |created all of the Instances of this Model that you ever expect to want, then it is simply annoying to have
+          |that option. In that case, put this Property on your Model, and set it to True -- it will make that option
+          |in the Editor go away.""".stripMargin)))
