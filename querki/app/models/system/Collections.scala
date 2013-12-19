@@ -204,13 +204,15 @@ abstract class SingleElementBase(cid:OID, pf:PropFetcher) extends SystemCollecti
       if (guts.isEmpty())
         doDefault(elemT)
       else {
-        val elemStrs = guts.split(",").toList
+        val temp = "" + Char.MinValue
+        val elemStrs = guts.replace("\\,", temp).split(",").toList.map(_.replace(temp, ","))
         elemStrs.map(elemT.deserialize(_))
       }
     }
     
     def doSerialize(v:implType, elemT:pType):String = {
       v.map(elem => elemT.serialize(elem)).
+        map(_.replace(",", "\\,")).
         mkString("[", "," ,"]")
     }
     
