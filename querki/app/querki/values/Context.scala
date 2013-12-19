@@ -123,7 +123,14 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
         // In general, collect (and many of these operations) are very monadically evil, but
         // we've consciously decided to live with that.
         value.cType match {
-          case ExactlyOne => if (raw.isEmpty) Optional else ExactlyOne
+          case ExactlyOne => {
+            if (raw.isEmpty)
+              Optional 
+            else if (raw.size == 1)
+              ExactlyOne
+            else
+              QList
+          }
           case Optional => if (raw.size > 1) QList else Optional
           case _ => value.cType
         }

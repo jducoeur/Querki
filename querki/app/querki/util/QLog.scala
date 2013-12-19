@@ -1,15 +1,34 @@
 package querki.util
 
-import play.api.Logger
+import play.api.{Logger, Play}
 
 import models._
 
 object QLog {
   
-  def error(message: => String, error: => Throwable) = Logger.error(message, error)
-  def error(message: => String) = Logger.error(message)
+  lazy val inPlay:Boolean = Play.maybeApplication.isDefined 
   
-  def spew(msg:String) = Logger.info("----> " + msg)
+  def error(message: => String, error: => Throwable) = {
+    if (inPlay)
+      Logger.error(message, error)
+    else
+      println(message + "\n" + error.toString())
+  }
+  def error(message: => String) = {
+    if (inPlay)
+      Logger.error(message)
+    else
+      println(message)
+  }
+  
+  def info(message: => String) = {
+    if (inPlay)
+      Logger.info(message)
+    else
+      println(message)
+  }
+  
+  def spew(msg:String) = info("----> " + msg)
 
   def spewThing(t:Thing) = {
     def displayName = {

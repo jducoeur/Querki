@@ -10,9 +10,6 @@ import models._
 import querki.util._
 import querki.values._
 
-// TODO: this should go away
-import play.api.Logger
-
 /**
  * A QLFunction is something that can be called in the QL pipeline. It is mostly implemented
  * by Thing (with variants for Property and suchlike), but can also be anonymous -- for example,
@@ -109,15 +106,15 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
   val doLogContext = Config.getBoolean("querki.test.logContexts", false)
   def logContext[RT <: DebugRenderable](msg:String, context:QLContext)(processor: => RT):RT = {
     if (doLogContext) {
-      Logger.info(indent + msg + ": " + context.debugRender + " =")
-      Logger.info(indent + "{")
+      QLog.info(indent + msg + ": " + context.debugRender + " =")
+      QLog.info(indent + "{")
       logDepth = logDepth + 1
     }
     val result = processor
     if (doLogContext) {
       logDepth = logDepth - 1
       
-      Logger.info(indent + "} = " + result.debugRender)
+      QLog.info(indent + "} = " + result.debugRender)
     }
     result
   }
@@ -181,7 +178,7 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
   }
   
   private def processCall(call:QLCall, context:QLContext):QLContext = {
-    logContext("processName " + call, context) {
+    logContext("processCall " + call, context) {
 	    val thing = context.state.anythingByName(call.name.name)
 	    val tv = thing match {
 	      case Some(t) => {
@@ -338,20 +335,20 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
         case Success(result, _) => processParseTree(result, initialContext)
         case Failure(msg, next) => { renderError(msg, next) }
         // TODO: we should probably do something more serious in case of Error:
-        case Error(msg, next) => { Logger.error("Couldn't parse qlText: " + msg); renderError(msg, next) }
+        case Error(msg, next) => { QLog.error("Couldn't parse qlText: " + msg); renderError(msg, next) }
       }
     } catch {
       case overflow:java.lang.StackOverflowError => {
-        Logger.error("Stack overflow error while trying to parse this QLText:\n" + input.text)
+        QLog.error("Stack overflow error while trying to parse this QLText:\n" + input.text)
         overflow.printStackTrace()
         Wikitext("We're sorry -- this thing is apparently more complex than Querki can currently cope with. Please contact Justin: this is a bug we need to fix.")
       }
       case error:Exception => {
-        Logger.error("Error during QL Processing: " + error, error)
+        QLog.error("Error during QL Processing: " + error, error)
         Wikitext("We're sorry -- there was an error while trying to display this thing.")
       }
       case error:Throwable => {
-        Logger.error("Error during QL Processing: " + error)
+        QLog.error("Error during QL Processing: " + error)
         Wikitext("We're sorry -- there was an error while trying to display this thing.")
       }
     }
