@@ -1,6 +1,8 @@
 package models
 
-import models.system.{ExactlyOne, NameType, PlainTextType, ShowUnknownProp}
+import models.system.OIDs
+import models.system.{ExactlyOne, LinkModelProp, ShowUnknownProp, SimpleThing}
+import models.system.{NameType, NewTagSetType, PlainText, PlainTextType, TagSetType}
 
 import modules.time.TimeModule
 
@@ -21,14 +23,58 @@ case class TagThing(name:String, space:SpaceState) extends Thing(UnknownOID, spa
     import ql._
     
     implicit val s = space
-    val opt = space.getPropOpt(ShowUnknownProp)
+    val model = TagThing.preferredModelForTag(space, name)
+    val propAndValOpt = model.getPropOpt(ShowUnknownProp) orElse space.getPropOpt(ShowUnknownProp)
     val nameVal = ExactlyOne(PlainTextType(name))
     val nameAsContext = QLContext(nameVal, Some(rc))
     // TODO: the link below shouldn't be so hard-coded!
-    opt.map(pv => pv.render(nameAsContext)).getOrElse(Wikitext(name + " doesn't exist yet. [Click here to create it.](edit?thingId=" + SafeUrl(name) + ")"))    
+    propAndValOpt.map(pv => pv.render(nameAsContext)).getOrElse(Wikitext(name + " doesn't exist yet. [Click here to create it.](edit?thingId=" + SafeUrl(name) + ")"))    
   }
 }
 object TagThing {
   val defaultDisplayText = """Referenced from:
 [[_tagRefs -> _bulleted]]"""  
+    
+  def preferredModelForTag(implicit state:SpaceState, nameIn:String):Thing = {
+    val tagProps = state.propsOfType(TagSetType).filter(_.hasProp(OIDs.LinkModelOID))
+    val newTagProps = state.propsOfType(NewTagSetType).filter(_.hasProp(OIDs.LinkModelOID))
+    val name = NameType.canonicalize(nameIn)
+    val plainName = PlainText(nameIn)
+    if (tagProps.isEmpty && newTagProps.isEmpty)
+      SimpleThing
+    else {
+      val candidates = state.allThings.toSeq
+    
+      // Find the first Tag Set property (if any) that is being used with this Tag:
+      val tagPropOpt:Option[Property[_,_]] = tagProps.find { prop =>
+        val definingThingOpt = candidates.find { thing =>
+          val propValOpt = thing.getPropOpt(prop)
+          propValOpt.map(_.contains(name)).getOrElse(false)
+        }
+        definingThingOpt.isDefined
+      }
+      
+      val newTagPropOpt:Option[Property[_,_]] = newTagProps.find { prop =>
+        val definingThingOpt = candidates.find { thing =>
+          val propValOpt = thing.getPropOpt(prop)
+          propValOpt.map(_.contains(plainName)).getOrElse(false)
+        }
+        definingThingOpt.isDefined
+      }
+      
+      val definingPropOpt = newTagPropOpt orElse tagPropOpt
+      
+      // Get the Link Model for that property:
+      val modelOpt = 
+        for (
+          tagProp <- definingPropOpt;
+          linkModelPropVal <- tagProp.getPropOpt(LinkModelProp);
+          modelId <- linkModelPropVal.firstOpt;
+          model <- state.anything(modelId)
+          )
+          yield model
+
+      modelOpt.getOrElse(SimpleThing)
+    }
+  }
 }
