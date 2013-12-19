@@ -300,16 +300,20 @@ object InstanceEditPropsProp extends SystemProperty(InstanceEditPropsOID, LinkTy
 
 object ShowUnknownProp extends SystemProperty(ShowUnknownOID, LargeTextType, ExactlyOne,
     toProps(
-      setName("_showUnknownName"),
+      setName("Undefined Tag View"),
       AppliesToKindProp(Kind.Space),
-      PropSummary("What should be displayed when you click on an unknown Name?"),
-      PropDetails("""In Querki, it is entirely legal to refer to a Name of something you haven't written yet --
-          |for instance, Tags are often Names with no definition. So the question becomes, what should be
-          |displayed when you click on one of these unknown Names?
+      PropSummary("What should be displayed when you click on a Tag that isn't a Thing?"),
+      PropDetails("""In Querki, it is entirely legal to refer to the name of something you haven't written yet --
+          |for instance, Tags are often names with no definition. So the question becomes, what should be
+          |displayed when you click on one of these tags, since it doesn't point to a real Thing?
           |
-          |The _showUnknownName Property defines that. It is a Large Text that is defined on the Space; when
-          |you try to look at an unknown Name, it will show this text. You can put QL expression in here; they
+          |The Undefined Tag View Property defines that. It is a Large Text that is defined on the Space; when
+          |you try to look at an unknown name, it will show this text. You can put QL expressions in here; they
           |will receive the Name that you are trying to look at.
+          |
+          |You can also put an Undefined Tag View on a Model, which basically means that all Tags of this Model
+          |will use that View. (Technically, this means all Tags that are used in a Tag Set whose Link Model
+          |points to this Model.)
           |
           |There is a simple default value that is defined on every Space by default. But you should feel free
           |to override that to do something more interesting, especially if you are doing interesting things

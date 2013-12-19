@@ -11,7 +11,7 @@ import querki.values.{QLContext, RequestContext, SpaceState}
 
 /**
  * This is essentially a pseudo-Thing, produced when you navigate to an unknown Name. It basically
- * exists to support the display of the space._showUnknownName.
+ * exists to support the display of the Undefined Tag View.
  */
 case class TagThing(name:String, space:SpaceState) extends Thing(UnknownOID, space.id, UnknownOID, Kind.Thing, () => Thing.emptyProps, TimeModule.epoch) {
 
