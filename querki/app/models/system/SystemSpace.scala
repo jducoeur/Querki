@@ -23,6 +23,9 @@ import querki.values.SpaceState
  * Note that there are a few apparently holes in this run; that is because of Things that were
  * originally defined in System but got moved to Modules. We should avoid doing that -- favor
  * putting things in Modules unless they are clearly core.
+ * 
+ * Commented-out values, by and large, have been moved out to various Modules. At this point,
+ * don't add more items here too casually.
  */
 object OIDs {
   
@@ -80,7 +83,7 @@ object OIDs {
   val QUnitOID = sysId(39)
   val InternalPropOID = sysId(40)
   val ExternalLinkTypeOID = sysId(41)
-  val EditMethodOID = sysId(42)
+//  val EditMethodOID = sysId(42)
   val SectionMethodOID = sysId(43)
   val InstancesMethodOID = sysId(44)
   val QLTypeOID = sysId(45)
@@ -120,7 +123,7 @@ object OIDs {
   val QSetOID = sysId(79)
   val CommasMethodOID = sysId(80)
   val FormLineMethodOID = sysId(81) 
-  val EditOrElseMethodOID = sysId(82)
+//  val EditOrElseMethodOID = sysId(82)
   val AllPropsMethodOID = sysId(83)
   val AllPropsThingOID = sysId(84)
   val PropSummaryOID = sysId(85)
@@ -173,7 +176,7 @@ object SystemSpace {
       LinkModelProp,
       AppliesToKindProp,
       InternalProp,
-      EditMethod,
+//      EditMethod,
       SectionMethod,
       InstancesMethod,
       ApplyMethod,
@@ -206,7 +209,7 @@ object SystemSpace {
       CodeMethod,
       IsDefinedMethod,
       FormLineMethod,
-      EditOrElseMethod,
+//      EditOrElseMethod,
       AllPropsMethod,
       PropSummary,
       PropDetails,
