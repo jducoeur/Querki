@@ -111,8 +111,44 @@
   position: absolute;
   margin-left: -1.3em;
 }
-		
 
+
+/*
+ * Styles for the default Instance Editor view.
+ */
+
+._instanceEditor {
+  background-color: #f3f3f3;
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+._instanceEditor ._propTitle {
+  margin-top: 0px;
+  margin-bottom: 0px;
+  font-size: x-small;
+}
+
+._instanceEditor .para {
+  margin-bottom: 0px;
+}
+
+._instanceEditor textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+._instanceEditor text {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+._instanceEditor input {
+  width: 100%;
+  height: 26px;
+  box-sizing: border-box;
+}
 /*
  * Styles used in major Querki screens.
  */

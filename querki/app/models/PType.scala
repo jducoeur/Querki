@@ -160,6 +160,13 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * The PType that underlies this one. Mainly here to support the DelegatingType mechanism.
    */
   lazy val realType:PType[VT] = this
+  
+  /**
+   * The usual width to show for this Type, with this Property, in Bootstrap's base-12 terms.
+   * 
+   * Defaults to 6, but any editable Type really ought to set this.
+   */
+  def editorSpan(prop:Property[_,_]):Int = 6
 }
 
 /**

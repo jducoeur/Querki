@@ -98,6 +98,7 @@ trait CodeType {
 
     val doDefault = 0
     
+    override def editorSpan(prop:Property[_,_]):Int = 1    
     /**
      * TODO: eventually, we may want a more nuanced Int inputter. But this will do to start.
      */
@@ -177,7 +178,9 @@ trait CodeType {
   class TextType(tid:OID) extends TextTypeBase(tid,
       toProps(
         setName("Text Type")
-        )) with PTypeBuilder[QLText,String] {
+        )) with PTypeBuilder[QLText,String] 
+  {
+    override def editorSpan(prop:Property[_,_]):Int = 12    
   }
   object TextType extends TextType(TextTypeOID)
 
@@ -201,6 +204,8 @@ class QLType(tid:OID) extends TextTypeBase(tid,
       setName("Function")
     )) with PTypeBuilder[QLText,String] 
 {
+  override def editorSpan(prop:Property[_,_]):Int = 12   
+  
   override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem =
     CommonInputRenderers.renderLargeText(prop, state, currentValue, v, this)
 
@@ -231,6 +236,8 @@ object QLType extends QLType(QLTypeOID)
         setName("YesNo Type")
         )) with SimplePTypeBuilder[Boolean]
   {
+    override def editorSpan(prop:Property[_,_]):Int = 1
+    
     // It turns out that Java's parseBoolean is both too tolerant of nonsense, and
     // doesn't handle many common cases. So we'll do it ourselves:
     def doDeserialize(v:String) = {
@@ -354,9 +361,13 @@ object QLType extends QLType(QLTypeOID)
     override def doMatches(left:String, right:String):Boolean = equalNames(left, right)
   }
   object NameType extends NameType(NameTypeOID, "Name Type") {
+    override def editorSpan(prop:Property[_,_]):Int = 3
+    
     def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext(toDisplay(v))    
   }
   object TagSetType extends NameType(TagSetOID, "Tag Set Type") {
+    override def editorSpan(prop:Property[_,_]):Int = 12
+    
     override def requiredColl:Option[Collection] = Some(QSet)
     
     // TODO: this should probably get refactored with LinkType? They're different ways of
@@ -388,6 +399,8 @@ object QLType extends QLType(QLTypeOID)
         setName("Link Type")
         )) with SimplePTypeBuilder[OID] with NameableType with URLableType
   {
+    override def editorSpan(prop:Property[_,_]):Int = 6    
+    
     def doDeserialize(v:String) = OID(v)
     def doSerialize(v:OID) = v.toString
     
@@ -502,7 +515,10 @@ object QLType extends QLType(QLTypeOID)
   class LargeTextType(tid:OID) extends TextTypeBase(tid,
       toProps(
         setName("Large Text Type")
-        )) with PTypeBuilder[QLText,String] {
+        )) with PTypeBuilder[QLText,String] 
+  {
+    override def editorSpan(prop:Property[_,_]):Int = 12
+    
     override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem =
       CommonInputRenderers.renderLargeText(prop, state, currentValue, v, this)
   }
@@ -538,9 +554,14 @@ abstract class PlainTextType(tid:OID, actualName:String) extends SystemType[Plai
   val doDefault = PlainText("")
   override def wrap(raw:String):valType = PlainText(raw)
 }
-object PlainTextType extends PlainTextType(PlainTextOID, "Plain Text Type")
+object PlainTextType extends PlainTextType(PlainTextOID, "Plain Text Type") 
+{
+  override def editorSpan(prop:Property[_,_]):Int = 6
+}
 
 object NewTagSetType extends PlainTextType(NewTagSetOID, "New Tag Set Type") {
+  override def editorSpan(prop:Property[_,_]):Int = 12
+  
   override def requiredColl:Option[Collection] = Some(QSet)
  
   def equalNames(str1:PlainText, str2:PlainText):Boolean = {
@@ -595,6 +616,8 @@ class ExternalLinkType(tid:OID) extends SystemType[QURL](tid,
       setName("URL Type")
     )) with PTypeBuilder[QURL, String] with URLableType
 {
+  override def editorSpan(prop:Property[_,_]):Int = 6
+  
   def doDeserialize(v:String) = QURL(v)
   def doSerialize(v:QURL) = v.url
   def doWikify(context:QLContext)(v:QURL, displayOpt:Option[Wikitext] = None) = {

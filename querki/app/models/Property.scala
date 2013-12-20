@@ -69,6 +69,13 @@ case class Property[VT, -RT](
   def fromOpt(m:PropMap):Option[QValue] = m.get(this.id) map castVal
   
   /**
+   * How wide (in Bootstrap spans) should the editor control for this Property be?
+   * 
+   * This is gradually going to want to get *much* more sophisticated. But it's a start.
+   */
+  def editorSpan:Int = pType.editorSpan(this) 
+  
+  /**
    * Convenience method to fetch the value of this property in this map.
    */
   def first(m:PropMap):VT = pType.get(cType.first(from(m)))

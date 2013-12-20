@@ -5,8 +5,8 @@ import models.Thing.{PropFetcher, setName, toProps}
 
 import models.system.{SingleContextMethod, SystemProperty}
 import models.system.{ExactlyOne, QList}
-import models.system.{LargeTextType}
-import models.system.{AppliesToKindProp, IsModelProp, PropDetails, PropSummary}
+import models.system.{LargeTextType, LinkType, QLText}
+import models.system.{AppliesToKindProp, InstanceEditPropsProp, IsModelProp, PropDetails, PropSummary}
 import models.system.OIDs.sysId
 
 import ql.{QLCall, QLParser, QLPhrase}
@@ -75,18 +75,84 @@ class EditorModule(val moduleId:Short) extends Module {
       }
     }
     
-    def instanceEditorForThing(thing:Thing, thingContext:QLContext, params:Option[Seq[QLPhrase]]):Wikitext = {
-      implicit val s = thingContext.state
-      // TODO: if there is no Instance Edit View, generate it from the Thing's Properties:
+    /**
+     * This wrapper creates the actual layout bits for the default Instance Editor. Note that it is *highly*
+     * dependent on the styles defined in main.css!
+     */
+    case class EditorPropLayout(prop:Property[_,_]) {
+      def span = prop.editorSpan
+      def layout = s"""{{span$span:
+      |{{_propTitle: ${prop.displayName}:}}
+      |
+      |[[${prop.toThingId}._edit]]
+      |}}
+      |""".stripMargin
+    }
+    
+    case class EditorRowLayout(props:Seq[EditorPropLayout]) {
+      def span = (0 /: props) { (sum, propLayout) => sum + propLayout.span }
+      def layout = s"""{{row-fluid:
+    		  |${props.map(_.layout).mkString}
+              |}}
+    		  |""".stripMargin
+    }
+    
+    // This hard-coded number comes from Bootstrap, and is pretty integral to it:
+    val maxSpanPerRow = 12
+    
+    /**
+     * This takes the raw list of property layout objects, and breaks it into rows of no more
+     * than 12 spans each.
+     */
+    def splitRows(propLayouts:Seq[EditorPropLayout]):Seq[EditorRowLayout] = {
+      (Seq(EditorRowLayout(Seq.empty)) /: propLayouts) { (rows, nextProp) =>
+        val currentRow = rows.last
+        if ((currentRow.span + nextProp.span) > maxSpanPerRow)
+          // Need a new row
+          rows :+ EditorRowLayout(Seq(nextProp))
+        else
+          // There is room to fit it into the current row
+          rows.take(rows.length - 1) :+ currentRow.copy(currentRow.props :+ nextProp)
+      }
+    }
+    
+    def propsToEditForThing(thing:Thing, state:SpaceState):Seq[Property[_,_]] = {
+      implicit val s = state
       val result = for (
-        editorPropVal <- thing.getPropOpt(instanceEditViewProp);
-        editText <- editorPropVal.v.firstTyped(LargeTextType);
-        parser = new QLParser(editText, thingContext, params);
-        wikitext = parser.process
+        propsToEdit <- thing.getPropOpt(InstanceEditPropsProp);
+        propIds = propsToEdit.v.rawList(LinkType);
+        props = propIds.map(state.prop(_)).flatten    
           )
-        yield wikitext
-      
-      result.getOrElse(throw new PublicException("Editor.temp.InstanceEditorRequired"))
+        yield props
+
+      // TODO: if there is no InstanceEditPropsProp, build it from the Thing and Model:
+      result.getOrElse(???)
+    }
+    
+    def editorLayoutForThing(thing:Thing, state:SpaceState):QLText = {
+      implicit val s = state
+      thing.getPropOpt(instanceEditViewProp).flatMap(_.v.firstTyped(LargeTextType)) match {
+        // There's a predefined Instance Edit View, so use that:
+        case Some(editText) => editText
+        // Generate the View based on the Thing:
+        case None => {
+          val layoutPieces = propsToEditForThing(thing, state).map(EditorPropLayout(_))
+          val layoutRows = splitRows(layoutPieces)
+          // TODO: need to break this into distinct 12-span rows!
+          val propsLayout = s"""{{_instanceEditor:
+              |${layoutRows.map(_.layout).mkString}
+              |}}
+              |""".stripMargin
+          QLText(propsLayout)
+        }
+      }
+    }
+    
+    def instanceEditorForThing(thing:Thing, thingContext:QLContext, params:Option[Seq[QLPhrase]]):Wikitext = {
+      implicit val state = thingContext.state
+      val editText = editorLayoutForThing(thing, state)
+      val parser = new QLParser(editText, thingContext, params)
+      parser.process
     }
   
     def fullyApply(mainContext:QLContext, partialContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {
@@ -101,7 +167,7 @@ class EditorModule(val moduleId:Short) extends Module {
           case thing:ThingState => {
             implicit val state = partialContext.state
             if (thing.ifSet(IsModelProp)) {
-              val instances = state.descendants(thing.id, false, true)
+              val instances = state.descendants(thing.id, false, true).toSeq.sortBy(_.displayName)
               val wikitexts = instances.map { instance => instanceEditorForThing(instance, instance.thisAsContext(partialContext.request), params) }
               QList.from(wikitexts, ParsedTextType)
             } else {
