@@ -19,6 +19,9 @@ Thing.find.noSuch=That path does not point to a Thing that you are allowed to se
 Thing.find.unknownId=No Thing found with that id
 Thing.find.unknownName=No Thing found with that name
 
+Types.Int.tooLow=Values of {0} can be no less than {1}
+Types.Int.tooHigh=Values of {0} can be no more than {1}
+
 Types.Name.empty=Names must have non-zero length
 Types.Name.tooLong=Names should not be excessively long
 Types.Name.badChars=Names may only contain letters, digits, and spaces

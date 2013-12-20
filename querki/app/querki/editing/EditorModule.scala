@@ -6,7 +6,7 @@ import models.Thing.{PropFetcher, setName, toProps}
 
 import models.system.{SingleContextMethod, SystemProperty}
 import models.system.{ExactlyOne, QList}
-import models.system.{LargeTextType, LinkType, QLText}
+import models.system.{IntType, LargeTextType, LinkType, QLText}
 import models.system.{AppliesToKindProp, InstanceEditPropsProp, IsModelProp, PropDetails, PropSummary}
 import models.system.OIDs.sysId
 
@@ -15,6 +15,7 @@ import ql.{QLCall, QLParser, QLPhrase}
 import querki.html.RenderSpecialization._
 
 import modules.Modules.SkillLevel._
+import modules.Modules.Types
 
 import querki.util._
 import querki.values._
@@ -29,6 +30,7 @@ class EditorModule(val moduleId:Short) extends Module {
     
     val EditAsPickListOID = moid(1)
     val InstanceEditViewOID = moid(2)
+    val EditWidthPropOID = moid(3)
   }
   import MOIDs._
   
@@ -48,6 +50,14 @@ class EditorModule(val moduleId:Short) extends Module {
             |[[_code(""[[My Instance._edit]]"")]]
             |The contents are up to you, but it should usually contain _edit functions for each Property you
             |want to be editable.""".stripMargin)))
+  
+  lazy val editWidthProp = new SystemProperty(EditWidthPropOID, IntType, ExactlyOne,
+      toProps(
+        setName("Edit Width"),
+        Types.MinIntValueProp(1),
+        Types.MaxIntValueProp(12),
+        PropSummary("Lets you control how wide a Property's edit control is, in the Edit View"),
+        PropDetails("""This is width in Bootstrap span terms -- a number from 1 (narrow) to 12 (full width).""".stripMargin)))
 
   abstract class EditMethodBase(id:OID, pf:PropFetcher) extends SingleContextMethod(id, pf)
   {
@@ -82,7 +92,7 @@ class EditorModule(val moduleId:Short) extends Module {
      * This wrapper creates the actual layout bits for the default Instance Editor. Note that it is *highly*
      * dependent on the styles defined in main.css!
      */
-    private case class EditorPropLayout(prop:Property[_,_]) {
+    private case class EditorPropLayout(prop:Property[_,_])(implicit state:SpaceState) {
       def span = prop.editorSpan
       def layout = s"""{{span$span:
       |{{_propTitle: ${prop.displayName}:}}
@@ -302,6 +312,7 @@ class EditorModule(val moduleId:Short) extends Module {
     instanceEditViewProp,
     editMethod,
     editOrElseMethod,
-    editAsPicklistMethod
+    editAsPicklistMethod,
+    editWidthProp
   )
 }

@@ -71,9 +71,12 @@ case class Property[VT, -RT](
   /**
    * How wide (in Bootstrap spans) should the editor control for this Property be?
    * 
+   * If the Edit Width property is set on this Property, returns that. Otherwise, returns the
+   * preferred width of the Type.
+   * 
    * This is gradually going to want to get *much* more sophisticated. But it's a start.
    */
-  def editorSpan:Int = pType.editorSpan(this) 
+  def editorSpan(implicit state:SpaceState):Int = getPropOpt(modules.Modules.Editor.editWidthProp).flatMap(_.firstOpt).getOrElse(pType.editorSpan(this)) 
   
   /**
    * Convenience method to fetch the value of this property in this map.

@@ -11,7 +11,14 @@ import models.system.OIDs.sysId
 import modules.Module
 
 class TypesModule(val moduleId:Short) extends Module {
-  import TypesModule.MOIDs._
+  object MOIDs {
+    // Old Things, moved to here
+    val MinTextLengthOID = sysId(100)
+    
+    val MinIntValueOID = moid(1)
+    val MaxIntValueOID = moid(2)
+  }
+  import MOIDs._
   
   /***********************************************
    * PROPERTIES
@@ -29,14 +36,22 @@ class TypesModule(val moduleId:Short) extends Module {
           |so a Text composed entirely of spaces is still considered to be length 0. (Since for
           |most output purposes, leading and trailing spaces don't exist.)""".stripMargin)))
   
+  lazy val MinIntValueProp = new SystemProperty(MinIntValueOID, IntType, ExactlyOne,
+    toProps(
+      setName("Minimum Number Value"),
+      AppliesToKindProp(Kind.Property),
+      PropSummary("The minimum value allowed in this Whole Number Property")))
+  
+  lazy val MaxIntValueProp = new SystemProperty(MaxIntValueOID, IntType, ExactlyOne,
+    toProps(
+      setName("Maximum Number Value"),
+      AppliesToKindProp(Kind.Property),
+      PropSummary("The maximum value allowed in this Whole Number Property")))
+  
   override lazy val props = Seq(
     MinTextLengthProp
   )
 }
 
 object TypesModule {
-  object MOIDs {
-    // Old Things, moved to here
-    val MinTextLengthOID = sysId(100)
-  }
 }

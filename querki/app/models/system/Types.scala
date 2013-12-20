@@ -98,7 +98,23 @@ trait CodeType {
 
     val doDefault = 0
     
-    override def editorSpan(prop:Property[_,_]):Int = 1    
+    override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = {
+      for (
+        minValPO <- prop.getPropOpt(modules.Modules.Types.MinIntValueProp)(state);
+        minVal <- minValPO.firstOpt;
+        if (doDeserialize(v) < minVal)
+          )
+        throw new PublicException("Types.Int.tooLow", prop.displayName, minVal)
+      
+      for (
+        maxValPO <- prop.getPropOpt(modules.Modules.Types.MaxIntValueProp)(state);
+        maxVal <- maxValPO.firstOpt;
+        if (doDeserialize(v) > maxVal)
+          )
+        throw new PublicException("Types.Int.tooHigh", prop.displayName, maxVal)
+    }  
+    
+   override def editorSpan(prop:Property[_,_]):Int = 1    
     /**
      * TODO: eventually, we may want a more nuanced Int inputter. But this will do to start.
      */
