@@ -1,10 +1,10 @@
 package querki.editing
 
-import models.{Kind, OID, Property, Thing, ThingState}
+import models.{Kind, OID, Property, Thing, ThingState, Wikitext}
 import models.Thing.{PropFetcher, setName, toProps}
 
 import models.system.{SingleContextMethod, SystemProperty}
-import models.system.{ExactlyOne}
+import models.system.{ExactlyOne, QList}
 import models.system.{LargeTextType}
 import models.system.{AppliesToKindProp, IsModelProp, PropDetails, PropSummary}
 import models.system.OIDs.sysId
@@ -13,6 +13,7 @@ import ql.{QLCall, QLParser, QLPhrase}
 
 import querki.html.RenderSpecialization._
 
+import querki.util._
 import querki.values._
 
 import modules.Module
@@ -73,6 +74,20 @@ class EditorModule(val moduleId:Short) extends Module {
         case _ => cantEditFallback(mainContext, mainThing, partialContext, prop, params)
       }
     }
+    
+    def instanceEditorForThing(thing:Thing, thingContext:QLContext, params:Option[Seq[QLPhrase]]):Wikitext = {
+      implicit val s = thingContext.state
+      // TODO: if there is no Instance Edit View, generate it from the Thing's Properties:
+      val result = for (
+        editorPropVal <- thing.getPropOpt(instanceEditViewProp);
+        editText <- editorPropVal.v.firstTyped(LargeTextType);
+        parser = new QLParser(editText, thingContext, params);
+        wikitext = parser.process
+          )
+        yield wikitext
+      
+      result.getOrElse(throw new PublicException("Editor.temp.InstanceEditorRequired"))
+    }
   
     def fullyApply(mainContext:QLContext, partialContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {
       applyToIncomingThing(partialContext) { (partialThing, _) =>
@@ -84,21 +99,13 @@ class EditorModule(val moduleId:Short) extends Module {
           }
           
           case thing:ThingState => {
-            implicit val s = partialContext.state
+            implicit val state = partialContext.state
             if (thing.ifSet(IsModelProp)) {
-              // TODO: create an Edit page with live Editors for all Instances:
-              ???
+              val instances = state.descendants(thing.id, false, true)
+              val wikitexts = instances.map { instance => instanceEditorForThing(instance, instance.thisAsContext(partialContext.request), params) }
+              QList.from(wikitexts, ParsedTextType)
             } else {
-              // TODO: if there is no Instance Edit View, generate it from the Thing's Properties:
-              val result = for (
-                editorPropVal <- thing.getPropOpt(instanceEditViewProp);
-                editText <- editorPropVal.v.firstTyped(LargeTextType);
-                parser = new QLParser(editText, partialContext, params);
-                wikitext = parser.process
-                  )
-                yield WikitextValue(wikitext)
-              
-              result.getOrElse(WarningValue("For the time being, _edit can only be used on Things that have the Instance Edit View Property set."))
+              WikitextValue(instanceEditorForThing(thing, partialContext, params))
             }
           }
           
