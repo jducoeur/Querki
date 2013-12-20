@@ -1,6 +1,7 @@
 package querki.editing
 
 import models.{Kind, OID, Property, Thing, ThingState, Wikitext}
+import models.Property._
 import models.Thing.{PropFetcher, setName, toProps}
 
 import models.system.{SingleContextMethod, SystemProperty}
@@ -79,7 +80,7 @@ class EditorModule(val moduleId:Short) extends Module {
      * This wrapper creates the actual layout bits for the default Instance Editor. Note that it is *highly*
      * dependent on the styles defined in main.css!
      */
-    case class EditorPropLayout(prop:Property[_,_]) {
+    private case class EditorPropLayout(prop:Property[_,_]) {
       def span = prop.editorSpan
       def layout = s"""{{span$span:
       |{{_propTitle: ${prop.displayName}:}}
@@ -89,7 +90,7 @@ class EditorModule(val moduleId:Short) extends Module {
       |""".stripMargin
     }
     
-    case class EditorRowLayout(props:Seq[EditorPropLayout]) {
+    private case class EditorRowLayout(props:Seq[EditorPropLayout]) {
       def span = (0 /: props) { (sum, propLayout) => sum + propLayout.span }
       def layout = s"""{{row-fluid:
     		  |${props.map(_.layout).mkString}
@@ -104,7 +105,7 @@ class EditorModule(val moduleId:Short) extends Module {
      * This takes the raw list of property layout objects, and breaks it into rows of no more
      * than 12 spans each.
      */
-    def splitRows(propLayouts:Seq[EditorPropLayout]):Seq[EditorRowLayout] = {
+    private def splitRows(propLayouts:Iterable[EditorPropLayout]):Seq[EditorRowLayout] = {
       (Seq(EditorRowLayout(Seq.empty)) /: propLayouts) { (rows, nextProp) =>
         val currentRow = rows.last
         if ((currentRow.span + nextProp.span) > maxSpanPerRow)
@@ -116,7 +117,7 @@ class EditorModule(val moduleId:Short) extends Module {
       }
     }
     
-    def propsToEditForThing(thing:Thing, state:SpaceState):Seq[Property[_,_]] = {
+    private def propsToEditForThing(thing:Thing, state:SpaceState):Iterable[Property[_,_]] = {
       implicit val s = state
       val result = for (
         propsToEdit <- thing.getPropOpt(InstanceEditPropsProp);
@@ -125,11 +126,10 @@ class EditorModule(val moduleId:Short) extends Module {
           )
         yield props
 
-      // TODO: if there is no InstanceEditPropsProp, build it from the Thing and Model:
-      result.getOrElse(???)
+      result.getOrElse(PropList.from(thing).keys)
     }
     
-    def editorLayoutForThing(thing:Thing, state:SpaceState):QLText = {
+    private def editorLayoutForThing(thing:Thing, state:SpaceState):QLText = {
       implicit val s = state
       thing.getPropOpt(instanceEditViewProp).flatMap(_.v.firstTyped(LargeTextType)) match {
         // There's a predefined Instance Edit View, so use that:
@@ -148,7 +148,7 @@ class EditorModule(val moduleId:Short) extends Module {
       }
     }
     
-    def instanceEditorForThing(thing:Thing, thingContext:QLContext, params:Option[Seq[QLPhrase]]):Wikitext = {
+    private def instanceEditorForThing(thing:Thing, thingContext:QLContext, params:Option[Seq[QLPhrase]]):Wikitext = {
       implicit val state = thingContext.state
       val editText = editorLayoutForThing(thing, state)
       val parser = new QLParser(editText, thingContext, params)
