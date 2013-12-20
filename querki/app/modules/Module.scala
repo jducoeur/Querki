@@ -7,6 +7,9 @@ import querki.values.SpaceState
 
 object Modules {
   
+  // IMPORTANT: The numbers attached to these Modules must NEVER BE CHANGED!!!!! They
+  // get built into the moid's, and thence into the database! If a Module is removed,
+  // comment it out, but leave its number and all others alone.
   val Stylesheet = new stylesheet.StylesheetModule(1)
   val Email = new email.EmailModule(2)
   val Person = new person.PersonModule(3)
@@ -20,6 +23,7 @@ object Modules {
   val UI = new querki.html.UIModule(11)
   val DeriveName = new querki.types.DeriveNameModule(12)
   val Editor = new querki.editing.EditorModule(13)
+  val SkillLevel = new querki.identity.SkillLevelModule(14)
   
   private var allModules = Seq.empty[Module]
   
@@ -50,6 +54,7 @@ object Modules {
     s = init(UI, s)
     s = init(DeriveName, s)
     s = init(Editor, s)
+    s = init(SkillLevel, s)
     
     s
   }

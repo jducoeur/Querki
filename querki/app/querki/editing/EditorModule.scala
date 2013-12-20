@@ -14,6 +14,8 @@ import ql.{QLCall, QLParser, QLPhrase}
 
 import querki.html.RenderSpecialization._
 
+import modules.Modules.SkillLevel._
+
 import querki.util._
 import querki.values._
 
@@ -117,6 +119,16 @@ class EditorModule(val moduleId:Short) extends Module {
       }
     }
     
+    private def isAdvanced(prop:Property[_,_])(implicit state:SpaceState):Boolean = {
+      val result = for(
+        skillPropVal <- prop.getPropOpt(skillLevelProp);
+        skillLevel <- skillPropVal.firstOpt
+          )
+        yield skillLevel == skillLevelAdvanced.id
+        
+      result.getOrElse(false)
+    }
+    
     private def propsToEditForThing(thing:Thing, state:SpaceState):Iterable[Property[_,_]] = {
       implicit val s = state
       val result = for (
@@ -126,7 +138,8 @@ class EditorModule(val moduleId:Short) extends Module {
           )
         yield props
 
-      result.getOrElse(PropList.from(thing).keys)
+      // Note that the toList here implicitly sorts the PropList, more or less by display name:
+      result.getOrElse(PropList.from(thing).toList.map(_._1).filterNot(isAdvanced(_)))
     }
     
     private def editorLayoutForThing(thing:Thing, state:SpaceState):QLText = {

@@ -129,6 +129,7 @@ class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:
         NotInheritedProp(true),
         // TBD: we might allow Property Models down the road, but not yet:
         AppliesToKindProp(Kind.Thing),
+        SkillLevel(SkillLevel.Advanced),
         PropSummary("Is this Thing a Model?"),
         PropDetails("""All Things can be used as Models if you would like -- in Querki, unlike most programming
             |languages, the difference between a Model and an Instance is pretty small. But this flag indicates
@@ -351,6 +352,7 @@ object DeprecatedProp extends SystemProperty(DeprecatedOID, YesNoType, ExactlyOn
     toProps(
       setName("Deprecated"),
       NotInheritedProp(true),
+      SkillLevel(SkillLevel.Advanced),
       PropSummary("True iff this Thing is Deprecated."),
       PropDetails("""This is a marker flag that you can put on a Thing to say that it is on its way out, and shouldn't
           |be used any more.
