@@ -94,8 +94,15 @@ class EditorModule(val moduleId:Short) extends Module {
      */
     private case class EditorPropLayout(prop:Property[_,_])(implicit state:SpaceState) {
       def span = prop.editorSpan
+      def summaryTextOpt = prop.getPropOpt(PropSummary).flatMap(_.firstOpt).map(_.text)
+      def displayNamePhrase = {
+        summaryTextOpt match {
+          case Some(summaryText) => s"""[[""${prop.displayName}"" -> _tooltip(""$summaryText"")]]"""
+          case None => prop.displayName
+        }
+      }
       def layout = s"""{{span$span:
-      |{{_propTitle: ${prop.displayName}:}}
+      |{{_propTitle: $displayNamePhrase:}}
       |
       |[[${prop.toThingId}._edit]]
       |}}
