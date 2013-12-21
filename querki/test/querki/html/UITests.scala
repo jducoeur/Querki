@@ -19,14 +19,14 @@ class UITests extends QuerkiTests {
       implicit val requester = commonSpace.owner
       
       processQText(thingAsContext[TSpace](space, _.withInt), """[[Int Prop -> _class(""myClass"")]]""") should 
-        equal (expectedWarning("UI.class.htmlRequired"))            
+        equal (expectedWarning("UI.transform.htmlRequired"))            
     }
     
     "throw an Exception if no param is given" in {
       implicit val requester = commonSpace.owner
       
       processQText(commonThingAsContext(_.instance), """[[My Optional Text._edit -> _class]]""") should 
-        equal (expectedWarning("UI.class.classRequired"))                  
+        equal (expectedWarning("UI.transform.classRequired"))                  
     }
     
     "add classes to an _edit" in {
@@ -45,7 +45,7 @@ class UITests extends QuerkiTests {
     
     "add classes to a text" in {
       processQText(commonThingAsContext(_.instance), """[[""hello world"" -> _class(""myClass otherClass"")]]""") should
-        equal ("""<div class="para myClass otherClass">hello world</div>""")
+        equal ("""<span class="myClass otherClass">hello world</span>""")
     }
     
     "add classes to a bullet list" in {
@@ -58,7 +58,14 @@ class UITests extends QuerkiTests {
       processQText(commonThingAsContext(_.instance), """[[""hello
           |
           |world"" -> _class(""myClass otherClass"")]]""".stripMargin) should
-        equal (expectedWarning("UI.class.notWellFormed"))
+        equal (expectedWarning("UI.transform.notWellFormed"))
+    }
+  }
+  
+  "_tooltip method" should {
+    "add a tooltip to a text block" in {
+      processQText(commonThingAsContext(_.instance), """[[""hello world"" -> _tooltip(""I am a tooltip"")]]""") should
+        equal ("""<span title="I am a tooltip" class="_withTooltip">hello world</span>""")      
     }
   }
 }

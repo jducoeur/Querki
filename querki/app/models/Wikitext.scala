@@ -30,6 +30,7 @@ trait Wikitext extends DebugRenderable {
   }
   def transformDisplay = transform(new QuerkiTransformer) _
   def transformRaw = transform(new RawTransformer) _
+  def transformSpan = transform(new SpanTransformer) _
   
   def display:DisplayText
   
@@ -38,6 +39,12 @@ trait Wikitext extends DebugRenderable {
    * don't want to allow much Wikitext, such as display names.
    */
   def raw:DisplayText
+  
+  /**
+   * Produces the contents wrapped in a span instead of a div. Intended for cases where you need well-formed XML,
+   * but don't want block structure.
+   */
+  def span:DisplayText
   
   /**
    * This should only be used internally, never to display to the user!
@@ -82,6 +89,7 @@ case class QWikitext(wiki:String) extends Wikitext {
   
   def display = DisplayText(transformDisplay(internal))
   def raw = DisplayText(transformRaw(internal))
+  def span = DisplayText(transformSpan(internal))
   
   /**
    * This should only be used internally, never to display to the user!
@@ -110,6 +118,7 @@ case class HtmlWikitext(html:Html) extends Wikitext {
   private def str = html.toString
   def display = DisplayText(str)
   def raw = DisplayText(str)
+  def span = DisplayText(str)
   def internal = html.toString
   def plaintext = str
   val keepRaw = true
@@ -148,6 +157,7 @@ case class CompositeWikitext(left:Wikitext, right:Wikitext, insertNewline:Boolea
   
   def display = DisplayText(process(transformDisplay))
   def raw = DisplayText(process(transformRaw))
+  def span = DisplayText(process(transformSpan))
   def plaintext = process(str => str)
   def internal = throw new Exception("Nothing should be calling CompositeWikitext.internal!")
   
@@ -175,4 +185,11 @@ class RawTransformer extends Transformer with Decorator {
     override def allowVerbatimXml():Boolean = false
     override def decorateParagraphOpen():String = ""
     override def decorateParagraphClose():String = ""    
+}
+
+class SpanTransformer extends Transformer with Decorator {
+    override def deco() = this
+    override def allowVerbatimXml():Boolean = false
+    override def decorateParagraphOpen():String = "<span>"
+    override def decorateParagraphClose():String = "</span>"    
 }
