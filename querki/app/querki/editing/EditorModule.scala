@@ -7,7 +7,7 @@ import models.Thing.{PropFetcher, setName, toProps}
 import models.system.{SingleContextMethod, SystemProperty}
 import models.system.{ExactlyOne, QList}
 import models.system.{IntType, LargeTextType, LinkType, QLText}
-import models.system.{AppliesToKindProp, InstanceEditPropsProp, IsModelProp, PropDetails, PropSummary}
+import models.system.{AppliesToKindProp, DisplayTextProp, InstanceEditPropsProp, IsModelProp, PropDetails, PropSummary}
 import models.system.OIDs.sysId
 
 import ql.{QLCall, QLParser, QLPhrase}
@@ -146,6 +146,35 @@ class EditorModule(val moduleId:Short) extends Module {
       result.getOrElse(false)
     }
     
+    /**
+     * This is a place to stick weird, special filters.
+     */
+    def specialFilter(thing:Thing, prop:Property[_,_])(implicit state:SpaceState):Boolean = {
+      // We display Default View iff it is defined locally on this Thing, or it is *not*
+      // defined for the Model.
+      // TBD: this is kind of a weird hack. Is it peculiar to Default View, or is there
+      // a general concept here?
+      if (prop == DisplayTextProp) {
+        if (thing.localProp(DisplayTextProp).isDefined)
+          true
+        else {
+          thing.getModelOpt match {
+            case Some(model) => {
+              val result = for (
+                modelPO <- model.getPropOpt(DisplayTextProp);
+                if (!modelPO.isEmpty)
+                  )
+                yield false
+                
+              result.getOrElse(true)
+            }
+            case None => true
+          }
+        }
+      } else
+        true
+    }
+    
     private def propsToEditForThing(thing:Thing, state:SpaceState):Iterable[Property[_,_]] = {
       implicit val s = state
       val result = for (
@@ -156,7 +185,7 @@ class EditorModule(val moduleId:Short) extends Module {
         yield props
 
       // Note that the toList here implicitly sorts the PropList, more or less by display name:
-      result.getOrElse(PropList.from(thing).toList.map(_._1).filterNot(isAdvanced(_)))
+      result.getOrElse(PropList.from(thing).toList.map(_._1).filterNot(isAdvanced(_)).filter(specialFilter(thing, _)))
     }
     
     private def editorLayoutForThing(thing:Thing, state:SpaceState):QLText = {
