@@ -67,7 +67,7 @@ trait Requester { me:Actor =>
   /**
    * Override this to specify the timeout for requests
    */
-  implicit val requestTimeout = Timeout(1 seconds)
+  implicit val requestTimeout = Timeout(10 seconds)
  
   /**
    * Send a request, and specify the handler for the received response. You may also specify a failHandler,
