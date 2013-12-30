@@ -23,6 +23,7 @@ function finishStatus(msg) {
   $("#statusLine").show().delay(4000).hide("slow");
 }
 
+// JQuery plugin for Manifest-izing a control
 (function( $ ) {
 
   $.fn.asManifest = function (ownerId, spaceId) {
@@ -98,11 +99,105 @@ function finishStatus(msg) {
         
 }( jQuery ));
 
+// **********************************************
+//
+// jQuery plugin for re-arrangeable Lists
+//
+
+(function( $ ) {
+
+    function setButton(t, icon, title, cb) {
+	  t.html("<i class='" + icon + "'></i>");
+	  t.addClass("btn");
+      t.attr("title", title);
+      t.off("click");
+      t.on("click", cb);          
+    }
+        
+    function dataField(t, fieldName) {
+      return "#" + t.data(fieldName);
+    }
+        
+    function viaField(t, fieldName) {
+      var controlId = dataField(t, fieldName);
+      return $(controlId);
+    }
+    
+    $.fn.addListItemButton = function () {
+      this.each(function () {
+        setButton($(this), "icon-plus-sign", "Add Item", handleAddListItem);
+      });
+    }
+    
+    $.fn.deleteListItemButton = function () {
+      this.each(function () {
+        setButton($(this), "icon-remove-sign", "Delete Item", handleDeleteListItem);
+      });
+    }
+    
+    function handleAddListItem(evt) {
+      var templateField = $(this).parent().find(".inputTemplate").first();
+      var list = $(this).parent().find("ul").first();
+      var sizeField = viaField($(this), "size");
+      var curSize = Number(sizeField.val());
+      var newField = templateField.clone(true);
+      newField.attr("name", templateField.data("basename") + "[" + curSize + "]");
+      newField.removeClass("inputTemplate");
+      newField.show();
+      var newLi = $("<li><span class=\"icon-move\"></span></li>");
+      newLi.append(newField);
+      var delButton = $("<button class=\"delete-item-button btn-mini\">&nbsp;</button>");
+      setButton(delButton, "icon-remove-sign", "Delete Item", handleDeleteListItem);
+      newLi.append(delButton);
+      list.append(newLi);
+      sizeField.val(curSize + 1);
+      return false;
+    }
+    
+    function handleDeleteListItem(evt) {
+      var targetLi = $(this).parent();
+      var sortList = targetLi.parent();
+      targetLi.detach();
+      renumberList(sortList);
+      return false;
+    }
+    
+}( jQuery ));
+      
+function renumberList(sortList) {
+  var allItems = sortList.children("li");
+  var templateField = sortList.parent().find(".inputTemplate").first();
+  var baseItemName = templateField.data("basename");
+  var i = 0;
+  allItems.each(function () {
+    var listItem = $(this);
+    var inputField = listItem.find(".list-input-element");
+    inputField.attr("name", baseItemName + "[" + i + "]");
+    i = i + 1;
+  });        
+}
+    
+function onSortFinished(evt, ui) {
+  var itemMoved = ui.item;
+  var sortList = itemMoved.parent();
+  renumberList(sortList);
+}       
+
+// **********************************************
+
 function finalSetup(ownerId, spaceId, root) {
   // For now, we're specifically omitting selects inside list editors, because they aren't rendering right.
   // TODO: Fix this!
   // TODO: SelectBoxIt is nice in principle, but I keep hitting annoying edge cases. So disabling it for now.
   //$("select").filter(":not(.sortableList select)").selectBoxIt();
+  
+  // Invoke the List mechanisms, if appropriate:
+  root.find(".add-item-button").addListItemButton();
+  root.find(".delete-item-button").deleteListItemButton();
+  root.find(".sortableList").sortable({
+    stop:onSortFinished
+  });      
+  root.find(".inputTemplate").hide();
   
   root.find("._withTooltip").tooltip({ delay: 250 });
   

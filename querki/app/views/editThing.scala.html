@@ -202,18 +202,6 @@
           $(this).editButton();
           return false;
         }
-        
-        $.fn.addListItemButton = function () {
-          this.each(function () {
-            setButton($(this), "icon-plus-sign", "Add Item", handleAddListItem);
-          });
-        }
-        
-        $.fn.deleteListItemButton = function () {
-          this.each(function () {
-            setButton($(this), "icon-remove-sign", "Delete Item", handleDeleteListItem);
-          });
-        }
 
         function dataField(t, fieldName) {
           return "#" + t.data(fieldName);
@@ -223,55 +211,9 @@
           var controlId = dataField(t, fieldName);
           return $(controlId);
         }
-        
-        function handleAddListItem(evt) {
-          var templateField = $(this).parent().find(".inputTemplate").first();
-          var list = $(this).parent().find("ul").first();
-          var sizeField = viaField($(this), "size");
-          var curSize = Number(sizeField.val());
-          var newField = templateField.clone(true);
-          newField.attr("name", templateField.data("basename") + "[" + curSize + "]");
-          newField.removeClass("inputTemplate");
-          newField.show();
-          var newLi = $("<li><span class=\"icon-move\"></span></li>");
-          newLi.append(newField);
-          var delButton = $("<button class=\"delete-item-button btn-mini\">&nbsp;</button>");
-          setButton(delButton, "icon-remove-sign", "Delete Item", handleDeleteListItem);
-          newLi.append(delButton);
-          list.append(newLi);
-          sizeField.val(curSize + 1);
-          return false;
-        }
-        
-        function handleDeleteListItem(evt) {
-          var targetLi = $(this).parent();
-          var sortList = targetLi.parent();
-          targetLi.detach();
-          renumberList(sortList);
-          return false;
-        }
-        
+
       }( jQuery ));
-      
-      function renumberList(sortList) {
-        var allItems = sortList.children("li");
-        var templateField = sortList.parent().find(".inputTemplate").first();
-        var baseItemName = templateField.data("basename");
-        var i = 0;
-        allItems.each(function () {
-          var listItem = $(this);
-          var inputField = listItem.find(".list-input-element");
-          inputField.attr("name", baseItemName + "[" + i + "]");
-          i = i + 1;
-        });        
-      }
-        
-      function onSortFinished(evt, ui) {
-        var itemMoved = ui.item;
-        var sortList = itemMoved.parent();
-        renumberList(sortList);
-      }
-       
+
       var selectCreatingNew; 
       function handleLinkSelectChanged(evt) {
         selectCreatingNew = this;
@@ -483,12 +425,6 @@
         root.find(".edit-button").editButton();
         root.find(".revert-button").revertButton();
         root.find(".trash-button").trashButton();
-        root.find(".add-item-button").addListItemButton();
-        root.find(".delete-item-button").deleteListItemButton();
-        root.find(".inputTemplate").hide();
-        root.find(".sortableList").sortable({
-          stop:onSortFinished
-        });      
         root.find("._linkSelect").change(handleLinkSelectChanged);
       }
       
