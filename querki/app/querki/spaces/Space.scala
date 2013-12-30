@@ -63,6 +63,14 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
   lazy val persister = persistenceFactory.getSpacePersister(id)
   
   /**
+   * Our requests are going mainly to the Persister, which is talking to the DB, so give them
+   * lots of time.
+   * 
+   * TODO: this should probably become config-driven, so testing can clamp it down?
+   */
+  override implicit val requestTimeout = Timeout(DurationInt(30) seconds)
+  
+  /**
    * TODO: now that I understand Akka better, this is probably better reimplemented as a
    * local parameter of the Receive function. That is, we should start in a Loading
    * state, stashing incoming messages to begin with, and do each DB load (from Spaces
