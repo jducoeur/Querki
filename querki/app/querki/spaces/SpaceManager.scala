@@ -61,7 +61,7 @@ class SpaceManager(persistenceFactory:SpacePersistenceFactory) extends Actor wit
     context.child(sid).getOrElse(context.actorOf(Space.actorProps(persistenceFactory), sid))
   }
   
-  def receive = handleResponses orElse {
+  def receive = {
     // This is entirely a DB operation, so just have the Persister deal with it:
     case req @ ListMySpaces(owner) => persister.forward(req)
 

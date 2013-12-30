@@ -321,7 +321,7 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
     }
   }
   
-  def receive = handleResponses orElse {
+  def receive = {
     case req:CreateSpace => {
       sender ! ThingFound(UnknownOID, state)
     }

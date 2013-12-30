@@ -45,19 +45,12 @@ import akka.util.Timeout
  * around as a message to the local Actor. Note that the original sender is preserved, so the callback
  * can use it without problems.
  * 
- * Unfortunately, this does demand a bit of extra complicity on the Actor's part. In order to use this,
- * you must mix in this trait and add one clause to your receive:
- * 
- * def receive = handleResponses orElse {
- *   ... normal receive handlers...
- * }
- * 
- * handleResponse simply receives the RequestedReponse message, and calls invoke on it when received.
- * You can handle this in other ways if you prefer, but this seems cleanest. (I wish I could see a way
- * to avoid that detail, but so far I don't see one that is fully compatible with idiomatic Akka. And part
- * of the goal here is that this mechanism can be used without doing too much violence to the rest of your Akka code.)
+ * Note that, to make this work, the Request trait mixes in its own version of unhandled(). I *think* this
+ * should Just Work, but it's probably the part where I'm on least-comfortable ground, so watch for edge
+ * cases there. I have not yet tested how this interacts with Actor-defined unhandled(), and I'm mildly
+ * concerned about possible loops.
  */
-trait Requester { this:Actor =>
+trait Requester { me:Actor =>
   
   implicit class RequestableActorRef(a:ActorRef) {
     def request(msg:Any)(handler:Actor.Receive) = doRequest(a, msg)(handler)
@@ -75,10 +68,6 @@ trait Requester { this:Actor =>
    * Override this to specify the timeout for requests
    */
   implicit val requestTimeout = Timeout(1 seconds)
-  
-  def handleResponses:Receive = {
-    case resp:RequestedResponse => resp.invoke
-  }
  
   /**
    * Send a request, and specify the handler for the received response. You may also specify a failHandler,
@@ -92,6 +81,13 @@ trait Requester { this:Actor =>
     f.onComplete {
       case Success(resp) => self.tell(RequestedResponse(resp, handler), originalSender) 
       case Failure(thrown) => self.tell(RequestedResponse(thrown, handler), originalSender) 
+    }
+  }
+  
+  abstract override def unhandled(message: Any): Unit = {
+    message match {
+      case resp:RequestedResponse => resp.invoke
+      case other => me.unhandled(other)
     }
   }
 }

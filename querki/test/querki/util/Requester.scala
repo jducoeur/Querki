@@ -27,7 +27,7 @@ class MyRequester extends Actor with Requester with ActorLogging {
   
   var results = ""
   
-  def receive = handleResponses orElse {
+  def receive = {
     case Start(trans) => {
       trans.request(Stringify(4)) {
         case Stringified(str) => {
