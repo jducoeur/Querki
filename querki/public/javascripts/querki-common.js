@@ -186,25 +186,6 @@ function onSortFinished(evt, ui) {
 // **********************************************
 
 function finalSetup(ownerId, spaceId, root) {
-  // For now, we're specifically omitting selects inside list editors, because they aren't rendering right.
-  // TODO: Fix this!
-  // TODO: SelectBoxIt is nice in principle, but I keep hitting annoying edge cases. So disabling it for now.
-  //$("select").filter(":not(.sortableList select)").selectBoxIt();
-  
-  // Invoke the List mechanisms, if appropriate:
-  root.find(".add-item-button").addListItemButton();
-  root.find(".delete-item-button").deleteListItemButton();
-  root.find(".sortableList").sortable({
-    stop:onSortFinished
-  });      
-  root.find(".inputTemplate").hide();
-  
-  root.find("._withTooltip").tooltip({ delay: 250 });
-  
-  root.find("._tagSetInput").asManifest(ownerId, spaceId);
-  root.find(".controls ._largeTextEdit").addClass("span10");
-  root.find("._largeTextEdit").autosize();
-  root.find(".controls input[type='text']").filter(".propEditor").addClass("span10");
 
   function doUpdateValue(target, successCb, failureCb) {
       var prop = target.data("propid");
@@ -212,10 +193,13 @@ function finalSetup(ownerId, spaceId, root) {
       var serialized;
       if (target.hasClass("radioBtn")) {
         serialized = target.prop("name") + "=" + target.prop("value");
+      } else if (target.hasClass("coll-list-input")) {
+        // Serialize each of the elements of this list:
+        serialized = target.find(".list-input-element").serialize();
       } else {
         serialized = target.serialize();
       }
-      console.log("Serialized value is " + serialized);
+      console.log("Serialized value of " + thingId + ":" + prop + " is " + serialized);
       jsRoutes.controllers.Application.setProperty2(ownerId, spaceId, thingId).ajax({
         data: "addedProperty=&model=&field[0]=" + prop + "&" + serialized,
         success: function (result) {
@@ -237,6 +221,26 @@ function finalSetup(ownerId, spaceId, root) {
       doUpdateValue(target);
     }
   }
+
+  // For now, we're specifically omitting selects inside list editors, because they aren't rendering right.
+  // TODO: Fix this!
+  // TODO: SelectBoxIt is nice in principle, but I keep hitting annoying edge cases. So disabling it for now.
+  //$("select").filter(":not(.sortableList select)").selectBoxIt();
+  
+  // Invoke the List mechanisms, if appropriate:
+  root.find(".add-item-button").addListItemButton();
+  root.find(".delete-item-button").deleteListItemButton();
+  root.find(".sortableList").sortable({
+    stop:onSortFinished
+  });      
+  root.find(".inputTemplate").hide();
+  
+  root.find("._withTooltip").tooltip({ delay: 250 });
+  
+  root.find("._tagSetInput").asManifest(ownerId, spaceId);
+  root.find(".controls ._largeTextEdit").addClass("span10");
+  root.find("._largeTextEdit").autosize();
+  root.find(".controls input[type='text']").filter(".propEditor").addClass("span10");
 
   root.find(".propEditor").change(updateValue);
   root.find(".propEditor .radioBtn").click(updateValue);
