@@ -181,6 +181,7 @@ function onSortFinished(evt, ui) {
   var itemMoved = ui.item;
   var sortList = itemMoved.parent();
   renumberList(sortList);
+  return sortList;
 }       
 
 // **********************************************
@@ -215,11 +216,14 @@ function finalSetup(ownerId, spaceId, root) {
       showStatus("Saving...");  
   }
   
-  function updateValue(evt) {
+  function updateIfLive(target) {
     if (querkiLiveUpdate) {
-      var target = $(this);
       doUpdateValue(target);
-    }
+    }  
+  }
+  
+  function updateValue(evt) {
+    updateIfLive($(this));
   }
 
   // For now, we're specifically omitting selects inside list editors, because they aren't rendering right.
@@ -231,7 +235,12 @@ function finalSetup(ownerId, spaceId, root) {
   root.find(".add-item-button").addListItemButton();
   root.find(".delete-item-button").deleteListItemButton();
   root.find(".sortableList").sortable({
-    stop:onSortFinished
+    stop:function(evt, ui) {
+      // onSortFinished() returns the sortableList itself...
+      var sortList = onSortFinished(evt, ui);
+      // ... from which we perform the update on the coll-list-input, which is its parent:
+      updateIfLive(sortList.parent());
+    }
   });      
   root.find(".inputTemplate").hide();
   
