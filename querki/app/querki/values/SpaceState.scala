@@ -46,6 +46,28 @@ case class SpaceState(
     ownerIdentity:Option[querki.identity.Identity]) 
   extends Thing(s, s, m, Kind.Space, pf, mt) 
 {
+  // *******************************************
+  //
+  // Calculated and cached tables
+  //
+  // In some cases, it is worthwhile for us to cache some calculations on the SpaceState. Don't go overboard on
+  // these, but put them here as lazy vals.
+  //
+  
+  /**
+   * This is a bit specialized, but is the list of Properties available to add in the Editor.
+   */
+  lazy val publicPropsBySkill:Map[OID, Seq[Property[_,_]]] = {
+    implicit val s = this
+    propList.toSeq.
+      filterNot(_.ifSet(DeprecatedProp)).
+      filterNot(_.ifSet(InternalProp)).
+      filterNot(_.ifSet(IsFunctionProp)).
+      groupBy(SkillLevel(_))
+  }
+  
+  // *******************************************
+  
   // Walks up the App tree, looking for the specified Thing of the implied type:
   // IMPORTANT: note that the OID and ThingId versions of these methods are inconsistent in their
   // return signatures! That is a historical accident.
@@ -337,7 +359,17 @@ object SpaceState {
      */
     def members:Iterable[Thing] = people.filter(_.hasProp(modules.Modules.Person.identityLink)(state))
     
+    // *************************************
+    
     def ownerName:String = state.ownerIdentity.map(_.name).getOrElse(state.owner.toThingId)
     def ownerHandle:String = state.ownerIdentity.map(_.handle).getOrElse(state.owner.toThingId)
+    
+    // *************************************
+    
+    private def propsForLevel(level:OID):Seq[Property[_,_]] = {
+      state.publicPropsBySkill.get(level).getOrElse(Seq.empty)
+    }
+    def standardProps:Seq[Property[_,_]] = propsForLevel(SkillLevel.Standard)
+    def advancedProps:Seq[Property[_,_]] = propsForLevel(SkillLevel.Advanced)
   }
 }

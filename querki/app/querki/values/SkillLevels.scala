@@ -14,6 +14,15 @@ object SkillLevel {
   lazy val Advanced = skillLevelAdvanced
   
   def apply(level:OID) = skillLevelProp(level)
+  def apply(thing:Thing)(implicit state:SpaceState):OID = {
+    val result = for (
+      propVal <- thing.getPropOpt(skillLevelProp);
+      levelId <- propVal.firstOpt
+        )
+      yield levelId
+      
+    result.getOrElse(Standard.id)
+  } 
   
   def isAdvanced(thing:Thing)(implicit state:SpaceState):Boolean = {
     val result = for (

@@ -44,15 +44,6 @@
   aType.requiredColl.map(collExp(_)).getOrElse("")
 }
 
-@partitionedProps(s:SpaceState) = @{
-  // TODO: this should probably become a lazy val on SpaceState -- no need to keep recalculating it
-  s.propList.toSeq.
-    filterNot(_.ifSet(DeprecatedProp)(s)).
-    filterNot(_.ifSet(InternalProp)(s)).
-    filterNot(_.ifSet(IsFunctionProp)(s)).
-    partition(querki.values.SkillLevel.isAdvanced(_)(s))
-}
-
 @propIsWrongKind(prop:Property[_,_], s:SpaceState) = @{
   val result = for (
     propVal <- prop.getPropOpt(AppliesToKindProp)(s);
@@ -68,20 +59,18 @@
 }
 
 @propsInSpace(s:SpaceState) = {
-  @defining(partitionedProps(s)) { partitioned =>
     <optgroup label="Properties in @s.displayName">
-      @for(prop <- filterPropsByKind(partitioned._2, s).sortBy(_.displayName)) {
+      @for(prop <- filterPropsByKind(s.standardProps, s).sortBy(_.displayName)) {
         <option value="@prop.id.toString">@prop.displayName</option>
       }
     </optgroup>
-    @if(partitioned._1.length > 0) {
+    @if(s.advancedProps.length > 0) {
     <optgroup label="Advanced Properties in @s.displayName">
-      @for(prop <- filterPropsByKind(partitioned._1, s).sortBy(_.displayName)) {
+      @for(prop <- filterPropsByKind(s.advancedProps, s).sortBy(_.displayName)) {
         <option value="@prop.id.toString">@prop.displayName</option>
       }
     </optgroup>    
     }
-  }
   @{s.app.map(propsInSpace(_))}
 }
 
