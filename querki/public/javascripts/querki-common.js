@@ -123,22 +123,29 @@ function finishStatus(msg) {
       return $(controlId);
     }
     
-    $.fn.addListItemButton = function () {
+    function eventWithCallback(func, cb) {
+      return function(evt) {
+        return func(evt, cb);
+      }
+    }
+    
+    $.fn.addListItemButton = function (cb) {
       this.each(function () {
-        setButton($(this), "icon-plus-sign", "Add Item", handleAddListItem);
+        setButton($(this), "icon-plus-sign", "Add Item", eventWithCallback(handleAddListItem, cb));
       });
     }
     
-    $.fn.deleteListItemButton = function () {
+    $.fn.deleteListItemButton = function (cb) {
       this.each(function () {
-        setButton($(this), "icon-remove-sign", "Delete Item", handleDeleteListItem);
+        setButton($(this), "icon-remove-sign", "Delete Item", eventWithCallback(handleDeleteListItem, cb));
       });
     }
     
-    function handleAddListItem(evt) {
-      var templateField = $(this).parent().find(".inputTemplate").first();
-      var list = $(this).parent().find("ul").first();
-      var sizeField = viaField($(this), "size");
+    function handleAddListItem(evt, cb) {
+      var target = $(evt.currentTarget);
+      var templateField = target.parent().find(".inputTemplate").first();
+      var list = target.parent().find("ul").first();
+      var sizeField = viaField(target, "size");
       var curSize = Number(sizeField.val());
       var newField = templateField.clone(true);
       newField.attr("name", templateField.data("basename") + "[" + curSize + "]");
@@ -151,14 +158,16 @@ function finishStatus(msg) {
       newLi.append(delButton);
       list.append(newLi);
       sizeField.val(curSize + 1);
+      cb(list.parent());
       return false;
     }
     
-    function handleDeleteListItem(evt) {
-      var targetLi = $(this).parent();
+    function handleDeleteListItem(evt, cb) {
+      var targetLi = $(evt.currentTarget).parent();
       var sortList = targetLi.parent();
       targetLi.detach();
       renumberList(sortList);
+      cb(sortList.parent());
       return false;
     }
     
@@ -232,8 +241,8 @@ function finalSetup(ownerId, spaceId, root) {
   //$("select").filter(":not(.sortableList select)").selectBoxIt();
   
   // Invoke the List mechanisms, if appropriate:
-  root.find(".add-item-button").addListItemButton();
-  root.find(".delete-item-button").deleteListItemButton();
+  root.find(".add-item-button").addListItemButton(updateIfLive);
+  root.find(".delete-item-button").deleteListItemButton(updateIfLive);
   root.find(".sortableList").sortable({
     stop:function(evt, ui) {
       // onSortFinished() returns the sortableList itself...
