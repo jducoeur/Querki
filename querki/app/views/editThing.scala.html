@@ -235,23 +235,6 @@
         }
 
       }( jQuery ));
-
-      var selectCreatingNew; 
-      function handleLinkSelectChanged(evt) {
-        selectCreatingNew = this;
-        var optionSelected = $("option:selected", this);
-        if (optionSelected.hasClass("_createNewFromModel")) {
-          var modelId = optionSelected.data("model");
-          $("#create-instance-iframe").attr("src", "@routes.Application.createThing(rc.ownerHandle, space.toThingId, None)" + "?cl&subCreate=true&model=" + modelId)
-		  $("#create-instance-dialog").dialog("open");
-		  return false;          
-        } 
-      }
-      
-      function onLinkCreated(newThingId, newDisplayName) {
-        $(selectCreatingNew).append('<option value="' + newThingId + '" selected="selected">' + newDisplayName + '</option>');
-        $("#create-instance-dialog").dialog("close");
-      }
       
       // **************************************
       //
@@ -447,7 +430,6 @@
         root.find(".edit-button").editButton();
         root.find(".revert-button").revertButton();
         root.find(".trash-button").trashButton();
-        root.find("._linkSelect").change(handleLinkSelectChanged);
       }
       
       $(function() {
@@ -457,27 +439,9 @@
           $("#makeAnother").val("true");
           return true;
         });
-        
-		$("#create-instance-dialog").dialog({
-		    autoOpen:false,
-		    height: 800,
-		    width: 700,
-			modal: true,
-			buttons: {
-		      "Cancel": function () {
-			    $(this).dialog("close");
-			  }
-			},
-			close: function () {
-			}
-		});
 		
       });
     </script>
-    
-    <div id="create-instance-dialog" title="">
-      <iframe id="create-instance-iframe" src="" style="width: 95%; height: 95%"></iframe>
-    </div>
     
 	<div class="page-header">
 	    <h1>@Html(pageTitle) @cancelButton</h1>

@@ -194,6 +194,60 @@ function onSortFinished(evt, ui) {
 }       
 
 // **********************************************
+//
+// Supporting code for Create from Link:
+//
+
+var selectCreatingNew; 
+function handleLinkSelectChanged(evt) {
+  selectCreatingNew = this;
+  var optionSelected = $("option:selected", this);
+  if (optionSelected.hasClass("_createNewFromModel")) {
+    var modelId = optionSelected.data("model");
+    // Note that createThingRoute is defined in main.html:
+    $("#create-instance-iframe").attr("src", createThingRoute() + "?cl&subCreate=true&model=" + modelId)
+    $("#create-instance-dialog").dialog("open");
+	return false;          
+  } 
+}
+  
+function onLinkCreated(newThingId, newDisplayName) {
+  $(selectCreatingNew).append('<option value="' + newThingId + '" selected="selected">' + newDisplayName + '</option>');
+  $("#create-instance-dialog").dialog("close");
+  $(selectCreatingNew).closest(".propEditor").each(function () { 
+    editControlChanged($(this)); 
+  })
+}
+
+function setupCreateFromLink(root) {
+  // TODO: figure out how to make this nicely Bootstrappy and responsive:
+  var wWidth = $(window).width();
+  var dWidth = wWidth * 0.9;
+  var wHeight = $(window).height();
+  var dHeight = wHeight * 0.9;
+  $("#create-instance-dialog").dialog({
+	  autoOpen:false,
+	  height: dHeight,
+	  width: dWidth,
+	  modal: true,
+	  buttons: {
+	      "Cancel": function () {
+		    $(this).dialog("close");
+		  }
+	  },
+	  close: function () {
+	  }
+  });
+  
+  root.find("._linkSelect").change(handleLinkSelectChanged);
+}
+  
+// **********************************************
+
+var updateCB;
+function editControlChanged(target) {
+  updateCB(target);
+}
 
 function finalSetup(ownerId, spaceId, root) {
 
@@ -230,6 +284,7 @@ function finalSetup(ownerId, spaceId, root) {
       doUpdateValue(target);
     }  
   }
+  updateCB = updateIfLive;
   
   function updateValue(evt) {
     updateIfLive($(this));
@@ -263,11 +318,14 @@ function finalSetup(ownerId, spaceId, root) {
   root.find(".propEditor").change(updateValue);
   root.find(".propEditor .radioBtn").click(updateValue);
   
+  setupCreateFromLink(root);
+  
   // --------------------------
   // Pick List Management
   //
   // TODO: this code is horribly incestuous with HtmlRenderer. How can we modularize all of
   // this stuff more appropriately?
+  // TODO: all of this should get replaced by the same mechanism we use for Add Instance.
   function addToList(target, newId) {
     var master = target.parents(".propEditor");
     var basename = master.prop("name");

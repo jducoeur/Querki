@@ -43,6 +43,13 @@
   }
 }
 
+@createThingRoute = @{
+  space match {
+    case Some(s) => routes.Application.createThing(rc.ownerHandle, s.toThingId, None)
+    case _ => ""
+  }
+}
+
 @createOptGroups(s:SpaceState) = {
         <optgroup label="Models in @s.displayName">
           @for(model <- s.models.toSeq.filterNot(_.ifSet(DeprecatedProp)(s)).sortBy(_.displayName)) {
@@ -135,7 +142,7 @@
           }
         </style>
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap-responsive.css")">
-        <link type="text/css" rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/jquery.selectboxit/3.6.0/jquery.selectBoxIt.css" />
+        <!-- <link type="text/css" rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/jquery.selectboxit/3.6.0/jquery.selectBoxIt.css" /> -->
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/manifest.css")">
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
         
@@ -145,7 +152,7 @@
         <script src="@routes.Assets.at("javascripts/jquery-ui-1.10.0.custom.js")"></script>
         <script src="@routes.Assets.at("javascripts/jquery.ui.menubar.js")"></script>
         <script src="@routes.Assets.at("javascripts/bootstrap.js")"></script>
-		<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery.selectboxit/3.6.0/jquery.selectBoxIt.min.js"></script>
+		<!-- <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery.selectboxit/3.6.0/jquery.selectBoxIt.min.js"></script> -->
         <script src="@routes.Assets.at("javascripts/underscore-min.js")"></script>
         <script src="@routes.Assets.at("javascripts/jquery.autosize-min.js")"></script>
         <script src="@routes.Assets.at("javascripts/querki-common.js")"></script>
@@ -234,6 +241,11 @@
 			
 			finalSetup("@ownerId", "@spaceId", $('body'));
 		});
+		
+		// HACK: provide the route for Thing creation, for querki-common to use:
+		function createThingRoute() {
+		  return "@createThingRoute";
+		}
 		</script>
 		
 	<style>
@@ -321,6 +333,10 @@
 	    }
 	    
 	@createFormInSpace
+    
+    <div id="create-instance-dialog" title="">
+      <iframe id="create-instance-iframe" src="" style="width: 95%; height: 95%"></iframe>
+    </div>
 	
 	@if(thing.isDefined) {
       <div id="delete-dialog" title="Confirm Delete">
