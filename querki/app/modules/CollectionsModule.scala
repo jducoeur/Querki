@@ -4,6 +4,8 @@ import models._
 import models.system._
 import ql._
 
+import querki.conventions.{PropDetails, PropSummary}
+
 import querki.values._
 
 import Thing._

@@ -13,6 +13,8 @@ import OIDs._
 
 import YesNoType._
 
+import querki.conventions.{PropDetails, PropSummary}
+
 import querki.util._
 import querki.values._
 

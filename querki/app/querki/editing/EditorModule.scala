@@ -7,7 +7,7 @@ import models.Thing.{PropFetcher, setName, toProps}
 import models.system.{SingleContextMethod, SystemProperty}
 import models.system.{ExactlyOne, QList}
 import models.system.{IntType, LargeTextType, LinkType, QLText}
-import models.system.{AppliesToKindProp, DisplayTextProp, InstanceEditPropsProp, IsModelProp, PropDetails, PropSummary}
+import models.system.{AppliesToKindProp, DisplayTextProp, InstanceEditPropsProp, IsModelProp}
 import models.system.OIDs.sysId
 
 import ql.{QLCall, QLParser, QLPhrase}
@@ -16,6 +16,8 @@ import querki.html.RenderSpecialization._
 
 import modules.Modules.SkillLevel._
 import modules.Modules.Types
+
+import querki.conventions.{PropDetails, PropSummary}
 
 import querki.util._
 import querki.values._

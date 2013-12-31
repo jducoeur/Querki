@@ -10,6 +10,8 @@ import Thing._
 import OIDs._
 import SystemSpace._
 
+import querki.conventions.{PropSummaryOID, PropDetailsOID, PropSummary, PropDetails}
+
 import querki.values._
 
 class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
@@ -23,13 +25,13 @@ class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:
         setName("Property"),
         (InternalPropOID -> ExactlyOne(YesNoType(true))),
         (PropSummaryOID -> Optional(TextType("The root Property, from which all others derive."))),
-        (DisplayTextOID -> Optional(LargeTextType("""[[Property Summary -> ""**____** -- ""]]
+        (DisplayTextOID -> Optional(LargeTextType("""[[Summary -> ""**____** -- ""]]
             |[[_if(Property Type -> _is(Internal Method Type), 
             |  ""**METHOD**"",
             |  ""Collection: [[Property Collection]] Type: [[Property Type]]"")]]
             |
             |
-            |[[Property Details]]""".stripMargin)))
+            |[[Details]]""".stripMargin)))
         ), modules.time.TimeModule.epoch)
   
   object NameProp extends SystemProperty(NameOID, NameType, ExactlyOne,
@@ -341,34 +343,6 @@ object ShowUnknownProp extends SystemProperty(ShowUnknownOID, LargeTextType, Exa
           |There is a simple default value that is defined on every Space by default. But you should feel free
           |to override that to do something more interesting, especially if you are doing interesting things
           |with Tags in your Space.""".stripMargin)))
-
-object PropSummary extends SystemProperty(PropSummaryOID, TextType, Optional,
-    toProps(
-      setName("Property Summary"),
-      (NotInheritedOID -> ExactlyOne(YesNoType(true))),
-      AppliesToKindProp(Kind.Property),
-      (PropSummaryOID -> Optional(TextType("This is an optional one-line description of a Property."))),
-      (PropDetailsOID -> Optional(LargeTextType("""When you define a Property, you may add this Summary as
-          |part of that definition. It will be displayed in mouseover hovering and things like that, to help
-          |you and others remember what this Property is. It's optional, but recommended that you define
-          |this for all of your Properties.
-          |
-          |There is no required format or content for this Summary -- it should simply be a reminder of what
-          |this Property is about.""".stripMargin)))))
-
-object PropDetails extends SystemProperty(PropDetailsOID, LargeTextType, Optional,
-    toProps(
-      setName("Property Details"),
-      (NotInheritedOID -> ExactlyOne(YesNoType(true))),
-      AppliesToKindProp(Kind.Property),
-      (PropSummaryOID -> Optional(TextType("This is an optional detailed description of a Property."))),
-      (PropDetailsOID -> Optional(LargeTextType("""When you define a Property, you may add whatever description
-          |or documentation you see fit in the Details. This is the place to say what this Property is for, what
-          |it means, how it should be used, what is legal in it, and so on.
-          |
-    	  |It is entirely optional -- put something in here if it makes sense. In general, the more complex the
-          |Space, and the more people who will be using it, the wiser it becomes to give Details for all of your
-          |Properties. If this Space is simple and just for you, it usually isn't necessary.""".stripMargin)))))
 
 object DeprecatedProp extends SystemProperty(DeprecatedOID, YesNoType, ExactlyOne,
     toProps(

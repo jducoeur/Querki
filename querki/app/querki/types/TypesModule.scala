@@ -5,8 +5,10 @@ import models.Thing._
 
 import models.system.IntType
 import models.system.ExactlyOne
-import models.system.{AppliesToKindProp, PropDetails, PropSummary, SystemProperty}
+import models.system.{AppliesToKindProp, SystemProperty}
 import models.system.OIDs.sysId
+
+import querki.conventions.{PropDetails, PropSummary}
 
 import modules.Module
 

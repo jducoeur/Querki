@@ -5,8 +5,10 @@ import models.Thing._
 
 import models.system.ExactlyOne
 import models.system.LinkType
-import models.system.{DisplayTextProp, LinkModelProp, PropDetails, PropSummary, SystemProperty}
+import models.system.{DisplayTextProp, LinkModelProp, SystemProperty}
 import models.system.OIDs.{systemOID, SimpleThingOID}
+
+import querki.conventions.{PropDetails, PropSummary}
 
 import modules.Module
 

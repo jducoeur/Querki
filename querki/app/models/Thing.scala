@@ -316,11 +316,15 @@ abstract class Thing(
    * is empty.
    */
   def map[VT, DT, RT](prop:Property[VT, _], destType:PType[DT] with PTypeBuilder[DT, RT])(cb:VT => RT)(implicit state:SpaceState):QValue = {
-    val propAndValOpt = getPropOpt(prop)
-    propAndValOpt match {
-      case Some(propAndVal) => propAndVal.map(destType)(cb)
-      case None => Optional.Empty(destType)
-    }
+//    val propAndValOpt = getPropOpt(prop)
+//    propAndValOpt match {
+//      case Some(propAndVal) => propAndVal.map(destType)(cb)
+//      case None => Optional.Empty(destType)
+//    }
+    // TBD: does this do the desired thing? It is strictly correct, but if the Property is
+    // ExactlyOne, it will *always* return a value.
+    val propAndVal = getProp(prop)
+    propAndVal.map(destType)(cb)
   }
   
   /**

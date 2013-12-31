@@ -6,12 +6,13 @@ import play.api.templates.Html
 
 import models.{HtmlWikitext, OID}
 import models.Thing._
-import models.system.{InternalMethod, PropDetails, PropSummary}
+import models.system.{InternalMethod}
 
 import modules.Module
 
 import ql.QLPhrase
 
+import querki.conventions._
 import querki.util._
 import querki.values._
 

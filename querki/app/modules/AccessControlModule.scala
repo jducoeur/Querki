@@ -7,6 +7,8 @@ import models.system.OIDs._
 
 import ql._
 
+import querki.conventions.{PropDetails, PropSummary}
+
 import querki.util._
 import querki.values._
 

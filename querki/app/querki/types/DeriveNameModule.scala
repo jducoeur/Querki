@@ -7,10 +7,12 @@ import models.Thing._
 import models.system.SimpleThing
 import models.system.{LinkType, NameType, PlainTextType}
 import models.system.ExactlyOne
-import models.system.{LinkAllowAppsProp, LinkModelProp, NameProp, PropDetails, PropSummary, SystemProperty}
+import models.system.{LinkAllowAppsProp, LinkModelProp, NameProp, SystemProperty}
 import models.system.OIDs.{DisplayNameOID, NameOID, RootOID, systemOID}
 
 import modules.Module
+
+import querki.conventions.{PropDetails, PropSummary}
 
 import querki.spaces.{SpaceChangeManager, ThingChangeRequest}
 

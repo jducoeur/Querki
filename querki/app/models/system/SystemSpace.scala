@@ -126,8 +126,8 @@ object OIDs {
 //  val EditOrElseMethodOID = sysId(82)
   val AllPropsMethodOID = sysId(83)
   val AllPropsThingOID = sysId(84)
-  val PropSummaryOID = sysId(85)
-  val PropDetailsOID = sysId(86)
+//  val PropSummaryOID = sysId(85)
+//  val PropDetailsOID = sysId(86)
   val CountMethodOID = sysId(87)
   val ReverseMethodOID = sysId(88)
   val DescMethodOID = sysId(89)
@@ -212,8 +212,8 @@ object SystemSpace {
       FormLineMethod,
 //      EditOrElseMethod,
       AllPropsMethod,
-      PropSummary,
-      PropDetails,
+//      PropSummary,
+//      PropDetails,
       CountMethod,
       ReverseMethod,
       DescMethod,

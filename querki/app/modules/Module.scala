@@ -24,6 +24,7 @@ object Modules {
   val DeriveName = new querki.types.DeriveNameModule(12)
   val Editor = new querki.editing.EditorModule(13)
   val SkillLevel = new querki.identity.SkillLevelModule(14)
+  val Conventions = new querki.conventions.ConventionsModule(15)
   
   private var allModules = Seq.empty[Module]
   
@@ -55,6 +56,7 @@ object Modules {
     s = init(DeriveName, s)
     s = init(Editor, s)
     s = init(SkillLevel, s)
+    s = init(Conventions, s)
     
     s
   }
