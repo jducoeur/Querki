@@ -145,6 +145,7 @@ object OIDs {
   val DeprecatedOID = sysId(101)
   val NewTagSetOID = sysId(102)
   val NoCreateThroughLinkOID = sysId(103)
+  val IsFunctionOID = sysId(104)
 }
 
 /**
@@ -224,7 +225,8 @@ object SystemSpace {
       ShowLinkMethod,
       PropLinkMethod,
       DeprecatedProp,
-      NoCreateThroughLinkProp)
+      NoCreateThroughLinkProp,
+      IsFunctionProp)
       
   // Things:
   val things = OIDMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, Commas, DisplayThingTree, AllThings, AllProps)

@@ -10,7 +10,6 @@ import ql._
 import querki.util._
 import querki.values._
 
-import modules.Modules._
 import modules.person.PersonModule._
 
 import querki.identity.User
@@ -204,18 +203,21 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
   lazy val isPermissionProp = new SystemProperty(IsPermissionOID, YesNoType, ExactlyOne,
       toProps(
         setName("_isPermission"),
+        InternalProp(true),
         PropSummary("This Property is a Permission")))
   
   lazy val canEditCustomProp = new SystemProperty(CanEditCustomOID, QLType, Optional,
       toProps(
         setName("Who Can Edit Custom"),
         isPermissionProp(true),
+        SkillLevel(SkillLevel.Advanced),
         PropSummary("Who else can edit this Thing")))
 
   lazy val canReadProp = new SystemProperty(CanReadPropOID, LinkType, QSet,
       toProps(
         setName("Who Can Read"),
         isPermissionProp(true),
+        SkillLevel(SkillLevel.Advanced),
         (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
         PropSummary("Who else can read Things in this Space")))
 
@@ -223,6 +225,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
       toProps(
         setName("Who Can Edit"),
         isPermissionProp(true),
+        SkillLevel(SkillLevel.Advanced),
         (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
         PropSummary("Who else can edit Things in this Space"),
         PropDetails("""Note that this Property is *not* inherited, unlike most. If you want to
@@ -232,6 +235,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
       toProps(
         setName("Who Can Edit Children"),
         isPermissionProp(true),
+        SkillLevel(SkillLevel.Advanced),
         (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
         PropSummary("Who else can edit children of this Thing"),
         PropDetails("""This Property is useful on Models and Spaces, and works as follows.
@@ -249,6 +253,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
   lazy val canCreateProp = new SystemProperty(CanCreatePropOID, LinkType, QSet,
       toProps(
         setName("Who Can Create"),
+        SkillLevel(SkillLevel.Advanced),
         isPermissionProp(true),
         (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
         PropSummary("Who else can make new Things in this Space")))

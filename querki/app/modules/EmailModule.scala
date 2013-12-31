@@ -102,6 +102,7 @@ class EmailModule(val moduleId:Short) extends modules.Module {
       toProps(
         setName("Email Results"),
         InternalProp(true),
+        DeprecatedProp(true),
         PropSummary("Internal property, used in the process of sending email. Do not mess with this!")
       ))
   
@@ -109,6 +110,7 @@ class EmailModule(val moduleId:Short) extends modules.Module {
       toProps(
         setName("Email Address"),
         InternalProp(true),
+        DeprecatedProp(true),
         PropSummary("An email address for a Person"),
         PropDetails("""This Property represents the general notion of something that can have an email
             |address. It is available on Person, but you can reuse it wherever you like. In theory, you can
@@ -122,6 +124,7 @@ class EmailModule(val moduleId:Short) extends modules.Module {
         toProps(
           setName("Email To"),
           InternalProp(true),
+          DeprecatedProp(true),
           (LinkModelOID -> Optional(ElemValue(Person.MOIDs.PersonOID, LinkType))),
           PropSummary("Who should this email be sent to?"),
           PropDetails("""This is the raw list of people to send this email to. It should point to one or more
@@ -133,12 +136,14 @@ class EmailModule(val moduleId:Short) extends modules.Module {
       toProps(
         setName("Email Subject"),
         InternalProp(true),
+        DeprecatedProp(true),
         PropSummary("The title of the email")))
 
   lazy val emailBody = new SystemProperty(EmailBodyOID, LargeTextType, ExactlyOne,
       toProps(
         setName("Email Body"),
         InternalProp(true),
+        DeprecatedProp(true),
         PropSummary("The Contents of the email"),
         PropDetails("""The contents of the email may contain more or less arbitrary wikitext; these will be
             |rendered in the HTML version of the email pretty much the same as they would be in the browser.
@@ -148,6 +153,7 @@ class EmailModule(val moduleId:Short) extends modules.Module {
       toProps(
         setName("Sent To"),
         InternalProp(true),
+        DeprecatedProp(true),
         PropSummary("The Persons that this mail has already been sent to."),
         PropDetails("""This Property is set automatically when the email is sent. You usually should not modify
             |it by hand, but it is sometimes useful to do so before sending or resending the email, since the
@@ -156,6 +162,7 @@ class EmailModule(val moduleId:Short) extends modules.Module {
   lazy val recipientsProp = new SystemProperty(RecipientsOID, QLType, ExactlyOne,
       toProps(
         setName("Recipients"),
+        DeprecatedProp(true),
         PropSummary("Who will this email be sent to?"),
         PropDetails("""The Recipients property declares who will receive this email. It is a QL expression, and
             |you should only modify it if you know what you are doing. By default, it simply defers to

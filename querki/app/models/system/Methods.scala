@@ -16,11 +16,19 @@ import YesNoType._
 import querki.util._
 import querki.values._
 
+object IsFunctionProp extends SystemProperty(IsFunctionOID, YesNoType, ExactlyOne,
+    toProps(
+      setName("Is Function"),
+      SkillLevel(SkillLevel.Advanced),
+      PropSummary("True iff this Thing is a Function."),
+      PropDetails("""This is a marker flag that you can put on a Thing to say that it is a Function.
+          |This doesn't particularly change the way the Thing works, but has some UI effects.""".stripMargin)))
+
 /**
  * Internal methods -- functions defined in-code that can be assigned as properties -- should
  * inherit from this.
  */
-class InternalMethod(tid:OID, p:PropFetcher) extends SystemProperty(tid, InternalMethodType, QUnit, p)
+class InternalMethod(tid:OID, p:PropFetcher) extends SystemProperty(tid, InternalMethodType, QUnit, () => (p() + IsFunctionProp(true)))
 {
   /**
    * Methods should override this to implement their own functionality.
@@ -237,6 +245,7 @@ object SectionMethod extends InternalMethod(SectionMethodOID,
 object ApplyMethod extends SystemProperty(ApplyMethodOID, QLType, Optional,
     toProps(
       setName("_apply"),
+      SkillLevel(SkillLevel.Advanced),
       PropSummary("A QL Expression that will be run when you name this Thing."),
       PropDetails("""_apply is an advanced function, and most users will not use it directly. But it is probably
           |the most important Property in Querki, and advanced users may want to play with it.

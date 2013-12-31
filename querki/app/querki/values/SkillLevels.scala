@@ -1,6 +1,6 @@
 package querki.values
 
-import models.OID
+import models.{OID, Thing}
 
 import modules.Modules.SkillLevel._
   
@@ -14,4 +14,15 @@ object SkillLevel {
   lazy val Advanced = skillLevelAdvanced
   
   def apply(level:OID) = skillLevelProp(level)
+  
+  def isAdvanced(thing:Thing)(implicit state:SpaceState):Boolean = {
+    val result = for (
+      propVal <- thing.getPropOpt(skillLevelProp);
+      levelId <- propVal.firstOpt;
+      if (levelId == Advanced.id)
+        )
+      yield true
+      
+    result.getOrElse(false)
+  }
 }

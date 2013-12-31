@@ -119,6 +119,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
   lazy val chromelessInvites = new SystemProperty(ChromelessInvitesOID, YesNoType, ExactlyOne,
       toProps(
         setName("Chromeless Invites"),
+        DeprecatedProp(true),
         PropSummary("Should invitees to this Space see it unadorned with Querki chrome?"),
         PropDetails("""If you set this to Yes on a Space or Thing, then Invite Links pointing
             |to that will show up without Querki chrome. That is, when they join, they'll just see your

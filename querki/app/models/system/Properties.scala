@@ -21,6 +21,7 @@ class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:
   object UrProp extends Property(UrPropOID, systemOID, UrThing, TextType, ExactlyOne,
       toProps(
         setName("Property"),
+        (InternalPropOID -> ExactlyOne(YesNoType(true))),
         (PropSummaryOID -> Optional(TextType("The root Property, from which all others derive."))),
         (DisplayTextOID -> Optional(LargeTextType("""[[Property Summary -> ""**____** -- ""]]
             |[[_if(Property Type -> _is(Internal Method Type), 
@@ -104,6 +105,7 @@ class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:
       toProps(
         setName("Placeholder Text"),
         AppliesToKindProp(Kind.Property),
+        DeprecatedProp(true),
         PropSummary("Placeholder text for input boxes"),
         PropDetails("""In Text Properties, it is often helpful to have a prompt that displays inside the input
             |field until the user begins to type something there. If the Property has a Placeholder Text, that
@@ -147,6 +149,7 @@ object NotInheritedProp extends SystemProperty(NotInheritedOID, YesNoType, Exact
       // Need to define this explicitly, to break infinite loops in lookup:
       (NotInheritedOID -> ExactlyOne(ElemValue(false, new DelegatingType({YesNoType})))),
       AppliesToKindProp(Kind.Property),
+      SkillLevel(SkillLevel.Advanced),
       PropSummary("Should this Property be inherited from ancestors?"),
       PropDetails("""All Things in Querki are part of a big inheritance tree. Instances inherit from their Models,
           |which in turn usually inherit from higher-level Models.
@@ -193,6 +196,7 @@ object DisplayNameProp extends SystemProperty(DisplayNameOID, PlainTextType, Opt
 object LinkKindProp extends SystemProperty(LinkKindOID, IntType, QList,
     toProps(
       setName("Link Kind"),
+      SkillLevel(SkillLevel.Advanced),
       PropSummary("The Kind that this Property can Link to"),
       PropDetails("""When you create a Link Property, if you do *not* set the *Link Model* Property on it,
           |you may want to at least specify which *Kind* of Thing this can Link to. There are five Kinds of
@@ -220,7 +224,8 @@ object LinkAllowAppsProp extends SystemProperty(LinkAllowAppsOID, YesNoType, Opt
           |says that this Property should allow linking to Things in Apps of this Space.
           |
           |This is an advanced property, and not intended for casual use.""".stripMargin),
-      AppliesToKindProp(Kind.Property)
+      AppliesToKindProp(Kind.Property),
+      SkillLevel(SkillLevel.Advanced)
       ))
 
 object LinkModelProp extends SystemProperty(LinkModelOID, LinkType, Optional,
@@ -248,6 +253,7 @@ object LinkModelProp extends SystemProperty(LinkModelOID, LinkType, Optional,
 object LinkToModelsOnlyProp extends SystemProperty(LinkToModelsOnlyOID, YesNoType, ExactlyOne,
     toProps(
       setName("Link to Models Only"),
+      (modules.Modules.SkillLevel.MOIDs.SkillLevelPropOID -> ExactlyOne(LinkType(modules.Modules.SkillLevel.MOIDs.SkillLevelAdvancedOID))),
       PropSummary("Only allow this Property to Link to Models"),
       PropDetails("""If set to true, this Link Property will only show Models as options to link to in the editor.
           |
@@ -259,6 +265,7 @@ object AppliesToKindProp extends SystemProperty(AppliesToKindOID, IntType, QList
     toProps(
       setName("Applies To"),
       (AppliesToKindOID -> QList(ElemValue(Kind.Property, new DelegatingType(IntType)))),
+      (modules.Modules.SkillLevel.MOIDs.SkillLevelPropOID -> ExactlyOne(LinkType(modules.Modules.SkillLevel.MOIDs.SkillLevelAdvancedOID))),
       (PropSummaryOID -> Optional(TextType("Which Kinds of Things can this Property be used on?"))),
       (PropDetailsOID -> Optional(LargeTextType("""By default, a Property can be used on anything -- even when
           |that is nonsensical. The result is that, when creating a new Thing, you get a messy list of lots of

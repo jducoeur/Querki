@@ -89,6 +89,7 @@ class StylesheetModule(val moduleId:Short) extends modules.Module {
     toProps(
       setName("CSS"),
       InternalProp(true),
+      SkillLevel(SkillLevel.Advanced),
       PropSummary("The actual CSS for a Stylesheet"),
       PropDetails("""This is the main property on a Stylesheet. It can contain more or less
           |any arbitrary CSS, with just a few security-related exceptions.

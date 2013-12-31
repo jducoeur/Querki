@@ -21,6 +21,7 @@
 @space = @{ rc.state.get }
 @isEdit = @{ thing.isDefined }
 @isCreate = @{ !isEdit }
+@kind = @{ model.kind }
 
 @isSubCreate = @{ rc.isTrue("subCreate") }
 
@@ -43,12 +44,44 @@
   aType.requiredColl.map(collExp(_)).getOrElse("")
 }
 
+@partitionedProps(s:SpaceState) = @{
+  // TODO: this should probably become a lazy val on SpaceState -- no need to keep recalculating it
+  s.propList.toSeq.
+    filterNot(_.ifSet(DeprecatedProp)(s)).
+    filterNot(_.ifSet(InternalProp)(s)).
+    filterNot(_.ifSet(IsFunctionProp)(s)).
+    partition(querki.values.SkillLevel.isAdvanced(_)(s))
+}
+
+@propIsWrongKind(prop:Property[_,_], s:SpaceState) = @{
+  val result = for (
+    propVal <- prop.getPropOpt(AppliesToKindProp)(s);
+    targetKind <- propVal.firstOpt
+      )
+    yield targetKind != kind
+    
+  result.getOrElse(false)
+}
+
+@filterPropsByKind(props:Seq[Property[_,_]], s:SpaceState) = @{
+  props.filterNot(propIsWrongKind(_, s))
+}
+
 @propsInSpace(s:SpaceState) = {
-  <optgroup label="Properties in @s.displayName">
-    @for(prop <- s.propList.toSeq.sortBy(_.displayName)) {
-      <option value="@prop.id.toString">@prop.displayName</option>
+  @defining(partitionedProps(s)) { partitioned =>
+    <optgroup label="Properties in @s.displayName">
+      @for(prop <- filterPropsByKind(partitioned._2, s).sortBy(_.displayName)) {
+        <option value="@prop.id.toString">@prop.displayName</option>
+      }
+    </optgroup>
+    @if(partitioned._1.length > 0) {
+    <optgroup label="Advanced Properties in @s.displayName">
+      @for(prop <- filterPropsByKind(partitioned._1, s).sortBy(_.displayName)) {
+        <option value="@prop.id.toString">@prop.displayName</option>
+      }
+    </optgroup>    
     }
-  </optgroup>
+  }
   @{s.app.map(propsInSpace(_))}
 }
 
