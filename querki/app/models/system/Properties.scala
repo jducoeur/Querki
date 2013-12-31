@@ -304,7 +304,22 @@ object InstanceEditPropsProp extends SystemProperty(InstanceEditPropsOID, LinkTy
           |So this Property is a quick-and-easy way to lay out your Instance Editor. It is a List of
           |Properties that you can define however you like. When you create or edit an Instance of this
           |Model, it will display exactly those Properties, in that order, which usually makes it
-          |easier for you to write your Instances.""".stripMargin)))
+          |easier for you to write your Instances.
+          |
+          |BUG NOTE: this doesn't immediately register when you've added a Property to the Model, so it
+          |doesn't list the newly-added Property. For now, after you add a Property, save the Model and then
+          |edit it again -- the Property should now show up for you to use.""".stripMargin))) with LinkCandidateProvider
+{
+  def getLinkCandidates(state:SpaceState, currentValue:DisplayPropVal):Seq[Thing] = {
+    currentValue.on match {
+      case Some(thing) => {
+        // We're applying this to some actual thing, so list its Properties as options:
+        thing.allProps(state).toSeq.sortBy(_.displayName)
+      }
+      case _ => Seq.empty
+    }
+  }
+}
 
 object ShowUnknownProp extends SystemProperty(ShowUnknownOID, LargeTextType, ExactlyOne,
     toProps(

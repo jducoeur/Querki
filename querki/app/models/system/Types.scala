@@ -406,6 +406,14 @@ object QLType extends QLType(QLTypeOID)
   }
   
   /**
+   * Trait to mix into a Property that has opinions about which Links should be presented as candidates
+   * in the Editor.
+   */  
+  trait LinkCandidateProvider {
+    def getLinkCandidates(state:SpaceState, currentValue:DisplayPropVal):Seq[Thing]
+  }
+    
+  /**
    * The Type for Links to other Things
    * 
    * TODO: This Type, and its associated Properties, may want to become a Module.
@@ -488,7 +496,11 @@ object QLType extends QLType(QLTypeOID)
     val doDefault = UnknownOID
     
     def renderInputXmlGuts(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Iterable[Elem] = {
-      val candidates = state.linkCandidates(prop).toSeq.sortBy(_.displayName)
+      // Give the Property a chance to chime in on which candidates belong here:
+      val candidates = prop match {
+        case f:LinkCandidateProvider => f.getLinkCandidates(state, currentValue)
+        case _ => state.linkCandidates(prop).toSeq.sortBy(_.displayName)
+      }
       val realOptions =
         if (candidates.isEmpty) {
           Seq(<option value={UnknownOID.toString}><i>None defined</i></option>)
