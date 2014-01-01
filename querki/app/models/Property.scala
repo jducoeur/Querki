@@ -13,6 +13,9 @@ import com.github.nscala_time.time.Imports._
 
 import ql._
 
+// This is an unfortunate dependency. Can we get around it somehow?
+import querki.types.DefaultValueProp
+
 import querki.values._
 
 /**
@@ -30,9 +33,8 @@ case class Property[VT, -RT](
   extends Thing(i, s, m, Kind.Property, pf, mt) 
 {
   def default = {
-    // TODO: add the concept of the default meta-property, so you can set it
-    // on a prop-by-prop basis
-    cType.default(pType)
+    val explicitDefault = localProp(DefaultValueProp).map(_.v)
+    explicitDefault.getOrElse(cType.default(pType))
   }
   def defaultPair:PropAndVal[VT] = PropAndVal(this, default)
   // EVIL but arguably necessary. This is where we are trying to confine the cast from something

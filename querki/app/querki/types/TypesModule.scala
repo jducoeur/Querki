@@ -1,14 +1,17 @@
 package querki.types
 
-import models.{Kind}
+import models.SimplePTypeBuilder
+import models.{Kind, OID, Wikitext}
 import models.Thing._
 
-import models.system.IntType
+import models.system.{IntType, SystemType, YesNoType}
 import models.system.ExactlyOne
-import models.system.{AppliesToKindProp, SystemProperty}
-import models.system.OIDs.sysId
+import models.system.{AppliesToKindProp, InternalProp, NotInheritedProp, SystemProperty}
+import models.system.OIDs.{sysId, InternalPropOID, NotInheritedOID}
 
 import querki.conventions.{PropDetails, PropSummary}
+
+import querki.values._
 
 import modules.Module
 
@@ -19,8 +22,40 @@ class TypesModule(val moduleId:Short) extends Module {
     
     val MinIntValueOID = moid(1)
     val MaxIntValueOID = moid(2)
+    
+    val WrappedValueTypeOID = moid(3)
+    
+    val DefaultValuePropOID = moid(4)
   }
   import MOIDs._
+    
+  /******************************************
+   * TYPES
+   ******************************************/
+  
+  /**
+   * This is a special Type, still somewhat half-baked, which can be wrapped around *any* QValue.
+   * For the moment, I haven't thought through all the issues of UI and persistence, so it is just
+   * for internal use, for the DefaultProp, but it's a start.
+   */
+  class WrappedValueType(tid:OID) extends SystemType[QValue](tid,
+      toProps(
+        setName("Wrapped Value Type"),
+        (InternalPropOID -> ExactlyOne(YesNoType(true)))
+      )) with SimplePTypeBuilder[QValue]
+  {
+    def doDeserialize(v:String) = { throw new Exception("WrappedValueType does not implement doDeserialize") }
+    def doSerialize(v:QValue) = { throw new Exception("WrappedValueType does not implement doSerialize") }
+    
+    def doWikify(context:QLContext)(v:QValue, displayOpt:Option[Wikitext] = None) = { throw new Exception("WrappedValueType does not implement doWikify") }
+    
+    def doDefault = { throw new Exception("WrappedValueType does not implement doDefault") }
+  }
+  lazy val WrappedValueType = new WrappedValueType(WrappedValueTypeOID)
+  
+  override lazy val types = Seq(
+    WrappedValueType
+  )
   
   /***********************************************
    * PROPERTIES
@@ -50,8 +85,38 @@ class TypesModule(val moduleId:Short) extends Module {
       AppliesToKindProp(Kind.Property),
       PropSummary("The maximum value allowed in this Whole Number Property")))
   
+  /**
+   * The DefaultValueProp is pretty much what it says: it is the default value for this Property. That
+   * is, it is what you get when you hard-query for a Property on a Thing (not an Opt query), and that
+   * Property is *not* defined on the Thing.
+   * 
+   * Note that DefaultValueProp is a full-on QValue. That's because its Type is, in principle, unknown.
+   * It should match the Type and Collection of the Property it is being applied to, though, if you
+   * want to avoid strange and confusing behaviour.
+   * 
+   * In principle, it would be nice to expose this to end users to use. In practice, that's going to
+   * be challenging from a UI perspective: you have to feed in the expected Type and Collection to produce
+   * the correct input control. It's doable in principle, but enough work that I'm not going to bother
+   * until we care.
+   */
+  lazy val DefaultValueProp = new SystemProperty(DefaultValuePropOID, WrappedValueType, ExactlyOne,
+    toProps(
+      setName("Default Value"),
+      (InternalPropOID -> ExactlyOne(YesNoType(true))),
+      // Strictly speaking, it's not obvious that this is non-inherited. But for the moment, the usage
+      // of this property (in Property.default) can't look up the Model chain, so it is effectively
+      // uninherited. We'll see if we are motivated to change that. (Keep in mind that inherited Properties
+      // are, so far, unknown.)
+      (NotInheritedOID -> ExactlyOne(YesNoType(true))),
+      AppliesToKindProp(Kind.Property)))
+  
   override lazy val props = Seq(
-    MinTextLengthProp
+    MinTextLengthProp,
+    
+    MinIntValueProp,
+    MaxIntValueProp,
+    
+    DefaultValueProp
   )
 }
 

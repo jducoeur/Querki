@@ -8,6 +8,8 @@ import models.system.{LargeTextType, TextType, YesNoType}
 import models.system.{SystemProperty, AppliesToKindProp}
 import models.system.OIDs.{sysId, NotInheritedOID}
 
+import querki.types.DefaultValueProp
+
 import modules.Module
 
 /**
@@ -28,6 +30,7 @@ class ConventionsModule(val moduleId:Short) extends Module {
   lazy val PropSummary = new SystemProperty(PropSummaryOID, TextType, Optional,
     toProps(
       setName("Summary"),
+      DefaultValueProp(ExactlyOne(TextType("""____"""))),
       (PropSummaryOID -> Optional(TextType("This is an optional one-line description of something."))),
       (PropDetailsOID -> Optional(LargeTextType("""When you define a Property, you may add this Summary as
           |part of that definition. It will be displayed in mouseover hovering and things like that, to help
@@ -39,12 +42,6 @@ class ConventionsModule(val moduleId:Short) extends Module {
           |
           |There is no required format or content for this Summary -- it should simply be a reminder of what
           |this Thing is about.""".stripMargin)))))
-// TODO: for reasons I totally don't understand, this override completely fails. So okay -- we should probably
-// do this more correctly anyway, using a new meta-property for DefaultValue instead. But that is tricky, since
-// the DefaultValue's Collection and Type should match those of the Property it is associated with...
-//  {
-//    override def default = { println("!!!! In PropSummary.default!"); ExactlyOne(TextType("""[[Display Name]]""")) }
-//  }
 
   lazy val PropDetails = new SystemProperty(PropDetailsOID, LargeTextType, Optional,
     toProps(
@@ -61,18 +58,15 @@ class ConventionsModule(val moduleId:Short) extends Module {
   lazy val PropDescription = new SystemProperty(PropDescriptionOID, LargeTextType, ExactlyOne,
     toProps(
       setName("Description"),
+      DefaultValueProp(ExactlyOne(LargeTextType("""[[Summary]] [[Details -> ""
+          |
+          |____""]]""".stripMargin))),
       (PropSummaryOID -> Optional(TextType("This is the full description of something."))),
       (PropDetailsOID -> Optional(LargeTextType("""This Property lets you describe something, in as much detail
           |as seems appropriate.
           |
           |In general, you should probably use Description *or* Summary plus Details, depending on what makes most
           |sense for your case. By default, Description will show the Summary, followed by the Details.""".stripMargin)))))
-// TODO: see Summary. Need to find a functioning way to define a Default value.
-//  {
-//    override def default = ExactlyOne(LargeTextType("""[[Summary]] [[Details -> ""
-//        |
-//        |____""]]""".stripMargin))    
-//  }
   
   override lazy val props = Seq(
     PropSummary,
