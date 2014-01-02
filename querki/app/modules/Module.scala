@@ -25,6 +25,7 @@ object Modules {
   val Editor = new querki.editing.EditorModule(13)
   val SkillLevel = new querki.identity.SkillLevelModule(14)
   val Conventions = new querki.conventions.ConventionsModule(15)
+  val Core = new querki.core.CoreModule(16)
   
   private var allModules = Seq.empty[Module]
   
@@ -42,6 +43,7 @@ object Modules {
     // TODO: we shouldn't do this explicitly, we should declare these things just once:
     // TODO: in the long run, these should self-declare their dependencies, and
     // do a topological sort to initialize and terminate them in order:
+    s = init(Core, s)
     s = init(Types, s)
     s = init(Conventions, s)
     s = init(Stylesheet, s)

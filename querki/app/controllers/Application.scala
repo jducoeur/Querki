@@ -15,6 +15,8 @@ import Property._
 import system._
 import models.system._
 import models.system.SystemSpace._
+
+import querki.core._
 import querki.identity._
 
 import querki.html.HtmlRenderer

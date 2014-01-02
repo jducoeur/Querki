@@ -46,7 +46,7 @@ object OIDs {
   val IntTypeOID = sysId(2)
   val TextTypeOID = sysId(3)
   val YesNoTypeOID = sysId(4)
-  val UrPropOID = sysId(5)
+//  val UrPropOID = sysId(5)
   val NameOID = sysId(6)
   val DisplayTextOID = sysId(7)
   val PageOID = sysId(8)
@@ -162,7 +162,7 @@ object SystemSpace {
   
   // Properties:
   val props = OIDMap[Property[_,_]](
-      UrProp, 
+//      UrProp, 
       NameProp, 
       DisplayTextProp, 
       TypeProp, 

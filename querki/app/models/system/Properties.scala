@@ -10,12 +10,14 @@ import Thing._
 import OIDs._
 import SystemSpace._
 
+import querki.core
+
 import querki.conventions
 import querki.conventions.{PropSummary, PropDetails}
 import querki.values._
 
 class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
-  extends Property[VT, RT](pid, systemOID, UrPropOID, t, c, p, modules.time.TimeModule.epoch)
+  extends Property[VT, RT](pid, systemOID, core.MOIDs.UrPropOID, t, c, p, modules.time.TimeModule.epoch)
   
 /**
  * This is a variant of SystemProperty that has a declaring PropertyInterface. When this Property is
@@ -28,23 +30,6 @@ class APIProperty[VT, -RT](interface:PropertyInterface[VT, RT], pid:OID, t:PType
 {
   interface.set(this)
 }
-
-  /**
-   * The root Property, from which all others derive.
-   */
-  object UrProp extends Property(UrPropOID, systemOID, UrThing, TextType, ExactlyOne,
-      toProps(
-        setName("Property"),
-        (InternalPropOID -> ExactlyOne(YesNoType(true))),
-        (conventions.MOIDs.PropSummaryOID -> Optional(TextType("The root Property, from which all others derive."))),
-        (DisplayTextOID -> Optional(LargeTextType("""[[Summary -> ""**____** -- ""]]
-            |[[_if(Property Type -> _is(Internal Method Type), 
-            |  ""**METHOD**"",
-            |  ""Collection: [[Property Collection]] Type: [[Property Type]]"")]]
-            |
-            |
-            |[[Details]]""".stripMargin)))
-        ), modules.time.TimeModule.epoch)
   
   object NameProp extends SystemProperty(NameOID, NameType, ExactlyOne,
       toProps(

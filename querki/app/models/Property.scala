@@ -13,7 +13,8 @@ import com.github.nscala_time.time.Imports._
 
 import ql._
 
-// This is an unfortunate dependency. Can we get around it somehow?
+import querki.core.MOIDs._
+
 import querki.types.DefaultValueProp
 
 import querki.values._

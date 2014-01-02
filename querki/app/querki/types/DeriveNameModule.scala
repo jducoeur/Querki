@@ -197,7 +197,7 @@ class DeriveNameModule(val moduleId:Short) extends Module {
 object DeriveNameModule {
   import modules.Modules.DeriveName._
   
-  import models.system.OIDs.UrPropOID
+  import querki.core.MOIDs.UrPropOID
   
   private def isProperty(model:Thing)(implicit state:SpaceState):Boolean = {
     model.id == UrPropOID || model.isAncestor(UrPropOID)

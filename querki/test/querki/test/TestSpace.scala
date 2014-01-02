@@ -6,10 +6,11 @@ import models.{OID, OIDMap}
 import models.{Collection, Property, PType, PTypeBuilder, Thing, ThingState}
 import models.Thing._
 import models.system.{NameType, SystemSpace}
-import models.system.OIDs.{PageOID, systemOID, UrPropOID}
+import models.system.OIDs.{PageOID, systemOID}
 
 import modules.Modules.Person
 
+import querki.core.MOIDs._
 import querki.values._
 import querki.identity.{FullUser, Identity, IdentityKind, User, UserLevel}
 import querki.identity.UserLevel._
