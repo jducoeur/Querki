@@ -21,4 +21,7 @@ package object types {
   }
   
   val DefaultValueProp = new PropertyInterface[QValue,QValue]
+  val MinTextLengthProp = new PropertyInterface[Int, Int]
+  val MinIntValueProp = new PropertyInterface[Int, Int]
+  val MaxIntValueProp = new PropertyInterface[Int, Int]
 }

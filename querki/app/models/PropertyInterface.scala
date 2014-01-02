@@ -30,5 +30,9 @@ class PropertyInterface[VT, RT] {
 object PropertyInterface {
   implicit def interface2Property[VT,RT](interface:PropertyInterface[VT,RT]):Property[VT,RT] = {
     interface.get
-  }  
+  }
+  
+  implicit def interface2OID(interface:PropertyInterface[_,_]):OID = {
+    interface.get.id
+  }
 }

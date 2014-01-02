@@ -14,6 +14,7 @@ import NameCollection.bootProp
 
 import ql._
 
+import querki.basic.DisplayNameProp
 import querki.values._
 
 /**

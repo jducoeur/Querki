@@ -3,6 +3,7 @@ package querki.search
 import models._
 import models.system._
 
+import querki.basic.DisplayNameProp
 import querki.identity.User
 
 import querki.values.RequestContext

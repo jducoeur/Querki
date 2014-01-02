@@ -13,6 +13,7 @@ import OIDs._
 
 import ql._
 
+import querki.types._
 import querki.util._
 import querki.values._
 
@@ -61,7 +62,7 @@ object CommonInputRenderers {
 object TextTypeUtils {
   def validateText(v:String, prop:Property[_,_], state:SpaceState):Unit = {
     for (
-      minLengthVal <- prop.getPropOpt(modules.Modules.Types.MinTextLengthProp)(state);
+      minLengthVal <- prop.getPropOpt(MinTextLengthProp)(state);
       minLength <- minLengthVal.firstOpt
       if (v.trim().length() < minLength)
         )
@@ -100,14 +101,14 @@ trait CodeType {
     
     override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = {
       for (
-        minValPO <- prop.getPropOpt(modules.Modules.Types.MinIntValueProp)(state);
+        minValPO <- prop.getPropOpt(MinIntValueProp)(state);
         minVal <- minValPO.firstOpt;
         if (doDeserialize(v) < minVal)
           )
         throw new PublicException("Types.Int.tooLow", prop.displayName, minVal)
       
       for (
-        maxValPO <- prop.getPropOpt(modules.Modules.Types.MaxIntValueProp)(state);
+        maxValPO <- prop.getPropOpt(MaxIntValueProp)(state);
         maxVal <- maxValPO.firstOpt;
         if (doDeserialize(v) > maxVal)
           )

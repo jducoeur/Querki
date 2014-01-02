@@ -15,10 +15,10 @@ import ql.{QLCall, QLParser, QLPhrase}
 import querki.html.RenderSpecialization._
 
 import modules.Modules.SkillLevel._
-import modules.Modules.Types
 
 import querki.conventions.{PropDetails, PropSummary}
 
+import querki.types._
 import querki.util._
 import querki.values._
 
@@ -56,8 +56,8 @@ class EditorModule(val moduleId:Short) extends Module {
   lazy val editWidthProp = new SystemProperty(EditWidthPropOID, IntType, ExactlyOne,
       toProps(
         setName("Edit Width"),
-        Types.MinIntValueProp(1),
-        Types.MaxIntValueProp(12),
+        MinIntValueProp(1),
+        MaxIntValueProp(12),
         PropSummary("Lets you control how wide a Property's edit control is, in the Edit View"),
         PropDetails("""This is width in Bootstrap span terms -- a number from 1 (narrow) to 12 (full width).""".stripMargin)))
 

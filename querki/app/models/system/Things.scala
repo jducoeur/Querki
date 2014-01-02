@@ -8,6 +8,7 @@ import OIDs._
 
 import SystemSpace._
 
+import querki.basic
 import querki.values._
 
 /**
@@ -49,7 +50,7 @@ object SimpleThing extends ThingState(SimpleThingOID, systemOID, RootOID,
       setName("Simple-Thing"),
       IsModelProp(true),
       DisplayTextProp(Optional.QNone),
-      DisplayNameProp(Optional.QNone),
+      (querki.basic.MOIDs.DisplayNameOID -> Optional.QNone),
       modules.Modules.DeriveName.DeriveNameProp(modules.Modules.DeriveName.deriveInitially)))
 
 object Page extends ThingState(PageOID, systemOID, SimpleThingOID,

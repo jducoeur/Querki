@@ -1,7 +1,6 @@
 package querki.test
 
-import models.system.{DisplayNameProp}
-
+import querki.basic.DisplayNameProp
 import querki.util.PublicException
 
 class PropertyTests extends QuerkiTests {

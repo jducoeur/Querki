@@ -2,6 +2,8 @@ package querki.test
 
 import models.system._
 
+import querki.basic.DisplayNameProp
+
 import org.scalatest.{WordSpec, BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
 

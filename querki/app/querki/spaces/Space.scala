@@ -19,9 +19,10 @@ import messages._
 import Kind._
 import Thing.PropMap
 
+import querki.basic.DisplayNameProp
 import querki.identity.User
 
-import models.system.{CollectionProp, DisplayNameProp, LinkType, NameProp, NameType, TypeProp}
+import models.system.{CollectionProp, LinkType, NameProp, NameType, TypeProp}
 
 import messages._
 import SpaceError._

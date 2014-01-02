@@ -4,9 +4,10 @@ import models.{Attachment, ThingState}
 import models.Kind
 import models.system.{ExternalLinkType, LinkType, TextType}
 import models.system.{ExactlyOne, Optional, QList}
-import models.system.{DisplayNameProp, IsModelProp}
+import models.system.{IsModelProp}
 import models.system.OIDs.PageOID
 
+import querki.basic.DisplayNameProp
 import querki.identity.{User}
 import querki.identity.UserLevel._
 

@@ -26,6 +26,7 @@ object Modules {
   val SkillLevel = new querki.identity.SkillLevelModule(14)
   val Conventions = new querki.conventions.ConventionsModule(15)
   val Core = new querki.core.CoreModule(16)
+  val Basic = new querki.basic.BasicModule(17)
   
   private var allModules = Seq.empty[Module]
   
@@ -46,6 +47,7 @@ object Modules {
     s = init(Core, s)
     s = init(Types, s)
     s = init(Conventions, s)
+    s = init(Basic, s)
     s = init(Stylesheet, s)
     s = init(Email, s)
     s = init(Person, s)

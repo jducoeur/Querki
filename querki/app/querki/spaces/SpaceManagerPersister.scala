@@ -14,10 +14,11 @@ import messages._
 
 import models.{AsName, OID}
 import models.{Kind, Thing}
-import models.system.{DisplayNameProp, SystemSpace}
+import models.system.{SystemSpace}
 import models.system.SystemSpace.{State => SystemState}
 import models.system.OIDs.{systemOID, SystemUserOID}
 
+import querki.basic.DisplayNameProp
 import querki.db.ShardKind
 import ShardKind._
 

@@ -14,6 +14,7 @@ import models.system.OIDs._
 
 import ql._
 
+import querki.basic.DisplayNameProp
 import querki.conventions.{PropDetails, PropSummary}
 import querki.spaces.SpaceManager
 import querki.spaces.messages.{ChangeProps, CreateThing, ThingError, ThingFound, ThingResponse}

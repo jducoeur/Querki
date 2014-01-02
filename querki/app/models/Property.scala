@@ -13,6 +13,7 @@ import com.github.nscala_time.time.Imports._
 
 import ql._
 
+import querki.basic.DisplayNameProp
 import querki.core.MOIDs._
 
 import querki.types.DefaultValueProp
@@ -192,13 +193,13 @@ object Property {
   
   implicit object PropNameOrdering extends Ordering[Property[_,_]] {
     def compare(a:Property[_,_], b:Property[_,_]) = {
-      if (a eq DisplayNameProp) {
-        if (b eq DisplayNameProp)
+      if (a eq DisplayNameProp.get) {
+        if (b eq DisplayNameProp.get)
           0
         else
           // Display Name always displays first
           -1
-      } else if (b eq DisplayNameProp)
+      } else if (b eq DisplayNameProp.get)
         1
       else if (a eq NameProp) {
         if (b eq NameProp)

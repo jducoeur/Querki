@@ -16,6 +16,7 @@ import system._
 import models.system._
 import models.system.SystemSpace._
 
+import querki.basic._
 import querki.core._
 import querki.identity._
 
@@ -396,7 +397,7 @@ disallow: /
           getOrElse(ExactlyOne(LargeTextType(TagThing.defaultDisplayText)))
       showEditPage(rc, model, 
           PropList.inheritedProps(None, model) ++
-          PropList((DisplayNameProp -> DisplayPropVal(None, DisplayNameProp, Some(ExactlyOne(PlainTextType(name))))),
+          PropList(DisplayNameProp.get -> DisplayPropVal(None, DisplayNameProp, Some(ExactlyOne(PlainTextType(name)))),
                    (DisplayTextProp -> DisplayPropVal(None, DisplayTextProp, Some(defaultText)))))
     }
   })) { implicit rc =>

@@ -171,7 +171,7 @@ object SystemSpace {
       PromptProp, 
       IsModelProp, 
       NotInheritedProp,
-      DisplayNameProp,
+//      DisplayNameProp,
       LinkKindProp,
       LinkAllowAppsProp,
       LinkModelProp,
