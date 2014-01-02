@@ -10,6 +10,13 @@ object Modules {
   // IMPORTANT: The numbers attached to these Modules must NEVER BE CHANGED!!!!! They
   // get built into the moid's, and thence into the database! If a Module is removed,
   // comment it out, but leave its number and all others alone.
+  // TODO: these numbers should get moved into a file. The "official" copy is increasingly in
+  // their Modules, not here. Recognize that by rewriting Module to take ModuleIds as a param,
+  // and use that as the official moduleId. (Really, even that isn't necessary, since the
+  // moids should all get moved into the interfaces.)
+  // TODO: break this list into somewhere else, that gets passed in, to break the dependency
+  // cycles!!! The declaration should probably get joined all the way up in QuerkiRoot, and
+  // treated as a DI. But first, we need to automate the init-order dependency management.
   val Stylesheet = new stylesheet.StylesheetModule(1)
   val Email = new email.EmailModule(2)
   val Person = new person.PersonModule(3)
@@ -19,14 +26,14 @@ object Modules {
 //  val Rendering = new render.RenderingModule(7)
   val TOS = new querki.system.TOSModule(8)
   val Logic = new querki.logic.LogicModule(9)
-  val Types = new querki.types.TypesModule(10)
+  private val Types = new querki.types.impl.TypesModule(10)
   val UI = new querki.html.UIModule(11)
   val DeriveName = new querki.types.DeriveNameModule(12)
   val Editor = new querki.editing.EditorModule(13)
-  val SkillLevel = new querki.identity.SkillLevelModule(14)
+  private val SkillLevel = new querki.identity.skilllevel.impl.SkillLevelModule(14)
   val Conventions = new querki.conventions.ConventionsModule(15)
-  val Core = new querki.core.CoreModule(16)
-  val Basic = new querki.basic.BasicModule(17)
+  private val Core = new querki.core.CoreModule(16)
+  private val Basic = new querki.basic.BasicModule(17)
   
   private var allModules = Seq.empty[Module]
   
@@ -48,6 +55,7 @@ object Modules {
     s = init(Types, s)
     s = init(Conventions, s)
     s = init(Basic, s)
+    s = init(SkillLevel, s)
     s = init(Stylesheet, s)
     s = init(Email, s)
     s = init(Person, s)
@@ -60,7 +68,6 @@ object Modules {
     s = init(UI, s)
     s = init(DeriveName, s)
     s = init(Editor, s)
-    s = init(SkillLevel, s)
     
     s
   }

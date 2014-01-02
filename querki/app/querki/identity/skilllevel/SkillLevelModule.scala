@@ -1,26 +1,20 @@
-package querki.identity
+package querki.identity.skilllevel.impl
+
+import querki.identity.skilllevel._
 
 import models.{ThingState}
 import models.Thing._
-
 import models.system.ExactlyOne
 import models.system.LinkType
 import models.system.{DisplayTextProp, LinkModelProp, SystemProperty}
 import models.system.OIDs.{systemOID, SimpleThingOID}
 
-import querki.conventions.{PropDetails, PropSummary}
+import querki.conventions._
 
 import modules.Module
 
 class SkillLevelModule(val moduleId:Short) extends Module {
-  object MOIDs {
-    val SkillLevelPropOID = moid(1)
-    val SkillLevelOID = moid(2)
-    val SkillLevelBasicOID = moid(3)
-    val SkillLevelStandardOID = moid(4)
-    val SkillLevelAdvancedOID = moid(5)
-  }
-  import MOIDs._
+  import querki.identity.skilllevel.MOIDs._
   
   /***********************************************
    * PROPERTIES

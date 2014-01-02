@@ -14,10 +14,9 @@ import ql.{QLCall, QLParser, QLPhrase}
 
 import querki.html.RenderSpecialization._
 
-import modules.Modules.SkillLevel._
-
 import querki.conventions.{PropDetails, PropSummary}
 
+import querki.identity.skilllevel.SkillLevelProp
 import querki.types._
 import querki.util._
 import querki.values._
@@ -140,10 +139,10 @@ class EditorModule(val moduleId:Short) extends Module {
     
     private def isAdvanced(prop:Property[_,_])(implicit state:SpaceState):Boolean = {
       val result = for(
-        skillPropVal <- prop.getPropOpt(skillLevelProp);
+        skillPropVal <- prop.getPropOpt(SkillLevelProp);
         skillLevel <- skillPropVal.firstOpt
           )
-        yield skillLevel == skillLevelAdvanced.id
+        yield skillLevel == SkillLevel.Advanced
         
       result.getOrElse(false)
     }

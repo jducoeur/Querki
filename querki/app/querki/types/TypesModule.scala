@@ -1,4 +1,4 @@
-package querki.types
+package querki.types.impl
 
 import models.SimplePTypeBuilder
 import models.{Kind, OID, Wikitext}
@@ -14,6 +14,8 @@ import querki.conventions.{PropDetails, PropSummary}
 import querki.values._
 
 import modules.Module
+
+import querki.types._
 
 class TypesModule(val moduleId:Short) extends Module {
   import MOIDs._

@@ -230,7 +230,7 @@ object LinkModelProp extends SystemProperty(LinkModelOID, LinkType, Optional,
 object LinkToModelsOnlyProp extends SystemProperty(LinkToModelsOnlyOID, YesNoType, ExactlyOne,
     toProps(
       setName("Link to Models Only"),
-      (modules.Modules.SkillLevel.MOIDs.SkillLevelPropOID -> ExactlyOne(LinkType(modules.Modules.SkillLevel.MOIDs.SkillLevelAdvancedOID))),
+      (querki.identity.skilllevel.MOIDs.SkillLevelPropOID -> ExactlyOne(LinkType(querki.identity.skilllevel.MOIDs.SkillLevelAdvancedOID))),
       PropSummary("Only allow this Property to Link to Models"),
       PropDetails("""If set to true, this Link Property will only show Models as options to link to in the editor.
           |
@@ -242,7 +242,7 @@ object AppliesToKindProp extends SystemProperty(AppliesToKindOID, IntType, QList
     toProps(
       setName("Applies To"),
       (AppliesToKindOID -> QList(ElemValue(Kind.Property, new DelegatingType(IntType)))),
-      (modules.Modules.SkillLevel.MOIDs.SkillLevelPropOID -> ExactlyOne(LinkType(modules.Modules.SkillLevel.MOIDs.SkillLevelAdvancedOID))),
+      (querki.identity.skilllevel.MOIDs.SkillLevelPropOID -> ExactlyOne(LinkType(querki.identity.skilllevel.MOIDs.SkillLevelAdvancedOID))),
       (conventions.MOIDs.PropSummaryOID -> Optional(TextType("Which Kinds of Things can this Property be used on?"))),
       (conventions.MOIDs.PropDetailsOID -> Optional(LargeTextType("""By default, a Property can be used on anything -- even when
           |that is nonsensical. The result is that, when creating a new Thing, you get a messy list of lots of
