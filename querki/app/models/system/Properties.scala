@@ -16,6 +16,18 @@ import querki.values._
 
 class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
   extends Property[VT, RT](pid, systemOID, UrPropOID, t, c, p, modules.time.TimeModule.epoch)
+  
+/**
+ * This is a variant of SystemProperty that has a declaring PropertyInterface. When this Property is
+ * actually instantiated, it will automatically register itself into the interface.
+ * 
+ * In general, any Property in a Module that needs to be externally visible should be using this.
+ */
+class APIProperty[VT, -RT](interface:PropertyInterface[VT, RT], pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher)
+  extends SystemProperty[VT, RT](pid, t, c, p)
+{
+  interface.set(this)
+}
 
   /**
    * The root Property, from which all others derive.

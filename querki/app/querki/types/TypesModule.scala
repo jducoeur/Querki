@@ -6,7 +6,7 @@ import models.Thing._
 
 import models.system.{IntType, SystemType, YesNoType}
 import models.system.ExactlyOne
-import models.system.{AppliesToKindProp, InternalProp, NotInheritedProp, SystemProperty}
+import models.system.{APIProperty, AppliesToKindProp, InternalProp, NotInheritedProp, SystemProperty}
 import models.system.OIDs.{sysId, InternalPropOID, NotInheritedOID}
 
 import querki.conventions.{PropDetails, PropSummary}
@@ -88,7 +88,7 @@ class TypesModule(val moduleId:Short) extends Module {
    * the correct input control. It's doable in principle, but enough work that I'm not going to bother
    * until we care.
    */
-  lazy val DefaultValueProp = new SystemProperty(DefaultValuePropOID, WrappedValueType, ExactlyOne,
+  lazy val DefaultValueProp = new APIProperty(querki.types.DefaultValueProp, DefaultValuePropOID, WrappedValueType, ExactlyOne,
     toProps(
       setName("Default Value"),
       (InternalPropOID -> ExactlyOne(YesNoType(true))),
@@ -98,10 +98,6 @@ class TypesModule(val moduleId:Short) extends Module {
       // are, so far, unknown.)
       (NotInheritedOID -> ExactlyOne(YesNoType(true))),
       AppliesToKindProp(Kind.Property)))
-  {
-    // TODO: replace this with a generalized notion of APIProperty:
-    querki.types.DefaultValueProp.set(this)
-  }
   
   override lazy val props = Seq(
     MinTextLengthProp,
