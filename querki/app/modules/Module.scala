@@ -17,8 +17,8 @@ object Modules {
   // TODO: break this list into somewhere else, that gets passed in, to break the dependency
   // cycles!!! The declaration should probably get joined all the way up in QuerkiRoot, and
   // treated as a DI. But first, we need to automate the init-order dependency management.
-  val Stylesheet = new stylesheet.StylesheetModule(1)
-  val Email = new email.EmailModule(2)
+  private val Stylesheet = new stylesheet.StylesheetModule(1)
+  private val Email = new querki.email.impl.EmailModule(2)
   val Person = new person.PersonModule(3)
   val AccessControl = new querki.access.AccessControlModule(4)
   val Time = new time.TimeModule(5)
@@ -111,6 +111,19 @@ class ModuleIds(val moduleId:Short) {
    */
   def moid(localId:Short):OID = {
     OIDs.sysId((moduleId << 16) + localId)
+  }
+  
+  /**
+   * The old, broken algorithm for calculating moids. This was a *horrible* bug, and wound
+   * up polluting the OID space for a couple dozen Things. The only saving grace is that this
+   * error winds up with the lower 16 bits empty, so the results can't collide with correctly-formed
+   * moids.
+   * 
+   * TODO: go through the existing Spaces, and rewrite all references to these old moids to new
+   * ones that are correct. This is going to be delicate work.
+   */
+  def oldMoid(localId:Short):OID = {
+    OIDs.sysId(moduleId << 16 + localId)
   }
   
 }

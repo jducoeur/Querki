@@ -1,4 +1,6 @@
-package modules.email
+package querki.email.impl
+
+import querki.email._
 
 import scala.util._
 
@@ -26,14 +28,10 @@ import modules.Modules._
 import play.api.{Logger, Play}
 import play.api.Play.current
 
-/**
- * Represents an email address. For the moment this is basically just a String, but we'll gradually
- * add things like validation, so it's useful to get the abstraction clean now.
- */
-case class EmailAddress(addr:String)
-
 class EmailModule(val moduleId:Short) extends modules.Module {
 
+  import querki.email.MOIDs._
+  import EmailModule._
   def fullKey(key:String) = "querki.mail." + key
   def getRequiredConf(key:String) = {
     val opt = Play.configuration.getString(fullKey(key))
@@ -44,29 +42,45 @@ class EmailModule(val moduleId:Short) extends modules.Module {
   }
     
   lazy val smtpHost = getRequiredConf("smtpHost")
-  lazy val from = getRequiredConf("from")
   lazy val debug = Play.configuration.getBoolean(fullKey("debug")).getOrElse(false)
-
-  object MOIDs {
-    val EmailTypeOID = oldMoid(1)
-    val EmailPropOID = oldMoid(2)
-    val EmailTemplateOID = oldMoid(3)
-    val EmailToOID = oldMoid(4)
-    val EmailSendOID = oldMoid(5)
-    val EmailSubjectOID = oldMoid(6)
-//    val EmailCcOID = moid(7)
-    val EmailBodyOID = oldMoid(8)
-    val EmailShowSendOID = oldMoid(9)
-    val SentToOID = oldMoid(10)
-    val RecipientsOID = oldMoid(11)
-  }  
-  import MOIDs._
+  
+  private def createSession():Session = {
+    val props = System.getProperties()
+    props.setProperty("mail.host", smtpHost)
+    props.setProperty("mail.user", "querki")
+    props.setProperty("mail.transport.protocol", "smtp")
+    props.setProperty("mail.from", from)
+    props.setProperty("mail.debug", "true")
+	    
+    val session = Session.getInstance(props, null)
+	
+    session.setDebug(debug)
+    
+    session
+  }
   
   /**
-   * The character that we use to separate strings involving email addresses. Chosen mostly
-   * because it is not a legal character in email addresses.
+   * Sends an "official" email in the name of Querki itself.
+   * 
+   * USE WITH CAUTION! This should only be used for significant emails that do not come from a
+   * specific person. Excessive use of these could get us labeled as spammers, which we don't want.
+   * 
+   * TODO: in the long run, this should wind up mostly subsumed under a more-general Notifications
+   * system, which will include, eg, system-displayed notifications and social network messages,
+   * with the user controlling where his notifications go.  
    */
-  val emailSepChar = ';'
+  def sendSystemEmail(recipient:Identity, subject:Wikitext, body:Wikitext):Try[Unit] = {
+    val session = createSession()
+    
+    sendInternal(session, from, recipient.email, recipient.name, SystemUser.mainIdentity, subject, body)
+  }
+  
+  override def init() = {
+    // HACK: in the long run, this should register with a more general Notifications system instead:
+    querki.email.setEmailCallback(sendSystemEmail)
+    querki.email.setEmailPeopleCallback(sendToPeople)
+    querki.email.setFrom(getRequiredConf("from"))
+  }
   
   /******************************************
    * TYPES
@@ -107,7 +121,7 @@ class EmailModule(val moduleId:Short) extends modules.Module {
         PropSummary("Internal property, used in the process of sending email. Do not mess with this!")
       ))
   
-  lazy val emailAddress = new SystemProperty(EmailPropOID, EmailAddressType, Optional,
+  lazy val emailAddress = new APIProperty(querki.email.EmailAddressProp, EmailPropOID, EmailAddressType, Optional,
       toProps(
         setName("Email Address"),
         InternalProp(true),
@@ -243,22 +257,8 @@ class EmailModule(val moduleId:Short) extends modules.Module {
       TextValue("You aren't allowed to send that email")
   }
   
-  private def createSession():Session = {
-    val props = System.getProperties()
-    props.setProperty("mail.host", smtpHost)
-    props.setProperty("mail.user", "querki")
-    props.setProperty("mail.transport.protocol", "smtp")
-    props.setProperty("mail.from", from)
-    props.setProperty("mail.debug", "true")
-	    
-    val session = Session.getInstance(props, null)
-	
-    session.setDebug(debug)
-    
-    session
-  }
-  
-  def sendToPeople(context:QLContext, people:Seq[Thing], subjectQL:QLText, bodyQL:QLText)(implicit state:SpaceState):Seq[OID] = {
+  def sendToPeople(context:QLContext, people:Seq[Thing], subjectQL:QLText, bodyQL:QLText, state:SpaceState):Seq[OID] = {
+    implicit val s = state
     val session = createSession()
     
     people.flatMap { person =>
@@ -404,21 +404,5 @@ class EmailModule(val moduleId:Short) extends modules.Module {
 }
 
 object EmailModule {
-  import modules.Modules.Email._
-    
-  /**
-   * Sends an "official" email in the name of Querki itself.
-   * 
-   * USE WITH CAUTION! This should only be used for significant emails that do not come from a
-   * specific person. Excessive use of these could get us labeled as spammers, which we don't want.
-   * 
-   * TODO: in the long run, this should wind up mostly subsumed under a more-general Notifications
-   * system, which will include, eg, system-displayed notifications and social network messages,
-   * with the user controlling where his notifications go.  
-   */
-  def sendSystemEmail(recipient:Identity, subject:Wikitext, body:Wikitext):Try[Unit] = {
-    val session = createSession()
-    
-    sendInternal(session, from, recipient.email, recipient.name, SystemUser.mainIdentity, subject, body)
-  }
+
 }

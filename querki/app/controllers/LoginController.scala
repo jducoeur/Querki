@@ -77,7 +77,7 @@ object LoginController extends ApplicationBase {
 	        } else {
 	          val context = QLRequestContext(rc)
 	        
-	          val invitees = emailStrs.map(modules.email.EmailAddress(_))
+	          val invitees = emailStrs.map(querki.email.EmailAddress(_))
 	          val result = modules.Modules.Person.inviteMembers(rc, invitees)
 	        
 	          (

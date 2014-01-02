@@ -3,6 +3,8 @@
 @import helper._
 @import helper.twitterBootstrap._
 
+@import querki.email.EmailAddressProp
+
 @import querki.html.HtmlRenderer
 @import modules.Modules
 
@@ -53,7 +55,7 @@
           twice, doing so excessively is frowned upon, as is sending unwelcome invitations. Either of these is considered spam, and is
           grounds for removal from Querki.</p>
           
-          <p>Invitations will come from "@{modules.Modules.Email.from}". If your invitations are getting spam-filtered, tell your invitees
+          <p>Invitations will come from "@{querki.email.from}". If your invitations are getting spam-filtered, tell your invitees
           to add that address to their Contacts.</p>
           
           <p>Invitations will have your email address included as the Reply-To, so if the invitees write back, it will go directly to you.
@@ -89,7 +91,7 @@
         
         <table class="table table-hover">
           @for(invitee <- space.invitees;
-               propVal <- invitee.getPropOpt(modules.Modules.Email.emailAddress)(space);
+               propVal <- invitee.getPropOpt(EmailAddressProp)(space);
                emailAddr <- propVal.firstOpt;
                addr = emailAddr.addr) {
             <tr class="warning"><td>@addr</td></tr>

@@ -127,7 +127,7 @@ trait TestSpace {
     FullUser(
       toid(), 
       name, 
-      Seq(Identity(toid(), modules.email.EmailAddress(""), "", handle, name, IdentityKind.QuerkiLogin)),
+      Seq(Identity(toid(), querki.email.EmailAddress(""), "", handle, name, IdentityKind.QuerkiLogin)),
       level)
       
   /**

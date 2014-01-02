@@ -16,6 +16,7 @@ import ql._
 
 import querki.basic.DisplayNameProp
 import querki.conventions.{PropDetails, PropSummary}
+import querki.email._
 import querki.spaces.SpaceManager
 import querki.spaces.messages.{ChangeProps, CreateThing, ThingError, ThingFound, ThingResponse}
 import querki.util._
@@ -23,9 +24,8 @@ import querki.values._
 
 import querki.identity._
 
-import modules._
-// TODO: Hmm. This is a Module-boundaries break. I think we need an interface layer:
-import modules.email.EmailAddress
+import modules.Module
+import querki.email.EmailAddress
 
 import querki.util._
 
@@ -65,10 +65,6 @@ class PersonModule(val moduleId:Short) extends modules.Module {
    * EXTERNAL REFS
    ***********************************************/
 
-  lazy val Email = modules.Modules.Email
-  lazy val emailAddressProp = Email.emailAddress
-  lazy val emailAddressOID = Email.MOIDs.EmailPropOID
-  
   lazy val AccessControl = modules.Modules.AccessControl
   
   lazy val urlBase = Config.getString("querki.app.urlRoot")
@@ -176,7 +172,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
         IsModelProp(true),
         // TODO: this is a fugly declaration, and possibly unsafe -- do we have any
         // assurance that modules.Modules.Email has been constructed before this?
-        (modules.Modules.Email.MOIDs.EmailPropOID -> Optional.QNone),
+        EmailAddressProp(Optional.QNone),
         DisplayTextProp("""This represents a Member of this Space.""")))
     
   override lazy val things = Seq(
@@ -195,7 +191,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
    */
   private def setIdentityId(t:Thing, context:QLContext):OID = {
     implicit val s = context.state
-    val emailAddr = t.first(emailAddressProp)
+    val emailAddr = t.first(EmailAddressProp)
     val name = t.first(NameProp)
     // Get the Identity in the database...
     val identity = Identity.getOrCreateByEmail(emailAddr, name)
@@ -287,7 +283,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
           rootId <- mainContext.root.value.firstAs(LinkType);
           person <- state.anything(rootId);
           if (person.isAncestor(PersonOID));
-          emailPropOpt <- person.getPropOptTyped(emailAddressProp);
+          emailPropOpt <- person.getPropOptTyped(EmailAddressProp);
           email <- emailPropOpt.firstOpt;
           rc <- mainContext.requestOpt;
           // This is the value that we're going to use to identify this person when they
@@ -295,7 +291,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
           // being changed in the Person record after the email is sent. (Which could be
           // used as a spam vector, I suspect.)
           idString = person.id.toString + ":" + email.addr;
-          signed = Hasher.sign(idString, Email.emailSepChar);
+          signed = Hasher.sign(idString, emailSepChar);
           encoded = encodeURL(signed.toString);
           // TODO: this surely belongs in a utility somewhere -- it constructs the full path to a Thing, plus some paths.
 	      // Technically speaking, we are converting a Link to an ExternalLink, then adding params.
@@ -328,7 +324,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
     // into EmailAddress.addr. Instead, the Email PType should provide enough machinery to be able to do this
     // properly, by extending matches() with some proper comparators.
     val currentEmails = currentMembers.
-      map(member => (member.getPropOptTyped(emailAddressProp)(originalState) -> member)).
+      map(member => (member.getPropOptTyped(EmailAddressProp)(originalState) -> member)).
       filter(pair => (pair._1.isDefined && !pair._1.get.isEmpty)).
       map(entry => (entry._1.get.first.addr.toLowerCase(), entry._2)).
       toMap
@@ -348,7 +344,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
       
       val propMap = 
         Thing.toProps(
-          emailAddressProp(address.addr),
+          EmailAddressProp(address.addr),
           DisplayNameProp(displayName),
           AccessControl.canReadProp(AccessControl.ownerTag))()
       val msg = CreateThing(rc.requester.get, rc.ownerId, updatedState.toThingId, Kind.Thing, PersonOID, propMap)
@@ -372,7 +368,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
       |[[_spaceInvitation]]""".stripMargin)
     val bodyQL = updatedState.getPropOpt(inviteText).flatMap(_.firstOpt).getOrElse(QLText("")) + inviteLink
     // TODO: we probably should test that sentTo includes everyone we expected:
-    val sentTo = Email.sendToPeople(context, people ++ existingPeople, subjectQL, bodyQL)
+    val sentTo = sendToPeople(context, people ++ existingPeople, subjectQL, bodyQL)
     
     InvitationResult(newEmails, existingEmails)
   }
@@ -391,7 +387,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
           encodedInvite <- rc.firstQueryParam(inviteParam);
           spaceId <- rc.spaceIdOpt;
           ownerHandle <- rc.reqOwnerHandle;
-          hash = SignedHash(encodedInvite, Email.emailSepChar);
+          hash = SignedHash(encodedInvite, emailSepChar);
           // TODO: we should do something smarter if this fails:
           if (Hasher.checkSignature(hash));
           SignedHash(_, _, msg, _) = hash;

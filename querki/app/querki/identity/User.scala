@@ -20,7 +20,7 @@ import querki.system.TOSModule.noTOSUserVersion
 import querki.util._
 import SqlHelpers._
 
-import modules.email.EmailAddress
+import querki.email.EmailAddress
 
 object UserLevel {
   type UserLevel = Int

@@ -51,7 +51,7 @@ object AdminController extends ApplicationBase {
         |implemented. But we hope there is enough there now for you to find it useful.
         |
         |Have fun, and please contact us if you need any help!""".stripMargin)
-      modules.email.EmailModule.sendSystemEmail(newUser.mainIdentity, subject, body)
+      querki.email.sendSystemEmail(newUser.mainIdentity, subject, body)
     }
     
     Ok(newUserOpt.map(_.level.toString).getOrElse(UserLevel.PendingUser.toString))

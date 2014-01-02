@@ -10,7 +10,7 @@ import querki.values.{RequestContext, SpaceState}
 case object BasicTestUser extends User {
   val id = models.system.OIDs.TestUserOID
   val name = "Test User"
-  lazy val email = modules.email.EmailAddress("somebody@test.net")
+  lazy val email = querki.email.EmailAddress("somebody@test.net")
   val identities = Seq(Identity(models.system.OIDs.TestIdentityOID, email, "", "Test User", name, IdentityKind.QuerkiLogin))
   val level = PaidUser
   val tosVersion = noTOSUserVersion  
