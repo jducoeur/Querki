@@ -10,8 +10,8 @@ import Thing._
 import OIDs._
 import SystemSpace._
 
-import querki.conventions.{PropSummaryOID, PropDetailsOID, PropSummary, PropDetails}
-
+import querki.conventions
+import querki.conventions.{PropSummary, PropDetails}
 import querki.values._
 
 class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
@@ -24,7 +24,7 @@ class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:
       toProps(
         setName("Property"),
         (InternalPropOID -> ExactlyOne(YesNoType(true))),
-        (PropSummaryOID -> Optional(TextType("The root Property, from which all others derive."))),
+        (conventions.MOIDs.PropSummaryOID -> Optional(TextType("The root Property, from which all others derive."))),
         (DisplayTextOID -> Optional(LargeTextType("""[[Summary -> ""**____** -- ""]]
             |[[_if(Property Type -> _is(Internal Method Type), 
             |  ""**METHOD**"",
@@ -49,8 +49,8 @@ class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:
   object DisplayTextProp extends SystemProperty(DisplayTextOID, LargeTextType, Optional,
       toProps(
         setName("Default View"),
-        (PropSummaryOID -> ExactlyOne(TextType("How this Thing will be displayed"))),
-        (PropDetailsOID -> ExactlyOne(LargeTextType("""Default View is one of the most important Properties in Querki,
+        (conventions.MOIDs.PropSummaryOID -> ExactlyOne(TextType("How this Thing will be displayed"))),
+        (conventions.MOIDs.PropDetailsOID -> ExactlyOne(LargeTextType("""Default View is one of the most important Properties in Querki,
         		|and nearly every Thing has one. The Default View describes how this Thing will usually show up when you
         		|look at it as a web page. It can say almost anything you like, but usually consists of a mix of
         		|text and QL expressions. (Where a "QL Expression" is anything inside double-square-brackets.)""".stripMargin)))
@@ -268,8 +268,8 @@ object AppliesToKindProp extends SystemProperty(AppliesToKindOID, IntType, QList
       setName("Applies To"),
       (AppliesToKindOID -> QList(ElemValue(Kind.Property, new DelegatingType(IntType)))),
       (modules.Modules.SkillLevel.MOIDs.SkillLevelPropOID -> ExactlyOne(LinkType(modules.Modules.SkillLevel.MOIDs.SkillLevelAdvancedOID))),
-      (PropSummaryOID -> Optional(TextType("Which Kinds of Things can this Property be used on?"))),
-      (PropDetailsOID -> Optional(LargeTextType("""By default, a Property can be used on anything -- even when
+      (conventions.MOIDs.PropSummaryOID -> Optional(TextType("Which Kinds of Things can this Property be used on?"))),
+      (conventions.MOIDs.PropDetailsOID -> Optional(LargeTextType("""By default, a Property can be used on anything -- even when
           |that is nonsensical. The result is that, when creating a new Thing, you get a messy list of lots of
           |Properties, many of which are irrelevant.
           |

@@ -1,6 +1,6 @@
 package querki.conventions
 
-import models.Kind
+import models._
 import models.Thing._
 
 import models.system.{ExactlyOne, Optional}
@@ -8,7 +8,7 @@ import models.system.{LargeTextType, TextType, YesNoType}
 import models.system.{SystemProperty, AppliesToKindProp}
 import models.system.OIDs.{sysId, NotInheritedOID}
 
-import querki.types.DefaultValueProp
+import querki.types.MOIDs._
 
 import modules.Module
 
@@ -18,19 +18,12 @@ import modules.Module
  * to encourage their general use.
  */
 class ConventionsModule(val moduleId:Short) extends Module {
-  object MOIDs {
-    // Old OIDs, moved to here:
-    val PropSummaryOID = sysId(85)
-    val PropDetailsOID = sysId(86)
-    
-    val PropDescriptionOID = moid(1)
-  }
   import MOIDs._
 
   lazy val PropSummary = new SystemProperty(PropSummaryOID, TextType, Optional,
     toProps(
       setName("Summary"),
-      DefaultValueProp(ExactlyOne(TextType("""____"""))),
+      (DefaultValuePropOID -> ExactlyOne(TextType("""____"""))),
       (PropSummaryOID -> Optional(TextType("This is an optional one-line description of something."))),
       (PropDetailsOID -> Optional(LargeTextType("""When you define a Property, you may add this Summary as
           |part of that definition. It will be displayed in mouseover hovering and things like that, to help
@@ -58,7 +51,7 @@ class ConventionsModule(val moduleId:Short) extends Module {
   lazy val PropDescription = new SystemProperty(PropDescriptionOID, LargeTextType, ExactlyOne,
     toProps(
       setName("Description"),
-      DefaultValueProp(ExactlyOne(LargeTextType("""[[Summary]] [[Details -> ""
+      (DefaultValuePropOID -> ExactlyOne(LargeTextType("""[[Summary]] [[Details -> ""
           |
           |____""]]""".stripMargin))),
       (PropSummaryOID -> Optional(TextType("This is the full description of something."))),

@@ -16,17 +16,6 @@ import querki.values._
 import modules.Module
 
 class TypesModule(val moduleId:Short) extends Module {
-  object MOIDs {
-    // Old Things, moved to here
-    val MinTextLengthOID = sysId(100)
-    
-    val MinIntValueOID = moid(1)
-    val MaxIntValueOID = moid(2)
-    
-    val WrappedValueTypeOID = moid(3)
-    
-    val DefaultValuePropOID = moid(4)
-  }
   import MOIDs._
     
   /******************************************
@@ -56,7 +45,7 @@ class TypesModule(val moduleId:Short) extends Module {
   override lazy val types = Seq(
     WrappedValueType
   )
-  
+   
   /***********************************************
    * PROPERTIES
    ***********************************************/
@@ -109,6 +98,10 @@ class TypesModule(val moduleId:Short) extends Module {
       // are, so far, unknown.)
       (NotInheritedOID -> ExactlyOne(YesNoType(true))),
       AppliesToKindProp(Kind.Property)))
+  {
+    // TODO: replace this with a generalized notion of APIProperty:
+    querki.types.DefaultValueProp.set(this)
+  }
   
   override lazy val props = Seq(
     MinTextLengthProp,

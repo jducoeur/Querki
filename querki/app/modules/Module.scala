@@ -42,6 +42,8 @@ object Modules {
     // TODO: we shouldn't do this explicitly, we should declare these things just once:
     // TODO: in the long run, these should self-declare their dependencies, and
     // do a topological sort to initialize and terminate them in order:
+    s = init(Types, s)
+    s = init(Conventions, s)
     s = init(Stylesheet, s)
     s = init(Email, s)
     s = init(Person, s)
@@ -51,12 +53,10 @@ object Modules {
 //    s = init(Rendering, s)
     s = init(TOS, s)
     s = init(Logic, s)
-    s = init(Types, s)
     s = init(UI, s)
     s = init(DeriveName, s)
     s = init(Editor, s)
     s = init(SkillLevel, s)
-    s = init(Conventions, s)
     
     s
   }
@@ -70,6 +70,38 @@ object Modules {
   def termAllModules = {
     allModules.foreach(_.term)
   }
+}
+
+/**
+ * Definition of the ModuleIds for a Module.
+ * 
+ * The moduleId parameter at the top is a global, and must be unique for each Module. The master
+ * list of these is defined in Modules itself.
+ * 
+ * This object should be defined at the package level, as part of the Module's API, so that
+ * external systems can use these IDs safely, without causing accidental initialization of
+ * the Module.
+ */
+class ModuleIds(val moduleId:Short) {
+  
+  /**
+   * The OID for a Module-local Thing.
+   * 
+   * It is strongly recommended that each Module define a central table of its local OIDs,
+   * similar to the way SystemSpace.OIDs does, to avoid namespace contention.
+   * 
+   * moids should be permanent, just like the OIDs in SystemSpace. These are hardcoded values
+   * that will be used in the database, so they *MUST* not change. If you need major changes,
+   * deprecate the old value and introduce a new one.
+   * 
+   * You have 16 bits of namespace per Module. The theory is that that should be plenty for
+   * any foreseeable Module. (Hopefully I won't regret this decision, but Modules aren't
+   * supposed to be large.)  
+   */
+  def moid(localId:Short):OID = {
+    OIDs.sysId((moduleId << 16) + localId)
+  }
+  
 }
 
 /**
