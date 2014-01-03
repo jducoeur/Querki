@@ -122,6 +122,45 @@ class EcologyTests extends WordSpec
       val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState)
       
       assert(ecot1.myAnswer == Some(42))
-    }    
+    }
+    
+    "detect a missing interface in initialization" in {
+      val eco = new EcologyImpl
+      class Ecot1(val moduleId:Short) extends Module(eco) with TestInterface1 {
+        val interface2 = initRequires[TestInterface2]
+        
+        lazy val answer:Int = interface2.getTheAnswer
+        
+        override def init() = {
+          myAnswer = Some(answer)
+        }
+        var myAnswer:Option[Int] = None
+      }
+      class Ecot2(val moduleId:Short) extends Module(eco)
+      
+      val ecot1 = new Ecot1(1)
+      val ecot2 = new Ecot2(2)
+
+      intercept[InitMissingInterfaceException] {
+        val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState)
+      }
+    }
+    
+    "detect a dependency loop during initialization" in {
+      val eco = new EcologyImpl
+      class Ecot1(val moduleId:Short) extends Module(eco) with TestInterface1 {
+        val interface2 = initRequires[TestInterface2]
+      }
+      class Ecot2(val moduleId:Short) extends Module(eco) with TestInterface2 {
+        val interface1 = initRequires[TestInterface1]
+      }
+      
+      val ecot1 = new Ecot1(1)
+      val ecot2 = new Ecot2(2)
+
+      intercept[InitDependencyLoopException] {
+        val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState)
+      }
+    }
   }
 }

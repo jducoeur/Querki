@@ -116,7 +116,16 @@ class EcologyImpl extends Ecology with EcologyManager {
         // TODO: scan the remainder, and particularly their dependencies. If we find a dependency that
         // isn't in _registeredInterfaces, that means something isn't implemented yet. Otherwise, it
         // indicates a dependency loop. Include all of the remainder in an error message.
-        case None => throw new Exception("Unable to initialize any more Ecots!")
+        case None => {
+          remaining.foreach { ecot =>
+            ecot.dependsUpon.foreach { dependency =>
+              if (!_registeredInterfaces.contains(dependency))
+                throw new InitMissingInterfaceException(dependency, ecot)
+            }
+          }
+          
+          throw new InitDependencyLoopException(remaining)
+        }
       }
     }
   }
