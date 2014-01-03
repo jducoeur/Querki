@@ -1,5 +1,7 @@
 package querki.ecology
 
+import scala.reflect.runtime.universe.TypeTag
+
 import querki.values.SpaceState
 
 /**
@@ -17,6 +19,12 @@ trait Ecology {
    * this -- it is mainly used for setup and shutdown.
    */
   def manager:EcologyManager
+  
+  /**
+   * Fetches the registered interface. Throws an exception if the interface is not
+   * registered, or not initialized.
+   */
+  def api[T <: EcologyInterface : TypeTag]:T
 }
 
 /**
@@ -58,7 +66,7 @@ trait EcologyManager {
   /**
    * Mainly for testing and reporting.
    */
-  def isRegistered[C](implicit tag:scala.reflect.runtime.universe.TypeTag[C]):Boolean
+  def isRegistered[C](implicit tag:TypeTag[C]):Boolean
 }
 
 /**

@@ -49,7 +49,21 @@ class EcologyImpl extends Ecology with EcologyManager {
   // Ecology Implementation
   //
   
-  val manager:EcologyManager = this  
+  val manager:EcologyManager = this
+  
+  def api[T <: EcologyInterface : TypeTag]:T = {
+    // TBD: is this efficient enough? Are we going to have problems with this in practice?
+    val clazz = runtimeMirror.runtimeClass(typeOf[T].typeSymbol.asClass)
+    _initializedInterfaces.get(clazz) match {
+      case Some(ecot) => ecot.asInstanceOf[T]
+      case None => {
+        if (_registeredInterfaces.contains(clazz))
+          throw new UninitializedInterfaceException(clazz)
+        else
+          throw new UnknownInterfaceException(clazz)
+      }
+    }
+  }
   
   // ******************************************************
   //
