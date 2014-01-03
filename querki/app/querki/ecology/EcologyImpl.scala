@@ -37,7 +37,9 @@ class EcologyImpl extends Ecology with EcologyManager {
     initializeRemainingEcots(_registeredEcots, initialSpaceState)
   }
   
-  def term():Unit = ???
+  def term():Unit = {
+    _termOrder.foreach(_.term)
+  }
 
   def isRegistered[C](implicit tag:TypeTag[C]):Boolean = {
     val clazz = runtimeMirror.runtimeClass(tag.tpe.typeSymbol.asClass)
@@ -94,6 +96,12 @@ class EcologyImpl extends Ecology with EcologyManager {
   private var _initializedInterfaces:Map[Class[_], Ecot] = Map.empty
   
   /**
+   * The calculated order to terminate the world. This is basically the reverse of the order in which we
+   * initialized, since we calculated the dependencies then.
+   */
+  private var _termOrder:List[Ecot] = Nil
+  
+  /**
    * Recursively initialize the system. In each recursive pass, go through the remaining Ecots, and initialize
    * the first one we find that has no uninitialized dependencies. If we get through a pass without being able to
    * initialize *anything*, we have failed.
@@ -110,6 +118,7 @@ class EcologyImpl extends Ecology with EcologyManager {
           val newState = readyEcot.addSystemObjects(currentState)
           readyEcot.init
           _initializedEcots += readyEcot
+          _termOrder = readyEcot :: _termOrder
           readyEcot.implements.foreach(interface =>_initializedInterfaces += (interface -> readyEcot))
           initializeRemainingEcots(remaining - readyEcot, newState)
         }

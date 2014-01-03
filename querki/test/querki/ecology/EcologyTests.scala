@@ -62,15 +62,26 @@ class EcologyTests extends WordSpec
       }
     }
     
-    "successfully register and initialize Ecots with dependencies" in {
+    "successfully register, initialize and terminate Ecots with dependencies" in {
       val eco = new EcologyImpl
+      
+      var termOrder:Seq[Ecot] = Seq.empty
+      
       class Ecot1(val moduleId:Short) extends Module(eco) with TestInterface1 {
         val interface2 = initRequires[TestInterface2]
         
         lazy val answer:Int = interface2.getTheAnswer
+        
+        override def term() = {
+          termOrder = termOrder :+ this
+        }
       }
       class Ecot2(val moduleId:Short) extends Module(eco) with TestInterface2 {
         override val getTheAnswer = 42
+        
+        override def term() = {
+          termOrder = termOrder :+ this
+        }
       }
       
       val ecot1 = new Ecot1(1)
@@ -79,6 +90,11 @@ class EcologyTests extends WordSpec
       val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState)
       
       assert(ecot1.answer == 42)
+      
+      eco.manager.term
+      
+      assert(termOrder(0) == ecot1)
+      assert(termOrder(1) == ecot2)
     }
     
     "throw if I try to use a dependency before initialization" in {
@@ -161,6 +177,6 @@ class EcologyTests extends WordSpec
       intercept[InitDependencyLoopException] {
         val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState)
       }
-    }
+    }    
   }
 }
