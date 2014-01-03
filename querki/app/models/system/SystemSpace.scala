@@ -239,7 +239,7 @@ object SystemSpace {
     modules.Modules.termAllModules
   }
   
-  private def initialSystemState = {
+  def initialSystemState = {
     SpaceState(systemOID, RootOID,
       toProps(
         setName("System"),

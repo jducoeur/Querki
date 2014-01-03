@@ -1,5 +1,7 @@
 package querki.ecology
 
+import querki.values.SpaceState
+
 /**
  * The bundle that represents the entire universe.
  * 
@@ -44,9 +46,9 @@ trait EcologyManager {
   def register(ecot:Ecot):Unit
   
   /**
-   * Initializes the world.
+   * Initializes the world, and returns the resulting SpaceState.
    */
-  def init():Unit
+  def init(initialSpaceState:SpaceState):SpaceState
   
   /**
    * Terminates the world.
@@ -56,7 +58,7 @@ trait EcologyManager {
   /**
    * Mainly for testing and reporting.
    */
-  def allRegisteredInterfaces:Set[Class[_]]
+  def isRegistered[C](implicit tag:scala.reflect.runtime.universe.TypeTag[C]):Boolean
 }
 
 /**
@@ -92,6 +94,14 @@ trait Ecot extends EcologyMember {
   import scala.reflect.runtime.{universe => ru}
   import scala.reflect.runtime.universe._
   
+  /**
+   * The EcologyInterfaces that this Ecot requires in order to initialize.
+   * 
+   * Note that you will not usually set this manually.
+   * 
+   * TODO: get this working!
+   */
+  def dependsUpon:Set[Class[_]] = Set.empty
   
   /**
    * Initialization call, which may be overridden by the Module. This should hook in
@@ -111,9 +121,9 @@ trait Ecot extends EcologyMember {
    */
   ecology.manager.register(this)
 
+  private def mirror(clazz:Class[_]):Mirror = ru.runtimeMirror(clazz.getClassLoader)
   private def getType[T](clazz: Class[T]):Type = {
-    val runtimeMirror = ru.runtimeMirror(clazz.getClassLoader)
-    runtimeMirror.classSymbol(clazz).toType
+    mirror(clazz).classSymbol(clazz).toType
   }
 
   /**
@@ -124,7 +134,7 @@ trait Ecot extends EcologyMember {
   /**
    * This is the set of all EcologyInterfaces that this Ecot implements.
    */
-  def implements:Set[scala.reflect.runtime.universe.Symbol] = {
+  def implements:Set[Class[_]] = {
     val markerTpe = getType(classOf[EcologyInterface])
     val markerName = markerTpe.toString()
     val clazz = this.getClass()
@@ -139,6 +149,18 @@ trait Ecot extends EcologyMember {
       (interfaceBases.length > 1 &&
        interfaceBases(1).fullName == markerName)
     }
-    interfaceSymbols.toSet
+    interfaceSymbols.map(interface => mirror(clazz).runtimeClass(interface.asClass)).toSet
   }
+  
+  /**
+   * If the Module requires any specialized Things, Properties, Types or Collections,
+   * add them to the state here. The returned state should be the passed-in one plus
+   * the Module's stuff. (Note that the passed-in state is the System Space -- you are
+   * adding stuff to System.)
+   * 
+   * Individual Modules should not usually need to override this; instead, just define
+   * your objects in the types, props and things properties, and they will be added
+   * automatically.
+   */
+  def addSystemObjects(state:SpaceState):SpaceState
 }

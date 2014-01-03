@@ -3,6 +3,8 @@ package querki.ecology
 import org.scalatest.{WordSpec, BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
 
+import querki.values.SpaceState
+
 import querki.test._
 
 import modules._
@@ -22,6 +24,8 @@ class EcologyTests extends WordSpec
     
   }
   
+  trait TestInterface3 extends EcologyInterface
+  
   "The Ecology" should {
     "throw an exception if I double-register an interface" in {
       val eco = new EcologyImpl
@@ -34,7 +38,7 @@ class EcologyTests extends WordSpec
       }
     }
     
-    "successfully register a couple of interfaces" in {
+    "successfully register and initialize a couple of interfaces without dependencies" in {
       val eco = new EcologyImpl
       class Ecot1(val moduleId:Short) extends Module(eco) with TestInterface1
       class Ecot2(val moduleId:Short) extends Module(eco) with TestInterface2
@@ -42,12 +46,11 @@ class EcologyTests extends WordSpec
       val ecot1 = new Ecot1(1)
       val ecot2 = new Ecot2(2)
       
-      val registered = eco.manager.allRegisteredInterfaces
-      assert(registered.contains(classOf[TestInterface1]))
-      assert(registered.contains(classOf[TestInterface2]))
+      assert(eco.manager.isRegistered[TestInterface1])
+      assert(eco.manager.isRegistered[TestInterface2])
+      assert(!eco.manager.isRegistered[TestInterface3])
       
-      println("Registered Interfaces:")
-      eco.manager.allRegisteredInterfaces.foreach(interface => println(s"    ${interface.getSimpleName}"))
+      val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState)
     }
   }
 }
