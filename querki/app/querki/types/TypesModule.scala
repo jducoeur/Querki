@@ -18,7 +18,7 @@ import modules.Module
 
 import querki.types._
 
-class TypesModule(e:Ecology, val moduleId:Short) extends Module(e) {
+class TypesModule(e:Ecology, val moduleId:Short) extends Module(e) with Types {
   import MOIDs._
     
   /******************************************

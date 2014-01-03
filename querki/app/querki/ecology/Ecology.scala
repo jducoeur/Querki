@@ -52,6 +52,11 @@ trait EcologyManager {
    * Terminates the world.
    */
   def term():Unit
+  
+  /**
+   * Mainly for testing and reporting.
+   */
+  def allRegisteredInterfaces:Set[Class[_]]
 }
 
 /**
@@ -66,6 +71,13 @@ trait EcologyMember {
 }
 
 /**
+ * This is a pure marker trait. All "interfaces" exposed through the Ecology *must* have this as their
+ * first trait linearly. (Usually, it will be the only thing that an exposed interface extends, but
+ * that is not required.)
+ */
+trait EcologyInterface
+
+/**
  * A single "module" of the system.
  * 
  * In the Ecology Pattern, the world is mainly composed of Ecots. An Ecot is a piece of
@@ -77,6 +89,9 @@ trait EcologyMember {
  * that nobody gets confused by highly-overloaded words like "module".
  */
 trait Ecot extends EcologyMember {
+  import scala.reflect.runtime.{universe => ru}
+  import scala.reflect.runtime.universe._
+  
   
   /**
    * Initialization call, which may be overridden by the Module. This should hook in
@@ -95,4 +110,35 @@ trait Ecot extends EcologyMember {
    * or make any assumptions about being registered -- that is what init() is for.
    */
   ecology.manager.register(this)
+
+  private def getType[T](clazz: Class[T]):Type = {
+    val runtimeMirror = ru.runtimeMirror(clazz.getClassLoader)
+    runtimeMirror.classSymbol(clazz).toType
+  }
+
+  /**
+   * Mainly for printing.
+   */
+  def fullName = getType(this.getClass())
+  
+  /**
+   * This is the set of all EcologyInterfaces that this Ecot implements.
+   */
+  def implements:Set[scala.reflect.runtime.universe.Symbol] = {
+    val markerTpe = getType(classOf[EcologyInterface])
+    val markerName = markerTpe.toString()
+    val clazz = this.getClass()
+    val tpe = getType(clazz)
+    // A base class is an EcologyInterface iff its *second* base class is EcologyInterface.
+    // (Which means that that is the first thing it is extending.)
+    val interfaceSymbols = tpe.baseClasses.filter { possibleInterfaceSymbol =>
+      val possibleInterface = possibleInterfaceSymbol.typeSignatureIn(tpe)
+      val interfaceBases = possibleInterface.baseClasses
+      // Comparing by name is a bit lame, but I haven't yet figured out how to reliably
+      // compare by identity:
+      (interfaceBases.length > 1 &&
+       interfaceBases(1).fullName == markerName)
+    }
+    interfaceSymbols.toSet
+  }
 }

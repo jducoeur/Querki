@@ -7,40 +7,8 @@ import querki.ecology._
 
 import querki.values.SpaceState
 
-object Modules extends Ecology with EcologyManager {
-  
-  // ******************************************************
-  //
-  // EcologyManager Implementation
-  //
-  
-  val ecology:Ecology = this
-  
-  def register(ecot:Ecot):Unit = {
-    _registeredEcots = _registeredEcots + ecot
-  }
-  
-  def init():Unit = ???
-  
-  def term():Unit = ???
-  
-  // ******************************************************
-  //
-  // Ecology Implementation
-  //
-  
-  val manager:EcologyManager = this  
-  
-  // ******************************************************
-  //
-  // Internals
-  //
-  
-  /**
-   * All of the Ecots that have been registered, in no particular order.
-   */
-  private var _registeredEcots:Set[Ecot] = Set.empty
-  
+object Modules extends EcologyImpl {
+
   // ******************************************************
   //
   // Older Code
