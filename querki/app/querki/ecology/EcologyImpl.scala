@@ -21,7 +21,7 @@ class EcologyImpl extends Ecology with EcologyManager {
     ecot.implements.foreach { interfaceClass => 
       if (_registeredInterfaces.contains(interfaceClass)) {
         val currentRegistrant = _registeredInterfaces(interfaceClass)
-        throw new Exception(s"Ecot ${ecot.fullName} trying to register EcologyInterface ${interfaceClass.getSimpleName}, but it is already registered to ${currentRegistrant.fullName}")
+        throw new AlreadyRegisteredInterfaceException(interfaceClass, currentRegistrant, ecot)
       } else {
         _registeredInterfaces = _registeredInterfaces + (interfaceClass -> ecot)
       }
@@ -52,7 +52,9 @@ class EcologyImpl extends Ecology with EcologyManager {
   val manager:EcologyManager = this
   
   def api[T <: EcologyInterface : TypeTag]:T = {
-    // TBD: is this efficient enough? Are we going to have problems with this in practice?
+    // This is a bit dubiously inefficient. But it is supposed to mainly be called via
+    // InterfaceWrapper.get, which caches the result, so it shouldn't be called *too* often
+    // after system initialization.
     val clazz = runtimeMirror.runtimeClass(typeOf[T].typeSymbol.asClass)
     _initializedInterfaces.get(clazz) match {
       case Some(ecot) => ecot.asInstanceOf[T]

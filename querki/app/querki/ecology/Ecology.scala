@@ -87,6 +87,10 @@ trait EcologyMember {
  */
 trait EcologyInterface
 
+case class InterfaceWrapper[T <: EcologyInterface](ecology:Ecology)(implicit tag:TypeTag[T]) {
+  lazy val get:T = ecology.api[T]
+}
+
 /**
  * A single "module" of the system.
  * 
@@ -106,10 +110,14 @@ trait Ecot extends EcologyMember {
    * The EcologyInterfaces that this Ecot requires in order to initialize.
    * 
    * Note that you will not usually set this manually.
-   * 
-   * TODO: get this working!
    */
-  def dependsUpon:Set[Class[_]] = Set.empty
+  def dependsUpon:Set[Class[_]] = _dependencies
+  
+  private var _dependencies:Set[Class[_]] = Set.empty
+  def initRequires[T <: EcologyInterface](implicit tag:TypeTag[T]):InterfaceWrapper[T] = {
+    _dependencies += getClass(tag.tpe)
+    InterfaceWrapper[T](ecology)
+  }
   
   /**
    * Initialization call, which may be overridden by the Module. This should hook in
@@ -132,6 +140,9 @@ trait Ecot extends EcologyMember {
   private def mirror(clazz:Class[_]):Mirror = ru.runtimeMirror(clazz.getClassLoader)
   private def getType[T](clazz: Class[T]):Type = {
     mirror(clazz).classSymbol(clazz).toType
+  }
+  private def getClass(tpe:Type):Class[_] = {
+    mirror(this.getClass()).runtimeClass(tpe.typeSymbol.asClass)
   }
 
   /**

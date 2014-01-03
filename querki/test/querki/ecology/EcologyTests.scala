@@ -21,7 +21,7 @@ class EcologyTests extends WordSpec
   }
   
   trait TestInterface2 extends EcologyInterface {
-    
+    def getTheAnswer:Int = 1
   }
   
   trait TestInterface3 extends EcologyInterface
@@ -33,7 +33,7 @@ class EcologyTests extends WordSpec
       class Ecot2(val moduleId:Short) extends Module(eco) with TestInterface1
       
       val ecot1 = new Ecot1(1)
-      intercept[Exception] {
+      intercept[AlreadyRegisteredInterfaceException] {
         val ecot2 = new Ecot2(2)
       }
     }
@@ -61,5 +61,67 @@ class EcologyTests extends WordSpec
         eco.api[TestInterface3]
       }
     }
+    
+    "successfully register and initialize Ecots with dependencies" in {
+      val eco = new EcologyImpl
+      class Ecot1(val moduleId:Short) extends Module(eco) with TestInterface1 {
+        val interface2 = initRequires[TestInterface2]
+        
+        lazy val answer:Int = interface2.getTheAnswer
+      }
+      class Ecot2(val moduleId:Short) extends Module(eco) with TestInterface2 {
+        override val getTheAnswer = 42
+      }
+      
+      val ecot1 = new Ecot1(1)
+      val ecot2 = new Ecot2(2)
+      
+      val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState)
+      
+      assert(ecot1.answer == 42)
+    }
+    
+    "throw if I try to use a dependency before initialization" in {
+      val eco = new EcologyImpl
+      class Ecot1(val moduleId:Short) extends Module(eco) with TestInterface1 {
+        val interface2 = initRequires[TestInterface2]
+        
+        lazy val answer:Int = interface2.getTheAnswer
+        
+        val causeError = answer
+      }
+      class Ecot2(val moduleId:Short) extends Module(eco) with TestInterface2 {
+        override val getTheAnswer = 42
+      }
+      
+      val ecot2 = new Ecot2(2)
+      intercept[UninitializedInterfaceException] {
+        val ecot1 = new Ecot1(1)
+      }
+    }
+    
+    "allow me to use a dependency during initialization" in {
+      val eco = new EcologyImpl
+      class Ecot1(val moduleId:Short) extends Module(eco) with TestInterface1 {
+        val interface2 = initRequires[TestInterface2]
+        
+        lazy val answer:Int = interface2.getTheAnswer
+        
+        override def init() = {
+          myAnswer = Some(answer)
+        }
+        var myAnswer:Option[Int] = None
+      }
+      class Ecot2(val moduleId:Short) extends Module(eco) with TestInterface2 {
+        override val getTheAnswer = 42
+      }
+      
+      val ecot1 = new Ecot1(1)
+      val ecot2 = new Ecot2(2)
+      
+      val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState)
+      
+      assert(ecot1.myAnswer == Some(42))
+    }    
   }
 }

@@ -15,4 +15,8 @@ package object ecology {
    * likely require that in all cases. 
    */
   val Ecology = modules.Modules
+  
+  implicit def wrapper2Interface[T <: EcologyInterface](wrapper:InterfaceWrapper[T]):T = {
+    wrapper.get
+  }
 }
