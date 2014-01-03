@@ -13,10 +13,11 @@ import modules.Module
 import ql.QLPhrase
 
 import querki.conventions._
+import querki.ecology._
 import querki.util._
 import querki.values._
 
-class UIModule(val moduleId:Short) extends Module {
+class UIModule(e:Ecology, val moduleId:Short) extends Module(e) {
   object MOIDs {
     val ClassMethodOID = moid(1)
     val TooltipMethodOID = moid(2)

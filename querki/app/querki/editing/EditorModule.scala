@@ -15,6 +15,7 @@ import ql.{QLCall, QLParser, QLPhrase}
 import querki.html.RenderSpecialization._
 
 import querki.conventions.{PropDetails, PropSummary}
+import querki.ecology._
 
 import querki.identity.skilllevel.SkillLevelProp
 import querki.types._
@@ -23,7 +24,7 @@ import querki.values._
 
 import modules.Module
 
-class EditorModule(val moduleId:Short) extends Module {
+class EditorModule(e:Ecology, val moduleId:Short) extends Module(e) {
   object MOIDs {
     // Previously in System
     val EditMethodOID = sysId(42)

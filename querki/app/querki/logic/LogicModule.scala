@@ -9,6 +9,7 @@ import models.system.OIDs.{RootOID, systemOID}
 
 import ql.QLPhrase
 
+import querki.ecology._
 import querki.values._
 
 import modules.Module
@@ -20,7 +21,7 @@ import modules.Module
  * but that should be fixed. This should absorb YesNoType, and all of the predicate-oriented
  * methods.
  */
-class LogicModule(val moduleId:Short) extends Module {
+class LogicModule(e:Ecology, val moduleId:Short) extends Module(e) {
   object MOIDs {
     val TrueOID = moid(1)
     val FalseOID = moid(2)

@@ -16,6 +16,7 @@ import ql._
 
 import querki.basic.DisplayNameProp
 import querki.conventions.{PropDetails, PropSummary}
+import querki.ecology._
 import querki.email._
 import querki.spaces.SpaceManager
 import querki.spaces.messages.{ChangeProps, CreateThing, ThingError, ThingFound, ThingResponse}
@@ -38,7 +39,7 @@ import play.api.Logger
 // it isn't entirely clear whether statically described Properties really
 // require initialization-order dependencies. But I believe that the Person
 // object shouldn't be constructed until after the Email Module has been.
-class PersonModule(val moduleId:Short) extends modules.Module {
+class PersonModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
 
   object MOIDs {
     val PersonOID = oldMoid(1)

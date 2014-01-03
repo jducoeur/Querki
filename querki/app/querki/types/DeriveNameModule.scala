@@ -13,13 +13,14 @@ import models.system.OIDs.{DisplayNameOID, NameOID, RootOID, systemOID}
 import modules.Module
 
 import querki.conventions.{PropDetails, PropSummary}
+import querki.ecology._
 
 import querki.spaces.{SpaceChangeManager, ThingChangeRequest}
 
 import querki.util._
 import querki.values._
 
-class DeriveNameModule(val moduleId:Short) extends Module {
+class DeriveNameModule(e:Ecology, val moduleId:Short) extends Module(e) {
   
   object MOIDs {
     val DeriveNameOID = moid(1)

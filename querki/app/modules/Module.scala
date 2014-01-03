@@ -3,9 +3,48 @@ package modules
 import models._
 import models.system.OIDs
 
+import querki.ecology._
+
 import querki.values.SpaceState
 
-object Modules {
+object Modules extends Ecology with EcologyManager {
+  
+  // ******************************************************
+  //
+  // EcologyManager Implementation
+  //
+  
+  val ecology:Ecology = this
+  
+  def register(ecot:Ecot):Unit = {
+    _registeredEcots = _registeredEcots + ecot
+  }
+  
+  def init():Unit = ???
+  
+  def term():Unit = ???
+  
+  // ******************************************************
+  //
+  // Ecology Implementation
+  //
+  
+  val manager:EcologyManager = this  
+  
+  // ******************************************************
+  //
+  // Internals
+  //
+  
+  /**
+   * All of the Ecots that have been registered, in no particular order.
+   */
+  private var _registeredEcots:Set[Ecot] = Set.empty
+  
+  // ******************************************************
+  //
+  // Older Code
+  //
   
   // IMPORTANT: The numbers attached to these Modules must NEVER BE CHANGED!!!!! They
   // get built into the moid's, and thence into the database! If a Module is removed,
@@ -17,23 +56,23 @@ object Modules {
   // TODO: break this list into somewhere else, that gets passed in, to break the dependency
   // cycles!!! The declaration should probably get joined all the way up in QuerkiRoot, and
   // treated as a DI. But first, we need to automate the init-order dependency management.
-  private val Stylesheet = new stylesheet.StylesheetModule(1)
-  private val Email = new querki.email.impl.EmailModule(2)
-  val Person = new person.PersonModule(3)
-  val AccessControl = new querki.access.AccessControlModule(4)
-  val Time = new time.TimeModule(5)
-  val Collections = new collections.CollectionsModule(6)
-//  val Rendering = new render.RenderingModule(7)
-  val TOS = new querki.system.TOSModule(8)
-  val Logic = new querki.logic.LogicModule(9)
-  private val Types = new querki.types.impl.TypesModule(10)
-  val UI = new querki.html.UIModule(11)
-  val DeriveName = new querki.types.DeriveNameModule(12)
-  val Editor = new querki.editing.EditorModule(13)
-  private val SkillLevel = new querki.identity.skilllevel.impl.SkillLevelModule(14)
-  val Conventions = new querki.conventions.ConventionsModule(15)
-  private val Core = new querki.core.CoreModule(16)
-  private val Basic = new querki.basic.BasicModule(17)
+  private val Stylesheet = new stylesheet.StylesheetModule(this, 1)
+  private val Email = new querki.email.impl.EmailModule(this, 2)
+  val Person = new person.PersonModule(this, 3)
+  val AccessControl = new querki.access.AccessControlModule(this, 4)
+  val Time = new time.TimeModule(this, 5)
+  val Collections = new collections.CollectionsModule(this, 6)
+//  val Rendering = new render.RenderingModule(this, 7)
+  val TOS = new querki.system.TOSModule(this, 8)
+  private val Logic = new querki.logic.LogicModule(this, 9)
+  private val Types = new querki.types.impl.TypesModule(this, 10)
+  val UI = new querki.html.UIModule(this, 11)
+  val DeriveName = new querki.types.DeriveNameModule(this, 12)
+  val Editor = new querki.editing.EditorModule(this, 13)
+  private val SkillLevel = new querki.identity.skilllevel.impl.SkillLevelModule(this, 14)
+  val Conventions = new querki.conventions.ConventionsModule(this, 15)
+  private val Core = new querki.core.CoreModule(this, 16)
+  private val Basic = new querki.basic.BasicModule(this, 17)
   
   private var allModules = Seq.empty[Module]
   
@@ -171,23 +210,12 @@ class ModuleIds(val moduleId:Short) {
  * *after* all of the Modules have been created, so all the MOIDs will exist. It also
  * creates everything in DependsUpon order, so that Modules can depend on each other.
  */
-trait Module {
+abstract class Module(val ecology:Ecology) extends Ecot {
   
   /**
    * Mandatory value for concrete classes to fill in.
    */
   val moduleId:Short
-  
-  /**
-   * Initialization call, which may be overridden by the Module. This should hook in
-   * all Listeners.
-   */
-  def init = {}
-  
-  /**
-   * Termination call, which may be overridden by the Module on system shutdown.
-   */
-  def term = {}
   
   /**
    * The OID for a Module-local Thing.
@@ -244,15 +272,10 @@ trait Module {
    * automatically.
    */
   def addSystemObjects(state:SpaceState):SpaceState = {
-//    play.api.Logger.info("----> addSystemObjects for module " + moduleId + "; props are " + props.map{prop => prop.id.toString + "/" + prop.displayName}.toList.sorted.mkString(", "))
-//    play.api.Logger.info("---->     keys start as " + state.spaceProps.keys.map(_.toString).toList.sorted.mkString(", "))
-//    
     val result = state.copy(
       spaceProps = OIDMap[Property[_,_]](props:_*) ++: state.spaceProps, 
       things = OIDMap[ThingState](things:_*) ++: state.things,
       types = OIDMap[PType[_]](types:_*) ++: state.types)
-//      
-//    play.api.Logger.info("---->     all props are now " + result.spaceProps.values.map(_.displayName).toList.sorted.mkString(", "))
     
     result
   }

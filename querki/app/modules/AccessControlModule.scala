@@ -14,6 +14,7 @@ import querki.values._
 
 import modules.person.PersonModule._
 
+import querki.ecology._
 import querki.identity.User
 
 import play.api.Logger
@@ -150,7 +151,7 @@ object AccessControl {
   }
 }
 
-class AccessControlModule(val moduleId:Short) extends modules.Module {
+class AccessControlModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
   
   lazy val abstractPersonOID = modules.Modules.Person.MOIDs.SecurityPrincipalOID
 

@@ -13,6 +13,7 @@ import models.Thing._
 import ql._
 
 import querki.conventions.{PropDetails, PropSummary}
+import querki.ecology._
 import querki.util._
 import querki.values._
 
@@ -29,7 +30,7 @@ object OIDs {
 import models.system.OIDs._
 import OIDs._
 
-class StylesheetModule(val moduleId:Short) extends modules.Module {
+class StylesheetModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
   
   /******************************************
    * TYPES

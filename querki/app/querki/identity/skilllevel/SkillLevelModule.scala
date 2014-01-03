@@ -6,21 +6,22 @@ import models.{ThingState}
 import models.Thing._
 import models.system.ExactlyOne
 import models.system.LinkType
-import models.system.{DisplayTextProp, LinkModelProp, SystemProperty}
+import models.system.{DisplayTextProp, LinkModelProp, APIProperty}
 import models.system.OIDs.{systemOID, SimpleThingOID}
 
 import querki.conventions._
+import querki.ecology._
 
 import modules.Module
 
-class SkillLevelModule(val moduleId:Short) extends Module {
+class SkillLevelModule(e:Ecology, val moduleId:Short) extends Module(e) {
   import querki.identity.skilllevel.MOIDs._
   
   /***********************************************
    * PROPERTIES
    ***********************************************/
   
-  lazy val skillLevelProp = new SystemProperty(SkillLevelPropOID, LinkType, ExactlyOne,
+  lazy val skillLevelProp = new APIProperty(querki.identity.skilllevel.SkillLevelProp, SkillLevelPropOID, LinkType, ExactlyOne,
       toProps(
         setName("User Level to Show This"),
         LinkModelProp(skillLevelModel),

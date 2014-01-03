@@ -10,11 +10,12 @@ import models.system.NotInheritedProp
 
 import querki.conventions._
 import querki.core._
+import querki.ecology._
 import querki.types._
 
 import modules.Module
 
-class BasicModule(val moduleId:Short) extends Module {
+class BasicModule(e:Ecology, val moduleId:Short) extends Module(e) {
   import MOIDs._
   
   /***********************************************

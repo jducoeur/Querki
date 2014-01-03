@@ -9,10 +9,11 @@ import models.system.{ExactlyOne, Optional}
 import models.system.{LargeTextType, TextType, YesNoType}
 
 import querki.conventions
+import querki.ecology._
 
 import modules.Module
 
-class CoreModule(val moduleId:Short) extends Module {
+class CoreModule(e:Ecology, val moduleId:Short) extends Module(e) {
   import MOIDs._
 
   /***********************************************

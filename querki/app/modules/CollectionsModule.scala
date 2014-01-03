@@ -5,12 +5,13 @@ import models.system._
 import ql._
 
 import querki.conventions.{PropDetails, PropSummary}
+import querki.ecology._
 
 import querki.values._
 
 import Thing._
 
-class CollectionsModule(val moduleId:Short) extends modules.Module {
+class CollectionsModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
   
   object MOIDs {
     val PrevInListOID = moid(1)

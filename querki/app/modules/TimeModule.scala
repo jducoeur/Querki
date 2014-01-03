@@ -7,6 +7,7 @@ import models.system._
 
 import Thing._
 
+import querki.ecology._
 import querki.values.QLContext
 
 object TimeModule {
@@ -45,7 +46,7 @@ object TimeModule {
  * methods in System. (This will likely require us to split this Module into two, which
  * should be fine.) 
  */
-class TimeModule(val moduleId:Short) extends modules.Module {
+class TimeModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
 
   object MOIDs {
     val DateTimeTypeOID = moid(1)

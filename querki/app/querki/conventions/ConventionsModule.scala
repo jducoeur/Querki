@@ -8,6 +8,7 @@ import models.system.{LargeTextType, TextType, YesNoType}
 import models.system.{SystemProperty, AppliesToKindProp}
 import models.system.OIDs.{sysId, NotInheritedOID}
 
+import querki.ecology._
 import querki.types.MOIDs._
 
 import modules.Module
@@ -17,7 +18,7 @@ import modules.Module
  * to the operation of the system, but are common Properties and such that are useful enough
  * to encourage their general use.
  */
-class ConventionsModule(val moduleId:Short) extends Module {
+class ConventionsModule(e:Ecology, val moduleId:Short) extends Module(e) {
   import MOIDs._
 
   lazy val PropSummary = new SystemProperty(PropSummaryOID, TextType, Optional,

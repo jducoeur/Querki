@@ -4,6 +4,7 @@ import scala.util.Try
 
 import controllers.{PageEventManager, PlayRequestContext}
 
+import querki.ecology._
 import querki.identity.User
 import querki.util._
 
@@ -14,7 +15,7 @@ import querki.util._
  * Note that this works hand-in-glove with controllers.TOSController. Really, I would just do the
  * control stuff here, but wound up having strange problems with imports.
  */
-class TOSModule(val moduleId:Short) extends modules.Module {
+class TOSModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
   
   import TOSModule._
   

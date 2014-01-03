@@ -18,6 +18,7 @@ import models.system.OIDs._
 import ql._
 
 import querki.conventions.{PropDetails, PropSummary}
+import querki.ecology._
 import querki.identity._
 import querki.spaces.SpaceManager
 import querki.spaces.messages.{ChangeProps, ThingError, ThingFound, ThingResponse}
@@ -28,7 +29,7 @@ import modules.Modules._
 import play.api.{Logger, Play}
 import play.api.Play.current
 
-class EmailModule(val moduleId:Short) extends modules.Module {
+class EmailModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
 
   import querki.email.MOIDs._
   import EmailModule._

@@ -10,6 +10,7 @@ import models.system.{APIProperty, AppliesToKindProp, InternalProp, NotInherited
 import models.system.OIDs.{sysId, InternalPropOID, NotInheritedOID}
 
 import querki.conventions.{PropDetails, PropSummary}
+import querki.ecology._
 
 import querki.values._
 
@@ -17,7 +18,7 @@ import modules.Module
 
 import querki.types._
 
-class TypesModule(val moduleId:Short) extends Module {
+class TypesModule(e:Ecology, val moduleId:Short) extends Module(e) {
   import MOIDs._
     
   /******************************************
