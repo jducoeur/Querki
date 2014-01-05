@@ -77,21 +77,7 @@ class TypesModule(e:Ecology, val moduleId:Short) extends Module(e) with Types {
       AppliesToKindProp(Kind.Property),
       PropSummary("The maximum value allowed in this Whole Number Property")))
   
-  /**
-   * The DefaultValueProp is pretty much what it says: it is the default value for this Property. That
-   * is, it is what you get when you hard-query for a Property on a Thing (not an Opt query), and that
-   * Property is *not* defined on the Thing.
-   * 
-   * Note that DefaultValueProp is a full-on QValue. That's because its Type is, in principle, unknown.
-   * It should match the Type and Collection of the Property it is being applied to, though, if you
-   * want to avoid strange and confusing behaviour.
-   * 
-   * In principle, it would be nice to expose this to end users to use. In practice, that's going to
-   * be challenging from a UI perspective: you have to feed in the expected Type and Collection to produce
-   * the correct input control. It's doable in principle, but enough work that I'm not going to bother
-   * until we care.
-   */
-  lazy val defaultValueProp = new APIProperty(DefaultValueProp, DefaultValuePropOID, WrappedValueType, ExactlyOne,
+  lazy val DefaultValueProp = new SystemProperty(DefaultValuePropOID, WrappedValueType, ExactlyOne,
     toProps(
       setName("Default Value"),
       (InternalPropOID -> ExactlyOne(YesNoType(true))),
@@ -108,7 +94,7 @@ class TypesModule(e:Ecology, val moduleId:Short) extends Module(e) with Types {
     MinIntValueProp,
     MaxIntValueProp,
     
-    defaultValueProp
+    DefaultValueProp
   )
 }
 
