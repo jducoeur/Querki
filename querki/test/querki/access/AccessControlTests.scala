@@ -6,14 +6,15 @@ import models.UnknownOID
 
 import models.system.IsModelProp
 
-import modules.Modules.AccessControl._
-
+import querki.ecology._
 import querki.identity._
 import querki.identity.UserLevel._
 
 import querki.test._
 
 class AccessControlTests extends QuerkiTests {
+  lazy val AccessControl = getInterface[querki.security.AccessControl]
+  
   "A Space" should {
     "allow the Owner to Edit everything" in {
       val owner = commonSpace.owner
@@ -43,7 +44,7 @@ class AccessControlTests extends QuerkiTests {
     
     "allow a Member to edit something iff given explicit permission" in {
       class TSpace extends CommonSpace {
-        val allowedThing = new SimpleTestThing("Allowed to Members", canEditProp(member1.person.id))
+        val allowedThing = new SimpleTestThing("Allowed to Members", AccessControl.CanEditProp(member1.person.id))
       }
       val space = new TSpace
       
@@ -53,7 +54,7 @@ class AccessControlTests extends QuerkiTests {
     
     "allow Members to edit something iff given permission" in {
       class TSpace extends CommonSpace {
-        val allowedThing = new SimpleTestThing("Allowed to Members", canEditProp(membersTag))
+        val allowedThing = new SimpleTestThing("Allowed to Members", AccessControl.CanEditProp(AccessControl.MembersTag))
       }
       val space = new TSpace
       
@@ -65,7 +66,7 @@ class AccessControlTests extends QuerkiTests {
     "allow Edit of a Model's children, but not the Model, with Can Edit Children" in {
       class TSpace extends CommonSpace {
         // A simple default Model and Instance.
-        val testModel2 = new SimpleTestThing("My Model", IsModelProp(true), canEditChildrenProp(member1.person.id))
+        val testModel2 = new SimpleTestThing("My Model", IsModelProp(true), AccessControl.CanEditChildrenProp(member1.person.id))
         val instance2 = new TestThing("My Instance", testModel2) 
       }
       val space = new TSpace
@@ -78,7 +79,7 @@ class AccessControlTests extends QuerkiTests {
     
     "allow Edit of a Space's Things, but not the Space, with Can Edit Children" in {
       class TSpace extends CommonSpace {
-        override lazy val otherSpaceProps = Seq(canEditChildrenProp(membersTag))
+        override lazy val otherSpaceProps = Seq(AccessControl.CanEditChildrenProp(AccessControl.MembersTag))
       }
       val space = new TSpace
 
@@ -91,7 +92,7 @@ class AccessControlTests extends QuerkiTests {
     
     "allow members to Edit the Space iff given permission" in {
       class TSpace extends CommonSpace {
-        override lazy val otherSpaceProps = Seq(canEditProp(member1.person.id))
+        override lazy val otherSpaceProps = Seq(AccessControl.CanEditProp(member1.person.id))
       }
       val space = new TSpace
 

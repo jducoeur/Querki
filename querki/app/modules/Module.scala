@@ -27,7 +27,7 @@ object Modules extends EcologyImpl {
   private val Stylesheet = new stylesheet.StylesheetModule(this, 1)
   private val Email = new querki.email.impl.EmailModule(this, 2)
   private val Person = new querki.identity.PersonModule(this, 3)
-  val AccessControl = new querki.access.AccessControlModule(this, 4)
+  private val AccessControl = new querki.security.AccessControlModule(this, 4)
   val Time = new time.TimeModule(this, 5)
   val Collections = new collections.CollectionsModule(this, 6)
 //  val Rendering = new render.RenderingModule(this, 7)

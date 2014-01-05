@@ -234,7 +234,7 @@ class EmailModule(e:Ecology, val moduleId:Short) extends modules.Module(e) with 
    * METHOD CONTENTS
    ***********************************************/
     
-  import querki.access.AccessControl
+  lazy val AccessControl = interface[querki.security.AccessControl]
   def sendEmailIfAllowed(t:Thing, context:QLContext) = {
     if (AccessControl.canEdit(context.state, context.request.requesterOrAnon, t.id))
       doSendEmail(t, context)

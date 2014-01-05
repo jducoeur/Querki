@@ -58,7 +58,7 @@ class PersonModule(e:Ecology, val moduleId:Short) extends modules.Module(e) with
    * EXTERNAL REFS
    ***********************************************/
 
-  lazy val AccessControl = modules.Modules.AccessControl
+  lazy val AccessControl = interface[querki.security.AccessControl]
   
   lazy val urlBase = Config.getString("querki.app.urlRoot")
   
@@ -331,7 +331,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
         Thing.toProps(
           EmailAddressProp(address.addr),
           DisplayNameProp(displayName),
-          AccessControl.canReadProp(AccessControl.ownerTag))()
+          AccessControl.CanReadProp(AccessControl.OwnerTag))()
       val msg = CreateThing(rc.requester.get, rc.ownerId, updatedState.toThingId, Kind.Thing, PersonOID, propMap)
       implicit val timeout = Timeout(5 seconds)
       val future = SpaceManager.ref ? msg

@@ -322,20 +322,22 @@ case class SpaceState(
     filteredAsModel.filterNot(_.ifSet(InternalProp))
   }
   
+  lazy val AccessControl = getInterface[querki.security.AccessControl]
+  
   def canRead(who:User, thingId:OID):Boolean = {
-    querki.access.AccessControl.canRead(this, who, thingId)
+    AccessControl.canRead(this, who, thingId)
   }
   
   def canCreate(who:User, modelId:OID):Boolean = {
-    querki.access.AccessControl.canCreate(this, who, modelId)
+    AccessControl.canCreate(this, who, modelId)
   }
   
   def canEdit(who:User, thingId:OID):Boolean = {
-    querki.access.AccessControl.canEdit(this, who, thingId)
+    AccessControl.canEdit(this, who, thingId)
   }
   
   def canChangePropertyValue(who:User, propId:OID):Boolean = {
-    querki.access.AccessControl.canChangePropertyValue(this, who, propId)
+    AccessControl.canChangePropertyValue(this, who, propId)
   }
 }
 

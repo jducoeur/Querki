@@ -56,6 +56,7 @@ object LoginController extends ApplicationBase {
   )
   
   lazy val Person = getInterface[querki.identity.Person]
+  lazy val AccessControl = getInterface[querki.security.AccessControl]
   
   lazy val maxMembers = Config.getInt("querki.public.maxMembersPerSpace", 100)
   
@@ -111,7 +112,7 @@ object LoginController extends ApplicationBase {
         rc.requester match {
           case Some(user) => {
             // Yes. Am I already a member of this Space?
-            if (querki.access.AccessControl.isMember(user, rc.state.get)) {
+            if (AccessControl.isMember(user, rc.state.get)) {
               // Yes. Okay, just go the Space, since there's nothing to do here:
               Redirect(routes.Application.thing(ownerId, spaceId, spaceId))
             } else {
@@ -141,7 +142,7 @@ object LoginController extends ApplicationBase {
         userOpt match {
           case Some(user) => {
             // Yes. Am I already a member of this Space?
-            if (querki.access.AccessControl.isMember(user, rc.state.get)) {
+            if (AccessControl.isMember(user, rc.state.get)) {
               // Yes. Okay, just go the Space, since there's nothing to do here:
               Redirect(routes.Application.thing(ownerId, spaceId, spaceId)).withSession(user.toSession:_*)
             } else {
