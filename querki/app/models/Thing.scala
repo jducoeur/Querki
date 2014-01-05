@@ -14,7 +14,7 @@ import NameCollection.bootProp
 
 import ql._
 
-import querki.basic.DisplayNameProp
+import querki.ecology._
 import querki.values._
 
 /**
@@ -49,6 +49,8 @@ object Kind {
 object Thing {
   type PropMap = Map[OID, QValue]
   type PropFetcher = () => PropMap
+  
+  lazy val DisplayNameProp = getInterface[querki.basic.Basic].DisplayNameProp
   
   // A couple of convenience methods for the hard-coded Things in System:
   def toProps(pairs:(OID,QValue)*):PropFetcher = () => {

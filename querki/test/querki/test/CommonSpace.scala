@@ -7,7 +7,7 @@ import models.system.{ExactlyOne, Optional, QList}
 import models.system.{IsModelProp}
 import models.system.OIDs.PageOID
 
-import querki.basic.DisplayNameProp
+import querki.ecology._
 import querki.identity.{User}
 import querki.identity.UserLevel._
 
@@ -48,7 +48,7 @@ class CommonSpace extends TestSpace {
   val testModel = new SimpleTestThing("My Model", IsModelProp(true))
   val instance = new TestThing("My Instance", testModel, 
       optTextProp("Hello world")) 
-  val withDisplayName = new SimpleTestThing("Interesting Display Name", DisplayNameProp("""My name is "interesting"!"""))
+  val withDisplayName = new SimpleTestThing("Interesting Display Name", getInterface[querki.basic.Basic].DisplayNameProp("""My name is "interesting"!"""))
   
   /**
    * A simple imitation "photograph".

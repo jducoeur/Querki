@@ -21,6 +21,11 @@ package object ecology {
   /**
    * Shorthand for fetching a specified EcologyInterface. Note that the interface must be registered and
    * initialized, or this will throw an exception!
+   * 
+   * This should only be used by non-Ecot code, and should be minimized when possible -- this sort of static
+   * access to the Ecology isn't optimal in the long run. Ecot code should use the interface() method that is
+   * defined there. (Therefore, use of getInterface is the main "bad smell" that tells us where the Ecology is
+   * being accessed statically.)
    */
   def getInterface[T <: EcologyInterface : TypeTag]:T = Ecology.api[T]
   

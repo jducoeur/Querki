@@ -3,7 +3,7 @@ package querki.basic
 import models._
 import models.Thing._
 
-import models.system.APIProperty
+import models.system.SystemProperty
 import models.system.{Optional}
 import models.system.{PlainTextType}
 import models.system.NotInheritedProp
@@ -15,7 +15,7 @@ import querki.types._
 
 import modules.Module
 
-class BasicModule(e:Ecology, val moduleId:Short) extends Module(e) {
+class BasicModule(e:Ecology, val moduleId:Short) extends Module(e) with Basic {
   import MOIDs._
   
   val Types = initRequires[querki.types.Types]
@@ -29,7 +29,7 @@ class BasicModule(e:Ecology, val moduleId:Short) extends Module(e) {
    * has a number of restrictions, the DisplayNameProp does not. It is used to list a Thing
    * by preference when it is set.
    */
-  lazy val DisplayNameProp = new APIProperty(querki.basic.DisplayNameProp, DisplayNameOID, PlainTextType, Optional,
+  lazy val DisplayNameProp = new SystemProperty(DisplayNameOID, PlainTextType, Optional,
     toProps(
       setName("Display Name"),
       NotInheritedProp(true),

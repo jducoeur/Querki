@@ -6,7 +6,7 @@ import models.Thing._
 
 import models.system.{IntType, SystemType, YesNoType}
 import models.system.ExactlyOne
-import models.system.{APIProperty, AppliesToKindProp, InternalProp, NotInheritedProp, SystemProperty}
+import models.system.{AppliesToKindProp, InternalProp, NotInheritedProp, SystemProperty}
 import models.system.OIDs.{sysId, InternalPropOID, NotInheritedOID}
 
 import querki.conventions.{PropDetails, PropSummary}

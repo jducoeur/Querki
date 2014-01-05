@@ -3,12 +3,16 @@ package querki.search
 import models._
 import models.system._
 
-import querki.basic.DisplayNameProp
+import querki.ecology._
+
 import querki.identity.User
 
 import querki.values.RequestContext
 
+// TODO: this should be an Ecot!!!
 object Search {
+  lazy val DisplayNameProp = getInterface[querki.basic.Basic].DisplayNameProp
+  
   def search(rc:RequestContext, searchStr:String):Option[SearchResults] = {
     if (searchStr.length() < 3)
       None

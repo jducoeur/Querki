@@ -18,9 +18,10 @@ import models.system.{SystemSpace}
 import models.system.SystemSpace.{State => SystemState}
 import models.system.OIDs.{systemOID, SystemUserOID}
 
-import querki.basic.DisplayNameProp
 import querki.db.ShardKind
 import ShardKind._
+
+import querki.ecology._
 
 import querki.util._
 import querki.util.SqlHelpers._
@@ -37,8 +38,12 @@ import PersistMessages._
  * IMPORTANT: we create a *pool* of SpaceManagerPersisters to work with the SpaceManager.
  * This means that it is very important to keep this class stateless! You have no way of
  * knowing, in principle, which persister any given message will go to.
+ * 
+ * TODO: this should take the Ecology as a parameter, instead of accessing it statically.
  */
 private [spaces] class SpaceManagerPersister extends Actor {
+  
+  lazy val DisplayNameProp = getInterface[querki.basic.Basic].DisplayNameProp
 
   def receive = {
     case ListMySpaces(owner) => {

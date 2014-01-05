@@ -8,6 +8,8 @@ import models.system.{NameType, QLText}
 
 import ql.QLParser
 
+import querki.ecology._
+
 import querki.identity.User
 
 import querki.values.{QLContext, SpaceState}
@@ -63,4 +65,7 @@ class QuerkiTests
   }
   
   def expectedWarning(warningName:String):String = s"{{_warning:$warningName}}"
+  
+  // Commonly used Ecots and pieces therein:
+  lazy val DisplayNameProp = getInterface[querki.basic.Basic].DisplayNameProp
 }

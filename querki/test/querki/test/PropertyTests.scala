@@ -1,6 +1,7 @@
 package querki.test
 
-import querki.basic.DisplayNameProp
+import querki.ecology._
+
 import querki.util.PublicException
 
 class PropertyTests extends QuerkiTests {

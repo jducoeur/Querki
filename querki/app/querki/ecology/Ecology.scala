@@ -116,11 +116,35 @@ trait Ecot extends EcologyMember {
    */
   def dependsUpon:Set[Class[_]] = _dependencies
   
-  private var _dependencies:Set[Class[_]] = Set.empty
+  /**
+   * This is the method that Ecots should use to access other parts of the Ecology, if they are
+   * *not* needed at initialization time. 
+   */
+  def interface[T <: EcologyInterface : TypeTag]:T = ecology.api[T]
+
+  /**
+   * This should be used by Ecots to pull in interfaces that they will need for initialization.
+   * (This specifically includes Properties that are used in Thing declarations!)
+   * 
+   * The correct protocol here is to call this and stick the results in a *NON*-lazy val. The
+   * returned value isn't the interface itself, but a wrapper that will dereference to the interface
+   * during and after init. So it looks like this:
+   * 
+   *     ...
+   *     val Foo = initRequires[querki.foo.Foo]
+   *     ...
+   *     lazy val MyProp = new SystemProperty(... stuff...,
+   *       Foo("This is a Foo value"))
+   *       
+   * The key is that initRequires should be called synchronously during the constructor (and thereby
+   * tells the Ecology that you have an init-time dependency), but the returned value can only be used
+   * in lazy vals, or code that is called during init and later.
+   */
   def initRequires[T <: EcologyInterface](implicit tag:TypeTag[T]):InterfaceWrapper[T] = {
     _dependencies += getClass(tag.tpe)
     InterfaceWrapper[T](ecology)
   }
+  private var _dependencies:Set[Class[_]] = Set.empty
   
   /**
    * Initialization call, which may be overridden by the Module. This should hook in

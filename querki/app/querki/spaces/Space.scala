@@ -19,7 +19,8 @@ import messages._
 import Kind._
 import Thing.PropMap
 
-import querki.basic.DisplayNameProp
+import querki.ecology._
+
 import querki.identity.User
 
 import models.system.{CollectionProp, LinkType, NameProp, NameType, TypeProp}
@@ -49,6 +50,8 @@ import PersistMessages._
  * An Actor's name is based on its OID, as is its Thing Table in the DB. Use Space.sid()
  * to get the name. Note that this has *nothing* to do with the Space's Display Name, which
  * is user-defined. (And unique only to that user.)
+ * 
+ * TODO: Space really should take the Ecology as a parameter, instead of accessing it statically.
  */
 private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends Actor with Requester {
   
@@ -56,6 +59,8 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
   import models.system.SystemSpace.{State => systemState, _} 
   
   def id = OID(self.path.name)
+  
+  lazy val Basic = getInterface[querki.basic.Basic]
   
   /**
    * This is the Actor that manages all persistence (DB) operations. We do things this
@@ -140,7 +145,7 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
         createSomething(id, SystemUser, person.id, 
           toProps(
             setName(identity.handle),
-            DisplayNameProp(identity.name),
+            Basic.DisplayNameProp(identity.name),
             identityLink(identity.id))(),
           Kind.Thing,
           None)
@@ -290,8 +295,8 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
               val rawName = NameProp.first(newProps)
               val newName = NameType.canonicalize(rawName)
               val oldName = NameProp.first(oldThing.props)
-              val oldDisplay = DisplayNameProp.firstOpt(oldThing.props) map (_.raw.toString) getOrElse rawName
-              val newDisplay = DisplayNameProp.firstOpt(newProps) map (_.raw.toString) getOrElse rawName
+              val oldDisplay = Basic.DisplayNameProp.firstOpt(oldThing.props) map (_.raw.toString) getOrElse rawName
+              val newDisplay = Basic.DisplayNameProp.firstOpt(newProps) map (_.raw.toString) getOrElse rawName
               val spaceChange = if (!NameType.equalNames(newName, oldName) || !(oldDisplay.contentEquals(newDisplay))) {
                 Some(SpaceChange(newName, newDisplay))
               } else {

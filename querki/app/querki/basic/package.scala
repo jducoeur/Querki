@@ -1,8 +1,10 @@
 package querki
 
-import models.PropertyInterface
+import models.Property
 import models.system.PlainText
 import models.system.OIDs.sysId
+
+import querki.ecology._
 
 import modules.ModuleIds
 
@@ -15,5 +17,7 @@ package object basic {
     val DisplayNameOID = sysId(26)
   }
   
-  val DisplayNameProp = new PropertyInterface[PlainText,String]
+  trait Basic extends EcologyInterface {  
+    def DisplayNameProp:Property[PlainText,String]
+  }
 }

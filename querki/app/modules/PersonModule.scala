@@ -14,7 +14,6 @@ import models.system.OIDs._
 
 import ql._
 
-import querki.basic.DisplayNameProp
 import querki.conventions.{PropDetails, PropSummary}
 import querki.ecology._
 import querki.email.emailSepChar
@@ -43,6 +42,8 @@ class PersonModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
   
   val Email = initRequires[querki.email.Email]
   lazy val EmailAddressProp = Email.EmailAddressProp
+  
+  lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
 
   object MOIDs {
     val PersonOID = oldMoid(1)
