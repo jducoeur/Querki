@@ -23,7 +23,7 @@ class CoreModule(e:Ecology, val moduleId:Short) extends Module(e) {
   /**
    * The root Property, from which all others derive.
    */
-  class UrProp extends Property(UrPropOID, systemOID, UrThing, TextType, ExactlyOne,
+  lazy val UrProp = Property(UrPropOID, systemOID, UrThing, TextType, ExactlyOne,
       toProps(
         setName("Property"),
         (InternalPropOID -> ExactlyOne(YesNoType(true))),
@@ -36,10 +36,6 @@ class CoreModule(e:Ecology, val moduleId:Short) extends Module(e) {
             |
             |[[Details]]""".stripMargin)))
         ), modules.time.TimeModule.epoch)
-  {
-    querki.core.UrProp.set(this)
-  }
-  lazy val UrProp = new UrProp
 
   override lazy val props = Seq(
     UrProp

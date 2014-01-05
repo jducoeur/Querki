@@ -1,9 +1,11 @@
 package querki
 
-import models.PropertyInterface
+import models.Property
 
 import models.system.QLText
 import models.system.OIDs.sysId
+
+import querki.ecology._
 
 import modules.ModuleIds
 
@@ -19,5 +21,7 @@ package object core {
     val UrPropOID = sysId(5)
   }
   
-  val UrProp = new PropertyInterface[QLText, String]
+  trait Core extends EcologyInterface {
+    def UrProp:Property[QLText, String]
+  }
 }

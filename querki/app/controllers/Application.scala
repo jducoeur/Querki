@@ -17,7 +17,7 @@ import models.system._
 import models.system.SystemSpace._
 
 import querki.basic._
-import querki.core._
+import querki.ecology._
 import querki.identity._
 
 import querki.html.HtmlRenderer
@@ -52,6 +52,9 @@ object Application extends ApplicationBase {
     )((searchInput) => searchInput)
      ((searchInput:String) => Some(searchInput))
   )
+  
+  lazy val Core = getInterface[querki.core.Core]
+  lazy val UrProp = Core.UrProp
 
   def index = withUser(false) { rc =>
     Ok(views.html.index(rc))
