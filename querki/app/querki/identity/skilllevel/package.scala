@@ -1,6 +1,8 @@
 package querki.identity
 
-import models.{OID, PropertyInterface}
+import models.{OID, Property}
+
+import querki.ecology._
 
 import modules.ModuleIds
 
@@ -13,5 +15,7 @@ package object skilllevel {
     val SkillLevelAdvancedOID = moid(5)
   }
   
-  val SkillLevelProp = new PropertyInterface[OID, OID]
+  trait SkillLevel extends EcologyInterface {  
+    def SkillLevelProp:Property[OID, OID]
+  }
 }

@@ -17,7 +17,6 @@ import querki.html.RenderSpecialization._
 import querki.conventions.{PropDetails, PropSummary}
 import querki.ecology._
 
-import querki.identity.skilllevel.SkillLevelProp
 import querki.types._
 import querki.util._
 import querki.values._
@@ -140,16 +139,6 @@ class EditorModule(e:Ecology, val moduleId:Short) extends Module(e) {
       }
     }
     
-    private def isAdvanced(prop:Property[_,_])(implicit state:SpaceState):Boolean = {
-      val result = for(
-        skillPropVal <- prop.getPropOpt(SkillLevelProp);
-        skillLevel <- skillPropVal.firstOpt
-          )
-        yield skillLevel == SkillLevel.Advanced
-        
-      result.getOrElse(false)
-    }
-    
     /**
      * This is a place to stick weird, special filters.
      */
@@ -189,7 +178,7 @@ class EditorModule(e:Ecology, val moduleId:Short) extends Module(e) {
         yield props
 
       // Note that the toList here implicitly sorts the PropList, more or less by display name:
-      result.getOrElse(PropList.from(thing).toList.map(_._1).filterNot(isAdvanced(_)).filter(specialFilter(thing, _)))
+      result.getOrElse(PropList.from(thing).toList.map(_._1).filterNot(SkillLevel.isAdvanced(_)).filter(specialFilter(thing, _)))
     }
     
     private def editorLayoutForThing(thing:Thing, state:SpaceState):QLText = {

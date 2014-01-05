@@ -6,7 +6,7 @@ import models.{ThingState}
 import models.Thing._
 import models.system.ExactlyOne
 import models.system.LinkType
-import models.system.{DisplayTextProp, LinkModelProp, APIProperty}
+import models.system.{DisplayTextProp, LinkModelProp, SystemProperty}
 import models.system.OIDs.{systemOID, SimpleThingOID}
 
 import querki.conventions._
@@ -14,14 +14,14 @@ import querki.ecology._
 
 import modules.Module
 
-class SkillLevelModule(e:Ecology, val moduleId:Short) extends Module(e) {
+class SkillLevelModule(e:Ecology, val moduleId:Short) extends Module(e) with SkillLevel {
   import querki.identity.skilllevel.MOIDs._
   
   /***********************************************
    * PROPERTIES
    ***********************************************/
   
-  lazy val skillLevelProp = new APIProperty(querki.identity.skilllevel.SkillLevelProp, SkillLevelPropOID, LinkType, ExactlyOne,
+  lazy val SkillLevelProp = new SystemProperty(SkillLevelPropOID, LinkType, ExactlyOne,
       toProps(
         setName("User Level to Show This"),
         LinkModelProp(skillLevelModel),
@@ -44,7 +44,7 @@ class SkillLevelModule(e:Ecology, val moduleId:Short) extends Module(e) {
             |As of this writing, the mechanism to set your Level is not there yet, but it will come in due course.""".stripMargin)))
 
   override lazy val props = Seq(
-    skillLevelProp
+    SkillLevelProp
   )
   
   /***********************************************

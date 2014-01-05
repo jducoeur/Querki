@@ -2,13 +2,15 @@ package querki.values
 
 import models.{OID, Thing}
 import models.system.{ExactlyOne, LinkType}
-
+import querki.ecology._
 import querki.identity.skilllevel._
 import querki.identity.skilllevel.MOIDs._
   
 /**
  * This is a thin wrapper around the key values from SkillLevelModule, which are often useful. You usually
  * should be able to simply apply this object instead of delving into the details of SkillLevelModule.
+ * 
+ * TODO: this should go away, and be replaced by shadows in QuerkiEcot.
  */
 object SkillLevel {
   lazy val Basic = SkillLevelBasicOID
@@ -19,6 +21,8 @@ object SkillLevel {
   // cycle problems -- it can be used from the beginning of the universe without danger.
   // This is necessary, since so many Things declare themselves to be Advanced.
   def apply(level:OID) = (SkillLevelPropOID -> ExactlyOne(LinkType(level)))
+  
+  private lazy val SkillLevelProp = getInterface[querki.identity.skilllevel.SkillLevel].SkillLevelProp
   
   def apply(thing:Thing)(implicit state:SpaceState):OID = {
     val result = for (
