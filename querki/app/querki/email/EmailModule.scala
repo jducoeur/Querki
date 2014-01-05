@@ -29,10 +29,10 @@ import modules.Modules._
 import play.api.{Logger, Play}
 import play.api.Play.current
 
-class EmailModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
+class EmailModule(e:Ecology, val moduleId:Short) extends modules.Module(e) with Email {
 
   import querki.email.MOIDs._
-  import EmailModule._
+  
   def fullKey(key:String) = "querki.mail." + key
   def getRequiredConf(key:String) = {
     val opt = Play.configuration.getString(fullKey(key))
@@ -41,7 +41,8 @@ class EmailModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
       case None => throw new Exception("Didn't find required configuration key " + fullKey(key))
     }
   }
-    
+  
+  lazy val from = getRequiredConf("from")
   lazy val smtpHost = getRequiredConf("smtpHost")
   lazy val debug = Play.configuration.getBoolean(fullKey("debug")).getOrElse(false)
   
@@ -60,27 +61,10 @@ class EmailModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
     session
   }
   
-  /**
-   * Sends an "official" email in the name of Querki itself.
-   * 
-   * USE WITH CAUTION! This should only be used for significant emails that do not come from a
-   * specific person. Excessive use of these could get us labeled as spammers, which we don't want.
-   * 
-   * TODO: in the long run, this should wind up mostly subsumed under a more-general Notifications
-   * system, which will include, eg, system-displayed notifications and social network messages,
-   * with the user controlling where his notifications go.  
-   */
   def sendSystemEmail(recipient:Identity, subject:Wikitext, body:Wikitext):Try[Unit] = {
     val session = createSession()
     
     sendInternal(session, from, recipient.email, recipient.name, SystemUser.mainIdentity, subject, body)
-  }
-  
-  override def init() = {
-    // HACK: in the long run, this should register with a more general Notifications system instead:
-    querki.email.setEmailCallback(sendSystemEmail)
-    querki.email.setEmailPeopleCallback(sendToPeople)
-    querki.email.setFrom(getRequiredConf("from"))
   }
   
   /******************************************
@@ -122,7 +106,7 @@ class EmailModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
         PropSummary("Internal property, used in the process of sending email. Do not mess with this!")
       ))
   
-  lazy val emailAddress = new APIProperty(querki.email.EmailAddressProp, EmailPropOID, EmailAddressType, Optional,
+  lazy val EmailAddressProp = new SystemProperty(EmailPropOID, EmailAddressType, Optional,
       toProps(
         setName("Email Address"),
         InternalProp(true),
@@ -191,7 +175,7 @@ class EmailModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
 
   override lazy val props = Seq(
     // The actual email-address property
-    emailAddress,
+    EmailAddressProp,
     
     // TODO: introduce the Recipients property. This is an indirection between
     // Email Message and Email To, a QL expression that returns the list of people
@@ -258,8 +242,7 @@ class EmailModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
       TextValue("You aren't allowed to send that email")
   }
   
-  def sendToPeople(context:QLContext, people:Seq[Thing], subjectQL:QLText, bodyQL:QLText, state:SpaceState):Seq[OID] = {
-    implicit val s = state
+  def sendToPeople(context:QLContext, people:Seq[Thing], subjectQL:QLText, bodyQL:QLText)(implicit state:SpaceState):Seq[OID] = {
     val session = createSession()
     
     people.flatMap { person =>
@@ -312,7 +295,7 @@ class EmailModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
 	
   def sendToPerson(context:QLContext, person:Thing, session:Session, subjectQL:QLText, bodyQL:QLText, from:String)(implicit state:SpaceState):Option[OID] = {
     val name = person.displayName
-    val addrList = person.getProp(emailAddress)
+    val addrList = person.getProp(EmailAddressProp)
     if (addrList.isEmpty)
       None
     else {
@@ -402,8 +385,4 @@ class EmailModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
 	    resultingList
     }
   }
-}
-
-object EmailModule {
-
 }

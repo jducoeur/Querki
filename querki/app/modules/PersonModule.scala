@@ -17,7 +17,7 @@ import ql._
 import querki.basic.DisplayNameProp
 import querki.conventions.{PropDetails, PropSummary}
 import querki.ecology._
-import querki.email._
+import querki.email.emailSepChar
 import querki.spaces.SpaceManager
 import querki.spaces.messages.{ChangeProps, CreateThing, ThingError, ThingFound, ThingResponse}
 import querki.util._
@@ -40,6 +40,9 @@ import play.api.Logger
 // require initialization-order dependencies. But I believe that the Person
 // object shouldn't be constructed until after the Email Module has been.
 class PersonModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
+  
+  val Email = initRequires[querki.email.Email]
+  lazy val EmailAddressProp = Email.EmailAddressProp
 
   object MOIDs {
     val PersonOID = oldMoid(1)
@@ -171,8 +174,6 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
         setName("Person"),
         InternalProp(true),
         IsModelProp(true),
-        // TODO: this is a fugly declaration, and possibly unsafe -- do we have any
-        // assurance that modules.Modules.Email has been constructed before this?
         EmailAddressProp(Optional.QNone),
         DisplayTextProp("""This represents a Member of this Space.""")))
     
@@ -369,7 +370,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
       |[[_spaceInvitation]]""".stripMargin)
     val bodyQL = updatedState.getPropOpt(inviteText).flatMap(_.firstOpt).getOrElse(QLText("")) + inviteLink
     // TODO: we probably should test that sentTo includes everyone we expected:
-    val sentTo = sendToPeople(context, people ++ existingPeople, subjectQL, bodyQL)
+    val sentTo = Email.sendToPeople(context, people ++ existingPeople, subjectQL, bodyQL)
     
     InvitationResult(newEmails, existingEmails)
   }

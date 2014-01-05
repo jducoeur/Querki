@@ -3,10 +3,13 @@ package controllers
 import play.api.Routes
 import play.api.mvc._
 
+import querki.ecology._
 import querki.identity._
 import models._
 
 object AdminController extends ApplicationBase {
+  
+  lazy val Email = getInterface[querki.email.Email]
   
   def withAdmin(f: PlayRequestContext => Result) = {
     withUser(true) { rc =>
@@ -51,7 +54,7 @@ object AdminController extends ApplicationBase {
         |implemented. But we hope there is enough there now for you to find it useful.
         |
         |Have fun, and please contact us if you need any help!""".stripMargin)
-      querki.email.sendSystemEmail(newUser.mainIdentity, subject, body)
+      Email.sendSystemEmail(newUser.mainIdentity, subject, body)
     }
     
     Ok(newUserOpt.map(_.level.toString).getOrElse(UserLevel.PendingUser.toString))

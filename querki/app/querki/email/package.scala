@@ -1,6 +1,6 @@
 package querki
 
-import models.PropertyInterface
+import models.Property
 
 import modules.ModuleIds
 
@@ -10,6 +10,8 @@ import models.{OID, Thing, Wikitext}
 import models.system.QLText
 import querki.identity.Identity
 import querki.values.{QLContext, SpaceState}
+
+import querki.ecology._
 
 package object email {
   object MOIDs extends ModuleIds(2) {
@@ -26,56 +28,38 @@ package object email {
     val RecipientsOID = oldMoid(11)
   }
   
-  val EmailAddressProp = new PropertyInterface[EmailAddress,String]
-  
   /**
    * The character that we use to separate strings involving email addresses. Chosen mostly
    * because it is not a legal character in email addresses.
    */
   val emailSepChar = ';'
     
-  def from:String = {
-    _from match {
-      case Some(f) => f
-      case _ => throw new Exception("Email.from hasn't been initialized!")
-    }
-  }
-  private var _from:Option[String] = None
-  def setFrom(f:String) = { _from = Some(f) }
-    
   /**
    * Represents an email address. For the moment this is basically just a String, but we'll gradually
    * add things like validation, so it's useful to get the abstraction clean now.
    */
   case class EmailAddress(addr:String)
-  
-  /**
-   * HACK: this is a temporary workaround to decouple this call. It should be replaced by a more
-   * general Notifications system, which the Email system will hook itself into, but for now we
-   * do that registration as a hack.
-   */
-  def sendSystemEmail(recipient:Identity, subject:Wikitext, body:Wikitext):Try[Unit] = {
-    emailCB match {
-      case Some(cb) => cb(recipient, subject, body)
-      case _ => throw new Exception("sendSystemEmail not registered yet!")
-    }
-  }
-  private var emailCB:Option[(Identity, Wikitext, Wikitext) => Try[Unit]] = None
-  def setEmailCallback(cb:(Identity, Wikitext, Wikitext) => Try[Unit]) = {
-    emailCB = Some(cb)
-  }
-  
-  /**
-   * HACK: same as above.
-   */
-  def sendToPeople(context:QLContext, people:Seq[Thing], subjectQL:QLText, bodyQL:QLText)(implicit state:SpaceState):Seq[OID] = {
-    emailPeopleCB match {
-      case Some(cb) => cb(context, people, subjectQL, bodyQL, state)
-      case _ => throw new Exception("sendToPeople not registered yet!")
-    }    
-  }
-  private var emailPeopleCB:Option[(QLContext, Seq[Thing], QLText, QLText, SpaceState) => Seq[OID]] = None
-  def setEmailPeopleCallback(cb:(QLContext, Seq[Thing], QLText, QLText, SpaceState) => Seq[OID]) = {
-    emailPeopleCB = Some(cb)
+    
+  trait Email extends EcologyInterface {  
+    /**
+     * The email address that ordinary user emails will come from.
+     */
+    def from:String
+    
+    /**
+     * Sends an "official" email in the name of Querki itself.
+     * 
+     * USE WITH CAUTION! This should only be used for significant emails that do not come from a
+     * specific person. Excessive use of these could get us labeled as spammers, which we don't want.
+     * 
+     * TODO: in the long run, this should wind up mostly subsumed under a more-general Notifications
+     * system, which will include, eg, system-displayed notifications and social network messages,
+     * with the user controlling where his notifications go.  
+     */
+    def sendSystemEmail(recipient:Identity, subject:Wikitext, body:Wikitext):Try[Unit]
+    
+    def sendToPeople(context:QLContext, people:Seq[Thing], subjectQL:QLText, bodyQL:QLText)(implicit state:SpaceState):Seq[OID]
+    
+    def EmailAddressProp:Property[EmailAddress,String]
   }
 }

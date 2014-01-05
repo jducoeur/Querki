@@ -3,10 +3,10 @@
 @import helper._
 @import helper.twitterBootstrap._
 
-@import querki.email.EmailAddressProp
-
 @import querki.html.HtmlRenderer
 @import modules.Modules
+
+@import querki.ecology._
 
 @import querki.values.SpaceState._
 @import querki.values._
@@ -16,6 +16,8 @@
 @pageTitle = @{
   "Sharing and Security for " + space.displayName
 }
+
+@from = @{ getInterface[querki.email.Email].from }
 
 @main(QuerkiTemplate.View, pageTitle, rc) {
 
@@ -55,7 +57,7 @@
           twice, doing so excessively is frowned upon, as is sending unwelcome invitations. Either of these is considered spam, and is
           grounds for removal from Querki.</p>
           
-          <p>Invitations will come from "@{querki.email.from}". If your invitations are getting spam-filtered, tell your invitees
+          <p>Invitations will come from "@{from}". If your invitations are getting spam-filtered, tell your invitees
           to add that address to their Contacts.</p>
           
           <p>Invitations will have your email address included as the Reply-To, so if the invitees write back, it will go directly to you.
@@ -91,7 +93,7 @@
         
         <table class="table table-hover">
           @for(invitee <- space.invitees;
-               propVal <- invitee.getPropOpt(EmailAddressProp)(space);
+               propVal <- invitee.getPropOpt(getInterface[querki.email.Email].EmailAddressProp)(space);
                emailAddr <- propVal.firstOpt;
                addr = emailAddr.addr) {
             <tr class="warning"><td>@addr</td></tr>
