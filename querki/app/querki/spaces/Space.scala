@@ -61,6 +61,7 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
   def id = OID(self.path.name)
   
   lazy val Basic = getInterface[querki.basic.Basic]
+  lazy val Person = getInterface[querki.identity.Person]
   
   /**
    * This is the Actor that manages all persistence (DB) operations. We do things this
@@ -136,17 +137,15 @@ private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends
    */
   def checkOwnerIsMember() = {
     import models.Thing._
-    import modules.Modules.Person.{identityLink, person}
-    import modules.person.PersonModule._
     import querki.identity.SystemUser
     
     state.ownerIdentity.foreach { identity =>
-      if (identity.localPerson(state).isEmpty) {
-        createSomething(id, SystemUser, person.id, 
+      if (Person.localPerson(identity)(state).isEmpty) {
+        createSomething(id, SystemUser, Person.PersonModel.id, 
           toProps(
             setName(identity.handle),
             Basic.DisplayNameProp(identity.name),
-            identityLink(identity.id))(),
+            Person.IdentityLink(identity.id))(),
           Kind.Thing,
           None)
       }

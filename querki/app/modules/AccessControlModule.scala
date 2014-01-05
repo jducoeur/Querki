@@ -12,8 +12,6 @@ import querki.conventions.{PropDetails, PropSummary}
 import querki.util._
 import querki.values._
 
-import modules.person.PersonModule._
-
 import querki.ecology._
 import querki.identity.User
 
@@ -25,14 +23,16 @@ import play.api.Logger
 object AccessControl {
   import modules.Modules.AccessControl._
   
+  lazy val Person = getInterface[querki.identity.Person]
+  
   // TBD: this checks whether this person is a Member based on the Person records in the Space. Should we use
   // the SpaceMembership table instead? In general, there is a worrying semantic duplication here. We should
   // probably clarify the meaning of the Person record vs. the row in SpaceMembership.
   def isMember(who:User, state:SpaceState):Boolean = {
     implicit val s = state
-    val members = state.descendants(modules.Modules.Person.person.id, false, true)
+    val members = state.descendants(Person.PersonModel.id, false, true)
     members.exists { person =>
-      val personIdentityOpt = person.getPropOpt(modules.Modules.Person.identityLink)
+      val personIdentityOpt = person.getPropOpt(Person.IdentityLink)
       personIdentityOpt.map { personIdentity =>
         val oid = personIdentity.first
         who.hasIdentity(oid)
@@ -66,7 +66,7 @@ object AccessControl {
           true
         else if (isLocalUser && perms.contains(MOIDs.MembersTagOID))
           true
-        else if (perms.exists(who.hasPerson(_)))
+        else if (perms.exists(Person.hasPerson(who, _)))
           true
         else
           // *NOT* default. If the properly exists, and is left unset, then we
@@ -113,7 +113,7 @@ object AccessControl {
           true
         else */ if (isLocalUser && perms.contains(MOIDs.MembersTagOID))
           true
-        else if (perms.exists(who.hasPerson(_)))
+        else if (perms.exists(Person.hasPerson(who, _)))
           true
         else
           // *NOT* default. If the properly exists, and is left unset, then we
@@ -153,7 +153,7 @@ object AccessControl {
 
 class AccessControlModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
   
-  lazy val abstractPersonOID = modules.Modules.Person.MOIDs.SecurityPrincipalOID
+  lazy val abstractPersonOID = querki.identity.MOIDs.SecurityPrincipalOID
 
   object MOIDs {
     val CanEditCustomOID = moid(1)

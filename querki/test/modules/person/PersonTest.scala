@@ -1,20 +1,21 @@
 package modules.person
 
+import querki.ecology._
 import querki.test._
 
 class PersonTest extends QuerkiTests {
   
   "A Space" should {
     "recognize its members" in {
-      import modules.person.PersonModule._
+      val Person = getInterface[querki.identity.Person]
       implicit val s = commonState
       
       val personId = commonSpace.member1.person.id
       val person = commonState.anything(personId)
       assert(person.isDefined)
-      assert(commonSpace.member1.user.hasPerson(personId))
+      assert(Person.hasPerson(commonSpace.member1.user, personId))
       
-      assert(commonSpace.member1.user.mainIdentity.isPerson(person.get))
+      assert(Person.isPerson(commonSpace.member1.user.mainIdentity, person.get))
     }
   }
 

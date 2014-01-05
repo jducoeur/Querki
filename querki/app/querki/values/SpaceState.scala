@@ -11,6 +11,8 @@ import com.github.nscala_time.time.Imports._
 
 import Thing.PropFetcher
 
+import querki.ecology._
+
 import querki.identity.User
 
 import querki.util._
@@ -338,6 +340,9 @@ case class SpaceState(
 }
 
 object SpaceState {
+  
+  lazy val Person = getInterface[querki.identity.Person]
+  
   /**
    * Extra functionality that is sometimes useful to consider as part of the state, but isn't
    * really part of the core concept. Factored out to keep the main SpaceState interface and dependencies decently clean.
@@ -349,15 +354,15 @@ object SpaceState {
     /**
      * All the people who have been invited into this Space.
      */
-    def people:Iterable[Thing] = state.descendants(modules.Modules.Person.MOIDs.PersonOID, false, true)
+    def people:Iterable[Thing] = state.descendants(querki.identity.MOIDs.PersonOID, false, true)
     /**
      * All the people who have been invited into this Space who have not yet accepted.
      */
-    def invitees:Iterable[Thing] = people.filterNot(_.hasProp(modules.Modules.Person.identityLink)(state))
+    def invitees:Iterable[Thing] = people.filterNot(_.hasProp(Person.IdentityLink)(state))
     /**
      * All the people who have joined this Space.
      */
-    def members:Iterable[Thing] = people.filter(_.hasProp(modules.Modules.Person.identityLink)(state))
+    def members:Iterable[Thing] = people.filter(_.hasProp(Person.IdentityLink)(state))
     
     // *************************************
     

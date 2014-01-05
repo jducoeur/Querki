@@ -8,9 +8,8 @@ import models.Thing._
 import models.system.{NameType, SystemSpace}
 import models.system.OIDs.{PageOID, systemOID}
 
-import modules.Modules.Person
-
 import querki.core.MOIDs._
+import querki.ecology._
 import querki.values._
 import querki.identity.{FullUser, Identity, IdentityKind, User, UserLevel}
 import querki.identity.UserLevel._
@@ -52,6 +51,8 @@ case class SpaceMember(user:User, person:ThingState)
  * bits you need.
  */
 trait TestSpace {
+  
+  lazy val Person = getInterface[querki.identity.Person]
 
   // ================================
   //
@@ -138,7 +139,7 @@ trait TestSpace {
    */
   def member(name:String, handle:String, level:UserLevel):SpaceMember = {
     val user = userAs(name, handle, level)
-    val person = new TestThing(name, Person.person, Person.identityLink(user.mainIdentity.id))
+    val person = new TestThing(name, Person.PersonModel, Person.IdentityLink(user.mainIdentity.id))
     SpaceMember(user, person)
   }
 

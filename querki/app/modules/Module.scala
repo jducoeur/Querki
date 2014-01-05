@@ -26,7 +26,7 @@ object Modules extends EcologyImpl {
   // treated as a DI. But first, we need to automate the init-order dependency management.
   private val Stylesheet = new stylesheet.StylesheetModule(this, 1)
   private val Email = new querki.email.impl.EmailModule(this, 2)
-  val Person = new person.PersonModule(this, 3)
+  private val Person = new querki.identity.PersonModule(this, 3)
   val AccessControl = new querki.access.AccessControlModule(this, 4)
   val Time = new time.TimeModule(this, 5)
   val Collections = new collections.CollectionsModule(this, 6)

@@ -125,7 +125,7 @@ class EmailModule(e:Ecology, val moduleId:Short) extends modules.Module(e) with 
           setName("Email To"),
           InternalProp(true),
           DeprecatedProp(true),
-          (LinkModelOID -> Optional(ElemValue(Person.MOIDs.PersonOID, LinkType))),
+          (LinkModelOID -> Optional(ElemValue(querki.identity.MOIDs.PersonOID, LinkType))),
           PropSummary("Who should this email be sent to?"),
           PropDetails("""This is the raw list of people to send this email to. It should point to one or more
               |Person Things, each of which should have an Email Address set.

@@ -1,4 +1,4 @@
-package modules.person
+package querki.identity
 
 // For talking to the SpaceManager:
 import akka.pattern._
@@ -33,29 +33,17 @@ import controllers.{PageEventManager, PlayRequestContext}
 
 import play.api.Logger
 
-  
-// TODO: this Module should formally depend on the Email Module. Probably --
-// it isn't entirely clear whether statically described Properties really
-// require initialization-order dependencies. But I believe that the Person
-// object shouldn't be constructed until after the Email Module has been.
-class PersonModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
+/**
+ * TODO: this should probably be split into two modules, with all of the HTTP-specific stuff
+ * surrounding Cookies brought into the controllers instead. But it'll do for now.
+ */
+class PersonModule(e:Ecology, val moduleId:Short) extends modules.Module(e) with Person {
   
   val Email = initRequires[querki.email.Email]
   lazy val EmailAddressProp = Email.EmailAddressProp
   
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
-
-  object MOIDs {
-    val PersonOID = oldMoid(1)
-    val InviteLinkCmdOID = oldMoid(2)
-    val IdentityLinkOID = oldMoid(3)
-    val ChromelessInviteLinkOID = oldMoid(4)
-    val MeMethodOID = oldMoid(5)
-    val SecurityPrincipalOID = oldMoid(6)
-    val ChromelessInvitesOID = moid(7)
-    val InviteTextOID = moid(8)
-    val SpaceInviteOID = moid(9)
-  }
+  
   import MOIDs._
   
   override def init = {
@@ -90,7 +78,7 @@ Unlike the ordinary Invite Link command, this one results in a page with no Quer
 (NOTE: this will probably become a paid-users-only feature in the future. Also, this method isn't usually what you want any more;
 instead, you usually want to set the Chromeless Invites property on your Space.)""", doInviteLink(true))
 
-  lazy val identityLink = new SystemProperty(IdentityLinkOID, LinkType, Optional,
+  lazy val IdentityLink = new SystemProperty(IdentityLinkOID, LinkType, Optional,
       toProps(
         setName("Person to Identity Link"),
         InternalProp(true),
@@ -111,10 +99,9 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
             |deal, to make it more usable. So don't get too invested in the current behaviour.""".stripMargin)))
   {
     override def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
-      import PersonModule.UserPersonEnhancements
       val userOpt = context.request.requester
       implicit val state = context.state
-      val personOpt = userOpt.flatMap(_.localPerson)
+      val personOpt = userOpt.flatMap(localPerson(_))
       personOpt.map(person => LinkValue(person)).getOrElse(WarningValue("You are not a member of this Space"))
     }
   }
@@ -134,7 +121,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
             |
             |NOTE: this will probably become a paid-users-only feature in the future.""".stripMargin)))
   
-  lazy val inviteText = new SystemProperty(InviteTextOID, LargeTextType, ExactlyOne,
+  lazy val InviteText = new SystemProperty(InviteTextOID, LargeTextType, ExactlyOne,
       toProps(
         setName("Space Invitation Text"),
         AppliesToKindProp(Kind.Space),
@@ -150,13 +137,13 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
     
     chromelessInviteLink,
     
-    identityLink,
+    IdentityLink,
     
     meMethod,
     
     chromelessInvites,
     
-    inviteText,
+    InviteText,
     
     spaceInvite
   )
@@ -170,7 +157,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
         setName("Security Principal"),
         DisplayTextProp("""For internal use -- this the concept of a Thing that can be given permissions.""")))
   
-  lazy val person = ThingState(PersonOID, systemOID, SecurityPrincipalOID,
+  lazy val PersonModel = ThingState(PersonOID, systemOID, SecurityPrincipalOID,
       toProps(
         setName("Person"),
         InternalProp(true),
@@ -180,8 +167,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
     
   override lazy val things = Seq(
     securityPrincipal,
-    // The Person Model
-    person
+    PersonModel
   )
    
   /***********************************************
@@ -201,7 +187,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
     // ... then point the Person to it, so we can use it later...
     val req = context.request
     // TODO: we shouldn't do this again if the Person is already pointing to the Identity:
-    val changeRequest = ChangeProps(req.requester.get, s.owner, s.id, t.toThingId, toProps(identityLink(identity.id))())
+    val changeRequest = ChangeProps(req.requester.get, s.owner, s.id, t.toThingId, toProps(IdentityLink(identity.id))())
     // TODO: eventually, all of this should get beefed up in various ways:
     // -- ChangeProps should carry the version stamp of t, so that race conditions can be rejected.
     // -- Ideally, we shouldn't send the email until the Identity has been fully established. Indeed, this whole
@@ -222,8 +208,6 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
   
   val identityParam = "identity"
   val identityName = "identityName"
-  val identityEmail = "identityEmail"
-  val personParam = "person"
   val inviteParam = "invite"
     
   def doInviteLink(chromelessIn:Boolean)(t:Thing, context:QLContext):QValue = {
@@ -240,7 +224,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
       case Some(person) => {
         val chromeless = chromelessIn || t.ifSet(chromelessInvites) || state.ifSet(chromelessInvites)
         // Get the Identity linked from this Person. If there isn't already one, make one.
-	    val identityProp = person.localProp(identityLink)
+	    val identityProp = person.localProp(IdentityLink)
 	    val identityId = identityProp match {
 	      case Some(propAndVal) if (!propAndVal.isEmpty) => propAndVal.first
   	      // This will set identityProp, as well as getting the Identity's OID:
@@ -307,8 +291,6 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
     }
   }
   
-  case class InvitationResult(invited:Seq[EmailAddress], alreadyInvited:Seq[EmailAddress])
-  
   /**
    * Invite some people to join this Space. rc.state must be established (and authentication dealt with) before
    * we get here.
@@ -369,7 +351,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
       |------
       |
       |[[_spaceInvitation]]""".stripMargin)
-    val bodyQL = updatedState.getPropOpt(inviteText).flatMap(_.firstOpt).getOrElse(QLText("")) + inviteLink
+    val bodyQL = updatedState.getPropOpt(InviteText).flatMap(_.firstOpt).getOrElse(QLText("")) + inviteLink
     // TODO: we probably should test that sentTo includes everyone we expected:
     val sentTo = Email.sendToPeople(context, people ++ existingPeople, subjectQL, bodyQL)
     
@@ -425,59 +407,45 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
       membershipResult = User.addSpaceMembership(identity.id, state.id);
       changeRequest = ChangeProps(SystemUser, state.owner, state.id, person.toThingId, 
           toProps(
-            identityLink(identity.id),
+            IdentityLink(identity.id),
             DisplayNameProp(identity.name))())
     )
       yield SpaceManager.ask[ThingResponse, B](changeRequest)(cb)
   }
-}
-
-object PersonModule {
-  import modules.Modules.Person._
-  import modules.Modules.Person.MOIDs._
-  
+       
   def getPersonIdentity(person:Thing)(implicit state:SpaceState):Option[OID] = {
     for (
-      identityVal <- person.getPropOpt(identityLink);
+      identityVal <- person.getPropOpt(IdentityLink);
       identityId <- identityVal.firstOpt
         )
       yield identityId    
   }
   
-  /**
-   * Additional features of User, specifically for interacting with Person.
-   */
-  implicit class UserPersonEnhancements(user:User) {
-    def hasPerson(personId:OID)(implicit state:SpaceState):Boolean = {
-      state.anything(personId).map(hasPerson(_)).getOrElse(false)
-    }
-    def hasPerson(person:Thing)(implicit state:SpaceState):Boolean = {
-      val idOpt = getPersonIdentity(person)
-      idOpt.map(user.hasIdentity(_)).getOrElse(false)
-    }
-    
-    def localPerson(implicit state:SpaceState):Option[Thing] = {
-      state.
-        descendants(PersonOID, false, true).
-        filter(person => hasPerson(person)).
-        headOption
-    }
+  def hasPerson(user:User, personId:OID)(implicit state:SpaceState):Boolean = {
+    state.anything(personId).map(hasPerson(user, _)).getOrElse(false)
   }
   
-  /**
-   * Additional features of Identity, specifically for interacting with Person.
-   */
-  implicit class IdentityPersonEnhancements(identity:Identity) {
-    def isPerson(person:Thing)(implicit state:SpaceState):Boolean = {
-      val idOpt = getPersonIdentity(person)
-      idOpt.map(_ == identity.id).getOrElse(false)
-    }
-    
-    def localPerson(implicit state:SpaceState):Option[Thing] = {
-      state.
-        descendants(PersonOID, false, true).
-        filter(person => isPerson(person)).
-        headOption
-    }    
+  def hasPerson(user:User, person:Thing)(implicit state:SpaceState):Boolean = {
+    val idOpt = getPersonIdentity(person)
+    idOpt.map(user.hasIdentity(_)).getOrElse(false)
+  }
+  
+  def isPerson(identity:Identity, person:Thing)(implicit state:SpaceState):Boolean = {
+    val idOpt = getPersonIdentity(person)
+    idOpt.map(_ == identity.id).getOrElse(false)
+  }
+
+  def localPerson(identity:Identity)(implicit state:SpaceState):Option[Thing] = {
+    state.
+      descendants(MOIDs.PersonOID, false, true).
+      filter(person => isPerson(identity, person)).
+      headOption
+  }
+  
+  def localPerson(user:User)(implicit state:SpaceState):Option[Thing] = {
+    state.
+      descendants(MOIDs.PersonOID, false, true).
+      filter(person => hasPerson(user, person)).
+      headOption
   }
 }

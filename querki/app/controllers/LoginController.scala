@@ -10,6 +10,7 @@ import play.api.mvc._
 
 import models._
 
+import querki.ecology._
 import querki.identity._
 import querki.spaces.messages.{ThingError, ThingFound}
 import querki.util._
@@ -54,6 +55,8 @@ object LoginController extends ApplicationBase {
     )(PasswordChangeInfo.apply)(PasswordChangeInfo.unapply)
   )
   
+  lazy val Person = getInterface[querki.identity.Person]
+  
   lazy val maxMembers = Config.getInt("querki.public.maxMembersPerSpace", 100)
   
   def inviteMembers(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
@@ -78,7 +81,7 @@ object LoginController extends ApplicationBase {
 	          val context = QLRequestContext(rc)
 	        
 	          val invitees = emailStrs.map(querki.email.EmailAddress(_))
-	          val result = modules.Modules.Person.inviteMembers(rc, invitees)
+	          val result = Person.inviteMembers(rc, invitees)
 	        
 	          (
 	            if (result.invited.length > 0)
@@ -101,7 +104,7 @@ object LoginController extends ApplicationBase {
   def handleInvite(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId, allowAnyone = true) { implicit rc =>
     // This cookie gets set in PersonModule.InviteLoginChecker. If it isn't set, somebody is trying to sneak
     // in through the back door:
-    val emailOpt = rc.sessionCookie(modules.Modules.Person.identityEmail)
+    val emailOpt = rc.sessionCookie(querki.identity.identityEmail)
     emailOpt match {
       case Some(email) => {
         // Okay, it's a legitimate invitation. Is this a signed-in user?
@@ -160,14 +163,14 @@ object LoginController extends ApplicationBase {
       },
       info => {
         // Make sure we have a Person in a Space in the cookies -- that is required for a legitimate request
-    	val personOpt = rc.sessionCookie(modules.Modules.Person.personParam)
+    	val personOpt = rc.sessionCookie(querki.identity.personParam)
     	personOpt match {
     	  case Some(personId) => {
 	    	val result = User.createProvisional(info)
 	        result match {
 	          case Success(user) => {
 	            // We're now logged in, so start a new session. But preserve the personParam for the next step:
-	            Redirect(routes.LoginController.joinSpace(ownerId, spaceId)).withSession(user.toSession :+ (modules.Modules.Person.personParam -> personId):_*)
+	            Redirect(routes.LoginController.joinSpace(ownerId, spaceId)).withSession(user.toSession :+ (querki.identity.personParam -> personId):_*)
 	          }
 	          case Failure(error) => {
 	            val msg = error match {
@@ -185,7 +188,7 @@ object LoginController extends ApplicationBase {
   }
   
   def joinSpace(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId, allowAnyone = true) { implicit rc =>
-    val joinOpt = modules.Modules.Person.acceptInvitation(rc) {
+    val joinOpt = Person.acceptInvitation(rc) {
       case ThingFound(id, state) => Redirect(routes.Application.thing(ownerId, spaceId, spaceId))
       case ThingError(error, stateOpt) => doError(routes.Application.index, error)
     }

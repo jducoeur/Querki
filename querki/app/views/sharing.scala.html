@@ -18,6 +18,7 @@
 }
 
 @from = @{ getInterface[querki.email.Email].from }
+@InviteText = @{ getInterface[querki.identity.Person].InviteText }
 
 @main(QuerkiTemplate.View, pageTitle, rc) {
 
@@ -66,7 +67,7 @@
           <div class="control-group">
             <label class="control-label">Invitation Message</label>
             <div class="controls">
-              @HtmlRenderer.renderPropertyInput(space, Modules.Person.inviteText, space.getDisplayPropVal(Modules.Person.inviteText)(space))
+              @HtmlRenderer.renderPropertyInput(space, InviteText, space.getDisplayPropVal(InviteText)(space))
             </div>
           </div>
         
