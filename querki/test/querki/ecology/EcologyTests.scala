@@ -65,6 +65,8 @@ class EcologyTests extends WordSpec
     "successfully register, initialize and terminate Ecots with dependencies" in {
       val eco = new EcologyImpl
       
+      // The order of termination is deterministic, due to the dependencies. So check
+      // that it came out right:
       var termOrder:Seq[Ecot] = Seq.empty
       
       class Ecot1(val moduleId:Short) extends Module(eco) with TestInterface1 {

@@ -91,7 +91,7 @@ class TypesModule(e:Ecology, val moduleId:Short) extends Module(e) with Types {
    * the correct input control. It's doable in principle, but enough work that I'm not going to bother
    * until we care.
    */
-  lazy val DefaultValueProp = new APIProperty(querki.types.DefaultValueProp, DefaultValuePropOID, WrappedValueType, ExactlyOne,
+  lazy val defaultValueProp = new APIProperty(DefaultValueProp, DefaultValuePropOID, WrappedValueType, ExactlyOne,
     toProps(
       setName("Default Value"),
       (InternalPropOID -> ExactlyOne(YesNoType(true))),
@@ -108,7 +108,7 @@ class TypesModule(e:Ecology, val moduleId:Short) extends Module(e) with Types {
     MinIntValueProp,
     MaxIntValueProp,
     
-    DefaultValueProp
+    defaultValueProp
   )
 }
 

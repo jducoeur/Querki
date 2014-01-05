@@ -15,8 +15,9 @@ import ql._
 
 import querki.basic.DisplayNameProp
 import querki.core.MOIDs._
+import querki.ecology._
 
-import querki.types.DefaultValueProp
+import querki.types.Types
 
 import querki.values._
 
@@ -34,6 +35,16 @@ case class Property[VT, -RT](
     mt:DateTime)
   extends Thing(i, s, m, Kind.Property, pf, mt) 
 {
+  lazy val DefaultValueProp = try { 
+    Ecology.ecology.api[Types].DefaultValueProp
+  } catch {
+    case t:Throwable => {
+      println(s"Got exception $t from DefaultValueProp:")
+      t.printStackTrace()
+      throw t
+    }
+  }
+    
   def default = {
     val explicitDefault = localProp(DefaultValueProp).map(_.v)
     explicitDefault.getOrElse(cType.default(pType))

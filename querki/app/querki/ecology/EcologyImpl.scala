@@ -81,6 +81,10 @@ class EcologyImpl extends Ecology with EcologyManager {
   
   /**
    * All of the EcologyInterfaces that have been registered, and which Ecot implements each.
+   * 
+   * TODO: could this be done with Map[Type] instead of Map[Class]? Given Scala's preferences, that
+   * might be more efficient. And I don't think there is anything terribly public that has wound
+   * up relying on Class -- we're actually mostly using TypeTag in the APIs.
    */
   private var _registeredInterfaces:Map[Class[_], Ecot] = Map.empty
   

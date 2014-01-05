@@ -2,6 +2,8 @@ package querki.system
 
 import akka.actor._
 
+import querki.ecology._
+
 import querki.spaces.{DBSpacePersistenceFactory, SpaceManager}
 
 /**
@@ -21,7 +23,9 @@ class QuerkiRoot extends Actor {
       // Yes, it's a static initialization function. For now, it seems to be fine, because SystemSpace
       // is *quite* explicitly and deliberately immutable. So we create it now, and it's available
       // to everyone after that.
+      // TODO: this should be subsumed under Ecology initialization:
       models.system.SystemSpace.init
+      Ecology.ecology.manager.init(models.system.SystemSpace.initialSystemState)
     
       // Note that the SpacePersistenceFactory is intentionally defined all the way up here. That is
       // specifically for testing, so that we can stub it out and replace it with a mock version.

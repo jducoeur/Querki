@@ -101,6 +101,9 @@ case class InterfaceWrapper[T <: EcologyInterface](ecology:Ecology)(implicit tag
  * 
  * Yes, Ecot is a horrible piece of jargon. But it is helpful to have a unique term, so
  * that nobody gets confused by highly-overloaded words like "module".
+ * 
+ * TODO: a lot of implementation details have bled into this interface. Fix the relationship
+ * between it and Module. (Which will become EcotImpl.)
  */
 trait Ecot extends EcologyMember {
   import scala.reflect.runtime.{universe => ru}
