@@ -38,9 +38,9 @@ package object types {
      * until we care.
      */
     def DefaultValueProp:Property[QValue,QValue]    
-  }
   
-  val MinTextLengthProp = new PropertyInterface[Int, Int]
-  val MinIntValueProp = new PropertyInterface[Int, Int]
-  val MaxIntValueProp = new PropertyInterface[Int, Int]
+    def MinTextLengthProp:Property[Int, Int]
+    def MinIntValueProp:Property[Int, Int]
+    def MaxIntValueProp:Property[Int, Int]
+  }
 }

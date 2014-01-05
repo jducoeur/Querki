@@ -1,5 +1,7 @@
 package querki
 
+import scala.reflect.runtime.universe.TypeTag
+
 package object ecology {
   /**
    * The One True Ecology.
@@ -15,6 +17,12 @@ package object ecology {
    * likely require that in all cases. 
    */
   val Ecology = modules.Modules
+  
+  /**
+   * Shorthand for fetching a specified EcologyInterface. Note that the interface must be registered and
+   * initialized, or this will throw an exception!
+   */
+  def getInterface[T <: EcologyInterface : TypeTag]:T = Ecology.api[T]
   
   implicit def wrapper2Interface[T <: EcologyInterface](wrapper:InterfaceWrapper[T]):T = {
     wrapper.get

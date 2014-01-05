@@ -45,13 +45,15 @@ object Modules extends EcologyImpl {
   private var allModules = Seq.empty[Module]
   
   def init(module:Module, state:SpaceState):SpaceState = {
-    val newState = module.addSystemObjects(state)
-    module.init
+    // TEMP:
+    println(s"Initializing module ${module.getClass().getSimpleName()}")
+    val newState = initEcot(module, state)
     // TODO: is this right? This looks suspiciously useless:
     module +: allModules
     newState
   }
 
+  // TODO: this should get eliminated in favor of the new Ecology.init:
   def initAllModules(state:SpaceState):SpaceState = {
     var s = state
     

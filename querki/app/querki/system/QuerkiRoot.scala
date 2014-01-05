@@ -25,7 +25,7 @@ class QuerkiRoot extends Actor {
       // to everyone after that.
       // TODO: this should be subsumed under Ecology initialization:
       models.system.SystemSpace.init
-      Ecology.ecology.manager.init(models.system.SystemSpace.initialSystemState)
+//      Ecology.ecology.manager.init(models.system.SystemSpace.initialSystemState)
     
       // Note that the SpacePersistenceFactory is intentionally defined all the way up here. That is
       // specifically for testing, so that we can stub it out and replace it with a mock version.

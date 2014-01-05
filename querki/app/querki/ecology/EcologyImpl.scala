@@ -34,6 +34,8 @@ class EcologyImpl extends Ecology with EcologyManager {
   }
   
   def init(initialSpaceState:SpaceState):SpaceState = {
+    // TEMP:
+    println("Starting Ecology initialization")
     initializeRemainingEcots(_registeredEcots, initialSpaceState)
   }
   
@@ -58,15 +60,24 @@ class EcologyImpl extends Ecology with EcologyManager {
     // InterfaceWrapper.get, which caches the result, so it shouldn't be called *too* often
     // after system initialization.
     val clazz = runtimeMirror.runtimeClass(typeOf[T].typeSymbol.asClass)
-    _initializedInterfaces.get(clazz) match {
-      case Some(ecot) => ecot.asInstanceOf[T]
-      case None => {
-        if (_registeredInterfaces.contains(clazz))
-          throw new UninitializedInterfaceException(clazz)
-        else
-          throw new UnknownInterfaceException(clazz)
+    try {
+      _initializedInterfaces.get(clazz) match {
+        case Some(ecot) => ecot.asInstanceOf[T]
+        case None => {
+          if (_registeredInterfaces.contains(clazz))
+            throw new UninitializedInterfaceException(clazz)
+          else
+            throw new UnknownInterfaceException(clazz)
+        }
       }
-    }
+    } catch {
+      case e:Exception => {
+        // TODO: this should use logger, not println, once that mechanism is nice and solid:
+        println(s"Exception $e while trying to fetch interface ${clazz.getSimpleName()}:")
+        e.printStackTrace()
+        throw e
+      }
+    }    
   }
   
   // ******************************************************
@@ -105,6 +116,15 @@ class EcologyImpl extends Ecology with EcologyManager {
    */
   private var _termOrder:List[Ecot] = Nil
   
+  def initEcot(ecot:Ecot, currentState:SpaceState):SpaceState = {
+    val newState = ecot.addSystemObjects(currentState)
+    ecot.init
+    _initializedEcots += ecot
+    _termOrder = ecot :: _termOrder
+    ecot.implements.foreach(interface =>_initializedInterfaces += (interface -> ecot))
+    newState
+  }
+  
   /**
    * Recursively initialize the system. In each recursive pass, go through the remaining Ecots, and initialize
    * the first one we find that has no uninitialized dependencies. If we get through a pass without being able to
@@ -119,11 +139,7 @@ class EcologyImpl extends Ecology with EcologyManager {
     } else {
       remaining.find(_.dependsUpon.forall(_initializedInterfaces.contains(_))) match {
         case Some(readyEcot) => {
-          val newState = readyEcot.addSystemObjects(currentState)
-          readyEcot.init
-          _initializedEcots += readyEcot
-          _termOrder = readyEcot :: _termOrder
-          readyEcot.implements.foreach(interface =>_initializedInterfaces += (interface -> readyEcot))
+          val newState = initEcot(readyEcot, currentState)
           initializeRemainingEcots(remaining - readyEcot, newState)
         }
         // TODO: scan the remainder, and particularly their dependencies. If we find a dependency that

@@ -18,6 +18,8 @@ import modules.Module
 class BasicModule(e:Ecology, val moduleId:Short) extends Module(e) {
   import MOIDs._
   
+  val Types = initRequires[querki.types.Types]
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/
@@ -31,7 +33,7 @@ class BasicModule(e:Ecology, val moduleId:Short) extends Module(e) {
     toProps(
       setName("Display Name"),
       NotInheritedProp(true),
-      MinTextLengthProp(1),
+      Types.MinTextLengthProp(1),
       PropSummary("How to show this Thing's Name"),
       PropDetails("""Most Things in Querki have a Name. (It isn't strictly required, but strongly encouraged most
           |of the time.) In general, when we list a Thing, we show its Name. However, if you want to display

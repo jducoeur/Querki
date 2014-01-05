@@ -13,11 +13,14 @@ import OIDs._
 
 import ql._
 
-import querki.types._
+import querki.ecology._
+import querki.types.Types
 import querki.util._
 import querki.values._
 
 abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, systemOID, RootOID, pf) {
+  lazy val Types = getInterface[Types]
+  
   def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = {
     // TBD: this is smelly -- the fact that we need to know here how to render Optional is a nasty abstraction
     // break. But in general, rendering probably doesn't belong here: ultimately, rendering depends on the
@@ -59,10 +62,10 @@ object CommonInputRenderers {
   }
 }
 
-object TextTypeUtils {
+trait TextTypeUtils { self:SystemType[_] =>
   def validateText(v:String, prop:Property[_,_], state:SpaceState):Unit = {
     for (
-      minLengthVal <- prop.getPropOpt(MinTextLengthProp)(state);
+      minLengthVal <- prop.getPropOpt(Types.MinTextLengthProp)(state);
       minLength <- minLengthVal.firstOpt
       if (v.trim().length() < minLength)
         )
@@ -101,14 +104,14 @@ trait CodeType {
     
     override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = {
       for (
-        minValPO <- prop.getPropOpt(MinIntValueProp)(state);
+        minValPO <- prop.getPropOpt(Types.MinIntValueProp)(state);
         minVal <- minValPO.firstOpt;
         if (doDeserialize(v) < minVal)
           )
         throw new PublicException("Types.Int.tooLow", prop.displayName, minVal)
       
       for (
-        maxValPO <- prop.getPropOpt(MaxIntValueProp)(state);
+        maxValPO <- prop.getPropOpt(Types.MaxIntValueProp)(state);
         maxVal <- maxValPO.firstOpt;
         if (doDeserialize(v) > maxVal)
           )
@@ -147,7 +150,7 @@ trait CodeType {
   trait IsTextType
   
   abstract class TextTypeBase(oid:OID, pf:PropFetcher) extends SystemType[QLText](oid, pf
-      ) with PTypeBuilder[QLText,String] with CodeType with IsTextType
+      ) with PTypeBuilder[QLText,String] with CodeType with IsTextType with TextTypeUtils
   {
     def doDeserialize(v:String) = QLText(v)
     def doSerialize(v:QLText) = v.text
@@ -158,7 +161,7 @@ trait CodeType {
     val doDefault = QLText("")
     def wrap(raw:String):valType = QLText(raw)
     
-    override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = TextTypeUtils.validateText(v, prop, state)
+    override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = validateText(v, prop, state)
 
     // TBD: in principle, we really want this to return a *context*, not a *value*. This is a special
     // case of a growing concern: that we could be losing information by returning QValue from
@@ -569,7 +572,7 @@ case class PlainText(text:String) {
 abstract class PlainTextType(tid:OID, actualName:String) extends SystemType[PlainText](tid,
     toProps(
       setName(actualName)
-    )) with PTypeBuilder[PlainText,String] with IsTextType with NameableType 
+    )) with PTypeBuilder[PlainText,String] with IsTextType with NameableType with TextTypeUtils
 {
   def doDeserialize(v:String) = PlainText(v)
   def doSerialize(v:PlainText) = v.text
@@ -578,7 +581,7 @@ abstract class PlainTextType(tid:OID, actualName:String) extends SystemType[Plai
   
   def doWikify(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None) = Wikitext(v.text)
   
-  override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = TextTypeUtils.validateText(v, prop, state)
+  override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = validateText(v, prop, state)
   
   val doDefault = PlainText("")
   override def wrap(raw:String):valType = PlainText(raw)

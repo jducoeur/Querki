@@ -35,15 +35,7 @@ case class Property[VT, -RT](
     mt:DateTime)
   extends Thing(i, s, m, Kind.Property, pf, mt) 
 {
-  lazy val DefaultValueProp = try { 
-    Ecology.ecology.api[Types].DefaultValueProp
-  } catch {
-    case t:Throwable => {
-      println(s"Got exception $t from DefaultValueProp:")
-      t.printStackTrace()
-      throw t
-    }
-  }
+  lazy val DefaultValueProp = getInterface[Types].DefaultValueProp
     
   def default = {
     val explicitDefault = localProp(DefaultValueProp).map(_.v)

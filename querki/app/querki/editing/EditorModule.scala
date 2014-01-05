@@ -36,6 +36,8 @@ class EditorModule(e:Ecology, val moduleId:Short) extends Module(e) {
   }
   import MOIDs._
   
+  val Types = initRequires[querki.types.Types]
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/
@@ -56,8 +58,8 @@ class EditorModule(e:Ecology, val moduleId:Short) extends Module(e) {
   lazy val editWidthProp = new SystemProperty(EditWidthPropOID, IntType, ExactlyOne,
       toProps(
         setName("Edit Width"),
-        MinIntValueProp(1),
-        MaxIntValueProp(12),
+        Types.MinIntValueProp(1),
+        Types.MaxIntValueProp(12),
         PropSummary("Lets you control how wide a Property's edit control is, in the Edit View"),
         PropDetails("""This is width in Bootstrap span terms -- a number from 1 (narrow) to 12 (full width).""".stripMargin)))
 
