@@ -251,10 +251,4 @@ object SystemSpace {
         ShowUnknownProp(TagThing.defaultDisplayText)), 
       SystemUserOID, "System", querki.time.epoch, None, SystemTypes.all, props, things, SystemCollections.all, None)    
   }
-
-  // This gets set by SystemEcot:
-  // TODO: this accessor should eventually go away -- the System Space should be accessed through the
-  // System interface instead:
-  var _state:Option[SpaceState] = None
-  lazy val State = _state.get
 }

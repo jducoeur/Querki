@@ -13,8 +13,8 @@ import models.Kind._
 import models.MIMEType.MIMEType
 import models.Thing._
 import models.system.{CollectionProp, DisplayTextProp, TypeProp, UnresolvedPropType, UnresolvedPropValue}
-import models.system.SystemSpace.{State => systemState}
 
+import querki.ecology._
 import querki.time._
 import querki.time.TimeAnorm._
 
@@ -54,6 +54,8 @@ import messages.AttachmentContents
  * now that I think of it.)
  */
 private [spaces] class SpacePersister(val id:OID) extends Actor {
+  
+  lazy val SystemInterface = getInterface[querki.system.System]
 
   def SpaceSQL(query:String):SqlQuery = SpacePersister.SpaceSQL(id, query) 
   def AttachSQL(query:String):SqlQuery = SpacePersister.AttachSQL(id, query)
@@ -111,7 +113,7 @@ private [spaces] class SpacePersister(val id:OID) extends Actor {
 	      // those will wind up with pointer errors.
 	      // TODO: Do the Property load in multiple phases, so we can have local meta-properties.
 	      // TODO: this should use the App, not SystemSpace:
-	      var curState:SpaceState = systemState
+	      var curState:SpaceState = SystemInterface.State
 	      
 	      // Now load each kind. We do this in order, although in practice it shouldn't
 	      // matter too much so long as Space comes last:
@@ -165,7 +167,7 @@ private [spaces] class SpacePersister(val id:OID) extends Actor {
 	             owner,
 	             name,
 	             modTime,
-	             Some(systemState),
+	             Some(SystemInterface.State),
 	             // TODO: dynamic PTypes
 	             Map.empty[OID, PType[_]],
 	             Map.empty[OID, Property[_,_]],
@@ -184,7 +186,7 @@ private [spaces] class SpacePersister(val id:OID) extends Actor {
 	          // In the meantime, we fall back on a plain Space Thing:
 	          new SpaceState(
 	            id,
-	            systemState.id,
+	            SystemInterface.State.id,
 	            toProps(
 	              setName(name),
 	              DisplayTextProp("We were unable to load " + name + " properly. An error has been logged; our apologies.")
@@ -192,7 +194,7 @@ private [spaces] class SpacePersister(val id:OID) extends Actor {
 	            owner,
 	            name,
 	            epoch,
-	            Some(systemState),
+	            Some(SystemInterface.State),
 	            Map.empty[OID, PType[_]],
 	            Map.empty[OID, Property[_,_]],
 	            Map.empty[OID, ThingState],
@@ -204,12 +206,12 @@ private [spaces] class SpacePersister(val id:OID) extends Actor {
 	          spaceStream.head
 	      
 	      val loadedProps = getThings(Kind.Property) { (thingId, modelId, propMap, modTime) =>
-	        val typ = systemState.typ(TypeProp.first(propMap))
+	        val typ = SystemInterface.State.typ(TypeProp.first(propMap))
 	        // This cast is slightly weird, but safe and should be necessary. But I'm not sure
 	        // that the PTypeBuilder part is correct -- we may need to get the RT correct.
 	//        val boundTyp = typ.asInstanceOf[PType[typ.valType] with PTypeBuilder[typ.valType, Any]]
 	        val boundTyp = typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]]
-	        val coll = systemState.coll(CollectionProp.first(propMap))
+	        val coll = SystemInterface.State.coll(CollectionProp.first(propMap))
 	        // TODO: this feels wrong. coll.implType should be good enough, since it is viewable
 	        // as Iterable[ElemValue] by definition, but I can't figure out how to make that work.
 	        val boundColl = coll.asInstanceOf[Collection]

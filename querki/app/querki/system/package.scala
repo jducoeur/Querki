@@ -11,6 +11,6 @@ package object system {
      * This is the Officially Correct Way to get at the System Space. If you can get to it this way, do
      * so instead of using the old backdoor through SystemSpace.State, which will eventually go away.
      */
-    def SystemState:SpaceState
+    def State:SpaceState
   }
 }

@@ -3,7 +3,13 @@ package querki.system
 import querki.ecology._
 import querki.values.SpaceState
 
-private[system] trait SystemManagement extends EcologyInterface {
+/**
+ * The interface to manage the System.
+ */
+trait SystemManagement extends EcologyInterface {
+  /**
+   * Set the final System Space. The code that initialized the Ecology *must* call this once complete!
+   */
   def setState(state:SpaceState)
 }
 
@@ -11,8 +17,9 @@ object SystemMOIDs extends EcotIds(18)
 
 class SystemEcot(e:Ecology) extends QuerkiEcot(e) with System with SystemManagement {
   def setState(state:SpaceState) = {
-    models.system.SystemSpace._state = Some(state)
+    _state = Some(state)
   }
   
-  def SystemState = models.system.SystemSpace.State
+  var _state:Option[SpaceState] = None
+  def State = _state.getOrElse(throw new Exception("Attempting to access the System Space before init is complete!"))
 }

@@ -58,6 +58,7 @@ object Application extends ApplicationBase {
   lazy val Basic = getInterface[querki.basic.Basic]
   lazy val DisplayNameProp = Basic.DisplayNameProp
   lazy val DeriveName = getInterface[querki.types.DeriveName]
+  lazy val System = getInterface[querki.system.System]
 
   def index = withUser(false) { rc =>
     Ok(views.html.index(rc))
@@ -111,7 +112,7 @@ disallow: /
     newSpaceForm.bindFromRequest.fold(
       errors => doError(routes.Application.newSpace, "You have to specify a legal space name"),
       name => {
-        TryTrans[Unit, Result] { NameProp.validate(name, State) }.
+        TryTrans[Unit, Result] { NameProp.validate(name, System.State) }.
           onSucc { _ =>
             askSpaceMgr[ThingResponse](CreateSpace(requester, name)) {
               case ThingFound(_, state) => Redirect(routes.Application.space(requester.mainIdentity.handle, state.toThingId))
@@ -154,7 +155,7 @@ disallow: /
       // For the time being, we're only allowing basic Properties. We might allow Properties to
       // serve as Models, but one thing at a time.
       case Kind.Property => Seq(UrProp)
-      case Kind.Space => Seq(SystemSpace.State)
+      case Kind.Space => Seq(System.State)
       case _ => throw new Exception("Don't yet know how to create a Thing of kind " + mainModel.kind)
     }
   }

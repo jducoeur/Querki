@@ -5,6 +5,7 @@ import models.system._
 
 import ql.QLParser
 
+import querki.ecology._
 import querki.values._
 
 import play.api.Logger
@@ -21,13 +22,15 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
   // keeping it very tight, but it might eventually need to be over a thousand.
   val maxDepth = 100
   
+  lazy val System = getInterface[querki.system.System]
+  
   def request:RequestContext = {
     requestOpt match {
       case Some(r) => r
       case None => throw new Exception("Attempting to fetch the RequestContext from a Context that doesn't have one!")
     }
   }
-  def state:SpaceState = request.state.getOrElse(SystemSpace.State)
+  def state:SpaceState = request.state.getOrElse(System.State)
   def isEmpty = value.isEmpty
   // Parent matters at rendering time -- we render the final context in the context of its parent.
   // This matter most when (as often), the last context is a Text; it needs to be rendered correctly

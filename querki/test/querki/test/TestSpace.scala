@@ -53,6 +53,7 @@ case class SpaceMember(user:User, person:ThingState)
 trait TestSpace {
   
   lazy val Person = getInterface[querki.identity.Person]
+  lazy val System = getInterface[querki.system.System]
 
   // ================================
   //
@@ -122,7 +123,7 @@ trait TestSpace {
   lazy val app:SpaceState = {
     // TODO: we need to set up SystemSpace properly, in the Ecology:
 //    SystemSpace.init
-    SystemSpace.State
+    System.State
   }
   
   def userAs(name:String, handle:String, level:UserLevel):User = 

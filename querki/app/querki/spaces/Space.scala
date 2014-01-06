@@ -56,7 +56,7 @@ import PersistMessages._
 private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends Actor with Requester {
   
   import context._
-  import models.system.SystemSpace.{State => systemState, _} 
+  import models.system.SystemSpace._ 
   
   def id = OID(self.path.name)
   

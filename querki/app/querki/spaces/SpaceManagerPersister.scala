@@ -15,7 +15,6 @@ import messages._
 import models.{AsName, OID}
 import models.{Kind, Thing}
 import models.system.{SystemSpace}
-import models.system.SystemSpace.{State => SystemState}
 import models.system.OIDs.{systemOID, SystemUserOID}
 
 import querki.db.ShardKind
@@ -44,6 +43,7 @@ import PersistMessages._
 private [spaces] class SpaceManagerPersister extends Actor {
   
   lazy val DisplayNameProp = getInterface[querki.basic.Basic].DisplayNameProp
+  lazy val SystemInterface = getInterface[querki.system.System]
 
   def receive = {
     case ListMySpaces(owner) => {
@@ -65,7 +65,7 @@ private [spaces] class SpaceManagerPersister extends Actor {
             val ownerHandle = row.get[String]("handle").get
             SpaceDetails(AsName(name), id, display, AsName(ownerHandle))
           }
-        } ++ { if (owner == SystemUserOID) { Seq(SpaceDetails(AsName("System"), systemOID, SystemSpace.State.name, AsName("systemUser"))) } else Seq.empty }
+        } ++ { if (owner == SystemUserOID) { Seq(SpaceDetails(AsName("System"), systemOID, SystemInterface.State.name, AsName("systemUser"))) } else Seq.empty }
         val memberOf = DB.withConnection(dbName(System)) { implicit conn =>
           // Note that this gets a bit convoluted, by necessity. We are coming in through a User;
           // translating that to Identities; getting all of the Spaces that those Identities are members of;
@@ -137,7 +137,7 @@ private [spaces] class SpaceManagerPersister extends Actor {
               PRIMARY KEY (id))
             """).executeUpdate()
         val initProps = Thing.toProps(Thing.setName(name), DisplayNameProp(display))()
-        SpacePersister.createThingInSql(spaceId, spaceId, systemOID, Kind.Space, initProps, SystemState)
+        SpacePersister.createThingInSql(spaceId, spaceId, systemOID, Kind.Space, initProps, SystemInterface.State)
       }
       DB.withTransaction(dbName(System)) { implicit conn =>
         SQL("""
