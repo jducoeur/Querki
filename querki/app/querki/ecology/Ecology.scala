@@ -92,6 +92,59 @@ case class InterfaceWrapper[T <: EcologyInterface](ecology:Ecology)(implicit tag
 }
 
 /**
+ * Definition of the Ids for an Ecot.
+ * 
+ * The ecotId parameter at the top is a global, and must be unique for each Ecot. The master
+ * list of these is defined in querki.system.
+ * 
+ * This object should be defined at the package level, as part of the Ecot's API, so that
+ * external systems can use these IDs safely, without causing accidental initialization of
+ * the Ecot.
+ */
+class EcotIds(val ecotId:Short) {
+  import models.OID
+
+  /**
+   * Defines an OID at the root system level. This is mainly exposed for older legacy Things,
+   * that were defined before we began to break the world into Ecots. New Things should
+   * *NEVER* use this -- use moid() instead!
+   */
+  def sysId(local:Int) = OID(0, local)
+  
+  /**
+   * The OID for an Ecot-local Thing.
+   * 
+   * Each Ecot is required to declare the OIDs for the Things it defines, using this method.
+   * 
+   * moids should be permanent, just like the OIDs in SystemSpace. These are hardcoded values
+   * that will be used in the database, so they *MUST* not change. If you need major changes,
+   * deprecate the old value and introduce a new one.
+   * 
+   * You have 16 bits of namespace per Ecot. The theory is that that should be plenty for
+   * any foreseeable Ecot. (Hopefully I won't regret this decision, but Modules aren't
+   * supposed to be large.)
+   * 
+   * (Why "moid"? Ecots were originally called Modules, hence the "m", and it wasn't worth changing.)  
+   */
+  def moid(localId:Short):OID = {
+    sysId((ecotId << 16) + localId)
+  }
+  
+  /**
+   * The old, broken algorithm for calculating moids. This was a *horrible* bug, and wound
+   * up polluting the OID space for a couple dozen Things. The only saving grace is that this
+   * error winds up with the lower 16 bits empty, so the results can't collide with correctly-formed
+   * moids.
+   * 
+   * TODO: go through the existing Spaces, and rewrite all references to these old moids to new
+   * ones that are correct. This is going to be delicate work.
+   */
+  def oldMoid(localId:Short):OID = {
+    sysId(ecotId << 16 + localId)
+  }
+}
+
+/**
  * A single "module" of the system.
  * 
  * In the Ecology Pattern, the world is mainly composed of Ecots. An Ecot is a piece of

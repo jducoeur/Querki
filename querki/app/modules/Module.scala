@@ -95,50 +95,6 @@ object Modules extends EcologyImpl {
 }
 
 /**
- * Definition of the ModuleIds for a Module.
- * 
- * The moduleId parameter at the top is a global, and must be unique for each Module. The master
- * list of these is defined in Modules itself.
- * 
- * This object should be defined at the package level, as part of the Module's API, so that
- * external systems can use these IDs safely, without causing accidental initialization of
- * the Module.
- */
-class ModuleIds(val moduleId:Short) {
-  
-  /**
-   * The OID for a Module-local Thing.
-   * 
-   * It is strongly recommended that each Module define a central table of its local OIDs,
-   * similar to the way SystemSpace.OIDs does, to avoid namespace contention.
-   * 
-   * moids should be permanent, just like the OIDs in SystemSpace. These are hardcoded values
-   * that will be used in the database, so they *MUST* not change. If you need major changes,
-   * deprecate the old value and introduce a new one.
-   * 
-   * You have 16 bits of namespace per Module. The theory is that that should be plenty for
-   * any foreseeable Module. (Hopefully I won't regret this decision, but Modules aren't
-   * supposed to be large.)  
-   */
-  def moid(localId:Short):OID = {
-    OIDs.sysId((moduleId << 16) + localId)
-  }
-  
-  /**
-   * The old, broken algorithm for calculating moids. This was a *horrible* bug, and wound
-   * up polluting the OID space for a couple dozen Things. The only saving grace is that this
-   * error winds up with the lower 16 bits empty, so the results can't collide with correctly-formed
-   * moids.
-   * 
-   * TODO: go through the existing Spaces, and rewrite all references to these old moids to new
-   * ones that are correct. This is going to be delicate work.
-   */
-  def oldMoid(localId:Short):OID = {
-    OIDs.sysId(moduleId << 16 + localId)
-  }
-}
-
-/**
  * Represents a "plug-in" part of the system.
  * 
  * A Module is a collection of Properties, Things, Listeners and (typically) some code to

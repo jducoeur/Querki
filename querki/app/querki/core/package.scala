@@ -7,8 +7,6 @@ import models.system.OIDs.sysId
 
 import querki.ecology._
 
-import modules.ModuleIds
-
 /**
  * Querki's "core" objects
  * 
@@ -17,7 +15,7 @@ import modules.ModuleIds
  * it can be depended upon by all other Modules, and doesn't depend on any of them.
  */
 package object core {
-  object MOIDs extends ModuleIds(16) {
+  object MOIDs extends EcotIds(16) {
     val UrPropOID = sysId(5)
     val NotInheritedOID = sysId(24)
     val ApplyMethodOID = sysId(46)

@@ -6,10 +6,8 @@ import com.github.nscala_time.time.Imports._
 
 import querki.ecology._
 
-import modules.ModuleIds
-
 package object time {
-  object MOIDs extends ModuleIds(5) {
+  object MOIDs extends EcotIds(5) {
     val DateTimeTypeOID = moid(1)
     val ModifiedTimeMethodOID = moid(2)
   }

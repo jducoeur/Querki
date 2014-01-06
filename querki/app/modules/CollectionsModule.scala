@@ -10,7 +10,7 @@ import querki.values._
 
 import Thing._
 
-object MOIDs extends modules.ModuleIds(6) {
+object MOIDs extends EcotIds(6) {
   val PrevInListOID = moid(1)
   val NextInListOID = moid(2)
 }

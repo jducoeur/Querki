@@ -9,11 +9,9 @@ import querki.email.EmailAddress
 
 import querki.values.{RequestContext, SpaceState}
 
-import modules.ModuleIds
-
 package object identity {
 
-  object MOIDs extends ModuleIds(3)  {
+  object MOIDs extends EcotIds(3)  {
     val PersonOID = oldMoid(1)
     val InviteLinkCmdOID = oldMoid(2)
     val IdentityLinkOID = oldMoid(3)

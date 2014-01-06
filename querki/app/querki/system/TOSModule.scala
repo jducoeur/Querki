@@ -8,7 +8,7 @@ import querki.ecology._
 import querki.identity.User
 import querki.util._
 
-object MOIDs extends modules.ModuleIds(8)
+object MOIDs extends EcotIds(8)
 
 /**
  * Terms of Service manager. This is a Module mostly for lifecycle management, to plug into the

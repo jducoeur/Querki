@@ -6,11 +6,9 @@ import querki.ecology._
 import querki.identity.User
 import querki.values.SpaceState
 
-import modules.ModuleIds
-
 package object security {
   
-  object MOIDs extends ModuleIds(4) {
+  object MOIDs extends EcotIds(4) {
     val CanEditCustomOID = moid(1)
     val PublicTagOID = moid(2)
     val MembersTagOID = moid(3)

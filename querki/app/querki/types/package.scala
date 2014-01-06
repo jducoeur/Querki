@@ -7,10 +7,8 @@ import models.system.OIDs.sysId
 import querki.ecology._
 import querki.values.{QValue, SpaceState}
 
-import modules.ModuleIds
-
 package object types {
-  object MOIDs extends ModuleIds(10) {
+  object MOIDs extends EcotIds(10) {
     // Old Things, moved to here
     val MinTextLengthOID = sysId(100)
     
@@ -44,7 +42,7 @@ package object types {
     def MaxIntValueProp:Property[Int, Int]
   }
   
-  object DeriveNameMOIDs extends ModuleIds(12) {
+  object DeriveNameMOIDs extends EcotIds(12) {
     val DeriveNameOID = moid(1)
     val DeriveModelOID = moid(2)
     val DeriveAlwaysOID = moid(3)

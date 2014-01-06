@@ -2,8 +2,6 @@ package querki
 
 import models.Property
 
-import modules.ModuleIds
-
 // For the HACKs below:
 import scala.util.Try
 import models.{OID, Thing, Wikitext}
@@ -14,7 +12,7 @@ import querki.values.{QLContext, SpaceState}
 import querki.ecology._
 
 package object email {
-  object MOIDs extends ModuleIds(2) {
+  object MOIDs extends EcotIds(2) {
     val EmailTypeOID = oldMoid(1)
     val EmailPropOID = oldMoid(2)
     val EmailTemplateOID = oldMoid(3)

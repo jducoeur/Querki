@@ -6,10 +6,8 @@ import models.system.OIDs.sysId
 
 import querki.ecology._
 
-import modules.ModuleIds
-
 package object conventions {
-  object MOIDs extends ModuleIds(15) {
+  object MOIDs extends EcotIds(15) {
     // Old OIDs, moved to here:
     val PropSummaryOID = sysId(85)
     val PropDetailsOID = sysId(86)

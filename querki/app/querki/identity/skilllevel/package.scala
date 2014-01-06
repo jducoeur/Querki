@@ -4,10 +4,8 @@ import models.{OID, Property}
 
 import querki.ecology._
 
-import modules.ModuleIds
-
 package object skilllevel {
-  object MOIDs extends ModuleIds(14) {
+  object MOIDs extends EcotIds(14) {
     val SkillLevelPropOID = moid(1)
     val SkillLevelOID = moid(2)
     val SkillLevelBasicOID = moid(3)

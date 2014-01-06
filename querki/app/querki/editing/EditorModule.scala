@@ -22,7 +22,7 @@ import querki.values._
 
 import modules.Module
 
-object MOIDs extends modules.ModuleIds(13) {
+object MOIDs extends EcotIds(13) {
   // Previously in System
   val EditMethodOID = sysId(42)
   val EditOrElseMethodOID = sysId(82)
