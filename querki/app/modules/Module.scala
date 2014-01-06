@@ -31,7 +31,7 @@ object Modules extends EcologyImpl {
   private val Time = new querki.time.TimeModule(this, 5)
   private val Collections = new collections.CollectionsModule(this, 6)
 //  val Rendering = new render.RenderingModule(this, 7)
-  val TOS = new querki.system.TOSModule(this, 8)
+  private val TOS = new querki.system.TOSModule(this, 8)
   private val Logic = new querki.logic.LogicModule(this, 9)
   private val Types = new querki.types.impl.TypesModule(this, 10)
   val UI = new querki.html.UIModule(this, 11)

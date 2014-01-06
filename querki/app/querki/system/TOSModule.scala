@@ -8,6 +8,8 @@ import querki.ecology._
 import querki.identity.User
 import querki.util._
 
+object MOIDs extends modules.ModuleIds(8)
+
 /**
  * Terms of Service manager. This is a Module mostly for lifecycle management, to plug into the
  * PageEventManager, but it doesn't expose anything to the System Space.
