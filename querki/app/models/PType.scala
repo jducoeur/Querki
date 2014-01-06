@@ -4,8 +4,6 @@ import scala.xml._
 
 import play.api.templates.Html
 
-import modules.time.TimeModule
-
 import Thing._
 
 import ql._
@@ -18,7 +16,7 @@ import querki.values._
  * this is specifically so that we can potentially add user-defined Types down
  * the road.
  */
-abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s, m, Kind.Type, pf, TimeModule.epoch) {
+abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s, m, Kind.Type, pf, querki.time.epoch) {
   
   type valType = VT
 

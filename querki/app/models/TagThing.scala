@@ -4,8 +4,6 @@ import models.system.OIDs
 import models.system.{ExactlyOne, LinkModelProp, ShowUnknownProp, SimpleThing}
 import models.system.{NameType, NewTagSetType, PlainText, PlainTextType, TagSetType}
 
-import modules.time.TimeModule
-
 import querki.util.SafeUrl
 import querki.values.{QLContext, RequestContext, SpaceState}
 
@@ -13,7 +11,7 @@ import querki.values.{QLContext, RequestContext, SpaceState}
  * This is essentially a pseudo-Thing, produced when you navigate to an unknown Name. It basically
  * exists to support the display of the Undefined Tag View.
  */
-case class TagThing(name:String, space:SpaceState) extends Thing(UnknownOID, space.id, UnknownOID, Kind.Thing, () => Thing.emptyProps, TimeModule.epoch) {
+case class TagThing(name:String, space:SpaceState) extends Thing(UnknownOID, space.id, UnknownOID, Kind.Thing, () => Thing.emptyProps, querki.time.epoch) {
 
   override lazy val displayName = name
   override lazy val canonicalName = Some(name)

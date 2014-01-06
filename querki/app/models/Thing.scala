@@ -510,5 +510,5 @@ abstract class Thing(
  * 
  * Note that Models are basically just ordinary Things.
  */
-case class ThingState(i:OID, s:OID, m:OID, pf: PropFetcher, mt:DateTime = modules.time.TimeModule.epoch, k:Kind.Kind = Kind.Thing) 
+case class ThingState(i:OID, s:OID, m:OID, pf: PropFetcher, mt:DateTime = querki.time.epoch, k:Kind.Kind = Kind.Thing) 
   extends Thing(i, s, m, k, pf, mt) {}

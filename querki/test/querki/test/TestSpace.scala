@@ -69,7 +69,7 @@ trait TestSpace {
   
   def registerProp(p:Property[_,_]) = { props = props :+ p }
   class TestPropertyBase[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
-    extends Property[VT, RT](pid, spaceId, UrPropOID, t, c, p, modules.time.TimeModule.epoch)
+    extends Property[VT, RT](pid, spaceId, UrPropOID, t, c, p, querki.time.epoch)
   {
     registerProp(this)
   }
@@ -182,7 +182,7 @@ trait TestSpace {
       sProps,    // This Space's own props
       owner.mainIdentity.id,   // This Space's Owner
       spaceName, // This Space's Name
-      modules.time.TimeModule.epoch, // This Space's last-modified time
+      querki.time.epoch, // This Space's last-modified time
       Some(app), // This Space's App
       OIDMap(types:_*),
       OIDMap(props:_*),

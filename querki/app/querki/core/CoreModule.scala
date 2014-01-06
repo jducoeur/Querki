@@ -35,7 +35,7 @@ class CoreModule(e:Ecology, val moduleId:Short) extends Module(e) {
             |
             |
             |[[Details]]""".stripMargin)))
-        ), modules.time.TimeModule.epoch)
+        ), querki.time.epoch)
 
   override lazy val props = Seq(
     UrProp

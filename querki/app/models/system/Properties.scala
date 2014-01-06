@@ -18,7 +18,7 @@ import querki.types._
 import querki.values._
 
 class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
-  extends Property[VT, RT](pid, systemOID, core.MOIDs.UrPropOID, t, c, p, modules.time.TimeModule.epoch)
+  extends Property[VT, RT](pid, systemOID, core.MOIDs.UrPropOID, t, c, p, querki.time.epoch)
   
   object NameProp extends SystemProperty(NameOID, NameType, ExactlyOne,
       toProps(

@@ -67,7 +67,7 @@ object PhotoBase extends ThingState(PhotoBaseOID, systemOID, SimpleThingOID,
 This is the Model for all uploaded photographs. You shouldn't try to base something on this directly --
 just upload a photograph, and you'll get one of these.
 """)),
-    modules.time.TimeModule.epoch,
+    querki.time.epoch,
     Kind.Attachment
     )
 

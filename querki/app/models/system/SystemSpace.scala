@@ -257,7 +257,7 @@ object SystemSpace {
 [[How It Works -> _if(_isDefined, ""**____**"")]]
 """),
         ShowUnknownProp(TagThing.defaultDisplayText)), 
-      SystemUserOID, "System", modules.time.TimeModule.epoch, None, SystemTypes.all, props, things, SystemCollections.all, None)    
+      SystemUserOID, "System", querki.time.epoch, None, SystemTypes.all, props, things, SystemCollections.all, None)    
   }
   
   // Note the intentional implication here: trying to access State before init has been

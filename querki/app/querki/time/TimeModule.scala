@@ -1,4 +1,4 @@
-package modules.time
+package querki.time
 
 import com.github.nscala_time.time.Imports._
 
@@ -9,29 +9,6 @@ import Thing._
 
 import querki.ecology._
 import querki.values.QLContext
-
-object TimeModule {
-
-  import anorm._
-  
-  /**
-   * Anorm extension to convert a SQL Timestamp to a Joda DateTime.
-   * 
-   * Simplified from: http://stackoverflow.com/questions/11388301/joda-datetime-field-on-play-framework-2-0s-anorm/11975107#11975107
-   * See that post for how to convert other SQL types, but we may not bother, so I'm keeping it simple for now.
-   */
-  implicit def rowToDateTime: Column[DateTime] = Column.nonNull { (value, meta) =>
-    val MetaDataItem(qualified, nullable, clazz) = meta
-    value match {
-      case ts: java.sql.Timestamp => Right(new DateTime(ts.getTime))
-      //case d: java.sql.Date => Right(new DateTime(d.getTime))
-      case _ => Left(TypeDoesNotMatch("Cannot convert " + value + ":" + value.asInstanceOf[AnyRef].getClass) )
-    }
-  }
-  
-  // The epoch, typically used for "We don't really have a time for this":
-  val epoch = new DateTime(0)
-}
 
 /**
  * The TimeModule is responsible for all things Time-related in the Querki API.
@@ -48,12 +25,7 @@ object TimeModule {
  */
 class TimeModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
 
-  object MOIDs {
-    val DateTimeTypeOID = moid(1)
-    val ModifiedTimeMethodOID = moid(2)
-  }
   import MOIDs._
-  
     
   /******************************************
    * TYPES
@@ -78,7 +50,7 @@ class TimeModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
     
     override def doComp(context:QLContext)(left:DateTime, right:DateTime):Boolean = { left < right } 
     override def doMatches(left:DateTime, right:DateTime):Boolean = { left.millis == right.millis }
-    val doDefault = TimeModule.epoch
+    val doDefault = epoch
   }
   lazy val QDateTime = new QDateTime(DateTimeTypeOID)
   override lazy val types = Seq(QDateTime)

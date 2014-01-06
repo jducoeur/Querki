@@ -1,20 +1,22 @@
 package modules.time
 
-import com.github.nscala_time.time.Imports._
-
 import models.system.{ExactlyOne}
+
+import querki.ecology._
+
+import querki.time._
 
 import querki.test._
 
-import modules.Modules.Time._
-
 class DateTimeTests extends QuerkiTests {
+  lazy val Time = getInterface[querki.time.Time]
+  
   "DateTime" should {
     
     val jodaTime1 = new DateTime(2013, 3, 15, 10, 30)
     
     class TSpace extends CommonSpace {
-      val dateProp = new TestProperty(QDateTime, ExactlyOne, "DateTime Prop")
+      val dateProp = new TestProperty(Time.QDateTime, ExactlyOne, "DateTime Prop")
       
       val theModel = new SimpleTestThing("DateTime Model")
       val thing1 = new TestThing("Thing 1", theModel, dateProp(jodaTime1))

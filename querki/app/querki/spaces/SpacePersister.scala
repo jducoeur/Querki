@@ -4,9 +4,6 @@ import akka.actor._
 
 import anorm.{Success=>AnormSuccess,_}
 
-// nscala-time
-import com.github.nscala_time.time.Imports._
-
 import play.api.db._
 import play.api.Play.current
 
@@ -18,7 +15,8 @@ import models.Thing._
 import models.system.{CollectionProp, DisplayTextProp, TypeProp, UnresolvedPropType, UnresolvedPropValue}
 import models.system.SystemSpace.{State => systemState}
 
-import modules.time.TimeModule._
+import querki.time._
+import querki.time.TimeAnorm._
 
 import querki.db.ShardKind
 import ShardKind._
@@ -193,7 +191,7 @@ private [spaces] class SpacePersister(val id:OID) extends Actor {
 	              ),
 	            owner,
 	            name,
-	            modules.time.TimeModule.epoch,
+	            epoch,
 	            Some(systemState),
 	            Map.empty[OID, PType[_]],
 	            Map.empty[OID, Property[_,_]],

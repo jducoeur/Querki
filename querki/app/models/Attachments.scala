@@ -16,7 +16,7 @@ object MIMEType {
   val JSON = "application/json"
 }
 
-class Attachment(i:OID, s:OID, m:OID, pf: PropFetcher, mt:DateTime = modules.time.TimeModule.epoch) 
+class Attachment(i:OID, s:OID, m:OID, pf: PropFetcher, mt:DateTime = querki.time.epoch) 
   extends ThingState(i, s, m, pf, mt, Kind.Attachment) 
 {
   override def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
