@@ -75,16 +75,6 @@ case class Property[VT, -RT](
   def fromOpt(m:PropMap):Option[QValue] = m.get(this.id) map castVal
   
   /**
-   * How wide (in Bootstrap spans) should the editor control for this Property be?
-   * 
-   * If the Edit Width property is set on this Property, returns that. Otherwise, returns the
-   * preferred width of the Type.
-   * 
-   * This is gradually going to want to get *much* more sophisticated. But it's a start.
-   */
-  def editorSpan(implicit state:SpaceState):Int = getPropOpt(modules.Modules.Editor.editWidthProp).flatMap(_.firstOpt).getOrElse(pType.editorSpan(this)) 
-  
-  /**
    * Convenience method to fetch the value of this property in this map.
    */
   def first(m:PropMap):VT = pType.get(cType.first(from(m)))

@@ -36,7 +36,7 @@ object Modules extends EcologyImpl {
   private val Types = new querki.types.impl.TypesModule(this, 10)
   private val UI = new querki.html.UIModule(this, 11)
   private val DeriveName = new querki.types.DeriveNameModule(this, 12)
-  val Editor = new querki.editing.EditorModule(this, 13)
+  private val Editor = new querki.editing.EditorModule(this, 13)
   private val SkillLevel = new querki.identity.skilllevel.impl.SkillLevelModule(this, 14)
   val Conventions = new querki.conventions.ConventionsModule(this, 15)
   private val Core = new querki.core.CoreModule(this, 16)

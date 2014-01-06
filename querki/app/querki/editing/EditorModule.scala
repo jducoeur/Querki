@@ -23,16 +23,17 @@ import querki.values._
 
 import modules.Module
 
-class EditorModule(e:Ecology, val moduleId:Short) extends Module(e) {
-  object MOIDs {
-    // Previously in System
-    val EditMethodOID = sysId(42)
-    val EditOrElseMethodOID = sysId(82)
+object MOIDs extends modules.ModuleIds(13) {
+  // Previously in System
+  val EditMethodOID = sysId(42)
+  val EditOrElseMethodOID = sysId(82)
     
-    val EditAsPickListOID = moid(1)
-    val InstanceEditViewOID = moid(2)
-    val EditWidthPropOID = moid(3)
-  }
+  val EditAsPickListOID = moid(1)
+  val InstanceEditViewOID = moid(2)
+  val EditWidthPropOID = moid(3)
+}
+
+class EditorModule(e:Ecology, val moduleId:Short) extends Module(e) {
   import MOIDs._
   
   val Types = initRequires[querki.types.Types]
@@ -90,13 +91,23 @@ class EditorModule(e:Ecology, val moduleId:Short) extends Module(e) {
         case _ => cantEditFallback(mainContext, mainThing, partialContext, prop, params)
       }
     }
+  
+    /**
+     * How wide (in Bootstrap spans) should the editor control for this Property be?
+     * 
+     * If the Edit Width property is set on this Property, returns that. Otherwise, returns the
+     * preferred width of the Type.
+     * 
+     * This is gradually going to want to get *much* more sophisticated. But it's a start.
+     */
+    def editorSpan(prop:Property[_,_])(implicit state:SpaceState):Int = prop.getPropOpt(editWidthProp).flatMap(_.firstOpt).getOrElse(prop.pType.editorSpan(this)) 
     
     /**
      * This wrapper creates the actual layout bits for the default Instance Editor. Note that it is *highly*
      * dependent on the styles defined in main.css!
      */
     private case class EditorPropLayout(prop:Property[_,_])(implicit state:SpaceState) {
-      def span = prop.editorSpan
+      def span = editorSpan(prop)
       def summaryTextOpt = prop.getPropOpt(PropSummary).flatMap(_.firstOpt).map(_.text)
       def displayNamePhrase = {
         summaryTextOpt match {
