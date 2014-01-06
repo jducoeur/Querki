@@ -231,14 +231,6 @@ object SystemSpace {
   // Things:
   val things = OIDMap[ThingState](UrThing)
   
-  def init = {
-    _state = Some(modules.Modules.initAllModules(initialSystemState))
-  }
-  
-  def term = {
-    modules.Modules.termAllModules
-  }
-  
   def initialSystemState = {
     SpaceState(systemOID, RootOID,
       toProps(
@@ -259,9 +251,10 @@ object SystemSpace {
         ShowUnknownProp(TagThing.defaultDisplayText)), 
       SystemUserOID, "System", querki.time.epoch, None, SystemTypes.all, props, things, SystemCollections.all, None)    
   }
-  
-  // Note the intentional implication here: trying to access State before init has been
-  // called will throw an exception:
-  private var _state:Option[SpaceState] = None
+
+  // This gets set by SystemEcot:
+  // TODO: this accessor should eventually go away -- the System Space should be accessed through the
+  // System interface instead:
+  var _state:Option[SpaceState] = None
   lazy val State = _state.get
 }

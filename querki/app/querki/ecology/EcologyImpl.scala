@@ -40,7 +40,10 @@ class EcologyImpl extends Ecology with EcologyManager {
   }
   
   def term():Unit = {
-    _termOrder.foreach(_.term)
+    _termOrder.foreach { ecot =>
+      println(s"Terminating ecot ${ecot.fullName}")
+      ecot.term
+    }
   }
 
   def isRegistered[C](implicit tag:TypeTag[C]):Boolean = {
@@ -117,6 +120,8 @@ class EcologyImpl extends Ecology with EcologyManager {
   private var _termOrder:List[Ecot] = Nil
   
   def initEcot(ecot:Ecot, currentState:SpaceState):SpaceState = {
+    // TODO: this should go through Log instead:
+    println(s"Initializing ecot ${ecot.fullName}")
     val newState = ecot.addSystemObjects(currentState)
     ecot.init
     _initializedEcots += ecot

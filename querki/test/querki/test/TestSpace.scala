@@ -120,7 +120,8 @@ trait TestSpace {
    * want something different.
    */
   lazy val app:SpaceState = {
-    SystemSpace.init
+    // TODO: we need to set up SystemSpace properly, in the Ecology:
+//    SystemSpace.init
     SystemSpace.State
   }
   

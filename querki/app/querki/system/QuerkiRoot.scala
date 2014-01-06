@@ -18,14 +18,12 @@ class QuerkiRoot extends Actor {
   
   import QuerkiRoot._
   
+  def ecology = Ecology.ecology
+  
   def receive = {
     case Initialize => {
-      // Yes, it's a static initialization function. For now, it seems to be fine, because SystemSpace
-      // is *quite* explicitly and deliberately immutable. So we create it now, and it's available
-      // to everyone after that.
-      // TODO: this should be subsumed under Ecology initialization:
-      models.system.SystemSpace.init
-//      Ecology.ecology.manager.init(models.system.SystemSpace.initialSystemState)
+      val finalState = ecology.manager.init(models.system.SystemSpace.initialSystemState)
+      ecology.api[SystemManagement].setState(finalState)
     
       // Note that the SpacePersistenceFactory is intentionally defined all the way up here. That is
       // specifically for testing, so that we can stub it out and replace it with a mock version.
@@ -37,10 +35,18 @@ class QuerkiRoot extends Actor {
       
       sender ! Initialized
     }
+    
+    case Terminate => {
+      ecology.manager.term
+      
+      sender ! Terminated
+    }
   }
 }
 
 object QuerkiRoot {
   case object Initialize
   case object Initialized
+  case object Terminate
+  case object Terminated
 }

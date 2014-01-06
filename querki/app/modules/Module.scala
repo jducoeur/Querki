@@ -41,6 +41,7 @@ object Modules extends EcologyImpl {
   private val Conventions = new querki.conventions.ConventionsModule(this, 15)
   private val Core = new querki.core.CoreModule(this, 16)
   private val Basic = new querki.basic.BasicModule(this, 17)
+  private val System = new querki.system.SystemEcot(this, 18)
   
   private var allModules = Seq.empty[Module]
   
@@ -60,6 +61,7 @@ object Modules extends EcologyImpl {
     // TODO: we shouldn't do this explicitly, we should declare these things just once:
     // TODO: in the long run, these should self-declare their dependencies, and
     // do a topological sort to initialize and terminate them in order:
+    s = init(System, s)
     s = init(Core, s)
     s = init(Types, s)
     s = init(Conventions, s)

@@ -23,8 +23,6 @@ import querki.spaces.SpaceManager
 import querki.spaces.messages.{ChangeProps, ThingError, ThingFound, ThingResponse}
 import querki.values._
 
-import modules.Modules._
-
 import play.api.{Logger, Play}
 import play.api.Play.current
 

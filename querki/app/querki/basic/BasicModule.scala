@@ -19,6 +19,7 @@ import modules.Module
 class BasicModule(e:Ecology, val moduleId:Short) extends Module(e) with Basic {
   import MOIDs._
   
+  val Core = initRequires[querki.core.Core]
   val DeriveName = initRequires[querki.types.DeriveName]
   val Types = initRequires[querki.types.Types]
   
