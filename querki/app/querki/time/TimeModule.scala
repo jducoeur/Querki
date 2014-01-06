@@ -23,7 +23,7 @@ import querki.values.QLContext
  * methods in System. (This will likely require us to split this Module into two, which
  * should be fine.) 
  */
-class TimeModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
+class TimeModule(e:Ecology) extends modules.Module(e) {
 
   import MOIDs._
     

@@ -21,7 +21,7 @@ object MOIDs extends EcotIds(11) {
   val TooltipMethodOID = moid(2)
 }
 
-class UIModule(e:Ecology, val moduleId:Short) extends Module(e) {
+class UIModule(e:Ecology) extends Module(e) {
   import MOIDs._
 
   /***********************************************

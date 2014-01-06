@@ -32,7 +32,7 @@ object MOIDs extends EcotIds(13) {
   val EditWidthPropOID = moid(3)
 }
 
-class EditorModule(e:Ecology, val moduleId:Short) extends Module(e) {
+class EditorModule(e:Ecology) extends Module(e) {
   import MOIDs._
   
   val Types = initRequires[querki.types.Types]

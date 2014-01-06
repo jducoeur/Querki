@@ -11,7 +11,7 @@ private[system] trait SystemManagement extends EcologyInterface {
 
 object SystemMOIDs extends EcotIds(18)
 
-class SystemEcot(e:Ecology, val moduleId:Short) extends Module(e) with System with SystemManagement {
+class SystemEcot(e:Ecology) extends Module(e) with System with SystemManagement {
   def setState(state:SpaceState) = {
     models.system.SystemSpace._state = Some(state)
   }

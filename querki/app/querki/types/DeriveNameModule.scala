@@ -18,7 +18,7 @@ import querki.spaces.{SpaceChangeManager, ThingChangeRequest}
 import querki.util._
 import querki.values._
 
-class DeriveNameModule(e:Ecology, val moduleId:Short) extends Module(e) with DeriveName {
+class DeriveNameModule(e:Ecology) extends Module(e) with DeriveName {
   
   import DeriveNameMOIDs._
   

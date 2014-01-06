@@ -13,7 +13,7 @@ import querki.ecology._
 
 import modules.Module
 
-class CoreModule(e:Ecology, val moduleId:Short) extends Module(e) with Core {
+class CoreModule(e:Ecology) extends Module(e) with Core {
   import MOIDs._
 
   /***********************************************

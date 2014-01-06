@@ -36,7 +36,7 @@ import play.api.Logger
  * TODO: this should probably be split into two modules, with all of the HTTP-specific stuff
  * surrounding Cookies brought into the controllers instead. But it'll do for now.
  */
-class PersonModule(e:Ecology, val moduleId:Short) extends modules.Module(e) with Person {
+class PersonModule(e:Ecology) extends modules.Module(e) with Person {
   
   val Email = initRequires[querki.email.Email]
   lazy val EmailAddressProp = Email.EmailAddressProp

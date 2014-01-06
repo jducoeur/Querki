@@ -14,6 +14,11 @@ import querki.values._
 
 import modules.Module
 
+object MOIDs extends EcotIds(9) {
+  val TrueOID = moid(1)
+  val FalseOID = moid(2)
+}
+
 /**
  * This module should eventually contain everything pertaining to predicate logic.
  * 
@@ -21,11 +26,7 @@ import modules.Module
  * but that should be fixed. This should absorb YesNoType, and all of the predicate-oriented
  * methods.
  */
-class LogicModule(e:Ecology, val moduleId:Short) extends Module(e) {
-  object MOIDs {
-    val TrueOID = moid(1)
-    val FalseOID = moid(2)
-  }
+class LogicModule(e:Ecology) extends Module(e) {
   import MOIDs._
   
   /******************************************

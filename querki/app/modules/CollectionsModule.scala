@@ -15,7 +15,7 @@ object MOIDs extends EcotIds(6) {
   val NextInListOID = moid(2)
 }
 
-class CollectionsModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
+class CollectionsModule(e:Ecology) extends modules.Module(e) {
   
   import MOIDs._
 

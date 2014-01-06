@@ -17,7 +17,7 @@ import modules.Module
 
 import querki.types._
 
-class TypesModule(e:Ecology, val moduleId:Short) extends Module(e) with Types {
+class TypesModule(e:Ecology) extends Module(e) with Types {
   import MOIDs._
     
   /******************************************
@@ -47,7 +47,7 @@ class TypesModule(e:Ecology, val moduleId:Short) extends Module(e) with Types {
   override lazy val types = Seq(
     WrappedValueType
   )
-   
+
   /***********************************************
    * PROPERTIES
    ***********************************************/

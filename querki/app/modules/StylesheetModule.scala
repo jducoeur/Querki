@@ -29,7 +29,7 @@ object OIDs {
 import models.system.OIDs._
 import OIDs._
 
-class StylesheetModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
+class StylesheetModule(e:Ecology) extends modules.Module(e) {
   
   /******************************************
    * TYPES

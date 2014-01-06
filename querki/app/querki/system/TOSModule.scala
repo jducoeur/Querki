@@ -17,7 +17,7 @@ object MOIDs extends EcotIds(8)
  * Note that this works hand-in-glove with controllers.TOSController. Really, I would just do the
  * control stuff here, but wound up having strange problems with imports.
  */
-class TOSModule(e:Ecology, val moduleId:Short) extends modules.Module(e) {
+class TOSModule(e:Ecology) extends modules.Module(e) {
   
   import TOSModule._
   

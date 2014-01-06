@@ -13,7 +13,7 @@ import querki.ecology._
 
 import modules.Module
 
-class SkillLevelModule(e:Ecology, val moduleId:Short) extends Module(e) with SkillLevel {
+class SkillLevelModule(e:Ecology) extends Module(e) with SkillLevel {
   import querki.identity.skilllevel.MOIDs._
   
   /***********************************************
