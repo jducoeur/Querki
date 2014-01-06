@@ -6,10 +6,9 @@ import models.Thing._
 
 import models.system.{IntType, SystemType, YesNoType}
 import models.system.ExactlyOne
-import models.system.{AppliesToKindProp, InternalProp, NotInheritedProp, SystemProperty}
+import models.system.{AppliesToKindProp, InternalProp, SystemProperty}
 import models.system.OIDs.{sysId, InternalPropOID, NotInheritedOID}
 
-import querki.conventions.{PropDetails, PropSummary}
 import querki.ecology._
 
 import querki.values._
@@ -57,8 +56,8 @@ class TypesModule(e:Ecology, val moduleId:Short) extends Module(e) with Types {
     toProps(
       setName("Minimum Text Length"),
       AppliesToKindProp(Kind.Property),
-      PropSummary("The minimum length allowed in this Text, Large Text or PlainText Property"),
-      PropDetails("""If you add this meta-Property to your Text Property, it defines
+      Summary("The minimum length allowed in this Text, Large Text or PlainText Property"),
+      Details("""If you add this meta-Property to your Text Property, it defines
           |the minimum length that will be accepted in user-entered text.
           |
           |The Text value will be trimmed of leading and trailing whitespace before this test,
@@ -69,13 +68,13 @@ class TypesModule(e:Ecology, val moduleId:Short) extends Module(e) with Types {
     toProps(
       setName("Minimum Number Value"),
       AppliesToKindProp(Kind.Property),
-      PropSummary("The minimum value allowed in this Whole Number Property")))
+      Summary("The minimum value allowed in this Whole Number Property")))
   
   lazy val MaxIntValueProp = new SystemProperty(MaxIntValueOID, IntType, ExactlyOne,
     toProps(
       setName("Maximum Number Value"),
       AppliesToKindProp(Kind.Property),
-      PropSummary("The maximum value allowed in this Whole Number Property")))
+      Summary("The maximum value allowed in this Whole Number Property")))
   
   lazy val DefaultValueProp = new SystemProperty(DefaultValuePropOID, WrappedValueType, ExactlyOne,
     toProps(

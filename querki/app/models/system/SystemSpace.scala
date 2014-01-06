@@ -71,7 +71,7 @@ object OIDs {
 //  val CSSTextOID = sysId(27)
 //  val CSSOID = sysId(28)
 //  val StylesheetBaseOID = sysId(29)
-  val PhotoBaseOID = sysId(30)
+//  val PhotoBaseOID = sysId(30)
   val PrototypeUserOID = sysId(31)
 //  val GoogleFontOID = sysId(32)
   val LinkKindOID = sysId(33)
@@ -87,7 +87,7 @@ object OIDs {
   val SectionMethodOID = sysId(43)
   val InstancesMethodOID = sysId(44)
   val QLTypeOID = sysId(45)
-  val ApplyMethodOID = sysId(46)
+//  val ApplyMethodOID = sysId(46)
   val InstanceEditPropsOID = sysId(47)
   val RefsMethodOID = sysId(48)
   val OrMethodOID = sysId(49)
@@ -97,7 +97,7 @@ object OIDs {
   val IsNonEmptyOID = sysId(53)
   val PluralizeOID = sysId(54)
   val FilterOID = sysId(55)
-  val BulletedOID = sysId(56)
+//  val BulletedOID = sysId(56)
   val NotOID = sysId(57)
   val RestMethodOID = sysId(58)
   val SpaceMethodOID = sysId(59)
@@ -107,8 +107,8 @@ object OIDs {
   val IsModelMethodOID = sysId(63)
   val IfMethodOID = sysId(64)
   val JoinMethodOID = sysId(65)
-  val DisplayThingTreeOID = sysId(66)
-  val AllThingsOID = sysId(67)
+//  val DisplayThingTreeOID = sysId(66)
+//  val AllThingsOID = sysId(67)
   val IconButtonOID = sysId(68)
   val CreateInstanceLinkOID = sysId(69)
   val LinkToModelsOnlyOID = sysId(70)
@@ -121,11 +121,11 @@ object OIDs {
   val CodeMethodOID = sysId(77)
   val IsDefinedOID = sysId(78)
   val QSetOID = sysId(79)
-  val CommasMethodOID = sysId(80)
+//  val CommasMethodOID = sysId(80)
   val FormLineMethodOID = sysId(81) 
 //  val EditOrElseMethodOID = sysId(82)
   val AllPropsMethodOID = sysId(83)
-  val AllPropsThingOID = sysId(84)
+//  val AllPropsThingOID = sysId(84)
 //  val PropSummaryOID = sysId(85)
 //  val PropDetailsOID = sysId(86)
   val CountMethodOID = sysId(87)
@@ -170,7 +170,7 @@ object SystemSpace {
       PlaceholderTextProp, 
       PromptProp, 
       IsModelProp, 
-      NotInheritedProp,
+//      NotInheritedProp,
 //      DisplayNameProp,
       LinkKindProp,
       LinkAllowAppsProp,
@@ -180,7 +180,7 @@ object SystemSpace {
 //      EditMethod,
       SectionMethod,
       InstancesMethod,
-      ApplyMethod,
+//      ApplyMethod,
       InstanceEditPropsProp,
       RefsMethod,
       OrMethod,
@@ -229,7 +229,7 @@ object SystemSpace {
       IsFunctionProp)
       
   // Things:
-  val things = OIDMap[ThingState](UrThing, PhotoBase, Bulleted, Commas, DisplayThingTree, AllThings, AllProps)
+  val things = OIDMap[ThingState](UrThing)
   
   def init = {
     _state = Some(modules.Modules.initAllModules(initialSystemState))

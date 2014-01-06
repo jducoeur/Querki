@@ -9,7 +9,6 @@ import models.system.LinkType
 import models.system.{DisplayTextProp, LinkModelProp, SystemProperty}
 import models.system.OIDs.{systemOID}
 
-import querki.conventions._
 import querki.ecology._
 
 import modules.Module
@@ -26,8 +25,8 @@ class SkillLevelModule(e:Ecology, val moduleId:Short) extends Module(e) with Ski
         setName("User Level to Show This"),
         LinkModelProp(skillLevelModel),
         (SkillLevelPropOID -> ExactlyOne(LinkType(SkillLevelAdvancedOID))),
-        PropSummary("Describes the complexity of this Thing, in terms of what level of user experience it wants"),
-        PropDetails("""Querki tries very hard to be simple, but at the same time includes a great deal of power.
+        Summary("Describes the complexity of this Thing, in terms of what level of user experience it wants"),
+        Details("""Querki tries very hard to be simple, but at the same time includes a great deal of power.
             |The way it tames some of that complexity is with the notion of "user level" -- basically, providing a
             |way for the user to say how much complexity they want to tangle with.
             |

@@ -184,6 +184,7 @@ object Property {
   def prompt(text:String) = optTextProp(PromptOID, text)
   
   lazy val DisplayNameProp = getInterface[querki.basic.Basic].DisplayNameProp
+  lazy val NotInheritedProp = getInterface[querki.core.Core].NotInheritedProp
   
   implicit object PropNameOrdering extends Ordering[Property[_,_]] {
     def compare(a:Property[_,_], b:Property[_,_]) = {

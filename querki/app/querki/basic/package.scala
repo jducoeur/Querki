@@ -17,6 +17,12 @@ package object basic {
     val PageOID = sysId(8)
     val SimpleThingOID = sysId(23)
     val DisplayNameOID = sysId(26)
+    val PhotoBaseOID = sysId(30)
+    val BulletedOID = sysId(56)
+    val DisplayThingTreeOID = sysId(66)
+    val AllThingsOID = sysId(67)
+    val CommasMethodOID = sysId(80)
+    val AllPropsThingOID = sysId(84)
   }
   
   trait Basic extends EcologyInterface {  

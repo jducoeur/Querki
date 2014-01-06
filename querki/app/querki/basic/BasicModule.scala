@@ -7,7 +7,7 @@ import models.system.OIDs.{systemOID, RootOID}
 import models.system.SystemProperty
 import models.system.{Optional}
 import models.system.{PlainTextType}
-import models.system.{DeprecatedProp, DisplayTextProp, IsModelProp, NotInheritedProp}
+import models.system.{DeprecatedProp, DisplayTextProp, IsModelProp}
 
 import querki.conventions._
 import querki.core._
@@ -34,10 +34,10 @@ class BasicModule(e:Ecology, val moduleId:Short) extends Module(e) with Basic {
   lazy val DisplayNameProp = new SystemProperty(DisplayNameOID, PlainTextType, Optional,
     toProps(
       setName("Display Name"),
-      NotInheritedProp(true),
+      NotInherited,
       Types.MinTextLengthProp(1),
-      PropSummary("How to show this Thing's Name"),
-      PropDetails("""Most Things in Querki have a Name. (It isn't strictly required, but strongly encouraged most
+      Summary("How to show this Thing's Name"),
+      Details("""Most Things in Querki have a Name. (It isn't strictly required, but strongly encouraged most
           |of the time.) In general, when we list a Thing, we show its Name. However, if you want to display
           |something *other* than its Name instead, set its Display Name Property to show in its place.
           |
@@ -57,7 +57,7 @@ class BasicModule(e:Ecology, val moduleId:Short) extends Module(e) with Basic {
    * THINGS
    ***********************************************/
 
-  object SimpleThing extends ThingState(SimpleThingOID, systemOID, RootOID,
+  lazy val SimpleThing = ThingState(SimpleThingOID, systemOID, RootOID,
     toProps(
       setName("Simple-Thing"),
       IsModelProp(true),
@@ -65,14 +65,80 @@ class BasicModule(e:Ecology, val moduleId:Short) extends Module(e) with Basic {
       (querki.basic.MOIDs.DisplayNameOID -> Optional.QNone),
       DeriveName.DeriveNameProp(DeriveName.DeriveInitially)))
 
-  object Page extends ThingState(PageOID, systemOID, SimpleThingOID,
+  lazy val Page = ThingState(PageOID, systemOID, SimpleThingOID,
     toProps(
       setName("Simple-Page"),
       IsModelProp(true),
       DeprecatedProp(true)))
 
+  lazy val PhotoBase = ThingState(PhotoBaseOID, systemOID, querki.basic.MOIDs.SimpleThingOID,
+    toProps(
+      setName("Photograph-Base"),
+      IsModelProp(true),
+      DisplayTextProp("""
+This is the Model for all uploaded photographs. You shouldn't try to base something on this directly --
+just upload a photograph, and you'll get one of these.
+""")),
+    querki.time.epoch,
+    Kind.Attachment
+    )
+
+object Bulleted extends ThingState(BulletedOID, systemOID, RootOID,
+    toProps(
+      setName("_bulleted"),
+      ApplyMethod("\"\"* ____\"\""),
+      DisplayTextProp("""    LIST -> _bulleted
+          |This method takes a LIST, and render its elements as a bullet list, one per line. It is simply syntactic sugar for
+          |    LIST -> \""* \____\"" """.stripMargin)))
+
+object Commas extends ThingState(CommasMethodOID, systemOID, RootOID,
+    toProps(
+      setName("_commas"),
+      ApplyMethod("""_join("", "")"""),
+      DisplayTextProp("""    LIST -> _commas
+          |This method takes a LIST, and render its elements comma-separated. It is simply syntactic sugar for
+          |    LIST -> _join(\"", \"")""".stripMargin)))
+
+object DisplayThingTree extends ThingState(DisplayThingTreeOID, systemOID, RootOID,
+    toProps(
+      setName("_displayThingTree"),
+      ApplyMethod("""""[[_if(_isModel, ""{{_modelInTree:"")]]____[[_if(_isModel, "" [[_createInstanceLink -> _iconButton(""icon-plus-sign"", ""Create an Instance"")]]}}"")]]
+{{indent:[[_children -> 
+  _sort -> 
+  _displayThingTree]]
+}}
+""""")))
+
+object AllThings extends ThingState(AllThingsOID, systemOID, RootOID,
+    toProps(
+      setName("All Things"),
+      DisplayTextProp("[[All Things]]"),
+      ApplyMethod("""""{{_thingTree:
+[[_currentSpace ->
+  _externalRoots ->
+  _sort ->
+  _displayThingTree]]
+}}""""")))
+
+object AllProps extends ThingState(AllPropsThingOID, systemOID, RootOID,
+    toProps(
+      setName("All Properties"),
+      DisplayTextProp("[[All Properties]]"),
+      ApplyMethod("""""{{_thingTree:
+[[_currentSpace ->
+  _allProps ->
+  _bulleted]]
+}}
+""""")))
+
   override lazy val things = Seq(
     SimpleThing,
-    Page
+    Page,
+    PhotoBase,
+    Bulleted,
+    Commas,
+    DisplayThingTree,
+    AllThings,
+    AllProps
   )
 }

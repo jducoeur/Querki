@@ -1,7 +1,12 @@
 package querki
 
+import models.Property
+import models.system.QLText
+import models.system.OIDs.sysId
+
+import querki.ecology._
+
 import modules.ModuleIds
-import models.system.OIDs.{sysId}
 
 package object conventions {
   object MOIDs extends ModuleIds(15) {
@@ -12,6 +17,8 @@ package object conventions {
     val PropDescriptionOID = moid(1)    
   }
   
-  val PropSummary = modules.Modules.Conventions.PropSummary
-  val PropDetails = modules.Modules.Conventions.PropDetails
+  trait Conventions extends EcologyInterface {  
+    def PropSummary:Property[QLText,String]
+    def PropDetails:Property[QLText,String]
+  }
 }

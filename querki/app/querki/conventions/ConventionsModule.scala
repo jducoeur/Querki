@@ -18,7 +18,7 @@ import modules.Module
  * to the operation of the system, but are common Properties and such that are useful enough
  * to encourage their general use.
  */
-class ConventionsModule(e:Ecology, val moduleId:Short) extends Module(e) {
+class ConventionsModule(e:Ecology, val moduleId:Short) extends Module(e) with Conventions {
   import MOIDs._
 
   lazy val PropSummary = new SystemProperty(PropSummaryOID, TextType, Optional,

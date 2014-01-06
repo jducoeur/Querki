@@ -19,9 +19,13 @@ import modules.ModuleIds
 package object core {
   object MOIDs extends ModuleIds(16) {
     val UrPropOID = sysId(5)
+    val NotInheritedOID = sysId(24)
+    val ApplyMethodOID = sysId(46)
   }
   
   trait Core extends EcologyInterface {
+    def ApplyMethod:Property[QLText,String]
+    def NotInheritedProp:Property[Boolean,Boolean]
     def UrProp:Property[QLText, String]
   }
 }

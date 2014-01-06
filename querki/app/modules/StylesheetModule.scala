@@ -12,7 +12,6 @@ import models.Thing._
 
 import ql._
 
-import querki.conventions.{PropDetails, PropSummary}
 import querki.ecology._
 import querki.util._
 import querki.values._
@@ -72,8 +71,8 @@ class StylesheetModule(e:Ecology, val moduleId:Short) extends modules.Module(e) 
       setName("Stylesheet Link"),
       LinkModelProp(StylesheetBase),
       AppliesToKindProp(Kind.Thing),
-      PropSummary("Describes how to render Things when displaying them in the browser"),
-      PropDetails("""If you add the Stylesheet Link Property to a Thing, it should point to a
+      Summary("Describes how to render Things when displaying them in the browser"),
+      Details("""If you add the Stylesheet Link Property to a Thing, it should point to a
           |Stylesheet whose CSS describes some page layout. That CSS will be used when displaying
           |this Thing.
           |
@@ -92,8 +91,8 @@ class StylesheetModule(e:Ecology, val moduleId:Short) extends modules.Module(e) 
       setName("CSS"),
       InternalProp(true),
       SkillLevel(SkillLevel.Advanced),
-      PropSummary("The actual CSS for a Stylesheet"),
-      PropDetails("""This is the main property on a Stylesheet. It can contain more or less
+      Summary("The actual CSS for a Stylesheet"),
+      Details("""This is the main property on a Stylesheet. It can contain more or less
           |any arbitrary CSS, with just a few security-related exceptions.
           |
           |For the time being, we're not providing any fancy UI for making it easier to write
@@ -123,8 +122,8 @@ class StylesheetModule(e:Ecology, val moduleId:Short) extends modules.Module(e) 
       setName("Google Font Name"),
       // TODO: in fact, this only applies to Stylesheets:
       AppliesToKindProp(Kind.Thing),
-      PropSummary("The name of a Google Font to use in these styles"),
-      PropDetails("""Google provides a [large number of webfonts](http://www.google.com/fonts/) for public use.
+      Summary("The name of a Google Font to use in these styles"),
+      Details("""Google provides a [large number of webfonts](http://www.google.com/fonts/) for public use.
           |We find them useful, so we've made them available through Querki.
           |
           |To use a Google font, just add this Property to your Stylesheet, and set it to the name of the

@@ -38,7 +38,7 @@ object Modules extends EcologyImpl {
   private val DeriveName = new querki.types.DeriveNameModule(this, 12)
   private val Editor = new querki.editing.EditorModule(this, 13)
   private val SkillLevel = new querki.identity.skilllevel.impl.SkillLevelModule(this, 14)
-  val Conventions = new querki.conventions.ConventionsModule(this, 15)
+  private val Conventions = new querki.conventions.ConventionsModule(this, 15)
   private val Core = new querki.core.CoreModule(this, 16)
   private val Basic = new querki.basic.BasicModule(this, 17)
   
@@ -134,7 +134,6 @@ class ModuleIds(val moduleId:Short) {
   def oldMoid(localId:Short):OID = {
     OIDs.sysId(moduleId << 16 + localId)
   }
-  
 }
 
 /**
@@ -179,6 +178,8 @@ class ModuleIds(val moduleId:Short) {
  * Instead, Things should usually be created during init(). This will build everything
  * *after* all of the Modules have been created, so all the MOIDs will exist. It also
  * creates everything in DependsUpon order, so that Modules can depend on each other.
+ * 
+ * TODO: this should become QuerkiEcot.
  */
 abstract class Module(val ecology:Ecology) extends Ecot {
   
@@ -250,4 +251,39 @@ abstract class Module(val ecology:Ecology) extends Ecot {
     result
   }
   
+  /* ************************************************************
+   * Convenience aliases
+   * 
+   * All of the following are basic sugar, to reduce the number of imports required in Ecots.
+   * You are allowed and encouraged to use them freely, when appropriate.
+   * 
+   * Yes, this list is intentionally a bit long. But it MUST NOT include anything in an Interface:
+   * it is a big collection of very-commonly-used types and OIDs.
+   * 
+   * Do NOT add things here too casually -- it introduces a lot of coupling. It should be used
+   * only in cases that have proven to be very commonly used already.
+   * ************************************************************/
+  import models.system.ExactlyOne
+  import models.system.{IntType, LargeTextType, TextType, YesNoType}
+  
+  // Common Collections:
+  val ExactlyOne = models.system.ExactlyOne
+  val Optional = models.system.Optional
+  val QList = models.system.QList
+  val QSet = models.system.QSet
+  
+  // Common Types:
+  val QLType = models.system.QLType
+
+  // Common Property constructors, so they can be used in Thing declarations without introducing init
+  // dependencies:
+  def Summary(text:String) = (querki.conventions.MOIDs.PropSummaryOID -> ExactlyOne(TextType(text)))
+  def Details(text:String) = (querki.conventions.MOIDs.PropDetailsOID -> ExactlyOne(LargeTextType(text)))
+  val SkillLevel = querki.values.SkillLevel
+  def AppliesToKindProp(kind:Int) = (models.system.OIDs.AppliesToKindOID -> QList(IntType(kind)))
+  def NotInherited = (querki.core.MOIDs.NotInheritedOID -> ExactlyOne(YesNoType(true)))
+  
+  // The standard convenience sugar for defining a Property in an Ecot:
+  class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:models.Thing.PropFetcher) 
+    extends Property[VT, RT](pid, models.system.OIDs.systemOID, querki.core.MOIDs.UrPropOID, t, c, p, querki.time.epoch)
 }

@@ -14,7 +14,6 @@ import ql.{QLCall, QLParser, QLPhrase}
 
 import querki.html.RenderSpecialization._
 
-import querki.conventions.{PropDetails, PropSummary}
 import querki.ecology._
 
 import querki.types._
@@ -38,6 +37,8 @@ class EditorModule(e:Ecology, val moduleId:Short) extends Module(e) {
   
   val Types = initRequires[querki.types.Types]
   
+  lazy val Conventions = interface[querki.conventions.Conventions]
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/
@@ -45,8 +46,8 @@ class EditorModule(e:Ecology, val moduleId:Short) extends Module(e) {
   lazy val instanceEditViewProp = new SystemProperty(InstanceEditViewOID, LargeTextType, ExactlyOne,
       toProps(
         setName("Instance Edit View"),
-        PropSummary("Defines the Edit View for Instances of this Model"),
-        PropDetails("""Sometimes, you want to customize your editing experience -- to make things easier or more
+        Summary("Defines the Edit View for Instances of this Model"),
+        Details("""Sometimes, you want to customize your editing experience -- to make things easier or more
             |efficient, or prettier for your users. Regardless of the reason, this Property gives you complete
             |control.
             |
@@ -60,8 +61,8 @@ class EditorModule(e:Ecology, val moduleId:Short) extends Module(e) {
         setName("Edit Width"),
         Types.MinIntValueProp(1),
         Types.MaxIntValueProp(12),
-        PropSummary("Lets you control how wide a Property's edit control is, in the Edit View"),
-        PropDetails("""This is width in Bootstrap span terms -- a number from 1 (narrow) to 12 (full width).""".stripMargin)))
+        Summary("Lets you control how wide a Property's edit control is, in the Edit View"),
+        Details("""This is width in Bootstrap span terms -- a number from 1 (narrow) to 12 (full width).""".stripMargin)))
 
   abstract class EditMethodBase(id:OID, pf:PropFetcher) extends SingleContextMethod(id, pf)
   {
@@ -108,7 +109,7 @@ class EditorModule(e:Ecology, val moduleId:Short) extends Module(e) {
      */
     private case class EditorPropLayout(prop:Property[_,_])(implicit state:SpaceState) {
       def span = editorSpan(prop)
-      def summaryTextOpt = prop.getPropOpt(PropSummary).flatMap(_.firstOpt).map(_.text)
+      def summaryTextOpt = prop.getPropOpt(Conventions.PropSummary).flatMap(_.firstOpt).map(_.text)
       def displayNamePhrase = {
         summaryTextOpt match {
           case Some(summaryText) => s"""[[""${prop.displayName}"" -> _tooltip(""$summaryText"")]]"""
@@ -247,8 +248,8 @@ class EditorModule(e:Ecology, val moduleId:Short) extends Module(e) {
   lazy val editMethod = new EditMethodBase(EditMethodOID, 
     toProps(
       setName("_edit"),
-      PropSummary("Puts an editor for the specified Property into the page"),
-      PropDetails("""Sometimes, you want to make it easy to edit a Thing, without having to go into the Editor
+      Summary("Puts an editor for the specified Property into the page"),
+      Details("""Sometimes, you want to make it easy to edit a Thing, without having to go into the Editor
           |page. For instance, there may be a single button, or a few fields, that should be more easily editable
           |directly when you are looking at the Thing. That is when you use _edit.
           |
@@ -282,8 +283,8 @@ class EditorModule(e:Ecology, val moduleId:Short) extends Module(e) {
   lazy val editOrElseMethod = new EditMethodBase(EditOrElseMethodOID, 
     toProps(
       setName("_editOrElse"),
-      PropSummary("Like [[_edit._self]], but you can say what to show if the user can't edit this Property"),
-      PropDetails("""See [[_edit._self]] for the full details of how edit control works. This is just like that,
+      Summary("Like [[_edit._self]], but you can say what to show if the user can't edit this Property"),
+      Details("""See [[_edit._self]] for the full details of how edit control works. This is just like that,
           |but with an additional parameter:
           |    THING -> PROPERTY._editOrElse(FALLBACK)
           |If the current user isn't allowed to edit THING, then FALLBACK is produced instead.""".stripMargin),
@@ -312,8 +313,8 @@ class EditorModule(e:Ecology, val moduleId:Short) extends Module(e) {
   lazy val editAsPicklistMethod = new EditMethodBase(EditAsPickListOID, 
     toProps(
       setName("_editAsPickList"),
-      PropSummary("Edits a Tag or Link Set as a Pick List"),
-      PropDetails("""This is broadly similar to [[_edit._self]], but displays in a way that is sometimes more useful.
+      Summary("Edits a Tag or Link Set as a Pick List"),
+      Details("""This is broadly similar to [[_edit._self]], but displays in a way that is sometimes more useful.
           |
           |To use _editAsPickList, your set must have a Link Model set. This displays all known instances of that Link Model
           |as a checklist, and allows you to decide what is in or out simply by checking things in the list.""".stripMargin),

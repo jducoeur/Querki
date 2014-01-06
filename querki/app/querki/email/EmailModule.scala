@@ -17,7 +17,6 @@ import models.system.OIDs._
 
 import ql._
 
-import querki.conventions.{PropDetails, PropSummary}
 import querki.ecology._
 import querki.identity._
 import querki.spaces.SpaceManager
@@ -103,7 +102,7 @@ class EmailModule(e:Ecology, val moduleId:Short) extends modules.Module(e) with 
         setName("Email Results"),
         InternalProp(true),
         DeprecatedProp(true),
-        PropSummary("Internal property, used in the process of sending email. Do not mess with this!")
+        Summary("Internal property, used in the process of sending email. Do not mess with this!")
       ))
   
   lazy val EmailAddressProp = new SystemProperty(EmailPropOID, EmailAddressType, Optional,
@@ -111,8 +110,8 @@ class EmailModule(e:Ecology, val moduleId:Short) extends modules.Module(e) with 
         setName("Email Address"),
         InternalProp(true),
         DeprecatedProp(true),
-        PropSummary("An email address for a Person"),
-        PropDetails("""This Property represents the general notion of something that can have an email
+        Summary("An email address for a Person"),
+        Details("""This Property represents the general notion of something that can have an email
             |address. It is available on Person, but you can reuse it wherever you like. In theory, you can
             |send email to anything that has an Email Address property.
             |
@@ -126,8 +125,8 @@ class EmailModule(e:Ecology, val moduleId:Short) extends modules.Module(e) with 
           InternalProp(true),
           DeprecatedProp(true),
           (LinkModelOID -> Optional(ElemValue(querki.identity.MOIDs.PersonOID, LinkType))),
-          PropSummary("Who should this email be sent to?"),
-          PropDetails("""This is the raw list of people to send this email to. It should point to one or more
+          Summary("Who should this email be sent to?"),
+          Details("""This is the raw list of people to send this email to. It should point to one or more
               |Person Things, each of which should have an Email Address set.
               |
               |If you want to do something fancier than sending to specific people, see the Recipients property.""".stripMargin)))
@@ -137,15 +136,15 @@ class EmailModule(e:Ecology, val moduleId:Short) extends modules.Module(e) with 
         setName("Email Subject"),
         InternalProp(true),
         DeprecatedProp(true),
-        PropSummary("The title of the email")))
+        Summary("The title of the email")))
 
   lazy val emailBody = new SystemProperty(EmailBodyOID, LargeTextType, ExactlyOne,
       toProps(
         setName("Email Body"),
         InternalProp(true),
         DeprecatedProp(true),
-        PropSummary("The Contents of the email"),
-        PropDetails("""The contents of the email may contain more or less arbitrary wikitext; these will be
+        Summary("The Contents of the email"),
+        Details("""The contents of the email may contain more or less arbitrary wikitext; these will be
             |rendered in the HTML version of the email pretty much the same as they would be in the browser.
             |The email will also contain the raw wikitext, as the "plaintext" version.""".stripMargin)))
   
@@ -154,8 +153,8 @@ class EmailModule(e:Ecology, val moduleId:Short) extends modules.Module(e) with 
         setName("Sent To"),
         InternalProp(true),
         DeprecatedProp(true),
-        PropSummary("The Persons that this mail has already been sent to."),
-        PropDetails("""This Property is set automatically when the email is sent. You usually should not modify
+        Summary("The Persons that this mail has already been sent to."),
+        Details("""This Property is set automatically when the email is sent. You usually should not modify
             |it by hand, but it is sometimes useful to do so before sending or resending the email, since the
             |email will *not* be sent to anyone in this set.""".stripMargin)))
   
@@ -163,8 +162,8 @@ class EmailModule(e:Ecology, val moduleId:Short) extends modules.Module(e) with 
       toProps(
         setName("Recipients"),
         DeprecatedProp(true),
-        PropSummary("Who will this email be sent to?"),
-        PropDetails("""The Recipients property declares who will receive this email. It is a QL expression, and
+        Summary("Who will this email be sent to?"),
+        Details("""The Recipients property declares who will receive this email. It is a QL expression, and
             |you should only modify it if you know what you are doing. By default, it simply defers to
             |the contents of the Email To property -- for ordinary email, you should just list the people
             |who are to receive this in Email To. But you can edit Recipients to be any other QL expression,

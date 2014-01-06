@@ -4,7 +4,6 @@ import models._
 import models.system._
 import ql._
 
-import querki.conventions.{PropDetails, PropSummary}
 import querki.ecology._
 
 import querki.values._
@@ -27,8 +26,8 @@ class CollectionsModule(e:Ecology, val moduleId:Short) extends modules.Module(e)
   lazy val prevInListMethod = new InternalMethod(PrevInListOID,
       toProps(
         setName("_prevInList"),
-        PropSummary("Fetch the previous value to this one from the given List"),
-        PropDetails("""    THING -> _prevInList(LIST) -> PREVIOUS THING 
+        Summary("Fetch the previous value to this one from the given List"),
+        Details("""    THING -> _prevInList(LIST) -> PREVIOUS THING 
         		|Given a THING, and a LIST that contains that THING, this returns the *previous* THING to that
         		|in the LIST. It returns None iff the THING is not in the LIST, or if it is the beginning of the LIST.""".stripMargin)))
   {
@@ -56,8 +55,8 @@ class CollectionsModule(e:Ecology, val moduleId:Short) extends modules.Module(e)
   lazy val nextInListMethod = new InternalMethod(NextInListOID,
       toProps(
         setName("_nextInList"),
-        PropSummary("Fetch the next value to this one from the given List"),
-        PropDetails("""    THING -> _nextInList(LIST) -> NEXT THING 
+        Summary("Fetch the next value to this one from the given List"),
+        Details("""    THING -> _nextInList(LIST) -> NEXT THING 
         		|Given a THING, and a LIST that contains that THING, this returns the *next* THING to that
         		|in the LIST. It returns None iff the THING is not in the LIST, or if it is the end of the LIST.""".stripMargin)))
   {

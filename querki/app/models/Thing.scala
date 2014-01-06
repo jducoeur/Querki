@@ -51,6 +51,9 @@ object Thing {
   type PropFetcher = () => PropMap
   
   lazy val DisplayNameProp = getInterface[querki.basic.Basic].DisplayNameProp
+  lazy val Core = getInterface[querki.core.Core]
+  lazy val ApplyMethod = Core.ApplyMethod
+  lazy val NotInheritedProp = Core.NotInheritedProp
   
   // A couple of convenience methods for the hard-coded Things in System:
   def toProps(pairs:(OID,QValue)*):PropFetcher = () => {
@@ -211,7 +214,13 @@ abstract class Thing(
    * DEPRECATED: use getModelOpt instead!
    */
   def getModel(implicit state:SpaceState):Thing = { 
-      state.anything(model).getOrElse{ Logger.error("Unable to find Model for " + id); throw new Exception("Trying to get unknown Model " + model + " for " + displayName) }
+      state.anything(model).getOrElse{
+        try {
+          throw new Exception("Trying to get unknown Model " + model + " for " + displayName)
+        } catch {
+          case error:Exception => Logger.error("Unable to find Model", error); throw error
+        }
+      }
   }
   def getModelOpt(implicit state:SpaceState):Option[Thing] = {
     if (hasModel)

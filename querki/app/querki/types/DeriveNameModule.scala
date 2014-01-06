@@ -11,7 +11,6 @@ import models.system.OIDs.{DisplayNameOID, NameOID, RootOID, systemOID}
 
 import modules.Module
 
-import querki.conventions.{PropDetails, PropSummary}
 import querki.core.MOIDs.UrPropOID
 import querki.ecology._
 import querki.spaces.{SpaceChangeManager, ThingChangeRequest}
@@ -177,8 +176,8 @@ class DeriveNameModule(e:Ecology, val moduleId:Short) extends Module(e) with Der
       LinkModelProp(deriveModel),
       LinkAllowAppsProp(true),
       SkillLevel(SkillLevel.Advanced),
-      PropSummary("Should this Thing's Name be automatically derived from its Display Name?"),
-      PropDetails("""Querki has two different kinds of "name". Both are important, but they are
+      Summary("Should this Thing's Name be automatically derived from its Display Name?"),
+      Details("""Querki has two different kinds of "name". Both are important, but they are
           |very different:
           |
           |* A Thing's Name is its official name -- the one that shows up in its URL, and which you use to refer to it in QL expressions.

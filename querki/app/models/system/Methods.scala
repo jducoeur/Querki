@@ -13,8 +13,6 @@ import OIDs._
 
 import YesNoType._
 
-import querki.conventions.{PropDetails, PropSummary}
-
 import querki.util._
 import querki.values._
 
@@ -22,8 +20,8 @@ object IsFunctionProp extends SystemProperty(IsFunctionOID, YesNoType, ExactlyOn
     toProps(
       setName("Is Function"),
       SkillLevel(SkillLevel.Advanced),
-      PropSummary("True iff this Thing is a Function."),
-      PropDetails("""This is a marker flag that you can put on a Thing to say that it is a Function.
+      Summary("True iff this Thing is a Function."),
+      Details("""This is a marker flag that you can put on a Thing to say that it is a Function.
           |This doesn't particularly change the way the Thing works, but has some UI effects.""".stripMargin)))
 
 /**
@@ -64,8 +62,8 @@ class InternalMethod(tid:OID, p:PropFetcher) extends SystemProperty(tid, Interna
 class SingleThingMethod(tid:OID, name:String, summary:String, details:String, action:(Thing, QLContext) => QValue) extends InternalMethod(tid,
     toProps(
       setName(name),
-      PropSummary(summary),
-      PropDetails(details)
+      Summary(summary),
+      Details(details)
     ))
 {
   override def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
@@ -164,8 +162,8 @@ abstract class SingleContextMethod(tid:OID, p:PropFetcher) extends MetaMethod(ti
 object InstancesMethod extends SingleContextMethod(InstancesMethodOID,
     toProps(
       setName("_instances"),
-      PropSummary("Returns all of the non-Model Things that are based on this"),
-      PropDetails("""A Model is sort of like the concept of a Thing: "Person" or "CD" or "Recipe".
+      Summary("Returns all of the non-Model Things that are based on this"),
+      Details("""A Model is sort of like the concept of a Thing: "Person" or "CD" or "Recipe".
           |
           |An Instance is an actual Thing based on one of those Models: "Joe" or "In Through the Out Door" or "Macaroni and Cheese".
           |
@@ -190,8 +188,8 @@ object InstancesMethod extends SingleContextMethod(InstancesMethodOID,
 object SectionMethod extends InternalMethod(SectionMethodOID,
     toProps(
       setName("_section"),
-      PropSummary("Display a List as a Header, followed by its contents"),
-      PropDetails("""_section is intended for the common case where you want to display a section
+      Summary("Display a List as a Header, followed by its contents"),
+      Details("""_section is intended for the common case where you want to display a section
           |on the page if and only if a specific List is non-empty. It looks like this:
           |    My List -> _section(HEADER, DETAILS, EMPTY)
           |Each of the parameters can be any QL phrase, although they are often just text blocks. They are
@@ -244,50 +242,11 @@ object SectionMethod extends InternalMethod(SectionMethodOID,
   }
 }
 
-object ApplyMethod extends SystemProperty(ApplyMethodOID, QLType, Optional,
-    toProps(
-      setName("_apply"),
-      SkillLevel(SkillLevel.Advanced),
-      PropSummary("A QL Expression that will be run when you name this Thing."),
-      PropDetails("""_apply is an advanced function, and most users will not use it directly. But it is probably
-          |the most important Property in Querki, and advanced users may want to play with it.
-          |
-          |One of Querki's design goals was that it should Just Work. This is reflected, more than anywhere else,
-          |in the fact that you can just say:
-          |[[_code(""[[My Thing]]"")]]
-          |and it shows up as a pointer to *My Thing*.
-          |
-          |That seems obvious, but consider -- you can also say:
-          |[[_code(""[[My Property]]"")]]
-          |and what you get isn't a pointer to *My Property* -- instead, you get the *value* of My Property on the
-          |Thing you're looking at.
-          |
-          |Moreover, you can say:
-          |[[_code(""[[All Things]]"")]]
-          |on a page, and what you get is a listing of all of the Things in this Space! So what the heck is going on
-          |here?
-          |
-          |The secret behind the magic is the _apply method. _apply is a Property that is defined on *every* Thing.
-          |(More or less -- system-defined Things use a closely-related built-in mechanism.) It defines exactly
-          |"What should happen when I name this Thing?" So _apply on Properties displays the value of the Property
-          |on the received Thing; _apply on All Things is this QL Expression:
-          |[[_code(All Things._apply)]]
-          |And _apply for Thing (the Model that everything is based on) simply produces a pointer to this thing.
-          |
-          |You can define _apply for your own Things as well -- indeed, the way you usually write your own serious
-          |Methods is to define a Thing that just has an _apply Property, and then you can use the Method just like
-          |the system-defined ones, by name.
-          |
-          |The QL Expression in the _apply Property will receive whatever is passed in, and should produce whatever
-          |you want to pass out. It is currently completely unstructured and untyped. However, note that we will
-          |probably be moving towards more structure in the future, and you should always try to be consistent:
-          |as with any QL Expression, you should expect to receive a specific Type, and always produce a specific Type.""".stripMargin)))
-
 object RefsMethod extends ThingPropMethod(RefsMethodOID, 
     toProps(
       setName("_refs"),
-      PropSummary("""Returns all of the Things that use this Property to point to this Thing."""),
-      PropDetails("""    THING -> PROPERTY._refs -> REFERRING THINGS
+      Summary("""Returns all of the Things that use this Property to point to this Thing."""),
+      Details("""    THING -> PROPERTY._refs -> REFERRING THINGS
           |Say that my Space is listing my CD collection. I have a Model *Album* for individual discs,
           |and Model *Artist* for performers. Album has a Property *Artists*, which is a Set of Links
           |to Artist -- basically, the list of performers on this particular CD.
@@ -328,8 +287,8 @@ object RefsMethod extends ThingPropMethod(RefsMethodOID,
 object OrMethod extends InternalMethod(OrMethodOID,
     toProps(
       setName("_or"),
-      PropSummary("""The short-circuiting "or" operator."""),
-      PropDetails("""    RECEIVED -> _or(CLAUSE1, CLAUSE2, ...) -> RESULT
+      Summary("""The short-circuiting "or" operator."""),
+      Details("""    RECEIVED -> _or(CLAUSE1, CLAUSE2, ...) -> RESULT
           |_or takes any number of parameters. It runs through each of them, applying the incoming context.
           |It produces the first one that returns a non-empty result, or None iff all of them come out empty. 
           |
@@ -366,8 +325,8 @@ object OrMethod extends InternalMethod(OrMethodOID,
 object NotMethod extends InternalMethod(NotOID,
     toProps(
       setName("_not"),
-      PropSummary("Returns the reverse of the received value, or the parameter"),
-      PropDetails("""    TRUE/FALSE -> _not -> FALSE/TRUE
+      Summary("Returns the reverse of the received value, or the parameter"),
+      Details("""    TRUE/FALSE -> _not -> FALSE/TRUE
           |or
           |    RECEIVED -> _not(TRUE/FALSE) -> FALSE/TRUE
           |
@@ -387,8 +346,8 @@ object NotMethod extends InternalMethod(NotOID,
 object FirstMethod extends InternalMethod(FirstMethodOID,
     toProps(
       setName("_first"),
-      PropSummary("""Grabs just the first thing from the received context."""),
-      PropDetails("""    LIST -> _first -> OPTIONAL
+      Summary("""Grabs just the first thing from the received context."""),
+      Details("""    LIST -> _first -> OPTIONAL
           |Often you have a List, and you just want the first item in the List. (Especially when you
           |expect the list to only have one element in it.) Use _first to turn that List into an
           |Optional instead.
@@ -409,8 +368,8 @@ object FirstMethod extends InternalMethod(FirstMethodOID,
 object RestMethod extends InternalMethod(RestMethodOID,
     toProps(
       setName("_rest"),
-      PropSummary("""Produces everything but the first thing from the received context."""),
-      PropDetails("""    LIST -> _rest -> LIST
+      Summary("""Produces everything but the first thing from the received context."""),
+      Details("""    LIST -> _rest -> LIST
           |Often you have a List, and you want to slice off the first item (using _first). You then use _rest
           |to handle everything else.
           |
@@ -460,8 +419,8 @@ abstract class ButtonBase(tid:OID, pf:PropFetcher) extends InternalMethod(tid, p
 object LinkButtonMethod extends ButtonBase(LinkButtonOID,
     toProps(
       setName("_linkButton"),
-      PropSummary("Displays a button that goes to a linked page when you press it."),
-      PropDetails("""    LINK -> _linkButton(LABEL)
+      Summary("Displays a button that goes to a linked page when you press it."),
+      Details("""    LINK -> _linkButton(LABEL)
           |_linkButton receives a Link or External Link, and displays that
           |link as a button. It expects one parameter, which will be the label of the button.""".stripMargin)))
 {
@@ -475,8 +434,8 @@ object LinkButtonMethod extends ButtonBase(LinkButtonOID,
 object IconButtonMethod extends ButtonBase(IconButtonOID,
     toProps(
       setName("_iconButton"),
-      PropSummary("Displays a button showing an icon, that goes to a linked page when you press it."),
-      PropDetails("""    LINK -> _iconButton(ICON, TOOLTIP)
+      Summary("Displays a button showing an icon, that goes to a linked page when you press it."),
+      Details("""    LINK -> _iconButton(ICON, TOOLTIP)
           |_iconButton receives a Link or External Link, and displays that
           |link as a button. The first parameter identifies the icon to use for the button; the second is the
           |hover text to display as a tooltip. Both parameters are required.
@@ -495,8 +454,8 @@ object IconButtonMethod extends ButtonBase(IconButtonOID,
 object ShowLinkMethod extends InternalMethod(ShowLinkMethodOID,
     toProps(
       setName("_showLink"),
-      PropSummary("Displays a Link or External Link as a normal HTML link."),
-      PropDetails("""    LINK -> _showLink(LABEL)
+      Summary("Displays a Link or External Link as a normal HTML link."),
+      Details("""    LINK -> _showLink(LABEL)
           |This is the most normal way to display a Link or External Link with a chosen label. The
           |label may be any expression you choose.
           |
@@ -533,8 +492,8 @@ object ShowLinkMethod extends InternalMethod(ShowLinkMethodOID,
 object PropLinkMethod extends ThingPropMethod(PropLinkMethodOID, 
     toProps(
       setName("_propLink"),
-      PropSummary("""Produces a Link to a specific Property on a Thing."""),
-      PropDetails("""    THING -> PROPERTY._propLink -> EXTERNAL LINK
+      Summary("""Produces a Link to a specific Property on a Thing."""),
+      Details("""    THING -> PROPERTY._propLink -> EXTERNAL LINK
           |A common pattern in Querki is to provide alternate "views" for a Thing -- different ways of displaying it.
           |Typically, you do this by creating another Large Text Property (separate from Default View), which contains
           |the alternate view, and then linking to that somewhere. This method makes it easy to do so: feed the THING
@@ -564,8 +523,8 @@ object PropLinkMethod extends ThingPropMethod(PropLinkMethodOID,
 object IsNonEmptyMethod extends ThingPropMethod(IsNonEmptyOID,
     toProps(
       setName("_isNonEmpty"),
-      PropSummary("Tests whether the provided value is non-empty"),
-      PropDetails("""    THING -> PROP._isNonEmpty
+      Summary("Tests whether the provided value is non-empty"),
+      Details("""    THING -> PROP._isNonEmpty
           |or
           |    RECEIVED -> _isNonEmpty
           |The first form produces true iff PROP is defined on THING, and this instance contains at least one element.
@@ -600,8 +559,8 @@ object IsNonEmptyMethod extends ThingPropMethod(IsNonEmptyOID,
 object IsEmptyMethod extends ThingPropMethod(IsEmptyOID,
     toProps(
       setName("_isEmpty"),
-      PropSummary("Tests whether the provided value is empty"),
-      PropDetails("""    THING -> PROP._isEmpty
+      Summary("Tests whether the provided value is empty"),
+      Details("""    THING -> PROP._isEmpty
           |or
           |    RECEIVED -> _isEmpty
           |The first form produces true iff PROP is not defined on THING, or the value is empty.
@@ -626,8 +585,8 @@ object IsEmptyMethod extends ThingPropMethod(IsEmptyOID,
 object PluralizeMethod extends InternalMethod(PluralizeOID,
     toProps(
       setName("_pluralize"),
-      PropSummary("Produces the right word depending on how many elements are in a collection."),
-      DisplayTextProp("""    RECEIVED -> _pluralize(SINGULAR,PLURAL)
+      Summary("Produces the right word depending on how many elements are in a collection."),
+      Details("""    RECEIVED -> _pluralize(SINGULAR,PLURAL)
           |This is a convenient method for choosing different text depending on a Property. The RECEIVED
           |Context should usually be a List. If it contains a single element, _pluralize produces
           |SINGULAR; if it contains multiple *or* zero elements, _pluralize produces PLURAL.
@@ -659,8 +618,8 @@ object PluralizeMethod extends InternalMethod(PluralizeOID,
 object FilterMethod extends InternalMethod(FilterOID,
     toProps(
       setName("_filter"),
-      PropSummary("Filter out non-matching elements of a collection"),
-      PropDetails("""    RECEIVED -> _filter(FILTER)
+      Summary("Filter out non-matching elements of a collection"),
+      Details("""    RECEIVED -> _filter(FILTER)
           |This function is how you take a List of things, and whittle them down to just the ones you want.
           |
           |The FILTER should take a Thing, and produce a YesNo that says whether to include this Thing.
@@ -724,8 +683,8 @@ object AllPropsMethod extends SingleThingMethod(AllPropsMethodOID, "_allProps", 
 object SortMethod extends InternalMethod(SortMethodOID,
     toProps(
       setName("_sort"),
-      PropSummary("Sort the received list"),
-      PropDetails("""    LIST -> _sort -> SORTED
+      Summary("Sort the received list"),
+      Details("""    LIST -> _sort -> SORTED
           |or
           |    LIST -> _sort(EXP) -> SORTED
           |With no parameters (the first form), _sort sorts the elements of the received List alphabetically by their Display Names.
@@ -815,8 +774,8 @@ class DescendingType[VT](baseType: PType[VT]) extends DelegatingType[VT](baseTyp
 object DescMethod extends InternalMethod(DescMethodOID,
     toProps(
       setName("_desc"),
-      PropSummary("Sort this list in descending order"),
-      PropDetails("""    LIST -> _sort(_desc(EXP)) -> SORTED
+      Summary("Sort this list in descending order"),
+      Details("""    LIST -> _sort(_desc(EXP)) -> SORTED
           |
           |_desc returns the given EXP, tweaked so that the values in it have the reversed sort order from
           |what they would normally have. It is usually used inside of _sort, to reverse the sort order, which
@@ -868,8 +827,8 @@ object CreateInstanceLinkMethod extends SingleThingMethod(CreateInstanceLinkOID,
 object IfMethod extends InternalMethod(IfMethodOID,
     toProps(
       setName("_if"),
-      PropSummary("Choose what to produce, as directed"),
-      DisplayTextProp("""    RECEIVED -> _if(YESNO, IFCLAUSE, ELSECLAUSE) -> ...
+      Summary("Choose what to produce, as directed"),
+      Details("""    RECEIVED -> _if(YESNO, IFCLAUSE, ELSECLAUSE) -> ...
           |_if is one of the basic building blocks of programming. It applies the YESNO phrase to the received context.
           |If the result is Yes, it applies the IFCLAUSE to the received context and produces that. Otherwise, if there
           |is an ELSECLAUSE, it applies and produces that, or produces None if there is no ELSECLAUSE.
@@ -902,8 +861,8 @@ object IfMethod extends InternalMethod(IfMethodOID,
 object JoinMethod extends InternalMethod(JoinMethodOID,
     toProps(
       setName("_join"),
-      PropSummary("Combine a list of Text values together"),
-      DisplayTextProp("""    LIST -> _join(OPEN, SEP, CLOSE) -> QTEXT
+      Summary("Combine a list of Text values together"),
+      Details("""    LIST -> _join(OPEN, SEP, CLOSE) -> QTEXT
           |_join takes the given LIST, and turns it into a single line. For example, if My List was "Cat", "Dog", "Horse",
           |then
           |    My List -> _join
@@ -962,8 +921,8 @@ object JoinMethod extends InternalMethod(JoinMethodOID,
 object TagRefsMethod extends InternalMethod(TagRefsOID,
     toProps(
       setName("_tagRefs"),
-      PropSummary("Produces a List of all Things that have the received Thing or Name as a Tag"),
-      PropDetails("""    NAME -> _tagRefs -> THINGS
+      Summary("Produces a List of all Things that have the received Thing or Name as a Tag"),
+      Details("""    NAME -> _tagRefs -> THINGS
           |_tagRefs is usually the right way to answer the question "what points to this?" For example, if I wanted to
           |show a bullet list of everything that points to the current Thing, I would simply say:
           |    _tagRefs -> _bulleted
@@ -1014,11 +973,11 @@ object TagRefsMethod extends InternalMethod(TagRefsOID,
 object TagsForPropertyMethod extends SingleContextMethod(TagsForPropertyOID,
     toProps(
       setName("_tagsForProperty"),
-      PropSummary("Show all the Tags that are defined for this Property"),
+      Summary("Show all the Tags that are defined for this Property"),
       // TODO: this isn't displaying properly. Why not? It looks like the "" nested inside of the indirect
       // Property is causing the problem -- I am getting a syntax error *claiming* to be in Default View,
       // pointing at the first "":
-      PropDetails("""    TAG PROPERTY._tagsForProperty -> LIST OF TAGS
+      Details("""    TAG PROPERTY._tagsForProperty -> LIST OF TAGS
           |_tagsForProperty can be used on any Property whose Type is Tag Set. It produces a list of all of the
           |tags that have been used in that Property so far.
           |
@@ -1063,8 +1022,8 @@ object TagsForPropertyMethod extends SingleContextMethod(TagsForPropertyOID,
 object SelfMethod extends SingleContextMethod(SelfMethodOID,
     toProps(
       setName("_self"),
-      PropSummary("Get a Link to this Thing"),
-      PropDetails("""*thing*._self simply produces *thing*.
+      Summary("Get a Link to this Thing"),
+      Details("""*thing*._self simply produces *thing*.
           |
           |This seems silly, but it is useful for overriding the usual _apply behavior. In particular,
           |*property*._self is the way to get a link to the property itself, instead of fetching the value
@@ -1091,8 +1050,8 @@ object PropsOfTypeMethod extends SingleThingMethod(PropsOfTypeOID, "_propsOfType
 object CodeMethod extends SingleContextMethod(CodeMethodOID,
     toProps(
       setName("_code"),
-      PropSummary("Display a block of QL code"),
-      PropDetails("""_code() displays the raw code of a value or property, pretty flexibly.
+      Summary("Display a block of QL code"),
+      Details("""_code() displays the raw code of a value or property, pretty flexibly.
           |
           |You can give it as "TEXT -> _code" to display the TEXT -- however, note that the TEXT will be processed as normal
           |in this case. If you want to show some raw code, unprocessed, do it as "_code(TEXT)" instead.
@@ -1190,8 +1149,8 @@ object CodeMethod extends SingleContextMethod(CodeMethodOID,
 object IsDefinedMethod extends SingleContextMethod(IsDefinedOID,
     toProps(
       setName("_isDefined"),
-      PropSummary("Produces Yes if the name passed into it is a real Thing"),
-      PropDetails("""    NAME -> _isDefined -> YES or NO
+      Summary("Produces Yes if the name passed into it is a real Thing"),
+      Details("""    NAME -> _isDefined -> YES or NO
           |You typically use _isDefined with a Tag Property. It is simply a way to ask "is there actually something
           |with this name?", so that you can handle it differently depending on whether there is or not.""".stripMargin)))
 {
@@ -1203,8 +1162,8 @@ object IsDefinedMethod extends SingleContextMethod(IsDefinedOID,
 object CountMethod extends SingleContextMethod(CountMethodOID,
     toProps(
       setName("_count"),
-      PropSummary("Produces the number of elements in the received Collection"),
-      PropDetails("""    LIST -> _count -> NUMBER
+      Summary("Produces the number of elements in the received Collection"),
+      Details("""    LIST -> _count -> NUMBER
           |This is pretty much as simple as it sounds. It is most often used in the header of a _section, like this:
           |    \[[My List -> _section(\""Items: (\[[_count\]])\"", _commas)\]]""".stripMargin)))
 {
@@ -1219,8 +1178,8 @@ object CountMethod extends SingleContextMethod(CountMethodOID,
 object FormLineMethod extends SingleContextMethod(FormLineMethodOID,
     toProps(
       setName("_formLine"),
-      PropSummary("Display a label/control pair for an input form"),
-      PropDetails("""_formLine(LABEL,CONTROL) displays the LABEL/CONTROL pair as a standard full-width line. 
+      Summary("Display a label/control pair for an input form"),
+      Details("""_formLine(LABEL,CONTROL) displays the LABEL/CONTROL pair as a standard full-width line. 
           |
           |This is mainly for input forms, and is pretty persnickety at this point. It is not recommend for general use yet.""".stripMargin)))
 {
@@ -1245,8 +1204,8 @@ object FormLineMethod extends SingleContextMethod(FormLineMethodOID,
 object ReverseMethod extends SingleContextMethod(ReverseMethodOID,
     toProps(
       setName("_reverse"),
-      PropSummary("Produces the same Collection it receives, as a List, in reverse order"),
-      PropDetails("""    LIST -> _reverse -> REVERSED LIST
+      Summary("Produces the same Collection it receives, as a List, in reverse order"),
+      Details("""    LIST -> _reverse -> REVERSED LIST
           |
           |This does exactly what it sounds like: it produces the same list, in reversed order.
           |
@@ -1276,8 +1235,8 @@ object OIDMethod extends SingleThingMethod(OIDMethodOID, "_oid", "Get the unique
 object KindMethod extends InternalMethod(KindMethodOID,
     toProps(
       setName("_kind"), 
-      PropSummary("What kind of Thing is this?"), 
-      PropDetails("""There are two ways to use _kind:
+      Summary("What kind of Thing is this?"), 
+      Details("""There are two ways to use _kind:
           |    THING -> _kind -> Number
           |
           |This function produces the Number that represents the "kind"
@@ -1322,8 +1281,8 @@ object CurrentSpaceMethod extends SingleThingMethod(CurrentSpaceMethodOID, "_cur
 object IsMethod extends InternalMethod(IsMethodOID,
     toProps(
       setName("_is"),
-      PropSummary("Allows you to test whether you have a specific Thing"),
-      PropDetails("""    THING -> _is(THING) -> Yes or No
+      Summary("Allows you to test whether you have a specific Thing"),
+      Details("""    THING -> _is(THING) -> Yes or No
     |
     |This function produces Yes iff the parameter matches the passed-in THING, and No otherwise. It is almost always used
     |inside _if(). For instance, to check whether a Property is of Text Type:
@@ -1354,8 +1313,8 @@ object IsMethod extends InternalMethod(IsMethodOID,
 object EqualsMethod extends InternalMethod(EqualsMethodOID,
     toProps(
       setName("_equals"),
-      PropSummary("Do these parameters match?"),
-      PropDetails("""    _equals(EXP1, EXP2) -> YES OR NO
+      Summary("Do these parameters match?"),
+      Details("""    _equals(EXP1, EXP2) -> YES OR NO
           |_equals produces Yes iff the expressions in the two parameters match each other. The definition
           |of "match" is type-dependent, but by and large is similar to == in most programming languages.
           |

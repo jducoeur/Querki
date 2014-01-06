@@ -7,8 +7,6 @@ import models.system.OIDs._
 
 import ql._
 
-import querki.conventions.{PropDetails, PropSummary}
-
 import querki.util._
 import querki.values._
 
@@ -189,14 +187,14 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
       toProps(
         setName("_isPermission"),
         InternalProp(true),
-        PropSummary("This Property is a Permission")))
+        Summary("This Property is a Permission")))
   
   lazy val CanEditCustomProp = new SystemProperty(CanEditCustomOID, QLType, Optional,
       toProps(
         setName("Who Can Edit Custom"),
         isPermissionProp(true),
         SkillLevel(SkillLevel.Advanced),
-        PropSummary("Who else can edit this Thing")))
+        Summary("Who else can edit this Thing")))
 
   lazy val CanReadProp = new SystemProperty(CanReadPropOID, LinkType, QSet,
       toProps(
@@ -204,7 +202,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         isPermissionProp(true),
         SkillLevel(SkillLevel.Advanced),
         (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
-        PropSummary("Who else can read Things in this Space")))
+        Summary("Who else can read Things in this Space")))
 
   lazy val CanEditProp = new SystemProperty(CanEditPropOID, LinkType, QSet,
       toProps(
@@ -212,8 +210,8 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         isPermissionProp(true),
         SkillLevel(SkillLevel.Advanced),
         (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
-        PropSummary("Who else can edit Things in this Space"),
-        PropDetails("""Note that this Property is *not* inherited, unlike most. If you want to
+        Summary("Who else can edit Things in this Space"),
+        Details("""Note that this Property is *not* inherited, unlike most. If you want to
             |say who can edit Things made from this Model, use [[Who Can Edit Children._self]] instead.""".stripMargin)))
 
   lazy val CanEditChildrenProp = new SystemProperty(CanEditChildrenPropOID, LinkType, QSet,
@@ -222,8 +220,8 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         isPermissionProp(true),
         SkillLevel(SkillLevel.Advanced),
         (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
-        PropSummary("Who else can edit children of this Thing"),
-        PropDetails("""This Property is useful on Models and Spaces, and works as follows.
+        Summary("Who else can edit children of this Thing"),
+        Details("""This Property is useful on Models and Spaces, and works as follows.
             |
             |When you set this Property on a **Model**, it says who is allowed to edit the Things made from
             |that Model. That is, if I have a Model named *CD*, setting this Property on it says who can
@@ -241,7 +239,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         SkillLevel(SkillLevel.Advanced),
         isPermissionProp(true),
         (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
-        PropSummary("Who else can make new Things in this Space")))
+        Summary("Who else can make new Things in this Space")))
 
   override lazy val props = Seq(
 //    canEditCustomProp,

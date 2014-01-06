@@ -12,7 +12,6 @@ import modules.Module
 
 import ql.QLPhrase
 
-import querki.conventions._
 import querki.ecology._
 import querki.util._
 import querki.values._
@@ -36,8 +35,8 @@ class UIModule(e:Ecology, val moduleId:Short) extends Module(e) {
   abstract class HtmlModifier(oid:OID, name:String, summary:String, details:String) extends InternalMethod(oid, 
     toProps(
       setName(name),
-      PropSummary(summary),
-      PropDetails(details))) 
+      Summary(summary),
+      Details(details))) 
   {
     // Actual Modifier classes should implement this, which does the heart of the work
     def doTransform(elem:Elem, paramText:String):Elem

@@ -14,7 +14,6 @@ import models.system.OIDs._
 
 import ql._
 
-import querki.conventions.{PropDetails, PropSummary}
 import querki.ecology._
 import querki.email.emailSepChar
 import querki.spaces.SpaceManager
@@ -82,13 +81,13 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
       toProps(
         setName("Person to Identity Link"),
         InternalProp(true),
-        PropSummary("INTERNAL: points from a Space-scoped Person to a System-scoped Identity")))
+        Summary("INTERNAL: points from a Space-scoped Person to a System-scoped Identity")))
 
   lazy val meMethod = new InternalMethod(MeMethodOID,
       toProps(
         setName("_me"),
-        PropSummary("If the current user is a Person in the current Space, return that Person"),
-        PropDetails("""_me is the usual way to customize a Space based on who is looking at it. If the page is being viewed by
+        Summary("If the current user is a Person in the current Space, return that Person"),
+        Details("""_me is the usual way to customize a Space based on who is looking at it. If the page is being viewed by
             |a logged-in User, *and* they are a Member of this Space, it produces their Person record. If the viewer isn't
             |logged in, or isn't a Member, this will produce a Warning.
             |
@@ -110,8 +109,8 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
       toProps(
         setName("Chromeless Invites"),
         DeprecatedProp(true),
-        PropSummary("Should invitees to this Space see it unadorned with Querki chrome?"),
-        PropDetails("""If you set this to Yes on a Space or Thing, then Invite Links pointing
+        Summary("Should invitees to this Space see it unadorned with Querki chrome?"),
+        Details("""If you set this to Yes on a Space or Thing, then Invite Links pointing
             |to that will show up without Querki chrome. That is, when they join, they'll just see your
             |pages, with no top menu or Querki footer.
             |
@@ -125,8 +124,8 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
       toProps(
         setName("Space Invitation Text"),
         AppliesToKindProp(Kind.Space),
-        PropSummary("The text to use when inviting people to join your Space"),
-        PropDetails("""This is the content of the invitation email, to go along with the standard Querki
+        Summary("The text to use when inviting people to join your Space"),
+        Details("""This is the content of the invitation email, to go along with the standard Querki
             |invitation text.
             |
             |This is included in the Sharing and Security page, so you don't usually need to do anything
@@ -256,8 +255,8 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
       toProps(
         setName("_spaceInvitation"), 
         InternalProp(true),
-        PropSummary("Generate a Link to invite someone to join this Space."), 
-        PropDetails("""This is intended for internal use only. It is used to generate
+        Summary("Generate a Link to invite someone to join this Space."), 
+        Details("""This is intended for internal use only. It is used to generate
             |the link that is sent to invitees to your Space""".stripMargin)))
   {
     def fullyApply(mainContext:QLContext, partialContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {

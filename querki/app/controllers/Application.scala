@@ -595,7 +595,7 @@ disallow: /
 	  }
 	  val attachProps = Thing.toProps(DisplayNameProp(filename))()
 	  askSpaceMgr[ThingResponse](
-	    CreateAttachment(user, rc.ownerId, state.id.toThingId, contents, MIMEType.JPEG, contents.size, OIDs.PhotoBaseOID, attachProps)) {
+	    CreateAttachment(user, rc.ownerId, state.id.toThingId, contents, MIMEType.JPEG, contents.size, querki.basic.MOIDs.PhotoBaseOID, attachProps)) {
 	    case ThingFound(attachmentId, state2) => {
 	      Redirect(routes.Application.thing(ownerId, state.toThingId, attachmentId.toThingId))
 	    }

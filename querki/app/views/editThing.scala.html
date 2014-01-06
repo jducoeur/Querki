@@ -13,7 +13,6 @@
 
 @import models.Property._
 
-@import querki.conventions._
 @import querki.html._
 
 @import querki.values.SpaceState
@@ -27,6 +26,10 @@
 @isSubCreate = @{ rc.isTrue("subCreate") }
 
 @isForeign = @{ thing.get.spaceId != space.id }
+
+@Conventions = @{ querki.ecology.Ecology.api[querki.conventions.Conventions] }
+@PropSummary = @{ Conventions.PropSummary }
+@PropDetails = @{ Conventions.PropDetails }
 
 @canEdit = @{
   // Disable if you are trying to edit something in the wrong Space.
