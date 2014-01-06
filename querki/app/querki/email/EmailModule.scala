@@ -26,7 +26,7 @@ import querki.values._
 import play.api.{Logger, Play}
 import play.api.Play.current
 
-class EmailModule(e:Ecology) extends modules.Module(e) with Email {
+class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email {
 
   import querki.email.MOIDs._
   

@@ -13,11 +13,9 @@ import querki.ecology._
 
 import querki.values._
 
-import modules.Module
-
 import querki.types._
 
-class TypesModule(e:Ecology) extends Module(e) with Types {
+class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types {
   import MOIDs._
     
   /******************************************

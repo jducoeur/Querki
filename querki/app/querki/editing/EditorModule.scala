@@ -20,8 +20,6 @@ import querki.types._
 import querki.util._
 import querki.values._
 
-import modules.Module
-
 object MOIDs extends EcotIds(13) {
   // Previously in System
   val EditMethodOID = sysId(42)
@@ -32,7 +30,7 @@ object MOIDs extends EcotIds(13) {
   val EditWidthPropOID = moid(3)
 }
 
-class EditorModule(e:Ecology) extends Module(e) {
+class EditorModule(e:Ecology) extends QuerkiEcot(e) {
   import MOIDs._
   
   val Types = initRequires[querki.types.Types]

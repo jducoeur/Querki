@@ -14,9 +14,7 @@ import querki.core._
 import querki.ecology._
 import querki.types._
 
-import modules.Module
-
-class BasicModule(e:Ecology) extends Module(e) with Basic {
+class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic {
   import MOIDs._
   
   val Core = initRequires[querki.core.Core]

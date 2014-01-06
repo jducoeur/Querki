@@ -9,8 +9,6 @@ import models.system.ExactlyOne
 import models.system.{LinkAllowAppsProp, LinkModelProp, NameProp, SystemProperty}
 import models.system.OIDs.{DisplayNameOID, NameOID, RootOID, systemOID}
 
-import modules.Module
-
 import querki.core.MOIDs.UrPropOID
 import querki.ecology._
 import querki.spaces.{SpaceChangeManager, ThingChangeRequest}
@@ -18,7 +16,7 @@ import querki.spaces.{SpaceChangeManager, ThingChangeRequest}
 import querki.util._
 import querki.values._
 
-class DeriveNameModule(e:Ecology) extends Module(e) with DeriveName {
+class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName {
   
   import DeriveNameMOIDs._
   

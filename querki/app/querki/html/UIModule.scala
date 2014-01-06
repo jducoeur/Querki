@@ -8,8 +8,6 @@ import models.{HtmlWikitext, OID}
 import models.Thing._
 import models.system.{InternalMethod}
 
-import modules.Module
-
 import ql.QLPhrase
 
 import querki.ecology._
@@ -21,7 +19,7 @@ object MOIDs extends EcotIds(11) {
   val TooltipMethodOID = moid(2)
 }
 
-class UIModule(e:Ecology) extends Module(e) {
+class UIModule(e:Ecology) extends QuerkiEcot(e) {
   import MOIDs._
 
   /***********************************************

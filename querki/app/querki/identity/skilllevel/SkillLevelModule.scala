@@ -11,9 +11,7 @@ import models.system.OIDs.{systemOID}
 
 import querki.ecology._
 
-import modules.Module
-
-class SkillLevelModule(e:Ecology) extends Module(e) with SkillLevel {
+class SkillLevelModule(e:Ecology) extends QuerkiEcot(e) with SkillLevel {
   import querki.identity.skilllevel.MOIDs._
   
   /***********************************************

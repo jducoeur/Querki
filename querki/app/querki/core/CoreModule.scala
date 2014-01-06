@@ -11,9 +11,7 @@ import models.system.{LargeTextType, TextType, YesNoType}
 import querki.conventions
 import querki.ecology._
 
-import modules.Module
-
-class CoreModule(e:Ecology) extends Module(e) with Core {
+class CoreModule(e:Ecology) extends QuerkiEcot(e) with Core {
   import MOIDs._
 
   /***********************************************

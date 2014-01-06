@@ -12,8 +12,6 @@ import ql.QLPhrase
 import querki.ecology._
 import querki.values._
 
-import modules.Module
-
 object MOIDs extends EcotIds(9) {
   val TrueOID = moid(1)
   val FalseOID = moid(2)
@@ -26,7 +24,7 @@ object MOIDs extends EcotIds(9) {
  * but that should be fixed. This should absorb YesNoType, and all of the predicate-oriented
  * methods.
  */
-class LogicModule(e:Ecology) extends Module(e) {
+class LogicModule(e:Ecology) extends QuerkiEcot(e) {
   import MOIDs._
   
   /******************************************

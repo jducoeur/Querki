@@ -11,14 +11,12 @@ import models.system.OIDs.{sysId, NotInheritedOID}
 import querki.ecology._
 import querki.types.MOIDs._
 
-import modules.Module
-
 /**
  * This Module defines common Querki "conventions" -- things that aren't terribly *important*
  * to the operation of the system, but are common Properties and such that are useful enough
  * to encourage their general use.
  */
-class ConventionsModule(e:Ecology) extends Module(e) with Conventions {
+class ConventionsModule(e:Ecology) extends QuerkiEcot(e) with Conventions {
   import MOIDs._
 
   lazy val PropSummary = new SystemProperty(PropSummaryOID, TextType, Optional,

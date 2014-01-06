@@ -15,7 +15,7 @@ import querki.identity.User
 
 import play.api.Logger
 
-class AccessControlModule(e:Ecology) extends modules.Module(e) with AccessControl {
+class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
   
   lazy val abstractPersonOID = querki.identity.MOIDs.SecurityPrincipalOID
 
