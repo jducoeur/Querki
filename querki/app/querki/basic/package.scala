@@ -1,6 +1,6 @@
 package querki
 
-import models.Property
+import models.{Property, Thing}
 import models.system.PlainText
 import models.system.OIDs.sysId
 
@@ -14,10 +14,13 @@ import modules.ModuleIds
  */
 package object basic {
   object MOIDs extends ModuleIds(17) {
+    val PageOID = sysId(8)
+    val SimpleThingOID = sysId(23)
     val DisplayNameOID = sysId(26)
   }
   
   trait Basic extends EcologyInterface {  
     def DisplayNameProp:Property[PlainText,String]
+    def SimpleThing:Thing
   }
 }

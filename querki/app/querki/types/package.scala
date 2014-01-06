@@ -1,10 +1,11 @@
 package querki
 
-import models.Property
+import models.{DisplayPropVal, OID, Property, Thing}
+import models.Property.PropList
 import models.system.OIDs.sysId
 
 import querki.ecology._
-import querki.values.QValue
+import querki.values.{QValue, SpaceState}
 
 import modules.ModuleIds
 
@@ -41,5 +42,21 @@ package object types {
     def MinTextLengthProp:Property[Int, Int]
     def MinIntValueProp:Property[Int, Int]
     def MaxIntValueProp:Property[Int, Int]
+  }
+  
+  object DeriveNameMOIDs extends ModuleIds(12) {
+    val DeriveNameOID = moid(1)
+    val DeriveModelOID = moid(2)
+    val DeriveAlwaysOID = moid(3)
+    val DeriveInitiallyOID = moid(4)
+    val DeriveNeverOID = moid(5)
+  }
+  
+  trait DeriveName extends EcologyInterface {
+    def DeriveNameProp:Property[OID,OID]
+    
+    def DeriveInitially:Thing
+    
+    def filterNameIfDerived(state:SpaceState, model:Thing, props:PropList, propPair:(Property[_,_], DisplayPropVal)):Boolean
   }
 }

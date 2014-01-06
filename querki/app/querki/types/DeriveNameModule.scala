@@ -4,7 +4,6 @@ import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState}
 import models.Property.PropList
 import models.Thing._
 
-import models.system.SimpleThing
 import models.system.{LinkType, NameType, PlainTextType}
 import models.system.ExactlyOne
 import models.system.{LinkAllowAppsProp, LinkModelProp, NameProp, SystemProperty}
@@ -13,23 +12,18 @@ import models.system.OIDs.{DisplayNameOID, NameOID, RootOID, systemOID}
 import modules.Module
 
 import querki.conventions.{PropDetails, PropSummary}
+import querki.core.MOIDs.UrPropOID
 import querki.ecology._
-
 import querki.spaces.{SpaceChangeManager, ThingChangeRequest}
 
 import querki.util._
 import querki.values._
 
-class DeriveNameModule(e:Ecology, val moduleId:Short) extends Module(e) {
+class DeriveNameModule(e:Ecology, val moduleId:Short) extends Module(e) with DeriveName {
   
-  object MOIDs {
-    val DeriveNameOID = moid(1)
-    val DeriveModelOID = moid(2)
-    val DeriveAlwaysOID = moid(3)
-    val DeriveInitiallyOID = moid(4)
-    val DeriveNeverOID = moid(5)
-  }
-  import MOIDs._
+  import DeriveNameMOIDs._
+  
+  lazy val Basic = interface[querki.basic.Basic]
   
   override def init = {
     SpaceChangeManager.thingChanges += NameDeriver
@@ -54,7 +48,7 @@ class DeriveNameModule(e:Ecology, val moduleId:Short) extends Module(e) {
         case Some(flag) => flag 
         case None => {
           // It wasn't in the input data, so look up the chain:
-          val thing = evt.modelIdOpt.flatMap(s.anything(_)).getOrElse(SimpleThing)
+          val thing = evt.modelIdOpt.flatMap(s.anything(_)).getOrElse(Basic.SimpleThing)
           thing.firstOr(DeriveNameProp, DeriveInitiallyOID)          
         }
       }
@@ -125,6 +119,27 @@ class DeriveNameModule(e:Ecology, val moduleId:Short) extends Module(e) {
     }
   }
   
+  private def isProperty(model:Thing)(implicit state:SpaceState):Boolean = {
+    model.id == UrPropOID || model.isAncestor(UrPropOID)
+  }
+  
+  /**
+   * Used from the Editor UI, and intended to be used in a filter of Properties. Strips out NameProp unless
+   * we aren't deriving it.
+   */
+  def filterNameIfDerived(state:SpaceState, model:Thing, props:PropList, propPair:(Property[_,_], DisplayPropVal)):Boolean = {
+    implicit val s = state
+    val (prop, displayPropVal) = propPair
+    if (prop == NameProp && !isProperty(model)) {
+      val derivedVal:OID = {
+        val localVal:Option[OID] = props.get(DeriveNameProp).flatMap(_.v).flatMap(_.firstTyped(LinkType))
+        localVal.getOrElse(model.firstOr(DeriveNameProp, DeriveInitially.id))
+      }
+      derivedVal == deriveNever.id
+    } else
+      true
+  }
+  
   /******************************************
    * THINGS
    ******************************************/
@@ -137,7 +152,7 @@ class DeriveNameModule(e:Ecology, val moduleId:Short) extends Module(e) {
     toProps(
       setName("Always Derive Name")))
   
-  lazy val deriveInitially = new ThingState(DeriveInitiallyOID, systemOID, deriveModel,
+  lazy val DeriveInitially = new ThingState(DeriveInitiallyOID, systemOID, deriveModel,
     toProps(
       setName("Derive Name Initially")))
   
@@ -148,7 +163,7 @@ class DeriveNameModule(e:Ecology, val moduleId:Short) extends Module(e) {
   override lazy val things = Seq(
     deriveModel,
     deriveAlways,
-    deriveInitially,
+    DeriveInitially,
     deriveNever
   )
   
@@ -193,31 +208,4 @@ class DeriveNameModule(e:Ecology, val moduleId:Short) extends Module(e) {
   override lazy val props = Seq(
     DeriveNameProp
   )
-}
-
-object DeriveNameModule {
-  import modules.Modules.DeriveName._
-  
-  import querki.core.MOIDs.UrPropOID
-  
-  private def isProperty(model:Thing)(implicit state:SpaceState):Boolean = {
-    model.id == UrPropOID || model.isAncestor(UrPropOID)
-  }
-  
-  /**
-   * Used from the Editor UI, and intended to be used in a filter of Properties. Strips out NameProp unless
-   * we aren't deriving it.
-   */
-  def filterNameIfDerived(state:SpaceState, model:Thing, props:PropList, propPair:(Property[_,_], DisplayPropVal)):Boolean = {
-    implicit val s = state
-    val (prop, displayPropVal) = propPair
-    if (prop == NameProp && !isProperty(model)) {
-      val derivedVal:OID = {
-        val localVal:Option[OID] = props.get(DeriveNameProp).flatMap(_.v).flatMap(_.firstTyped(LinkType))
-        localVal.getOrElse(model.firstOr(DeriveNameProp, deriveInitially.id))
-      }
-      derivedVal == deriveNever.id
-    } else
-      true
-  }
 }

@@ -57,6 +57,7 @@ object Application extends ApplicationBase {
   
   lazy val Basic = getInterface[querki.basic.Basic]
   lazy val DisplayNameProp = Basic.DisplayNameProp
+  lazy val DeriveName = getInterface[querki.types.DeriveName]
 
   def index = withUser(false) { rc =>
     Ok(views.html.index(rc))
@@ -162,7 +163,7 @@ disallow: /
     implicit val state = rc.state.get
     val propList = prepPropList(props, model, rc.state.get).
       // If the name is being derived, don't show it in the Editor UI:
-      filter(querki.types.DeriveNameModule.filterNameIfDerived(state, model, props, _))
+      filter(DeriveName.filterNameIfDerived(state, model, props, _))
     try { 
       val page = views.html.editThing(
         rc.copy(error = errorMsg),
@@ -211,7 +212,7 @@ disallow: /
     implicit val state = rc.state.get
     val modelThingIdOpt = modelIdOpt map (ThingId(_))
     val modelOpt = modelThingIdOpt flatMap (rc.state.get.anything(_))
-    val model = modelOpt getOrElse SimpleThing
+    val model = modelOpt getOrElse Basic.SimpleThing
     showEditPage(rc, model, PropList.inheritedProps(None, model))
   }
   

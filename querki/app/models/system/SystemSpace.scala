@@ -49,7 +49,7 @@ object OIDs {
 //  val UrPropOID = sysId(5)
   val NameOID = sysId(6)
   val DisplayTextOID = sysId(7)
-  val PageOID = sysId(8)
+//  val PageOID = sysId(8)
   val SystemUserOID = sysId(9)
   val NameTypeOID = sysId(10)
   val TestUserOID = sysId(11)
@@ -64,7 +64,7 @@ object OIDs {
   val PromptOID = sysId(20)
   val LargeTextTypeOID = sysId(21)
   val IsModelOID = sysId(22)
-  val SimpleThingOID = sysId(23)
+//  val SimpleThingOID = sysId(23)
   val NotInheritedOID = sysId(24)
 //  val StylesheetOID = sysId(25)
   val DisplayNameOID = sysId(26)
@@ -229,7 +229,7 @@ object SystemSpace {
       IsFunctionProp)
       
   // Things:
-  val things = OIDMap[ThingState](UrThing, Page, SimpleThing, PhotoBase, Bulleted, Commas, DisplayThingTree, AllThings, AllProps)
+  val things = OIDMap[ThingState](UrThing, PhotoBase, Bulleted, Commas, DisplayThingTree, AllThings, AllProps)
   
   def init = {
     _state = Some(modules.Modules.initAllModules(initialSystemState))

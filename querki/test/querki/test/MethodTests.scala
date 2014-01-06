@@ -8,7 +8,6 @@ import models.Thing._
 import models.system.{ExactlyOne, Optional, QList, QSet}
 import Optional.QNone
 import models.system.{ExternalLinkType, LargeTextType, LinkType, QLText}
-import models.system.OIDs.{PageOID}
 
 import ql.QLParser
 

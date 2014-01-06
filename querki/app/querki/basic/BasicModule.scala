@@ -3,10 +3,11 @@ package querki.basic
 import models._
 import models.Thing._
 
+import models.system.OIDs.{systemOID, RootOID}
 import models.system.SystemProperty
 import models.system.{Optional}
 import models.system.{PlainTextType}
-import models.system.NotInheritedProp
+import models.system.{DeprecatedProp, DisplayTextProp, IsModelProp, NotInheritedProp}
 
 import querki.conventions._
 import querki.core._
@@ -18,6 +19,7 @@ import modules.Module
 class BasicModule(e:Ecology, val moduleId:Short) extends Module(e) with Basic {
   import MOIDs._
   
+  val DeriveName = initRequires[querki.types.DeriveName]
   val Types = initRequires[querki.types.Types]
   
   /***********************************************
@@ -50,5 +52,27 @@ class BasicModule(e:Ecology, val moduleId:Short) extends Module(e) with Basic {
   override lazy val props = Seq(
     DisplayNameProp
   )
+  
+  /***********************************************
+   * THINGS
+   ***********************************************/
 
+  object SimpleThing extends ThingState(SimpleThingOID, systemOID, RootOID,
+    toProps(
+      setName("Simple-Thing"),
+      IsModelProp(true),
+      DisplayTextProp(Optional.QNone),
+      (querki.basic.MOIDs.DisplayNameOID -> Optional.QNone),
+      DeriveName.DeriveNameProp(DeriveName.DeriveInitially)))
+
+  object Page extends ThingState(PageOID, systemOID, SimpleThingOID,
+    toProps(
+      setName("Simple-Page"),
+      IsModelProp(true),
+      DeprecatedProp(true)))
+
+  override lazy val things = Seq(
+    SimpleThing,
+    Page
+  )
 }

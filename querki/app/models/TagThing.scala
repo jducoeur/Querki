@@ -1,9 +1,10 @@
 package models
 
 import models.system.OIDs
-import models.system.{ExactlyOne, LinkModelProp, ShowUnknownProp, SimpleThing}
+import models.system.{ExactlyOne, LinkModelProp, ShowUnknownProp}
 import models.system.{NameType, NewTagSetType, PlainText, PlainTextType, TagSetType}
 
+import querki.ecology._
 import querki.util.SafeUrl
 import querki.values.{QLContext, RequestContext, SpaceState}
 
@@ -33,13 +34,15 @@ object TagThing {
   val defaultDisplayText = """Referenced from:
 [[_tagRefs -> _bulleted]]"""  
     
+  lazy val Basic = getInterface[querki.basic.Basic]
+    
   def preferredModelForTag(implicit state:SpaceState, nameIn:String):Thing = {
     val tagProps = state.propsOfType(TagSetType).filter(_.hasProp(OIDs.LinkModelOID))
     val newTagProps = state.propsOfType(NewTagSetType).filter(_.hasProp(OIDs.LinkModelOID))
     val name = NameType.canonicalize(nameIn)
     val plainName = PlainText(nameIn)
     if (tagProps.isEmpty && newTagProps.isEmpty)
-      SimpleThing
+      Basic.SimpleThing
     else {
       val candidates = state.allThings.toSeq
     
@@ -72,7 +75,7 @@ object TagThing {
           )
           yield model
 
-      modelOpt.getOrElse(SimpleThing)
+      modelOpt.getOrElse(Basic.SimpleThing)
     }
   }
 }

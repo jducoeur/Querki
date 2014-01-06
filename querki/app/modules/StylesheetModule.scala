@@ -150,7 +150,7 @@ class StylesheetModule(e:Ecology, val moduleId:Short) extends modules.Module(e) 
    * THINGS
    ***********************************************/
 
-  lazy val StylesheetBase = new ThingState(StylesheetBaseOID, systemOID, SimpleThingOID,
+  lazy val StylesheetBase = new ThingState(StylesheetBaseOID, systemOID, querki.basic.MOIDs.SimpleThingOID,
     toProps(
       setName("Stylesheet"),
       IsModelProp(true),

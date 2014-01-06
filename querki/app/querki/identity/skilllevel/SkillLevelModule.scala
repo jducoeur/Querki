@@ -7,7 +7,7 @@ import models.Thing._
 import models.system.ExactlyOne
 import models.system.LinkType
 import models.system.{DisplayTextProp, LinkModelProp, SystemProperty}
-import models.system.OIDs.{systemOID, SimpleThingOID}
+import models.system.OIDs.{systemOID}
 
 import querki.conventions._
 import querki.ecology._
@@ -51,7 +51,7 @@ class SkillLevelModule(e:Ecology, val moduleId:Short) extends Module(e) with Ski
    * THINGS
    ***********************************************/
   
-  lazy val skillLevelModel = ThingState(SkillLevelOID, systemOID, SimpleThingOID,
+  lazy val skillLevelModel = ThingState(SkillLevelOID, systemOID, querki.basic.MOIDs.SimpleThingOID,
       toProps(
         setName("User Level"),
         DisplayTextProp("""This Model's Instances are the possible User Levels.""")))

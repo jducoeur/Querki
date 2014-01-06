@@ -6,7 +6,7 @@ import models.{OID, OIDMap}
 import models.{Collection, Property, PType, PTypeBuilder, Thing, ThingState}
 import models.Thing._
 import models.system.{NameType, SystemSpace}
-import models.system.OIDs.{PageOID, systemOID}
+import models.system.OIDs.{systemOID}
 
 import querki.core.MOIDs._
 import querki.ecology._
@@ -86,7 +86,7 @@ trait TestSpace {
     extends TestThingBase(pid, name, model, pairs:_*)
   {
     def this(pid:OID, name:String, pairs:(OID, QValue)*) = {
-      this(pid, name, PageOID, pairs:_*)
+      this(pid, name, querki.basic.MOIDs.PageOID, pairs:_*)
     }
     def this(name:String, model:OID, pairs:(OID, QValue)*) = {
       this(toid(), name, model, pairs:_*)

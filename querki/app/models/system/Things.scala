@@ -9,6 +9,7 @@ import OIDs._
 import SystemSpace._
 
 import querki.basic
+import querki.ecology._
 import querki.values._
 
 /**
@@ -43,23 +44,8 @@ object UrThing extends ThingState(RootOID, systemOID, RootOID,
   
   override def hasModel = false
 }
-  
 
-object SimpleThing extends ThingState(SimpleThingOID, systemOID, RootOID,
-    toProps(
-      setName("Simple-Thing"),
-      IsModelProp(true),
-      DisplayTextProp(Optional.QNone),
-      (querki.basic.MOIDs.DisplayNameOID -> Optional.QNone),
-      modules.Modules.DeriveName.DeriveNameProp(modules.Modules.DeriveName.deriveInitially)))
-
-object Page extends ThingState(PageOID, systemOID, SimpleThingOID,
-    toProps(
-      setName("Simple-Page"),
-      IsModelProp(true),
-      DeprecatedProp(true)))
-
-object PhotoBase extends ThingState(PhotoBaseOID, systemOID, SimpleThingOID,
+object PhotoBase extends ThingState(PhotoBaseOID, systemOID, querki.basic.MOIDs.SimpleThingOID,
     toProps(
       setName("Photograph-Base"),
       IsModelProp(true),

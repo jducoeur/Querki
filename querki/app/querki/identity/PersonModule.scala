@@ -152,7 +152,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
    * THINGS
    ***********************************************/
   
-  lazy val securityPrincipal = ThingState(SecurityPrincipalOID, systemOID, SimpleThingOID,
+  lazy val securityPrincipal = ThingState(SecurityPrincipalOID, systemOID, querki.basic.MOIDs.SimpleThingOID,
       toProps(
         setName("Security Principal"),
         DisplayTextProp("""For internal use -- this the concept of a Thing that can be given permissions.""")))

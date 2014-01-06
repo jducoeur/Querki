@@ -5,7 +5,6 @@ import models.Kind
 import models.system.{ExternalLinkType, LinkType, TextType}
 import models.system.{ExactlyOne, Optional, QList}
 import models.system.{IsModelProp}
-import models.system.OIDs.PageOID
 
 import querki.ecology._
 import querki.identity.{User}
@@ -53,7 +52,7 @@ class CommonSpace extends TestSpace {
   /**
    * A simple imitation "photograph".
    */
-  val photo = new Attachment(toid(), spaceId, PageOID, makePropFetcher("My Photo", Seq.empty))
+  val photo = new Attachment(toid(), spaceId, querki.basic.MOIDs.PageOID, makePropFetcher("My Photo", Seq.empty))
   registerThing(photo)
 
   /**

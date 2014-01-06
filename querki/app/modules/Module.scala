@@ -35,7 +35,7 @@ object Modules extends EcologyImpl {
   private val Logic = new querki.logic.LogicModule(this, 9)
   private val Types = new querki.types.impl.TypesModule(this, 10)
   private val UI = new querki.html.UIModule(this, 11)
-  val DeriveName = new querki.types.DeriveNameModule(this, 12)
+  private val DeriveName = new querki.types.DeriveNameModule(this, 12)
   val Editor = new querki.editing.EditorModule(this, 13)
   private val SkillLevel = new querki.identity.skilllevel.impl.SkillLevelModule(this, 14)
   val Conventions = new querki.conventions.ConventionsModule(this, 15)
@@ -63,6 +63,7 @@ object Modules extends EcologyImpl {
     s = init(Core, s)
     s = init(Types, s)
     s = init(Conventions, s)
+    s = init(DeriveName, s)
     s = init(Basic, s)
     s = init(SkillLevel, s)
     s = init(Stylesheet, s)
@@ -75,7 +76,6 @@ object Modules extends EcologyImpl {
     s = init(TOS, s)
     s = init(Logic, s)
     s = init(UI, s)
-    s = init(DeriveName, s)
     s = init(Editor, s)
     
     s
