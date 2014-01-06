@@ -17,11 +17,12 @@ import querki.ecology._
 import querki.util._
 import querki.values._
 
+object MOIDs extends modules.ModuleIds(11) {
+  val ClassMethodOID = moid(1)
+  val TooltipMethodOID = moid(2)
+}
+
 class UIModule(e:Ecology, val moduleId:Short) extends Module(e) {
-  object MOIDs {
-    val ClassMethodOID = moid(1)
-    val TooltipMethodOID = moid(2)
-  }
   import MOIDs._
 
   /***********************************************
