@@ -19,7 +19,7 @@ import querki.util._
 import querki.values._
 
 abstract class SystemType[T](tid:OID, pf:PropFetcher)(implicit e:Ecology = querki.ecology.Ecology) extends PType[T](tid, systemOID, RootOID, pf)(e) {
-  lazy val Types = getInterface[Types]
+  lazy val Types = interface[Types]
   
   def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = {
     // TBD: this is smelly -- the fact that we need to know here how to render Optional is a nasty abstraction

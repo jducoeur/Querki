@@ -34,7 +34,7 @@ case class Property[VT, -RT](
     mt:DateTime)(implicit e:Ecology) 
   extends Thing(i, s, m, Kind.Property, pf, mt)(e)
 {
-  lazy val DefaultValueProp = getInterface[Types].DefaultValueProp
+  lazy val DefaultValueProp = interface[Types].DefaultValueProp
     
   def default = {
     val explicitDefault = localProp(DefaultValueProp).map(_.v)
@@ -175,6 +175,21 @@ case class DisplayPropVal(on:Option[Thing], prop: Property[_,_], v: Option[QValu
   lazy val effectiveV = v.orElse(inheritedVal)
 }
 
+import scala.reflect.runtime.universe.TypeTag
+/**
+ * This is a bit of a hack -- it's a way for static code to hold a solid pointer to an Interface.
+ * 
+ * TODO: this is probably wrong -- instead, the code in object Property should probably be in an Ecot.
+ */
+class FetchedInterface[T <: EcologyInterface](implicit tag:TypeTag[T]) {
+  var _interface:Option[T] = None
+  def apply(m:EcologyMember):T = {
+    if (_interface.isEmpty)
+      _interface = Some(m.interface[T])
+    _interface.get
+  }
+}
+
 object Property {
   def optTextProp(id:OID, text:String) = (id -> Optional(ElemValue(PlainText(text), new DelegatingType({PlainTextType})))) 
   /**
@@ -182,12 +197,15 @@ object Property {
    */
   def placeholderText(text:String) = optTextProp(PlaceholderTextOID, text)  
   def prompt(text:String) = optTextProp(PromptOID, text)
-  
-  lazy val DisplayNameProp = getInterface[querki.basic.Basic].DisplayNameProp
-  lazy val NotInheritedProp = getInterface[querki.core.Core].NotInheritedProp
+
+  lazy val Basic = new FetchedInterface[querki.basic.Basic]
+  def getDisplayNameProp(m:EcologyMember) = Basic(m).DisplayNameProp
+  lazy val Core = new FetchedInterface[querki.core.Core]
+  def getNotInheritedProp(m:EcologyMember) = Core(m).NotInheritedProp
   
   implicit object PropNameOrdering extends Ordering[Property[_,_]] {
     def compare(a:Property[_,_], b:Property[_,_]) = {
+      val DisplayNameProp = getDisplayNameProp(a)
       if (a eq DisplayNameProp) {
         if (b eq DisplayNameProp)
           0
@@ -229,6 +247,7 @@ object Property {
     def inheritedProps(thing:Option[Thing], model:Thing)(implicit state:SpaceState):PropList = {
       // Get the Model's PropList, and push its values into the inherited slots:
       val raw = fromRec(model, thing)   
+      val NotInheritedProp = getNotInheritedProp(model)
       (TreeMap.empty[Property[_,_], DisplayPropVal] /: raw) { (result, fromModel) =>
         val (prop, v) = fromModel
         if (prop == NameProp && !isProperty(thing)) {
