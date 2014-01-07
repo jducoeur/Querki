@@ -16,6 +16,7 @@ import system._
 import models.system._
 import models.system.SystemSpace._
 
+import querki.core.PropList
 import querki.ecology._
 import querki.identity._
 
@@ -60,6 +61,7 @@ object Application extends ApplicationBase {
   lazy val DeriveName = getInterface[querki.types.DeriveName]
   lazy val System = getInterface[querki.system.System]
   lazy val Search = getInterface[querki.search.Search]
+  lazy val PropListMgr = getInterface[querki.core.PropListManager]
 
   def index = withUser(false) { rc =>
     Ok(views.html.index(rc))
@@ -215,14 +217,14 @@ disallow: /
     val modelThingIdOpt = modelIdOpt map (ThingId(_))
     val modelOpt = modelThingIdOpt flatMap (rc.state.get.anything(_))
     val model = modelOpt getOrElse Basic.SimpleThing
-    showEditPage(rc, model, PropList.inheritedProps(None, model))
+    showEditPage(rc, model, PropListMgr.inheritedProps(None, model))
   }
   
   def createProperty(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
     showEditPage(
         rc, 
         UrProp,
-        PropList.inheritedProps(None, UrProp)(rc.state.get))
+        PropListMgr.inheritedProps(None, UrProp)(rc.state.get))
   }
   
   def doCreateThing(ownerId:String, spaceId:String, subCreate:Option[Boolean]) = {
@@ -273,7 +275,7 @@ disallow: /
         val fromAPI = formFlag("API")
         
         def makeProps(propList:List[FormFieldInfo]):PropList = {
-          val modelProps = PropList.inheritedProps(thing, oldModel)
+          val modelProps = PropListMgr.inheritedProps(thing, oldModel)
           val nonEmpty = propList filterNot (_.isEmpty)
           // Iff there are props whose submitted values are invalid, set them back to the
           // previous value, or the default if there wasn't one.
@@ -349,7 +351,7 @@ disallow: /
                   val thing = newState.anything(thingId).get
                   
                   if (makeAnother)
-                    showEditPage(rc.copy(state = Some(newState)), oldModel, PropList.inheritedProps(None, oldModel)(newState))
+                    showEditPage(rc.copy(state = Some(newState)), oldModel, PropListMgr.inheritedProps(None, oldModel)(newState))
                   else if (rc.isTrue("subCreate")) {
                     Ok(views.html.subCreate(rc, thing));
                   } else if (fromAPI) {
@@ -404,8 +406,8 @@ disallow: /
           map(_.v).
           getOrElse(ExactlyOne(LargeTextType(TagThing.defaultDisplayText)))
       showEditPage(rc, model, 
-          PropList.inheritedProps(None, model) ++
-          PropList(DisplayNameProp -> DisplayPropVal(None, DisplayNameProp, Some(ExactlyOne(PlainTextType(name)))),
+          PropListMgr.inheritedProps(None, model) ++
+          PropListMgr(DisplayNameProp -> DisplayPropVal(None, DisplayNameProp, Some(ExactlyOne(PlainTextType(name)))),
                    (DisplayTextProp -> DisplayPropVal(None, DisplayTextProp, Some(defaultText)))))
     }
   })) { implicit rc =>
@@ -413,7 +415,7 @@ disallow: /
     val thing = rc.thing.get
     // TODO: security check that I'm allowed to edit this
 	val model = thing.getModel
-	showEditPage(rc, model, PropList.from(thing))
+	showEditPage(rc, model, PropListMgr.from(thing))
   }
   
   def doEditThing(ownerId:String, spaceId:String, thingIdStr:String) = editThingInternal(ownerId, spaceId, Some(thingIdStr), false)

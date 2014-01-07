@@ -37,6 +37,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) {
   
   lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
+  lazy val PropListMgr = interface[querki.core.PropListManager]
   
   /***********************************************
    * PROPERTIES
@@ -189,7 +190,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) {
         yield props
 
       // Note that the toList here implicitly sorts the PropList, more or less by display name:
-      result.getOrElse(PropList.from(thing).toList.map(_._1).filterNot(SkillLevel.isAdvanced(_)).filter(specialFilter(thing, _)))
+      result.getOrElse(PropListMgr.from(thing).toList.map(_._1).filterNot(SkillLevel.isAdvanced(_)).filter(specialFilter(thing, _)))
     }
     
     private def editorLayoutForThing(thing:Thing, state:SpaceState):QLText = {

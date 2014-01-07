@@ -1,7 +1,6 @@
 package querki.types
 
 import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState}
-import models.Property.PropList
 import models.Thing._
 
 import models.system.{LinkType, NameType, PlainTextType}
@@ -9,6 +8,7 @@ import models.system.ExactlyOne
 import models.system.{LinkAllowAppsProp, LinkModelProp, NameProp, SystemProperty}
 import models.system.OIDs.{DisplayNameOID, NameOID, RootOID, systemOID}
 
+import querki.core.PropList
 import querki.core.MOIDs.UrPropOID
 import querki.ecology._
 import querki.spaces.{SpaceChangeManager, ThingChangeRequest}

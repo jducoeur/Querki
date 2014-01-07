@@ -40,7 +40,6 @@ object SkillLevel {
   object NameProp extends SystemProperty(NameOID, NameType, ExactlyOne,
       toProps(
         setName("Name"),
-        placeholderText("Name..."),
         NotInherited(),
         Summary("The name of this Thing"),
         Details("""Names should consist mainly of letters and numbers; they may also include dashes

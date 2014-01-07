@@ -33,6 +33,7 @@ object SystemCreator {
     new querki.basic.BasicModule(ecology)                          // 17
     new querki.system.SystemEcot(ecology)                          // 18
     new querki.search.SearchEcot(ecology)                          // 19
+    new querki.core.PropListManagerEcot(ecology)                   // 20
     
     ecology
   }

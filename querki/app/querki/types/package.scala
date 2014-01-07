@@ -1,9 +1,9 @@
 package querki
 
 import models.{DisplayPropVal, OID, Property, Thing}
-import models.Property.PropList
 import models.system.OIDs.sysId
 
+import querki.core.PropList
 import querki.ecology._
 import querki.values.{QValue, SpaceState}
 
