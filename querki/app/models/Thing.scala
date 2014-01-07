@@ -50,11 +50,6 @@ object Thing {
   type PropMap = Map[OID, QValue]
   type PropFetcher = () => PropMap
   
-  lazy val DisplayNameProp = getInterface[querki.basic.Basic].DisplayNameProp
-  lazy val Core = getInterface[querki.core.Core]
-  lazy val ApplyMethod = Core.ApplyMethod
-  lazy val NotInheritedProp = Core.NotInheritedProp
-  
   // A couple of convenience methods for the hard-coded Things in System:
   def toProps(pairs:(OID,QValue)*):PropFetcher = () => {
     (Map.empty[OID, QValue] /: pairs) { (m:Map[OID, QValue], pair:(OID, QValue)) =>
@@ -136,11 +131,19 @@ abstract class Thing(
     val model:OID, 
     val kind:Kind.Kind,
     val propFetcher: PropFetcher,
-    val modTime:DateTime) extends QLFunction
+    val modTime:DateTime)(implicit val ecology:Ecology) extends QLFunction with EcologyMember
 {
   lazy val props:PropMap = propFetcher()
   
   def thisAsContext(implicit request:RequestContext) = QLContext(ExactlyOne(LinkType(this.id)), Some(request))
+  
+  // These are defs instead of vals, because any vals defined here will be for every single Thing in the
+  // world. Don't val-ify too casually. In this case, I believe we're willing to accept a little lookup
+  // overhead, to save space:
+  def DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
+  def Core = interface[querki.core.Core]
+  def ApplyMethod = Core.ApplyMethod
+  def NotInheritedProp = Core.NotInheritedProp
   
   /**
    * The Name of this Thing, if there is one set.
@@ -519,5 +522,5 @@ abstract class Thing(
  * 
  * Note that Models are basically just ordinary Things.
  */
-case class ThingState(i:OID, s:OID, m:OID, pf: PropFetcher, mt:DateTime = querki.time.epoch, k:Kind.Kind = Kind.Thing) 
-  extends Thing(i, s, m, k, pf, mt) {}
+case class ThingState(i:OID, s:OID, m:OID, pf: PropFetcher, mt:DateTime = querki.time.epoch, k:Kind.Kind = Kind.Thing)(implicit e:Ecology) 
+  extends Thing(i, s, m, k, pf, mt)(e) with EcologyMember {}

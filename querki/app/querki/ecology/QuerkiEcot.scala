@@ -25,7 +25,11 @@ import querki.values.SpaceState
  * And init-time dependencies that this Ecot requires (including Properties used in the
  * constructors of those Things) must be declared as *NON*-lazy vals using initRequires().
  */
-abstract class QuerkiEcot(val ecology:Ecology) extends Ecot {
+abstract class QuerkiEcot(ecologyIn:Ecology) extends Ecot {
+  
+  // Note that this cannot, sadly, be a val, because it is needed in Ecot's constructor:
+  implicit def ecology = ecologyIn
+  
   /**
    * The PTypes introduced by this Module, if any.
    */

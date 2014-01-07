@@ -34,8 +34,7 @@ class EcologyImpl extends Ecology with EcologyManager {
   }
   
   def init(initialSpaceState:SpaceState):SpaceState = {
-    // TEMP:
-    println("Starting Ecology initialization")
+    println("Starting Ecology initialization...")
     initializeRemainingEcots(_registeredEcots, initialSpaceState)
   }
   

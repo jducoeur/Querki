@@ -11,6 +11,7 @@ import Thing._
 
 import ql._
 
+import querki.ecology.Ecology
 import querki.util._
 import querki.values._
 
@@ -28,7 +29,7 @@ import querki.values._
  * can't be user-created yet. When we add user-defined Collections, we'll need to make it
  * possible to fetch the timestamp at load time, as usual.
  */
-abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s, m, Kind.Collection, pf, querki.time.epoch) {
+abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecology) extends Thing(i, s, m, Kind.Collection, pf, querki.time.epoch)(e) {
   
   type pType = PType[_]
   type implType <: Iterable[ElemValue]

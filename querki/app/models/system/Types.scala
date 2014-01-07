@@ -18,7 +18,7 @@ import querki.types.Types
 import querki.util._
 import querki.values._
 
-abstract class SystemType[T](tid:OID, pf:PropFetcher) extends PType[T](tid, systemOID, RootOID, pf) {
+abstract class SystemType[T](tid:OID, pf:PropFetcher)(implicit e:Ecology = querki.ecology.Ecology) extends PType[T](tid, systemOID, RootOID, pf)(e) {
   lazy val Types = getInterface[Types]
   
   def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = {

@@ -81,7 +81,7 @@ trait EcologyMember {
   /**
    * A way to get from here to the Ecology.
    */
-  def ecology:Ecology
+  implicit def ecology:Ecology
   
   /**
    * This is the method that Ecots and EcologyMembers should use to access other parts of the Ecology, if they are
@@ -169,6 +169,7 @@ class EcotIds(val ecotId:Short) {
  * between it and Module. (Which will become EcotImpl.)
  */
 trait Ecot extends EcologyMember {
+
   import scala.reflect.runtime.{universe => ru}
   import scala.reflect.runtime.universe._
   

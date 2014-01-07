@@ -52,6 +52,8 @@ case class SpaceMember(user:User, person:ThingState)
  */
 trait TestSpace {
   
+  implicit val ecology = querki.ecology.Ecology
+  
   lazy val Person = getInterface[querki.identity.Person]
   lazy val System = getInterface[querki.system.System]
 

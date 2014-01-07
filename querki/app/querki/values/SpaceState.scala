@@ -46,8 +46,8 @@ case class SpaceState(
     things:Map[OID, ThingState],
     colls:Map[OID, Collection],
     ownerIdentity:Option[querki.identity.Identity],
-    ecology:Ecology) 
-  extends Thing(s, s, m, Kind.Space, pf, mt) with EcologyMember 
+    e:Ecology) 
+  extends Thing(s, s, m, Kind.Space, pf, mt)(e) with EcologyMember 
 {
   lazy val Person = interface[querki.identity.Person]  
   lazy val AccessControl = interface[querki.security.AccessControl]

@@ -12,7 +12,7 @@ import querki.values.{QLContext, RequestContext, SpaceState}
  * This is essentially a pseudo-Thing, produced when you navigate to an unknown Name. It basically
  * exists to support the display of the Undefined Tag View.
  */
-case class TagThing(name:String, space:SpaceState) extends Thing(UnknownOID, space.id, UnknownOID, Kind.Thing, () => Thing.emptyProps, querki.time.epoch) {
+case class TagThing(name:String, space:SpaceState)(implicit e:Ecology) extends Thing(UnknownOID, space.id, UnknownOID, Kind.Thing, () => Thing.emptyProps, querki.time.epoch)(e) {
 
   override lazy val displayName = name
   override lazy val canonicalName = Some(name)

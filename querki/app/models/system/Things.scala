@@ -22,7 +22,7 @@ object UrThing extends ThingState(RootOID, systemOID, RootOID,
       // TODO: once we rework the UI some more, we probably can and should remove this Optional from here.
       // It is really only here to remind the Space author to think about whether something is a Model.
       (IsModelOID -> ExactlyOne(ElemValue(false, new DelegatingType(YesNoType))))
-      )) 
+      ))(querki.ecology.Ecology)
 {
   override def getProp(propId:OID)(implicit state:SpaceState):PropAndVal[_] = {
     // If we've gotten up to here and haven't found the property, use

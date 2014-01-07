@@ -53,7 +53,7 @@ import messages.AttachmentContents
  * manages the whole hive of Actors for this Space. (That might be the better architecture,
  * now that I think of it.)
  */
-private [spaces] class SpacePersister(val id:OID, val ecology:Ecology) extends Actor with EcologyMember {
+private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) extends Actor with EcologyMember {
   
   lazy val SystemInterface = interface[querki.system.System]
 

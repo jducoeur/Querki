@@ -5,6 +5,7 @@ import com.github.nscala_time.time.Imports.DateTime
 import Thing._
 
 import ql.{QLPhrase}
+import querki.ecology.Ecology
 import querki.util._
 import querki.values.{QLContext, QValue, WikitextValue}
 
@@ -16,8 +17,8 @@ object MIMEType {
   val JSON = "application/json"
 }
 
-class Attachment(i:OID, s:OID, m:OID, pf: PropFetcher, mt:DateTime = querki.time.epoch) 
-  extends ThingState(i, s, m, pf, mt, Kind.Attachment) 
+class Attachment(i:OID, s:OID, m:OID, pf: PropFetcher, mt:DateTime = querki.time.epoch)(implicit e:Ecology)  
+  extends ThingState(i, s, m, pf, mt, Kind.Attachment)(e) 
 {
   override def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
     // When you simply apply an Attachment, include that attachment

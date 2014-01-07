@@ -16,6 +16,7 @@ import OIDs._
 
 import ql._
 
+import querki.ecology.Ecology
 import querki.util._
 import querki.values._
 
@@ -24,7 +25,7 @@ import querki.values._
 // Collections
 //
 
-abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid, systemOID, UrCollectionOID, pf)
+abstract class SystemCollection(cid:OID, pf:PropFetcher)(implicit e:Ecology = querki.ecology.Ecology) extends Collection(cid, systemOID, UrCollectionOID, pf)(e)
   
   /**
    * Root Collection type. Exists solely so that there is a common runtime root, in case
@@ -34,7 +35,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher) extends Collection(cid,
       toProps(
         setName("Collection"),
         InternalProp(true)
-        )) 
+        ))(querki.ecology.Ecology)
   {
 	type implType = List[ElemValue]
 	

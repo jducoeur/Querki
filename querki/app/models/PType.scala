@@ -8,6 +8,7 @@ import Thing._
 
 import ql._
 
+import querki.ecology.Ecology
 import querki.values._
 
 /**
@@ -16,7 +17,7 @@ import querki.values._
  * this is specifically so that we can potentially add user-defined Types down
  * the road.
  */
-abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s, m, Kind.Type, pf, querki.time.epoch) {
+abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecology) extends Thing(i, s, m, Kind.Type, pf, querki.time.epoch)(e) {
   
   type valType = VT
 
@@ -175,7 +176,7 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
  * TBD: is this good enough? Do I need to deal with the fields in the signature as well? Could be painful if so --
  * might have to refactor all the way down to Thing, to make those constructor fields into trait fields instead.
  */
-class DelegatingType[VT](resolver: => PType[VT]) extends PType[VT](UnknownOID, UnknownOID, UnknownOID, () => emptyProps) {
+class DelegatingType[VT](resolver: => PType[VT])(implicit e:Ecology = querki.ecology.Ecology) extends PType[VT](UnknownOID, UnknownOID, UnknownOID, () => emptyProps)(e) {
   /**
    * Note that this is intentionally recursive, so it works with multiple layers of wrapping.
    */
@@ -198,7 +199,7 @@ class DelegatingType[VT](resolver: => PType[VT]) extends PType[VT](UnknownOID, U
 /**
  * Marker type, used to signify "no real type" in empty collections.
  */
-object UnknownType extends PType[Unit](UnknownOID, UnknownOID, UnknownOID, () => emptyProps) {
+object UnknownType extends PType[Unit](UnknownOID, UnknownOID, UnknownOID, () => emptyProps)(querki.ecology.Ecology) {
   def doDeserialize(v:String) = throw new Exception("Trying to use UnknownType!")
   def doSerialize(v:Unit) = throw new Exception("Trying to use UnknownType!")
   def doWikify(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None) = throw new Exception("Trying to use UnknownType!")

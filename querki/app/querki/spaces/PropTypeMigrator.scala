@@ -19,6 +19,7 @@ case class TypeChangeInfo(typeChanged:Boolean, newType:PType[Any] with PTypeBuil
         val usingThingId = usingThing.id
         val newV = newProp.deserialize(serialized)
         val usingProps = usingThing.props + (prop.id -> newV)
+        implicit val e = usingThing.ecology
         usingThing match {
           case t:Attachment => state.copy(things = state.things + (usingThingId -> t.copy(pf = () => usingProps)))
           case t:ThingState => state.copy(things = state.things + (usingThingId -> t.copy(pf = () => usingProps)))

@@ -199,6 +199,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
     else {
       persister.request(Create(state, modelId, kind, props, attachmentInfo)) {
         case Changed(thingId, modTime) => {
+          implicit val e = ecology
           kind match {
             case Kind.Thing => {
               val thing = ThingState(thingId, spaceId, modelId, () => props, modTime, kind)
@@ -248,6 +249,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
 	        case None => oldThing.model
 	      }
 	        
+          implicit val e = ecology
 	      // TODO: this needs a clause for each Kind you can get:
           oldThing match {
             case t:Attachment => {

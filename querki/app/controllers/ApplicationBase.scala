@@ -14,7 +14,7 @@ import querki.values.SpaceState
 
 class ApplicationBase extends Controller {
   
-  lazy val ecology:Ecology = querki.ecology.Ecology
+  implicit lazy val ecology:Ecology = querki.ecology.Ecology
   
   /**
    * Standard error handler. Iff you get an error and the correct response is to redirect to

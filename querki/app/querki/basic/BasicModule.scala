@@ -21,6 +21,8 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic {
   val DeriveName = initRequires[querki.types.DeriveName]
   val Types = initRequires[querki.types.Types]
   
+  lazy val ApplyMethod = Core.ApplyMethod
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/

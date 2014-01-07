@@ -12,12 +12,13 @@ import SystemSpace._
 
 import querki.core
 
+import querki.ecology._
 import querki.types._
 import querki.values._
 
 // TODO: replace this with the version in QuerkiEcot:
-class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
-  extends Property[VT, RT](pid, systemOID, core.MOIDs.UrPropOID, t, c, p, querki.time.epoch)
+class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher)(implicit e:Ecology = querki.ecology.Ecology) 
+  extends Property[VT, RT](pid, systemOID, core.MOIDs.UrPropOID, t, c, p, querki.time.epoch)(e)
   
 // TEMP: while we're getting things working:
 object Summary {

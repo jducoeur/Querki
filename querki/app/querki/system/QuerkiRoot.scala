@@ -22,7 +22,9 @@ class QuerkiRoot extends Actor {
   
   def receive = {
     case Initialize => {
+      println("Creating the Ecology...")
       SystemCreator.createAllEcots(ecology)
+      println("... initializing the Ecology...")
       val finalState = ecology.manager.init(models.system.SystemSpace.initialSystemState(ecology))
       ecology.api[SystemManagement].setState(finalState)
     
@@ -34,6 +36,7 @@ class QuerkiRoot extends Actor {
       val ref = context.actorOf(Props(new SpaceManager(ecology, new DBSpacePersistenceFactory(ecology))), name="SpaceManager")
       SpaceManager.setSpaceManager(ref)
       
+      println("... Querki running.")
       sender ! Initialized
     }
     
