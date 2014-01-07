@@ -7,7 +7,7 @@ class PersonTest extends QuerkiTests {
   
   "A Space" should {
     "recognize its members" in {
-      val Person = getInterface[querki.identity.Person]
+      val Person = interface[querki.identity.Person]
       implicit val s = commonState
       
       val personId = commonSpace.member1.person.id

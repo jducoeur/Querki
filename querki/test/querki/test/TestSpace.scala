@@ -50,12 +50,10 @@ case class SpaceMember(user:User, person:ThingState)
  * In general, you should construct a class based on TestSpace, that fills in the
  * bits you need.
  */
-trait TestSpace {
+trait TestSpace extends EcologyMember {
   
-  implicit val ecology = querki.ecology.Ecology
-  
-  lazy val Person = getInterface[querki.identity.Person]
-  lazy val System = getInterface[querki.system.System]
+  lazy val Person = interface[querki.identity.Person]
+  lazy val System = interface[querki.system.System]
 
   // ================================
   //
@@ -122,11 +120,7 @@ trait TestSpace {
    * This Space's App. Defaults to the System Space; override this if you
    * want something different.
    */
-  lazy val app:SpaceState = {
-    // TODO: we need to set up SystemSpace properly, in the Ecology:
-//    SystemSpace.init
-    System.State
-  }
+  lazy val app:SpaceState = System.State
   
   def userAs(name:String, handle:String, level:UserLevel):User = 
     FullUser(
@@ -193,7 +187,6 @@ trait TestSpace {
       OIDMap(things:_*),
       OIDMap(Seq.empty:_*),  // This Space's Collections
       None,      // The Owner's actual Identity
-      // TODO: FIX THIS!!!
-      querki.ecology.Ecology
+      ecology
     )
 }

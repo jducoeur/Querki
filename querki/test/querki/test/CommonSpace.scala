@@ -17,7 +17,10 @@ import querki.identity.UserLevel._
  * tests, put them in here. If you are only using them in one or two tests, subclass
  * this and use that instead.
  */
-class CommonSpace extends TestSpace {
+class CommonSpace(implicit ecologyIn:Ecology) extends TestSpace {
+  
+  def ecology = ecologyIn
+  
   // In the simple case, we only have one Space, so it can own the World:
   val world = new TestWorld
   
@@ -47,7 +50,7 @@ class CommonSpace extends TestSpace {
   val testModel = new SimpleTestThing("My Model", IsModelProp(true))
   val instance = new TestThing("My Instance", testModel, 
       optTextProp("Hello world")) 
-  val withDisplayName = new SimpleTestThing("Interesting Display Name", getInterface[querki.basic.Basic].DisplayNameProp("""My name is "interesting"!"""))
+  val withDisplayName = new SimpleTestThing("Interesting Display Name", interface[querki.basic.Basic].DisplayNameProp("""My name is "interesting"!"""))
   
   /**
    * A simple imitation "photograph".

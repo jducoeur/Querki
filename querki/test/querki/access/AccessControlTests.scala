@@ -13,7 +13,7 @@ import querki.identity.UserLevel._
 import querki.test._
 
 class AccessControlTests extends QuerkiTests {
-  lazy val AccessControl = getInterface[querki.security.AccessControl]
+  lazy val AccessControl = interface[querki.security.AccessControl]
   
   "A Space" should {
     "allow the Owner to Edit everything" in {

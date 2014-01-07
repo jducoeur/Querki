@@ -9,7 +9,7 @@ import querki.time._
 import querki.test._
 
 class DateTimeTests extends QuerkiTests {
-  lazy val Time = getInterface[querki.time.Time]
+  lazy val Time = interface[querki.time.Time]
   
   "DateTime" should {
     

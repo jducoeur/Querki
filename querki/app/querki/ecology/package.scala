@@ -13,7 +13,7 @@ package object ecology {
    * you should pass the Ecology trait around as a pointer whenever possible. In the long run, we will
    * likely require that in all cases. 
    */
-  val Ecology = new EcologyImpl
+  var Ecology:Ecology = null
   
   /**
    * Shorthand for fetching a specified EcologyInterface. Note that the interface must be registered and

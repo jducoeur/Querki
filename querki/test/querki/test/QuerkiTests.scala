@@ -18,15 +18,35 @@ class QuerkiTests
   extends WordSpec
   with ShouldMatchers
   with BeforeAndAfterAll
+  with EcologyMember
 {
-  // TODO: FIX THIS!!!
-  lazy val ecology:Ecology = querki.ecology.Ecology
+  implicit var ecology:Ecology = null
+  
+  /**
+   * This is the method to add the Ecots into the Ecology. By default, it creates the whole world, but
+   * that is not required -- feel free to override this with a version that instantiates only some of them,
+   * and stubs out others.
+   */
+  def createEcots(e:Ecology) = {
+    querki.system.SystemCreator.createAllEcots(e)
+  }
+  
+  def createEcology() = {
+    val e = new EcologyImpl
+    // TEMP: this should go away!
+    querki.ecology.Ecology = e
+    createEcots(e)
+    val state = e.init(models.system.SystemSpace.initialSystemState(e))
+    e.api[querki.system.SystemManagement].setState(state)
+    ecology = e
+  }
   
   // Just for efficiency, we create the CommonSpace once -- it is immutable, and good enough for
   // most purposes:
-  lazy val commonSpace = new CommonSpace
-  override def beforeAll() = { 
-    commonSpace
+  var commonSpace:CommonSpace = null
+  override def beforeAll() = {
+    createEcology
+    commonSpace = new CommonSpace
   }
   def commonState = commonSpace.state
   
@@ -70,5 +90,5 @@ class QuerkiTests
   def expectedWarning(warningName:String):String = s"{{_warning:$warningName}}"
   
   // Commonly used Ecots and pieces therein:
-  lazy val DisplayNameProp = getInterface[querki.basic.Basic].DisplayNameProp
+  lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
 }

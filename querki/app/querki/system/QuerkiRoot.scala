@@ -18,11 +18,14 @@ class QuerkiRoot extends Actor {
   
   import QuerkiRoot._
   
-  def ecology = Ecology.ecology
+  var ecology:Ecology = null
   
   def receive = {
     case Initialize => {
       println("Creating the Ecology...")
+      ecology = new EcologyImpl
+      // TEMP: this should go away!
+      querki.ecology.Ecology = ecology
       SystemCreator.createAllEcots(ecology)
       println("... initializing the Ecology...")
       val finalState = ecology.manager.init(models.system.SystemSpace.initialSystemState(ecology))
