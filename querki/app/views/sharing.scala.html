@@ -16,8 +16,8 @@
   "Sharing and Security for " + space.displayName
 }
 
-@from = @{ getInterface[querki.email.Email].from }
-@InviteText = @{ getInterface[querki.identity.Person].InviteText }
+@from = @{ rc.interface[querki.email.Email].from }
+@InviteText = @{ rc.interface[querki.identity.Person].InviteText }
 
 @main(QuerkiTemplate.View, pageTitle, rc) {
 
@@ -93,7 +93,7 @@
         
         <table class="table table-hover">
           @for(invitee <- space.invitees;
-               propVal <- invitee.getPropOpt(getInterface[querki.email.Email].EmailAddressProp)(space);
+               propVal <- invitee.getPropOpt(rc.interface[querki.email.Email].EmailAddressProp)(space);
                emailAddr <- propVal.firstOpt;
                addr = emailAddr.addr) {
             <tr class="warning"><td>@addr</td></tr>
