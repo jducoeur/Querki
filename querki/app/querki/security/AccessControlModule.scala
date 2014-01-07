@@ -21,7 +21,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
 
   import MOIDs._
   
-  lazy val Person = getInterface[querki.identity.Person]
+  lazy val Person = interface[querki.identity.Person]
   
   // TBD: this checks whether this person is a Member based on the Person records in the Space. Should we use
   // the SpaceMembership table instead? In general, there is a worrying semantic duplication here. We should
