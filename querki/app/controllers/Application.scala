@@ -59,6 +59,7 @@ object Application extends ApplicationBase {
   lazy val DisplayNameProp = Basic.DisplayNameProp
   lazy val DeriveName = getInterface[querki.types.DeriveName]
   lazy val System = getInterface[querki.system.System]
+  lazy val Search = getInterface[querki.search.Search]
 
   def index = withUser(false) { rc =>
     Ok(views.html.index(rc))

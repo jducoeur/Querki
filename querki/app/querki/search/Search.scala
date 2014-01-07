@@ -9,9 +9,10 @@ import querki.identity.User
 
 import querki.values.RequestContext
 
-// TODO: this should be an Ecot!!!
-object Search {
-  lazy val DisplayNameProp = getInterface[querki.basic.Basic].DisplayNameProp
+object MOIDs extends EcotIds(19)
+
+class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search {
+  lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
   
   def search(rc:RequestContext, searchStr:String):Option[SearchResults] = {
     if (searchStr.length() < 3)
