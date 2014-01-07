@@ -7,6 +7,8 @@ import models._
 import Property._
 import Thing._
 
+import querki.ecology.Ecology
+
 import querki.values.SpaceState
 
 /**
@@ -231,7 +233,7 @@ object SystemSpace {
   // Things:
   val things = OIDMap[ThingState](UrThing)
   
-  def initialSystemState = {
+  def initialSystemState(ecology:Ecology) = {
     SpaceState(systemOID, RootOID,
       toProps(
         setName("System"),
@@ -249,6 +251,6 @@ object SystemSpace {
 [[How It Works -> _if(_isDefined, ""**____**"")]]
 """),
         ShowUnknownProp(TagThing.defaultDisplayText)), 
-      SystemUserOID, "System", querki.time.epoch, None, SystemTypes.all, props, things, SystemCollections.all, None)    
+      SystemUserOID, "System", querki.time.epoch, None, SystemTypes.all, props, things, SystemCollections.all, None, ecology)    
   }
 }

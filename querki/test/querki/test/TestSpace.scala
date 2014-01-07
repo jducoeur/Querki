@@ -190,6 +190,8 @@ trait TestSpace {
       OIDMap(props:_*),
       OIDMap(things:_*),
       OIDMap(Seq.empty:_*),  // This Space's Collections
-      None       // The Owner's actual Identity
+      None,      // The Owner's actual Identity
+      // TODO: FIX THIS!!!
+      querki.ecology.Ecology
     )
 }

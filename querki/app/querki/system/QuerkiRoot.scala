@@ -23,7 +23,7 @@ class QuerkiRoot extends Actor {
   def receive = {
     case Initialize => {
       SystemCreator.createAllEcots(ecology)
-      val finalState = ecology.manager.init(models.system.SystemSpace.initialSystemState)
+      val finalState = ecology.manager.init(models.system.SystemSpace.initialSystemState(ecology))
       ecology.api[SystemManagement].setState(finalState)
     
       // Note that the SpacePersistenceFactory is intentionally defined all the way up here. That is

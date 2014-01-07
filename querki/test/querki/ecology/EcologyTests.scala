@@ -52,7 +52,7 @@ class EcologyTests extends WordSpec
       assert(eco.manager.isRegistered[TestInterface2])
       assert(!eco.manager.isRegistered[TestInterface3])
       
-      val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState)
+      val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState(eco))
       
       val interface1 = eco.api[TestInterface1]
       intercept[UnknownInterfaceException] {
@@ -87,7 +87,7 @@ class EcologyTests extends WordSpec
       val ecot1 = new Ecot1(1)
       val ecot2 = new Ecot2(2)
       
-      val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState)
+      val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState(eco))
       
       assert(ecot1.answer == 42)
       
@@ -135,7 +135,7 @@ class EcologyTests extends WordSpec
       val ecot1 = new Ecot1(1)
       val ecot2 = new Ecot2(2)
       
-      val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState)
+      val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState(eco))
       
       assert(ecot1.myAnswer == Some(42))
     }
@@ -158,7 +158,7 @@ class EcologyTests extends WordSpec
       val ecot2 = new Ecot2(2)
 
       intercept[InitMissingInterfaceException] {
-        val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState)
+        val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState(eco))
       }
     }
     
@@ -175,7 +175,7 @@ class EcologyTests extends WordSpec
       val ecot2 = new Ecot2(2)
 
       intercept[InitDependencyLoopException] {
-        val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState)
+        val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState(eco))
       }
     }    
   }

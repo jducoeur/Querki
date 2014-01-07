@@ -45,9 +45,13 @@ case class SpaceState(
     spaceProps:Map[OID, Property[_,_]],
     things:Map[OID, ThingState],
     colls:Map[OID, Collection],
-    ownerIdentity:Option[querki.identity.Identity]) 
-  extends Thing(s, s, m, Kind.Space, pf, mt) 
+    ownerIdentity:Option[querki.identity.Identity],
+    ecology:Ecology) 
+  extends Thing(s, s, m, Kind.Space, pf, mt) with EcologyMember 
 {
+  lazy val Person = interface[querki.identity.Person]  
+  lazy val AccessControl = interface[querki.security.AccessControl]
+  
   // *******************************************
   //
   // Calculated and cached tables
@@ -322,8 +326,6 @@ case class SpaceState(
     filteredAsModel.filterNot(_.ifSet(InternalProp))
   }
   
-  lazy val AccessControl = getInterface[querki.security.AccessControl]
-  
   def canRead(who:User, thingId:OID):Boolean = {
     AccessControl.canRead(this, who, thingId)
   }
@@ -343,8 +345,6 @@ case class SpaceState(
 
 object SpaceState {
   
-  lazy val Person = getInterface[querki.identity.Person]
-  
   /**
    * Extra functionality that is sometimes useful to consider as part of the state, but isn't
    * really part of the core concept. Factored out to keep the main SpaceState interface and dependencies decently clean.
@@ -360,11 +360,11 @@ object SpaceState {
     /**
      * All the people who have been invited into this Space who have not yet accepted.
      */
-    def invitees:Iterable[Thing] = people.filterNot(_.hasProp(Person.IdentityLink)(state))
+    def invitees:Iterable[Thing] = people.filterNot(_.hasProp(state.Person.IdentityLink)(state))
     /**
      * All the people who have joined this Space.
      */
-    def members:Iterable[Thing] = people.filter(_.hasProp(Person.IdentityLink)(state))
+    def members:Iterable[Thing] = people.filter(_.hasProp(state.Person.IdentityLink)(state))
     
     // *************************************
     

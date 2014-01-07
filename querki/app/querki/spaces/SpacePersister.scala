@@ -174,7 +174,8 @@ private [spaces] class SpacePersister(val id:OID, val ecology:Ecology) extends A
 	             Map.empty[OID, ThingState],
 	             // TODO (probably rather later): dynamic Collections
 	             Map.empty[OID, Collection],
-	             None
+	             None,
+	             ecology
 	            )
 	      }
 	      
@@ -200,7 +201,8 @@ private [spaces] class SpacePersister(val id:OID, val ecology:Ecology) extends A
 	            Map.empty[OID, ThingState],
 	            // TODO (probably rather later): dynamic Collections
 	            Map.empty[OID, Collection],
-	            None
+	            None,
+	            ecology
 	            )
 	        } else
 	          spaceStream.head
