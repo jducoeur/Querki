@@ -34,15 +34,13 @@ object TagThing {
   val defaultDisplayText = """Referenced from:
 [[_tagRefs -> _bulleted]]"""  
     
-  lazy val Basic = getInterface[querki.basic.Basic]
-    
   def preferredModelForTag(implicit state:SpaceState, nameIn:String):Thing = {
     val tagProps = state.propsOfType(TagSetType).filter(_.hasProp(OIDs.LinkModelOID))
     val newTagProps = state.propsOfType(NewTagSetType).filter(_.hasProp(OIDs.LinkModelOID))
     val name = NameType.canonicalize(nameIn)
     val plainName = PlainText(nameIn)
     if (tagProps.isEmpty && newTagProps.isEmpty)
-      Basic.SimpleThing
+      state.interface[querki.basic.Basic].SimpleThing
     else {
       val candidates = state.allThings.toSeq
     
@@ -75,7 +73,7 @@ object TagThing {
           )
           yield model
 
-      modelOpt.getOrElse(Basic.SimpleThing)
+      modelOpt.getOrElse(state.interface[querki.basic.Basic].SimpleThing)
     }
   }
 }
