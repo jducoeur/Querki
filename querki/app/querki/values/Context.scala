@@ -16,14 +16,17 @@ trait DebugRenderable {
 }
 
 case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:Option[QLContext] = None, 
-                     parser:Option[QLParser] = None, depth:Int = 0, useCollection:Boolean = false, propOpt:Option[Property[_,_]] = None) extends DebugRenderable
+                     parser:Option[QLParser] = None, depth:Int = 0, useCollection:Boolean = false, propOpt:Option[Property[_,_]] = None) 
+  extends DebugRenderable with EcologyMember
 {
   // This might become a config param -- it is the maximum depth we will allow a call to be. For now, we're
   // keeping it very tight, but it might eventually need to be over a thousand.
   val maxDepth = 100
   
-  lazy val System = getInterface[querki.system.System]
+  // Note that this will crash if we don't have a RequestContext!
+  lazy val System = interface[querki.system.System]
   
+  def ecology:Ecology = request.ecology
   def request:RequestContext = {
     requestOpt match {
       case Some(r) => r

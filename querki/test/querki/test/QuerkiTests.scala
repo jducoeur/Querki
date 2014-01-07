@@ -19,6 +19,9 @@ class QuerkiTests
   with ShouldMatchers
   with BeforeAndAfterAll
 {
+  // TODO: FIX THIS!!!
+  lazy val ecology:Ecology = querki.ecology.Ecology
+  
   // Just for efficiency, we create the CommonSpace once -- it is immutable, and good enough for
   // most purposes:
   lazy val commonSpace = new CommonSpace
@@ -45,7 +48,7 @@ class QuerkiTests
    */
   def thingAsContext[S <: CommonSpace](space:S, f: S => Thing)(implicit requester:User = BasicTestUser):QLContext = {
     val (state, thing) = spaceAndThing(space, f)
-    val rc = SimpleTestRequestContext(space.owner.mainIdentity.id, state, thing)
+    val rc = SimpleTestRequestContext(space.owner.mainIdentity.id, state, thing, ecology)
     thing.thisAsContext(rc)
   }
   

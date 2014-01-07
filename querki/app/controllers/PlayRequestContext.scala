@@ -4,6 +4,7 @@ import play.api.mvc._
 import models._
 
 import language.implicitConversions
+import querki.ecology._
 import querki.identity.User
 
 import querki.values.{RequestContext, SpaceState}
@@ -62,12 +63,13 @@ case class PlayRequestContext(
     override val ownerId:OID, 
     override val state:Option[SpaceState], 
     override val thing:Option[Thing],
+    override val ecology:Ecology,
     error:Option[String] = None,
     sessionUpdates:Seq[(String,String)] = Seq.empty,
     redirectTo:Option[Call] = None,
     spaceIdOpt:Option[String] = None,
     reqOwnerHandle:Option[String] = None) 
-  extends RequestContext(requester, ownerId, state, thing)
+  extends RequestContext(requester, ownerId, state, thing, ecology)
   with RequestHeaderParser
 {
   // NOTE: this may be wrong, but at the moment is the way the logic works

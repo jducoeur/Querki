@@ -5,6 +5,7 @@ import play.api.mvc._
 
 import models._
 
+import querki.ecology._
 import querki.identity._
 import querki.spaces.SpaceManager
 import querki.spaces.messages._
@@ -12,6 +13,8 @@ import querki.util._
 import querki.values.SpaceState
 
 class ApplicationBase extends Controller {
+  
+  lazy val ecology:Ecology = querki.ecology.Ecology
   
   /**
    * Standard error handler. Iff you get an error and the correct response is to redirect to
@@ -82,7 +85,7 @@ class ApplicationBase extends Controller {
     } else {
       // Iff requireLogin was false, we might not have a real user here, so massage it:
       val userParam = if (user == User.Anonymous) None else Some(user)
-      f(PlayRequestContext(request, userParam, UnknownOID, None, None))
+      f(PlayRequestContext(request, userParam, UnknownOID, None, None, ecology))
     }
   }
   

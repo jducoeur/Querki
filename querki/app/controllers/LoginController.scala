@@ -240,7 +240,7 @@ object LoginController extends ApplicationBase {
     Security.Authenticated(forceUser, onUnauthorized) { user =>
       Action { implicit request =>
         if (user == User.Anonymous)
-          Ok(views.html.login(PlayRequestContext(request, None, UnknownOID, None, None)))
+          Ok(views.html.login(PlayRequestContext(request, None, UnknownOID, None, None, ecology)))
         else {
           Redirect(routes.Application.index)
         }
@@ -248,7 +248,7 @@ object LoginController extends ApplicationBase {
     }
   
   def dologin = Action { implicit request =>
-    val rc = PlayRequestContext(request, None, UnknownOID, None, None)
+    val rc = PlayRequestContext(request, None, UnknownOID, None, None, ecology)
     userForm.bindFromRequest.fold(
       errors => doError(routes.LoginController.login, "I didn't understand that"),
       form => {

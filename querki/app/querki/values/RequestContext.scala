@@ -4,6 +4,8 @@ import models.OID
 import models.UnknownOID
 import models.Thing
 
+import querki.ecology._
+
 import querki.identity.User
 
 /**
@@ -28,7 +30,8 @@ abstract class RequestContext(
     // Note that this is an *identity*
     val ownerId:OID, 
     val state:Option[SpaceState], 
-    val thing:Option[Thing]) 
+    val thing:Option[Thing],
+    val ecology:Ecology) extends EcologyMember
 {
   def requesterOrAnon = requester getOrElse User.Anonymous
   def requesterOID = requester map (_.id) getOrElse UnknownOID  
