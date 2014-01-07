@@ -90,7 +90,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
     toProps(
       setName("CSS"),
       InternalProp(true),
-      SkillLevel(SkillLevel.Advanced),
+      SkillLevel(SkillLevelAdvanced),
       Summary("The actual CSS for a Stylesheet"),
       Details("""This is the main property on a Stylesheet. It can contain more or less
           |any arbitrary CSS, with just a few security-related exceptions.

@@ -29,6 +29,12 @@ object Details {
 object NotInherited {
   def apply() = (querki.core.MOIDs.NotInheritedOID -> ExactlyOne(YesNoType(true)))
 }
+object SkillLevel {
+  val Basic = querki.identity.skilllevel.MOIDs.SkillLevelBasicOID
+  val Standard = querki.identity.skilllevel.MOIDs.SkillLevelStandardOID
+  val Advanced = querki.identity.skilllevel.MOIDs.SkillLevelAdvancedOID
+  def apply(level:OID) = (querki.identity.skilllevel.MOIDs.SkillLevelPropOID -> ExactlyOne(LinkType(level)))
+}
   
   object NameProp extends SystemProperty(NameOID, NameType, ExactlyOne,
       toProps(

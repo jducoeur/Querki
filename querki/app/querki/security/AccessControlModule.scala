@@ -193,14 +193,14 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
       toProps(
         setName("Who Can Edit Custom"),
         isPermissionProp(true),
-        SkillLevel(SkillLevel.Advanced),
+        SkillLevel(SkillLevelAdvanced),
         Summary("Who else can edit this Thing")))
 
   lazy val CanReadProp = new SystemProperty(CanReadPropOID, LinkType, QSet,
       toProps(
         setName("Who Can Read"),
         isPermissionProp(true),
-        SkillLevel(SkillLevel.Advanced),
+        SkillLevel(SkillLevelAdvanced),
         (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
         Summary("Who else can read Things in this Space")))
 
@@ -208,7 +208,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
       toProps(
         setName("Who Can Edit"),
         isPermissionProp(true),
-        SkillLevel(SkillLevel.Advanced),
+        SkillLevel(SkillLevelAdvanced),
         (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
         Summary("Who else can edit Things in this Space"),
         Details("""Note that this Property is *not* inherited, unlike most. If you want to
@@ -218,7 +218,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
       toProps(
         setName("Who Can Edit Children"),
         isPermissionProp(true),
-        SkillLevel(SkillLevel.Advanced),
+        SkillLevel(SkillLevelAdvanced),
         (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
         Summary("Who else can edit children of this Thing"),
         Details("""This Property is useful on Models and Spaces, and works as follows.
@@ -236,7 +236,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
   lazy val CanCreateProp = new SystemProperty(CanCreatePropOID, LinkType, QSet,
       toProps(
         setName("Who Can Create"),
-        SkillLevel(SkillLevel.Advanced),
+        SkillLevel(SkillLevelAdvanced),
         isPermissionProp(true),
         (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
         Summary("Who else can make new Things in this Space")))

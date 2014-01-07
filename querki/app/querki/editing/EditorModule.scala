@@ -36,6 +36,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) {
   val Types = initRequires[querki.types.Types]
   
   lazy val Conventions = interface[querki.conventions.Conventions]
+  lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   
   /***********************************************
    * PROPERTIES

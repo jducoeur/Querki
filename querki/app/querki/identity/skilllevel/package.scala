@@ -1,8 +1,10 @@
 package querki.identity
 
-import models.{OID, Property}
+import models.{OID, Property, Thing}
 
 import querki.ecology._
+
+import querki.values.SpaceState
 
 package object skilllevel {
   object MOIDs extends EcotIds(14) {
@@ -15,5 +17,8 @@ package object skilllevel {
   
   trait SkillLevel extends EcologyInterface {  
     def SkillLevelProp:Property[OID, OID]
+    
+    def apply(thing:Thing)(implicit state:SpaceState):OID
+    def isAdvanced(thing:Thing)(implicit state:SpaceState):Boolean
   }
 }

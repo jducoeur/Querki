@@ -80,6 +80,7 @@ abstract class QuerkiEcot(val ecology:Ecology) extends Ecot {
   // Common Types:
   val IntType = models.system.IntType
   val LargeTextType = models.system.LargeTextType
+  val LinkType = models.system.LinkType
   val QLType = models.system.QLType
   val TextType = models.system.TextType
   val YesNoType = models.system.YesNoType
@@ -88,9 +89,13 @@ abstract class QuerkiEcot(val ecology:Ecology) extends Ecot {
   // dependencies:
   def Summary(text:String) = (querki.conventions.MOIDs.PropSummaryOID -> ExactlyOne(TextType(text)))
   def Details(text:String) = (querki.conventions.MOIDs.PropDetailsOID -> ExactlyOne(LargeTextType(text)))
-  val SkillLevel = querki.values.SkillLevel
   def AppliesToKindProp(kind:Int) = (models.system.OIDs.AppliesToKindOID -> QList(IntType(kind)))
   def NotInherited = (querki.core.MOIDs.NotInheritedOID -> ExactlyOne(YesNoType(true)))
+  
+  lazy val SkillLevelBasic = querki.identity.skilllevel.MOIDs.SkillLevelBasicOID
+  lazy val SkillLevelStandard = querki.identity.skilllevel.MOIDs.SkillLevelStandardOID
+  lazy val SkillLevelAdvanced = querki.identity.skilllevel.MOIDs.SkillLevelAdvancedOID
+  def SkillLevel(level:OID) = (querki.identity.skilllevel.MOIDs.SkillLevelPropOID -> ExactlyOne(LinkType(level)))
   
   // The standard convenience sugar for defining a Property in an Ecot:
   class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:models.Thing.PropFetcher) 

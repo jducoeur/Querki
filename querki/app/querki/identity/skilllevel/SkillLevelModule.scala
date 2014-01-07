@@ -2,7 +2,7 @@ package querki.identity.skilllevel.impl
 
 import querki.identity.skilllevel._
 
-import models.{ThingState}
+import models.{OID, Thing, ThingState}
 import models.Thing._
 import models.system.ExactlyOne
 import models.system.LinkType
@@ -10,6 +10,8 @@ import models.system.{DisplayTextProp, LinkModelProp, SystemProperty}
 import models.system.OIDs.{systemOID}
 
 import querki.ecology._
+
+import querki.values.SpaceState
 
 class SkillLevelModule(e:Ecology) extends QuerkiEcot(e) with SkillLevel {
   import querki.identity.skilllevel.MOIDs._
@@ -74,4 +76,29 @@ class SkillLevelModule(e:Ecology) extends QuerkiEcot(e) with SkillLevel {
     skillLevelStandard,
     skillLevelAdvanced
   )
+  
+  /***********************************************
+   * METHODS
+   ***********************************************/
+  
+  def apply(thing:Thing)(implicit state:SpaceState):OID = {
+    val result = for (
+      propVal <- thing.getPropOpt(SkillLevelProp);
+      levelId <- propVal.firstOpt
+        )
+      yield levelId
+      
+    result.getOrElse(SkillLevelStandard)
+  } 
+    
+  def isAdvanced(thing:Thing)(implicit state:SpaceState):Boolean = {
+    val result = for (
+      propVal <- thing.getPropOpt(SkillLevelProp);
+      levelId <- propVal.firstOpt;
+      if (levelId == SkillLevelAdvanced)
+        )
+      yield true
+      
+    result.getOrElse(false)
+  }
 }

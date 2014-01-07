@@ -38,7 +38,7 @@ class CoreModule(e:Ecology) extends QuerkiEcot(e) with Core {
   lazy val ApplyMethod = new SystemProperty(ApplyMethodOID, QLType, Optional,
     toProps(
       setName("_apply"),
-      SkillLevel(SkillLevel.Advanced),
+      SkillLevel(SkillLevelAdvanced),
       Summary("A QL Expression that will be run when you name this Thing."),
       Details("""_apply is an advanced function, and most users will not use it directly. But it is probably
           |the most important Property in Querki, and advanced users may want to play with it.
@@ -80,7 +80,7 @@ class CoreModule(e:Ecology) extends QuerkiEcot(e) with Core {
       // Need to define this explicitly, to break infinite loops in lookup:
       (NotInheritedOID -> ExactlyOne(querki.values.ElemValue(false, new DelegatingType({YesNoType})))),
       AppliesToKindProp(Kind.Property),
-      SkillLevel(SkillLevel.Advanced),
+      SkillLevel(SkillLevelAdvanced),
       Summary("Should this Property be inherited from ancestors?"),
       Details("""All Things in Querki are part of a big inheritance tree. Instances inherit from their Models,
           |which in turn usually inherit from higher-level Models.
