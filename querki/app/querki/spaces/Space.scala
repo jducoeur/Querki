@@ -53,15 +53,15 @@ import PersistMessages._
  * 
  * TODO: Space really should take the Ecology as a parameter, instead of accessing it statically.
  */
-private [spaces] class Space(persistenceFactory:SpacePersistenceFactory) extends Actor with Requester {
+private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory) extends Actor with Requester with EcologyMember {
   
   import context._
   import models.system.SystemSpace._ 
   
   def id = OID(self.path.name)
   
-  lazy val Basic = getInterface[querki.basic.Basic]
-  lazy val Person = getInterface[querki.identity.Person]
+  lazy val Basic = interface[querki.basic.Basic]
+  lazy val Person = interface[querki.identity.Person]
   
   /**
    * This is the Actor that manages all persistence (DB) operations. We do things this
@@ -409,5 +409,5 @@ object Space {
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
   // with "Props(classOf(Space), ...)". See:
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-  def actorProps(persistenceFactory:SpacePersistenceFactory):Props = Props(new Space(persistenceFactory))
+  def actorProps(ecology:Ecology, persistenceFactory:SpacePersistenceFactory):Props = Props(new Space(ecology, persistenceFactory))
 }

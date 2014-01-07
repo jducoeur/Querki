@@ -28,6 +28,8 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.Play.current
 import play.Configuration
 
+import querki.ecology._
+
 import querki.identity.User
 
 import querki.spaces._
@@ -37,7 +39,7 @@ import querki.util.SqlHelpers._
 
 import PersistMessages._
 
-class SpaceManager(persistenceFactory:SpacePersistenceFactory) extends Actor with Requester {
+class SpaceManager(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory) extends Actor with Requester with EcologyMember {
   import models.system.SystemSpace
   import SystemSpace._
   import Space._
@@ -58,7 +60,7 @@ class SpaceManager(persistenceFactory:SpacePersistenceFactory) extends Actor wit
   def getSpace(spaceId:OID):ActorRef = {
     val sid = Space.sid(spaceId)
     // Fetch the existing Space Actor, or fire it up:
-    context.child(sid).getOrElse(context.actorOf(Space.actorProps(persistenceFactory), sid))
+    context.child(sid).getOrElse(context.actorOf(Space.actorProps(ecology, persistenceFactory), sid))
   }
   
   def receive = {

@@ -72,12 +72,22 @@ trait EcologyManager {
 /**
  * This is an abstraction for any object that lives inside the Ecology, and knows how to get to it.
  * This includes Ecots, but also many child objects of Ecots.
+ * 
+ * If at all possible, anything that "consumes" the Ecology -- anything that fetches interfaces -- should
+ * be an EcologyMember. This means that it needs to receive the Ecology in some fashion -- most often as
+ * a constructor parameter, but it could also simply use a pointer to its parent, or something like that.
  */
 trait EcologyMember {
   /**
    * A way to get from here to the Ecology.
    */
   def ecology:Ecology
+  
+  /**
+   * This is the method that Ecots and EcologyMembers should use to access other parts of the Ecology, if they are
+   * *not* needed at initialization time. 
+   */
+  def interface[T <: EcologyInterface : TypeTag]:T = ecology.api[T]
 }
 
 /**
@@ -168,12 +178,6 @@ trait Ecot extends EcologyMember {
    * Note that you will not usually set this manually.
    */
   def dependsUpon:Set[Class[_]] = _dependencies
-  
-  /**
-   * This is the method that Ecots should use to access other parts of the Ecology, if they are
-   * *not* needed at initialization time. 
-   */
-  def interface[T <: EcologyInterface : TypeTag]:T = ecology.api[T]
 
   /**
    * This should be used by Ecots to pull in interfaces that they will need for initialization.

@@ -53,9 +53,9 @@ import messages.AttachmentContents
  * manages the whole hive of Actors for this Space. (That might be the better architecture,
  * now that I think of it.)
  */
-private [spaces] class SpacePersister(val id:OID) extends Actor {
+private [spaces] class SpacePersister(val id:OID, val ecology:Ecology) extends Actor with EcologyMember {
   
-  lazy val SystemInterface = getInterface[querki.system.System]
+  lazy val SystemInterface = interface[querki.system.System]
 
   def SpaceSQL(query:String):SqlQuery = SpacePersister.SpaceSQL(id, query) 
   def AttachSQL(query:String):SqlQuery = SpacePersister.AttachSQL(id, query)

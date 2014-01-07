@@ -31,7 +31,7 @@ class QuerkiRoot extends Actor {
       // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
       // with "Props(classOf(Space), ...)". See:
       //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-      val ref = context.actorOf(Props(new SpaceManager(new DBSpacePersistenceFactory)), name="SpaceManager")
+      val ref = context.actorOf(Props(new SpaceManager(ecology, new DBSpacePersistenceFactory(ecology))), name="SpaceManager")
       SpaceManager.setSpaceManager(ref)
       
       sender ! Initialized

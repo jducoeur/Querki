@@ -40,10 +40,10 @@ import PersistMessages._
  * 
  * TODO: this should take the Ecology as a parameter, instead of accessing it statically.
  */
-private [spaces] class SpaceManagerPersister extends Actor {
+private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor with EcologyMember {
   
-  lazy val DisplayNameProp = getInterface[querki.basic.Basic].DisplayNameProp
-  lazy val SystemInterface = getInterface[querki.system.System]
+  lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
+  lazy val SystemInterface = interface[querki.system.System]
 
   def receive = {
     case ListMySpaces(owner) => {
