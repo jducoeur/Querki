@@ -53,15 +53,15 @@ class Application extends ApplicationBase {
      ((searchInput:String) => Some(searchInput))
   )
   
-  lazy val Core = getInterface[querki.core.Core]
+  lazy val Core = interface[querki.core.Core]
   lazy val UrProp = Core.UrProp
   
-  lazy val Basic = getInterface[querki.basic.Basic]
+  lazy val Basic = interface[querki.basic.Basic]
   lazy val DisplayNameProp = Basic.DisplayNameProp
-  lazy val DeriveName = getInterface[querki.types.DeriveName]
-  lazy val System = getInterface[querki.system.System]
-  lazy val Search = getInterface[querki.search.Search]
-  lazy val PropListMgr = getInterface[querki.core.PropListManager]
+  lazy val DeriveName = interface[querki.types.DeriveName]
+  lazy val System = interface[querki.system.System]
+  lazy val Search = interface[querki.search.Search]
+  lazy val PropListMgr = interface[querki.core.PropListManager]
 
   def index = withUser(false) { rc =>
     Ok(views.html.index(rc))

@@ -9,7 +9,7 @@ import models._
 
 class AdminController extends ApplicationBase {
   
-  lazy val Email = getInterface[querki.email.Email]
+  lazy val Email = interface[querki.email.Email]
   
   def withAdmin(f: PlayRequestContext => Result) = {
     withUser(true) { rc =>

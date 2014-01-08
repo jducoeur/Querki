@@ -12,7 +12,7 @@ import querki.spaces.messages._
 import querki.util._
 import querki.values.SpaceState
 
-class ApplicationBase extends Controller {
+class ApplicationBase extends Controller with EcologyMember {
   
   implicit var ecology:Ecology = null
   
