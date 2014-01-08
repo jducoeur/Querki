@@ -1,4 +1,4 @@
-package modules.time
+package querki.time
 
 import models.system.{ExactlyOne}
 

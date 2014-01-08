@@ -23,8 +23,8 @@ import querki.values.QLContext
  * methods in System. (This will likely require us to split this Module into two, which
  * should be fine.) 
  */
-class TimeModule(e:Ecology) extends QuerkiEcot(e) {
-
+class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time {
+ 
   import MOIDs._
     
   /******************************************
