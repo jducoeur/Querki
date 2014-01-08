@@ -202,11 +202,11 @@ trait Ecot extends EcologyMember {
     _dependencies += getClass(tag.tpe)
     InterfaceWrapper[T](ecology)
   }
-  // Everything except System depends on System. This is kludgy but convenient:
+  // Everything except Core depends on Core. This is kludgy but convenient:
   private var _dependencies:Set[Class[_]] = {
     this match {
-      case me:querki.system.System => Set.empty
-      case _ => Set(classOf[querki.system.System])
+      case me:querki.core.Core => Set.empty
+      case _ => Set(classOf[querki.core.Core])
     }
   }
   
