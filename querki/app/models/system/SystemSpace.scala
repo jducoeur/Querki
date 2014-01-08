@@ -93,18 +93,18 @@ object OIDs {
   val InstanceEditPropsOID = sysId(47)
 //  val RefsMethodOID = sysId(48)
 //  val OrMethodOID = sysId(49)
-  val FirstMethodOID = sysId(50)
+//  val FirstMethodOID = sysId(50)
 //  val LinkButtonOID = sysId(51)
-  val IsEmptyOID = sysId(52)
-  val IsNonEmptyOID = sysId(53)
+//  val IsEmptyOID = sysId(52)
+//  val IsNonEmptyOID = sysId(53)
   val PluralizeOID = sysId(54)
-  val FilterOID = sysId(55)
+//  val FilterOID = sysId(55)
 //  val BulletedOID = sysId(56)
 //  val NotOID = sysId(57)
-  val RestMethodOID = sysId(58)
+//  val RestMethodOID = sysId(58)
 //  val SpaceMethodOID = sysId(59)
 //  val ExternalRootsOID = sysId(60)
-  val SortMethodOID = sysId(61)
+//  val SortMethodOID = sysId(61)
 //  val ChildrenMethodOID = sysId(62)
 //  val IsModelMethodOID = sysId(63)
 //  val IfMethodOID = sysId(64)
@@ -130,9 +130,9 @@ object OIDs {
 //  val AllPropsThingOID = sysId(84)
 //  val PropSummaryOID = sysId(85)
 //  val PropDetailsOID = sysId(86)
-  val CountMethodOID = sysId(87)
-  val ReverseMethodOID = sysId(88)
-  val DescMethodOID = sysId(89)
+//  val CountMethodOID = sysId(87)
+//  val ReverseMethodOID = sysId(88)
+//  val DescMethodOID = sysId(89)
 //  val OIDMethodOID = sysId(90)
 //  val KindMethodOID = sysId(91)
 //  val CurrentSpaceMethodOID = sysId(92)
@@ -186,17 +186,17 @@ object SystemSpace {
       InstanceEditPropsProp,
 //      RefsMethod,
 //      OrMethod,
-      FirstMethod,
-      RestMethod,
+//      FirstMethod,
+//      RestMethod,
 //      LinkButtonMethod,
-      IsEmptyMethod,
-      IsNonEmptyMethod,
+//      IsEmptyMethod,
+//      IsNonEmptyMethod,
       PluralizeMethod,
-      FilterMethod,
+//      FilterMethod,
 //      NotMethod,
 //      SpaceMethod,
 //      ExternalRootsMethod,
-      SortMethod,
+//      SortMethod,
 //      ChildrenMethod,
 //      IsModelMethod,
 //      IfMethod,
@@ -216,9 +216,9 @@ object SystemSpace {
 //      AllPropsMethod,
 //      PropSummary,
 //      PropDetails,
-      CountMethod,
-      ReverseMethod,
-      DescMethod,
+//      CountMethod,
+//      ReverseMethod,
+//      DescMethod,
 //      OIDMethod,
 //      KindMethod,
 //      CurrentSpaceMethod,

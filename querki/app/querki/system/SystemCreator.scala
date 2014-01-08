@@ -19,7 +19,7 @@ object SystemCreator {
     new querki.identity.PersonModule(ecology)                      // 3
     new querki.security.AccessControlModule(ecology)               // 4
     new querki.time.TimeModule(ecology)                            // 5
-    new modules.collections.CollectionsModule(ecology)             // 6
+    new querki.collections.CollectionsModule(ecology)              // 6
 //  new render.RenderingModule(ecology)                            // 7
     new querki.system.TOSModule(ecology)                           // 8
     new querki.logic.LogicModule(ecology)                          // 9
