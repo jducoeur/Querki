@@ -75,6 +75,23 @@ abstract class QuerkiEcot(ecologyIn:Ecology) extends Ecot {
    * only in cases that have proven to be very commonly used already.
    * ************************************************************/
   
+  // Common classes:
+  type OID = models.OID
+  type Property[VT, -RT] = models.Property[VT,RT]
+  type PropFetcher = models.Thing.PropFetcher
+  type QValue = querki.values.QValue
+  type Thing = models.Thing
+  
+  // Utility functions for constructing Things:
+  def toProps(pairs:(OID,QValue)*):PropFetcher = () => {
+    (Map.empty[OID, QValue] /: pairs) { (m:Map[OID, QValue], pair:(OID, QValue)) =>
+      m + (pair._1 -> pair._2)
+    }
+  }
+  
+  import models.NameCollection.bootProp
+  def setName(str:String):(OID,QValue) = bootProp(models.system.OIDs.NameOID, str)
+  
   // Common Collections:
   val ExactlyOne = models.system.ExactlyOne
   val Optional = models.system.Optional

@@ -159,32 +159,6 @@ abstract class SingleContextMethod(tid:OID, p:PropFetcher) extends MetaMethod(ti
   }
 }
 
-object InstancesMethod extends SingleContextMethod(InstancesMethodOID,
-    toProps(
-      setName("_instances"),
-      Summary("Returns all of the non-Model Things that are based on this"),
-      Details("""A Model is sort of like the concept of a Thing: "Person" or "CD" or "Recipe".
-          |
-          |An Instance is an actual Thing based on one of those Models: "Joe" or "In Through the Out Door" or "Macaroni and Cheese".
-          |
-          |Most of the time, when using Querki, you want to create one or more Models that describe the *kinds*
-          |of Things you're interested in, and then create a bunch of Instances of each Model.
-          |
-          |So _instances looks like this:
-          |    MODEL -> _instances -> LIST OF INSTANCES
-          |That is, it receives a *Model*, and produces the Instances that come from that Model.
-          |
-          |If you have sub-Models under *Model* (that add more Properties, for example), this will include those as well.""".stripMargin)))
-{
-  def fullyApply(mainContext:QLContext, partialContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {
-    applyToIncomingThing(partialContext)(handleThing)
-  }
-  
-  def handleThing(t:Thing, context:QLContext):QValue = {
-    QList.from(context.state.descendants(t.id, false, true).map(_.id), LinkType)
-  }
-}
-
 object SectionMethod extends InternalMethod(SectionMethodOID,
     toProps(
       setName("_section"),
@@ -242,47 +216,6 @@ object SectionMethod extends InternalMethod(SectionMethodOID,
   }
 }
 
-object RefsMethod extends ThingPropMethod(RefsMethodOID, 
-    toProps(
-      setName("_refs"),
-      Summary("""Returns all of the Things that use this Property to point to this Thing."""),
-      Details("""    THING -> PROPERTY._refs -> REFERRING THINGS
-          |Say that my Space is listing my CD collection. I have a Model *Album* for individual discs,
-          |and Model *Artist* for performers. Album has a Property *Artists*, which is a Set of Links
-          |to Artist -- basically, the list of performers on this particular CD.
-          |
-          |In this case, *Artist* is likely to want to say something like:
-          |[[_code(""[[Artists._refs -> _bulleted]]"")]]
-          |That is, based on the Artist we're looking at (which is always the initial Context passed into
-          |a QL Expression), get all the Things that refer to this Artist using the *Artists* Property,
-          |and display them as a bullet list.
-          |
-          |This method is enormously useful -- most Models that get pointed to like this will probably
-          |want to use it.
-          |
-          |Note that this always returns a List, since any number of Things could be pointing to this.""".stripMargin)))
-{
-  def applyToPropAndThing(mainContext:QLContext, mainThing:Thing, 
-    partialContext:QLContext, propErased:Property[_,_],
-    params:Option[Seq[QLPhrase]]):QValue =
-  {
-    if (propErased.pType == LinkType) {
-	  // EVIL: is there any decent way to get rid of this? I know that the PType is LinkType, so I know
-	  // it's legit; can I tell that to Scala?
-	  val prop = propErased.asInstanceOf[Property[OID,_]]
-	  val results =
-	    for (
-	      candidateThing <- mainContext.state.allThings;
-	      propAndVal <- candidateThing.getPropOpt(prop)(mainContext.state);
-	      if propAndVal.contains(mainThing.id)
-	    )
-	      yield candidateThing.id;
-	  QList.from(results, LinkType)
-    } else {
-      WarningValue("_refs can only be applied to Links")
-    }
-  }
-}
 
 object OrMethod extends InternalMethod(OrMethodOID,
     toProps(
@@ -653,32 +586,6 @@ object FilterMethod extends InternalMethod(FilterOID,
   }
 }
 
-object SpaceMethod extends SingleThingMethod(SpaceMethodOID, "_space", "What Space is this Thing in?", 
-    """    RECEIVED -> _space -> SPACE
-    |
-    |This function produces the Space that the received Thing is contained in.""".stripMargin,
-{ (thing, context) => LinkValue(thing.spaceId) })
-
-object ExternalRootsMethod extends SingleThingMethod(ExternalRootsOID, "_externalRoots", "What are the ancestor Things for this Space?", 
-    """    SPACE -> _externalRoots -> ROOTS
-    |
-    |Pass in a link to a Space; this produces all of the "roots" -- the Things from its Apps -- used
-    |by that Space.
-    |
-    |User code will rarely care about this function, but it is part of how the [[All Things._self]] display works.""".stripMargin,
-{ (thing, context) => QList.from(context.state.thingRoots, LinkType) })
-
-object AllPropsMethod extends SingleThingMethod(AllPropsMethodOID, "_allProps", "What are the Properties in this Space?", 
-    """    SPACE -> _allProps -> PROPS
-    |
-    |This receives a link to a Space, and produces all of the Properties defined in that Space.""".stripMargin,
-{ (thing, context) => 
-  thing match {
-    case s:SpaceState => QList.from(s.propList.toSeq.sortBy(_.displayName), LinkFromThingBuilder) 
-    case _ => WarningValue("_allProps must be used with a Space")
-  }
-  
-})
 
 object SortMethod extends InternalMethod(SortMethodOID,
     toProps(
@@ -791,15 +698,6 @@ object DescMethod extends InternalMethod(DescMethodOID,
     }
   }
 }
-
-object ChildrenMethod extends SingleThingMethod(ChildrenMethodOID, "_children", "This produces the immediate children of the received Model.",
-    """    MODEL -> _children -> LIST OF CHILDREN
-    |This produces all of the Things that list MODEL as their Model. It includes both other Models, and Instances.""".stripMargin,
-{ (thing, context) => QList.from(context.state.children(thing).map(_.id), LinkType) })
-
-object IsModelMethod extends SingleThingMethod(IsModelMethodOID, "_isModel", "This produces Yes if the received Thing is a Model.",
-    """    THING -> _isModel -> Yes or No""".stripMargin,
-{ (thing, context) => ExactlyOne(thing.isModel(context.state)) })
 
 // TODO: this is so full of abstraction breaks it isn't funny. Using routes here is inappropriate; indeed, the fact that we're referring
 // to Play at all in this level is inappropriate. This probably needs to be routed through the rendering system, so that it takes the
@@ -915,107 +813,6 @@ object JoinMethod extends InternalMethod(JoinMethodOID,
         renderParam(openPhrase) + (renderedList.head /: renderedList.tail) ((total, next) => total + sep + next) + renderParam(closePhrase)
       }
     WikitextValue(result)
-  }
-}
-
-object TagRefsMethod extends InternalMethod(TagRefsOID,
-    toProps(
-      setName("_tagRefs"),
-      Summary("Produces a List of all Things that have the received Thing or Name as a Tag"),
-      Details("""    NAME -> _tagRefs -> THINGS
-          |_tagRefs is usually the right way to answer the question "what points to this?" For example, if I wanted to
-          |show a bullet list of everything that points to the current Thing, I would simply say:
-          |    _tagRefs -> _bulleted
-          |_tagRefs is designed to receive a "name" (which is what a Tag is). If you send it a Thing, then it will use
-          |the Name of that Thing.
-          |
-          |NOTE: _tagRefs and _refs are closely related concepts. They currently work differently, but we might
-          |at some point combine them for simplicity.""".stripMargin)))
-{ 
-  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
-    val elemT = context.value.pType
-    elemT match {
-      case nameable:NameableType => {
-        val allProps = context.state.allProps.values
-        val tagProps = allProps.filter(prop => prop.pType == TagSetType || prop.pType == NewTagSetType)
-        val name = nameable.getName(context)(context.value.first)
-        val thingOpt = elemT match {
-          case LinkType => LinkType.followLink(context)
-          case _ => None
-        }
-        val namePt = thingOpt.map(thing => PlainText(thing.unsafeDisplayName)).getOrElse(PlainText(name))
-        val candidates = context.state.allThings
-        
-        def hasThisTag(candidate:Thing):Boolean = {
-          tagProps.exists{ prop =>
-            val propAndVal = candidate.localProp(prop)
-            val found = prop.pType match {
-              case TagSetType => {
-	            val candidateTags:Option[List[String]] = propAndVal.map(_.v.rawList(TagSetType))
-	            candidateTags.map(_.exists { candidateName => NameType.equalNames(candidateName, name) })
-              }
-              case NewTagSetType => {
-	            val candidateTags:Option[List[PlainText]] = propAndVal.map(_.v.rawList(NewTagSetType))
-	            candidateTags.map(_.exists { candidateName => NewTagSetType.equalNames(candidateName, namePt) })                
-              }
-            }
-            found.getOrElse(false)
-          }
-        }
-        
-        QList.from(candidates.filter(hasThisTag), LinkFromThingBuilder)
-      }
-      case _ => WarningValue("_tagRefs can only be used with a Tag or Link, not " + elemT.displayName)
-    }
-  }
-}
-
-object TagsForPropertyMethod extends SingleContextMethod(TagsForPropertyOID,
-    toProps(
-      setName("_tagsForProperty"),
-      Summary("Show all the Tags that are defined for this Property"),
-      // TODO: this isn't displaying properly. Why not? It looks like the "" nested inside of the indirect
-      // Property is causing the problem -- I am getting a syntax error *claiming* to be in Default View,
-      // pointing at the first "":
-      Details("""    TAG PROPERTY._tagsForProperty -> LIST OF TAGS
-          |_tagsForProperty can be used on any Property whose Type is Tag Set. It produces a list of all of the
-          |tags that have been used in that Property so far.
-          |
-          |Typically, you then feed the results of this to _tagRefs, to get the Things that use that Tag. For example,
-          |if I had a list of Wines, using a Tag Set Property giving its "Wine Color", I could say:
-          |    \[[Wine Color._tagsForProperty -> \""* \____: \[[_tagRefs -> _commas\]]\""\]]
-          |to produce a list like:
-          |* Red: Pinot Noir, Shiraz
-          |* White: Pinot Gris, Chardonnay
-          |""".stripMargin)))
-{
-  def fetchTags(space:SpaceState, propIn:Property[_,_]):Set[String] = {
-    implicit val s = space
-    val thingsWithProp = space.thingsWithProp(propIn)
-    if (propIn.pType == TagSetType) {
-      val prop = propIn.confirmType(TagSetType)
-      (Set.empty[String] /: thingsWithProp) { (set, thing) =>
-        set ++ thing.getProp(prop).rawList
-      }
-    } else if (propIn.pType == NewTagSetType) {
-      val prop = propIn.confirmType(NewTagSetType)
-      (Set.empty[String] /: thingsWithProp) { (set, thing) =>
-        set ++ thing.getProp(prop).rawList.map(_.text)
-      }      
-    } else
-      // TODO: should this be a PublicException?
-      throw new Exception("Trying to fetchTags on a non-Tag Property!")
-  }
-  
-  def fullyApply(mainContext:QLContext, partialContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {
-    applyToIncomingThing(partialContext) { (shouldBeProp, _) =>
-      shouldBeProp match {
-        case prop:Property[_,_] if (prop.pType == TagSetType) => {
-          QList.from(fetchTags(partialContext.state, prop), TagSetType)
-        }
-        case _ => WarningValue("The _tagsForProperty method can only be used on Tag Set Properties")
-      } 
-    }    
   }
 }
 
@@ -1146,19 +943,6 @@ object CodeMethod extends SingleContextMethod(CodeMethodOID,
   }
 }
 
-object IsDefinedMethod extends SingleContextMethod(IsDefinedOID,
-    toProps(
-      setName("_isDefined"),
-      Summary("Produces Yes if the name passed into it is a real Thing"),
-      Details("""    NAME -> _isDefined -> YES or NO
-          |You typically use _isDefined with a Tag Property. It is simply a way to ask "is there actually something
-          |with this name?", so that you can handle it differently depending on whether there is or not.""".stripMargin)))
-{
-  def fullyApply(mainContext:QLContext, partialContext:QLContext, paramsOpt:Option[Seq[QLPhrase]]):QValue = {
-    partialContext.value.pType != UnknownNameType
-  }
-}
-
 object CountMethod extends SingleContextMethod(CountMethodOID,
     toProps(
       setName("_count"),
@@ -1222,93 +1006,6 @@ object ReverseMethod extends SingleContextMethod(ReverseMethodOID,
   }
 }
 
-object OIDMethod extends SingleThingMethod(OIDMethodOID, "_oid", "Get the unique global id of this Thing", 
-    """    THING -> _oid -> Text
-    |
-    |This function produces the unique Object ID (which will generally be a period followed by some letters and numbers)
-    |of the received Thing.
-    |
-    |Each Thing in Querki has an Object ID. In most cases, it can be used in place of the Thing's name, and it is never
-    |ambiguous -- it always refers to one specific Thing.""".stripMargin,
-{ (thing, context) => TextValue(thing.id.toThingId) })
-
-object KindMethod extends InternalMethod(KindMethodOID,
-    toProps(
-      setName("_kind"), 
-      Summary("What kind of Thing is this?"), 
-      Details("""There are two ways to use _kind:
-          |    THING -> _kind -> Number
-          |
-          |This function produces the Number that represents the "kind"
-          |of the received Thing. The Kinds are:
-          |
-          |* Thing: 0
-          |* Type: 1
-          |* Property: 2
-          |* Space: 3
-          |* Collection: 4
-          |* Attachment: 5
-          |
-          |By and large, though, you should never use these numbers directly. Instead, use
-          |the second form of this method:
-          |    _kind(KIND) -> Number
-          |The KIND parameter should be exactly one of the above names.
-          |
-          |So for example, you can test whether the incoming Thing is a Property by saying:
-          |    ... -> _if(_equals(_kind, _kind(Property)), ...)
-          |""".stripMargin)))
-{ 
-  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
-    // If there is a parameter, this will produce its value:
-    val paramResult = for (
-      params <- paramsOpt;
-      param = params(0);
-      QLCall(kindName, _, _, _) = param.ops(0)
-        )
-      yield Kind.fromName(kindName.name).map(kind => ExactlyOne(IntType(kind))).getOrElse(WarningValue("Unknown Kind: " + kindName))
-      
-    // If not, produce the incoming Thing's value:
-    paramResult.getOrElse(applyToIncomingThing(context) { (thing, context) => ExactlyOne(IntType(thing.kind)) })
-  }
-}
-
-object CurrentSpaceMethod extends SingleThingMethod(CurrentSpaceMethodOID, "_currentSpace", "What Space are we looking at?", 
-    """THING -> _currentSpace -> SPACE
-    |
-    |This function produces the Space that we are currently displaying. (Generally, the one in the URL.)""".stripMargin,
-{ (thing, context) => LinkValue(context.root.state) })
-
-object IsMethod extends InternalMethod(IsMethodOID,
-    toProps(
-      setName("_is"),
-      Summary("Allows you to test whether you have a specific Thing"),
-      Details("""    THING -> _is(THING) -> Yes or No
-    |
-    |This function produces Yes iff the parameter matches the passed-in THING, and No otherwise. It is almost always used
-    |inside _if(). For instance, to check whether a Property is of Text Type:
-    |    MyProp.Property Type -> _if(_is(Text Type), ...)""".stripMargin)))
-{ 
-  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
-    paramsOpt match {
-      case Some(params) => {
-        val contextValOpt = context.value.firstAs(LinkType)
-        contextValOpt match {
-          case Some(contextOid) => {
-            val paramValOpt = context.parser.get.processPhrase(params(0).ops, context).value.firstAs(LinkType)
-            paramValOpt match {
-              case Some(paramOid) => {
-                ExactlyOne(contextOid == paramOid)
-              }
-              case _ => WarningValue("Parameter of _is didn't produce a Thing")
-            }
-          }
-          case None => WarningValue("_is didn't receive a Thing value")
-        }
-      }
-      case None => WarningValue("_is is meaningless without a parameter")
-    }
-  }
-}
 
 object EqualsMethod extends InternalMethod(EqualsMethodOID,
     toProps(

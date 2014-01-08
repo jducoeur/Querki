@@ -62,6 +62,7 @@ class Application extends ApplicationBase {
   lazy val System = interface[querki.system.System]
   lazy val Search = interface[querki.search.Search]
   lazy val PropListMgr = interface[querki.core.PropListManager]
+  lazy val Tags = interface[querki.tags.Tags]
 
   def index = withUser(false) { rc =>
     Ok(views.html.index(rc))
@@ -503,7 +504,7 @@ disallow: /
       (
         prop <- propOpt
       )
-        yield TagsForPropertyMethod.fetchTags(space, prop).filter(_.toLowerCase().contains(lowerQ))
+        yield Tags.fetchTags(space, prop).filter(_.toLowerCase().contains(lowerQ))
         
     val tagsSorted = tagsOpt.map(tags => tags.toList.sorted)
     val thingsSorted = propOpt.map(prop => getLinksFromSpace(space, prop, lowerQ)).getOrElse(Seq.empty).map(_._1)

@@ -87,11 +87,11 @@ object OIDs {
   val ExternalLinkTypeOID = sysId(41)
 //  val EditMethodOID = sysId(42)
   val SectionMethodOID = sysId(43)
-  val InstancesMethodOID = sysId(44)
+//  val InstancesMethodOID = sysId(44)
   val QLTypeOID = sysId(45)
 //  val ApplyMethodOID = sysId(46)
   val InstanceEditPropsOID = sysId(47)
-  val RefsMethodOID = sysId(48)
+//  val RefsMethodOID = sysId(48)
   val OrMethodOID = sysId(49)
   val FirstMethodOID = sysId(50)
   val LinkButtonOID = sysId(51)
@@ -102,11 +102,11 @@ object OIDs {
 //  val BulletedOID = sysId(56)
   val NotOID = sysId(57)
   val RestMethodOID = sysId(58)
-  val SpaceMethodOID = sysId(59)
-  val ExternalRootsOID = sysId(60)
+//  val SpaceMethodOID = sysId(59)
+//  val ExternalRootsOID = sysId(60)
   val SortMethodOID = sysId(61)
-  val ChildrenMethodOID = sysId(62)
-  val IsModelMethodOID = sysId(63)
+//  val ChildrenMethodOID = sysId(62)
+//  val IsModelMethodOID = sysId(63)
   val IfMethodOID = sysId(64)
   val JoinMethodOID = sysId(65)
 //  val DisplayThingTreeOID = sysId(66)
@@ -115,28 +115,28 @@ object OIDs {
   val CreateInstanceLinkOID = sysId(69)
   val LinkToModelsOnlyOID = sysId(70)
   val TagSetOID = sysId(71)
-  val TagRefsOID = sysId(72)
+//  val TagRefsOID = sysId(72)
   val ShowUnknownOID = sysId(73)
-  val TagsForPropertyOID = sysId(74)
+//  val TagsForPropertyOID = sysId(74)
   val SelfMethodOID = sysId(75)
   val PropsOfTypeOID = sysId(76)
   val CodeMethodOID = sysId(77)
-  val IsDefinedOID = sysId(78)
+//  val IsDefinedOID = sysId(78)
   val QSetOID = sysId(79)
 //  val CommasMethodOID = sysId(80)
   val FormLineMethodOID = sysId(81) 
 //  val EditOrElseMethodOID = sysId(82)
-  val AllPropsMethodOID = sysId(83)
+//  val AllPropsMethodOID = sysId(83)
 //  val AllPropsThingOID = sysId(84)
 //  val PropSummaryOID = sysId(85)
 //  val PropDetailsOID = sysId(86)
   val CountMethodOID = sysId(87)
   val ReverseMethodOID = sysId(88)
   val DescMethodOID = sysId(89)
-  val OIDMethodOID = sysId(90)
-  val KindMethodOID = sysId(91)
-  val CurrentSpaceMethodOID = sysId(92)
-  val IsMethodOID = sysId(93)
+//  val OIDMethodOID = sysId(90)
+//  val KindMethodOID = sysId(91)
+//  val CurrentSpaceMethodOID = sysId(92)
+//  val IsMethodOID = sysId(93)
   val EqualsMethodOID = sysId(94)
   val ShowLinkMethodOID = sysId(95)
   val PropLinkMethodOID = sysId(96)
@@ -181,10 +181,10 @@ object SystemSpace {
       InternalProp,
 //      EditMethod,
       SectionMethod,
-      InstancesMethod,
+//      InstancesMethod,
 //      ApplyMethod,
       InstanceEditPropsProp,
-      RefsMethod,
+//      RefsMethod,
       OrMethod,
       FirstMethod,
       RestMethod,
@@ -194,35 +194,35 @@ object SystemSpace {
       PluralizeMethod,
       FilterMethod,
       NotMethod,
-      SpaceMethod,
-      ExternalRootsMethod,
+//      SpaceMethod,
+//      ExternalRootsMethod,
       SortMethod,
-      ChildrenMethod,
-      IsModelMethod,
+//      ChildrenMethod,
+//      IsModelMethod,
       IfMethod,
       JoinMethod,
       IconButtonMethod,
       CreateInstanceLinkMethod,
       LinkToModelsOnlyProp,
-      TagRefsMethod,
+//      TagRefsMethod,
       ShowUnknownProp,
-      TagsForPropertyMethod,
+//      TagsForPropertyMethod,
       SelfMethod,
       PropsOfTypeMethod,
       CodeMethod,
-      IsDefinedMethod,
+//      IsDefinedMethod,
       FormLineMethod,
 //      EditOrElseMethod,
-      AllPropsMethod,
+//      AllPropsMethod,
 //      PropSummary,
 //      PropDetails,
       CountMethod,
       ReverseMethod,
       DescMethod,
-      OIDMethod,
-      KindMethod,
-      CurrentSpaceMethod,
-      IsMethod,
+//      OIDMethod,
+//      KindMethod,
+//      CurrentSpaceMethod,
+//      IsMethod,
       EqualsMethod,
       ShowLinkMethod,
       PropLinkMethod,
