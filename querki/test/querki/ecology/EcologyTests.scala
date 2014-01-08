@@ -7,9 +7,6 @@ import querki.values.SpaceState
 
 import querki.test._
 
-/**
- * TODO: this should probably go back to inheriting from QuerkiTests, once those are working again.
- */
 class EcologyTests extends WordSpec
   with ShouldMatchers
   with BeforeAndAfterAll
@@ -23,6 +20,12 @@ class EcologyTests extends WordSpec
   }
   
   trait TestInterface3 extends EcologyInterface
+  
+  def doInit(eco:Ecology):SpaceState = {
+    // The Ecology itself assumes that System is registered:
+    new querki.system.SystemEcot(eco)
+    eco.manager.init(models.system.SystemSpace.initialSystemState(eco))
+  }
   
   "The Ecology" should {
     "throw an exception if I double-register an interface" in {
@@ -52,7 +55,7 @@ class EcologyTests extends WordSpec
       assert(eco.manager.isRegistered[TestInterface2])
       assert(!eco.manager.isRegistered[TestInterface3])
       
-      val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState(eco))
+      val finalState = doInit(eco)
       
       val interface1 = eco.api[TestInterface1]
       intercept[UnknownInterfaceException] {
@@ -87,7 +90,7 @@ class EcologyTests extends WordSpec
       val ecot1 = new Ecot1(1)
       val ecot2 = new Ecot2(2)
       
-      val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState(eco))
+      val finalState = doInit(eco)
       
       assert(ecot1.answer == 42)
       
@@ -135,7 +138,7 @@ class EcologyTests extends WordSpec
       val ecot1 = new Ecot1(1)
       val ecot2 = new Ecot2(2)
       
-      val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState(eco))
+      val finalState = doInit(eco)
       
       assert(ecot1.myAnswer == Some(42))
     }
@@ -158,7 +161,7 @@ class EcologyTests extends WordSpec
       val ecot2 = new Ecot2(2)
 
       intercept[InitMissingInterfaceException] {
-        val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState(eco))
+        val finalState = doInit(eco)
       }
     }
     
@@ -175,7 +178,7 @@ class EcologyTests extends WordSpec
       val ecot2 = new Ecot2(2)
 
       intercept[InitDependencyLoopException] {
-        val finalState = eco.manager.init(models.system.SystemSpace.initialSystemState(eco))
+        val finalState = doInit(eco)
       }
     }    
   }
