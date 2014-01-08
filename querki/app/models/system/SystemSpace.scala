@@ -92,7 +92,7 @@ object OIDs {
 //  val ApplyMethodOID = sysId(46)
   val InstanceEditPropsOID = sysId(47)
 //  val RefsMethodOID = sysId(48)
-  val OrMethodOID = sysId(49)
+//  val OrMethodOID = sysId(49)
   val FirstMethodOID = sysId(50)
 //  val LinkButtonOID = sysId(51)
   val IsEmptyOID = sysId(52)
@@ -100,14 +100,14 @@ object OIDs {
   val PluralizeOID = sysId(54)
   val FilterOID = sysId(55)
 //  val BulletedOID = sysId(56)
-  val NotOID = sysId(57)
+//  val NotOID = sysId(57)
   val RestMethodOID = sysId(58)
 //  val SpaceMethodOID = sysId(59)
 //  val ExternalRootsOID = sysId(60)
   val SortMethodOID = sysId(61)
 //  val ChildrenMethodOID = sysId(62)
 //  val IsModelMethodOID = sysId(63)
-  val IfMethodOID = sysId(64)
+//  val IfMethodOID = sysId(64)
   val JoinMethodOID = sysId(65)
 //  val DisplayThingTreeOID = sysId(66)
 //  val AllThingsOID = sysId(67)
@@ -137,7 +137,7 @@ object OIDs {
 //  val KindMethodOID = sysId(91)
 //  val CurrentSpaceMethodOID = sysId(92)
 //  val IsMethodOID = sysId(93)
-  val EqualsMethodOID = sysId(94)
+//  val EqualsMethodOID = sysId(94)
 //  val ShowLinkMethodOID = sysId(95)
 //  val PropLinkMethodOID = sysId(96)
   val SystemIdentityOID = sysId(97)
@@ -185,7 +185,7 @@ object SystemSpace {
 //      ApplyMethod,
       InstanceEditPropsProp,
 //      RefsMethod,
-      OrMethod,
+//      OrMethod,
       FirstMethod,
       RestMethod,
 //      LinkButtonMethod,
@@ -193,13 +193,13 @@ object SystemSpace {
       IsNonEmptyMethod,
       PluralizeMethod,
       FilterMethod,
-      NotMethod,
+//      NotMethod,
 //      SpaceMethod,
 //      ExternalRootsMethod,
       SortMethod,
 //      ChildrenMethod,
 //      IsModelMethod,
-      IfMethod,
+//      IfMethod,
       JoinMethod,
 //      IconButtonMethod,
 //      CreateInstanceLinkMethod,
@@ -223,7 +223,7 @@ object SystemSpace {
 //      KindMethod,
 //      CurrentSpaceMethod,
 //      IsMethod,
-      EqualsMethod,
+//      EqualsMethod,
 //      ShowLinkMethod,
 //      PropLinkMethod,
       DeprecatedProp,
