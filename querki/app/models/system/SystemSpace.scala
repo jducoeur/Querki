@@ -97,7 +97,7 @@ object OIDs {
 //  val LinkButtonOID = sysId(51)
 //  val IsEmptyOID = sysId(52)
 //  val IsNonEmptyOID = sysId(53)
-  val PluralizeOID = sysId(54)
+//  val PluralizeOID = sysId(54)
 //  val FilterOID = sysId(55)
 //  val BulletedOID = sysId(56)
 //  val NotOID = sysId(57)
@@ -108,7 +108,7 @@ object OIDs {
 //  val ChildrenMethodOID = sysId(62)
 //  val IsModelMethodOID = sysId(63)
 //  val IfMethodOID = sysId(64)
-  val JoinMethodOID = sysId(65)
+//  val JoinMethodOID = sysId(65)
 //  val DisplayThingTreeOID = sysId(66)
 //  val AllThingsOID = sysId(67)
 //  val IconButtonOID = sysId(68)
@@ -191,7 +191,7 @@ object SystemSpace {
 //      LinkButtonMethod,
 //      IsEmptyMethod,
 //      IsNonEmptyMethod,
-      PluralizeMethod,
+//      PluralizeMethod,
 //      FilterMethod,
 //      NotMethod,
 //      SpaceMethod,
@@ -200,7 +200,7 @@ object SystemSpace {
 //      ChildrenMethod,
 //      IsModelMethod,
 //      IfMethod,
-      JoinMethod,
+//      JoinMethod,
 //      IconButtonMethod,
 //      CreateInstanceLinkMethod,
       LinkToModelsOnlyProp,

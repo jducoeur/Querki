@@ -36,6 +36,7 @@ object SystemCreator {
     new querki.core.PropListManagerEcot(ecology)                   // 20
     new querki.datamodel.DataModelAccessEcot(ecology)              // 21
     new querki.tags.TagsEcot(ecology)                              // 22
+    new querki.text.TextEcot(ecology)                              // 23
     
     ecology
   }
