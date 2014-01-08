@@ -86,7 +86,7 @@ object OIDs {
   val InternalPropOID = sysId(40)
   val ExternalLinkTypeOID = sysId(41)
 //  val EditMethodOID = sysId(42)
-  val SectionMethodOID = sysId(43)
+//  val SectionMethodOID = sysId(43)
 //  val InstancesMethodOID = sysId(44)
   val QLTypeOID = sysId(45)
 //  val ApplyMethodOID = sysId(46)
@@ -94,7 +94,7 @@ object OIDs {
 //  val RefsMethodOID = sysId(48)
   val OrMethodOID = sysId(49)
   val FirstMethodOID = sysId(50)
-  val LinkButtonOID = sysId(51)
+//  val LinkButtonOID = sysId(51)
   val IsEmptyOID = sysId(52)
   val IsNonEmptyOID = sysId(53)
   val PluralizeOID = sysId(54)
@@ -111,8 +111,8 @@ object OIDs {
   val JoinMethodOID = sysId(65)
 //  val DisplayThingTreeOID = sysId(66)
 //  val AllThingsOID = sysId(67)
-  val IconButtonOID = sysId(68)
-  val CreateInstanceLinkOID = sysId(69)
+//  val IconButtonOID = sysId(68)
+//  val CreateInstanceLinkOID = sysId(69)
   val LinkToModelsOnlyOID = sysId(70)
   val TagSetOID = sysId(71)
 //  val TagRefsOID = sysId(72)
@@ -138,8 +138,8 @@ object OIDs {
 //  val CurrentSpaceMethodOID = sysId(92)
 //  val IsMethodOID = sysId(93)
   val EqualsMethodOID = sysId(94)
-  val ShowLinkMethodOID = sysId(95)
-  val PropLinkMethodOID = sysId(96)
+//  val ShowLinkMethodOID = sysId(95)
+//  val PropLinkMethodOID = sysId(96)
   val SystemIdentityOID = sysId(97)
   val TestIdentityOID = sysId(98)
   val PrototypeIdentityOID = sysId(99)
@@ -180,7 +180,7 @@ object SystemSpace {
       AppliesToKindProp,
       InternalProp,
 //      EditMethod,
-      SectionMethod,
+//      SectionMethod,
 //      InstancesMethod,
 //      ApplyMethod,
       InstanceEditPropsProp,
@@ -188,7 +188,7 @@ object SystemSpace {
       OrMethod,
       FirstMethod,
       RestMethod,
-      LinkButtonMethod,
+//      LinkButtonMethod,
       IsEmptyMethod,
       IsNonEmptyMethod,
       PluralizeMethod,
@@ -201,8 +201,8 @@ object SystemSpace {
 //      IsModelMethod,
       IfMethod,
       JoinMethod,
-      IconButtonMethod,
-      CreateInstanceLinkMethod,
+//      IconButtonMethod,
+//      CreateInstanceLinkMethod,
       LinkToModelsOnlyProp,
 //      TagRefsMethod,
       ShowUnknownProp,
@@ -224,8 +224,8 @@ object SystemSpace {
 //      CurrentSpaceMethod,
 //      IsMethod,
       EqualsMethod,
-      ShowLinkMethod,
-      PropLinkMethod,
+//      ShowLinkMethod,
+//      PropLinkMethod,
       DeprecatedProp,
       NoCreateThroughLinkProp,
       IsFunctionProp)

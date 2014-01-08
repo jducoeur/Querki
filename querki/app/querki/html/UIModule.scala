@@ -4,9 +4,9 @@ import scala.xml._
 
 import play.api.templates.Html
 
-import models.{HtmlWikitext, OID}
-import models.Thing._
-import models.system.{InternalMethod}
+import models.{HtmlWikitext, OID, QWikitext, Wikitext}
+import models.system.{InternalMethod, SingleThingMethod, ThingPropMethod}
+import models.system.{ExternalLinkType, URLableType}
 
 import ql.QLPhrase
 
@@ -15,6 +15,13 @@ import querki.util._
 import querki.values._
 
 object MOIDs extends EcotIds(11) {
+  val SectionMethodOID = sysId(43)
+  val LinkButtonOID = sysId(51)
+  val IconButtonOID = sysId(68)
+  val CreateInstanceLinkOID = sysId(69)
+  val ShowLinkMethodOID = sysId(95)
+  val PropLinkMethodOID = sysId(96)
+  
   val ClassMethodOID = moid(1)
   val TooltipMethodOID = moid(2)
 }
@@ -118,8 +125,225 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) {
     }
   }
 
+  /***********************************************
+   * FUNCTIONS
+   ***********************************************/
+
+  class SectionMethod extends InternalMethod(SectionMethodOID,
+    toProps(
+      setName("_section"),
+      Summary("Display a List as a Header, followed by its contents"),
+      Details("""_section is intended for the common case where you want to display a section
+          |on the page if and only if a specific List is non-empty. It looks like this:
+          |    My List -> _section(HEADER, DETAILS, EMPTY)
+          |Each of the parameters can be any QL phrase, although they are often just text blocks. They are
+          |treated as follows:
+          |
+          |* HEADER is shown first, if the incoming List is non-empty. It gets the entire List as its Context.
+          |* DETAILS is shown after the header. It is repeated for each element in the List, just as it would
+          |if you fed a List into a normal text block.
+          |* EMPTY is shown if and only if the List is empty. This lets you show something else if appropriate.
+          |It is optional -- you can leave it off.
+          |
+          |Note that the generated QText will have the HEADER on a separate line from the DETAILS. This is
+          |usually what you want. It means that, for example, if you start the HEADER with "###", it will show
+          |up as a true header, separate from the DETAILS, but if it is just something like "Contents:", the
+          |HEADER and DETAILS will run together, since QText joins ordinary text lines together.""".stripMargin)
+    )) 
+  {
+  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+    paramsOpt match {
+      case Some(params) if (params.length > 0) => {
+        val header = params(0)
+        val details = if (params.length > 1) Some(params(1)) else None
+        val empty = if (params.length > 2) Some(params(2)) else None
+        buildSection(context, header, details, empty)
+      }
+      case _ => ErrorValue("_section requires at least one parameter")
+    }
+  }  
+  
+  def buildSection(context:QLContext, header:QLPhrase, detailsOpt:Option[QLPhrase], emptyOpt:Option[QLPhrase]):QValue = {
+    val parser = context.parser.get
+    val wikitext = if (context.isEmpty) {
+      parser.contextsToWikitext(emptyOpt.map(empty => Seq(parser.processPhrase(empty.ops, context.root))).getOrElse(Seq.empty))
+    } else {
+      val processedHeader = parser.contextsToWikitext(Seq(parser.processPhrase(header.ops, context.asCollection)))
+      val processedDetails = detailsOpt.map(details => Seq(parser.processPhrase(details.ops, context)))
+      // TODO: why are we transforming this to Wikitext this early? Is there any reason to? Shouldn't we just turn all
+      // of this into a new List Context and pass it on through? Conceptually that would be more correct. The only problem
+      // is that the Header and Details potentially produce different Types, so they might not fit neatly into a single List.
+      // Which implies, of course, that what we *should* be producing here is a Tuple of (Header, List[Details]). Hmm --
+      // let's revisit this once we have Tuples implemented.
+      processedDetails match {
+        // Note that there is automatically a newline inserted between the Header and Details. Most of the time, this
+        // produces exactly the right result:
+        case Some(details) => processedHeader + parser.contextsToWikitext(details, true)
+        case None => processedHeader
+      }
+    }
+    WikitextValue(wikitext)
+  }
+  }
+
+	abstract class ButtonBase(tid:OID, pf:PropFetcher) extends InternalMethod(tid, pf)
+	{
+	  def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem
+	  
+	  def numParams:Int
+	  
+	  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+	    paramsOpt match {
+	      case Some(params) if (params.length == numParams) => {
+	        val urlOpt = context.value.pType match {
+	          case pt:URLableType => context.value.firstOpt.flatMap(pt.getURL(context)(_))
+	          case _ => None
+	        }
+	        
+	        urlOpt match {
+	          case Some(url) => {
+	            val paramTexts = params.map(phrase => context.parser.get.processPhrase(phrase.ops, context).value.wikify(context))
+	            HtmlValue(Html(generateButton(url, paramTexts).toString))            
+	          }
+	          // Nothing incoming, so cut.
+	          // TODO: there is probably a general pattern to pull out here, of "cut processing if the input is empty"
+	          case None => EmptyValue(RawHtmlType)
+	        }
+	      }
+	      case None => WarningValue(displayName + " requires " + numParams + " parameters.")
+	    }
+	  }
+	}
+
+	class LinkButtonMethod extends ButtonBase(LinkButtonOID,
+	    toProps(
+	      setName("_linkButton"),
+	      Summary("Displays a button that goes to a linked page when you press it."),
+	      Details("""    LINK -> _linkButton(LABEL)
+	          |_linkButton receives a Link or External Link, and displays that
+	          |link as a button. It expects one parameter, which will be the label of the button.""".stripMargin)))
+	{
+	  val numParams = 1
+	  
+	  def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem = {
+	    <a class="btn btn-primary" href={url}>{params(0).raw}</a>
+	  }
+	}
+	
+	class IconButtonMethod extends ButtonBase(IconButtonOID,
+	    toProps(
+	      setName("_iconButton"),
+	      Summary("Displays a button showing an icon, that goes to a linked page when you press it."),
+	      Details("""    LINK -> _iconButton(ICON, TOOLTIP)
+	          |_iconButton receives a Link or External Link, and displays that
+	          |link as a button. The first parameter identifies the icon to use for the button; the second is the
+	          |hover text to display as a tooltip. Both parameters are required.
+	          |
+	          |For icons, you may use anything from the [Bootstrap Glyphicon](http://getbootstrap.com/2.3.2/base-css.html#icons) set.
+	          |Just use the name of the icon (in double-double quotes) in the parameter.""".stripMargin)))
+	  {
+	  val numParams = 2
+	  
+	  def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem = {
+	    <a class="btn btn-mini btn-primary" href={url} title={params(1).raw}><i class={params(0).raw + " icon-white"}></i></a>
+	  }
+	}
+	
+	// TODO: this is very similar to _linkButton, and should be refactored.
+	class ShowLinkMethod extends InternalMethod(ShowLinkMethodOID,
+	    toProps(
+	      setName("_showLink"),
+	      Summary("Displays a Link or External Link as a normal HTML link."),
+	      Details("""    LINK -> _showLink(LABEL)
+	          |This is the most normal way to display a Link or External Link with a chosen label. The
+	          |label may be any expression you choose.
+	          |
+	          |The default behaviour of a Link, if you don't do anything with it, is effectively
+	          |"_showLink(Default View)".""".stripMargin)))
+	{
+	  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+	    paramsOpt match {
+	      case Some(params) if (params.length > 0) => {
+	        context.value.pType match {
+	          case pt:URLableType => {
+	            context.collect(ParsedTextType) { elemContext =>
+	              val wikitextOpt = for (
+	                elemV <- elemContext.value.firstOpt;
+	                url <- pt.getURL(elemContext)(elemV);
+	                label = elemContext.parser.get.processPhrase(params(0).ops, elemContext).value.wikify(elemContext)
+	                  )
+	                yield QWikitext("[") + label + QWikitext(s"]($url)")
+	              
+	              wikitextOpt match {
+	                case Some(wikitext) => QValue.make(ExactlyOne, ParsedTextType, wikitext)
+	                case None => Optional.Empty(ParsedTextType)
+	              }
+	            }
+	          }
+	          case _ => WarningValue(displayName + " can only be used with Link types")
+	        }
+	      }
+	      case None => WarningValue(displayName + " requires a label parameter.")
+	    }
+	  }
+	}
+		
+	class PropLinkMethod extends ThingPropMethod(PropLinkMethodOID, 
+	    toProps(
+	      setName("_propLink"),
+	      Summary("""Produces a Link to a specific Property on a Thing."""),
+	      Details("""    THING -> PROPERTY._propLink -> EXTERNAL LINK
+	          |A common pattern in Querki is to provide alternate "views" for a Thing -- different ways of displaying it.
+	          |Typically, you do this by creating another Large Text Property (separate from Default View), which contains
+	          |the alternate view, and then linking to that somewhere. This method makes it easy to do so: feed the THING
+	          |and PROPERTY into _propLink, and the result is an EXTERNAL LINK which you can then pass to _showLink,
+	          |_linkButton or _iconButton.
+	          |
+	          |NOTE: this currently only works for Things in the local Space, and probably does *not* work correctly in
+	          |sub-Spaces yet.
+	          |
+	          |NOTE: this does not check that the specified PROPERTY is actually a Text Property, so be careful!""".stripMargin)))
+	{
+	  def applyToPropAndThing(mainContext:QLContext, mainThing:Thing, 
+	    partialContext:QLContext, propErased:Property[_,_],
+	    params:Option[Seq[QLPhrase]]):QValue =
+	  {
+	    ExactlyOne(ExternalLinkType(mainThing.toThingId + "?prop=" + propErased.toThingId))
+	  }
+	}
+	
+	// TODO: this is so full of abstraction breaks it isn't funny. Using routes here is inappropriate; indeed, the fact that we're referring
+	// to Play at all in this level is inappropriate. This probably needs to be routed through the rendering system, so that it takes the
+	// current rendering environment and produces a relative control appropriate within it. But it'll do for the short term.
+	import controllers.routes
+	class CreateInstanceLinkMethod extends SingleThingMethod(CreateInstanceLinkOID, "_createInstanceLink", 
+	    "Given a received Model, this produces a Link to create an instance of that Model.",
+	    """    MODEL -> _createInstanceLink -> _linkButton(LABEL)
+	    |This is how you implement a "Create" button. _createInstanceLink takes a MODEL, and produces an External Link to the page to create a new Instance of it.
+	    |
+	    |You will usually then feed this into, eg, _linkButton or _iconButton as a way to display the Link.""".stripMargin,
+	{ (thing, context) => 
+	  import controllers.PlayRequestContext
+	  context.request match {
+	    case PlayRequestContext(request, _, _, _, _, _, _, _, _, _, _) => {
+	      implicit val req = request
+	      ExactlyOne(
+	        ExternalLinkType(routes.Application.createThing(context.request.ownerId.toThingId, context.state.toThingId, Some(thing.toThingId)).absoluteURL()))
+	    }
+	    case _ => WarningValue("_createInstanceLink does not currently work outside of Play")
+	  }
+	})
+
+  
   override lazy val props = Seq(
     classMethod,
-    tooltipMethod
+    tooltipMethod,
+    
+    new SectionMethod,
+    new LinkButtonMethod,
+    new IconButtonMethod,
+    new ShowLinkMethod,
+    new PropLinkMethod,
+    new CreateInstanceLinkMethod
   )
 }
