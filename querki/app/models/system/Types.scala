@@ -73,14 +73,6 @@ trait TextTypeUtils { self:SystemType[_] =>
   }  
 }
 
-/**
- * This trait should be used by any type that can consider itself "code" -- in particular, that wants to be
- * displayable in the _code() method. 
- */
-trait CodeType {
-  def code(elem:ElemValue):String
-}
-
   /**
    * The Type for integers
    */
@@ -150,7 +142,7 @@ trait CodeType {
   trait IsTextType
   
   abstract class TextTypeBase(oid:OID, pf:PropFetcher) extends SystemType[QLText](oid, pf
-      ) with PTypeBuilder[QLText,String] with CodeType with IsTextType with TextTypeUtils
+      ) with PTypeBuilder[QLText,String] with querki.ql.CodeType with IsTextType with TextTypeUtils
   {
     def doDeserialize(v:String) = QLText(v)
     def doSerialize(v:QLText) = v.text

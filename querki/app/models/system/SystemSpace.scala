@@ -118,9 +118,9 @@ object OIDs {
 //  val TagRefsOID = sysId(72)
   val ShowUnknownOID = sysId(73)
 //  val TagsForPropertyOID = sysId(74)
-  val SelfMethodOID = sysId(75)
+//  val SelfMethodOID = sysId(75)
   val PropsOfTypeOID = sysId(76)
-  val CodeMethodOID = sysId(77)
+//  val CodeMethodOID = sysId(77)
 //  val IsDefinedOID = sysId(78)
   val QSetOID = sysId(79)
 //  val CommasMethodOID = sysId(80)
@@ -207,9 +207,9 @@ object SystemSpace {
 //      TagRefsMethod,
       ShowUnknownProp,
 //      TagsForPropertyMethod,
-      SelfMethod,
+//      SelfMethod,
       PropsOfTypeMethod,
-      CodeMethod,
+//      CodeMethod,
 //      IsDefinedMethod,
       FormLineMethod,
 //      EditOrElseMethod,

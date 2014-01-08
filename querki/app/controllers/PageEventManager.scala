@@ -9,6 +9,8 @@ import querki.util._
  * This implements a pub/sub interface similar to Publisher. However, it adds the concept
  * of "Contributor" -- subscribers don't just passively listen for events, they provide
  * contributions, which is kind of the point.
+ * 
+ * TODO: this MUST become an Ecot!!!
  */
 object PageEventManager {
   val addHeaders = new PageAggregator

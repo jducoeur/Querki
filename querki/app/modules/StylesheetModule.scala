@@ -1,14 +1,14 @@
 package modules.stylesheet
 
+// TODO: these are all abstraction breaks!
 import play.api.Logger
 import play.api.templates.Html
+import controllers.PageEventManager
 
 import models._
-import models.system._
-// We need this because some of these objects were originally created in System,
-// and their OIDs live there:
-import models.system.OIDs.sysId
-import models.Thing._
+import models.system.{SystemType, PlainTextType}
+import models.system.CommonInputRenderers
+import models.system.{DisplayTextProp, InternalProp, IsModelProp, LinkModelProp}
 
 import ql._
 
@@ -19,7 +19,7 @@ import querki.values._
 // This is for the PageEventManager and related classes:
 import controllers._
 
-object OIDs {
+object MOIDs extends EcotIds(1) {
   val StylesheetOID = sysId(25)
   val CSSTextOID = sysId(27)
   val CSSOID = sysId(28)
@@ -27,10 +27,12 @@ object OIDs {
   val GoogleFontOID = sysId(32)
 }
 import models.system.OIDs._
-import OIDs._
+
+import querki.ql.CodeType
 
 class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
-  
+  import MOIDs._
+
   /******************************************
    * TYPES
    ******************************************/
