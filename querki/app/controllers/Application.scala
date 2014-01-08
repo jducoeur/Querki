@@ -28,7 +28,7 @@ import SpaceError._
 import querki.util._
 import querki.values._
 
-object Application extends ApplicationBase {
+class Application extends ApplicationBase {
   
   val newSpaceForm = Form(
     mapping(

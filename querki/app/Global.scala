@@ -30,6 +30,10 @@ object Global extends GlobalSettings {
     scala.concurrent.Await.result(fut, scala.concurrent.duration.Duration("30 seconds"))
     
     Logger.info("... Done")
-  }  
+  }
   
+  override def getControllerInstance[A](controllerClass: Class[A]) : A = {
+    println(s"Getting controller $controllerClass")
+    super.getControllerInstance(controllerClass)
+  }  
 }

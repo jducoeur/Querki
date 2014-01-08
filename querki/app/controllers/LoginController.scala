@@ -16,7 +16,9 @@ import querki.spaces.messages.{ThingError, ThingFound}
 import querki.util._
 import querki.values.QLRequestContext
 
-object LoginController extends ApplicationBase {
+case class PasswordChangeInfo(password:String, newPassword:String, newPasswordAgain:String)
+
+class LoginController extends ApplicationBase {
   
   case class UserForm(name:String, password:String)
   val userForm = Form(
@@ -46,7 +48,6 @@ object LoginController extends ApplicationBase {
     )(SignupInfo.apply)(SignupInfo.unapply)
   )
   
-  case class PasswordChangeInfo(password:String, newPassword:String, newPasswordAgain:String)
   val passwordChangeForm = Form(
     mapping(
       "password" -> nonEmptyText,

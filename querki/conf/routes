@@ -3,70 +3,70 @@
 # ~~~~
 
 # Home page
-GET     /                           controllers.Application.index
-GET     /robots.txt					controllers.Application.robots
-GET     /login                      controllers.LoginController.login
-GET     /spaces                     controllers.Application.spaces
-GET     /newSpace                   controllers.Application.newSpace
-POST    /doNewSpace                 controllers.Application.doNewSpace
+GET     /                           @controllers.Application.index
+GET     /robots.txt					@controllers.Application.robots
+GET     /login                      @controllers.LoginController.login
+GET     /spaces                     @controllers.Application.spaces
+GET     /newSpace                   @controllers.Application.newSpace
+POST    /doNewSpace                 @controllers.Application.doNewSpace
 
-GET     /TOS                        controllers.TOSController.showTOS
-POST    /TOS                        controllers.TOSController.handleTOS
+GET     /TOS                        @controllers.TOSController.showTOS
+POST    /TOS                        @controllers.TOSController.handleTOS
 
 # User Profile functions
-GET     /u/:userName                controllers.LoginController.userByName(userName)
-POST    /u/:userName/_changePassword controllers.LoginController.changePassword(userName)
+GET     /u/:userName                @controllers.LoginController.userByName(userName)
+POST    /u/:userName/_changePassword @controllers.LoginController.changePassword(userName)
 
-GET     /u/:userName/:spaceId/      controllers.Application.space(userName, spaceId)
+GET     /u/:userName/:spaceId/      @controllers.Application.space(userName, spaceId)
 
-GET     /u/:userName/:spaceId/createThing controllers.Application.createThing(userName, spaceId, model:Option[String])
-GET     /u/:userName/:spaceId/createProperty controllers.Application.createProperty(userName, spaceId)
-POST    /u/:userName/:spaceId/createThing controllers.Application.doCreateThing(userName, spaceId, subCreate:Option[Boolean])
-POST    /u/:userName/:spaceId/setProperty2 controllers.Application.setProperty2(userName, spaceId, thingId)
-GET		/u/:userName/:spaceId/getPropertyDisplay controllers.Application.getPropertyDisplay(userName, spaceId, thingId, prop)
-GET     /u/:userName/:spaceId/getPropertyEditor controllers.Application.getPropertyEditor(userName, spaceId, thingId, prop, i:Int)
+GET     /u/:userName/:spaceId/createThing @controllers.Application.createThing(userName, spaceId, model:Option[String])
+GET     /u/:userName/:spaceId/createProperty @controllers.Application.createProperty(userName, spaceId)
+POST    /u/:userName/:spaceId/createThing @controllers.Application.doCreateThing(userName, spaceId, subCreate:Option[Boolean])
+POST    /u/:userName/:spaceId/setProperty2 @controllers.Application.setProperty2(userName, spaceId, thingId)
+GET		/u/:userName/:spaceId/getPropertyDisplay @controllers.Application.getPropertyDisplay(userName, spaceId, thingId, prop)
+GET     /u/:userName/:spaceId/getPropertyEditor @controllers.Application.getPropertyEditor(userName, spaceId, thingId, prop, i:Int)
 
-GET     /u/:userName/:spaceId/edit controllers.Application.editThing(userName, spaceId, thingId)
-POST    /u/:userName/:spaceId/edit controllers.Application.doEditThing(userName, spaceId, thingId)
-GET     /u/:userName/:spaceId/view controllers.Application.viewThing(userName, spaceId, thingId)
-GET     /u/:userName/:spaceId/delete  controllers.Application.deleteThing(userName, spaceId, thingId)
+GET     /u/:userName/:spaceId/edit @controllers.Application.editThing(userName, spaceId, thingId)
+POST    /u/:userName/:spaceId/edit @controllers.Application.doEditThing(userName, spaceId, thingId)
+GET     /u/:userName/:spaceId/view @controllers.Application.viewThing(userName, spaceId, thingId)
+GET     /u/:userName/:spaceId/delete  @controllers.Application.deleteThing(userName, spaceId, thingId)
 
-GET     /u/:userName/:spaceId/upload      controllers.Application.upload(userName, spaceId)
-POST    /u/:userName/:spaceId/upload      controllers.Application.doUpload(userName, spaceId)
+GET     /u/:userName/:spaceId/upload      @controllers.Application.upload(userName, spaceId)
+POST    /u/:userName/:spaceId/upload      @controllers.Application.doUpload(userName, spaceId)
 
-GET     /u/:userName/:spaceId/_sharing    controllers.Application.sharing(userName, spaceId)
-POST    /u/:userName/:spaceId/_inviteMembers controllers.LoginController.inviteMembers(userName, spaceId)
-GET     /u/:userName/:spaceId/_handleInvite controllers.LoginController.handleInvite(userName, spaceId)
-POST    /u/:userName/:spaceId/_handleInvite controllers.LoginController.signup(userName, spaceId)
-POST    /u/:userName/:spaceId/_joinLogin  controllers.LoginController.joinlogin(userName, spaceId)
-GET     /u/:userName/:spaceId/_join       controllers.LoginController.joinSpace(userName, spaceId)
+GET     /u/:userName/:spaceId/_sharing    @controllers.Application.sharing(userName, spaceId)
+POST    /u/:userName/:spaceId/_inviteMembers @controllers.LoginController.inviteMembers(userName, spaceId)
+GET     /u/:userName/:spaceId/_handleInvite @controllers.LoginController.handleInvite(userName, spaceId)
+POST    /u/:userName/:spaceId/_handleInvite @controllers.LoginController.signup(userName, spaceId)
+POST    /u/:userName/:spaceId/_joinLogin  @controllers.LoginController.joinlogin(userName, spaceId)
+GET     /u/:userName/:spaceId/_join       @controllers.LoginController.joinSpace(userName, spaceId)
 
-GET     /u/:userName/:spaceId/export controllers.Application.exportThing(userName, spaceId, thingId)
+GET     /u/:userName/:spaceId/export @controllers.Application.exportThing(userName, spaceId, thingId)
 
-GET     /u/:userName/:spaceId/getTags     controllers.Application.getTags(userName, spaceId, propId, q)
-GET     /u/:userName/:spaceId/getLinks    controllers.Application.getLinks(userName, spaceId, propId, q)
+GET     /u/:userName/:spaceId/getTags     @controllers.Application.getTags(userName, spaceId, propId, q)
+GET     /u/:userName/:spaceId/getLinks    @controllers.Application.getLinks(userName, spaceId, propId, q)
 
-POST    /u/:userName/:spaceId/search      controllers.Application.search(userName, spaceId)
+POST    /u/:userName/:spaceId/search      @controllers.Application.search(userName, spaceId)
 
-GET     /u/:userName/:spaceId/a/:attachmentId controllers.Application.attachment(userName, spaceId, attachmentId)
+GET     /u/:userName/:spaceId/a/:attachmentId @controllers.Application.attachment(userName, spaceId, attachmentId)
 
 # Note that Things can have slashes in their names!
-GET     /u/:userName/:spaceId/*thingId    controllers.Application.thing(userName, spaceId, thingId)
+GET     /u/:userName/:spaceId/*thingId    @controllers.Application.thing(userName, spaceId, thingId)
 
 
-POST    /dologin                    controllers.LoginController.dologin
-GET     /logout                     controllers.LoginController.logout
+POST    /dologin                    @controllers.LoginController.dologin
+GET     /logout                     @controllers.LoginController.logout
 
 # Admin functionality
-GET     /admin/manageUsers          controllers.AdminController.manageUsers
-GET     /admin/upgradePendingUser   controllers.AdminController.upgradePendingUser(userId)
-GET     /admin/makeAdmin            controllers.AdminController.makeAdmin(userId)
-GET     /adminJs                    controllers.AdminController.javascriptRoutes
+GET     /admin/manageUsers          @controllers.AdminController.manageUsers
+GET     /admin/upgradePendingUser   @controllers.AdminController.upgradePendingUser(userId)
+GET     /admin/makeAdmin            @controllers.AdminController.makeAdmin(userId)
+GET     /adminJs                    @controllers.AdminController.javascriptRoutes
 
 # AJAX test stuff:
-GET     /showTestAjax               controllers.Application.showTestAjax
-POST    /testAjax                   controllers.Application.testAjax(i1, i2)
-GET     /javascriptRoutes           controllers.Application.javascriptRoutes
+GET     /showTestAjax               @controllers.Application.showTestAjax
+POST    /testAjax                   @controllers.Application.testAjax(i1, i2)
+GET     /javascriptRoutes           @controllers.Application.javascriptRoutes
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

@@ -7,7 +7,7 @@ import querki.ecology._
 import querki.identity._
 import models._
 
-object AdminController extends ApplicationBase {
+class AdminController extends ApplicationBase {
   
   lazy val Email = getInterface[querki.email.Email]
   

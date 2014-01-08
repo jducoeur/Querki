@@ -8,11 +8,12 @@ import querki.system.TOSModule
 
 import querki.util._
 
+case class TOSForm(version:Int = -1, agreed:Boolean = false)
+
 /**
  * Handle Terms of Service. This class works hand-in-glove with querki.system.TOSModule.
  */
-object TOSController extends ApplicationBase {
-  case class TOSForm(version:Int = -1, agreed:Boolean = false)
+class TOSController extends ApplicationBase {
   val tosForm = Form(
     mapping(
       "version" -> number,
