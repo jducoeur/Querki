@@ -1,34 +1,21 @@
 package models.system
 
-import play.api.Logger
-import play.api.templates.Html
-
 import models._
-import Property._
 import Thing._
 
 import ql._
 
-import OIDs._
-
 import YesNoType._
 
+import querki.datamodel.MOIDs.IsFunctionOID
 import querki.util._
 import querki.values._
-
-object IsFunctionProp extends SystemProperty(IsFunctionOID, YesNoType, ExactlyOne,
-    toProps(
-      setName("Is Function"),
-      SkillLevel(SkillLevel.Advanced),
-      Summary("True iff this Thing is a Function."),
-      Details("""This is a marker flag that you can put on a Thing to say that it is a Function.
-          |This doesn't particularly change the way the Thing works, but has some UI effects.""".stripMargin)))
 
 /**
  * Internal methods -- functions defined in-code that can be assigned as properties -- should
  * inherit from this.
  */
-class InternalMethod(tid:OID, p:PropFetcher) extends SystemProperty(tid, InternalMethodType, QUnit, () => (p() + IsFunctionProp(true)))
+class InternalMethod(tid:OID, p:PropFetcher) extends SystemProperty(tid, InternalMethodType, QUnit, () => (p() + (IsFunctionOID  -> true)))
 {
   /**
    * Methods should override this to implement their own functionality.
@@ -70,7 +57,7 @@ class SingleThingMethod(tid:OID, name:String, summary:String, details:String, ac
     try {
       applyToIncomingThing(context)(handleThing)
     } catch {
-      case error:Exception => Logger.error("Error while running internal method", error)
+      case error:Exception => QLog.error("Error while running internal method", error)
       ErrorValue("Error while running internal method")
     }
   }
@@ -156,43 +143,5 @@ abstract class SingleContextMethod(tid:OID, p:PropFetcher) extends MetaMethod(ti
 {
   override def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
     fullyApply(context, context, params)
-  }
-}
-
-object PropsOfTypeMethod extends SingleThingMethod(PropsOfTypeOID, "_propsOfType", "This receives a Type, and produces all of the Properties in this Space with that Type",
-    """    TYPE -> _propsOfType -> LIST OF PROPS""".stripMargin,
-{ (thing, context) =>
-  thing match {
-    case pt:PType[_] => QList.from(context.state.propsOfType(pt), LinkFromThingBuilder)
-    case _ => WarningValue("_propsOfType can only be used on a Type")
-  }
-})
-
-// TODO: this code is pretty damned Bootstrap-specific, which by definition is too HTML-specific. We should probably
-// replace it with something that is much more neutral -- simple label/control styles -- and have client-side code
-// that rewrites it appropriately for the UI in use.
-object FormLineMethod extends SingleContextMethod(FormLineMethodOID,
-    toProps(
-      setName("_formLine"),
-      Summary("Display a label/control pair for an input form"),
-      Details("""_formLine(LABEL,CONTROL) displays the LABEL/CONTROL pair as a standard full-width line. 
-          |
-          |This is mainly for input forms, and is pretty persnickety at this point. It is not recommend for general use yet.""".stripMargin)))
-{
-  def fullyApply(mainContext:QLContext, partialContext:QLContext, paramsOpt:Option[Seq[QLPhrase]]):QValue = {
-    paramsOpt match {
-      case Some(params) if (params.length == 2) => {
-        val context = partialContext
-        val label = context.parser.get.processPhrase(params(0).ops, context).value
-        val control = context.parser.get.processPhrase(params(1).ops, context).value
-        WikitextValue(
-          Wikitext("\n{{form-horizontal:\n{{control-group:\n{{control-label:\n") +
-          label.wikify(context) +
-          Wikitext("\n}}\n{{controls:\n") +
-          control.wikify(context) +
-          Wikitext("\n}}\n}}\n}}\n"))
-      }
-      case _ => WarningValue("_formLine requires two parameters")
-    }
   }
 }

@@ -119,12 +119,12 @@ object OIDs {
   val ShowUnknownOID = sysId(73)
 //  val TagsForPropertyOID = sysId(74)
 //  val SelfMethodOID = sysId(75)
-  val PropsOfTypeOID = sysId(76)
+//  val PropsOfTypeOID = sysId(76)
 //  val CodeMethodOID = sysId(77)
 //  val IsDefinedOID = sysId(78)
   val QSetOID = sysId(79)
 //  val CommasMethodOID = sysId(80)
-  val FormLineMethodOID = sysId(81) 
+//  val FormLineMethodOID = sysId(81) 
 //  val EditOrElseMethodOID = sysId(82)
 //  val AllPropsMethodOID = sysId(83)
 //  val AllPropsThingOID = sysId(84)
@@ -147,7 +147,7 @@ object OIDs {
   val DeprecatedOID = sysId(101)
   val NewTagSetOID = sysId(102)
   val NoCreateThroughLinkOID = sysId(103)
-  val IsFunctionOID = sysId(104)
+//  val IsFunctionOID = sysId(104)
 }
 
 /**
@@ -208,10 +208,10 @@ object SystemSpace {
       ShowUnknownProp,
 //      TagsForPropertyMethod,
 //      SelfMethod,
-      PropsOfTypeMethod,
+//      PropsOfTypeMethod,
 //      CodeMethod,
 //      IsDefinedMethod,
-      FormLineMethod,
+//      FormLineMethod,
 //      EditOrElseMethod,
 //      AllPropsMethod,
 //      PropSummary,
@@ -227,8 +227,9 @@ object SystemSpace {
 //      ShowLinkMethod,
 //      PropLinkMethod,
       DeprecatedProp,
-      NoCreateThroughLinkProp,
-      IsFunctionProp)
+      NoCreateThroughLinkProp
+//      IsFunctionProp
+      )
       
   // Things:
   val things = OIDMap[ThingState](UrThing)

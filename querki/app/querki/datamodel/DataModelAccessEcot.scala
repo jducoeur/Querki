@@ -2,28 +2,13 @@ package querki.datamodel
 
 import querki.ecology._
 
-import models.{Kind}
+import models.{Kind, PType}
 import models.system.{InternalMethod, SingleContextMethod, SingleThingMethod, ThingPropMethod}
 import models.system.{LinkFromThingBuilder}
 
 import ql._
 
 import querki.values._
-
-object MOIDs extends EcotIds(21) {
-  val InstancesMethodOID = sysId(44)
-  val RefsMethodOID = sysId(48)
-  val SpaceMethodOID = sysId(59)
-  val ExternalRootsOID = sysId(60)
-  val ChildrenMethodOID = sysId(62)
-  val IsModelMethodOID = sysId(63)
-  val IsDefinedOID = sysId(78)
-  val AllPropsMethodOID = sysId(83)
-  val OIDMethodOID = sysId(90)
-  val KindMethodOID = sysId(91)
-  val CurrentSpaceMethodOID = sysId(92)
-  val IsMethodOID = sysId(93)
-}
 
 /**
  * This Ecot mainly is about defining Functions that give QL access to the Ecology,
@@ -33,7 +18,7 @@ object MOIDs extends EcotIds(21) {
  * factoring is found, feel free to move them. (Pay attention to OIDs! But if it's a
  * sysId, it can be moved freely.)
  */
-class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) {
+class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess {
   import MOIDs._
   import YesNoType._
 
@@ -246,6 +231,23 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) {
   }
   }
 
+	lazy val PropsOfTypeMethod = new SingleThingMethod(PropsOfTypeOID, "_propsOfType", "This receives a Type, and produces all of the Properties in this Space with that Type",
+	    """    TYPE -> _propsOfType -> LIST OF PROPS""".stripMargin,
+	{ (thing, context) =>
+	  thing match {
+	    case pt:PType[_] => QList.from(context.state.propsOfType(pt), LinkFromThingBuilder)
+	    case _ => WarningValue("_propsOfType can only be used on a Type")
+	  }
+	})
+
+  lazy val IsFunctionProp = new SystemProperty(IsFunctionOID, YesNoType, ExactlyOne,
+    toProps(
+      setName("Is Function"),
+      SkillLevel(SkillLevelAdvanced),
+      Summary("True iff this Thing is a Function."),
+      Details("""This is a marker flag that you can put on a Thing to say that it is a Function.
+          |This doesn't particularly change the way the Thing works, but has some UI effects.""".stripMargin)))
+
 
   override lazy val props = Seq(
     new InstancesMethod,
@@ -259,6 +261,8 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) {
     new OIDMethod,
     new KindMethod,
     new CurrentSpaceMethod,
-    new IsMethod
+    new IsMethod,
+    PropsOfTypeMethod,
+    IsFunctionProp
   )
 }

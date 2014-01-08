@@ -23,6 +23,7 @@ import querki.values._
 object MOIDs extends EcotIds(13) {
   // Previously in System
   val EditMethodOID = sysId(42)
+  val FormLineMethodOID = sysId(81) 
   val EditOrElseMethodOID = sysId(82)
     
   val EditAsPickListOID = moid(1)
@@ -348,12 +349,42 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) {
       hasAddOpt.map(_ => Set(PickList, WithAdd)).getOrElse(Set(PickList))
     }
   }
+
+	// TODO: this code is pretty damned Bootstrap-specific, which by definition is too HTML-specific. We should probably
+	// replace it with something that is much more neutral -- simple label/control styles -- and have client-side code
+	// that rewrites it appropriately for the UI in use.
+	lazy val FormLineMethod = new SingleContextMethod(FormLineMethodOID,
+	    toProps(
+	      setName("_formLine"),
+	      Summary("Display a label/control pair for an input form"),
+	      Details("""_formLine(LABEL,CONTROL) displays the LABEL/CONTROL pair as a standard full-width line. 
+	          |
+	          |This is mainly for input forms, and is pretty persnickety at this point. It is not recommend for general use yet.""".stripMargin)))
+	{
+	  def fullyApply(mainContext:QLContext, partialContext:QLContext, paramsOpt:Option[Seq[QLPhrase]]):QValue = {
+	    paramsOpt match {
+	      case Some(params) if (params.length == 2) => {
+	        val context = partialContext
+	        val label = context.parser.get.processPhrase(params(0).ops, context).value
+	        val control = context.parser.get.processPhrase(params(1).ops, context).value
+	        WikitextValue(
+	          Wikitext("\n{{form-horizontal:\n{{control-group:\n{{control-label:\n") +
+	          label.wikify(context) +
+	          Wikitext("\n}}\n{{controls:\n") +
+	          control.wikify(context) +
+	          Wikitext("\n}}\n}}\n}}\n"))
+	      }
+	      case _ => WarningValue("_formLine requires two parameters")
+	    }
+	  }
+	}
   
   override lazy val props = Seq(
     instanceEditViewProp,
     editMethod,
     editOrElseMethod,
     editAsPicklistMethod,
-    editWidthProp
+    editWidthProp,
+    FormLineMethod
   )
 }

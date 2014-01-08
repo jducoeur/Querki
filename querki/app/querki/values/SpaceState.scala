@@ -52,6 +52,9 @@ case class SpaceState(
   lazy val Person = interface[querki.identity.Person]  
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
+  lazy val DataModel = interface[querki.datamodel.DataModelAccess]
+  
+  lazy val IsFunctionProp = DataModel.IsFunctionProp
   
   // *******************************************
   //
