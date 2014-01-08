@@ -40,7 +40,7 @@ class QuerkiRoot extends Actor {
       SpaceManager.setSpaceManager(ref)
       
       println("... Querki running.")
-      sender ! Initialized
+      sender ! Initialized(ecology)
     }
     
     case Terminate => {
@@ -53,7 +53,7 @@ class QuerkiRoot extends Actor {
 
 object QuerkiRoot {
   case object Initialize
-  case object Initialized
+  case class Initialized(ecology:Ecology)
   case object Terminate
   case object Terminated
 }
