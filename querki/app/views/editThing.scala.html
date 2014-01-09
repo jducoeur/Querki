@@ -28,6 +28,7 @@
 @Conventions = @{ rc.interface[querki.conventions.Conventions] }
 @Core = @{ rc.interface[querki.core.Core] }
 @HtmlRenderer = @{ rc.interface[querki.html.HtmlRenderer] }
+@Editor = @{ rc.interface[querki.editing.Editor] }
 
 @PropSummary = @{ Conventions.PropSummary }
 @PropDetails = @{ Conventions.PropDetails }
@@ -108,7 +109,7 @@
 
 @showProperty(prop:Property[_,_], v:DisplayPropVal, i:Int) = {
   <div id="propGroup-@i" class="control-group @{if(v.isInherited) "inherited"}">
-    <label class="control-label _withTooltip" @setTooltip(prop)>@Html(prop.getProp(PromptProp)(space).renderPlainOr(prop.getProp(NameProp)(space).renderPlain).raw)
+    <label class="control-label _withTooltip" @setTooltip(prop)>@Html(prop.getProp(Editor.PromptProp)(space).renderPlainOr(prop.getProp(NameProp)(space).renderPlain).raw)
       @if(v.hasInheritance) {
         &nbsp;&nbsp;<button data-empty="@v.emptyControlId" data-model-name="@Html(v.inheritedFrom.get.displayName)" data-edits="@v.inputControlId" class="@editButtonClass(v) btn-mini">&nbsp;</button>
       } else {

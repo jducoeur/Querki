@@ -43,27 +43,6 @@ object AppliesToKindProp {
 object InternalProp {
   def apply(b:Boolean) = (querki.core.MOIDs.InternalPropOID -> ExactlyOne(YesNoType(b)))
 }
-    
-  object PlaceholderTextProp extends SystemProperty(PlaceholderTextOID, PlainTextType, Optional,
-      toProps(
-        setName("Placeholder Text"),
-        AppliesToKindProp(Kind.Property),
-        (querki.basic.MOIDs.DeprecatedOID -> true),
-        Summary("Placeholder text for input boxes"),
-        Details("""In Text Properties, it is often helpful to have a prompt that displays inside the input
-            |field until the user begins to type something there. If the Property has a Placeholder Text, that
-            |will be displayed in grey when the input is first shown.""".stripMargin)
-        ))
-  
-  object PromptProp extends SystemProperty(PromptOID, PlainTextType, Optional,
-      toProps(
-        setName("Prompt"),
-        AppliesToKindProp(Kind.Property),
-        Summary("Prompt to use in the Editor"),
-        Details("""In the Editor, Properties are usually displayed with their Name. If you want to show something
-            |other than the Name, set the Prompt Property to say what you would like to show instead.""".stripMargin)
-        ))
-
 /**
  * Meta-property, set on Properties of LinkType, to filter what to Link to.
  */
@@ -134,38 +113,6 @@ object LinkToModelsOnlyProp extends SystemProperty(LinkToModelsOnlyOID, YesNoTyp
           |This is an advanced property, and something of a hack -- don't get too comfortable with it. In the
           |medium term, it should get replaced by a more general LinkFilter property that lets you specify which
           |Things to link to.""".stripMargin)))
-
-// TODO: this should really only allow the properties that are defined on this Model:
-object InstanceEditPropsProp extends SystemProperty(InstanceEditPropsOID, LinkType, QList,
-    toProps(
-      setName("Properties to edit in Instances"),
-      LinkAllowAppsProp(true),
-      LinkKindProp(Kind.Property),
-      Summary("Which Properties should be edited in Instances of this Model?"),
-      Details("""It is very common to define a bunch of Properties on a Model that you really don't
-          |ever intend to change on the Instances. (In particular, you very often will define the Display
-          |Text on the Model, not on the Instances.) This results in your Instance Editor being cluttered
-          |with lots of Properties that you never, ever use.
-          |
-          |So this Property is a quick-and-easy way to lay out your Instance Editor. It is a List of
-          |Properties that you can define however you like. When you create or edit an Instance of this
-          |Model, it will display exactly those Properties, in that order, which usually makes it
-          |easier for you to write your Instances.
-          |
-          |BUG NOTE: this doesn't immediately register when you've added a Property to the Model, so it
-          |doesn't list the newly-added Property. For now, after you add a Property, save the Model and then
-          |edit it again -- the Property should now show up for you to use.""".stripMargin))) with LinkCandidateProvider
-{
-  def getLinkCandidates(state:SpaceState, currentValue:DisplayPropVal):Seq[Thing] = {
-    currentValue.on match {
-      case Some(thing) => {
-        // We're applying this to some actual thing, so list its Properties as options:
-        thing.allProps(state).toSeq.sortBy(_.displayName)
-      }
-      case _ => Seq.empty
-    }
-  }
-}
 
 object ShowUnknownProp extends SystemProperty(ShowUnknownOID, LargeTextType, ExactlyOne,
     toProps(

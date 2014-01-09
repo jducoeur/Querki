@@ -62,8 +62,8 @@ object OIDs {
   val LinkTypeOID = sysId(16)
 //  val TypePropOID = sysId(17)
 //  val CollectionPropOID = sysId(18)
-  val PlaceholderTextOID = sysId(19)
-  val PromptOID = sysId(20)
+//  val PlaceholderTextOID = sysId(19)
+//  val PromptOID = sysId(20)
   val LargeTextTypeOID = sysId(21)
 //  val IsModelOID = sysId(22)
 //  val SimpleThingOID = sysId(23)
@@ -90,7 +90,7 @@ object OIDs {
 //  val InstancesMethodOID = sysId(44)
   val QLTypeOID = sysId(45)
 //  val ApplyMethodOID = sysId(46)
-  val InstanceEditPropsOID = sysId(47)
+//  val InstanceEditPropsOID = sysId(47)
 //  val RefsMethodOID = sysId(48)
 //  val OrMethodOID = sysId(49)
 //  val FirstMethodOID = sysId(50)
@@ -169,8 +169,8 @@ object SystemSpace {
 //      DisplayTextProp, 
 //      TypeProp, 
 //      CollectionProp,
-      PlaceholderTextProp, 
-      PromptProp, 
+//      PlaceholderTextProp, 
+//      PromptProp, 
 //      IsModelProp, 
 //      NotInheritedProp,
 //      DisplayNameProp,
@@ -183,7 +183,7 @@ object SystemSpace {
 //      SectionMethod,
 //      InstancesMethod,
 //      ApplyMethod,
-      InstanceEditPropsProp,
+//      InstanceEditPropsProp,
 //      RefsMethod,
 //      OrMethod,
 //      FirstMethod,

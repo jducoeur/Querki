@@ -1,13 +1,10 @@
 package querki.editing
 
-import models.{Kind, OID, Property, Thing, ThingState, Wikitext}
-import models.Property._
-import models.Thing.{PropFetcher, setName, toProps}
+import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState, Wikitext}
 
-import models.system.{SingleContextMethod, SystemProperty}
+import models.system.{SingleContextMethod, SystemProperty, LinkAllowAppsProp, LinkKindProp}
 import models.system.{ExactlyOne, QList}
-import models.system.{IntType, LargeTextType, LinkType, QLText}
-import models.system.{InstanceEditPropsProp}
+import models.system.{IntType, LargeTextType, LinkCandidateProvider, LinkType, PlainTextType, QLText}
 import models.system.OIDs.sysId
 
 import ql.{QLCall, QLParser, QLPhrase}
@@ -20,35 +17,76 @@ import querki.types._
 import querki.util._
 import querki.values._
 
-object MOIDs extends EcotIds(13) {
-  // Previously in System
-  val EditMethodOID = sysId(42)
-  val FormLineMethodOID = sysId(81) 
-  val EditOrElseMethodOID = sysId(82)
-    
-  val EditAsPickListOID = moid(1)
-  val InstanceEditViewOID = moid(2)
-  val EditWidthPropOID = moid(3)
-}
-
 class EditorModule(e:Ecology) extends QuerkiEcot(e) {
   import MOIDs._
   
   val Types = initRequires[querki.types.Types]
+  val Basic = initRequires[querki.basic.Basic]
   
   lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   lazy val PropListMgr = interface[querki.core.PropListManager]
   lazy val Core = interface[querki.core.Core]
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
-  lazy val Basic = interface[querki.basic.Basic]
   
   lazy val DisplayTextProp = Basic.DisplayTextProp
   
   /***********************************************
    * PROPERTIES
    ***********************************************/
+    
+  lazy val PlaceholderTextProp = new SystemProperty(PlaceholderTextOID, PlainTextType, Optional,
+      toProps(
+        setName("Placeholder Text"),
+        AppliesToKindProp(Kind.Property),
+        Basic.DeprecatedProp(true),
+        Summary("Placeholder text for input boxes"),
+        Details("""In Text Properties, it is often helpful to have a prompt that displays inside the input
+            |field until the user begins to type something there. If the Property has a Placeholder Text, that
+            |will be displayed in grey when the input is first shown.""".stripMargin)
+        ))
   
+  lazy val PromptProp = new SystemProperty(PromptOID, PlainTextType, Optional,
+      toProps(
+        setName("Prompt"),
+        AppliesToKindProp(Kind.Property),
+        Summary("Prompt to use in the Editor"),
+        Details("""In the Editor, Properties are usually displayed with their Name. If you want to show something
+            |other than the Name, set the Prompt Property to say what you would like to show instead.""".stripMargin)
+        ))
+	
+	// TODO: this should really only allow the properties that are defined on this Model:
+	lazy val InstanceEditPropsProp = new SystemProperty(InstanceEditPropsOID, LinkType, QList,
+	    toProps(
+	      setName("Properties to edit in Instances"),
+	      LinkAllowAppsProp(true),
+	      LinkKindProp(Kind.Property),
+	      Summary("Which Properties should be edited in Instances of this Model?"),
+	      Details("""It is very common to define a bunch of Properties on a Model that you really don't
+	          |ever intend to change on the Instances. (In particular, you very often will define the Display
+	          |Text on the Model, not on the Instances.) This results in your Instance Editor being cluttered
+	          |with lots of Properties that you never, ever use.
+	          |
+	          |So this Property is a quick-and-easy way to lay out your Instance Editor. It is a List of
+	          |Properties that you can define however you like. When you create or edit an Instance of this
+	          |Model, it will display exactly those Properties, in that order, which usually makes it
+	          |easier for you to write your Instances.
+	          |
+	          |BUG NOTE: this doesn't immediately register when you've added a Property to the Model, so it
+	          |doesn't list the newly-added Property. For now, after you add a Property, save the Model and then
+	          |edit it again -- the Property should now show up for you to use.""".stripMargin))) with LinkCandidateProvider
+	{
+	  def getLinkCandidates(state:SpaceState, currentValue:DisplayPropVal):Seq[Thing] = {
+	    currentValue.on match {
+	      case Some(thing) => {
+	        // We're applying this to some actual thing, so list its Properties as options:
+	        thing.allProps(state).toSeq.sortBy(_.displayName)
+	      }
+	      case _ => Seq.empty
+	    }
+	  }
+	}
+
   lazy val instanceEditViewProp = new SystemProperty(InstanceEditViewOID, LargeTextType, ExactlyOne,
       toProps(
         setName("Instance Edit View"),
@@ -385,6 +423,9 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) {
 	}
   
   override lazy val props = Seq(
+    PlaceholderTextProp,
+    PromptProp,
+    InstanceEditPropsProp,
     instanceEditViewProp,
     editMethod,
     editOrElseMethod,

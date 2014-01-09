@@ -11,6 +11,7 @@
 @isForeign = @{ thing.spaceId != space.id }
 
 @Core = @{ rc.interface[querki.core.Core] }
+@Editor = @{ rc.interface[querki.editing.Editor] }
 
 @InternalProp = @{ Core.InternalProp }
 @NameProp = @{ Core.NameProp }
@@ -42,7 +43,7 @@
 }
 
 @showProperty(prop:Property[_,_], v:QValue) = {
-  <dt class="control-label _withTooltip" @setTooltip(prop)>@Html(prop.getProp(PromptProp)(space).renderPlainOr(prop.getProp(NameProp)(space).renderPlain).raw)</dt>
+  <dt class="control-label _withTooltip" @setTooltip(prop)>@Html(prop.getProp(Editor.PromptProp)(space).renderPlainOr(prop.getProp(NameProp)(space).renderPlain).raw)</dt>
   <dd>@showValue(v)</dd>
 }
 

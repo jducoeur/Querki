@@ -57,6 +57,7 @@ class Application extends ApplicationBase {
   lazy val Basic = interface[querki.basic.Basic]
   lazy val DisplayNameProp = Basic.DisplayNameProp
   lazy val DeriveName = interface[querki.types.DeriveName]
+  lazy val Editor = interface[querki.editing.Editor]
   lazy val System = interface[querki.system.System]
   lazy val Search = interface[querki.search.Search]
   lazy val PropListMgr = interface[querki.core.PropListManager]
@@ -191,7 +192,7 @@ disallow: /
   }
   
   def prepPropList(propList:PropList, model:Thing, state:SpaceState):Seq[(Property[_,_], DisplayPropVal)] = {
-    val propsToEdit = model.getPropOpt(InstanceEditPropsProp)(state).map(_.rawList)
+    val propsToEdit = model.getPropOpt(Editor.InstanceEditPropsProp)(state).map(_.rawList)
     propsToEdit match {
       // If the model specifies which properties we actually want to edit, then use just those, in that order:
       case Some(editList) => {
@@ -325,7 +326,7 @@ disallow: /
             }
             val props = Thing.toProps(propPairs:_*)()
             val spaceMsg = if (thing.isDefined) {
-              if (partial || oldModel.hasProp(OIDs.InstanceEditPropsOID)) {
+              if (partial || oldModel.hasProp(querki.editing.MOIDs.InstanceEditPropsOID)) {
                 // Editing an instance, so we only have a subset of the props, not the full list.
                 // NOTE: the reason this is separated from the next clause is because ChangeProps gives us
                 // no way to *delete* a property. We don't normally expect to do that in a limited-edit instance,
