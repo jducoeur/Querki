@@ -76,9 +76,9 @@ object OIDs {
 //  val PhotoBaseOID = sysId(30)
   val PrototypeUserOID = sysId(31)
 //  val GoogleFontOID = sysId(32)
-  val LinkKindOID = sysId(33)
-  val LinkAllowAppsOID = sysId(34)
-  val LinkModelOID = sysId(35)
+//  val LinkKindOID = sysId(33)
+//  val LinkAllowAppsOID = sysId(34)
+//  val LinkModelOID = sysId(35)
 //  val AppliesToKindOID = sysId(36)
   val PlainTextOID = sysId(37)
   val InternalMethodOID = sysId(38)
@@ -113,10 +113,10 @@ object OIDs {
 //  val AllThingsOID = sysId(67)
 //  val IconButtonOID = sysId(68)
 //  val CreateInstanceLinkOID = sysId(69)
-  val LinkToModelsOnlyOID = sysId(70)
+//  val LinkToModelsOnlyOID = sysId(70)
   val TagSetOID = sysId(71)
 //  val TagRefsOID = sysId(72)
-  val ShowUnknownOID = sysId(73)
+//  val ShowUnknownOID = sysId(73)
 //  val TagsForPropertyOID = sysId(74)
 //  val SelfMethodOID = sysId(75)
 //  val PropsOfTypeOID = sysId(76)
@@ -146,7 +146,7 @@ object OIDs {
 //  val MinTextLengthOID = sysId(100)
 //  val DeprecatedOID = sysId(101)
   val NewTagSetOID = sysId(102)
-  val NoCreateThroughLinkOID = sysId(103)
+//  val NoCreateThroughLinkOID = sysId(103)
 //  val IsFunctionOID = sysId(104)
 }
 
@@ -174,9 +174,9 @@ object SystemSpace {
 //      IsModelProp, 
 //      NotInheritedProp,
 //      DisplayNameProp,
-      LinkKindProp,
-      LinkAllowAppsProp,
-      LinkModelProp,
+//      LinkKindProp,
+//      LinkAllowAppsProp,
+//      LinkModelProp,
 //      AppliesToKindProp,
 //      InternalProp,
 //      EditMethod,
@@ -203,9 +203,9 @@ object SystemSpace {
 //      JoinMethod,
 //      IconButtonMethod,
 //      CreateInstanceLinkMethod,
-      LinkToModelsOnlyProp,
+//      LinkToModelsOnlyProp,
 //      TagRefsMethod,
-      ShowUnknownProp,
+//      ShowUnknownProp
 //      TagsForPropertyMethod,
 //      SelfMethod,
 //      PropsOfTypeMethod,
@@ -227,7 +227,7 @@ object SystemSpace {
 //      ShowLinkMethod,
 //      PropLinkMethod,
 //      DeprecatedProp,
-      NoCreateThroughLinkProp
+//      NoCreateThroughLinkProp
 //      IsFunctionProp
       )
       
@@ -251,7 +251,7 @@ object SystemSpace {
             
 [[How It Works -> _if(_isDefined, ""**____**"")]]
 """))),
-        ShowUnknownProp(TagThing.defaultDisplayText)), 
+        (querki.tags.MOIDs.ShowUnknownOID -> ExactlyOne(TextType(querki.tags.defaultDisplayText)))), 
       SystemUserOID, "System", querki.time.epoch, None, SystemTypes.all, props, things, SystemCollections.all, None, ecology)    
   }
 }

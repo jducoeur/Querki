@@ -16,8 +16,8 @@ import querki.values.ElemValue
 class CoreModule(e:Ecology) extends QuerkiEcot(e) with Core {
   import MOIDs._
   
-  def LinkKindProp(kind:Kind.Kind) = (models.system.OIDs.LinkKindOID -> ExactlyOne(IntType(kind)))
-  def LinkAllowAppsProp(b:Boolean) = (models.system.OIDs.LinkAllowAppsOID -> YesNoType.boolean2YesNoQValue(b))
+  def LinkKindProp(kind:Kind.Kind) = (querki.links.MOIDs.LinkKindOID -> ExactlyOne(IntType(kind)))
+  def LinkAllowAppsProp(b:Boolean) = (querki.links.MOIDs.LinkAllowAppsOID -> YesNoType.boolean2YesNoQValue(b))
 
   /***********************************************
    * PROPERTIES

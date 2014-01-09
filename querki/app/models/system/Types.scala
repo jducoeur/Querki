@@ -412,7 +412,7 @@ object QLType extends QLType(QLTypeOID)
   /**
    * The Type for Links to other Things
    * 
-   * TODO: This Type, and its associated Properties, may want to become a Module.
+   * TODO: This Type probably belongs in LinksEcot.
    */
   class LinkType(tid:OID) extends SystemType[OID](tid,
       toProps(
@@ -509,11 +509,12 @@ object QLType extends QLType(QLTypeOID)
             }
           }
         }
-      val linkModel = prop.getPropOpt(LinkModelProp)(state)
+      val Links = interface[querki.links.Links]
+      val linkModel = prop.getPropOpt(Links.LinkModelProp)(state)
       linkModel match {
         case Some(propAndVal) => {
           val model = state.anything(propAndVal.first).get
-          if (model.ifSet(NoCreateThroughLinkProp)(state))
+          if (model.ifSet(Links.NoCreateThroughLinkProp)(state))
             realOptions
           else
             realOptions :+ <option class="_createNewFromModel" data-model={model.toThingId} value={UnknownOID.id.toString}>Create a New {model.displayName}</option>

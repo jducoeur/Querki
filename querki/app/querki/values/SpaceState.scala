@@ -53,6 +53,7 @@ case class SpaceState(
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   lazy val DataModel = interface[querki.datamodel.DataModelAccess]
+  lazy val Links = interface[querki.links.Links]
   
   lazy val IsFunctionProp = DataModel.IsFunctionProp
   lazy val InternalProp = Core.InternalProp
@@ -280,7 +281,7 @@ case class SpaceState(
     implicit val s = this
     
     val locals = linkCandidatesLocal(prop)
-    if (app.isDefined && prop.hasProp(LinkAllowAppsProp) && prop.first(LinkAllowAppsProp))
+    if (app.isDefined && prop.hasProp(Links.LinkAllowAppsProp) && prop.first(Links.LinkAllowAppsProp))
       locals ++: app.get.linkCandidates(prop)
     else
       locals
@@ -293,10 +294,10 @@ case class SpaceState(
     implicit val s = this
     
     // First, filter the candidates based on LinkKind:
-    val allCandidates = if (prop.hasProp(LinkKindProp)) {
-      val allowedKinds = prop.getPropVal(LinkKindProp).cv
+    val allCandidates = if (prop.hasProp(Links.LinkKindProp)) {
+      val allowedKinds = prop.getPropVal(Links.LinkKindProp).cv
       def fetchKind(wrappedVal:ElemValue):Iterable[Thing] = {
-        val kind = LinkKindProp.pType.get(wrappedVal)
+        val kind = Links.LinkKindProp.pType.get(wrappedVal)
         kind match {
           case Kind.Thing => things.values
           case Kind.Property => spaceProps.values
@@ -315,14 +316,14 @@ case class SpaceState(
     // Now, if they've specified a particular Model to be the limit of the candidate
     // tree -- essentially, they've specified what type you can link to -- filter for
     // that:
-    val filteredByModel = if (prop.hasProp(LinkModelProp)) {
-      val limit = prop.first(LinkModelProp)
+    val filteredByModel = if (prop.hasProp(Links.LinkModelProp)) {
+      val limit = prop.first(Links.LinkModelProp)
       allCandidates filter (_.isAncestor(limit))
     } else {
       allCandidates
     }
     
-    val filteredAsModel = if (prop.ifSet(LinkToModelsOnlyProp)) {
+    val filteredAsModel = if (prop.ifSet(Links.LinkToModelsOnlyProp)) {
       filteredByModel filter (_.isModel)
     } else {
       filteredByModel

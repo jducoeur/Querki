@@ -6,6 +6,8 @@ import org.scalatest.{WordSpec, BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
 
 class QLTests extends QuerkiTests {
+  lazy val Links = interface[querki.links.Links]
+  
   // === Attachments ===
   "Photos" should {
     "self-render when linked" in {
@@ -92,7 +94,7 @@ class QLTests extends QuerkiTests {
         val enum1 = new TestThing("Enum 1", myEnum)
         val enum2 = new TestThing("Enum 2", myEnum)
         
-        val myEnumProp = new TestProperty(LinkType, ExactlyOne, "Enum Prop", LinkModelProp(myEnum))
+        val myEnumProp = new TestProperty(LinkType, ExactlyOne, "Enum Prop", Links.LinkModelProp(myEnum))
         
         val thingWithMethod = new SimpleTestThing("Methodical", myQLProp("""_if(_equals($_context, With Enum 1 -> Enum Prop), ""You gave me Enum 1!"", ""Wrong thing! Humph!"")""".stripMargin))
         val withEnum1 = new SimpleTestThing("With Enum 1", myEnumProp(enum1))
@@ -128,7 +130,7 @@ class QLTests extends QuerkiTests {
         val enum1 = new TestThing("Enum 1", myEnum)
         val enum2 = new TestThing("Enum 2", myEnum)
         
-        val myEnumProp = new TestProperty(LinkType, ExactlyOne, "Enum Prop", LinkModelProp(myEnum))
+        val myEnumProp = new TestProperty(LinkType, ExactlyOne, "Enum Prop", Links.LinkModelProp(myEnum))
         
         val thingWithMethod = new SimpleTestThing("Methodical", myQLProp("""_if(_equals($_1, With Enum 1 -> Enum Prop), ""You gave me Enum 1!"", ""Wrong thing! Humph!"")""".stripMargin))
         val withEnum1 = new SimpleTestThing("With Enum 1", myEnumProp(enum1))
@@ -150,7 +152,7 @@ class QLTests extends QuerkiTests {
         val enum1 = new TestThing("Enum 1", myEnum)
         val enum2 = new TestThing("Enum 2", myEnum)
         
-        val myEnumProp = new TestProperty(LinkType, ExactlyOne, "Enum Prop", LinkModelProp(myEnum))
+        val myEnumProp = new TestProperty(LinkType, ExactlyOne, "Enum Prop", Links.LinkModelProp(myEnum))
         
         val thingWithMethod = new SimpleTestThing("Methodical", myQLProp("""_if(_equals($_1, $_2 -> Enum Prop), ""Yep, that has the right value"", ""Wrong value!"")""".stripMargin))
         val withEnum1 = new SimpleTestThing("With Enum 1", myEnumProp(enum1))

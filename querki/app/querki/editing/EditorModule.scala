@@ -2,7 +2,7 @@ package querki.editing
 
 import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState, Wikitext}
 
-import models.system.{SingleContextMethod, SystemProperty, LinkAllowAppsProp, LinkKindProp}
+import models.system.{SingleContextMethod, SystemProperty}
 import models.system.{ExactlyOne, QList}
 import models.system.{IntType, LargeTextType, LinkCandidateProvider, LinkType, PlainTextType, QLText}
 import models.system.OIDs.sysId
@@ -22,6 +22,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) {
   
   val Types = initRequires[querki.types.Types]
   val Basic = initRequires[querki.basic.Basic]
+  val Links = initRequires[querki.links.Links]
   
   lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
@@ -59,8 +60,8 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) {
 	lazy val InstanceEditPropsProp = new SystemProperty(InstanceEditPropsOID, LinkType, QList,
 	    toProps(
 	      setName("Properties to edit in Instances"),
-	      LinkAllowAppsProp(true),
-	      LinkKindProp(Kind.Property),
+	      Links.LinkAllowAppsProp(true),
+	      Links.LinkKindProp(Kind.Property),
 	      Summary("Which Properties should be edited in Instances of this Model?"),
 	      Details("""It is very common to define a bunch of Properties on a Model that you really don't
 	          |ever intend to change on the Instances. (In particular, you very often will define the Display

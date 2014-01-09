@@ -17,11 +17,13 @@ import play.api.Logger
 
 class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
   
-  lazy val abstractPersonOID = querki.identity.MOIDs.SecurityPrincipalOID
-
   import MOIDs._
+
+  val Links = initRequires[querki.links.Links]
+  val Person = initRequires[querki.identity.Person]
   
-  lazy val Person = interface[querki.identity.Person]
+  lazy val LinkModelProp = Links.LinkModelProp
+  lazy val abstractPerson = Person.SecurityPrincipal
   
   // TBD: this checks whether this person is a Member based on the Person records in the Space. Should we use
   // the SpaceMembership table instead? In general, there is a worrying semantic duplication here. We should
@@ -152,21 +154,21 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
    * THINGS
    ***********************************************/
   
-  lazy val publicTag = ThingState(PublicTagOID, systemOID, abstractPersonOID,
+  lazy val publicTag = ThingState(PublicTagOID, systemOID, abstractPerson,
       toProps(
         setName("Public"),
         Summary("""
 Use this Tag in Can Read if you want your Space or Thing to be readable by everybody.
 """)))
     
-  lazy val MembersTag = ThingState(MembersTagOID, systemOID, abstractPersonOID,
+  lazy val MembersTag = ThingState(MembersTagOID, systemOID, abstractPerson,
       toProps(
         setName("Members"),
         Summary("""
 Use this Tag in Can Read if you want your Space or Thing to be readable by members of the Space.
 """)))
     
-  lazy val OwnerTag = ThingState(OwnerTagOID, systemOID, abstractPersonOID,
+  lazy val OwnerTag = ThingState(OwnerTagOID, systemOID, abstractPerson,
       toProps(
         setName("Owner"),
         Summary("""
@@ -201,7 +203,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         setName("Who Can Read"),
         isPermissionProp(true),
         SkillLevel(SkillLevelAdvanced),
-        (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
+        LinkModelProp(abstractPerson),
         Summary("Who else can read Things in this Space")))
 
   lazy val CanEditProp = new SystemProperty(CanEditPropOID, LinkType, QSet,
@@ -209,7 +211,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         setName("Who Can Edit"),
         isPermissionProp(true),
         SkillLevel(SkillLevelAdvanced),
-        (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
+        LinkModelProp(abstractPerson),
         Summary("Who else can edit Things in this Space"),
         Details("""Note that this Property is *not* inherited, unlike most. If you want to
             |say who can edit Things made from this Model, use [[Who Can Edit Children._self]] instead.""".stripMargin)))
@@ -219,7 +221,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         setName("Who Can Edit Children"),
         isPermissionProp(true),
         SkillLevel(SkillLevelAdvanced),
-        (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
+        LinkModelProp(abstractPerson),
         Summary("Who else can edit children of this Thing"),
         Details("""This Property is useful on Models and Spaces, and works as follows.
             |
@@ -238,7 +240,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         setName("Who Can Create"),
         SkillLevel(SkillLevelAdvanced),
         isPermissionProp(true),
-        (LinkModelOID -> Optional(ElemValue(abstractPersonOID, new DelegatingType(LinkType)))),
+        LinkModelProp(abstractPerson),
         Summary("Who else can make new Things in this Space")))
 
   override lazy val props = Seq(

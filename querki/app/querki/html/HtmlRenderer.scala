@@ -30,6 +30,7 @@ object MOIDs extends EcotIds(26)
 class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer {
   
   lazy val Core = interface[querki.core.Core]
+  lazy val Links = interface[querki.links.Links]
   
   /*********************************
    * PUBLIC API
@@ -189,7 +190,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer {
   def renderPickList(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):Elem = {
     implicit val s = state
     val instancesOpt = for (
-        propAndVal <- prop.getPropOpt(LinkModelProp);
+        propAndVal <- prop.getPropOpt(Links.LinkModelProp);
         modelOID <- propAndVal.firstOpt
         )
       yield (modelOID, state.descendants(modelOID, false, true))

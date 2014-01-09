@@ -32,6 +32,7 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email {
   
   val Core = initRequires[querki.core.Core]
   val Basic = initRequires[querki.basic.Basic]
+  val Links = initRequires[querki.links.Links]
   
   lazy val DeprecatedProp = Basic.DeprecatedProp
   lazy val DisplayTextProp = Basic.DisplayTextProp
@@ -128,7 +129,7 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email {
           setName("Email To"),
           InternalProp(true),
           DeprecatedProp(true),
-          (LinkModelOID -> Optional(ElemValue(querki.identity.MOIDs.PersonOID, LinkType))),
+          Links.LinkModelProp(querki.identity.MOIDs.PersonOID),
           Summary("Who should this email be sent to?"),
           Details("""This is the raw list of people to send this email to. It should point to one or more
               |Person Things, each of which should have an Email Address set.

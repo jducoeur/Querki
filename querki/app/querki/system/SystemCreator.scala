@@ -40,6 +40,7 @@ object SystemCreator {
     new querki.ql.QLEcot(ecology)                                  // 24
     new querki.spaces.PropTypeMigratorEcot(ecology)                // 25
     new querki.html.HtmlRendererEcot(ecology)                      // 26
+    new querki.links.LinksEcot(ecology)                            // 27
     
     ecology
   }

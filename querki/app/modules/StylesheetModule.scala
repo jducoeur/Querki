@@ -8,7 +8,6 @@ import controllers.PageEventManager
 import models._
 import models.system.{SystemType, PlainTextType}
 import models.system.CommonInputRenderers
-import models.system.{LinkModelProp}
 
 import ql._
 
@@ -35,6 +34,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
   
   val Core = initRequires[querki.core.Core]
   val Basic = initRequires[querki.basic.Basic]
+  val Links = initRequires[querki.links.Links]
 
   /******************************************
    * TYPES
@@ -74,7 +74,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
   lazy val StylesheetProp = new SystemProperty(StylesheetOID, LinkType, Optional,
     toProps(
       setName("Stylesheet Link"),
-      LinkModelProp(StylesheetBase),
+      Links.LinkModelProp(StylesheetBase),
       AppliesToKindProp(Kind.Thing),
       Summary("Describes how to render Things when displaying them in the browser"),
       Details("""If you add the Stylesheet Link Property to a Thing, it should point to a

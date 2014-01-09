@@ -6,7 +6,7 @@ import models.{OID, Thing, ThingState}
 import models.Thing._
 import models.system.ExactlyOne
 import models.system.LinkType
-import models.system.{LinkModelProp, SystemProperty}
+import models.system.{SystemProperty}
 import models.system.OIDs.{systemOID}
 
 import querki.ecology._
@@ -16,6 +16,8 @@ import querki.values.SpaceState
 class SkillLevelModule(e:Ecology) extends QuerkiEcot(e) with SkillLevel {
   import querki.identity.skilllevel.MOIDs._
   
+  val Links = initRequires[querki.links.Links]
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/
@@ -23,7 +25,7 @@ class SkillLevelModule(e:Ecology) extends QuerkiEcot(e) with SkillLevel {
   lazy val SkillLevelProp = new SystemProperty(SkillLevelPropOID, LinkType, ExactlyOne,
       toProps(
         setName("User Level to Show This"),
-        LinkModelProp(skillLevelModel),
+        Links.LinkModelProp(skillLevelModel),
         (SkillLevelPropOID -> ExactlyOne(LinkType(SkillLevelAdvancedOID))),
         Summary("Describes the complexity of this Thing, in terms of what level of user experience it wants"),
         Details("""Querki tries very hard to be simple, but at the same time includes a great deal of power.

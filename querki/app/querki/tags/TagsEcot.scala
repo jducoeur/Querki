@@ -2,16 +2,14 @@ package querki.tags
 
 import querki.ecology._
 
+import models.{AsDisplayName, Kind, Thing, ThingId, UnknownOID, Wikitext}
+
 import models.system.{InternalMethod, SingleContextMethod}
-import models.system.{LinkFromThingBuilder, NameType, NameableType, NewTagSetType, PlainText, TagSetType}
+import models.system.{LinkFromThingBuilder, NameType, NameableType, NewTagSetType, PlainText, PlainTextType, TagSetType}
 
 import ql._
+import querki.util.SafeUrl
 import querki.values._
-
-object MOIDs extends EcotIds(22) {
-  val TagRefsOID = sysId(72)
-  val TagsForPropertyOID = sysId(74)
-}
 
 /**
  * TODO: this should probably absorb more of the concept of "tags", maybe even including the Types.
@@ -19,6 +17,34 @@ object MOIDs extends EcotIds(22) {
 class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags {
   import MOIDs._
   
+  val Links = initRequires[querki.links.Links]
+    
+  lazy val LinkModelOID = querki.links.MOIDs.LinkModelOID
+  
+  /**
+   * This is essentially a pseudo-Thing, produced when you navigate to an unknown Name. It basically
+   * exists to support the display of the Undefined Tag View.
+   */
+  case class TagThing(name:String, space:SpaceState)(implicit e:Ecology) extends Thing(UnknownOID, space.id, UnknownOID, Kind.Thing, () => Thing.emptyProps, querki.time.epoch)(e) {
+    override lazy val displayName = name
+    override lazy val canonicalName = Some(name)
+    override lazy val toThingId:ThingId = new AsDisplayName(name)
+  
+    override def render(implicit rc:RequestContext, prop:Option[Property[_,_]] = None):Wikitext = {
+      import ql._
+    
+      implicit val s = space
+      val model = preferredModelForTag(space, name)
+      val propAndValOpt = model.getPropOpt(ShowUnknownProp) orElse space.getPropOpt(ShowUnknownProp)
+      val nameVal = ExactlyOne(PlainTextType(name))
+      val nameAsContext = QLContext(nameVal, Some(rc))
+      // TODO: the link below shouldn't be so hard-coded!
+      propAndValOpt.map(pv => pv.render(nameAsContext)).getOrElse(Wikitext(name + " doesn't exist yet. [Click here to create it.](edit?thingId=" + SafeUrl(name) + ")"))    
+    }
+  }
+  
+  def getTag(name:String, state:SpaceState):Thing = TagThing(name, state)
+
   def fetchTags(space:SpaceState, propIn:Property[_,_]):Set[String] = {
     implicit val s = space
     val thingsWithProp = space.thingsWithProp(propIn)
@@ -36,12 +62,77 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags {
       // TODO: should this be a PublicException?
       throw new Exception("Trying to fetchTags on a non-Tag Property!")
   }
+    
+  def preferredModelForTag(implicit state:SpaceState, nameIn:String):Thing = {
+    val tagProps = state.propsOfType(TagSetType).filter(_.hasProp(LinkModelOID))
+    val newTagProps = state.propsOfType(NewTagSetType).filter(_.hasProp(LinkModelOID))
+    val name = NameType.canonicalize(nameIn)
+    val plainName = PlainText(nameIn)
+    if (tagProps.isEmpty && newTagProps.isEmpty)
+      state.interface[querki.basic.Basic].SimpleThing
+    else {
+      val candidates = state.allThings.toSeq
+    
+      // Find the first Tag Set property (if any) that is being used with this Tag:
+      val tagPropOpt:Option[Property[_,_]] = tagProps.find { prop =>
+        val definingThingOpt = candidates.find { thing =>
+          val propValOpt = thing.getPropOpt(prop)
+          propValOpt.map(_.contains(name)).getOrElse(false)
+        }
+        definingThingOpt.isDefined
+      }
+      
+      val newTagPropOpt:Option[Property[_,_]] = newTagProps.find { prop =>
+        val definingThingOpt = candidates.find { thing =>
+          val propValOpt = thing.getPropOpt(prop)
+          propValOpt.map(_.contains(plainName)).getOrElse(false)
+        }
+        definingThingOpt.isDefined
+      }
+      
+      val definingPropOpt = newTagPropOpt orElse tagPropOpt
+      
+      // Get the Link Model for that property:
+      val modelOpt = 
+        for (
+          tagProp <- definingPropOpt;
+          linkModelPropVal <- tagProp.getPropOpt(Links.LinkModelProp);
+          modelId <- linkModelPropVal.firstOpt;
+          model <- state.anything(modelId)
+          )
+          yield model
 
+      modelOpt.getOrElse(state.interface[querki.basic.Basic].SimpleThing)
+    }
+  }
+
+  lazy val ShowUnknownProp = new SystemProperty(ShowUnknownOID, LargeTextType, ExactlyOne,
+    toProps(
+      setName("Undefined Tag View"),
+      AppliesToKindProp(Kind.Space),
+      Summary("What should be displayed when you click on a Tag that isn't a Thing?"),
+      Details("""In Querki, it is entirely legal to refer to the name of something you haven't written yet --
+          |for instance, Tags are often names with no definition. So the question becomes, what should be
+          |displayed when you click on one of these tags, since it doesn't point to a real Thing?
+          |
+          |The Undefined Tag View Property defines that. It is a Large Text that is defined on the Space; when
+          |you try to look at an unknown name, it will show this text. You can put QL expressions in here; they
+          |will receive the Name that you are trying to look at.
+          |
+          |You can also put an Undefined Tag View on a Model, which basically means that all Tags of this Model
+          |will use that View. (Technically, this means all Tags that are used in a Tag Set whose Link Model
+          |points to this Model.)
+          |
+          |There is a simple default value that is defined on every Space by default. But you should feel free
+          |to override that to do something more interesting, especially if you are doing interesting things
+          |with Tags in your Space.""".stripMargin)))
+
+  
   /***********************************************
    * FUNCTIONS
    ***********************************************/  
 
-  class TagRefsMethod extends InternalMethod(TagRefsOID,
+  lazy val TagRefsMethod = new InternalMethod(TagRefsOID,
     toProps(
       setName("_tagRefs"),
       Summary("Produces a List of all Things that have the received Thing or Name as a Tag"),
@@ -93,7 +184,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags {
     }
   }
 
-  class TagsForPropertyMethod extends SingleContextMethod(TagsForPropertyOID,
+  lazy val TagsForPropertyMethod = new SingleContextMethod(TagsForPropertyOID,
     toProps(
       setName("_tagsForProperty"),
       Summary("Show all the Tags that are defined for this Property"),
@@ -125,7 +216,8 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags {
   }
 
   override lazy val props = Seq(
-    new TagRefsMethod,
-    new TagsForPropertyMethod
+    ShowUnknownProp,
+    TagRefsMethod,
+    TagsForPropertyMethod
   )
 }

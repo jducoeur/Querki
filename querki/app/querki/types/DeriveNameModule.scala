@@ -5,7 +5,7 @@ import models.Thing._
 
 import models.system.{LinkType, NameType, PlainTextType}
 import models.system.ExactlyOne
-import models.system.{LinkAllowAppsProp, LinkModelProp, SystemProperty}
+import models.system.{SystemProperty}
 import models.system.OIDs.{DisplayNameOID, RootOID, systemOID}
 
 import querki.core.PropList
@@ -19,6 +19,8 @@ import querki.values._
 class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName {
   
   import DeriveNameMOIDs._
+  
+  val Links = initRequires[querki.links.Links]
   
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Core = interface[querki.core.Core]
@@ -174,8 +176,8 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName {
   lazy val DeriveNameProp = new SystemProperty(DeriveNameOID, LinkType, ExactlyOne,
     toProps(
       setName("_deriveName"),
-      LinkModelProp(deriveModel),
-      LinkAllowAppsProp(true),
+      Links.LinkModelProp(deriveModel),
+      Links.LinkAllowAppsProp(true),
       SkillLevel(SkillLevelAdvanced),
       Summary("Should this Thing's Name be automatically derived from its Display Name?"),
       Details("""Querki has two different kinds of "name". Both are important, but they are

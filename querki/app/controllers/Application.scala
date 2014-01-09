@@ -63,6 +63,7 @@ class Application extends ApplicationBase {
   lazy val PropListMgr = interface[querki.core.PropListManager]
   lazy val Tags = interface[querki.tags.Tags]
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
+  lazy val Links = interface[querki.links.Links]
   
   lazy val UrProp = Core.UrProp  
   lazy val AppliesToKindProp = Core.AppliesToKindProp
@@ -94,7 +95,7 @@ disallow: /
   def thing(ownerId:String, spaceId:String, thingId:String) = withThing(false, ownerId, spaceId, thingId, Some({ 
     case (ThingError(error, stateOpt), rc) if (error.msgName == UnknownName) => {
       // We didn't find the requested Thing, so display a TagThing for it instead:
-      val rcWithName = rc.copy(thing = Some(TagThing(thingId, stateOpt.get)))
+      val rcWithName = rc.copy(thing = Some(Tags.getTag(thingId, stateOpt.get)))
       Ok(views.html.thing(rcWithName))
     }
   })) { implicit rc =>
@@ -403,12 +404,12 @@ disallow: /
       // This happens normally when you "Edit" a Tag.
       implicit val state = rc.state.get
       // If this Tag is used in a Tag Set Property with a Link Model, use that:
-      val model = TagThing.preferredModelForTag(state, thingIdStr)
+      val model = Tags.preferredModelForTag(state, thingIdStr)
       val name = NameType.toDisplay(thingIdStr)
       val defaultText =
-        model.getPropOpt(ShowUnknownProp).orElse(state.getPropOpt(ShowUnknownProp)).
+        model.getPropOpt(Tags.ShowUnknownProp).orElse(state.getPropOpt(Tags.ShowUnknownProp)).
           map(_.v).
-          getOrElse(ExactlyOne(LargeTextType(TagThing.defaultDisplayText)))
+          getOrElse(ExactlyOne(LargeTextType(querki.tags.defaultDisplayText)))
       showEditPage(rc, model, 
           PropListMgr.inheritedProps(None, model) ++
           PropListMgr(DisplayNameProp -> DisplayPropVal(None, DisplayNameProp, Some(ExactlyOne(PlainTextType(name)))),
@@ -532,7 +533,7 @@ disallow: /
       // Filter the options if there is a valid Link Model:
       val thingsFiltered = {
         val filteredOpt = for (
-          linkModelProp <- prop.getPropOpt(LinkModelProp);
+          linkModelProp <- prop.getPropOpt(Links.LinkModelProp);
           targetModel <- linkModelProp.firstOpt
             )
           yield allThings.filter(_.isAncestor(targetModel))

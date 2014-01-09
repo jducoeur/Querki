@@ -151,7 +151,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
    * THINGS
    ***********************************************/
   
-  lazy val securityPrincipal = ThingState(SecurityPrincipalOID, systemOID, querki.basic.MOIDs.SimpleThingOID,
+  lazy val SecurityPrincipal = ThingState(SecurityPrincipalOID, systemOID, querki.basic.MOIDs.SimpleThingOID,
       toProps(
         setName("Security Principal"),
         Summary("""For internal use -- this the concept of a Thing that can be given permissions.""")))
@@ -165,7 +165,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
         Summary("""This represents a Member of this Space.""")))
     
   override lazy val things = Seq(
-    securityPrincipal,
+    SecurityPrincipal,
     PersonModel
   )
    
