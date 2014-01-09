@@ -44,7 +44,7 @@ object OIDs {
    */
   val systemOID = sysId(0)
   
-  val RootOID = sysId(1)
+//  val RootOID = sysId(1)
   val IntTypeOID = sysId(2)
   val TextTypeOID = sysId(3)
   val YesNoTypeOID = sysId(4)
@@ -163,79 +163,13 @@ object SystemSpace {
   // errors on startup. This means we have to be careful to keep these lists in synch!
   
   // Properties:
-  val props = OIDMap[Property[_,_]](
-//      UrProp, 
-//      NameProp, 
-//      DisplayTextProp, 
-//      TypeProp, 
-//      CollectionProp,
-//      PlaceholderTextProp, 
-//      PromptProp, 
-//      IsModelProp, 
-//      NotInheritedProp,
-//      DisplayNameProp,
-//      LinkKindProp,
-//      LinkAllowAppsProp,
-//      LinkModelProp,
-//      AppliesToKindProp,
-//      InternalProp,
-//      EditMethod,
-//      SectionMethod,
-//      InstancesMethod,
-//      ApplyMethod,
-//      InstanceEditPropsProp,
-//      RefsMethod,
-//      OrMethod,
-//      FirstMethod,
-//      RestMethod,
-//      LinkButtonMethod,
-//      IsEmptyMethod,
-//      IsNonEmptyMethod,
-//      PluralizeMethod,
-//      FilterMethod,
-//      NotMethod,
-//      SpaceMethod,
-//      ExternalRootsMethod,
-//      SortMethod,
-//      ChildrenMethod,
-//      IsModelMethod,
-//      IfMethod,
-//      JoinMethod,
-//      IconButtonMethod,
-//      CreateInstanceLinkMethod,
-//      LinkToModelsOnlyProp,
-//      TagRefsMethod,
-//      ShowUnknownProp
-//      TagsForPropertyMethod,
-//      SelfMethod,
-//      PropsOfTypeMethod,
-//      CodeMethod,
-//      IsDefinedMethod,
-//      FormLineMethod,
-//      EditOrElseMethod,
-//      AllPropsMethod,
-//      PropSummary,
-//      PropDetails,
-//      CountMethod,
-//      ReverseMethod,
-//      DescMethod,
-//      OIDMethod,
-//      KindMethod,
-//      CurrentSpaceMethod,
-//      IsMethod,
-//      EqualsMethod,
-//      ShowLinkMethod,
-//      PropLinkMethod,
-//      DeprecatedProp,
-//      NoCreateThroughLinkProp
-//      IsFunctionProp
-      )
+  val props = OIDMap[Property[_,_]]()
       
   // Things:
-  val things = OIDMap[ThingState](UrThing)
+  val things = OIDMap[ThingState]()
   
   def initialSystemState(ecology:Ecology) = {
-    SpaceState(systemOID, RootOID,
+    SpaceState(systemOID, querki.core.MOIDs.RootOID,
       toProps(
         setName("System"),
         (querki.basic.MOIDs.DisplayTextOID -> ExactlyOne(LargeTextType("""### Things in [[Display Name]]

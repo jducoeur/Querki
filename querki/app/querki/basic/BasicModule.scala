@@ -3,7 +3,7 @@ package querki.basic
 import models._
 import models.Thing._
 
-import models.system.OIDs.{systemOID, RootOID}
+import models.system.OIDs.{systemOID}
 import models.system.SystemProperty
 import models.system.{Optional}
 import models.system.{PlainTextType}

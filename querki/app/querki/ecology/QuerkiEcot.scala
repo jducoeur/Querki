@@ -75,6 +75,9 @@ abstract class QuerkiEcot(ecologyIn:Ecology) extends Ecot {
    * only in cases that have proven to be very commonly used already.
    * ************************************************************/
   
+  // The OID of the world root, which is the Model for most basic Things:
+  val RootOID = querki.core.MOIDs.RootOID
+  
   // Common classes:
   type OID = models.OID
   type Property[VT, -RT] = models.Property[VT,RT]

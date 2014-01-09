@@ -20,6 +20,7 @@ import querki.values.SpaceState
  */
 package object core {
   object MOIDs extends EcotIds(16) {
+    val RootOID = sysId(1)
     val UrPropOID = sysId(5)
     val NameOID = sysId(6)
     val TypePropOID = sysId(17)

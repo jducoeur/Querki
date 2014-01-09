@@ -6,7 +6,7 @@ import models.Thing._
 import models.system.{LinkType, NameType, PlainTextType}
 import models.system.ExactlyOne
 import models.system.{SystemProperty}
-import models.system.OIDs.{DisplayNameOID, RootOID, systemOID}
+import models.system.OIDs.{DisplayNameOID, systemOID}
 
 import querki.core.PropList
 import querki.core.MOIDs.UrPropOID

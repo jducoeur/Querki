@@ -31,7 +31,7 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher)(implicit e:Ecology = qu
    * Root Collection type. Exists solely so that there is a common runtime root, in case
    * we want to be able to write new collections.
    */
-  class UrCollection extends Collection(UrCollectionOID, systemOID, UrThing,
+  class UrCollection extends Collection(UrCollectionOID, systemOID, querki.core.MOIDs.RootOID,
       toProps(
         setName("Collection"),
         InternalProp(true)

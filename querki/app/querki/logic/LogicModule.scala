@@ -2,7 +2,7 @@ package querki.logic
 
 import models.{OID, ThingState}
 import models.system.{InternalMethod}
-import models.system.OIDs.{RootOID, systemOID}
+import models.system.OIDs.{systemOID}
 
 import ql.QLPhrase
 
