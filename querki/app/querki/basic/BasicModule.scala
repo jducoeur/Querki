@@ -7,7 +7,6 @@ import models.system.OIDs.{systemOID, RootOID}
 import models.system.SystemProperty
 import models.system.{Optional}
 import models.system.{PlainTextType}
-import models.system.{DeprecatedProp, DisplayTextProp}
 
 import querki.conventions._
 import querki.core._
@@ -50,9 +49,35 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic {
           |bit over time. We are thinking of putting Display Name more front-and-center, and making Name derive
           |from that instead.""".stripMargin)
       ))
+  
+  // TODO: the name DisplayTextProp still need to be renamed to DefaultViewProp:
+  lazy val DisplayTextProp = new SystemProperty(DisplayTextOID, LargeTextType, Optional,
+      toProps(
+        setName("Default View"),
+        Summary("How this Thing will be displayed"),
+        Details("""Default View is one of the most important Properties in Querki,
+        		|and nearly every Thing has one. The Default View describes how this Thing will usually show up when you
+        		|look at it as a web page. It can say almost anything you like, but usually consists of a mix of
+        		|text and QL expressions. (Where a "QL Expression" is anything inside double-square-brackets.)""".stripMargin)
+        ))
+
+  lazy val DeprecatedProp = new SystemProperty(DeprecatedOID, YesNoType, ExactlyOne,
+    toProps(
+      setName("Deprecated"),
+      NotInherited,
+      SkillLevel(SkillLevelAdvanced),
+      Summary("True iff this Thing is Deprecated."),
+      Details("""This is a marker flag that you can put on a Thing to say that it is on its way out, and shouldn't
+          |be used any more.
+          |
+          |The exact meaning of Deprecated depends on the situation, but Querki will tend to hide Things marked as
+          |Deprecated. If you see somewhere that a Deprecated Thing is visible and shouldn't be, please log a bug
+          |report about it.""".stripMargin)))
 
   override lazy val props = Seq(
-    DisplayNameProp
+    DisplayNameProp,
+    DisplayTextProp,
+    DeprecatedProp
   )
   
   /***********************************************

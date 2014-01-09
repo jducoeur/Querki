@@ -6,6 +6,7 @@ import models._
 
 import Property._
 import Thing._
+import YesNoType._
 
 import OIDs._
 import SystemSpace._
@@ -42,23 +43,12 @@ object AppliesToKindProp {
 object InternalProp {
   def apply(b:Boolean) = (querki.core.MOIDs.InternalPropOID -> ExactlyOne(YesNoType(b)))
 }
-  
-  // TODO: the name DisplayTextProp still need to be renamed to DefaultViewProp:
-  object DisplayTextProp extends SystemProperty(DisplayTextOID, LargeTextType, Optional,
-      toProps(
-        setName("Default View"),
-        Summary("How this Thing will be displayed"),
-        Details("""Default View is one of the most important Properties in Querki,
-        		|and nearly every Thing has one. The Default View describes how this Thing will usually show up when you
-        		|look at it as a web page. It can say almost anything you like, but usually consists of a mix of
-        		|text and QL expressions. (Where a "QL Expression" is anything inside double-square-brackets.)""".stripMargin)
-        ))
     
   object PlaceholderTextProp extends SystemProperty(PlaceholderTextOID, PlainTextType, Optional,
       toProps(
         setName("Placeholder Text"),
         AppliesToKindProp(Kind.Property),
-        DeprecatedProp(true),
+        (querki.basic.MOIDs.DeprecatedOID -> true),
         Summary("Placeholder text for input boxes"),
         Details("""In Text Properties, it is often helpful to have a prompt that displays inside the input
             |field until the user begins to type something there. If the Property has a Placeholder Text, that
@@ -197,19 +187,6 @@ object ShowUnknownProp extends SystemProperty(ShowUnknownOID, LargeTextType, Exa
           |There is a simple default value that is defined on every Space by default. But you should feel free
           |to override that to do something more interesting, especially if you are doing interesting things
           |with Tags in your Space.""".stripMargin)))
-
-object DeprecatedProp extends SystemProperty(DeprecatedOID, YesNoType, ExactlyOne,
-    toProps(
-      setName("Deprecated"),
-      NotInherited(),
-      SkillLevel(SkillLevel.Advanced),
-      Summary("True iff this Thing is Deprecated."),
-      Details("""This is a marker flag that you can put on a Thing to say that it is on its way out, and shouldn't
-          |be used any more.
-          |
-          |The exact meaning of Deprecated depends on the situation, but Querki will tend to hide Things marked as
-          |Deprecated. If you see somewhere that a Deprecated Thing is visible and shouldn't be, please log a bug
-          |report about it.""".stripMargin)))
 
 object NoCreateThroughLinkProp extends SystemProperty(NoCreateThroughLinkOID, YesNoType, ExactlyOne,
     toProps(

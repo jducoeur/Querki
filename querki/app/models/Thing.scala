@@ -142,6 +142,7 @@ abstract class Thing(
   // overhead, to save space:
   def DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
   def Core = interface[querki.core.Core]
+  def Basic = interface[querki.basic.Basic]
   def ApplyMethod = Core.ApplyMethod
   def NotInheritedProp = Core.NotInheritedProp
   def NameProp = Core.NameProp
@@ -463,7 +464,7 @@ abstract class Thing(
    */
   def render(implicit request:RequestContext, prop:Option[Property[_,_]] = None):Wikitext = {
     implicit val state = request.state.get
-    val actualProp = prop.getOrElse(DisplayTextProp)
+    val actualProp = prop.getOrElse(Basic.DisplayTextProp)
     val renderedOpt = for (
       pv <- getPropOpt(actualProp);
       if (!pv.isEmpty)

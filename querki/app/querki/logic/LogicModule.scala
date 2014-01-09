@@ -1,7 +1,6 @@
 package querki.logic
 
 import models.{OID, ThingState}
-import models.system.{DisplayTextProp}
 import models.system.{InternalMethod}
 import models.system.OIDs.{RootOID, systemOID}
 
@@ -181,12 +180,12 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) {
   lazy val trueVal = new BooleanValue(TrueOID, YesNoType.True,
       toProps(
         setName("True"),
-        DisplayTextProp("""The literal true value, for use in QL expressions.""")))
+        Summary("""The literal true value, for use in QL expressions.""")))
   
   lazy val falseVal = new BooleanValue(FalseOID, YesNoType.False,
       toProps(
         setName("False"),
-        DisplayTextProp("""The literal false value, for use in QL expressions.""")))
+        Summary("""The literal false value, for use in QL expressions.""")))
 
   override lazy val things = Seq(
     trueVal,

@@ -12,7 +12,7 @@ import models.{Attachment, Collection, Property, PType, PTypeBuilder, Kind, Thin
 import models.Kind._
 import models.MIMEType.MIMEType
 import models.Thing._
-import models.system.{DisplayTextProp, UnresolvedPropType, UnresolvedPropValue}
+import models.system.{UnresolvedPropType, UnresolvedPropValue}
 
 import querki.ecology._
 import querki.time._
@@ -191,7 +191,7 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
 	            SystemInterface.State.id,
 	            toProps(
 	              setName(name),
-	              DisplayTextProp("We were unable to load " + name + " properly. An error has been logged; our apologies.")
+	              interface[querki.basic.Basic].DisplayTextProp("We were unable to load " + name + " properly. An error has been logged; our apologies.")
 	              ),
 	            owner,
 	            name,

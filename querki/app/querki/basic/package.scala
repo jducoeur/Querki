@@ -1,7 +1,7 @@
 package querki
 
 import models.{Property, Thing}
-import models.system.PlainText
+import models.system.{PlainText, QLText}
 import models.system.OIDs.sysId
 
 import querki.ecology._
@@ -12,6 +12,7 @@ import querki.ecology._
  */
 package object basic {
   object MOIDs extends EcotIds(17) {
+    val DisplayTextOID = sysId(7)
     val PageOID = sysId(8)
     val SimpleThingOID = sysId(23)
     val DisplayNameOID = sysId(26)
@@ -21,10 +22,13 @@ package object basic {
     val AllThingsOID = sysId(67)
     val CommasMethodOID = sysId(80)
     val AllPropsThingOID = sysId(84)
+    val DeprecatedOID = sysId(101)
   }
   
   trait Basic extends EcologyInterface {  
+    def DeprecatedProp:Property[Boolean,Boolean]
     def DisplayNameProp:Property[PlainText,String]
+    def DisplayTextProp:Property[QLText,String]
     def SimpleThing:Thing
   }
 }

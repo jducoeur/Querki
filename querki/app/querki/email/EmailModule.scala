@@ -30,6 +30,12 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email {
 
   import querki.email.MOIDs._
   
+  val Core = initRequires[querki.core.Core]
+  val Basic = initRequires[querki.basic.Basic]
+  
+  lazy val DeprecatedProp = Basic.DeprecatedProp
+  lazy val DisplayTextProp = Basic.DisplayTextProp
+  
   def fullKey(key:String) = "querki.mail." + key
   def getRequiredConf(key:String) = {
     val opt = Play.configuration.getString(fullKey(key))
@@ -38,8 +44,6 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email {
       case None => throw new Exception("Didn't find required configuration key " + fullKey(key))
     }
   }
-  
-  val Core = initRequires[querki.core.Core]
   
   lazy val from = getRequiredConf("from")
   lazy val smtpHost = getRequiredConf("smtpHost")

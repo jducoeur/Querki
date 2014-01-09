@@ -38,6 +38,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person {
   
   val Email = initRequires[querki.email.Email]
   val Core = initRequires[querki.core.Core]
+  val Basic = initRequires[querki.basic.Basic]
   
   lazy val EmailAddressProp = Email.EmailAddressProp
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
@@ -107,7 +108,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
   lazy val chromelessInvites = new SystemProperty(ChromelessInvitesOID, YesNoType, ExactlyOne,
       toProps(
         setName("Chromeless Invites"),
-        DeprecatedProp(true),
+        Basic.DeprecatedProp(true),
         Summary("Should invitees to this Space see it unadorned with Querki chrome?"),
         Details("""If you set this to Yes on a Space or Thing, then Invite Links pointing
             |to that will show up without Querki chrome. That is, when they join, they'll just see your
@@ -153,7 +154,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
   lazy val securityPrincipal = ThingState(SecurityPrincipalOID, systemOID, querki.basic.MOIDs.SimpleThingOID,
       toProps(
         setName("Security Principal"),
-        DisplayTextProp("""For internal use -- this the concept of a Thing that can be given permissions.""")))
+        Summary("""For internal use -- this the concept of a Thing that can be given permissions.""")))
   
   lazy val PersonModel = ThingState(PersonOID, systemOID, SecurityPrincipalOID,
       toProps(
@@ -161,7 +162,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
         InternalProp(true),
         Core.IsModelProp(true),
         EmailAddressProp(Optional.QNone),
-        DisplayTextProp("""This represents a Member of this Space.""")))
+        Summary("""This represents a Member of this Space.""")))
     
   override lazy val things = Seq(
     securityPrincipal,

@@ -8,7 +8,7 @@ import controllers.PageEventManager
 import models._
 import models.system.{SystemType, PlainTextType}
 import models.system.CommonInputRenderers
-import models.system.{DisplayTextProp, InternalProp, LinkModelProp}
+import models.system.{LinkModelProp}
 
 import ql._
 
@@ -34,6 +34,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
   import MOIDs._
   
   val Core = initRequires[querki.core.Core]
+  val Basic = initRequires[querki.basic.Basic]
 
   /******************************************
    * TYPES
@@ -93,7 +94,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
   lazy val CSSProp = new SystemProperty(CSSOID, CSSTextType, Optional,
     toProps(
       setName("CSS"),
-      InternalProp(true),
+      Core.InternalProp(true),
       SkillLevel(SkillLevelAdvanced),
       Summary("The actual CSS for a Stylesheet"),
       Details("""This is the main property on a Stylesheet. It can contain more or less
@@ -157,7 +158,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
     toProps(
       setName("Stylesheet"),
       Core.IsModelProp(true),
-      DisplayTextProp("[[_code(CSS)]]"),
+      Basic.DisplayTextProp("[[_code(CSS)]]"),
       CSSProp("")))
   
   override lazy val things = Seq(StylesheetBase)

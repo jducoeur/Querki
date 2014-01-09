@@ -411,7 +411,7 @@ disallow: /
       showEditPage(rc, model, 
           PropListMgr.inheritedProps(None, model) ++
           PropListMgr(DisplayNameProp -> DisplayPropVal(None, DisplayNameProp, Some(ExactlyOne(PlainTextType(name)))),
-                   (DisplayTextProp -> DisplayPropVal(None, DisplayTextProp, Some(defaultText)))))
+                   (Basic.DisplayTextProp -> DisplayPropVal(None, Basic.DisplayTextProp, Some(defaultText)))))
     }
   })) { implicit rc =>
     implicit val state = rc.state.get

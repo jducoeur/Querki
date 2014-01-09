@@ -144,7 +144,7 @@ object OIDs {
   val TestIdentityOID = sysId(98)
   val PrototypeIdentityOID = sysId(99)
 //  val MinTextLengthOID = sysId(100)
-  val DeprecatedOID = sysId(101)
+//  val DeprecatedOID = sysId(101)
   val NewTagSetOID = sysId(102)
   val NoCreateThroughLinkOID = sysId(103)
 //  val IsFunctionOID = sysId(104)
@@ -166,7 +166,7 @@ object SystemSpace {
   val props = OIDMap[Property[_,_]](
 //      UrProp, 
 //      NameProp, 
-      DisplayTextProp, 
+//      DisplayTextProp, 
 //      TypeProp, 
 //      CollectionProp,
       PlaceholderTextProp, 
@@ -226,7 +226,7 @@ object SystemSpace {
 //      EqualsMethod,
 //      ShowLinkMethod,
 //      PropLinkMethod,
-      DeprecatedProp,
+//      DeprecatedProp,
       NoCreateThroughLinkProp
 //      IsFunctionProp
       )
@@ -238,7 +238,7 @@ object SystemSpace {
     SpaceState(systemOID, RootOID,
       toProps(
         setName("System"),
-        DisplayTextProp("""### Things in [[Display Name]]
+        (querki.basic.MOIDs.DisplayTextOID -> ExactlyOne(LargeTextType("""### Things in [[Display Name]]
 [[All Things]]
             
 [[Tag Set Type -> 
@@ -250,7 +250,7 @@ object SystemSpace {
 "")]]
             
 [[How It Works -> _if(_isDefined, ""**____**"")]]
-"""),
+"""))),
         ShowUnknownProp(TagThing.defaultDisplayText)), 
       SystemUserOID, "System", querki.time.epoch, None, SystemTypes.all, props, things, SystemCollections.all, None, ecology)    
   }

@@ -71,7 +71,7 @@ case class SpaceState(
   lazy val publicPropsBySkill:Map[OID, Seq[Property[_,_]]] = {
     implicit val s = this
     propList.toSeq.
-      filterNot(_.ifSet(DeprecatedProp)).
+      filterNot(_.ifSet(Basic.DeprecatedProp)).
       filterNot(_.ifSet(InternalProp)).
       filterNot(_.ifSet(IsFunctionProp)).
       groupBy(SkillLevel(_))

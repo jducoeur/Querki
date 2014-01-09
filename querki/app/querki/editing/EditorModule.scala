@@ -7,7 +7,7 @@ import models.Thing.{PropFetcher, setName, toProps}
 import models.system.{SingleContextMethod, SystemProperty}
 import models.system.{ExactlyOne, QList}
 import models.system.{IntType, LargeTextType, LinkType, QLText}
-import models.system.{AppliesToKindProp, DisplayTextProp, InstanceEditPropsProp}
+import models.system.{InstanceEditPropsProp}
 import models.system.OIDs.sysId
 
 import ql.{QLCall, QLParser, QLPhrase}
@@ -41,6 +41,9 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) {
   lazy val PropListMgr = interface[querki.core.PropListManager]
   lazy val Core = interface[querki.core.Core]
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
+  lazy val Basic = interface[querki.basic.Basic]
+  
+  lazy val DisplayTextProp = Basic.DisplayTextProp
   
   /***********************************************
    * PROPERTIES
