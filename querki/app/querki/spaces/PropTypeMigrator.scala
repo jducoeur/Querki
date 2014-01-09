@@ -3,8 +3,9 @@ package querki.spaces
 import models.{Attachment, Property, PType, PTypeBuilder, Thing, ThingState}
 import models.Thing.PropMap
 
-import models.system.{CollectionProp, IsTextType, LinkType, TypeProp}
+import models.system.{IsTextType, LinkType}
 
+import querki.ecology._
 import querki.util._
 import querki.values._
 
@@ -33,11 +34,20 @@ case class TypeChangeInfo(typeChanged:Boolean, newType:PType[Any] with PTypeBuil
   } 
 }
 
+private [spaces] trait PropTypeMigrator extends EcologyInterface {
+  def checkLegalChange(state:SpaceState, oldThing:Thing, newProps:PropMap):Unit
+  def prepChange(state:SpaceState, prop:Property[_,_], newProps:PropMap):TypeChangeInfo
+}
+
+object MOIDs extends EcotIds(25)
+
 /**
  * This utility deals with the important edge case of trying to change the Type of a
  * Property. This is a sufficient big and complex problem as to demand its own class.
  */
-object PropTypeMigrator {
+class PropTypeMigratorEcot(e:Ecology) extends QuerkiEcot(e) with PropTypeMigrator {
+  
+  lazy val Core = interface[querki.core.Core]
   
   private def isLegalTypeChange(oldType:PType[_], newType:PType[_]):Boolean = {
     oldType.isInstanceOf[IsTextType] && newType.isInstanceOf[IsTextType]
@@ -51,9 +61,9 @@ object PropTypeMigrator {
     oldThing match {
       case prop:Property[_,_] => {
         for (
-          oldTypeVal <- oldThing.getPropOpt(TypeProp);
+          oldTypeVal <- oldThing.getPropOpt(Core.TypeProp);
           oldTypeId <- oldTypeVal.firstOpt;
-          newPropVal <- newProps.get(TypeProp);
+          newPropVal <- newProps.get(Core.TypeProp);
           newTypeId <- newPropVal.firstTyped(LinkType);
           if (oldTypeId != newTypeId);
           oldType <- state.typ(oldTypeId.toThingId);
@@ -63,9 +73,9 @@ object PropTypeMigrator {
           throw new PublicException("Space.modifyThing.illegalTypeChange", oldType.displayName, newType.displayName)
         
         for (
-          oldCollVal <- oldThing.getPropOpt(CollectionProp);
+          oldCollVal <- oldThing.getPropOpt(Core.CollectionProp);
           oldCollId <- oldCollVal.firstOpt;
-          newCollVal <- newProps.get(CollectionProp);
+          newCollVal <- newProps.get(Core.CollectionProp);
           newCollId <- newCollVal.firstTyped(LinkType);
           if (oldCollId != newCollId)
             )
@@ -79,7 +89,7 @@ object PropTypeMigrator {
     val propId = prop.id
     val newTypeOpt =
       for (
-        newPropVal <- newProps.get(TypeProp);
+        newPropVal <- newProps.get(Core.TypeProp);
         newTypeId <- newPropVal.firstTyped(LinkType);
         newType <- state.typ(newTypeId.toThingId)
           )

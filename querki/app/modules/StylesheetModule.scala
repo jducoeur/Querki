@@ -8,7 +8,7 @@ import controllers.PageEventManager
 import models._
 import models.system.{SystemType, PlainTextType}
 import models.system.CommonInputRenderers
-import models.system.{DisplayTextProp, InternalProp, IsModelProp, LinkModelProp}
+import models.system.{DisplayTextProp, InternalProp, LinkModelProp}
 
 import ql._
 
@@ -32,6 +32,8 @@ import querki.ql.CodeType
 
 class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
   import MOIDs._
+  
+  val Core = initRequires[querki.core.Core]
 
   /******************************************
    * TYPES
@@ -154,7 +156,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
   lazy val StylesheetBase = new ThingState(StylesheetBaseOID, systemOID, querki.basic.MOIDs.SimpleThingOID,
     toProps(
       setName("Stylesheet"),
-      IsModelProp(true),
+      Core.IsModelProp(true),
       DisplayTextProp("[[_code(CSS)]]"),
       CSSProp("")))
   

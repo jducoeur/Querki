@@ -4,7 +4,6 @@ import models.{Attachment, ThingState}
 import models.Kind
 import models.system.{ExternalLinkType, LinkType, TextType}
 import models.system.{ExactlyOne, Optional, QList}
-import models.system.{IsModelProp}
 
 import querki.ecology._
 import querki.identity.{User}
@@ -20,6 +19,8 @@ import querki.identity.UserLevel._
 class CommonSpace(implicit ecologyIn:Ecology) extends TestSpace {
   
   def ecology = ecologyIn
+  
+  lazy val Core = interface[querki.core.Core]
   
   // In the simple case, we only have one Space, so it can own the World:
   val world = new TestWorld
@@ -47,7 +48,7 @@ class CommonSpace(implicit ecologyIn:Ecology) extends TestSpace {
   val nonMember:User = userAs("Non-Member", "nonMemberHandle", PaidUser)
   
   // A simple default Model and Instance.
-  val testModel = new SimpleTestThing("My Model", IsModelProp(true))
+  val testModel = new SimpleTestThing("My Model", Core.IsModelProp(true))
   val instance = new TestThing("My Instance", testModel, 
       optTextProp("Hello world")) 
   val withDisplayName = new SimpleTestThing("Interesting Display Name", interface[querki.basic.Basic].DisplayNameProp("""My name is "interesting"!"""))

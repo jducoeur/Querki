@@ -4,8 +4,6 @@ import org.scalatest.Assertions._
 
 import models.UnknownOID
 
-import models.system.IsModelProp
-
 import querki.ecology._
 import querki.identity._
 import querki.identity.UserLevel._
@@ -14,6 +12,7 @@ import querki.test._
 
 class AccessControlTests extends QuerkiTests {
   lazy val AccessControl = interface[querki.security.AccessControl]
+  lazy val Core = interface[querki.core.Core]
   
   "A Space" should {
     "allow the Owner to Edit everything" in {
@@ -66,7 +65,7 @@ class AccessControlTests extends QuerkiTests {
     "allow Edit of a Model's children, but not the Model, with Can Edit Children" in {
       class TSpace extends CommonSpace {
         // A simple default Model and Instance.
-        val testModel2 = new SimpleTestThing("My Model", IsModelProp(true), AccessControl.CanEditChildrenProp(member1.person.id))
+        val testModel2 = new SimpleTestThing("My Model", Core.IsModelProp(true), AccessControl.CanEditChildrenProp(member1.person.id))
         val instance2 = new TestThing("My Instance", testModel2) 
       }
       val space = new TSpace

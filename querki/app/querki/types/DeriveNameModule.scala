@@ -5,8 +5,8 @@ import models.Thing._
 
 import models.system.{LinkType, NameType, PlainTextType}
 import models.system.ExactlyOne
-import models.system.{LinkAllowAppsProp, LinkModelProp, NameProp, SystemProperty}
-import models.system.OIDs.{DisplayNameOID, NameOID, RootOID, systemOID}
+import models.system.{LinkAllowAppsProp, LinkModelProp, SystemProperty}
+import models.system.OIDs.{DisplayNameOID, RootOID, systemOID}
 
 import querki.core.PropList
 import querki.core.MOIDs.UrPropOID
@@ -21,6 +21,9 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName {
   import DeriveNameMOIDs._
   
   lazy val Basic = interface[querki.basic.Basic]
+  lazy val Core = interface[querki.core.Core]
+  
+  lazy val NameProp = Core.NameProp
   
   override def init = {
     SpaceChangeManager.thingChanges += NameDeriver
@@ -69,7 +72,7 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName {
       evt.thingOpt match {
         // Don't even try this on Spaces -- it's too dangerous:
         case Some(SpaceState(_, _, _, _, spaceName, _, _, _, _, _, _, _, _)) => {
-          if (evt.newProps.contains(NameOID))
+          if (evt.newProps.contains(querki.core.MOIDs.NameOID))
             evt
           else
             evt.copy(newProps = evt.newProps + NameProp(spaceName))

@@ -3,16 +3,21 @@ package querki.core
 import models._
 import models.Thing._
 
-import models.system.OIDs.{systemOID, DisplayTextOID, InternalPropOID}
+import models.system.OIDs.{systemOID, DisplayTextOID}
 import models.system.SystemProperty
 import models.system.{UrThing}
-import models.system.{LargeTextType, TextType, YesNoType}
+import models.system.{LargeTextType, NameType, TextType, YesNoType}
 
 import querki.conventions
 import querki.ecology._
 
+import querki.values.ElemValue
+
 class CoreModule(e:Ecology) extends QuerkiEcot(e) with Core {
   import MOIDs._
+  
+  def LinkKindProp(kind:Kind.Kind) = (models.system.OIDs.LinkKindOID -> ExactlyOne(IntType(kind)))
+  def LinkAllowAppsProp(b:Boolean) = (models.system.OIDs.LinkAllowAppsOID -> YesNoType.boolean2YesNoQValue(b))
 
   /***********************************************
    * PROPERTIES
@@ -97,10 +102,120 @@ class CoreModule(e:Ecology) extends QuerkiEcot(e) with Core {
           |So you can use the *Not Inherited* flag to indicate that this Property should not be inherited from
           |Models to Things. This is a very advanced Property, and not intended for ordinary use.""".stripMargin)
       ))
+  
+  lazy val NameProp = new SystemProperty(NameOID, NameType, ExactlyOne,
+      toProps(
+        setName("Name"),
+        NotInherited,
+        Summary("The name of this Thing"),
+        Details("""Names should consist mainly of letters and numbers; they may also include dashes
+        		|and spaces. They should usually start with a letter, and they shouldn't be
+        		|excessively long.""".stripMargin)
+        ))
+
+  /**
+   * The Property that points from a Property to its Type.
+   */
+  lazy val TypeProp = new SystemProperty(TypePropOID, LinkType, ExactlyOne,
+      toProps(
+        setName("Property Type"),
+        LinkKindProp(Kind.Type),
+        LinkAllowAppsProp(true),
+        AppliesToKindProp(Kind.Property),
+        NotInherited,
+        Summary("The Type that this Property can hold"),
+        Details("""A Type is something like "Text" or "Number" or "Tag". Every Property must be designed for
+        		|exactly one Type, and only values of that Type can be placed in it.
+        		|
+        		|Most Properties are of type Text or Large Text (which is the same thing, but can have multiple lines);
+        		|if you don't know what to use, that's usually your best bet.""".stripMargin)
+        ))
+  
+  /**
+   * The Property that points from a Property to its Collection.
+   */
+  lazy val CollectionProp = new SystemProperty(CollectionPropOID, LinkType, ExactlyOne,
+      toProps(
+        setName("Property Collection"),
+        LinkKindProp(Kind.Collection),
+        LinkAllowAppsProp(true),
+        AppliesToKindProp(Kind.Property),
+        NotInherited,
+        Summary("How much this Property holds"),
+        Details("""Collection is a subtle but important concept. A Property Value isn't necessarily *one* of a
+            |Type -- it can take several forms, and you have to say which one it is. As of this writing, the
+            |available Collections are:
+            |
+            |* Exactly One -- the most common case, where the Property holds one of this Type. Note that this means
+            |    that it *always* holds one of this type; if you don't give it a value, it will be set to a default.
+            |* Optional -- the Property may or may not hold a value of this Type. Use Optional when it makes sense
+            |    for a Thing to have the Property but not have it filled in. It is very common for a Model to have an
+            |    Optional Property, which its Instances can choose to fill in when it makes sense.
+            |* List -- the Property holds an ordered list of this Type. You most often use List with Links. Note that
+            |    you can rearrange the List using drag-and-drop, and duplicates are allowed.
+            |* Set -- the Property holds an unordered set of this Type. You most often use Set with Tags. Duplicates
+            |    will be silently thrown away, and order is not preserved; Sets are usually shown in alphabetical order.
+            |
+            |When you create a Property, you must choose which Collection it uses. If you aren't sure, it is usually
+            |best to go for Exactly One, but you should use any of these when they make sense.""".stripMargin)
+        ))
+
+  /**
+   * A flag set on a Thing to indicate that it should be used as a Model. Note that this
+   * Property is not inherited: the child of a Model is not usually a Model.
+   */
+  lazy val IsModelProp = new SystemProperty(IsModelOID, YesNoType, ExactlyOne,
+      toProps(
+        setName("Is a Model"),
+        NotInherited,
+        // TBD: we might allow Property Models down the road, but not yet:
+        AppliesToKindProp(Kind.Thing),
+        SkillLevel(SkillLevelAdvanced),
+        Summary("Is this Thing a Model?"),
+        Details("""All Things can be used as Models if you would like -- in Querki, unlike most programming
+            |languages, the difference between a Model and an Instance is pretty small. But this flag indicates
+            |that this Thing should *normally* be considered a Model. If you set it, then this Model will be
+            |offered as a possibility when you go to create a Thing, it will be displayed a bit differently in
+            |the Space's list of its Things, and in general will be handled a little differently.""".stripMargin)
+        ))
+
+  lazy val AppliesToKindProp = new SystemProperty(AppliesToKindOID, IntType, QList,
+    toProps(
+      setName("Applies To"),
+      (AppliesToKindOID -> QList(ElemValue(Kind.Property, new DelegatingType(IntType)))),
+      (querki.identity.skilllevel.MOIDs.SkillLevelPropOID -> ExactlyOne(LinkType(querki.identity.skilllevel.MOIDs.SkillLevelAdvancedOID))),
+      Summary("Which Kinds of Things can this Property be used on?"),
+      Details("""By default, a Property can be used on anything -- even when
+          |that is nonsensical. The result is that, when creating a new Thing, you get a messy list of lots of
+          |Properties, many of which are irrelevant.
+          |
+          |So to keep that from happening, use this on your Properties. In most cases, a Property is really intended
+          |to only apply to Things *or* Properties, not both. So using this can keep you from having a long and
+          |confusing Property List.
+          |
+          |This is an advanced Property, mostly because most user-defined Properties are intended to be used on
+          |Things, and you usually want to see all of your user-defined Properties as options. But serious
+          |programmers working in Querki may want to set this, especially if they are creating meta-Properties.""".stripMargin)
+      ))
+
+  lazy val InternalProp = new SystemProperty(InternalPropOID, YesNoType, Optional,
+    toProps(
+      setName("Internal Property"),
+      AppliesToKindProp(Kind.Property),
+      NotInherited,
+      (InternalPropOID -> Optional(YesNoType(true))),
+      Summary("If set, this Property is system-internal, and should not be visible to end users."),
+      Details("""Pretty much by definition, you should never need to use this meta-Property.""".stripMargin)))
 
   override lazy val props = Seq(
     ApplyMethod,
     NotInheritedProp,
-    UrProp
+    UrProp,
+    NameProp,
+    TypeProp,
+    CollectionProp,
+    IsModelProp,
+    AppliesToKindProp,
+    InternalProp
   )
 }

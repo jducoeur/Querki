@@ -5,7 +5,7 @@ import scala.util._
 
 import models.{AsName, AsOID, OID}
 import models.{Kind, Thing}
-import models.system.{NameProp, NameType}
+import models.system.{NameType}
 import models.system.OIDs._
 import messages._
 import SpaceError._

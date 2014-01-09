@@ -90,7 +90,7 @@ abstract class QuerkiEcot(ecologyIn:Ecology) extends Ecot {
   }
   
   import models.NameCollection.bootProp
-  def setName(str:String):(OID,QValue) = bootProp(models.system.OIDs.NameOID, str)
+  def setName(str:String):(OID,QValue) = bootProp(querki.core.MOIDs.NameOID, str)
   
   // Common Collections:
   val ExactlyOne = models.system.ExactlyOne
@@ -110,7 +110,7 @@ abstract class QuerkiEcot(ecologyIn:Ecology) extends Ecot {
   // dependencies:
   def Summary(text:String) = (querki.conventions.MOIDs.PropSummaryOID -> ExactlyOne(TextType(text)))
   def Details(text:String) = (querki.conventions.MOIDs.PropDetailsOID -> ExactlyOne(LargeTextType(text)))
-  def AppliesToKindProp(kind:Int) = (models.system.OIDs.AppliesToKindOID -> QList(IntType(kind)))
+  def AppliesToKindProp(kind:Int) = (querki.core.MOIDs.AppliesToKindOID -> QList(IntType(kind)))
   def NotInherited = (querki.core.MOIDs.NotInheritedOID -> ExactlyOne(YesNoType(true)))
   
   lazy val SkillLevelBasic = querki.identity.skilllevel.MOIDs.SkillLevelBasicOID

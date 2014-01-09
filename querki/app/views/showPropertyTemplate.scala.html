@@ -1,12 +1,13 @@
 @(rc:PlayRequestContext, prop:Property[_,_], v:DisplayPropVal, i:Int)
 
 @import models.system._
-@import querki.html.HtmlRenderer
 
 @space = @{ rc.state.get }
 
+@NameProp = @{ rc.interface[querki.core.Core].NameProp }
+
 @showInputControl(prop:Property[_,_], v:DisplayPropVal, i:Int) = {
-  @HtmlRenderer.renderPropertyInput(space, prop, v)
+  @rc.interface[querki.html.HtmlRenderer].renderPropertyInput(space, prop, v)
 }
 
 @editButtonClass(v:DisplayPropVal) = @{

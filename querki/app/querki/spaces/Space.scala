@@ -23,7 +23,7 @@ import querki.ecology._
 
 import querki.identity.User
 
-import models.system.{CollectionProp, LinkType, NameProp, NameType, TypeProp}
+import models.system.{LinkType, NameType}
 
 import messages._
 import SpaceError._
@@ -62,6 +62,8 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
   
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Person = interface[querki.identity.Person]
+  lazy val Core = interface[querki.core.Core]
+  lazy val PropTypeMigrator = interface[PropTypeMigrator]
   
   /**
    * This is the Actor that manages all persistence (DB) operations. We do things this
@@ -184,7 +186,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
     val spaceId = checkSpaceId(spaceThingId)
     // Give listeners a chance to make alterations
     val props = SpaceChangeManager.thingChanges(ThingChangeRequest(state, Some(modelId), None, propsIn)).newProps
-    val name = NameProp.firstOpt(props)
+    val name = Core.NameProp.firstOpt(props)
     val canChangeTry = 
       TryTrans[Unit, Boolean] { canChangeProperties(who, None, props) }.
         onSucc { _ => true }.
@@ -210,8 +212,8 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
               updateState(state.copy(things = state.things + (thingId -> thing)))              
             }
             case Kind.Property => {
-              val typ = state.typ(TypeProp.first(props))
-              val coll = state.coll(CollectionProp.first(props))
+              val typ = state.typ(Core.TypeProp.first(props))
+              val coll = state.coll(Core.CollectionProp.first(props))
               val boundTyp = typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]]
               val boundColl = coll.asInstanceOf[Collection]
               val thing = Property(thingId, spaceId, modelId, boundTyp, boundColl, () => props, modTime)
@@ -293,9 +295,9 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
             }
             case s:SpaceState => {
               // TODO: handle changing the owner or apps of the Space. (Different messages?)
-              val rawName = NameProp.first(newProps)
+              val rawName = Core.NameProp.first(newProps)
               val newName = NameType.canonicalize(rawName)
-              val oldName = NameProp.first(oldThing.props)
+              val oldName = Core.NameProp.first(oldThing.props)
               val oldDisplay = Basic.DisplayNameProp.firstOpt(oldThing.props) map (_.raw.toString) getOrElse rawName
               val newDisplay = Basic.DisplayNameProp.firstOpt(newProps) map (_.raw.toString) getOrElse rawName
               val spaceChange = if (!NameType.equalNames(newName, oldName) || !(oldDisplay.contentEquals(newDisplay))) {

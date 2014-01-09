@@ -7,7 +7,7 @@ import models.system.OIDs.{systemOID, RootOID}
 import models.system.SystemProperty
 import models.system.{Optional}
 import models.system.{PlainTextType}
-import models.system.{DeprecatedProp, DisplayTextProp, IsModelProp}
+import models.system.{DeprecatedProp, DisplayTextProp}
 
 import querki.conventions._
 import querki.core._
@@ -22,6 +22,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic {
   val Types = initRequires[querki.types.Types]
   
   lazy val ApplyMethod = Core.ApplyMethod
+  lazy val IsModelProp = Core.IsModelProp
   
   /***********************************************
    * PROPERTIES

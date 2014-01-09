@@ -37,8 +37,9 @@ import play.api.Logger
 class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person {
   
   val Email = initRequires[querki.email.Email]
-  lazy val EmailAddressProp = Email.EmailAddressProp
+  val Core = initRequires[querki.core.Core]
   
+  lazy val EmailAddressProp = Email.EmailAddressProp
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
   
   import MOIDs._
@@ -158,7 +159,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
       toProps(
         setName("Person"),
         InternalProp(true),
-        IsModelProp(true),
+        Core.IsModelProp(true),
         EmailAddressProp(Optional.QNone),
         DisplayTextProp("""This represents a Member of this Space.""")))
     
@@ -178,7 +179,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
   private def setIdentityId(t:Thing, context:QLContext):OID = {
     implicit val s = context.state
     val emailAddr = t.first(EmailAddressProp)
-    val name = t.first(NameProp)
+    val name = t.first(Core.NameProp)
     // Get the Identity in the database...
     val identity = Identity.getOrCreateByEmail(emailAddr, name)
     // ... then point the Person to it, so we can use it later...

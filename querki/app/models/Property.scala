@@ -47,8 +47,8 @@ case class Property[VT, -RT](
   def pair(v:QValue) = PropAndVal(this, castVal(v))
 
   override lazy val props:PropMap = propFetcher() + 
-		  CollectionProp(cType) +
-		  TypeProp(pType)
+		  (CollectionPropOID -> ExactlyOne(LinkType(cType))) +
+		  (TypePropOID -> ExactlyOne(LinkType(pType)))
 
   /**
    * This little method is a type-math workaround. We're often dealing with properties in contexts

@@ -38,6 +38,8 @@ object SystemCreator {
     new querki.tags.TagsEcot(ecology)                              // 22
     new querki.text.TextEcot(ecology)                              // 23
     new querki.ql.QLEcot(ecology)                                  // 24
+    new querki.spaces.PropTypeMigratorEcot(ecology)                // 25
+    new querki.html.HtmlRendererEcot(ecology)                      // 26
     
     ecology
   }

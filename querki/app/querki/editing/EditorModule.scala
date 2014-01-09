@@ -7,7 +7,7 @@ import models.Thing.{PropFetcher, setName, toProps}
 import models.system.{SingleContextMethod, SystemProperty}
 import models.system.{ExactlyOne, QList}
 import models.system.{IntType, LargeTextType, LinkType, QLText}
-import models.system.{AppliesToKindProp, DisplayTextProp, InstanceEditPropsProp, IsModelProp}
+import models.system.{AppliesToKindProp, DisplayTextProp, InstanceEditPropsProp}
 import models.system.OIDs.sysId
 
 import ql.{QLCall, QLParser, QLPhrase}
@@ -39,6 +39,8 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) {
   lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   lazy val PropListMgr = interface[querki.core.PropListManager]
+  lazy val Core = interface[querki.core.Core]
+  lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
   
   /***********************************************
    * PROPERTIES
@@ -86,7 +88,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) {
   	      // probably need to have the Context contain the desire to render in HTML, and delegate to the
 	      // HTML renderer indirectly. In other words, the Context should know the renderer to use, and pass
 	      // that into here:
-	      val inputControl = querki.html.HtmlRenderer.renderPropertyInput(mainContext.state, prop, currentValue, 
+	      val inputControl = HtmlRenderer.renderPropertyInput(mainContext.state, prop, currentValue, 
 	          specialization(mainContext, mainThing, partialContext, prop, params))
 	      HtmlValue(inputControl)    
         }
@@ -231,7 +233,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) {
           
           case thing:ThingState => {
             implicit val state = partialContext.state
-            if (thing.ifSet(IsModelProp)) {
+            if (thing.ifSet(Core.IsModelProp)) {
               val instances = state.descendants(thing.id, false, true).toSeq.sortBy(_.displayName)
               val wikitexts = instances.map { instance => instanceEditorForThing(instance, instance.thisAsContext(partialContext.request), params) }
               QList.from(wikitexts, ParsedTextType)

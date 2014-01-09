@@ -4,7 +4,6 @@ import collection.immutable.TreeMap
 
 import models.{DisplayPropVal, Property, Thing}
 
-import models.system.NameProp
 import querki.core.MOIDs.UrPropOID
 
 import querki.ecology._
@@ -15,8 +14,11 @@ object PropListMOIDs extends EcotIds(20)
 
 class PropListManagerEcot(e:Ecology) extends QuerkiEcot(e) with PropListManager {
   
+  lazy val Core = interface[querki.core.Core]
+  
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
-  lazy val NotInheritedProp = interface[querki.core.Core].NotInheritedProp
+  lazy val NotInheritedProp = Core.NotInheritedProp
+  lazy val NameProp = Core.NameProp
   
   implicit object PropNameOrdering extends Ordering[Property[_,_]] {
     def compare(a:Property[_,_], b:Property[_,_]) = {

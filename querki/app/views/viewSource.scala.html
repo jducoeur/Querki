@@ -10,7 +10,11 @@
 
 @isForeign = @{ thing.spaceId != space.id }
 
-@PropSummary = @{ querki.ecology.Ecology.api[querki.conventions.Conventions].PropSummary }
+@Core = @{ rc.interface[querki.core.Core] }
+
+@InternalProp = @{ Core.InternalProp }
+@NameProp = @{ Core.NameProp }
+@PropSummary = @{ rc.interface[querki.conventions.Conventions].PropSummary }
 
 @pageTitle = @{
   // TODO: the hardcoded System below should be the name of the Space this thing is from:

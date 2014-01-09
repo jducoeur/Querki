@@ -14,7 +14,7 @@ import querki.ecology._
 import querki.util._
 import querki.values._
 
-object MOIDs extends EcotIds(11) {
+object UIMOIDs extends EcotIds(11) {
   val SectionMethodOID = sysId(43)
   val LinkButtonOID = sysId(51)
   val IconButtonOID = sysId(68)
@@ -27,7 +27,9 @@ object MOIDs extends EcotIds(11) {
 }
 
 class UIModule(e:Ecology) extends QuerkiEcot(e) {
-  import MOIDs._
+  import UIMOIDs._
+  
+  lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
 
   /***********************************************
    * PROPERTIES

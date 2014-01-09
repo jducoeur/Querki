@@ -36,16 +36,12 @@ object SkillLevel {
   val Advanced = querki.identity.skilllevel.MOIDs.SkillLevelAdvancedOID
   def apply(level:OID) = (querki.identity.skilllevel.MOIDs.SkillLevelPropOID -> ExactlyOne(LinkType(level)))
 }
-  
-  object NameProp extends SystemProperty(NameOID, NameType, ExactlyOne,
-      toProps(
-        setName("Name"),
-        NotInherited(),
-        Summary("The name of this Thing"),
-        Details("""Names should consist mainly of letters and numbers; they may also include dashes
-        		|and spaces. They should usually start with a letter, and they shouldn't be
-        		|excessively long.""".stripMargin)
-        ))
+object AppliesToKindProp {
+  def apply(kind:Kind.Kind) = (querki.core.MOIDs.AppliesToKindOID -> ExactlyOne(IntType(kind)))
+}
+object InternalProp {
+  def apply(b:Boolean) = (querki.core.MOIDs.InternalPropOID -> ExactlyOne(YesNoType(b)))
+}
   
   // TODO: the name DisplayTextProp still need to be renamed to DefaultViewProp:
   object DisplayTextProp extends SystemProperty(DisplayTextOID, LargeTextType, Optional,
@@ -56,53 +52,6 @@ object SkillLevel {
         		|and nearly every Thing has one. The Default View describes how this Thing will usually show up when you
         		|look at it as a web page. It can say almost anything you like, but usually consists of a mix of
         		|text and QL expressions. (Where a "QL Expression" is anything inside double-square-brackets.)""".stripMargin)
-        ))
-
-  /**
-   * The Property that points from a Property to its Type.
-   */
-  object TypeProp extends SystemProperty(TypePropOID, LinkType, ExactlyOne,
-      toProps(
-        setName("Property Type"),
-        LinkKindProp(Kind.Type),
-        LinkAllowAppsProp(true),
-        AppliesToKindProp(Kind.Property),
-        NotInherited(),
-        Summary("The Type that this Property can hold"),
-        Details("""A Type is something like "Text" or "Number" or "Tag". Every Property must be designed for
-        		|exactly one Type, and only values of that Type can be placed in it.
-        		|
-        		|Most Properties are of type Text or Large Text (which is the same thing, but can have multiple lines);
-        		|if you don't know what to use, that's usually your best bet.""".stripMargin)
-        ))
-  
-  /**
-   * The Property that points from a Property to its Collection.
-   */
-  object CollectionProp extends SystemProperty(CollectionPropOID, LinkType, ExactlyOne,
-      toProps(
-        setName("Property Collection"),
-        LinkKindProp(Kind.Collection),
-        LinkAllowAppsProp(true),
-        AppliesToKindProp(Kind.Property),
-        NotInherited(),
-        Summary("How much this Property holds"),
-        Details("""Collection is a subtle but important concept. A Property Value isn't necessarily *one* of a
-            |Type -- it can take several forms, and you have to say which one it is. As of this writing, the
-            |available Collections are:
-            |
-            |* Exactly One -- the most common case, where the Property holds one of this Type. Note that this means
-            |    that it *always* holds one of this type; if you don't give it a value, it will be set to a default.
-            |* Optional -- the Property may or may not hold a value of this Type. Use Optional when it makes sense
-            |    for a Thing to have the Property but not have it filled in. It is very common for a Model to have an
-            |    Optional Property, which its Instances can choose to fill in when it makes sense.
-            |* List -- the Property holds an ordered list of this Type. You most often use List with Links. Note that
-            |    you can rearrange the List using drag-and-drop, and duplicates are allowed.
-            |* Set -- the Property holds an unordered set of this Type. You most often use Set with Tags. Duplicates
-            |    will be silently thrown away, and order is not preserved; Sets are usually shown in alphabetical order.
-            |
-            |When you create a Property, you must choose which Collection it uses. If you aren't sure, it is usually
-            |best to go for Exactly One, but you should use any of these when they make sense.""".stripMargin)
         ))
     
   object PlaceholderTextProp extends SystemProperty(PlaceholderTextOID, PlainTextType, Optional,
@@ -123,25 +72,6 @@ object SkillLevel {
         Summary("Prompt to use in the Editor"),
         Details("""In the Editor, Properties are usually displayed with their Name. If you want to show something
             |other than the Name, set the Prompt Property to say what you would like to show instead.""".stripMargin)
-        ))
-
-  /**
-   * A flag set on a Thing to indicate that it should be used as a Model. Note that this
-   * Property is not inherited: the child of a Model is not usually a Model.
-   */
-  object IsModelProp extends SystemProperty(IsModelOID, YesNoType, ExactlyOne,
-      toProps(
-        setName("Is a Model"),
-        NotInherited(),
-        // TBD: we might allow Property Models down the road, but not yet:
-        AppliesToKindProp(Kind.Thing),
-        SkillLevel(SkillLevel.Advanced),
-        Summary("Is this Thing a Model?"),
-        Details("""All Things can be used as Models if you would like -- in Querki, unlike most programming
-            |languages, the difference between a Model and an Instance is pretty small. But this flag indicates
-            |that this Thing should *normally* be considered a Model. If you set it, then this Model will be
-            |offered as a possibility when you go to create a Thing, it will be displayed a bit differently in
-            |the Space's list of its Things, and in general will be handled a little differently.""".stripMargin)
         ))
 
 /**
@@ -214,34 +144,6 @@ object LinkToModelsOnlyProp extends SystemProperty(LinkToModelsOnlyOID, YesNoTyp
           |This is an advanced property, and something of a hack -- don't get too comfortable with it. In the
           |medium term, it should get replaced by a more general LinkFilter property that lets you specify which
           |Things to link to.""".stripMargin)))
-
-object AppliesToKindProp extends SystemProperty(AppliesToKindOID, IntType, QList,
-    toProps(
-      setName("Applies To"),
-      (AppliesToKindOID -> QList(ElemValue(Kind.Property, new DelegatingType(IntType)))),
-      (querki.identity.skilllevel.MOIDs.SkillLevelPropOID -> ExactlyOne(LinkType(querki.identity.skilllevel.MOIDs.SkillLevelAdvancedOID))),
-      Summary("Which Kinds of Things can this Property be used on?"),
-      Details("""By default, a Property can be used on anything -- even when
-          |that is nonsensical. The result is that, when creating a new Thing, you get a messy list of lots of
-          |Properties, many of which are irrelevant.
-          |
-          |So to keep that from happening, use this on your Properties. In most cases, a Property is really intended
-          |to only apply to Things *or* Properties, not both. So using this can keep you from having a long and
-          |confusing Property List.
-          |
-          |This is an advanced Property, mostly because most user-defined Properties are intended to be used on
-          |Things, and you usually want to see all of your user-defined Properties as options. But serious
-          |programmers working in Querki may want to set this, especially if they are creating meta-Properties.""".stripMargin)
-      ))
-
-object InternalProp extends SystemProperty(InternalPropOID, YesNoType, Optional,
-    toProps(
-      setName("Internal Property"),
-      AppliesToKindProp(Kind.Property),
-      NotInherited(),
-      (InternalPropOID -> Optional(YesNoType(true))),
-      Summary("If set, this Property is system-internal, and should not be visible to end users."),
-      Details("""Pretty much by definition, you should never need to use this meta-Property.""".stripMargin)))
 
 // TODO: this should really only allow the properties that are defined on this Model:
 object InstanceEditPropsProp extends SystemProperty(InstanceEditPropsOID, LinkType, QList,

@@ -54,8 +54,6 @@ class Application extends ApplicationBase {
   )
   
   lazy val Core = interface[querki.core.Core]
-  lazy val UrProp = Core.UrProp
-  
   lazy val Basic = interface[querki.basic.Basic]
   lazy val DisplayNameProp = Basic.DisplayNameProp
   lazy val DeriveName = interface[querki.types.DeriveName]
@@ -63,6 +61,10 @@ class Application extends ApplicationBase {
   lazy val Search = interface[querki.search.Search]
   lazy val PropListMgr = interface[querki.core.PropListManager]
   lazy val Tags = interface[querki.tags.Tags]
+  lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
+  
+  lazy val UrProp = Core.UrProp  
+  lazy val AppliesToKindProp = Core.AppliesToKindProp
 
   def index = withUser(false) { rc =>
     Ok(views.html.index(rc))
@@ -116,7 +118,7 @@ disallow: /
     newSpaceForm.bindFromRequest.fold(
       errors => doError(routes.Application.newSpace, "You have to specify a legal space name"),
       name => {
-        TryTrans[Unit, Result] { NameProp.validate(name, System.State) }.
+        TryTrans[Unit, Result] { Core.NameProp.validate(name, System.State) }.
           onSucc { _ =>
             askSpaceMgr[ThingResponse](CreateSpace(requester, name)) {
               case ThingFound(_, state) => Redirect(routes.Application.space(requester.mainIdentity.handle, state.toThingId))
@@ -134,7 +136,7 @@ disallow: /
     // This lists all of the visible properties that aren't in the existing list, and removes the
     // InternalProps:
     implicit val s = state
-    val candidates = (state.allProps.values.toSet -- existingProps).toSeq.filterNot(_.ifSet(InternalProp))
+    val candidates = (state.allProps.values.toSet -- existingProps).toSeq.filterNot(_.ifSet(Core.InternalProp))
 
     // TODO: sort alphabetically
     

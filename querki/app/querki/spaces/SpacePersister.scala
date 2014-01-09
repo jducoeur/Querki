@@ -12,7 +12,7 @@ import models.{Attachment, Collection, Property, PType, PTypeBuilder, Kind, Thin
 import models.Kind._
 import models.MIMEType.MIMEType
 import models.Thing._
-import models.system.{CollectionProp, DisplayTextProp, TypeProp, UnresolvedPropType, UnresolvedPropValue}
+import models.system.{DisplayTextProp, UnresolvedPropType, UnresolvedPropValue}
 
 import querki.ecology._
 import querki.time._
@@ -56,6 +56,7 @@ import messages.AttachmentContents
 private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) extends Actor with EcologyMember {
   
   lazy val SystemInterface = interface[querki.system.System]
+  lazy val Core = interface[querki.core.Core]
 
   def SpaceSQL(query:String):SqlQuery = SpacePersister.SpaceSQL(id, query) 
   def AttachSQL(query:String):SqlQuery = SpacePersister.AttachSQL(id, query)
@@ -208,12 +209,12 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
 	          spaceStream.head
 	      
 	      val loadedProps = getThings(Kind.Property) { (thingId, modelId, propMap, modTime) =>
-	        val typ = SystemInterface.State.typ(TypeProp.first(propMap))
+	        val typ = SystemInterface.State.typ(Core.TypeProp.first(propMap))
 	        // This cast is slightly weird, but safe and should be necessary. But I'm not sure
 	        // that the PTypeBuilder part is correct -- we may need to get the RT correct.
 	//        val boundTyp = typ.asInstanceOf[PType[typ.valType] with PTypeBuilder[typ.valType, Any]]
 	        val boundTyp = typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]]
-	        val coll = SystemInterface.State.coll(CollectionProp.first(propMap))
+	        val coll = SystemInterface.State.coll(Core.CollectionProp.first(propMap))
 	        // TODO: this feels wrong. coll.implType should be good enough, since it is viewable
 	        // as Iterable[ElemValue] by definition, but I can't figure out how to make that work.
 	        val boundColl = coll.asInstanceOf[Collection]

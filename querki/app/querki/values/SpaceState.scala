@@ -55,6 +55,7 @@ case class SpaceState(
   lazy val DataModel = interface[querki.datamodel.DataModelAccess]
   
   lazy val IsFunctionProp = DataModel.IsFunctionProp
+  lazy val InternalProp = Core.InternalProp
   
   // *******************************************
   //
@@ -196,7 +197,7 @@ case class SpaceState(
 
   def models:Iterable[ThingState] = {
     implicit val s = this
-    things.values.filter(_.first(IsModelProp))    
+    things.values.filter(_.first(Core.IsModelProp))    
   }
   def allModels:Iterable[ThingState] = {
     val myModels = models

@@ -7,8 +7,9 @@ import models.Thing._
 import models.system.{IntType, SystemType, YesNoType}
 import models.system.ExactlyOne
 import models.system.{AppliesToKindProp, InternalProp, SystemProperty}
-import models.system.OIDs.{sysId, InternalPropOID, NotInheritedOID}
+import models.system.OIDs.{sysId, NotInheritedOID}
 
+import querki.core.MOIDs.InternalPropOID
 import querki.ecology._
 
 import querki.values._

@@ -2,7 +2,7 @@ package querki
 
 import collection.immutable.TreeMap
 
-import models.{DisplayPropVal, Property, Thing}
+import models.{DisplayPropVal, OID, Property, Thing}
 
 import models.system.{QLText}
 import models.system.OIDs.sysId
@@ -21,7 +21,13 @@ import querki.values.SpaceState
 package object core {
   object MOIDs extends EcotIds(16) {
     val UrPropOID = sysId(5)
+    val NameOID = sysId(6)
+    val TypePropOID = sysId(17)
+    val CollectionPropOID = sysId(18)
+    val IsModelOID = sysId(22)
     val NotInheritedOID = sysId(24)
+    val AppliesToKindOID = sysId(36)
+    val InternalPropOID = sysId(40)
     val ApplyMethodOID = sysId(46)
   }
   
@@ -29,6 +35,12 @@ package object core {
     def ApplyMethod:Property[QLText,String]
     def NotInheritedProp:Property[Boolean,Boolean]
     def UrProp:Property[QLText, String]
+    def IsModelProp:Property[Boolean,Boolean]
+    def NameProp:Property[String,String]
+    def TypeProp:Property[OID,OID]
+    def CollectionProp:Property[OID,OID]
+    def InternalProp:Property[Boolean,Boolean]
+    def AppliesToKindProp:Property[Int,Int]
   }
   
   type PropList = TreeMap[Property[_,_], DisplayPropVal]

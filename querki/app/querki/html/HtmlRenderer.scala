@@ -9,14 +9,13 @@ import play.api.templates.Html
 import models._
 import models.system._
 
+import querki.ecology._
+
 import querki.values._
 
-object RenderSpecialization extends Enumeration {
-  type RenderSpecialization = Value
-  
-  val Unspecialized, PickList, WithAdd = Value
-}
 import RenderSpecialization._
+
+object MOIDs extends EcotIds(26)
 
 /**
  * This is the top level object that knows about HTML. All rendering of Things into HTML,
@@ -28,7 +27,9 @@ import RenderSpecialization._
  * TODO: there should be a trait called something like InputRenderer, which this derives from,
  * generalizing the concept of rendering and response.
  */
-object HtmlRenderer {
+class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer {
+  
+  lazy val Core = interface[querki.core.Core]
   
   /*********************************
    * PUBLIC API
@@ -207,7 +208,7 @@ object HtmlRenderer {
             case Some(map) => {
               if (isNameType) {
                 val name = for (
-                    propAndVal <- item.getPropOpt(NameProp);
+                    propAndVal <- item.getPropOpt(Core.NameProp);
                     name <- propAndVal.firstOpt
                       )
                   yield name

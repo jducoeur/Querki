@@ -236,7 +236,7 @@ abstract class SingleElementBase(cid:OID, pf:PropFetcher) extends SystemCollecti
     // Rationalize the two, to eliminate all the duplication. In theory, the concept and structure
     // belongs here, and the details belong there.
     def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
-      import querki.html.HtmlRenderer
+      val HtmlRenderer = interface[querki.html.HtmlRenderer]
       val inputTemplate = HtmlRenderer.addClasses(elemT.renderInput(prop, state, currentValue, elemT.default), "inputTemplate list-input-element") %      
     		  Attribute("data-basename", Text(currentValue.collectionControlId + "-item"),
     		  Null)

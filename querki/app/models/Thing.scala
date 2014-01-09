@@ -61,7 +61,7 @@ object Thing {
   
   // NOTE: don't try to make this more concise -- it causes chicken-and-egg problems in system
   // initialization:
-  def setName(str:String):(OID,QValue) = bootProp(NameOID, str)
+  def setName(str:String):(OID,QValue) = bootProp(querki.core.MOIDs.NameOID, str)
 //    (NameOID -> ExactlyOne(ElemValue(str)))
 //    (NameOID -> PropValue(Some(ElemValue(str))))
 
@@ -144,6 +144,7 @@ abstract class Thing(
   def Core = interface[querki.core.Core]
   def ApplyMethod = Core.ApplyMethod
   def NotInheritedProp = Core.NotInheritedProp
+  def NameProp = Core.NameProp
   
   /**
    * The Name of this Thing, if there is one set.
@@ -364,7 +365,7 @@ abstract class Thing(
    * Returns true iff this Thing has the IsModel flag set to true on it.
    */
   def isModel(implicit state:SpaceState):Boolean = {
-    ifSet(IsModelProp)
+    ifSet(Core.IsModelProp)
   }
   
   /**

@@ -39,6 +39,8 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email {
     }
   }
   
+  val Core = initRequires[querki.core.Core]
+  
   lazy val from = getRequiredConf("from")
   lazy val smtpHost = getRequiredConf("smtpHost")
   lazy val debug = Play.configuration.getBoolean(fullKey("debug")).getOrElse(false)
@@ -201,7 +203,7 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email {
     ThingState(EmailTemplateOID, systemOID, RootOID,
       toProps(
         setName("Email Message"),
-        IsModelProp(true),
+        Core.IsModelProp(true),
         emailTo(),
         emailSubject(""),
         emailBody(),

@@ -49,7 +49,7 @@ object OIDs {
   val TextTypeOID = sysId(3)
   val YesNoTypeOID = sysId(4)
 //  val UrPropOID = sysId(5)
-  val NameOID = sysId(6)
+//  val NameOID = sysId(6)
   val DisplayTextOID = sysId(7)
 //  val PageOID = sysId(8)
   val SystemUserOID = sysId(9)
@@ -60,12 +60,12 @@ object OIDs {
   val OptionalOID = sysId(14)
   val QListOID = sysId(15)
   val LinkTypeOID = sysId(16)
-  val TypePropOID = sysId(17)
-  val CollectionPropOID = sysId(18)
+//  val TypePropOID = sysId(17)
+//  val CollectionPropOID = sysId(18)
   val PlaceholderTextOID = sysId(19)
   val PromptOID = sysId(20)
   val LargeTextTypeOID = sysId(21)
-  val IsModelOID = sysId(22)
+//  val IsModelOID = sysId(22)
 //  val SimpleThingOID = sysId(23)
   val NotInheritedOID = sysId(24)
 //  val StylesheetOID = sysId(25)
@@ -79,11 +79,11 @@ object OIDs {
   val LinkKindOID = sysId(33)
   val LinkAllowAppsOID = sysId(34)
   val LinkModelOID = sysId(35)
-  val AppliesToKindOID = sysId(36)
+//  val AppliesToKindOID = sysId(36)
   val PlainTextOID = sysId(37)
   val InternalMethodOID = sysId(38)
   val QUnitOID = sysId(39)
-  val InternalPropOID = sysId(40)
+//  val InternalPropOID = sysId(40)
   val ExternalLinkTypeOID = sysId(41)
 //  val EditMethodOID = sysId(42)
 //  val SectionMethodOID = sysId(43)
@@ -165,20 +165,20 @@ object SystemSpace {
   // Properties:
   val props = OIDMap[Property[_,_]](
 //      UrProp, 
-      NameProp, 
+//      NameProp, 
       DisplayTextProp, 
-      TypeProp, 
-      CollectionProp,
+//      TypeProp, 
+//      CollectionProp,
       PlaceholderTextProp, 
       PromptProp, 
-      IsModelProp, 
+//      IsModelProp, 
 //      NotInheritedProp,
 //      DisplayNameProp,
       LinkKindProp,
       LinkAllowAppsProp,
       LinkModelProp,
-      AppliesToKindProp,
-      InternalProp,
+//      AppliesToKindProp,
+//      InternalProp,
 //      EditMethod,
 //      SectionMethod,
 //      InstancesMethod,

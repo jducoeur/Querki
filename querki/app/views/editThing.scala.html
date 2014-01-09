@@ -13,8 +13,6 @@
 
 @import models.Property._
 
-@import querki.html._
-
 @import querki.values.SpaceState
 
 @thing = @{ rc.thing }
@@ -28,8 +26,13 @@
 @isForeign = @{ thing.get.spaceId != space.id }
 
 @Conventions = @{ rc.interface[querki.conventions.Conventions] }
+@Core = @{ rc.interface[querki.core.Core] }
+@HtmlRenderer = @{ rc.interface[querki.html.HtmlRenderer] }
+
 @PropSummary = @{ Conventions.PropSummary }
 @PropDetails = @{ Conventions.PropDetails }
+@AppliesToKindProp = @{ Core.AppliesToKindProp }
+@NameProp = @{ Core.NameProp }
 
 @canEdit = @{
   // Disable if you are trying to edit something in the wrong Space.
@@ -358,8 +361,8 @@
         }
         
         @createCall(NameProp, "newPropName")
-        @createCall(TypeProp, "newPropType")
-        @createCall(CollectionProp, "newPropColl")
+        @createCall(Core.TypeProp, "newPropType")
+        @createCall(Core.CollectionProp, "newPropColl")
         @createCall(PropSummary, "newPropSummary")
         @createCall(PropDetails, "newPropDetails")
         @createCall(LinkModelProp, "newPropLinkModel")
@@ -506,7 +509,7 @@
             <p><input type="text" id="_newPropName" placeholder="Name (required)..."></p>
             <select id="_newPropType">
                 <option value="">Choose the Property's type (required)...</option>
-                @for(aType <- space.allTypes.values.filterNot(_.ifSet(InternalProp)(space)).toSeq.sortBy(_.displayName)) {
+                @for(aType <- space.allTypes.values.filterNot(_.ifSet(Core.InternalProp)(space)).toSeq.sortBy(_.displayName)) {
                   <option value="@aType.id.toString" @collForType(aType)>@aType.displayName</option>
                 }
             </select>
