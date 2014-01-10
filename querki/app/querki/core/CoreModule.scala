@@ -14,7 +14,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core {
   import MOIDs._
   
   def LinkKindProp(kind:Kind.Kind) = (querki.links.MOIDs.LinkKindOID -> ExactlyOne(IntType(kind)))
-  def LinkAllowAppsProp(b:Boolean) = (querki.links.MOIDs.LinkAllowAppsOID -> YesNoType.boolean2YesNoQValue(b))
+  def LinkAllowAppsProp(b:Boolean) = (querki.links.MOIDs.LinkAllowAppsOID -> ExactlyOne(YesNoType(b)))
 
   /**
    * The Ur-Thing, from which the entire world descends. Note that this is
