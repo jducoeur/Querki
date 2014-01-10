@@ -12,9 +12,9 @@ import querki.values.{ElemValue, QLContext, SpaceState}
 
 object SpacePersistenceMOIDs extends EcotIds(28)
 
-class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) {
+class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistence {
   // The name of the Space's Thing Table
-  def thingTable(id:OID) = "s" + sid(id)
+  def thingTable(id:OID):String = "s" + sid(id)
   // The name of a backup for the Thing Table
   def backupTable(id:OID, version:Int) = thingTable(id) + "_Backup" + version
   // The name of the Space's Attachments Table

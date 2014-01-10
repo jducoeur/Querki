@@ -20,7 +20,7 @@ package object spaces {
     def UnresolvedPropType:PType[String]
     
     // The name of the Space's Thing Table
-    def thingTable(id:OID)
+    def thingTable(id:OID):String
     
     def SpaceSQL(spaceId:OID, query:String, version:Int = 0):SqlQuery
     def AttachSQL(spaceId:OID, query:String):SqlQuery
