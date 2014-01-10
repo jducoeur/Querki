@@ -1,7 +1,5 @@
 package querki.time
 
-import models.system.{ExactlyOne}
-
 import querki.ecology._
 
 import querki.time._

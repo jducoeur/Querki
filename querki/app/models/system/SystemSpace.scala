@@ -171,7 +171,7 @@ object SystemSpace {
   def initialSystemState(ecology:Ecology) = {
     SpaceState(systemOID, querki.core.MOIDs.RootOID,
       toProps(
-        setName("System"),
+        setName("System")
         // TODO: this needs to get added *after* Core is set up!
 //        (querki.basic.MOIDs.DisplayTextOID -> ExactlyOne(LargeTextType("""### Things in [[Display Name]]
 //[[All Things]]
@@ -186,7 +186,8 @@ object SystemSpace {
 //            
 //[[How It Works -> _if(_isDefined, ""**____**"")]]
 //"""))),
-        (querki.tags.MOIDs.ShowUnknownOID -> ExactlyOne(TextType(querki.tags.defaultDisplayText)))), 
+//        (querki.tags.MOIDs.ShowUnknownOID -> ExactlyOne(TextType(querki.tags.defaultDisplayText)))
+        ), 
       SystemUserOID, "System", querki.time.epoch, None, SystemTypes.all, props, things, OIDMap[Collection](), None, ecology)    
   }
 }

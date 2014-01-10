@@ -2,7 +2,7 @@ package querki.html
 
 import scala.xml.XML
 
-import models.system.{ExactlyOne, IntType}
+import models.system.{IntType}
 
 import querki.test._
 

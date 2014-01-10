@@ -1,6 +1,5 @@
 package querki.test
 
-import models.system.{QList, QSet}
 import models.system.{PlainTextType, TextType}
 
 class TypeTests extends QuerkiTests {

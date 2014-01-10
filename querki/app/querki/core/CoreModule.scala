@@ -68,6 +68,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core {
   
   lazy val QNone = Optional.QNone
   def listFrom[RT,VT](in:Iterable[RT], builder:PTypeBuilderBase[VT,RT]):QValue = QList.from(in, builder)
+  def makeListValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = QList.makePropValue(cv, elemT)
   def makeSetValue(rawList:Seq[ElemValue], pt:PType[_], context:QLContext):QValue = QSet.makeSetValue(rawList, pt, context)
   
   override lazy val colls = Seq(

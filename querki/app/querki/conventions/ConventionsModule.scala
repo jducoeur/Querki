@@ -3,7 +3,6 @@ package querki.conventions
 import models._
 import models.Thing._
 
-import models.system.{ExactlyOne, Optional}
 import models.system.{LargeTextType, TextType, YesNoType}
 import models.system.OIDs.{sysId, NotInheritedOID}
 

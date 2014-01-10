@@ -1,6 +1,5 @@
 package querki.logic
 
-import models.system.ExactlyOne
 import models.system.YesNoType
 
 import querki.test._

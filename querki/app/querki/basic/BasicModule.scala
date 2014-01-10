@@ -4,7 +4,6 @@ import models._
 import models.Thing._
 
 import models.system.OIDs.{systemOID}
-import models.system.{Optional}
 import models.system.{PlainTextType}
 
 import querki.conventions._

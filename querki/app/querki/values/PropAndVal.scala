@@ -2,8 +2,6 @@ package querki.values
 
 import models._
 
-import models.system.QList
-
 import querki.ecology._
 
 /**
@@ -35,7 +33,7 @@ case class PropAndVal[VT](prop:Property[VT, _], v:QValue) extends EcologyMember 
   // TODO: Evil! This should be smarter about how it combines Collections, instead of forcing things to QList.
   // In particular, combining two QSets should wind up with QSet semantics:
   def ++(others:Iterable[VT]):QValue = {
-    QList.makePropValue((v.cv ++ others.map(ElemValue(_, prop.pType))).toList, prop.pType)
+    interface[querki.core.Core].makeListValue((v.cv ++ others.map(ElemValue(_, prop.pType))).toList, prop.pType)
   }
   def contains(toCheck:VT):Boolean = v.contains(prop.pType, toCheck)
   def exists(check:VT => Boolean):Boolean = v.exists(prop.pType, check)

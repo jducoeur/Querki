@@ -4,7 +4,6 @@ import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState}
 import models.Thing._
 
 import models.system.{LinkType, NameType, PlainTextType}
-import models.system.ExactlyOne
 import models.system.OIDs.{DisplayNameOID, systemOID}
 
 import querki.core.PropList

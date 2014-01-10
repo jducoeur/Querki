@@ -5,7 +5,6 @@ import models.{Kind, OID, Wikitext}
 import models.Thing._
 
 import models.system.{IntType, SystemType, YesNoType}
-import models.system.ExactlyOne
 import models.system.OIDs.{sysId, NotInheritedOID}
 
 import querki.core.MOIDs.InternalPropOID

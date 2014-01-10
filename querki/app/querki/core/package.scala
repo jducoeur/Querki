@@ -47,6 +47,7 @@ package object core {
     
     def QNone:QValue
     def listFrom[RT,VT](in:Iterable[RT], builder:PTypeBuilderBase[VT,RT]):QValue
+    def makeListValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue
     def makeSetValue(rawList:Seq[ElemValue], pt:PType[_], context:QLContext):QValue
     
     def ApplyMethod:Property[QLText,String]

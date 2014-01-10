@@ -22,6 +22,12 @@ class QuerkiTests
 {
   implicit var ecology:Ecology = null
   
+  lazy val Core = interface[querki.core.Core]
+  
+  lazy val ExactlyOne = Core.ExactlyOne
+  lazy val Optional = Core.Optional
+  lazy val QList = Core.QList
+  
   /**
    * This is the method to add the Ecots into the Ecology. By default, it creates the whole world, but
    * that is not required -- feel free to override this with a version that instantiates only some of them,

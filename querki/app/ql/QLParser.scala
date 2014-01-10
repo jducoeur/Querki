@@ -86,6 +86,7 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
   
   implicit def ecology:Ecology = ci.state.ecology
   
+  lazy val Core = interface[querki.core.Core]
   lazy val QL = interface[querki.ql.QL]
   
   def WarningValue = QL.WarningValue _
@@ -189,7 +190,7 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
 	        try {
 	          methodOpt match {
 	            case Some(method) => {
-	              val partialFunction = method.partiallyApply(context.next(ExactlyOne(LinkType(t.id))))
+	              val partialFunction = method.partiallyApply(context.next(Core.ExactlyOne(LinkType(t.id))))
 	              partialFunction.qlApply(context, params)
 	            }
 	            case None => t.qlApply(context, params)
@@ -203,7 +204,7 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
 	      // the renderer, it will turn into a link to the undefined page, where they can create it.
 	      //
 	      // TBD: in principle, we might want to make this more Space-controllable. But it isn't obvious that we care. 
-	      case None => ExactlyOne(UnknownNameType(call.name.name))
+	      case None => Core.ExactlyOne(UnknownNameType(call.name.name))
 	    }
 	    context.next(tv)
     }
