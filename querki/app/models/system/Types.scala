@@ -629,38 +629,7 @@ class InternalMethodType(tid:OID) extends SystemType[String](tid,
 }
 object InternalMethodType extends InternalMethodType(InternalMethodOID)
 
-// Why not java.net.URL? Because it just plain can't cope with simply relative URLs -- it always wants
-// to wind up with an absolute URL. But that's silly: we frequently want a relative URL, and specifically
-// *don't* want to be encoding the whole damned thing here.
-case class QURL(url:String) {
-  val legalChars = """\w\d\-\._\~:/\?#\[\]@!$&'\(\)\*\+,;="""
-  if (!url.matches(s"[$legalChars]*"))
-    throw new Exception("Not a legal URL!")
-}
-class ExternalLinkType(tid:OID) extends SystemType[QURL](tid,
-    toProps(
-      setName("URL Type")
-    )) with PTypeBuilder[QURL, String] with URLableType
-{
-  override def editorSpan(prop:Property[_,_]):Int = 6
-  
-  def doDeserialize(v:String) = QURL(v)
-  def doSerialize(v:QURL) = v.url
-  def doWikify(context:QLContext)(v:QURL, displayOpt:Option[Wikitext] = None) = {
-    val display = displayOpt.getOrElse(Wikitext(v.url))
-    Wikitext("[") + display + Wikitext("](" + v.url + ")")
-  }
-  
-  def getURL(context:QLContext)(elem:ElemValue):Option[String] = {
-    elem.getOpt(this).map(_.url)
-  }
-  
-  val doDefault = new QURL("")
-  override def wrap(raw:String):valType = new QURL(raw)
-}
-object ExternalLinkType extends ExternalLinkType(ExternalLinkTypeOID)
-
 object SystemTypes {
   def all = OIDMap[PType[_]](
-      IntType, TextType, QLType, YesNoType, NameType, TagSetType, LinkType, LargeTextType, PlainTextType, InternalMethodType, ExternalLinkType, NewTagSetType)  
+      IntType, TextType, QLType, YesNoType, NameType, TagSetType, LinkType, LargeTextType, PlainTextType, InternalMethodType, NewTagSetType)  
 }

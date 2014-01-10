@@ -9,7 +9,7 @@ import scala.concurrent.Future
 
 import models._
 import models.Thing._
-import models.system.{ExternalLinkType, QLText}
+import models.system.{QLText}
 import models.system.OIDs._
 
 import ql._
@@ -40,9 +40,11 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   val Basic = initRequires[querki.basic.Basic]
   
   lazy val QL = interface[querki.ql.QL]
+  lazy val Links = interface[querki.links.Links]
   
   lazy val EmailAddressProp = Email.EmailAddressProp
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
+  lazy val ExternalLinkType = Links.ExternalLinkType
   
   import MOIDs._
   

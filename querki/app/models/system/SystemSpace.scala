@@ -84,7 +84,7 @@ object OIDs {
   val InternalMethodOID = sysId(38)
 //  val QUnitOID = sysId(39)
 //  val InternalPropOID = sysId(40)
-  val ExternalLinkTypeOID = sysId(41)
+//  val ExternalLinkTypeOID = sysId(41)
 //  val EditMethodOID = sysId(42)
 //  val SectionMethodOID = sysId(43)
 //  val InstancesMethodOID = sysId(44)

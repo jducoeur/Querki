@@ -5,7 +5,7 @@ import scala.xml._
 import play.api.templates.Html
 
 import models.{HtmlWikitext, OID, QWikitext, Wikitext}
-import models.system.{ExternalLinkType, URLableType}
+import models.system.{URLableType}
 
 import ql.QLPhrase
 
@@ -29,7 +29,10 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   import UIMOIDs._
 
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
+  lazy val Links = interface[querki.links.Links]
   lazy val QL = interface[querki.ql.QL]
+  
+  lazy val ExternalLinkType = Links.ExternalLinkType
 
   /***********************************************
    * PROPERTIES

@@ -1,11 +1,45 @@
 package querki.links
 
-import models.Kind
+import models.{Kind, PTypeBuilder, Wikitext}
+
+import models.system.{SystemType, URLableType}
 
 import querki.ecology._
 
+import querki.values.{ElemValue, QLContext}
+
 class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
   import MOIDs._
+      
+  /***********************************************
+   * TYPES
+   ***********************************************/
+  
+  lazy val ExternalLinkType = new SystemType[QURL](ExternalLinkTypeOID,
+    toProps(
+      setName("URL Type")
+    )) with PTypeBuilder[QURL, String] with URLableType
+  {
+    override def editorSpan(prop:Property[_,_]):Int = 6
+  
+    def doDeserialize(v:String) = QURL(v)
+    def doSerialize(v:QURL) = v.url
+    def doWikify(context:QLContext)(v:QURL, displayOpt:Option[Wikitext] = None) = {
+      val display = displayOpt.getOrElse(Wikitext(v.url))
+      Wikitext("[") + display + Wikitext("](" + v.url + ")")
+    }
+  
+    def getURL(context:QLContext)(elem:ElemValue):Option[String] = {
+      elem.getOpt(this).map(_.url)
+    }
+  
+    val doDefault = new QURL("")
+    override def wrap(raw:String):valType = new QURL(raw)
+  }
+  
+  override lazy val types = Seq(
+    ExternalLinkType
+  )
     
   /***********************************************
    * PROPERTIES
