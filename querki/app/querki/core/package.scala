@@ -2,7 +2,7 @@ package querki
 
 import collection.immutable.TreeMap
 
-import models.{Collection, DisplayPropVal, OID, Property, PType, PTypeBuilderBase, Thing}
+import models.{Collection, DisplayPropVal, OID, Property, PType, PTypeBuilder, PTypeBuilderBase, Thing}
 
 import models.system.{QLText}
 import models.system.OIDs.sysId
@@ -32,6 +32,7 @@ package object core {
     val IsModelOID = sysId(22)
     val NotInheritedOID = sysId(24)
     val AppliesToKindOID = sysId(36)
+    val InternalMethodOID = sysId(38)
     val QUnitOID = sysId(39)
     val InternalPropOID = sysId(40)
     val ApplyMethodOID = sysId(46)
@@ -44,6 +45,8 @@ package object core {
     def QList:Collection
     def QSet:Collection
     def QUnit:Collection
+    
+    def InternalMethodType:PType[String] with PTypeBuilder[String,String]
     
     def QNone:QValue
     def listFrom[RT,VT](in:Iterable[RT], builder:PTypeBuilderBase[VT,RT]):QValue

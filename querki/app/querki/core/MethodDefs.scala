@@ -2,7 +2,6 @@ package querki.core
 
 import querki.ecology._
 
-import models.system.{InternalMethodType}
 import models.system.YesNoType._
 
 import ql.{QLFunction, QLPhrase}
@@ -25,7 +24,7 @@ trait MethodDefs { self:QuerkiEcot =>
    * inherit from this.
    */
   class InternalMethod(tid:OID, p:PropFetcher)
-    extends SystemProperty[String,String](tid, InternalMethodType, QUnit, () => (p() + (querki.datamodel.MOIDs.IsFunctionOID  -> true)))
+    extends SystemProperty[String,String](tid, Core.InternalMethodType, QUnit, () => (p() + (querki.datamodel.MOIDs.IsFunctionOID  -> true)))
   {
     /**
      * Methods should override this to implement their own functionality.

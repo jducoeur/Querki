@@ -612,24 +612,8 @@ object NewTagSetType extends PlainTextType(NewTagSetOID, "New Tag Set Type") {
   }
 }
 
-class InternalMethodType(tid:OID) extends SystemType[String](tid,
-    toProps(
-      setName("Internal Method Type")//,
-//      Core.InternalProp(true)
-    )) with SimplePTypeBuilder[String]
-{
-  def boom = throw new Exception("InternalMethodType cannot be used conventionally. It simply wraps code.")
-  def doDeserialize(v:String) = boom
-  def doSerialize(v:String) = boom
-
-  def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext("Internal Method")
-    
-  val doDefault = ""
-  override def wrap(raw:String):valType = boom 
-}
-object InternalMethodType extends InternalMethodType(InternalMethodOID)
 
 object SystemTypes {
   def all = OIDMap[PType[_]](
-      IntType, TextType, QLType, YesNoType, NameType, TagSetType, LinkType, LargeTextType, PlainTextType, InternalMethodType, NewTagSetType)  
+      IntType, TextType, QLType, YesNoType, NameType, TagSetType, LinkType, LargeTextType, PlainTextType, NewTagSetType)  
 }

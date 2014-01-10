@@ -10,7 +10,7 @@ import querki.ecology._
 
 import querki.values.{ElemValue, PropAndVal, QLContext, QValue, SpaceState}
 
-class CoreModule(e:Ecology) extends CoreEcot(e) with Core {
+class CoreModule(e:Ecology) extends CoreEcot(e) with Core with TypeCreation {
   import MOIDs._
   
   def LinkKindProp(kind:Kind.Kind) = (querki.links.MOIDs.LinkKindOID -> ExactlyOne(IntType(kind)))
@@ -83,6 +83,18 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core {
   def emptyListOf(pType:PType[_]) = QList.empty(pType)
   def emptyList = QList.empty
 
+  /***********************************************
+   * TYPES
+   * 
+   * These are all defined in the Types file.
+   ***********************************************/
+  
+  lazy val InternalMethodType = new InternalMethodType
+  
+  override lazy val types = Seq(
+    InternalMethodType
+  )
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/
