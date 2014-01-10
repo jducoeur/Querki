@@ -5,20 +5,47 @@ import play.api.templates.Html
 
 import querki.ecology._
 
-import models.{PType}
-import models.system.SingleContextMethod
+import models.{PType, PTypeBuilder, Thing, UnknownOID, UnknownType}
+import models.system.{QLText}
 
 import ql._
 
-import querki.values.{HtmlValue, ParsedTextType, QLContext, SpaceState, WarningValue}
+import querki.util.QLog
+import querki.values.{CutProcessing, ElemValue, HtmlValue, ParsedTextType, QLContext, SpaceState}
 
 object MOIDs extends EcotIds(24) {
   val SelfMethodOID = sysId(75)
   val CodeMethodOID = sysId(77)
 }
 
-class QLEcot(e:Ecology) extends QuerkiEcot(e) {
+class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with querki.core.MethodDefs {
   import MOIDs._
+  
+  lazy val ExactlyOneCut = new querki.core.ExactlyOneBase(UnknownOID) {
+    override def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = new ExactlyOnePropValue(cv.toList, this, elemT) with CutProcessing
+  }
+  
+  lazy val EmptyListCutColl = new querki.core.QListBase(UnknownOID, () => Thing.emptyProps) {
+    def apply() = new QListPropValue(List.empty, this, UnknownType) with CutProcessing  
+  }
+  def EmptyListCut() = EmptyListCutColl()
+
+  object ErrorTextType extends models.system.TextTypeBase(UnknownOID,
+    Thing.toProps(
+      Thing.setName("Error Text")
+    )) with PTypeBuilder[QLText,String] {
+  }
+
+  def WarningValue(msg:String) = ExactlyOneCut(ErrorTextType("{{_warning:" + msg + "}}"))
+  
+  def ErrorValue(msg:String) = {
+    try {
+      throw new Exception("dummy")
+    } catch {
+      case e:Exception => QLog.error(s"Displaying error $msg; stack trace:\n${e.getStackTraceString}")  
+    }
+    WarningValue(msg)
+  }
   
   /***********************************************
    * FUNCTIONS

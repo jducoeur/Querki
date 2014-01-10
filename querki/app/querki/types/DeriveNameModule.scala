@@ -5,7 +5,6 @@ import models.Thing._
 
 import models.system.{LinkType, NameType, PlainTextType}
 import models.system.ExactlyOne
-import models.system.{SystemProperty}
 import models.system.OIDs.{DisplayNameOID, systemOID}
 
 import querki.core.PropList
@@ -23,7 +22,6 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName {
   val Links = initRequires[querki.links.Links]
   
   lazy val Basic = interface[querki.basic.Basic]
-  lazy val Core = interface[querki.core.Core]
   
   lazy val NameProp = Core.NameProp
   

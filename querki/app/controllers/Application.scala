@@ -409,10 +409,10 @@ disallow: /
       val defaultText =
         model.getPropOpt(Tags.ShowUnknownProp).orElse(state.getPropOpt(Tags.ShowUnknownProp)).
           map(_.v).
-          getOrElse(ExactlyOne(LargeTextType(querki.tags.defaultDisplayText)))
+          getOrElse(Core.ExactlyOne(LargeTextType(querki.tags.defaultDisplayText)))
       showEditPage(rc, model, 
           PropListMgr.inheritedProps(None, model) ++
-          PropListMgr(DisplayNameProp -> DisplayPropVal(None, DisplayNameProp, Some(ExactlyOne(PlainTextType(name)))),
+          PropListMgr(DisplayNameProp -> DisplayPropVal(None, DisplayNameProp, Some(Core.ExactlyOne(PlainTextType(name)))),
                    (Basic.DisplayTextProp -> DisplayPropVal(None, Basic.DisplayTextProp, Some(defaultText)))))
     }
   })) { implicit rc =>
@@ -632,13 +632,14 @@ disallow: /
   }
   
   def exportThing(ownerId:String, spaceId:String, thingIdStr:String) = withSpace(true, ownerId, spaceId, Some(thingIdStr)) { implicit rc =>
-    implicit val state = rc.state.get
-    val thing = rc.thing.get
-    // TODO: security check that I'm allowed to export this
-    val export = thing.export
-    Ok(export).as(MIMEType.JSON)
+//    implicit val state = rc.state.get
+//    val thing = rc.thing.get
+//    // TODO: security check that I'm allowed to export this
+//    val export = thing.export
+//    Ok(export).as(MIMEType.JSON)
+    Ok("NYI")
   }
-  
+
   def sharing(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
     if (rc.isOwner)
       Ok(views.html.sharing(rc))

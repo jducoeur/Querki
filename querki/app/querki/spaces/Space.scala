@@ -405,8 +405,6 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
 }
 
 object Space {
-  // The name of the Space Actor
-  def sid(id:OID) = id.toString
   // The OID of the Space, based on the sid
   def oid(sid:String) = OID(sid)
   

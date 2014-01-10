@@ -2,7 +2,7 @@ package querki.evolutions.steps
 
 import java.sql.Connection
 
-import querki.spaces.SpacePersister.SpaceSQL
+import querki.ecology._
 
 import querki.evolutions._
 
@@ -12,7 +12,7 @@ import querki.evolutions._
  * might actually clean up deleted Things, but for now we're not going to worry about them:
  * we don't care much about disk space, and they won't usually be loaded into memory.
  */
-object Step3 extends Step {
+class Step3(implicit val ecology:Ecology) extends Step {
   val version = 3
   
   def doEvolve(info:SpaceInfo)(implicit conn:java.sql.Connection):Unit = {

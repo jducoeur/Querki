@@ -4,7 +4,6 @@ import querki.ecology._
 
 import models.{AsDisplayName, Kind, Thing, ThingId, UnknownOID, Wikitext}
 
-import models.system.{InternalMethod, SingleContextMethod}
 import models.system.{LinkFromThingBuilder, NameType, NameableType, NewTagSetType, PlainText, PlainTextType, TagSetType}
 
 import ql._
@@ -14,7 +13,7 @@ import querki.values._
 /**
  * TODO: this should probably absorb more of the concept of "tags", maybe even including the Types.
  */
-class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags {
+class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.MethodDefs {
   import MOIDs._
   
   val Links = initRequires[querki.links.Links]
@@ -177,7 +176,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags {
             }
           }
         
-          QList.from(candidates.filter(hasThisTag), LinkFromThingBuilder)
+          Core.listFrom(candidates.filter(hasThisTag), LinkFromThingBuilder)
         }
         case _ => WarningValue("_tagRefs can only be used with a Tag or Link, not " + elemT.displayName)
       }
@@ -207,7 +206,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags {
       applyToIncomingThing(partialContext) { (shouldBeProp, _) =>
         shouldBeProp match {
           case prop:Property[_,_] if (prop.pType == TagSetType) => {
-            QList.from(fetchTags(partialContext.state, prop), TagSetType)
+            Core.listFrom(fetchTags(partialContext.state, prop), TagSetType)
           }
           case _ => WarningValue("The _tagsForProperty method can only be used on Tag Set Properties")
         } 

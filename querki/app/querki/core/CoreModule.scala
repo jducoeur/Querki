@@ -3,15 +3,14 @@ package querki.core
 import models._
 
 import models.system.OIDs.{systemOID, DisplayTextOID}
-import models.system.SystemProperty
-import models.system.{LargeTextType, NameType, TextType, YesNoType}
+import models.system.{IntType, LargeTextType, LinkType, NameType, QLType, TextType, YesNoType}
 
 import querki.conventions
 import querki.ecology._
 
-import querki.values.{ElemValue, PropAndVal, SpaceState}
+import querki.values.{ElemValue, PropAndVal, QLContext, QValue, SpaceState}
 
-class CoreModule(e:Ecology) extends QuerkiEcot(e) with Core {
+class CoreModule(e:Ecology) extends CoreEcot(e) with Core {
   import MOIDs._
   
   def LinkKindProp(kind:Kind.Kind) = (querki.links.MOIDs.LinkKindOID -> ExactlyOne(IntType(kind)))
@@ -27,7 +26,7 @@ class CoreModule(e:Ecology) extends QuerkiEcot(e) with Core {
       // TODO: once we rework the UI some more, we probably can and should remove this Optional from here.
       // It is really only here to remind the Space author to think about whether something is a Model.
       (querki.core.MOIDs.IsModelOID -> ExactlyOne(ElemValue(false, new DelegatingType(YesNoType))))
-      ))(querki.ecology.Ecology)
+      ))
   {
     override def getProp(propId:OID)(implicit state:SpaceState):PropAndVal[_] = {
       // If we've gotten up to here and haven't found the property, use
@@ -55,8 +54,46 @@ class CoreModule(e:Ecology) extends QuerkiEcot(e) with Core {
   )
 
   /***********************************************
+   * COLLECTIONS
+   * 
+   * These are all defined in the Collections file.
+   ***********************************************/
+  
+  lazy val UrCollection = new UrCollection
+  lazy val ExactlyOne = new ExactlyOne
+  lazy val Optional = new Optional
+  lazy val QList = new QList
+  lazy val QSet = new QSet
+  lazy val QUnit = new QUnit
+  
+  lazy val QNone = Optional.QNone
+  def listFrom[RT,VT](in:Iterable[RT], builder:PTypeBuilderBase[VT,RT]):QValue = QList.from(in, builder)
+  def makeSetValue(rawList:Seq[ElemValue], pt:PType[_], context:QLContext):QValue = QSet.makeSetValue(rawList, pt, context)
+  
+  override lazy val colls = Seq(
+    UrCollection,
+    ExactlyOne,
+    Optional,
+    QList,
+    QSet,
+    QUnit
+  )
+  
+  def emptyListOf(pType:PType[_]) = QList.empty(pType)
+  def emptyList = QList.empty
+
+  /***********************************************
    * PROPERTIES
    ***********************************************/
+  
+  // Our own Core-safe versions of a few QuerkiEcot shadows:
+  def Summary(text:String) = (querki.conventions.MOIDs.PropSummaryOID -> ExactlyOne(TextType(text)))
+  def Details(text:String) = (querki.conventions.MOIDs.PropDetailsOID -> ExactlyOne(LargeTextType(text))) 
+  def NotInherited = (querki.core.MOIDs.NotInheritedOID -> ExactlyOne(YesNoType(true)))
+  lazy val SkillLevelBasic = querki.identity.skilllevel.MOIDs.SkillLevelBasicOID
+  lazy val SkillLevelStandard = querki.identity.skilllevel.MOIDs.SkillLevelStandardOID
+  lazy val SkillLevelAdvanced = querki.identity.skilllevel.MOIDs.SkillLevelAdvancedOID
+  def SkillLevel(level:OID) = (querki.identity.skilllevel.MOIDs.SkillLevelPropOID -> ExactlyOne(LinkType(level)))
 
   /**
    * The root Property, from which all others derive.

@@ -65,53 +65,6 @@ object Thing {
 //    (NameOID -> ExactlyOne(ElemValue(str)))
 //    (NameOID -> PropValue(Some(ElemValue(str))))
 
-  // TODO: this escape/unescape is certainly too simplistic to cope with recursive types.
-  // Come back to this sometime before we make the type system more robust.
-  def escape(str:String) = {
-    str.replace("\\", "\\\\").replace(";", "\\;").replace(":", "\\:").replace("}", "\\}").replace("{", "\\{")
-  }
-  def unescape(str:String) = {
-    str.replace("\\{", "{").replace("\\}", "}").replace("\\:", ":").replace("\\;", ";").replace("\\\\", "\\")
-  }
-  
-  def serializeProps(props:PropMap, space:SpaceState) = {
-    val serializedProps = props.map { pair =>
-      val (ptr, v) = pair
-      val propOpt = space.prop(ptr)
-      propOpt match {
-        case Some(prop) => {
-          val oid = prop.id
-          oid.toString + 
-            ":" + 
-            Thing.escape(prop.serialize(prop.castVal(v)))
-        }
-        case None => ""  // This is *very* weird
-      }
-    }
-    
-    serializedProps.mkString("{", ";", "}")
-  }    
-  
-  def deserializeProps(str:String, space:SpaceState):PropMap = {
-    // Strip the surrounding {} pair:
-    val stripExt = str.slice(1, str.length() - 1)
-    // Note that we have to split on semicolons that are *not* preceded by backslashes. This is
-    // a little tricky to express in regex -- the weird bit is saying "things that aren't backslashes,
-    // non-capturing".
-    val propStrs = stripExt.split("""(?<=[^\\]);""")
-    val propPairs = propStrs.filter(_.trim.length() > 0).map { propStr =>
-      val (idStr, valStrAndColon) = propStr.splitAt(propStr.indexOf(':'))
-      val valStr = unescape(valStrAndColon.drop(1))
-      val id = OID(idStr)
-      val propOpt = space.prop(id)
-      val v = propOpt match {
-        case Some(prop) => prop.deserialize(valStr)
-        case None => UnresolvedProp(UnresolvedPropType(valStr))
-      }
-      (id, v)
-    }
-    toProps(propPairs:_*)()
-  }
 }
 
 import Thing._
@@ -135,7 +88,7 @@ abstract class Thing(
 {
   lazy val props:PropMap = propFetcher()
   
-  def thisAsContext(implicit request:RequestContext) = QLContext(ExactlyOne(LinkType(this.id)), Some(request))
+  def thisAsContext(implicit request:RequestContext) = QLContext(Core.ExactlyOne(LinkType(this.id)), Some(request))
   
   // These are defs instead of vals, because any vals defined here will be for every single Thing in the
   // world. Don't val-ify too casually. In this case, I believe we're willing to accept a little lookup
@@ -143,6 +96,8 @@ abstract class Thing(
   def DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
   def Core = interface[querki.core.Core]
   def Basic = interface[querki.basic.Basic]
+  def QL = interface[querki.ql.QL]
+  
   def ApplyMethod = Core.ApplyMethod
   def NotInheritedProp = Core.NotInheritedProp
   def NameProp = Core.NameProp
@@ -489,10 +444,16 @@ abstract class Thing(
         val qlParser = new QLParser(qlText, context.forProperty(apply.prop), params)
         qlParser.processMethod.value
       }
-      case None => ExactlyOne(LinkType(id))
+      case None => Core.ExactlyOne(LinkType(id))
     }
   }  
   
+  class BogusFunction extends QLFunction {
+    def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
+      QL.WarningValue("It does not make sense to put this after a dot.")
+    }
+  }
+
   /**
    * This is specifically for the right-hand side of a dot in QL processing. This counts
    * as partial application, and should return a function that will handle the rest of the
@@ -503,17 +464,6 @@ abstract class Thing(
    */
   def partiallyApply(context:QLContext):QLFunction = {
     new BogusFunction
-  }
-
-  def serializeProps(implicit state:SpaceState) = Thing.serializeProps(props, state)
-  
-  def export(implicit state:SpaceState):String = {
-    "{" +
-    "id:" + id.toString + ";" +
-    "model:" + model.id.toString + ";" +
-    "kind:" + kind.toString + ";" +
-    "props:" + serializeProps +
-    "}"
   }
 }
 

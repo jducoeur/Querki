@@ -22,7 +22,7 @@ class DBSpacePersistenceFactory(val ecology:Ecology) extends SpacePersistenceFac
     // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
     // with "Props(classOf(Space), ...)". See:
     //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-    context.actorOf(Props(new SpacePersister(spaceId, ecology)), SpacePersister.sid(spaceId) + "-persist")
+    context.actorOf(Props(new SpacePersister(spaceId, ecology)), sid(spaceId) + "-persist")
   }
 
   // Note that we actually create a *pool* of persistence routers for this job, because it is important,

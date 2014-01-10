@@ -4,6 +4,8 @@ import models._
 
 import models.system.QList
 
+import querki.ecology._
+
 /**
  * A convenient wrapper for passing a value around in a way that can be fetched.
  * 
@@ -17,11 +19,13 @@ import models.system.QList
  * TBD: is there a better way to do this? Can we construct a variant of QValue that carries its
  * own VT? Or make this wrapper no longer require the Property, just carry the VT itself?
  */
-case class PropAndVal[VT](prop:Property[VT, _], v:QValue) {
+case class PropAndVal[VT](prop:Property[VT, _], v:QValue) extends EcologyMember {
+  implicit def ecology:Ecology = prop.ecology
+  
   def render(context:QLContext) = v.wikify(context)
-  def renderPlain = render(EmptyContext)
+  def renderPlain = render(EmptyContext(ecology))
   def renderOr(context:QLContext)(other: => Wikitext) = if (v.isEmpty) other else render(context)
-  def renderPlainOr(other: => Wikitext) = renderOr(EmptyContext)(other)
+  def renderPlainOr(other: => Wikitext) = renderOr(EmptyContext(ecology))(other)
   def renderPlainIfDefined = if (!v.isEmpty) renderPlain else Wikitext("")
   // TODO: Evil! Deprecated in favor of firstOpt:
   def first = v.firstAs(prop.pType).get

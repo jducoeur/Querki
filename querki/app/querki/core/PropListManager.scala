@@ -14,8 +14,6 @@ object PropListMOIDs extends EcotIds(20)
 
 class PropListManagerEcot(e:Ecology) extends QuerkiEcot(e) with PropListManager {
   
-  lazy val Core = interface[querki.core.Core]
-  
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
   lazy val NotInheritedProp = Core.NotInheritedProp
   lazy val NameProp = Core.NameProp

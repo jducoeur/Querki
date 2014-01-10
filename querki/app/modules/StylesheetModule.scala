@@ -32,7 +32,6 @@ import querki.ql.CodeType
 class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
   import MOIDs._
   
-  val Core = initRequires[querki.core.Core]
   val Basic = initRequires[querki.basic.Basic]
   val Links = initRequires[querki.links.Links]
 

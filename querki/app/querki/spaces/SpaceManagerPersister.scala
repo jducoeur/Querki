@@ -44,6 +44,7 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
   
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
   lazy val SystemInterface = interface[querki.system.System]
+  lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
 
   def receive = {
     case ListMySpaces(owner) => {
@@ -120,7 +121,7 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
       // NOTE: we have to do this as two separate Transactions, because part goes into the User DB and
       // part into System. That's unfortunate, but kind of a consequence of the architecture.
       DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
-        SpacePersister.SpaceSQL(spaceId, """
+        SpacePersistence.SpaceSQL(spaceId, """
             CREATE TABLE {tname} (
               id bigint NOT NULL,
               model bigint NOT NULL,
@@ -128,7 +129,7 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
               props MEDIUMTEXT NOT NULL,
               PRIMARY KEY (id))
             """).executeUpdate()
-        SpacePersister.AttachSQL(spaceId, """
+        SpacePersistence.AttachSQL(spaceId, """
             CREATE TABLE {tname} (
               id bigint NOT NULL,
               mime varchar(127) NOT NULL,
@@ -137,7 +138,7 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
               PRIMARY KEY (id))
             """).executeUpdate()
         val initProps = Thing.toProps(Thing.setName(name), DisplayNameProp(display))()
-        SpacePersister.createThingInSql(spaceId, spaceId, systemOID, Kind.Space, initProps, SystemInterface.State)
+        SpacePersistence.createThingInSql(spaceId, spaceId, systemOID, Kind.Space, initProps, SystemInterface.State)
       }
       DB.withTransaction(dbName(System)) { implicit conn =>
         SQL("""

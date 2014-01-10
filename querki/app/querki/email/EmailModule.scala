@@ -12,7 +12,7 @@ import com.sun.mail.smtp._
 
 import models._
 import models.Thing._
-import models.system._
+import models.system.{QLText, SystemType}
 import models.system.OIDs._
 
 import ql._
@@ -26,16 +26,18 @@ import querki.values._
 import play.api.{Logger, Play}
 import play.api.Play.current
 
-class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email {
+class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.MethodDefs {
 
   import querki.email.MOIDs._
   
-  val Core = initRequires[querki.core.Core]
   val Basic = initRequires[querki.basic.Basic]
   val Links = initRequires[querki.links.Links]
   
+  lazy val QL = interface[querki.ql.QL]
+  
   lazy val DeprecatedProp = Basic.DeprecatedProp
   lazy val DisplayTextProp = Basic.DisplayTextProp
+  lazy val InternalProp = Core.InternalProp
   
   def fullKey(key:String) = "querki.mail." + key
   def getRequiredConf(key:String) = {
@@ -340,7 +342,7 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email {
     val recipientParser = new QLParser(recipientsIndirect.first, t.thisAsContext(context.request).forProperty(recipientsProp))
     val recipientContext = recipientParser.processMethod
     if (recipientContext.value.pType != LinkType) {
-      ErrorValue("The Recipient property of an Email Message must return a collection of Links; instead, it produced " + recipientContext.value.pType.displayName)
+      QL.ErrorValue("The Recipient property of an Email Message must return a collection of Links; instead, it produced " + recipientContext.value.pType.displayName)
     } else {
       val recipients = recipientContext.value
       

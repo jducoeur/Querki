@@ -2,8 +2,6 @@ package querki.editing
 
 import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState, Wikitext}
 
-import models.system.{SingleContextMethod, SystemProperty}
-import models.system.{ExactlyOne, QList}
 import models.system.{IntType, LargeTextType, LinkCandidateProvider, LinkType, PlainTextType, QLText}
 import models.system.OIDs.sysId
 
@@ -17,18 +15,17 @@ import querki.types._
 import querki.util._
 import querki.values._
 
-class EditorModule(e:Ecology) extends QuerkiEcot(e) {
+class EditorModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   import MOIDs._
   
   val Types = initRequires[querki.types.Types]
   val Basic = initRequires[querki.basic.Basic]
   val Links = initRequires[querki.links.Links]
   
-  lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   lazy val PropListMgr = interface[querki.core.PropListManager]
-  lazy val Core = interface[querki.core.Core]
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
+  lazy val QL = interface[querki.ql.QL]
   
   lazy val DisplayTextProp = Basic.DisplayTextProp
   
@@ -278,13 +275,13 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) {
             if (thing.ifSet(Core.IsModelProp)) {
               val instances = state.descendants(thing.id, false, true).toSeq.sortBy(_.displayName)
               val wikitexts = instances.map { instance => instanceEditorForThing(instance, instance.thisAsContext(partialContext.request), params) }
-              QList.from(wikitexts, ParsedTextType)
+              Core.listFrom(wikitexts, ParsedTextType)
             } else {
               WikitextValue(instanceEditorForThing(thing, partialContext, params))
             }
           }
           
-          case _ => ErrorValue("The " + displayName + " method can only be used on Properties, Models and Instances")
+          case _ => QL.WarningValue("The " + displayName + " method can only be used on Properties, Models and Instances")
         } 
       }
     }

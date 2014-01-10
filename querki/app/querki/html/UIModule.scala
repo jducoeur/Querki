@@ -5,7 +5,6 @@ import scala.xml._
 import play.api.templates.Html
 
 import models.{HtmlWikitext, OID, QWikitext, Wikitext}
-import models.system.{InternalMethod, SingleThingMethod, ThingPropMethod}
 import models.system.{ExternalLinkType, URLableType}
 
 import ql.QLPhrase
@@ -26,10 +25,11 @@ object UIMOIDs extends EcotIds(11) {
   val TooltipMethodOID = moid(2)
 }
 
-class UIModule(e:Ecology) extends QuerkiEcot(e) {
+class UIModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   import UIMOIDs._
-  
+
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
+  lazy val QL = interface[querki.ql.QL]
 
   /***********************************************
    * PROPERTIES
@@ -161,7 +161,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) {
         val empty = if (params.length > 2) Some(params(2)) else None
         buildSection(context, header, details, empty)
       }
-      case _ => ErrorValue("_section requires at least one parameter")
+      case _ => QL.ErrorValue("_section requires at least one parameter")
     }
   }  
   
@@ -278,7 +278,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) {
 	              
 	              wikitextOpt match {
 	                case Some(wikitext) => QValue.make(ExactlyOne, ParsedTextType, wikitext)
-	                case None => Optional.Empty(ParsedTextType)
+	                case None => Core.emptyListOf(ParsedTextType)
 	              }
 	            }
 	          }
@@ -332,7 +332,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) {
 	      ExactlyOne(
 	        ExternalLinkType(routes.Application.createThing(context.request.ownerId.toThingId, context.state.toThingId, Some(thing.toThingId)).absoluteURL()))
 	    }
-	    case _ => WarningValue("_createInstanceLink does not currently work outside of Play")
+	    case _ => QL.WarningValue("_createInstanceLink does not currently work outside of Play")
 	  }
 	})
 

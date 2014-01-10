@@ -5,10 +5,9 @@ import java.sql.Connection
 import play.api.db._
 import play.api.Play.current
 
-import models._
+import querki.ecology._
 
-import querki.spaces.SpacePersister
-import querki.spaces.SpacePersister.SpaceSQL
+import models._
 
 import querki.db.ShardKind._
 
@@ -19,11 +18,16 @@ import querki.db.ShardKind._
  * By and large, a Step will specify the version, and fill in doEvolve(), which makes
  * the actual changes to the Space table.
  */
-trait Step {
+trait Step extends EcologyMember {
   /**
    * Each Step must specify this version stamp, which must be unique!
    */
   def version:Int
+  
+  implicit def ecology:Ecology
+  
+  lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
+  def SpaceSQL(spaceId:OID, query:String, version:Int = 0):SqlQuery = SpacePersistence.SpaceSQL(spaceId, query, version)
   
   def evolveUp(spaceId:OID) = {
     // TBD: is there any way to do this all within a single transaction? Since it spans DBs,
@@ -52,10 +56,10 @@ trait Step {
    */
   def backupTables(info:SpaceInfo)(implicit conn:Connection):Unit = {
     // TODO: back up the history and attachments as well?
-    SpaceSQL(info.id, """
+    SpacePersistence.SpaceSQL(info.id, """
         CREATE TABLE {bname} LIKE {tname}
         """, info.version).executeUpdate
-    SpaceSQL(info.id, """
+    SpacePersistence.SpaceSQL(info.id, """
         INSERT {bname} SELECT * FROM {tname}
         """, info.version).executeUpdate
   }
@@ -67,9 +71,9 @@ trait Step {
   def doEvolve(info:SpaceInfo)(implicit conn:Connection):Unit
 }
   
-case class SpaceInfo(id:OID, version:Int) {
-  def thingTable = SpacePersister.thingTable(id)
+case class SpaceInfo(id:OID, version:Int)(implicit val ecology:Ecology) extends EcologyMember {
+  def thingTable = interface[querki.spaces.SpacePersistence].thingTable(id)
 }
 object SpaceInfo {
-  def apply(row:SqlRow):SpaceInfo = SpaceInfo(OID(row.get[Long]("id").get), row.get[Int]("version").get)
+  def apply(row:SqlRow)(implicit ecology:Ecology):SpaceInfo = SpaceInfo(OID(row.get[Long]("id").get), row.get[Int]("version").get)
 }

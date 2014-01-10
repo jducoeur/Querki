@@ -3,7 +3,7 @@ package querki.time
 import com.github.nscala_time.time.Imports._
 
 import models._
-import models.system._
+import models.system.SystemType
 
 import Thing._
 
@@ -23,7 +23,7 @@ import querki.values.QLContext
  * methods in System. (This will likely require us to split this Module into two, which
  * should be fine.) 
  */
-class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time {
+class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.MethodDefs {
  
   import MOIDs._
     

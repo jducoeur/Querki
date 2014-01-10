@@ -3,8 +3,9 @@ package querki.evolutions.steps
 import anorm._
 import play.api.db._
 
+import querki.ecology._
+
 import models._
-import querki.spaces.SpacePersister.SpaceSQL
 
 import querki.evolutions._
 
@@ -13,7 +14,7 @@ import querki.evolutions._
  * 
  * This Step adds Modified timestamps for all Things.
  */
-object Step2 extends Step {
+class Step2(implicit val ecology:Ecology) extends Step {
   val version = 2
   
   def doEvolve(info:SpaceInfo)(implicit conn:java.sql.Connection):Unit = {

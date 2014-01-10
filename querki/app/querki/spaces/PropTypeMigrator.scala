@@ -47,8 +47,6 @@ object MOIDs extends EcotIds(25)
  */
 class PropTypeMigratorEcot(e:Ecology) extends QuerkiEcot(e) with PropTypeMigrator {
   
-  lazy val Core = interface[querki.core.Core]
-  
   private def isLegalTypeChange(oldType:PType[_], newType:PType[_]):Boolean = {
     oldType.isInstanceOf[IsTextType] && newType.isInstanceOf[IsTextType]
   }

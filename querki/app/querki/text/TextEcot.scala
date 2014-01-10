@@ -3,17 +3,16 @@ package querki.text
 import querki.ecology._
 
 import models.Wikitext
-import models.system.InternalMethod
 
 import ql.QLPhrase
-import querki.values.{QLContext, WarningValue, WikitextValue}
+import querki.values.{QLContext, WikitextValue}
 
 object MOIDs extends EcotIds(23) {
   val PluralizeOID = sysId(54)
   val JoinMethodOID = sysId(65)
 }
 
-class TextEcot(e:Ecology) extends QuerkiEcot(e) {
+class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   import MOIDs._
 
   /***********************************************

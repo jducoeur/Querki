@@ -26,7 +26,7 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
   // Note that this will crash if we don't have a RequestContext!
   lazy val System = interface[querki.system.System]
   
-  def ecology:Ecology = request.ecology
+  implicit def ecology:Ecology = request.ecology
   def request:RequestContext = {
     requestOpt match {
       case Some(r) => r
@@ -187,7 +187,7 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
  * Play template level.
  */
 object QLRequestContext {
-  def apply(request:RequestContext) = QLContext(EmptyValue.untyped, Some(request))
+  def apply(request:RequestContext) = QLContext(EmptyValue.untyped(request.ecology), Some(request))
 }
 
 /**
@@ -197,4 +197,6 @@ object QLRequestContext {
  * 
  * TODO: deprecate and remove this.
  */
-object EmptyContext extends QLContext(EmptyValue.untyped, None)
+object EmptyContext {
+  def apply(implicit ecology:Ecology) = QLContext(EmptyValue.untyped, None)
+}

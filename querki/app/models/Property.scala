@@ -35,6 +35,7 @@ case class Property[VT, -RT](
   extends Thing(i, s, m, Kind.Property, pf, mt)(e)
 {
   lazy val DefaultValueProp = interface[Types].DefaultValueProp
+  def WarningValue(msg:String) = interface[querki.ql.QL].WarningValue(msg)
     
   def default = {
     val explicitDefault = localProp(DefaultValueProp).map(_.v)

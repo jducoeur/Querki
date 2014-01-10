@@ -7,6 +7,7 @@ import scala.util.parsing.combinator._
 import models.system._
 import models._
 
+import querki.ecology._
 import querki.util._
 import querki.values._
 
@@ -22,12 +23,6 @@ trait QLFunction {
 class PartiallyAppliedFunction(partialContext:QLContext, action:(QLContext, Option[Seq[QLPhrase]]) => QValue) extends QLFunction {
   def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
     action(context, params)
-  }
-}
-
-class BogusFunction extends QLFunction {
-  def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
-    ErrorValue("It does not make sense to put this after a dot.")
   }
 }
 
@@ -83,11 +78,17 @@ case class ParsedQLText(parts:Seq[QLTextPart]) {
 }
 case class QLSpace(text:String)
 
-class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None) extends RegexParsers {
+class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None) extends RegexParsers with EcologyMember {
   
   // Add the parser to the context, so that methods can call back into it. Note that we are treating this as essentially
   // a modification, rather than another level of depth:
   val initialContext = ci.copy(parser = Some(this))
+  
+  implicit def ecology:Ecology = ci.state.ecology
+  
+  lazy val QL = interface[querki.ql.QL]
+  
+  def WarningValue = QL.WarningValue _
   
   // Crude but useful debugging of the process tree. Could stand to be beefed up when I have time
   // Note that this is fundamentally not threadsafe, because of logDepth!

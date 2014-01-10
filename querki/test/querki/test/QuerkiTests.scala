@@ -34,7 +34,7 @@ class QuerkiTests
   def createEcology() = {
     val e = new EcologyImpl
     // TEMP: this should go away!
-    querki.ecology.Ecology = e
+    querki.ecology.theEcology = e
     createEcots(e)
     val state = e.init(models.system.SystemSpace.initialSystemState(e))
     e.api[querki.system.SystemManagement].setState(state)

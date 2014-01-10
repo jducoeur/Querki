@@ -3,7 +3,6 @@ package querki.datamodel
 import querki.ecology._
 
 import models.{Kind, PType}
-import models.system.{InternalMethod, SingleContextMethod, SingleThingMethod, ThingPropMethod}
 import models.system.{LinkFromThingBuilder}
 
 import ql._
@@ -18,10 +17,12 @@ import querki.values._
  * factoring is found, feel free to move them. (Pay attention to OIDs! But if it's a
  * sysId, it can be moved freely.)
  */
-class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess {
+class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess with querki.core.MethodDefs {
   import MOIDs._
   import YesNoType._
-
+  
+  lazy val QL = interface[querki.ql.QL]
+  
   /***********************************************
    * FUNCTIONS
    ***********************************************/  
@@ -48,7 +49,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     }
   
     def handleThing(t:Thing, context:QLContext):QValue = {
-      QList.from(context.state.descendants(t.id, false, true).map(_.id), LinkType)
+      Core.listFrom(context.state.descendants(t.id, false, true).map(_.id), LinkType)
     }
   }
   
@@ -87,7 +88,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
 	      if propAndVal.contains(mainThing.id)
 	    )
 	      yield candidateThing.id;
-	  QList.from(results, LinkType)
+	  Core.listFrom(results, LinkType)
     } else {
       WarningValue("_refs can only be applied to Links")
     }
@@ -98,7 +99,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     """    RECEIVED -> _space -> SPACE
     |
     |This function produces the Space that the received Thing is contained in.""".stripMargin,
-  { (thing, context) => LinkValue(thing.spaceId) })
+  { (thing, context) => LinkValue(thing.spaceId)(ecology) })
 
   class ExternalRootsMethod extends SingleThingMethod(ExternalRootsOID, "_externalRoots", "What are the ancestor Things for this Space?", 
     """    SPACE -> _externalRoots -> ROOTS
@@ -107,7 +108,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     |by that Space.
     |
     |User code will rarely care about this function, but it is part of how the [[All Things._self]] display works.""".stripMargin,
-  { (thing, context) => QList.from(context.state.thingRoots, LinkType) })
+  { (thing, context) => Core.listFrom(context.state.thingRoots, LinkType) })
 
   class AllPropsMethod extends SingleThingMethod(AllPropsMethodOID, "_allProps", "What are the Properties in this Space?", 
     """    SPACE -> _allProps -> PROPS
@@ -115,8 +116,8 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     |This receives a link to a Space, and produces all of the Properties defined in that Space.""".stripMargin,
   { (thing, context) => 
     thing match {
-      case s:SpaceState => QList.from(s.propList.toSeq.sortBy(_.displayName), LinkFromThingBuilder) 
-      case _ => WarningValue("_allProps must be used with a Space")
+      case s:SpaceState => Core.listFrom(s.propList.toSeq.sortBy(_.displayName), LinkFromThingBuilder) 
+      case _ => QL.WarningValue("_allProps must be used with a Space")
     }
   
   })
@@ -124,7 +125,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   class ChildrenMethod extends SingleThingMethod(ChildrenMethodOID, "_children", "This produces the immediate children of the received Model.",
     """    MODEL -> _children -> LIST OF CHILDREN
     |This produces all of the Things that list MODEL as their Model. It includes both other Models, and Instances.""".stripMargin,
-  { (thing, context) => QList.from(context.state.children(thing).map(_.id), LinkType) })
+  { (thing, context) => Core.listFrom(context.state.children(thing).map(_.id), LinkType) })
 
   class IsModelMethod extends SingleThingMethod(IsModelMethodOID, "_isModel", "This produces Yes if the received Thing is a Model.",
     """    THING -> _isModel -> Yes or No""".stripMargin,
@@ -151,7 +152,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     |
     |Each Thing in Querki has an Object ID. In most cases, it can be used in place of the Thing's name, and it is never
     |ambiguous -- it always refers to one specific Thing.""".stripMargin,
-  { (thing, context) => TextValue(thing.id.toThingId) })
+  { (thing, context) => TextValue(thing.id.toThingId)(ecology) })
 
   class KindMethod extends InternalMethod(KindMethodOID,
     toProps(
@@ -197,7 +198,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     """THING -> _currentSpace -> SPACE
     |
     |This function produces the Space that we are currently displaying. (Generally, the one in the URL.)""".stripMargin,
-  { (thing, context) => LinkValue(context.root.state) })
+  { (thing, context) => LinkValue(context.root.state)(ecology) })
 
   class IsMethod extends InternalMethod(IsMethodOID,
     toProps(
@@ -235,8 +236,8 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
 	    """    TYPE -> _propsOfType -> LIST OF PROPS""".stripMargin,
 	{ (thing, context) =>
 	  thing match {
-	    case pt:PType[_] => QList.from(context.state.propsOfType(pt), LinkFromThingBuilder)
-	    case _ => WarningValue("_propsOfType can only be used on a Type")
+	    case pt:PType[_] => Core.listFrom(context.state.propsOfType(pt), LinkFromThingBuilder)
+	    case _ => QL.WarningValue("_propsOfType can only be used on a Type")
 	  }
 	})
 

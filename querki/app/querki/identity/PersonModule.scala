@@ -9,7 +9,7 @@ import scala.concurrent.Future
 
 import models._
 import models.Thing._
-import models.system._
+import models.system.{ExternalLinkType, QLText}
 import models.system.OIDs._
 
 import ql._
@@ -34,11 +34,12 @@ import play.api.Logger
  * TODO: this should probably be split into two modules, with all of the HTTP-specific stuff
  * surrounding Cookies brought into the controllers instead. But it'll do for now.
  */
-class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person {
+class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core.MethodDefs {
   
   val Email = initRequires[querki.email.Email]
-  val Core = initRequires[querki.core.Core]
   val Basic = initRequires[querki.basic.Basic]
+  
+  lazy val QL = interface[querki.ql.QL]
   
   lazy val EmailAddressProp = Email.EmailAddressProp
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
@@ -80,7 +81,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
   lazy val IdentityLink = new SystemProperty(IdentityLinkOID, LinkType, Optional,
       toProps(
         setName("Person to Identity Link"),
-        InternalProp(true),
+        Core.InternalProp(true),
         Summary("INTERNAL: points from a Space-scoped Person to a System-scoped Identity")))
 
   lazy val meMethod = new InternalMethod(MeMethodOID,
@@ -159,9 +160,9 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
   lazy val PersonModel = ThingState(PersonOID, systemOID, SecurityPrincipalOID,
       toProps(
         setName("Person"),
-        InternalProp(true),
+        Core.InternalProp(true),
         Core.IsModelProp(true),
-        EmailAddressProp(Optional.QNone),
+        EmailAddressProp(Core.QNone),
         Summary("""This represents a Member of this Space.""")))
     
   override lazy val things = Seq(
@@ -239,7 +240,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
 	      (if (chromeless) "&cl=on" else "")
 	    ExactlyOne(ExternalLinkType(url))
       }
-      case _ => WarningValue("Invite Link is only defined when sending email")
+      case _ => QL.WarningValue("Invite Link is only defined when sending email")
     }
   }
   
@@ -254,7 +255,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
   lazy val spaceInvite = new SingleContextMethod(SpaceInviteOID,
       toProps(
         setName("_spaceInvitation"), 
-        InternalProp(true),
+        Core.InternalProp(true),
         Summary("Generate a Link to invite someone to join this Space."), 
         Details("""This is intended for internal use only. It is used to generate
             |the link that is sent to invitees to your Space""".stripMargin)))

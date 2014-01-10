@@ -29,7 +29,6 @@ object MOIDs extends EcotIds(26)
  */
 class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer {
   
-  lazy val Core = interface[querki.core.Core]
   lazy val Links = interface[querki.links.Links]
   
   /*********************************
@@ -275,7 +274,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer {
   def handleOptionalForm(prop:Property[_,_], newVal:String, pType:PType[_], isNone:String => Boolean):FormFieldInfo = {
     if (isNone(newVal))
       // This is a bit subtle: there *is* a value, which is "None"
-      FormFieldInfo(prop, Some(Optional.QNone), false, true)
+      FormFieldInfo(prop, Some(Core.QNone), false, true)
     else
       FormFieldInfo(prop, Some(Optional(pType.fromUser(newVal))), false, true)
   }
@@ -300,7 +299,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer {
           yield v
       // TODO: some nasty abstraction breakage here. We shouldn't know that the internal is List:
       val oldVals = oldRaw.map(pt.fromUser(_)).toList
-      FormFieldInfo(prop, Some(QSet.makeSetValue(oldVals, pt, context)), false, true)
+      FormFieldInfo(prop, Some(Core.makeSetValue(oldVals, pt, context)), false, true)
     }
   }
 }

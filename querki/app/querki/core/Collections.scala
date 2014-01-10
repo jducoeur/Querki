@@ -1,4 +1,5 @@
-package models.system
+package querki.core
+
 
 import language.existentials
 import scala.xml._
@@ -12,32 +13,34 @@ import models._
 
 import Thing._
 
-import OIDs._
-
 import ql._
+
+import models.system.OIDs.systemOID
 
 import querki.ecology.Ecology
 import querki.util._
 import querki.values._
+
+import MOIDs._
 
 //////////////////////////////////////
 //
 // Collections
 //
 
-// TODO: these should all die, ASAP!
-
-abstract class SystemCollection(cid:OID, pf:PropFetcher)(implicit e:Ecology = querki.ecology.theEcology) extends Collection(cid, systemOID, querki.core.MOIDs.UrCollectionOID, pf)(e)
+abstract private[core] class SystemCollection(cid:OID, pf:PropFetcher)(implicit e:Ecology) extends Collection(cid, systemOID, UrCollectionOID, pf)(e)
   
   /**
    * Root Collection type. Exists solely so that there is a common runtime root, in case
    * we want to be able to write new collections.
    */
-  class UrCollection extends Collection(querki.core.MOIDs.UrCollectionOID, systemOID, querki.core.MOIDs.RootOID,
+  private[core] class UrCollection(implicit e:Ecology) extends Collection(UrCollectionOID, systemOID, querki.core.MOIDs.RootOID,
       toProps(
         setName("Collection")//,
+        // TODO: is it possible to mark this as Internal without being *inside* CoreModule itself? There's
+        // a bit of chicken-and-egg going on here:
 //        InternalProp(true)
-        ))(querki.ecology.theEcology)
+        ))
   {
 	type implType = List[ElemValue]
 	
@@ -58,9 +61,8 @@ abstract class SystemCollection(cid:OID, pf:PropFetcher)(implicit e:Ecology = qu
 	def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo =
 	  throw new Error("Trying to fromUser on root collection!")
   }
-  object UrCollection extends UrCollection
   
-abstract class SingleElementBase(cid:OID, pf:PropFetcher) extends SystemCollection(cid, pf)
+abstract private[core] class SingleElementBase(cid:OID, pf:PropFetcher)(implicit e:Ecology) extends SystemCollection(cid, pf)
 {
   // TODO: this really doesn't belong here. We need to tease the HTTP/HTML specific
   // stuff out from the core concepts.
@@ -102,7 +104,7 @@ abstract class SingleElementBase(cid:OID, pf:PropFetcher) extends SystemCollecti
    * 
    * TODO: rewrite ExactlyOne and Optional to be based on an actual Iterable with the right semantics.
    */
-  class ExactlyOne(cid:OID) extends SingleElementBase(cid,
+  class ExactlyOneBase(oid:OID)(implicit e:Ecology) extends SingleElementBase(oid,
     ExactlyOneProps.fetchProps) 
   {
     type implType = List[ElemValue]
@@ -127,10 +129,10 @@ abstract class SingleElementBase(cid:OID, pf:PropFetcher) extends SystemCollecti
     }
 
     def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = ExactlyOnePropValue(cv.toList, this, elemT)
-    protected case class ExactlyOnePropValue(cv:implType, cType:ExactlyOne, pType:PType[_]) extends QValue
+    protected case class ExactlyOnePropValue(cv:implType, cType:ExactlyOneBase, pType:PType[_]) extends QValue
   }
-  object ExactlyOne extends ExactlyOne(querki.core.MOIDs.ExactlyOneOID)
-  object ExactlyOneProps {
+  class ExactlyOne(implicit e:Ecology) extends ExactlyOneBase(ExactlyOneOID)
+  private[core] object ExactlyOneProps {
     def fetchProps:() => PropMap = {
       Thing.toProps(
         setName("Exactly-One")
@@ -138,7 +140,7 @@ abstract class SingleElementBase(cid:OID, pf:PropFetcher) extends SystemCollecti
     }    
   }
   
-  class Optional(cid:OID) extends SingleElementBase(cid,
+  private[core] class Optional(implicit e:Ecology) extends SingleElementBase(OptionalOID,
       toProps(
         setName("Optional")
         )) 
@@ -195,10 +197,9 @@ abstract class SingleElementBase(cid:OID, pf:PropFetcher) extends SystemCollecti
     val QNone:QValue = makePropValue(Nil, UnknownType)
     def Empty(elemT:pType):QValue = makePropValue(Nil, elemT) 
   }
-  object Optional extends Optional(querki.core.MOIDs.OptionalOID)
   
   
-  abstract class QListBase(cid:OID, pf:PropFetcher) extends SystemCollection(cid, pf) 
+  abstract class QListBase(cid:OID, pf:PropFetcher)(implicit e:Ecology) extends SystemCollection(cid, pf) 
   {
     type implType = List[ElemValue]
     
@@ -282,15 +283,14 @@ abstract class SingleElementBase(cid:OID, pf:PropFetcher) extends SystemCollecti
         FormFieldInfo(prop, Some(makePropValue(oldVals, elemT)), false, true)
       }
     }
+    protected case class QListPropValue(cv:implType, cType:QListBase, pType:PType[_]) extends QValue    
+    def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = QListPropValue(cv.toList, this, elemT)
   }
-  class QList(cid:OID) extends QListBase(cid,
+  private[core] class QList(implicit e:Ecology) extends QListBase(QListOID,
       toProps(
         setName("List")
         ))
   {
-    def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = QListPropValue(cv.toList, this, elemT)
-    protected case class QListPropValue(cv:implType, cType:QList, pType:PType[_]) extends QValue    
-    
     /**
      * Given an incoming Iterable of RTs, this produces the corresponding QList of VTs.
      * This should simplify a lot of the Scala-level code.
@@ -300,16 +300,15 @@ abstract class SingleElementBase(cid:OID, pf:PropFetcher) extends SystemCollecti
       makePropValue(rawList, builder.pType)
     }
   }
-  object QList extends QList(querki.core.MOIDs.QListOID)
   
-  class QSet(cid:OID) extends QListBase(cid,
+  private[core] class QSet(implicit e:Ecology) extends QListBase(QSetOID,
       toProps(
         setName("Set")))
   {
     // TODO: this *really* should be makePropValue -- it is Very Very Bad that it isn't. But
     // that doesn't yet have a way of getting at the PType, which we need for comp() and matches().
     // This may become less critical once ElemValue carries the PType.
-    def makeSetValue(rawList:implType, pt:PType[_], context:QLContext):QValue = {
+    def makeSetValue(rawList:Seq[ElemValue], pt:PType[_], context:QLContext):QValue = {
       val sorted = rawList.sortWith(pt.comp(context))
       val deduped = ((List.empty[ElemValue], Option.empty[ElemValue]) /: sorted){ (state, next) =>
         val (list, prevOpt) = state
@@ -325,10 +324,9 @@ abstract class SingleElementBase(cid:OID, pf:PropFetcher) extends SystemCollecti
 
       QSetPropValue(deduped._1, this, pt)
     }
-    def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = QSetPropValue(cv.toList, this, elemT)
+    override def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = QSetPropValue(cv.toList, this, elemT)
     private case class QSetPropValue(cv:implType, cType:QSet, pType:PType[_]) extends QValue    
   }
-  object QSet extends QSet(querki.core.MOIDs.QSetOID)
   
 /**
  * This is a special marker collection that is Unit -- that is, it is by definition empty.
@@ -336,9 +334,11 @@ abstract class SingleElementBase(cid:OID, pf:PropFetcher) extends SystemCollecti
  * Property is the significant part. Action-only side-effecting Methods are the most likely
  * usage.
  */
-class QUnit(cid:OID) extends SystemCollection(cid,
+class QUnit(implicit e:Ecology) extends SystemCollection(QUnitOID,
   toProps(
-    setName("Always Empty")
+    setName("Always Empty")//,
+    // TODO: again, how do we do this without chicken-and-egg problems?
+//    InternalProp(true)
   )) 
 {
   type implType = List[ElemValue]
@@ -361,9 +361,4 @@ class QUnit(cid:OID) extends SystemCollection(cid,
 
   def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo =
 	throw new Error("Trying to fromUser on Unit!")
-}
-object QUnit extends QUnit(querki.core.MOIDs.QUnitOID)
-    
-object SystemCollections {
-  def all = OIDMap[Collection](UrCollection, ExactlyOne, Optional, QList, QSet, QUnit)
 }

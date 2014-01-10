@@ -1,7 +1,6 @@
 package querki.logic
 
 import models.{OID, ThingState}
-import models.system.{InternalMethod}
 import models.system.OIDs.{systemOID}
 
 import ql.QLPhrase
@@ -26,7 +25,7 @@ object MOIDs extends EcotIds(9) {
  * but that should be fixed. This should absorb YesNoType, and all of the predicate-oriented
  * methods.
  */
-class LogicModule(e:Ecology) extends QuerkiEcot(e) {
+class LogicModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   import MOIDs._
   import YesNoType._
 

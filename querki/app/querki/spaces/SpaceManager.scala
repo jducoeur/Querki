@@ -58,9 +58,9 @@ class SpaceManager(val ecology:Ecology, persistenceFactory:SpacePersistenceFacto
   private var spaceNameCache:Map[String,SpaceInfo] = Map.empty
   
   def getSpace(spaceId:OID):ActorRef = {
-    val sid = Space.sid(spaceId)
+    val mySid = sid(spaceId)
     // Fetch the existing Space Actor, or fire it up:
-    context.child(sid).getOrElse(context.actorOf(Space.actorProps(ecology, persistenceFactory), sid))
+    context.child(mySid).getOrElse(context.actorOf(Space.actorProps(ecology, persistenceFactory), mySid))
   }
   
   def receive = {

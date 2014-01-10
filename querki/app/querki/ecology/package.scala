@@ -13,7 +13,7 @@ package object ecology {
    * you should pass the Ecology trait around as a pointer whenever possible. In the long run, we will
    * likely require that in all cases. 
    */
-  var Ecology:Ecology = null
+  var theEcology:Ecology = null
   
   implicit def wrapper2Interface[T <: EcologyInterface](wrapper:InterfaceWrapper[T]):T = {
     wrapper.get

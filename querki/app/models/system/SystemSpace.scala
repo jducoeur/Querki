@@ -55,10 +55,10 @@ object OIDs {
   val SystemUserOID = sysId(9)
   val NameTypeOID = sysId(10)
   val TestUserOID = sysId(11)
-  val UrCollectionOID = sysId(12)
-  val ExactlyOneOID = sysId(13)
-  val OptionalOID = sysId(14)
-  val QListOID = sysId(15)
+//  val UrCollectionOID = sysId(12)
+//  val ExactlyOneOID = sysId(13)
+//  val OptionalOID = sysId(14)
+//  val QListOID = sysId(15)
   val LinkTypeOID = sysId(16)
 //  val TypePropOID = sysId(17)
 //  val CollectionPropOID = sysId(18)
@@ -82,7 +82,7 @@ object OIDs {
 //  val AppliesToKindOID = sysId(36)
   val PlainTextOID = sysId(37)
   val InternalMethodOID = sysId(38)
-  val QUnitOID = sysId(39)
+//  val QUnitOID = sysId(39)
 //  val InternalPropOID = sysId(40)
   val ExternalLinkTypeOID = sysId(41)
 //  val EditMethodOID = sysId(42)
@@ -122,7 +122,7 @@ object OIDs {
 //  val PropsOfTypeOID = sysId(76)
 //  val CodeMethodOID = sysId(77)
 //  val IsDefinedOID = sysId(78)
-  val QSetOID = sysId(79)
+//  val QSetOID = sysId(79)
 //  val CommasMethodOID = sysId(80)
 //  val FormLineMethodOID = sysId(81) 
 //  val EditOrElseMethodOID = sysId(82)
@@ -172,20 +172,21 @@ object SystemSpace {
     SpaceState(systemOID, querki.core.MOIDs.RootOID,
       toProps(
         setName("System"),
-        (querki.basic.MOIDs.DisplayTextOID -> ExactlyOne(LargeTextType("""### Things in [[Display Name]]
-[[All Things]]
-            
-[[Tag Set Type -> 
-  _propsOfType ->
-  _sort ->
-  _section(
-    ""### Tags"", 
-    ""**____**: [[_tagsForProperty -> _sort -> _join("", "")]]
-"")]]
-            
-[[How It Works -> _if(_isDefined, ""**____**"")]]
-"""))),
+        // TODO: this needs to get added *after* Core is set up!
+//        (querki.basic.MOIDs.DisplayTextOID -> ExactlyOne(LargeTextType("""### Things in [[Display Name]]
+//[[All Things]]
+//            
+//[[Tag Set Type -> 
+//  _propsOfType ->
+//  _sort ->
+//  _section(
+//    ""### Tags"", 
+//    ""**____**: [[_tagsForProperty -> _sort -> _join("", "")]]
+//"")]]
+//            
+//[[How It Works -> _if(_isDefined, ""**____**"")]]
+//"""))),
         (querki.tags.MOIDs.ShowUnknownOID -> ExactlyOne(TextType(querki.tags.defaultDisplayText)))), 
-      SystemUserOID, "System", querki.time.epoch, None, SystemTypes.all, props, things, SystemCollections.all, None, ecology)    
+      SystemUserOID, "System", querki.time.epoch, None, SystemTypes.all, props, things, OIDMap[Collection](), None, ecology)    
   }
 }

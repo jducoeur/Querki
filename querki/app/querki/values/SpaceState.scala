@@ -382,7 +382,7 @@ object SpaceState {
     private def propsForLevel(level:OID):Seq[Property[_,_]] = {
       state.publicPropsBySkill.get(level).getOrElse(Seq.empty)
     }
-    def standardProps:Seq[Property[_,_]] = propsForLevel(SkillLevel.Standard)
-    def advancedProps:Seq[Property[_,_]] = propsForLevel(SkillLevel.Advanced)
+    def standardProps:Seq[Property[_,_]] = propsForLevel(querki.identity.skilllevel.MOIDs.SkillLevelStandardOID)
+    def advancedProps:Seq[Property[_,_]] = propsForLevel(querki.identity.skilllevel.MOIDs.SkillLevelAdvancedOID)
   }
 }

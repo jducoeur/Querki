@@ -4,7 +4,6 @@ import models._
 import models.Thing._
 
 import models.system.OIDs.{systemOID}
-import models.system.SystemProperty
 import models.system.{Optional}
 import models.system.{PlainTextType}
 
@@ -16,7 +15,6 @@ import querki.types._
 class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic {
   import MOIDs._
   
-  val Core = initRequires[querki.core.Core]
   val DeriveName = initRequires[querki.types.DeriveName]
   val Types = initRequires[querki.types.Types]
   
@@ -88,8 +86,8 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic {
     toProps(
       setName("Simple-Thing"),
       IsModelProp(true),
-      DisplayTextProp(Optional.QNone),
-      (querki.basic.MOIDs.DisplayNameOID -> Optional.QNone),
+      DisplayTextProp(Core.QNone),
+      (querki.basic.MOIDs.DisplayNameOID -> Core.QNone),
       DeriveName.DeriveNameProp(DeriveName.DeriveInitially)))
 
   lazy val Page = ThingState(PageOID, systemOID, SimpleThingOID,

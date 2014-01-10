@@ -41,6 +41,8 @@ object SystemCreator {
     new querki.spaces.PropTypeMigratorEcot(ecology)                // 25
     new querki.html.HtmlRendererEcot(ecology)                      // 26
     new querki.links.LinksEcot(ecology)                            // 27
+    new querki.spaces.SpacePersistenceEcot(ecology)                // 28
+    new querki.evolutions.EvolutionsEcot(ecology)                  // 29
     
     ecology
   }

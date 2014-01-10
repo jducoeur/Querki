@@ -7,12 +7,12 @@ import anorm.{Success=>AnormSuccess,_}
 import play.api.db._
 import play.api.Play.current
 
-import models.{OID}
-import models.{Attachment, Collection, Property, PType, PTypeBuilder, Kind, Thing, ThingState}
+import models.{OID, UnknownOID}
+import models.{Attachment, Collection, Property, PType, PTypeBuilder, SimplePTypeBuilder, Kind, Thing, ThingState, Wikitext}
 import models.Kind._
 import models.MIMEType.MIMEType
 import models.Thing._
-import models.system.{UnresolvedPropType, UnresolvedPropValue}
+import models.system.{SystemType}
 
 import querki.ecology._
 import querki.time._
@@ -22,7 +22,7 @@ import querki.db.ShardKind
 import ShardKind._
 import querki.evolutions.Evolutions
 import querki.identity.User
-import querki.values.SpaceState
+import querki.values.{ElemValue, QLContext, QValue, SpaceState}
 import querki.util._
 import querki.util.SqlHelpers._
 
@@ -57,9 +57,16 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
   
   lazy val SystemInterface = interface[querki.system.System]
   lazy val Core = interface[querki.core.Core]
+  lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
+  lazy val Evolutions = interface[querki.evolutions.Evolutions]
 
-  def SpaceSQL(query:String):SqlQuery = SpacePersister.SpaceSQL(id, query) 
-  def AttachSQL(query:String):SqlQuery = SpacePersister.AttachSQL(id, query)
+  // The OID of the Space, based on the sid
+  def oid = Space.oid _
+  // The name of the Space's History Table
+  def historyTable(id:OID) = "h" + sid(id)
+  
+  def SpaceSQL(query:String):SqlQuery = SpacePersistence.SpaceSQL(id, query)
+  def AttachSQL(query:String):SqlQuery = SpacePersistence.AttachSQL(id, query)
   
   // TODO: this sort of state just plain doesn't belong here...
   
@@ -89,7 +96,6 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
   def name = spaceInfo.get[String]("name").get
   def owner = OID(spaceInfo.get[Long]("owner").get)
   def version = spaceInfo.get[Int]("version").get
-
   
   def receive = {
     
@@ -127,7 +133,7 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
 	          // more -- as it is, errors can propagate widely, so objects just vanish. 
 	          // But they should generally be considered internal errors.
 	          try {
-	            val propMap = Thing.deserializeProps(row.get[String]("props").get, curState)
+	            val propMap = SpacePersistence.deserializeProps(row.get[String]("props").get, curState)
 	            val modTime = row.get[DateTime]("modified").get
 	            Some(
 	              builder(
@@ -241,7 +247,7 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
 	            case unres:UnresolvedPropValue => {
 	              val propOpt = curState.prop(id)
 	              val v = propOpt match {
-	                case Some(prop) => prop.deserialize(value.firstTyped(UnresolvedPropType).get)
+	                case Some(prop) => prop.deserialize(value.firstTyped(SpacePersistence.UnresolvedPropType).get)
 	                case None => value
 	              }
 	              (id, v)
@@ -292,7 +298,7 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
           """
           ).on("thingId" -> thingId.raw,
                "modelId" -> modelId.raw,
-               "props" -> Thing.serializeProps(props, state)).executeUpdate()
+               "props" -> SpacePersistence.serializeProps(props, state)).executeUpdate()
                
         // TODO: in principle, this should come from the DB's timestamp:
         val modTime = DateTime.now
@@ -321,7 +327,7 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
       DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
         val thingId = OID.next(ShardKind.User)
         // TODO: add a history record
-        SpacePersister.createThingInSql(thingId, id, modelId, kind, props, state)
+        SpacePersistence.createThingInSql(thingId, id, modelId, kind, props, state)
         // TBD: this isn't quite right -- we really should be taking the DB's definition of the timestamp
         // instead:
         val modTime = DateTime.now
@@ -373,44 +379,4 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
 }
 
 object SpacePersister {
-  
-  // The name of the Space Actor
-  def sid = Space.sid _
-  // The OID of the Space, based on the sid
-  def oid = Space.oid _
-  // The name of the Space's Thing Table
-  def thingTable(id:OID) = "s" + sid(id)
-  // The name of the Space's History Table
-  def historyTable(id:OID) = "h" + sid(id)
-  // The name of the Space's Attachments Table
-  def attachTable(id:OID) = "a" + sid(id)
-  // The name of a backup for the Thing Table
-  def backupTable(id:OID, version:Int) = thingTable(id) + "_Backup" + version
-  
-  /**
-   * The intent here is to use this with queries that use the thingTable. You can't use
-   * on()-style parameters for table names (because on() quotes the params in a way that makes
-   * MySQL choke), so we need to work around that.
-   * 
-   * You can always use this in place of ordinary SQL(); it is simply a no-op for ordinary queries.
-   * 
-   * If you need to use the {bname} parameter, you must pass in a version number.
-   */
-  def SpaceSQL(spaceId:OID, query:String, version:Int = 0):SqlQuery = {
-    val replQuery = query.replace("{tname}", thingTable(spaceId)).replace("{bname}", backupTable(spaceId, version))
-    SQL(replQuery)
-  }
-  def createThingInSql(thingId:OID, spaceId:OID, modelId:OID, kind:Int, props:PropMap, serialContext:SpaceState)(implicit conn:java.sql.Connection) = {
-    SpaceSQL(spaceId, """
-        INSERT INTO {tname}
-        (id, model, kind, props) VALUES
-        ({thingId}, {modelId}, {kind}, {props})
-        """
-        ).on("thingId" -> thingId.raw,
-             "modelId" -> modelId.raw,
-             "kind" -> kind,
-             "props" -> Thing.serializeProps(props, serialContext)).executeUpdate()    
-  }
-  
-  def AttachSQL(spaceId:OID, query:String):SqlQuery = SQL(query.replace("{tname}", attachTable(spaceId)))
 }

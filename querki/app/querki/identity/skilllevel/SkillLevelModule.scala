@@ -6,7 +6,6 @@ import models.{OID, Thing, ThingState}
 import models.Thing._
 import models.system.ExactlyOne
 import models.system.LinkType
-import models.system.{SystemProperty}
 import models.system.OIDs.{systemOID}
 
 import querki.ecology._

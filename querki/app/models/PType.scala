@@ -176,7 +176,7 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecology
  * TBD: is this good enough? Do I need to deal with the fields in the signature as well? Could be painful if so --
  * might have to refactor all the way down to Thing, to make those constructor fields into trait fields instead.
  */
-class DelegatingType[VT](resolver: => PType[VT])(implicit e:Ecology = querki.ecology.Ecology) extends PType[VT](UnknownOID, UnknownOID, UnknownOID, () => emptyProps)(e) {
+class DelegatingType[VT](resolver: => PType[VT])(implicit e:Ecology = querki.ecology.theEcology) extends PType[VT](UnknownOID, UnknownOID, UnknownOID, () => emptyProps)(e) {
   /**
    * Note that this is intentionally recursive, so it works with multiple layers of wrapping.
    */
@@ -199,7 +199,7 @@ class DelegatingType[VT](resolver: => PType[VT])(implicit e:Ecology = querki.eco
 /**
  * Marker type, used to signify "no real type" in empty collections.
  */
-object UnknownType extends PType[Unit](UnknownOID, UnknownOID, UnknownOID, () => emptyProps)(querki.ecology.Ecology) {
+object UnknownType extends PType[Unit](UnknownOID, UnknownOID, UnknownOID, () => emptyProps)(querki.ecology.theEcology) {
   def doDeserialize(v:String) = throw new Exception("Trying to use UnknownType!")
   def doSerialize(v:Unit) = throw new Exception("Trying to use UnknownType!")
   def doWikify(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None) = throw new Exception("Trying to use UnknownType!")

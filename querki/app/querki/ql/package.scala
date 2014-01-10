@@ -1,6 +1,8 @@
 package querki
 
-import querki.values.ElemValue
+import querki.ecology._
+
+import querki.values.{ElemValue, QValue}
 
 package object ql {
 
@@ -10,6 +12,13 @@ package object ql {
    */
   trait CodeType {
     def code(elem:ElemValue):String
+  }
+  
+  trait QL extends EcologyInterface {
+    def WarningValue(msg:String):QValue
+    def ErrorValue(msg:String):QValue
+    
+    def EmptyListCut():QValue
   }
 
 }

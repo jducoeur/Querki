@@ -18,7 +18,7 @@ import querki.types.Types
 import querki.util._
 import querki.values._
 
-abstract class SystemType[T](tid:OID, pf:PropFetcher)(implicit e:Ecology = querki.ecology.Ecology) extends PType[T](tid, systemOID, querki.core.MOIDs.RootOID, pf)(e) {
+abstract class SystemType[T](tid:OID, pf:PropFetcher)(implicit e:Ecology = querki.ecology.theEcology) extends PType[T](tid, systemOID, querki.core.MOIDs.RootOID, pf)(e) {
   lazy val Types = interface[Types]
   
   def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = {
@@ -27,7 +27,7 @@ abstract class SystemType[T](tid:OID, pf:PropFetcher)(implicit e:Ecology = querk
     // Collection/Type matrix, and there doesn't seem to be a nice clean division of responsibilities...
     val renderedBlank = for (
       ev <- currentValue.effectiveV;
-      if (displayEmptyAsBlank && ev.cType == Optional && ev.isEmpty)
+      if (displayEmptyAsBlank && ev.cType == Core.Optional && ev.isEmpty)
         )
       yield CommonInputRenderers.renderBlank(prop, state, currentValue, this)
       
@@ -226,7 +226,7 @@ class QLType(tid:OID) extends TextTypeBase(tid,
   // qlApply, and should actually be returning a full successor Context.
   override def qlApplyFromProp(definingContext:QLContext, incomingContext:QLContext, prop:Property[QLText,_], params:Option[Seq[QLPhrase]]):Option[QValue] = {
     if (definingContext.isEmpty) {
-      Some(ErrorValue("""Trying to use QL Property """" + prop.displayName + """" in an empty context.
+      Some(interface[querki.ql.QL].WarningValue("""Trying to use QL Property """" + prop.displayName + """" in an empty context.
 This often means that you've invoked it recursively without saying which Thing it is defined in."""))
     } else {
       Some(prop.applyToIncomingThing(definingContext) { (thing, context) =>
@@ -304,8 +304,9 @@ object QLType extends QLType(QLTypeOID)
         YesNoType.False
     }
     
+    // This is *begging* to crash, until YesNoType moves into Core!
     implicit def boolean2YesNoQValue(raw:Boolean):QValue = {
-      ExactlyOne(raw)
+      Core.ExactlyOne(raw)
     }
     
     def toBoolean(typed:QValue):Boolean = {
@@ -380,7 +381,7 @@ object QLType extends QLType(QLTypeOID)
   object TagSetType extends NameType(TagSetOID, "Tag Set Type") {
     override def editorSpan(prop:Property[_,_]):Int = 12
     
-    override def requiredColl:Option[Collection] = Some(QSet)
+    override def requiredColl:Option[Collection] = Some(Core.QSet)
     
     // TODO: this should probably get refactored with LinkType? They're different ways of
     // expressing the same concepts; it's just that Links are OID-based, whereas Names/Tags are
@@ -587,7 +588,7 @@ object PlainTextType extends PlainTextType(PlainTextOID, "Plain Text Type")
 object NewTagSetType extends PlainTextType(NewTagSetOID, "New Tag Set Type") {
   override def editorSpan(prop:Property[_,_]):Int = 12
   
-  override def requiredColl:Option[Collection] = Some(QSet)
+  override def requiredColl:Option[Collection] = Some(Core.QSet)
  
   def equalNames(str1:PlainText, str2:PlainText):Boolean = {
     str1.text.toLowerCase.contentEquals(str2.text.toLowerCase())
@@ -613,8 +614,8 @@ object NewTagSetType extends PlainTextType(NewTagSetOID, "New Tag Set Type") {
 
 class InternalMethodType(tid:OID) extends SystemType[String](tid,
     toProps(
-      setName("Internal Method Type"),
-      InternalProp(true)
+      setName("Internal Method Type")//,
+//      Core.InternalProp(true)
     )) with SimplePTypeBuilder[String]
 {
   def boom = throw new Exception("InternalMethodType cannot be used conventionally. It simply wraps code.")
@@ -658,26 +659,6 @@ class ExternalLinkType(tid:OID) extends SystemType[QURL](tid,
   override def wrap(raw:String):valType = new QURL(raw)
 }
 object ExternalLinkType extends ExternalLinkType(ExternalLinkTypeOID)
-
-// This is a pure marker trait, indicating that this PropValue didn't load correctly yet:
-trait UnresolvedPropValue
-object UnresolvedProp extends ExactlyOne(UnknownOID) {
-   override def makePropValue(cv:Iterable[ElemValue], pType:PType[_]):QValue = UnresPropValue(cv.toList, this, pType)
-   private case class UnresPropValue(cv:implType, cType:ExactlyOne, pType:PType[_]) extends QValue with UnresolvedPropValue
-}
-// This pseudo-Type is used to store values from disk that we can't resolve yet. It is only
-// used at Space-load time:
-object UnresolvedPropType extends SystemType[String](UnknownOID,
-    toProps(
-      setName("UnresolvedProp")
-    )) with SimplePTypeBuilder[String]
-{
-  def doDeserialize(v:String) = v
-  def doSerialize(v:String) = v
-  def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext("Unresolved property value!")
-  
-  val doDefault = ""
-}
 
 object SystemTypes {
   def all = OIDMap[PType[_]](

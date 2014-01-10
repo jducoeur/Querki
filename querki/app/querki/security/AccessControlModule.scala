@@ -188,7 +188,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
   lazy val isPermissionProp = new SystemProperty(IsPermissionOID, YesNoType, ExactlyOne,
       toProps(
         setName("_isPermission"),
-        InternalProp(true),
+        Core.InternalProp(true),
         Summary("This Property is a Permission")))
   
   lazy val CanEditCustomProp = new SystemProperty(CanEditCustomOID, QLType, Optional,

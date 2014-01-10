@@ -5,7 +5,6 @@ import models.Thing._
 
 import models.system.{ExactlyOne, Optional}
 import models.system.{LargeTextType, TextType, YesNoType}
-import models.system.{SystemProperty, AppliesToKindProp}
 import models.system.OIDs.{sysId, NotInheritedOID}
 
 import querki.ecology._

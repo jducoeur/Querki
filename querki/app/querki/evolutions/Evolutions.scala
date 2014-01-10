@@ -1,8 +1,12 @@
 package querki.evolutions
 
+import querki.ecology._
+
 import models.OID
 
 import steps._
+
+object MOIDs extends EcotIds(29)
 
 /**
  * The main API for Space Evolutions.
@@ -23,16 +27,16 @@ import steps._
  * To add a Step, simply create it in querki.evolutions.steps (make sure its version is set!), and
  * add it to stepList below.
  */
-object Evolutions {
+class EvolutionsEcot(e:Ecology) extends QuerkiEcot(e) with Evolutions {
   // All Steps must be registered in this list.
   // NOTE: for the moment, we are *not* tolerant of gaps in the numeric sequence. We might need to
   // make this more robust at some point.
-  private val stepList:Seq[Step] = Seq(
-    Step2,
-    Step3
+  private lazy val stepList:Seq[Step] = Seq(
+    new Step2,
+    new Step3
   )
   
-  private val steps:Map[Int, Step] = Map(stepList.map(step => (step.version, step)):_*)
+  private lazy val steps:Map[Int, Step] = Map(stepList.map(step => (step.version, step)):_*)
   
   val currentVersion = steps.keys.max
       

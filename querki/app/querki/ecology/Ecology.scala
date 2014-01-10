@@ -202,13 +202,7 @@ trait Ecot extends EcologyMember {
     _dependencies += getClass(tag.tpe)
     InterfaceWrapper[T](ecology)
   }
-  // Everything except Core depends on Core. This is kludgy but convenient:
-  private var _dependencies:Set[Class[_]] = {
-    this match {
-      case me:querki.core.Core => Set.empty
-      case _ => Set(classOf[querki.core.Core])
-    }
-  }
+  private var _dependencies:Set[Class[_]] = Set.empty
   
   /**
    * Initialization call, which may be overridden by the Module. This should hook in

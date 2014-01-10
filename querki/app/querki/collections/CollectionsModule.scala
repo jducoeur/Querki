@@ -24,10 +24,12 @@ object MOIDs extends EcotIds(6) {
   val NextInListOID = moid(2)
 }
 
-class CollectionsModule(e:Ecology) extends QuerkiEcot(e) {
+class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   import MOIDs._
   import YesNoType._
 
+  lazy val QL = interface[querki.ql.QL]
+  
   /***********************************************
    * FUNCTIONS
    ***********************************************/
@@ -47,7 +49,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) {
 	    val sourceColl = context.value
 	    val result = 
 	      if (sourceColl.isEmpty)
-	        Optional.QNone
+	        Core.QNone
 	      else
 	        Optional(sourceColl.cv.head)
 	    result
@@ -70,7 +72,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) {
 	    if (sourceColl.isEmpty)
 	      // Cut processing at this point:
 	      // TODO: can/should we preserve the source PType?
-	      EmptyListCut()
+	      QL.EmptyListCut()
 	    else
 	      QList.makePropValue(sourceColl.cv.tail.toList, context.value.pType)
 	  }
@@ -179,7 +181,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) {
 	    )
 	      yield context.flatMapAsContext(tryElem(parser, phrase), context.value.pType).value
 	      
-	    result.getOrElse(WarningValue("_filter requires exactly one parameter"))
+	    result.getOrElse(QL.WarningValue("_filter requires exactly one parameter"))
 	  }
 	}
 	
@@ -257,7 +259,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) {
 	        // TODO: there is obviously a refactoring screaming to break free here, but it involves some fancy
 	        // type math. How do we lift things so that we can do QList.from() an arbitrary PType? (Remember that
 	        // it expects a PTypeBuilder, *and* requires that the input Iterable be of the expected RT.)
-	        QList.from(sortedOIDs, LinkType)
+	        Core.listFrom(sortedOIDs, LinkType)
 	      }
 	      case _ => {
 	        val sorted = start.sortWith(pType.comp(context))

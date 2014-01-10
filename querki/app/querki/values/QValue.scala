@@ -7,6 +7,7 @@ import models.system._
 import play.api.Logger
 import play.api.templates.Html
 
+import querki.ecology.Ecology
 import querki.util._
 import querki.values._
 
@@ -181,47 +182,22 @@ object QValue {
   }
 }
 
-object ErrorTextType extends TextTypeBase(UnknownOID,
-  Thing.toProps(
-    Thing.setName("Error Text")
-  )) with PTypeBuilder[QLText,String] {
-}
-object ExactlyOneCut extends ExactlyOne(UnknownOID) {
-  override def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = new ExactlyOnePropValue(cv.toList, this, elemT) with CutProcessing
-}
-object EmptyListCut extends QList(UnknownOID) {
-  def apply() = new QListPropValue(List.empty, this, UnknownType) with CutProcessing  
-}
-
-object ErrorValue {
-  def apply(msg:String) = {
-    try {
-      throw new Exception("dummy")
-    } catch {
-      case e:Exception => Logger.error(s"Displaying error $msg; stack trace:\n${e.getStackTraceString}")  
-    }
-    WarningValue(msg)
-  }
-}
 object TextValue {
-  def apply(msg:String) = ExactlyOne(PlainTextType(msg))
+  def apply(msg:String)(implicit ecology:Ecology) = ecology.api[querki.core.Core].ExactlyOne(PlainTextType(msg))
 }
 object HtmlValue {
-  def apply(html:Html):QValue = ExactlyOne(RawHtmlType(HtmlWikitext(html)))
-  def apply(str:String):QValue = apply(Html(str))
+  def apply(html:Html)(implicit ecology:Ecology):QValue = ecology.api[querki.core.Core].ExactlyOne(RawHtmlType(HtmlWikitext(html)))
+  def apply(str:String)(implicit ecology:Ecology):QValue = apply(Html(str))
 }
 object WikitextValue {
-  def apply(wikitext:Wikitext):QValue = ExactlyOne(ParsedTextType(wikitext))
+  def apply(wikitext:Wikitext)(implicit ecology:Ecology):QValue = ecology.api[querki.core.Core].ExactlyOne(ParsedTextType(wikitext))
 }
 object LinkValue {
-  def apply(target:OID) = ExactlyOne(LinkType(target))
-}
-object WarningValue {
-  def apply(msg:String) = ExactlyOneCut(ErrorTextType("{{_warning:" + msg + "}}"))
+  def apply(target:OID)(implicit ecology:Ecology) = ecology.api[querki.core.Core].ExactlyOne(LinkType(target))
 }
 object EmptyValue {
   // TODO: do something with this?
-  def apply(pType:PType[_]) = QList.empty(pType)
+  def apply(pType:PType[_])(implicit ecology:Ecology) = ecology.api[querki.core.Core].emptyListOf(pType)
   // TODO: do we need this?
-  def untyped = QList.empty
+  def untyped(implicit ecology:Ecology) = ecology.api[querki.core.Core].emptyList
 }
