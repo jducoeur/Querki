@@ -1,12 +1,10 @@
 package querki.values
 
 import models._
-import models.system._
 
 import ql.QLParser
 
 import querki.ecology._
-import querki.values._
 
 import play.api.Logger
 
@@ -19,6 +17,12 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
                      parser:Option[QLParser] = None, depth:Int = 0, useCollection:Boolean = false, propOpt:Option[Property[_,_]] = None) 
   extends DebugRenderable with EcologyMember
 {
+  lazy val Core = interface[querki.core.Core]
+  
+  def ExactlyOne = Core.ExactlyOne
+  def Optional = Core.Optional
+  def QList = Core.QList
+  
   // This might become a config param -- it is the maximum depth we will allow a call to be. For now, we're
   // keeping it very tight, but it might eventually need to be over a thousand.
   val maxDepth = 100
@@ -129,7 +133,7 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
         // In general, collect (and many of these operations) are very monadically evil, but
         // we've consciously decided to live with that.
         value.cType match {
-          case ExactlyOne => {
+          case t:querki.core.ExactlyOne => {
             if (raw.isEmpty)
               Optional 
             else if (raw.size == 1)
@@ -137,7 +141,7 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
             else
               QList
           }
-          case Optional => if (raw.size > 1) QList else Optional
+          case t:querki.core.Optional => if (raw.size > 1) QList else Optional
           case _ => value.cType
         }
       newCT.makePropValue(raw, pt)

@@ -140,7 +140,7 @@ abstract private[core] class SingleElementBase(cid:OID, pf:PropFetcher)(implicit
     }    
   }
   
-  private[core] class Optional(implicit e:Ecology) extends SingleElementBase(OptionalOID,
+  class Optional(implicit e:Ecology) extends SingleElementBase(OptionalOID,
       toProps(
         setName("Optional")
         )) 
