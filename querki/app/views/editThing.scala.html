@@ -7,7 +7,7 @@
 
 @import play.api.Logger
 
-@import models.system.{TagSetType, NewTagSetType, NameType, LinkType}
+@import models.system.{TagSetType, NameType, LinkType}
 @import models.system.SystemSpace._
 @import querki.core.MOIDs.UrPropOID
 
@@ -34,6 +34,8 @@
 @Optional = @{ Core.Optional }
 @QList = @{ Core.QList }
 @QSet = @{ Core.QSet }
+
+@NewTagSetType = @{ rc.interface[querki.tags.Tags].NewTagSetType }
 
 @PropSummary = @{ Conventions.PropSummary }
 @PropDetails = @{ Conventions.PropDetails }

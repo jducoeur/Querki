@@ -30,6 +30,9 @@ object MOIDs extends EcotIds(26)
 class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer {
   
   lazy val Links = interface[querki.links.Links]
+  lazy val Tags = interface[querki.tags.Tags]
+  
+  lazy val NewTagSetType = Tags.NewTagSetType
   
   /*********************************
    * PUBLIC API

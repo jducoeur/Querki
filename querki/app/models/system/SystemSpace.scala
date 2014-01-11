@@ -81,7 +81,7 @@ object OIDs {
 //  val LinkModelOID = sysId(35)
 //  val AppliesToKindOID = sysId(36)
   val PlainTextOID = sysId(37)
-  val InternalMethodOID = sysId(38)
+//  val InternalMethodOID = sysId(38)
 //  val QUnitOID = sysId(39)
 //  val InternalPropOID = sysId(40)
 //  val ExternalLinkTypeOID = sysId(41)
@@ -145,7 +145,7 @@ object OIDs {
   val PrototypeIdentityOID = sysId(99)
 //  val MinTextLengthOID = sysId(100)
 //  val DeprecatedOID = sysId(101)
-  val NewTagSetOID = sysId(102)
+//  val NewTagSetOID = sysId(102)
 //  val NoCreateThroughLinkOID = sysId(103)
 //  val IsFunctionOID = sysId(104)
 }

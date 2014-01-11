@@ -4,7 +4,7 @@ import querki.ecology._
 
 import models.{AsDisplayName, Kind, Thing, ThingId, UnknownOID, Wikitext}
 
-import models.system.{LinkFromThingBuilder, NameType, NameableType, NewTagSetType, PlainText, PlainTextType, TagSetType}
+import models.system.{LinkFromThingBuilder, NameType, NameableType, PlainText, PlainTextType, QLText, TagSetType}
 
 import ql._
 import querki.util.SafeUrl
@@ -19,7 +19,42 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   val Links = initRequires[querki.links.Links]
     
   lazy val LinkModelOID = querki.links.MOIDs.LinkModelOID
+
+  /***********************************************
+   * TYPES
+   ***********************************************/
+
+  lazy val NewTagSetType = new PlainTextType(NewTagSetOID, "New Tag Set Type") {
+    override def editorSpan(prop:Property[_,_]):Int = 12
   
+    override def requiredColl = Some(Core.QSet)
+ 
+    def equalNames(str1:PlainText, str2:PlainText):Boolean = {
+      str1.text.toLowerCase.contentEquals(str2.text.toLowerCase())
+    }
+  
+    override def doWikify(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None) = {
+      val display = displayOpt.getOrElse(Wikitext(v.text))
+      // NOTE: yes, there is danger of Javascript injection here. We deal with that at the QText layer,
+      // since that danger is there in ordinary QText as well.
+      Wikitext("[") + display + Wikitext(s"](${SafeUrl(v.text)})") 
+    }
+  
+    override def doComp(context:QLContext)(left:PlainText, right:PlainText):Boolean = { left.text < right.text } 
+      
+    override def doMatches(left:PlainText, right:PlainText):Boolean = equalNames(left, right)
+    
+    override def renderProperty(prop:Property[_,_])(implicit request:RequestContext):Option[Wikitext] = {
+      val parser = new ql.QLParser(QLText("""These tags are currently being used:
+[[_tagsForProperty -> _sort -> _bulleted]]"""), prop.thisAsContext)
+      Some(parser.process)
+    }
+  }
+
+  override lazy val types = Seq(
+    NewTagSetType
+  )
+
   /**
    * This is essentially a pseudo-Thing, produced when you navigate to an unknown Name. It basically
    * exists to support the display of the Undefined Tag View.
