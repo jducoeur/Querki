@@ -12,11 +12,12 @@ import com.sun.mail.smtp._
 
 import models._
 import models.Thing._
-import models.system.{QLText, SystemType}
+import models.system.{SystemType}
 import models.system.OIDs._
 
 import ql._
 
+import querki.core.QLText
 import querki.ecology._
 import querki.identity._
 import querki.spaces.SpaceManager
@@ -34,6 +35,8 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   val Links = initRequires[querki.links.Links]
   
   lazy val QL = interface[querki.ql.QL]
+  
+  lazy val QLType = Basic.QLType
   
   lazy val DeprecatedProp = Basic.DeprecatedProp
   lazy val DisplayTextProp = Basic.DisplayTextProp

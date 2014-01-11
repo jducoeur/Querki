@@ -1,16 +1,21 @@
 package querki.basic
 
+import scala.xml.Elem
+
 import models._
 import models.Thing._
 
 import models.system.OIDs.{systemOID}
 
+import ql.{QLParser, QLPhrase}
+
 import querki.conventions._
 import querki.core._
 import querki.ecology._
 import querki.types._
+import querki.values.{ElemValue, QLContext, SpaceState}
 
-class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with PlainTextBaseType {
+class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis with PlainTextBaseType {
   import MOIDs._
   
   val DeriveName = initRequires[querki.types.DeriveName]
@@ -18,13 +23,60 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with PlainTextBase
   
   lazy val IsModelProp = Core.IsModelProp
   
+  /***********************************************
+   * TYPES
+   ***********************************************/
+  
   lazy val PlainTextType = new PlainTextType(PlainTextOID, "Plain Text Type") 
   {
     override def editorSpan(prop:Property[_,_]):Int = 6
   }
+
+  /**
+   * A QL field is sort of like inside-out QLText. It is processed very similarly,
+   * but whereas the "outer" layer of QLText is expected to be QText, with QL in
+   * subclauses, the outer layer of a QL field is QL, with wikitext in subclauses.
+   * 
+   * In other words, it is like QLText, but just the stuff inside the [[ ]] parts.
+   * 
+   * QL fields are also processed a bit differently. QLText is fully processed and
+   * rendered, producing QText. QL fields are essentially methods, which get *called*
+   * from other methods and from QLText. So the results are not turned directly into
+   * QText; instead, the resulting Context is fed back out to the caller.
+   * 
+   * The public Name for this is now Function, because really, that's what it is. It
+   * now is getting powerful enough to be worth the name.
+   */
+  lazy val QLType = new TextTypeBase(QLTypeOID,
+    toProps(
+      setName("Function")
+    )) with PTypeBuilder[QLText,String] 
+  {
+    override def editorSpan(prop:Property[_,_]):Int = 12   
+  
+    override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem =
+      renderLargeText(prop, state, currentValue, v, this)
+
+    // TBD: in principle, we really want this to return a *context*, not a *value*. This is a special
+    // case of a growing concern: that we could be losing information by returning QValue from
+    // qlApply, and should actually be returning a full successor Context.
+    override def qlApplyFromProp(definingContext:QLContext, incomingContext:QLContext, prop:Property[QLText,_], params:Option[Seq[QLPhrase]]):Option[QValue] = {
+      if (definingContext.isEmpty) {
+        Some(interface[querki.ql.QL].WarningValue("""Trying to use QL Property """" + prop.displayName + """" in an empty context.
+This often means that you've invoked it recursively without saying which Thing it is defined in."""))
+      } else {
+        Some(prop.applyToIncomingThing(definingContext) { (thing, context) =>
+          val qlPhraseText = thing.first(prop)(context.state)
+          val parser = new QLParser(qlPhraseText, incomingContext.forProperty(prop), params)
+          parser.processMethod.value
+        })
+      }
+    }
+  }
   
   override lazy val types = Seq(
-    PlainTextType
+    PlainTextType,
+    QLType
   )
   
   def TextValue(msg:String):QValue = ExactlyOne(PlainTextType(msg))

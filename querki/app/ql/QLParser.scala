@@ -7,6 +7,7 @@ import scala.util.parsing.combinator._
 import models.system._
 import models._
 
+import querki.core.QLText
 import querki.ecology._
 import querki.util._
 import querki.values._

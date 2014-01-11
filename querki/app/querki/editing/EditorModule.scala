@@ -2,10 +2,12 @@ package querki.editing
 
 import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState, Wikitext}
 
-import models.system.{IntType, LargeTextType, LinkCandidateProvider, LinkType, QLText}
+import models.system.{IntType, LinkCandidateProvider, LinkType}
 import models.system.OIDs.sysId
 
 import ql.{QLCall, QLParser, QLPhrase}
+
+import querki.core.QLText
 
 import querki.html.RenderSpecialization._
 

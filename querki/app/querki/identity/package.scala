@@ -1,10 +1,10 @@
 package querki
 
 import models.{OID, Property, Thing}
-import models.system.QLText
 
 import querki.ecology._
 
+import querki.core.QLText
 import querki.email.EmailAddress
 
 import querki.values.{RequestContext, SpaceState}

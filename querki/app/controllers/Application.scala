@@ -409,7 +409,7 @@ disallow: /
       val defaultText =
         model.getPropOpt(Tags.ShowUnknownProp).orElse(state.getPropOpt(Tags.ShowUnknownProp)).
           map(_.v).
-          getOrElse(Core.ExactlyOne(LargeTextType(querki.tags.defaultDisplayText)))
+          getOrElse(Core.ExactlyOne(Core.LargeTextType(querki.tags.defaultDisplayText)))
       showEditPage(rc, model, 
           PropListMgr.inheritedProps(None, model) ++
           PropListMgr(DisplayNameProp -> DisplayPropVal(None, DisplayNameProp, Some(Core.ExactlyOne(Basic.PlainTextType(name)))),

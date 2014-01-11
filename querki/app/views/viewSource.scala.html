@@ -31,7 +31,7 @@
 }
 
 @showValue(v:QValue) = {
-  @if(v.pType.isInstanceOf[TextTypeBase]) {
+  @if(v.pType.isInstanceOf[querki.core.IsTextType]) {
     <pre><code>@v.cv.map(v.pType.toUser(_)).mkString("\n")</code></pre>
   } else {
     @Html(v.wikify(QLRequestContext(rc)).display)

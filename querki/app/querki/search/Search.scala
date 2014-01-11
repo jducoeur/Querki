@@ -41,7 +41,7 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search {
           val tResults:Iterable[Option[SearchResult]] = t.props.map { pair =>
             val (propId, propValue) = pair
             propValue.pType match {
-              case textType:TextTypeBase => {
+              case textType:querki.core.TextTypeBasis#TextTypeBase => {
                 val firstVal = propValue.firstAs(textType)
                 firstVal.flatMap { qtext => 
                   val propComp = qtext.text.toLowerCase()

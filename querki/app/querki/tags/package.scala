@@ -3,10 +3,10 @@ package querki
 import querki.ecology._
 
 import models.{Property, PType, Thing}
-import models.system.{QLText}
 
 import querki.values.SpaceState
 
+import querki.core.QLText
 import querki.basic.PlainText
 
 package object tags {

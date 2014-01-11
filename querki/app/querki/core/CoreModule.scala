@@ -3,14 +3,14 @@ package querki.core
 import models._
 
 import models.system.OIDs.{systemOID, DisplayTextOID}
-import models.system.{IntType, LargeTextType, LinkType, NameType, QLType, TextType, YesNoType}
+import models.system.{IntType, LinkType, NameType, YesNoType}
 
 import querki.conventions
 import querki.ecology._
 
 import querki.values.{ElemValue, PropAndVal, QLContext, QValue, SpaceState}
 
-class CoreModule(e:Ecology) extends CoreEcot(e) with Core with TypeCreation {
+class CoreModule(e:Ecology) extends CoreEcot(e) with Core with TextTypeBasis with TypeCreation {
   import MOIDs._
   
   def LinkKindProp(kind:Kind.Kind) = (querki.links.MOIDs.LinkKindOID -> ExactlyOne(IntType(kind)))
@@ -90,9 +90,13 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with TypeCreation {
    ***********************************************/
   
   lazy val InternalMethodType = new InternalMethodType
+  lazy val TextType = new TextType
+  lazy val LargeTextType = new LargeTextType
   
   override lazy val types = Seq(
-    InternalMethodType
+    InternalMethodType,
+    TextType,
+    LargeTextType
   )
   
   /***********************************************

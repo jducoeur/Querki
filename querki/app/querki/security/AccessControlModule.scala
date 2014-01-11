@@ -19,8 +19,11 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
   
   import MOIDs._
 
+  val Basic = initRequires[querki.basic.Basic]
   val Links = initRequires[querki.links.Links]
   val Person = initRequires[querki.identity.Person]
+  
+  lazy val QLType = Basic.QLType
   
   lazy val LinkModelProp = Links.LinkModelProp
   lazy val abstractPerson = Person.SecurityPrincipal

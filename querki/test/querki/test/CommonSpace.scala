@@ -2,7 +2,7 @@ package querki.test
 
 import models.{Attachment, ThingState}
 import models.Kind
-import models.system.{LinkType, TextType}
+import models.system.{LinkType}
 
 import querki.ecology._
 import querki.identity.{User}
@@ -28,6 +28,7 @@ class CommonSpace(implicit ecologyIn:Ecology) extends TestSpace {
   lazy val QSet = Core.QSet
   
   lazy val ExternalLinkType = Links.ExternalLinkType
+  lazy val TextType = Core.TextType
   
   // In the simple case, we only have one Space, so it can own the World:
   val world = new TestWorld

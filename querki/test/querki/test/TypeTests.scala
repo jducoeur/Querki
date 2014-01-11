@@ -1,8 +1,8 @@
 package querki.test
 
-import models.system.{TextType}
-
 class TypeTests extends QuerkiTests {
+  lazy val TextType = Core.TextType
+  
   "Set of Text" should {
     "render appropriately" in {
       class TSpace extends CommonSpace {

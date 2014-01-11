@@ -18,27 +18,8 @@ import querki.types.Types
 import querki.util._
 import querki.values._
 
-abstract class SystemType[T](tid:OID, pf:PropFetcher)(implicit e:Ecology = querki.ecology.theEcology) extends PType[T](tid, systemOID, querki.core.MOIDs.RootOID, pf)(e) {
-  lazy val Types = interface[Types]
+trait CommonInputRenderers { self:SystemType[_] =>
   
-  def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = {
-    // TBD: this is smelly -- the fact that we need to know here how to render Optional is a nasty abstraction
-    // break. But in general, rendering probably doesn't belong here: ultimately, rendering depends on the
-    // Collection/Type matrix, and there doesn't seem to be a nice clean division of responsibilities...
-    val renderedBlank = for (
-      ev <- currentValue.effectiveV;
-      if (displayEmptyAsBlank && ev.cType == Core.Optional && ev.isEmpty)
-        )
-      yield CommonInputRenderers.renderBlank(prop, state, currentValue, this)
-      
-    renderedBlank.getOrElse(CommonInputRenderers.renderText(prop, state, currentValue, v, this))
-  }
-  
-  // Iff a Type wants to render QNone as blank text instead of the default value, set this to true
-  val displayEmptyAsBlank:Boolean = false
-}
-
-object CommonInputRenderers {
   def renderAnyText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_])(doRender: (String) => Elem):Elem = {
     val str = elemT.toUser(v)
     val xml = doRender(str)
@@ -58,19 +39,30 @@ object CommonInputRenderers {
   }
   
   def renderBlank(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):Elem = {
-    renderText(prop, state, currentValue, TextType(""), TextType)
+    renderText(prop, state, currentValue, Core.TextType(""), Core.TextType)
   }
 }
 
-trait TextTypeUtils { self:SystemType[_] =>
-  def validateText(v:String, prop:Property[_,_], state:SpaceState):Unit = {
-    for (
-      minLengthVal <- prop.getPropOpt(Types.MinTextLengthProp)(state);
-      minLength <- minLengthVal.firstOpt
-      if (v.trim().length() < minLength)
+abstract class SystemType[T](tid:OID, pf:PropFetcher)(implicit e:Ecology = querki.ecology.theEcology) 
+  extends PType[T](tid, systemOID, querki.core.MOIDs.RootOID, pf)(e) with CommonInputRenderers
+{
+  lazy val Types = interface[Types]
+  
+  def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = {
+    // TBD: this is smelly -- the fact that we need to know here how to render Optional is a nasty abstraction
+    // break. But in general, rendering probably doesn't belong here: ultimately, rendering depends on the
+    // Collection/Type matrix, and there doesn't seem to be a nice clean division of responsibilities...
+    val renderedBlank = for (
+      ev <- currentValue.effectiveV;
+      if (displayEmptyAsBlank && ev.cType == Core.Optional && ev.isEmpty)
         )
-      throw new PublicException("Types.Text.tooShort", prop.displayName, minLength)
-  }  
+      yield renderBlank(prop, state, currentValue, this)
+      
+    renderedBlank.getOrElse(renderText(prop, state, currentValue, v, this))
+  }
+  
+  // Iff a Type wants to render QNone as blank text instead of the default value, set this to true
+  val displayEmptyAsBlank:Boolean = false
 }
 
   /**
@@ -116,129 +108,6 @@ trait TextTypeUtils { self:SystemType[_] =>
      */
   }
   object IntType extends IntType(IntTypeOID)
-  
-  /**
-   * QLText is a String that may contain both Wikitext and QL expressions. It must go through two
-   * transformations before display:
-   * 
-   * -- Processing, which parses and computes the QL expressions, turning them into Wikitext.
-   * -- Rendering, which turns the Wikitext into the final output format. (Usually HTML.)
-   * 
-   * Processing always happens in the server; rendering happens at the client for the typical
-   * web-browser UI, or in the client if you have a smart client (eg, a smartphone app).
-   * 
-   * QLText mainly exists for security purposes: the pipeline of QLText -> Wikitext -> Html
-   * doesn't necessarily do any transformation at all, but reifies the semantics of what's
-   * allowed and what needs processing before display. This is mainly to ensure that, eg,
-   * raw HTML doesn't get through when it's not allowed.
-   */
-  case class QLText(text:String) {
-    def +(other:QLText) = QLText(text + other.text)
-  }
-  
-  /**
-   * Trivial marker trait, that simply identifies the "Text Types" that are similarly serializable.
-   */
-  trait IsTextType
-  
-  abstract class TextTypeBase(oid:OID, pf:PropFetcher) extends SystemType[QLText](oid, pf
-      ) with PTypeBuilder[QLText,String] with querki.ql.CodeType with IsTextType with TextTypeUtils
-  {
-    def doDeserialize(v:String) = QLText(v)
-    def doSerialize(v:QLText) = v.text
-    def doWikify(context:QLContext)(v:QLText, displayOpt:Option[Wikitext] = None) = {
-      val parser = new QLParser(v, context)
-      parser.process
-    }
-    val doDefault = QLText("")
-    def wrap(raw:String):valType = QLText(raw)
-    
-    override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = validateText(v, prop, state)
-
-    // TBD: in principle, we really want this to return a *context*, not a *value*. This is a special
-    // case of a growing concern: that we could be losing information by returning QValue from
-    // qlApply, and should actually be returning a full successor Context.
-    // TODO: merge this with the fairly-similar code in QLType
-    override def qlApplyFromProp(definingContext:QLContext, incomingContext:QLContext, prop:Property[QLText,_], params:Option[Seq[QLPhrase]]):Option[QValue] = {
-      // TBD: in a perfect world, this would be a true Warning: legal, but with a warning on the side. Unfortunately, doing it
-      // like this gets in the way of perfectly legit ordinary situations, and violates the general Querki data model, that
-      // passing None to a Stage usually results in None. (That is, it violates ordinary map semantics.)
-//      if (definingContext.isEmpty) {
-//        Some(WarningValue("""Trying to use Text Property """" + prop.displayName + """" in an empty context.
-//This often means that you've invoked it recursively without saying which Thing it is defined in."""))
-//      } else {
-        Some(incomingContext.collect(ParsedTextType) { elemContext:QLContext =>
-          prop.applyToIncomingThing(definingContext) { (thing, context) =>
-            implicit val s = definingContext.state
-            // In other words, map over all the text values in this property, parsing all of them
-            // and passing the resulting collection along the pipeline:
-            thing.map(prop, ParsedTextType) { qlText =>
-              val parser = new QLParser(qlText, elemContext, params)
-              parser.process
-            }
-          }
-        })
-//      }
-    }
-      
-    def code(elem:ElemValue):String = get(elem).text
-  }
-
-  /**
-   * The Type for Text -- probably the most common type in Querki
-   */
-  class TextType(tid:OID) extends TextTypeBase(tid,
-      toProps(
-        setName("Text Type")
-        )) with PTypeBuilder[QLText,String] 
-  {
-    override def editorSpan(prop:Property[_,_]):Int = 12    
-  }
-  object TextType extends TextType(TextTypeOID)
-
-/**
- * A QL field is sort of like inside-out QLText. It is processed very similarly,
- * but whereas the "outer" layer of QLText is expected to be QText, with QL in
- * subclauses, the outer layer of a QL field is QL, with wikitext in subclauses.
- * 
- * In other words, it is like QLText, but just the stuff inside the [[ ]] parts.
- * 
- * QL fields are also processed a bit differently. QLText is fully processed and
- * rendered, producing QText. QL fields are essentially methods, which get *called*
- * from other methods and from QLText. So the results are not turned directly into
- * QText; instead, the resulting Context is fed back out to the caller.
- * 
- * The public Name for this is now Function, because really, that's what it is. It
- * now is getting powerful enough to be worth the name.
- */
-class QLType(tid:OID) extends TextTypeBase(tid,
-    toProps(
-      setName("Function")
-    )) with PTypeBuilder[QLText,String] 
-{
-  override def editorSpan(prop:Property[_,_]):Int = 12   
-  
-  override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem =
-    CommonInputRenderers.renderLargeText(prop, state, currentValue, v, this)
-
-  // TBD: in principle, we really want this to return a *context*, not a *value*. This is a special
-  // case of a growing concern: that we could be losing information by returning QValue from
-  // qlApply, and should actually be returning a full successor Context.
-  override def qlApplyFromProp(definingContext:QLContext, incomingContext:QLContext, prop:Property[QLText,_], params:Option[Seq[QLPhrase]]):Option[QValue] = {
-    if (definingContext.isEmpty) {
-      Some(interface[querki.ql.QL].WarningValue("""Trying to use QL Property """" + prop.displayName + """" in an empty context.
-This often means that you've invoked it recursively without saying which Thing it is defined in."""))
-    } else {
-      Some(prop.applyToIncomingThing(definingContext) { (thing, context) =>
-        val qlPhraseText = thing.first(prop)(context.state)
-        val parser = new QLParser(qlPhraseText, incomingContext.forProperty(prop), params)
-        parser.processMethod.value
-      })
-    }
-  }
-  
-}
-object QLType extends QLType(QLTypeOID)
   
   /**
    * The YesNo Type -- or Boolean, as us geeks think of it
@@ -389,7 +258,7 @@ object QLType extends QLType(QLTypeOID)
     def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = nameToLink(context)(v)
     
     override def renderProperty(prop:Property[_,_])(implicit request:RequestContext):Option[Wikitext] = {
-      val parser = new ql.QLParser(QLText("""These tags are currently being used:
+      val parser = new ql.QLParser(querki.core.QLText("""These tags are currently being used:
 [[_tagsForProperty -> _sort -> _bulleted]]"""), prop.thisAsContext)
       Some(parser.process)
     }
@@ -535,22 +404,7 @@ object QLType extends QLType(QLTypeOID)
     def wrap(raw:Thing):OID = raw.id
   }
 
-  /**
-   * The Type for Large Text -- stuff that we expect to take up more space on-screen
-   */
-  class LargeTextType(tid:OID) extends TextTypeBase(tid,
-      toProps(
-        setName("Large Text Type")
-        )) with PTypeBuilder[QLText,String] 
-  {
-    override def editorSpan(prop:Property[_,_]):Int = 12
-    
-    override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem =
-      CommonInputRenderers.renderLargeText(prop, state, currentValue, v, this)
-  }
-  object LargeTextType extends LargeTextType(LargeTextTypeOID)
-
 object SystemTypes {
   def all = OIDMap[PType[_]](
-      IntType, TextType, QLType, YesNoType, NameType, TagSetType, LinkType, LargeTextType)  
+      IntType, YesNoType, NameType, TagSetType, LinkType)  
 }

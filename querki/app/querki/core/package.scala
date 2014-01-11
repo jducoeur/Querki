@@ -4,7 +4,6 @@ import collection.immutable.TreeMap
 
 import models.{Collection, DisplayPropVal, OID, Property, PType, PTypeBuilder, PTypeBuilderBase, Thing}
 
-import models.system.{QLText}
 import models.system.OIDs.sysId
 
 import querki.ecology._
@@ -21,6 +20,7 @@ import querki.values.{ElemValue, QLContext, QValue, SpaceState}
 package object core {
   object MOIDs extends EcotIds(16) {
     val RootOID = sysId(1)
+    val TextTypeOID = sysId(3)
     val UrPropOID = sysId(5)
     val NameOID = sysId(6)
     val UrCollectionOID = sysId(12)
@@ -29,6 +29,7 @@ package object core {
     val QListOID = sysId(15)
     val TypePropOID = sysId(17)
     val CollectionPropOID = sysId(18)
+    val LargeTextTypeOID = sysId(21)
     val IsModelOID = sysId(22)
     val NotInheritedOID = sysId(24)
     val AppliesToKindOID = sysId(36)
@@ -36,6 +37,25 @@ package object core {
     val QUnitOID = sysId(39)
     val InternalPropOID = sysId(40)
     val QSetOID = sysId(79)
+  }
+    
+  /**
+   * QLText is a String that may contain both Wikitext and QL expressions. It must go through two
+   * transformations before display:
+   * 
+   * -- Processing, which parses and computes the QL expressions, turning them into Wikitext.
+   * -- Rendering, which turns the Wikitext into the final output format. (Usually HTML.)
+   * 
+   * Processing always happens in the server; rendering happens at the client for the typical
+   * web-browser UI, or in the client if you have a smart client (eg, a smartphone app).
+   * 
+   * QLText mainly exists for security purposes: the pipeline of QLText -> Wikitext -> Html
+   * doesn't necessarily do any transformation at all, but reifies the semantics of what's
+   * allowed and what needs processing before display. This is mainly to ensure that, eg,
+   * raw HTML doesn't get through when it's not allowed.
+   */
+  case class QLText(text:String) {
+    def +(other:QLText) = QLText(text + other.text)
   }
   
   trait Core extends EcologyInterface {
@@ -46,6 +66,8 @@ package object core {
     def QUnit:Collection
     
     def InternalMethodType:PType[String] with PTypeBuilder[String,String]
+    def TextType:PType[QLText] with PTypeBuilder[QLText,String]
+    def LargeTextType:PType[QLText] with PTypeBuilder[QLText,String]
     
     def QNone:QValue
     def listFrom[RT,VT](in:Iterable[RT], builder:PTypeBuilderBase[VT,RT]):QValue

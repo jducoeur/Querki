@@ -4,13 +4,15 @@ import querki.ecology._
 
 import models.{OID, Property, PTypeBuilder, Wikitext}
 
-import models.system.{SystemType, NameableType, TextTypeUtils, IsTextType}
+import models.system.{SystemType, NameableType}
+
+import querki.core.{IsTextType, TextTypeBasis}
 
 import querki.values.{ElemValue, QLContext, SpaceState}
 
 import MOIDs._
 
-trait PlainTextBaseType { self:QuerkiEcot =>
+trait PlainTextBaseType { self:QuerkiEcot with TextTypeBasis =>
   abstract class PlainTextType(tid:OID, actualName:String) extends SystemType[PlainText](tid,
     toProps(
       setName(actualName)

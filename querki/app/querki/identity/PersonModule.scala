@@ -9,11 +9,11 @@ import scala.concurrent.Future
 
 import models._
 import models.Thing._
-import models.system.{QLText}
 import models.system.OIDs._
 
 import ql._
 
+import querki.core.QLText
 import querki.ecology._
 import querki.email.emailSepChar
 import querki.spaces.SpaceManager

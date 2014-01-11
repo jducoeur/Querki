@@ -46,7 +46,7 @@ object OIDs {
   
 //  val RootOID = sysId(1)
   val IntTypeOID = sysId(2)
-  val TextTypeOID = sysId(3)
+//  val TextTypeOID = sysId(3)
   val YesNoTypeOID = sysId(4)
 //  val UrPropOID = sysId(5)
 //  val NameOID = sysId(6)
@@ -64,7 +64,7 @@ object OIDs {
 //  val CollectionPropOID = sysId(18)
 //  val PlaceholderTextOID = sysId(19)
 //  val PromptOID = sysId(20)
-  val LargeTextTypeOID = sysId(21)
+//  val LargeTextTypeOID = sysId(21)
 //  val IsModelOID = sysId(22)
 //  val SimpleThingOID = sysId(23)
   val NotInheritedOID = sysId(24)

@@ -121,10 +121,9 @@ abstract class QuerkiEcot(ecologyIn:Ecology) extends CoreEcot(ecologyIn) {
   
   // Common Types:
   val IntType = models.system.IntType
-  val LargeTextType = models.system.LargeTextType
+  lazy val LargeTextType = Core.LargeTextType
   val LinkType = models.system.LinkType
-  val QLType = models.system.QLType
-  val TextType = models.system.TextType
+  lazy val TextType = Core.TextType
   val YesNoType = models.system.YesNoType
     
   // Common Property constructors, so they can be used in Thing declarations without introducing init

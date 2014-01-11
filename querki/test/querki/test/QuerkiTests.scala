@@ -4,9 +4,11 @@ import org.scalatest.{WordSpec, BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
 
 import models.{Thing}
-import models.system.{NameType, QLText}
+import models.system.{NameType}
 
 import ql.QLParser
+
+import querki.core.QLText
 
 import querki.ecology._
 

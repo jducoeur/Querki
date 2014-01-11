@@ -5,7 +5,7 @@ import org.scalatest.matchers.ShouldMatchers
 
 import models.{Thing, ThingState, Wikitext}
 import models.Thing._
-import models.system.{LargeTextType, LinkType, QLText}
+import models.system.{LinkType}
 
 import ql.QLParser
 
@@ -13,6 +13,8 @@ import querki.values.{QLContext, SpaceState}
 
 class MethodTests extends QuerkiTests
 {
+  lazy val LargeTextType = Core.LargeTextType
+  
   // === _filter ===
   "_filter" should {
     "work with _equals" in {

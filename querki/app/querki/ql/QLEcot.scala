@@ -6,10 +6,10 @@ import play.api.templates.Html
 import querki.ecology._
 
 import models.{PType, PTypeBuilder, Thing, UnknownOID, UnknownType}
-import models.system.{QLText}
 
 import ql._
 
+import querki.core.QLText
 import querki.util.QLog
 import querki.values.{CutProcessing, ElemValue, HtmlValue, ParsedTextType, QLContext, SpaceState}
 
@@ -18,7 +18,7 @@ object MOIDs extends EcotIds(24) {
   val CodeMethodOID = sysId(77)
 }
 
-class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with querki.core.MethodDefs {
+class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with querki.core.MethodDefs with querki.core.TextTypeBasis {
   import MOIDs._
   
   lazy val ExactlyOneCut = new querki.core.ExactlyOneBase(UnknownOID) {
@@ -30,7 +30,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with querki.core.MethodDef
   }
   def EmptyListCut() = EmptyListCutColl()
 
-  object ErrorTextType extends models.system.TextTypeBase(UnknownOID,
+  object ErrorTextType extends TextTypeBase(UnknownOID,
     Thing.toProps(
       Thing.setName("Error Text")
     )) with PTypeBuilder[QLText,String] {

@@ -5,7 +5,8 @@ import models.Property
 // For the HACKs below:
 import scala.util.Try
 import models.{OID, Thing, Wikitext}
-import models.system.QLText
+
+import querki.core.QLText
 import querki.identity.Identity
 import querki.values.{QLContext, SpaceState}
 

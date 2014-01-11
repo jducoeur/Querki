@@ -1,10 +1,11 @@
 package querki
 
 import models.{Property, PType, PTypeBuilder, Thing}
-import models.system.{QLText}
 import models.system.OIDs.sysId
 
 import querki.ecology._
+
+import querki.core.QLText
 
 import querki.values.QValue
 
@@ -20,6 +21,7 @@ package object basic {
     val DisplayNameOID = sysId(26)
     val PhotoBaseOID = sysId(30)
     val PlainTextOID = sysId(37)
+    val QLTypeOID = sysId(45)
     val ApplyMethodOID = sysId(46)
     val BulletedOID = sysId(56)
     val DisplayThingTreeOID = sysId(66)
@@ -44,6 +46,7 @@ package object basic {
   
   trait Basic extends EcologyInterface {  
     def PlainTextType:PType[PlainText] with PTypeBuilder[PlainText, String]
+    def QLType:PType[QLText] with PTypeBuilder[QLText,String]
     
     def ApplyMethod:Property[QLText,String]    
     def DeprecatedProp:Property[Boolean,Boolean]

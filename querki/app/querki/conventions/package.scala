@@ -1,10 +1,11 @@
 package querki
 
 import models.Property
-import models.system.QLText
 import models.system.OIDs.sysId
 
 import querki.ecology._
+
+import querki.core.QLText
 
 package object conventions {
   object MOIDs extends EcotIds(15) {
