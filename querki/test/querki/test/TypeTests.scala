@@ -1,6 +1,6 @@
 package querki.test
 
-import models.system.{PlainTextType, TextType}
+import models.system.{TextType}
 
 class TypeTests extends QuerkiTests {
   "Set of Text" should {

@@ -35,7 +35,6 @@ package object core {
     val InternalMethodOID = sysId(38)
     val QUnitOID = sysId(39)
     val InternalPropOID = sysId(40)
-    val ApplyMethodOID = sysId(46)
     val QSetOID = sysId(79)
   }
   
@@ -52,8 +51,6 @@ package object core {
     def listFrom[RT,VT](in:Iterable[RT], builder:PTypeBuilderBase[VT,RT]):QValue
     def makeListValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue
     def makeSetValue(rawList:Seq[ElemValue], pt:PType[_], context:QLContext):QValue
-    
-    def ApplyMethod:Property[QLText,String]
     
     def NotInheritedProp:Property[Boolean,Boolean]
     def UrProp:Property[QLText, String]

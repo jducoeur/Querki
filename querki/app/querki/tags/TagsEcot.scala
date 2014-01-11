@@ -4,19 +4,24 @@ import querki.ecology._
 
 import models.{AsDisplayName, Kind, Thing, ThingId, UnknownOID, Wikitext}
 
-import models.system.{LinkFromThingBuilder, NameType, NameableType, PlainText, PlainTextType, QLText, TagSetType}
+import models.system.{LinkFromThingBuilder, NameType, NameableType, QLText, TagSetType}
 
 import ql._
+import querki.basic.{PlainText, PlainTextBaseType}
 import querki.util.SafeUrl
 import querki.values._
 
 /**
  * TODO: this should probably absorb more of the concept of "tags", maybe even including the Types.
  */
-class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.MethodDefs {
+class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.MethodDefs with PlainTextBaseType {
   import MOIDs._
   
   val Links = initRequires[querki.links.Links]
+  
+  lazy val Basic = interface[querki.basic.Basic]
+  
+  lazy val PlainTextType = Basic.PlainTextType
     
   lazy val LinkModelOID = querki.links.MOIDs.LinkModelOID
 

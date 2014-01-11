@@ -6,7 +6,7 @@ import play.api.templates.Html
 import controllers.PageEventManager
 
 import models._
-import models.system.{SystemType, PlainTextType}
+import models.system.{SystemType}
 import models.system.CommonInputRenderers
 
 import ql._
@@ -34,6 +34,8 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
   
   val Basic = initRequires[querki.basic.Basic]
   val Links = initRequires[querki.links.Links]
+  
+  lazy val PlainTextType = Basic.PlainTextType
 
   /******************************************
    * TYPES

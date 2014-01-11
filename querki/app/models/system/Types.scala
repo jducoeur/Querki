@@ -549,43 +549,8 @@ object QLType extends QLType(QLTypeOID)
       CommonInputRenderers.renderLargeText(prop, state, currentValue, v, this)
   }
   object LargeTextType extends LargeTextType(LargeTextTypeOID)
-  
-/**
- * PlainText is essentially a simple String -- it represents a String field that does *not* contain
- * QL or Wikitext. It is used for a few Properties like Display Name, that are more flexible than NameType
- * but still can't go hog-wild.
- * 
- * Note that, while PlainText is mostly rendered literally, it still has to be HTML-neutered before display.
- */
-case class PlainText(text:String) {
-  def raw:String = {
-    text.replaceAll("&", "&amp;").replaceAll("<", "&lt;")
-  }
-}
-  
-abstract class PlainTextType(tid:OID, actualName:String) extends SystemType[PlainText](tid,
-    toProps(
-      setName(actualName)
-    )) with PTypeBuilder[PlainText,String] with IsTextType with NameableType with TextTypeUtils
-{
-  def doDeserialize(v:String) = PlainText(v)
-  def doSerialize(v:PlainText) = v.text
-  
-  def getName(context:QLContext)(v:ElemValue):String = get(v).text
-  
-  def doWikify(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None) = Wikitext(v.text)
-  
-  override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = validateText(v, prop, state)
-  
-  val doDefault = PlainText("")
-  override def wrap(raw:String):valType = PlainText(raw)
-}
-object PlainTextType extends PlainTextType(PlainTextOID, "Plain Text Type") 
-{
-  override def editorSpan(prop:Property[_,_]):Int = 6
-}
 
 object SystemTypes {
   def all = OIDMap[PType[_]](
-      IntType, TextType, QLType, YesNoType, NameType, TagSetType, LinkType, LargeTextType, PlainTextType)  
+      IntType, TextType, QLType, YesNoType, NameType, TagSetType, LinkType, LargeTextType)  
 }

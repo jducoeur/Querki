@@ -182,9 +182,6 @@ object QValue {
   }
 }
 
-object TextValue {
-  def apply(msg:String)(implicit ecology:Ecology) = ecology.api[querki.core.Core].ExactlyOne(PlainTextType(msg))
-}
 object HtmlValue {
   def apply(html:Html)(implicit ecology:Ecology):QValue = ecology.api[querki.core.Core].ExactlyOne(RawHtmlType(HtmlWikitext(html)))
   def apply(str:String)(implicit ecology:Ecology):QValue = apply(Html(str))

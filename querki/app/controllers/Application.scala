@@ -412,7 +412,7 @@ disallow: /
           getOrElse(Core.ExactlyOne(LargeTextType(querki.tags.defaultDisplayText)))
       showEditPage(rc, model, 
           PropListMgr.inheritedProps(None, model) ++
-          PropListMgr(DisplayNameProp -> DisplayPropVal(None, DisplayNameProp, Some(Core.ExactlyOne(PlainTextType(name)))),
+          PropListMgr(DisplayNameProp -> DisplayPropVal(None, DisplayNameProp, Some(Core.ExactlyOne(Basic.PlainTextType(name)))),
                    (Basic.DisplayTextProp -> DisplayPropVal(None, Basic.DisplayTextProp, Some(defaultText)))))
     }
   })) { implicit rc =>

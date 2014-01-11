@@ -1,9 +1,10 @@
 package querki
 
 import models.{OID, Property}
-import models.system.PlainText
 
 import querki.ecology._
+
+import querki.basic.PlainText
 
 package object editing {
 

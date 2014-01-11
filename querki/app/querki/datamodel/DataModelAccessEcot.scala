@@ -22,6 +22,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   import YesNoType._
   
   lazy val QL = interface[querki.ql.QL]
+  lazy val Basic = interface[querki.basic.Basic]
   
   /***********************************************
    * FUNCTIONS
@@ -152,7 +153,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     |
     |Each Thing in Querki has an Object ID. In most cases, it can be used in place of the Thing's name, and it is never
     |ambiguous -- it always refers to one specific Thing.""".stripMargin,
-  { (thing, context) => TextValue(thing.id.toThingId)(ecology) })
+  { (thing, context) => Basic.TextValue(thing.id.toThingId) })
 
   class KindMethod extends InternalMethod(KindMethodOID,
     toProps(

@@ -3,7 +3,7 @@ package querki.types
 import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState}
 import models.Thing._
 
-import models.system.{LinkType, NameType, PlainTextType}
+import models.system.{LinkType, NameType}
 import models.system.OIDs.{DisplayNameOID, systemOID}
 
 import querki.core.PropList
@@ -86,7 +86,7 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName {
           
 	      val newDisplayNameOpt = for (
 	        newDisplayNameVal <- evt.newProps.get(DisplayNameOID);
-	        name <- newDisplayNameVal.firstTyped(PlainTextType)
+	        name <- newDisplayNameVal.firstTyped(Basic.PlainTextType)
 	          )
 	        yield name.text;
 	      

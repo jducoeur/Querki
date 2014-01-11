@@ -245,7 +245,7 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
     if (AccessControl.canEdit(context.state, context.request.requesterOrAnon, t.id))
       doSendEmail(t, context)
     else
-      TextValue("You aren't allowed to send that email")
+      Basic.TextValue("You aren't allowed to send that email")
   }
   
   def sendToPeople(context:QLContext, people:Seq[Thing], subjectQL:QLText, bodyQL:QLText)(implicit state:SpaceState):Seq[OID] = {

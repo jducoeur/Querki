@@ -2,7 +2,7 @@ package querki.editing
 
 import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState, Wikitext}
 
-import models.system.{IntType, LargeTextType, LinkCandidateProvider, LinkType, PlainTextType, QLText}
+import models.system.{IntType, LargeTextType, LinkCandidateProvider, LinkType, QLText}
 import models.system.OIDs.sysId
 
 import ql.{QLCall, QLParser, QLPhrase}
@@ -26,6 +26,8 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
   lazy val PropListMgr = interface[querki.core.PropListManager]
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
   lazy val QL = interface[querki.ql.QL]
+  
+  lazy val PlainTextType = Basic.PlainTextType
   
   lazy val DisplayTextProp = Basic.DisplayTextProp
   

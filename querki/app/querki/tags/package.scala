@@ -3,9 +3,11 @@ package querki
 import querki.ecology._
 
 import models.{Property, PType, Thing}
-import models.system.{PlainText, QLText}
+import models.system.{QLText}
 
 import querki.values.SpaceState
+
+import querki.basic.PlainText
 
 package object tags {
   val defaultDisplayText = """Referenced from:

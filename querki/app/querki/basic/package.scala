@@ -1,10 +1,12 @@
 package querki
 
-import models.{Property, Thing}
-import models.system.{PlainText, QLText}
+import models.{Property, PType, PTypeBuilder, Thing}
+import models.system.{QLText}
 import models.system.OIDs.sysId
 
 import querki.ecology._
+
+import querki.values.QValue
 
 /**
  * This Module contains "Basic" Querki -- some Properties and such that aren't core (not central to the
@@ -17,6 +19,8 @@ package object basic {
     val SimpleThingOID = sysId(23)
     val DisplayNameOID = sysId(26)
     val PhotoBaseOID = sysId(30)
+    val PlainTextOID = sysId(37)
+    val ApplyMethodOID = sysId(46)
     val BulletedOID = sysId(56)
     val DisplayThingTreeOID = sysId(66)
     val AllThingsOID = sysId(67)
@@ -25,10 +29,29 @@ package object basic {
     val DeprecatedOID = sysId(101)
   }
   
+  /**
+   * PlainText is essentially a simple String -- it represents a String field that does *not* contain
+   * QL or Wikitext. It is used for a few Properties like Display Name, that are more flexible than NameType
+   * but still can't go hog-wild.
+   * 
+   * Note that, while PlainText is mostly rendered literally, it still has to be HTML-neutered before display.
+   */
+  case class PlainText(text:String) {
+    def raw:String = {
+      text.replaceAll("&", "&amp;").replaceAll("<", "&lt;")
+    }
+  }
+  
   trait Basic extends EcologyInterface {  
+    def PlainTextType:PType[PlainText] with PTypeBuilder[PlainText, String]
+    
+    def ApplyMethod:Property[QLText,String]    
     def DeprecatedProp:Property[Boolean,Boolean]
     def DisplayNameProp:Property[PlainText,String]
     def DisplayTextProp:Property[QLText,String]
+    
     def SimpleThing:Thing
+    
+    def TextValue(msg:String):QValue
   }
 }

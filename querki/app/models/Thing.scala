@@ -98,7 +98,7 @@ abstract class Thing(
   def Basic = interface[querki.basic.Basic]
   def QL = interface[querki.ql.QL]
   
-  def ApplyMethod = Core.ApplyMethod
+  def ApplyMethod = Basic.ApplyMethod
   def NotInheritedProp = Core.NotInheritedProp
   def NameProp = Core.NameProp
   
