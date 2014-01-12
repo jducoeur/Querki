@@ -3,7 +3,6 @@ package querki.datamodel
 import querki.ecology._
 
 import models.{Kind, PType}
-import models.system.{LinkFromThingBuilder}
 
 import ql._
 
@@ -23,6 +22,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   
   lazy val QL = interface[querki.ql.QL]
   lazy val Basic = interface[querki.basic.Basic]
+  lazy val Links = interface[querki.links.Links]
   
   /***********************************************
    * FUNCTIONS
@@ -100,7 +100,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     """    RECEIVED -> _space -> SPACE
     |
     |This function produces the Space that the received Thing is contained in.""".stripMargin,
-  { (thing, context) => LinkValue(thing.spaceId)(ecology) })
+  { (thing, context) => Links.LinkValue(thing.spaceId) })
 
   class ExternalRootsMethod extends SingleThingMethod(ExternalRootsOID, "_externalRoots", "What are the ancestor Things for this Space?", 
     """    SPACE -> _externalRoots -> ROOTS
@@ -117,7 +117,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     |This receives a link to a Space, and produces all of the Properties defined in that Space.""".stripMargin,
   { (thing, context) => 
     thing match {
-      case s:SpaceState => Core.listFrom(s.propList.toSeq.sortBy(_.displayName), LinkFromThingBuilder) 
+      case s:SpaceState => Core.listFrom(s.propList.toSeq.sortBy(_.displayName), Core.LinkFromThingBuilder) 
       case _ => QL.WarningValue("_allProps must be used with a Space")
     }
   
@@ -199,7 +199,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     """THING -> _currentSpace -> SPACE
     |
     |This function produces the Space that we are currently displaying. (Generally, the one in the URL.)""".stripMargin,
-  { (thing, context) => LinkValue(context.root.state)(ecology) })
+  { (thing, context) => Links.LinkValue(context.root.state) })
 
   class IsMethod extends InternalMethod(IsMethodOID,
     toProps(
@@ -237,7 +237,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
 	    """    TYPE -> _propsOfType -> LIST OF PROPS""".stripMargin,
 	{ (thing, context) =>
 	  thing match {
-	    case pt:PType[_] => Core.listFrom(context.state.propsOfType(pt), LinkFromThingBuilder)
+	    case pt:PType[_] => Core.listFrom(context.state.propsOfType(pt), Core.LinkFromThingBuilder)
 	    case _ => QL.WarningValue("_propsOfType can only be used on a Type")
 	  }
 	})

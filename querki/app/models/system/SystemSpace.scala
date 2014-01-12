@@ -59,7 +59,7 @@ object OIDs {
 //  val ExactlyOneOID = sysId(13)
 //  val OptionalOID = sysId(14)
 //  val QListOID = sysId(15)
-  val LinkTypeOID = sysId(16)
+//  val LinkTypeOID = sysId(16)
 //  val TypePropOID = sysId(17)
 //  val CollectionPropOID = sysId(18)
 //  val PlaceholderTextOID = sysId(19)

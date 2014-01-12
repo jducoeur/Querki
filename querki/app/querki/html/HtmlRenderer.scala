@@ -27,7 +27,7 @@ object MOIDs extends EcotIds(26)
  * TODO: there should be a trait called something like InputRenderer, which this derives from,
  * generalizing the concept of rendering and response.
  */
-class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer {
+class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with querki.core.LinkUtils {
   
   lazy val Links = interface[querki.links.Links]
   lazy val Tags = interface[querki.tags.Tags]
@@ -140,7 +140,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer {
     val results = <select class="_linkSelect"> 
       <option value={UnknownOID.id.toString}>Nothing selected</option>
       {
-      LinkType.renderInputXmlGuts(prop, state, currentValue, ElemValue(v, LinkType))
+      renderInputXmlGuts(prop, state, currentValue, ElemValue(v, LinkType))
     } </select>
     results
   }
@@ -151,7 +151,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer {
     
     def getKeyAndVal(elem:ElemValue):(String, String) = {
       pt match {
-        case linkType:LinkType => {
+        case linkType:querki.core.TypeCreation#LinkType => {
           val oid = linkType.get(elem)
           // TODO: cheating! This should go through LinkType.follow, but we don't have a Context yet:
           val tOpt = state.anything(oid)

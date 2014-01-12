@@ -4,6 +4,8 @@ import models.{OID, Property, PType, PTypeBuilder}
 
 import querki.ecology._
 
+import querki.values.QValue
+
 package object links {
   object MOIDs extends EcotIds(27) {
     val LinkKindOID = sysId(33)
@@ -31,5 +33,7 @@ package object links {
     def LinkModelProp:Property[OID,OID]
     def LinkToModelsOnlyProp:Property[Boolean,Boolean]
     def NoCreateThroughLinkProp:Property[Boolean,Boolean]
+    
+    def LinkValue(target:OID):QValue
   }
 }

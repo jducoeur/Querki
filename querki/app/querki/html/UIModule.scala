@@ -5,10 +5,10 @@ import scala.xml._
 import play.api.templates.Html
 
 import models.{HtmlWikitext, OID, QWikitext, Wikitext}
-import models.system.{URLableType}
 
 import ql.QLPhrase
 
+import querki.core.URLableType
 import querki.ecology._
 import querki.util._
 import querki.values._

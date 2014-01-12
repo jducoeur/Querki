@@ -2,14 +2,17 @@ package querki.links
 
 import models.{Kind, PTypeBuilder, Wikitext}
 
-import models.system.{SystemType, URLableType}
+import models.system.{SystemType}
 
+import querki.core.URLableType
 import querki.ecology._
 
 import querki.values.{ElemValue, QLContext}
 
 class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
   import MOIDs._
+  
+  def LinkValue(target:OID):QValue = ExactlyOne(LinkType(target))
       
   /***********************************************
    * TYPES

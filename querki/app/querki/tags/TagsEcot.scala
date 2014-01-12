@@ -4,7 +4,7 @@ import querki.ecology._
 
 import models.{AsDisplayName, Kind, Thing, ThingId, UnknownOID, Wikitext}
 
-import models.system.{LinkFromThingBuilder, NameType, NameableType, TagSetType}
+import models.system.{NameType, NameableType, TagSetType}
 
 import ql._
 import querki.basic.{PlainText, PlainTextBaseType}
@@ -194,7 +194,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
           val tagProps = allProps.filter(prop => prop.pType == TagSetType || prop.pType == NewTagSetType)
           val name = nameable.getName(context)(context.value.first)
           val thingOpt = elemT match {
-            case LinkType => LinkType.followLink(context)
+            case LinkType => Core.followLink(context)
             case _ => None
           }
           val namePt = thingOpt.map(thing => PlainText(thing.unsafeDisplayName)).getOrElse(PlainText(name))
@@ -217,7 +217,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
             }
           }
         
-          Core.listFrom(candidates.filter(hasThisTag), LinkFromThingBuilder)
+          Core.listFrom(candidates.filter(hasThisTag), Core.LinkFromThingBuilder)
         }
         case _ => WarningValue("_tagRefs can only be used with a Tag or Link, not " + elemT.displayName)
       }

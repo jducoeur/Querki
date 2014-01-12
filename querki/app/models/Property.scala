@@ -48,8 +48,8 @@ case class Property[VT, -RT](
   def pair(v:QValue) = PropAndVal(this, castVal(v))
 
   override lazy val props:PropMap = propFetcher() + 
-		  (CollectionPropOID -> Core.ExactlyOne(LinkType(cType))) +
-		  (TypePropOID -> Core.ExactlyOne(LinkType(pType)))
+		  (CollectionPropOID -> Core.ExactlyOne(Core.LinkType(cType))) +
+		  (TypePropOID -> Core.ExactlyOne(Core.LinkType(pType)))
 
   /**
    * This little method is a type-math workaround. We're often dealing with properties in contexts
@@ -106,7 +106,7 @@ case class Property[VT, -RT](
     } else {
       val valType = context.value.pType
       valType match {
-        case link:LinkType => {
+        case link:querki.core.TypeCreation#LinkType => {
           val coll = context.value.cType
           val thing = link.followLink(context)
           thing match {

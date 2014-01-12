@@ -27,6 +27,7 @@ package object core {
     val ExactlyOneOID = sysId(13)
     val OptionalOID = sysId(14)
     val QListOID = sysId(15)
+    val LinkTypeOID = sysId(16)
     val TypePropOID = sysId(17)
     val CollectionPropOID = sysId(18)
     val LargeTextTypeOID = sysId(21)
@@ -68,11 +69,15 @@ package object core {
     def InternalMethodType:PType[String] with PTypeBuilder[String,String]
     def TextType:PType[QLText] with PTypeBuilder[QLText,String]
     def LargeTextType:PType[QLText] with PTypeBuilder[QLText,String]
+    def LinkType:PType[OID] with PTypeBuilder[OID,OID]
+    
+    def LinkFromThingBuilder:PTypeBuilderBase[OID, Thing]
     
     def QNone:QValue
     def listFrom[RT,VT](in:Iterable[RT], builder:PTypeBuilderBase[VT,RT]):QValue
     def makeListValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue
     def makeSetValue(rawList:Seq[ElemValue], pt:PType[_], context:QLContext):QValue
+    def followLink(context:QLContext):Option[Thing]
     
     def NotInheritedProp:Property[Boolean,Boolean]
     def UrProp:Property[QLText, String]

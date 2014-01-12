@@ -5,7 +5,6 @@ import org.scalatest.matchers.ShouldMatchers
 
 import models.{Thing, ThingState, Wikitext}
 import models.Thing._
-import models.system.{LinkType}
 
 import ql.QLParser
 

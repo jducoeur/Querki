@@ -191,7 +191,7 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
 	        try {
 	          methodOpt match {
 	            case Some(method) => {
-	              val partialFunction = method.partiallyApply(context.next(Core.ExactlyOne(LinkType(t.id))))
+	              val partialFunction = method.partiallyApply(context.next(Core.ExactlyOne(Core.LinkType(t.id))))
 	              partialFunction.qlApply(context, params)
 	            }
 	            case None => t.qlApply(context, params)

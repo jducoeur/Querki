@@ -122,7 +122,7 @@ abstract class QuerkiEcot(ecologyIn:Ecology) extends CoreEcot(ecologyIn) {
   // Common Types:
   val IntType = models.system.IntType
   lazy val LargeTextType = Core.LargeTextType
-  val LinkType = models.system.LinkType
+  lazy val LinkType = Core.LinkType
   lazy val TextType = Core.TextType
   val YesNoType = models.system.YesNoType
     

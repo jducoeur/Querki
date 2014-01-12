@@ -104,7 +104,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
       val userOpt = context.request.requester
       implicit val state = context.state
       val personOpt = userOpt.flatMap(localPerson(_))
-      personOpt.map(person => LinkValue(person)).getOrElse(WarningValue("You are not a member of this Space"))
+      personOpt.map(person => Links.LinkValue(person)).getOrElse(WarningValue("You are not a member of this Space"))
     }
   }
   

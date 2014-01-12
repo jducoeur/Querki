@@ -23,7 +23,7 @@ import querki.ecology._
 
 import querki.identity.User
 
-import models.system.{LinkType, NameType}
+import models.system.{NameType}
 
 import messages._
 import SpaceError._

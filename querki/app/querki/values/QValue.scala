@@ -189,9 +189,6 @@ object HtmlValue {
 object WikitextValue {
   def apply(wikitext:Wikitext)(implicit ecology:Ecology):QValue = ecology.api[querki.core.Core].ExactlyOne(ParsedTextType(wikitext))
 }
-object LinkValue {
-  def apply(target:OID)(implicit ecology:Ecology) = ecology.api[querki.core.Core].ExactlyOne(LinkType(target))
-}
 object EmptyValue {
   // TODO: do something with this?
   def apply(pType:PType[_])(implicit ecology:Ecology) = ecology.api[querki.core.Core].emptyListOf(pType)

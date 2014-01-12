@@ -3,8 +3,6 @@ package querki.spaces
 import models.{Attachment, Property, PType, PTypeBuilder, Thing, ThingState}
 import models.Thing.PropMap
 
-import models.system.{LinkType}
-
 import querki.core.IsTextType
 import querki.ecology._
 import querki.util._
