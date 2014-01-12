@@ -17,7 +17,7 @@ import querki.types._
 import querki.util._
 import querki.values._
 
-class EditorModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
+class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core.MethodDefs {
   import MOIDs._
   
   val Types = initRequires[querki.types.Types]
