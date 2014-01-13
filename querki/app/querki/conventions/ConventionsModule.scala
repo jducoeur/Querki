@@ -1,7 +1,6 @@
 package querki.conventions
 
 import models._
-import models.Thing._
 
 import querki.ecology._
 import querki.types.MOIDs._

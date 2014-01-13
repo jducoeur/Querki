@@ -4,7 +4,6 @@ import org.scalatest.{WordSpec, BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
 
 import models.{Thing, ThingState, Wikitext}
-import models.Thing._
 
 import ql.QLParser
 

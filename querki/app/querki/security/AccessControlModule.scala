@@ -1,7 +1,6 @@
 package querki.security
 
 import models._
-import models.Thing._
 
 import ql._
 

@@ -3,7 +3,6 @@ package querki.basic
 import scala.xml.Elem
 
 import models._
-import models.Thing._
 
 import ql.{QLParser, QLPhrase}
 

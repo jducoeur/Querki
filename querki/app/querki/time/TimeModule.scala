@@ -4,8 +4,6 @@ import com.github.nscala_time.time.Imports._
 
 import models._
 
-import Thing._
-
 import querki.ecology._
 import querki.values.QLContext
 

@@ -4,7 +4,6 @@ import models._
 import ql._
 import querki.ecology._
 import querki.values._
-import models.Thing._
 
 object MOIDs extends EcotIds(6) {
   val FirstMethodOID = sysId(50)

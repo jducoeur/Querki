@@ -5,7 +5,7 @@ import scala.xml._
 
 import play.api.Logger
 
-import Thing._
+import Thing.PropFetcher
 
 import ql._
 

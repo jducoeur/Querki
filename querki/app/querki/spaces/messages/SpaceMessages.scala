@@ -5,7 +5,7 @@ import language.implicitConversions
 import models.{Kind, MIMEType, Thing}
 import Kind._
 import MIMEType.MIMEType
-import Thing._
+import models.Thing.PropMap
 import models.{AsOID, OID, ThingId, UnknownOID}
 
 import querki.identity.User

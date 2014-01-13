@@ -137,7 +137,6 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
    * TBD: all these internal imports are a bad smell. This probably belongs elsewhere, but where?
    */
   def checkOwnerIsMember() = {
-    import models.Thing._
     import querki.identity.SystemUser
     
     state.ownerIdentity.foreach { identity =>

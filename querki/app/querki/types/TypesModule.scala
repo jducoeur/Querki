@@ -2,7 +2,6 @@ package querki.types.impl
 
 import models.SimplePTypeBuilder
 import models.{Kind, OID, Wikitext}
-import models.Thing._
 
 import querki.core.MOIDs.InternalPropOID
 import querki.ecology._

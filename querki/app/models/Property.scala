@@ -2,7 +2,7 @@ package models
 
 import language.existentials
 
-import Thing._
+import Thing.{PropFetcher, PropMap}
 
 import ql.{PartiallyAppliedFunction, QLFunction, QLPhrase}
 

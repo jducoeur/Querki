@@ -2,7 +2,7 @@ package models
 
 import com.github.nscala_time.time.Imports.DateTime
 
-import Thing._
+import Thing.PropFetcher
 
 import ql.{QLPhrase}
 import querki.ecology.Ecology

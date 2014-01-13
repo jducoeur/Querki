@@ -2,7 +2,7 @@ package models
 
 import scala.xml.Elem
 
-import Thing._
+import Thing.{PropFetcher, emptyProps}
 
 import ql.QLPhrase
 

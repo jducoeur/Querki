@@ -1,7 +1,6 @@
 package querki.types
 
 import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState}
-import models.Thing._
 
 import querki.core.{NameUtils, PropList}
 import querki.core.MOIDs.UrPropOID

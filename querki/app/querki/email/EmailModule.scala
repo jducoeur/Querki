@@ -11,7 +11,6 @@ import javax.mail.util.ByteArrayDataSource
 import com.sun.mail.smtp._
 
 import models._
-import models.Thing._
 
 import ql._
 

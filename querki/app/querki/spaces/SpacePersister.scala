@@ -11,7 +11,7 @@ import models.{OID, UnknownOID}
 import models.{Attachment, Collection, Property, PType, PTypeBuilder, SimplePTypeBuilder, Kind, Thing, ThingState, Wikitext}
 import models.Kind._
 import models.MIMEType.MIMEType
-import models.Thing._
+import models.Thing.PropMap
 
 import querki.ecology._
 import querki.time._

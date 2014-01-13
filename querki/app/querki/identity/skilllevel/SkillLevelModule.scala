@@ -3,7 +3,6 @@ package querki.identity.skilllevel.impl
 import querki.identity.skilllevel._
 
 import models.{OID, Thing, ThingState}
-import models.Thing._
 
 import querki.ecology._
 
