@@ -12,34 +12,6 @@ import querki.util._
 import querki.values._
 
 /**
- * This is a fake PType, which exists so that we can persist embedded Texts in the pipeline.
- */
-object ParsedTextType extends SystemType[Wikitext](OIDs.IllegalOID, () => Thing.emptyProps) with SimplePTypeBuilder[Wikitext]
-{
-  def doDeserialize(v:String) = throw new Exception("Can't deserialize ParsedText!")
-  def doSerialize(v:Wikitext) = throw new Exception("Can't serialize ParsedText!")
-  def doWikify(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None) = v
-  
-  override def doComp(context:QLContext)(left:Wikitext, right:Wikitext):Boolean = { left.plaintext < right.plaintext } 
-  override def doDebugRender(context:QLContext)(v:Wikitext) = v.contents.map(_.internal).mkString
-  
-  val doDefault = Wikitext("")
-  def wrap(raw:String):valType = Wikitext(raw)
-}
-
-/**
- * This is a fake PType, so that code can inject HTML into the pipeline
- */
-object RawHtmlType extends SystemType[Wikitext](OIDs.IllegalOID, () => Thing.emptyProps) with SimplePTypeBuilder[Wikitext]
-{
-  def doDeserialize(v:String) = throw new Exception("Can't deserialize ParsedText!")
-  def doSerialize(v:Wikitext) = throw new Exception("Can't serialize ParsedText!")
-  def doWikify(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None) = v
-    
-  val doDefault = Wikitext("")
-}
-
-/**
  * Marker trait, to indicate that we should stop processing at this value. Mix it
  * into the returned value to indicate that we should stop. This is probably a stopgap,
  * but it's okay for now.
@@ -171,14 +143,6 @@ object QValue {
     val iter = vals.map(pType(_))
     cType.makePropValue(iter, pType)
   }
-}
-
-object HtmlValue {
-  def apply(html:Html)(implicit ecology:Ecology):QValue = ecology.api[querki.core.Core].ExactlyOne(RawHtmlType(HtmlWikitext(html)))
-  def apply(str:String)(implicit ecology:Ecology):QValue = apply(Html(str))
-}
-object WikitextValue {
-  def apply(wikitext:Wikitext)(implicit ecology:Ecology):QValue = ecology.api[querki.core.Core].ExactlyOne(ParsedTextType(wikitext))
 }
 object EmptyValue {
   // TODO: do something with this?

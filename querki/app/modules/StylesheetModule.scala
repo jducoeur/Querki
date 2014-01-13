@@ -6,8 +6,6 @@ import play.api.templates.Html
 import controllers.PageEventManager
 
 import models._
-import models.system.{SystemType}
-import models.system.CommonInputRenderers
 
 import ql._
 

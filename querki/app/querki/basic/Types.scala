@@ -4,8 +4,6 @@ import querki.ecology._
 
 import models.{OID, Property, PTypeBuilder, Wikitext}
 
-import models.system.{SystemType}
-
 import querki.core.{IsTextType, NameableType, TextTypeBasis}
 
 import querki.values.{ElemValue, QLContext, SpaceState}

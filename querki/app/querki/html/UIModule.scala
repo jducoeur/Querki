@@ -4,7 +4,7 @@ import scala.xml._
 
 import play.api.templates.Html
 
-import models.{HtmlWikitext, OID, QWikitext, Wikitext}
+import models.{HtmlWikitext, OID, QWikitext, SimplePTypeBuilder, UnknownOID, Wikitext}
 
 import ql.QLPhrase
 
@@ -25,7 +25,11 @@ object UIMOIDs extends EcotIds(11) {
   val TooltipMethodOID = moid(2)
 }
 
-class UIModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
+/**
+ * TODO: this should probably be merged with HtmlRenderer -- the distinction between them looks pretty
+ * artificial from the outside.
+ */
+class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.MethodDefs {
   import UIMOIDs._
 
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
@@ -33,6 +37,28 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   lazy val QL = interface[querki.ql.QL]
   
   lazy val ExternalLinkType = Links.ExternalLinkType
+  lazy val ParsedTextType = QL.ParsedTextType
+
+  /***********************************************
+   * TYPES
+   ***********************************************/
+
+  /**
+   * This is a fake PType, so that code can inject HTML into the pipeline.
+   * 
+   * Note that this doesn't get registered in System, since it doesn't exist from the User's perspective.
+   */
+  lazy val RawHtmlType = new SystemType[Wikitext](UnknownOID, () => models.Thing.emptyProps) with SimplePTypeBuilder[Wikitext]
+  {
+    def doDeserialize(v:String) = throw new Exception("Can't deserialize ParsedText!")
+    def doSerialize(v:Wikitext) = throw new Exception("Can't serialize ParsedText!")
+    def doWikify(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None) = v
+    
+    val doDefault = Wikitext("")
+  }
+
+  def HtmlValue(html:Html):QValue = ExactlyOne(RawHtmlType(HtmlWikitext(html)))
+  def HtmlValue(str:String):QValue = HtmlValue(Html(str))
 
   /***********************************************
    * PROPERTIES
@@ -187,7 +213,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
         case None => processedHeader
       }
     }
-    WikitextValue(wikitext)
+    QL.WikitextValue(wikitext)
   }
   }
 

@@ -7,7 +7,6 @@ import play.api.data.Form
 import play.api.templates.Html
 
 import models._
-import models.system._
 
 import querki.ecology._
 

@@ -14,6 +14,7 @@ abstract class CoreEcot(ecologyIn:Ecology) extends Ecot {
   implicit def ecology = ecologyIn
   
   // Common classes:
+  type SystemType[T] = querki.core.TypeUtils.SystemType[T]
   type OID = models.OID
   type Property[VT, -RT] = models.Property[VT,RT]
   type PropFetcher = models.Thing.PropFetcher
@@ -119,6 +120,7 @@ abstract class QuerkiEcot(ecologyIn:Ecology) extends CoreEcot(ecologyIn) {
   lazy val QSet = Core.QSet
   
   // Common Types:
+  lazy val UnknownType = Core.UnknownType
   lazy val IntType = Core.IntType
   lazy val LargeTextType = Core.LargeTextType
   lazy val LinkType = Core.LinkType

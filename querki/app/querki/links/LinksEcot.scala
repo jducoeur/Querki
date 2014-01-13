@@ -2,8 +2,6 @@ package querki.links
 
 import models.{Kind, PTypeBuilder, Wikitext}
 
-import models.system.{SystemType}
-
 import querki.core.URLableType
 import querki.ecology._
 

@@ -5,13 +5,13 @@ import play.api.templates.Html
 
 import querki.ecology._
 
-import models.{PType, PTypeBuilder, Thing, UnknownOID, UnknownType, Wikitext}
+import models.{PType, PTypeBuilder, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
 
 import ql._
 
 import querki.core.QLText
 import querki.util.QLog
-import querki.values.{CutProcessing, ElemValue, HtmlValue, ParsedTextType, QLContext, SpaceState}
+import querki.values.{CutProcessing, ElemValue, QLContext, SpaceState}
 
 object MOIDs extends EcotIds(24) {
   val SelfMethodOID = sysId(75)
@@ -24,12 +24,14 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
 {
   import MOIDs._
   
+  lazy val HtmlUI = interface[querki.html.HtmlUI]
+  
   lazy val ExactlyOneCut = new ExactlyOneBase(UnknownOID) {
     override def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = new ExactlyOnePropValue(cv.toList, this, elemT) with CutProcessing
   }
   
   lazy val EmptyListCutColl = new QListBase(UnknownOID, () => Thing.emptyProps) {
-    def apply() = new QListPropValue(List.empty, this, UnknownType) with CutProcessing  
+    def apply() = new QListPropValue(List.empty, this, Core.UnknownType) with CutProcessing  
   }
   def EmptyListCut() = EmptyListCutColl()
 
@@ -50,6 +52,8 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
     WarningValue(msg)
   }
   
+  def WikitextValue(wikitext:Wikitext):QValue = ExactlyOne(ParsedTextType(wikitext))
+  
   /***********************************************
    * TYPES
    ***********************************************/
@@ -62,10 +66,22 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
       Wikitext("{{_unknownName:") + nameToLink(context)(v, displayOpt) + Wikitext("}}")
     }
   }
+
+  /**
+   * This is a fake PType, which exists so that we can persist embedded Texts in the pipeline.
+   */
+  lazy val ParsedTextType = new SystemType[Wikitext](UnknownOID, () => Thing.emptyProps) with SimplePTypeBuilder[Wikitext]
+  {
+    def doDeserialize(v:String) = throw new Exception("Can't deserialize ParsedText!")
+    def doSerialize(v:Wikitext) = throw new Exception("Can't serialize ParsedText!")
+    def doWikify(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None) = v
   
-  override lazy val types = Seq(
-    UnknownNameType
-  ) 
+    override def doComp(context:QLContext)(left:Wikitext, right:Wikitext):Boolean = { left.plaintext < right.plaintext } 
+    override def doDebugRender(context:QLContext)(v:Wikitext) = v.contents.map(_.internal).mkString
+  
+    val doDefault = Wikitext("")
+    def wrap(raw:String):valType = Wikitext(raw)
+  }
   
   /***********************************************
    * FUNCTIONS
@@ -112,7 +128,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
 	{
 	  def encodeString(str:String):QValue = {
 	    val escaped = scala.xml.Utility.escape(str)
-	    HtmlValue(Html("<pre>" + escaped + "</pre>"))    
+	    HtmlUI.HtmlValue(Html("<pre>" + escaped + "</pre>"))    
 	  }
 	  
 	  def encode(propVal:QValue, pType:PType[_]):QValue = {

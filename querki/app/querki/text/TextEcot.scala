@@ -5,7 +5,7 @@ import querki.ecology._
 import models.Wikitext
 
 import ql.QLPhrase
-import querki.values.{QLContext, WikitextValue}
+import querki.values.{QLContext}
 
 object MOIDs extends EcotIds(23) {
   val PluralizeOID = sysId(54)
@@ -14,6 +14,8 @@ object MOIDs extends EcotIds(23) {
 
 class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   import MOIDs._
+  
+  lazy val QL = interface[querki.ql.QL]
 
   /***********************************************
    * FUNCTIONS
@@ -108,7 +110,7 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	        val sep = renderParam(sepPhrase)
 	        renderParam(openPhrase) + (renderedList.head /: renderedList.tail) ((total, next) => total + sep + next) + renderParam(closePhrase)
 	      }
-	    WikitextValue(result)
+	    QL.WikitextValue(result)
 	  }
 	}
 

@@ -26,6 +26,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   lazy val PropListMgr = interface[querki.core.PropListManager]
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
+  lazy val HtmlUI = interface[querki.html.HtmlUI]
   lazy val QL = interface[querki.ql.QL]
   
   lazy val PlainTextType = Basic.PlainTextType
@@ -132,7 +133,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	      // that into here:
 	      val inputControl = HtmlRenderer.renderPropertyInput(mainContext.state, prop, currentValue, 
 	          specialization(mainContext, mainThing, partialContext, prop, params))
-	      HtmlValue(inputControl)    
+	      HtmlUI.HtmlValue(inputControl)    
         }
         case _ => cantEditFallback(mainContext, mainThing, partialContext, prop, params)
       }
@@ -278,9 +279,9 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
             if (thing.ifSet(Core.IsModelProp)) {
               val instances = state.descendants(thing.id, false, true).toSeq.sortBy(_.displayName)
               val wikitexts = instances.map { instance => instanceEditorForThing(instance, instance.thisAsContext(partialContext.request), params) }
-              Core.listFrom(wikitexts, ParsedTextType)
+              Core.listFrom(wikitexts, QL.ParsedTextType)
             } else {
-              WikitextValue(instanceEditorForThing(thing, partialContext, params))
+              QL.WikitextValue(instanceEditorForThing(thing, partialContext, params))
             }
           }
           
@@ -411,7 +412,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	        val context = partialContext
 	        val label = context.parser.get.processPhrase(params(0).ops, context).value
 	        val control = context.parser.get.processPhrase(params(1).ops, context).value
-	        WikitextValue(
+	        QL.WikitextValue(
 	          Wikitext("\n{{form-horizontal:\n{{control-group:\n{{control-label:\n") +
 	          label.wikify(context) +
 	          Wikitext("\n}}\n{{controls:\n") +

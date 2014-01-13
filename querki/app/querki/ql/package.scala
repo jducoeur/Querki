@@ -1,6 +1,6 @@
 package querki
 
-import models.{PType, PTypeBuilder}
+import models.{PType, PTypeBuilder, Wikitext}
 
 import querki.ecology._
 
@@ -18,9 +18,11 @@ package object ql {
   
   trait QL extends EcologyInterface {
     def UnknownNameType:PType[String] with PTypeBuilder[String,String]
+    def ParsedTextType:PType[Wikitext] with PTypeBuilder[Wikitext,Wikitext]
     
     def WarningValue(msg:String):QValue
     def ErrorValue(msg:String):QValue
+    def WikitextValue(wikitext:Wikitext):QValue
     
     def EmptyListCut():QValue
   }

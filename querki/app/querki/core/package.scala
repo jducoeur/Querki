@@ -69,6 +69,7 @@ package object core {
     def QSet:Collection
     def QUnit:Collection
     
+    def UnknownType:PType[Unit]
     def InternalMethodType:PType[String] with PTypeBuilder[String,String]
     def TextType:PType[QLText] with PTypeBuilder[QLText,String]
     def LargeTextType:PType[QLText] with PTypeBuilder[QLText,String]

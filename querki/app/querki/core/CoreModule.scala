@@ -94,6 +94,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
    * These are all defined in the Types file.
    ***********************************************/
   
+  lazy val UnknownType = new UnknownType
   lazy val InternalMethodType = new InternalMethodType
   lazy val TextType = new TextType
   lazy val LargeTextType = new LargeTextType

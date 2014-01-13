@@ -188,6 +188,6 @@ object SystemSpace {
 //"""))),
 //        (querki.tags.MOIDs.ShowUnknownOID -> ExactlyOne(TextType(querki.tags.defaultDisplayText)))
         ), 
-      SystemUserOID, "System", querki.time.epoch, None, SystemTypes.all, props, things, OIDMap[Collection](), None, ecology)    
+      SystemUserOID, "System", querki.time.epoch, None, OIDMap[PType[_]](), props, things, OIDMap[Collection](), None, ecology)    
   }
 }

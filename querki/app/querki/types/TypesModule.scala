@@ -4,7 +4,6 @@ import models.SimplePTypeBuilder
 import models.{Kind, OID, Wikitext}
 import models.Thing._
 
-import models.system.{SystemType}
 import models.system.OIDs.{sysId, NotInheritedOID}
 
 import querki.core.MOIDs.InternalPropOID

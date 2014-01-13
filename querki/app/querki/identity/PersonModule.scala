@@ -41,6 +41,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   
   lazy val QL = interface[querki.ql.QL]
   lazy val Links = interface[querki.links.Links]
+  lazy val HtmlUI = interface[querki.html.HtmlUI]
   
   lazy val EmailAddressProp = Email.EmailAddressProp
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
@@ -287,7 +288,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
 	      url = urlBase + "u/" + rc.ownerHandle + "/" + state.toThingId +
 	        "/?" + inviteParam + "=" + encoded
         }
-        yield HtmlValue(s"""<b><a href="$url">Click here</a></b> to accept the invitation.""")
+        yield HtmlUI.HtmlValue(s"""<b><a href="$url">Click here</a></b> to accept the invitation.""")
         
       inviteOpt.getOrElse(WarningValue("This appears to be an incorrect use of _spaceInvitation."))
     }

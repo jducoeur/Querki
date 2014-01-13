@@ -2,19 +2,17 @@ package querki.core
 
 import scala.xml.Elem
 
-import models.{DisplayPropVal, OID, Property, PTypeBuilder, PTypeBuilderBase, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
+import models.{DisplayPropVal, OID, Property, PType, PTypeBuilder, PTypeBuilderBase, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
 import models.Thing.PropFetcher
-
-import models.system.{SystemType, CommonInputRenderers}
 
 import querki.ecology._
 
 import ql.{QLParser, QLPhrase}
 import querki.util.PublicException
-import querki.values.{ElemValue, ParsedTextType, QLContext, QValue, SpaceState}
+import querki.values.{ElemValue, QLContext, QValue, SpaceState}
 
 import MOIDs._
-  
+
 /**
  * Trivial marker trait, that simply identifies the "Text Types" that are similarly serializable.
  */
@@ -74,6 +72,7 @@ trait TextTypeBasis { self:CoreEcot =>
 //        Some(WarningValue("""Trying to use Text Property """" + prop.displayName + """" in an empty context.
 //This often means that you've invoked it recursively without saying which Thing it is defined in."""))
 //      } else {
+        val ParsedTextType = interface[querki.ql.QL].ParsedTextType
         Some(incomingContext.collect(ParsedTextType) { elemContext:QLContext =>
           prop.applyToIncomingThing(definingContext) { (thing, context) =>
             implicit val s = definingContext.state
@@ -195,6 +194,21 @@ trait LinkUtils { self:CoreEcot =>
 }
 
 trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with LinkUtils with NameUtils =>
+
+  /**
+   * Marker type, used to signify "no real type" in empty collections.
+   */
+  class UnknownType extends PType[Unit](UnknownOID, UnknownOID, UnknownOID, () => models.Thing.emptyProps) {
+    def doDeserialize(v:String) = throw new Exception("Trying to use UnknownType!")
+    def doSerialize(v:Unit) = throw new Exception("Trying to use UnknownType!")
+    def doWikify(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None) = throw new Exception("Trying to use UnknownType!")
+  
+    def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = 
+      throw new Exception("Trying to use UnknownType!")
+
+    lazy val doDefault = throw new Exception("Trying to use UnknownType!")
+  }
+  
   class InternalMethodType extends SystemType[String](InternalMethodOID,
     toProps(
       setName("Internal Method Type")//,

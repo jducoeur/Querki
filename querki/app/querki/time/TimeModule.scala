@@ -3,7 +3,6 @@ package querki.time
 import com.github.nscala_time.time.Imports._
 
 import models._
-import models.system.SystemType
 
 import Thing._
 

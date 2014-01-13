@@ -4,7 +4,6 @@ import anorm.{Success=>AnormSuccess,_}
 
 import models.{OID, PType, SimplePTypeBuilder, UnknownOID, Wikitext}
 import models.Thing.PropMap
-import models.system.SystemType
 
 import querki.ecology._
 

@@ -12,7 +12,6 @@ import models.{Attachment, Collection, Property, PType, PTypeBuilder, SimplePTyp
 import models.Kind._
 import models.MIMEType.MIMEType
 import models.Thing._
-import models.system.{SystemType}
 
 import querki.ecology._
 import querki.time._

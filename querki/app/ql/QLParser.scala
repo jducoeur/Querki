@@ -172,11 +172,11 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
 	    // For each element of the incoming context, recurse in and process the embedded Text
 	    // in that context.
 	    val transformed = context.map { elemContext =>
-	      ParsedTextType(processParseTree(text.contents, elemContext))
+	      QL.ParsedTextType(processParseTree(text.contents, elemContext))
 	    }
 	    // TBD: the asInstanceOf here is surprising -- I would have expected transformed to come out
 	    // as the right type simply by type signature. Can we get rid of it?
-	    context.next(ct.makePropValue(transformed.asInstanceOf[ct.implType], ParsedTextType))
+	    context.next(ct.makePropValue(transformed.asInstanceOf[ct.implType], QL.ParsedTextType))
     }
   }
   
@@ -361,8 +361,8 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
     val parseResult = parseAll(qlPhrase, input.text)
     parseResult match {
       case Success(result, _) => processPhrase(result.ops, initialContext)
-      case Failure(msg, next) => { initialContext.next(WikitextValue(renderError(msg, next))) }
-      case Error(msg, next) => { initialContext.next(WikitextValue(renderError(msg, next))) }
+      case Failure(msg, next) => { initialContext.next(QL.WikitextValue(renderError(msg, next))) }
+      case Error(msg, next) => { initialContext.next(QL.WikitextValue(renderError(msg, next))) }
     }
   }
 }
