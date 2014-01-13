@@ -5,7 +5,6 @@ import language.existentials
 import models.{Collection, Property, PType, Thing, ThingState}
 import models.{Kind}
 import models.{AsName, AsOID, OID, ThingId}
-import models.system._
 
 import com.github.nscala_time.time.Imports._
 

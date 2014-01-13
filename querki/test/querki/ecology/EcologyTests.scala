@@ -22,9 +22,10 @@ class EcologyTests extends WordSpec
   trait TestInterface3 extends EcologyInterface
   
   def doInit(eco:Ecology):SpaceState = {
-    // The Ecology itself assumes that System is registered:
+    // The Ecology itself assumes that Core is registered, and System is needed to finish things up:
     new querki.core.CoreModule(eco)
-    eco.manager.init(models.system.SystemSpace.initialSystemState(eco))
+    new querki.system.SystemEcot(eco)
+    eco.manager.init(querki.system.InitialSystemState.create(eco))
   }
   
   "The Ecology" should {

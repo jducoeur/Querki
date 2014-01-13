@@ -39,10 +39,6 @@ import querki.util.SqlHelpers._
 import PersistMessages._
 
 class SpaceManager(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory) extends Actor with Requester with EcologyMember {
-  import models.system.SystemSpace
-  import SystemSpace._
-  import Space._
-  
   /**
    * This Actor deals with all DB-style operations for the SpaceManager.
    */

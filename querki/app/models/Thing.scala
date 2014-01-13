@@ -5,10 +5,6 @@ import play.api.templates.Html
 
 import com.github.nscala_time.time.Imports._
 
-import models.system._
-import models.system.SystemSpace
-import models.system.SystemSpace._
-
 import ql._
 
 import querki.ecology._

@@ -12,9 +12,6 @@ import play.api.libs.concurrent.Promise
 import play.api.mvc._
 import models._
 import Property._
-import system._
-import models.system._
-import models.system.SystemSpace._
 
 import querki.core.{NameUtils, PropList}
 import querki.ecology._

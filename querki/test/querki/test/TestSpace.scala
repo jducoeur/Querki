@@ -5,7 +5,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import models.{OID, OIDMap}
 import models.{Collection, Property, PType, PTypeBuilder, Thing, ThingState}
 import models.Thing._
-import models.system.{SystemSpace}
 
 import querki.core.MOIDs._
 import querki.ecology._

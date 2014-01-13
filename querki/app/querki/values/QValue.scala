@@ -1,7 +1,6 @@
 package querki.values
 
 import models._
-import models.system._
 
 // TODO: both of these should get evolved away!
 import play.api.Logger

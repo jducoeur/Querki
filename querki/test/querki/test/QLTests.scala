@@ -1,7 +1,5 @@
 package querki.test
 
-import models.system._
-
 import org.scalatest.{WordSpec, BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
 

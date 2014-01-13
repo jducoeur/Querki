@@ -1,13 +1,10 @@
 package querki.collections
 
 import models._
-import models.system._
 import ql._
 import querki.ecology._
 import querki.values._
 import models.Thing._
-import MOIDs.NextInListOID
-import MOIDs.PrevInListOID
 
 object MOIDs extends EcotIds(6) {
   val FirstMethodOID = sysId(50)

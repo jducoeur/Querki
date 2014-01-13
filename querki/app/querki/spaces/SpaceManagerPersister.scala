@@ -14,7 +14,6 @@ import messages._
 
 import models.{AsName, OID}
 import models.{Kind, Thing}
-import models.system.{SystemSpace}
 
 import querki.db.ShardKind
 import ShardKind._

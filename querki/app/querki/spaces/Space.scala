@@ -56,7 +56,6 @@ import PersistMessages._
 private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory) extends Actor with Requester with EcologyMember {
   
   import context._
-  import models.system.SystemSpace._ 
   
   def id = OID(self.path.name)
   

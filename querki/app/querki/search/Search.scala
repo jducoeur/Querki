@@ -1,7 +1,6 @@
 package querki.search
 
 import models._
-import models.system._
 
 import querki.ecology._
 

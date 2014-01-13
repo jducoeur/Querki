@@ -5,9 +5,6 @@ import play.api.templates.Html
 
 import Thing._
 
-import system._
-import system.SystemSpace._
-
 import com.github.nscala_time.time.Imports._
 
 import ql._

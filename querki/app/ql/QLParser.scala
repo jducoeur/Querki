@@ -4,7 +4,6 @@ import language.existentials
 
 import scala.util.parsing.combinator._
 
-import models.system._
 import models._
 
 import querki.core.QLText
