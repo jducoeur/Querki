@@ -79,6 +79,7 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecolog
     doRenderInput(prop, state, currentValue, elemT)
   }
 
+  // TODO: this is a bad smell! We need to do something smart with typeclasses to get rid of it...
   import play.api.data.Form
   def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo
   

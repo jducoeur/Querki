@@ -81,9 +81,6 @@ case class Property[VT, -RT](
   
   def validate(str:String, state:SpaceState) = pType.validate(str, this, state)
   
-  // TODO: this clearly doesn't belong here. Put it into the Rendering code instead!
-  import play.api.data.Form
-  def fromUser(on:Option[Thing], form:Form[_], state:SpaceState):FormFieldInfo = cType.fromUser(on, form, this, pType, state)
   // TODO: this clearly isn't correct. How are we actually going to handle more complex types?
   def toUser(v:QValue):String = {
     val cv = castVal(v)
