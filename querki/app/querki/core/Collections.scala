@@ -192,7 +192,7 @@ trait CollectionBase { self:CoreEcot =>
 
 }
 
-trait CollectionCreation { self:CoreEcot with CollectionBase =>
+trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
 
   /**
    * Root Collection type. Exists solely so that there is a common runtime root, in case
@@ -200,10 +200,8 @@ trait CollectionCreation { self:CoreEcot with CollectionBase =>
    */
   class UrCollection extends Collection(UrCollectionOID, systemOID, querki.core.MOIDs.RootOID,
       toProps(
-        setName("Collection")//,
-        // TODO: is it possible to mark this as Internal without being *inside* CoreModule itself? There's
-        // a bit of chicken-and-egg going on here:
-//        InternalProp(true)
+        setName("Collection"),
+        setInternal
         ))
   {
 	type implType = List[ElemValue]
@@ -336,9 +334,8 @@ trait CollectionCreation { self:CoreEcot with CollectionBase =>
    */
   class QUnit extends SystemCollection(QUnitOID,
     toProps(
-      setName("Always Empty")//,
-      // TODO: again, how do we do this without chicken-and-egg problems?
-//    InternalProp(true)
+      setName("Always Empty"),
+      setInternal
     )) 
   {
     type implType = List[ElemValue]
@@ -364,18 +361,13 @@ trait CollectionCreation { self:CoreEcot with CollectionBase =>
   }
 
   /**
-   * A null collection, whose sole purpose is to be the cType for the Name Property.
+   * A boot-time singleton collection, which exists in order to hold the first few key Properties.
    * 
-   * TBD: this is bloody dangerous, and we'll see how well it works. But we have nasty
-   * chicken-and-egg problems otherwise -- every Thing has Properties, which have Collections,
-   * which causes looping. In particular, we need a Collection for the initial PropValues
-   * to point to.
-   * 
-   * TODO: there's nothing terribly "name"-centric about this -- it's really just the "boot"
-   * collection, for the most central internal Properties. Rename it, and use it for InternalProp
-   * as well.
+   * This should not be used outside of Core, and not even heavily used in Core. It cannot be serialized; moreover,
+   * nothing that *uses* it can be serialized, so it is strictly for system objects. It basically exists so that
+   * we can get the real Collections booted up.
    */
-  class NameCollection extends SingleElementBase(UnknownOID, () => models.Thing.emptyProps) {
+  class bootCollection extends SingleElementBase(UnknownOID, () => models.Thing.emptyProps) {
     type implType = List[ElemValue]
 
     def doDeserialize(ser:String, elemT:pType):implType = List(elemT.deserialize(ser))
@@ -389,13 +381,13 @@ trait CollectionCreation { self:CoreEcot with CollectionBase =>
       List(elemT.default)
     }
     def wrap(elem:ElemValue):implType = List(elem)
-    def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = NamePropValue(cv.toList, NameCollection.this, elemT)
+    def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = bootPropValue(cv.toList, this, elemT)
     
     def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
       val v = currentValue.v.map(_.first).getOrElse(elemT.default)
       elemT.renderInput(prop, state, currentValue, v)
     }
 
-    private case class NamePropValue(cv:implType, cType:NameCollection, pType:PType[_]) extends QValue {}  
+    private case class bootPropValue(cv:implType, cType:bootCollection, pType:PType[_]) extends QValue {}  
   }
 }

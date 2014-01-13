@@ -193,7 +193,7 @@ trait LinkUtils { self:CoreEcot =>
   
 }
 
-trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with LinkUtils with NameUtils =>
+trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTypeBasis with LinkUtils with NameUtils =>
 
   /**
    * Marker type, used to signify "no real type" in empty collections.
@@ -211,8 +211,8 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with Li
   
   class InternalMethodType extends SystemType[String](InternalMethodOID,
     toProps(
-      setName("Internal Method Type")//,
-//      Core.InternalProp(true)
+      setName("Internal Method Type"),
+      setInternal
     )) with SimplePTypeBuilder[String]
   {
     def boom = throw new Exception("InternalMethodType cannot be used conventionally. It simply wraps code.")

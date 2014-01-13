@@ -10,7 +10,7 @@ import querki.ecology._
 import querki.values.{ElemValue, PropAndVal, QLContext, QValue, SpaceState}
 
 class CoreModule(e:Ecology) extends CoreEcot(e) with Core
-  with CollectionBase with CollectionCreation
+  with BootUtils with CollectionBase with CollectionCreation
   with TextTypeBasis with LinkUtils with NameUtils with NameTypeBasis with TypeCreation 
 {
   import MOIDs._
@@ -67,14 +67,20 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
   lazy val QList = new QList
   lazy val QSet = new QSet
   lazy val QUnit = new QUnit
-  lazy val NameCollection = new NameCollection
+  lazy val bootCollection = new bootCollection
   
   lazy val QNone = Optional.QNone
   def listFrom[RT,VT](in:Iterable[RT], builder:PTypeBuilderBase[VT,RT]):QValue = QList.from(in, builder)
   def makeListValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = QList.makePropValue(cv, elemT)
   def makeSetValue(rawList:Seq[ElemValue], pt:PType[_], context:QLContext):QValue = QSet.makeSetValue(rawList, pt, context)
   
-  def setName(v:String) = (NameOID -> NameCollection(ElemValue(v, new DelegatingType({NameType}))))
+  // In practice, system-set Names use the bootCollection instead of ExactlyOne, so that we don't have
+  // dependency problems.
+  def setName(v:String) = (NameOID -> bootCollection(ElemValue(v, new DelegatingType({NameType}))))
+
+  // PRIVATE: this is the workaround so we can mark key boot-critical Things as Internal while avoiding
+  // initialization loops.
+  def setInternal = (InternalPropOID -> bootCollection(ElemValue(true, new DelegatingType({YesNoType}))))
   
   override lazy val colls = Seq(
     UrCollection,
@@ -139,7 +145,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
   lazy val UrProp = Property(UrPropOID, systemOID, UrThing, TextType, ExactlyOne,
       toProps(
         setName("Property"),
-        (InternalPropOID -> ExactlyOne(YesNoType(true))),
+        setInternal,
         (conventions.MOIDs.PropSummaryOID -> Optional(TextType("The root Property, from which all others derive."))),
         (DisplayTextOID -> Optional(LargeTextType("""[[Summary -> ""**____** -- ""]]
             |[[_if(Property Type -> _is(Internal Method Type), 
@@ -174,6 +180,10 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
           |Models to Things. This is a very advanced Property, and not intended for ordinary use.""".stripMargin)
       ))
   
+  /**
+   * The formal Name of a Thing. Note that system-created Names mostly use bootCollection instead of
+   * ExactlyOne, to avoid initialization loops.
+   */
   lazy val NameProp = new SystemProperty(NameOID, NameType, ExactlyOne,
       toProps(
         setName("Name"),
@@ -274,7 +284,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
       setName("Internal Property"),
       AppliesToKindProp(Kind.Property),
       NotInherited,
-      (InternalPropOID -> Optional(YesNoType(true))),
+      setInternal,
       Summary("If set, this Property is system-internal, and should not be visible to end users."),
       Details("""Pretty much by definition, you should never need to use this meta-Property.""".stripMargin)))
 
