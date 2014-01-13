@@ -1,11 +1,10 @@
 package models
 
-import com.github.nscala_time.time.Imports.DateTime
-
 import Thing.PropFetcher
 
 import ql.{QLPhrase}
 import querki.ecology.Ecology
+import querki.time.DateTime
 import querki.util._
 import querki.values.{QLContext, QValue}
 

@@ -3,8 +3,6 @@ package models
 import language.implicitConversions
 import scala.xml._
 
-import play.api.Logger
-
 import Thing.PropFetcher
 
 import ql._

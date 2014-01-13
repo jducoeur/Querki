@@ -1,31 +1,15 @@
 package models
 
 import language.implicitConversions
+
+// TODO: this is all a very bad smell! OID needs to have an associated Ecot, which hides the
+// details of creating the next OID, so that it can be properly stubbed out.
 import anorm._
 import play.api.db._
 import play.api.Play.current
 
 import querki.core.NameUtils
 import querki.db.ShardKind._
-
-/**
- * By and large, we internally use ThingPtrs. This is an abstract "pointer" to a Thing.
- * It can be either an OID or a hard reference. (Note that Thing derives from ThingPtr.)
- * 
- * To be honest, this is a slightly premature optimization -- I don't know how much it
- * really matters. But given how much of the actual *processing* of Querki is going to
- * be chasing through networks of objects, I want to leave room for optimizing it. So
- * the notion is that we will probably eventually want two-phase loading. First, we
- * will load all of the objects in their "raw" form, with just OIDs. Once that's done,
- * we can do a second phase, resolving those OIDs to hard pointers, to make lookups
- * faster in processing.
- * 
- * So I'm introducing ThingPtr as an abstraction now, so that we can add that sort of
- * optimization later.
- */
-//trait ThingPtr {
-//  def id:OID
-//}
 
 /**
  * OID is the primary identifier for all objects in Querki. Internally, it is a long
