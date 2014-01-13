@@ -15,7 +15,6 @@ import messages._
 import models.{AsName, OID}
 import models.{Kind, Thing}
 import models.system.{SystemSpace}
-import models.system.OIDs.{systemOID, SystemUserOID}
 
 import querki.db.ShardKind
 import ShardKind._
@@ -67,7 +66,7 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
             val ownerHandle = row.get[String]("handle").get
             SpaceDetails(AsName(name), id, display, AsName(ownerHandle))
           }
-        } ++ { if (owner == SystemUserOID) { Seq(SpaceDetails(AsName("System"), systemOID, SystemInterface.State.name, AsName("systemUser"))) } else Seq.empty }
+        } ++ { if (owner == querki.identity.MOIDs.SystemUserOID) { Seq(SpaceDetails(AsName("System"), SystemIds.systemOID, SystemInterface.State.name, AsName("systemUser"))) } else Seq.empty }
         val memberOf = DB.withConnection(dbName(System)) { implicit conn =>
           // Note that this gets a bit convoluted, by necessity. We are coming in through a User;
           // translating that to Identities; getting all of the Spaces that those Identities are members of;
@@ -139,7 +138,7 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
               PRIMARY KEY (id))
             """).executeUpdate()
         val initProps = Thing.toProps(Core.setName(name), DisplayNameProp(display))()
-        SpacePersistence.createThingInSql(spaceId, spaceId, systemOID, Kind.Space, initProps, SystemInterface.State)
+        SpacePersistence.createThingInSql(spaceId, spaceId, SystemIds.systemOID, Kind.Space, initProps, SystemInterface.State)
       }
       DB.withTransaction(dbName(System)) { implicit conn =>
         SQL("""

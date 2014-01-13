@@ -3,8 +3,6 @@ package querki.types
 import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState}
 import models.Thing._
 
-import models.system.OIDs.{DisplayNameOID, systemOID}
-
 import querki.core.{NameUtils, PropList}
 import querki.core.MOIDs.UrPropOID
 import querki.ecology._
@@ -84,7 +82,7 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with Nam
           def evtWithExistingName = existingNameOpt.map(existingName => evt.copy(newProps = evt.newProps + NameProp(existingName))).getOrElse(evt)
           
 	      val newDisplayNameOpt = for (
-	        newDisplayNameVal <- evt.newProps.get(DisplayNameOID);
+	        newDisplayNameVal <- evt.newProps.get(querki.basic.MOIDs.DisplayNameOID);
 	        name <- newDisplayNameVal.firstTyped(Basic.PlainTextType)
 	          )
 	        yield name.text;

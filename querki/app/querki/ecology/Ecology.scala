@@ -153,6 +153,9 @@ class EcotIds(val ecotId:Short) {
     sysId(ecotId << 16 + localId)
   }
 }
+object SystemIds extends EcotIds(0) {
+  val systemOID = sysId(0)
+}
 
 /**
  * A single "module" of the system.

@@ -2,8 +2,6 @@ package querki.core
 
 import models._
 
-import models.system.OIDs.{systemOID, DisplayTextOID}
-
 import querki.conventions
 import querki.ecology._
 
@@ -147,7 +145,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
         setName("Property"),
         setInternal,
         (conventions.MOIDs.PropSummaryOID -> Optional(TextType("The root Property, from which all others derive."))),
-        (DisplayTextOID -> Optional(LargeTextType("""[[Summary -> ""**____** -- ""]]
+        (querki.basic.MOIDs.DisplayTextOID -> Optional(LargeTextType("""[[Summary -> ""**____** -- ""]]
             |[[_if(Property Type -> _is(Internal Method Type), 
             |  ""**METHOD**"",
             |  ""Collection: [[Property Collection]] Type: [[Property Type]]"")]]

@@ -9,7 +9,6 @@ import scala.concurrent.Future
 
 import models._
 import models.Thing._
-import models.system.OIDs._
 
 import ql._
 

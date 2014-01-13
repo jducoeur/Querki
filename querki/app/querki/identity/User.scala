@@ -10,7 +10,6 @@ import play.api.Play.current
 
 import models.{OID,UnknownOID}
 import models.{ThingId,AsOID,AsName}
-import models.system
 
 import querki.core.NameUtils
 import querki.db.ShardKind
@@ -22,6 +21,8 @@ import querki.util._
 import SqlHelpers._
 
 import querki.email.EmailAddress
+
+import MOIDs._
 
 object UserLevel {
   type UserLevel = Int
@@ -129,12 +130,12 @@ case class FullUser(id:OID, name:String, identities:Seq[Identity] = Seq.empty, l
 // unlimited rights, so should only be invoked when we are intentionally doing something on the user's
 // behalf that they cannot do themselves. That automatically requires a security audit.
 case object SystemUser extends User {
-  val id = models.system.OIDs.SystemUserOID
+  val id = SystemUserOID
   val name = "SystemUser"
   lazy val email = EmailAddress(Config.getString("querki.mail.systemFrom", "querki@querki.net"))
   // TODO: the presence of a reference to models.system here is suspicious. Does this indicate that SystemUser
   // doesn't belong in this file? Likely so.
-  val identities = Seq(Identity(models.system.OIDs.SystemIdentityOID, email, "", "systemUser", name, IdentityKind.QuerkiLogin))
+  val identities = Seq(Identity(SystemIdentityOID, email, "", "systemUser", name, IdentityKind.QuerkiLogin))
   val level = SuperadminUser
   val tosVersion = noTOSUserVersion
 }

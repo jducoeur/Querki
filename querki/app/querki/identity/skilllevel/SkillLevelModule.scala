@@ -4,7 +4,6 @@ import querki.identity.skilllevel._
 
 import models.{OID, Thing, ThingState}
 import models.Thing._
-import models.system.OIDs.{systemOID}
 
 import querki.ecology._
 

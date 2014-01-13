@@ -13,8 +13,6 @@ import models._
 
 import ql._
 
-import models.system.OIDs.systemOID
-
 import querki.ecology._
 import querki.util._
 import querki.values._

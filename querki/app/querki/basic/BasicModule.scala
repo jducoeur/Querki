@@ -5,8 +5,6 @@ import scala.xml.Elem
 import models._
 import models.Thing._
 
-import models.system.OIDs.{systemOID}
-
 import ql.{QLParser, QLPhrase}
 
 import querki.conventions._

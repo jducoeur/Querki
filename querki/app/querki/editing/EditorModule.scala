@@ -2,8 +2,6 @@ package querki.editing
 
 import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState, Wikitext}
 
-import models.system.OIDs.sysId
-
 import ql.{QLCall, QLParser, QLPhrase}
 
 import querki.core.{LinkCandidateProvider, QLText}

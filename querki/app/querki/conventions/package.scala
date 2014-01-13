@@ -1,7 +1,6 @@
 package querki
 
 import models.Property
-import models.system.OIDs.sysId
 
 import querki.ecology._
 

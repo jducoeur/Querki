@@ -5,7 +5,7 @@ import scala.xml.Elem
 import models.{DisplayPropVal, OID, Property, PType}
 import models.Thing.PropFetcher
 
-import querki.ecology.Ecology
+import querki.ecology._
 import querki.values.{ElemValue, SpaceState}
 
 private[core] trait BootUtils { self:CoreModule =>
@@ -38,7 +38,7 @@ object TypeUtils {
   }
 
   abstract class SystemType[T](tid:OID, pf:PropFetcher)(implicit e:Ecology) 
-    extends PType[T](tid, models.system.OIDs.systemOID, querki.core.MOIDs.RootOID, pf)(e) with CommonInputRenderers
+    extends PType[T](tid, SystemIds.systemOID, querki.core.MOIDs.RootOID, pf)(e) with CommonInputRenderers
   {
     // Types is where the various validators and such live:
     lazy val Types = interface[querki.types.Types]

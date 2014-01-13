@@ -3,7 +3,6 @@ package querki.security
 import models._
 import models.Thing._
 import models.system._
-import models.system.OIDs._
 
 import ql._
 
@@ -48,7 +47,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
   // not, we use the provided default.
   def hasPermission(aclProp:Property[OID,_], state:SpaceState, who:User, thingId:OID, default:Boolean, publicAllowed:Boolean):Boolean = {
     // TODO: this really ought to be who.isSuperadmin, instead of SystemUserOID?
-    if (who.hasIdentity(state.owner) || who.id == SystemUserOID)
+    if (who.hasIdentity(state.owner) || who.id == querki.identity.MOIDs.SystemUserOID)
       true
     else {
       implicit val s = state
@@ -98,7 +97,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
     // TODO: refactor this with the hasPermission() method above.
     // TODO: this really ought to be who.isSuperadmin, instead of SystemUserOID?
     val thingId = { if (thingIdIn == UnknownOID) state.id else thingIdIn}
-    if (who.hasIdentity(state.owner) || who.id == SystemUserOID)
+    if (who.hasIdentity(state.owner) || who.id == querki.identity.MOIDs.SystemUserOID)
       true
     else {
       implicit val s = state

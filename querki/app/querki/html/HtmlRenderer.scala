@@ -239,7 +239,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
         } </ul> {
           if (specialization.contains(WithAdd)) {
             <div class="input-append">
-              <input type="text" class="_quickCreateProp" placeholder="New Item Name" data-model={modelOID.toString} data-propid={models.system.OIDs.DisplayNameOID.toString} data-addtolist="true"></input>
+              <input type="text" class="_quickCreateProp" placeholder="New Item Name" data-model={modelOID.toString} data-propid={querki.basic.MOIDs.DisplayNameOID.toString} data-addtolist="true"></input>
               <button type="button" class="btn _quickCreate">Add</button>
             </div>
           }

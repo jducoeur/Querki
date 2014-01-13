@@ -12,7 +12,6 @@ import com.sun.mail.smtp._
 
 import models._
 import models.Thing._
-import models.system.OIDs._
 
 import ql._
 

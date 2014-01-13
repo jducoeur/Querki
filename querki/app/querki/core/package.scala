@@ -4,8 +4,6 @@ import collection.immutable.TreeMap
 
 import models.{Collection, DisplayPropVal, OID, Property, PType, PTypeBuilder, PTypeBuilderBase, Thing}
 
-import models.system.OIDs.sysId
-
 import querki.ecology._
 
 import querki.values.{ElemValue, QLContext, QValue, SpaceState}

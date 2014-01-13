@@ -12,6 +12,14 @@ import querki.values.{RequestContext, SpaceState}
 package object identity {
 
   object MOIDs extends EcotIds(3)  {
+    // The central hard-coded User and Identity IDs, which are used for system and testing purposes:
+    val SystemUserOID = sysId(9)
+    val TestUserOID = sysId(11)
+    val PrototypeUserOID = sysId(31)
+    val SystemIdentityOID = sysId(97)
+    val TestIdentityOID = sysId(98)
+    val PrototypeIdentityOID = sysId(99)
+    
     val PersonOID = oldMoid(1)
     val InviteLinkCmdOID = oldMoid(2)
     val IdentityLinkOID = oldMoid(3)

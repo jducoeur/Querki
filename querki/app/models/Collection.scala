@@ -5,8 +5,6 @@ import scala.xml._
 
 import play.api.Logger
 
-import system.OIDs._
-
 import Thing._
 
 import ql._

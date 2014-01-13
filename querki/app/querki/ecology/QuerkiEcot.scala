@@ -21,6 +21,9 @@ abstract class CoreEcot(ecologyIn:Ecology) extends Ecot {
   type QValue = querki.values.QValue
   type Thing = models.Thing
   
+  // The OID of the System Space, which contains the various program-created Things:
+  val systemOID = SystemIds.systemOID
+  
   /**
    * The Collections introduced by this Module, if any.
    */
@@ -69,7 +72,7 @@ abstract class CoreEcot(ecologyIn:Ecology) extends Ecot {
   
   // The standard convenience sugar for defining a Property in an Ecot:
   class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:models.Thing.PropFetcher) 
-    extends Property[VT, RT](pid, models.system.OIDs.systemOID, querki.core.MOIDs.UrPropOID, t, c, p, querki.time.epoch)
+    extends Property[VT, RT](pid, systemOID, querki.core.MOIDs.UrPropOID, t, c, p, querki.time.epoch)
 }
 
 /**

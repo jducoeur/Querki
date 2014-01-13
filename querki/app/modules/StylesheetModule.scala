@@ -23,7 +23,6 @@ object MOIDs extends EcotIds(1) {
   val StylesheetBaseOID = sysId(29)
   val GoogleFontOID = sysId(32)
 }
-import models.system.OIDs._
 
 import querki.ql.CodeType
 

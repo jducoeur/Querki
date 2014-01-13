@@ -4,8 +4,6 @@ import models.SimplePTypeBuilder
 import models.{Kind, OID, Wikitext}
 import models.Thing._
 
-import models.system.OIDs.{sysId, NotInheritedOID}
-
 import querki.core.MOIDs.InternalPropOID
 import querki.ecology._
 
@@ -75,12 +73,12 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types {
   lazy val DefaultValueProp = new SystemProperty(DefaultValuePropOID, WrappedValueType, ExactlyOne,
     toProps(
       setName("Default Value"),
-      (InternalPropOID -> ExactlyOne(YesNoType(true))),
+      Core.InternalProp(true),
       // Strictly speaking, it's not obvious that this is non-inherited. But for the moment, the usage
       // of this property (in Property.default) can't look up the Model chain, so it is effectively
       // uninherited. We'll see if we are motivated to change that. (Keep in mind that inherited Properties
       // are, so far, unknown.)
-      (NotInheritedOID -> ExactlyOne(YesNoType(true))),
+      Core.NotInheritedProp(true),
       AppliesToKindProp(Kind.Property)))
 
   override lazy val props = Seq(

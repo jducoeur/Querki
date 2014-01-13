@@ -1,7 +1,6 @@
 package querki
 
 import models.{DisplayPropVal, OID, Property, Thing}
-import models.system.OIDs.sysId
 
 import querki.core.PropList
 import querki.ecology._

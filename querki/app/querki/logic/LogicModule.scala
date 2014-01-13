@@ -1,7 +1,6 @@
 package querki.logic
 
 import models.{OID, ThingState}
-import models.system.OIDs.{systemOID}
 
 import ql.QLPhrase
 
