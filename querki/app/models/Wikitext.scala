@@ -1,6 +1,6 @@
 package models
 
-import play.api.Logger
+// TODO: this is a bad smell, and should be lifted into either controllers or at least querki.html:
 import play.api.templates.Html
 
 import language.implicitConversions

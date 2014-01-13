@@ -1,13 +1,10 @@
 package models
 
-import play.api._
-import play.api.templates.Html
-
-import com.github.nscala_time.time.Imports._
-
-import ql._
+import ql.{QLFunction, QLParser, QLPhrase}
 
 import querki.ecology._
+import querki.time.DateTime
+import querki.util.QLog
 import querki.values._
 
 /**
@@ -171,7 +168,7 @@ abstract class Thing(
         try {
           throw new Exception("Trying to get unknown Model " + model + " for " + displayName)
         } catch {
-          case error:Exception => Logger.error("Unable to find Model", error); throw error
+          case error:Exception => QLog.error("Unable to find Model", error); throw error
         }
       }
   }
@@ -379,17 +376,7 @@ abstract class Thing(
   }
   
   def renderProps(implicit request:RequestContext):Wikitext = {
-    val listMap = props.map { entry =>
-      val propOpt = request.state.get.prop(entry._1)
-      propOpt match {
-        case Some(prop) => {
-          val pv = prop.pair(entry._2)
-          "<dt>" + prop.displayName + "</dt><dd>" + pv.render(thisAsContext).display + "</dd>"
-        }
-        case None => "<dt>" + entry._1 + "</dt><dd>Property not found!</dd>"
-      }
-    }
-    HtmlWikitext(Html(listMap.mkString("<dl>", "", "</dl>")))    
+    request.renderer.renderThingDefault(this)
   }
   
   /**

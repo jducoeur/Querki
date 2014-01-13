@@ -71,6 +71,20 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     }
   }
   
+  def renderThingDefault(thing:Thing)(implicit rc:RequestContext):Wikitext = {
+    val listMap = thing.props.map { entry =>
+      val propOpt = rc.state.get.prop(entry._1)
+      propOpt match {
+        case Some(prop) => {
+          val pv = prop.pair(entry._2)
+          "<dt>" + prop.displayName + "</dt><dd>" + pv.render(thing.thisAsContext).display + "</dd>"
+        }
+        case None => "<dt>" + entry._1 + "</dt><dd>Property not found!</dd>"
+      }
+    }
+    HtmlWikitext(Html(listMap.mkString("<dl>", "", "</dl>")))    
+  }
+  
   /*********************************
    * INTERNALS
    *********************************/

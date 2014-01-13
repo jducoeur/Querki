@@ -1,12 +1,10 @@
 package models
 
-import scala.xml._
-
-import play.api.templates.Html
+import scala.xml.Elem
 
 import Thing._
 
-import ql._
+import ql.QLPhrase
 
 import querki.ecology.Ecology
 import querki.values._

@@ -1,17 +1,15 @@
 package models
 
 import language.existentials
-import play.api.templates.Html
 
 import Thing._
 
-import com.github.nscala_time.time.Imports._
-
-import ql._
+import ql.{PartiallyAppliedFunction, QLFunction, QLPhrase}
 
 import querki.core.MOIDs._
 import querki.ecology._
 
+import querki.time.DateTime
 import querki.types.Types
 
 import querki.values._

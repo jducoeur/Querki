@@ -8,6 +8,8 @@ import querki.ecology._
 
 import querki.identity.User
 
+import querki.ui.UIRenderer
+
 /**
  * As Querki gets more complex, we're passing larger and larger bundles of information around.
  * So instead of trying to do that all in separate parameters, we're taking all the common
@@ -41,4 +43,9 @@ abstract class RequestContext(
   def withUpdatedState(newState:SpaceState):RequestContext
   
   def isOwner = requesterOrAnon.hasIdentity(ownerId)
+  
+  /**
+   * The UIRenderer to use for displaying stuff to the user in this context.
+   */
+  def renderer:UIRenderer
 }

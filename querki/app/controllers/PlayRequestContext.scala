@@ -7,6 +7,7 @@ import language.implicitConversions
 import querki.ecology._
 import querki.identity.User
 
+import querki.ui.UIRenderer
 import querki.values.{RequestContext, SpaceState}
 
 trait RequestHeaderParser 
@@ -72,6 +73,8 @@ case class PlayRequestContext(
   extends RequestContext(requester, ownerId, state, thing, ecology)
   with RequestHeaderParser
 {
+  def renderer:UIRenderer = interface[querki.html.HtmlRenderer]
+  
   // NOTE: this may be wrong, but at the moment is the way the logic works
   val returnToHere:Boolean = false
   

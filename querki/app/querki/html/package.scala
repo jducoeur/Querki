@@ -11,6 +11,7 @@ import querki.ecology._
 
 import models.{DisplayPropVal, FormFieldInfo, Property, Thing}
 
+import querki.ui.UIRenderer
 import querki.values.{QLContext, QValue, SpaceState}
 
 package object html {
@@ -20,7 +21,11 @@ package object html {
     val Unspecialized, PickList, WithAdd = Value
   }
 
-  trait HtmlRenderer extends EcologyInterface {
+  /**
+   * This is currently the HTML-specific interface for rendering. We should gradually move towards exposing
+   * querki.ui.UIRenderer, which is implementation-agnostic.
+   */
+  trait HtmlRenderer extends UIRenderer with EcologyInterface {
     def addClasses(elem:Elem, addedClasses:String):Elem
     def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_], context:QLContext):FormFieldInfo
     def renderPropertyInput(state:SpaceState, prop:Property[_,_], 
