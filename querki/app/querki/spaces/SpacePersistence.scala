@@ -12,7 +12,9 @@ import querki.values.{ElemValue, QLContext, SpaceState}
 
 object SpacePersistenceMOIDs extends EcotIds(28)
 
-class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistence {
+class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistence
+  with querki.core.CollectionBase
+{
   // The name of the Space's Thing Table
   def thingTable(id:OID):String = "s" + sid(id)
   // The name of a backup for the Thing Table
@@ -97,9 +99,9 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
     toProps(propPairs:_*)()
   }
 
-  object UnresolvedProp extends querki.core.ExactlyOne {
+  object UnresolvedProp extends ExactlyOneBase(UnknownOID) {
     override def makePropValue(cv:Iterable[ElemValue], pType:PType[_]):QValue = UnresPropValue(cv.toList, this, pType)
-    private case class UnresPropValue(cv:implType, cType:querki.core.ExactlyOne, pType:PType[_]) extends QValue with UnresolvedPropValue
+    private case class UnresPropValue(cv:implType, cType:ExactlyOneBase, pType:PType[_]) extends QValue with UnresolvedPropValue
   }
   
   // This pseudo-Type is used to store values from disk that we can't resolve yet. It is only

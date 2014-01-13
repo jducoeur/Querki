@@ -18,7 +18,6 @@ class CommonSpace(implicit ecologyIn:Ecology) extends TestSpace {
   
   def ecology = ecologyIn
   
-  lazy val Core = interface[querki.core.Core]
   lazy val Links = interface[querki.links.Links]
   
   lazy val ExactlyOne = Core.ExactlyOne

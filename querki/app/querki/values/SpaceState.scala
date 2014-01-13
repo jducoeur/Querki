@@ -11,6 +11,7 @@ import com.github.nscala_time.time.Imports._
 
 import Thing.PropFetcher
 
+import querki.core.NameUtils
 import querki.ecology._
 
 import querki.identity.User
@@ -124,7 +125,7 @@ case class SpaceState(
   private def thingWithName[T <: Thing](name:String, things:Map[OID, T]):Option[T] = {
     things.values.find { thing =>
       val thingNameOpt = thing.canonicalName
-      thingNameOpt.isDefined && NameType.equalNames(thingNameOpt.get, name)
+      thingNameOpt.isDefined && NameUtils.equalNames(thingNameOpt.get, name)
     }
   }
   
@@ -138,7 +139,7 @@ case class SpaceState(
     if (oid == id) Some(this) else None
   }
   def spaceByName(tryName:String):Option[Thing] = {
-    if (tryName == NameType.toInternal(name)) Some(this) else None
+    if (tryName == NameUtils.toInternal(name)) Some(this) else None
   }
   
   def anythingByDisplayName(rawName:String):Option[Thing] = {
@@ -153,7 +154,7 @@ case class SpaceState(
   // TBD: changed this to look up the app stack. That's clearly right sometimes, like in QL.
   // Is it always right?
   def anythingByName(rawName:String):Option[Thing] = {
-    val name = NameType.toInternal(rawName)
+    val name = NameUtils.toInternal(rawName)
     thingWithName(name, things).orElse(
       thingWithName(name, spaceProps).orElse(
         thingWithName(name, types).orElse(

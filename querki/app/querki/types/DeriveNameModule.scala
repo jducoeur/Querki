@@ -3,10 +3,9 @@ package querki.types
 import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState}
 import models.Thing._
 
-import models.system.{NameType}
 import models.system.OIDs.{DisplayNameOID, systemOID}
 
-import querki.core.PropList
+import querki.core.{NameUtils, PropList}
 import querki.core.MOIDs.UrPropOID
 import querki.ecology._
 import querki.spaces.{SpaceChangeManager, ThingChangeRequest}
@@ -14,7 +13,7 @@ import querki.spaces.{SpaceChangeManager, ThingChangeRequest}
 import querki.util._
 import querki.values._
 
-class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName {
+class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with NameUtils {
   
   import DeriveNameMOIDs._
   
@@ -55,7 +54,7 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName {
     
     // Given the Display Name, figure out what to actually name this Thing:
     def updateWithDerived(evt:ThingChangeRequest, displayName:String, kicker:Int = 0):ThingChangeRequest = {
-      val candidate = NameType.makeLegal(displayName) + (if (kicker > 0) " " + kicker else "")
+      val candidate = makeLegal(displayName) + (if (kicker > 0) " " + kicker else "")
       val existingThing = evt.state.anythingByName(candidate)
       // It's a duplicate if we found the name *and* it isn't the Thing we're looking at:
       val isDuplicate = existingThing.isDefined && (evt.thingOpt.isEmpty || evt.thingOpt.get.id != existingThing.get.id)
@@ -79,7 +78,7 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName {
         case _ => {
           implicit val s = evt.state
           val oldNameOpt = evt.thingOpt.flatMap(_.getPropOpt(NameProp)).flatMap(_.firstOpt)
-          val existingNameOpt = evt.newProps.get(NameProp).flatMap(_.firstTyped(NameType)).orElse(oldNameOpt)
+          val existingNameOpt = evt.newProps.get(NameProp).flatMap(_.firstTyped(Core.NameType)).orElse(oldNameOpt)
           // The fallback default: make sure that evt contains a sensible Name if possible. Since it may not be showing in the
           // Editor, we have to fill it back in from the existing Name in many cases:
           def evtWithExistingName = existingNameOpt.map(existingName => evt.copy(newProps = evt.newProps + NameProp(existingName))).getOrElse(evt)

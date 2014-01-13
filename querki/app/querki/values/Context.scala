@@ -133,7 +133,7 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
         // In general, collect (and many of these operations) are very monadically evil, but
         // we've consciously decided to live with that.
         value.cType match {
-          case t:querki.core.ExactlyOne => {
+          case t:querki.core.CollectionCreation#ExactlyOne => {
             if (raw.isEmpty)
               Optional 
             else if (raw.size == 1)
@@ -141,7 +141,7 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
             else
               QList
           }
-          case t:querki.core.Optional => if (raw.size > 1) QList else Optional
+          case t:querki.core.CollectionCreation#Optional => if (raw.size > 1) QList else Optional
           case _ => value.cType
         }
       newCT.makePropValue(raw, pt)

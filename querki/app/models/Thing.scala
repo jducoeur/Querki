@@ -10,8 +10,6 @@ import models.system.OIDs._
 import models.system.SystemSpace
 import models.system.SystemSpace._
 
-import NameCollection.bootProp
-
 import ql._
 
 import querki.ecology._
@@ -61,7 +59,7 @@ object Thing {
   
   // NOTE: don't try to make this more concise -- it causes chicken-and-egg problems in system
   // initialization:
-  def setName(str:String):(OID,QValue) = bootProp(querki.core.MOIDs.NameOID, str)
+//  def setName(str:String):(OID,QValue) = bootProp(querki.core.MOIDs.NameOID, str)
 //    (NameOID -> ExactlyOne(ElemValue(str)))
 //    (NameOID -> PropValue(Some(ElemValue(str))))
 

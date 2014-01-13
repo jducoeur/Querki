@@ -19,11 +19,11 @@ import messages._
 import Kind._
 import Thing.PropMap
 
+import querki.core.NameUtils
+
 import querki.ecology._
 
 import querki.identity.User
-
-import models.system.{NameType}
 
 import messages._
 import SpaceError._
@@ -145,7 +145,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
       if (Person.localPerson(identity)(state).isEmpty) {
         createSomething(id, SystemUser, Person.PersonModel.id, 
           toProps(
-            setName(identity.handle),
+            Core.setName(identity.handle),
             Basic.DisplayNameProp(identity.name),
             Person.IdentityLink(identity.id))(),
           Kind.Thing,
@@ -177,7 +177,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
   def checkSpaceId(thingId:ThingId):OID = {
     thingId match {
       case AsOID(oid) => if (oid == id) oid else throw new Exception("Space " + id + " somehow got message for " + oid)
-      case AsName(thingName) => if (NameType.equalNames(thingName, state.name)) id else throw new Exception("Space " + state.name + " somehow got message for " + thingName)
+      case AsName(thingName) => if (NameUtils.equalNames(thingName, state.name)) id else throw new Exception("Space " + state.name + " somehow got message for " + thingName)
     }
   }
 
@@ -296,11 +296,11 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
             case s:SpaceState => {
               // TODO: handle changing the owner or apps of the Space. (Different messages?)
               val rawName = Core.NameProp.first(newProps)
-              val newName = NameType.canonicalize(rawName)
+              val newName = NameUtils.canonicalize(rawName)
               val oldName = Core.NameProp.first(oldThing.props)
               val oldDisplay = Basic.DisplayNameProp.firstOpt(oldThing.props) map (_.raw.toString) getOrElse rawName
               val newDisplay = Basic.DisplayNameProp.firstOpt(newProps) map (_.raw.toString) getOrElse rawName
-              val spaceChange = if (!NameType.equalNames(newName, oldName) || !(oldDisplay.contentEquals(newDisplay))) {
+              val spaceChange = if (!NameUtils.equalNames(newName, oldName) || !(oldDisplay.contentEquals(newDisplay))) {
                 Some(SpaceChange(newName, newDisplay))
               } else {
                 None

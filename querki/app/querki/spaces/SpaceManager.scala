@@ -5,7 +5,6 @@ import scala.util._
 
 import models.{AsName, AsOID, OID}
 import models.{Kind, Thing}
-import models.system.{NameType}
 import models.system.OIDs._
 import messages._
 import SpaceError._
@@ -28,6 +27,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.Play.current
 import play.Configuration
 
+import querki.core.NameUtils
 import querki.ecology._
 
 import querki.identity.User
@@ -78,7 +78,7 @@ class SpaceManager(val ecology:Ecology, persistenceFactory:SpacePersistenceFacto
               maxSpaces
           }
           
-          persister.request(CreateSpacePersist(requester.mainIdentity.id, userMaxSpaces, NameType.canonicalize(display), display)) {
+          persister.request(CreateSpacePersist(requester.mainIdentity.id, userMaxSpaces, NameUtils.canonicalize(display), display)) {
             case err:ThingError => sender ! err
             // Now, let the Space Actor finish the process once it is ready:
             case Changed(spaceId, _) => getSpace(spaceId).forward(req)
@@ -92,7 +92,7 @@ class SpaceManager(val ecology:Ecology, persistenceFactory:SpacePersistenceFacto
       req match {
         case SpaceMessage(_, _, AsOID(spaceId)) => getSpace(spaceId).forward(req)
         case SpaceMessage(_, ownerId, AsName(spaceName)) => {
-          val canonName = NameType.canonicalize(spaceName)
+          val canonName = NameUtils.canonicalize(spaceName)
           spaceNameCache.get(canonName) match {
             case Some(SpaceInfo(spaceId, name)) => getSpace(spaceId).forward(req)
             case None => {

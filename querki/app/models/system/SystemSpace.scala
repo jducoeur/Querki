@@ -45,15 +45,15 @@ object OIDs {
   val systemOID = sysId(0)
   
 //  val RootOID = sysId(1)
-  val IntTypeOID = sysId(2)
+//  val IntTypeOID = sysId(2)
 //  val TextTypeOID = sysId(3)
-  val YesNoTypeOID = sysId(4)
+//  val YesNoTypeOID = sysId(4)
 //  val UrPropOID = sysId(5)
 //  val NameOID = sysId(6)
   val DisplayTextOID = sysId(7)
 //  val PageOID = sysId(8)
   val SystemUserOID = sysId(9)
-  val NameTypeOID = sysId(10)
+//  val NameTypeOID = sysId(10)
   val TestUserOID = sysId(11)
 //  val UrCollectionOID = sysId(12)
 //  val ExactlyOneOID = sysId(13)
@@ -114,7 +114,7 @@ object OIDs {
 //  val IconButtonOID = sysId(68)
 //  val CreateInstanceLinkOID = sysId(69)
 //  val LinkToModelsOnlyOID = sysId(70)
-  val TagSetOID = sysId(71)
+//  val TagSetOID = sysId(71)
 //  val TagRefsOID = sysId(72)
 //  val ShowUnknownOID = sysId(73)
 //  val TagsForPropertyOID = sysId(74)
@@ -171,8 +171,8 @@ object SystemSpace {
   def initialSystemState(ecology:Ecology) = {
     SpaceState(systemOID, querki.core.MOIDs.RootOID,
       toProps(
-        setName("System")
-        // TODO: this needs to get added *after* Core is set up!
+        // TODO: this all needs to get added *after* Core is set up!
+//        setName("System")
 //        (querki.basic.MOIDs.DisplayTextOID -> ExactlyOne(LargeTextType("""### Things in [[Display Name]]
 //[[All Things]]
 //            

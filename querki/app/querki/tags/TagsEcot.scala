@@ -2,20 +2,18 @@ package querki.tags
 
 import querki.ecology._
 
-import models.{AsDisplayName, Kind, Thing, ThingId, UnknownOID, Wikitext}
-
-import models.system.{NameType, NameableType, TagSetType}
+import models.{AsDisplayName, Collection, Kind, Thing, ThingId, UnknownOID, Wikitext}
 
 import ql._
 import querki.basic.{PlainText, PlainTextBaseType}
-import querki.core.{QLText, TextTypeBasis}
+import querki.core.{NameableType, NameTypeBasis, NameUtils, QLText, TextTypeBasis}
 import querki.util.SafeUrl
 import querki.values._
 
 /**
  * TODO: this should probably absorb more of the concept of "tags", maybe even including the Types.
  */
-class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.MethodDefs with TextTypeBasis with PlainTextBaseType {
+class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.MethodDefs with NameUtils with NameTypeBasis with TextTypeBasis with PlainTextBaseType {
   import MOIDs._
   
   val Links = initRequires[querki.links.Links]
@@ -23,12 +21,30 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   lazy val Basic = interface[querki.basic.Basic]
   
   lazy val PlainTextType = Basic.PlainTextType
+  lazy val NameType = Core.NameType
     
   lazy val LinkModelOID = querki.links.MOIDs.LinkModelOID
 
   /***********************************************
    * TYPES
    ***********************************************/
+
+  lazy val TagSetType = new NameTypeBase(TagSetOID, "Tag Set Type") {
+    override def editorSpan(prop:Property[_,_]):Int = 12
+    
+    override def requiredColl:Option[Collection] = Some(Core.QSet)
+    
+    // TODO: this should probably get refactored with LinkType? They're different ways of
+    // expressing the same concepts; it's just that Links are OID-based, whereas Names/Tags are
+    // name-based.
+    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = nameToLink(context)(v)
+    
+    override def renderProperty(prop:Property[_,_])(implicit request:RequestContext):Option[Wikitext] = {
+      val parser = new ql.QLParser(querki.core.QLText("""These tags are currently being used:
+[[_tagsForProperty -> _sort -> _bulleted]]"""), prop.thisAsContext)
+      Some(parser.process)
+    }
+  }
 
   lazy val NewTagSetType = new PlainTextType(NewTagSetOID, "New Tag Set Type") {
     override def editorSpan(prop:Property[_,_]):Int = 12
@@ -58,6 +74,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   }
 
   override lazy val types = Seq(
+    TagSetType,
     NewTagSetType
   )
 
@@ -106,7 +123,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   def preferredModelForTag(implicit state:SpaceState, nameIn:String):Thing = {
     val tagProps = state.propsOfType(TagSetType).filter(_.hasProp(LinkModelOID))
     val newTagProps = state.propsOfType(NewTagSetType).filter(_.hasProp(LinkModelOID))
-    val name = NameType.canonicalize(nameIn)
+    val name = canonicalize(nameIn)
     val plainName = PlainText(nameIn)
     if (tagProps.isEmpty && newTagProps.isEmpty)
       state.interface[querki.basic.Basic].SimpleThing
@@ -206,7 +223,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
               val found = prop.pType match {
                 case TagSetType => {
 	              val candidateTags:Option[List[String]] = propAndVal.map(_.v.rawList(TagSetType))
-	              candidateTags.map(_.exists { candidateName => NameType.equalNames(candidateName, name) })
+	              candidateTags.map(_.exists { candidateName => equalNames(candidateName, name) })
                 }
                 case NewTagSetType => {
 	              val candidateTags:Option[List[PlainText]] = propAndVal.map(_.v.rawList(NewTagSetType))

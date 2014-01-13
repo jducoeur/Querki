@@ -24,9 +24,8 @@ object MOIDs extends EcotIds(6) {
   val NextInListOID = moid(2)
 }
 
-class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
+class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with querki.logic.YesNoUtils {
   import MOIDs._
-  import YesNoType._
 
   lazy val QL = interface[querki.ql.QL]
   

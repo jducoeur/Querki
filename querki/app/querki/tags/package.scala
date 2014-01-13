@@ -14,6 +14,7 @@ package object tags {
 [[_tagRefs -> _bulleted]]"""  
 
   object MOIDs extends EcotIds(22) {
+    val TagSetOID = sysId(71)
     val TagRefsOID = sysId(72)
     val ShowUnknownOID = sysId(73)
     val TagsForPropertyOID = sysId(74)
@@ -21,6 +22,7 @@ package object tags {
   }
 
   trait Tags extends EcologyInterface {
+    def TagSetType:PType[String]
     def NewTagSetType:PType[PlainText]
     
     def ShowUnknownProp:Property[QLText,String]

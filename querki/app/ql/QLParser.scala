@@ -205,7 +205,7 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
 	      // the renderer, it will turn into a link to the undefined page, where they can create it.
 	      //
 	      // TBD: in principle, we might want to make this more Space-controllable. But it isn't obvious that we care. 
-	      case None => Core.ExactlyOne(UnknownNameType(call.name.name))
+	      case None => Core.ExactlyOne(QL.UnknownNameType(call.name.name))
 	    }
 	    context.next(tv)
     }

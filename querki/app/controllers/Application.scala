@@ -16,7 +16,7 @@ import system._
 import models.system._
 import models.system.SystemSpace._
 
-import querki.core.PropList
+import querki.core.{NameUtils, PropList}
 import querki.ecology._
 import querki.identity._
 
@@ -405,7 +405,7 @@ disallow: /
       implicit val state = rc.state.get
       // If this Tag is used in a Tag Set Property with a Link Model, use that:
       val model = Tags.preferredModelForTag(state, thingIdStr)
-      val name = NameType.toDisplay(thingIdStr)
+      val name = NameUtils.toDisplay(thingIdStr)
       val defaultText =
         model.getPropOpt(Tags.ShowUnknownProp).orElse(state.getPropOpt(Tags.ShowUnknownProp)).
           map(_.v).

@@ -2,15 +2,13 @@ package querki.html
 
 import scala.xml.XML
 
-import models.system.{IntType}
-
 import querki.test._
 
 class UITests extends QuerkiTests {
   "_class method" should {
     "throw an Exception if handed a Number" in {
       class TSpace extends CommonSpace {
-        val intProp = new TestProperty(IntType, ExactlyOne, "Int Prop")
+        val intProp = new TestProperty(Core.IntType, ExactlyOne, "Int Prop")
         
         val withInt = new SimpleTestThing("Int Thing", intProp(42))
       }

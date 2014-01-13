@@ -1,7 +1,5 @@
 package querki.logic
 
-import models.system.YesNoType
-
 import querki.test._
 
 class LogicTests extends QuerkiTests {
@@ -17,7 +15,7 @@ class LogicTests extends QuerkiTests {
   "_equals" should {
     "compare correctly with True and False" in {
       class TSpace extends CommonSpace {
-        val boolProp = new TestProperty(YesNoType, ExactlyOne, "Boolean Prop")
+        val boolProp = new TestProperty(Core.YesNoType, ExactlyOne, "Boolean Prop")
         
         val theModel = new SimpleTestThing("Sorting Model")
         val trueThing = new TestThing("Thing 1", theModel, boolProp(true))

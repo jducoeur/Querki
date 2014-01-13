@@ -3,7 +3,6 @@ package querki.conventions
 import models._
 import models.Thing._
 
-import models.system.{YesNoType}
 import models.system.OIDs.{sysId, NotInheritedOID}
 
 import querki.ecology._

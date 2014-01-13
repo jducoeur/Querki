@@ -7,7 +7,6 @@
 
 @import play.api.Logger
 
-@import models.system.{TagSetType, NameType}
 @import models.system.SystemSpace._
 @import querki.core.MOIDs.UrPropOID
 
@@ -29,14 +28,17 @@
 @Core = @{ rc.interface[querki.core.Core] }
 @HtmlRenderer = @{ rc.interface[querki.html.HtmlRenderer] }
 @Editor = @{ rc.interface[querki.editing.Editor] }
+@Tags = @{ rc.interface[querki.tags.Tags] }
 
 @ExactlyOne = @{ Core.ExactlyOne }
 @Optional = @{ Core.Optional }
 @QList = @{ Core.QList }
 @QSet = @{ Core.QSet }
 
-@NewTagSetType = @{ rc.interface[querki.tags.Tags].NewTagSetType }
+@TagSetType = @{ Tags.TagSetType }
+@NewTagSetType = @{ Tags.NewTagSetType }
 @LinkType = @{ Core.LinkType }
+@NameType = @{ Core.NameType }
 
 @PropSummary = @{ Conventions.PropSummary }
 @PropDetails = @{ Conventions.PropDetails }

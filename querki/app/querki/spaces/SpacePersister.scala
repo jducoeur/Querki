@@ -196,7 +196,7 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
 	            id,
 	            SystemInterface.State.id,
 	            toProps(
-	              setName(name),
+	              Core.setName(name),
 	              interface[querki.basic.Basic].DisplayTextProp("We were unable to load " + name + " properly. An error has been logged; our apologies.")
 	              ),
 	            owner,

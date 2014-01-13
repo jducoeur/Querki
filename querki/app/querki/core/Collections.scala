@@ -11,13 +11,11 @@ import play.api.data.Form
 
 import models._
 
-import Thing._
-
 import ql._
 
 import models.system.OIDs.systemOID
 
-import querki.ecology.Ecology
+import querki.ecology._
 import querki.util._
 import querki.values._
 
@@ -28,73 +26,42 @@ import MOIDs._
 // Collections
 //
 
-abstract private[core] class SystemCollection(cid:OID, pf:PropFetcher)(implicit e:Ecology) extends Collection(cid, systemOID, UrCollectionOID, pf)(e)
-  
-  /**
-   * Root Collection type. Exists solely so that there is a common runtime root, in case
-   * we want to be able to write new collections.
-   */
-  private[core] class UrCollection(implicit e:Ecology) extends Collection(UrCollectionOID, systemOID, querki.core.MOIDs.RootOID,
-      toProps(
-        setName("Collection")//,
-        // TODO: is it possible to mark this as Internal without being *inside* CoreModule itself? There's
-        // a bit of chicken-and-egg going on here:
-//        InternalProp(true)
-        ))
+trait CollectionBase { self:CoreEcot =>
+  abstract class SystemCollection(cid:OID, pf:PropFetcher)(implicit e:Ecology) extends Collection(cid, systemOID, UrCollectionOID, pf)(e)
+
+  abstract private[core] class SingleElementBase(cid:OID, pf:PropFetcher)(implicit e:Ecology) extends SystemCollection(cid, pf)(e)
   {
-	type implType = List[ElemValue]
-	
-    def doDeserialize(ser:String, elemT:pType):implType = 
-      throw new Error("Trying to deserialize root collection!")
-    def doSerialize(v:implType, elemT:pType):String = 
-      throw new Error("Trying to serialize root collection!")
-    def doWikify(context:QLContext)(ser:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = 
-      throw new Error("Trying to render root collection!")
-    def doDefault(elemT:pType):implType = 
-      throw new Error("Trying to default root collection!")    
-	def wrap(elem:ElemValue):implType =
-	  throw new Error("Trying to wrap root collection!")    
-	def makePropValue(cv:Iterable[ElemValue], pType:PType[_]):QValue =
-	  throw new Error("Trying to makePropValue root collection!")    
-    def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem =
-	  throw new Error("Trying to render input on root collection!")
-	def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo =
-	  throw new Error("Trying to fromUser on root collection!")
-  }
-  
-abstract private[core] class SingleElementBase(cid:OID, pf:PropFetcher)(implicit e:Ecology) extends SystemCollection(cid, pf)
-{
-  // TODO: this really doesn't belong here. We need to tease the HTTP/HTML specific
-  // stuff out from the core concepts.
-  // TODO: this will need refactoring, to get more complex on a per-Collection basis
-  def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo = {
-    val fieldIds = FieldIds(on, prop)
-    val empty = form(fieldIds.emptyControlId).value map (_.toBoolean) getOrElse false
-    if (empty) {
-      FormFieldInfo(prop, None, true, true)
-    } else {
-      val formV = form(fieldIds.inputControlId).value
-      formV match {
-    	// Normal case: pass it to the PType for parsing the value out:
-        case Some(v) => {
-          rawInterpretation(v, prop, elemT).getOrElse {
-            TryTrans { elemT.validate(v, prop, state) }.
-              onSucc { _ => FormFieldInfo(prop, Some(apply(elemT.fromUser(v))), false, true, Some(v)) }.
-              onFail { ex => FormFieldInfo(prop, None, true, false, Some(v), Some(ex)) }.
-              result
+    // TODO: this really doesn't belong here. We need to tease the HTTP/HTML specific
+    // stuff out from the core concepts.
+    // TODO: this will need refactoring, to get more complex on a per-Collection basis
+    def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo = {
+      val fieldIds = FieldIds(on, prop)
+      val empty = form(fieldIds.emptyControlId).value map (_.toBoolean) getOrElse false
+      if (empty) {
+        FormFieldInfo(prop, None, true, true)
+      } else {
+        val formV = form(fieldIds.inputControlId).value
+        formV match {
+    	  // Normal case: pass it to the PType for parsing the value out:
+          case Some(v) => {
+            rawInterpretation(v, prop, elemT).getOrElse {
+              TryTrans { elemT.validate(v, prop, state) }.
+                onSucc { _ => FormFieldInfo(prop, Some(apply(elemT.fromUser(v))), false, true, Some(v)) }.
+                onFail { ex => FormFieldInfo(prop, None, true, false, Some(v), Some(ex)) }.
+                result
+            }
           }
+          // There was no field value found. In this case, we take the default. That
+          // seems strange, but this case is entirely valid in the case of a checkbox.
+          // IMPORTANT / TODO: this code is horribly specific to the weird edge case of
+          // checkboxes! I don't love it, and it needs heavy testing!
+          case None => FormFieldInfo(prop, Some(apply(elemT.default)), false, true)
         }
-        // There was no field value found. In this case, we take the default. That
-        // seems strange, but this case is entirely valid in the case of a checkbox.
-        // IMPORTANT / TODO: this code is horribly specific to the weird edge case of
-        // checkboxes! I don't love it, and it needs heavy testing!
-        case None => FormFieldInfo(prop, Some(apply(elemT.default)), false, true)
       }
     }
-  }
   
-  def rawInterpretation(v:String, prop:Property[_,_], elemT:pType):Option[FormFieldInfo] = None
-}
+    def rawInterpretation(v:String, prop:Property[_,_], elemT:pType):Option[FormFieldInfo] = None
+  }
   
   /**
    * ExactlyOne is essentially Some -- it is quite intentionally Optional without the choice of None.
@@ -104,8 +71,9 @@ abstract private[core] class SingleElementBase(cid:OID, pf:PropFetcher)(implicit
    * 
    * TODO: rewrite ExactlyOne and Optional to be based on an actual Iterable with the right semantics.
    */
-  class ExactlyOneBase(oid:OID)(implicit e:Ecology) extends SingleElementBase(oid,
-    ExactlyOneProps.fetchProps) 
+  class ExactlyOneBase(oid:OID) extends SingleElementBase(oid, 
+      toProps(
+        setName("Exactly One"))) 
   {
     type implType = List[ElemValue]
 
@@ -131,75 +99,8 @@ abstract private[core] class SingleElementBase(cid:OID, pf:PropFetcher)(implicit
     def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = ExactlyOnePropValue(cv.toList, this, elemT)
     protected case class ExactlyOnePropValue(cv:implType, cType:ExactlyOneBase, pType:PType[_]) extends QValue
   }
-  class ExactlyOne(implicit e:Ecology) extends ExactlyOneBase(ExactlyOneOID)
-  private[core] object ExactlyOneProps {
-    def fetchProps:() => PropMap = {
-      Thing.toProps(
-        setName("Exactly-One")
-      )
-    }    
-  }
   
-  class Optional(implicit e:Ecology) extends SingleElementBase(OptionalOID,
-      toProps(
-        setName("Optional")
-        )) 
-  {
-    type implType = List[ElemValue]
-    
-    override def rawInterpretation(v:String, prop:Property[_,_], elemT:pType):Option[FormFieldInfo] = {
-      // If the input was empty, that's QNone.
-      // TODO: this isn't good enough for the long run -- we'll have to do something more
-      // sophisticated when we get to complex Types. But it's a start.
-      if (v.length() == 0)
-        Some(FormFieldInfo(prop, Some(QNone), false, true))
-      else
-        None
-    }
-    
-    def doDeserialize(ser:String, elemT:pType):implType = {
-      ser match {
-        case "!" => Nil
-        case s:String => {
-          val elemStr = s.slice(1, s.length() - 1)
-          List(elemT.deserialize(elemStr))
-        }
-      }
-    }
-    
-    def doSerialize(v:implType, elemT:pType):String = {
-      v match {
-        case List(elem) => "(" + elemT.serialize(elem) + ")"
-        case Nil => "!"
-      }
-    }
-    
-    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = {
-      v match {
-        case List(elem) => elemT.wikify(context)(elem, displayOpt)
-        case Nil => Wikitext("")
-      }
-    }
-    
-    def doDefault(elemT:pType):implType = Nil
-    
-    def wrap(elem:ElemValue):implType = List(elem)
-    def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = OptionalPropValue(cv.toList, this, elemT)    
-    private case class OptionalPropValue(cv:implType, cType:Optional, pType:PType[_]) extends QValue
-    
-    def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
-      // TODO: what should we do here? Has custom rendering become unnecessary here? Does the appearance of the
-      // trash button eliminate the need for anything fancy for Optional properties?
-      val v = currentValue.effectiveV.flatMap(_.firstOpt).getOrElse(elemT.default)
-      elemT.renderInput(prop, state, currentValue, v)
-    }
-
-    val QNone:QValue = makePropValue(Nil, UnknownType)
-    def Empty(elemT:pType):QValue = makePropValue(Nil, elemT) 
-  }
-  
-  
-  abstract class QListBase(cid:OID, pf:PropFetcher)(implicit e:Ecology) extends SystemCollection(cid, pf) 
+  abstract class QListBase(cid:OID, pf:PropFetcher) extends SystemCollection(cid, pf) 
   {
     type implType = List[ElemValue]
     
@@ -286,7 +187,104 @@ abstract private[core] class SingleElementBase(cid:OID, pf:PropFetcher)(implicit
     protected case class QListPropValue(cv:implType, cType:QListBase, pType:PType[_]) extends QValue    
     def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = QListPropValue(cv.toList, this, elemT)
   }
-  private[core] class QList(implicit e:Ecology) extends QListBase(QListOID,
+
+}
+
+trait CollectionCreation { self:CoreEcot with CollectionBase =>
+
+  /**
+   * Root Collection type. Exists solely so that there is a common runtime root, in case
+   * we want to be able to write new collections.
+   */
+  class UrCollection extends Collection(UrCollectionOID, systemOID, querki.core.MOIDs.RootOID,
+      toProps(
+        setName("Collection")//,
+        // TODO: is it possible to mark this as Internal without being *inside* CoreModule itself? There's
+        // a bit of chicken-and-egg going on here:
+//        InternalProp(true)
+        ))
+  {
+	type implType = List[ElemValue]
+	
+    def doDeserialize(ser:String, elemT:pType):implType = 
+      throw new Error("Trying to deserialize root collection!")
+    def doSerialize(v:implType, elemT:pType):String = 
+      throw new Error("Trying to serialize root collection!")
+    def doWikify(context:QLContext)(ser:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = 
+      throw new Error("Trying to render root collection!")
+    def doDefault(elemT:pType):implType = 
+      throw new Error("Trying to default root collection!")    
+	def wrap(elem:ElemValue):implType =
+	  throw new Error("Trying to wrap root collection!")    
+	def makePropValue(cv:Iterable[ElemValue], pType:PType[_]):QValue =
+	  throw new Error("Trying to makePropValue root collection!")    
+    def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem =
+	  throw new Error("Trying to render input on root collection!")
+	def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo =
+	  throw new Error("Trying to fromUser on root collection!")
+  }
+  
+  class ExactlyOne(implicit e:Ecology) extends ExactlyOneBase(ExactlyOneOID)
+
+  class Optional extends SingleElementBase(OptionalOID,
+      toProps(
+        setName("Optional")
+        )) 
+  {
+    type implType = List[ElemValue]
+    
+    override def rawInterpretation(v:String, prop:Property[_,_], elemT:pType):Option[FormFieldInfo] = {
+      // If the input was empty, that's QNone.
+      // TODO: this isn't good enough for the long run -- we'll have to do something more
+      // sophisticated when we get to complex Types. But it's a start.
+      if (v.length() == 0)
+        Some(FormFieldInfo(prop, Some(QNone), false, true))
+      else
+        None
+    }
+    
+    def doDeserialize(ser:String, elemT:pType):implType = {
+      ser match {
+        case "!" => Nil
+        case s:String => {
+          val elemStr = s.slice(1, s.length() - 1)
+          List(elemT.deserialize(elemStr))
+        }
+      }
+    }
+    
+    def doSerialize(v:implType, elemT:pType):String = {
+      v match {
+        case List(elem) => "(" + elemT.serialize(elem) + ")"
+        case Nil => "!"
+      }
+    }
+    
+    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = {
+      v match {
+        case List(elem) => elemT.wikify(context)(elem, displayOpt)
+        case Nil => Wikitext("")
+      }
+    }
+    
+    def doDefault(elemT:pType):implType = Nil
+    
+    def wrap(elem:ElemValue):implType = List(elem)
+    def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = OptionalPropValue(cv.toList, this, elemT)    
+    private case class OptionalPropValue(cv:implType, cType:Optional, pType:PType[_]) extends QValue
+    
+    def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+      // TODO: what should we do here? Has custom rendering become unnecessary here? Does the appearance of the
+      // trash button eliminate the need for anything fancy for Optional properties?
+      val v = currentValue.effectiveV.flatMap(_.firstOpt).getOrElse(elemT.default)
+      elemT.renderInput(prop, state, currentValue, v)
+    }
+
+    val QNone:QValue = makePropValue(Nil, UnknownType)
+    def Empty(elemT:pType):QValue = makePropValue(Nil, elemT) 
+  }
+  
+  class QList extends QListBase(QListOID,
       toProps(
         setName("List")
         ))
@@ -301,7 +299,7 @@ abstract private[core] class SingleElementBase(cid:OID, pf:PropFetcher)(implicit
     }
   }
   
-  private[core] class QSet(implicit e:Ecology) extends QListBase(QSetOID,
+  class QSet extends QListBase(QSetOID,
       toProps(
         setName("Set")))
   {
@@ -328,37 +326,74 @@ abstract private[core] class SingleElementBase(cid:OID, pf:PropFetcher)(implicit
     private case class QSetPropValue(cv:implType, cType:QSet, pType:PType[_]) extends QValue    
   }
   
-/**
- * This is a special marker collection that is Unit -- that is, it is by definition empty.
- * It should only be used for "marker" Properties, where the existence or non-existence of the
- * Property is the significant part. Action-only side-effecting Methods are the most likely
- * usage.
- */
-class QUnit(implicit e:Ecology) extends SystemCollection(QUnitOID,
-  toProps(
-    setName("Always Empty")//,
-    // TODO: again, how do we do this without chicken-and-egg problems?
+  /**
+   * This is a special marker collection that is Unit -- that is, it is by definition empty.
+   * It should only be used for "marker" Properties, where the existence or non-existence of the
+   * Property is the significant part. Action-only side-effecting Methods are the most likely
+   * usage.
+   */
+  class QUnit extends SystemCollection(QUnitOID,
+    toProps(
+      setName("Always Empty")//,
+      // TODO: again, how do we do this without chicken-and-egg problems?
 //    InternalProp(true)
-  )) 
-{
-  type implType = List[ElemValue]
+    )) 
+  {
+    type implType = List[ElemValue]
     
-  def doDeserialize(ser:String, elemT:pType):implType = Nil
+    def doDeserialize(ser:String, elemT:pType):implType = Nil
     
-  def doSerialize(v:implType, elemT:pType):String = ""
+    def doSerialize(v:implType, elemT:pType):String = ""
     
-  def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = Wikitext("")
+    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = Wikitext("")
     
-  def doDefault(elemT:pType):implType = Nil
+    def doDefault(elemT:pType):implType = Nil
     
-  def wrap(elem:ElemValue):implType = Nil
-  def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = UnitPropValue(cv.toList, this, elemT)    
-  private case class UnitPropValue(cv:implType, cType:QUnit, pType:PType[_]) extends QValue
+    def wrap(elem:ElemValue):implType = Nil
+    def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = UnitPropValue(cv.toList, this, elemT)    
+    private case class UnitPropValue(cv:implType, cType:QUnit, pType:PType[_]) extends QValue
     
-  def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
-    <i>Defined</i>
+    def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+      <i>Defined</i>
+    }
+
+    def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo =
+	  throw new Error("Trying to fromUser on Unit!")
   }
 
-  def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo =
-	throw new Error("Trying to fromUser on Unit!")
+  /**
+   * A null collection, whose sole purpose is to be the cType for the Name Property.
+   * 
+   * TBD: this is bloody dangerous, and we'll see how well it works. But we have nasty
+   * chicken-and-egg problems otherwise -- every Thing has Properties, which have Collections,
+   * which causes looping. In particular, we need a Collection for the initial PropValues
+   * to point to.
+   * 
+   * TODO: there's nothing terribly "name"-centric about this -- it's really just the "boot"
+   * collection, for the most central internal Properties. Rename it, and use it for InternalProp
+   * as well.
+   */
+  class NameCollection extends SingleElementBase(UnknownOID, () => models.Thing.emptyProps) {
+    type implType = List[ElemValue]
+
+    def doDeserialize(ser:String, elemT:pType):implType = List(elemT.deserialize(ser))
+
+    def doSerialize(v:implType, elemT:pType):String = elemT.serialize(v.head)
+
+    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = {
+      elemT.wikify(context)(v.head, displayOpt)
+    }
+    def doDefault(elemT:pType):implType = {
+      List(elemT.default)
+    }
+    def wrap(elem:ElemValue):implType = List(elem)
+    def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = NamePropValue(cv.toList, NameCollection.this, elemT)
+    
+    def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+      val v = currentValue.v.map(_.first).getOrElse(elemT.default)
+      elemT.renderInput(prop, state, currentValue, v)
+    }
+
+    private case class NamePropValue(cv:implType, cType:NameCollection, pType:PType[_]) extends QValue {}  
+  }
 }

@@ -13,6 +13,13 @@ abstract class CoreEcot(ecologyIn:Ecology) extends Ecot {
   // Note that this cannot, sadly, be a val, because it is needed in Ecot's constructor:
   implicit def ecology = ecologyIn
   
+  // Common classes:
+  type OID = models.OID
+  type Property[VT, -RT] = models.Property[VT,RT]
+  type PropFetcher = models.Thing.PropFetcher
+  type QValue = querki.values.QValue
+  type Thing = models.Thing
+  
   /**
    * The Collections introduced by this Module, if any.
    */
@@ -51,8 +58,7 @@ abstract class CoreEcot(ecologyIn:Ecology) extends Ecot {
   }
     
   // Utility functions for constructing Things:
-  import models.NameCollection.bootProp
-  def setName(str:String):(OID,QValue) = bootProp(querki.core.MOIDs.NameOID, str)
+  def setName(str:String):(OID,QValue)
   
   def toProps(pairs:(OID,QValue)*):models.Thing.PropFetcher = () => {
     (Map.empty[OID, QValue] /: pairs) { (m:Map[OID, QValue], pair:(OID, QValue)) =>
@@ -106,13 +112,6 @@ abstract class QuerkiEcot(ecologyIn:Ecology) extends CoreEcot(ecologyIn) {
   // The OID of the world root, which is the Model for most basic Things:
   val RootOID = querki.core.MOIDs.RootOID
   
-  // Common classes:
-  type OID = models.OID
-  type Property[VT, -RT] = models.Property[VT,RT]
-  type PropFetcher = models.Thing.PropFetcher
-  type QValue = querki.values.QValue
-  type Thing = models.Thing
-  
   // Common Collections:
   lazy val ExactlyOne = Core.ExactlyOne
   lazy val Optional = Core.Optional
@@ -120,12 +119,14 @@ abstract class QuerkiEcot(ecologyIn:Ecology) extends CoreEcot(ecologyIn) {
   lazy val QSet = Core.QSet
   
   // Common Types:
-  val IntType = models.system.IntType
+  lazy val IntType = Core.IntType
   lazy val LargeTextType = Core.LargeTextType
   lazy val LinkType = Core.LinkType
   lazy val TextType = Core.TextType
-  val YesNoType = models.system.YesNoType
-    
+  lazy val YesNoType = Core.YesNoType
+  
+  override def setName(str:String):(OID,QValue) = Core.setName(str)
+
   // Common Property constructors, so they can be used in Thing declarations without introducing init
   // dependencies:
   def Summary(text:String) = (querki.conventions.MOIDs.PropSummaryOID -> ExactlyOne(TextType(text)))

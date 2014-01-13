@@ -16,9 +16,8 @@ import querki.values._
  * factoring is found, feel free to move them. (Pay attention to OIDs! But if it's a
  * sysId, it can be moved freely.)
  */
-class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess with querki.core.MethodDefs {
+class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess with querki.logic.YesNoUtils with querki.core.MethodDefs {
   import MOIDs._
-  import YesNoType._
   
   lazy val QL = interface[querki.ql.QL]
   lazy val Basic = interface[querki.basic.Basic]
@@ -141,7 +140,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |with this name?", so that you can handle it differently depending on whether there is or not.""".stripMargin)))
   {
     def fullyApply(mainContext:QLContext, partialContext:QLContext, paramsOpt:Option[Seq[QLPhrase]]):QValue = {
-      partialContext.value.pType != UnknownNameType
+      partialContext.value.pType != QL.UnknownNameType
     }
   }
 

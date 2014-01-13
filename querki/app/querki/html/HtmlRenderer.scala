@@ -32,6 +32,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   lazy val Links = interface[querki.links.Links]
   lazy val Tags = interface[querki.tags.Tags]
   
+  lazy val NameType = Core.NameType
   lazy val NewTagSetType = Tags.NewTagSetType
   
   /*********************************
@@ -56,7 +57,9 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   
   // TODO: refactor this with Collection.fromUser():
   def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_], context:QLContext):FormFieldInfo = {
-    if (prop.cType == QSet && (prop.pType.isInstanceOf[NameType] || prop.pType == LinkType || prop.pType == NewTagSetType)) {
+    // TODO: this Ecot has a lot of incestuous tests of NameType. I'm leaving these ugly for now. Find a better solution,
+    // like lifting out a more public trait to test against.
+    if (prop.cType == QSet && (prop.pType.isInstanceOf[querki.core.TypeCreation#NameType] || prop.pType == LinkType || prop.pType == NewTagSetType)) {
       handleTagSet(prop, on, form, context)
     } else {
       val fieldIds = FieldIds(on, prop)
@@ -100,7 +103,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       Some(renderOptYesNo(state, prop, currentValue))
     else if (cType == Optional && pType == LinkType)
       Some(renderOptLink(state, prop, currentValue))
-    else if (cType == QSet && (pType.isInstanceOf[NameType] || pType == LinkType || pType == NewTagSetType)) {
+    else if (cType == QSet && (pType.isInstanceOf[querki.core.TypeCreation#NameType] || pType == LinkType || pType == NewTagSetType)) {
       if (specialization.contains(PickList))
         Some(renderPickList(state, prop, currentValue, specialization))
       else
@@ -158,7 +161,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
           val name = tOpt.map(_.displayName).getOrElse(oid.toThingId.toString)
           (oid.toString, name)
         }
-        case nameType:NameType => {
+        case nameType:querki.core.TypeCreation#NameType => {
           val name = nameType.get(elem)
           (name, name)          
         }
@@ -180,7 +183,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     val rawList = getTagSetNames(state, prop, currentValue)
     
     // We treat names/tags and links a bit differently, although they look similar on the surface:
-    val isNameType = prop.pType.isInstanceOf[NameType] || prop.pType == NewTagSetType
+    val isNameType = prop.pType.isInstanceOf[querki.core.TypeCreation#NameType] || prop.pType == NewTagSetType
     val current = "[" + rawList.map(_.map(keyVal => "{\"display\":\"" + JSONescape(keyVal._2) + "\", \"id\":\"" + JSONescape(keyVal._1) + "\"}").mkString(", ")).getOrElse("") + "]"
     <input class="_tagSetInput" data-isNames={isNameType.toString} type="text" data-current={current}></input>
   }
@@ -202,7 +205,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
         val sortedInstances = allInstances.toSeq.sortBy(_.displayName).zipWithIndex
         val rawList = getTagSetNames(state, prop, currentValue)
         val currentMap = rawList.map(_.toMap)
-        val isNameType = prop.pType.isInstanceOf[NameType]
+        val isNameType = prop.pType.isInstanceOf[querki.core.TypeCreation#NameType]
         
         val listName = currentValue.inputControlId + "_values"
         

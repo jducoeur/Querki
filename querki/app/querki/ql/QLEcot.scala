@@ -5,7 +5,7 @@ import play.api.templates.Html
 
 import querki.ecology._
 
-import models.{PType, PTypeBuilder, Thing, UnknownOID, UnknownType}
+import models.{PType, PTypeBuilder, Thing, UnknownOID, UnknownType, Wikitext}
 
 import ql._
 
@@ -18,21 +18,24 @@ object MOIDs extends EcotIds(24) {
   val CodeMethodOID = sysId(77)
 }
 
-class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with querki.core.MethodDefs with querki.core.TextTypeBasis {
+class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL 
+  with querki.core.CollectionBase
+  with querki.core.MethodDefs with querki.core.TextTypeBasis with querki.core.NameUtils with querki.core.NameTypeBasis 
+{
   import MOIDs._
   
-  lazy val ExactlyOneCut = new querki.core.ExactlyOneBase(UnknownOID) {
+  lazy val ExactlyOneCut = new ExactlyOneBase(UnknownOID) {
     override def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = new ExactlyOnePropValue(cv.toList, this, elemT) with CutProcessing
   }
   
-  lazy val EmptyListCutColl = new querki.core.QListBase(UnknownOID, () => Thing.emptyProps) {
+  lazy val EmptyListCutColl = new QListBase(UnknownOID, () => Thing.emptyProps) {
     def apply() = new QListPropValue(List.empty, this, UnknownType) with CutProcessing  
   }
   def EmptyListCut() = EmptyListCutColl()
 
   object ErrorTextType extends TextTypeBase(UnknownOID,
     Thing.toProps(
-      Thing.setName("Error Text")
+      setName("Error Text")
     )) with PTypeBuilder[QLText,String] {
   }
 
@@ -46,6 +49,23 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with querki.core.MethodDef
     }
     WarningValue(msg)
   }
+  
+  /***********************************************
+   * TYPES
+   ***********************************************/
+
+  /**
+   * This is a fake PType, used when we encounter a name we don't know.
+   */
+  lazy val UnknownNameType = new NameTypeBase(UnknownOID, "_unknownNameType") {
+    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = {
+      Wikitext("{{_unknownName:") + nameToLink(context)(v, displayOpt) + Wikitext("}}")
+    }
+  }
+  
+  override lazy val types = Seq(
+    UnknownNameType
+  ) 
   
   /***********************************************
    * FUNCTIONS

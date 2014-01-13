@@ -25,9 +25,8 @@ object MOIDs extends EcotIds(9) {
  * but that should be fixed. This should absorb YesNoType, and all of the predicate-oriented
  * methods.
  */
-class LogicModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
+class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.core.MethodDefs {
   import MOIDs._
-  import YesNoType._
 
   /******************************************
    * FUNCTIONS
@@ -88,7 +87,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	      }
 	      case _ => context.value
 	    }
-	    !YesNoType.toBoolean(inVal)
+	    !toBoolean(inVal)
 	  }
 	}
 	
@@ -113,7 +112,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	        val predicatePhrase = params(0)
 	        val ifCase = params(1)
 	        val predResult = context.parser.get.processPhrase(predicatePhrase.ops, context)
-	        if (YesNoType.toBoolean(predResult.value)) {
+	        if (toBoolean(predResult.value)) {
 	          context.parser.get.processPhrase(ifCase.ops, context).value
 	        } else if (params.length > 2) {
 	          val elseCase = params(2)
@@ -176,12 +175,12 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
     override def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = v
   }
   
-  lazy val trueVal = new BooleanValue(TrueOID, YesNoType.True,
+  lazy val trueVal = new BooleanValue(TrueOID, True,
       toProps(
         setName("True"),
         Summary("""The literal true value, for use in QL expressions.""")))
   
-  lazy val falseVal = new BooleanValue(FalseOID, YesNoType.False,
+  lazy val falseVal = new BooleanValue(FalseOID, False,
       toProps(
         setName("False"),
         Summary("""The literal false value, for use in QL expressions.""")))

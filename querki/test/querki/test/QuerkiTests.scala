@@ -4,7 +4,6 @@ import org.scalatest.{WordSpec, BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
 
 import models.{Thing}
-import models.system.{NameType}
 
 import ql.QLParser
 
@@ -89,7 +88,7 @@ class QuerkiTests
   def listOfLinkText(things:Thing*):String = {
     val lines = things.map { t =>
       val display = t.displayName
-      val name = t.canonicalName.map(NameType.toUrl(_)).getOrElse(display)
+      val name = t.canonicalName.map(querki.core.NameUtils.toUrl(_)).getOrElse(display)
       "\n[" + display + "](" + name + ")" 
     }
     lines.mkString

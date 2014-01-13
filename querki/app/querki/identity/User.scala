@@ -12,6 +12,7 @@ import models.{OID,UnknownOID}
 import models.{ThingId,AsOID,AsName}
 import models.system
 
+import querki.core.NameUtils
 import querki.db.ShardKind
 import ShardKind._
 
@@ -240,7 +241,7 @@ object User {
   }
   
   private def loadByHandle(rawHandle:String, checkOpt:Option[User => Boolean]):Option[User] = {
-    val handle = system.NameType.canonicalize(rawHandle)
+    val handle = NameUtils.canonicalize(rawHandle)
     val personQuery = userLoadSqlWhere("""handle={handle} and kind={loginKind}""").on("handle" -> handle, "loginKind" -> IdentityKind.QuerkiLogin)
     getUser(personQuery, checkOpt)
   }

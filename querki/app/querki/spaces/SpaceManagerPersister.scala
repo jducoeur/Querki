@@ -42,6 +42,7 @@ import PersistMessages._
  */
 private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor with EcologyMember {
   
+  lazy val Core = interface[querki.core.Core]
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
   lazy val SystemInterface = interface[querki.system.System]
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
@@ -137,7 +138,7 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
               content mediumblob NOT NULL,
               PRIMARY KEY (id))
             """).executeUpdate()
-        val initProps = Thing.toProps(Thing.setName(name), DisplayNameProp(display))()
+        val initProps = Thing.toProps(Core.setName(name), DisplayNameProp(display))()
         SpacePersistence.createThingInSql(spaceId, spaceId, systemOID, Kind.Space, initProps, SystemInterface.State)
       }
       DB.withTransaction(dbName(System)) { implicit conn =>

@@ -1,5 +1,7 @@
 package querki
 
+import models.{PType, PTypeBuilder}
+
 import querki.ecology._
 
 import querki.values.{ElemValue, QValue}
@@ -15,6 +17,8 @@ package object ql {
   }
   
   trait QL extends EcologyInterface {
+    def UnknownNameType:PType[String] with PTypeBuilder[String,String]
+    
     def WarningValue(msg:String):QValue
     def ErrorValue(msg:String):QValue
     

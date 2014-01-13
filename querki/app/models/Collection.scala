@@ -144,38 +144,3 @@ private[models] abstract class SingleElementBase(cid:OID, pf:PropFetcher) extend
   def rawInterpretation(v:String, prop:Property[_,_], elemT:pType):Option[FormFieldInfo] = None
 }
   
-
-/**
- * A null collection, whose sole purpose is to be the cType for the Name Property.
- * 
- * TBD: this is bloody dangerous, and we'll see how well it works. But we have nasty
- * chicken-and-egg problems otherwise -- every Thing has Properties, which have Collections,
- * which causes looping. In particular, we need a Collection for the initial PropValues
- * to point to.
- */
-class NameCollection extends SingleElementBase(IllegalOID, () => emptyProps) {
-  type implType = List[ElemValue]
-
-  def doDeserialize(ser:String, elemT:pType):implType = List(elemT.deserialize(ser))
-
-  def doSerialize(v:implType, elemT:pType):String = elemT.serialize(v.head)
-
-  def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = {
-    elemT.wikify(context)(v.head, displayOpt)
-  }
-  def doDefault(elemT:pType):implType = {
-    List(elemT.default)
-  }
-  def wrap(elem:ElemValue):implType = List(elem)
-  def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = NamePropValue(cv.toList, NameCollection.this, elemT)
-    
-  def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
-    val v = currentValue.v.map(_.first).getOrElse(elemT.default)
-    elemT.renderInput(prop, state, currentValue, v)
-  }
-
-  private case class NamePropValue(cv:implType, cType:NameCollection, pType:PType[_]) extends QValue {}  
-}
-object NameCollection extends NameCollection {
-  def bootProp(oid:OID, v:Any) = (oid -> apply(ElemValue(v, new DelegatingType({models.system.NameType}))))
-}

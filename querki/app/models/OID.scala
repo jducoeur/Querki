@@ -5,6 +5,7 @@ import anorm._
 import play.api.db._
 import play.api.Play.current
 
+import querki.core.NameUtils
 import querki.db.ShardKind._
 
 /**
@@ -109,7 +110,7 @@ case class AsName(name:String) extends ThingId {
   // We are currently using toUrl for this, *not* canonicalize, because we want to preserve case
   // in the URL. This does, however, mean that you can't casually compare the toString'ed versions
   // of two AsNames and assume that they are equal!
-  override def toString() = system.NameType.toUrl(name)
+  override def toString() = NameUtils.toUrl(name)
 }
 // This is a bit of a hack, to work around certain cases where we need to *not* Urlify 
 class AsDisplayName(name:String) extends AsName(name) {

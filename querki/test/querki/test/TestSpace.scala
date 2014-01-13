@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import models.{OID, OIDMap}
 import models.{Collection, Property, PType, PTypeBuilder, Thing, ThingState}
 import models.Thing._
-import models.system.{NameType, SystemSpace}
+import models.system.{SystemSpace}
 import models.system.OIDs.{systemOID}
 
 import querki.core.MOIDs._
@@ -52,6 +52,7 @@ case class SpaceMember(user:User, person:ThingState)
  */
 trait TestSpace extends EcologyMember {
   
+  lazy val Core = interface[querki.core.Core]
   lazy val Person = interface[querki.identity.Person]
   lazy val System = interface[querki.system.System]
 
@@ -65,7 +66,7 @@ trait TestSpace extends EcologyMember {
   //
   
   def makePropFetcher(name:String, pairs:Seq[(OID,QValue)]) = {
-    toProps((pairs :+ setName(name)):_*)
+    toProps((pairs :+ Core.setName(name)):_*)
   }
   
   def registerProp(p:Property[_,_]) = { props = props :+ p }
@@ -153,7 +154,7 @@ trait TestSpace extends EcologyMember {
   
   lazy val sProps:PropFetcher =
     toProps(
-      (otherSpaceProps :+ setName(spaceName)):_*
+      (otherSpaceProps :+ Core.setName(spaceName)):_*
     )
 
   /**

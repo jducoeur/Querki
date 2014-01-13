@@ -20,9 +20,12 @@ import querki.values.{ElemValue, QLContext, QValue, SpaceState}
 package object core {
   object MOIDs extends EcotIds(16) {
     val RootOID = sysId(1)
+    val IntTypeOID = sysId(2)
     val TextTypeOID = sysId(3)
+    val YesNoTypeOID = sysId(4)
     val UrPropOID = sysId(5)
     val NameOID = sysId(6)
+    val NameTypeOID = sysId(10)
     val UrCollectionOID = sysId(12)
     val ExactlyOneOID = sysId(13)
     val OptionalOID = sysId(14)
@@ -70,6 +73,9 @@ package object core {
     def TextType:PType[QLText] with PTypeBuilder[QLText,String]
     def LargeTextType:PType[QLText] with PTypeBuilder[QLText,String]
     def LinkType:PType[OID] with PTypeBuilder[OID,OID]
+    def NameType:PType[String] with PTypeBuilder[String,String]
+    def IntType:PType[Int] with PTypeBuilder[Int,Int]
+    def YesNoType:PType[Boolean] with PTypeBuilder[Boolean,Boolean]
     
     def LinkFromThingBuilder:PTypeBuilderBase[OID, Thing]
     
@@ -78,6 +84,8 @@ package object core {
     def makeListValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue
     def makeSetValue(rawList:Seq[ElemValue], pt:PType[_], context:QLContext):QValue
     def followLink(context:QLContext):Option[Thing]
+    // Ecots have this built-in, but non-Ecots can use this:
+    def setName(str:String):(OID,QValue)
     
     def NotInheritedProp:Property[Boolean,Boolean]
     def UrProp:Property[QLText, String]

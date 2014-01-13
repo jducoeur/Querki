@@ -3,14 +3,16 @@ package querki.core
 import models._
 
 import models.system.OIDs.{systemOID, DisplayTextOID}
-import models.system.{IntType, NameType, YesNoType}
 
 import querki.conventions
 import querki.ecology._
 
 import querki.values.{ElemValue, PropAndVal, QLContext, QValue, SpaceState}
 
-class CoreModule(e:Ecology) extends CoreEcot(e) with Core with TextTypeBasis with LinkUtils with TypeCreation {
+class CoreModule(e:Ecology) extends CoreEcot(e) with Core
+  with CollectionBase with CollectionCreation
+  with TextTypeBasis with LinkUtils with NameUtils with NameTypeBasis with TypeCreation 
+{
   import MOIDs._
   
   def LinkKindProp(kind:Kind.Kind) = (querki.links.MOIDs.LinkKindOID -> ExactlyOne(IntType(kind)))
@@ -65,11 +67,14 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with TextTypeBasis wit
   lazy val QList = new QList
   lazy val QSet = new QSet
   lazy val QUnit = new QUnit
+  lazy val NameCollection = new NameCollection
   
   lazy val QNone = Optional.QNone
   def listFrom[RT,VT](in:Iterable[RT], builder:PTypeBuilderBase[VT,RT]):QValue = QList.from(in, builder)
   def makeListValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = QList.makePropValue(cv, elemT)
   def makeSetValue(rawList:Seq[ElemValue], pt:PType[_], context:QLContext):QValue = QSet.makeSetValue(rawList, pt, context)
+  
+  def setName(v:String) = (NameOID -> NameCollection(ElemValue(v, new DelegatingType({NameType}))))
   
   override lazy val colls = Seq(
     UrCollection,
@@ -93,6 +98,9 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with TextTypeBasis wit
   lazy val TextType = new TextType
   lazy val LargeTextType = new LargeTextType
   lazy val LinkType = new LinkType
+  lazy val NameType = new NameType
+  lazy val IntType = new IntType
+  lazy val YesNoType = new YesNoType
   
   lazy val LinkFromThingBuilder = new PTypeBuilderBase[OID, Thing] {
     def pType = LinkType
@@ -105,7 +113,10 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with TextTypeBasis wit
     InternalMethodType,
     TextType,
     LargeTextType,
-    LinkType
+    LinkType,
+    NameType,
+    IntType,
+    YesNoType
   )
   
   /***********************************************
