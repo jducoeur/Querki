@@ -136,7 +136,7 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
               content mediumblob NOT NULL,
               PRIMARY KEY (id))
             """).executeUpdate()
-        val initProps = Thing.toProps(Core.setName(name), DisplayNameProp(display))()
+        val initProps = Core.toProps(Core.setName(name), DisplayNameProp(display))()
         SpacePersistence.createThingInSql(spaceId, spaceId, SystemIds.systemOID, Kind.Space, initProps, SystemInterface.State)
       }
       DB.withTransaction(dbName(System)) { implicit conn =>

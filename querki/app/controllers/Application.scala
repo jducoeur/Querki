@@ -322,7 +322,7 @@ disallow: /
               val FormFieldInfo(prop, value, _, _, _, _) = pair
               (prop.id, value.get)
             }
-            val props = Thing.toProps(propPairs:_*)()
+            val props = Core.toProps(propPairs:_*)()
             val spaceMsg = if (thing.isDefined) {
               if (partial || oldModel.hasProp(querki.editing.MOIDs.InstanceEditPropsOID)) {
                 // Editing an instance, so we only have a subset of the props, not the full list.
@@ -599,7 +599,7 @@ disallow: /
 	  } finally {
 	    source.close()
 	  }
-	  val attachProps = Thing.toProps(DisplayNameProp(filename))()
+	  val attachProps = Core.toProps(DisplayNameProp(filename))()
 	  askSpaceMgr[ThingResponse](
 	    CreateAttachment(user, rc.ownerId, state.id.toThingId, contents, MIMEType.JPEG, contents.size, querki.basic.MOIDs.PhotoBaseOID, attachProps)) {
 	    case ThingFound(attachmentId, state2) => {

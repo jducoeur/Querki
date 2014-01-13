@@ -36,7 +36,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
   def EmptyListCut() = EmptyListCutColl()
 
   object ErrorTextType extends TextTypeBase(UnknownOID,
-    Thing.toProps(
+    toProps(
       setName("Error Text")
     )) with PTypeBuilder[QLText,String] {
   }

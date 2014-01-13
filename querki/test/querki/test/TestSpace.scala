@@ -64,7 +64,7 @@ trait TestSpace extends EcologyMember {
   //
   
   def makePropFetcher(name:String, pairs:Seq[(OID,QValue)]) = {
-    toProps((pairs :+ Core.setName(name)):_*)
+    Core.toProps((pairs :+ Core.setName(name)):_*)
   }
   
   def registerProp(p:Property[_,_]) = { props = props :+ p }
@@ -151,7 +151,7 @@ trait TestSpace extends EcologyMember {
   lazy val otherSpaceProps:Seq[(OID, QValue)] = Seq.empty
   
   lazy val sProps:PropFetcher =
-    toProps(
+    Core.toProps(
       (otherSpaceProps :+ Core.setName(spaceName)):_*
     )
 

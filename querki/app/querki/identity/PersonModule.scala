@@ -330,7 +330,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
       val displayName = "Invitee " + prefix
       
       val propMap = 
-        Thing.toProps(
+        toProps(
           EmailAddressProp(address.addr),
           DisplayNameProp(displayName),
           AccessControl.CanReadProp(AccessControl.OwnerTag))()

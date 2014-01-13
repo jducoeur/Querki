@@ -83,8 +83,10 @@ package object core {
     def makeListValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue
     def makeSetValue(rawList:Seq[ElemValue], pt:PType[_], context:QLContext):QValue
     def followLink(context:QLContext):Option[Thing]
-    // Ecots have this built-in, but non-Ecots can use this:
+    
+    // Ecots have these built-in, but non-Ecots can use this:
     def setName(str:String):(OID,QValue)
+    def toProps(pairs:(OID,QValue)*):models.Thing.PropFetcher
     
     def NotInheritedProp:Property[Boolean,Boolean]
     def UrProp:Property[QLText, String]

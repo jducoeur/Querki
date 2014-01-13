@@ -40,21 +40,7 @@ object Thing {
   type PropMap = Map[OID, QValue]
   type PropFetcher = () => PropMap
   
-  // A couple of convenience methods for the hard-coded Things in System:
-  def toProps(pairs:(OID,QValue)*):PropFetcher = () => {
-    (Map.empty[OID, QValue] /: pairs) { (m:Map[OID, QValue], pair:(OID, QValue)) =>
-      m + (pair._1 -> pair._2)
-    }
-  }
-  
   def emptyProps = Map.empty[OID, QValue]
-  
-  // NOTE: don't try to make this more concise -- it causes chicken-and-egg problems in system
-  // initialization:
-//  def setName(str:String):(OID,QValue) = bootProp(querki.core.MOIDs.NameOID, str)
-//    (NameOID -> ExactlyOne(ElemValue(str)))
-//    (NameOID -> PropValue(Some(ElemValue(str))))
-
 }
 
 import Thing._

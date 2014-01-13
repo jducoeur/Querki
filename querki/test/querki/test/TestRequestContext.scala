@@ -26,4 +26,6 @@ case class SimpleTestRequestContext(o:OID, s:SpaceState, t:Thing, e:Ecology)(imp
     e)
 {
   def withUpdatedState(newState:SpaceState):RequestContext = copy(s = newState)
+  // In principle, we really should have a test renderer here instead:
+  def renderer = interface[querki.html.HtmlRenderer]
 }

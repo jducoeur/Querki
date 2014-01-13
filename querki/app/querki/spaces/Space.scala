@@ -143,7 +143,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
     state.ownerIdentity.foreach { identity =>
       if (Person.localPerson(identity)(state).isEmpty) {
         createSomething(id, SystemUser, Person.PersonModel.id, 
-          toProps(
+          Core.toProps(
             Core.setName(identity.handle),
             Basic.DisplayNameProp(identity.name),
             Person.IdentityLink(identity.id))(),
