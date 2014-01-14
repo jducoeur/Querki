@@ -17,9 +17,11 @@ object MOIDs extends EcotIds(8)
  * Note that this works hand-in-glove with controllers.TOSController. Really, I would just do the
  * control stuff here, but wound up having strange problems with imports.
  */
-class TOSModule(e:Ecology) extends QuerkiEcot(e) {
+class TOSModule(e:Ecology) extends QuerkiEcot(e) with TermsOfService {
   
   import TOSModule._
+  
+  lazy val UserAccess = interface[querki.identity.UserAccess]
   
   override def init = {
     PageEventManager.requestReceived += TOSChecker
@@ -27,6 +29,13 @@ class TOSModule(e:Ecology) extends QuerkiEcot(e) {
   
   override def term = {
     PageEventManager.requestReceived -= TOSChecker
+  }
+  
+  /**
+   * Record that the User has accepted the TOS. May throw an exception, so use inside Tryer!
+   */
+  def recordAccept(user:User, version:Int):User =  {
+    UserAccess.setTOSVersion(user.id, version).get
   }
   
   import controllers.PlayRequestContext
@@ -61,13 +70,6 @@ object TOSModule {
    * The current Terms of Service, rendered as HTML.
    */
   def current:DisplayText = Wikitext(currentVersion.text).display
-  
-  /**
-   * Record that the User has accepted the TOS. May throw an exception, so use inside Tryer!
-   */
-  def recordAccept(user:User, version:Int):User =  {
-    User.setTOSVersion(user.id, version).get
-  }
 }
 
 case class TOSVersion(version:Int, text:String)

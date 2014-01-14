@@ -139,7 +139,7 @@ class LoginController extends ApplicationBase {
     userForm.bindFromRequest.fold(
       errors => doError(Call(request.method, request.path), "I didn't understand that"),
       form => {
-        val userOpt = User.checkQuerkiLogin(form.name, form.password)
+        val userOpt = UserAccess.checkQuerkiLogin(form.name, form.password)
         userOpt match {
           case Some(user) => {
             // Yes. Am I already a member of this Space?
@@ -168,7 +168,7 @@ class LoginController extends ApplicationBase {
     	val personOpt = rc.sessionCookie(querki.identity.personParam)
     	personOpt match {
     	  case Some(personId) => {
-	    	val result = User.createProvisional(info)
+	    	val result = UserAccess.createProvisional(info)
 	        result match {
 	          case Success(user) => {
 	            // We're now logged in, so start a new session. But preserve the personParam for the next step:
@@ -201,7 +201,7 @@ class LoginController extends ApplicationBase {
   }
 
   def userByName(userName:String) = withUser(true) { rc =>
-    val pairOpt = User.getIdentity(ThingId(userName))
+    val pairOpt = UserAccess.getIdentity(ThingId(userName))
     pairOpt match {
       case Some((identity, level)) => {
         val initialPasswordForm = PasswordChangeInfo("", "", "")
@@ -217,12 +217,12 @@ class LoginController extends ApplicationBase {
     rawForm.fold(
       errorForm => doError(routes.LoginController.userByName(handle), "That was not a legal password"),
       info => {
-        val checkedLogin = User.checkQuerkiLogin(handle, info.password)
+        val checkedLogin = UserAccess.checkQuerkiLogin(handle, info.password)
         checkedLogin match {
           case Some(user) => {
             if (info.newPassword == info.newPasswordAgain) {
               val identity = user.identityByHandle(handle).get
-              val newUser = User.changePassword(rc.requesterOrAnon, identity, info.newPassword)
+              val newUser = UserAccess.changePassword(rc.requesterOrAnon, identity, info.newPassword)
               Redirect(routes.LoginController.userByName(handle)).flashing("info" -> "Password changed")
             } else {
               doError(routes.LoginController.userByName(handle), "The passwords didn't match")
@@ -253,7 +253,7 @@ class LoginController extends ApplicationBase {
     userForm.bindFromRequest.fold(
       errors => doError(routes.LoginController.login, "I didn't understand that"),
       form => {
-        val userOpt = User.checkQuerkiLogin(form.name, form.password)
+        val userOpt = UserAccess.checkQuerkiLogin(form.name, form.password)
         userOpt match {
           case Some(user) => {
             val redirectOpt = rc.sessionCookie(rc.returnToParam)

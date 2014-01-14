@@ -43,6 +43,7 @@ object SystemCreator {
     new querki.links.LinksEcot(ecology)                            // 27
     new querki.spaces.SpacePersistenceEcot(ecology)                // 28
     new querki.evolutions.EvolutionsEcot(ecology)                  // 29
+    new querki.identity.UserPersistence(ecology)                   // 30
     
     ecology
   }

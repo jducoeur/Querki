@@ -1,6 +1,11 @@
 package querki
 
-import models.{OID, Property, Thing}
+import scala.util.Try
+
+// TODO: this is an unfortunate abstraction break:
+import play.api.mvc.RequestHeader
+
+import models.{OID, Property, Thing, ThingId}
 
 import querki.ecology._
 
@@ -57,5 +62,19 @@ package object identity {
     def hasPerson(user:User, person:Thing)(implicit state:SpaceState):Boolean
     def isPerson(identity:Identity, person:Thing)(implicit state:SpaceState):Boolean
     def localPerson(identity:Identity)(implicit state:SpaceState):Option[Thing]
+  }
+  
+  trait UserAccess extends EcologyInterface {
+    def addSpaceMembership(identityId:OID, spaceId:OID):Boolean
+    def changePassword(requester:User, identity:Identity, newPassword:String):Try[User]
+    def changeUserLevel(userId:OID, requester:User, level:UserLevel.UserLevel):Option[User]
+    def checkQuerkiLogin(login:String, passwordEntered:String):Option[User]
+    def createProvisional(info:SignupInfo):Try[User]
+    def get(request:RequestHeader):Option[User]
+    def getAllForAdmin(requester:User):Seq[User]
+    def getIdentity(rawHandle:String):Option[OID]
+    def getIdentity(id:OID):Option[Identity]
+    def getIdentity(thingId:ThingId):Option[(Identity, UserLevel.UserLevel)]
+    def setTOSVersion(userId:OID, version:Int):Option[User]
   }
 }

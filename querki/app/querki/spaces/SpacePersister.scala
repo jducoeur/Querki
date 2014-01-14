@@ -58,6 +58,7 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
   lazy val Core = interface[querki.core.Core]
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   lazy val Evolutions = interface[querki.evolutions.Evolutions]
+  lazy val UserAccess = interface[querki.identity.UserAccess]
 
   // The OID of the Space, based on the sid
   def oid = Space.oid _
@@ -266,7 +267,7 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
 	      curState = curState.copy(spaceProps = Map(fixedAllProps:_*))
 	      
 	      // BLOCKING, but useful: make the owner visible, so that we can, eg, write URLs
-	      curState = curState.copy(ownerIdentity = User.getIdentity(owner))
+	      curState = curState.copy(ownerIdentity = UserAccess.getIdentity(owner))
 	      
 	      sender ! Loaded(curState)
 	    }

@@ -4,8 +4,6 @@ import play.api.data._
 import play.api.data.Forms._
 import play.api.mvc._
 
-import querki.system.TOSModule
-
 import querki.util._
 
 case class TOSForm(version:Int = -1, agreed:Boolean = false)
@@ -21,6 +19,8 @@ class TOSController extends ApplicationBase {
     )(TOSForm.apply)(TOSForm.unapply)
   )
 
+  lazy val TOS = interface[querki.system.TermsOfService]
+  
   def showTOS = withUser(true) { rc =>
     Ok(views.html.tos(rc, tosForm.fill(TOSForm())))
   }
@@ -36,7 +36,7 @@ class TOSController extends ApplicationBase {
     if (response == "on" || response == "true") {
       // TODO: use redirectTo to return to where we were before this started.
       Tryer[querki.identity.User, PlainResult]
-        { TOSModule.recordAccept(rc.requesterOrAnon, rawForm.data("version").toInt) }
+        { TOS.recordAccept(rc.requesterOrAnon, rawForm.data("version").toInt) }
         { user => rc.returnToPreviousOr(routes.Application.index) }
         { ex => doError(routes.TOSController.showTOS, ex) }
     } else {

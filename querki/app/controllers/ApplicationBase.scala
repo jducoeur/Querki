@@ -16,6 +16,8 @@ class ApplicationBase extends Controller with EcologyMember {
   
   implicit var ecology:Ecology = null
   
+  lazy val UserAccess = interface[querki.identity.UserAccess]
+  
   /**
    * Standard error handler. Iff you get an error and the correct response is to redirect to
    * another page, use this. The only exception is iff you need to preserve data, and thus want
@@ -41,14 +43,14 @@ class ApplicationBase extends Controller with EcologyMember {
       case AsName(name) => {
         if (name.length() == 0) UnknownOID
         else {
-          val userOpt = User.getIdentity(name)
+          val userOpt = UserAccess.getIdentity(name)
           userOpt getOrElse UnknownOID
         }
       }
     }
   }
   
-  def userFromSession(request:RequestHeader) = User.get(request)
+  def userFromSession(request:RequestHeader) = UserAccess.get(request)
   // Workaround to deal with the fact that Security.Authenticated has to get a non-empty
   // result in order to let things through. So if a registered user is *optional*, we need to
   // return something:

@@ -30,7 +30,7 @@ class AdminController extends ApplicationBase {
   } 
 
   def manageUsers = withAdmin { rc =>
-    val users = User.getAllForAdmin(rc.requesterOrAnon)
+    val users = UserAccess.getAllForAdmin(rc.requesterOrAnon)
     Ok(views.html.manageUsers(rc, users))
   }
   
@@ -39,7 +39,7 @@ class AdminController extends ApplicationBase {
    */
   def upgradePendingUser(userIdStr:String) = withAdmin { rc =>
     val userId = OID(userIdStr)
-    val newUserOpt = User.changeUserLevel(userId, rc.requesterOrAnon, UserLevel.FreeUser)
+    val newUserOpt = UserAccess.changeUserLevel(userId, rc.requesterOrAnon, UserLevel.FreeUser)
     
     newUserOpt.map { newUser =>
       // TODO: these strings should be internationalized
@@ -65,7 +65,7 @@ class AdminController extends ApplicationBase {
    */
   def makeAdmin(userIdStr:String) = withSuperadmin { rc =>
     val userId = OID(userIdStr)
-    val newUserOpt = User.changeUserLevel(userId, rc.requesterOrAnon, UserLevel.AdminUser)
+    val newUserOpt = UserAccess.changeUserLevel(userId, rc.requesterOrAnon, UserLevel.AdminUser)
     Ok(newUserOpt.map(_.level.toString).getOrElse(UserLevel.PendingUser.toString))
   }
   

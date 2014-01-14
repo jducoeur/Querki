@@ -40,6 +40,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   lazy val QL = interface[querki.ql.QL]
   lazy val Links = interface[querki.links.Links]
   lazy val HtmlUI = interface[querki.html.HtmlUI]
+  lazy val UserAccess = interface[querki.identity.UserAccess]
   
   lazy val EmailAddressProp = Email.EmailAddressProp
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
@@ -66,18 +67,6 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   /***********************************************
    * PROPERTIES
    ***********************************************/
-
-  // The actual definition of this method is down below
-  lazy val inviteLink = new SingleThingMethod(InviteLinkCmdOID, "Invite Link", "Generate a Link to invite someone to join this Space.", 
-      """Place this command inside of an Email Message.
-When the email is sent, it will be replaced by a link that the recipient of the email can use to log into this Space as a Person.""", doInviteLink(false))
-
-  lazy val chromelessInviteLink = new SingleThingMethod(ChromelessInviteLinkOID, "Plain Invite Link", "Generate a Link to join this Space, with no Querki menus and such.", 
-      """Place this command inside of an Email Message.
-When the email is sent, it will be replaced by a link that the recipient of the email can use to log into this Space as a Person.
-Unlike the ordinary Invite Link command, this one results in a page with no Querki menu bar, just your pages.
-(NOTE: this will probably become a paid-users-only feature in the future. Also, this method isn't usually what you want any more;
-instead, you usually want to set the Chromeless Invites property on your Space.)""", doInviteLink(true))
 
   lazy val IdentityLink = new SystemProperty(IdentityLinkOID, LinkType, Optional,
       toProps(
@@ -134,10 +123,6 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
             |directly with it.""".stripMargin)))
 
   override lazy val props = Seq(
-    inviteLink,
-    
-    chromelessInviteLink,
-    
     IdentityLink,
     
     meMethod,
@@ -170,85 +155,13 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
     SecurityPrincipal,
     PersonModel
   )
-   
-  /***********************************************
-   * METHOD CONTENTS
-   ***********************************************/
-  
-  /**
-   * Find the Identity that goes with this Person's email address, or create one if there
-   * isn't already one.
-   */
-  private def setIdentityId(t:Thing, context:QLContext):OID = {
-    implicit val s = context.state
-    val emailAddr = t.first(EmailAddressProp)
-    val name = t.first(Core.NameProp)
-    // Get the Identity in the database...
-    val identity = Identity.getOrCreateByEmail(emailAddr, name)
-    // ... then point the Person to it, so we can use it later...
-    val req = context.request
-    // TODO: we shouldn't do this again if the Person is already pointing to the Identity:
-    val changeRequest = ChangeProps(req.requester.get, s.owner, s.id, t.toThingId, toProps(IdentityLink(identity.id))())
-    // TODO: eventually, all of this should get beefed up in various ways:
-    // -- ChangeProps should carry the version stamp of t, so that race conditions can be rejected.
-    // -- Ideally, we shouldn't send the email until the Identity has been fully established. Indeed, this whole
-    //    business really *ought* to be transactional.
-    SpaceManager.ask(changeRequest) { resp:ThingResponse =>
-      resp match {
-        case ThingFound(id, state) => Logger.info("Added identity " + identity.id + " to Person " + t.toThingId)
-        case ThingError(error, stateOpt) => Logger.error("Unable to add identity " + identity.id + " to Person " + t.toThingId + ": " + error.msgName)
-      }
-    }
-    // ... and finally, return it so we can use it now:
-    identity.id
-  }
-  
-  def idHash(personId:OID, identityId:OID):EncryptedHash = {
-    Hasher.calcHash(personId.toString + identityId.toString)
-  }
-  
-  val identityParam = "identity"
-  val identityName = "identityName"
-  val inviteParam = "invite"
-    
-  def doInviteLink(chromelessIn:Boolean)(t:Thing, context:QLContext):QValue = {
-    implicit val state = context.state
-    val personOpt =
-      for {
-        rootId <- context.root.value.firstAs(LinkType);
-        rootThing <- state.anything(rootId);
-        if (rootThing.isAncestor(PersonOID))
-      }
-        yield rootThing
-        
-    personOpt match {
-      case Some(person) => {
-        val chromeless = chromelessIn || t.ifSet(chromelessInvites) || state.ifSet(chromelessInvites)
-        // Get the Identity linked from this Person. If there isn't already one, make one.
-	    val identityProp = person.localProp(IdentityLink)
-	    val identityId = identityProp match {
-	      case Some(propAndVal) if (!propAndVal.isEmpty) => propAndVal.first
-  	      // This will set identityProp, as well as getting the Identity's OID:
-	      case _ => setIdentityId(person, context)
-	    }
-	    val hash = idHash(person.id, identityId)
-	    
-	    // TODO: this surely belongs in a utility somewhere -- it constructs the full path to a Thing, plus some paths.
-	    // Technically speaking, we are converting a Link to an ExternalLink, then adding params.
-	    val url = urlBase + "u/" + state.owner.toThingId + "/" + state.name + "/" + t.toThingId + 
-	      "?" + personParam + "=" + person.id.toThingId + "&" +
-	      identityParam + "=" + hash +
-	      (if (chromeless) "&cl=on" else "")
-	    ExactlyOne(ExternalLinkType(url))
-      }
-      case _ => QL.WarningValue("Invite Link is only defined when sending email")
-    }
-  }
-  
+
   /*************************************************************
    * INVITATION MANAGEMENT
    *************************************************************/
 
+  val inviteParam = "invite"
+    
   // TODO: this belongs in a utility library somewhere:
   def encodeURL(url:String):String = java.net.URLEncoder.encode(url, "UTF-8")
   def decodeURL(url:String):String = java.net.URLDecoder.decode(url, "UTF-8")
@@ -405,7 +318,7 @@ instead, you usually want to set the Chromeless Invites property on your Space.)
       // TODO: currently, we're just taking the first identity, arbitrarily. But in the long run, I should be able
       // to choose which of my identities is joining this Space:
       identity <- user.identityBy(_ => true);
-      membershipResult = User.addSpaceMembership(identity.id, state.id);
+      membershipResult = UserAccess.addSpaceMembership(identity.id, state.id);
       changeRequest = ChangeProps(SystemUser, state.owner, state.id, person.toThingId, 
           toProps(
             IdentityLink(identity.id),

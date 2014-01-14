@@ -2,6 +2,7 @@ package querki
 
 import querki.ecology._
 
+import querki.identity.User
 import querki.values.SpaceState
 
 package object system {
@@ -12,5 +13,9 @@ package object system {
      * so instead of using the old backdoor through SystemSpace.State, which will eventually go away.
      */
     def State:SpaceState
+  }
+  
+  trait TermsOfService extends EcologyInterface {
+    def recordAccept(user:User, version:Int):User
   }
 }
