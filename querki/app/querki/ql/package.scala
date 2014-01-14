@@ -26,6 +26,59 @@ package object ql {
     def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue
   }
   
+  /**
+   * This encapsulates the call information about a single function invocation in QL. In general,
+   * common functionality should get wrapped up into here.
+   */
+  trait Invocation {
+    /**
+     * How many parameters were actually given?
+     */
+    def numParams:Int
+    
+    /**
+     * Check the actual Invocation against the provided Signature.
+     * 
+     * TODO: soon, the Signature will be given as a Property, and checked automatically.
+     */
+    def ifMatches(sig:Signature)(f:Invocation => QValue):QValue
+    
+    /**
+     * Declare that we expect the received context to be of the given PType or trait, and
+     * keep going using that.
+     */
+    def contextAs[T : scala.reflect.ClassTag](f:T => QValue):QValue
+    
+    /**
+     * Process one of the parameters. Expects that you have already checked that you have
+     * all your expected parameters, using ifMatches!
+     */
+    def processParam(paramNum:Int, processContext:QLContext = context):QValue
+    
+    //////////////
+    //
+    // These are the raw fields. By and large, you should prefer *not* to use these, and some of them
+    // may go away in the long run. If possible, use higher-level functions instead.
+    //
+    
+    /**
+     * The "primary" context of this invocation. This is an exact synonym for receivedContext, and is the
+     * one you usually care about. 
+     */
+    def context:QLContext
+    
+    /**
+     * The Context that was passed to this function. This always exists, although a few functions don't care
+     * about it.
+     */
+    def receivedContext:QLContext
+    
+    /**
+     * The parameter list for this invocation, iff there was one.
+     */
+    def paramsOpt:Option[Seq[QLPhrase]]
+  }
+  
   trait QL extends EcologyInterface {
     
     /**

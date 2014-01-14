@@ -8,7 +8,7 @@ import models.{HtmlWikitext, OID, QWikitext, SimplePTypeBuilder, UnknownOID, Wik
 
 import querki.core.URLableType
 import querki.ecology._
-import querki.ql.QLPhrase
+import querki.ql.{QLPhrase, Signature, RequiredParam}
 import querki.util._
 import querki.values._
 
@@ -291,29 +291,25 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	          |The default behaviour of a Link, if you don't do anything with it, is effectively
 	          |"_showLink(Default View)".""".stripMargin)))
 	{
-	  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
-	    paramsOpt match {
-	      case Some(params) if (params.length > 0) => {
-	        context.value.pType match {
-	          case pt:URLableType => {
-	            context.collect(ParsedTextType) { elemContext =>
-	              val wikitextOpt = for (
-	                elemV <- elemContext.value.firstOpt;
-	                url <- pt.getURL(elemContext)(elemV);
-	                label = elemContext.parser.get.processPhrase(params(0).ops, elemContext).value.wikify(elemContext)
-	                  )
-	                yield QWikitext("[") + label + QWikitext(s"]($url)")
+	  lazy val sig = Signature(ParsedTextType, RequiredParam("label"))
+	  
+	  override def qlApply(invInit:Invocation):QValue = {
+	    invInit.ifMatches(sig) { inv =>
+	      inv.contextAs[URLableType] { pt =>
+	        inv.context.collect(ParsedTextType) { elemContext =>
+              val wikitextOpt = for (
+	            elemV <- elemContext.value.firstOpt;
+	            url <- pt.getURL(elemContext)(elemV);
+	            label = inv.processParam(0, elemContext).wikify(elemContext)
+                  )
+                yield QWikitext("[") + label + QWikitext(s"]($url)")
 	              
-	              wikitextOpt match {
-	                case Some(wikitext) => QValue.make(ExactlyOne, ParsedTextType, wikitext)
-	                case None => Core.emptyListOf(ParsedTextType)
-	              }
-	            }
-	          }
-	          case _ => WarningValue(displayName + " can only be used with Link types")
+              wikitextOpt match {
+                case Some(wikitext) => QValue.make(ExactlyOne, ParsedTextType, wikitext)
+                case None => Core.emptyListOf(ParsedTextType)
+              }	          
 	        }
 	      }
-	      case None => WarningValue(displayName + " requires a label parameter.")
 	    }
 	  }
 	}

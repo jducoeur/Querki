@@ -20,6 +20,7 @@ abstract class CoreEcot(ecologyIn:Ecology) extends Ecot {
   type PropFetcher = models.Thing.PropFetcher
   type QValue = querki.values.QValue
   type Thing = models.Thing
+  type Invocation = querki.ql.Invocation
   
   // The OID of the System Space, which contains the various program-created Things:
   val systemOID = SystemIds.systemOID

@@ -1,7 +1,7 @@
 package models
 
 import querki.ecology._
-import querki.ql.{QLFunction, QLPhrase}
+import querki.ql.{Invocation, QLFunction, QLPhrase}
 import querki.time.DateTime
 import querki.util.QLog
 import querki.values._
@@ -399,7 +399,9 @@ abstract class Thing(
    * Subclasses are allowed to override it as make sense.
    * 
    * This basic version returns a Link to this thing.
-   * TODO: add a "self" method to always be able to do this.
+   * 
+   * DEPRECATED: new code should use the version that takes an Invocation instead. This
+   * version is being phased out.
    */
   def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
     val applyOpt = getPropOpt(ApplyMethod)(context.state)
@@ -410,7 +412,17 @@ abstract class Thing(
       }
       case None => Core.ExactlyOne(Core.LinkType(id))
     }
-  }  
+  }
+  
+  /**
+   * Called when this Thing is encountered with no method invocation in a QL expression.
+   * Subclasses are allowed to override it as make sense.
+   * 
+   * This basic version returns a Link to this thing.
+   */
+  def qlApply(inv:Invocation):QValue = {
+    qlApply(inv.context, inv.paramsOpt)
+  }
   
   class BogusFunction extends QLFunction {
     def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {

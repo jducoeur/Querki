@@ -132,7 +132,11 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
 	              val partialFunction = method.partiallyApply(context.next(Core.ExactlyOne(Core.LinkType(t.id))))
 	              partialFunction.qlApply(context, params)
 	            }
-	            case None => t.qlApply(context, params)
+	            case None => {
+	              val inv = InvocationImpl(t, context, params)
+	              t.qlApply(inv)
+//	              t.qlApply(context, params)
+	            }
 	          }
 	        } catch {
 	          case ex:PublicException => WarningValue(ex.display(context.requestOpt))
