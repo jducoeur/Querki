@@ -14,7 +14,7 @@ object SystemCreator {
     // IMPORTANT: The numbers attached to these Ecots must NEVER BE CHANGED!!!!! They
     // get built into the moid's, and thence into the database! If an Ecot is removed,
     // comment it out, but leave its number and all others alone.
-    new modules.stylesheet.StylesheetModule(ecology)               // 1
+    new querki.css.StylesheetModule(ecology)               // 1
     new querki.email.impl.EmailModule(ecology)                     // 2
     new querki.identity.PersonModule(ecology)                      // 3
     new querki.security.AccessControlModule(ecology)               // 4

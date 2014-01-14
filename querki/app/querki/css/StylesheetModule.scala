@@ -1,16 +1,21 @@
-package modules.stylesheet
+package querki.css
 
 // TODO: these are all abstraction breaks!
 import controllers.PageEventManager
-
 import models._
-
 import querki.ecology._
 import querki.util._
 import querki.values._
-
-// This is for the PageEventManager and related classes:
 import controllers._
+
+import querki.ql.CodeType
+import MOIDs.CSSOID
+import MOIDs.CSSTextOID
+import MOIDs.GoogleFontOID
+import MOIDs.StylesheetBaseOID
+import MOIDs.StylesheetOID
+import models.OID.thing2OID
+import scala.reflect.runtime.universe
 
 object MOIDs extends EcotIds(1) {
   val StylesheetOID = sysId(25)
@@ -19,8 +24,6 @@ object MOIDs extends EcotIds(1) {
   val StylesheetBaseOID = sysId(29)
   val GoogleFontOID = sysId(32)
 }
-
-import querki.ql.CodeType
 
 class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
   import MOIDs._
