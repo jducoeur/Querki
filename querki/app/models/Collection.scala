@@ -5,8 +5,6 @@ import scala.xml._
 
 import Thing.PropFetcher
 
-import ql._
-
 import querki.ecology.Ecology
 import querki.util._
 import querki.values._

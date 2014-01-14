@@ -6,10 +6,9 @@ import play.api.templates.Html
 
 import models.{HtmlWikitext, OID, QWikitext, SimplePTypeBuilder, UnknownOID, Wikitext}
 
-import ql.QLPhrase
-
 import querki.core.URLableType
 import querki.ecology._
+import querki.ql.QLPhrase
 import querki.util._
 import querki.values._
 

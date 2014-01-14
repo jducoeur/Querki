@@ -1,8 +1,8 @@
 package querki.collections
 
 import models._
-import ql._
 import querki.ecology._
+import querki.ql.{QLParser, QLPhrase}
 import querki.values._
 
 object MOIDs extends EcotIds(6) {
@@ -160,6 +160,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    // TODO: this is currently convoluted and hard to understand -- we're dissecting the list using
 	    // flatMapAsContext(); yielding an Option saying whether to keep each one; stitching it back together
 	    // as a Context, and then just using the QValue. Bleah.
+	    // TODO: this needs a major rewrite, to stop using so many QL internals!
 	    def tryElem(parser:QLParser, phrase:QLPhrase)(elem:QLContext):Option[ElemValue] = {
 	      val passesYesNo = parser.processPhrase(phrase.ops, elem).value
 	      for (

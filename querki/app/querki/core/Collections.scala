@@ -11,8 +11,6 @@ import play.api.data.Form
 
 import models._
 
-import ql._
-
 import querki.ecology._
 import querki.util._
 import querki.values._

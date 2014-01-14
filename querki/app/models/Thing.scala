@@ -1,8 +1,7 @@
 package models
 
-import ql.{QLFunction, QLParser, QLPhrase}
-
 import querki.ecology._
+import querki.ql.{QLFunction, QLPhrase}
 import querki.time.DateTime
 import querki.util.QLog
 import querki.values._
@@ -407,8 +406,7 @@ abstract class Thing(
     applyOpt match {
       case Some(apply) => {
         val qlText = apply.first
-        val qlParser = new QLParser(qlText, context.forProperty(apply.prop), params)
-        qlParser.processMethod.value
+        QL.processMethod(qlText, context.forProperty(apply.prop), params)
       }
       case None => Core.ExactlyOne(Core.LinkType(id))
     }

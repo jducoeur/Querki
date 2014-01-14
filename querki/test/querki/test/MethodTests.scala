@@ -5,8 +5,6 @@ import org.scalatest.matchers.ShouldMatchers
 
 import models.{Thing, ThingState, Wikitext}
 
-import ql.QLParser
-
 import querki.values.{QLContext, SpaceState}
 
 class MethodTests extends QuerkiTests

@@ -12,8 +12,6 @@ import com.sun.mail.smtp._
 
 import models._
 
-import ql._
-
 import querki.core.QLText
 import querki.ecology._
 import querki.identity._
@@ -315,10 +313,8 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
       // Once that is done, restore the incoming context as the parent of this one.
       val personContext = QLContext(ExactlyOne(ElemValue(person.id, LinkType)), context.requestOpt, None) //Some(context))
     
-      val subjectParser = new QLParser(subjectQL, personContext.forProperty(emailSubject))
-      val subject = subjectParser.process	    
-      val bodyParser = new QLParser(bodyQL, personContext.forProperty(emailBody))
-      val body = bodyParser.process
+      val subject = QL.process(subjectQL, personContext.forProperty(emailSubject))
+      val body = QL.process(bodyQL, personContext.forProperty(emailBody))
       
       // Note that emails are sent with the ReplyTo set to whoever asked for this email to be generated.
       // You are responsible for your own emails.
@@ -339,13 +335,10 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
     val previouslySentToOpt = t.getPropOpt(sentToProp)
     
     // Get the actual list of recipients:
-    val recipientParser = new QLParser(recipientsIndirect.first, t.thisAsContext(context.request).forProperty(recipientsProp))
-    val recipientContext = recipientParser.processMethod
-    if (recipientContext.value.pType != LinkType) {
-      QL.ErrorValue("The Recipient property of an Email Message must return a collection of Links; instead, it produced " + recipientContext.value.pType.displayName)
+    val recipients = QL.processMethod(recipientsIndirect.first, t.thisAsContext(context.request).forProperty(recipientsProp))
+    if (recipients.pType != LinkType) {
+      QL.ErrorValue("The Recipient property of an Email Message must return a collection of Links; instead, it produced " + recipients.pType.displayName)
     } else {
-      val recipients = recipientContext.value
-      
         val subjectQL = t.getProp(emailSubject).first
         val bodyQL = t.getProp(emailBody).first		      
 	    

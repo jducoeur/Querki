@@ -4,11 +4,9 @@ import language.existentials
 
 import Thing.{PropFetcher, PropMap}
 
-import ql.{PartiallyAppliedFunction, QLFunction, QLPhrase}
-
 import querki.core.MOIDs._
 import querki.ecology._
-
+import querki.ql.{PartiallyAppliedFunction, QLFunction, QLPhrase}
 import querki.time.DateTime
 import querki.types.Types
 

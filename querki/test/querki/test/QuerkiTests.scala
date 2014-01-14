@@ -5,8 +5,6 @@ import org.scalatest.matchers.ShouldMatchers
 
 import models.{Thing}
 
-import ql.QLParser
-
 import querki.core.QLText
 
 import querki.ecology._
@@ -24,6 +22,7 @@ class QuerkiTests
   implicit var ecology:Ecology = null
   
   lazy val Core = interface[querki.core.Core]
+  lazy val QL = interface[querki.ql.QL]
   
   lazy val ExactlyOne = Core.ExactlyOne
   lazy val Optional = Core.Optional
@@ -57,8 +56,7 @@ class QuerkiTests
   
   def processQText(context:QLContext, text:String):String = {
     val qt = QLText(text)
-    val parser = new QLParser(qt, context)
-    val wikitext = parser.process
+    val wikitext = QL.process(qt, context)
     wikitext.plaintext
   }
   

@@ -7,8 +7,6 @@ import querki.ecology._
 
 import models.{PType, PTypeBuilder, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
 
-import ql._
-
 import querki.core.QLText
 import querki.util.QLog
 import querki.values.{CutProcessing, ElemValue, QLContext, SpaceState}
@@ -25,6 +23,20 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
   import MOIDs._
   
   lazy val HtmlUI = interface[querki.html.HtmlUI]
+  
+  /***********************************************
+   * PUBLIC API
+   ***********************************************/
+  
+  def process(input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):Wikitext = {
+    val parser = new QLParser(input, ci, paramsOpt)
+    parser.process
+  }
+  
+  def processMethod(input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+    val parser = new QLParser(input, ci, paramsOpt)
+    parser.processMethod.value
+  }
   
   lazy val ExactlyOneCut = new ExactlyOneBase(UnknownOID) {
     override def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = new ExactlyOnePropValue(cv.toList, this, elemT) with CutProcessing

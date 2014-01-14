@@ -2,11 +2,10 @@ package querki.values
 
 import models._
 
-import ql.QLParser
-
 import querki.ecology._
 
-import play.api.Logger
+// TODO: this is a bad smell! Can we hide the parser better behind the Context?
+import querki.ql.QLParser
 
 // TODO: this trait probably belongs with QLog
 trait DebugRenderable {

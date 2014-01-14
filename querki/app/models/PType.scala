@@ -4,9 +4,8 @@ import scala.xml.Elem
 
 import Thing.{PropFetcher, emptyProps}
 
-import ql.QLPhrase
-
 import querki.ecology.Ecology
+import querki.ql.QLPhrase
 import querki.values._
 
 /**

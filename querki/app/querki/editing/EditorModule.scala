@@ -2,13 +2,12 @@ package querki.editing
 
 import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState, Wikitext}
 
-import ql.{QLCall, QLParser, QLPhrase}
-
 import querki.core.{LinkCandidateProvider, QLText}
 
 import querki.html.RenderSpecialization._
 
 import querki.ecology._
+import querki.ql.{QLCall, QLPhrase}
 
 import querki.types._
 import querki.util._
@@ -259,8 +258,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
     private def instanceEditorForThing(thing:Thing, thingContext:QLContext, params:Option[Seq[QLPhrase]]):Wikitext = {
       implicit val state = thingContext.state
       val editText = editorLayoutForThing(thing, state)
-      val parser = new QLParser(editText, thingContext, params)
-      parser.process
+      QL.process(editText, thingContext, params)
     }
   
     def fullyApply(mainContext:QLContext, partialContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {

@@ -1,13 +1,9 @@
 package modules.stylesheet
 
 // TODO: these are all abstraction breaks!
-import play.api.Logger
-import play.api.templates.Html
 import controllers.PageEventManager
 
 import models._
-
-import ql._
 
 import querki.ecology._
 import querki.util._

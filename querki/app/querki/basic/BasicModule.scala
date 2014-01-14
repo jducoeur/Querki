@@ -4,11 +4,10 @@ import scala.xml.Elem
 
 import models._
 
-import ql.{QLParser, QLPhrase}
-
 import querki.conventions._
 import querki.core._
 import querki.ecology._
+import querki.ql.QLPhrase
 import querki.types._
 import querki.values.{ElemValue, QLContext, SpaceState}
 
@@ -64,8 +63,7 @@ This often means that you've invoked it recursively without saying which Thing i
       } else {
         Some(prop.applyToIncomingThing(definingContext) { (thing, context) =>
           val qlPhraseText = thing.first(prop)(context.state)
-          val parser = new QLParser(qlPhraseText, incomingContext.forProperty(prop), params)
-          parser.processMethod.value
+          QL.processMethod(qlPhraseText, incomingContext.forProperty(prop), params)
         })
       }
     }

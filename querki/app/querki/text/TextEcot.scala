@@ -4,7 +4,7 @@ import querki.ecology._
 
 import models.Wikitext
 
-import ql.QLPhrase
+import querki.ql.QLPhrase
 import querki.values.{QLContext}
 
 object MOIDs extends EcotIds(23) {

@@ -2,8 +2,8 @@ package models
 
 import Thing.PropFetcher
 
-import ql.{QLPhrase}
 import querki.ecology.Ecology
+import querki.ql.QLPhrase
 import querki.time.DateTime
 import querki.util._
 import querki.values.{QLContext, QValue}

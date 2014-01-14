@@ -4,9 +4,9 @@ import querki.ecology._
 
 import models.{AsDisplayName, Collection, Kind, Thing, ThingId, UnknownOID, Wikitext}
 
-import ql._
 import querki.basic.{PlainText, PlainTextBaseType}
 import querki.core.{NameableType, NameTypeBasis, NameUtils, QLText, TextTypeBasis}
+import querki.ql.QLPhrase
 import querki.util.SafeUrl
 import querki.values._
 
@@ -40,9 +40,8 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = nameToLink(context)(v)
     
     override def renderProperty(prop:Property[_,_])(implicit request:RequestContext):Option[Wikitext] = {
-      val parser = new ql.QLParser(querki.core.QLText("""These tags are currently being used:
-[[_tagsForProperty -> _sort -> _bulleted]]"""), prop.thisAsContext)
-      Some(parser.process)
+      Some(QL.process(querki.core.QLText("""These tags are currently being used:
+[[_tagsForProperty -> _sort -> _bulleted]]"""), prop.thisAsContext))
     }
   }
 
@@ -67,9 +66,8 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     override def doMatches(left:PlainText, right:PlainText):Boolean = equalNames(left, right)
     
     override def renderProperty(prop:Property[_,_])(implicit request:RequestContext):Option[Wikitext] = {
-      val parser = new ql.QLParser(QLText("""These tags are currently being used:
-[[_tagsForProperty -> _sort -> _bulleted]]"""), prop.thisAsContext)
-      Some(parser.process)
+      Some(QL.process(QLText("""These tags are currently being used:
+[[_tagsForProperty -> _sort -> _bulleted]]"""), prop.thisAsContext))
     }
   }
 
@@ -88,8 +86,6 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     override lazy val toThingId:ThingId = new AsDisplayName(name)
   
     override def render(implicit rc:RequestContext, prop:Option[Property[_,_]] = None):Wikitext = {
-      import ql._
-    
       implicit val s = space
       val model = preferredModelForTag(space, name)
       val propAndValOpt = model.getPropOpt(ShowUnknownProp) orElse space.getPropOpt(ShowUnknownProp)

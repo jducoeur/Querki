@@ -7,7 +7,7 @@ import models.Thing.PropFetcher
 
 import querki.ecology._
 
-import ql.{QLParser, QLPhrase}
+import querki.ql.QLPhrase
 import querki.util.PublicException
 import querki.values.{ElemValue, QLContext, QValue, SpaceState}
 
@@ -35,6 +35,8 @@ trait LinkCandidateProvider {
 
 trait TextTypeBasis { self:CoreEcot =>
   
+  lazy val QL = interface[querki.ql.QL]
+  
   trait TextTypeUtils { self:SystemType[_] =>
     def validateText(v:String, prop:Property[_,_], state:SpaceState):Unit = {
       for (
@@ -52,8 +54,7 @@ trait TextTypeBasis { self:CoreEcot =>
     def doDeserialize(v:String) = QLText(v)
     def doSerialize(v:QLText) = v.text
     def doWikify(context:QLContext)(v:QLText, displayOpt:Option[Wikitext] = None) = {
-      val parser = new QLParser(v, context)
-      parser.process
+      QL.process(v, context)
     }
     val doDefault = QLText("")
     def wrap(raw:String):valType = QLText(raw)
@@ -73,14 +74,17 @@ trait TextTypeBasis { self:CoreEcot =>
 //This often means that you've invoked it recursively without saying which Thing it is defined in."""))
 //      } else {
         val ParsedTextType = interface[querki.ql.QL].ParsedTextType
+        // TODO: this is a good candidate for optimization. If we turned this inside-out, we could fetch the QLText
+        // from the definingContext, parse that *once*, and process that AST over each element of the incomingContext.
+        // That would potentially save us tons and tons of redundant parsing. But it requires reworking the QLParser
+        // interface, to split parsing from processing.
         Some(incomingContext.collect(ParsedTextType) { elemContext:QLContext =>
           prop.applyToIncomingThing(definingContext) { (thing, context) =>
             implicit val s = definingContext.state
             // In other words, map over all the text values in this property, parsing all of them
             // and passing the resulting collection along the pipeline:
             thing.map(prop, ParsedTextType) { qlText =>
-              val parser = new QLParser(qlText, elemContext, params)
-              parser.process
+              QL.process(qlText, elemContext, params)
             }
           }
         })

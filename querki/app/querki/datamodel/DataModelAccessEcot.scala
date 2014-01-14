@@ -4,7 +4,7 @@ import querki.ecology._
 
 import models.{Kind, PType}
 
-import ql._
+import querki.ql.{QLCall, QLPhrase}
 
 import querki.values._
 

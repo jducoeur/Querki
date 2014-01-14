@@ -2,8 +2,6 @@ package querki.security
 
 import models._
 
-import ql._
-
 import querki.util._
 import querki.values._
 

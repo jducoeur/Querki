@@ -1,4 +1,4 @@
-package ql
+package querki.ql
 
 import language.existentials
 
@@ -11,72 +11,11 @@ import querki.ecology._
 import querki.util._
 import querki.values._
 
-/**
- * A QLFunction is something that can be called in the QL pipeline. It is mostly implemented
- * by Thing (with variants for Property and suchlike), but can also be anonymous -- for example,
- * when a method returns a partially-applied function.
- */
-trait QLFunction {
-  def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue
-}
-
 class PartiallyAppliedFunction(partialContext:QLContext, action:(QLContext, Option[Seq[QLPhrase]]) => QValue) extends QLFunction {
   def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
     action(context, params)
   }
 }
-
-sealed abstract class QLName(val name:String) {
-  def reconstructString:String
-}
-case class QLSafeName(n:String) extends QLName(n) {
-  def reconstructString:String = n
-}
-case class QLDisplayName(n:String) extends QLName(n) {
-  def reconstructString:String = "`" + n + "`"
-}
-sealed abstract class QLTextPart {
-  def reconstructString:String
-  
-  override def toString = reconstructString
-}
-case class UnQLText(text:String) extends QLTextPart {
-  def reconstructString:String = text
-}
-sealed abstract class QLStage(collFlag:Option[String]) {
-  def reconstructString:String
-  def useCollection:Boolean = collFlag match {
-    case Some(_) => true
-    case None => false
-  }
-  
-  override def toString = reconstructString
-}
-case class QLCall(name:QLName, methodName:Option[String], params:Option[Seq[QLPhrase]], collFlag:Option[String]) extends QLStage(collFlag) {
-  def reconstructString = collFlag.getOrElse("") +
-    name.reconstructString +
-    methodName.map(str => "." + str).getOrElse("") +
-    params.map("(" + _.map(_.reconstructString).mkString(", ") + ")").getOrElse("")
-}
-case class QLTextStage(contents:ParsedQLText, collFlag:Option[String]) extends QLStage(collFlag) {
-  def reconstructString = collFlag.getOrElse("") + "\"\"" + contents.reconstructString + "\"\""
-}
-case class QLBinding(name:String) extends QLStage(None) {
-  def reconstructString = "$" + name
-}
-case class QLPhrase(ops:Seq[QLStage]) {
-  def reconstructString = ops.map(_.reconstructString).mkString(" -> ")
-}
-case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart {
-  def reconstructString = "[[" + phrases.map(_.reconstructString).mkString + "]]"
-}
-case class QLLink(contents:ParsedQLText) extends QLTextPart {
-  def reconstructString = "__" + contents.reconstructString + "__"
-}
-case class ParsedQLText(parts:Seq[QLTextPart]) {
-  def reconstructString = parts.map(_.reconstructString).mkString
-}
-case class QLSpace(text:String)
 
 class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None) extends RegexParsers with EcologyMember {
   

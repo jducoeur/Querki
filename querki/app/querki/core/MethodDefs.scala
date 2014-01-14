@@ -2,7 +2,7 @@ package querki.core
 
 import querki.ecology._
 
-import ql.{QLFunction, QLPhrase}
+import querki.ql.{PartiallyAppliedFunction, QLFunction, QLPhrase}
 
 import querki.util.QLog
 import querki.values.QLContext
@@ -88,7 +88,7 @@ trait MethodDefs { self:QuerkiEcot =>
       def handleRemainder(mainContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {
         fullyApply(mainContext, leftContext, params)
       }
-      new ql.PartiallyAppliedFunction(leftContext, handleRemainder)
+      new PartiallyAppliedFunction(leftContext, handleRemainder)
     }
   
     /**

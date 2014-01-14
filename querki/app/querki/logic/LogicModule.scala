@@ -2,9 +2,8 @@ package querki.logic
 
 import models.{OID, ThingState}
 
-import ql.QLPhrase
-
 import querki.ecology._
+import querki.ql.QLPhrase
 import querki.values._
 
 object MOIDs extends EcotIds(9) {
