@@ -17,6 +17,7 @@ class ApplicationBase extends Controller with EcologyMember {
   implicit var ecology:Ecology = null
   
   lazy val UserAccess = interface[querki.identity.UserAccess]
+  lazy val PageEventManager = interface[controllers.PageEventManager]
   
   /**
    * Standard error handler. Iff you get an error and the correct response is to redirect to

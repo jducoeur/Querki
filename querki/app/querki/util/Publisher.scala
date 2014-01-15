@@ -45,4 +45,5 @@ trait Sequencer[Evt] extends Publisher[Evt, Evt] {
   def update(evt:Evt):Evt = {
     (evt /: contributors) ((current, contributor) => contributor.notify(current, this))
   }
+  def apply(evt:Evt):Evt = update(evt)
 }

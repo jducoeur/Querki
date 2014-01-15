@@ -19,9 +19,5 @@ object SpaceChangeManager {
    */
   val thingChanges = new ThingChangeUpdater
 
-  class ThingChangeUpdater extends Sequencer[ThingChangeRequest] {
-    def apply(rc:ThingChangeRequest):ThingChangeRequest = {
-      update(rc)
-    }
-  }
+  class ThingChangeUpdater extends Sequencer[ThingChangeRequest]
 }

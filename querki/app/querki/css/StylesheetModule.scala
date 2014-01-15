@@ -30,6 +30,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
   
   val Basic = initRequires[querki.basic.Basic]
   val Links = initRequires[querki.links.Links]
+  val PageEventManager = initRequires[controllers.PageEventManager]
   
   lazy val PlainTextType = Basic.PlainTextType
 

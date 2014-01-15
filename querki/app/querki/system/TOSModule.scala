@@ -21,6 +21,8 @@ class TOSModule(e:Ecology) extends QuerkiEcot(e) with TermsOfService {
   
   import TOSModule._
   
+  val PageEventManager = initRequires[controllers.PageEventManager]
+  
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
   override def init = {

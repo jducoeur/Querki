@@ -35,6 +35,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   
   val Email = initRequires[querki.email.Email]
   val Basic = initRequires[querki.basic.Basic]
+  val PageEventManager = initRequires[controllers.PageEventManager]
   
   lazy val QL = interface[querki.ql.QL]
   lazy val Links = interface[querki.links.Links]

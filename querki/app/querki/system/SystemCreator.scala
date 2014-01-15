@@ -44,6 +44,7 @@ object SystemCreator {
     new querki.spaces.SpacePersistenceEcot(ecology)                // 28
     new querki.evolutions.EvolutionsEcot(ecology)                  // 29
     new querki.identity.UserPersistence(ecology)                   // 30
+    new controllers.PageEventManagerEcot(ecology)                  // 31
     
     ecology
   }
