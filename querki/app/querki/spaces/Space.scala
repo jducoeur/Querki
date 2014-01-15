@@ -63,6 +63,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
   lazy val Person = interface[querki.identity.Person]
   lazy val Core = interface[querki.core.Core]
   lazy val PropTypeMigrator = interface[PropTypeMigrator]
+  lazy val SpaceChangeManager = interface[SpaceChangeManager]
   
   /**
    * This is the Actor that manages all persistence (DB) operations. We do things this
