@@ -59,6 +59,7 @@ class CommonSpace(implicit ecologyIn:Ecology) extends TestSpace {
   val instance = new TestThing("My Instance", testModel, 
       optTextProp("Hello world")) 
   val withDisplayName = new SimpleTestThing("Interesting Display Name", interface[querki.basic.Basic].DisplayNameProp("""My name is "interesting"!"""))
+  val trivialThing = new SimpleTestThing("Trivial")
   
   /**
    * A simple imitation "photograph".

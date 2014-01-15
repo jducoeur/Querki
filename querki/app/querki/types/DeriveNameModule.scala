@@ -15,9 +15,9 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with Nam
   import DeriveNameMOIDs._
   
   val Links = initRequires[querki.links.Links]
+  val SpaceChangeManager = initRequires[querki.spaces.SpaceChangeManager]
   
   lazy val Basic = interface[querki.basic.Basic]
-  lazy val SpaceChangeManager = interface[querki.spaces.SpaceChangeManager]
   
   lazy val NameProp = Core.NameProp
   
