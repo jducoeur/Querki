@@ -9,7 +9,7 @@ import play.api.data.Form
 
 import querki.ecology._
 
-import models.{DisplayPropVal, FormFieldInfo, Property, Thing}
+import models.{DisplayPropVal, FormFieldInfo, Property, Thing, Wikitext}
 
 import querki.ui.UIRenderer
 import querki.values.{QLContext, QValue, SpaceState}
@@ -36,5 +36,8 @@ package object html {
   trait HtmlUI extends EcologyInterface {
     def HtmlValue(html:Html):QValue
     def HtmlValue(str:String):QValue
+    def HtmlValue(xml:Elem):QValue
+    
+    def toWikitext(xml:Elem):Wikitext
   }
 }

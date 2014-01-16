@@ -241,7 +241,7 @@ function setupCreateFromLink(root) {
   
   root.find("._linkSelect").change(handleLinkSelectChanged);
 }
-  
+
 // **********************************************
 
 var updateCB;
@@ -250,6 +250,34 @@ function editControlChanged(target) {
 }
 
 function finalSetup(ownerId, spaceId, root) {
+
+  function insertThingEditor(thingId, beforeNode) {
+    jsRoutes.controllers.Application.getThingEditor(ownerId, spaceId, thingId).ajax({
+      success: function (result) {
+        var newElem = $(result);
+	    newElem.insertBefore(beforeNode);
+        finalSetup(ownerId, spaceId, newElem);
+      },
+      error: function (err) {
+        showStatus("Couldn't fetch the editor -- refresh this page!");
+      }
+    });
+  }
+
+  function createAnotherThing(evt) {
+    var modelId = $(this).data("model");
+    var createButton = $(this);
+    jsRoutes.controllers.Application.doCreateThing(ownerId, spaceId).ajax({
+      data: "API=true&model=" + modelId,
+      success: function (result) {
+	    insertThingEditor(result, createButton);
+	  },
+	  error: function (err) {
+	    alert("Error: " + err.responseText);
+	  }
+    });
+  }
+  root.find("._createAnother").click(createAnotherThing);
 
   function doUpdateValue(target, successCb, failureCb) {
       var prop = target.data("propid");

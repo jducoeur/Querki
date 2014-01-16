@@ -493,6 +493,20 @@ disallow: /
       
     Ok(resultOpt.getOrElse("Couldn't create that property editor!"))
   }
+  
+  /**
+   * AJAX: Fetch the "live editor" for the specified Thing.
+   */
+  def getThingEditor(ownerId:String, spaceId:String, thingId:String) = withThing(true, ownerId, spaceId, thingId) { implicit rc =>
+    val resultOpt = 
+      for (
+        thing <- rc.thing;
+        wikitext = Editor.getInstanceEditor(thing, rc)
+      )
+        yield wikitext.display.toString
+        
+    Ok(resultOpt.getOrElse("Couldn't find that Thing!"))
+  }
 
   /**
    * AJAX call to fetch the existing tag values for the specified property.
@@ -669,7 +683,8 @@ disallow: /
         routes.javascript.Application.setProperty2,
         routes.javascript.Application.getPropertyDisplay,
         routes.javascript.Application.getPropertyEditor,
-        routes.javascript.Application.doCreateThing
+        routes.javascript.Application.doCreateThing,
+        routes.javascript.Application.getThingEditor
       )
     ).as("text/javascript")
   }

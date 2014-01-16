@@ -58,6 +58,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 
   def HtmlValue(html:Html):QValue = ExactlyOne(RawHtmlType(HtmlWikitext(html)))
   def HtmlValue(str:String):QValue = HtmlValue(Html(str))
+  def HtmlValue(xml:Elem):QValue = HtmlValue(Xhtml.toXhtml(xml))
+  
+  def toWikitext(xml:Elem):Wikitext = HtmlWikitext(Html(Xhtml.toXhtml(xml)))
 
   /***********************************************
    * PROPERTIES

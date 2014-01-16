@@ -1,10 +1,10 @@
 package querki
 
-import models.{OID, Property}
-
-import querki.ecology._
+import models.{OID, Property, Thing, Wikitext}
 
 import querki.basic.PlainText
+import querki.ecology._
+import querki.values.RequestContext
 
 package object editing {
 
@@ -23,6 +23,12 @@ package object editing {
   }
 
   trait Editor extends EcologyInterface {
+    /**
+     * This fetches the wikitext UI for editing the given Thing. Assumes that the caller has already validated
+     * that the request comes from someone who can edit this Thing.
+     */
+    def getInstanceEditor(thing:Thing, rc:RequestContext):Wikitext
+    
     def InstanceEditPropsProp:Property[OID,OID]
     def PromptProp:Property[PlainText,String]
   }
