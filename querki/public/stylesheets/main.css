@@ -122,6 +122,7 @@
   width: 100%;
   padding: 8px;
   margin-bottom: 10px;
+  position: relative;
 }
 
 ._instanceEditor ._propTitle {
@@ -152,7 +153,7 @@
 
 ._instanceEditor ._deleteInstanceButton {
   position: absolute;
-  right: 20px;
+  right: 10px;
   line-height: 14px;
   background-color: lightpink;
   width: 10px;

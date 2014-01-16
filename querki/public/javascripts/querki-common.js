@@ -294,9 +294,9 @@ function finalSetup(ownerId, spaceId, root) {
   }
   root.find("._createAnother").click(createAnotherThing);
   
-  // TBD: should there be a confirmation step for this?
-  function deleteInstance(evt) {
-    var editor = $(this).parents("._instanceEditor");
+  function reallyDelete(evt) {
+    var deleteButton = $(this);
+    var editor = deleteButton.parents("._instanceEditor");
     var thingId = editor.data("thingid");
     jsRoutes.controllers.Application.deleteThing(ownerId, spaceId, thingId).ajax({
       data: "API=true",
@@ -306,9 +306,31 @@ function finalSetup(ownerId, spaceId, root) {
       error: function (err) {
         showStatus("Error: " + err);
       }
-    });
+    });  
   }
-  root.find("._deleteInstanceButton").click(deleteInstance);
+  
+  // Confirmation: we show a popover, and give the user a couple of seconds to press delete
+  // again to really do it. Otherwise, auto-cancel.
+  function deleteInstance(evt) {
+    var deleteButton = $(this);
+    deleteButton.popover({
+      content: "Click again to delete",
+      placement: 'left',
+      trigger: 'manual'
+    });
+    deleteButton.popover('show');
+    deleteButton.off('click', null, deleteInstance);
+    deleteButton.on('click', null, reallyDelete);
+    var timeout = setTimeout(
+      function () {
+        deleteButton.popover('hide');
+        deleteButton.off('click', null, reallyDelete);
+        deleteButton.on('click', null, deleteInstance);
+      },
+      2000
+    );
+  }
+  root.on('click', "._deleteInstanceButton", deleteInstance)
 
   function doUpdateValue(target, successCb, failureCb) {
       var prop = target.data("propid");
