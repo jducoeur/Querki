@@ -162,6 +162,14 @@
   cursor: pointer;
 }
 
+._instanceEditor ._deleteInstanceButton {
+  display: none;
+}
+
+._instanceEditor:hover ._deleteInstanceButton {
+  display: inherit;
+}
+
 /*
  * Styles used in major Querki screens.
  */
