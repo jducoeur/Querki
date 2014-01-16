@@ -90,14 +90,17 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 
       def processHtml(html:Html):HtmlWikitext = {
         val parsedParamOpt = context.parser.get.processPhrase(params(0).ops, context).value.firstTyped(ParsedTextType)
-        if (parsedParamOpt.isEmpty)
+        if (parsedParamOpt.isEmpty) 
           throw new PublicException("UI.transform.classRequired", name)
         val paramText = parsedParamOpt.get.raw.toString
         // TODO: It is truly annoying that I have to handle things this way -- there should be a
         // cleaner way to deal. I begin to suspect that I should be passing around XML instead
         // of raw HTML, so I can manipulate it better.
         val rawHtml = html.body
-        val rawXml = XML.loadString(rawHtml)
+        val nodes = scala.xml.parsing.XhtmlParser(scala.io.Source.fromString(rawHtml))
+        // TODO: we really shouldn't be assuming that we only have a single Node -- we should do
+        // something sensible in the case of multi-paragraph input:
+        val rawXml = nodes.head.asInstanceOf[Elem]
         val newXml = doTransform(rawXml, paramText, context, params)
         val newHtml = Html(Xhtml.toXhtml(newXml))
         HtmlWikitext(newHtml)        
@@ -118,7 +121,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	        }
 	      }
       } catch {
-        case ex:org.xml.sax.SAXParseException => throw new PublicException("UI.transform.notWellFormed", name)
+        case ex:org.xml.sax.SAXParseException => {
+          throw new PublicException("UI.transform.notWellFormed", name)
+        }
       }
     }
   }
