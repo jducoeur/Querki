@@ -157,7 +157,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
               val instances = state.descendants(thing.id, false, true).toSeq.sortBy(_.displayName)
               val wikitexts = 
                 instances.map { instance => instanceEditorForThing(instance, instance.thisAsContext(partialContext.request), params) } :+
-                createInstanceButton(thing)
+                createInstanceButton(thing, mainContext)
               Core.listFrom(wikitexts, QL.ParsedTextType)
             } else {
               QL.WikitextValue(instanceEditorForThing(thing, partialContext, params))

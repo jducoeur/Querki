@@ -136,7 +136,11 @@ trait ThingEditor { self:EditorModule =>
       QL.process(editText, thingContext, params)
     }
     
-    def createInstanceButton(model:Thing):Wikitext = {
-      HtmlUI.toWikitext(<input type="button" class="_createAnother btn" data-model={model.id.toString} value={s"Create another ${model.displayName}"}></input>)
+    def createInstanceButton(model:Thing, context:QLContext):Wikitext = {
+      if (context.state.canCreate(context.request.requesterOrAnon, model.id)) {
+        HtmlUI.toWikitext(<input type="button" class="_createAnother btn" data-model={model.id.toString} value={s"Create another ${model.displayName}"}></input>)
+      } else {
+        Wikitext("")
+      }
     }
 }
