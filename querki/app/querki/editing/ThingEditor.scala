@@ -92,6 +92,9 @@ trait ThingEditor { self:EditorModule =>
             case None => true
           }
         }
+      } else if (prop == NameProp) {
+        // We only should show Name if it is not derived:
+        !DeriveName.nameIsDerived(thing, state)
       } else
         true
     }

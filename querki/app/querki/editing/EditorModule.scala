@@ -25,10 +25,12 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
   lazy val HtmlUI = interface[querki.html.HtmlUI]
   lazy val QL = interface[querki.ql.QL]
+  lazy val DeriveName = interface[querki.types.DeriveName]
   
   lazy val PlainTextType = Basic.PlainTextType
   
   lazy val DisplayTextProp = Basic.DisplayTextProp
+  lazy val NameProp = Core.NameProp
   
   def getInstanceEditor(thing:Thing, rc:RequestContext):Wikitext = {
     instanceEditorForThing(thing, thing.thisAsContext(rc), None)

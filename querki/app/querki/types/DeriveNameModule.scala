@@ -136,6 +136,17 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with Nam
       true
   }
   
+  def nameIsDerived(thing:Thing, state:SpaceState):Boolean = {
+    implicit val s = state
+    val resultOpt = for (
+      propAndVal <- thing.getPropOpt(DeriveNameProp);
+      flag <- propAndVal.firstOpt
+        )
+      yield flag != deriveNever.id
+      
+    resultOpt.getOrElse(true)
+  }
+  
   /******************************************
    * THINGS
    ******************************************/

@@ -55,5 +55,6 @@ package object types {
     def DeriveInitially:Thing
     
     def filterNameIfDerived(state:SpaceState, model:Thing, props:PropList, propPair:(Property[_,_], DisplayPropVal)):Boolean
+    def nameIsDerived(thing:Thing, state:SpaceState):Boolean
   }
 }
