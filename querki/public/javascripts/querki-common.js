@@ -242,6 +242,19 @@ function setupCreateFromLink(root) {
   root.find("._linkSelect").change(handleLinkSelectChanged);
 }
 
+// Scroll to the bottom of the window, with a reasonably pleasant animation:
+function animateScrollToBottom() {
+  $('html, body').animate({ 
+     scrollTop: $(document).height()-$(window).height()}, 
+     500, 
+     "swing"
+  );
+}
+
+function instantScrollToBottom() {
+  $('html, body').scrollTop($(document).height()-$(window).height());
+}
+
 // **********************************************
 
 var updateCB;
@@ -257,6 +270,7 @@ function finalSetup(ownerId, spaceId, root) {
         var newElem = $(result);
 	    newElem.insertBefore(beforeNode);
         finalSetup(ownerId, spaceId, newElem);
+        instantScrollToBottom();
       },
       error: function (err) {
         showStatus("Couldn't fetch the editor -- refresh this page!");
