@@ -271,6 +271,7 @@ function finalSetup(ownerId, spaceId, root) {
 	    newElem.insertBefore(beforeNode);
         finalSetup(ownerId, spaceId, newElem);
         instantScrollToBottom();
+        newElem.find(".propEditor").first().focus();
       },
       error: function (err) {
         showStatus("Couldn't fetch the editor -- refresh this page!");
