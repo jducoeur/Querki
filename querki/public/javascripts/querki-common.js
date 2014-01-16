@@ -293,6 +293,13 @@ function finalSetup(ownerId, spaceId, root) {
     });
   }
   root.find("._createAnother").click(createAnotherThing);
+  
+  function deleteInstance(evt) {
+    var editor = $(this).parents("._instanceEditor");
+    var thingId = editor.data("thingid");
+    alert("Trying to delete thing " + thingId);
+  }
+  root.find("._deleteInstanceButton").click(deleteInstance);
 
   function doUpdateValue(target, successCb, failureCb) {
       var prop = target.data("propid");

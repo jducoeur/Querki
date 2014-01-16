@@ -149,6 +149,19 @@
   height: 26px;
   box-sizing: border-box;
 }
+
+._instanceEditor ._deleteInstanceButton {
+  position: absolute;
+  right: 20px;
+  line-height: 14px;
+  background-color: lightpink;
+  width: 10px;
+  height: 15px;
+  text-align: center;
+  border: 1px solid;
+  cursor: pointer;
+}
+
 /*
  * Styles used in major Querki screens.
  */

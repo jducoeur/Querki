@@ -122,6 +122,7 @@ trait ThingEditor { self:EditorModule =>
           val layoutPieces = propsToEditForThing(thing, state).map(EditorPropLayout(_))
           val layoutRows = splitRows(layoutPieces)
           val propsLayout = s"""[[""{{_instanceEditor:
+              |{{_deleteInstanceButton:x}}
               |${layoutRows.map(_.layout).mkString}
               |}}"" -> _data(""thingId"", ""${thing.toThingId}"")]]
               |""".stripMargin
