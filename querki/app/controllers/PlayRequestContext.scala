@@ -94,6 +94,8 @@ case class PlayRequestContext(
 
   def withError(err:String) = copy(error = Some(err))
   
+  def APICall:Boolean = isTrue("API")
+  
   // TODO: these probably don't belong here in the long run:
   val chromelessName = "cl"
   def chromeless = isOn(chromelessName)

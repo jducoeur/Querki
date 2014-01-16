@@ -434,10 +434,18 @@ disallow: /
     val deleteMsg = DeleteThing(rc.requester.get, rc.ownerId, rc.state.get.toThingId, thing.toThingId)
     askSpaceMgr[ThingResponse](deleteMsg) {
       case ThingFound(thingId, newState) => {
-        Redirect(routes.Application.space(ownerId, spaceId)).flashing("info" -> (displayName + " deleted."))
+        if (rc.APICall) {
+          Ok("Deleted")
+        } else {
+          Redirect(routes.Application.space(ownerId, spaceId)).flashing("info" -> (displayName + " deleted."))
+        }
       }
       case ThingError(error, stateOpt) => {
-        doError(routes.Application.space(ownerId, spaceId), error)
+        if (rc.APICall) {
+          InternalServerError(error.display(Some(rc)))
+        } else {
+          doError(routes.Application.space(ownerId, spaceId), error)
+        }
       }
     }
   }
@@ -684,7 +692,8 @@ disallow: /
         routes.javascript.Application.getPropertyDisplay,
         routes.javascript.Application.getPropertyEditor,
         routes.javascript.Application.doCreateThing,
-        routes.javascript.Application.getThingEditor
+        routes.javascript.Application.getThingEditor,
+        routes.javascript.Application.deleteThing
       )
     ).as("text/javascript")
   }

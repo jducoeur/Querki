@@ -294,10 +294,19 @@ function finalSetup(ownerId, spaceId, root) {
   }
   root.find("._createAnother").click(createAnotherThing);
   
+  // TBD: should there be a confirmation step for this?
   function deleteInstance(evt) {
     var editor = $(this).parents("._instanceEditor");
     var thingId = editor.data("thingid");
-    alert("Trying to delete thing " + thingId);
+    jsRoutes.controllers.Application.deleteThing(ownerId, spaceId, thingId).ajax({
+      data: "API=true",
+      success: function(result) {
+        editor.hide(400, function () { editor.remove(); });
+      },
+      error: function (err) {
+        showStatus("Error: " + err);
+      }
+    });
   }
   root.find("._deleteInstanceButton").click(deleteInstance);
 
