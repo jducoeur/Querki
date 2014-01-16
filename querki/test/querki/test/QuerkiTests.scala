@@ -44,7 +44,12 @@ class QuerkiTests
     e.api[querki.system.SystemManagement].setState(state)
     ecology = e
   }
-  
+
+  implicit class testableString(str:String) {
+    // Multi-line test strings should use this, to deal with Unix vs. Windows problems:
+    def stripReturns:String = str.replace("\r", "").stripMargin
+  }
+    
   // Just for efficiency, we create the CommonSpace once -- it is immutable, and good enough for
   // most purposes:
   var commonSpace:CommonSpace = null

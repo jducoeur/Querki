@@ -22,6 +22,7 @@ object UIMOIDs extends EcotIds(11) {
   
   val ClassMethodOID = moid(1)
   val TooltipMethodOID = moid(2)
+  val DataMethodOID = moid(3)
 }
 
 /**
@@ -77,7 +78,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       Details(details))) 
   {
     // Actual Modifier classes should implement this, which does the heart of the work
-    def doTransform(elem:Elem, paramText:String):Elem
+    def doTransform(elem:Elem, paramText:String, context:QLContext, params:Seq[QLPhrase]):Elem
     
     override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
       val v = context.value
@@ -97,7 +98,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         // of raw HTML, so I can manipulate it better.
         val rawHtml = html.body
         val rawXml = XML.loadString(rawHtml)
-        val newXml = doTransform(rawXml, paramText)
+        val newXml = doTransform(rawXml, paramText, context, params)
         val newHtml = Html(Xhtml.toXhtml(newXml))
         HtmlWikitext(newHtml)        
       }
@@ -139,7 +140,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
             |This will create a paragraph for "hello world" as usual, but will attach "myClass" as a class on that
             |paragraph. (This is less often necessary, but occasionally helpful.)""".stripMargin)
   {
-    def doTransform(elem:Elem, paramText:String):Elem = HtmlRenderer.addClasses(elem, paramText)
+    def doTransform(elem:Elem, paramText:String, context:QLContext, params:Seq[QLPhrase]):Elem = HtmlRenderer.addClasses(elem, paramText)
   }
   
   lazy val tooltipMethod = new HtmlModifier(TooltipMethodOID, "_tooltip",
@@ -152,9 +153,27 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       |In the long run, you will be able to describe a tooltip without using a QL expression, but
       |for now, this is the way to do it.""".stripMargin)
   {
-    def doTransform(elem:Elem, paramText:String):Elem = {
+    def doTransform(elem:Elem, paramText:String, context:QLContext, params:Seq[QLPhrase]):Elem = {
       val withClass = HtmlRenderer.addClasses(elem, "_withTooltip")
       withClass % Attribute("title", Text(paramText), Null)
+    }
+  }
+  
+  lazy val dataMethod = new HtmlModifier(DataMethodOID, "_data",
+      "Add HTML5 data to the received HTML value",
+      """This is mainly for internal use for now. Similarly to the _class function, this lets
+      |you add a data tag to a block. So for example, this:
+      |[[_code(""[[""Hello world"" -> _data(""foo"", ""something"")]]"")]]
+      |will add a "data-foo" attribute to the block containing Hello world.""".stripMargin)
+  {
+    def doTransform(elem:Elem, paramText:String, context:QLContext, params:Seq[QLPhrase]):Elem = {
+      if (params.length < 2)
+        throw new PublicException("UI.transform.dataRequired")
+      
+      val dataBlock = context.parser.get.processPhrase(params(1).ops, context).value.firstTyped(ParsedTextType).
+        getOrElse(throw new PublicException("UI.transform.dataRequired")).raw
+      
+      elem % Attribute(s"data-$paramText", Text(dataBlock), Null)
     }
   }
 
@@ -367,6 +386,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   override lazy val props = Seq(
     classMethod,
     tooltipMethod,
+    dataMethod,
     
     new SectionMethod,
     new LinkButtonMethod,

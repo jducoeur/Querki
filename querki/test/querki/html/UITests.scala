@@ -66,4 +66,19 @@ class UITests extends QuerkiTests {
         equal ("""<span title="I am a tooltip" class="_withTooltip">hello world</span>""")      
     }
   }
+  
+  "_data method" should {
+    "add a simple data attribute to a span" in {
+      processQText(commonThingAsContext(_.instance), """[[""hello world"" -> _data(""foo"",""I am some data"")]]""") should
+        equal ("""<span data-foo="I am some data">hello world</span>""")            
+    }
+    
+    "add a simple data attribute to a div" in {
+      processQText(commonThingAsContext(_.instance), """[[""{{myClass:
+          |hello world
+          |}}"" -> _data(""foo"",""I am some data"")]]""".stripMargin) should
+        equal ("""<div data-foo="I am some data" class="myClass">
+            |<span>hello world</span></div>""".stripReturns)
+    }
+  }
 }

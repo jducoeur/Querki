@@ -121,9 +121,9 @@ trait ThingEditor { self:EditorModule =>
         case None => {
           val layoutPieces = propsToEditForThing(thing, state).map(EditorPropLayout(_))
           val layoutRows = splitRows(layoutPieces)
-          val propsLayout = s"""{{_instanceEditor:
+          val propsLayout = s"""[[""{{_instanceEditor:
               |${layoutRows.map(_.layout).mkString}
-              |}}
+              |}}"" -> _data(""thingId"", ""${thing.toThingId}"")]]
               |""".stripMargin
           QLText(propsLayout)
         }

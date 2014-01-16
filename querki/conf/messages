@@ -31,6 +31,7 @@ Types.Text.tooShort={0} must be at least {1} characters long, not counting space
 UI.transform.htmlRequired=The {0} function only works with raw HTML values (such as those produced by _edit) or Text blocks
 UI.transform.classRequired=The {0} function requires one Text parameter: _class(""myParam"")
 UI.transform.notWellFormed=The text received by {0} was not well-formed XML. For the time being, _class can only cope with a single HTML element, not multiple paragraphs.
+UI.transform.dataRequired=The _data function requires two parameters, the second being the text to put into the data.
 
 User.handleExists=Handle {0} is already in use. Please try another.
 User.emailExists=Email address {0} is already in use. If you already have a Querki account, please sign in with that.
