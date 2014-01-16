@@ -97,11 +97,12 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         // cleaner way to deal. I begin to suspect that I should be passing around XML instead
         // of raw HTML, so I can manipulate it better.
         val rawHtml = html.body
+        // Note that, while this code *seems* like it should cope with multiple distinct nodes in the
+        // input, it doesn't -- XhtmlParser craps out after the first node, sadly.
+        // TODO: is there a way to make it cope with multiple nodes? Given that it returns a
+        // NodeSeq, I find it weird that it is so unforgiving.
         val nodes = scala.xml.parsing.XhtmlParser(scala.io.Source.fromString(rawHtml))
-        // TODO: we really shouldn't be assuming that we only have a single Node -- we should do
-        // something sensible in the case of multi-paragraph input:
-        val rawXml = nodes.head.asInstanceOf[Elem]
-        val newXml = doTransform(rawXml, paramText, context, params)
+        val newXml = nodes.map(node => doTransform(node.asInstanceOf[Elem], paramText, context, params))
         val newHtml = Html(Xhtml.toXhtml(newXml))
         HtmlWikitext(newHtml)        
       }
