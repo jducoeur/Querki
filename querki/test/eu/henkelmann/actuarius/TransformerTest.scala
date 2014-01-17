@@ -15,6 +15,12 @@ import org.junit.runner.RunWith
 //@RunWith(classOf[JUnitRunner])
 class TransformerTest extends FlatSpec with ShouldMatchers with Transformer {
     
+
+  implicit class testableString(str:String) {
+    // Multi-line test strings should use this, to deal with Unix vs. Windows problems:
+    def stripReturns:String = str.replace("\r", "").stripMargin
+  }
+  
     "The Transformer" should "create xhtml fragments from markdown" in {
         apply("") should equal ("")
         apply("\n") should equal ("")
@@ -42,7 +48,7 @@ class TransformerTest extends FlatSpec with ShouldMatchers with Transformer {
 a paragraph""") should equal(
 """<p>Here is
 a paragraph</p>
-""")
+""".stripReturns)
     }
 
     it should "parse paragraphs" in {
@@ -54,7 +60,7 @@ sed diam nonumy eirmod tempor invidunt ut
 """<p>Lorem ipsum dolor sit amet,
 consetetur sadipscing elitr,
 sed diam nonumy eirmod tempor invidunt ut</p>
-""")
+""".stripReturns)
     }
 
     it should "parse multiple paragraphs" in {
@@ -69,7 +75,7 @@ test"""
 """<p>test</p>
 <p>test</p>
 <p>test</p>
-"""
+""".stripReturns
 )
     }
 
@@ -86,7 +92,7 @@ test"""
 <li>bar</li>
 <li>baz</li>
 </ul>
-"""
+""".stripReturns
         )
         apply("1. foo\n22. bar\n10. baz\n") should equal (
 """<ol>
@@ -94,7 +100,7 @@ test"""
 <li>bar</li>
 <li>baz</li>
 </ol>
-"""
+""".stripReturns
         )
         apply("* foo\n\n* bar\n\n* baz\n\n") should equal (
 """<ul>
@@ -105,7 +111,7 @@ test"""
 <li><p>baz</p>
 </li>
 </ul>
-"""
+""".stripReturns
         )
         apply("* foo\n\n* bar\n* baz\n") should equal (
 """<ul>
@@ -115,7 +121,7 @@ test"""
 </li>
 <li>baz</li>
 </ul>
-"""
+""".stripReturns
         )
         apply("""* foo
 
@@ -133,7 +139,7 @@ test"""
 <li><p>bam</p>
 </li>
 </ul>
-"""
+""".stripReturns
         )
     }
     
@@ -143,7 +149,7 @@ test"""
 <dt>color</dt>
 <dd>red</dd>
 </dl>
-"""
+""".stripReturns
         )   
         apply(": color : red\n: number : 42\n: animal : cat\n") should equal (
 """<dl>
@@ -154,7 +160,7 @@ test"""
 <dt>animal</dt>
 <dd>cat</dd>
 </dl>
-"""
+""".stripReturns
         )      
     }
     
@@ -166,7 +172,7 @@ this is some styled text
 """<div class="myClass">
 <p>this is some styled text</p>
 </div>
-"""
+""".stripReturns
           )
       
       apply("""{{ myClass :
@@ -180,7 +186,7 @@ this is some styled text
 <li>list 2</li>
 </ul>
 </div>
-"""
+""".stripReturns
           )
     }
         
@@ -196,7 +202,7 @@ this is some styled text
 <p>this is some styled text</p>
 </div>
 </div>
-"""
+""".stripReturns
           )
     }
     
@@ -208,21 +214,21 @@ this is some styled text
 """<div class="myClass myClass2 myClass3">
 <p>this is some styled text</p>
 </div>
-"""
+""".stripReturns
           )
     }
     
     it should "handle class spans" in {
       apply("""{{ myClass: here is some styled text!}} and unstyled""") should equal (
             """<p><span class="myClass"> here is some styled text!</span> and unstyled</p>
-""")
+""".stripReturns)
       apply("""Here is some {{myClass:styled text that
 crosses a line}} and then
 continues
 """) should equal ("""<p>Here is some <span class="myClass">styled text that
 crosses a line</span> and then
 continues</p>
-""")
+""".stripReturns)
     }
 
     it should "stop a list after an empty line" in {
@@ -236,7 +242,7 @@ paragraph"""
 <li>b</li>
 </ol>
 <p>paragraph</p>
-"""
+""".stripReturns
 )
 
     }
@@ -248,7 +254,7 @@ paragraph"""
 </blockquote>
 <p>baz</p>
 </blockquote>
-"""
+""".stripReturns
         )
     }
 
@@ -268,7 +274,7 @@ else in the doc, define the link:
   [id]: http://example.com/  "Title"
 """) should equal ("""<p>An <a href="http://example.com/" title="Title">example</a>. Then, anywhere
 else in the doc, define the link:</p>
-""")
+""".stripReturns)
     }
 
     it should "parse atx style headings" in {
@@ -335,7 +341,7 @@ but this is:
 -----------
 but this is:
 </code></pre>
-"""    
+""".stripReturns    
 )
 
 apply(
@@ -351,7 +357,7 @@ And now to something completely different.
 <p>And now to something completely different.</p>
 <pre><code>old style code
 </code></pre>
-"""    
+""".stripReturns    
 )
 
 apply(
@@ -369,7 +375,7 @@ No need to end blocks
 And now to something completely different.
     old style code
 </code></pre>
-"""    
+""".stripReturns    
 )
 
 apply(
@@ -389,7 +395,7 @@ No need to end blocks
 And now to something completely different.
     old style code
 </code></pre>
-"""    
+""".stripReturns    
 )
     }
     
