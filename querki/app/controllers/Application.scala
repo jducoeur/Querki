@@ -13,7 +13,7 @@ import play.api.mvc._
 import models._
 import Property._
 
-import querki.core.{NameUtils, PropList}
+import querki.core.{NameUtils, PropList, QLText}
 import querki.ecology._
 import querki.identity._
 
@@ -61,6 +61,7 @@ class Application extends ApplicationBase {
   lazy val Tags = interface[querki.tags.Tags]
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
   lazy val Links = interface[querki.links.Links]
+  lazy val QL = interface[querki.ql.QL]
   
   lazy val UrProp = Core.UrProp  
   lazy val AppliesToKindProp = Core.AppliesToKindProp
@@ -418,6 +419,17 @@ disallow: /
     // TODO: security check that I'm allowed to edit this
 	val model = thing.getModel
 	showEditPage(rc, model, PropListMgr.from(thing))
+  }
+  
+  def editInstances(ownerId:String, spaceId:String, modelIdStr:String) = withThing(true, ownerId, spaceId, modelIdStr) { implicit rc =>
+    implicit val state = rc.state
+    val thing = rc.thing.get
+    val editText = QLText(s"""### Editing instances of ____
+    |
+    |[[_edit]]""".stripMargin)
+    val wikitext = QL.process(editText, thing.thisAsContext, None)
+    val html = wikitext.display.html
+    Ok(views.html.main(QuerkiTemplate.Thing, s"Editing instances of ${thing.displayName}", rc, true)(html))
   }
   
   def doEditThing(ownerId:String, spaceId:String, thingIdStr:String) = editThingInternal(ownerId, spaceId, Some(thingIdStr), false)
