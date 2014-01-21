@@ -58,7 +58,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_], context:QLContext):FormFieldInfo = {
     // TODO: this Ecot has a lot of incestuous tests of NameType. I'm leaving these ugly for now. Find a better solution,
     // like lifting out a more public trait to test against.
-    if (prop.cType == QSet && (prop.pType.isInstanceOf[querki.core.TypeCreation#NameType] || prop.pType == LinkType || prop.pType == NewTagSetType)) {
+    if (prop.cType == QSet && (prop.pType.isInstanceOf[querki.core.IsNameType] || prop.pType == LinkType || prop.pType == NewTagSetType)) {
       handleTagSet(prop, on, form, context)
     } else {
       val fieldIds = FieldIds(on, prop)
@@ -174,7 +174,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
           val name = tOpt.map(_.displayName).getOrElse(oid.toThingId.toString)
           (oid.toString, name)
         }
-        case nameType:querki.core.TypeCreation#NameType => {
+        case nameType:querki.core.IsNameType => {
           val name = nameType.get(elem)
           (name, name)          
         }
@@ -196,7 +196,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     val rawList = getTagSetNames(state, prop, currentValue)
     
     // We treat names/tags and links a bit differently, although they look similar on the surface:
-    val isNameType = prop.pType.isInstanceOf[querki.core.TypeCreation#NameType] || prop.pType == NewTagSetType
+    val isNameType = prop.pType == Tags.TagSetType || prop.pType == NewTagSetType
     val current = "[" + rawList.map(_.map(keyVal => "{\"display\":\"" + JSONescape(keyVal._2) + "\", \"id\":\"" + JSONescape(keyVal._1) + "\"}").mkString(", ")).getOrElse("") + "]"
     <input class="_tagSetInput" data-isNames={isNameType.toString} type="text" data-current={current}></input>
   }
@@ -218,7 +218,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
         val sortedInstances = allInstances.toSeq.sortBy(_.displayName).zipWithIndex
         val rawList = getTagSetNames(state, prop, currentValue)
         val currentMap = rawList.map(_.toMap)
-        val isNameType = prop.pType.isInstanceOf[querki.core.TypeCreation#NameType]
+        val isNameType = prop.pType.isInstanceOf[querki.core.IsNameType]
         
         val listName = currentValue.inputControlId + "_values"
         

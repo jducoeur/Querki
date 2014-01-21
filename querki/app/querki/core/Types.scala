@@ -119,6 +119,9 @@ trait NameUtils {
 // So that these functions can be used without mixing in NameUtils:
 object NameUtils extends NameUtils
 
+// Marker trait for NameTypeBase and everything that descends from it:
+trait IsNameType extends PType[String] 
+
 trait NameTypeBasis { self:CoreEcot with NameUtils =>  
   /**
    * The Type for Display Names -- similar to Text, but not identical
@@ -126,7 +129,7 @@ trait NameTypeBasis { self:CoreEcot with NameUtils =>
   abstract class NameTypeBase(tid:OID, name:String) extends SystemType[String](tid,
       toProps(
         setName(name)
-        )) with SimplePTypeBuilder[String] with NameableType
+        )) with SimplePTypeBuilder[String] with NameableType with IsNameType
   {
         
     def doDeserialize(v:String) = toDisplay(v)
