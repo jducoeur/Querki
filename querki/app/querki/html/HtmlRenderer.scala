@@ -116,7 +116,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       Some(renderOptYesNo(state, prop, currentValue))
     else if (cType == Optional && pType == LinkType)
       Some(renderOptLink(state, prop, currentValue))
-    else if (cType == QSet && (pType.isInstanceOf[querki.core.TypeCreation#NameType] || pType == LinkType || pType == NewTagSetType)) {
+    else if (cType == QSet && (pType == Core.NameType || pType == Tags.TagSetType || pType == LinkType || pType == NewTagSetType)) {
       if (specialization.contains(PickList))
         Some(renderPickList(state, prop, currentValue, specialization))
       else
