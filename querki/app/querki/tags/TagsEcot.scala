@@ -262,7 +262,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     def fullyApply(mainContext:QLContext, partialContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {
       applyToIncomingThing(partialContext) { (shouldBeProp, _) =>
         shouldBeProp match {
-          case prop:Property[_,_] if (prop.pType == TagSetType) => {
+          case prop:Property[_,_] if (prop.pType == TagSetType || prop.pType == NewTagSetType) => {
             Core.listFrom(fetchTags(partialContext.state, prop), TagSetType)
           }
           case _ => WarningValue("The _tagsForProperty method can only be used on Tag Set Properties")
