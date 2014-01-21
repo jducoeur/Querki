@@ -37,6 +37,14 @@ class SystemEcot(e:Ecology) extends QuerkiEcot(e) with System with SystemManagem
             |""**____**: [[_tagsForProperty -> _sort -> _join("", "")]]
             |"")]]
             |
+            |[[Old Tag Set Type -> 
+            |_propsOfType ->
+            |_sort ->
+            |_section(
+            |""### Tags"", 
+            |""**____**: [[_tagsForProperty -> _sort -> _join("", "")]]
+            |"")]]
+            |
             |[[How It Works -> _if(_isDefined, ""**____**"")]]
             |""".stripMargin),
         Tags.ShowUnknownProp(querki.tags.defaultDisplayText)))

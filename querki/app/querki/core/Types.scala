@@ -126,10 +126,8 @@ trait NameTypeBasis { self:CoreEcot with NameUtils =>
   /**
    * The Type for Display Names -- similar to Text, but not identical
    */
-  abstract class NameTypeBase(tid:OID, name:String) extends SystemType[String](tid,
-      toProps(
-        setName(name)
-        )) with SimplePTypeBuilder[String] with NameableType with IsNameType
+  abstract class NameTypeBase(tid:OID, pf:PropFetcher) extends SystemType[String](tid, pf) 
+    with SimplePTypeBuilder[String] with NameableType with IsNameType
   {
         
     def doDeserialize(v:String) = toDisplay(v)
@@ -232,7 +230,8 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
     override def wrap(raw:String):valType = boom 
   }
   
-  class NameType extends NameTypeBase(NameTypeOID, "Name Type") {
+  class NameType extends NameTypeBase(NameTypeOID, 
+      toProps(setName("Name Type"))) {
     override def editorSpan(prop:Property[_,_]):Int = 3
     
     def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext(toDisplay(v))    

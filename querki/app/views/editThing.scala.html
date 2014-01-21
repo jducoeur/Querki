@@ -27,6 +27,7 @@
 @HtmlRenderer = @{ rc.interface[querki.html.HtmlRenderer] }
 @Editor = @{ rc.interface[querki.editing.Editor] }
 @Tags = @{ rc.interface[querki.tags.Tags] }
+@Basic = @{ rc.interface[querki.basic.Basic] }
 
 @ExactlyOne = @{ Core.ExactlyOne }
 @Optional = @{ Core.Optional }
@@ -519,7 +520,7 @@
             <p><input type="text" id="_newPropName" placeholder="Name (required)..."></p>
             <select id="_newPropType">
                 <option value="">Choose the Property's type (required)...</option>
-                @for(aType <- space.allTypes.values.filterNot(_.ifSet(Core.InternalProp)(space)).toSeq.sortBy(_.displayName)) {
+                @for(aType <- space.allTypes.values.filterNot(_.ifSet(Core.InternalProp)(space)).filterNot(_.ifSet(Basic.DeprecatedProp)(space)).toSeq.sortBy(_.displayName)) {
                   <option value="@aType.id.toString" @collForType(aType)>@aType.displayName</option>
                 }
             </select>

@@ -17,8 +17,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   import MOIDs._
   
   val Links = initRequires[querki.links.Links]
-  
-  lazy val Basic = interface[querki.basic.Basic]
+  val Basic = initRequires[querki.basic.Basic]
   
   lazy val PlainTextType = Basic.PlainTextType
   lazy val NameType = Core.NameType
@@ -29,7 +28,11 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
    * TYPES
    ***********************************************/
 
-  lazy val TagSetType = new NameTypeBase(TagSetOID, "Tag Set Type") {
+  lazy val TagSetType = new NameTypeBase(TagSetOID, 
+      toProps(
+        setName("Old Tag Set Type"),
+        Basic.DeprecatedProp(true))) 
+  {
     override def editorSpan(prop:Property[_,_]):Int = 12
     
     override def requiredColl:Option[Collection] = Some(Core.QSet)
@@ -45,7 +48,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     }
   }
 
-  lazy val NewTagSetType = new PlainTextType(NewTagSetOID, "New Tag Set Type") {
+  lazy val NewTagSetType = new PlainTextType(NewTagSetOID, "Tag Set Type") {
     override def editorSpan(prop:Property[_,_]):Int = 12
   
     override def requiredColl = Some(Core.QSet)

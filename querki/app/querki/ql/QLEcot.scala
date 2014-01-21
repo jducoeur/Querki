@@ -73,7 +73,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
   /**
    * This is a fake PType, used when we encounter a name we don't know.
    */
-  lazy val UnknownNameType = new NameTypeBase(UnknownOID, "_unknownNameType") {
+  lazy val UnknownNameType = new NameTypeBase(UnknownOID, toProps(setName("_unknownNameType"))) {
     def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = {
       Wikitext("{{_unknownName:") + nameToLink(context)(v, displayOpt) + Wikitext("}}")
     }
