@@ -44,7 +44,7 @@ function finishStatus(msg) {
       $(this).manifest({
         marcoPolo: {
 		  url: entryPoint + '?propId=' + propId,
-		  minChars: 3,
+		  minChars: 1,
 		  required: required,
 		  formatData: function(data) { return data; },
 		  formatItem: function(data, $item) { return data.display; },
