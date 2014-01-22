@@ -1,8 +1,9 @@
 package querki
 
-import querki.ecology._
+import models.{Property, Thing}
 
-import models.Property
+import querki.ecology._
+import querki.values.SpaceState
 
 package object datamodel {
 
@@ -28,5 +29,7 @@ package object datamodel {
 
   trait DataModelAccess extends EcologyInterface {
     def IsFunctionProp:Property[Boolean,Boolean]
+    
+    def isDeletable(t:Thing)(implicit state:SpaceState):Boolean
   }
 }

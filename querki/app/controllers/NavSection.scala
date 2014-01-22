@@ -4,6 +4,7 @@ import play.api.mvc.Call
 import models.Thing
 import models.ThingState
 
+// TODO: this should be an Ecot!!!
 object NavSection {
   object homeNav extends NavSections(Seq())
   
@@ -34,11 +35,8 @@ object NavSection {
     }    
   }
   
-  def deletable(t:Thing):Boolean = {
-    t match {
-      case ts:ThingState => true
-      case _ => false
-    }
+  def deletable(t:Thing, rc:PlayRequestContext):Boolean = {
+    rc.interface[querki.datamodel.DataModelAccess].isDeletable(t)(rc.state.get)
   }
       
   def nav(rc:PlayRequestContext) = {
@@ -87,7 +85,7 @@ object NavSection {
         NavLink("Edit " + thing.displayName, routes.Application.editThing(owner, spaceId, thingId), None, rc.state.get.canEdit(rc.requesterOrAnon, thing.id)),
         NavLink("View Source", routes.Application.viewThing(owner, spaceId, thingId), None, rc.state.get.canRead(rc.requesterOrAnon, thing.id)),
         // Note that the following route is bogus: we actually navigate in Javascript, after verifying they want to delete:
-        NavLink("Delete " + thing.displayName, routes.Application.thing(owner, spaceId, thingId), Some("deleteThing"), deletable(thing))
+        NavLink("Delete " + thing.displayName, routes.Application.thing(owner, spaceId, thingId), Some("deleteThing"), deletable(thing, rc))
       ) ++ create ++ attachment
     }
     val thingLinks = thingLinksOpt.getOrElse(Seq.empty[NavLink])

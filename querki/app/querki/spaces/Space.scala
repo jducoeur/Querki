@@ -64,6 +64,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
   lazy val Core = interface[querki.core.Core]
   lazy val PropTypeMigrator = interface[PropTypeMigrator]
   lazy val SpaceChangeManager = interface[SpaceChangeManager]
+  lazy val DataModel = interface[querki.datamodel.DataModelAccess]
   
   /**
    * This is the Actor that manages all persistence (DB) operations. We do things this
@@ -322,14 +323,16 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
     val spaceId = checkSpaceId(spaceThingId)
     val oldThingOpt = state.anything(thingId)
     oldThingOpt map { oldThing =>
-      // TODO: eventually we will allow you to delete Properties, but we're nowhere near
-      // ready to cope with all the potential error conditions yet.
-      if (!oldThing.isInstanceOf[ThingState] || !canEdit(who, oldThing.id)) {
+      if (!DataModel.isDeletable(oldThing)(state) || !canEdit(who, oldThing.id)) {
         sender ! ThingError(new PublicException(ModifyNotAllowed))
       } else {
         val thingId = oldThing.id
         persister ! Delete(thingId)
-        updateState(state.copy(things = state.things - thingId)) 
+        oldThing match {
+          case t:ThingState => updateState(state.copy(things = state.things - thingId))
+          case p:Property[_,_] => updateState(state.copy(spaceProps = state.spaceProps - thingId))
+          case _ => throw new Exception("Somehow got a request to delete unexpected thing " + oldThing)
+        }
         sender ! ThingFound(thingId, state)
       }
     } getOrElse {

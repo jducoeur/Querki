@@ -23,6 +23,18 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Links = interface[querki.links.Links]
   
+  def isDeletable(t:Thing)(implicit state:SpaceState):Boolean = {
+    t match {
+      case thing:ThingState => true
+      case prop:Property[_,_] => {
+        // You are allowed to delete a Property *if* nothing is using it any more:
+        val thingsWithProp = state.allThings.filter(_.props.contains(prop.id))
+        thingsWithProp.isEmpty
+      }
+      case _ => false
+    }
+  }
+  
   /***********************************************
    * FUNCTIONS
    ***********************************************/  
