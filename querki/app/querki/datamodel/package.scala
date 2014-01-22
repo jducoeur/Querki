@@ -21,6 +21,9 @@ package object datamodel {
 	  val CurrentSpaceMethodOID = sysId(92)
 	  val IsMethodOID = sysId(93)
 	  val IsFunctionOID = sysId(104)
+	  
+	  val HasPropertyMethodOID = moid(1)
+	  val AllThingsOID = moid(2)
 	}
 
   trait DataModelAccess extends EcologyInterface {

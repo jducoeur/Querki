@@ -151,7 +151,16 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
             |  ""Collection: [[Property Collection]] Type: [[Property Type]]"")]]
             |
             |
-            |[[Details]]""".stripMargin)))
+            |[[Details]]
+            |
+            |#### Things that use ____
+            |
+            |[[_currentSpace ->
+            |  _allThings ->
+            |  _filter(_hasProperty($_context)) ->
+            |  _sort ->
+            |  _bulleted]]
+            |""".stripMargin)))
         ), querki.time.epoch)
 
   lazy val NotInheritedProp = new SystemProperty(NotInheritedOID, YesNoType, ExactlyOne,

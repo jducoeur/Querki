@@ -5,7 +5,7 @@ import querki.ecology._
 import models.{Kind, PType}
 
 import querki.ql.{QLCall, QLPhrase}
-
+import querki.util.PublicException
 import querki.values._
 
 /**
@@ -248,7 +248,56 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
       Summary("True iff this Thing is a Function."),
       Details("""This is a marker flag that you can put on a Thing to say that it is a Function.
           |This doesn't particularly change the way the Thing works, but has some UI effects.""".stripMargin)))
+	
+  lazy val HasPropertyMethod = new InternalMethod(HasPropertyMethodOID,
+    toProps(
+      setName("_hasProperty"),
+      SkillLevel(SkillLevelAdvanced),
+      Summary("Allows you to test whether this Thing has a specified Property"),
+      Details("""    THING -> _hasProperty(PROP._self) -> Yes or No
+    |
+    |This function produces Yes iff the parameter is a Property of the received THING, and No otherwise.
+    |Note that you must specify _self on the Property's name -- the parameter is the Property itself,
+    |not its value on this Thing.""".stripMargin)))
+  { 
+	// TODO: this whole thing really should be using Invocation in monadic style in one big for comprehension.
+	// I've deliberately written this method in a way to suggest what that should look like.
+    override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+      implicit val state = context.state
+      
+      if (paramsOpt.isEmpty || paramsOpt.get.length < 1)
+        throw new PublicException("Func.missingParam", displayName)
+      val params = paramsOpt.get
+      
+      val contextValOpt = context.value.firstAs(LinkType)
+      if (contextValOpt.isEmpty)
+        throw new PublicException("Func.notThing", displayName)
+      val contextVal = contextValOpt.get
+      
+      val thingOpt = state.anything(contextVal)
+      if (thingOpt.isEmpty)
+        throw new PublicException("Func.unknownThing", displayName)
+      val thing = thingOpt.get
+      
+      val processed = context.parser.get.processPhrase(params(0).ops, context).value
+      val paramValOpt = processed.firstAs(LinkType)
+      if (paramValOpt.isEmpty)
+        throw new PublicException("Func.paramNotThing", displayName, "1")
+      val propOid = paramValOpt.get
 
+      ExactlyOne(thing.props.contains(propOid))
+    }
+  }
+
+
+  lazy val AllThingsMethod = new SingleThingMethod(AllThingsOID, "_allThings", "This receives a Space, and produces all of the Things in that Space",
+	    """    SPACE -> _allThings -> LIST OF THINGS""".stripMargin,
+	{ (thing, context) =>
+	  thing match {
+	    case s:SpaceState => Core.listFrom(s.allThings.map(_.id), LinkType)
+	    case _ => QL.WarningValue("_allThings can only be used on a Space")
+	  }
+	})
 
   override lazy val props = Seq(
     new InstancesMethod,
@@ -264,6 +313,8 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     new CurrentSpaceMethod,
     new IsMethod,
     PropsOfTypeMethod,
-    IsFunctionProp
+    IsFunctionProp,
+    HasPropertyMethod,
+    AllThingsMethod
   )
 }
