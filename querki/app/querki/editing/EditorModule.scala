@@ -1,5 +1,7 @@
 package querki.editing
 
+import scala.xml.Elem
+
 import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState, Wikitext}
 
 import querki.core.{LinkCandidateProvider, QLText}
@@ -143,6 +145,74 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
     }
   
     def fullyApply(mainContext:QLContext, partialContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {
+      
+      // TODO: this belongs in Invocation as a general mechanism:
+      def intParam(name:String, default:Int):Int = {
+        val rc = mainContext.request
+        val strs = rc.queryParam(name)
+        if (strs.length > 0) {
+          try {
+            java.lang.Integer.parseInt(strs.head)
+          } catch {
+            case _:Throwable => default
+          }
+        } else
+          default
+      }
+      
+      // TODO: For now, we're just going to go with an abstraction break. But figure out how this should work:
+      def paginator(rc:controllers.PlayRequestContext, allInstances:Seq[Thing], startAt:Int, pageSize:Int):Wikitext = {
+        val req = rc.request
+        val reqParams = (req.queryString - "page").map { pair =>
+          val (k, v) = pair
+          val vs = v.mkString(",")
+          s"$k=$vs"
+        }.toSeq.mkString("&")
+        val baseUri = req.path + "?" + reqParams
+        
+        def urlForPage(num:Int):String = {
+          baseUri + "&page=" + num.toString
+        }
+        
+        // Suggested on this page: http://stackoverflow.com/questions/17944/how-to-round-up-the-result-of-integer-division
+        val totalPages = (allInstances.length - 1) / pageSize + 1
+        if (totalPages > 1) {
+          val curPage = (Math.floor(startAt / pageSize)).toInt + 1
+          val leftPage = Math.max(curPage - 3, 0) + 1
+          val rightPage = Math.min(curPage + 3, totalPages) + 1
+          val range = leftPage until rightPage
+          val pages = range.map { pageNum =>
+              <li class={ if (pageNum == curPage) "active" else "" }><a href={urlForPage(pageNum)}>{pageNum}</a></li>
+          }
+          val leftEllipses:Seq[Elem] = { 
+            if (leftPage > 1)
+              Seq(<li class="disabled"><a href="#">...</a></li>)
+            else
+              Seq.empty
+          }
+          val rightEllipses:Seq[Elem] = { 
+            if (rightPage <= totalPages)
+              Seq(<li class="disabled"><a href="#">...</a></li>)
+            else
+              Seq.empty
+          }
+          val xml =
+            <div class="pagination pagination-centered">
+              <ul>
+              <li><a href={urlForPage(1)}>&laquo;</a></li>
+              <li><a href={ if (curPage == 1) "#" else urlForPage(curPage - 1) } class={ if (curPage == 1) "disabled" else "" }>&lsaquo;</a></li>
+              { leftEllipses }
+              { pages }
+              { rightEllipses }
+              <li><a href={ if (curPage == totalPages) "#" else urlForPage(curPage + 1) } class={ if (curPage == totalPages) "disabled" else "" }>&rsaquo;</a></li>
+              <li><a href={urlForPage(totalPages)}>&raquo;</a></li>
+              </ul>
+            </div>
+          HtmlUI.toWikitext(xml)
+        } else
+          Wikitext("")
+      }
+      
       applyToIncomingThing(partialContext) { (partialThing, _) =>
         partialThing match {
           case prop:Property[_,_] => {
@@ -154,11 +224,15 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
           case thing:ThingState => {
             implicit val state = partialContext.state
             if (thing.ifSet(Core.IsModelProp)) {
-              val instances = state.descendants(thing.id, false, true).toSeq.sortBy(_.displayName)
+              val allInstances = state.descendants(thing.id, false, true).toSeq.sortBy(_.displayName)
+              val page = intParam("page", 1) - 1
+              val pageSize = intParam("pageSize", 10)
+              val startAt = pageSize * page
+              val instances = allInstances.drop(startAt).take(pageSize)
               val wikitexts = 
                 instances.map { instance => instanceEditorForThing(instance, instance.thisAsContext(partialContext.request), params) } :+
                 createInstanceButton(thing, mainContext)
-              Core.listFrom(wikitexts, QL.ParsedTextType)
+              Core.listFrom(paginator(partialContext.request.asInstanceOf[controllers.PlayRequestContext], allInstances, startAt, pageSize) +: wikitexts, QL.ParsedTextType)
             } else {
               QL.WikitextValue(instanceEditorForThing(thing, partialContext, params))
             }

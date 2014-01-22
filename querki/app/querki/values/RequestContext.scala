@@ -45,6 +45,14 @@ abstract class RequestContext(
   def isOwner = requesterOrAnon.hasIdentity(ownerId)
   
   /**
+   * Fetch the value of the named parameter of this request.
+   * 
+   * TBD: this is an HTTP-ism bleeding into the abstraction. Is it appropriate? It's awfully *convenient*,
+   * but we'll see whether it's right.
+   */
+  def queryParam(paramName:String):Seq[String]
+  
+  /**
    * The UIRenderer to use for displaying stuff to the user in this context.
    */
   def renderer:UIRenderer
