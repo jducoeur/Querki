@@ -425,8 +425,10 @@ disallow: /
     implicit val state = rc.state
     val thing = rc.thing.get
     val editText = QLText(s"""### Editing instances of ____
-    |
-    |[[_edit]]""".stripMargin)
+        |
+        |[[_edit]]
+        |
+        |[[_linkButton(""Done"")]]""".stripMargin)
     val wikitext = QL.process(editText, thing.thisAsContext, None)
     val html = wikitext.display.html
     Ok(views.html.main(QuerkiTemplate.Thing, s"Editing instances of ${thing.displayName}", rc, true)(html))
