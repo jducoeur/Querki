@@ -83,13 +83,18 @@ class TryTrans[T, R](func: => T, succ:Option[T => R] = None, fail:Option[PublicE
   def onFail(f:PublicException => R) = new TryTrans(func, succ, Some(f))
   
   def result:R = {
-    val t = Try { func }
-    t match {
-      case Failure(ex:PublicException) if (fail.isDefined) => fail.get(ex)
-      case Failure(error) if (fail.isDefined) => { QLog.error("Internal error", error); fail.get(UnexpectedPublicException) }
-      case Success(v) if (succ.isDefined) => succ.get(v)
-      case _ => throw new Exception("Incompletely defined TryTrans")
-    }    
+    // NOTE: I tried to do this with scala.util.Try, and found it a miserable failure in the case of
+    // functions that return Unit -- I couldn't force evaluation to happen at the right time. So we're
+    // doing it manually instead:
+    try {
+      succ.get(func)
+    } catch {
+      case ex:PublicException => fail.get(ex)
+      case ex:Exception => {
+        QLog.error("Internal error", ex)
+        fail.get(UnexpectedPublicException)        
+      }
+    }
   }
 }
 
