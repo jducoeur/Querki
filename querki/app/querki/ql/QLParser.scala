@@ -135,7 +135,6 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
 	            case None => {
 	              val inv = InvocationImpl(t, context, params)
 	              t.qlApply(inv)
-//	              t.qlApply(context, params)
 	            }
 	          }
 	        } catch {

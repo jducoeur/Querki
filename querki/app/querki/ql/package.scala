@@ -1,6 +1,6 @@
 package querki
 
-import models.{PType, PTypeBuilder, Wikitext}
+import models.{PType, PTypeBuilder, Thing, Wikitext}
 
 import querki.core.QLText
 import querki.ecology._
@@ -24,6 +24,25 @@ package object ql {
    */
   trait QLFunction {
     def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue
+  }
+  
+  /**
+   * This quietly transforms a returned InvocationValue[QValue] into a QValue, and will typically be
+   * invoked at the end of the function.
+   */
+  implicit def inv2QValue(inv:InvocationValue[QValue]):QValue = {
+    inv.getError.getOrElse(inv.get)
+  }
+  
+  /**
+   * The InvocationValue Monad, which is how we query Invocations inside of a for.
+   */
+  trait InvocationValue[T] {
+    def map[R](f:T => R):InvocationValue[R]
+    def flatMap[R](f:T => InvocationValue[R]):InvocationValue[R]
+    
+    def get:T
+    def getError:Option[QValue]
   }
   
   /**
@@ -53,7 +72,25 @@ package object ql {
      * Process one of the parameters. Expects that you have already checked that you have
      * all your expected parameters, using ifMatches!
      */
-    def processParam(paramNum:Int, processContext:QLContext = context):QValue
+    def oldProcessParam(paramNum:Int, processContext:QLContext = context):QValue
+    
+    /**
+     * If the received context is of the specified type, returns the first element of that context
+     * monadically.
+     * 
+     * TODO: this method is a bit suspicious -- we should be encouraging use of map semantics instead.
+     */
+    def contextFirstAs[VT](pt:PType[VT]):InvocationValue[VT]
+
+    /**
+     * Returns the first Thing in the received context.
+     */
+    def contextFirstThing:InvocationValue[Thing]
+
+    /**
+     * Get the specified parameter's first value, which should be of the given Type.
+     */
+    def processParamFirstAs[VT](paramNum:Int, pt:PType[VT], processContext:QLContext = context):InvocationValue[VT]
     
     //////////////
     //

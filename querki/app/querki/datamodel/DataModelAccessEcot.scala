@@ -272,33 +272,13 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     |Note that you must specify _self on the Property's name -- the parameter is the Property itself,
     |not its value on this Thing.""".stripMargin)))
   { 
-	// TODO: this whole thing really should be using Invocation in monadic style in one big for comprehension.
-	// I've deliberately written this method in a way to suggest what that should look like.
-    override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
-      implicit val state = context.state
-      
-      if (paramsOpt.isEmpty || paramsOpt.get.length < 1)
-        throw new PublicException("Func.missingParam", displayName)
-      val params = paramsOpt.get
-      
-      val contextValOpt = context.value.firstAs(LinkType)
-      if (contextValOpt.isEmpty)
-        throw new PublicException("Func.notThing", displayName)
-      val contextVal = contextValOpt.get
-      
-      val thingOpt = state.anything(contextVal)
-      if (thingOpt.isEmpty)
-        throw new PublicException("Func.unknownThing", displayName)
-      val thing = thingOpt.get
-      
-      val processed = context.parser.get.processPhrase(params(0).ops, context).value
-      val paramValOpt = processed.firstAs(LinkType)
-      if (paramValOpt.isEmpty)
-        throw new PublicException("Func.paramNotThing", displayName, "1")
-      val propOid = paramValOpt.get
-
-      ExactlyOne(thing.props.contains(propOid))
-    }
+	override def qlApply(inv:Invocation):QValue = {
+	  for (
+	    thing <- inv.contextFirstThing;
+	    propOid <- inv.processParamFirstAs(0, LinkType)
+	      )
+	    yield ExactlyOne(thing.props.contains(propOid))
+	}
   }
 
 

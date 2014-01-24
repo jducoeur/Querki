@@ -328,7 +328,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
               val wikitextOpt = for (
 	            elemV <- elemContext.value.firstOpt;
 	            url <- pt.getURL(elemContext)(elemV);
-	            label = inv.processParam(0, elemContext).wikify(elemContext)
+	            label = inv.oldProcessParam(0, elemContext).wikify(elemContext)
                   )
                 yield QWikitext("[") + label + QWikitext(s"]($url)")
 	              
