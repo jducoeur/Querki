@@ -6,6 +6,7 @@ Func.missingParam={0} is meaningless without a parameter
 Func.notThing={0} didn't receive a Thing value
 Func.paramNotThing={0}'s parameter {1} should be a Thing
 Func.unknownThing={0} received a link to an unknown Thing! (Maybe something got deleted?)
+Func.wrongType={0} didn't receive the expected type
 
 Space.create.alreadyExists=You already have a Space with the name {0}. Please choose a different name.
 Space.create.illegalName={0} is not a legal name for a Space. Space names should consist of just letters, digits and spaces.

@@ -79,6 +79,14 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
   
   def error[VT](name:String, params:String*) = InvocationValueImpl[VT](this, None, Some(PublicException(name, params:_*)))
   
+  def contextTypeAs[T : ClassTag]:InvocationValue[T] = {
+    val clazz = implicitly[ClassTag[T]].runtimeClass
+    if (clazz.isInstance(context.value.pType))
+      InvocationValueImpl(this, Some(context.value.pType.asInstanceOf[T]), None)
+    else
+      error("Func.wrongType", displayName)
+  }
+  
   def contextFirstAs[VT](pt:PType[VT]):InvocationValue[VT] = {
     context.value.firstAs(pt) match {
       case Some(v) => InvocationValueImpl(this, Some(v), None)

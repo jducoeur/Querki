@@ -73,6 +73,14 @@ package object ql {
      * all your expected parameters, using ifMatches!
      */
     def oldProcessParam(paramNum:Int, processContext:QLContext = context):QValue
+
+//    /**
+//     * If the context's value is of the specified type (which need not be a PType), return
+//     * it cast to that type.
+//     */
+//    def contextTypeAs[T : scala.reflect.ClassTag]:InvocationValue[T]
+//    
+//    def contextElements:InvocationValue[List[QLContext]]
     
     /**
      * If the received context is of the specified type, returns the first element of that context

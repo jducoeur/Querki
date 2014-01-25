@@ -322,6 +322,15 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	  lazy val sig = Signature(ParsedTextType, RequiredParam("label"))
 	  
 	  override def qlApply(invInit:Invocation):QValue = {
+	    // TODO: this is a work in progress. The problem is that we are trying to combine the
+	    // InvocationValue and List Monads, and Monads Don't Compose. Figure out the best way
+	    // around this.
+//	    for (
+//	      pt <- inv.contextTypeAs[URLableType];
+//	      elemContexts <- inv.contextElements;
+//	      elemContext <- elemContexts
+//	    )
+//	      yield EmptyValue
 	    invInit.ifMatches(sig) { inv =>
 	      inv.contextAs[URLableType] { pt =>
 	        inv.context.collect(ParsedTextType) { elemContext =>
