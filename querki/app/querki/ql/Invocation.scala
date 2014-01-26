@@ -83,12 +83,17 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
     else
       error("Func.wrongType", displayName)
   }
-//  
-//  def contextElements:InvocationValue[QLContext] = {
-//    
-//  }
   
-  def withOption[T](opt:Option[T], errOpt:Option[PublicException] = None):InvocationValue[T] = {
+  def contextElements:InvocationValue[QLContext] = {
+    if (context.useCollection) {
+      InvocationValueImpl(this, Some(context), None)
+    } else {
+      val contexts = context.value.cv.map(elem => context.next(Core.ExactlyOne(elem)))
+      InvocationValueImpl(this, contexts, None)
+    }
+  }
+  
+  def opt[T](opt:Option[T], errOpt:Option[PublicException] = None):InvocationValue[T] = {
     opt match {
       case Some(v) => InvocationValueImpl(this, Some(v), None)
       case None => {
@@ -99,6 +104,10 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
         }
       }
     }
+  }
+  
+  def iter[T](it:Iterable[T], errOpt:Option[PublicException] = None):InvocationValue[T] = {
+    InvocationValueImpl(this, it, errOpt)
   }
   
   def contextFirstAs[VT](pt:PType[VT]):InvocationValue[VT] = {
@@ -117,10 +126,20 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
     }
   }
   
+  def processParam(paramNum:Int, processContext:QLContext = context):InvocationValue[QValue] = {
+    paramsOpt match {
+      case Some(params) if (params.length >= (paramNum - 1)) => {
+        val processed = context.parser.get.processPhrase(params(paramNum).ops, processContext).value
+        InvocationValueImpl(this, Some(processed), None)
+      }
+      case _ => error("Func.missingParam", displayName)
+    }    
+  }
+  
   def processParamFirstAs[VT](paramNum:Int, pt:PType[VT], processContext:QLContext = context):InvocationValue[VT] = {
     paramsOpt match {
       case Some(params) if (params.length >= (paramNum - 1)) => {
-        val processed = context.parser.get.processPhrase(params(paramNum).ops, context).value
+        val processed = context.parser.get.processPhrase(params(paramNum).ops, processContext).value
         processed.firstAs(pt) match {
           case Some(v) => InvocationValueImpl(this, Some(v), None)
           case None => error("Func.paramNotThing", displayName, paramNum.toString)

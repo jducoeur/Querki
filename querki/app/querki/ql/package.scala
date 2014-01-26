@@ -78,15 +78,24 @@ package object ql {
     /**
      * Turns an Option value into an InvocationValue, so they can be used in a for comprehension together.
      */
-    def withOption[T](opt:Option[T], errOpt:Option[PublicException] = None):InvocationValue[T]
+    def opt[T](opt:Option[T], errOpt:Option[PublicException] = None):InvocationValue[T]
+    
+    /**
+     * Turns an Iterable into an InvocationValue, so they can be used in a for comprehension together.
+     */
+    def iter[T](it:Iterable[T], errOpt:Option[PublicException] = None):InvocationValue[T]
 
-//    /**
-//     * If the context's value is of the specified type (which need not be a PType), return
-//     * it cast to that type.
-//     */
-//    def contextTypeAs[T : scala.reflect.ClassTag]:InvocationValue[T]
-//    
-//    def contextElements:InvocationValue[List[QLContext]]
+    /**
+     * If the context's value is of the specified type (which need not be a PType), return
+     * it cast to that type.
+     */
+    def contextTypeAs[T : scala.reflect.ClassTag]:InvocationValue[T]
+
+    /**
+     * This iterates over the individual elements of the received context, wrapping each one as a
+     * context unto itself to make it usable.
+     */
+    def contextElements:InvocationValue[QLContext]
     
     /**
      * If the received context is of the specified type, returns the first element of that context
@@ -100,6 +109,11 @@ package object ql {
      * Returns the first Thing in the received context.
      */
     def contextFirstThing:InvocationValue[Thing]
+    
+    /**
+     * Process and return the specific parameter, assuming nothing about the results.
+     */
+    def processParam(paramNum:Int, processContext:QLContext = context):InvocationValue[QValue]
 
     /**
      * Get the specified parameter's first value, which should be of the given Type.
