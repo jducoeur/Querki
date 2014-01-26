@@ -52,30 +52,6 @@ package object ql {
    */
   trait Invocation {
     /**
-     * How many parameters were actually given?
-     */
-    def numParams:Int
-    
-    /**
-     * Check the actual Invocation against the provided Signature.
-     * 
-     * TODO: soon, the Signature will be given as a Property, and checked automatically.
-     */
-    def ifMatches(sig:Signature)(f:Invocation => QValue):QValue
-    
-    /**
-     * Declare that we expect the received context to be of the given PType or trait, and
-     * keep going using that.
-     */
-    def contextAs[T : scala.reflect.ClassTag](f:T => QValue):QValue
-    
-    /**
-     * Process one of the parameters. Expects that you have already checked that you have
-     * all your expected parameters, using ifMatches!
-     */
-    def oldProcessParam(paramNum:Int, processContext:QLContext = context):QValue
-    
-    /**
      * Turns an Option value into an InvocationValue, so they can be used in a for comprehension together.
      */
     def opt[T](opt:Option[T], errOpt:Option[PublicException] = None):InvocationValue[T]
@@ -137,6 +113,11 @@ package object ql {
      * about it.
      */
     def receivedContext:QLContext
+    
+    /**
+     * How many parameters were actually given?
+     */
+    def numParams:Int
     
     /**
      * The parameter list for this invocation, iff there was one.
