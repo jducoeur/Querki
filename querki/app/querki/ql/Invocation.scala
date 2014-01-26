@@ -30,10 +30,9 @@ private[ql] case class InvocationValueImpl[T](inv:Invocation, vOpt:Option[T] = N
       case None => {
         vOpt match {
           case Some(v) => InvocationValueImpl(inv, Some(f(v)), None)
-          case None => {
-            QLog.error("Somehow got an InvocationValueImpl with no initial value!")
-            InvocationValueImpl(inv, None, Some(UnexpectedPublicException))
-          }
+          // The pipeline drained somewhere along the line, and we're simply dealing with a
+          // legitimately empty result:
+          case None => InvocationValueImpl(inv, None, None)
         }
       }
     }
@@ -47,28 +46,19 @@ private[ql] case class InvocationValueImpl[T](inv:Invocation, vOpt:Option[T] = N
       case None => {
         vOpt match {
           case Some(v) => f(v)
-          case None => {
-            QLog.error("Somehow got an InvocationValueImpl with no initial value!")
-            InvocationValueImpl(inv, None, Some(UnexpectedPublicException))
-          }
+          case None => InvocationValueImpl(inv, None, None)
         }
       }
     }
   }
     
-  def get:T = vOpt.get
+  def get:Option[T] = vOpt
   def getError:Option[QValue] = errOpt.map { ex =>
     val msg = ex.display(Some(inv.context.request))
     QL.WarningValue(msg) 
   }
 }
 
-/**
- * TODO: okay, fine, I give -- this *really* needs to be rewritten as a proper Monad. I want to be able to
- * build a for statement that is basically checking this Invocation over and over again, returning a WarningValue
- * if anything fails or the resulting value if it all works. That is classic Monadic behaviour, so I should
- * just suck it up and figure it out.
- */
 private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext, paramsOpt:Option[Seq[QLPhrase]], sig:Option[Signature] = None)(implicit val ecology:Ecology) 
   extends Invocation with EcologyMember
 {
@@ -85,6 +75,23 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
       InvocationValueImpl(this, Some(context.value.pType.asInstanceOf[T]), None)
     else
       error("Func.wrongType", displayName)
+  }
+//  
+//  def contextElements:InvocationValue[QLContext] = {
+//    
+//  }
+  
+  def withOption[T](opt:Option[T], errOpt:Option[PublicException] = None):InvocationValue[T] = {
+    opt match {
+      case Some(v) => InvocationValueImpl(this, Some(v), None)
+      case None => {
+        errOpt match {
+          case Some(err) => InvocationValueImpl(this, None, Some(err))
+          // No error specified if this isn't true, so we're simply passing Empty along:
+          case None => InvocationValueImpl(this, None, None)
+        }
+      }
+    }
   }
   
   def contextFirstAs[VT](pt:PType[VT]):InvocationValue[VT] = {

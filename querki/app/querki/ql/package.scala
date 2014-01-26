@@ -5,7 +5,8 @@ import models.{PType, PTypeBuilder, Thing, Wikitext}
 import querki.core.QLText
 import querki.ecology._
 
-import querki.values.{ElemValue, QLContext, QValue}
+import querki.util.PublicException
+import querki.values.{ElemValue, EmptyValue, QLContext, QValue}
 
 package object ql {
 
@@ -30,8 +31,8 @@ package object ql {
    * This quietly transforms a returned InvocationValue[QValue] into a QValue, and will typically be
    * invoked at the end of the function.
    */
-  implicit def inv2QValue(inv:InvocationValue[QValue]):QValue = {
-    inv.getError.getOrElse(inv.get)
+  implicit def inv2QValue(inv:InvocationValue[QValue])(implicit ecology:Ecology):QValue = {
+    inv.getError.getOrElse(inv.get.getOrElse(EmptyValue.untyped))
   }
   
   /**
@@ -41,7 +42,7 @@ package object ql {
     def map[R](f:T => R):InvocationValue[R]
     def flatMap[R](f:T => InvocationValue[R]):InvocationValue[R]
     
-    def get:T
+    def get:Option[T]
     def getError:Option[QValue]
   }
   
@@ -73,6 +74,11 @@ package object ql {
      * all your expected parameters, using ifMatches!
      */
     def oldProcessParam(paramNum:Int, processContext:QLContext = context):QValue
+    
+    /**
+     * Turns an Option value into an InvocationValue, so they can be used in a for comprehension together.
+     */
+    def withOption[T](opt:Option[T], errOpt:Option[PublicException] = None):InvocationValue[T]
 
 //    /**
 //     * If the context's value is of the specified type (which need not be a PType), return
