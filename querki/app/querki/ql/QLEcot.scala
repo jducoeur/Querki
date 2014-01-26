@@ -28,6 +28,36 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
    * PUBLIC API
    ***********************************************/
   
+  def inv2QValueImpl(inv:InvocationValue[QValue]):QValue = {
+    inv.getError.getOrElse {
+      val qvs = inv.get
+      // This code originally lived in QLContext.collect(). It is still kind of iffy, but is
+      // conceptually Iterable[QValue].flatten:
+      // This part is iffy. How do we infer the correct PType if the result is empty?
+      val pt = {
+        if (qvs.isEmpty)
+          Core.UnknownType
+        else
+          qvs.head.pType
+      }
+      val raw = qvs.flatten(_.cv)
+      // TBD: is this reasonable? We're essentially eliding out the original Collections, in favor
+      // of inferring it from the ordinal of the result. The original version in QLContext.collect()
+      // actually used the initial Collection if possible, and tweaked only if necessary. That might
+      // be more correct, but would require passing the Collections hand-to-hand through
+      // InvocationValue, and having a formalism for how to combine them. (Which is, I suspect,
+      // reinventing MonadTransformers?)
+      val newCT = 
+        if (raw.isEmpty)
+          Core.Optional
+        else if (raw.size == 1)
+          Core.ExactlyOne
+        else
+          Core.QList
+      newCT.makePropValue(raw, pt)
+    }
+  }
+  
   def process(input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):Wikitext = {
     val parser = new QLParser(input, ci, paramsOpt)
     parser.process

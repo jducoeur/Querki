@@ -32,7 +32,7 @@ package object ql {
    * invoked at the end of the function.
    */
   implicit def inv2QValue(inv:InvocationValue[QValue])(implicit ecology:Ecology):QValue = {
-    inv.getError.getOrElse(inv.get.getOrElse(EmptyValue.untyped))
+    ecology.api[querki.ql.QL].inv2QValueImpl(inv)
   }
   
   /**
@@ -42,7 +42,7 @@ package object ql {
     def map[R](f:T => R):InvocationValue[R]
     def flatMap[R](f:T => InvocationValue[R]):InvocationValue[R]
     
-    def get:Option[T]
+    def get:Iterable[T]
     def getError:Option[QValue]
   }
   
@@ -130,7 +130,12 @@ package object ql {
     def paramsOpt:Option[Seq[QLPhrase]]
   }
   
-  trait QL extends EcologyInterface {
+  trait QL extends EcologyInterface {        
+    /**
+     * Internal method, usually invoked implicitly by inv2QValue.
+     */
+    def inv2QValueImpl(inv:InvocationValue[QValue]):QValue
+
     
     /**
      * The primary entry point for processing a body of QLText into Wikitext.

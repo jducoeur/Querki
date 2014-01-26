@@ -17,7 +17,7 @@ case class Signature(returnPt:PType[_], required:RequiredParam*) {
   def numRequiredParams = required.length
 }
 
-private[ql] case class InvocationValueImpl[T](inv:Invocation, vOpt:Option[T] = None, errOpt:Option[PublicException] = None)(implicit val ecology:Ecology) 
+private[ql] case class InvocationValueImpl[T](inv:Invocation, vs:Iterable[T], errOpt:Option[PublicException] = None)(implicit val ecology:Ecology) 
   extends InvocationValue[T] with EcologyMember
 {
   lazy val QL = interface[QL]
@@ -28,12 +28,8 @@ private[ql] case class InvocationValueImpl[T](inv:Invocation, vOpt:Option[T] = N
       case Some(err) => InvocationValueImpl[R](inv, None, errOpt)
       // Otherwise, actually call f:
       case None => {
-        vOpt match {
-          case Some(v) => InvocationValueImpl(inv, Some(f(v)), None)
-          // The pipeline drained somewhere along the line, and we're simply dealing with a
-          // legitimately empty result:
-          case None => InvocationValueImpl(inv, None, None)
-        }
+        val maps = vs.map(v => f(v))
+        InvocationValueImpl(inv, maps, None)
       }
     }
   }
@@ -44,15 +40,26 @@ private[ql] case class InvocationValueImpl[T](inv:Invocation, vOpt:Option[T] = N
       case Some(err) => InvocationValueImpl[R](inv, None, errOpt)
       // Otherwise, actually call f:
       case None => {
-        vOpt match {
-          case Some(v) => f(v)
-          case None => InvocationValueImpl(inv, None, None)
+        // This gets a little complex, so that we can preserve interim errors:
+        (InvocationValueImpl(inv, Seq.empty[R], None) /: vs) { (current, v) =>
+          current.errOpt match {
+            case Some(err) => InvocationValueImpl[R](inv, None, current.errOpt)
+            case None => {
+              // HACK: is there a really good way of avoiding this cheat without polluting the public API of
+              // InvocationValue with the errOpt?
+              val result = f(v).asInstanceOf[InvocationValueImpl[R]]
+              result.errOpt match {
+                case Some(err) => result
+                case None => InvocationValueImpl(inv, current.vs ++: result.vs, None)
+              }
+            }
+          }
         }
       }
     }
   }
     
-  def get:Option[T] = vOpt
+  def get:Iterable[T] = vs
   def getError:Option[QValue] = errOpt.map { ex =>
     val msg = ex.display(Some(inv.context.request))
     QL.WarningValue(msg) 
