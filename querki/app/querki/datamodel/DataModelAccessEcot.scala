@@ -222,26 +222,14 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     |inside _if(). For instance, to check whether a Property is of Text Type:
     |    MyProp.Property Type -> _if(_is(Text Type), ...)""".stripMargin)))
   { 
-  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
-    paramsOpt match {
-      case Some(params) => {
-        val contextValOpt = context.value.firstAs(LinkType)
-        contextValOpt match {
-          case Some(contextOid) => {
-            val paramValOpt = context.parser.get.processPhrase(params(0).ops, context).value.firstAs(LinkType)
-            paramValOpt match {
-              case Some(paramOid) => {
-                ExactlyOne(contextOid == paramOid)
-              }
-              case _ => WarningValue("Parameter of _is didn't produce a Thing")
-            }
-          }
-          case None => WarningValue("_is didn't receive a Thing value")
-        }
-      }
-      case None => WarningValue("_is is meaningless without a parameter")
+    override def qlApply(inv:Invocation):QValue = {
+      for 
+      (
+        receivedId <- inv.contextFirstAs(LinkType);
+        paramId <- inv.processParamFirstAs(0, LinkType)
+      )
+        yield ExactlyOne(receivedId == paramId)
     }
-  }
   }
 
 	lazy val PropsOfTypeMethod = new SingleThingMethod(PropsOfTypeOID, "_propsOfType", "This receives a Type, and produces all of the Properties in this Space with that Type",
