@@ -88,9 +88,17 @@ package object ql {
      * In general, try to avoid this method, in favor of contextAllAs instead.
      */
     def contextFirstAs[VT](pt:PType[VT]):InvocationValue[VT]
+    
+    /**
+     * Iterates over all of the received Things. (That is, this checks that the received values are
+     * all LinkType, resolves them to Thing, and gives an error if any aren't Links.)
+     */
+    def contextAllThings:InvocationValue[Thing]
 
     /**
      * Returns the first Thing in the received context.
+     * 
+     * In general, try to avoid this method, in favor of contextAllThings instead.
      */
     def contextFirstThing:InvocationValue[Thing]
     

@@ -248,6 +248,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
       Summary("True iff this Thing is a Function."),
       Details("""This is a marker flag that you can put on a Thing to say that it is a Function.
           |This doesn't particularly change the way the Thing works, but has some UI effects.""".stripMargin)))
+
 	
   lazy val HasPropertyMethod = new InternalMethod(HasPropertyMethodOID,
     toProps(
@@ -262,7 +263,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   { 
 	override def qlApply(inv:Invocation):QValue = {
 	  for (
-	    thing <- inv.contextFirstThing;
+	    thing <- inv.contextAllThings;
 	    propOid <- inv.processParamFirstAs(0, LinkType)
 	      )
 	    yield ExactlyOne(thing.props.contains(propOid))

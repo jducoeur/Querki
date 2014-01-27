@@ -135,6 +135,19 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
     }
   }
   
+  def contextAllThings:InvocationValue[Thing] = {
+    if (!context.value.matchesType(Core.LinkType))
+      error("Func.notThing", displayName)
+    else {
+      val ids = context.value.flatMap(Core.LinkType)(Some(_))
+      val thingsOpt = ids.map(state.anything(_))
+      if (thingsOpt.forall(_.isDefined))
+        InvocationValueImpl(this, thingsOpt.flatten, None)
+      else
+        error("Func.unknownThing", displayName)
+    }    
+  }
+  
   def processParam(paramNum:Int, processContext:QLContext = context):InvocationValue[QValue] = {
     paramsOpt match {
       case Some(params) if (params.length >= (paramNum - 1)) => {

@@ -29,6 +29,21 @@ class DataModelTests extends QuerkiTests {
       processQText(commonThingAsContext(_.instance), """[[_hasProperty(My Optional Text)]]""") should 
         equal (expectedWarning("Func.paramNotThing"))      
     }
+    
+    "process a List of Things, saying whether they all have the Property" in {
+      class TSpace extends CommonSpace {
+        val myProp = new TestProperty(TextType, ExactlyOne, "My Text Prop")
+        val linkee1 = new SimpleTestThing("Linkee 1", myProp("hello"))
+        val linkee2 = new SimpleTestThing("Linkee 2")
+        val linkee3 = new SimpleTestThing("Linkee 3", myProp("there"))
+        val linkee4 = new SimpleTestThing("Linkee 4")
+        val linker = new SimpleTestThing("Linker", listLinksProp(linkee1, linkee2, linkee3, linkee4))
+      }
+      val space = new TSpace
+      
+      processQText(thingAsContext[TSpace](space, (_.linker)), """[[My List of Links -> _hasProperty(My Text Prop._self) -> _commas]]""") should
+        equal ("""true, false, true, false""")      
+    }
   }
   
   // === _is ===
