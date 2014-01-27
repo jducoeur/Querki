@@ -68,6 +68,11 @@ class SpaceLoadTests extends QuerkiTests {
       userTesting.prepSpace(commonSpace)
       db.storeSpace(commonState)
       val loadedState = loader.doLoad(db)
+      
+      // Just do a simple smoketest based on the contents of CommonSpace. This demonstrates that both
+      // the property and instance have loaded:
+      processQText(loadedContext(loadedState, commonSpace.instance.id), """[[My Optional Text]]""") should
+        equal ("""Hello world""")
     }
   }
 }

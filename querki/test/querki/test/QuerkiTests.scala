@@ -3,7 +3,7 @@ package querki.test
 import org.scalatest.{WordSpec, BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
 
-import models.{Thing}
+import models.{OID, Thing}
 
 import querki.core.QLText
 
@@ -84,6 +84,16 @@ class QuerkiTests
   }
   
   def commonThingAsContext(f: CommonSpace => Thing)(implicit requester:User = BasicTestUser):QLContext = thingAsContext(commonSpace, f)
+  
+  /**
+   * This is a variant of thingAsContext, intended for use when we have "saved" and "loaded" the state, so we
+   * aren't directly using a derivative of CommonSpace.
+   */
+  def loadedContext(state:SpaceState, id:OID)(implicit requester:User = BasicTestUser):QLContext = {
+    val thing = state.anything(id).get
+    val rc = SimpleTestRequestContext(state.owner, state, thing, ecology)
+    thing.thisAsContext(rc)
+  }
   
   /**
    * Given a list of expected Things that comes out at the end of a QL expression, this is the
