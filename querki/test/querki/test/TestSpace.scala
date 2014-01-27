@@ -148,7 +148,7 @@ trait TestSpace extends EcologyMember {
    * The props of the Space itself. If you need these to be anything interesting, override
    * this and set it to what you want.
    */
-  lazy val otherSpaceProps:Seq[(OID, QValue)] = Seq.empty
+  def otherSpaceProps:Seq[(OID, QValue)] = Seq.empty
   
   lazy val sProps:PropFetcher =
     Core.toProps(

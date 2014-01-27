@@ -7,7 +7,7 @@ import models.Thing.PropMap
 
 import querki.ecology._
 import querki.time.DateTime
-import querki.values.SpaceState
+import querki.values.{QValue, SpaceState}
 
 /**
  * A stub for the "database" in Space saving/loading. Plays at least somewhat fair: truly serializes and
@@ -59,20 +59,38 @@ class SpaceLoadTester(val state:SpaceState, val ecology:Ecology) extends SpaceLo
 }
 
 class SpaceLoadTests extends QuerkiTests {
+  def saveLoad(space:CommonSpace):SpaceState = {
+    val userTesting = interface[UserTesting]
+    val db = new SpaceLoadTestDB(ecology)
+    val loader = new SpaceLoadTester(commonState, ecology)
+      
+    userTesting.prepSpace(space)
+    db.storeSpace(space.state)
+    loader.doLoad(db)
+  }
+  
   "SpacePersister" should {
     "successfully save and load the CommonSpace" in {
-      val userTesting = interface[UserTesting]
-      val db = new SpaceLoadTestDB(ecology)
-      val loader = new SpaceLoadTester(commonState, ecology)
-      
-      userTesting.prepSpace(commonSpace)
-      db.storeSpace(commonState)
-      val loadedState = loader.doLoad(db)
+      val loadedState = saveLoad(commonSpace)
       
       // Just do a simple smoketest based on the contents of CommonSpace. This demonstrates that both
       // the property and instance have loaded:
       processQText(loadedContext(loadedState, commonSpace.instance.id), """[[My Optional Text]]""") should
         equal ("""Hello world""")
+    }
+    
+    "successfully save and load if the Space uses its own Property" in {
+      class TestSpace extends CommonSpace {
+        override def otherSpaceProps:Seq[(OID, QValue)] = Seq(optTextProp("I'm a Space!"))
+      }
+      val space = new TestSpace
+      
+      val loadedState = saveLoad(space)
+      
+      // Just do a simple smoketest based on the contents of CommonSpace. This demonstrates that both
+      // the property and instance have loaded:
+      processQText(loadedContext(loadedState, space.state.id), """[[My Optional Text]]""") should
+        equal ("""I'm a Space!""")
     }
   }
 }
