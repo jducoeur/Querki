@@ -170,7 +170,7 @@ trait TestSpace extends EcologyMember {
   
   /**
    * The *INITIAL* state of this Space for the test. If you plan to evolve the State, the test
-   * will need to fire up a Space Actor to manage that.
+   * will need to fire up a Space Actor to manage that, or do it some other way.
    */
   lazy val state:SpaceState =
     SpaceState(
