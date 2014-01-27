@@ -34,7 +34,10 @@ class QuerkiTests
    * and stubs out others.
    */
   def createEcots(e:Ecology) = {
-    querki.system.SystemCreator.createAllEcots(e)
+    querki.system.SystemCreator.createTestableEcots(e)
+
+    // Testable stubs:
+    new UserAccessStub(e)
   }
   
   def createEcology() = {

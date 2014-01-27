@@ -10,11 +10,25 @@ import querki.ecology._
  * composed mainly of stubs.
  */
 object SystemCreator {
-  def createAllEcots(ecology:Ecology):Ecology = {
+  /**
+   * This creates the Ecots that really should not be used in unit testing, because they work
+   * with the database.
+   */
+  def createDBEcots(ecology:Ecology) = {
+    new querki.identity.UserPersistence(ecology)                   // 30    
+  }
+  
+  /**
+   * This creates the Ecots that can potentially be used in testing.
+   * 
+   * As of this writing, I haven't gone through this list carefully. Some of these
+   * will need to be moved to createDBEcots eventually.
+   */
+  def createTestableEcots(ecology:Ecology) = {
     // IMPORTANT: The numbers attached to these Ecots must NEVER BE CHANGED!!!!! They
     // get built into the moid's, and thence into the database! If an Ecot is removed,
     // comment it out, but leave its number and all others alone.
-    new querki.css.StylesheetModule(ecology)               // 1
+    new querki.css.StylesheetModule(ecology)                       // 1
     new querki.email.impl.EmailModule(ecology)                     // 2
     new querki.identity.PersonModule(ecology)                      // 3
     new querki.security.AccessControlModule(ecology)               // 4
@@ -43,9 +57,13 @@ object SystemCreator {
     new querki.links.LinksEcot(ecology)                            // 27
     new querki.spaces.SpacePersistenceEcot(ecology)                // 28
     new querki.evolutions.EvolutionsEcot(ecology)                  // 29
-    new querki.identity.UserPersistence(ecology)                   // 30
     new controllers.PageEventManagerEcot(ecology)                  // 31
-    new querki.spaces.SpaceChangeManagerEcot(ecology)              // 32
+    new querki.spaces.SpaceChangeManagerEcot(ecology)              // 32    
+  }
+  
+  def createAllEcots(ecology:Ecology):Ecology = {
+    createTestableEcots(ecology)
+    createDBEcots(ecology)
     
     ecology
   }
