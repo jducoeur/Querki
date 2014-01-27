@@ -62,5 +62,19 @@ class DataModelTests extends QuerkiTests {
       processQText(thingAsContext[TSpace](space, (_.linker)), """[[_if(Single Link -> _is(Other), ""Yes"", ""No"")]]""") should
         equal ("""No""")
     }
+    
+    // Edge case, but this ought to work:
+    "work with a received List" in {
+      class TSpace extends CommonSpace {
+        val linkee1 = new SimpleTestThing("Linkee 1")
+        val linkee2 = new SimpleTestThing("Linkee 2")
+        val linkee3 = new SimpleTestThing("Linkee 3")
+        val linker = new SimpleTestThing("Linker", listLinksProp(linkee1, linkee2, linkee3, linkee2))
+      }
+      val space = new TSpace
+      
+      processQText(thingAsContext[TSpace](space, (_.linker)), """[[My List of Links -> _is(Linkee 2) -> _commas]]""") should
+        equal ("""false, true, false, true""")
+    }
   }
 }

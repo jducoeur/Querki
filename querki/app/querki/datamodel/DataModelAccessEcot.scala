@@ -225,7 +225,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     override def qlApply(inv:Invocation):QValue = {
       for 
       (
-        receivedId <- inv.contextFirstAs(LinkType);
+        receivedId <- inv.contextAllAs(LinkType);
         paramId <- inv.processParamFirstAs(0, LinkType)
       )
         yield ExactlyOne(receivedId == paramId)

@@ -45,6 +45,9 @@ trait QValue {
   def isEmpty = cType.isEmpty(this)
   def size = cv.size
   
+  // This essentially duplicates ElemValue.matchesType. Where does this code belong?
+  def matchesType(pt:PType[_]):Boolean = { pType.realType == pt.realType }
+  
   /**
    * Returns true iff these two QValues are equivalent.
    * 

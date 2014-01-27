@@ -74,10 +74,18 @@ package object ql {
     def contextElements:InvocationValue[QLContext]
     
     /**
+     * Iterates over all of the elements in the received context.
+     * 
+     * This should generally be used in preference to contextFirstAs -- it is more general and
+     * "Querkish".
+     */
+    def contextAllAs[VT](pt:PType[VT]):InvocationValue[VT]
+    
+    /**
      * If the received context is of the specified type, returns the first element of that context
      * monadically.
      * 
-     * TODO: this method is a bit suspicious -- we should be encouraging use of map semantics instead.
+     * In general, try to avoid this method, in favor of contextAllAs instead.
      */
     def contextFirstAs[VT](pt:PType[VT]):InvocationValue[VT]
 

@@ -117,6 +117,15 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
     }
   }
   
+  def contextAllAs[VT](pt:PType[VT]):InvocationValue[VT] = {
+    if (!context.value.matchesType(pt))
+      error("Func.notThing", displayName)
+    else {
+      val vs = context.value.flatMap(pt)(Some(_))
+      InvocationValueImpl(this, vs, None)
+    }
+  }
+  
   def contextFirstThing:InvocationValue[Thing] = {
     contextFirstAs(Core.LinkType).flatMap { oid =>
       state.anything(oid) match {
