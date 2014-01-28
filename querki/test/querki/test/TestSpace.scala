@@ -67,6 +67,8 @@ trait TestSpace extends EcologyMember {
     Core.toProps((pairs :+ Core.setName(name)):_*)
   }
   
+  def registerType(pt:PType[_]) = { types = types :+ pt }
+  
   def registerProp(p:Property[_,_]) = { props = props :+ p }
   class TestPropertyBase[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
     extends Property[VT, RT](pid, spaceId, UrPropOID, t, c, p, querki.time.epoch)
@@ -158,7 +160,7 @@ trait TestSpace extends EcologyMember {
   /**
    * The PTypes introduced by this Test, if any.
    */
-  lazy val types:Seq[PType[_]] = Seq.empty
+  var types:Seq[PType[_]] = Seq.empty
   /**
    * The Properties introduced by this Test, if any.
    */
