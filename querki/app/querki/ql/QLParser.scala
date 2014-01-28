@@ -11,9 +11,9 @@ import querki.ecology._
 import querki.util._
 import querki.values._
 
-class PartiallyAppliedFunction(partialContext:QLContext, action:(QLContext, Option[Seq[QLPhrase]]) => QValue) extends QLFunction {
-  def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
-    action(context, params)
+class PartiallyAppliedFunction(partialContext:QLContext, action:(Invocation) => QValue) extends QLFunction {
+  def qlApply(inv:Invocation):QValue = {
+    action(inv)
   }
 }
 
@@ -129,11 +129,12 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
 	        try {
 	          methodOpt match {
 	            case Some(method) => {
-	              val partialFunction = method.partiallyApply(context.next(Core.ExactlyOne(Core.LinkType(t.id))))
-	              partialFunction.qlApply(context, params)
+	              val definingContext = context.next(Core.ExactlyOne(Core.LinkType(t.id)))
+	              val partialFunction = method.partiallyApply(definingContext)
+	              partialFunction.qlApply(InvocationImpl(t, context, Some(definingContext), params))
 	            }
 	            case None => {
-	              val inv = InvocationImpl(t, context, params)
+	              val inv = InvocationImpl(t, context, None, params)
 	              t.qlApply(inv)
 	            }
 	          }

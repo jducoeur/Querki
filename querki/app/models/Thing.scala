@@ -425,7 +425,7 @@ abstract class Thing(
   }
   
   class BogusFunction extends QLFunction {
-    def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
+    def qlApply(inv:Invocation):QValue = {
       QL.WarningValue("It does not make sense to put this after a dot.")
     }
   }

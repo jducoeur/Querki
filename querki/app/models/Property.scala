@@ -6,7 +6,7 @@ import Thing.{PropFetcher, PropMap}
 
 import querki.core.MOIDs._
 import querki.ecology._
-import querki.ql.{PartiallyAppliedFunction, QLFunction, QLPhrase}
+import querki.ql.{Invocation, PartiallyAppliedFunction, QLFunction, QLPhrase}
 import querki.time.DateTime
 import querki.types.Types
 
@@ -127,14 +127,14 @@ case class Property[VT, -RT](
   }  
   
   override def partiallyApply(leftContext:QLContext):QLFunction = {
-    def handleRemainder(mainContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {
+    def handleRemainder(inv:Invocation):QValue = {
       // Note that partial application ignores the incoming context if the type isn't doing anything clever. By
       // and large, this syntax mainly exists for QL properties:
       //
       //   incomingContext -> definingThing.MyQLFunction(params)
       //
       // But we allow you to use partial application in general, since it sometimes feels natural.
-      pType.qlApplyFromProp(leftContext, mainContext, this, params).getOrElse(applyToIncomingThing(leftContext) { (t, context) =>
+      pType.qlApplyFromProp(leftContext, inv.context, this, inv.paramsOpt).getOrElse(applyToIncomingThing(leftContext) { (t, context) =>
         t.getPropVal(this)(context.state)
       })
     }

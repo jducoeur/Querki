@@ -89,6 +89,28 @@ class DataModelTests extends QuerkiTests {
       processQText(thingAsContext[TSpace](space, (_.instancesModel)), """[[_instances -> _sort]]""") should 
         equal (listOfLinkText(space.instance1, space.instance2, space.instance3))
     }
+    
+    "work in dotted position" in {
+      processQText(commonThingAsContext(_.sandbox), """[[My Model._instances -> _commas]]""") should 
+        equal ("""[My Instance](My-Instance)""")
+    }
+    
+    "cope with multiple received Models" in {
+      class TSpace extends CommonSpace {
+        val instancesModel = new SimpleTestThing("Model with Instances", Core.IsModelProp(true))
+        val model2 = new SimpleTestThing("Model 2", Core.IsModelProp(true))
+        
+        val instance1 = new TestThing("Instance 1", instancesModel)
+        val instance2 = new TestThing("Instance 2", model2)
+        val instance3 = new TestThing("Instance 3", instancesModel)
+        
+        val linker = new SimpleTestThing("Linker", listLinksProp(instancesModel, model2))
+      }
+      val space = new TSpace
+      
+      processQText(thingAsContext[TSpace](space, (_.linker)), """[[My List of Links -> _instances -> _sort]]""") should 
+        equal (listOfLinkText(space.instance1, space.instance2, space.instance3))
+    }
   }
   
   // === _is ===

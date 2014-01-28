@@ -66,7 +66,7 @@ private[ql] case class InvocationValueImpl[T](inv:Invocation, vs:Iterable[T], er
   }
 }
 
-private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext, paramsOpt:Option[Seq[QLPhrase]], sig:Option[Signature] = None)(implicit val ecology:Ecology) 
+private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext, val definingContext:Option[QLContext], paramsOpt:Option[Seq[QLPhrase]], sig:Option[Signature] = None)(implicit val ecology:Ecology) 
   extends Invocation with EcologyMember
 {
   lazy val QL = interface[querki.ql.QL]
@@ -75,6 +75,13 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
   lazy val displayName = invokedOn.displayName
   
   def error[VT](name:String, params:String*) = InvocationValueImpl[VT](this, None, Some(PublicException(name, params:_*)))
+  
+  def preferDefiningContext:Invocation = {
+    definingContext match {
+      case Some(c) => this.copy(receivedContext = c)
+      case None => this.copy(definingContext = Some(receivedContext))
+    }
+  }
   
   def contextTypeAs[T : ClassTag]:InvocationValue[T] = {
     val clazz = implicitly[ClassTag[T]].runtimeClass

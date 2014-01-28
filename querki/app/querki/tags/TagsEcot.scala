@@ -259,11 +259,11 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
           |* White: Pinot Gris, Chardonnay
           |""".stripMargin)))
   {
-    def fullyApply(mainContext:QLContext, partialContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {
-      applyToIncomingThing(partialContext) { (shouldBeProp, _) =>
+    def fullyApply(inv:Invocation):QValue = {
+      applyToIncomingThing(inv.definingContext.get) { (shouldBeProp, _) =>
         shouldBeProp match {
           case prop:Property[_,_] if (prop.pType == TagSetType || prop.pType == NewTagSetType) => {
-            Core.listFrom(fetchTags(partialContext.state, prop), TagSetType)
+            Core.listFrom(fetchTags(inv.state, prop), TagSetType)
           }
           case _ => WarningValue("The _tagsForProperty method can only be used on Tag Set Properties")
         } 

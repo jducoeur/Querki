@@ -6,7 +6,7 @@ import querki.core.QLText
 import querki.ecology._
 
 import querki.util.PublicException
-import querki.values.{ElemValue, EmptyValue, QLContext, QValue}
+import querki.values.{ElemValue, EmptyValue, QLContext, QValue, SpaceState}
 
 package object ql {
 
@@ -24,7 +24,7 @@ package object ql {
    * when a method returns a partially-applied function.
    */
   trait QLFunction {
-    def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue
+    def qlApply(inv:Invocation):QValue
   }
   
   /**
@@ -51,6 +51,16 @@ package object ql {
    * common functionality should get wrapped up into here.
    */
   trait Invocation {
+    /**
+     * Should be used by Functions that only take a single context, which should be the definingContext
+     * if there is one. Returns a new Invocation that has the receivedContext and definingContext set
+     * to the same value.
+     * 
+     * Basically, this should be used by Functions that are members of a specific Thing, and only
+     * care about that Thing.
+     */
+    def preferDefiningContext:Invocation
+    
     /**
      * Turns an Option value into an InvocationValue, so they can be used in a for comprehension together.
      */
@@ -125,10 +135,20 @@ package object ql {
     def context:QLContext
     
     /**
+     * The SpaceState of the Context.
+     */
+    def state:SpaceState
+    
+    /**
      * The Context that was passed to this function. This always exists, although a few functions don't care
      * about it.
      */
     def receivedContext:QLContext
+    
+    /**
+     * The Context that this function was defined on, which may be different from the received one.
+     */
+    def definingContext:Option[QLContext]
     
     /**
      * How many parameters were actually given?

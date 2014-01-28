@@ -143,8 +143,8 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
 	          |Link to that Thing. It is never necessary for ordinary Things, but frequently useful when _apply
 	          |has been defined on it.""".stripMargin)))
 	{
-	  def fullyApply(mainContext:QLContext, partialContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {
-	    partialContext.value
+	  def fullyApply(inv:Invocation):QValue = {
+	    inv.definingContext.get.value
 	  }
 	}
 	
@@ -199,9 +199,10 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
 	  
 	  // TODO: this is horrible. Surely we can turn this into something cleaner with better use of the functional
 	  // tools in the Scala toolbelt.
-	  def fullyApply(mainContext:QLContext, partialContext:QLContext, paramsOpt:Option[Seq[QLPhrase]]):QValue = {
+	  def fullyApply(inv:Invocation):QValue = {
+	    val partialContext = inv.definingContext.get
 	    implicit val space = partialContext.state
-	    paramsOpt match {
+	    inv.paramsOpt match {
 	      case Some(params) => {
 	        // TODO: the way we're handling this is horrible and hard-coded, and needs re-examination. The thing is,
 	        // we *mostly* don't want to process this. Specifically, we don't want to process the last step of this.
@@ -229,7 +230,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
 	                val propOpt = space.anythingByName(thingName)
 	                propOpt match {
 	                  case Some(propThing) => {
-	                    applyToIncomingThing(mainContext) { (thing, _) =>
+	                    applyToIncomingThing(inv.context) { (thing, _) =>
 	                      encodeThingAndProp(thing, propThing).getOrElse(encodeString(phrase.reconstructString))
 	                    }
 	                  }

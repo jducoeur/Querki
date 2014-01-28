@@ -80,22 +80,19 @@ trait MethodDefs { self:QuerkiEcot =>
    */
   abstract class MetaMethod(tid:OID, p:PropFetcher) extends InternalMethod(tid, p)
   {
-    override def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
+    override def qlApply(inv:Invocation):QValue = {
       interface[querki.ql.QL].WarningValue(displayName + " can not be applied on its own; you need to use this on the right-hand side of a dot, as PropertyName." + displayName)
     }
   
     override def partiallyApply(leftContext:QLContext):QLFunction = {
-      def handleRemainder(mainContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {
-        fullyApply(mainContext, leftContext, params)
-      }
-      new PartiallyAppliedFunction(leftContext, handleRemainder)
+      new PartiallyAppliedFunction(leftContext, fullyApply)
     }
   
     /**
      * The actual Method must implement this. It takes both contexts -- the partial context that we were
      * dotted to and the main incoming context -- and does the usual sorts of things with them.
      */
-    def fullyApply(mainContext:QLContext, partialContext:QLContext, params:Option[Seq[QLPhrase]]):QValue
+    def fullyApply(inv:Invocation):QValue
   }
 
   /**
@@ -111,12 +108,13 @@ trait MethodDefs { self:QuerkiEcot =>
       partialContext:QLContext, prop:Property[_,_],
       params:Option[Seq[QLPhrase]]):QValue
       
-    def fullyApply(mainContext:QLContext, partialContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {
-      applyToIncomingThing(mainContext) { (mainThing, _) =>
+    def fullyApply(inv:Invocation):QValue = {
+      applyToIncomingThing(inv.context) { (mainThing, _) =>
+        val partialContext = inv.definingContext.get
         applyToIncomingThing(partialContext) { (shouldBeProp, _) =>
           shouldBeProp match {
             case prop:Property[_,_] => {
-              applyToPropAndThing(mainContext, mainThing, partialContext, prop, params)
+              applyToPropAndThing(inv.context, mainThing, partialContext, prop, inv.paramsOpt)
             }
             case _ => interface[querki.ql.QL].WarningValue("The " + displayName + " method can only be used on Properties")
           } 
@@ -136,8 +134,10 @@ trait MethodDefs { self:QuerkiEcot =>
    */
   abstract class SingleContextMethod(tid:OID, p:PropFetcher) extends MetaMethod(tid, p)
   {
-    override def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
-      fullyApply(context, context, params)
+    // Note that this will be called iff a defining context was *not* supplied. If one was, then
+    // QLParser will call partiallyApply instead, and that will directly call fullyApply.
+    override def qlApply(inv:Invocation):QValue = {
+      fullyApply(inv.preferDefiningContext)
     }
   }
 }

@@ -144,7 +144,11 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       }
     }
   
-    def fullyApply(mainContext:QLContext, partialContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {
+    def fullyApply(inv:Invocation):QValue = {
+      
+      val mainContext = inv.context
+      val partialContext = inv.definingContext.get
+      val params = inv.paramsOpt
       
       // TODO: this belongs in Invocation as a general mechanism:
       def intParam(name:String, default:Int):Int = {
@@ -359,10 +363,10 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	          |
 	          |This is mainly for input forms, and is pretty persnickety at this point. It is not recommend for general use yet.""".stripMargin)))
 	{
-	  def fullyApply(mainContext:QLContext, partialContext:QLContext, paramsOpt:Option[Seq[QLPhrase]]):QValue = {
-	    paramsOpt match {
+	  def fullyApply(inv:Invocation):QValue = {
+	    inv.paramsOpt match {
 	      case Some(params) if (params.length == 2) => {
-	        val context = partialContext
+	        val context = inv.definingContext.get
 	        val label = context.parser.get.processPhrase(params(0).ops, context).value
 	        val control = context.parser.get.processPhrase(params(1).ops, context).value
 	        QL.WikitextValue(

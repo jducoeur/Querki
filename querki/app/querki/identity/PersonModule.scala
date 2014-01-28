@@ -174,8 +174,9 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
         Details("""This is intended for internal use only. It is used to generate
             |the link that is sent to invitees to your Space""".stripMargin)))
   {
-    def fullyApply(mainContext:QLContext, partialContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {
-      implicit val state = mainContext.state
+    def fullyApply(inv:Invocation):QValue = {
+      val mainContext = inv.context
+      implicit val state = inv.state
       
       // TODO: we're using EmailModule to inject the Person as the root context. That's ghastly, and
       // no longer necessary: add a backdoor to add the Person as an annotation instead.

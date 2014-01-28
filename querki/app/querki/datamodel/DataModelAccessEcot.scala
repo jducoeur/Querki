@@ -56,12 +56,12 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |
           |If you have sub-Models under *Model* (that add more Properties, for example), this will include those as well.""".stripMargin)))
   {
-    def fullyApply(mainContext:QLContext, partialContext:QLContext, params:Option[Seq[QLPhrase]]):QValue = {
-      applyToIncomingThing(partialContext)(handleThing)
-    }
-  
-    def handleThing(t:Thing, context:QLContext):QValue = {
-      Core.listFrom(context.state.descendants(t.id, false, true).map(_.id), LinkType)
+    def fullyApply(invIn:Invocation):QValue = {
+      val inv = invIn.preferDefiningContext
+      for (
+        thing <- inv.contextAllThings
+      )
+        yield Core.listFrom(inv.state.descendants(thing.id, false, true).map(_.id), LinkType)
     }
   }
   
@@ -151,8 +151,8 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |You typically use _isDefined with a Tag Property. It is simply a way to ask "is there actually something
           |with this name?", so that you can handle it differently depending on whether there is or not.""".stripMargin)))
   {
-    def fullyApply(mainContext:QLContext, partialContext:QLContext, paramsOpt:Option[Seq[QLPhrase]]):QValue = {
-      partialContext.value.pType != QL.UnknownNameType
+    def fullyApply(inv:Invocation):QValue = {
+      inv.context.value.pType != QL.UnknownNameType
     }
   }
 

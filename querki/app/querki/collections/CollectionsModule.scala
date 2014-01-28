@@ -302,8 +302,8 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |This is pretty much as simple as it sounds. It is most often used in the header of a _section, like this:
 	          |    \[[My List -> _section(\""Items: (\[[_count\]])\"", _commas)\]]""".stripMargin)))
 	{
-	  def fullyApply(mainContext:QLContext, partialContext:QLContext, paramsOpt:Option[Seq[QLPhrase]]):QValue = {
-	    ExactlyOne(IntType(partialContext.value.cv.size))
+	  def fullyApply(inv:Invocation):QValue = {
+	    ExactlyOne(IntType(inv.context.value.cv.size))
 	  }
 	}
 	
@@ -323,8 +323,8 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |You can't _reverse a Set itself (Sets have their own intrinsic order), but _sort always
 	          |produces a List.""".stripMargin)))
 	{
-	  def fullyApply(mainContext:QLContext, partialContext:QLContext, paramsOpt:Option[Seq[QLPhrase]]):QValue = {
-	    QList.makePropValue(partialContext.value.cv.toSeq.reverse.toList, partialContext.value.pType)
+	  def fullyApply(inv:Invocation):QValue = {
+	    QList.makePropValue(inv.context.value.cv.toSeq.reverse.toList, inv.context.value.pType)
 	  }
 	}
   
