@@ -46,6 +46,51 @@ class DataModelTests extends QuerkiTests {
     }
   }
   
+  // === _instances ===
+  "_instances" should {
+    "list the single instance of a Model" in {
+      processQText(commonThingAsContext(_.testModel), """[[_instances -> _commas]]""") should 
+        equal ("""[My Instance](My-Instance)""")
+    }
+    
+    "list several instances of a Model" in {
+      class TSpace extends CommonSpace {
+        val instancesModel = new SimpleTestThing("Model with Instances", Core.IsModelProp(true))
+        val instance1 = new TestThing("Instance 1", instancesModel)
+        val instance2 = new TestThing("Instance 2", instancesModel)
+        val instance3 = new TestThing("Instance 3", instancesModel)
+      }
+      val space = new TSpace
+      
+      processQText(thingAsContext[TSpace](space, (_.instancesModel)), """[[_instances -> _sort]]""") should 
+        equal (listOfLinkText(space.instance1, space.instance2, space.instance3))
+    }
+    
+    "list no instances of an empty Model" in {
+      class TSpace extends CommonSpace {
+        val instancesModel = new SimpleTestThing("Model with no Instances", Core.IsModelProp(true))
+      }
+      val space = new TSpace
+      
+      processQText(thingAsContext[TSpace](space, (_.instancesModel)), """[[_instances -> _sort]]""") should 
+        equal ("""""")
+    }
+    
+    "list instances through SubModels" in {
+      class TSpace extends CommonSpace {
+        val instancesModel = new SimpleTestThing("Model with Instances", Core.IsModelProp(true))
+        val subModel = new TestThing("Submodel", instancesModel, Core.IsModelProp(true))
+        val instance1 = new TestThing("Instance 1", instancesModel)
+        val instance2 = new TestThing("Instance 2", subModel)
+        val instance3 = new TestThing("Instance 3", instancesModel)
+      }
+      val space = new TSpace
+      
+      processQText(thingAsContext[TSpace](space, (_.instancesModel)), """[[_instances -> _sort]]""") should 
+        equal (listOfLinkText(space.instance1, space.instance2, space.instance3))
+    }
+  }
+  
   // === _is ===
   "_is" should {
     "successfully check an incoming Thing" in {
