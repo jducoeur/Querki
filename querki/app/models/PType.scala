@@ -52,8 +52,8 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecology
   /**
    * Also required for all PTypes -- the default value to fall back on.
    */
-  def doDefault:VT
-  final def default:ElemValue = ElemValue(doDefault, this)
+  def doDefault(implicit state:SpaceState):VT
+  final def default(implicit state:SpaceState):ElemValue = ElemValue(doDefault, this)
   
   /**
    * Turns this value into an appropriate form for user editing. Currently that means
@@ -188,7 +188,7 @@ class DelegatingType[VT](resolver: => PType[VT])(implicit e:Ecology) extends PTy
   def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = 
     realType.renderInputXml(prop, state, currentValue, v)
 
-  lazy val doDefault = realType.doDefault
+  def doDefault(implicit state:SpaceState) = realType.doDefault
   
   override def toString = super.toString + ": " + realType.toString()
 }

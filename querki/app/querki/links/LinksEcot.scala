@@ -34,7 +34,7 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
       elem.getOpt(this).map(_.url)
     }
   
-    val doDefault = new QURL("")
+    def doDefault(implicit state:SpaceState) = new QURL("")
     override def wrap(raw:String):valType = new QURL(raw)
   }
   

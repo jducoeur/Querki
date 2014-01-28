@@ -33,7 +33,7 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types {
     
     def doWikify(context:QLContext)(v:QValue, displayOpt:Option[Wikitext] = None) = { throw new Exception("WrappedValueType does not implement doWikify") }
     
-    def doDefault = { throw new Exception("WrappedValueType does not implement doDefault") }
+    def doDefault(implicit state:SpaceState) = { throw new Exception("WrappedValueType does not implement doDefault") }
   }
   lazy val WrappedValueType = new WrappedValueType(WrappedValueTypeOID)
   

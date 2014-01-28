@@ -54,7 +54,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     def doSerialize(v:Wikitext)(implicit state:SpaceState) = throw new Exception("Can't serialize ParsedText!")
     def doWikify(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None) = v
     
-    val doDefault = Wikitext("")
+    def doDefault(implicit state:SpaceState) = Wikitext("")
   }
 
   def HtmlValue(html:Html):QValue = ExactlyOne(RawHtmlType(HtmlWikitext(html)))

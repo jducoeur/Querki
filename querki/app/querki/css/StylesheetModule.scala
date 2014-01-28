@@ -52,7 +52,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
     def doSerialize(v:String)(implicit state:SpaceState) = v
     def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext(v)
 
-    val doDefault = ""
+    def doDefault(implicit state:SpaceState) = ""
     
     override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):scala.xml.Elem =
       renderLargeText(prop, state, currentValue, v, this)

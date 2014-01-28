@@ -55,8 +55,8 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecolog
   /**
    * Also required for all Collections -- the default value to fall back on.
    */
-  protected def doDefault(elemT:pType):implType
-  final def default(elemT:pType):QValue = makePropValue(doDefault(elemT), elemT)
+  protected def doDefault(elemT:pType)(implicit state:SpaceState):implType
+  final def default(elemT:pType)(implicit state:SpaceState):QValue = makePropValue(doDefault(elemT), elemT)
   
   /**
    * Convenience wrapper for creating in-code PropValues.

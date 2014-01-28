@@ -121,7 +121,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
     override def doComp(context:QLContext)(left:Wikitext, right:Wikitext):Boolean = { left.plaintext < right.plaintext } 
     override def doDebugRender(context:QLContext)(v:Wikitext) = v.contents.map(_.internal).mkString
   
-    val doDefault = Wikitext("")
+    def doDefault(implicit state:SpaceState) = Wikitext("")
     def wrap(raw:String):valType = Wikitext(raw)
   }
   

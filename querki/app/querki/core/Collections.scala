@@ -85,12 +85,13 @@ trait CollectionBase { self:CoreEcot =>
     def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = {
       elemT.wikify(context)(v.head, displayOpt)
     }
-    def doDefault(elemT:pType):implType = {
+    def doDefault(elemT:pType)(implicit state:SpaceState):implType = {
       List(elemT.default)
     }
     def wrap(elem:ElemValue):implType = List(elem)
     
     def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+      implicit val s = state
       val v = currentValue.effectiveV.flatMap(_.firstOpt).getOrElse(elemT.default)
       elemT.renderInput(prop, state, currentValue, v)
     }
@@ -126,7 +127,7 @@ trait CollectionBase { self:CoreEcot =>
       (Wikitext.empty /: renderedElems) ((soFar, next) => soFar.+(next, true))
     }
     
-    def doDefault(elemT:pType):implType = List.empty
+    def doDefault(elemT:pType)(implicit state:SpaceState):implType = List.empty
     
     def wrap(elem:ElemValue):implType = List(elem)
     
@@ -139,6 +140,7 @@ trait CollectionBase { self:CoreEcot =>
     // Rationalize the two, to eliminate all the duplication. In theory, the concept and structure
     // belongs here, and the details belong there.
     def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+      implicit val s = state
       val HtmlRenderer = interface[querki.html.HtmlRenderer]
       val inputTemplate = HtmlRenderer.addClasses(elemT.renderInput(prop, state, currentValue, elemT.default), "inputTemplate list-input-element") %      
     		  Attribute("data-basename", Text(currentValue.collectionControlId + "-item"),
@@ -210,7 +212,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
       throw new Error("Trying to serialize root collection!")
     def doWikify(context:QLContext)(ser:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = 
       throw new Error("Trying to render root collection!")
-    def doDefault(elemT:pType):implType = 
+    def doDefault(elemT:pType)(implicit state:SpaceState):implType = 
       throw new Error("Trying to default root collection!")    
 	def wrap(elem:ElemValue):implType =
 	  throw new Error("Trying to wrap root collection!")    
@@ -265,13 +267,14 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
       }
     }
     
-    def doDefault(elemT:pType):implType = Nil
+    def doDefault(elemT:pType)(implicit state:SpaceState):implType = Nil
     
     def wrap(elem:ElemValue):implType = List(elem)
     def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = OptionalPropValue(cv.toList, this, elemT)    
     private case class OptionalPropValue(cv:implType, cType:Optional, pType:PType[_]) extends QValue
     
     def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+      implicit val s = state
       // TODO: what should we do here? Has custom rendering become unnecessary here? Does the appearance of the
       // trash button eliminate the need for anything fancy for Optional properties?
       val v = currentValue.effectiveV.flatMap(_.firstOpt).getOrElse(elemT.default)
@@ -344,7 +347,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
     
     def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = Wikitext("")
     
-    def doDefault(elemT:pType):implType = Nil
+    def doDefault(elemT:pType)(implicit state:SpaceState):implType = Nil
     
     def wrap(elem:ElemValue):implType = Nil
     def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = UnitPropValue(cv.toList, this, elemT)    
@@ -375,13 +378,14 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
     def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = {
       elemT.wikify(context)(v.head, displayOpt)
     }
-    def doDefault(elemT:pType):implType = {
+    def doDefault(elemT:pType)(implicit state:SpaceState):implType = {
       List(elemT.default)
     }
     def wrap(elem:ElemValue):implType = List(elem)
     def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = bootPropValue(cv.toList, this, elemT)
     
     def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+      implicit val s = state
       val v = currentValue.v.map(_.first).getOrElse(elemT.default)
       elemT.renderInput(prop, state, currentValue, v)
     }

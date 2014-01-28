@@ -85,7 +85,7 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
     // TODO: in the long run, this probably should render as a clickable URL?
     def doWikify(context:QLContext)(v:EmailAddress, displayOpt:Option[Wikitext] = None) = Wikitext(v.addr)
     
-    val doDefault = EmailAddress("")
+    def doDefault(implicit state:SpaceState) = EmailAddress("")
     def wrap(raw:String):valType = EmailAddress(raw)
     
     override def doMatches(left:EmailAddress, right:EmailAddress):Boolean = left.addr.equalsIgnoreCase(right.addr)

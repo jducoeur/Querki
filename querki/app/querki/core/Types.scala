@@ -56,7 +56,7 @@ trait TextTypeBasis { self:CoreEcot =>
     def doWikify(context:QLContext)(v:QLText, displayOpt:Option[Wikitext] = None) = {
       QL.process(v, context)
     }
-    val doDefault = QLText("")
+    def doDefault(implicit state:SpaceState) = QLText("")
     def wrap(raw:String):valType = QLText(raw)
     
     override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = validateText(v, prop, state)
@@ -156,7 +156,7 @@ trait NameTypeBasis { self:CoreEcot with NameUtils =>
     
     override def doComp(context:QLContext)(left:String, right:String):Boolean = compareNames(context)(left,right)
 
-    val doDefault = ""
+    def doDefault(implicit state:SpaceState) = ""
       
     override def doMatches(left:String, right:String):Boolean = equalNames(left, right)
   }  
@@ -211,7 +211,7 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
     def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = 
       throw new Exception("Trying to use UnknownType!")
 
-    lazy val doDefault = throw new Exception("Trying to use UnknownType!")
+    def doDefault(implicit state:SpaceState) = throw new Exception("Trying to use UnknownType!")
   }
   
   class InternalMethodType extends SystemType[String](InternalMethodOID,
@@ -226,7 +226,7 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
 
     def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext("Internal Method")
     
-    val doDefault = ""
+    def doDefault(implicit state:SpaceState) = ""
     override def wrap(raw:String):valType = boom 
   }
   
@@ -340,7 +340,7 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
     
     // TODO: define doFromUser()
 
-    val doDefault = UnknownOID
+    def doDefault(implicit state:SpaceState) = UnknownOID
     
     override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = {
         <select class="_linkSelect"> {
@@ -368,7 +368,7 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
     def doSerialize(v:Int)(implicit state:SpaceState) = v.toString
     def doWikify(context:QLContext)(v:Int, displayOpt:Option[Wikitext] = None) = Wikitext(v.toString)
 
-    val doDefault = 0
+    def doDefault(implicit state:SpaceState) = 0
     
     override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = {
       implicit val s = state
@@ -437,7 +437,7 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
     def doSerialize(v:Boolean)(implicit state:SpaceState) = v.toString
     def doWikify(context:QLContext)(v:Boolean, displayOpt:Option[Wikitext] = None) = Wikitext(v.toString())
     
-    val doDefault = false
+    def doDefault(implicit state:SpaceState) = false
     
     override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = {
       if (get(v))

@@ -116,7 +116,7 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
     def doSerialize(v:String)(implicit state:SpaceState) = v
     def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext("Unresolved property value!")
   
-    val doDefault = ""
+    def doDefault(implicit state:SpaceState) = ""
   }
 
 }

@@ -47,7 +47,7 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
     
     override def doComp(context:QLContext)(left:DateTime, right:DateTime):Boolean = { left < right } 
     override def doMatches(left:DateTime, right:DateTime):Boolean = { left.millis == right.millis }
-    val doDefault = epoch
+    def doDefault(implicit state:SpaceState) = epoch
   }
   lazy val QDateTime = new QDateTime(DateTimeTypeOID)
   override lazy val types = Seq(QDateTime)

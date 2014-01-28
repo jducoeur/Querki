@@ -29,11 +29,11 @@ case class Property[VT, -RT](
   lazy val DefaultValueProp = interface[Types].DefaultValueProp
   def WarningValue(msg:String) = interface[querki.ql.QL].WarningValue(msg)
     
-  def default = {
+  def default(implicit state:SpaceState) = {
     val explicitDefault = localProp(DefaultValueProp).map(_.v)
     explicitDefault.getOrElse(cType.default(pType))
   }
-  def defaultPair:PropAndVal[VT] = PropAndVal(this, default)
+  def defaultPair(implicit state:SpaceState):PropAndVal[VT] = PropAndVal(this, default)
   // EVIL but arguably necessary. This is where we are trying to confine the cast from something
   // we get out of the PropMap (which is a bit undertyped) to match the associated Property.
   def castVal(v:QValue) = v.asInstanceOf[QValue]
@@ -74,7 +74,6 @@ case class Property[VT, -RT](
   def firstOpt(m:PropMap):Option[VT] = fromOpt(m) map cType.first map pType.get
 
   def apply(raws:RT*) = (this.id, QValue.make(cType, pType, raws:_*))
-  def apply() = (this.id, cType.default(pType))
   def apply(qv:QValue) = (this.id, qv)
   
   def validate(str:String, state:SpaceState) = pType.validate(str, this, state)

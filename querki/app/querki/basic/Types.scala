@@ -25,7 +25,7 @@ trait PlainTextBaseType { self:QuerkiEcot with TextTypeBasis =>
   
     override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = validateText(v, prop, state)
   
-    val doDefault = PlainText("")
+    def doDefault(implicit state:SpaceState) = PlainText("")
     override def wrap(raw:String):valType = PlainText(raw)
   }
 }
