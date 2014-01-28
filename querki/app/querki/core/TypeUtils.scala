@@ -15,7 +15,7 @@ private[core] trait BootUtils { self:CoreModule =>
 object TypeUtils {
   trait CommonInputRenderers { self:SystemType[_] =>
     def renderAnyText(prop:Property[_, _], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_])(doRender: (String) => Elem):Elem = {
-      val str = elemT.toUser(v)
+      val str = elemT.toUser(v)(state)
       val xml = doRender(str)
       xml
     }

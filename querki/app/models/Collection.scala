@@ -32,13 +32,13 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecolog
    * Each Collection is required to implement this -- it is the deserializer for the
    * type.
    */
-  protected def doDeserialize(ser:String, elemT:pType):implType
-  final def deserialize(ser:String, elemT:pType):QValue = makePropValue(doDeserialize(ser,elemT), elemT)
+  protected def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType
+  final def deserialize(ser:String, elemT:pType)(implicit state:SpaceState):QValue = makePropValue(doDeserialize(ser,elemT), elemT)
   
   /**
    * Also required for all Collections, to serialize values of this type.
    */
-  def doSerialize(v:implType, elemT:pType):String 
+  def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String 
 //  final def serialize(v:PropValue, elemT:pType):String = doSerialize(v.cv, elemT)
   
   /**
@@ -84,7 +84,7 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecolog
   /**
    * TODO: this needs to become much more sophisticated, but it's a start.
    */
-  def fromUser(newVal:String, prop:Property[_,_], elemT:pType):QValue = {
+  def fromUser(newVal:String, prop:Property[_,_], elemT:pType)(implicit state:SpaceState):QValue = {
     apply(elemT.fromUser(newVal))
   }
   

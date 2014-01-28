@@ -135,7 +135,7 @@ trait SpaceLoader { self:EcologyMember =>
             case unres:UnresolvedPropValue => {
               val propOpt = curState.prop(id)
               val v = propOpt match {
-                case Some(prop) => prop.deserialize(value.firstTyped(SpacePersistence.UnresolvedPropType).get)
+                case Some(prop) => prop.deserialize(value.firstTyped(SpacePersistence.UnresolvedPropType).get)(curState)
                 case None => value
               }
               (id, v)

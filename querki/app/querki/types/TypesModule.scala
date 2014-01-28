@@ -28,8 +28,8 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types {
         (InternalPropOID -> ExactlyOne(YesNoType(true)))
       )) with SimplePTypeBuilder[QValue]
   {
-    def doDeserialize(v:String) = { throw new Exception("WrappedValueType does not implement doDeserialize") }
-    def doSerialize(v:QValue) = { throw new Exception("WrappedValueType does not implement doSerialize") }
+    def doDeserialize(v:String)(implicit state:SpaceState) = { throw new Exception("WrappedValueType does not implement doDeserialize") }
+    def doSerialize(v:QValue)(implicit state:SpaceState) = { throw new Exception("WrappedValueType does not implement doSerialize") }
     
     def doWikify(context:QLContext)(v:QValue, displayOpt:Option[Wikitext] = None) = { throw new Exception("WrappedValueType does not implement doWikify") }
     

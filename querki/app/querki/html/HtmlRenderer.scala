@@ -50,12 +50,13 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     Html(xmlFixedQuotes)
   }
   
-  def propValFromUser(prop:Property[_,_], str:String):QValue = {
+  def propValFromUser(prop:Property[_,_], str:String)(implicit state:SpaceState):QValue = {
     handleSpecialized(prop, str).getOrElse(prop.cType.fromUser(str, prop, prop.pType))
   }
   
   // TODO: refactor this with Collection.fromUser():
   def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_], context:QLContext):FormFieldInfo = {
+    implicit val s = context.state
     // TODO: this Ecot has a lot of incestuous tests of NameType. I'm leaving these ugly for now. Find a better solution,
     // like lifting out a more public trait to test against.
     if (prop.cType == QSet && (prop.pType.isInstanceOf[querki.core.IsNameType] || prop.pType == LinkType || prop.pType == NewTagSetType)) {
@@ -264,7 +265,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     }
   }
   
-  def handleSpecialized(prop:Property[_,_], newVal:String):Option[QValue] = {
+  def handleSpecialized(prop:Property[_,_], newVal:String)(implicit state:SpaceState):Option[QValue] = {
     if (prop.cType == Optional && prop.pType == YesNoType)
       Some(handleOptional(prop, newVal, YesNoType, (_ == "maybe")))
     else if (prop.cType == Optional && prop.pType == LinkType)
@@ -273,7 +274,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       None
   }
   
-  def handleOptional(prop:Property[_,_], newVal:String, pType:PType[_], isEmpty:String => Boolean):QValue = {
+  def handleOptional(prop:Property[_,_], newVal:String, pType:PType[_], isEmpty:String => Boolean)(implicit state:SpaceState):QValue = {
     if (isEmpty(newVal))
       Optional.default(pType)
     else
@@ -281,7 +282,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   }
   
   // TODO: refactor this together with the above. It's going to require some fancy type math, though:
-  def handleSpecializedForm(prop:Property[_,_], newVal:String):Option[FormFieldInfo] = {
+  def handleSpecializedForm(prop:Property[_,_], newVal:String)(implicit state:SpaceState):Option[FormFieldInfo] = {
     if (prop.cType == Optional && prop.pType == YesNoType)
       Some(handleOptionalForm(prop, newVal, YesNoType, (_ == "maybe")))
     else if (prop.cType == Optional && prop.pType == LinkType)
@@ -290,7 +291,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       None
   }
   
-  def handleOptionalForm(prop:Property[_,_], newVal:String, pType:PType[_], isNone:String => Boolean):FormFieldInfo = {
+  def handleOptionalForm(prop:Property[_,_], newVal:String, pType:PType[_], isNone:String => Boolean)(implicit state:SpaceState):FormFieldInfo = {
     if (isNone(newVal))
       // This is a bit subtle: there *is* a value, which is "None"
       FormFieldInfo(prop, Some(Core.QNone), false, true)
@@ -301,6 +302,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   // TODO: TagSets come from Manifest, and the end result is similar to QList.fromUser(). Figure out
   // how to refactor these together, if possible.
   def handleTagSet(prop:Property[_,_], on:Option[Thing], form:Form[_], context:QLContext):FormFieldInfo = {
+    implicit val s = context.state
     val fieldIds = FieldIds(on, prop)
     // TODO: this stuff testing for empty isn't really type-specific -- indeed, it is handling the button that is
     // rendered in editThing.html. So it probably belongs at a higher level?

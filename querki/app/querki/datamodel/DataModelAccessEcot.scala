@@ -250,6 +250,13 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |This doesn't particularly change the way the Thing works, but has some UI effects.""".stripMargin)))
 
 	
+  // TODO: Rework _hasProperty to be smarter about DWIMming its parameter. Introduce
+  // inv.processParamPropertyRef(), which expects the specified parameter to be a Property.
+  // It should try evaluating the param -- if the result is a Property, return that; if not,
+  // and the parameter is a Property itself, return that. That is, let's get rid of the
+  // need for the _self by returning the fully-evaluated parameter only if it actually
+  // results in a Property. That allows indirections to work, but the common case of
+  // an explicitly-named Property to *also* work.
   lazy val HasPropertyMethod = new InternalMethod(HasPropertyMethodOID,
     toProps(
       setName("_hasProperty"),

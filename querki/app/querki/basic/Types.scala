@@ -16,8 +16,8 @@ trait PlainTextBaseType { self:QuerkiEcot with TextTypeBasis =>
       setName(actualName)
     )) with PTypeBuilder[PlainText,String] with IsTextType with NameableType with TextTypeUtils
   {
-    def doDeserialize(v:String) = PlainText(v)
-    def doSerialize(v:PlainText) = v.text
+    def doDeserialize(v:String)(implicit state:SpaceState) = PlainText(v)
+    def doSerialize(v:PlainText)(implicit state:SpaceState) = v.text
   
     def getName(context:QLContext)(v:ElemValue):String = get(v).text
   

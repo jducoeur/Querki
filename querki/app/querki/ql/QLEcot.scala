@@ -114,8 +114,8 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
    */
   lazy val ParsedTextType = new SystemType[Wikitext](UnknownOID, () => Thing.emptyProps) with SimplePTypeBuilder[Wikitext]
   {
-    def doDeserialize(v:String) = throw new Exception("Can't deserialize ParsedText!")
-    def doSerialize(v:Wikitext) = throw new Exception("Can't serialize ParsedText!")
+    def doDeserialize(v:String)(implicit state:SpaceState) = throw new Exception("Can't deserialize ParsedText!")
+    def doSerialize(v:Wikitext)(implicit state:SpaceState) = throw new Exception("Can't serialize ParsedText!")
     def doWikify(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None) = v
   
     override def doComp(context:QLContext)(left:Wikitext, right:Wikitext):Boolean = { left.plaintext < right.plaintext } 

@@ -22,14 +22,14 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecology
    * Each PType is required to implement this -- it is the deserializer for the
    * type.
    */
-  def doDeserialize(ser:String):VT
-  final def deserialize(ser:String):ElemValue = ElemValue(doDeserialize(ser), this)
+  def doDeserialize(ser:String)(implicit state:SpaceState):VT
+  final def deserialize(ser:String)(implicit state:SpaceState):ElemValue = ElemValue(doDeserialize(ser), this)
   
   /**
    * Also required for all PTypes, to serialize values of this type.
    */
-  def doSerialize(v:VT):String
-  final def serialize(v:ElemValue):String = doSerialize(get(v))
+  def doSerialize(v:VT)(implicit state:SpaceState):String
+  final def serialize(v:ElemValue)(implicit state:SpaceState):String = doSerialize(get(v))
   
   /**
    * Takes a value of this type, and turns it into displayable form. Querki
@@ -59,13 +59,16 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecology
    * Turns this value into an appropriate form for user editing. Currently that means
    * a String, although that's likely to get more interesting soon.
    */
-  def doToUser(v:VT):String = doSerialize(v)
-  final def toUser(v:ElemValue):String = doToUser(get(v))
+  def doToUser(v:VT)(implicit state:SpaceState):String = doSerialize(v)
+  final def toUser(v:ElemValue)(implicit state:SpaceState):String = doToUser(get(v))
   
   /**
    * This compares two values. It is used to sort Collections.
    */
-  def doComp(context:QLContext)(left:VT, right:VT):Boolean = { math.Ordering.String.lt(doToUser(left), doToUser(right)) } 
+  def doComp(context:QLContext)(left:VT, right:VT):Boolean = {
+    implicit val s = context.state
+    math.Ordering.String.lt(doToUser(left), doToUser(right)) 
+  } 
   final def comp(context:QLContext)(left:ElemValue, right:ElemValue):Boolean = doComp(context)(get(left), get(right))
   
   /**
@@ -89,7 +92,7 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecology
    * wrapped in a Tryer!
    */
   def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = {
-    doFromUser(v)
+    doFromUser(v)(state)
   }
   
   /**
@@ -114,8 +117,8 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecology
    * This should throw an Exception if the input is not legal. This is used in
    * validation.
    */
-  protected def doFromUser(str:String):VT = doDeserialize(str)
-  final def fromUser(str:String):ElemValue = ElemValue(doFromUser(str), this)
+  protected def doFromUser(str:String)(implicit state:SpaceState):VT = doDeserialize(str)
+  final def fromUser(str:String)(implicit state:SpaceState):ElemValue = ElemValue(doFromUser(str), this)
   
   /**
    * If this Type implies special processing when named in a QL expression (other than simply returning
@@ -176,8 +179,8 @@ class DelegatingType[VT](resolver: => PType[VT])(implicit e:Ecology) extends PTy
    */
   override lazy val realType:PType[VT] = resolver.realType
   
-  def doDeserialize(v:String) = realType.doDeserialize(v)
-  def doSerialize(v:VT) = realType.doSerialize(v)
+  def doDeserialize(v:String)(implicit state:SpaceState) = realType.doDeserialize(v)
+  def doSerialize(v:VT)(implicit state:SpaceState) = realType.doSerialize(v)
   def doWikify(context:QLContext)(v:VT, displayOpt:Option[Wikitext] = None) = realType.doWikify(context)(v)
   
   override def doMatches(left:VT, right:VT) = realType.doMatches(left, right)

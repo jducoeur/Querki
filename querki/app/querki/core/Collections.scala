@@ -33,6 +33,7 @@ trait CollectionBase { self:CoreEcot =>
     // stuff out from the core concepts.
     // TODO: this will need refactoring, to get more complex on a per-Collection basis
     def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo = {
+      implicit val s = state
       val fieldIds = FieldIds(on, prop)
       val empty = form(fieldIds.emptyControlId).value map (_.toBoolean) getOrElse false
       if (empty) {
@@ -75,10 +76,10 @@ trait CollectionBase { self:CoreEcot =>
   {
     type implType = List[ElemValue]
 
-	def doDeserialize(ser:String, elemT:pType):implType = {
+	def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = {
       List(elemT.deserialize(ser))
     }
-    def doSerialize(v:implType, elemT:pType):String = {
+    def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = {
       elemT.serialize(v.head)
     }
     def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = {
@@ -102,7 +103,7 @@ trait CollectionBase { self:CoreEcot =>
   {
     type implType = List[ElemValue]
     
-    def doDeserialize(ser:String, elemT:pType):implType = {
+    def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = {
       val guts = ser.slice(1, ser.length() - 1).trim()
       if (guts.isEmpty())
         doDefault(elemT)
@@ -113,7 +114,7 @@ trait CollectionBase { self:CoreEcot =>
       }
     }
     
-    def doSerialize(v:implType, elemT:pType):String = {
+    def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = {
       v.map(elem => elemT.serialize(elem)).
         map(_.replace(",", "\\,")).
         mkString("[", "," ,"]")
@@ -166,6 +167,7 @@ trait CollectionBase { self:CoreEcot =>
     import play.api.data.Form
     // TODO: this will want to be refactored with the default version in Collection.scala
     override def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo = {
+      implicit val s = state
       val fieldIds = FieldIds(on, prop)
       val empty = form(fieldIds.emptyControlId).value map (_.toBoolean) getOrElse false
       if (empty) {
@@ -202,9 +204,9 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
   {
 	type implType = List[ElemValue]
 	
-    def doDeserialize(ser:String, elemT:pType):implType = 
+    def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = 
       throw new Error("Trying to deserialize root collection!")
-    def doSerialize(v:implType, elemT:pType):String = 
+    def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = 
       throw new Error("Trying to serialize root collection!")
     def doWikify(context:QLContext)(ser:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = 
       throw new Error("Trying to render root collection!")
@@ -239,7 +241,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
         None
     }
     
-    def doDeserialize(ser:String, elemT:pType):implType = {
+    def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = {
       ser match {
         case "!" => Nil
         case s:String => {
@@ -249,7 +251,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
       }
     }
     
-    def doSerialize(v:implType, elemT:pType):String = {
+    def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = {
       v match {
         case List(elem) => "(" + elemT.serialize(elem) + ")"
         case Nil => "!"
@@ -336,9 +338,9 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
   {
     type implType = List[ElemValue]
     
-    def doDeserialize(ser:String, elemT:pType):implType = Nil
+    def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = Nil
     
-    def doSerialize(v:implType, elemT:pType):String = ""
+    def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = ""
     
     def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = Wikitext("")
     
@@ -366,9 +368,9 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
   class bootCollection extends SingleElementBase(UnknownOID, () => models.Thing.emptyProps) {
     type implType = List[ElemValue]
 
-    def doDeserialize(ser:String, elemT:pType):implType = List(elemT.deserialize(ser))
+    def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = List(elemT.deserialize(ser))
 
-    def doSerialize(v:implType, elemT:pType):String = elemT.serialize(v.head)
+    def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = elemT.serialize(v.head)
 
     def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = {
       elemT.wikify(context)(v.head, displayOpt)

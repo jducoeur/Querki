@@ -5,7 +5,7 @@ import com.github.nscala_time.time.Imports._
 import models._
 
 import querki.ecology._
-import querki.values.QLContext
+import querki.values.{QLContext, SpaceState}
 
 /**
  * The TimeModule is responsible for all things Time-related in the Querki API.
@@ -33,8 +33,8 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
         setName("Date and Time Type")
       )) with SimplePTypeBuilder[DateTime]
   {
-    def doDeserialize(v:String) = new DateTime(v.toLong)
-    def doSerialize(v:DateTime) = v.millis.toString
+    def doDeserialize(v:String)(implicit state:SpaceState) = new DateTime(v.toLong)
+    def doSerialize(v:DateTime)(implicit state:SpaceState) = v.millis.toString
     val defaultRenderFormat = DateTimeFormat.mediumDateTime
     
     def doWikify(context:QLContext)(v:DateTime, displayOpt:Option[Wikitext] = None) = {

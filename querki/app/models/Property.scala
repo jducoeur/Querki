@@ -80,7 +80,7 @@ case class Property[VT, -RT](
   def validate(str:String, state:SpaceState) = pType.validate(str, this, state)
   
   // TODO: this clearly isn't correct. How are we actually going to handle more complex types?
-  def toUser(v:QValue):String = {
+  def toUser(v:QValue)(implicit state:SpaceState):String = {
     val cv = castVal(v)
     if (cType.isEmpty(cv))
       ""
@@ -88,8 +88,8 @@ case class Property[VT, -RT](
       pType.toUser(cType.first(cv))
   }
   
-  def serialize(v:QValue):String = v.serialize(pType)
-  def deserialize(str:String):QValue = cType.deserialize(str, pType)
+  def serialize(v:QValue)(implicit state:SpaceState):String = v.serialize(pType)
+  def deserialize(str:String)(implicit state:SpaceState):QValue = cType.deserialize(str, pType)
   
   def applyToIncomingThing(context:QLContext)(action:(Thing, QLContext) => QValue):QValue = {
     if (context.isEmpty) {

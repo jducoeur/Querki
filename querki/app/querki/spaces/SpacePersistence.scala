@@ -60,6 +60,7 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
   }
   
   def serializeProps(props:PropMap, space:SpaceState):String = {
+    implicit val s = space
     val serializedProps = props.map { pair =>
       val (ptr, v) = pair
       val propOpt = space.prop(ptr)
@@ -78,6 +79,7 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
   }    
   
   def deserializeProps(str:String, space:SpaceState):PropMap = {
+    implicit val s = space
     // Strip the surrounding {} pair:
     val stripExt = str.slice(1, str.length() - 1)
     // Note that we have to split on semicolons that are *not* preceded by backslashes. This is
@@ -110,8 +112,8 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
       setName("UnresolvedProp")
     )) with SimplePTypeBuilder[String]
   {
-    def doDeserialize(v:String) = v
-    def doSerialize(v:String) = v
+    def doDeserialize(v:String)(implicit state:SpaceState) = v
+    def doSerialize(v:String)(implicit state:SpaceState) = v
     def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext("Unresolved property value!")
   
     val doDefault = ""

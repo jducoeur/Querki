@@ -80,8 +80,8 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
         setName("Email")
       )) with PTypeBuilder[EmailAddress,String]
   {
-    def doDeserialize(v:String) = EmailAddress(v)
-    def doSerialize(v:EmailAddress) = v.addr
+    def doDeserialize(v:String)(implicit state:SpaceState) = EmailAddress(v)
+    def doSerialize(v:EmailAddress)(implicit state:SpaceState) = v.addr
     // TODO: in the long run, this probably should render as a clickable URL?
     def doWikify(context:QLContext)(v:EmailAddress, displayOpt:Option[Wikitext] = None) = Wikitext(v.addr)
     

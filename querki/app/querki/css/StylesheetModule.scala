@@ -48,8 +48,8 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
   {
     // TODO: filter any Javascript-enabling keywords! This should go in doFromUser().
     
-    def doDeserialize(v:String) = v
-    def doSerialize(v:String) = v
+    def doDeserialize(v:String)(implicit state:SpaceState) = v
+    def doSerialize(v:String)(implicit state:SpaceState) = v
     def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext(v)
 
     val doDefault = ""

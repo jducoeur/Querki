@@ -17,7 +17,7 @@ case class TypeChangeInfo(typeChanged:Boolean, newType:PType[Any] with PTypeBuil
       val newState = (stateIn /: serializedValues) { (state, oldPair) =>
         val (usingThing, serialized) = oldPair
         val usingThingId = usingThing.id
-        val newV = newProp.deserialize(serialized)
+        val newV = newProp.deserialize(serialized)(state)
         val usingProps = usingThing.props + (prop.id -> newV)
         implicit val e = usingThing.ecology
         usingThing match {
@@ -83,6 +83,7 @@ class PropTypeMigratorEcot(e:Ecology) extends QuerkiEcot(e) with PropTypeMigrato
   }
   
   def prepChange(state:SpaceState, prop:Property[_,_], newProps:PropMap):TypeChangeInfo = {
+    implicit val s = state
     val propId = prop.id
     val newTypeOpt =
       for (

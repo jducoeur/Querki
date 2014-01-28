@@ -28,7 +28,7 @@ trait QValue {
   def pType:PType[_]
   
   // TODO: this doesn't need to take elemT any more:
-  def serialize(elemT:PType[_]):String = cType.doSerialize(cv, elemT)
+  def serialize(elemT:PType[_])(implicit state:SpaceState):String = cType.doSerialize(cv, elemT)
   // DEPRECATED: in favor of firstOpt
   def first = cType.first(this)
   def firstOpt = cType.firstOpt(this)

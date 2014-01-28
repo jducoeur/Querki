@@ -51,8 +51,8 @@ trait TextTypeBasis { self:CoreEcot =>
   abstract class TextTypeBase(oid:OID, pf:PropFetcher) extends SystemType[QLText](oid, pf
       ) with PTypeBuilder[QLText,String] with querki.ql.CodeType with IsTextType with TextTypeUtils
   {
-    def doDeserialize(v:String) = QLText(v)
-    def doSerialize(v:QLText) = v.text
+    def doDeserialize(v:String)(implicit state:SpaceState) = QLText(v)
+    def doSerialize(v:QLText)(implicit state:SpaceState) = v.text
     def doWikify(context:QLContext)(v:QLText, displayOpt:Option[Wikitext] = None) = {
       QL.process(v, context)
     }
@@ -130,11 +130,11 @@ trait NameTypeBasis { self:CoreEcot with NameUtils =>
     with SimplePTypeBuilder[String] with NameableType with IsNameType
   {
         
-    def doDeserialize(v:String) = toDisplay(v)
-    def doSerialize(v:String) = toInternal(v)
+    def doDeserialize(v:String)(implicit state:SpaceState) = toDisplay(v)
+    def doSerialize(v:String)(implicit state:SpaceState) = toInternal(v)
     
-    override def doToUser(v:String):String = toDisplay(v)
-    override protected def doFromUser(v:String):String = {
+    override def doToUser(v:String)(implicit state:SpaceState):String = toDisplay(v)
+    override protected def doFromUser(v:String)(implicit state:SpaceState):String = {
       if (v.length() == 0)
         throw new PublicException("Types.Name.empty")
       else if (v.length() > 254)
@@ -204,8 +204,8 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
    * Marker type, used to signify "no real type" in empty collections.
    */
   class UnknownType extends PType[Unit](UnknownOID, UnknownOID, UnknownOID, () => models.Thing.emptyProps) {
-    def doDeserialize(v:String) = throw new Exception("Trying to use UnknownType!")
-    def doSerialize(v:Unit) = throw new Exception("Trying to use UnknownType!")
+    def doDeserialize(v:String)(implicit state:SpaceState) = throw new Exception("Trying to use UnknownType!")
+    def doSerialize(v:Unit)(implicit state:SpaceState) = throw new Exception("Trying to use UnknownType!")
     def doWikify(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None) = throw new Exception("Trying to use UnknownType!")
   
     def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = 
@@ -221,8 +221,8 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
     )) with SimplePTypeBuilder[String]
   {
     def boom = throw new Exception("InternalMethodType cannot be used conventionally. It simply wraps code.")
-    def doDeserialize(v:String) = boom
-    def doSerialize(v:String) = boom
+    def doDeserialize(v:String)(implicit state:SpaceState) = boom
+    def doSerialize(v:String)(implicit state:SpaceState) = boom
 
     def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext("Internal Method")
     
@@ -272,8 +272,8 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
   {
     override def editorSpan(prop:Property[_,_]):Int = 6    
     
-    def doDeserialize(v:String) = OID(v)
-    def doSerialize(v:OID) = v.toString
+    def doDeserialize(v:String)(implicit state:SpaceState) = OID(v)
+    def doSerialize(v:OID)(implicit state:SpaceState) = v.toString
     
     def follow(context:QLContext)(v:OID) = context.state.anything(v)
     def followLink(context:QLContext):Option[Thing] = {
@@ -359,18 +359,19 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
   {
     override val displayEmptyAsBlank:Boolean = true
     
-    def doDeserialize(v:String) = try {
+    def doDeserialize(v:String)(implicit state:SpaceState) = try {
       java.lang.Integer.parseInt(v)
     } catch {
       case ex:java.lang.NumberFormatException => throw new PublicException("Types.Number.badFormat")
     }
     
-    def doSerialize(v:Int) = v.toString
+    def doSerialize(v:Int)(implicit state:SpaceState) = v.toString
     def doWikify(context:QLContext)(v:Int, displayOpt:Option[Wikitext] = None) = Wikitext(v.toString)
 
     val doDefault = 0
     
     override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = {
+      implicit val s = state
       for (
         minValPO <- prop.getPropOpt(Types.MinIntValueProp)(state);
         minVal <- minValPO.firstOpt;
@@ -404,7 +405,7 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
     
     // It turns out that Java's parseBoolean is both too tolerant of nonsense, and
     // doesn't handle many common cases. So we'll do it ourselves:
-    def doDeserialize(v:String) = {
+    def doDeserialize(v:String)(implicit state:SpaceState) = {
       v.toLowerCase() match {
         case "true" => true
         case "false" => false
@@ -433,7 +434,7 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
         case _ => throw new Exception("I can't interpret " + v + " as a YesNo value")
       }
     }
-    def doSerialize(v:Boolean) = v.toString
+    def doSerialize(v:Boolean)(implicit state:SpaceState) = v.toString
     def doWikify(context:QLContext)(v:Boolean, displayOpt:Option[Wikitext] = None) = Wikitext(v.toString())
     
     val doDefault = false

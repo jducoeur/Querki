@@ -50,8 +50,8 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
    */
   lazy val RawHtmlType = new SystemType[Wikitext](UnknownOID, () => models.Thing.emptyProps) with SimplePTypeBuilder[Wikitext]
   {
-    def doDeserialize(v:String) = throw new Exception("Can't deserialize ParsedText!")
-    def doSerialize(v:Wikitext) = throw new Exception("Can't serialize ParsedText!")
+    def doDeserialize(v:String)(implicit state:SpaceState) = throw new Exception("Can't deserialize ParsedText!")
+    def doSerialize(v:Wikitext)(implicit state:SpaceState) = throw new Exception("Can't serialize ParsedText!")
     def doWikify(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None) = v
     
     val doDefault = Wikitext("")
