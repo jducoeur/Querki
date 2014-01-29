@@ -24,11 +24,16 @@ class ModelTypeTests extends QuerkiTests with ModelTypeDefiner {
         val propOfModelType = new TestProperty(modelType, ExactlyOne, "Complex Prop")
         
         val thingWithComplex = new SimpleTestThing("My Complex Thing",
-            propOfModelType(emptyProps +
-              numberProp(3) +
-              textProp("Text in Instance")))
+            propOfModelType(SimplePropertyBundle(
+              numberProp(3),
+              textProp("Text in Instance"))))
       }
       val space = new TSpace
+      
+      processQText(thingAsContext[TSpace](space, _.thingWithComplex), """[[Complex Prop -> Number in Model]]""") should
+        equal ("3")      
+      processQText(thingAsContext[TSpace](space, _.thingWithComplex), """[[Complex Prop -> Text in Model]]""") should
+        equal ("Text in Instance")      
     }
   }
 }

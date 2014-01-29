@@ -17,6 +17,11 @@ import querki.values._
  */
 trait CutProcessing
 
+/**
+ * Marker trait for PTypes that represent an error. Used to avoid re-erroring when we encounter this.
+ */
+trait IsErrorType
+
 trait QValue {
   // We are cutting iff the constructor mixed in CutProcessing:
   def cut = this.isInstanceOf[CutProcessing]

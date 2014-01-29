@@ -9,7 +9,7 @@ import models.{PType, PTypeBuilder, SimplePTypeBuilder, Thing, UnknownOID, Wikit
 
 import querki.core.QLText
 import querki.util.QLog
-import querki.values.{CutProcessing, ElemValue, QLContext, SpaceState}
+import querki.values.{CutProcessing, ElemValue, IsErrorType, QLContext, SpaceState}
 
 object MOIDs extends EcotIds(24) {
   val SelfMethodOID = sysId(75)
@@ -80,7 +80,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
   object ErrorTextType extends TextTypeBase(UnknownOID,
     toProps(
       setName("Error Text")
-    )) with PTypeBuilder[QLText,String] {
+    )) with PTypeBuilder[QLText,String] with IsErrorType {
   }
 
   def WarningValue(msg:String) = ExactlyOneCut(ErrorTextType("{{_warning:" + msg + "}}"))

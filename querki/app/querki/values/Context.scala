@@ -125,25 +125,30 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
     } else {
       val qvs = map(cb)
       val raw = qvs.flatten(_.cv)
-      if (!raw.isEmpty && (!raw.head.matchesType(pt)))
-        throw new Exception("Context.collect expected type " + pt + " but got " + raw.head.pType)
-      val newCT = 
-        // HACK: How should this work correctly? There seems to be a general concept trying to break out.
-        // In general, collect (and many of these operations) are very monadically evil, but
-        // we've consciously decided to live with that.
-        value.cType match {
-          case t:querki.core.CollectionCreation#ExactlyOne => {
-            if (raw.isEmpty)
-              Optional 
-            else if (raw.size == 1)
-              ExactlyOne
-            else
-              QList
-          }
-          case t:querki.core.CollectionCreation#Optional => if (raw.size > 1) QList else Optional
-          case _ => value.cType
+      if (!raw.isEmpty && (!raw.head.matchesType(pt))) {
+        raw.head.pType match {
+          case errType:IsErrorType => ExactlyOne(raw.head)
+          case _ => throw new Exception("Context.collect expected type " + pt + " but got " + raw.head.pType)
         }
-      newCT.makePropValue(raw, pt)
+      } else {
+        val newCT = 
+          // HACK: How should this work correctly? There seems to be a general concept trying to break out.
+          // In general, collect (and many of these operations) are very monadically evil, but
+          // we've consciously decided to live with that.
+          value.cType match {
+            case t:querki.core.CollectionCreation#ExactlyOne => {
+              if (raw.isEmpty)
+                Optional 
+              else if (raw.size == 1)
+                ExactlyOne
+              else
+                QList
+            }
+            case t:querki.core.CollectionCreation#Optional => if (raw.size > 1) QList else Optional
+            case _ => value.cType
+          }
+        newCT.makePropValue(raw, pt)
+      }
     }
   }
   

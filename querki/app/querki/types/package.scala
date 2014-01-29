@@ -19,6 +19,8 @@ package object types {
     val DefaultValuePropOID = moid(4)
   }
   
+  implicit def vals2Bundle(vals:(OID, QValue)*):SimplePropertyBundle = SimplePropertyBundle(vals:_*)
+  
   trait Types extends EcologyInterface {
     /**
      * The DefaultValueProp is pretty much what it says: it is the default value for this Property. That

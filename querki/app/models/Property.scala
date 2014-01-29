@@ -28,6 +28,7 @@ case class Property[VT, -RT](
 {
   lazy val DefaultValueProp = interface[Types].DefaultValueProp
   def WarningValue(msg:String) = interface[querki.ql.QL].WarningValue(msg)
+  def ErrorValue(msg:String) = interface[querki.ql.QL].ErrorValue(msg)
     
   def default(implicit state:SpaceState) = {
     val explicitDefault = localProp(DefaultValueProp).map(_.v)
@@ -91,6 +92,15 @@ case class Property[VT, -RT](
   def deserialize(str:String)(implicit state:SpaceState):QValue = cType.deserialize(str, pType)
   
   def applyToIncomingThing(context:QLContext)(action:(Thing, QLContext) => QValue):QValue = {
+    applyToIncomingProps(context) { (props, internalContext) =>
+      props match {
+        case t:Thing => action(t, internalContext)
+        case _ => ErrorValue("Got a PropertyBundle where we we expected a Thing -- there is probably a call to applyToIncomingThing that should be Props")
+      }
+    }
+  }
+  
+  def applyToIncomingProps(context:QLContext)(action:(PropertyBundle, QLContext) => QValue):QValue = {
     if (context.isEmpty) {
       EmptyValue(pType)
     } else {
@@ -102,6 +112,13 @@ case class Property[VT, -RT](
           thing match {
             case Some(t) => action(t, context)
             case None => WarningValue("Couldn't find Thing from " + context.toString)
+          }
+        }
+        // TODO: this is a nasty dependency. Can we do something better?
+        case mt:querki.types.ModelTypeDefiner#ModelType => {
+          context.value.firstAs(mt) match {
+            case Some(bundle) => action(bundle, context)
+            case None => interface[querki.ql.QL].ErrorValue("Unable to fetch PropertyBundle from ModelType QValue!")
           }
         }
         case _ => WarningValue("Can't apply a Property in a " + valType.displayName + " context!")
@@ -120,7 +137,7 @@ case class Property[VT, -RT](
     // Give the Type first dibs at handling the call; otherwise, return the value of this property
     // on the incoming thing.
     pType.qlApplyFromProp(context, context, this, params).getOrElse(
-      applyToIncomingThing(context) { (t, innerContext) =>
+      applyToIncomingProps(context) { (t, innerContext) =>
         t.getPropVal(this)(innerContext.state)
       })
   }  

@@ -59,7 +59,7 @@ abstract class Thing(
     val model:OID, 
     val kind:Kind.Kind,
     val propFetcher: PropFetcher,
-    val modTime:DateTime)(implicit val ecology:Ecology) extends QLFunction with EcologyMember
+    val modTime:DateTime)(implicit val ecology:Ecology) extends QLFunction with PropertyBundle with EcologyMember
 {
   lazy val props:PropMap = propFetcher()
   
