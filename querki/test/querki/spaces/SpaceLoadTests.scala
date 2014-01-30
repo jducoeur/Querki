@@ -99,6 +99,9 @@ class SpaceLoadTests extends QuerkiTests {
       val space = new ComplexSpace
       
       val loadedState = saveLoad(space)
+      
+      processQText(loadedContext(loadedState, space.thingWithComplex.id), """[[Complex Prop -> Text in Model]]""") should
+        equal ("Text in Instance")      
     }
   }
 }
