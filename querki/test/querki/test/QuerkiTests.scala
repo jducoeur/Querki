@@ -23,6 +23,7 @@ class QuerkiTests
   
   lazy val Core = interface[querki.core.Core]
   lazy val QL = interface[querki.ql.QL]
+  lazy val Links = interface[querki.links.Links]
   
   lazy val ExactlyOne = Core.ExactlyOne
   lazy val Optional = Core.Optional

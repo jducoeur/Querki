@@ -5,7 +5,6 @@ import org.scalatest.matchers.ShouldMatchers
 
 class QLTests extends QuerkiTests {
   lazy val Basic = interface[querki.basic.Basic]
-  lazy val Links = interface[querki.links.Links]
   
   lazy val QLType = Basic.QLType
   
