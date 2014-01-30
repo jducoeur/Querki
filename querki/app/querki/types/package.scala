@@ -17,11 +17,18 @@ package object types {
     val WrappedValueTypeOID = moid(3)
     
     val DefaultValuePropOID = moid(4)
+    val ModelForTypePropOID = moid(5)
   }
   
   implicit def vals2Bundle(vals:(OID, QValue)*):SimplePropertyBundle = SimplePropertyBundle(vals:_*)
   
   trait Types extends EcologyInterface {
+    /**
+     * The ModelForTypeProp is the pointer from a Model Type to the actual Model that it is wrapped around.
+     * This is generally only needed for save/load and other type-construction operations.
+     */
+    def ModelForTypeProp:Property[OID,OID]
+    
     /**
      * The DefaultValueProp is pretty much what it says: it is the default value for this Property. That
      * is, it is what you get when you hard-query for a Property on a Thing (not an Opt query), and that

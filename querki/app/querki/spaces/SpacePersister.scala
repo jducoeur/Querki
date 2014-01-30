@@ -21,6 +21,7 @@ import querki.db.ShardKind
 import ShardKind._
 import querki.evolutions.Evolutions
 import querki.identity.User
+import querki.types.ModelTypeDefiner
 import querki.values.{ElemValue, QLContext, QValue, SpaceState}
 import querki.util._
 import querki.util.SqlHelpers._
@@ -52,13 +53,14 @@ import messages.AttachmentContents
  * manages the whole hive of Actors for this Space. (That might be the better architecture,
  * now that I think of it.)
  */
-private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) extends Actor with EcologyMember with SpaceLoader {
+private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) extends Actor with EcologyMember with SpaceLoader with ModelTypeDefiner {
   
   lazy val SystemInterface = interface[querki.system.System]
   lazy val Core = interface[querki.core.Core]
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   lazy val Evolutions = interface[querki.evolutions.Evolutions]
   lazy val UserAccess = interface[querki.identity.UserAccess]
+  lazy val Types = interface[querki.types.Types]
 
   // The OID of the Space, based on the sid
   def oid = Space.oid _

@@ -19,13 +19,14 @@ trait ThingStreamLoader {
  * Performs the guts of loading a Space. This is broken out from Load itself specifically so that it can be
  * decoupled from the actual SQL code, stubbed and unit-tested.
  */
-trait SpaceLoader { self:EcologyMember =>
+trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
   
   // Fields defined in SpacePersister or the test stub:
   def Core:querki.core.Core
   def SystemInterface:querki.system.System
   def SpacePersistence:querki.spaces.SpacePersistence
   def UserAccess:querki.identity.UserAccess
+  def Types:querki.types.Types
   
   def id:OID
   def name:String
@@ -101,9 +102,20 @@ trait SpaceLoader { self:EcologyMember =>
             )
         } else
           spaceStream.head
+          
+      // For now, we are assuming that all dynamically-loaded Types are ModelTypes. This may or may not
+      // prove true in the long run, but is a helpful simplifying assumption that is currently true.
+      val types = getThings(Kind.Type) { (thingId, modelId, propMap, modTime) =>
+        val basedOn = Types.ModelForTypeProp.first(propMap)
+        // TODO: ModelType should take modTime, like all other dynamically-created Things:
+        // TODO: do a second pass over types later -- they take Properties, so they *could* have locally-created
+        // Properties, which will show up as UnresolvedPropValue for now:
+        new ModelType(thingId, basedOn, () => propMap)
+      }
+      curState = curState.copy(types = types)
       
       val loadedProps = getThings(Kind.Property) { (thingId, modelId, propMap, modTime) =>
-        val typ = SystemInterface.State.typ(Core.TypeProp.first(propMap))
+        val typ = curState.typ(Core.TypeProp.first(propMap))
         // This cast is slightly weird, but safe and should be necessary. But I'm not sure
         // that the PTypeBuilder part is correct -- we may need to get the RT correct.
 //        val boundTyp = typ.asInstanceOf[PType[typ.valType] with PTypeBuilder[typ.valType, Any]]

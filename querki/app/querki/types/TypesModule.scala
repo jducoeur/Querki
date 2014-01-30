@@ -44,6 +44,13 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
   /***********************************************
    * PROPERTIES
    ***********************************************/
+  
+  lazy val ModelForTypeProp = new SystemProperty(ModelForTypePropOID, LinkType, ExactlyOne,
+    toProps(
+      setName("_modelForType"),
+      AppliesToKindProp(Kind.Type),
+      Summary("This receives a Model Type, and produces the Model that it is based upon."),
+      SkillLevel(SkillLevelAdvanced)))
 
   lazy val MinTextLengthProp = new SystemProperty(MinTextLengthOID, IntType, ExactlyOne,
     toProps(
@@ -81,6 +88,8 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
       AppliesToKindProp(Kind.Property)))
 
   override lazy val props = Seq(
+    ModelForTypeProp,
+    
     MinTextLengthProp,
     
     MinIntValueProp,

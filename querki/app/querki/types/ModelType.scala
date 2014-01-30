@@ -6,6 +6,8 @@ import models.Thing.{PropMap, emptyProps}
 import querki.ecology._
 import querki.values.{PropAndVal, QLContext, QValue, SpaceState}
 
+import MOIDs._
+
 case class SimplePropertyBundle(props:PropMap)
 
 object SimplePropertyBundle {
@@ -58,13 +60,26 @@ case class ModeledPropertyBundle(modelType:ModelTypeDefiner#ModelType, props:Pro
   }
 }
 
+/**
+ * This mix-in trait is intended for use by any system that needs to create ModelTypes -- not *often* needed, but there
+ * are several places that need to be able to do it.
+ */
 trait ModelTypeDefiner { self:EcologyMember =>
   
   class ModelType(tid:OID, val basedOn:OID, typeProps:() => PropMap) extends querki.core.TypeUtils.SystemType[ModeledPropertyBundle](tid,
       typeProps) with PTypeBuilder[ModeledPropertyBundle, SimplePropertyBundle]
   {
-    def doDeserialize(v:String)(implicit state:SpaceState) = { throw new Exception("WrappedValueType does not implement doDeserialize") }
-    def doSerialize(v:ModeledPropertyBundle)(implicit state:SpaceState) = { throw new Exception("WrappedValueType does not implement doSerialize") }
+    override lazy val props:PropMap = propFetcher() + 
+		  (ModelForTypePropOID -> Core.ExactlyOne(Core.LinkType(basedOn)))
+    
+    lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
+    
+    def doDeserialize(v:String)(implicit state:SpaceState) = { 
+      ModeledPropertyBundle(this, SpacePersistence.deserializeProps(v, state))
+    }
+    def doSerialize(v:ModeledPropertyBundle)(implicit state:SpaceState) = { 
+      SpacePersistence.serializeProps(v.props, state)
+    }
     
     /**
      * By and large, we don't recommend simply displaying a Model Type, since the results are a bit unpredictable. But it should at

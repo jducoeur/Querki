@@ -7,6 +7,7 @@ import models.Thing.PropMap
 
 import querki.ecology._
 import querki.time.DateTime
+import querki.types.{ComplexSpace, ModelTypeDefiner}
 import querki.values.{QValue, SpaceState}
 
 /**
@@ -40,7 +41,7 @@ class SpaceLoadTestDB(val ecology:Ecology) extends EcologyMember with ThingStrea
 /**
  * Stub for testing the SpaceLoader.
  */
-class SpaceLoadTester(val state:SpaceState, val ecology:Ecology) extends SpaceLoader with EcologyMember {
+class SpaceLoadTester(val state:SpaceState, val ecology:Ecology) extends SpaceLoader with EcologyMember with ModelTypeDefiner {
   
   // ======================
   // Values expected by SpaceLoader
@@ -49,6 +50,7 @@ class SpaceLoadTester(val state:SpaceState, val ecology:Ecology) extends SpaceLo
   lazy val SystemInterface = interface[querki.system.System]
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   lazy val UserAccess = interface[querki.identity.UserAccess]
+  lazy val Types = interface[querki.types.Types]
   
   def id:OID = state.id
   def name:String = state.name
@@ -91,6 +93,12 @@ class SpaceLoadTests extends QuerkiTests {
       // the property and instance have loaded:
       processQText(loadedContext(loadedState, space.state.id), """[[My Optional Text]]""") should
         equal ("""I'm a Space!""")
+    }
+    
+    "successfully save and load a Space with Model Types" in {
+      val space = new ComplexSpace
+      
+      val loadedState = saveLoad(space)
     }
   }
 }
