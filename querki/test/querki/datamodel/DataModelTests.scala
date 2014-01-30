@@ -163,10 +163,10 @@ class DataModelTests extends QuerkiTests {
   // === _refs ===
   "_refs" should {
     "find a bunch of ordinary Links" in {
-      val space = new CDSpace
+      implicit val space = new CDSpace
       
-      processQText(thingAsContext[CDSpace](space, (_.sandbox)), """[[They Might Be Giants -> Artists._refs -> _sort]]""") should
-        equal (listOfLinkText(space.factoryShowroom, space.flood))
+      pql("""[[They Might Be Giants -> Artists._refs -> _sort]]""") should
+        equal (listOfLinkText(space.factoryShowroom, space.flood))        
     }
   }
 }

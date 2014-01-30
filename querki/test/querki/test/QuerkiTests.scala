@@ -48,6 +48,18 @@ class QuerkiTests
     e.api[querki.system.SystemManagement].setState(state)
     ecology = e
   }
+  
+  /**
+   * The current easiest way to declare a typical QL test. You must have declared an implicit CommonSpace or
+   * descendant for this to work, but it's very boilerplate-light. Note that this supplies the Space itself
+   * as the context, so you will usually need to specify explicit context at the beginning of the QL expression.
+   */
+  def pql[S <: CommonSpace](text:String)(implicit space:S, requester:User = BasicTestUser):String = {
+    val state = space.state
+    val rc = SimpleTestRequestContext(space.owner.mainIdentity.id, state, state, ecology)
+    val context = state.thisAsContext(rc)
+    processQText(context, text)
+  }
 
   implicit class testableString(str:String) {
     // Multi-line test strings should use this, to deal with Unix vs. Windows problems:
