@@ -62,23 +62,12 @@ private[ql] case class InvocationValueImpl[T](inv:Invocation, vs:Iterable[T], er
   /**
    * Our implementation of withFilter, for "if" statements in for comprehensions.
    */
-  class WithFilterImpl[T](real:InvocationValueImpl[T], f:T => Boolean) extends WithFilter[T] {
-    def map[R](mf:T => R):InvocationValue[R] = {
-      val newVs = real.vs.filter(f)
-      new InvocationValueImpl(inv, newVs, errOpt).map(mf)
-    }
-    
-    def flatMap[R](mf:T => InvocationValue[R]):InvocationValue[R] = {
-      val newVs = real.vs.filter(f)
-      new InvocationValueImpl(inv, newVs, errOpt).flatMap(mf)      
-    }
-    
-    def withFilter(g:T => Boolean):WithFilter[T] = {
-      new WithFilterImpl(real, (x => f(x) && g(x)))
-    }
+  class WithFilterImpl(f:T => Boolean) extends WithFilter[T] {
+    def map[R](mf:T => R):InvocationValue[R] = new InvocationValueImpl(inv, self.vs.filter(f), errOpt).map(mf)
+    def flatMap[R](mf:T => InvocationValue[R]):InvocationValue[R] = new InvocationValueImpl(inv, self.vs.filter(f), errOpt).flatMap(mf)
+    def withFilter(g:T => Boolean):WithFilter[T] = new WithFilterImpl((x => f(x) && g(x)))
   }
-  
-  def withFilter(f:T => Boolean):WithFilter[T] = new WithFilterImpl(this, f)
+  def withFilter(f:T => Boolean):WithFilter[T] = new WithFilterImpl(f)
     
   def get:Iterable[T] = vs
   def getError:Option[QValue] = errOpt.map { ex =>
