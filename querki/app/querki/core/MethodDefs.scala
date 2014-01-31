@@ -96,34 +96,6 @@ trait MethodDefs { self:QuerkiEcot =>
   }
 
   /**
-   * This is a specialized but common category of Methods: ones that operate on a specific Property, on a
-   * specific Thing. They all expect the syntax "THING -> PROP._method".
-   */
-  abstract class ThingPropMethod(tid:OID, p:PropFetcher) extends MetaMethod(tid, p)
-  {
-    /**
-     * Concrete classes should define this method, which is the heart of things.
-     */
-    def applyToPropAndThing(mainContext:QLContext, mainThing:Thing, 
-      partialContext:QLContext, prop:Property[_,_],
-      params:Option[Seq[QLPhrase]]):QValue
-      
-    def fullyApply(inv:Invocation):QValue = {
-      applyToIncomingThing(inv.context) { (mainThing, _) =>
-        val partialContext = inv.definingContext.get
-        applyToIncomingThing(partialContext) { (shouldBeProp, _) =>
-          shouldBeProp match {
-            case prop:Property[_,_] => {
-              applyToPropAndThing(inv.context, mainThing, partialContext, prop, inv.paramsOpt)
-            }
-            case _ => interface[querki.ql.QL].WarningValue("The " + displayName + " method can only be used on Properties")
-          } 
-        }
-      }
-    }
-  }
-
-  /**
    * This is a syntactically-loose method that you can use in *either* a dotted or normal place,
    * but which really doesn't take any incoming context except for that one. It is intended mainly
    * for beginning-of-phrase methods that intuitively seem like they should be dotted, and which

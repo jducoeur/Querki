@@ -335,7 +335,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	  }
 	}
 		
-	class PropLinkMethod extends ThingPropMethod(PropLinkMethodOID, 
+	class PropLinkMethod extends MetaMethod(PropLinkMethodOID, 
 	    toProps(
 	      setName("_propLink"),
 	      Summary("""Produces a Link to a specific Property on a Thing."""),
@@ -349,13 +349,15 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	          |NOTE: this currently only works for Things in the local Space, and probably does *not* work correctly in
 	          |sub-Spaces yet.
 	          |
-	          |NOTE: this does not check that the specified PROPERTY is actually a Text Property, so be careful!""".stripMargin)))
+	          |This will work for any Property Type, even Types that don't really make sense as Views, so use with a bit
+	          |of care!""".stripMargin)))
 	{
-	  def applyToPropAndThing(mainContext:QLContext, mainThing:Thing, 
-	    partialContext:QLContext, propErased:Property[_,_],
-	    params:Option[Seq[QLPhrase]]):QValue =
-	  {
-	    ExactlyOne(ExternalLinkType(mainThing.toThingId + "?prop=" + propErased.toThingId))
+	  def fullyApply(inv:Invocation):QValue = {
+	    for (
+	      thing <- inv.contextAllThings;
+	      prop <- inv.definingContextAsProperty
+	    )
+	      yield ExactlyOne(ExternalLinkType(thing.toThingId + "?prop=" + prop.toThingId))
 	  }
 	}
 	
