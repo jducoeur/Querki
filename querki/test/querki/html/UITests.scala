@@ -95,6 +95,16 @@ class UITests extends QuerkiTests {
     }
   }
   
+  // === _propLink ===
+  "_propLink" should {
+    "work normally" in {
+      implicit val s = new CDSpace
+      
+      pql("""[[My Favorites -> Show Favorites._propLink -> ""__Faves__""]]""") should
+        equal ("[Faves](My-Favorites?prop=Show-Favorites)")
+    }
+  }
+  
   // === _showLink ===
   "_showLink" should {
     "work with a Link to Thing" in {
