@@ -102,6 +102,12 @@ class SpaceLoadTests extends QuerkiTests {
       
       processQText(loadedContext(loadedState, space.thingWithComplex.id), """[[Complex Prop -> Text in Model]]""") should
         equal ("Text in Instance")      
+      
+      processQText(loadedContext(loadedState, space.thingWithComplex.id), """[[Top Level Thing -> Meta Property -> _first -> Complex Prop -> Text in Model]]""") should
+        equal ("Top Text 1")      
+      
+      processQText(loadedContext(loadedState, space.thingWithComplex.id), """[[My Tree -> Left -> Right -> Node Id]]""") should
+        equal ("3")      
     }
   }
 }

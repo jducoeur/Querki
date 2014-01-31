@@ -40,6 +40,30 @@ class ComplexSpace(implicit ec:Ecology) extends CommonSpace with ModelTypeDefine
       metaProp(
         SimplePropertyBundle(propOfModelType(SimplePropertyBundle(numberProp(100), textProp("Top Text 1")))),
         SimplePropertyBundle(propOfModelType(SimplePropertyBundle(numberProp(200), textProp("Top Text 2"))))))
+  
+  // Now, here is the complex one. We're building a recursive tree, so we need to define the model, then the
+  // type, then the property, then redefine the model again.
+  //
+  // Note that this is a proof of concept for a binary tree. If we can do this, the sky's the limit.
+  val nodeId = new TestProperty(TextType, Optional, "Node Id")
+  val initialNodeModel = new SimpleTestThing("Tree Node Model")
+  val nodeType = new ModelType(toid, initialNodeModel.id,
+      Core.toProps(
+        Core.setName("Node Type")))
+  registerType(nodeType)
+  val leftProp = new TestProperty(nodeType, Optional, "Left")
+  val rightProp = new TestProperty(nodeType, Optional, "Right")
+  val nodeModel = new TestThing(initialNodeModel.id, "Tree Node Model", leftProp(), rightProp(), nodeId())
+  
+  val myTree = new TestThing("My Tree", nodeModel,
+      leftProp(SimplePropertyBundle(
+        leftProp(SimplePropertyBundle(nodeId("1"))),
+        rightProp(SimplePropertyBundle(nodeId("3"))),
+        nodeId("2"))),
+      rightProp(SimplePropertyBundle(
+        rightProp(SimplePropertyBundle(nodeId("6"))),
+        nodeId("5"))),
+      nodeId("4"))
 }
       
 class ModelTypeTests extends QuerkiTests {
@@ -77,6 +101,15 @@ class ModelTypeTests extends QuerkiTests {
       
       pql("""[[Top Level Thing -> Meta Property -> _first -> Complex Prop -> Text in Model]]""") should
         equal("Top Text 1")
+    }
+  }
+  
+  "A recursive Model Type" should {
+    "be defineable and usable" in {
+      implicit val space = new ComplexSpace
+      
+      pql("""[[My Tree -> Left -> Right -> Node Id]]""") should
+        equal("3")
     }
   }
 }
