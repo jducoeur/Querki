@@ -165,6 +165,24 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
     }    
   }
   
+  def definingContextAsProperty:InvocationValue[Property[_,_]] = {
+    definingContext match {
+      case Some(defining) => {
+        if (!defining.value.matchesType(Core.LinkType))
+          error("Func.notThing", displayName)
+        else {
+          val ids:Iterable[ThingId] = defining.value.flatMap(Core.LinkType)(oid => Some(AsOID(oid)))
+          val propOpts:Iterable[Option[Property[_,_]]] = ids.map(state.prop(_))
+          if (propOpts.forall(_.isDefined)) {
+            InvocationValueImpl(this, propOpts.flatten, None)
+          } else
+            error("Func.notProp", displayName)
+    }          
+      }
+      case None => error("Func.missingDefiningContext", displayName)
+    }    
+  }
+  
   def definingContextAsPropertyOf[VT](targetType:PType[VT]):InvocationValue[Property[VT,_]] = {
     definingContext match {
       case Some(defining) => {

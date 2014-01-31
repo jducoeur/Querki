@@ -121,6 +121,11 @@ package object ql {
     def contextFirstThing:InvocationValue[Thing]
     
     /**
+     * Expects that the definingContext is a Property, and returns that.
+     */
+    def definingContextAsProperty:InvocationValue[Property[_,_]]
+    
+    /**
      * This is a bit specialized, but expects that the defining (dotted) context will be a Property
      * of the specified Type.
      * 

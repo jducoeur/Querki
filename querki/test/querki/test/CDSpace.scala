@@ -24,6 +24,8 @@ class CDSpace(implicit ecologyIn:Ecology) extends CommonSpace {
     
   val flood = new TestThing("Flood", albumModel, artistsProp(tmbg))
   val factoryShowroom = new TestThing("Factory Showroom", albumModel, artistsProp(tmbg))
+  
+  val randomCollection = new TestThing("Classical Randomness", albumModel)
     
   new TestThing("Be Yourself Tonight", albumModel, artistsProp(eurythmics))
   new TestThing("Touch", albumModel, artistsProp(eurythmics))

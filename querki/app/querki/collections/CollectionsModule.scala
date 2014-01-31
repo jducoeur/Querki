@@ -72,16 +72,20 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	      QList.makePropValue(sourceColl.cv.tail.toList, context.value.pType)
 	  }
 	}
-	
-  def isEmpty(mainContext:QLContext, mainThing:Thing, prop:Property[_,_]):Boolean = {
-    implicit val s = mainContext.state
-    val isEmpty = for (
-      propAndVal <- mainThing.localProp(prop)
-    )
-      yield propAndVal.isEmpty
-    
-    isEmpty.getOrElse(true)
-  }
+
+	def isEmpty(inv:Invocation):Boolean = {
+      val result = for (
+	    thing <- inv.contextAllThings;
+	    prop <- inv.definingContextAsProperty;
+	    propAndVal <- inv.opt(thing.localProp(prop))
+	  )
+	    yield propAndVal.isEmpty
+	      
+	  if (result.get.isEmpty)
+	    true
+	  else
+	    result.get.head	  
+	}
 	
 	/**
 	 * TBD: is this the correct definition of _isEmpty and _isNonEmpty? It feels slightly off to me, to have it specifically depend
@@ -90,7 +94,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	 * 
 	 * Maybe the correct solution is a little more nuanced, that a property is considered "empty" if its value is the default?
 	 */
-	lazy val IsNonEmptyMethod = new ThingPropMethod(IsNonEmptyOID,
+	lazy val IsNonEmptyMethod = new MetaMethod(IsNonEmptyOID,
 	    toProps(
 	      setName("_isNonEmpty"),
 	      Summary("Tests whether the provided value is non-empty"),
@@ -104,19 +108,16 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |This is usually used on a List, Set or Optional, but you *can* use it on an ExactlyOne value. (In which
 	          |case it will always produce True.)""".stripMargin)))
 	{
-	  override def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
-	    boolean2YesNoQValue(!context.value.isEmpty)
+	  override def qlApply(inv:Invocation):QValue = {
+	    boolean2YesNoQValue(!inv.context.value.isEmpty)
 	  }
 	  
-	  def applyToPropAndThing(mainContext:QLContext, mainThing:Thing, 
-	    partialContext:QLContext, prop:Property[_,_],
-	    params:Option[Seq[QLPhrase]]):QValue =
-	  {
-	    return boolean2YesNoQValue(!isEmpty(mainContext, mainThing, prop))
+	  def fullyApply(inv:Invocation):QValue = {
+        boolean2YesNoQValue(!isEmpty(inv))
 	  }
 	}
 	
-	lazy val IsEmptyMethod = new ThingPropMethod(IsEmptyOID,
+	lazy val IsEmptyMethod = new MetaMethod(IsEmptyOID,
 	    toProps(
 	      setName("_isEmpty"),
 	      Summary("Tests whether the provided value is empty"),
@@ -130,15 +131,12 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |This is usually used on a List, Set or Optional, but you *can* use it on an ExactlyOne value. (In which
 	          |case it will always produce False.)""".stripMargin)))
 	{
-	  override def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
-	    boolean2YesNoQValue(context.value.isEmpty)
+	  override def qlApply(inv:Invocation):QValue = {
+	    boolean2YesNoQValue(inv.context.value.isEmpty)
 	  }
-	
-	  def applyToPropAndThing(mainContext:QLContext, mainThing:Thing, 
-	    partialContext:QLContext, prop:Property[_,_],
-	    params:Option[Seq[QLPhrase]]):QValue =
-	  {
-	    return boolean2YesNoQValue(isEmpty(mainContext, mainThing, prop))
+	  
+	  def fullyApply(inv:Invocation):QValue = {
+        boolean2YesNoQValue(isEmpty(inv))
 	  }
 	}
 	
