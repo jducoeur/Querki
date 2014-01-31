@@ -65,7 +65,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     }
   }
   
-  class RefsMethod extends ThingPropMethod(RefsMethodOID, 
+  class RefsMethod extends MetaMethod(RefsMethodOID, 
     toProps(
       setName("_refs"),
       Summary("""Returns all of the Things that use this Property to point to this Thing."""),
@@ -85,26 +85,16 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |
           |Note that this always returns a List, since any number of Things could be pointing to this.""".stripMargin)))
   {
-  def applyToPropAndThing(mainContext:QLContext, mainThing:Thing, 
-    partialContext:QLContext, propErased:Property[_,_],
-    params:Option[Seq[QLPhrase]]):QValue =
-  {
-    if (propErased.pType == LinkType) {
-	  // EVIL: is there any decent way to get rid of this? I know that the PType is LinkType, so I know
-	  // it's legit; can I tell that to Scala?
-	  val prop = propErased.asInstanceOf[Property[OID,_]]
-	  val results =
-	    for (
-	      candidateThing <- mainContext.state.allThings;
-	      propAndVal <- candidateThing.getPropOpt(prop)(mainContext.state);
-	      if propAndVal.contains(mainThing.id)
-	    )
-	      yield candidateThing.id;
-	  Core.listFrom(results, LinkType)
-    } else {
-      WarningValue("_refs can only be applied to Links")
+    def fullyApply(inv:Invocation):QValue = {
+      for (
+        thing <- inv.contextAllThings;
+        prop <- inv.definingContextAsPropertyOf(LinkType);
+        candidateThing <- inv.iter(inv.state.allThings);
+        propAndVal <- inv.opt(candidateThing.getPropOpt(prop)(inv.state));
+        if (propAndVal.contains(thing.id))
+      )
+        yield ExactlyOne(LinkType(candidateThing.id))
     }
-  }
   }
   
   class SpaceMethod extends SingleThingMethod(SpaceMethodOID, "_space", "What Space is this Thing in?", 

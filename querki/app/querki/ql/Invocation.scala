@@ -4,7 +4,7 @@ import scala.reflect.ClassTag
 
 import querki.values.SpaceState
 
-import models.{PType, Thing}
+import models.{AsOID, Property, PType, Thing, ThingId}
 
 import querki.ecology._
 import querki.util._
@@ -19,7 +19,7 @@ case class Signature(returnPt:PType[_], required:RequiredParam*) {
 
 private[ql] case class InvocationValueImpl[T](inv:Invocation, vs:Iterable[T], errOpt:Option[PublicException] = None)(implicit val ecology:Ecology) 
   extends InvocationValue[T] with EcologyMember
-{
+{ self =>
   lazy val QL = interface[QL]
   
   def map[R](f:T => R):InvocationValue[R] = {
@@ -58,6 +58,27 @@ private[ql] case class InvocationValueImpl[T](inv:Invocation, vs:Iterable[T], er
       }
     }
   }
+
+  /**
+   * Our implementation of withFilter, for "if" statements in for comprehensions.
+   */
+  class WithFilterImpl[T](real:InvocationValueImpl[T], f:T => Boolean) extends WithFilter[T] {
+    def map[R](mf:T => R):InvocationValue[R] = {
+      val newVs = real.vs.filter(f)
+      new InvocationValueImpl(inv, newVs, errOpt).map(mf)
+    }
+    
+    def flatMap[R](mf:T => InvocationValue[R]):InvocationValue[R] = {
+      val newVs = real.vs.filter(f)
+      new InvocationValueImpl(inv, newVs, errOpt).flatMap(mf)      
+    }
+    
+    def withFilter(g:T => Boolean):WithFilter[T] = {
+      new WithFilterImpl(real, (x => f(x) && g(x)))
+    }
+  }
+  
+  def withFilter(f:T => Boolean):WithFilter[T] = new WithFilterImpl(this, f)
     
   def get:Iterable[T] = vs
   def getError:Option[QValue] = errOpt.map { ex =>
@@ -153,6 +174,24 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
       else
         error("Func.unknownThing", displayName)
     }    
+  }
+  
+  def definingContextAsPropertyOf[VT](targetType:PType[VT]):InvocationValue[Property[VT,_]] = {
+    definingContext match {
+      case Some(defining) => {
+        if (!defining.value.matchesType(Core.LinkType))
+          error("Func.notThing", displayName)
+        else {
+          val ids:Iterable[ThingId] = defining.value.flatMap(Core.LinkType)(oid => Some(AsOID(oid)))
+          val propOpts:Iterable[Option[Property[VT,_]]] = ids.map(state.prop(_).flatMap(prop => prop.confirmType(targetType)))
+          if (propOpts.forall(_.isDefined)) {
+            InvocationValueImpl(this, propOpts.flatten, None)
+          } else
+            error("Func.notProp", displayName)
+    }          
+      }
+      case None => error("Func.missingDefiningContext", displayName)
+    }  
   }
   
   def processParam(paramNum:Int, processContext:QLContext = context):InvocationValue[QValue] = {

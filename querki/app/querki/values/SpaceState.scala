@@ -232,7 +232,7 @@ case class SpaceState(
   }
   
   def propsOfType[VT](pt:PType[VT]):Iterable[Property[VT,_]] = {
-    spaceProps.values.filter(_.pType == pt).map(_.confirmType(pt))
+    spaceProps.values.filter(_.pType == pt).map(_.confirmType(pt).get)
   }
   
   /**

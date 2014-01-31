@@ -105,12 +105,12 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     implicit val s = space
     val thingsWithProp = space.thingsWithProp(propIn)
     if (propIn.pType == TagSetType) {
-      val prop = propIn.confirmType(TagSetType)
+      val prop = propIn.confirmType(TagSetType).get
       (Set.empty[String] /: thingsWithProp) { (set, thing) =>
         set ++ thing.getProp(prop).rawList
       }
     } else if (propIn.pType == NewTagSetType) {
-      val prop = propIn.confirmType(NewTagSetType)
+      val prop = propIn.confirmType(NewTagSetType).get
       (Set.empty[String] /: thingsWithProp) { (set, thing) =>
         set ++ thing.getProp(prop).rawList.map(_.text)
       }      

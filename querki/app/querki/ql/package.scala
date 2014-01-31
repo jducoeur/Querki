@@ -1,6 +1,6 @@
 package querki
 
-import models.{PType, PTypeBuilder, Thing, Wikitext}
+import models.{Property, PType, PTypeBuilder, Thing, Wikitext}
 
 import querki.core.QLText
 import querki.ecology._
@@ -35,12 +35,20 @@ package object ql {
     ecology.api[querki.ql.QL].inv2QValueImpl(inv)
   }
   
+  
+  trait WithFilter[T] {
+    def map[R](mf:T => R):InvocationValue[R]
+    def flatMap[R](mf:T => InvocationValue[R]):InvocationValue[R]
+    def withFilter(g:T => Boolean):WithFilter[T]
+  }
+  
   /**
    * The InvocationValue Monad, which is how we query Invocations inside of a for.
    */
   trait InvocationValue[T] {
     def map[R](f:T => R):InvocationValue[R]
     def flatMap[R](f:T => InvocationValue[R]):InvocationValue[R]
+    def withFilter(f:T => Boolean):WithFilter[T]
     
     def get:Iterable[T]
     def getError:Option[QValue]
@@ -111,6 +119,16 @@ package object ql {
      * In general, try to avoid this method, in favor of contextAllThings instead.
      */
     def contextFirstThing:InvocationValue[Thing]
+    
+    /**
+     * This is a bit specialized, but expects that the defining (dotted) context will be a Property
+     * of the specified Type.
+     * 
+     * Future-proofing note: while QL syntax currently only allows a single value in this position,
+     * this is written to iterate over all values found. This may become relevant as bindings become
+     * more powerful in the QL language.
+     */
+    def definingContextAsPropertyOf[VT](targetType:PType[VT]):InvocationValue[Property[VT,_]]
     
     /**
      * Process and return the specific parameter, assuming nothing about the results.
