@@ -168,5 +168,19 @@ class DataModelTests extends QuerkiTests {
       pql("""[[They Might Be Giants -> Artists._refs -> _sort]]""") should
         equal (listOfLinkText(space.factoryShowroom, space.flood))        
     }
+    
+    "cope with an empty received list" in {
+      implicit val space = new CDSpace
+      
+      pql("""[[Whitney Houston -> Artists._refs -> _sort]]""") should
+        equal (listOfLinkText())        
+    }
+    
+    "cope with a list of inputs" in {
+      implicit val space = new CDSpace
+      
+      pql("""[[My Favorites -> Favorite Artists -> Artists._refs -> _sort]]""") should
+        equal (listOfLinkText(space.factoryShowroom, space.firesAtMight, space.flood, space.ghostOfARose, space.shadowOfTheMoon))        
+    }
   }
 }
