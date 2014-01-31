@@ -25,6 +25,21 @@ class ComplexSpace(implicit ec:Ecology) extends CommonSpace with ModelTypeDefine
       propOfModelType(SimplePropertyBundle(
         numberProp(3),
         textProp("Text in Instance"))))
+  
+  val metaModel = new SimpleTestThing("Meta Model",
+      propOfModelType(SimplePropertyBundle(
+        numberProp(42),
+        textProp("Text from MetaModel"))))
+  val metaType = new ModelType(toid, metaModel.id,
+      Core.toProps(
+        Core.setName("Meta Type")))
+  registerType(metaType)
+  val metaProp = new TestProperty(metaType, QList, "Meta Property")
+  
+  val metaThing = new SimpleTestThing("Top level Thing",
+      metaProp(
+        SimplePropertyBundle(propOfModelType(SimplePropertyBundle(numberProp(100), textProp("Top Text 1")))),
+        SimplePropertyBundle(propOfModelType(SimplePropertyBundle(numberProp(200), textProp("Top Text 2"))))))
 }
       
 class ModelTypeTests extends QuerkiTests {
@@ -53,6 +68,15 @@ class ModelTypeTests extends QuerkiTests {
         equal("""
             |: Number in Model : 3
             |: Text in Model : Text in Instance""".stripReturns)
+    }
+  }
+  
+  "A nested Model Type" should {
+    "be defineable and usable" in {
+      implicit val space = new ComplexSpace
+      
+      pql("""[[Top Level Thing -> Meta Property -> _first -> Complex Prop -> Text in Model]]""") should
+        equal("Top Text 1")
     }
   }
 }
