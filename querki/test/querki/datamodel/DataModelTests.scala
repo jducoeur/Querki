@@ -160,6 +160,31 @@ class DataModelTests extends QuerkiTests {
     }
   }
   
+  // === _isDefined
+  "_isDefined" should {
+    "work in dotted position with something that does exist" in {
+      implicit val s = commonSpace
+      pql("""[[My Optional URL._isDefined]]""") should equal ("true")
+    }
+    
+    // Note that QL syntax only allows dotting of names that actually exist; otherwise, the rest of
+    // the stage gets ignored. This *might* change, but for now let's test the actual behaviour:
+    "can not work in dotted position with something that doesn't exist" in {
+      implicit val s = commonSpace
+      pql("""[[Floob._isDefined]]""") should equal ("{{_unknownName:[Floob](Floob)}}")
+    }
+    
+    "work in received position with something that does exist" in {
+      implicit val s = commonSpace
+      pql("""[[My Optional URL -> _isDefined]]""") should equal ("true")
+    }
+    
+    "work in received position with something that doesn't exist" in {
+      implicit val s = commonSpace
+      pql("""[[Floob -> _isDefined]]""") should equal ("false")
+    }
+  }
+  
   // === _refs ===
   "_refs" should {
     "find a bunch of ordinary Links" in {

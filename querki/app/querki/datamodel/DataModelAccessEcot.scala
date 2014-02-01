@@ -39,7 +39,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
    * FUNCTIONS
    ***********************************************/  
 
-  class InstancesMethod extends SingleContextMethod(InstancesMethodOID,
+  class InstancesMethod extends InternalMethod(InstancesMethodOID,
     toProps(
       setName("_instances"),
       Summary("Returns all of the non-Model Things that are based on this"),
@@ -56,7 +56,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |
           |If you have sub-Models under *Model* (that add more Properties, for example), this will include those as well.""".stripMargin)))
   {
-    def fullyApply(invIn:Invocation):QValue = {
+    override def qlApply(invIn:Invocation):QValue = {
       val inv = invIn.preferDefiningContext
       for (
         thing <- inv.contextAllThings
@@ -65,7 +65,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     }
   }
   
-  class RefsMethod extends MetaMethod(RefsMethodOID, 
+  class RefsMethod extends InternalMethod(RefsMethodOID, 
     toProps(
       setName("_refs"),
       Summary("""Returns all of the Things that use this Property to point to this Thing."""),
@@ -85,7 +85,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |
           |Note that this always returns a List, since any number of Things could be pointing to this.""".stripMargin)))
   {
-    def fullyApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QValue = {
       for (
         thing <- inv.contextAllThings;
         prop <- inv.definingContextAsPropertyOf(LinkType);
@@ -133,7 +133,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     """    THING -> _isModel -> Yes or No""".stripMargin,
   { (thing, context) => ExactlyOne(thing.isModel(context.state)) })
 
-  class IsDefinedMethod extends SingleContextMethod(IsDefinedOID,
+  class IsDefinedMethod extends InternalMethod(IsDefinedOID,
     toProps(
       setName("_isDefined"),
       Summary("Produces Yes if the name passed into it is a real Thing"),
@@ -141,8 +141,11 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |You typically use _isDefined with a Tag Property. It is simply a way to ask "is there actually something
           |with this name?", so that you can handle it differently depending on whether there is or not.""".stripMargin)))
   {
-    def fullyApply(inv:Invocation):QValue = {
-      inv.context.value.pType != QL.UnknownNameType
+    override def qlApply(inv:Invocation):QValue = {
+      // If there is a defining context, we use that. But it's kind of an edge case, since QL syntax will
+      // never allow this to return false if the defining name *doesn't* exist. (It'll become an UnknownNameType,
+      // but not passed into methods.) We might change this eventually; we'll see.
+      inv.preferDefiningContext.context.value.pType != QL.UnknownNameType
     }
   }
 
