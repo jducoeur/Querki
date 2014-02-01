@@ -344,7 +344,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	  }
 	}
 		
-	class PropLinkMethod extends MetaMethod(PropLinkMethodOID, 
+	class PropLinkMethod extends InternalMethod(PropLinkMethodOID, 
 	    toProps(
 	      setName("_propLink"),
 	      Summary("""Produces a Link to a specific Property on a Thing."""),
@@ -361,7 +361,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	          |This will work for any Property Type, even Types that don't really make sense as Views, so use with a bit
 	          |of care!""".stripMargin)))
 	{
-	  def fullyApply(inv:Invocation):QValue = {
+	  override def qlApply(inv:Invocation):QValue = {
 	    for (
 	      thing <- inv.contextAllThings;
 	      prop <- inv.definingContextAsProperty
