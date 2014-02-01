@@ -301,7 +301,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	  }
 	}
 
-	lazy val CountMethod = new SingleContextMethod(CountMethodOID,
+	lazy val CountMethod = new InternalMethod(CountMethodOID,
 	    toProps(
 	      setName("_count"),
 	      Summary("Produces the number of elements in the received Collection"),
@@ -309,12 +309,12 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |This is pretty much as simple as it sounds. It is most often used in the header of a _section, like this:
 	          |    \[[My List -> _section(\""Items: (\[[_count\]])\"", _commas)\]]""".stripMargin)))
 	{
-	  def fullyApply(inv:Invocation):QValue = {
+	  override def qlApply(inv:Invocation):QValue = {
 	    ExactlyOne(IntType(inv.context.value.cv.size))
 	  }
 	}
 	
-	lazy val ReverseMethod = new SingleContextMethod(ReverseMethodOID,
+	lazy val ReverseMethod = new InternalMethod(ReverseMethodOID,
 	    toProps(
 	      setName("_reverse"),
 	      Summary("Produces the same Collection it receives, as a List, in reverse order"),
@@ -330,7 +330,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |You can't _reverse a Set itself (Sets have their own intrinsic order), but _sort always
 	          |produces a List.""".stripMargin)))
 	{
-	  def fullyApply(inv:Invocation):QValue = {
+	  override def qlApply(inv:Invocation):QValue = {
 	    QList.makePropValue(inv.context.value.cv.toSeq.reverse.toList, inv.context.value.pType)
 	  }
 	}
