@@ -121,11 +121,9 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       partialContext:QLContext, prop:Property[_,_],
       params:Option[Seq[QLPhrase]]):Set[RenderSpecialization] = Set(Unspecialized)
   
-    def cantEditFallback(mainContext:QLContext, mainThing:Thing, 
-      partialContext:QLContext, prop:Property[_,_],
-      params:Option[Seq[QLPhrase]]):QValue
+    def cantEditFallback(inv:Invocation):QValue
   
-    def applyToPropAndThing(mainContext:QLContext, mainThing:Thing, 
+    def applyToPropAndThing(inv:Invocation, mainContext:QLContext, mainThing:Thing, 
       partialContext:QLContext, prop:Property[_,_],
       params:Option[Seq[QLPhrase]]):QValue =
     {
@@ -140,7 +138,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	          specialization(mainContext, mainThing, partialContext, prop, params))
 	      HtmlUI.HtmlValue(inputControl)    
         }
-        case _ => cantEditFallback(mainContext, mainThing, partialContext, prop, params)
+        case _ => cantEditFallback(inv)
       }
     }
   
@@ -221,7 +219,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
         partialThing match {
           case prop:Property[_,_] => {
             applyToIncomingThing(mainContext) { (mainThing, _) =>
-              applyToPropAndThing(mainContext, mainThing, partialContext, prop, params)
+              applyToPropAndThing(inv, mainContext, mainThing, partialContext, prop, params)
             }
           }
           
@@ -274,12 +272,13 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       AppliesToKindProp(Kind.Property)
     )) 
   {
-    def cantEditFallback(mainContext:QLContext, mainThing:Thing, 
-      partialContext:QLContext, prop:Property[_,_],
-      params:Option[Seq[QLPhrase]]):QValue = {
-        // This user isn't allowed to edit, so simply render the property in its default form.
-        // For more control, user _editOrElse instead.
-        prop.qlApply(mainContext, params)    
+    def cantEditFallback(inv:Invocation):QValue = {
+      // This user isn't allowed to edit, so simply render the property in its default form.
+      // For more control, user _editOrElse instead.
+      for (
+        prop <- inv.definingContextAsProperty
+      )
+        yield prop.qlApply(inv)    
     }  
   }
   
@@ -294,13 +293,14 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       AppliesToKindProp(Kind.Property)
     )) 
   {
-    def cantEditFallback(mainContext:QLContext, mainThing:Thing, 
-      partialContext:QLContext, prop:Property[_,_],
-      paramsOpt:Option[Seq[QLPhrase]]):QValue = {
+    def cantEditFallback(inv:Invocation):QValue = {
+      val context = inv.context
+      val paramsOpt = inv.paramsOpt
+      
         // This user isn't allowed to edit, so display the fallback
         paramsOpt match {
           case Some(params) if (params.length > 0) => {
-            mainContext.parser.get.processPhrase(params(0).ops, mainContext).value
+            context.parser.get.processPhrase(params(0).ops, context).value
           }
           case _ => WarningValue("_editOrElse requires a parameter")
         }
@@ -325,12 +325,13 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
     )) 
   {
     // TODO: this is stolen directly from _edit, and should probably be refactored:
-    def cantEditFallback(mainContext:QLContext, mainThing:Thing, 
-      partialContext:QLContext, prop:Property[_,_],
-      params:Option[Seq[QLPhrase]]):QValue = {
-        // This user isn't allowed to edit, so simply render the property in its default form.
-        // For more control, user _editOrElse instead.
-        prop.qlApply(mainContext, params)    
+    def cantEditFallback(inv:Invocation):QValue = {
+      // This user isn't allowed to edit, so simply render the property in its default form.
+      // For more control, user _editOrElse instead.
+      for (
+        prop <- inv.definingContextAsProperty
+      )
+        yield prop.qlApply(inv)    
     }  
     
     override def specialization(mainContext:QLContext, mainThing:Thing, 

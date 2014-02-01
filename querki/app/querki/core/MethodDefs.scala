@@ -27,9 +27,9 @@ trait MethodDefs { self:QuerkiEcot =>
     /**
      * Methods should override this to implement their own functionality.
      */
-    override def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
+    override def qlApply(inv:Invocation):QValue = {
       // By default, we just pass the incoming context right through:
-      context.value
+      inv.context.value
     }
   }
 
@@ -48,7 +48,9 @@ trait MethodDefs { self:QuerkiEcot =>
       Details(details)
     ))
   {
-    override def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
+    override def qlApply(inv:Invocation):QValue = {
+      val context = inv.context
+      
       try {
         applyToIncomingThing(context)(handleThing)
       } catch {

@@ -399,29 +399,19 @@ abstract class Thing(
    * Subclasses are allowed to override it as make sense.
    * 
    * This basic version returns a Link to this thing.
-   * 
-   * DEPRECATED: new code should use the version that takes an Invocation instead. This
-   * version is being phased out.
    */
-  def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
+  def qlApply(inv:Invocation):QValue = {
+    val context = inv.context
+    val paramsOpt = inv.paramsOpt
+    
     val applyOpt = getPropOpt(ApplyMethod)(context.state)
     applyOpt match {
       case Some(apply) => {
         val qlText = apply.first
-        QL.processMethod(qlText, context.forProperty(apply.prop), params)
+        QL.processMethod(qlText, context.forProperty(apply.prop), paramsOpt)
       }
       case None => Core.ExactlyOne(Core.LinkType(id))
     }
-  }
-  
-  /**
-   * Called when this Thing is encountered with no method invocation in a QL expression.
-   * Subclasses are allowed to override it as make sense.
-   * 
-   * This basic version returns a Link to this thing.
-   */
-  def qlApply(inv:Invocation):QValue = {
-    qlApply(inv.context, inv.paramsOpt)
   }
   
   class BogusFunction extends QLFunction {
