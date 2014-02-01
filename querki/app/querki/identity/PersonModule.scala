@@ -168,7 +168,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   def encodeURL(url:String):String = java.net.URLEncoder.encode(url, "UTF-8")
   def decodeURL(url:String):String = java.net.URLDecoder.decode(url, "UTF-8")
   
-  lazy val spaceInvite = new SingleContextMethod(SpaceInviteOID,
+  lazy val spaceInvite = new InternalMethod(SpaceInviteOID,
       toProps(
         setName("_spaceInvitation"), 
         Core.InternalProp(true),
@@ -176,7 +176,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
         Details("""This is intended for internal use only. It is used to generate
             |the link that is sent to invitees to your Space""".stripMargin)))
   {
-    def fullyApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QValue = {
       val mainContext = inv.context
       implicit val state = inv.state
       
