@@ -98,7 +98,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	 * 
 	 * Maybe the correct solution is a little more nuanced, that a property is considered "empty" if its value is the default?
 	 */
-	lazy val IsNonEmptyMethod = new MetaMethod(IsNonEmptyOID,
+	lazy val IsNonEmptyMethod = new InternalMethod(IsNonEmptyOID,
 	    toProps(
 	      setName("_isNonEmpty"),
 	      Summary("Tests whether the provided value is non-empty"),
@@ -113,15 +113,14 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |case it will always produce True.)""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QValue = {
-	    boolean2YesNoQValue(!inv.context.value.isEmpty)
-	  }
-	  
-	  def fullyApply(inv:Invocation):QValue = {
-        boolean2YesNoQValue(!isEmpty(inv))
+	    if (inv.definingContext.isDefined)
+	      boolean2YesNoQValue(!isEmpty(inv))
+	    else
+	      boolean2YesNoQValue(!inv.context.value.isEmpty)
 	  }
 	}
 	
-	lazy val IsEmptyMethod = new MetaMethod(IsEmptyOID,
+	lazy val IsEmptyMethod = new InternalMethod(IsEmptyOID,
 	    toProps(
 	      setName("_isEmpty"),
 	      Summary("Tests whether the provided value is empty"),
@@ -136,11 +135,10 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |case it will always produce False.)""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QValue = {
-	    boolean2YesNoQValue(inv.context.value.isEmpty)
-	  }
-	  
-	  def fullyApply(inv:Invocation):QValue = {
-        boolean2YesNoQValue(isEmpty(inv))
+	    if (inv.definingContext.isDefined)
+	      boolean2YesNoQValue(isEmpty(inv))
+	    else
+  	      boolean2YesNoQValue(inv.context.value.isEmpty)
 	  }
 	}
 	
