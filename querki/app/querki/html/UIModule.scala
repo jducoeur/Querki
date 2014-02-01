@@ -80,7 +80,10 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     // Actual Modifier classes should implement this, which does the heart of the work
     def doTransform(elem:Elem, paramText:String, context:QLContext, params:Seq[QLPhrase]):Elem
     
-    override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+    override def qlApply(inv:Invocation):QValue = {
+      val context = inv.context
+      val paramsOpt = inv.paramsOpt
+      
       val v = context.value
       if (v.pType != RawHtmlType && v.pType != ParsedTextType)
         throw new PublicException("UI.transform.htmlRequired", name)
@@ -209,39 +212,42 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           |HEADER and DETAILS will run together, since QText joins ordinary text lines together.""".stripMargin)
     )) 
   {
-  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
-    paramsOpt match {
-      case Some(params) if (params.length > 0) => {
-        val header = params(0)
-        val details = if (params.length > 1) Some(params(1)) else None
-        val empty = if (params.length > 2) Some(params(2)) else None
-        buildSection(context, header, details, empty)
+    override def qlApply(inv:Invocation):QValue = {
+      val context = inv.context
+      val paramsOpt = inv.paramsOpt
+    
+      paramsOpt match {
+        case Some(params) if (params.length > 0) => {
+          val header = params(0)
+          val details = if (params.length > 1) Some(params(1)) else None
+          val empty = if (params.length > 2) Some(params(2)) else None
+          buildSection(context, header, details, empty)
+        }
+        case _ => QL.ErrorValue("_section requires at least one parameter")
       }
-      case _ => QL.ErrorValue("_section requires at least one parameter")
     }
-  }  
   
-  def buildSection(context:QLContext, header:QLPhrase, detailsOpt:Option[QLPhrase], emptyOpt:Option[QLPhrase]):QValue = {
-    val parser = context.parser.get
-    val wikitext = if (context.isEmpty) {
-      parser.contextsToWikitext(emptyOpt.map(empty => Seq(parser.processPhrase(empty.ops, context.root))).getOrElse(Seq.empty))
-    } else {
-      val processedHeader = parser.contextsToWikitext(Seq(parser.processPhrase(header.ops, context.asCollection)))
-      val processedDetails = detailsOpt.map(details => Seq(parser.processPhrase(details.ops, context)))
-      // TODO: why are we transforming this to Wikitext this early? Is there any reason to? Shouldn't we just turn all
-      // of this into a new List Context and pass it on through? Conceptually that would be more correct. The only problem
-      // is that the Header and Details potentially produce different Types, so they might not fit neatly into a single List.
-      // Which implies, of course, that what we *should* be producing here is a Tuple of (Header, List[Details]). Hmm --
-      // let's revisit this once we have Tuples implemented.
-      processedDetails match {
-        // Note that there is automatically a newline inserted between the Header and Details. Most of the time, this
-        // produces exactly the right result:
-        case Some(details) => processedHeader + parser.contextsToWikitext(details, true)
-        case None => processedHeader
+    def buildSection(context:QLContext, header:QLPhrase, detailsOpt:Option[QLPhrase], emptyOpt:Option[QLPhrase]):QValue = {
+      val parser = context.parser.get
+      val wikitext = if (context.isEmpty) {
+        parser.contextsToWikitext(emptyOpt.map(empty => Seq(parser.processPhrase(empty.ops, context.root))).getOrElse(Seq.empty))
+      } else {
+        val processedHeader = parser.contextsToWikitext(Seq(parser.processPhrase(header.ops, context.asCollection)))
+        val processedDetails = detailsOpt.map(details => Seq(parser.processPhrase(details.ops, context)))
+        // TODO: why are we transforming this to Wikitext this early? Is there any reason to? Shouldn't we just turn all
+        // of this into a new List Context and pass it on through? Conceptually that would be more correct. The only problem
+        // is that the Header and Details potentially produce different Types, so they might not fit neatly into a single List.
+        // Which implies, of course, that what we *should* be producing here is a Tuple of (Header, List[Details]). Hmm --
+        // let's revisit this once we have Tuples implemented.
+        processedDetails match {
+          // Note that there is automatically a newline inserted between the Header and Details. Most of the time, this
+          // produces exactly the right result:
+          case Some(details) => processedHeader + parser.contextsToWikitext(details, true)
+          case None => processedHeader
+        }
       }
+      QL.WikitextValue(wikitext)
     }
-    QL.WikitextValue(wikitext)
-  }
   }
 
 	abstract class ButtonBase(tid:OID, pf:PropFetcher) extends InternalMethod(tid, pf)
@@ -250,7 +256,10 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	  
 	  def numParams:Int
 	  
-	  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+	  override def qlApply(inv:Invocation):QValue = {
+	    val context = inv.context
+	    val paramsOpt = inv.paramsOpt
+	    
 	    paramsOpt match {
 	      case Some(params) if (params.length == numParams) => {
 	        val urlOpt = context.value.pType match {

@@ -88,7 +88,9 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
             |NOTE: the high concept of _me is important, and will be continuing, but the details are likely to evolve a great
             |deal, to make it more usable. So don't get too invested in the current behaviour.""".stripMargin)))
   {
-    override def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
+    override def qlApply(inv:Invocation):QValue = {
+      val context = inv.context
+      
       val userOpt = context.request.requester
       implicit val state = context.state
       val personOpt = userOpt.flatMap(localPerson(_))

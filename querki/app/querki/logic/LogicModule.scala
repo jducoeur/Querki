@@ -42,7 +42,10 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	          |the obvious thing if the clauses return a single True/False result. (Or if there is a single parameter,
 	          |or'ing together the results from that.)""".stripMargin)))
 	{
-	  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+	  override def qlApply(inv:Invocation):QValue = {
+	    val context = inv.context
+	    val paramsOpt = inv.paramsOpt
+	    
 	    paramsOpt match {
 	      case Some(params) => {
 	        val result = (Option.empty[QValue] /: params) { (current, phrase) =>
@@ -78,7 +81,10 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	          |
 	          |_not takes the parameter if one is given, or the received value if not. It returns True iff that it False, and False if it is anything else""".stripMargin)))
 	{
-	  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+	  override def qlApply(inv:Invocation):QValue = {
+	    val context = inv.context
+	    val paramsOpt = inv.paramsOpt
+	    
 	    val inVal = paramsOpt match {
 	      case Some(params) if (params.length == 1) => {
 	        context.parser.get.processPhrase(params(0).ops, context).value
@@ -104,7 +110,10 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	          |though, note that IFCLAUSE and ELSECLAUSE are *inside* the parentheses, rather than after them as most languages
 	          |have it.""".stripMargin)))
 	{
-	  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+	  override def qlApply(inv:Invocation):QValue = {
+	    val context = inv.context
+	    val paramsOpt = inv.paramsOpt
+	    
 	    paramsOpt match {
 	      case Some(params) if (params.length > 1) => {
 	        val predicatePhrase = params(0)
@@ -136,7 +145,10 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	          |Note that we are likely to enhance this method in the future, to do more, but this is the
 	          |important core functionality.""".stripMargin)))
 	{  
-	  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+	  override def qlApply(inv:Invocation):QValue = {
+	    val context = inv.context
+	    val paramsOpt = inv.paramsOpt
+	    
 	    paramsOpt match {
 	      case Some(params) if (params.length > 1) => {
 	        val first = context.parser.get.processPhrase(params(0).ops, context).value
@@ -170,7 +182,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
   class BooleanValue(tid:OID, elem:ElemValue, pf:PropFetcher) extends ThingState(tid, systemOID, RootOID, pf)(ecology)
   {
     val v = ExactlyOne(elem)
-    override def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = v
+    override def qlApply(inv:Invocation):QValue = v
   }
   
   lazy val trueVal = new BooleanValue(TrueOID, True,

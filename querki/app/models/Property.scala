@@ -133,26 +133,27 @@ case class Property[VT, -RT](
    * TODO: if this Property isn't defined on the target Thing or its ancestors, this should return None.
    * So technically, this should be returning Optional. Note that PType.qlApply() already does this.
    */
-  override def qlApply(context:QLContext, params:Option[Seq[QLPhrase]] = None):QValue = {
+  override def qlApply(inv:Invocation):QValue = {
     // Give the Type first dibs at handling the call; otherwise, return the value of this property
     // on the incoming thing.
-    pType.qlApplyFromProp(context, context, this, params).getOrElse(
-      applyToIncomingProps(context) { (t, innerContext) =>
+    pType.qlApplyFromProp(inv.definingContext.getOrElse(inv.context), inv.context, this, inv.paramsOpt).getOrElse(
+      applyToIncomingProps(inv.context) { (t, innerContext) =>
         t.getPropVal(this)(innerContext.state)
       })
   }  
   
   override def partiallyApply(leftContext:QLContext):QLFunction = {
     def handleRemainder(inv:Invocation):QValue = {
-      // Note that partial application ignores the incoming context if the type isn't doing anything clever. By
-      // and large, this syntax mainly exists for QL properties:
-      //
-      //   incomingContext -> definingThing.MyQLFunction(params)
-      //
-      // But we allow you to use partial application in general, since it sometimes feels natural.
-      pType.qlApplyFromProp(leftContext, inv.context, this, inv.paramsOpt).getOrElse(applyToIncomingThing(leftContext) { (t, context) =>
-        t.getPropVal(this)(context.state)
-      })
+      qlApply(inv)
+//      // Note that partial application ignores the incoming context if the type isn't doing anything clever. By
+//      // and large, this syntax mainly exists for QL properties:
+//      //
+//      //   incomingContext -> definingThing.MyQLFunction(params)
+//      //
+//      // But we allow you to use partial application in general, since it sometimes feels natural.
+//      pType.qlApplyFromProp(leftContext, inv.context, this, inv.paramsOpt).getOrElse(applyToIncomingThing(leftContext) { (t, context) =>
+//        t.getPropVal(this)(context.state)
+//      })
     }
     new PartiallyAppliedFunction(leftContext, handleRemainder)
   }

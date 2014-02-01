@@ -40,7 +40,9 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |
 	          |If LIST is empty, this produces None. If LIST has elements, this produces Optional(first element).""".stripMargin)))
 	{
-	  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+	  override def qlApply(inv:Invocation):QValue = {
+	    val context = inv.context
+	    
 	    val sourceColl = context.value
 	    val result = 
 	      if (sourceColl.isEmpty)
@@ -62,7 +64,9 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |_rest currently isn't useful very often. As the QL language gets more powerful, it will
 	          |become a useful tool, although mainly for fairly advanced programmers.""".stripMargin)))
 	{
-	  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+	  override def qlApply(inv:Invocation):QValue = {
+	    val context = inv.context
+	    
 	    val sourceColl = context.value
 	    if (sourceColl.isEmpty)
 	      // Cut processing at this point:
@@ -153,7 +157,9 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |This is one of the most commonly-useful functions in Querki. It is how you usually say, "I only want *some*
 	          |of the elements in this List or Set".""".stripMargin)))
 	{
-	  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+	  override def qlApply(inv:Invocation):QValue = {
+	    val context = inv.context
+	    val paramsOpt = inv.paramsOpt
 	    
 	    // TODO: this is currently convoluted and hard to understand -- we're dissecting the list using
 	    // flatMapAsContext(); yielding an Option saying whether to keep each one; stitching it back together
@@ -214,7 +220,9 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |demand. It is likely that we will add the ability to sort by multiple keys (sort on Property A, then Property B if those are
 	          |identical) in the not-too-distant future -- yell if this proves important for you.""".stripMargin)))
 	{
-	  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+	  override def qlApply(inv:Invocation):QValue = {
+	    val context = inv.context
+	    val paramsOpt = inv.paramsOpt
 	    
 	    implicit val s = context.state
 	    implicit val rc = context.request
@@ -281,7 +289,10 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |what they would normally have. It is usually used inside of _sort, to reverse the sort order, which
 	          |is normally in ascending order.""".stripMargin)))
 	{
-	  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+	  override def qlApply(inv:Invocation):QValue = {
+	    val context = inv.context
+	    val paramsOpt = inv.paramsOpt
+	    
 	    paramsOpt match {
 	      case Some(params) => {
 	        val innerRes = context.parser.get.processPhrase(params(0).ops, context).value;
@@ -334,7 +345,10 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
         		|Given a THING, and a LIST that contains that THING, this returns the *previous* THING to that
         		|in the LIST. It returns None iff the THING is not in the LIST, or if it is the beginning of the LIST.""".stripMargin)))
   {
-    override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+    override def qlApply(inv:Invocation):QValue = {
+      val context = inv.context
+      val paramsOpt = inv.paramsOpt
+      
       paramsOpt match {
         case Some(params) if (params.length > 0) => {
           val thing = context.value.first
@@ -363,7 +377,10 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
         		|Given a THING, and a LIST that contains that THING, this returns the *next* THING to that
         		|in the LIST. It returns None iff the THING is not in the LIST, or if it is the end of the LIST.""".stripMargin)))
   {
-    override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+    override def qlApply(inv:Invocation):QValue = {
+      val context = inv.context
+      val paramsOpt = inv.paramsOpt
+      
       paramsOpt match {
         case Some(params) if (params.length > 0) => {
           val thing = context.value.first

@@ -33,7 +33,10 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	          |Note that this behaviour is pretty English-specific. We expect that other variations will
 	          |be needed for other languages in the long run.""".stripMargin)))
 	{
-	  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+	  override def qlApply(inv:Invocation):QValue = {
+	    val context = inv.context
+	    val paramsOpt = inv.paramsOpt
+	    
 	    def chooseParam(params:Seq[QLPhrase]):QLPhrase = {
 	      val received = context.value
 	      if (received.isEmpty || received.size > 1)
@@ -82,7 +85,10 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	          |be rendered into their default forms before getting combined. But at the end of _join, what you get back is
 	          |one big block of QText. You can't do any further processing on the elements after this.""".stripMargin)))
 	{
-	  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+	  override def qlApply(inv:Invocation):QValue = {
+	    val context = inv.context
+	    val paramsOpt = inv.paramsOpt
+	    
 	    val (openPhrase, sepPhrase, closePhrase) = paramsOpt match {
 	      case Some(params) if (params.length == 1) => (None, Some(params(0)), None)
 	      case Some(params) if (params.length == 2) => (Some(params(0)), Some(params(1)), None)

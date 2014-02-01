@@ -202,7 +202,9 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
           |NOTE: _tagRefs and _refs are closely related concepts. They currently work differently, but we might
           |at some point combine them for simplicity.""".stripMargin)))
   { 
-    override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+    override def qlApply(inv:Invocation):QValue = {
+      val context = inv.context
+      
       val elemT = context.value.pType
       elemT match {
         case nameable:NameableType => {

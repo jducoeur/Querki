@@ -182,7 +182,10 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |    ... -> _if(_equals(_kind, _kind(Property)), ...)
           |""".stripMargin)))
   { 
-  override def qlApply(context:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
+  override def qlApply(inv:Invocation):QValue = {
+    val context = inv.context
+    val paramsOpt = inv.paramsOpt
+    
     // If there is a parameter, this will produce its value:
     val paramResult = for (
       params <- paramsOpt;
