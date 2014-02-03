@@ -129,7 +129,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
    * FUNCTIONS
    ***********************************************/
 	
-	lazy val SelfMethod = new SingleContextMethod(SelfMethodOID,
+	lazy val SelfMethod = new InternalMethod(SelfMethodOID,
 	    toProps(
 	      setName("_self"),
 	      Summary("Get a Link to this Thing"),
@@ -143,12 +143,12 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
 	          |Link to that Thing. It is never necessary for ordinary Things, but frequently useful when _apply
 	          |has been defined on it.""".stripMargin)))
 	{
-	  def fullyApply(inv:Invocation):QValue = {
+	  override def qlApply(inv:Invocation):QValue = {
 	    inv.definingContext.get.value
 	  }
 	}
 	
-	lazy val CodeMethod = new SingleContextMethod(CodeMethodOID,
+	lazy val CodeMethod = new InternalMethod(CodeMethodOID,
 	    toProps(
 	      setName("_code"),
 	      Summary("Display a block of QL code"),
@@ -199,8 +199,8 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
 	  
 	  // TODO: this is horrible. Surely we can turn this into something cleaner with better use of the functional
 	  // tools in the Scala toolbelt.
-	  def fullyApply(inv:Invocation):QValue = {
-	    val partialContext = inv.definingContext.get
+	  override def qlApply(inv:Invocation):QValue = {
+	    val partialContext = inv.preferDefiningContext.context
 	    implicit val space = partialContext.state
 	    inv.paramsOpt match {
 	      case Some(params) => {
