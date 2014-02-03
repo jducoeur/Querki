@@ -115,7 +115,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
         Summary("Lets you control how wide a Property's edit control is, in the Edit View"),
         Details("""This is width in Bootstrap span terms -- a number from 1 (narrow) to 12 (full width).""".stripMargin)))
 
-  abstract class EditMethodBase(id:OID, pf:PropFetcher) extends SingleContextMethod(id, pf)
+  abstract class EditMethodBase(id:OID, pf:PropFetcher) extends InternalMethod(id, pf)
   {
     def specialization(mainContext:QLContext, mainThing:Thing, 
       partialContext:QLContext, prop:Property[_,_],
@@ -142,10 +142,9 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       }
     }
   
-    def fullyApply(inv:Invocation):QValue = {
-      
+    override def qlApply(inv:Invocation):QValue = {
       val mainContext = inv.context
-      val partialContext = inv.definingContext.get
+      val partialContext = inv.definingContext.getOrElse(inv.context)
       val params = inv.paramsOpt
       
       // TODO: this belongs in Invocation as a general mechanism:
@@ -356,7 +355,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	// TODO: this code is pretty damned Bootstrap-specific, which by definition is too HTML-specific. We should probably
 	// replace it with something that is much more neutral -- simple label/control styles -- and have client-side code
 	// that rewrites it appropriately for the UI in use.
-	lazy val FormLineMethod = new SingleContextMethod(FormLineMethodOID,
+	lazy val FormLineMethod = new InternalMethod(FormLineMethodOID,
 	    toProps(
 	      setName("_formLine"),
 	      Summary("Display a label/control pair for an input form"),
@@ -364,7 +363,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	          |
 	          |This is mainly for input forms, and is pretty persnickety at this point. It is not recommend for general use yet.""".stripMargin)))
 	{
-	  def fullyApply(inv:Invocation):QValue = {
+	  override def qlApply(inv:Invocation):QValue = {
 	    inv.paramsOpt match {
 	      case Some(params) if (params.length == 2) => {
 	        val context = inv.definingContext.get
