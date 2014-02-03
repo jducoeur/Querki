@@ -2,7 +2,7 @@ package querki
 
 import querki.ecology._
 
-import models.{Property, PType, Thing}
+import models.{Property, PType, PTypeBuilder, Thing}
 
 import querki.values.SpaceState
 
@@ -22,7 +22,7 @@ package object tags {
   }
 
   trait Tags extends EcologyInterface {
-    def TagSetType:PType[String]
+    def TagSetType:PType[String] with PTypeBuilder[String,String]
     def NewTagSetType:PType[PlainText]
     
     def ShowUnknownProp:Property[QLText,String]

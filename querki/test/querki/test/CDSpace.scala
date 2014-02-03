@@ -8,11 +8,14 @@ import querki.ecology._
  */
 class CDSpace(implicit ecologyIn:Ecology) extends CommonSpace {
   val artistModel = new SimpleTestThing("Artist")
+  val genreModel = new SimpleTestThing("Genre")
+  
+  val genres = new TestProperty(interface[querki.tags.Tags].TagSetType, QSet, "Genres")
     
-  val eurythmics = new TestThing("Eurythmics", artistModel)
-  val tmbg = new TestThing("They Might Be Giants", artistModel)
-  val blackmores = new TestThing("Blackmores Night", artistModel)
-  val whitney = new TestThing("Whitney Houston", artistModel)
+  val eurythmics = new TestThing("Eurythmics", artistModel, genres("Rock"))
+  val tmbg = new TestThing("They Might Be Giants", artistModel, genres("Rock", "Weird"))
+  val blackmores = new TestThing("Blackmores Night", artistModel, genres("Rock", "Folk"))
+  val whitney = new TestThing("Whitney Houston", artistModel, genres("Pop"))
     
   val artistsProp = new TestProperty(LinkType, QSet, "Artists", Links.LinkModelProp(artistModel))
     
