@@ -242,7 +242,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     }
   }
 
-  lazy val TagsForPropertyMethod = new SingleContextMethod(TagsForPropertyOID,
+  lazy val TagsForPropertyMethod = new InternalMethod(TagsForPropertyOID,
     toProps(
       setName("_tagsForProperty"),
       Summary("Show all the Tags that are defined for this Property"),
@@ -261,7 +261,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
           |* White: Pinot Gris, Chardonnay
           |""".stripMargin)))
   {
-    def fullyApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QValue = {
       applyToIncomingThing(inv.definingContext.get) { (shouldBeProp, _) =>
         shouldBeProp match {
           case prop:Property[_,_] if (prop.pType == TagSetType || prop.pType == NewTagSetType) => {
