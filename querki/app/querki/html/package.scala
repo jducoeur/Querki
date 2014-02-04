@@ -12,7 +12,7 @@ import querki.ecology._
 import models.{DisplayPropVal, FormFieldInfo, Property, Thing, Wikitext}
 
 import querki.ui.UIRenderer
-import querki.values.{QLContext, QValue, SpaceState}
+import querki.values.{QLContext, QValue, RequestContext, SpaceState}
 
 package object html {
   object RenderSpecialization extends Enumeration {
@@ -28,7 +28,7 @@ package object html {
   trait HtmlRenderer extends UIRenderer with EcologyInterface {
     def addClasses(elem:Elem, addedClasses:String):Elem
     def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_], context:QLContext):FormFieldInfo
-    def renderPropertyInput(state:SpaceState, prop:Property[_,_], 
+    def renderPropertyInput(rc:RequestContext, prop:Property[_,_], 
         currentValue:DisplayPropVal, 
         specialization:Set[RenderSpecialization.RenderSpecialization] = Set(RenderSpecialization.Unspecialized)):Html
   }

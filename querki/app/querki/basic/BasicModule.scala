@@ -9,7 +9,7 @@ import querki.core._
 import querki.ecology._
 import querki.ql.QLPhrase
 import querki.types._
-import querki.values.{ElemValue, QLContext, SpaceState}
+import querki.values.{ElemValue, QLContext, RequestContext, SpaceState}
 
 class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis with PlainTextBaseType {
   import MOIDs._
@@ -50,8 +50,8 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
   {
     override def editorSpan(prop:Property[_,_]):Int = 12   
   
-    override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem =
-      renderLargeText(prop, state, currentValue, v, this)
+    override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):Elem =
+      renderLargeText(prop, rc, currentValue, v, this)
 
     // TBD: in principle, we really want this to return a *context*, not a *value*. This is a special
     // case of a growing concern: that we could be losing information by returning QValue from

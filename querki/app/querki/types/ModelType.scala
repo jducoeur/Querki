@@ -134,7 +134,7 @@ trait ModelTypeDefiner { self:EcologyMember =>
       ModeledPropertyBundle(this, basedOn, raw.props)
     }
 //    
-//    def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = {
+//    def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):Elem = {
 //      
 //    }
   }

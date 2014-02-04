@@ -72,9 +72,9 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecolog
    * TODO: this is an abstraction break, and really belongs in some side tree that maps Collections
    * to HTML representations. But that's for another day.
    */
-  def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):Elem
-  def renderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):Elem = {
-    doRenderInput(prop, state, currentValue, elemT)
+  def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):Elem
+  def renderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):Elem = {
+    doRenderInput(prop, rc, currentValue, elemT)
   }
 
   // TODO: this is a bad smell! We need to do something smart with typeclasses to get rid of it...

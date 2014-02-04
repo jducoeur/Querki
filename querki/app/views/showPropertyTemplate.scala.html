@@ -6,7 +6,7 @@
 @NameProp = @{ rc.interface[querki.core.Core].NameProp }
 
 @showInputControl(prop:Property[_,_], v:DisplayPropVal, i:Int) = {
-  @rc.interface[querki.html.HtmlRenderer].renderPropertyInput(space, prop, v)
+  @rc.interface[querki.html.HtmlRenderer].renderPropertyInput(rc, prop, v)
 }
 
 @editButtonClass(v:DisplayPropVal) = @{

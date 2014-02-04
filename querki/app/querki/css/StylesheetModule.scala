@@ -54,8 +54,8 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
 
     def doDefault(implicit state:SpaceState) = ""
     
-    override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):scala.xml.Elem =
-      renderLargeText(prop, state, currentValue, v, this)
+    override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):scala.xml.Elem =
+      renderLargeText(prop, rc, currentValue, v, this)
       
     def code(elem:ElemValue):String = get(elem)
   }

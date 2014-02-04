@@ -90,10 +90,10 @@ trait CollectionBase { self:CoreEcot =>
     }
     def wrap(elem:ElemValue):implType = List(elem)
     
-    def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
-      implicit val s = state
+    def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+      implicit val s = rc.state.get
       val v = currentValue.effectiveV.flatMap(_.firstOpt).getOrElse(elemT.default)
-      elemT.renderInput(prop, state, currentValue, v)
+      elemT.renderInput(prop, rc, currentValue, v)
     }
 
     def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = ExactlyOnePropValue(cv.toList, this, elemT)
@@ -139,10 +139,10 @@ trait CollectionBase { self:CoreEcot =>
     // TODO: the stuff created here overlaps badly with the Javascript code in editThing.scala.html.
     // Rationalize the two, to eliminate all the duplication. In theory, the concept and structure
     // belongs here, and the details belong there.
-    def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
-      implicit val s = state
+    def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+      implicit val state = rc.state.get
       val HtmlRenderer = interface[querki.html.HtmlRenderer]
-      val inputTemplate = HtmlRenderer.addClasses(elemT.renderInput(prop, state, currentValue, elemT.default), "inputTemplate list-input-element") %      
+      val inputTemplate = HtmlRenderer.addClasses(elemT.renderInput(prop, rc, currentValue, elemT.default), "inputTemplate list-input-element") %      
     		  Attribute("data-basename", Text(currentValue.collectionControlId + "-item"),
     		  Null)
       val addButtonId = currentValue.collectionControlId + "-addButton"
@@ -152,7 +152,7 @@ trait CollectionBase { self:CoreEcot =>
             val cv = v.cv
             cv.zipWithIndex.map { pair =>
               val (elemV, i) = pair
-              val simplyRendered = elemT.renderInput(prop, state, currentValue, elemV)
+              val simplyRendered = elemT.renderInput(prop, rc, currentValue, elemV)
               val itemRendered = HtmlRenderer.addClasses(simplyRendered, "list-input-element") %
               	Attribute("id", Text(currentValue.collectionControlId + "-item[" + i + "]"), 
               	Attribute("name", Text(currentValue.collectionControlId + "-item[" + i + "]"), Null))
@@ -218,7 +218,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
 	  throw new Error("Trying to wrap root collection!")    
 	def makePropValue(cv:Iterable[ElemValue], pType:PType[_]):QValue =
 	  throw new Error("Trying to makePropValue root collection!")    
-    def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem =
+    def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem =
 	  throw new Error("Trying to render input on root collection!")
 	def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo =
 	  throw new Error("Trying to fromUser on root collection!")
@@ -273,12 +273,12 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
     def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = OptionalPropValue(cv.toList, this, elemT)    
     private case class OptionalPropValue(cv:implType, cType:Optional, pType:PType[_]) extends QValue
     
-    def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
-      implicit val s = state
+    def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+      implicit val state = rc.state.get
       // TODO: what should we do here? Has custom rendering become unnecessary here? Does the appearance of the
       // trash button eliminate the need for anything fancy for Optional properties?
       val v = currentValue.effectiveV.flatMap(_.firstOpt).getOrElse(elemT.default)
-      elemT.renderInput(prop, state, currentValue, v)
+      elemT.renderInput(prop, rc, currentValue, v)
     }
 
     val QNone:QValue = makePropValue(Nil, UnknownType)
@@ -353,7 +353,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
     def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = UnitPropValue(cv.toList, this, elemT)    
     private case class UnitPropValue(cv:implType, cType:QUnit, pType:PType[_]) extends QValue
     
-    def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+    def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
       <i>Defined</i>
     }
 
@@ -384,10 +384,10 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
     def wrap(elem:ElemValue):implType = List(elem)
     def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = bootPropValue(cv.toList, this, elemT)
     
-    def doRenderInput(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
-      implicit val s = state
+    def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+      implicit val s = rc.state.get
       val v = currentValue.v.map(_.first).getOrElse(elemT.default)
-      elemT.renderInput(prop, state, currentValue, v)
+      elemT.renderInput(prop, rc, currentValue, v)
     }
 
     private case class bootPropValue(cv:implType, cType:bootCollection, pType:PType[_]) extends QValue {}  

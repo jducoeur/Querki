@@ -38,10 +38,11 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
    * PUBLIC API
    *********************************/
   
-  def renderPropertyInput(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization] = Set(Unspecialized)):Html = {
+  def renderPropertyInput(rc:RequestContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization] = Set(Unspecialized)):Html = {
+    val state = rc.state.get
     val cType = prop.cType
     val pType = prop.pType
-    val rendered = renderSpecialized(cType, pType, state, prop, currentValue, specialization).getOrElse(cType.renderInput(prop, state, currentValue, pType))
+    val rendered = renderSpecialized(cType, pType, rc, prop, currentValue, specialization).getOrElse(cType.renderInput(prop, rc, currentValue, pType))
     val onThing = currentValue.on.flatMap(_.asThing)
     val xml3 = addEditorAttributes(rendered, currentValue.inputControlId, prop.id, currentValue.inputControlId, onThing.map(_.id.toThingId))
     // TODO: this is *very* suspicious, but we need to find a solution. RenderTagSet is trying to pass JSON structures in the
@@ -112,12 +113,13 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     xml3
   }
   
-  def renderSpecialized(cType:Collection, pType:PType[_], state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):Option[Elem] = {
+  def renderSpecialized(cType:Collection, pType:PType[_], rc:RequestContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):Option[Elem] = {
     // TODO: make this more data-driven. There should be a table of these.
+    val state = rc.state.get
     if (cType == Optional && pType == YesNoType)
       Some(renderOptYesNo(state, prop, currentValue))
     else if (cType == Optional && pType == LinkType)
-      Some(renderOptLink(state, prop, currentValue))
+      Some(renderOptLink(rc, prop, currentValue))
     else if (cType == QSet && (pType == Core.NameType || pType == Tags.TagSetType || pType == LinkType || pType == NewTagSetType)) {
       if (specialization.contains(PickList))
         Some(renderPickList(state, prop, currentValue, specialization))
@@ -151,8 +153,8 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       <span class="btn-group" data-toggle="buttons-radio" name={currentValue.inputControlId + "-wrapper"}>{oneButton("Yes", "true", (isSet && v))}{oneButton("Maybe", "maybe", (!isSet))}{oneButton("No", "false", (isSet && !v))}</span>
   }
   
-  def renderOptLink(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Elem = {
-    implicit val s = state
+  def renderOptLink(rc:RequestContext, prop:Property[_,_], currentValue:DisplayPropVal):Elem = {
+    implicit val s = rc.state.get
     val pType = LinkType
     val pair = currentValue.effectiveV.map(propVal => if (propVal.cv.isEmpty) (false, pType.default) else (true, propVal.first)).getOrElse((false, pType.default))
     val isSet = pair._1
@@ -161,7 +163,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     val results = <select class="_linkSelect"> 
       <option value={UnknownOID.id.toString}>Nothing selected</option>
       {
-      renderInputXmlGuts(prop, state, currentValue, ElemValue(v, LinkType))
+      renderInputXmlGuts(prop, rc, currentValue, ElemValue(v, LinkType))
     } </select>
     results
   }

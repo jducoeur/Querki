@@ -9,7 +9,7 @@ import querki.ecology._
 
 import querki.ql.QLPhrase
 import querki.util.PublicException
-import querki.values.{ElemValue, QLContext, QValue, SpaceState}
+import querki.values.{ElemValue, QLContext, QValue, RequestContext, SpaceState}
 
 import MOIDs._
 
@@ -164,7 +164,8 @@ trait NameTypeBasis { self:CoreEcot with NameUtils =>
 
 trait LinkUtils { self:CoreEcot =>
     
-    def renderInputXmlGuts(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Iterable[Elem] = {
+    def renderInputXmlGuts(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):Iterable[Elem] = {
+      val state = rc.state.get
       // Give the Property a chance to chime in on which candidates belong here:
       val candidates = prop match {
         case f:LinkCandidateProvider => f.getLinkCandidates(state, currentValue)
@@ -208,7 +209,7 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
     def doSerialize(v:Unit)(implicit state:SpaceState) = throw new Exception("Trying to use UnknownType!")
     def doWikify(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None) = throw new Exception("Trying to use UnknownType!")
   
-    def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = 
+    def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):Elem = 
       throw new Exception("Trying to use UnknownType!")
 
     def doDefault(implicit state:SpaceState) = throw new Exception("Trying to use UnknownType!")
@@ -228,7 +229,7 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
     def doSerialize(v:Unit)(implicit state:SpaceState) = throw new Exception("Trying to use UrType!")
     def doWikify(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None) = throw new Exception("Trying to use UrType!")
   
-    def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = 
+    def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):Elem = 
       throw new Exception("Trying to use UrType!")
 
     def doDefault(implicit state:SpaceState) = throw new Exception("Trying to use UrType!")    
@@ -278,8 +279,8 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
   {
     override def editorSpan(prop:Property[_,_]):Int = 12
     
-    override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem =
-      renderLargeText(prop, state, currentValue, v, this)
+    override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):Elem =
+      renderLargeText(prop, rc, currentValue, v, this)
   }
     
   /**
@@ -362,9 +363,9 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
 
     def doDefault(implicit state:SpaceState) = UnknownOID
     
-    override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = {
+    override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):Elem = {
         <select class="_linkSelect"> {
-          renderInputXmlGuts(prop, state, currentValue, v)
+          renderInputXmlGuts(prop, rc, currentValue, v)
         } </select>
     }
   }
@@ -459,7 +460,7 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
     
     def doDefault(implicit state:SpaceState) = false
     
-    override def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = {
+    override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):Elem = {
       if (get(v))
         <input type="checkbox" checked="checked" />
       else
