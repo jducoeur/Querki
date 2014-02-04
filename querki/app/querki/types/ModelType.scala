@@ -109,7 +109,13 @@ trait ModelTypeDefiner { self:EcologyMember =>
       }
     }
     
-    def doDefault(implicit state:SpaceState) = { throw new Exception("WrappedValueType does not implement doDefault") }
+    def doDefault(implicit state:SpaceState) = { 
+      state.anything(basedOn) match {
+        // The defaults for this Type are exactly the values defined in the Model it is based on:
+        case Some(model) => ModeledPropertyBundle(this, model.props)
+        case None => throw new Exception(s"Model $basedOn for Model Type $id no longer exists!")
+      }
+    }
     
     def wrap(raw:SimplePropertyBundle):ModeledPropertyBundle = {
       ModeledPropertyBundle(this, raw.props)
