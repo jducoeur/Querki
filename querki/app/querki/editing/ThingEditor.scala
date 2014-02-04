@@ -124,7 +124,7 @@ trait ThingEditor { self:EditorModule =>
           val propsLayout = s"""[[""{{_instanceEditor:
               |${ if (thing.isThing) "{{_deleteInstanceButton:x}}" else "" }
               |${layoutRows.map(_.layout).mkString}
-              |}}"" ${ if (thing.isThing) """-> _data(""thingId"", ""${thing.asInstanceOf[Thing].toThingId}"")]]""" else "" }
+              |}}"" ${ if (thing.isThing) s"""-> _data(""thingId"", ""${thing.asInstanceOf[Thing].toThingId}"")""" else "" }]]
               |""".stripMargin
           QLText(propsLayout)
         }

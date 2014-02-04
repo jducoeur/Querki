@@ -207,10 +207,6 @@ abstract class Thing(
       localProp(prop).getOrElse(getModelOpt.map(_.getProp(prop)).getOrElse(prop.defaultPair))
   }
   
-  def localPropVal[VT, CT](prop:Property[VT, _]):Option[QValue] = {
-    prop.fromOpt(props)
-  }
-  
   def localOrDefault(propId:OID)(implicit state:SpaceState):PropAndVal[_] = {
     val prop = state.prop(propId).getOrElse(throw new Exception("Using localOrDefault on an unknown Property!"))
     localProp(propId).getOrElse(prop.defaultPair)
@@ -231,17 +227,6 @@ abstract class Thing(
       prop.default
     else
       getModel.getPropVal(prop)
-  }
-  
-  def getDisplayPropVal[VT, _](prop:Property[VT, _])(implicit state:SpaceState):DisplayPropVal = {
-    val local = localPropVal(prop)
-    local match {
-      case Some(v) => DisplayPropVal(Some(this), prop, Some(v))
-      case None => {
-        val inheritedVal = getPropOpt(prop)
-        DisplayPropVal(Some(this), prop, None, inheritedVal.map(_.v))
-      }
-    }
   }
 
   /**

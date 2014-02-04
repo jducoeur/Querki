@@ -93,6 +93,15 @@ class ModelTypeTests extends QuerkiTests {
             |: Number in Model : 3
             |: Text in Model : Text in Instance""".stripReturns)
     }
+    
+    "be able to generate an Edit control" in {
+      val Editor = interface[querki.editing.Editor]
+      implicit val space = new ComplexSpace
+      implicit val user = space.owner
+      
+      val result = pql("""[[My Complex Thing -> _edit]]""")
+      println("----> " + result)
+    }
   }
   
   "A nested Model Type" should {

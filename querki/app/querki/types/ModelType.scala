@@ -52,7 +52,7 @@ case class ModeledPropertyBundle(modelType:ModelTypeDefiner#ModelType, basedOn:O
   }
   
   def getPropVal[VT, CT](prop:Property[VT, _])(implicit state:SpaceState):QValue = {
-    prop.fromOpt(props).getOrElse {
+    localPropVal(prop).getOrElse {
       getModelOpt.map(_.getPropVal(prop)).getOrElse { 
         modelType.interface[querki.ql.QL].WarningValue(s"Couldn't find Property ${prop.displayName} on the received value")
       }
@@ -86,6 +86,9 @@ trait ModelTypeDefiner { self:EcologyMember =>
 		  (ModelForTypePropOID -> Core.ExactlyOne(Core.LinkType(basedOn)))
     
     lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
+    lazy val Editor = interface[querki.editing.Editor]
+    
+    override def editorSpan(prop:Property[_,_]):Int = 12
     
     def doDeserialize(v:String)(implicit state:SpaceState) = { 
       ModeledPropertyBundle(this, basedOn, SpacePersistence.deserializeProps(v, state))
@@ -133,10 +136,18 @@ trait ModelTypeDefiner { self:EcologyMember =>
     def wrap(raw:SimplePropertyBundle):ModeledPropertyBundle = {
       ModeledPropertyBundle(this, basedOn, raw.props)
     }
-//    
-//    def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):Elem = {
-//      
-//    }
+    
+    override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):Elem = {
+      val bundle = get(v)
+      val wikitext = Editor.getInstanceEditor(bundle, rc)
+      
+      // TODO: this is horrible. How can we fix this abstraction break? The underlying problem is the
+      // fact that we are trying to embed generated Wikitext inside of an XML Elem, and we have no concept
+      // of that in the design.
+      val rawHtml = wikitext.display.html.body
+      val nodeSeq = scala.xml.parsing.XhtmlParser(scala.io.Source.fromString(rawHtml))
+      nodeSeq.head.asInstanceOf[Elem]
+    }
   }
   
 }

@@ -9,6 +9,7 @@ import querki.core.{LinkCandidateProvider, QLText}
 import querki.html.RenderSpecialization._
 
 import querki.ecology._
+import querki.identity.User
 import querki.ql.{QLCall, QLPhrase}
 
 import querki.types._
@@ -117,18 +118,27 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 
   abstract class EditMethodBase(id:OID, pf:PropFetcher) extends InternalMethod(id, pf)
   {
-    def specialization(mainContext:QLContext, mainThing:Thing, 
+    def specialization(mainContext:QLContext, mainThing:PropertyBundle, 
       partialContext:QLContext, prop:Property[_,_],
       params:Option[Seq[QLPhrase]]):Set[RenderSpecialization] = Set(Unspecialized)
   
     def cantEditFallback(inv:Invocation):QValue
+    
+    def canEdit(context:QLContext, requester:User, thing:PropertyBundle):Boolean = {
+      thing match {
+        case t:Thing => context.state.canEdit(requester, t.id)
+        // TODO: this isn't right. It should return true iff the requester can edit the Thing
+        // this bundle is contained in. Hmm...
+        case _ => true
+      }
+    }
   
-    def applyToPropAndThing(inv:Invocation, mainContext:QLContext, mainThing:Thing, 
+    def applyToPropAndThing(inv:Invocation, mainContext:QLContext, mainThing:PropertyBundle, 
       partialContext:QLContext, prop:Property[_,_],
       params:Option[Seq[QLPhrase]]):QValue =
     {
       mainContext.request.requester match {
-        case Some(requester) if (mainContext.state.canEdit(requester, mainThing.id)) => {
+        case Some(requester) if (canEdit(mainContext, requester, mainThing)) => {
           val currentValue = mainThing.getDisplayPropVal(prop)(mainContext.state)
 	      // TODO: conceptually, this is a bit off -- the rendering style shouldn't be hard-coded here. We
   	      // probably need to have the Context contain the desire to render in HTML, and delegate to the
@@ -217,7 +227,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       applyToIncomingThing(partialContext) { (partialThing, _) =>
         partialThing match {
           case prop:Property[_,_] => {
-            applyToIncomingThing(mainContext) { (mainThing, _) =>
+            applyToIncomingProps(mainContext) { (mainThing, _) =>
               applyToPropAndThing(inv, mainContext, mainThing, partialContext, prop, params)
             }
           }
@@ -333,7 +343,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
         yield prop.qlApply(inv)    
     }  
     
-    override def specialization(mainContext:QLContext, mainThing:Thing, 
+    override def specialization(mainContext:QLContext, mainThing:PropertyBundle, 
       partialContext:QLContext, prop:Property[_,_],
       paramsOpt:Option[Seq[QLPhrase]]):Set[RenderSpecialization] = 
     {
