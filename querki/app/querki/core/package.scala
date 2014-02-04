@@ -39,6 +39,8 @@ package object core {
     val QUnitOID = sysId(39)
     val InternalPropOID = sysId(40)
     val QSetOID = sysId(79)
+    
+    val UrTypeOID = moid(1)
   }
     
   /**
@@ -68,6 +70,7 @@ package object core {
     def QUnit:Collection
     
     def UnknownType:PType[Unit]
+    def UrType:PType[Unit]
     def InternalMethodType:PType[String] with PTypeBuilder[String,String]
     def TextType:PType[QLText] with PTypeBuilder[QLText,String]
     def LargeTextType:PType[QLText] with PTypeBuilder[QLText,String]

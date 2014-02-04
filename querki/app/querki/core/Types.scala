@@ -214,6 +214,26 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
     def doDefault(implicit state:SpaceState) = throw new Exception("Trying to use UnknownType!")
   }
   
+  /**
+   * The Root Type, that all others are based on.
+   * 
+   * Note that this was a late addition to the system, and is necessary mostly for Model Types to hang off of.
+   */
+  class UrType extends PType[Unit](UrTypeOID, SystemIds.systemOID, querki.core.MOIDs.RootOID, 
+      toProps(
+        setName("Root Type"),
+        setInternal))
+  {
+    def doDeserialize(v:String)(implicit state:SpaceState) = throw new Exception("Trying to use UrType!")
+    def doSerialize(v:Unit)(implicit state:SpaceState) = throw new Exception("Trying to use UrType!")
+    def doWikify(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None) = throw new Exception("Trying to use UrType!")
+  
+    def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = 
+      throw new Exception("Trying to use UrType!")
+
+    def doDefault(implicit state:SpaceState) = throw new Exception("Trying to use UrType!")    
+  }
+  
   class InternalMethodType extends SystemType[String](InternalMethodOID,
     toProps(
       setName("Internal Method Type"),

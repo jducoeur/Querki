@@ -99,6 +99,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
    ***********************************************/
   
   lazy val UnknownType = new UnknownType
+  lazy val UrType = new UrType
   lazy val InternalMethodType = new InternalMethodType
   lazy val TextType = new TextType
   lazy val LargeTextType = new LargeTextType
@@ -115,6 +116,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
   def followLink(context:QLContext):Option[Thing] = LinkType.followLink(context)
   
   override lazy val types = Seq(
+    UrType,
     InternalMethodType,
     TextType,
     LargeTextType,

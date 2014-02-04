@@ -14,6 +14,7 @@ import akka.util.Timeout
 import models.{Kind, MIMEType}
 import models.{AsOID, AsName, OID, ThingId, UnknownOID}
 import models.{Attachment, Collection, Property, PType, PTypeBuilder, Thing, ThingState}
+import models.Thing.emptyProps
 import messages._
 
 import Kind._
@@ -30,6 +31,8 @@ import SpaceError._
 
 import MIMEType.MIMEType
 
+import querki.types.ModelTypeDefiner
+import querki.types.MOIDs.ModelForTypePropOID
 import querki.util._
 import querki.values.SpaceState
 
@@ -53,7 +56,9 @@ import PersistMessages._
  * 
  * TODO: Space really should take the Ecology as a parameter, instead of accessing it statically.
  */
-private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory) extends Actor with Requester with EcologyMember {
+private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory) 
+  extends Actor with Requester with EcologyMember with ModelTypeDefiner 
+{
   
   import context._
   
@@ -218,6 +223,18 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
               val boundColl = coll.asInstanceOf[Collection]
               val thing = Property(thingId, spaceId, modelId, boundTyp, boundColl, () => props, modTime)
               updateState(state.copy(spaceProps = state.spaceProps + (thingId -> thing)))          
+            }
+            case Kind.Type => {
+              val typOpt = for (
+                basedOnVal <- props.get(ModelForTypePropOID);
+                basedOn <- basedOnVal.firstAs(Core.LinkType)
+                  )
+                yield new ModelType(thingId, basedOn, () => props)
+              
+              typOpt match {
+                case Some(typ) => updateState(state.copy(types = state.types + (thingId -> typ)))
+                case None => throw new Exception("Tried to create a Type without a valid Model!")
+              }
             }
             case _ => throw new Exception("Got a request to create a thing of kind " + kind + ", but don't know how yet!")
           }
