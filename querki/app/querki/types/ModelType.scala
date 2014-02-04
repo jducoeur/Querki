@@ -1,10 +1,12 @@
 package querki.types
 
-import models.{OID, Property, PropertyBundle, PType, PTypeBuilder, Thing, Wikitext}
+import scala.xml.Elem
+
+import models.{DisplayPropVal, OID, Property, PropertyBundle, PType, PTypeBuilder, Thing, Wikitext}
 import models.Thing.{PropMap, emptyProps}
 
 import querki.ecology._
-import querki.values.{PropAndVal, QLContext, QValue, SpaceState}
+import querki.values.{ElemValue, PropAndVal, QLContext, QValue, RequestContext, SpaceState}
 
 import MOIDs._
 
@@ -20,10 +22,21 @@ object SimplePropertyBundle {
  * TODO: a good deal of this code is copied from Thing. Think carefully about the right factoring here. I kind of
  * want PropertyBundle to remain a pure interface, but we may want to carefully lift out a base implementation.
  */
-case class ModeledPropertyBundle(modelType:ModelTypeDefiner#ModelType, props:PropMap) extends PropertyBundle {
+case class ModeledPropertyBundle(modelType:ModelTypeDefiner#ModelType, basedOn:OID, props:PropMap)(implicit val ecology:Ecology) 
+  extends PropertyBundle with EcologyMember 
+{
+  def isThing:Boolean = false
+  def asThing:Option[Thing] = None
+  def hasModel:Boolean = true
+  def getModel(implicit state:SpaceState):Thing = {
+    getModelOpt(state).getOrElse(throw new Exception(s"Trying to fetch Model $basedOn for Model Type $modelType, but it doesn't seem to exist!"))
+  }
+  
   def getModelOpt(implicit state:SpaceState):Option[Thing] = {
     state.anything(modelType.basedOn)
   }
+  
+  def thisAsContext(implicit request:RequestContext):QLContext = QLContext(interface[querki.core.Core].ExactlyOne(ElemValue(this, modelType)), Some(request))
   
   def hasProp(propId:OID)(implicit state:SpaceState):Boolean = {
     props.contains(propId) || { 
@@ -75,7 +88,7 @@ trait ModelTypeDefiner { self:EcologyMember =>
     lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
     
     def doDeserialize(v:String)(implicit state:SpaceState) = { 
-      ModeledPropertyBundle(this, SpacePersistence.deserializeProps(v, state))
+      ModeledPropertyBundle(this, basedOn, SpacePersistence.deserializeProps(v, state))
     }
     def doSerialize(v:ModeledPropertyBundle)(implicit state:SpaceState) = { 
       SpacePersistence.serializeProps(v.props, state)
@@ -112,14 +125,18 @@ trait ModelTypeDefiner { self:EcologyMember =>
     def doDefault(implicit state:SpaceState) = { 
       state.anything(basedOn) match {
         // The defaults for this Type are exactly the values defined in the Model it is based on:
-        case Some(model) => ModeledPropertyBundle(this, model.props)
+        case Some(model) => ModeledPropertyBundle(this, basedOn, model.props)
         case None => throw new Exception(s"Model $basedOn for Model Type $id no longer exists!")
       }
     }
     
     def wrap(raw:SimplePropertyBundle):ModeledPropertyBundle = {
-      ModeledPropertyBundle(this, raw.props)
+      ModeledPropertyBundle(this, basedOn, raw.props)
     }
+//    
+//    def renderInputXml(prop:Property[_,_], state:SpaceState, currentValue:DisplayPropVal, v:ElemValue):Elem = {
+//      
+//    }
   }
   
 }

@@ -1,6 +1,6 @@
 package querki.editing
 
-import models.{Property, Thing, Wikitext}
+import models.{Property, PropertyBundle, Thing, Wikitext}
 
 import querki.core.QLText
 import querki.ecology._
@@ -70,7 +70,7 @@ trait ThingEditor { self:EditorModule =>
     /**
      * This is a place to stick weird, special filters.
      */
-    def specialFilter(thing:Thing, prop:Property[_,_])(implicit state:SpaceState):Boolean = {
+    def specialFilter(thing:PropertyBundle, prop:Property[_,_])(implicit state:SpaceState):Boolean = {
       // We display Default View iff it is defined locally on this Thing, or it is *not*
       // defined for the Model.
       // TBD: this is kind of a weird hack. Is it peculiar to Default View, or is there
@@ -92,14 +92,14 @@ trait ThingEditor { self:EditorModule =>
             case None => true
           }
         }
-      } else if (prop == NameProp) {
+      } else if (prop == NameProp && thing.isThing) {
         // We only should show Name if it is not derived:
-        !DeriveName.nameIsDerived(thing, state)
+        !DeriveName.nameIsDerived(thing.asThing.get, state)
       } else
         true
     }
     
-    private def propsToEditForThing(thing:Thing, state:SpaceState):Iterable[Property[_,_]] = {
+    private def propsToEditForThing(thing:PropertyBundle, state:SpaceState):Iterable[Property[_,_]] = {
       implicit val s = state
       val result = for (
         propsToEdit <- thing.getPropOpt(InstanceEditPropsProp);
@@ -112,7 +112,7 @@ trait ThingEditor { self:EditorModule =>
       result.getOrElse(PropListMgr.from(thing).toList.map(_._1).filterNot(SkillLevel.isAdvanced(_)).filter(specialFilter(thing, _)))
     }
     
-    private def editorLayoutForThing(thing:Thing, state:SpaceState):QLText = {
+    private def editorLayoutForThing(thing:PropertyBundle, state:SpaceState):QLText = {
       implicit val s = state
       thing.getPropOpt(instanceEditViewProp).flatMap(_.v.firstTyped(LargeTextType)) match {
         // There's a predefined Instance Edit View, so use that:
@@ -122,16 +122,16 @@ trait ThingEditor { self:EditorModule =>
           val layoutPieces = propsToEditForThing(thing, state).map(EditorPropLayout(_))
           val layoutRows = splitRows(layoutPieces)
           val propsLayout = s"""[[""{{_instanceEditor:
-              |{{_deleteInstanceButton:x}}
+              |${ if (thing.isThing) "{{_deleteInstanceButton:x}}" else "" }
               |${layoutRows.map(_.layout).mkString}
-              |}}"" -> _data(""thingId"", ""${thing.toThingId}"")]]
+              |}}"" ${ if (thing.isThing) """-> _data(""thingId"", ""${thing.asInstanceOf[Thing].toThingId}"")]]""" else "" }
               |""".stripMargin
           QLText(propsLayout)
         }
       }
     }
     
-    def instanceEditorForThing(thing:Thing, thingContext:QLContext, params:Option[Seq[QLPhrase]]):Wikitext = {
+    def instanceEditorForThing(thing:PropertyBundle, thingContext:QLContext, params:Option[Seq[QLPhrase]]):Wikitext = {
       implicit val state = thingContext.state
       val editText = editorLayoutForThing(thing, state)
       QL.process(editText, thingContext, params)

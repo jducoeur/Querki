@@ -2,7 +2,7 @@ package querki.core
 
 import collection.immutable.TreeMap
 
-import models.{DisplayPropVal, Property, Thing}
+import models.{DisplayPropVal, Property, PropertyBundle, Thing}
 
 import querki.core.MOIDs.UrPropOID
 
@@ -46,11 +46,17 @@ class PropListManagerEcot(e:Ecology) extends QuerkiEcot(e) with PropListManager 
       (TreeMap.empty[Property[_,_], DisplayPropVal] /: pairs)((m, pair) => m + pair)
     }
     
-    private def isProperty(thing:Option[Thing])(implicit state:SpaceState):Boolean = {
-      thing.map(_.isAncestor(UrPropOID)).getOrElse(false)
+    private def isProperty(bundleOpt:Option[PropertyBundle])(implicit state:SpaceState):Boolean = {
+      val resultOpt = for (
+        bundle <- bundleOpt;
+        thing <- bundle.asThing
+      )
+        yield thing.isAncestor(UrPropOID)
+        
+      resultOpt.getOrElse(false)
     }
     
-    def inheritedProps(thing:Option[Thing], model:Thing)(implicit state:SpaceState):PropList = {
+    def inheritedProps(thing:Option[PropertyBundle], model:Thing)(implicit state:SpaceState):PropList = {
       // Get the Model's PropList, and push its values into the inherited slots:
       val raw = fromRec(model, thing)   
       (TreeMap.empty[Property[_,_], DisplayPropVal] /: raw) { (result, fromModel) =>
@@ -71,7 +77,7 @@ class PropListManagerEcot(e:Ecology) extends QuerkiEcot(e) with PropListManager 
     
     // TODO: this is all pretty inefficient. We should be caching the PropLists,
     // especially for common models.
-    private def fromRec(thing:Thing, root:Option[Thing])(implicit state:SpaceState):PropList = {
+    private def fromRec(thing:PropertyBundle, root:Option[PropertyBundle])(implicit state:SpaceState):PropList = {
       val inherited =
         if (thing.hasModel)
           inheritedProps(root, thing.getModel)
@@ -95,7 +101,7 @@ class PropListManagerEcot(e:Ecology) extends QuerkiEcot(e) with PropListManager 
       }
     }
     
-    def from(thing:Thing)(implicit state:SpaceState):PropList = {
+    def from(thing:PropertyBundle)(implicit state:SpaceState):PropList = {
       fromRec(thing, Some(thing))
     }
 }

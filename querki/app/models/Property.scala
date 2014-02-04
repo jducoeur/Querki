@@ -159,9 +159,19 @@ case class Property[VT, -RT](
   }
 }
 
-class FieldIds(t:Option[Thing], p:Property[_,_]) {
+class FieldIds(bundleOpt:Option[PropertyBundle], p:Property[_,_]) {
   lazy val propId = p.id.toString
-  lazy val thingId = t.map(_.id.toString).getOrElse("")
+  
+  lazy val thingId = {
+    val resultOpt = for (
+      bundle <- bundleOpt;
+      thing <- bundle.asThing
+    )
+      yield thing.id.toString
+      
+    resultOpt.getOrElse("")
+  }
+  
   lazy val suffix = "-" + propId + "-" + thingId  
   
   lazy val inputControlId = "v" + suffix
@@ -174,7 +184,7 @@ object FieldIds {
   def apply(t:Option[Thing], p:Property[_,_]) = new FieldIds(t,p)
 }
 
-case class DisplayPropVal(on:Option[Thing], prop: Property[_,_], v: Option[QValue], inheritedVal:Option[QValue] = None, inheritedFrom:Option[Thing] = None) extends
+case class DisplayPropVal(on:Option[PropertyBundle], prop: Property[_,_], v: Option[QValue], inheritedVal:Option[QValue] = None, inheritedFrom:Option[Thing] = None) extends
   FieldIds(on, prop)
 {
   lazy val isInherited = v.isEmpty && inheritedVal.isDefined

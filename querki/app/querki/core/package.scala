@@ -2,7 +2,7 @@ package querki
 
 import collection.immutable.TreeMap
 
-import models.{Collection, DisplayPropVal, OID, Property, PType, PTypeBuilder, PTypeBuilderBase, Thing}
+import models.{Collection, DisplayPropVal, OID, Property, PropertyBundle, PType, PTypeBuilder, PTypeBuilderBase, Thing}
 
 import querki.ecology._
 
@@ -111,7 +111,7 @@ package object core {
    */
   trait PropListManager extends EcologyInterface {
     def apply(pairs:(Property[_,_], DisplayPropVal)*):PropList
-    def inheritedProps(thing:Option[Thing], model:Thing)(implicit state:SpaceState):PropList
-    def from(thing:Thing)(implicit state:SpaceState):PropList
+    def inheritedProps(thing:Option[PropertyBundle], model:Thing)(implicit state:SpaceState):PropList
+    def from(thing:PropertyBundle)(implicit state:SpaceState):PropList
   }
 }

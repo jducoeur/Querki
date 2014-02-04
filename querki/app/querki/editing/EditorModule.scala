@@ -2,7 +2,7 @@ package querki.editing
 
 import scala.xml.Elem
 
-import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState, Wikitext}
+import models.{DisplayPropVal, Kind, OID, Property, PropertyBundle, Thing, ThingState, Wikitext}
 
 import querki.core.{LinkCandidateProvider, QLText}
 
@@ -34,7 +34,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   lazy val DisplayTextProp = Basic.DisplayTextProp
   lazy val NameProp = Core.NameProp
   
-  def getInstanceEditor(thing:Thing, rc:RequestContext):Wikitext = {
+  def getInstanceEditor(thing:PropertyBundle, rc:RequestContext):Wikitext = {
     instanceEditorForThing(thing, thing.thisAsContext(rc), None)
   }
   

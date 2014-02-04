@@ -42,7 +42,8 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     val cType = prop.cType
     val pType = prop.pType
     val rendered = renderSpecialized(cType, pType, state, prop, currentValue, specialization).getOrElse(cType.renderInput(prop, state, currentValue, pType))
-    val xml3 = addEditorAttributes(rendered, currentValue.inputControlId, prop.id, currentValue.inputControlId, currentValue.on.map(_.id.toThingId))
+    val onThing = currentValue.on.flatMap(_.asThing)
+    val xml3 = addEditorAttributes(rendered, currentValue.inputControlId, prop.id, currentValue.inputControlId, onThing.map(_.id.toThingId))
     // TODO: this is *very* suspicious, but we need to find a solution. RenderTagSet is trying to pass JSON structures in the
     // value field, but for that to be JSON-legal, the attributes need to be single-quoted, and the strings in them double-quoted.
     // That isn't the way things come out here, so we're kludging, but I worry about potential security holes...
@@ -143,7 +144,8 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       val id = currentValue.inputControlId + "-" + label
       val name = currentValue.inputControlId
       // Note that, to work for interactive controls, the special AJAX properties must be on the individual buttons!
-      addEditorAttributes(inputElem, name, prop.id, id, currentValue.on.map(_.id.toThingId)) // ++ <label for={id}>{label}</label>
+      val onThing = currentValue.on.flatMap(_.asThing)
+      addEditorAttributes(inputElem, name, prop.id, id, onThing.map(_.id.toThingId)) // ++ <label for={id}>{label}</label>
     }
     
       <span class="btn-group" data-toggle="buttons-radio" name={currentValue.inputControlId + "-wrapper"}>{oneButton("Yes", "true", (isSet && v))}{oneButton("Maybe", "maybe", (!isSet))}{oneButton("No", "false", (isSet && !v))}</span>

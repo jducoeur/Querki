@@ -144,6 +144,9 @@ abstract class Thing(
     val nameOpt = canonicalName
     nameOpt map AsName getOrElse AsOID(id)
   }
+  
+  def isThing:Boolean = true
+  def asThing:Option[Thing] = Some(this)
 
   /**
    * DEPRECATED: use getModelOpt instead!
@@ -332,25 +335,12 @@ abstract class Thing(
       None
   }
   
-  def localProps(implicit state:SpaceState):Set[Property[_,_]] = {
-    val propOpts = props.keys.map(state.prop(_))
-    val validProps = propOpts.flatten
-    validProps.toSet    
-  }
-  
   def localPropsAndVals(implicit state:SpaceState):Iterable[PropAndVal[_]] = {
     for (
       entry <- props;
       prop <- state.prop(entry._1)
         )
       yield prop.pair(entry._2)
-  }
-  
-  /**
-   * Lists all of the Properties defined on this Thing and its ancestors.
-   */
-  def allProps(implicit state:SpaceState):Set[Property[_,_]] = {
-    localProps ++ getModel.allProps
   }
   
   /**
