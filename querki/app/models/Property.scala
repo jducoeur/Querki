@@ -159,8 +159,21 @@ case class Property[VT, -RT](
   }
 }
 
-class FieldIds(bundleOpt:Option[PropertyBundle], p:Property[_,_]) {
+class FieldIds(bundleOpt:Option[PropertyBundle], p:Property[_,_], val container:Option[FieldIds] = None) {
   lazy val propId = p.id.toString
+  
+  def idStack(parent:Option[FieldIds], soFar:String):String = {
+    val wrappedSoFar = {
+      if (soFar.length() > 0)
+        propId + "-" + soFar
+      else
+        propId
+    }
+    parent match {
+      case Some(p) => p.idStack(p.container, wrappedSoFar)
+      case None => wrappedSoFar + "-" + thingId
+    }
+  }
   
   lazy val thingId = {
     val resultOpt = for (
@@ -172,7 +185,7 @@ class FieldIds(bundleOpt:Option[PropertyBundle], p:Property[_,_]) {
     resultOpt.getOrElse("")
   }
   
-  lazy val suffix = "-" + propId + "-" + thingId  
+  lazy val suffix = "-" + idStack(container, "") //propId + "-" + thingId  
   
   lazy val inputControlId = "v" + suffix
   lazy val collectionControlId = "coll" + suffix
@@ -184,8 +197,9 @@ object FieldIds {
   def apply(t:Option[Thing], p:Property[_,_]) = new FieldIds(t,p)
 }
 
-case class DisplayPropVal(on:Option[PropertyBundle], prop: Property[_,_], v: Option[QValue], inheritedVal:Option[QValue] = None, inheritedFrom:Option[Thing] = None) extends
-  FieldIds(on, prop)
+case class DisplayPropVal(on:Option[PropertyBundle], prop: Property[_,_], v: Option[QValue], 
+    inheritedVal:Option[QValue] = None, inheritedFrom:Option[Thing] = None, cont:Option[DisplayPropVal] = None) 
+  extends FieldIds(on, prop, cont)
 {
   lazy val isInherited = v.isEmpty && inheritedVal.isDefined
   

@@ -35,8 +35,8 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   lazy val DisplayTextProp = Basic.DisplayTextProp
   lazy val NameProp = Core.NameProp
   
-  def getInstanceEditor(thing:PropertyBundle, rc:RequestContext):Wikitext = {
-    instanceEditorForThing(thing, thing.thisAsContext(rc), None)
+  def getInstanceEditor(thing:PropertyBundle, rc:RequestContext, currentValue:Option[DisplayPropVal] = None):Wikitext = {
+    instanceEditorForThing(thing, thing.thisAsContext(rc).copy(currentValue = currentValue), None)
   }
   
   /***********************************************
@@ -139,7 +139,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
     {
       mainContext.request.requester match {
         case Some(requester) if (canEdit(mainContext, requester, mainThing)) => {
-          val currentValue = mainThing.getDisplayPropVal(prop)(mainContext.state)
+          val currentValue = mainThing.getDisplayPropVal(prop)(mainContext.state).copy(cont = mainContext.currentValue)
 	      // TODO: conceptually, this is a bit off -- the rendering style shouldn't be hard-coded here. We
   	      // probably need to have the Context contain the desire to render in HTML, and delegate to the
 	      // HTML renderer indirectly. In other words, the Context should know the renderer to use, and pass

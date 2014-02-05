@@ -99,7 +99,7 @@ class ModelTypeTests extends QuerkiTests {
       implicit val space = new ComplexSpace
       implicit val user = space.owner
       
-      val result = pql("""[[My Complex Thing -> _edit]]""")
+      val result = pql("""[[Top Level Thing -> _edit]]""")
       println("----> " + result)
     }
   }

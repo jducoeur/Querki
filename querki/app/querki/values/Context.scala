@@ -13,7 +13,8 @@ trait DebugRenderable {
 }
 
 case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:Option[QLContext] = None, 
-                     parser:Option[QLParser] = None, depth:Int = 0, useCollection:Boolean = false, propOpt:Option[Property[_,_]] = None) 
+                     parser:Option[QLParser] = None, depth:Int = 0, useCollection:Boolean = false, propOpt:Option[Property[_,_]] = None,
+                     currentValue:Option[DisplayPropVal] = None) 
   extends DebugRenderable with EcologyMember
 {
   lazy val Core = interface[querki.core.Core]

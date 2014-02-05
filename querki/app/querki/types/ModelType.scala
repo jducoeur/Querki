@@ -139,7 +139,7 @@ trait ModelTypeDefiner { self:EcologyMember =>
     
     override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):Elem = {
       val bundle = get(v)
-      val wikitext = Editor.getInstanceEditor(bundle, rc)
+      val wikitext = Editor.getInstanceEditor(bundle, rc, Some(currentValue))
       
       // TODO: this is horrible. How can we fix this abstraction break? The underlying problem is the
       // fact that we are trying to embed generated Wikitext inside of an XML Elem, and we have no concept
