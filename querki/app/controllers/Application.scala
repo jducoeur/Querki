@@ -251,15 +251,24 @@ disallow: /
     
         // Whether we're creating or editing depends on whether thing is specified:
         val thing = rc.thing
-        val rawProps = info.fields map { propIdStr => 
-          val propId = OID(propIdStr)
+        val rawProps:List[FormFieldInfo] = info.fields map { propsIdStr =>
+          // TODO: the knowledge about the format of these IDs is scattered hither and yon around the code.
+          // Where does it belong?
+          val propIds = propsIdStr.split("-").map(OID(_))
+          val higherIds = propIds.dropRight(1)
+          val propId = propIds.last
           val propOpt = state.prop(propId)
-          propOpt match {
+          val actualFormFieldInfo = propOpt match {
             case Some(prop) => {
               HtmlRenderer.propValFromUser(prop, thing, rawForm, context)              
             }
             // TODO: this means that an unknown property was specified. We should think about the right error path here:
             case None => FormFieldInfo(UrProp, None, true, false)
+          }
+          if (higherIds.length == 0)
+            actualFormFieldInfo
+          else {
+            actualFormFieldInfo
           }
         }
         val oldModel =

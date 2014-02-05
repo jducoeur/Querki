@@ -1,7 +1,8 @@
 package querki.types.impl
 
 import models.SimplePTypeBuilder
-import models.{Kind, OID, Wikitext}
+import models.{FormFieldInfo, Kind, OID, PropertyBundle, Wikitext}
+import models.Thing.emptyProps
 
 import querki.core.MOIDs.InternalPropOID
 import querki.ecology._
@@ -40,6 +41,85 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
   override lazy val types = Seq(
     WrappedValueType
   )
+  
+  def getModelType(prop:Property[_,_]):Option[ModelTypeDefiner#ModelType] = {
+    val pt = prop.pType
+    pt match {
+      case mt:ModelTypeDefiner#ModelType => Some(mt)
+      case _ => None
+    }    
+  }
+//  
+//  def asModelProp(prop:Property[_,_]):Option[Property[ModeledPropertyBundle,_]] = {
+//    getModelType(prop).flatMap(mt => prop.confirmType(mt))
+//  }
+//  
+//  def existingBundle(bundle:PropertyBundle, containers:List[OID])(implicit state:SpaceState):Option[ModeledPropertyBundle] = {
+//    val propId = containers.head
+//    val current = for {
+//      prop <- state.prop(propId)
+//      modelProp <- asModelProp(prop)
+//      v <- modelProp.firstOpt(bundle.props)
+//    }
+//      yield v
+//    
+//    containers match {
+//      case last :: Nil => current
+//      case head :: tail if (current.isDefined) => existingBundle(current.get, tail)
+//      case _ => current
+//    }
+//  }
+//  
+//  def buildNewBundle(existingOpt:Option[ModeledPropertyBundle], pt:ModelType, innerV:FormFieldInfo):ModeledPropertyBundle = {
+//    existingOpt match {
+//      case Some(existing) if (innerV.value.isDefined) => ModeledPropertyBundle(existing.modelType, existing.modelType.basedOn, existing.props + (innerV.propId -> innerV.value.get))
+//      case Some(existing) => existing
+//      case None if (innerV.value.isDefined) => ModeledPropertyBundle(pt, pt.basedOn, emptyProps + (innerV.propId -> innerV.value.get))
+//      case None => ModeledPropertyBundle(pt, pt.basedOn, emptyProps)
+//    }
+//  }
+  
+  /**
+   * This expects that containers contains all the props *except* the innermost, real child property.
+   */
+  def rebuildBundle(existingOpt:Option[PropertyBundle], containers:List[OID], innerV:FormFieldInfo)(implicit state:SpaceState):Option[FormFieldInfo] = {
+    containers match {
+      case propId :: rest => {
+        for {
+          prop <- state.prop(propId)
+          mt <- getModelType(prop)
+          modelProp <- prop.confirmType(mt)
+          // TODO: this is a clear bad smell -- this shouldn't be firstOpt. Do we need to build indexes into the
+          // container IDs? I sadly suspect we do...
+          childBundleOpt = existingOpt.flatMap(existing => modelProp.firstOpt(existing.props))
+          rebuiltChild <- rebuildBundle(childBundleOpt, rest, innerV)
+          childVal <- rebuiltChild.value
+          childPropId = rebuiltChild.propId
+          oldProps = existingOpt.map(_.props).getOrElse(emptyProps)
+          newVal = ExactlyOne(mt(SimplePropertyBundle(oldProps + (childPropId -> childVal))))
+        }
+          yield FormFieldInfo(modelProp, Some(newVal), false, true)
+      }
+      case Nil => Some(innerV)
+    }
+  }
+//  
+//  /**
+//   * This is used to construct the new QValue for a nested Model Type Property, based on the existing Thing and
+//   * the value to be wrapped into it. Returns the top-level value that can be placed into the Thing.
+//   * 
+//   * Expects that containers is a sequence of OIDs that correspond to nested Model Properties, from outer to inner,
+//   * and innerV is the constructed value of the field that actually changed in this stack, which should be a property
+//   * of the innermost container.
+//   */
+//  def wrapModelValue(existingThing:Option[Thing], containers:Seq[OID], innerV:FormFieldInfo)(implicit state:SpaceState):FormFieldInfo = {
+//    val propId = containers.last
+//    val wrappedVal = for {
+//      prop <- state.prop(propId)
+//      modelProp <- asModelProp(prop)
+//    }
+//      yield
+//  }
 
   /***********************************************
    * PROPERTIES

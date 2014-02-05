@@ -43,8 +43,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     val cType = prop.cType
     val pType = prop.pType
     val rendered = renderSpecialized(cType, pType, rc, prop, currentValue, specialization).getOrElse(cType.renderInput(prop, rc, currentValue, pType))
-    val onThing = currentValue.on.flatMap(_.asThing)
-    val xml3 = addEditorAttributes(rendered, currentValue.inputControlId, prop.id, currentValue.inputControlId, onThing.map(_.id.toThingId))
+    val xml3 = addEditorAttributes(rendered, currentValue, prop, currentValue.inputControlId)
     // TODO: this is *very* suspicious, but we need to find a solution. RenderTagSet is trying to pass JSON structures in the
     // value field, but for that to be JSON-legal, the attributes need to be single-quoted, and the strings in them double-quoted.
     // That isn't the way things come out here, so we're kludging, but I worry about potential security holes...
@@ -52,9 +51,9 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     Html(xmlFixedQuotes)
   }
   
-  def propValFromUser(prop:Property[_,_], str:String)(implicit state:SpaceState):QValue = {
-    handleSpecialized(prop, str).getOrElse(prop.cType.fromUser(str, prop, prop.pType))
-  }
+//  def propValFromUser(prop:Property[_,_], str:String)(implicit state:SpaceState):QValue = {
+//    handleSpecialized(prop, str).getOrElse(prop.cType.fromUser(str, prop, prop.pType))
+//  }
   
   // TODO: refactor this with Collection.fromUser():
   def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_], context:QLContext):FormFieldInfo = {
@@ -97,16 +96,16 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     elem % Attribute("class", classAttr, Null)
   }
   
-  def addEditorAttributes(elem:Elem, name:String, prop:OID, id:String, thingOpt:Option[String]):Elem = {
+  def addEditorAttributes(elem:Elem, currentValue:DisplayPropVal, prop:Property[_,_], id:String):Elem = {
     // If there is already a name specified, leave it in place. This is occasionally *very* important, as
     // in renderOptionalYesNo -- that needs the usual name to be on the *buttons*, not on the wrapper:
-    val newName = elem.attribute("name").map(_.head.text).getOrElse(name)
+    val newName = elem.attribute("name").map(_.head.text).getOrElse(currentValue.inputControlId)
     val xml2 = addClasses(elem, "propEditor") %
     	Attribute("name", Text(newName),
-    	Attribute("data-prop", Text(prop.toThingId),
-    	Attribute("data-propId", Text(prop.toString),
+    	Attribute("data-prop", Text(prop.id.toThingId),
+    	Attribute("data-propId", Text(currentValue.fullPropId),
     	Attribute("id", Text(id), Null))))
-    val xml3 = thingOpt match {
+    val xml3 = currentValue.thingId match {
       case Some(thing) => xml2 % Attribute("data-thing", Text(thing), Null)
       case None => xml2
     }
@@ -147,7 +146,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       val name = currentValue.inputControlId
       // Note that, to work for interactive controls, the special AJAX properties must be on the individual buttons!
       val onThing = currentValue.on.flatMap(_.asThing)
-      addEditorAttributes(inputElem, name, prop.id, id, onThing.map(_.id.toThingId)) // ++ <label for={id}>{label}</label>
+      addEditorAttributes(inputElem, currentValue, prop, id) // ++ <label for={id}>{label}</label>
     }
     
       <span class="btn-group" data-toggle="buttons-radio" name={currentValue.inputControlId + "-wrapper"}>{oneButton("Yes", "true", (isSet && v))}{oneButton("Maybe", "maybe", (!isSet))}{oneButton("No", "false", (isSet && !v))}</span>

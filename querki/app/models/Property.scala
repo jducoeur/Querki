@@ -162,7 +162,7 @@ case class Property[VT, -RT](
 class FieldIds(bundleOpt:Option[PropertyBundle], p:Property[_,_], val container:Option[FieldIds] = None) {
   lazy val propId = p.id.toString
   
-  def idStack(parent:Option[FieldIds], soFar:String):String = {
+  def idStack(parent:Option[FieldIds], soFar:String, withThing:Boolean):String = {
     val wrappedSoFar = {
       if (soFar.length() > 0)
         propId + "-" + soFar
@@ -170,22 +170,38 @@ class FieldIds(bundleOpt:Option[PropertyBundle], p:Property[_,_], val container:
         propId
     }
     parent match {
-      case Some(p) => p.idStack(p.container, wrappedSoFar)
-      case None => wrappedSoFar + "-" + thingId
+      case Some(p) => p.idStack(p.container, wrappedSoFar, withThing)
+      case None => wrappedSoFar + { if (withThing) "-" + plainThingId else "" }
     }
   }
   
-  lazy val thingId = {
+  lazy val fullPropId = idStack(container, "", false)
+  
+  /**
+   * Note that this produces an undotted version of the name, whereas thingId produces the
+   * more normal format.
+   */
+  private lazy val plainThingId:String = {
     val resultOpt = for (
       bundle <- bundleOpt;
       thing <- bundle.asThing
     )
       yield thing.id.toString
       
-    resultOpt.getOrElse("")
+    resultOpt.orElse(container.map(_.plainThingId)).getOrElse("")
   }
   
-  lazy val suffix = "-" + idStack(container, "") //propId + "-" + thingId  
+  lazy val thingId:Option[String] = {
+    val resultOpt:Option[String] = for (
+      bundle <- bundleOpt;
+      thing <- bundle.asThing
+    )
+      yield thing.id.toThingId
+      
+    resultOpt.orElse(container.flatMap { cont => cont.thingId }) 
+  }
+  
+  lazy val suffix = "-" + idStack(container, "", true)
   
   lazy val inputControlId = "v" + suffix
   lazy val collectionControlId = "coll" + suffix
