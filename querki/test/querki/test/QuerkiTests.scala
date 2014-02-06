@@ -55,7 +55,9 @@ class QuerkiTests
    * as the context, so you will usually need to specify explicit context at the beginning of the QL expression.
    */
   def pql[S <: CommonSpace](text:String)(implicit space:S, requester:User = BasicTestUser):String = {
-    val state = space.state
+    pqls(text, space.state)
+  }
+  def pqls[S <: CommonSpace](text:String, state:SpaceState)(implicit space:S, requester:User = BasicTestUser):String = {
     val rc = SimpleTestRequestContext(space.owner.mainIdentity.id, state, state, ecology)
     val context = state.thisAsContext(rc)
     processQText(context, text)

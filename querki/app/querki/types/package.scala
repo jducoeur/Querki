@@ -1,6 +1,6 @@
 package querki
 
-import models.{DisplayPropVal, OID, Property, Thing}
+import models.{DisplayPropVal, FormFieldInfo, OID, Property, PropertyBundle, Thing}
 
 import querki.core.PropList
 import querki.ecology._
@@ -48,6 +48,8 @@ package object types {
     def MinTextLengthProp:Property[Int, Int]
     def MinIntValueProp:Property[Int, Int]
     def MaxIntValueProp:Property[Int, Int]
+    
+    def rebuildBundle(existingOpt:Option[PropertyBundle], containers:List[OID], innerV:FormFieldInfo)(implicit state:SpaceState):Option[FormFieldInfo]
   }
   
   object DeriveNameMOIDs extends EcotIds(12) {

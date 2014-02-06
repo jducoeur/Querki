@@ -1,5 +1,6 @@
 package querki.types
 
+import models.{FormFieldInfo, ThingState}
 import models.Thing.emptyProps
 
 import querki.ecology._
@@ -119,6 +120,34 @@ class ModelTypeTests extends QuerkiTests {
       
       pql("""[[My Tree -> Left -> Right -> Node Id]]""") should
         equal("3")
+    }
+  }
+  
+  "rebuildBundle" should {
+    "work for a reasonably nested value" in {
+      implicit val space = new ComplexSpace
+      val state = space.state
+      val Types = interface[querki.types.Types]
+      
+      val detailChange = FormFieldInfo(space.numberProp, Some(space.numberProp(99)._2), false, true)
+      
+      println("Original: " + pql("""[[Top Level Thing -> Meta Property]]"""))
+      println("MetaProp: " + space.metaProp.id + "; ComplexProp: " + space.propOfModelType.id)
+      println("Actual Change " + detailChange)
+      
+      val resultOpt = Types.rebuildBundle(
+          Some(space.metaThing), 
+          space.metaProp.id :: space.propOfModelType.id :: Nil, 
+          detailChange)(state)
+      println("Result: " + resultOpt)
+      val result = resultOpt.get
+      
+      val originalThing:ThingState = space.metaThing
+      val newProps = space.metaThing.props + (result.propId -> result.value.get)
+      val rebuiltThing = originalThing.copy(pf = () => newProps)
+      val newState = state.copy(things = state.things + (rebuiltThing.id -> rebuiltThing))
+      
+      println("Rebuilt: " + pqls("""[[Top Level Thing -> Meta Property]]""", newState))
     }
   }
 }
