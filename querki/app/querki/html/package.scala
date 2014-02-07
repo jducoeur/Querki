@@ -9,7 +9,7 @@ import play.api.data.Form
 
 import querki.ecology._
 
-import models.{DisplayPropVal, FormFieldInfo, Property, Thing, Wikitext}
+import models.{DisplayPropVal, FieldIds, FormFieldInfo, Property, Thing, Wikitext}
 
 import querki.ui.UIRenderer
 import querki.values.{QLContext, QValue, RequestContext, SpaceState}
@@ -27,7 +27,7 @@ package object html {
    */
   trait HtmlRenderer extends UIRenderer with EcologyInterface {
     def addClasses(elem:Elem, addedClasses:String):Elem
-    def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_], context:QLContext):FormFieldInfo
+    def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_], context:QLContext, containers:Option[FieldIds]):FormFieldInfo
     def renderPropertyInput(rc:RequestContext, prop:Property[_,_], 
         currentValue:DisplayPropVal, 
         specialization:Set[RenderSpecialization.RenderSpecialization] = Set(RenderSpecialization.Unspecialized)):Html

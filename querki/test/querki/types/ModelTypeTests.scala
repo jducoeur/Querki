@@ -124,7 +124,7 @@ class ModelTypeTests extends QuerkiTests {
   }
   
   "rebuildBundle" should {
-    "work for a reasonably nested value" in {
+    "work for a reasonably nested value with an index" in {
       implicit val space = new ComplexSpace
       val state = space.state
       val Types = interface[querki.types.Types]

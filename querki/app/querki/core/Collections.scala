@@ -32,9 +32,9 @@ trait CollectionBase { self:CoreEcot =>
     // TODO: this really doesn't belong here. We need to tease the HTTP/HTML specific
     // stuff out from the core concepts.
     // TODO: this will need refactoring, to get more complex on a per-Collection basis
-    def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo = {
+    def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo = {
       implicit val s = state
-      val fieldIds = FieldIds(on, prop)
+      val fieldIds = new FieldIds(on, prop, containers)
       val empty = form(fieldIds.emptyControlId).value map (_.toBoolean) getOrElse false
       if (empty) {
         FormFieldInfo(prop, None, true, true)
@@ -169,7 +169,7 @@ trait CollectionBase { self:CoreEcot =>
     
     import play.api.data.Form
     // TODO: this will want to be refactored with the default version in Collection.scala
-    override def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo = {
+    override def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo = {
       implicit val s = state
       val fieldIds = FieldIds(on, prop)
       val empty = form(fieldIds.emptyControlId).value map (_.toBoolean) getOrElse false
@@ -221,7 +221,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
 	  throw new Error("Trying to makePropValue root collection!")    
     def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem =
 	  throw new Error("Trying to render input on root collection!")
-	def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo =
+	def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo =
 	  throw new Error("Trying to fromUser on root collection!")
   }
   
@@ -358,7 +358,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
       <i>Defined</i>
     }
 
-    def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, state:SpaceState):FormFieldInfo =
+    def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo =
 	  throw new Error("Trying to fromUser on Unit!")
   }
 

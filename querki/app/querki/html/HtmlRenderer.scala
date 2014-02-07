@@ -56,7 +56,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
 //  }
   
   // TODO: refactor this with Collection.fromUser():
-  def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_], context:QLContext):FormFieldInfo = {
+  def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_], context:QLContext, containers:Option[FieldIds]):FormFieldInfo = {
     implicit val s = context.state
     // TODO: this Ecot has a lot of incestuous tests of NameType. I'm leaving these ugly for now. Find a better solution,
     // like lifting out a more public trait to test against.
@@ -69,7 +69,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
         specialized <- handleSpecializedForm(prop, formV)
           )
         yield specialized
-      spec.getOrElse(prop.cType.fromUser(on, form, prop, prop.pType, context.state))
+      spec.getOrElse(prop.cType.fromUser(on, form, prop, prop.pType, containers, context.state))
     }
   }
   
@@ -100,7 +100,16 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     // If there is already a name specified, leave it in place. This is occasionally *very* important, as
     // in renderOptionalYesNo -- that needs the usual name to be on the *buttons*, not on the wrapper:
     val newName = elem.attribute("name").map(_.head.text).getOrElse(currentValue.inputControlId)
-    val xml2 = addClasses(elem, "propEditor") %
+    val asEditor = {
+      // HACK: if this is an intermediate Model Property, we must *not* add propEditor, or we wind
+      // up with that conflicting with the propEditor of the actual fields underneath it. There might
+      // be a more general concept fighting to break out here, but I'm not sure.
+      if (prop.pType.isInstanceOf[querki.types.ModelTypeDefiner#ModelType])
+        elem
+      else
+        addClasses(elem, "propEditor")
+    }
+    val xml2 = asEditor %
     	Attribute("name", Text(newName),
     	Attribute("data-prop", Text(prop.id.toThingId),
     	Attribute("data-propId", Text(currentValue.fullPropId),

@@ -62,6 +62,7 @@ class Application extends ApplicationBase {
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
   lazy val Links = interface[querki.links.Links]
   lazy val QL = interface[querki.ql.QL]
+  lazy val Types = interface[querki.types.Types]
   
   lazy val UrProp = Core.UrProp  
   lazy val AppliesToKindProp = Core.AppliesToKindProp
@@ -257,11 +258,15 @@ disallow: /
           // TODO: if IndexedOID.parse fails, we're losing that information. Do something about this!
           val propIds = propsIdStr.split("-").map(IndexedOID.parse(_)).flatten
           val higherIds = propIds.dropRight(1)
+          val higherFieldIds = (Option.empty[FieldIds] /: higherIds) { (current, higherId) =>
+            val prop = state.prop(higherId.id).get
+            Some(new FieldIds(thing, prop, current))
+          }
           val propId = propIds.last.id
           val propOpt = state.prop(propId)
           val actualFormFieldInfo = propOpt match {
             case Some(prop) => {
-              HtmlRenderer.propValFromUser(prop, thing, rawForm, context)              
+              HtmlRenderer.propValFromUser(prop, thing, rawForm, context, higherFieldIds)              
             }
             // TODO: this means that an unknown property was specified. We should think about the right error path here:
             case None => FormFieldInfo(UrProp, None, true, false)
@@ -269,7 +274,8 @@ disallow: /
           if (higherIds.length == 0)
             actualFormFieldInfo
           else {
-            actualFormFieldInfo
+            Types.rebuildBundle(thing, higherIds.toList, actualFormFieldInfo).
+              getOrElse(FormFieldInfo(UrProp, None, true, false, None, Some(new PublicException("Didn't get bundle"))))
           }
         }
         val oldModel =
