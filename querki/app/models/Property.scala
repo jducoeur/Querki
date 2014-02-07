@@ -159,15 +159,16 @@ case class Property[VT, -RT](
   }
 }
 
-class FieldIds(bundleOpt:Option[PropertyBundle], p:Property[_,_], val container:Option[FieldIds] = None) {
+class FieldIds(bundleOpt:Option[PropertyBundle], p:Property[_,_], val container:Option[FieldIds] = None, val index:Option[Int] = None) {
   lazy val propId = p.id.toString
+  lazy val propIdWithIndex = propId  + index.map("[" + _.toString + "]").getOrElse("")
   
   def idStack(parent:Option[FieldIds], soFar:String, withThing:Boolean):String = {
     val wrappedSoFar = {
       if (soFar.length() > 0)
-        propId + "-" + soFar
+        propIdWithIndex + "-" + soFar
       else
-        propId
+        propIdWithIndex
     }
     parent match {
       case Some(p) => p.idStack(p.container, wrappedSoFar, withThing)
@@ -214,8 +215,8 @@ object FieldIds {
 }
 
 case class DisplayPropVal(on:Option[PropertyBundle], prop: Property[_,_], v: Option[QValue], 
-    inheritedVal:Option[QValue] = None, inheritedFrom:Option[Thing] = None, cont:Option[DisplayPropVal] = None) 
-  extends FieldIds(on, prop, cont)
+    inheritedVal:Option[QValue] = None, inheritedFrom:Option[Thing] = None, cont:Option[DisplayPropVal] = None, i:Option[Int] = None) 
+  extends FieldIds(on, prop, cont, i)
 {
   lazy val isInherited = v.isEmpty && inheritedVal.isDefined
   

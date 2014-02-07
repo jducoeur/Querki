@@ -75,6 +75,8 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
           dummy1 = println("oldProps = " + oldProps)
           newProps = oldProps + (childPropId -> childVal)
           dummy2 = println("newProps = " + newProps)
+          // TODO: the other half of the problem above: we've losing the other values that might have been in the
+          // original collection.
           newVal = ExactlyOne(mt(SimplePropertyBundle(newProps)))
         }
           yield FormFieldInfo(modelProp, Some(newVal), false, true)

@@ -152,7 +152,8 @@ trait CollectionBase { self:CoreEcot =>
             val cv = v.cv
             cv.zipWithIndex.map { pair =>
               val (elemV, i) = pair
-              val simplyRendered = elemT.renderInput(prop, rc, currentValue, elemV)
+              val elemCurrentValue = currentValue.copy(i = Some(i))
+              val simplyRendered = elemT.renderInput(prop, rc, elemCurrentValue, elemV)
               val itemRendered = HtmlRenderer.addClasses(simplyRendered, "list-input-element") %
               	Attribute("id", Text(currentValue.collectionControlId + "-item[" + i + "]"), 
               	Attribute("name", Text(currentValue.collectionControlId + "-item[" + i + "]"), Null))
