@@ -111,3 +111,22 @@ object ThingId {
   
   implicit def thingId2Str(id:ThingId) = id.toString()
 }
+
+case class IndexedOID(id:OID, i:Option[Int] = None)
+
+object IndexedOID {
+  val regex = """(\w+)(\[(\d+)\])?""".r
+  def parse(str:String):Option[IndexedOID] = {
+    str match {
+      case regex(id, _, i) => {
+        if (i == null)
+          Some(IndexedOID(OID(id), None))
+        else
+          Some(IndexedOID(OID(id), Some(java.lang.Integer.parseInt(i))))
+      }
+      case _ => None
+    }
+  }
+  
+  implicit def OID2Indexed(id:OID):IndexedOID = IndexedOID(id)
+}

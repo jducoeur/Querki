@@ -1,6 +1,6 @@
 package querki.types
 
-import models.{FormFieldInfo, ThingState}
+import models.{FormFieldInfo, IndexedOID, ThingState}
 import models.Thing.emptyProps
 
 import querki.ecology._
@@ -128,26 +128,30 @@ class ModelTypeTests extends QuerkiTests {
       implicit val space = new ComplexSpace
       val state = space.state
       val Types = interface[querki.types.Types]
-      
+
+      // In other words, we have received a new value for numberProp...
       val detailChange = FormFieldInfo(space.numberProp, Some(space.numberProp(99)._2), false, true)
       
-      println("Original: " + pql("""[[Top Level Thing -> Meta Property]]"""))
-      println("MetaProp: " + space.metaProp.id + "; ComplexProp: " + space.propOfModelType.id)
-      println("Actual Change " + detailChange)
+      val originalResult = pql("""[[Top Level Thing -> Meta Property]]""")
       
+      // ... which is nested inside of metaProp[1]-propOfModelType. The original of this is 200.
       val resultOpt = Types.rebuildBundle(
           Some(space.metaThing), 
-          space.metaProp.id :: space.propOfModelType.id :: Nil, 
+          IndexedOID(space.metaProp.id, Some(1)) :: space.propOfModelType.iid :: Nil, 
           detailChange)(state)
-      println("Result: " + resultOpt)
       val result = resultOpt.get
       
+      // Given the new value, rebuilt the SpaceState. (In theory, we should be doing this through
+      // Space.scala, but we're not ready for that yet.)
       val originalThing:ThingState = space.metaThing
       val newProps = space.metaThing.props + (result.propId -> result.value.get)
       val rebuiltThing = originalThing.copy(pf = () => newProps)
       val newState = state.copy(things = state.things + (rebuiltThing.id -> rebuiltThing))
       
-      println("Rebuilt: " + pqls("""[[Top Level Thing -> Meta Property]]""", newState))
+      val rebuiltResult = pqls("""[[Top Level Thing -> Meta Property]]""", newState)
+      
+      // In the end, nothing should look different except for the one value:
+      assert(rebuiltResult == originalResult.replace("200", "99"))
     }
   }
 }

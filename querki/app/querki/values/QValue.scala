@@ -47,6 +47,21 @@ trait QValue {
   }
   def wikify(context:QLContext, displayOpt:Option[Wikitext] = None):Wikitext = cType.doWikify(context)(cv, pType, displayOpt)
   
+  /**
+   * Fetch the nth value in here, which is expected to be the specified type.
+   */
+  def nthAs[VT](index:Int, elemT:PType[VT]):Option[VT] = {
+    val nth = cType.get(this, index)
+    nth.flatMap(_.getOpt(elemT))
+  }
+  
+  /**
+   * Returns a new QValue with the nth element replaced.
+   */
+  def replaceNth(index:Int, elem:ElemValue):QValue = {
+    cType.makePropValue(cType.replace(cv, elem, index), pType)
+  }
+  
   def isEmpty = cType.isEmpty(this)
   def size = cv.size
   

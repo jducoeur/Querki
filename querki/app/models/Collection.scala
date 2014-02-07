@@ -97,6 +97,26 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecolog
   final def first(v:QValue):ElemValue = v.cv.head
   final def firstOpt(v:QValue):Option[ElemValue] = if (isEmpty(v)) None else Some(v.cv.head)
   
+  /**
+   * Returns the nth value in this Collection.
+   */
+  final def get(v:QValue, index:Int):Option[ElemValue] = {
+    try {
+      Some(v.cv.toSeq(index))
+    } catch {
+      case ex:IndexOutOfBoundsException => None
+    }
+  }
+  
+  /**
+   * Given a collection, a value and an index, this returns a copy of the collection with the value
+   * spliced at that index.
+   */
+  final def replace(v:implType, elem:ElemValue, index:Int):implType = {
+    // Hmph. This asInstanceOf[] seems like it should be entirely unnecessary. Why isn't it working right?
+    v.toSeq.patch(index, Seq(elem), 1).asInstanceOf[implType]
+  }
+  
   final def isEmpty(v:QValue):Boolean = v.cv.isEmpty
   
   implicit def toIterable(v:implType):Iterable[ElemValue] = v.asInstanceOf[Iterable[ElemValue]]

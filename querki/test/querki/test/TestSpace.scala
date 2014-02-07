@@ -2,7 +2,7 @@ package querki.test
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import models.{OID, OIDMap}
+import models.{IndexedOID, OID, OIDMap}
 import models.{Collection, Property, PType, PTypeBuilder, Thing, ThingState}
 import models.Thing.PropFetcher
 
@@ -73,6 +73,8 @@ trait TestSpace extends EcologyMember {
   class TestPropertyBase[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
     extends Property[VT, RT](pid, spaceId, UrPropOID, t, c, p, querki.time.epoch)
   {
+    lazy val iid:IndexedOID = IndexedOID(id)
+    
     registerProp(this)
   }
   class TestProperty[VT, -RT](t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, name:String, pairs:(OID,QValue)*)

@@ -1,7 +1,7 @@
 package querki.types.impl
 
 import models.SimplePTypeBuilder
-import models.{FormFieldInfo, Kind, OID, PropertyBundle, Wikitext}
+import models.{FormFieldInfo, IndexedOID, Kind, OID, PropertyBundle, Wikitext}
 import models.Thing.emptyProps
 
 import querki.core.MOIDs.InternalPropOID
@@ -42,9 +42,11 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
     WrappedValueType
   )
   
+  /***********************************************
+   * API
+   ***********************************************/  
   
-  
-  def getModelType(prop:Property[_,_]):Option[ModelTypeDefiner#ModelType] = {
+  private def getModelType(prop:Property[_,_]):Option[ModelTypeDefiner#ModelType] = {
     val pt = prop.pType
     pt match {
       case mt:ModelTypeDefiner#ModelType => Some(mt)
@@ -53,38 +55,59 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
   }
   
   /**
+   * If there is an existing Thing we are working, and it has the specified Model Property, fetch its value.
+   */
+  private def getChildBundle(existingOpt:Option[PropertyBundle], mt:ModelTypeDefiner#ModelType, modelProp:Property[ModeledPropertyBundle,_], indexOpt:Option[Int])(implicit state:SpaceState):Option[PropertyBundle] = {
+    for {
+      existing <- existingOpt
+      childPV <- existing.getPropOpt(modelProp)
+      childQV = childPV.v
+      childBundle <- indexOpt.flatMap(index => childQV.nthAs(index, mt)).orElse(childQV.firstAs(mt))
+    }
+      yield childBundle
+  }
+  
+  /**
+   * If there is an existing value, splice the new childBundle into it; otherwise, just create the QValue.
+   */
+  private def replaceChildBundle(existingOpt:Option[PropertyBundle], childBundle:ElemValue, modelProp:Property[ModeledPropertyBundle,_], indexOpt:Option[Int])(implicit state:SpaceState):QValue = {
+    val result = for {
+      existing <- existingOpt
+      childPV <- existing.getPropOpt(modelProp)
+      index <- indexOpt
+      childQV = childPV.v
+      newQV = childQV.replaceNth(index, childBundle)
+    }
+      yield newQV
+      
+    result.getOrElse(ExactlyOne(childBundle))
+  }
+  
+  /**
    * This expects that containers contains all the props *except* the innermost, real child property.
    */
-  def rebuildBundle(existingOpt:Option[PropertyBundle], containers:List[OID], innerV:FormFieldInfo)(implicit state:SpaceState):Option[FormFieldInfo] = {
-    println("======")
-    println("Existing: " + existingOpt)
-    println("Containers: " + containers)
+  def rebuildBundle(existingOpt:Option[PropertyBundle], containers:List[IndexedOID], innerV:FormFieldInfo)(implicit state:SpaceState):Option[FormFieldInfo] = {
     val ret = containers match {
-      case propId :: rest => {
+      case propIId :: rest => {
+        val propId = propIId.id
+        val index = propIId.i
         for {
           prop <- state.prop(propId)
           mt <- getModelType(prop)
           modelProp <- prop.confirmType(mt)
-          // TODO: this is a clear bad smell -- this shouldn't be firstOpt. Do we need to build indexes into the
-          // container IDs? I sadly suspect we do...
-          childBundleOpt = existingOpt.flatMap(existing => modelProp.firstOpt(existing.props))
+          // If we have an existing bundle value with the appropriate index, we're overriding that:
+          childBundleOpt = getChildBundle(existingOpt, mt, modelProp, index)
           rebuiltChild <- rebuildBundle(childBundleOpt, rest, innerV)
           childVal <- rebuiltChild.value
           childPropId = rebuiltChild.propId
           oldProps = childBundleOpt.map(_.props).getOrElse(emptyProps)
-          dummy1 = println("oldProps = " + oldProps)
           newProps = oldProps + (childPropId -> childVal)
-          dummy2 = println("newProps = " + newProps)
-          // TODO: the other half of the problem above: we've losing the other values that might have been in the
-          // original collection.
-          newVal = ExactlyOne(mt(SimplePropertyBundle(newProps)))
+          newVal = replaceChildBundle(existingOpt, mt(SimplePropertyBundle(newProps)), modelProp, index)
         }
           yield FormFieldInfo(modelProp, Some(newVal), false, true)
       }
       case Nil => Some(innerV)
     }
-    println("Returning: " + ret)
-    println("++++++")
     ret
   }
 

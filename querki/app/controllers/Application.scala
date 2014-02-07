@@ -254,9 +254,10 @@ disallow: /
         val rawProps:List[FormFieldInfo] = info.fields map { propsIdStr =>
           // TODO: the knowledge about the format of these IDs is scattered hither and yon around the code.
           // Where does it belong?
-          val propIds = propsIdStr.split("-").map(OID(_))
+          // TODO: if IndexedOID.parse fails, we're losing that information. Do something about this!
+          val propIds = propsIdStr.split("-").map(IndexedOID.parse(_)).flatten
           val higherIds = propIds.dropRight(1)
-          val propId = propIds.last
+          val propId = propIds.last.id
           val propOpt = state.prop(propId)
           val actualFormFieldInfo = propOpt match {
             case Some(prop) => {
