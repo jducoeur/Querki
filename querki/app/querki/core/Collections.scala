@@ -171,7 +171,7 @@ trait CollectionBase { self:CoreEcot =>
     // TODO: this will want to be refactored with the default version in Collection.scala
     override def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo = {
       implicit val s = state
-      val fieldIds = FieldIds(on, prop)
+      val fieldIds = new FieldIds(on, prop, containers)
       val empty = form(fieldIds.emptyControlId).value map (_.toBoolean) getOrElse false
       if (empty) {
         FormFieldInfo(prop, None, true, true)
