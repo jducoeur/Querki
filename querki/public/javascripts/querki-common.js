@@ -348,10 +348,35 @@ function finalSetup(ownerId, spaceId, root) {
     );
   }
   root.on('click', "._deleteInstanceButton", deleteInstance)
+  
+  function renumberModelList(target) {
+    var prop = target.data("propid");
+    var thingId = target.data("thing").substring(1);
+    var targetRegex = new RegExp(prop + "\\[" + "\\d" + "\\]", "g");
+    var i = 0;
+    target.find(".list-input-element").each(function () {
+      var element = $(this);
+      var replacement = prop + "[" + i + "]";
+      element.find(".propEditor").each(function () {
+        var editor = $(this);
+        var propid = editor.data("propid");
+        if (typeof(propid) != "undefined") {
+          propid = propid.replace(targetRegex, replacement);
+          $(this).data("propid", propid)
+        }
+        var name = $(this).attr("name");
+        if (typeof(name) != "undefined") {
+          name = name.replace(targetRegex, replacement);
+          $(this).attr("name", name)
+        }        
+      });
+      i = i + 1;
+    });
+  }
 
   function doUpdateValue(target, successCb, failureCb) {
     if (target.hasClass("modelValue")) {
-      // Don't do anything at the moment -- we only serialize the parts of modelValues.
+      renumberModelList(target);
     } else {
       var prop = target.data("propid");
       var thingId = target.data("thing");
