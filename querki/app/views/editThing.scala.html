@@ -410,7 +410,9 @@
                   "&field[0]=@{querki.types.MOIDs.ModelForTypePropOID.toString}&@{FieldIds(None, Types.ModelForTypeProp).inputControlId}=" + newTypeModel() +
                   "&field[1]=@{querki.basic.MOIDs.DisplayNameOID.toString}&@{FieldIds(None, Basic.DisplayNameProp).inputControlId}=" + newTypeModelName() + " Type",
 	        success: function (result) {
-	          actuallyCreateProperty(result);
+	          // HACK: we have to cut off the dot here, because createThing expects a raw OID. This is mostly
+	          // a sign that exposing both OID and ThingId to the UI was a Very Bad Idea, and needs to be fixed.
+	          actuallyCreateProperty(result.substring(1));
 	        },
 	        error: function (err) {
 	          alert("Error: " + err.responseText);
@@ -563,7 +565,7 @@
             </select>
             <select id="_newTypeModel" style="display:none;">
                 <option value="">Type based on which Model?...</option>
-                @for(aModel <- space.models.toSeq.sortBy(_.displayName)) {
+                @for(aModel <- space.models.toSeq.sortBy(_.displayName).filter(_.hasProp(Editor.InstanceProps)(space))) {
                   <option value="@aModel.id.toString">@aModel.displayName</option>
                 }
             </select>

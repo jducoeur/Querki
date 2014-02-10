@@ -141,6 +141,22 @@ function finishStatus(msg) {
       });
     }
     
+    function replaceIndexes(newField, curSize) {
+      var replacement = "[" + curSize + "]";
+      newField.find("input").each(function () {
+        var propid = $(this).data("propid");
+        if (typeof(propid) != "undefined") {
+          propid = propid.replace("[-1]", replacement);
+          $(this).data("propid", propid)
+        }
+        var name = $(this).attr("name");
+        if (typeof(name) != "undefined") {
+          name = name.replace("[-1]", replacement);
+          $(this).attr("name", name)
+        }
+      });
+    }
+    
     function handleAddListItem(evt, cb) {
       var target = $(evt.currentTarget);
       var templateField = target.parent().find(".inputTemplate").first();
@@ -151,6 +167,7 @@ function finishStatus(msg) {
       newField.attr("name", templateField.data("basename") + "[" + curSize + "]");
       newField.removeClass("inputTemplate");
       newField.show();
+      replaceIndexes(newField, curSize);
       var newLi = $("<li><span class=\"icon-move\"></span></li>");
       newLi.append(newField);
       var delButton = $("<button class=\"delete-item-button btn-mini\">&nbsp;</button>");
@@ -333,6 +350,9 @@ function finalSetup(ownerId, spaceId, root) {
   root.on('click', "._deleteInstanceButton", deleteInstance)
 
   function doUpdateValue(target, successCb, failureCb) {
+    if (target.hasClass("modelValue")) {
+      // Don't do anything at the moment -- we only serialize the parts of modelValues.
+    } else {
       var prop = target.data("propid");
       var thingId = target.data("thing");
       var serialized;
@@ -358,6 +378,7 @@ function finalSetup(ownerId, spaceId, root) {
         }
       });
       showStatus("Saving...");  
+    }
   }
   
   function updateIfLive(target) {

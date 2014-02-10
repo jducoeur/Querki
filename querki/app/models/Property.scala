@@ -209,6 +209,8 @@ class FieldIds(bundleOpt:Option[PropertyBundle], p:Property[_,_], val container:
   // This is a hidden input field, which is a flag to tell the receiving code whether the
   // field is "empty" -- inherited or deleted, but with no local value:
   lazy val emptyControlId = "empty" + suffix
+  
+  override def toString = idStack(container, "", true)
 }
 object FieldIds {
   def apply(t:Option[Thing], p:Property[_,_]) = new FieldIds(t,p)

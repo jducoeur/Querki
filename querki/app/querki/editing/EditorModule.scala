@@ -64,12 +64,13 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
         ))
 	
 	// TODO: this should really only allow the properties that are defined on this Model:
-	lazy val InstanceEditPropsProp = new SystemProperty(InstanceEditPropsOID, LinkType, QList,
+    // TODO: this has broadened in scope, and really doesn't belong in Editor any more:
+	lazy val InstanceProps = new SystemProperty(InstanceEditPropsOID, LinkType, QList,
 	    toProps(
-	      setName("Properties to edit in Instances"),
+	      setName("Instance Properties"),
 	      Links.LinkAllowAppsProp(true),
 	      Links.LinkKindProp(Kind.Property),
-	      Summary("Which Properties should be edited in Instances of this Model?"),
+	      Summary("Which Properties are relevant for Instances of this Model?"),
 	      Details("""It is very common to define a bunch of Properties on a Model that you really don't
 	          |ever intend to change on the Instances. (In particular, you very often will define the Display
 	          |Text on the Model, not on the Instances.) This results in your Instance Editor being cluttered
@@ -79,6 +80,8 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	          |Properties that you can define however you like. When you create or edit an Instance of this
 	          |Model, it will display exactly those Properties, in that order, which usually makes it
 	          |easier for you to write your Instances.
+	          |
+	          |ADVANCED: if you want to use a Model as a Type, you must set its Instance Properties.
 	          |
 	          |BUG NOTE: this doesn't immediately register when you've added a Property to the Model, so it
 	          |doesn't list the newly-added Property. For now, after you add a Property, save the Model and then
@@ -394,7 +397,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   override lazy val props = Seq(
     PlaceholderTextProp,
     PromptProp,
-    InstanceEditPropsProp,
+    InstanceProps,
     instanceEditViewProp,
     editMethod,
     editOrElseMethod,

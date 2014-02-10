@@ -6,6 +6,7 @@ import models.{DisplayPropVal, OID, Property, PropertyBundle, PType, PTypeBuilde
 import models.Thing.{PropMap, emptyProps}
 
 import querki.ecology._
+import querki.util.QLog
 import querki.values.{ElemValue, PropAndVal, QLContext, QValue, RequestContext, SpaceState}
 
 import MOIDs._
@@ -94,7 +95,25 @@ trait ModelTypeDefiner { self:EcologyMember =>
       ModeledPropertyBundle(this, basedOn, SpacePersistence.deserializeProps(v, state))
     }
     def doSerialize(v:ModeledPropertyBundle)(implicit state:SpaceState) = { 
-      SpacePersistence.serializeProps(v.props, state)
+      SpacePersistence.serializeProps(relevantProps(v), state)
+    }
+    
+    private def relevantProps(v:ModeledPropertyBundle)(implicit state:SpaceState):Map[OID, QValue] = {
+      relevantProps(v.getModel, v)
+    }
+    
+    private def relevantProps(model:Thing, v:PropertyBundle)(implicit state:SpaceState):Map[OID, QValue] = {    
+      def instancePropsOpt = model.getPropOpt(Editor.InstanceProps)
+      instancePropsOpt match {
+        case Some(instancePropsPV) => {
+          val instanceProps = instancePropsPV.v.rawList(Core.LinkType)
+          v.props.filter { pair => 
+            val (propId, _) = pair
+            instanceProps.contains(propId)
+          }
+        }
+        case None => v.props
+      }      
     }
     
     /**
@@ -108,7 +127,7 @@ trait ModelTypeDefiner { self:EcologyMember =>
     def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None) = {
       implicit val state = context.state
       // Introduce a bit of indirection, so we can sort the properties by display name:
-      val propInfo = v.props.map { pair =>
+      val propInfo = relevantProps(v).map { pair =>
         val (propId, propVal) = pair
         (propId, state.anything(propId), propVal)
       }
@@ -128,7 +147,7 @@ trait ModelTypeDefiner { self:EcologyMember =>
     def doDefault(implicit state:SpaceState) = { 
       state.anything(basedOn) match {
         // The defaults for this Type are exactly the values defined in the Model it is based on:
-        case Some(model) => ModeledPropertyBundle(this, basedOn, model.props)
+        case Some(model) => ModeledPropertyBundle(this, basedOn, relevantProps(model, model))
         case None => throw new Exception(s"Model $basedOn for Model Type $id no longer exists!")
       }
     }

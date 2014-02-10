@@ -29,17 +29,8 @@ object QLog {
   }
   
   def spew(msg:String) = info("----> " + msg)
-
-  def spewThing(t:Thing) = {
-    def displayName = {
-      try {
-        t.displayName
-      } catch {
-        case e:Throwable => "Error fetching displayName: " + e
-      }
-    }
-    
-    def renderProps = {
+  
+  def renderBundle(t:PropertyBundle):String = {
       try {
         val props = t.props
         val renderedProps = props.map { pair =>
@@ -51,8 +42,19 @@ object QLog {
         renderedProps.mkString("\n")
       } catch {
         case e:Throwable => "Error fetching properties: " + e
+      }    
+  }
+
+  def spewThing(t:Thing) = {
+    def displayName = {
+      try {
+        t.displayName
+      } catch {
+        case e:Throwable => "Error fetching displayName: " + e
       }
     }
+    
+    def renderProps = renderBundle(t)
     
     val rendered = s"""Thing #${t.id} ($displayName)
   In Space #${t.spaceId}

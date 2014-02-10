@@ -102,7 +102,7 @@ trait ThingEditor { self:EditorModule =>
     private def propsToEditForThing(thing:PropertyBundle, state:SpaceState):Iterable[Property[_,_]] = {
       implicit val s = state
       val result = for (
-        propsToEdit <- thing.getPropOpt(InstanceEditPropsProp);
+        propsToEdit <- thing.getPropOpt(InstanceProps);
         propIds = propsToEdit.v.rawList(LinkType);
         props = propIds.map(state.prop(_)).flatten    
           )

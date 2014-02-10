@@ -142,7 +142,7 @@ trait CollectionBase { self:CoreEcot =>
     def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
       implicit val state = rc.state.get
       val HtmlRenderer = interface[querki.html.HtmlRenderer]
-      val inputTemplate = HtmlRenderer.addClasses(elemT.renderInput(prop, rc, currentValue, elemT.default), "inputTemplate list-input-element") %      
+      val inputTemplate = HtmlRenderer.addClasses(elemT.renderInput(prop, rc, currentValue.copy(i = Some(-1)), elemT.default), "inputTemplate list-input-element") %      
     		  Attribute("data-basename", Text(currentValue.collectionControlId + "-item"),
     		  Null)
       val addButtonId = currentValue.collectionControlId + "-addButton"

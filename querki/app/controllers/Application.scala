@@ -192,7 +192,7 @@ disallow: /
   }
   
   def prepPropList(propList:PropList, model:Thing, state:SpaceState):Seq[(Property[_,_], DisplayPropVal)] = {
-    val propsToEdit = model.getPropOpt(Editor.InstanceEditPropsProp)(state).map(_.rawList)
+    val propsToEdit = model.getPropOpt(Editor.InstanceProps)(state).map(_.rawList)
     propsToEdit match {
       // If the model specifies which properties we actually want to edit, then use just those, in that order:
       case Some(editList) => {
@@ -260,7 +260,7 @@ disallow: /
           val higherIds = propIds.dropRight(1)
           val higherFieldIds = (Option.empty[FieldIds] /: higherIds) { (current, higherId) =>
             val prop = state.prop(higherId.id).get
-            Some(new FieldIds(thing, prop, current))
+            Some(new FieldIds(thing, prop, current, higherId.i))
           }
           val propId = propIds.last.id
           val propOpt = state.prop(propId)

@@ -29,7 +29,7 @@ package object editing {
      */
     def getInstanceEditor(thing:PropertyBundle, rc:RequestContext, currentValue:Option[DisplayPropVal] = None):Wikitext
     
-    def InstanceEditPropsProp:Property[OID,OID]
+    def InstanceProps:Property[OID,OID]
     def PromptProp:Property[PlainText,String]
   }
 }

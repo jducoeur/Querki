@@ -105,7 +105,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       // up with that conflicting with the propEditor of the actual fields underneath it. There might
       // be a more general concept fighting to break out here, but I'm not sure.
       if (prop.pType.isInstanceOf[querki.types.ModelTypeDefiner#ModelType])
-        elem
+        addClasses(elem, "modelValue")
       else
         addClasses(elem, "propEditor")
     }

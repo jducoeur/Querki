@@ -112,7 +112,9 @@ object ThingId {
   implicit def thingId2Str(id:ThingId) = id.toString()
 }
 
-case class IndexedOID(id:OID, i:Option[Int] = None)
+case class IndexedOID(id:OID, i:Option[Int] = None) {
+  override def toString = id.toString + i.map("[" + _.toString + "]").getOrElse("")
+}
 
 object IndexedOID {
   val regex = """(\w+)(\[(\d+)\])?""".r
