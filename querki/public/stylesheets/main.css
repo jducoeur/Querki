@@ -107,7 +107,7 @@
   width: 80%;
 }
 
-.sortableList li span { 
+.sortableList li .icon-move { 
   position: absolute;
   margin-left: -1.3em;
 }
