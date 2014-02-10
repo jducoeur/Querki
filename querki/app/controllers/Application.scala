@@ -252,6 +252,10 @@ disallow: /
     
         // Whether we're creating or editing depends on whether thing is specified:
         val thing = rc.thing
+        // Since rebuildBundle can result in changes that build on each other, we need a thing that
+        // responds to those changes.
+        // TODO: we might want to redo this more properly functional, instead of relying on a var:
+        var updatingThing = thing
         val rawProps:List[FormFieldInfo] = info.fields map { propsIdStr =>
           // TODO: the knowledge about the format of these IDs is scattered hither and yon around the code.
           // Where does it belong?
@@ -260,23 +264,35 @@ disallow: /
           val higherIds = propIds.dropRight(1)
           val higherFieldIds = (Option.empty[FieldIds] /: higherIds) { (current, higherId) =>
             val prop = state.prop(higherId.id).get
-            Some(new FieldIds(thing, prop, current, higherId.i))
+            Some(new FieldIds(updatingThing, prop, current, higherId.i))
           }
           val propId = propIds.last.id
           val propOpt = state.prop(propId)
           val actualFormFieldInfo = propOpt match {
             case Some(prop) => {
-              HtmlRenderer.propValFromUser(prop, thing, rawForm, context, higherFieldIds)              
+              HtmlRenderer.propValFromUser(prop, updatingThing, rawForm, context, higherFieldIds)              
             }
             // TODO: this means that an unknown property was specified. We should think about the right error path here:
             case None => FormFieldInfo(UrProp, None, true, false)
           }
-          if (higherIds.length == 0)
-            actualFormFieldInfo
-          else {
-            Types.rebuildBundle(thing, higherIds.toList, actualFormFieldInfo).
-              getOrElse(FormFieldInfo(UrProp, None, true, false, None, Some(new PublicException("Didn't get bundle"))))
+          val result = {
+            if (higherIds.length == 0)
+              actualFormFieldInfo
+            else {
+              Types.rebuildBundle(updatingThing, higherIds.toList, actualFormFieldInfo).
+                getOrElse(FormFieldInfo(UrProp, None, true, false, None, Some(new PublicException("Didn't get bundle"))))
+            }
           }
+          updatingThing match {
+            case Some(ts @ ThingState(_, _, _, _, _, _)) if (result.isValid && !result.isEmpty) => {
+              val newProps = ts.props + (result.propId -> result.value.get)
+              updatingThing = Some(ts.copy(pf = () => newProps))
+            }
+            case _ => {
+              // We really ought to cope with other Kinds here, at least in principle...
+            }
+          }
+          result
         }
         val oldModel =
           if (info.model.length() > 0)

@@ -375,23 +375,42 @@ function finalSetup(ownerId, spaceId, root) {
   }
 
   function doUpdateValue(target, successCb, failureCb) {
-    if (target.hasClass("modelValue")) {
-      renumberModelList(target);
-    } else {
       var prop = target.data("propid");
       var thingId = target.data("thing");
-      var serialized;
-      if (target.hasClass("radioBtn")) {
-        serialized = target.prop("name") + "=" + target.prop("value");
-      } else if (target.hasClass("coll-list-input")) {
-        // Serialize each of the elements of this list:
-        serialized = target.find(".list-input-element").serialize();
+      var serialized = "";
+      if (target.hasClass("modelValue")) {
+        // For the moment, we are sending the entire list every time a major change event
+        // occurs. At some point, we must change this to work with diffs instead.
+        renumberModelList(target);
+        var i = 0;
+        var childHolder = target;
+        if (target.hasClass("coll-list-input")) {
+          // To make sure that we don't send the input template as well:
+          childHolder = target.find(".sortableList").first();
+        }
+        // Clear the existing value, since we're going to send everything:
+        serialized = serialized + "&field[" + i + "]=" + prop + "&" + target.attr("name") + "=";
+        i = i + 1;
+        childHolder.find(".propEditor").each(function () {
+          var editControl = $(this);
+          serialized = serialized + "&field[" + i + "]=" + editControl.data("propid") +
+                       "&" + editControl.serialize();
+          i = i + 1;
+        });
       } else {
-        serialized = target.serialize();
+        if (target.hasClass("radioBtn")) {
+          serialized = target.prop("name") + "=" + target.prop("value");
+        } else if (target.hasClass("coll-list-input")) {
+          // Serialize each of the elements of this list:
+          serialized = target.find(".list-input-element").serialize();
+        } else {
+          serialized = target.serialize();
+        }
+        serialized = "&field[0]=" + prop + "&" + serialized
       }
       console.log("Serialized value of " + thingId + ":" + prop + " is " + serialized);
       jsRoutes.controllers.Application.setProperty2(ownerId, spaceId, thingId).ajax({
-        data: "addedProperty=&model=&field[0]=" + prop + "&" + serialized,
+        data: "addedProperty=&model=" + serialized,
         success: function (result) {
           finishStatus("Saved");
           if (typeof(successCb) != "undefined") {
@@ -402,8 +421,7 @@ function finalSetup(ownerId, spaceId, root) {
           showStatus("Error trying to save. Please reload this page and try again.");
         }
       });
-      showStatus("Saving...");  
-    }
+      showStatus("Saving...");
   }
   
   function updateIfLive(target) {
