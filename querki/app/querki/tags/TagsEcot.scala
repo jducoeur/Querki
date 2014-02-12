@@ -259,10 +259,15 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
           |to produce a list like:
           |* Red: Pinot Noir, Shiraz
           |* White: Pinot Gris, Chardonnay
-          |""".stripMargin)))
+          |
+          |ADVANCED: It is legal to use this with a received Property, instead of using the dot syntax. But remember
+          |that it must be applied to the Property *itself*, so you might have to use _self to get the right results,
+          |like this:
+          |    \[[Wine Color._self -> _tagsForProperty -> \""* \____: \[[_tagRefs -> _commas\]]\""\]]
+          |In general, you only want to receive the Property like this if you are passing it into a Function.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QValue = {
-      applyToIncomingThing(inv.definingContext.get) { (shouldBeProp, _) =>
+      applyToIncomingThing(inv.preferDefiningContext.definingContext.get) { (shouldBeProp, _) =>
         shouldBeProp match {
           case prop:Property[_,_] if (prop.pType == TagSetType || prop.pType == NewTagSetType) => {
             Core.listFrom(fetchTags(inv.state, prop), TagSetType)
