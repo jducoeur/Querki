@@ -143,7 +143,7 @@ function finishStatus(msg) {
     
     function replaceIndexes(newField, curSize) {
       var replacement = "[" + curSize + "]";
-      newField.find("input").each(function () {
+      newField.find(".propEditor").each(function () {
         var propid = $(this).data("propid");
         if (typeof(propid) != "undefined") {
           propid = propid.replace("[-1]", replacement);

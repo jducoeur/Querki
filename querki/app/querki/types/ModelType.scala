@@ -159,13 +159,7 @@ trait ModelTypeDefiner { self:EcologyMember =>
     override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):Elem = {
       val bundle = get(v)
       val wikitext = Editor.getInstanceEditor(bundle, rc, Some(currentValue))
-      
-      // TODO: this is horrible. How can we fix this abstraction break? The underlying problem is the
-      // fact that we are trying to embed generated Wikitext inside of an XML Elem, and we have no concept
-      // of that in the design. Should all of this be encapsulated in DisplayText, in a new XML method?
-      val rawHtml = wikitext.display.html.body
-      val nodeSeq = scala.xml.parsing.XhtmlParser(scala.io.Source.fromString(rawHtml))
-      nodeSeq.head.asInstanceOf[Elem]
+      wikitext.display.xml
     }
   }
   
