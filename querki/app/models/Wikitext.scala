@@ -1,6 +1,6 @@
 package models
 
-import scala.xml.Elem
+import scala.xml.NodeSeq
 
 // TODO: this is a bad smell, and should be lifted into either controllers or at least querki.html:
 import play.api.templates.Html
@@ -19,10 +19,7 @@ case class DisplayText(val str:String) {
   // Since a DisplayText is already HTML-neutered, it is safe to encode as HTML:
   def html = Html(str)
   def htmlWikitext = HtmlWikitext(html)
-  def xml:Elem = {
-    val nodeSeq = scala.xml.parsing.XhtmlParser(scala.io.Source.fromString(str))
-    nodeSeq.head.asInstanceOf[Elem]    
-  }
+  def xml:NodeSeq = XmlHelpers.parseXhtmlFragment(str)
 }
 object DisplayText {
   implicit def displayText2String(disp:DisplayText) = disp.str

@@ -1,6 +1,6 @@
 package querki.core
 
-import scala.xml.Elem
+import scala.xml.NodeSeq
 
 import models.{DisplayPropVal, OID, Property, PType}
 import models.Thing.PropFetcher
@@ -14,25 +14,25 @@ private[core] trait BootUtils { self:CoreModule =>
 
 object TypeUtils {
   trait CommonInputRenderers { self:SystemType[_] =>
-    def renderAnyText(prop:Property[_, _], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_])(doRender: (String) => Elem):Elem = {
+    def renderAnyText(prop:Property[_, _], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_])(doRender: (String) => NodeSeq):NodeSeq = {
       val str = elemT.toUser(v)(rc.state.get)
       val xml = doRender(str)
       xml
     }
   
-    def renderLargeText(prop:Property[_, _], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_]):Elem = {
+    def renderLargeText(prop:Property[_, _], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_]):NodeSeq = {
       renderAnyText(prop, rc, currentValue, v, elemT) { cv =>
         <textarea class="_largeTextEdit" rows="2">{cv}</textarea>
       }
     }
   
-    def renderText(prop:Property[_, _], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_]):Elem = {
+    def renderText(prop:Property[_, _], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_]):NodeSeq = {
       renderAnyText(prop, rc, currentValue, v, elemT) { cv =>
         <input type="text" value={cv}/>
       }
     }
   
-    def renderBlank(prop:Property[_, _], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):Elem = {
+    def renderBlank(prop:Property[_, _], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):NodeSeq = {
       renderText(prop, rc, currentValue, Core.TextType(""), Core.TextType)
     }
   }
@@ -43,7 +43,7 @@ object TypeUtils {
     // Types is where the various validators and such live:
     lazy val Types = interface[querki.types.Types]
     
-    def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):Elem = {
+    def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
       // TBD: this is smelly -- the fact that we need to know here how to render Optional is a nasty abstraction
       // break. But in general, rendering probably doesn't belong here: ultimately, rendering depends on the
       // Collection/Type matrix, and there doesn't seem to be a nice clean division of responsibilities...

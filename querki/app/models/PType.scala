@@ -1,6 +1,6 @@
 package models
 
-import scala.xml.Elem
+import scala.xml.NodeSeq
 
 import Thing.{PropFetcher, emptyProps}
 
@@ -105,8 +105,8 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecology
    * side classes for each PType, which describe how to render them in particular circumstances. But
    * we'll get to that...
    */
-  def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):scala.xml.Elem
-  def renderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):Elem = {
+  def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq
+  def renderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
     renderInputXml(prop, rc, currentValue, v)
   }
   
@@ -185,7 +185,7 @@ class DelegatingType[VT](resolver: => PType[VT])(implicit e:Ecology) extends PTy
   
   override def doMatches(left:VT, right:VT) = realType.doMatches(left, right)
   
-  def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):Elem = 
+  def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = 
     realType.renderInputXml(prop, rc, currentValue, v)
 
   def doDefault(implicit state:SpaceState) = realType.doDefault

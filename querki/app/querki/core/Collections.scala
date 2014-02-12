@@ -2,7 +2,7 @@ package querki.core
 
 
 import language.existentials
-import scala.xml._
+import scala.xml.{Attribute, NodeSeq, Null, Text}
 
 import play.api.Logger
 
@@ -90,7 +90,7 @@ trait CollectionBase { self:CoreEcot =>
     }
     def wrap(elem:ElemValue):implType = List(elem)
     
-    def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+    def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):NodeSeq = {
       implicit val s = rc.state.get
       val v = currentValue.effectiveV.flatMap(_.firstOpt).getOrElse(elemT.default)
       elemT.renderInput(prop, rc, currentValue, v)
@@ -139,12 +139,13 @@ trait CollectionBase { self:CoreEcot =>
     // TODO: the stuff created here overlaps badly with the Javascript code in editThing.scala.html.
     // Rationalize the two, to eliminate all the duplication. In theory, the concept and structure
     // belongs here, and the details belong there.
-    def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+    def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):NodeSeq = {
       implicit val state = rc.state.get
       val HtmlRenderer = interface[querki.html.HtmlRenderer]
-      val inputTemplate = HtmlRenderer.addClasses(elemT.renderInput(prop, rc, currentValue.copy(i = Some(-1)), elemT.default), "inputTemplate list-input-element") %      
+      val defaulted = HtmlRenderer.addClasses(elemT.renderInput(prop, rc, currentValue.copy(i = Some(-1)), elemT.default), "inputTemplate list-input-element")
+      val inputTemplate = XmlHelpers.mapElems(defaulted) ( _ %      
     		  Attribute("data-basename", Text(currentValue.collectionControlId + "-item"),
-    		  Null)
+    		  Null))
       val addButtonId = currentValue.collectionControlId + "-addButton"
       <div class="coll-list-input" data-delegate-disable-to={addButtonId}>
         <ul id={currentValue.collectionControlId} class="sortableList">{
@@ -154,9 +155,12 @@ trait CollectionBase { self:CoreEcot =>
               val (elemV, i) = pair
               val elemCurrentValue = currentValue.copy(i = Some(i))
               val simplyRendered = elemT.renderInput(prop, rc, elemCurrentValue, elemV)
-              val itemRendered = HtmlRenderer.addClasses(simplyRendered, "list-input-element") %
-              	Attribute("id", Text(currentValue.collectionControlId + "-item[" + i + "]"), 
-              	Attribute("name", Text(currentValue.collectionControlId + "-item[" + i + "]"), Null))
+              val withClasses = HtmlRenderer.addClasses(simplyRendered, "list-input-element")
+              val itemRendered:NodeSeq = XmlHelpers.mapElems(withClasses) { elem =>
+                elem %
+              	  Attribute("id", Text(currentValue.collectionControlId + "-item[" + i + "]"), 
+              	  Attribute("name", Text(currentValue.collectionControlId + "-item[" + i + "]"), Null))
+              }
               <li><span class="icon-move"></span>{itemRendered}<button class="delete-item-button btn-mini">&nbsp;</button></li>
             }
           }.getOrElse(NodeSeq.Empty)
@@ -219,7 +223,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
 	  throw new Error("Trying to wrap root collection!")    
 	def makePropValue(cv:Iterable[ElemValue], pType:PType[_]):QValue =
 	  throw new Error("Trying to makePropValue root collection!")    
-    def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem =
+    def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):NodeSeq =
 	  throw new Error("Trying to render input on root collection!")
 	def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo =
 	  throw new Error("Trying to fromUser on root collection!")
@@ -274,7 +278,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
     def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = OptionalPropValue(cv.toList, this, elemT)    
     private case class OptionalPropValue(cv:implType, cType:Optional, pType:PType[_]) extends QValue
     
-    def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+    def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):NodeSeq = {
       implicit val state = rc.state.get
       // TODO: what should we do here? Has custom rendering become unnecessary here? Does the appearance of the
       // trash button eliminate the need for anything fancy for Optional properties?
@@ -354,7 +358,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
     def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = UnitPropValue(cv.toList, this, elemT)    
     private case class UnitPropValue(cv:implType, cType:QUnit, pType:PType[_]) extends QValue
     
-    def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+    def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):NodeSeq = {
       <i>Defined</i>
     }
 
@@ -385,7 +389,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
     def wrap(elem:ElemValue):implType = List(elem)
     def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = bootPropValue(cv.toList, this, elemT)
     
-    def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):scala.xml.Elem = {
+    def doRenderInput(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):NodeSeq = {
       implicit val s = rc.state.get
       val v = currentValue.v.map(_.first).getOrElse(elemT.default)
       elemT.renderInput(prop, rc, currentValue, v)

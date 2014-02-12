@@ -1,6 +1,6 @@
 package querki.html
 
-import scala.xml._
+import scala.xml.{Attribute, NodeSeq, Null, Text, Xhtml}
 
 import play.api.templates.Html
 
@@ -59,9 +59,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 
   def HtmlValue(html:Html):QValue = ExactlyOne(RawHtmlType(HtmlWikitext(html)))
   def HtmlValue(str:String):QValue = HtmlValue(Html(str))
-  def HtmlValue(xml:Elem):QValue = HtmlValue(Xhtml.toXhtml(xml))
+  def HtmlValue(xml:NodeSeq):QValue = HtmlValue(Xhtml.toXhtml(xml))
   
-  def toWikitext(xml:Elem):Wikitext = HtmlWikitext(Html(Xhtml.toXhtml(xml)))
+  def toWikitext(xml:NodeSeq):Wikitext = HtmlWikitext(Html(Xhtml.toXhtml(xml)))
 
   /***********************************************
    * PROPERTIES
@@ -78,7 +78,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       Details(details))) 
   {
     // Actual Modifier classes should implement this, which does the heart of the work
-    def doTransform(elem:Elem, paramText:String, context:QLContext, params:Seq[QLPhrase]):Elem
+    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLPhrase]):NodeSeq
     
     override def qlApply(inv:Invocation):QValue = {
       val context = inv.context
@@ -96,18 +96,8 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         if (parsedParamOpt.isEmpty) 
           throw new PublicException("UI.transform.classRequired", name)
         val paramText = parsedParamOpt.get.raw.toString
-//        // TODO: It is truly annoying that I have to handle things this way -- there should be a
-//        // cleaner way to deal. I begin to suspect that I should be passing around XML instead
-//        // of raw HTML, so I can manipulate it better.
-//        val rawHtml = html.body
-//        // Note that, while this code *seems* like it should cope with multiple distinct nodes in the
-//        // input, it doesn't -- XhtmlParser craps out after the first node, sadly.
-//        // TODO: is there a way to make it cope with multiple nodes? Given that it returns a
-//        // NodeSeq, I find it weird that it is so unforgiving.
-//        val nodes = scala.xml.parsing.XhtmlParser(scala.io.Source.fromString(rawHtml))
-//        val newXml = nodes.map(node => doTransform(node.asInstanceOf[Elem], paramText, context, params))
-        val node = content.xml
-        val newXml = doTransform(node, paramText, context, params)
+        val nodes = content.xml
+        val newXml = nodes.flatMap(node => doTransform(node, paramText, context, params))
         val newHtml = Html(Xhtml.toXhtml(newXml))
         HtmlWikitext(newHtml)        
       }
@@ -115,11 +105,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       try {
 	      v.pType match {
 	        case RawHtmlType => {
-		      v.map(RawHtmlType, RawHtmlType) { wikitext => processHtml(wikitext.display)
-//		        wikitext match {
-//		          case HtmlWikitext(html) => processHtml(html)
-//		        }
-		      }          
+		      v.map(RawHtmlType, RawHtmlType) { wikitext => processHtml(wikitext.display) }          
 	        }
 	        
 	        case ParsedTextType => {
@@ -151,7 +137,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
             |This will create a paragraph for "hello world" as usual, but will attach "myClass" as a class on that
             |paragraph. (This is less often necessary, but occasionally helpful.)""".stripMargin)
   {
-    def doTransform(elem:Elem, paramText:String, context:QLContext, params:Seq[QLPhrase]):Elem = HtmlRenderer.addClasses(elem, paramText)
+    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLPhrase]):NodeSeq = HtmlRenderer.addClasses(nodes, paramText)
   }
   
   lazy val tooltipMethod = new HtmlModifier(TooltipMethodOID, "_tooltip",
@@ -164,9 +150,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       |In the long run, you will be able to describe a tooltip without using a QL expression, but
       |for now, this is the way to do it.""".stripMargin)
   {
-    def doTransform(elem:Elem, paramText:String, context:QLContext, params:Seq[QLPhrase]):Elem = {
-      val withClass = HtmlRenderer.addClasses(elem, "_withTooltip")
-      withClass % Attribute("title", Text(paramText), Null)
+    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLPhrase]):NodeSeq = {
+      val withClass = HtmlRenderer.addClasses(nodes, "_withTooltip")      
+      XmlHelpers.mapElems(withClass)(_ % Attribute("title", Text(paramText), Null))
     }
   }
   
@@ -177,14 +163,14 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       |[[_code(""[[""Hello world"" -> _data(""foo"", ""something"")]]"")]]
       |will add a "data-foo" attribute to the block containing Hello world.""".stripMargin)
   {
-    def doTransform(elem:Elem, paramText:String, context:QLContext, params:Seq[QLPhrase]):Elem = {
+    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLPhrase]):NodeSeq = {
       if (params.length < 2)
         throw new PublicException("UI.transform.dataRequired")
       
       val dataBlock = context.parser.get.processPhrase(params(1).ops, context).value.firstTyped(ParsedTextType).
         getOrElse(throw new PublicException("UI.transform.dataRequired")).raw
       
-      elem % Attribute(s"data-$paramText", Text(dataBlock), Null)
+      XmlHelpers.mapElems(nodes)(_ % Attribute(s"data-$paramText", Text(dataBlock), Null))
     }
   }
 

@@ -1,6 +1,6 @@
 package querki.html
 
-import scala.xml._
+import scala.xml.{Attribute, NodeSeq, Null, Text, Xhtml}
 
 import play.api.Logger
 import play.api.data.Form
@@ -10,6 +10,7 @@ import models._
 
 import querki.ecology._
 
+import querki.util.XmlHelpers
 import querki.values._
 
 import RenderSpecialization._
@@ -91,37 +92,41 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
    * INTERNALS
    *********************************/
   
-  def addClasses(elem:Elem, addedClasses:String):Elem = {
-    val classAttr = elem.attribute("class").map(_ :+ Text(" " + addedClasses)).getOrElse(Text(addedClasses))
-    elem % Attribute("class", classAttr, Null)
+  def addClasses(nodes:NodeSeq, addedClasses:String):NodeSeq = {
+    XmlHelpers.mapElems(nodes) { elem =>
+      val classAttr = elem.attribute("class").map(_ :+ Text(" " + addedClasses)).getOrElse(Text(addedClasses))
+      elem % Attribute("class", classAttr, Null)      
+    }
   }
   
-  def addEditorAttributes(elem:Elem, currentValue:DisplayPropVal, prop:Property[_,_], id:String):Elem = {
-    // If there is already a name specified, leave it in place. This is occasionally *very* important, as
-    // in renderOptionalYesNo -- that needs the usual name to be on the *buttons*, not on the wrapper:
-    val newName = elem.attribute("name").map(_.head.text).getOrElse(currentValue.inputControlId)
-    val asEditor = {
-      // HACK: if this is an intermediate Model Property, we must *not* add propEditor, or we wind
-      // up with that conflicting with the propEditor of the actual fields underneath it. There might
-      // be a more general concept fighting to break out here, but I'm not sure.
-      if (prop.pType.isInstanceOf[querki.types.ModelTypeDefiner#ModelType])
-        addClasses(elem, "modelValue")
-      else
-        addClasses(elem, "propEditor")
-    }
-    val xml2 = asEditor %
-    	Attribute("name", Text(newName),
+  def addEditorAttributes(nodes:NodeSeq, currentValue:DisplayPropVal, prop:Property[_,_], id:String):NodeSeq = {
+    XmlHelpers.mapElems(nodes) { elem =>
+      // If there is already a name specified, leave it in place. This is occasionally *very* important, as
+      // in renderOptionalYesNo -- that needs the usual name to be on the *buttons*, not on the wrapper:
+      val newName = elem.attribute("name").map(_.head.text).getOrElse(currentValue.inputControlId)
+      val asEditor = {
+        // HACK: if this is an intermediate Model Property, we must *not* add propEditor, or we wind
+        // up with that conflicting with the propEditor of the actual fields underneath it. There might
+        // be a more general concept fighting to break out here, but I'm not sure.
+        if (prop.pType.isInstanceOf[querki.types.ModelTypeDefiner#ModelType])
+          addClasses(elem, "modelValue")
+        else
+          addClasses(elem, "propEditor")
+      }
+      val xml2 = asEditor.asInstanceOf[scala.xml.Elem] %
+      	Attribute("name", Text(newName),
     	Attribute("data-prop", Text(prop.id.toThingId),
     	Attribute("data-propId", Text(currentValue.fullPropId),
     	Attribute("id", Text(id), Null))))
-    val xml3 = currentValue.thingId match {
-      case Some(thing) => xml2 % Attribute("data-thing", Text(thing), Null)
-      case None => xml2
+      val xml3 = currentValue.thingId match {
+        case Some(thing) => xml2 % Attribute("data-thing", Text(thing), Null)
+        case None => xml2
+      }
+      xml3
     }
-    xml3
   }
   
-  def renderSpecialized(cType:Collection, pType:PType[_], rc:RequestContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):Option[Elem] = {
+  def renderSpecialized(cType:Collection, pType:PType[_], rc:RequestContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):Option[NodeSeq] = {
     // TODO: make this more data-driven. There should be a table of these.
     val state = rc.state.get
     if (cType == Optional && pType == YesNoType)
@@ -137,7 +142,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       None
   }
   
-  def renderOptYesNo(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Elem = {
+  def renderOptYesNo(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):NodeSeq = {
     implicit val s = state
     val pType = YesNoType
     val pair = currentValue.effectiveV.map(propVal => if (propVal.cv.isEmpty) (false, pType.default) else (true, propVal.first)).getOrElse((false, pType.default))
@@ -161,7 +166,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       <span class="btn-group" data-toggle="buttons-radio" name={currentValue.inputControlId + "-wrapper"}>{oneButton("Yes", "true", (isSet && v))}{oneButton("Maybe", "maybe", (!isSet))}{oneButton("No", "false", (isSet && !v))}</span>
   }
   
-  def renderOptLink(rc:RequestContext, prop:Property[_,_], currentValue:DisplayPropVal):Elem = {
+  def renderOptLink(rc:RequestContext, prop:Property[_,_], currentValue:DisplayPropVal):NodeSeq = {
     implicit val s = rc.state.get
     val pType = LinkType
     val pair = currentValue.effectiveV.map(propVal => if (propVal.cv.isEmpty) (false, pType.default) else (true, propVal.first)).getOrElse((false, pType.default))
@@ -207,7 +212,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     str.replace("\\", "\\\\").replace("\"", "\\\"")
   }
   
-  def renderTagSet(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Elem = {
+  def renderTagSet(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):NodeSeq = {
     val rawList = getTagSetNames(state, prop, currentValue)
     
     // We treat names/tags and links a bit differently, although they look similar on the surface:
@@ -220,7 +225,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
    * This is an alternate renderer for Tag/List Sets. It displays a list of *all* of the candidate Things
    * (defined by the Link Model), and lets you choose them by checkboxes. A primitive first cut, but useful.
    */
-  def renderPickList(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):Elem = {
+  def renderPickList(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):NodeSeq = {
     implicit val s = state
     val instancesOpt = for (
         propAndVal <- prop.getPropOpt(Links.LinkModelProp);

@@ -53,13 +53,11 @@ class UITests extends QuerkiTests {
         equal ("<ul class=\"myClass otherClass\">\n<li>hello</li>\n<li>world</li>\n</ul>")
     }
     
-    // TODO: this is validating a bug, but at least it's a known bug. Note that, currently, we only return the *last*
-    // paragraph of the input block:
-    "add classes incorrectly to a multiparagraph text" in {
+    "add classes correctly to a multiparagraph text" in {
       processQText(commonThingAsContext(_.instance), """[[""hello
           |
           |world"" -> _class(""myClass otherClass"")]]""".stripMargin) should
-        equal ("""<span class="myClass otherClass">world</span>""")
+        equal ("""<span class="myClass otherClass">hello</span><span class="myClass otherClass">world</span>""")
     }
   }
   

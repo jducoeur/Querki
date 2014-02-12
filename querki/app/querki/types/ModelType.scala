@@ -1,6 +1,6 @@
 package querki.types
 
-import scala.xml.Elem
+import scala.xml.NodeSeq
 
 import models.{DisplayPropVal, OID, Property, PropertyBundle, PType, PTypeBuilder, Thing, Wikitext}
 import models.Thing.{PropMap, emptyProps}
@@ -156,7 +156,7 @@ trait ModelTypeDefiner { self:EcologyMember =>
       ModeledPropertyBundle(this, basedOn, raw.props)
     }
     
-    override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):Elem = {
+    override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
       val bundle = get(v)
       val wikitext = Editor.getInstanceEditor(bundle, rc, Some(currentValue))
       wikitext.display.xml

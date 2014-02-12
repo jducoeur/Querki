@@ -3,7 +3,7 @@ package querki
 // TODO: this is unfortunate abstraction leakage:
 import play.api.templates.Html
 
-import scala.xml.Elem
+import scala.xml.NodeSeq
 
 import play.api.data.Form
 
@@ -26,7 +26,8 @@ package object html {
    * querki.ui.UIRenderer, which is implementation-agnostic.
    */
   trait HtmlRenderer extends UIRenderer with EcologyInterface {
-    def addClasses(elem:Elem, addedClasses:String):Elem
+    // If nodes is itself an Elem, this uses that; otherwise, it expects nodes to be a sequence of Elems:
+    def addClasses(nodes:NodeSeq, addedClasses:String):NodeSeq
     def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_], context:QLContext, containers:Option[FieldIds]):FormFieldInfo
     def renderPropertyInput(rc:RequestContext, prop:Property[_,_], 
         currentValue:DisplayPropVal, 
@@ -36,8 +37,8 @@ package object html {
   trait HtmlUI extends EcologyInterface {
     def HtmlValue(html:Html):QValue
     def HtmlValue(str:String):QValue
-    def HtmlValue(xml:Elem):QValue
+    def HtmlValue(xml:NodeSeq):QValue
     
-    def toWikitext(xml:Elem):Wikitext
+    def toWikitext(xml:NodeSeq):Wikitext
   }
 }
