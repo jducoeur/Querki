@@ -4,7 +4,7 @@ import scala.xml._
 
 import play.api.templates.Html
 
-import models.{HtmlWikitext, OID, QWikitext, SimplePTypeBuilder, UnknownOID, Wikitext}
+import models.{DisplayText, HtmlWikitext, OID, QWikitext, SimplePTypeBuilder, UnknownOID, Wikitext}
 
 import querki.core.URLableType
 import querki.ecology._
@@ -91,21 +91,23 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         throw new PublicException("UI.transform.classRequired", name)
       val params = paramsOpt.get
 
-      def processHtml(html:Html):HtmlWikitext = {
+      def processHtml(content:DisplayText):HtmlWikitext = {
         val parsedParamOpt = context.parser.get.processPhrase(params(0).ops, context).value.firstTyped(ParsedTextType)
         if (parsedParamOpt.isEmpty) 
           throw new PublicException("UI.transform.classRequired", name)
         val paramText = parsedParamOpt.get.raw.toString
-        // TODO: It is truly annoying that I have to handle things this way -- there should be a
-        // cleaner way to deal. I begin to suspect that I should be passing around XML instead
-        // of raw HTML, so I can manipulate it better.
-        val rawHtml = html.body
-        // Note that, while this code *seems* like it should cope with multiple distinct nodes in the
-        // input, it doesn't -- XhtmlParser craps out after the first node, sadly.
-        // TODO: is there a way to make it cope with multiple nodes? Given that it returns a
-        // NodeSeq, I find it weird that it is so unforgiving.
-        val nodes = scala.xml.parsing.XhtmlParser(scala.io.Source.fromString(rawHtml))
-        val newXml = nodes.map(node => doTransform(node.asInstanceOf[Elem], paramText, context, params))
+//        // TODO: It is truly annoying that I have to handle things this way -- there should be a
+//        // cleaner way to deal. I begin to suspect that I should be passing around XML instead
+//        // of raw HTML, so I can manipulate it better.
+//        val rawHtml = html.body
+//        // Note that, while this code *seems* like it should cope with multiple distinct nodes in the
+//        // input, it doesn't -- XhtmlParser craps out after the first node, sadly.
+//        // TODO: is there a way to make it cope with multiple nodes? Given that it returns a
+//        // NodeSeq, I find it weird that it is so unforgiving.
+//        val nodes = scala.xml.parsing.XhtmlParser(scala.io.Source.fromString(rawHtml))
+//        val newXml = nodes.map(node => doTransform(node.asInstanceOf[Elem], paramText, context, params))
+        val node = content.xml
+        val newXml = doTransform(node, paramText, context, params)
         val newHtml = Html(Xhtml.toXhtml(newXml))
         HtmlWikitext(newHtml)        
       }
@@ -113,15 +115,15 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       try {
 	      v.pType match {
 	        case RawHtmlType => {
-		      v.map(RawHtmlType, RawHtmlType) { wikitext =>
-		        wikitext match {
-		          case HtmlWikitext(html) => processHtml(html)
-		        }
+		      v.map(RawHtmlType, RawHtmlType) { wikitext => processHtml(wikitext.display)
+//		        wikitext match {
+//		          case HtmlWikitext(html) => processHtml(html)
+//		        }
 		      }          
 	        }
 	        
 	        case ParsedTextType => {
-		      v.map(ParsedTextType, RawHtmlType) { wikitext => processHtml(wikitext.span.html) }          
+		      v.map(ParsedTextType, RawHtmlType) { wikitext => processHtml(wikitext.span) }          
 	        }
 	      }
       } catch {
