@@ -146,7 +146,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
       toProps(
         setName("Property"),
         setInternal,
-        (conventions.MOIDs.PropSummaryOID -> Optional(TextType("The root Property, from which all others derive."))),
+        (conventions.MOIDs.PropSummaryOID -> Optional.QNone),
         (querki.basic.MOIDs.DisplayTextOID -> Optional(LargeTextType("""[[Summary -> ""**____** -- ""]]
             |[[_if(Property Type -> _is(Internal Method Type), 
             |  ""**METHOD**"",
