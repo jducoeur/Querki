@@ -317,8 +317,8 @@ case class SpaceState(
     // tree -- essentially, they've specified what type you can link to -- filter for
     // that:
     val filteredByModel = if (prop.hasProp(Links.LinkModelProp)) {
-      val limit = prop.first(Links.LinkModelProp)
-      allCandidates filter (_.isAncestor(limit))
+      val limitOpt = prop.firstOpt(Links.LinkModelProp)
+      limitOpt.map(limit => allCandidates filter (_.isAncestor(limit))).getOrElse(allCandidates)
     } else {
       allCandidates
     }

@@ -186,7 +186,7 @@ trait LinkUtils { self:CoreEcot =>
       val Links = interface[querki.links.Links]
       val linkModel = prop.getPropOpt(Links.LinkModelProp)(state)
       linkModel match {
-        case Some(propAndVal) => {
+        case Some(propAndVal) if (!propAndVal.isEmpty) => {
           val model = state.anything(propAndVal.first).get
           if (model.ifSet(Links.NoCreateThroughLinkProp)(state))
             realOptions

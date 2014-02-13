@@ -236,6 +236,8 @@ abstract class Thing(
    * IMPORTANT: this will throw an Exception if you try to call it on an Optional that is empty!
    * In general, while it is syntactically legal to call this on an Optional type, it's usually
    * inappropriate.
+   * 
+   * DEPRECATED: you should use firstOpt instead!
    */
   def first[VT](prop:Property[VT, _])(implicit state:SpaceState):VT = {
     getProp(prop).first
@@ -271,6 +273,17 @@ abstract class Thing(
       default
     else
       cv.first
+  }
+  
+  /**
+   * Returns the first value of the specified Property *or* None.
+   */
+  def firstOpt[VT](prop:Property[VT, _])(implicit state:SpaceState):Option[VT] = {
+    val cv = getProp(prop)
+    if (cv.isEmpty)
+      None
+    else
+      Some(cv.first)
   }
   
   /**

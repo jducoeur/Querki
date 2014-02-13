@@ -170,6 +170,8 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
       setName("Not Inherited"),
       // Need to define this explicitly, to break infinite loops in lookup:
       (NotInheritedOID -> ExactlyOne(querki.values.ElemValue(false, new DelegatingType({YesNoType})))),
+      // For reasons I really don't understand, we need to set this explicitly:
+      (InternalPropOID -> bootCollection(ElemValue(false, new DelegatingType({YesNoType})))),
       AppliesToKindProp(Kind.Property),
       SkillLevel(SkillLevelAdvanced),
       Summary("Should this Property be inherited from ancestors?"),

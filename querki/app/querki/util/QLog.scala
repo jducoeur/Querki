@@ -4,6 +4,8 @@ import play.api.{Logger, Play}
 
 import models._
 
+import querki.values.SpaceState
+
 object QLog {
   
   lazy val inPlay:Boolean = Play.maybeApplication.isDefined 
@@ -30,14 +32,15 @@ object QLog {
   
   def spew(msg:String) = info("----> " + msg)
   
-  def renderBundle(t:PropertyBundle):String = {
+  def renderBundle(t:PropertyBundle)(implicit state:SpaceState):String = {
       try {
         val props = t.props
         val renderedProps = props.map { pair =>
           val (key, value) = pair
+          val propName = state.prop(key).map(_.displayName).getOrElse(s"??? ($key)")
           val elems = value.elems
           val stringifiedElems = elems.map(_.elem.toString).toList.mkString(", ")
-          s"    $key: $stringifiedElems"
+          s"    $propName: $stringifiedElems"
         }
         renderedProps.mkString("\n")
       } catch {
@@ -45,7 +48,7 @@ object QLog {
       }    
   }
 
-  def spewThing(t:Thing) = {
+  def spewThing(t:Thing)(implicit state:SpaceState) = {
     def displayName = {
       try {
         t.displayName
