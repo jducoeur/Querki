@@ -550,7 +550,7 @@
                 @for(aType <- space.allTypes.values.
                        filterNot(_.ifSet(Core.InternalProp)(space)).
                        filterNot(_.ifSet(Basic.DeprecatedProp)(space)).
-                       filterNot(Types.getModelTypeInfo(_).isDefined).
+                       filterNot(_.isInstanceOf[querki.types.ModelTypeBase]).
                        toSeq.sortBy(_.displayName)) {
                   <option value="@aType.id.toString" @collForType(aType)>@aType.displayName</option>
                 }

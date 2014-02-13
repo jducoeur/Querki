@@ -25,7 +25,7 @@ package object types {
   /**
    * This is the "public face" of a Model Type, with the interesting stuff about it.
    */
-  trait ModelTypeInfo {
+  trait ModelTypeBase extends PType[ModeledPropertyBundle] {
     def basedOn:OID
   }
   
@@ -57,11 +57,6 @@ package object types {
     def MaxIntValueProp:Property[Int, Int]
     
     def rebuildBundle(existingOpt:Option[PropertyBundle], containers:List[IndexedOID], innerV:FormFieldInfo)(implicit state:SpaceState):Option[FormFieldInfo]
-    
-    /**
-     * Iff the given PType is a ModelType, return the info about it; otherwise None.
-     */
-    def getModelTypeInfo(typ:PType[_]):Option[ModelTypeInfo]
   }
   
   object DeriveNameMOIDs extends EcotIds(12) {

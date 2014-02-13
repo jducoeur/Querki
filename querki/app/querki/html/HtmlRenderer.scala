@@ -108,10 +108,10 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
         // HACK: if this is an intermediate Model Property, we must *not* add propEditor, or we wind
         // up with that conflicting with the propEditor of the actual fields underneath it. There might
         // be a more general concept fighting to break out here, but I'm not sure.
-        if (prop.pType.isInstanceOf[querki.types.ModelTypeDefiner#ModelType])
-          addClasses(elem, "modelValue")
-        else
-          addClasses(elem, "propEditor")
+        prop.pType match {
+          case mt:querki.types.ModelTypeBase => addClasses(elem, "modelValue")
+          case _ => addClasses(elem, "propEditor")
+        }
       }
       val xml2 = asEditor.asInstanceOf[scala.xml.Elem] %
       	Attribute("name", Text(newName),

@@ -114,8 +114,7 @@ case class Property[VT, -RT](
             case None => WarningValue("Couldn't find Thing from " + context.toString)
           }
         }
-        // TODO: this is a nasty dependency. Can we do something better?
-        case mt:querki.types.ModelTypeDefiner#ModelType => {
+        case mt:querki.types.ModelTypeBase => {
           context.value.firstAs(mt) match {
             case Some(bundle) => action(bundle, context)
             case None => interface[querki.ql.QL].ErrorValue("Unable to fetch PropertyBundle from ModelType QValue!")

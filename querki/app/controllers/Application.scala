@@ -705,9 +705,9 @@ disallow: /
     implicit val state = rc.state.get
     val model = rc.thing.get
     val typOpt = state.types.values.find { typ =>
-      Types.getModelTypeInfo(typ) match {
-        case Some(info) => info.basedOn == model.id
-        case None => false
+      typ match {
+        case mt:querki.types.ModelTypeBase => mt.basedOn == model.id
+        case _ => false
       }
     }
     

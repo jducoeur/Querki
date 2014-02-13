@@ -81,7 +81,7 @@ case class ModeledPropertyBundle(modelType:ModelTypeDefiner#ModelType, basedOn:O
 trait ModelTypeDefiner { self:EcologyMember =>
   
   class ModelType(tid:OID, val basedOn:OID, typeProps:() => PropMap) extends querki.core.TypeUtils.SystemType[ModeledPropertyBundle](tid,
-      typeProps) with PTypeBuilder[ModeledPropertyBundle, SimplePropertyBundle] with ModelTypeInfo
+      typeProps) with PTypeBuilder[ModeledPropertyBundle, SimplePropertyBundle] with ModelTypeBase
   {
     override lazy val props:PropMap = propFetcher() + 
 		  (ModelForTypePropOID -> Core.ExactlyOne(Core.LinkType(basedOn)))

@@ -111,13 +111,6 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
     ret
   }
   
-  def getModelTypeInfo(typ:PType[_]):Option[ModelTypeInfo] = {
-    typ match {
-      case mt:ModelTypeDefiner#ModelType => Some(mt)
-      case _ => None
-    }
-  }
-  
   /***********************************************
    * PROPERTIES
    ***********************************************/
