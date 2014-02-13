@@ -696,6 +696,47 @@ disallow: /
     }     
   }
   
+  /**
+   * Given a Model, return the Type that wraps around that Model.
+   * 
+   * API ONLY.
+   */
+  def getModelType(ownerId:String, spaceId:String, modelId:String) = withThing(true, ownerId, spaceId, modelId) { rc =>
+    implicit val state = rc.state.get
+    val model = rc.thing.get
+    val typOpt = state.types.values.find { typ =>
+      Types.getModelTypeInfo(typ) match {
+        case Some(info) => info.basedOn == model.id
+        case None => false
+      }
+    }
+    
+    typOpt match {
+      case Some(typ) => {
+        // We already have a Type for this Model:
+        Ok(typ.id.toString)
+      }
+      case None => {
+        val props = Map(
+            Types.ModelForTypeProp(model),
+            Basic.DisplayNameProp("__" + model.displayName + " Type"))
+        // TODO: note that there is technically a slight race condition here -- between us fetching the SpaceState
+        // in withThing(), and us sending this message, somebody else could create the new Type. That's not
+        // devastating, but it *is* unintentional, and it's a good example of why we need to move towards a more
+        // transactional view of things, where our CreateThing message includes the version stamp of the state it
+        // is based on, and fails if the stamp is out of date.
+        val spaceMsg = CreateThing(rc.requesterOrAnon, rc.ownerId, ThingId(spaceId), Kind.Type, Core.UrType, props)        
+        askSpaceMgr[ThingResponse](spaceMsg) {
+          case ThingFound(thingId, newState) => Ok(thingId.toString)
+          case ThingError(error, stateOpt) => {
+            val msg = error.display(rc.request)
+            NotAcceptable(msg)
+          }
+        }        
+      }
+    }
+  }
+  
   def exportThing(ownerId:String, spaceId:String, thingIdStr:String) = withSpace(true, ownerId, spaceId, Some(thingIdStr)) { implicit rc =>
 //    implicit val state = rc.state.get
 //    val thing = rc.thing.get
@@ -739,7 +780,8 @@ disallow: /
         routes.javascript.Application.getPropertyEditor,
         routes.javascript.Application.doCreateThing,
         routes.javascript.Application.getThingEditor,
-        routes.javascript.Application.deleteThing
+        routes.javascript.Application.deleteThing,
+        routes.javascript.Application.getModelType
       )
     ).as("text/javascript")
   }

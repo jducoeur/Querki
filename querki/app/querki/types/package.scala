@@ -1,6 +1,6 @@
 package querki
 
-import models.{DisplayPropVal, FormFieldInfo, IndexedOID, OID, Property, PropertyBundle, Thing}
+import models.{DisplayPropVal, FormFieldInfo, IndexedOID, OID, Property, PropertyBundle, PType, Thing}
 
 import querki.core.PropList
 import querki.ecology._
@@ -21,6 +21,13 @@ package object types {
   }
   
   implicit def vals2Bundle(vals:(OID, QValue)*):SimplePropertyBundle = SimplePropertyBundle(vals:_*)
+  
+  /**
+   * This is the "public face" of a Model Type, with the interesting stuff about it.
+   */
+  trait ModelTypeInfo {
+    def basedOn:OID
+  }
   
   trait Types extends EcologyInterface {
     /**
@@ -50,6 +57,11 @@ package object types {
     def MaxIntValueProp:Property[Int, Int]
     
     def rebuildBundle(existingOpt:Option[PropertyBundle], containers:List[IndexedOID], innerV:FormFieldInfo)(implicit state:SpaceState):Option[FormFieldInfo]
+    
+    /**
+     * Iff the given PType is a ModelType, return the info about it; otherwise None.
+     */
+    def getModelTypeInfo(typ:PType[_]):Option[ModelTypeInfo]
   }
   
   object DeriveNameMOIDs extends EcotIds(12) {

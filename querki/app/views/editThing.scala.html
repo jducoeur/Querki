@@ -405,19 +405,14 @@
           return false;
           
         if (newPropType() == @createTypeIndicator) {
-          jsRoutes.controllers.Application.doCreateThing("@space.owner.toThingId", "@space.id.toThingId").ajax({
-            data: "API=true&model=@{querki.core.MOIDs.UrTypeOID.toString}" +
-                  "&field[0]=@{querki.types.MOIDs.ModelForTypePropOID.toString}&@{FieldIds(None, Types.ModelForTypeProp).inputControlId}=" + newTypeModel() +
-                  "&field[1]=@{querki.basic.MOIDs.DisplayNameOID.toString}&@{FieldIds(None, Basic.DisplayNameProp).inputControlId}=" + newTypeModelName() + " Type",
+          jsRoutes.controllers.Application.getModelType("@space.owner.toThingId", "@space.id.toThingId", newTypeModel()).ajax({
 	        success: function (result) {
-	          // HACK: we have to cut off the dot here, because createThing expects a raw OID. This is mostly
-	          // a sign that exposing both OID and ThingId to the UI was a Very Bad Idea, and needs to be fixed.
-	          actuallyCreateProperty(result.substring(1));
+	          actuallyCreateProperty(result);
 	        },
 	        error: function (err) {
 	          alert("Error: " + err.responseText);
-  	        }
-	      });
+  	        }          
+          });
         } else {
           actuallyCreateProperty(newPropType());
         }
@@ -552,10 +547,14 @@
             <p><input type="text" id="_newPropName" placeholder="Name (required)..."></p>
             <select id="_newPropType">
                 <option value="">Choose the Property's type (required)...</option>
-                @for(aType <- space.allTypes.values.filterNot(_.ifSet(Core.InternalProp)(space)).filterNot(_.ifSet(Basic.DeprecatedProp)(space)).toSeq.sortBy(_.displayName)) {
+                @for(aType <- space.allTypes.values.
+                       filterNot(_.ifSet(Core.InternalProp)(space)).
+                       filterNot(_.ifSet(Basic.DeprecatedProp)(space)).
+                       filterNot(Types.getModelTypeInfo(_).isDefined).
+                       toSeq.sortBy(_.displayName)) {
                   <option value="@aType.id.toString" @collForType(aType)>@aType.displayName</option>
                 }
-                <option value=@createTypeIndicator>New Type, based on a Model</option>
+                <option value=@createTypeIndicator>Based on a Model</option>
             </select>
             <select id="_newPropLinkModel" style="display:none;">
                 <option value="">Link to which Model? (optional)...</option>
@@ -564,9 +563,9 @@
                 }
             </select>
             <select id="_newTypeModel" style="display:none;">
-                <option value="">Type based on which Model?...</option>
+                <option value="">Based on which Model?...</option>
                 @for(aModel <- space.models.toSeq.sortBy(_.displayName).filter(_.hasProp(Editor.InstanceProps)(space))) {
-                  <option value="@aModel.id.toString">@aModel.displayName</option>
+                  <option value="@aModel.id.toThingId">@aModel.displayName</option>
                 }
             </select>
 		    <div id="_newPropColl" class="btn-group offset1" data-toggle="buttons-radio">

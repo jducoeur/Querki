@@ -1,7 +1,7 @@
 package querki.types.impl
 
 import models.SimplePTypeBuilder
-import models.{FormFieldInfo, IndexedOID, Kind, OID, PropertyBundle, Wikitext}
+import models.{FormFieldInfo, IndexedOID, Kind, OID, PropertyBundle, PType, Wikitext}
 import models.Thing.emptyProps
 
 import querki.core.MOIDs.InternalPropOID
@@ -110,7 +110,14 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
     }
     ret
   }
-
+  
+  def getModelTypeInfo(typ:PType[_]):Option[ModelTypeInfo] = {
+    typ match {
+      case mt:ModelTypeDefiner#ModelType => Some(mt)
+      case _ => None
+    }
+  }
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/

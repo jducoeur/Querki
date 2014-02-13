@@ -27,6 +27,7 @@ GET		/u/:userName/:spaceId/getPropertyDisplay @controllers.Application.getProper
 GET     /u/:userName/:spaceId/getPropertyEditor @controllers.Application.getPropertyEditor(userName, spaceId, thingId, prop, i:Int)
 GET     /u/:userName/:spaceId/_getThingEditor @controllers.Application.getThingEditor(userName, spaceId, thingId)
 GET     /u/:userName/:spaceId/_editInstances @controllers.Application.editInstances(userName, spaceId, modelId)
+GET     /u/:userName/:spaceId/_getModelType @controllers.Application.getModelType(userName, spaceId, modelId)
 
 GET     /u/:userName/:spaceId/edit @controllers.Application.editThing(userName, spaceId, thingId)
 POST    /u/:userName/:spaceId/edit @controllers.Application.doEditThing(userName, spaceId, thingId)
