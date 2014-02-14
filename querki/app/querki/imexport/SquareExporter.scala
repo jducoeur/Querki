@@ -8,6 +8,8 @@ import querki.values.{QValue, SpaceState}
 
 trait PropAccessor {
   def getPropValue(instanceOpt:Option[PropertyBundle])(implicit state:SpaceState):Seq[QValue]
+  
+  def getTitles:Seq[String]
 }
 
 case class SimplePropAccessor(prop:Property[_,_]) extends PropAccessor {
@@ -20,6 +22,8 @@ case class SimplePropAccessor(prop:Property[_,_]) extends PropAccessor {
       
     vOpt.map(Seq(_)).getOrElse(Seq())
   }
+  
+  def getTitles:Seq[String] = Seq(prop.unsafeDisplayName)
 }
 
 case class ModelPropAccessor(prop:Property[ModeledPropertyBundle,_], children:Seq[PropAccessor]) extends PropAccessor {
@@ -35,6 +39,8 @@ case class ModelPropAccessor(prop:Property[ModeledPropertyBundle,_], children:Se
       child.getPropValue(vOpt)
     }
   }
+  
+  def getTitles:Seq[String] = children.flatMap(_.getTitles)
 }
 
 /**

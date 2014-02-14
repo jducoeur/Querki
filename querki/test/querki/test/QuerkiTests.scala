@@ -22,6 +22,7 @@ class QuerkiTests
   implicit var ecology:Ecology = null
   
   lazy val Core = interface[querki.core.Core]
+  lazy val Basic = interface[querki.basic.Basic]
   lazy val QL = interface[querki.ql.QL]
   lazy val Links = interface[querki.links.Links]
   

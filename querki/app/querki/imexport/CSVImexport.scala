@@ -12,7 +12,7 @@ private[imexport] class CSVImexport(implicit val ecology:Ecology) extends Export
   def exportInstances(model:Thing, instances:Seq[Thing])(implicit state:SpaceState):ExportedContent = {
     val cols = columns(model)
     
-    val rows:Seq[String] = instances.map { instance =>
+    val rows:Seq[String] = cols.flatMap(_.getTitles).map(escapeCSVCell(_)).mkString(",") +: instances.map { instance =>
       val cellValues:Seq[QValue] = cols.flatMap(_.getPropValue(Some(instance)))
       val cellStrs:Seq[String] = cellValues.map { qv =>
         if (qv.isEmpty)

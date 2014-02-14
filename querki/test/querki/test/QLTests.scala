@@ -4,8 +4,6 @@ import org.scalatest.{WordSpec, BeforeAndAfterAll}
 import org.scalatest.matchers.ShouldMatchers
 
 class QLTests extends QuerkiTests {
-  lazy val Basic = interface[querki.basic.Basic]
-  
   lazy val QLType = Basic.QLType
   
   // === Attachments ===
