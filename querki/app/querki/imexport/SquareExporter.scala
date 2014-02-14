@@ -48,7 +48,7 @@ private[imexport] trait SquareExporter extends EcologyMember {
       prop.pType match {
         case mt:ModelTypeBase => {
           val modelProp = prop.asInstanceOf[Property[ModeledPropertyBundle,_]]
-          val modelOpt = state.prop(mt.basedOn)
+          val modelOpt = state.anything(mt.basedOn)
           modelOpt match {
             case Some(model) => ModelPropAccessor(modelProp, columns(model))
             case None => SimplePropAccessor(modelProp)
