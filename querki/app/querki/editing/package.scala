@@ -4,7 +4,7 @@ import models.{DisplayPropVal, OID, Property, PropertyBundle, Thing, Wikitext}
 
 import querki.basic.PlainText
 import querki.ecology._
-import querki.values.RequestContext
+import querki.values.{RequestContext, SpaceState}
 
 package object editing {
 
@@ -31,5 +31,14 @@ package object editing {
     
     def InstanceProps:Property[OID,OID]
     def PromptProp:Property[PlainText,String]
+    
+    /**
+     * Given a Model, this returns the expected Properties to show/use for Instances of this Model.
+     * 
+     * Note that this is implicitly a "square" way of thinking of things, and doesn't account for possible
+     * sub-Models that might add additional Properties, or the Properties defined on the Thing itself. So it
+     * is not always the correct way to look at the problem -- use with care.
+     */
+    def instancePropsForModel(model:PropertyBundle, state:SpaceState):Seq[Property[_,_]]
   }
 }

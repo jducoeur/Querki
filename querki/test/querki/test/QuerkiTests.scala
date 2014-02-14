@@ -11,7 +11,7 @@ import querki.ecology._
 
 import querki.identity.User
 
-import querki.values.{QLContext, SpaceState}
+import querki.values.{QLContext, RequestContext, SpaceState}
 
 class QuerkiTests 
   extends WordSpec
@@ -49,6 +49,13 @@ class QuerkiTests
     ecology = e
   }
   
+  def getRcs[S <: CommonSpace](state:SpaceState)(implicit space:S, requester:User = BasicTestUser):RequestContext = {
+    SimpleTestRequestContext(space.owner.mainIdentity.id, state, state, ecology)
+  }
+  def getRc[S <: CommonSpace](implicit space:S, requester:User = BasicTestUser):RequestContext = {
+    getRcs(space.state)
+  }
+  
   /**
    * The current easiest way to declare a typical QL test. You must have declared an implicit CommonSpace or
    * descendant for this to work, but it's very boilerplate-light. Note that this supplies the Space itself
@@ -58,7 +65,7 @@ class QuerkiTests
     pqls(text, space.state)
   }
   def pqls[S <: CommonSpace](text:String, state:SpaceState)(implicit space:S, requester:User = BasicTestUser):String = {
-    val rc = SimpleTestRequestContext(space.owner.mainIdentity.id, state, state, ecology)
+    val rc = getRcs(state)
     val context = state.thisAsContext(rc)
     processQText(context, text)
   }

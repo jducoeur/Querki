@@ -10,6 +10,8 @@ Func.wrongType={0} didn't receive the expected type
 Func.missingDefiningContext={0} must be used with a dot
 Func.notProp={0} can only be used on Properties
 
+Imexport.exportNotAllowed=You aren't allowed to read {0}, so you can't export its instances.
+
 Space.create.alreadyExists=You already have a Space with the name {0}. Please choose a different name.
 Space.create.illegalName={0} is not a legal name for a Space. Space names should consist of just letters, digits and spaces.
 Space.create.maxSpaces=You are only allowed to create {0} Spaces at this time. This limit will be raised in the future.
