@@ -208,5 +208,32 @@ class CSVTests extends QuerkiTests {
           |Instance-2,42,Category 1
           |Instance-3,42,Category 3""".stripReturns)
     }
+    
+    "work with Categories" in {
+      class TSpace extends CommonSpace {
+        val categoryModel = new SimpleTestThing("My Category", Links.NoCreateThroughLinkProp(true))
+        val cat1 = new TestThing("Category 1", categoryModel)
+        val cat2 = new TestThing("Category 2", categoryModel)
+        val cat3 = new TestThing("Category 3", categoryModel)
+        
+        val numberProp = new TestProperty(Core.IntType, ExactlyOne, "Number Prop")
+        val linkProp = new TestProperty(LinkType, QSet, "The categories", Links.LinkModelProp(categoryModel))
+        val myModel = new SimpleTestThing("My Model", numberProp(42), linkProp(cat2))
+        
+        val instance1 = new TestThing("Instance 1", myModel)
+        val instance2 = new TestThing("Instance 2", myModel, linkProp(cat1, cat3))
+        val instance3 = new TestThing("Instance 3", myModel, linkProp(cat3))
+      }
+      
+      implicit val s = new TSpace
+      
+      val result = Imexport.exportInstances(getRc, Format.CSV, s.myModel)(s.state)
+      assert(result.name == "My Model.csv")
+      // Note that the Categories are at the end because "The categories" comes after "Name" and "Number Prop":
+      new String(result.content).stripReturns should equal("""Name,Number Prop,Category 1,Category 2,Category 3
+          |Instance-1,42,,x,
+          |Instance-2,42,x,,x
+          |Instance-3,42,,,x""".stripReturns)
+    }
   }
 }

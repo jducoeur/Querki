@@ -1,6 +1,6 @@
 package querki.imexport
 
-import models.{Property, PropertyBundle, Thing}
+import models.{OID, Property, PropertyBundle, Thing}
 
 import querki.ecology._
 import querki.types.{ModeledPropertyBundle, ModelTypeBase}
@@ -43,10 +43,45 @@ case class ModelPropAccessor(prop:Property[ModeledPropertyBundle,_], children:Se
   def getTitles:Seq[String] = children.flatMap(_.getTitles)
 }
 
+case class CategoryPropAccessor(prop:Property[OID,_], values:Seq[Thing])(implicit val ecology:Ecology) extends PropAccessor with EcologyMember {
+  lazy val Core = interface[querki.core.Core]
+  lazy val LinkType = Core.LinkType
+  lazy val ExactlyOne = Core.ExactlyOne
+  lazy val TextType = Core.TextType
+  
+  def getPropValue(instanceOpt:Option[PropertyBundle])(implicit state:SpaceState):Seq[QValue] = {
+    val vOpt = for {
+      instance <- instanceOpt
+      pv <- instance.getPropOpt(prop)
+    }
+      yield pv.v
+
+    val strs = values.map { thing =>
+      val id = thing.id
+      // TODO: this is kind of a broken abstraction break, the fact that we are defining the
+      // "checkboxes" here. They really ought to be defined in the Exporter itself. Think about how
+      // to better handle this.
+      if (vOpt.isDefined && vOpt.get.contains(LinkType, id))
+        "x"
+      else
+        ""
+    }
+      
+    strs.map(str => ExactlyOne(TextType(str)))
+  }
+  
+  def getTitles:Seq[String] = values.map(_.displayName)  
+}
+
 /**
  * Utility trait for Exporters that export their data in columnar formats.
  */
 private[imexport] trait SquareExporter extends EcologyMember {
+  lazy val Core = interface[querki.core.Core]
+  lazy val Links = interface[querki.links.Links]
+  lazy val LinkType = Core.LinkType
+  lazy val QSet = Core.QSet
+  
   def columns(model:Thing)(implicit state:SpaceState):Seq[PropAccessor] = {
     val props = interface[querki.editing.Editor].instancePropsForModel(model, state)
     
@@ -61,7 +96,21 @@ private[imexport] trait SquareExporter extends EcologyMember {
           }
         }
         
-        case _ => SimplePropAccessor(prop)
+        case _ => {
+          // If this Property is a Set of Links to a Category, then we break it out to separate columns for the
+          // Category values:
+          val categoryOpt = for {
+            linkProp <- prop.confirmType(LinkType)
+            if (prop.cType == QSet)
+            linkModelPV <- prop.getPropOpt(Links.LinkModelProp)
+            linkModelId <- linkModelPV.firstOpt
+            linkModel <- state.anything(linkModelId)
+            if (linkModel.ifSet(Links.NoCreateThroughLinkProp))
+          }
+            yield CategoryPropAccessor(linkProp, state.descendants(linkModelId, false, true).toSeq.sortBy(_.displayName))
+            
+          categoryOpt.getOrElse(SimplePropAccessor(prop))
+        }
       }
     }
   }
