@@ -368,6 +368,13 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
           renderInputXmlGuts(prop, rc, currentValue, v)
         } </select>
     }
+    
+    override def doToUser(v:OID)(implicit state:SpaceState):String = {
+      state.anything(v) match {
+        case Some(thing) => thing.displayName
+        case None => v.toString
+      }
+    }
   }
   
   /**

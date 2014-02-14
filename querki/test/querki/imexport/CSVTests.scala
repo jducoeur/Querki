@@ -176,5 +176,30 @@ class CSVTests extends QuerkiTests {
           |Instance-3,42,"Hello
           |there"""".stripReturns)
     }
+    
+    "work with simple Links" in {
+      class TSpace extends CommonSpace {
+        val categoryModel = new SimpleTestThing("My Category")
+        val cat1 = new TestThing("Category 1", categoryModel)
+        val cat2 = new TestThing("Category 2", categoryModel)
+        val cat3 = new TestThing("Category 3", categoryModel)
+        
+        val numberProp = new TestProperty(Core.IntType, ExactlyOne, "Number Prop")
+        val linkProp = new TestProperty(LinkType, ExactlyOne, "Text Prop", Links.LinkModelProp(categoryModel))
+        val myModel = new SimpleTestThing("My Model", numberProp(42), linkProp(cat2))
+        
+        val instance1 = new TestThing("Instance 1", myModel)
+        val instance2 = new TestThing("Instance 2", myModel, linkProp(cat1))
+        val instance3 = new TestThing("Instance 3", myModel, linkProp(cat3))
+      }
+      
+      implicit val s = new TSpace
+      
+      val result = Imexport.exportInstances(getRc, Format.CSV, s.myModel)(s.state)
+      assert(result.name == "My Model.csv")
+      new String(result.content).stripReturns should equal("""Instance-1,42,Category 2
+          |Instance-2,42,Category 1
+          |Instance-3,42,Category 3""".stripReturns)
+    }
   }
 }
