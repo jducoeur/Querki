@@ -4,7 +4,7 @@ import models.{Property, PropertyBundle, Thing, Wikitext}
 
 import querki.core.QLText
 import querki.ecology._
-import querki.ql.QLPhrase
+import querki.ql.Invocation
 import querki.values.{QLContext, SpaceState}
 
 trait ThingEditor { self:EditorModule =>
@@ -131,10 +131,10 @@ trait ThingEditor { self:EditorModule =>
       }
     }
     
-    def instanceEditorForThing(thing:PropertyBundle, thingContext:QLContext, params:Option[Seq[QLPhrase]]):Wikitext = {
+    def instanceEditorForThing(thing:PropertyBundle, thingContext:QLContext, inv:Option[Invocation]):Wikitext = {
       implicit val state = thingContext.state
       val editText = editorLayoutForThing(thing, state)
-      QL.process(editText, thingContext, params)
+      QL.process(editText, thingContext, inv)
     }
     
     def createInstanceButton(model:Thing, context:QLContext):Wikitext = {

@@ -135,4 +135,7 @@ class QuerkiTests
   
   // Commonly used Ecots and pieces therein:
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
+
+  // Turns on massive QLParser spewage. Should not be checked in!
+  def turnOnContextLogging() = querki.util.Config.test("querki.test.logContexts", "true")
 }

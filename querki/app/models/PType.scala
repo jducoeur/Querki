@@ -5,7 +5,7 @@ import scala.xml.NodeSeq
 import Thing.{PropFetcher, emptyProps}
 
 import querki.ecology.Ecology
-import querki.ql.QLPhrase
+import querki.ql.Invocation
 import querki.values._
 
 /**
@@ -131,7 +131,7 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecology
    * If this isn't partially applied, the incomingContext is used for both. See Property for the main
    * usage of this.
    */
-  def qlApplyFromProp(definingContext:QLContext, incomingContext:QLContext, prop:Property[VT,_], params:Option[Seq[QLPhrase]]):Option[QValue] = None
+  def qlApplyFromProp(inv:Invocation, prop:Property[VT,_]):Option[QValue] = None
   
   /**
    * Iff defined, this Type must *always* be used with the specified Collection.

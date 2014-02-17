@@ -56,14 +56,15 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
     // TBD: in principle, we really want this to return a *context*, not a *value*. This is a special
     // case of a growing concern: that we could be losing information by returning QValue from
     // qlApply, and should actually be returning a full successor Context.
-    override def qlApplyFromProp(definingContext:QLContext, incomingContext:QLContext, prop:Property[QLText,_], params:Option[Seq[QLPhrase]]):Option[QValue] = {
+    override def qlApplyFromProp(inv:Invocation, prop:Property[QLText,_]):Option[QValue] = {
+      val definingContext = inv.definingContext.getOrElse(inv.context)
       if (definingContext.isEmpty) {
         Some(interface[querki.ql.QL].WarningValue("""Trying to use QL Property """" + prop.displayName + """" in an empty context.
 This often means that you've invoked it recursively without saying which Thing it is defined in."""))
       } else {
         Some(prop.applyToIncomingThing(definingContext) { (thing, context) =>
           val qlPhraseText = thing.first(prop)(context.state)
-          QL.processMethod(qlPhraseText, incomingContext.forProperty(prop), params)
+          QL.processMethod(qlPhraseText, inv.context.forProperty(prop), Some(inv))
         })
       }
     }

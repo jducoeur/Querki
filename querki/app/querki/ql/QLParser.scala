@@ -17,11 +17,13 @@ class PartiallyAppliedFunction(partialContext:QLContext, action:(Invocation) => 
   }
 }
 
-class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None) extends RegexParsers with EcologyMember {
+class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None) extends RegexParsers with EcologyMember {
   
   // Add the parser to the context, so that methods can call back into it. Note that we are treating this as essentially
   // a modification, rather than another level of depth:
   val initialContext = ci.copy(parser = Some(this))
+  
+  val paramsOpt = invOpt.flatMap(_.paramsOpt)
   
   implicit def ecology:Ecology = ci.state.ecology
   
@@ -153,18 +155,18 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
     }
   }
   
-  private def processInternalBinding(binding:QLBinding, context:QLContext):QLContext = {
+  private def processInternalBinding(binding:QLBinding, context:QLContext, isParam:Boolean, resolvingParser:QLParser):QLContext = {
     if (binding.name == "_context") {
-      initialContext
+      resolvingParser.initialContext
     } else {
       try {
         val rawParamNum = Integer.parseInt(binding.name.substring(1))
         val paramNum = rawParamNum - 1
         val resultOpt = for (
-          params <- paramsOpt;
+          params <- resolvingParser.paramsOpt;
           phrase = params(paramNum)
             )
-          yield processPhrase(phrase.ops, context)
+          yield processPhrase(phrase.ops, context, true)
         
         resultOpt.getOrElse(context.next(WarningValue("No parameters passed in")))
       } catch {
@@ -174,16 +176,28 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
     }
   }
   
-  private def processBinding(binding:QLBinding, context:QLContext):QLContext = {
+  private def processBinding(binding:QLBinding, context:QLContext, isParam:Boolean):QLContext = {
     logContext("processBinding " + binding, context) {
+      
+      // What is this? The thing is, bindings are complicated. Iff we are in a subparser, *and* we are resolving
+      // the parameters from that subparser, then we need to be resolving the bindings against the *parent*, not
+      // against this parser. That is, "myMethod($_1)"'s parameter is parameter 1 from the *caller*. Our normal
+      // resolution would be against the *callee*.
+      val resolvingParser = {
+        if (invOpt.isDefined && isParam)
+          invOpt.flatMap(_.context.parser).get
+        else
+          this
+      }
+    
       if (binding.name.startsWith("_"))
-        processInternalBinding(binding, context)
+        processInternalBinding(binding, context, isParam, resolvingParser)
       else
         context.next(WarningValue("Only internal bindings, starting with $_, are allowed at the moment."))
     }
   }
   
-  private def processStage(stage:QLStage, contextIn:QLContext):QLContext = {
+  private def processStage(stage:QLStage, contextIn:QLContext, isParam:Boolean):QLContext = {
     val context = 
       if (contextIn.depth > contextIn.maxDepth)
         contextIn.next(WarningValue("Too many levels of calls -- you can only have up to " + contextIn.maxDepth + " calls in a phrase."));
@@ -195,27 +209,32 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
 	    stage match {
 	      case name:QLCall => processCall(name, context)
 	      case subText:QLTextStage => processTextStage(subText, context)
-	      case binding:QLBinding => processBinding(binding, context)
+	      case binding:QLBinding => processBinding(binding, context, isParam)
 //        case QLPlainTextStage(text) => context.next(TextValue(text))
 	    }
     }
   }
   
-  def processPhrase(ops:Seq[QLStage], startContext:QLContext):QLContext = {
-    logContext("processPhrase " + ops, startContext) {
+  private[ql] def processPhrase(ops:Seq[QLStage], startContext:QLContext, isParam:Boolean):QLContext = {
+    logContext("processPhrase " + ops + "; isParam=" + isParam, startContext) {
 	    (startContext /: ops) { (context, stage) => 
 	      if (context.isCut)
 	        // Setting the "cut" flag means that we're just stopping processing here. Usually
 	        // used for warnings:
 	        context
 	      else
-	        processStage(stage, context) 
+	        processStage(stage, context, isParam) 
 	    }
     }
   }
+  // This is the entry point that is currently visible to the outside. We believe this is only used for
+  // dealing with parameters.
+  def processPhrase(ops:Seq[QLStage], startContext:QLContext):QLContext = {
+    processPhrase(ops, startContext, false)
+  }
   
   private def processPhrases(phrases:Seq[QLPhrase], context:QLContext):Seq[QLContext] = {
-    phrases map (phrase => processPhrase(phrase.ops, context))
+    phrases map (phrase => processPhrase(phrase.ops, context, false))
   }
 
   def contextsToWikitext(contexts:Seq[QLContext], insertNewlines:Boolean = false):Wikitext = {
@@ -299,10 +318,10 @@ class QLParser(val input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] =
     }
   }
   
-  def processMethod:QLContext = {
+  private[ql] def processMethod:QLContext = {
     val parseResult = parseAll(qlPhrase, input.text)
     parseResult match {
-      case Success(result, _) => processPhrase(result.ops, initialContext)
+      case Success(result, _) => processPhrase(result.ops, initialContext, false)
       case Failure(msg, next) => { initialContext.next(QL.WikitextValue(renderError(msg, next))) }
       case Error(msg, next) => { initialContext.next(QL.WikitextValue(renderError(msg, next))) }
     }

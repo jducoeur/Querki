@@ -197,7 +197,7 @@ package object ql {
      * The input text should be a block of QLText (with the text on the "outside"). This parses
      * that, uses the given context and params to process it, and returns the resulting Wikitext.
      */
-    def process(input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):Wikitext
+    def process(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None):Wikitext
     
     /**
      * Process a QL Function into a QValue.
@@ -205,7 +205,7 @@ package object ql {
      * The input text should be a block of QL (with any text on the "inside"). This parses that,
      * uses the given context and params to process it, and returns the resulting QValue.
      */
-    def processMethod(input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue
+    def processMethod(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None):QValue
     
     def UnknownNameType:PType[String] with PTypeBuilder[String,String]
     def ParsedTextType:PType[Wikitext] with PTypeBuilder[Wikitext,Wikitext]

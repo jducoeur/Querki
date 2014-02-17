@@ -84,6 +84,22 @@ class QLTests extends QuerkiTests {
         equal ("[Methodical](Methodical)")
     }
     
+    "work as a nested parameter" in {
+      class TSpace extends CommonSpace {
+        val myMethod = new TestProperty(QLType, ExactlyOne, "My Method")
+        val myInnerMethod = new TestProperty(QLType, ExactlyOne, "Method 2")
+        
+        val otherThing = new SimpleTestThing("Other Thing")
+        val thingWithMethods = new SimpleTestThing("Methodical", 
+            myMethod("""Other Thing -> Methodical.Method 2($_context)"""),
+            myInnerMethod("""""[[$_context]]; [[$_1]]"""""))
+      }
+      val space = new TSpace
+      
+      processQText(thingAsContext[TSpace](space, (_.thingWithMethods)), "[[My Method]]") should
+        equal ("[Other Thing](Other-Thing); [Methodical](Methodical)")
+    }
+    
     "work when used as a complex parameter" in {
       class TSpace extends CommonSpace {
         val myQLProp = new TestProperty(QLType, ExactlyOne, "My Method")

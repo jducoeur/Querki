@@ -65,7 +65,8 @@ trait TextTypeBasis { self:CoreEcot =>
     // case of a growing concern: that we could be losing information by returning QValue from
     // qlApply, and should actually be returning a full successor Context.
     // TODO: merge this with the fairly-similar code in QLType
-    override def qlApplyFromProp(definingContext:QLContext, incomingContext:QLContext, prop:Property[QLText,_], params:Option[Seq[QLPhrase]]):Option[QValue] = {
+    override def qlApplyFromProp(inv:Invocation, prop:Property[QLText,_]):Option[QValue] = {
+      val definingContext = inv.definingContext.getOrElse(inv.context)
       // TBD: in a perfect world, this would be a true Warning: legal, but with a warning on the side. Unfortunately, doing it
       // like this gets in the way of perfectly legit ordinary situations, and violates the general Querki data model, that
       // passing None to a Stage usually results in None. (That is, it violates ordinary map semantics.)
@@ -78,13 +79,13 @@ trait TextTypeBasis { self:CoreEcot =>
         // from the definingContext, parse that *once*, and process that AST over each element of the incomingContext.
         // That would potentially save us tons and tons of redundant parsing. But it requires reworking the QLParser
         // interface, to split parsing from processing.
-        Some(incomingContext.collect(ParsedTextType) { elemContext:QLContext =>
+        Some(inv.context.collect(ParsedTextType) { elemContext:QLContext =>
           prop.applyToIncomingProps(definingContext) { (thing, context) =>
             implicit val s = definingContext.state
             // In other words, map over all the text values in this property, parsing all of them
             // and passing the resulting collection along the pipeline:
             thing.map(prop, ParsedTextType) { qlText =>
-              QL.process(qlText, elemContext, params)
+              QL.process(qlText, elemContext, Some(inv))
             }
           }
         })

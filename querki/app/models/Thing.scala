@@ -396,7 +396,7 @@ abstract class Thing(
     applyOpt match {
       case Some(apply) => {
         val qlText = apply.first
-        QL.processMethod(qlText, context.forProperty(apply.prop), paramsOpt)
+        QL.processMethod(qlText, context.forProperty(apply.prop), Some(inv))
       }
       case None => Core.ExactlyOne(Core.LinkType(id))
     }

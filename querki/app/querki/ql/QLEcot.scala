@@ -58,13 +58,13 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
     }
   }
   
-  def process(input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):Wikitext = {
-    val parser = new QLParser(input, ci, paramsOpt)
+  def process(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None):Wikitext = {
+    val parser = new QLParser(input, ci, invOpt)
     parser.process
   }
   
-  def processMethod(input:QLText, ci:QLContext, paramsOpt:Option[Seq[QLPhrase]] = None):QValue = {
-    val parser = new QLParser(input, ci, paramsOpt)
+  def processMethod(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None):QValue = {
+    val parser = new QLParser(input, ci, invOpt)
     parser.processMethod.value
   }
   

@@ -135,7 +135,7 @@ case class Property[VT, -RT](
   override def qlApply(inv:Invocation):QValue = {
     // Give the Type first dibs at handling the call; otherwise, return the value of this property
     // on the incoming thing.
-    pType.qlApplyFromProp(inv.definingContext.getOrElse(inv.context), inv.context, this, inv.paramsOpt).getOrElse(
+    pType.qlApplyFromProp(inv, this).getOrElse(
       applyToIncomingProps(inv.context) { (t, innerContext) =>
         t.getPropVal(this)(innerContext.state)
       })
