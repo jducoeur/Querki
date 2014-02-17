@@ -145,6 +145,8 @@ class CSVTests extends QuerkiTests {
 		        SimplePropertyBundle(propOfModelType(SimplePropertyBundle(numberProp(200), textProp("Top Text 2"))))))
 		  val metaThing2 = new TestThing("Top level Thing 2", topModel,
 		      metaProp(SimplePropertyBundle(propOfModelType(SimplePropertyBundle(numberProp(200), textProp("Top Text 2"))))))
+		  // Note that this one intentionally doesn't include metaProp, so we can validate that the lower-level fields get stubbed:
+		  val metaThing3 = new TestThing("Top level Thing 3", topModel)
       }
       implicit val s = new TSpace
       
@@ -155,9 +157,10 @@ class CSVTests extends QuerkiTests {
       // which comes before "Name":
       new String(result.content).stripReturns should equal("""Text in Model,Number in Model,Name
           |Top Text 1,11,Top-level-Thing-1
-          |Top Text 2,200,Top-level-Thing-2""".stripReturns)
+          |Top Text 2,200,Top-level-Thing-2
+          |Text from MetaModel,42,Top-level-Thing-3""".stripReturns)
     }
-    
+
     "work with escaped fields" in {
       class TSpace extends CommonSpace {
         val numberProp = new TestProperty(Core.IntType, ExactlyOne, "Number Prop")

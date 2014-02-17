@@ -63,6 +63,7 @@ class Application extends ApplicationBase {
   lazy val Links = interface[querki.links.Links]
   lazy val QL = interface[querki.ql.QL]
   lazy val Types = interface[querki.types.Types]
+  lazy val Imexport = interface[querki.imexport.Imexport]
   
   lazy val UrProp = Core.UrProp  
   lazy val AppliesToKindProp = Core.AppliesToKindProp
@@ -735,6 +736,28 @@ disallow: /
         }        
       }
     }
+  }
+  
+  def showAdvancedCommands(ownerId:String, spaceId:String, thingId:String) = withThing(true, ownerId, spaceId, thingId) { implicit rc =>
+    implicit val state = rc.state.get
+    val thing = rc.thing.get
+    val editText = QLText(s"""### Advanced commands for ____
+        |
+        |**[Export all Instances of [[Name]] as a CSV file](_exportModel?modelId=[[_oid]]&format=1)**
+        |
+        |[[_linkButton(""Done"")]]""".stripMargin)
+    val wikitext = QL.process(editText, thing.thisAsContext, None)
+    val html = wikitext.display.html
+    Ok(views.html.main(QuerkiTemplate.Thing, s"Editing instances of ${thing.displayName}", rc, true)(html))    
+  }
+  
+  def exportModel(ownerId:String, spaceId:String, modelId:String, format:Int) = withThing(true, ownerId, spaceId, modelId) { rc =>
+    implicit val state = rc.state.get
+    val model = rc.thing.get
+    
+    val result = Imexport.exportInstances(rc, format, model)
+    
+    Ok(result.content).as(result.mime).withHeaders(("Content-disposition" -> s"attachment;filename=${result.name}"))
   }
   
   def exportThing(ownerId:String, spaceId:String, thingIdStr:String) = withSpace(true, ownerId, spaceId, Some(thingIdStr)) { implicit rc =>

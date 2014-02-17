@@ -14,6 +14,7 @@ object MIMEType {
   val CSS = "text/css"
   val JPEG = "image/jpeg"
   val JSON = "application/json"
+  val CSV = "text/csv"
 }
 
 class Attachment(i:OID, s:OID, m:OID, pf: PropFetcher, mt:DateTime = querki.time.epoch)(implicit e:Ecology)  

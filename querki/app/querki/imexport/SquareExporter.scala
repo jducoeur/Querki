@@ -31,7 +31,11 @@ case class ModelPropAccessor(prop:Property[ModeledPropertyBundle,_], children:Se
     val vOpt = for {
       instance <- instanceOpt
       pv <- instance.getPropOpt(prop)
-      v <- pv.firstOpt
+      // NOTE: we only use the *first* element here, and we always guarantee that we will use one. This is conceptually
+      // broken, but necessary in order to get "square" results.
+      // Note also that we have to go directly to the pType to get the fallback value, because we want to guarantee
+      // that we get exactly one value. If the property is a List, then the default will still be empty:
+      v <- pv.firstOpt.orElse(Some(prop.pType.doDefault))
     }
       yield v
       

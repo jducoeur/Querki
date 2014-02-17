@@ -1,6 +1,6 @@
 package querki.imexport
 
-import models.Thing
+import models.{MIMEType, Thing}
 
 import querki.ecology._
 import querki.util._
@@ -14,7 +14,7 @@ trait Exporter {
  * For now, this is just a trivial implementation of the interface. We're separating them mostly on
  * principle.
  */
-case class ExportedContentImpl(content:Array[Byte], name:String) extends ExportedContent
+case class ExportedContentImpl(content:Array[Byte], name:String, mime:MIMEType.MIMEType) extends ExportedContent
 
 class ImexportEcot(e:Ecology) extends QuerkiEcot(e) with Imexport {
   

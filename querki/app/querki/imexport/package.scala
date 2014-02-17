@@ -1,6 +1,6 @@
 package querki
 
-import models.Thing
+import models.{MIMEType, Thing}
 
 import querki.ecology._
 import querki.values.{RequestContext, SpaceState}
@@ -27,6 +27,7 @@ package object imexport {
   trait ExportedContent {
     def content:Array[Byte]
     def name:String
+    def mime:MIMEType.MIMEType
   }
   
   trait Imexport extends EcologyInterface {

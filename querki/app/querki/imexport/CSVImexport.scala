@@ -1,6 +1,6 @@
 package querki.imexport
 
-import models.Thing
+import models.{MIMEType, Thing}
 
 import querki.ecology._
 import querki.values.{QValue, SpaceState}
@@ -30,7 +30,7 @@ private[imexport] class CSVImexport(implicit val ecology:Ecology) extends Export
     // usual for CSV:
     val text = rows.mkString("\r\n")
     
-    ExportedContentImpl(text.getBytes(), model.displayName + ".csv")
+    ExportedContentImpl(text.getBytes(), model.displayName + ".csv", MIMEType.CSV)
   }
   
   // Again, escaping as suggested by Wikipedia's summary of RFC 4180:
