@@ -20,6 +20,33 @@ class CollectionsTests extends QuerkiTests {
     }
   }
   
+  // === _foreach ===
+  "_foreach" should {
+    "work normally" in {
+      lazy val QLType = Basic.QLType
+      
+      class TSpace extends CommonSpace {
+        val myQLProp = new TestProperty(QLType, ExactlyOne, "My Method")
+        val listProp = new TestProperty(LinkType, QList, "List of Links")
+        
+        val thing1 = new SimpleTestThing("Thing 1")
+        val thing2 = new SimpleTestThing("Thing 2")
+        val thing3 = new SimpleTestThing("Thing 3")
+        
+        val myThing = new SimpleTestThing("My Thing",
+            myQLProp("""""I got:[[$_context]]"""""),
+            listProp(thing1, thing2, thing3))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[My Thing -> List of Links -> _foreach(My Thing.My Method)]]""") should
+        equal("""
+            |I got:[Thing 1](Thing-1)
+            |I got:[Thing 2](Thing-2)
+            |I got:[Thing 3](Thing-3)""".stripReturns)
+    }
+  }
+  
   // === _isEmpty ===
   "_isEmpty" should {
     "work correctly in dotted position" in {

@@ -18,6 +18,7 @@ object MOIDs extends EcotIds(6) {
   
   val PrevInListOID = moid(1)
   val NextInListOID = moid(2)
+  val ForeachMethodOID = moid(3)
 }
 
 class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with querki.logic.YesNoUtils {
@@ -398,6 +399,23 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
       }
     }
   }
+  
+  lazy val foreachMethod = new InternalMethod(NextInListOID,
+      toProps(
+        setName("_foreach"),
+        Summary("Applies the parameter to each element in the received collection, and produces a collection of the results"),
+        Details("""    COLL -> _foreach(param) -> RESULT 
+        		|Otherwise known as "map" in many programming languages, this lets you take an expression or function
+                |that operates on a single element, and apply it to each element in the received collection.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      for {
+        elemContext <- inv.contextElements
+        elemResult <- inv.processParam(0, elemContext)
+      }
+        yield elemResult
+    }
+  }
 
   override lazy val props = Seq(
     FirstMethod,
@@ -411,7 +429,8 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
     ReverseMethod,
       
     prevInListMethod,
-    nextInListMethod
+    nextInListMethod,
+    foreachMethod
   )
   
 }
