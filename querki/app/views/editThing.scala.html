@@ -452,7 +452,7 @@
           });
         }
       }
-    
+ 				
       $(function() {
         $("#_addPropertyButton").click(beginAddProperty);
         $("#_cancelAddPropertyButton").click(closeAddProperty);
@@ -467,6 +467,37 @@
         $("#_newPropType, #_newPropName").change(checkCreateButton);
         $("#_newPropType").change(checkIfLinkType);
         $("#_newPropType").change(checkTypeCollection);
+        
+        @if(thing.isDefined) {
+			$("#changeModelBtn").on("click", function(evt) {
+			  $("#change-model-dialog").dialog("open");
+			});
+		
+			$("#change-model-dialog").dialog({
+			  autoOpen:false,
+			  height: 300,
+			  width: 350,
+			  modal: true,
+			  buttons: {
+			    "Change": function () {
+			      var modelId = $("#changedModel :selected").first().val()
+			      if (modelId && (modelId.length > 0)) {
+			        // TBD: Bit of an abstraction break here -- the Javascript needs to know the URL syntax for
+			        // model creation. Can we do this better somehow? 
+			        window.location = "@routes.Application.changeModel(rc.ownerHandle, space.toThingId, thing.get.toThingId)" + "&modelId=" + modelId;
+			      } else {
+			        // TODO: The Create button should really be disabled unless a legit option
+			        // is picked; not quite sure how to do that in jQuery UI. 
+			      }
+			    },
+			    "Cancel": function () {
+			      $(this).dialog("close");
+			    }
+			  },
+			  close: function () {
+			  }
+			});
+		}
       });
       
       // **************************************
@@ -488,8 +519,15 @@
       });
     </script>
     
+    @if(thing.isDefined) {
+      @modelSelectionForm(rc, space, "change-model-dialog", "Change Model", "Choose the new Model:", "changedModel")    
+    }
+    
 	<div class="page-header">
 	    <h1>@Html(pageTitle) @cancelButton</h1>
+		@if(thing.isDefined) {
+	      <p class="_smallSubtitle">Model: @{model.displayName} -- <a href="#" id="changeModelBtn">Change Model</a></p>	
+		}
 	</div>
 	
 	@if(!canEdit) {

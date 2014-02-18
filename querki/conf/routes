@@ -33,6 +33,7 @@ GET     /u/:userName/:spaceId/_advanced @controllers.Application.showAdvancedCom
 
 GET     /u/:userName/:spaceId/edit @controllers.Application.editThing(userName, spaceId, thingId)
 POST    /u/:userName/:spaceId/edit @controllers.Application.doEditThing(userName, spaceId, thingId)
+GET     /u/:userName/:spaceId/_changeModel @controllers.Application.changeModel(userName, spaceId, thingId)
 GET     /u/:userName/:spaceId/view @controllers.Application.viewThing(userName, spaceId, thingId)
 GET     /u/:userName/:spaceId/delete  @controllers.Application.deleteThing(userName, spaceId, thingId)
 

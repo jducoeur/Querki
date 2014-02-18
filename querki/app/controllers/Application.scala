@@ -468,6 +468,27 @@ disallow: /
   }
   
   def doEditThing(ownerId:String, spaceId:String, thingIdStr:String) = editThingInternal(ownerId, spaceId, Some(thingIdStr), false)
+  
+  def changeModel(ownerId:String, spaceId:String, thingIdStr:String) = withThing(true, ownerId, spaceId, thingIdStr) { implicit rc =>
+    val state = rc.state.get
+    val thing = rc.thing.get
+    val modelIdOpt = rc.firstQueryParam("modelId")
+    modelIdOpt.flatMap(modelIdStr => state.anything(ThingId(modelIdStr))) match {
+      case Some(model) => {
+        val spaceMsg = ModifyThing(rc.requesterOrAnon, rc.ownerId, ThingId(spaceId), rc.thing.get.id.toThingId, model.id, thing.props)
+        askSpaceMgr[ThingResponse](spaceMsg) {
+          case ThingFound(thingId, newState) => {
+            val newThing = newState.anything(thingId)
+            Redirect(routes.Application.thing(newState.ownerHandle, newState.toThingId, newThing.get.toThingId))
+          }
+          case ThingError(error, stateOpt) => {
+        	doError(routes.Application.thing(ownerId, spaceId, thingIdStr), error)
+          }
+        }
+      }
+      case None => doError(routes.Application.thing(ownerId, spaceId, thingIdStr), "Unknown Model: " + modelIdOpt)
+    }
+  }
 
   // TODO: this should really have its own security property, Can View Source, which should default to Can Read. But for now,
   // we'll make do with Can Read, which is implicit in withThing:
