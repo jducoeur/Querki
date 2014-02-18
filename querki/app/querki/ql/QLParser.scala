@@ -87,14 +87,14 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None)
       partialDelimiterRegex) ^^ { UnQLText(_) }
   def qlSafeName[QLSafeName] = name ^^ { QLSafeName(_) }
   def qlDisplayName[QLDisplayName] = "`" ~> "[^`]*".r <~ "`" ^^ { QLDisplayName(_) }
-  def qlName:Parser[QLName] = qlSafeName | qlDisplayName
+  def qlName:Parser[QLName] = qlBinding | qlSafeName | qlDisplayName
   def qlCall:Parser[QLCall] = opt("\\*\\s*".r) ~ qlName ~ opt("." ~> name) ~ opt("\\(\\s*".r ~> (rep1sep(qlPhrase, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
     case collFlag ~ n ~ optMethod ~ optParams => QLCall(n, optMethod, optParams, collFlag) }
   // Note that the failure() here only works because we specifically disallow "]]" in a Text!
   def qlTextStage:Parser[QLTextStage] = (opt("\\*\\s*".r) <~ "\"\"") ~ qlText <~ ("\"\"" | failure("Reached the end of the QL expression, but missing the closing \"\" for a Text expression in it") ) ^^ {
     case collFlag ~ text => QLTextStage(text, collFlag) }
   def qlBinding:Parser[QLBinding] = "\\s*\\$".r ~> name ^^ { QLBinding(_) } 
-  def qlStage:Parser[QLStage] = qlBinding | qlCall | qlTextStage
+  def qlStage:Parser[QLStage] = qlCall | qlTextStage
   def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, qlSpace ~ "->".r ~ qlSpace) ^^ { QLPhrase(_) }
   def qlExp:Parser[QLExp] = opt(qlSpace) ~> repsep(qlPhrase, "\\s*\\r?\\n|\\s*;\\s*".r) <~ opt(qlSpace) ^^ { QLExp(_) }
   def qlLink:Parser[QLLink] = qlText ^^ { QLLink(_) }
@@ -120,38 +120,49 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None)
     }
   }
   
-  private def processCall(call:QLCall, context:QLContext):QLContext = {
+  private def processCall(call:QLCall, context:QLContext, isParam:Boolean):QLContext = {
     logContext("processCall " + call, context) {
-	    val thing = context.state.anythingByName(call.name.name)
-	    val tv = thing match {
-	      case Some(t) => {
-	        // If there are parameters to the call, they are a collection of phrases.
-	        val params = call.params
-	        val methodOpt = call.methodName.flatMap(context.state.anythingByName(_))
-	        try {
-	          methodOpt match {
-	            case Some(method) => {
-	              val definingContext = context.next(Core.ExactlyOne(Core.LinkType(t.id)))
-	              val partialFunction = method.partiallyApply(definingContext)
-	              partialFunction.qlApply(InvocationImpl(t, context, Some(definingContext), params))
-	            }
-	            case None => {
-	              val inv = InvocationImpl(t, context, None, params)
-	              t.qlApply(inv)
-	            }
-	          }
-	        } catch {
-	          case ex:PublicException => WarningValue(ex.display(context.requestOpt))
-	          case error:Exception => QLog.error("Error during QL Processing", error); WarningValue(UnexpectedPublicException.display(context.requestOpt))
-	        }
-	      }
-	      // They specified a name we don't know. Turn it into a raw NameType and pass it through. If it gets to
-	      // the renderer, it will turn into a link to the undefined page, where they can create it.
-	      //
-	      // TBD: in principle, we might want to make this more Space-controllable. But it isn't obvious that we care. 
-	      case None => Core.ExactlyOne(QL.UnknownNameType(call.name.name))
-	    }
-	    context.next(tv)
+      
+      def processThing(t:Thing):QValue = {
+        // If there are parameters to the call, they are a collection of phrases.
+        val params = call.params
+        val methodOpt = call.methodName.flatMap(context.state.anythingByName(_))
+        try {
+          methodOpt match {
+            case Some(method) => {
+              val definingContext = context.next(Core.ExactlyOne(Core.LinkType(t.id)))
+              val partialFunction = method.partiallyApply(definingContext)
+              partialFunction.qlApply(InvocationImpl(t, context, Some(definingContext), params))
+            }
+            case None => {
+              val inv = InvocationImpl(t, context, None, params)
+              t.qlApply(inv)
+            }
+          }
+        } catch {
+          case ex:PublicException => WarningValue(ex.display(context.requestOpt))
+          case error:Exception => QLog.error("Error during QL Processing", error); WarningValue(UnexpectedPublicException.display(context.requestOpt))
+        }      
+      }  
+      
+      call.name match {
+        case binding:QLBinding => { 
+          val resolvedBinding = processBinding(binding, context, isParam)
+        
+          val tOpt = for {
+            oid <- resolvedBinding.value.firstAs(Core.LinkType)
+            thing <- context.state.anything(oid)
+          }
+            yield thing
+          
+          tOpt.map(t => context.next(processThing(t))).getOrElse(resolvedBinding)
+        }
+        case _ => {
+          val tOpt = context.state.anythingByName(call.name.name)
+        
+          tOpt.map(t => context.next(processThing(t))).getOrElse(context.next(Core.ExactlyOne(QL.UnknownNameType(call.name.name))))
+        }
+      }
     }
   }
   
@@ -190,22 +201,10 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None)
           this
       }
     
-      val resolvedBinding = if (binding.name.startsWith("_"))
+      if (binding.name.startsWith("_"))
         processInternalBinding(binding, context, isParam, resolvingParser)
       else
         context.next(WarningValue("Only internal bindings, starting with $_, are allowed at the moment."))
-
-      // If we get a Link back, then try processing it as appropriate as the context.
-      // TODO: this really should be merged with the code in processCall, so that we can
-      // use a Binding exactly the same way we do a Name:
-      val processedBinding = for {
-        oid <- resolvedBinding.value.firstAs(Core.LinkType)
-        thing <- context.state.anything(oid)
-        inv = InvocationImpl(thing, context, None, None)
-      }
-        yield context.next(thing.qlApply(inv))
-        
-      processedBinding.getOrElse(resolvedBinding)
     }
   }
   
@@ -219,9 +218,8 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None)
         contextIn
     logContext("processStage " + stage, context) {
 	    stage match {
-	      case name:QLCall => processCall(name, context)
+	      case name:QLCall => processCall(name, context, isParam)
 	      case subText:QLTextStage => processTextStage(subText, context)
-	      case binding:QLBinding => processBinding(binding, context, isParam)
 //        case QLPlainTextStage(text) => context.next(TextValue(text))
 	    }
     }

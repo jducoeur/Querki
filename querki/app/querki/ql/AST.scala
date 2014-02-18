@@ -32,6 +32,9 @@ private[ql] case class QLSafeName(n:String) extends QLName(n) {
 private[ql] case class QLDisplayName(n:String) extends QLName(n) {
   def reconstructString:String = "`" + n + "`"
 }
+private[ql] case class QLBinding(n:String) extends QLName(n) {
+  def reconstructString = "$" + n
+}
 private[ql] sealed abstract class QLTextPart {
   def reconstructString:String
   
@@ -51,9 +54,6 @@ private[ql] sealed abstract class QLStage(collFlag:Option[String]) {
 }
 private[ql] case class QLTextStage(contents:ParsedQLText, collFlag:Option[String]) extends QLStage(collFlag) {
   def reconstructString = collFlag.getOrElse("") + "\"\"" + contents.reconstructString + "\"\""
-}
-private[ql] case class QLBinding(name:String) extends QLStage(None) {
-  def reconstructString = "$" + name
 }
 private[ql] case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart {
   def reconstructString = "[[" + phrases.map(_.reconstructString).mkString + "]]"
