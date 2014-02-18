@@ -100,6 +100,25 @@ class QLTests extends QuerkiTests {
         equal ("[Other Thing](Other-Thing); [Methodical](Methodical)")
     }
     
+    
+    "work with a property" in {
+      class TSpace extends CommonSpace {
+        val myMethod = new TestProperty(QLType, ExactlyOne, "My Method")
+        val myInnerMethod = new TestProperty(QLType, ExactlyOne, "Method 2")
+        
+        val numberProp = new TestProperty(Core.IntType, Optional, "My Number")
+        
+        val otherThing = new SimpleTestThing("Other Thing", numberProp(42))
+        val thingWithMethods = new SimpleTestThing("Methodical", 
+            myMethod("""My Number._self -> Methodical.Method 2(Other Thing)"""),
+            myInnerMethod("""""[[$_1 -> $_context]]"""""))
+      }
+      val space = new TSpace
+      
+      processQText(thingAsContext[TSpace](space, (_.thingWithMethods)), "[[My Method]]") should
+        equal ("42")
+    }
+    
     "work when used as a complex parameter" in {
       class TSpace extends CommonSpace {
         val myQLProp = new TestProperty(QLType, ExactlyOne, "My Method")

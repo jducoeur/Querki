@@ -190,10 +190,22 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None)
           this
       }
     
-      if (binding.name.startsWith("_"))
+      val resolvedBinding = if (binding.name.startsWith("_"))
         processInternalBinding(binding, context, isParam, resolvingParser)
       else
         context.next(WarningValue("Only internal bindings, starting with $_, are allowed at the moment."))
+
+      // If we get a Link back, then try processing it as appropriate as the context.
+      // TODO: this really should be merged with the code in processCall, so that we can
+      // use a Binding exactly the same way we do a Name:
+      val processedBinding = for {
+        oid <- resolvedBinding.value.firstAs(Core.LinkType)
+        thing <- context.state.anything(oid)
+        inv = InvocationImpl(thing, context, None, None)
+      }
+        yield context.next(thing.qlApply(inv))
+        
+      processedBinding.getOrElse(resolvedBinding)
     }
   }
   
