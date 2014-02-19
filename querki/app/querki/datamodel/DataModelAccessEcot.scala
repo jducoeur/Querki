@@ -5,7 +5,8 @@ import querki.ecology._
 import models.{Kind, PType}
 
 import querki.ql.{QLCall, QLPhrase}
-import querki.util.PublicException
+import querki.spaces.ThingChangeRequest
+import querki.util.{Contributor, PublicException, Publisher}
 import querki.values._
 
 /**
@@ -19,9 +20,57 @@ import querki.values._
 class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess with querki.logic.YesNoUtils with querki.core.MethodDefs {
   import MOIDs._
   
+  val SpaceChangeManager = initRequires[querki.spaces.SpaceChangeManager]
+  
+  override def init = {
+    SpaceChangeManager.thingChanges += PropCopier
+  }
+  
+  override def term = {
+    SpaceChangeManager.thingChanges += PropCopier
+  }
+  
   lazy val QL = interface[querki.ql.QL]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Links = interface[querki.links.Links]
+  
+  private object PropCopier extends Contributor[ThingChangeRequest, ThingChangeRequest] {
+    // This is called whenever we get a Create or Modify request.
+    def notify(evt:ThingChangeRequest, sender:Publisher[ThingChangeRequest,ThingChangeRequest]):ThingChangeRequest = {
+      evt match {
+        // We only worry about it if there is a Model and there isn't a Thing, so this is a Create:
+        case ThingChangeRequest(state, Some(modelId), None, props) => {
+          implicit val s = state
+          state.anything(modelId) match {
+            case Some(model) => {
+              val copiedProps = model.props.keys.filter { propId =>
+                state.prop(propId) match {
+                  case Some(prop) => prop.ifSet(copyIntoInstances)
+                  case None => false
+                }
+              }
+              
+              val newProps = (props /: copiedProps) { (curProps, copyId) =>
+                if (props.contains(copyId))
+                  // The create is already overriding the Model's value
+                  curProps
+                else
+                  model.getPropOpt(copyId) match {
+                    case Some(pv) => props + (copyId -> pv.v)
+                    case None => props
+                  }
+              }
+              
+              ThingChangeRequest(state, Some(modelId), None, newProps)
+            }
+            // TODO: this is actually a strange error -- what should we do here?
+            case None => evt
+          }
+        }
+        case _ => evt
+      }
+    }
+  }
   
   def isDeletable(t:Thing)(implicit state:SpaceState):Boolean = {
     t match {
@@ -34,6 +83,32 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
       case _ => false
     }
   }
+  
+  /***********************************************
+   * PROPERTIES
+   ***********************************************/  
+  
+  lazy val copyIntoInstances = new SystemProperty(CopyIntoInstancesOID, YesNoType, ExactlyOne, 
+      toProps(
+        setName("Copy into Instances"),
+        SkillLevel(SkillLevelAdvanced),
+        Core.AppliesToKindProp(Kind.Property),
+        Summary("If set, this Property's values will always be copied from the Model into newly-created Instances"),
+        Details("""Usually, Querki's Properties are inherited from the Model to the Instance -- that is, if the
+            |Instance doesn't have the Property set, it will use the value from the Model. 99% of the time, that is
+            |what you want -- it is flexible, and allows you to make changes to the Model and have them immediately
+            |picked up by the Instances.
+            |
+            |Very occasionally, however, you have a Property that doesn't want this -- that wants to nail down the
+            |value permanently when you create the Instance. For such Properties, set this flag. When the Instance
+            |is created, the Model's value for this Property will be copied into the Instance, so that the Instance
+            |permanently has its own value, and will not change if the Model does.
+            |
+            |This was mainly created for certain bulk-data-entry situations, where you want to set the value to something,
+            |create a bunch of Instances with that value, then change it to something else and create a bunch of Instances
+            |with that. This is reasonable, but keep in mind that creating sub-Models with the different values is
+            |sometimes an easier and better way to deal with it.""".stripMargin)
+        ))
   
   /***********************************************
    * FUNCTIONS
@@ -284,6 +359,8 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
 	})
 
   override lazy val props = Seq(
+    copyIntoInstances,
+      
     new InstancesMethod,
     new RefsMethod,
     new SpaceMethod,

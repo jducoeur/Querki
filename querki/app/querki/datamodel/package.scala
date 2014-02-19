@@ -25,6 +25,7 @@ package object datamodel {
 	  
 	  val HasPropertyMethodOID = moid(1)
 	  val AllThingsOID = moid(2)
+	  val CopyIntoInstancesOID = moid(3)
 	}
 
   trait DataModelAccess extends EcologyInterface {
