@@ -30,6 +30,7 @@ package object datamodel {
 
   trait DataModelAccess extends EcologyInterface {
     def IsFunctionProp:Property[Boolean,Boolean]
+    def CopyIntoInstances:Property[Boolean,Boolean]
     
     def isDeletable(t:Thing)(implicit state:SpaceState):Boolean
   }

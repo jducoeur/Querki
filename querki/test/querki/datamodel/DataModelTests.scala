@@ -2,7 +2,38 @@ package querki.datamodel
 
 import querki.test._
 
+import querki.spaces.ThingChangeRequest
+
 class DataModelTests extends QuerkiTests {
+  lazy val DataModelAccess = interface[querki.datamodel.DataModelAccess]
+  lazy val SpaceChangeManager = interface[querki.spaces.SpaceChangeManager]
+  
+  // === Copy Into Instances ===
+  "Copy Into Instances" should {
+    "work normally" in {
+      class TSpace extends CommonSpace {
+        val myProp = new TestProperty(TextType, Optional, "My Text Prop", DataModelAccess.CopyIntoInstances(true))
+        val otherProp = new TestProperty(TextType, Optional, "Other Text Prop")
+        
+        val myModel = new SimpleTestThing("My Model", myProp("Hello"), otherProp("Yay!"))
+        
+        val myInstance = new TestThing("My Instance", myModel)
+      }
+      implicit val s = new TSpace
+      
+      assert(!s.myInstance.props.contains(s.myProp.id))
+      assert(!s.myInstance.props.contains(s.otherProp.id))
+      
+      // TODO: this is a pretty low-level test. Once we actually have unit testing working for the Space Actor,
+      // we should test that way, to get a more realistic functional test:
+      val actualProps = SpaceChangeManager.thingChanges(ThingChangeRequest(s.state, Some(s.myModel.id), None, s.myInstance.props)).newProps
+
+      // In other words, myProp is being copied into the actual properties, but otherProp is not:
+      assert(actualProps.contains(s.myProp.id))
+      assert(!actualProps.contains(s.otherProp.id))
+    }
+  }
+  
   // === _hasProperty ===
   "_hasProperty" should {
     "produce true iff the Thing has the Property" in {

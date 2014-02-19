@@ -45,7 +45,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
             case Some(model) => {
               val copiedProps = model.props.keys.filter { propId =>
                 state.prop(propId) match {
-                  case Some(prop) => prop.ifSet(copyIntoInstances)
+                  case Some(prop) => prop.ifSet(CopyIntoInstances)
                   case None => false
                 }
               }
@@ -88,7 +88,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
    * PROPERTIES
    ***********************************************/  
   
-  lazy val copyIntoInstances = new SystemProperty(CopyIntoInstancesOID, YesNoType, ExactlyOne, 
+  lazy val CopyIntoInstances = new SystemProperty(CopyIntoInstancesOID, YesNoType, ExactlyOne, 
       toProps(
         setName("Copy into Instances"),
         SkillLevel(SkillLevelAdvanced),
@@ -359,7 +359,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
 	})
 
   override lazy val props = Seq(
-    copyIntoInstances,
+    CopyIntoInstances,
       
     new InstancesMethod,
     new RefsMethod,
