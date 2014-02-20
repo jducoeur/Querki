@@ -60,6 +60,7 @@ object SystemCreator {
     new controllers.PageEventManagerEcot(ecology)                  // 31
     new querki.spaces.SpaceChangeManagerEcot(ecology)              // 32    
     new querki.imexport.ImexportEcot(ecology)                      // 33
+    new querki.datamodel.introspection.IntrospectionEcot(ecology)  // 34
   }
   
   def createAllEcots(ecology:Ecology):Ecology = {
