@@ -131,7 +131,9 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   lazy val definedOnMethod = new InternalMethod(DefinedOnMethodOID,
       toProps(
         setName("_definedOn"),
-        Summary("Fetch the Thing or Model Value that the current Property was defined on, inside of _foreachProperty")))
+        Summary("Fetch the Thing or Model Value that the current Property was defined on, inside of _foreachProperty"),
+        Details("""Keep in mind that this returns the *immediate* container of the Property, though. If you have a
+            |complex nested Model, this might not return the value you expect.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QValue = {
       for {

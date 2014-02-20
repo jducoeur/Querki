@@ -17,6 +17,9 @@ class IntrospectionTests extends QuerkiTests {
     val bottomModel = new SimpleTestThing("Bottom Model", prop1(1), prop2(2), prop4(4), prop5(5), prop3(3),
         Editor.InstanceProps(prop1, prop2, prop3, prop4, prop5))
     
+    val bottomThing1 = new TestThing("Bottom 1", bottomModel)
+    val bottomThing2 = new TestThing("Bottom 2", bottomModel)
+    
     val modelType = new ModelType(toid, bottomModel.id, 
       Core.toProps(
         Core.setName("__ Bottom Model Type")
@@ -25,7 +28,7 @@ class IntrospectionTests extends QuerkiTests {
 
     val propOfModelType = new TestProperty(modelType, ExactlyOne, "Complex Prop")
     
-    val complexThingModel = new SimpleTestThing("Complex Thing Model", propOfModelType())
+    val complexThingModel = new SimpleTestThing("Complex Thing Model", propOfModelType(SimplePropertyBundle()))
     val complexThing = new TestThing("My Complex Thing", complexThingModel, propOfModelType(SimplePropertyBundle(prop3(9))))
     val trivialComplexThing = new TestThing("Other Complex Thing", complexThingModel)
   }
@@ -54,21 +57,22 @@ class IntrospectionTests extends QuerkiTests {
     }
   }
   
-  // TODO: this doesn't work right yet, because, frighteningly, Property access is doing a _first. Need to fix that!
-//  "_definedOn" should {
-//    "work properly" in {
-//      implicit val space = new TSpace
-//      
-//      println(pql("""[[Complex Thing Model._instances  -> ""hello ""]]"""))
-//      
-//      // Note that the results are in order by Instance Props, not alphabetical:
-//      println(pql("""[[Complex Thing Model._instances -> Complex Prop -> _foreachProperty(""Name: [[_prop -> Name]]; Value: [[_val]]; On: [[_definedOn -> Name]]"") -> _bulleted]]"""))// should
-////        equal("""
-////            |* Name: First Prop; Value: 1
-////            |* Name: Second Prop; Value: 2
-////            |* Name: Third Prop; Value: 9
-////            |* Name: Fourth Prop; Value: 4
-////            |* Name: Fifth Prop; Value: 5""".stripReturns)
-//    }    
-//  }
+  "_definedOn" should {
+    "work properly" in {
+      implicit val space = new TSpace
+      
+      pql("""[[Bottom Model._instances -> _sort -> _foreachProperty(""Name: [[_prop -> Name]]; Value: [[_val]]; On: [[_definedOn -> Name]]"") -> _bulleted]]""")  should
+        equal ("""
+            |* Name: First Prop; Value: 1; On: Bottom 1
+            |* Name: Second Prop; Value: 2; On: Bottom 1
+            |* Name: Third Prop; Value: 3; On: Bottom 1
+            |* Name: Fourth Prop; Value: 4; On: Bottom 1
+            |* Name: Fifth Prop; Value: 5; On: Bottom 1
+            |* Name: First Prop; Value: 1; On: Bottom 2
+            |* Name: Second Prop; Value: 2; On: Bottom 2
+            |* Name: Third Prop; Value: 3; On: Bottom 2
+            |* Name: Fourth Prop; Value: 4; On: Bottom 2
+            |* Name: Fifth Prop; Value: 5; On: Bottom 2""".stripReturns)
+    }    
+  }
 }
