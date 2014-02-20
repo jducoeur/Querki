@@ -1,6 +1,6 @@
 package querki
 
-import models.{Property, PType, PTypeBuilder, Thing, Wikitext}
+import models.{Property, PropertyBundle, PType, PTypeBuilder, Thing, Wikitext}
 
 import querki.core.QLText
 import querki.ecology._
@@ -112,6 +112,12 @@ package object ql {
      * all LinkType, resolves them to Thing, and gives an error if any aren't Links.)
      */
     def contextAllThings:InvocationValue[Thing]
+    
+    /**
+     * Iterates over all of the received Bundles. That is, you can pass *either* a Link to a Thing or a
+     * ModeledPropertyBundle into here, and the rest of the code can deal with it.
+     */
+    def contextAllBundles:InvocationValue[PropertyBundle]
 
     /**
      * Returns the first Thing in the received context.

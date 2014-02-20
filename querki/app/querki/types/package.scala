@@ -15,9 +15,11 @@ package object types {
     val MaxIntValueOID = moid(2)
     
     val WrappedValueTypeOID = moid(3)
-    
     val DefaultValuePropOID = moid(4)
     val ModelForTypePropOID = moid(5)
+    val ForeachPropertyMethodOID = moid(6)
+    val ValMethodOID = moid(7)
+    val PropMethodOID = moid(8)
   }
   
   implicit def vals2Bundle(vals:(OID, QValue)*):SimplePropertyBundle = SimplePropertyBundle(vals:_*)

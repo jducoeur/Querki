@@ -154,4 +154,31 @@ class ModelTypeTests extends QuerkiTests {
       assert(rebuiltResult == originalResult.replace("200", "99"))
     }
   }
+  
+  "_foreachProperty" should {
+    "work for a simple Model Value" in {
+      class TSpace extends CommonSpace with ModelTypeDefiner {
+        val prop1 = new TestProperty(Core.IntType, ExactlyOne, "First Prop")
+        val prop2 = new TestProperty(Core.IntType, ExactlyOne, "Second Prop")
+        val prop3 = new TestProperty(Core.IntType, ExactlyOne, "Third Prop")
+        val prop4 = new TestProperty(Core.IntType, ExactlyOne, "Fourth Prop")
+        val prop5 = new TestProperty(Core.IntType, ExactlyOne, "Fifth Prop")
+        
+        val bottomModel = new SimpleTestThing("Bottom Model", prop1(1), prop2(2), prop3(3), prop4(4), prop5(5))
+        
+        val modelType = new ModelType(toid, bottomModel.id, 
+          Core.toProps(
+            Core.setName("__ Bottom Model Type")
+          ))
+        registerType(modelType)
+    
+        val propOfModelType = new TestProperty(modelType, ExactlyOne, "Complex Prop")
+        
+        val complexThing = new SimpleTestThing("My Complex Thing", propOfModelType(SimplePropertyBundle(prop3(9))))
+      }
+      implicit val space = new TSpace
+      
+      println(pql("""[[My Complex Thing -> Complex Prop -> _foreachProperty(""Name: [[_prop -> Name]]; Value: [[_val]]"") -> _bulleted]]"""))
+    }
+  }
 }

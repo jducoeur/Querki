@@ -4,9 +4,10 @@ import scala.reflect.ClassTag
 
 import querki.values.SpaceState
 
-import models.{AsOID, Property, PType, Thing, ThingId}
+import models.{AsOID, Property, PropertyBundle, PType, Thing, ThingId}
 
 import querki.ecology._
+import querki.types.ModelTypeBase
 import querki.util._
 import querki.values.{QLContext, QValue, SpaceState}
 
@@ -81,6 +82,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
 {
   lazy val QL = interface[querki.ql.QL]
   lazy val Core = interface[querki.core.Core]
+  lazy val Types = interface[querki.types.Types]
   
   lazy val displayName = invokedOn.displayName
   
@@ -163,6 +165,23 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
       else
         error("Func.unknownThing", displayName)
     }    
+  }
+  
+  def contextAllBundles:InvocationValue[PropertyBundle] = {
+    if (context.value.matchesType(Core.LinkType)) {
+      val ids = context.value.flatMap(Core.LinkType)(Some(_))
+      val thingsOpt = ids.map(state.anything(_))
+      if (thingsOpt.forall(_.isDefined))
+        InvocationValueImpl(this, thingsOpt.flatten, None)
+      else
+        error("Func.unknownThing", displayName)      
+    } else context.value.pType match {
+      case mt:ModelTypeBase => {
+        val bundles = context.value.flatMap(mt)(Some(_))
+        InvocationValueImpl(this, bundles, None)
+      }
+      case _ => error("Func.notThing", displayName)
+    } 
   }
   
   def definingContextAsProperty:InvocationValue[Property[_,_]] = {
