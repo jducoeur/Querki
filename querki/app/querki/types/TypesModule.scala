@@ -6,13 +6,15 @@ import models.Thing.emptyProps
 
 import querki.core.MOIDs.InternalPropOID
 import querki.ecology._
-
+import querki.util.QLog
 import querki.values._
 
 import querki.types._
 
 class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefiner with querki.core.MethodDefs {
   import MOIDs._
+  
+  lazy val PropListMgr = interface[querki.core.PropListManager]
     
   /******************************************
    * TYPES
@@ -198,7 +200,17 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
           |functions.""".stripMargin)))
   {
     def bundle2Props(bundle:PropertyBundle)(implicit state:SpaceState):Iterable[QValue] = {
-      bundle.props.map(pair => ExactlyOne(PropAndValType(pair)))
+      bundle.getModelOpt match {
+        case Some(model) => {
+          val propList = PropListMgr.from(bundle)
+          val orderedList = PropListMgr.prepPropList(propList, model, state)
+          orderedList.filterNot(_._2.effectiveV.isEmpty).map { propListEntry =>
+            val (prop, displayVal) = propListEntry
+            ExactlyOne(PropAndValType((prop.id -> displayVal.effectiveV.get)))
+          }
+        }
+        case None => bundle.props.map(pair => ExactlyOne(PropAndValType(pair)))
+      }
     }
     
     override def qlApply(invIn:Invocation):QValue = {

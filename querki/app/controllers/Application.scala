@@ -170,7 +170,7 @@ disallow: /
   
   def showEditPage(rc: PlayRequestContext, model:Thing, props:PropList, errorMsg:Option[String] = None) = {
     implicit val state = rc.state.get
-    val propList = prepPropList(props, model, rc.state.get).
+    val propList = PropListMgr.prepPropList(props, model, rc.state.get).
       // If the name is being derived, don't show it in the Editor UI:
       filter(DeriveName.filterNameIfDerived(state, model, props, _))
     try { 
@@ -189,31 +189,6 @@ disallow: /
       case e:Error => Logger.error("Error while displaying Editor: " + e)
       // TODO: put a real error message here:
       BadRequest("Internal error!")
-    }
-  }
-  
-  def prepPropList(propList:PropList, model:Thing, state:SpaceState):Seq[(Property[_,_], DisplayPropVal)] = {
-    val propsToEdit = model.getPropOpt(Editor.InstanceProps)(state).map(_.rawList)
-    propsToEdit match {
-      // If the model specifies which properties we actually want to edit, then use just those, in that order:
-      case Some(editList) => {
-        val withOpts = (Seq.empty[(Property[_,_], Option[DisplayPropVal])] /: editList) { (list, oid) =>
-          val propOpt = state.prop(oid)
-          propOpt match {
-            case Some(prop) => {
-              val v = propList.get(prop)
-              list :+ (prop, v)
-            }
-            case None => {
-              Logger.warn("Was unable to find Property " + oid + " in prepPropList()")
-              list
-            }
-          }
-        }
-        withOpts.filter(_._2.isDefined).map(pair => (pair._1, pair._2.get))
-      }
-      // Otherwise, we default to doing it by name:
-      case None => propList.toList
     }
   }
   
