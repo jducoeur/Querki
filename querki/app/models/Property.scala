@@ -92,7 +92,7 @@ case class Property[VT, -RT](
   def deserialize(str:String)(implicit state:SpaceState):QValue = cType.deserialize(str, pType)
   
   // TODO: these two methods are probably obsolete. Can they consistently be replaced by
-  // inv.contextAllThings/Bundles?
+  // inv.contextBundlesAndContexts?
   def applyToIncomingThing(inv:Invocation)(action:(Thing, QLContext) => QValue):QValue = {
     applyToIncomingProps(inv) { (props, internalContext) =>
       props match {
@@ -104,8 +104,7 @@ case class Property[VT, -RT](
   
   def applyToIncomingProps(inv:Invocation)(action:(PropertyBundle, QLContext) => QValue):QValue = {
     for {
-      elemContext <- inv.contextElements
-      bundle <- inv.contextAllBundles(elemContext)
+      (bundle, elemContext) <- inv.contextBundlesAndContexts
     }
       yield action(bundle, elemContext)
   }

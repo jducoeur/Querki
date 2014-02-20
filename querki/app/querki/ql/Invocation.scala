@@ -167,18 +167,35 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
     }    
   }
   
-  def contextAllBundles(processContext:QLContext = context):InvocationValue[PropertyBundle] = {
-    if (processContext.value.matchesType(Core.LinkType)) {
-      val ids = processContext.value.flatMap(Core.LinkType)(Some(_))
+  def contextAllBundles:InvocationValue[PropertyBundle] = {
+    if (context.value.matchesType(Core.LinkType)) {
+      val ids = context.value.flatMap(Core.LinkType)(Some(_))
       val thingsOpt = ids.map(state.anything(_))
       if (thingsOpt.forall(_.isDefined))
         InvocationValueImpl(this, thingsOpt.flatten, None)
       else
         error("Func.unknownThing", displayName)      
-    } else processContext.value.pType match {
+    } else context.value.pType match {
       case mt:ModelTypeBase => {
-        val bundles = processContext.value.flatMap(mt)(Some(_))
+        val bundles = context.value.flatMap(mt)(Some(_))
         InvocationValueImpl(this, bundles, None)
+      }
+      case _ => error("Func.notThing", displayName)
+    } 
+  }
+  
+  def contextBundlesAndContexts:InvocationValue[(PropertyBundle, QLContext)] = {
+    if (context.value.matchesType(Core.LinkType)) {
+      val ids = context.value.flatMap(Core.LinkType)(Some(_))
+      val thingsOpt = ids.map(state.anything(_))
+      if (thingsOpt.forall(_.isDefined))
+        InvocationValueImpl(this, thingsOpt.flatten.map(t => (t, context.next(Core.ExactlyOne(Core.LinkType(t))))), None)
+      else
+        error("Func.unknownThing", displayName)      
+    } else context.value.pType match {
+      case mt:ModelTypeBase => {
+        val pairs = context.value.cv.map(elem => (elem.get(mt), context.next(Core.ExactlyOne(elem))))
+        InvocationValueImpl(this, pairs, None)
       }
       case _ => error("Func.notThing", displayName)
     } 
