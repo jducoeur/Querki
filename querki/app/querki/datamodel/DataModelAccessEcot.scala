@@ -261,7 +261,6 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |""".stripMargin)))
   { 
   override def qlApply(inv:Invocation):QValue = {
-    val context = inv.context
     val paramsOpt = inv.paramsOpt
     
     // If there is a parameter, this will produce its value:
@@ -273,7 +272,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
       yield Kind.fromName(kindName.name).map(kind => ExactlyOne(IntType(kind))).getOrElse(WarningValue("Unknown Kind: " + kindName))
       
     // If not, produce the incoming Thing's value:
-    paramResult.getOrElse(applyToIncomingThing(context) { (thing, context) => ExactlyOne(IntType(thing.kind)) })
+    paramResult.getOrElse(applyToIncomingThing(inv) { (thing, context) => ExactlyOne(IntType(thing.kind)) })
   }
   }
 

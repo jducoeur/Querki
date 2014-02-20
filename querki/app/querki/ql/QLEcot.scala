@@ -229,7 +229,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
 	                val propOpt = space.anythingByName(thingName)
 	                propOpt match {
 	                  case Some(propThing) => {
-	                    applyToIncomingThing(inv.context) { (thing, _) =>
+	                    applyToIncomingThing(inv) { (thing, _) =>
 	                      encodeThingAndProp(thing, propThing).getOrElse(encodeString(phrase.reconstructString))
 	                    }
 	                  }

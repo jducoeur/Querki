@@ -62,7 +62,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
         Some(interface[querki.ql.QL].WarningValue("""Trying to use QL Property """" + prop.displayName + """" in an empty context.
 This often means that you've invoked it recursively without saying which Thing it is defined in."""))
       } else {
-        Some(prop.applyToIncomingThing(definingContext) { (thing, context) =>
+        Some(prop.applyToIncomingThing(inv.preferDefiningContext) { (thing, context) =>
           val qlPhraseText = thing.first(prop)(context.state)
           QL.processMethod(qlPhraseText, inv.context.forProperty(prop), Some(inv))
         })

@@ -21,4 +21,29 @@ class PropertyTests extends QuerkiTests {
       assert(ex.msgName == "Types.Text.tooShort")
     }
   }
+    
+  "Property references" should {
+    "dereference a List of Things correctly" in {
+      class TSpace extends CommonSpace {
+        val myProp = new TestProperty(Core.IntType, Optional, "Number Prop")
+        
+        val myModel = new SimpleTestThing("Test Model", myProp(0))
+        
+        val instance1 = new TestThing("Instance 1", myModel, myProp(1))
+        val instance2 = new TestThing("Instance 2", myModel, myProp(2))
+        val instance3 = new TestThing("Instance 3", myModel, myProp(3))
+        val instance4 = new TestThing("Instance 4", myModel, myProp(4))
+        val instance5 = new TestThing("Instance 5", myModel, myProp(5))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Test Model._instances -> Number Prop -> _sort]]""") should
+        equal("""
+            |1
+            |2
+            |3
+            |4
+            |5""".stripReturns)
+    }
+  }
 }

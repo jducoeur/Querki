@@ -167,17 +167,17 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
     }    
   }
   
-  def contextAllBundles:InvocationValue[PropertyBundle] = {
-    if (context.value.matchesType(Core.LinkType)) {
-      val ids = context.value.flatMap(Core.LinkType)(Some(_))
+  def contextAllBundles(processContext:QLContext = context):InvocationValue[PropertyBundle] = {
+    if (processContext.value.matchesType(Core.LinkType)) {
+      val ids = processContext.value.flatMap(Core.LinkType)(Some(_))
       val thingsOpt = ids.map(state.anything(_))
       if (thingsOpt.forall(_.isDefined))
         InvocationValueImpl(this, thingsOpt.flatten, None)
       else
         error("Func.unknownThing", displayName)      
-    } else context.value.pType match {
+    } else processContext.value.pType match {
       case mt:ModelTypeBase => {
-        val bundles = context.value.flatMap(mt)(Some(_))
+        val bundles = processContext.value.flatMap(mt)(Some(_))
         InvocationValueImpl(this, bundles, None)
       }
       case _ => error("Func.notThing", displayName)

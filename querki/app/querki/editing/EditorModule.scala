@@ -227,10 +227,10 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
           Wikitext("")
       }
       
-      applyToIncomingThing(partialContext) { (partialThing, _) =>
+      applyToIncomingThing(inv.preferDefiningContext) { (partialThing, _) =>
         partialThing match {
           case prop:Property[_,_] => {
-            applyToIncomingProps(mainContext) { (mainThing, _) =>
+            applyToIncomingProps(inv) { (mainThing, _) =>
               applyToPropAndThing(inv, mainContext, mainThing, partialContext, prop, params)
             }
           }

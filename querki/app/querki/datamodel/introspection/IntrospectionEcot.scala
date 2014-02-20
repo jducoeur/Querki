@@ -91,7 +91,7 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
       val inv = invIn.preferDefiningContext
       implicit val state = inv.state
       for {
-        bundle <- inv.contextAllBundles
+        bundle <- inv.contextAllBundles()
         propAndVal <- inv.iter(bundle2Props(bundle))
         result <- inv.processParam(0, inv.context.next(propAndVal))
       }

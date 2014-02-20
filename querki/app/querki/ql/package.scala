@@ -117,7 +117,7 @@ package object ql {
      * Iterates over all of the received Bundles. That is, you can pass *either* a Link to a Thing or a
      * ModeledPropertyBundle into here, and the rest of the code can deal with it.
      */
-    def contextAllBundles:InvocationValue[PropertyBundle]
+    def contextAllBundles(processContext:QLContext = context):InvocationValue[PropertyBundle]
 
     /**
      * Returns the first Thing in the received context.

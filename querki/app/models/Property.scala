@@ -91,8 +91,10 @@ case class Property[VT, -RT](
   def serialize(v:QValue)(implicit state:SpaceState):String = v.serialize(pType)
   def deserialize(str:String)(implicit state:SpaceState):QValue = cType.deserialize(str, pType)
   
-  def applyToIncomingThing(context:QLContext)(action:(Thing, QLContext) => QValue):QValue = {
-    applyToIncomingProps(context) { (props, internalContext) =>
+  // TODO: these two methods are probably obsolete. Can they consistently be replaced by
+  // inv.contextAllThings/Bundles?
+  def applyToIncomingThing(inv:Invocation)(action:(Thing, QLContext) => QValue):QValue = {
+    applyToIncomingProps(inv) { (props, internalContext) =>
       props match {
         case t:Thing => action(t, internalContext)
         case _ => ErrorValue("Got a PropertyBundle where we we expected a Thing -- there is probably a call to applyToIncomingThing that should be Props")
@@ -100,29 +102,12 @@ case class Property[VT, -RT](
     }
   }
   
-  def applyToIncomingProps(context:QLContext)(action:(PropertyBundle, QLContext) => QValue):QValue = {
-    if (context.isEmpty) {
-      EmptyValue(pType)
-    } else {
-      val valType = context.value.pType
-      valType match {
-        case link:querki.core.TypeCreation#LinkType => {
-          val coll = context.value.cType
-          val thing = link.followLink(context)
-          thing match {
-            case Some(t) => action(t, context)
-            case None => WarningValue("Couldn't find Thing from " + context.toString)
-          }
-        }
-        case mt:querki.types.ModelTypeBase => {
-          context.value.firstAs(mt) match {
-            case Some(bundle) => action(bundle, context)
-            case None => interface[querki.ql.QL].ErrorValue("Unable to fetch PropertyBundle from ModelType QValue!")
-          }
-        }
-        case _ => WarningValue("Can't apply a Property in a " + valType.displayName + " context!")
-      }
+  def applyToIncomingProps(inv:Invocation)(action:(PropertyBundle, QLContext) => QValue):QValue = {
+    for {
+      elemContext <- inv.contextElements
+      bundle <- inv.contextAllBundles(elemContext)
     }
+      yield action(bundle, elemContext)
   }
   
   /**
@@ -136,7 +121,7 @@ case class Property[VT, -RT](
     // Give the Type first dibs at handling the call; otherwise, return the value of this property
     // on the incoming thing.
     pType.qlApplyFromProp(inv, this).getOrElse(
-      applyToIncomingProps(inv.context) { (t, innerContext) =>
+      applyToIncomingProps(inv) { (t, innerContext) =>
         t.getPropVal(this)(innerContext.state)
       })
   }  

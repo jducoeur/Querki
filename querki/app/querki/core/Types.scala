@@ -80,7 +80,7 @@ trait TextTypeBasis { self:CoreEcot =>
         // That would potentially save us tons and tons of redundant parsing. But it requires reworking the QLParser
         // interface, to split parsing from processing.
         Some(inv.context.collect(ParsedTextType) { elemContext:QLContext =>
-          prop.applyToIncomingProps(definingContext) { (thing, context) =>
+          prop.applyToIncomingProps(inv.preferDefiningContext) { (thing, context) =>
             implicit val s = definingContext.state
             // In other words, map over all the text values in this property, parsing all of them
             // and passing the resulting collection along the pipeline:
