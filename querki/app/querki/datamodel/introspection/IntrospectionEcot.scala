@@ -1,20 +1,24 @@
 package querki.datamodel.introspection
 
-import models.{PropertyBundle, SimplePTypeBuilder, UnknownOID, Wikitext}
+import models.{DisplayPropVal, PropertyBundle, SimplePTypeBuilder, UnknownOID, Wikitext}
 
 import querki.ecology._
+import querki.util.PublicException
 import querki.values.{QLContext, SpaceState}
 
 object MOIDs extends EcotIds(34) {
   val ForeachPropertyMethodOID = moid(1)
   val ValMethodOID = moid(2)
   val PropMethodOID = moid(3)  
+  val DefinedOnMethodOID = moid(4)
+  val IsInheritedMethodOID = moid(5)
 }
 
 class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   import MOIDs._
   
   lazy val PropListMgr = interface[querki.core.PropListManager]
+  lazy val QL = interface[querki.ql.QL]
       
   /******************************************
    * TYPES
@@ -23,20 +27,21 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   /**
    * This Type is intentionally purely internal for the time being -- we don't allow users to instantiate it, or even see it much.
    */
-  lazy val PropAndValType = new SystemType[(OID, QValue)](UnknownOID,
+  lazy val PropAndValType = new SystemType[DisplayPropVal](UnknownOID,
       toProps(
         setName("Prop and Val Type"),
-        Core.InternalProp(true))) with SimplePTypeBuilder[(OID, QValue)]
+        Core.InternalProp(true))) with SimplePTypeBuilder[DisplayPropVal]
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = ???
-    def doSerialize(v:(OID, QValue))(implicit state:SpaceState) = ???
+    def doSerialize(v:DisplayPropVal)(implicit state:SpaceState) = ???
     
-    def doWikify(context:QLContext)(v:(OID, QValue), displayOpt:Option[Wikitext] = None) = { 
-      val propName = context.state.prop(v._1) match {
-        case Some(p) => p.displayName
-        case _ => v._1.toString
+    def doWikify(context:QLContext)(v:DisplayPropVal, displayOpt:Option[Wikitext] = None) = { 
+      val propName = v.prop.displayName
+      val vDisplay = v.v match {
+        case Some(v) => v.wikify(context, displayOpt) 
+        case None => Wikitext.empty
       }
-      Wikitext(s"$propName: ${v._2.wikify(context, displayOpt)}")
+      Wikitext(s"$propName: $vDisplay")
     }
     
     def doDefault(implicit state:SpaceState) = ???  
@@ -62,15 +67,23 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   {
     def bundle2Props(bundle:PropertyBundle)(implicit state:SpaceState):Iterable[QValue] = {
       bundle.getModelOpt match {
+        
         case Some(model) => {
           val propList = PropListMgr.from(bundle)
           val orderedList = PropListMgr.prepPropList(propList, model, state)
           orderedList.filterNot(_._2.effectiveV.isEmpty).map { propListEntry =>
             val (prop, displayVal) = propListEntry
-            ExactlyOne(PropAndValType((prop.id -> displayVal.effectiveV.get)))
+            ExactlyOne(PropAndValType(displayVal))
           }
         }
-        case None => bundle.props.map(pair => ExactlyOne(PropAndValType(pair)))
+        
+        case None => bundle.props.map{ pair =>
+          val propOpt = state.prop(pair._1)
+          propOpt match {
+            case Some(prop) => ExactlyOne(PropAndValType(DisplayPropVal(Some(bundle), prop, Some(pair._2))))
+            case None => throw new PublicException("Func.unknownPropOID", pair._1)
+          }
+        }
       }
     }
     
@@ -93,9 +106,12 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   {
     override def qlApply(inv:Invocation):QValue = {
       for {
-        pair <- inv.contextAllAs(PropAndValType)
+        dpv <- inv.contextAllAs(PropAndValType)
       }
-        yield pair._2
+        yield dpv.effectiveV match {
+          case Some(v) => v
+          case None => Core.QNone
+        }
     }
   }
   
@@ -106,15 +122,50 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   {
     override def qlApply(inv:Invocation):QValue = {
       for {
-        pair <- inv.contextAllAs(PropAndValType)
+        dpv <- inv.contextAllAs(PropAndValType)
       }
-        yield ExactlyOne(LinkType(pair._1))
+        yield ExactlyOne(LinkType(dpv.prop))
+    }
+  }
+  
+  lazy val definedOnMethod = new InternalMethod(DefinedOnMethodOID,
+      toProps(
+        setName("_definedOn"),
+        Summary("Fetch the Thing or Model Value that the current Property was defined on, inside of _foreachProperty")))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      for {
+        dpv <- inv.contextAllAs(PropAndValType)
+      }
+        yield dpv.on match {
+          case Some(on) => on match {
+            case t:Thing => ExactlyOne(LinkType(t))
+            // Ick: how can we make this case less ugly? We have the PropertyBundle, and need to turn it back into a QValue:
+            case bundle @ querki.types.ModeledPropertyBundle(mt, _, _) => ExactlyOne(mt(querki.types.SimplePropertyBundle(bundle.props.toSeq:_*)))
+          }
+          case None => Core.QNone
+        }
+    }
+  }
+  
+  lazy val isInheritedMethod = new InternalMethod(IsInheritedMethodOID,
+      toProps(
+        setName("_isInherited"),
+        Summary("Says whether the current Property's value is locally defined or was inherited from the Model, inside of _foreachProperty")))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      for {
+        dpv <- inv.contextAllAs(PropAndValType)
+      }
+        yield ExactlyOne(YesNoType(dpv.isInherited))
     }
   }
 
   override lazy val props = Seq(
     foreachPropertyMethod,
     valMethod,
-    propMethod
+    propMethod,
+    definedOnMethod,
+    isInheritedMethod
   )
 }
