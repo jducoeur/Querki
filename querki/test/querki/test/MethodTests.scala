@@ -115,7 +115,7 @@ class MethodTests extends QuerkiTests
         val ref5 = new TestThing("Reference 5", refModel, refProp(thing5))
         val ref6 = new TestThing("Reference 6", refModel)
       }
-      val space = new TSpace
+      implicit val space = new TSpace
       
       processQText(thingAsContext[TSpace](space, _.theModel), """[[Referring Model._instances -> _sort(Reference -> Prop to Sort) -> ""[[Name]]: [[Reference -> Prop to Sort]]""]]""") should
         equal ("\nReference 1a: \nReference 3: \nReference 6: \nReference 5: Alphabetical!\nReference 2: Check!\nReference 4: Floobity!\nReference 1: Kazam!")      

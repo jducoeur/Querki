@@ -52,6 +52,7 @@ package object ql {
     
     def get:Iterable[T]
     def getError:Option[QValue]
+    def getReturnType:Option[PType[_]]
   }
   
   /**
@@ -78,6 +79,17 @@ package object ql {
      * Turns an Iterable into an InvocationValue, so they can be used in a for comprehension together.
      */
     def iter[T](it:Iterable[T], errOpt:Option[PublicException] = None):InvocationValue[T]
+    
+    /**
+     * Declares the return type for the expected result. This can occasionally be crucial in order to
+     * cast an empty return collection to the right type. It is strongly recommended if this function
+     * can return an empty collection and you know the desired Type.
+     * 
+     * This returns a dummy Boolean, but that is simply to make the for comprehension work -- just assign
+     * it to a dummy binding and otherwise ignore the result. (It turns out that returning Unit causes
+     * things to short-circuit.)
+     */
+    def returnsType(pt:PType[_]):InvocationValue[Boolean]
 
     /**
      * If the context's value is of the specified type (which need not be a PType), return

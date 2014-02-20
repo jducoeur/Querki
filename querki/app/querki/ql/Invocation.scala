@@ -18,7 +18,7 @@ case class Signature(returnPt:PType[_], required:RequiredParam*) {
   def numRequiredParams = required.length
 }
 
-private[ql] case class InvocationValueImpl[T](inv:Invocation, vs:Iterable[T], errOpt:Option[PublicException] = None)(implicit val ecology:Ecology) 
+private[ql] case class InvocationValueImpl[T](inv:Invocation, vs:Iterable[T], errOpt:Option[PublicException] = None, returnType:Option[PType[_]] = None)(implicit val ecology:Ecology) 
   extends InvocationValue[T] with EcologyMember
 { self =>
   lazy val QL = interface[QL]
@@ -26,11 +26,11 @@ private[ql] case class InvocationValueImpl[T](inv:Invocation, vs:Iterable[T], er
   def map[R](f:T => R):InvocationValue[R] = {
     errOpt match {
       // If there has already been an error, just propagate that:
-      case Some(err) => InvocationValueImpl[R](inv, None, errOpt)
+      case Some(err) => InvocationValueImpl[R](inv, None, errOpt, returnType)
       // Otherwise, actually call f:
       case None => {
         val maps = vs.map(v => f(v))
-        InvocationValueImpl(inv, maps, None)
+        InvocationValueImpl(inv, maps, None, returnType)
       }
     }
   }
@@ -38,20 +38,20 @@ private[ql] case class InvocationValueImpl[T](inv:Invocation, vs:Iterable[T], er
   def flatMap[R](f:T => InvocationValue[R]):InvocationValue[R] = {
     errOpt match {
       // If there has already been an error, just propagate that:
-      case Some(err) => InvocationValueImpl[R](inv, None, errOpt)
+      case Some(err) => InvocationValueImpl[R](inv, None, errOpt, returnType)
       // Otherwise, actually call f:
       case None => {
         // This gets a little complex, so that we can preserve interim errors:
         (InvocationValueImpl(inv, Seq.empty[R], None) /: vs) { (current, v) =>
           current.errOpt match {
-            case Some(err) => InvocationValueImpl[R](inv, None, current.errOpt)
+            case Some(err) => InvocationValueImpl[R](inv, None, current.errOpt, returnType)
             case None => {
               // HACK: is there a really good way of avoiding this cheat without polluting the public API of
               // InvocationValue with the errOpt?
               val result = f(v).asInstanceOf[InvocationValueImpl[R]]
               result.errOpt match {
                 case Some(err) => result
-                case None => InvocationValueImpl(inv, current.vs ++: result.vs, None)
+                case None => InvocationValueImpl(inv, current.vs ++: result.vs, None, returnType)
               }
             }
           }
@@ -64,8 +64,8 @@ private[ql] case class InvocationValueImpl[T](inv:Invocation, vs:Iterable[T], er
    * Our implementation of withFilter, for "if" statements in for comprehensions.
    */
   class WithFilterImpl(f:T => Boolean) extends WithFilter[T] {
-    def map[R](mf:T => R):InvocationValue[R] = new InvocationValueImpl(inv, self.vs.filter(f), errOpt).map(mf)
-    def flatMap[R](mf:T => InvocationValue[R]):InvocationValue[R] = new InvocationValueImpl(inv, self.vs.filter(f), errOpt).flatMap(mf)
+    def map[R](mf:T => R):InvocationValue[R] = new InvocationValueImpl(inv, self.vs.filter(f), errOpt, returnType).map(mf)
+    def flatMap[R](mf:T => InvocationValue[R]):InvocationValue[R] = new InvocationValueImpl(inv, self.vs.filter(f), errOpt, returnType).flatMap(mf)
     def withFilter(g:T => Boolean):WithFilter[T] = new WithFilterImpl((x => f(x) && g(x)))
   }
   def withFilter(f:T => Boolean):WithFilter[T] = new WithFilterImpl(f)
@@ -75,6 +75,7 @@ private[ql] case class InvocationValueImpl[T](inv:Invocation, vs:Iterable[T], er
     val msg = ex.display(Some(inv.context.request))
     QL.WarningValue(msg) 
   }
+  def getReturnType:Option[PType[_]] = returnType
 }
 
 private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext, val definingContext:Option[QLContext], paramsOpt:Option[Seq[QLPhrase]], sig:Option[Signature] = None)(implicit val ecology:Ecology) 
@@ -87,6 +88,10 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
   lazy val displayName = invokedOn.displayName
   
   def error[VT](name:String, params:String*) = InvocationValueImpl[VT](this, None, Some(PublicException(name, params:_*)))
+  
+  def returnsType(pt:PType[_]):InvocationValue[Boolean] = {
+    InvocationValueImpl(this, Some(true), None, Some(pt))
+  }
   
   def preferDefiningContext:Invocation = {
     definingContext match {

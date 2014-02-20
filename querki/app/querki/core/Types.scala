@@ -61,35 +61,25 @@ trait TextTypeBasis { self:CoreEcot =>
     
     override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = validateText(v, prop, state)
 
-    // TBD: in principle, we really want this to return a *context*, not a *value*. This is a special
-    // case of a growing concern: that we could be losing information by returning QValue from
-    // qlApply, and should actually be returning a full successor Context.
-    // TODO: merge this with the fairly-similar code in QLType
     override def qlApplyFromProp(inv:Invocation, prop:Property[QLText,_]):Option[QValue] = {
-      val definingContext = inv.definingContext.getOrElse(inv.context)
-      // TBD: in a perfect world, this would be a true Warning: legal, but with a warning on the side. Unfortunately, doing it
-      // like this gets in the way of perfectly legit ordinary situations, and violates the general Querki data model, that
-      // passing None to a Stage usually results in None. (That is, it violates ordinary map semantics.)
-//      if (definingContext.isEmpty) {
-//        Some(WarningValue("""Trying to use Text Property """" + prop.displayName + """" in an empty context.
-//This often means that you've invoked it recursively without saying which Thing it is defined in."""))
-//      } else {
-        val ParsedTextType = interface[querki.ql.QL].ParsedTextType
-        // TODO: this is a good candidate for optimization. If we turned this inside-out, we could fetch the QLText
-        // from the definingContext, parse that *once*, and process that AST over each element of the incomingContext.
-        // That would potentially save us tons and tons of redundant parsing. But it requires reworking the QLParser
-        // interface, to split parsing from processing.
-        Some(inv.context.collect(ParsedTextType) { elemContext:QLContext =>
-          prop.applyToIncomingProps(inv.preferDefiningContext) { (thing, context) =>
-            implicit val s = definingContext.state
-            // In other words, map over all the text values in this property, parsing all of them
-            // and passing the resulting collection along the pipeline:
-            thing.map(prop, ParsedTextType) { qlText =>
-              QL.process(qlText, elemContext, Some(inv))
-            }
-          }
-        })
-//      }
+      implicit val s = inv.state
+      val result:QValue = for {
+        // Declare the expected return type, which can be important if the results are empty and get
+        // fed into, eg, _sort.
+        // TODO: this should become a more general concept! We should be declaring this transform at
+        // the Type level, I think.
+        dummy <- inv.returnsType(QL.ParsedTextType)
+        // For each received Thing...
+        (bundle, elemContext) <- inv.preferDefiningContext.contextBundlesAndContexts
+        // ... get this Property's value on the Thing...
+        pv <- inv.opt(bundle.getPropOpt(prop))
+        // ... get each element in the Property (which might conceivably be multi-valued)...
+        qlText <- inv.iter(pv.v.rawList(this))
+      }
+        // ... and process that element through QL.
+        yield Core.ExactlyOne(QL.ParsedTextType(QL.process(qlText, elemContext, Some(inv))))
+        
+      Some(result)
     }
       
     def code(elem:ElemValue):String = get(elem).text

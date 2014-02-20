@@ -36,7 +36,13 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
       // This part is iffy. How do we infer the correct PType if the result is empty?
       val pt = {
         if (qvs.isEmpty)
-          Core.UnknownType
+          inv.getReturnType match {
+            // This means that the calling code called Invocation.returnsType:
+            case Some(ipt) => ipt
+            // TODO: we might want to turn this into a logged warning. It can cause problems downstream if,
+            // eg, you feed the results into _sort:
+            case None => Core.UnknownType
+          }
         else
           qvs.head.pType
       }
