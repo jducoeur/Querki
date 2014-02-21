@@ -13,6 +13,12 @@ class IntrospectionTests extends QuerkiTests {
     val prop4 = new TestProperty(Core.IntType, ExactlyOne, "Fourth Prop")
     val prop5 = new TestProperty(Core.IntType, ExactlyOne, "Fifth Prop")
     
+    val optProp = new TestProperty(Core.IntType, Optional, "Opt Prop")
+    
+    val modelWithOpt = new SimpleTestThing("Model with Opt", prop1(1), prop2(2), optProp(Core.QNone),
+        Editor.InstanceProps(prop1, optProp, prop2))
+    val thingWithOpt = new TestThing("Thing with Opt", modelWithOpt)
+    
     // props intentionally not quite in either alphabetical or numeric order:
     val bottomModel = new SimpleTestThing("Bottom Model", prop1(1), prop2(2), prop4(4), prop5(5), prop3(3),
         Editor.InstanceProps(prop1, prop2, prop3, prop4, prop5))
@@ -45,6 +51,22 @@ class IntrospectionTests extends QuerkiTests {
             |* Name: Third Prop; Value: 9
             |* Name: Fourth Prop; Value: 4
             |* Name: Fifth Prop; Value: 5""".stripReturns)
+    }
+    
+    "work with a non-quoted Expression" in {
+      implicit val space = new TSpace
+      
+      pql("""[[Thing with Opt -> _foreachProperty(_if(_val -> _isNonEmpty, ""[[_prop -> Name]]: [[_val]]""))]]""") should
+        equal("""
+            |First Prop: 1
+            |Second Prop: 2""".stripReturns)
+      pql("""[[My Complex Thing -> Complex Prop -> _foreachProperty(_if(_isNonEmpty, ""[[_prop -> Name]]: [[_val]]""))]]""") should
+        equal("""
+            |First Prop: 1
+            |Second Prop: 2
+            |Third Prop: 9
+            |Fourth Prop: 4
+            |Fifth Prop: 5""".stripReturns)
     }
   }
   
