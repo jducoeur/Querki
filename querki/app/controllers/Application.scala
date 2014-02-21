@@ -228,35 +228,33 @@ disallow: /
     
         // Whether we're creating or editing depends on whether thing is specified:
         val thing = rc.thing
+
+        // Go through all of the form fields that we got from the client, and extract the actual
+        // properties there based on their names:
+        val fieldIds:List[FieldIds] = rawForm.data.keys.map(key => DisplayPropVal.propPathFromName(key, thing)).flatten.toList.sortBy(_.fullPropId)
+        
         // Since rebuildBundle can result in changes that build on each other, we need a thing that
         // responds to those changes.
         // TODO: we might want to redo this more properly functional, instead of relying on a var:
         var updatingThing = thing
-        val rawProps:List[FormFieldInfo] = info.fields map { propsIdStr =>
-          // TODO: the knowledge about the format of these IDs is scattered hither and yon around the code.
-          // Where does it belong?
-          // TODO: if IndexedOID.parse fails, we're losing that information. Do something about this!
-          val propIds = propsIdStr.split("-").map(IndexedOID.parse(_)).flatten
-          val higherIds = propIds.dropRight(1)
-          val higherFieldIds = (Option.empty[FieldIds] /: higherIds) { (current, higherId) =>
-            val prop = state.prop(higherId.id).get
-            Some(new FieldIds(updatingThing, prop, current, higherId.i))
-          }
-          val propId = propIds.last.id
-          val propOpt = state.prop(propId)
-          val actualFormFieldInfo = propOpt match {
-            case Some(prop) => {
-              HtmlRenderer.propValFromUser(prop, updatingThing, rawForm, context, higherFieldIds)              
-            }
-            // TODO: this means that an unknown property was specified. We should think about the right error path here:
-            case None => FormFieldInfo(UrProp, None, true, false)
-          }
+        val rawProps:List[FormFieldInfo] = fieldIds map { fieldId =>
+          val higherFieldIdsOpt = fieldId.container
+          val actualFormFieldInfo = HtmlRenderer.propValFromUser(fieldId.p, updatingThing, rawForm, context, higherFieldIdsOpt)
           val result = {
-            if (higherIds.length == 0)
-              actualFormFieldInfo
-            else {
-              Types.rebuildBundle(updatingThing, higherIds.toList, actualFormFieldInfo).
-                getOrElse(FormFieldInfo(UrProp, None, true, false, None, Some(new PublicException("Didn't get bundle"))))
+            higherFieldIdsOpt match {
+              case Some(higherFieldIds) => {
+                // TEMP: restructure rebuildBundle to take higherFieldIds directly:
+                def toHigherIds(oneFieldId:FieldIds):List[IndexedOID] = {
+                  val thisId = IndexedOID(oneFieldId.p.id, oneFieldId.index)
+                  oneFieldId.container match {
+                    case Some(c) => toHigherIds(c) ::: List(thisId)
+                    case None => List(thisId)
+                  }
+                }
+                Types.rebuildBundle(updatingThing, toHigherIds(higherFieldIds), actualFormFieldInfo).
+                  getOrElse(FormFieldInfo(UrProp, None, true, false, None, Some(new PublicException("Didn't get bundle"))))         
+              }
+              case None => actualFormFieldInfo
             }
           }
           updatingThing match {
