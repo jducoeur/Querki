@@ -82,7 +82,7 @@ function finishStatus(msg) {
             // need to serialize; instead, the form is composed of a bunch of hidden fields with names
             // ending with "_values".
 	        jsRoutes.controllers.Application.setProperty2(ownerId, spaceId, thingId).ajax({
-	          data: "addedProperty=&model=&field[0]=" + prop + "&" + serialized,
+	          data: "addedProperty=&model=&" + serialized,
 	          success: function (result) {
 	            finishStatus("Saved");
 	          },
@@ -382,20 +382,16 @@ function finalSetup(ownerId, spaceId, root) {
         // For the moment, we are sending the entire list every time a major change event
         // occurs. At some point, we must change this to work with diffs instead.
         renumberModelList(target);
-        var i = 0;
         var childHolder = target;
         if (target.hasClass("coll-list-input")) {
           // To make sure that we don't send the input template as well:
           childHolder = target.find(".sortableList").first();
         }
         // Clear the existing value, since we're going to send everything:
-        serialized = serialized + "&field[" + i + "]=" + prop + "&" + target.attr("name") + "=";
-        i = i + 1;
+        serialized = serialized + "&" + target.attr("name") + "=";
         childHolder.find(".propEditor").each(function () {
           var editControl = $(this);
-          serialized = serialized + "&field[" + i + "]=" + editControl.data("propid") +
-                       "&" + editControl.serialize();
-          i = i + 1;
+          serialized = serialized + "&" + editControl.serialize();
         });
       } else {
         if (target.hasClass("radioBtn")) {
@@ -406,7 +402,7 @@ function finalSetup(ownerId, spaceId, root) {
         } else {
           serialized = target.serialize();
         }
-        serialized = "&field[0]=" + prop + "&" + serialized
+        serialized = "&" + serialized
       }
       console.log("Serialized value of " + thingId + ":" + prop + " is " + serialized);
       jsRoutes.controllers.Application.setProperty2(ownerId, spaceId, thingId).ajax({
@@ -491,7 +487,7 @@ function finalSetup(ownerId, spaceId, root) {
     var createVal = target.val();
     var addtolist = target.data("addtolist");
     jsRoutes.controllers.Application.doCreateThing(ownerId, spaceId).ajax({
-      data: "API=true&model=" + modelId + "&field[0]=" + prop + "&v-" + prop + "-=" + createVal,
+      data: "API=true&model=" + modelId + "&v-" + prop + "-=" + createVal,
       success: function (result) {
         finishStatus("Added");
         // TODO: this is horrible coupling. I'd really like to keep quickCreate and addToList separate.
