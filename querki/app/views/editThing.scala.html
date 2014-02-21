@@ -131,7 +131,6 @@
     </label>
     <div class="controls">
       @showInputControl(prop, v, i)
-  	  <input type="hidden" name="field[@i]" value="@prop.id.toString">
 	  <input type="hidden" name="@v.emptyControlId" id="@v.emptyControlId" value="@v.isInherited.toString">
     </div>
   </div>
@@ -364,14 +363,10 @@
       }
       
       function createPropertyFields(propTypeId) {
-        var fieldNum = 0;
         var result = {}
         
         function create(propId, inputId, propVal) {
           if (propVal.length > 0) {
-            var fieldNumName = "field[" + fieldNum + "]";
-            result[fieldNumName] = propId;
-            fieldNum = fieldNum + 1;
             result[inputId] = propVal;
           }
         }

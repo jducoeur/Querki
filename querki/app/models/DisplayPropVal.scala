@@ -71,7 +71,15 @@ case class DisplayPropVal(on:Option[PropertyBundle], prop: Property[_,_], v: Opt
 }
 
 object DisplayPropVal {
-  private def propPathFromSuffix(suffix:String, bundle:Option[PropertyBundle])(implicit state:SpaceState):Option[FieldIds] = {
+  private def propPathFromSuffix(suffixIn:String, bundle:Option[PropertyBundle])(implicit state:SpaceState):Option[FieldIds] = {
+    // HACK: to work around the funny values produced by Manifest, when it is dynamically serializing.
+    // Fix this on the client side!
+    val suffix = 
+      if (suffixIn.contains("_values["))
+        suffixIn.substring(0, suffixIn.indexOf("_values["))
+      else
+        suffixIn
+        
     val path = suffix.split("-").map(IndexedOID.parse(_))
     if (path.exists(_.isEmpty))
       // Something didn't parse, so it's not a legal path:

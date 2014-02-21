@@ -34,13 +34,12 @@ class Application extends ApplicationBase {
      ((name:String) => Some(name))
   )
   
-  case class NewThingForm(fields:List[String], model:String)
+  case class NewThingForm(model:String)
   val newThingForm = Form(
     mapping(
-      "field" -> list(text),
       "model" -> text
-    )((field, model) => NewThingForm(field, model))
-     ((info:NewThingForm) => Some((info.fields, info.model)))
+    )((model) => NewThingForm(model))
+     ((info:NewThingForm) => Some((info.model)))
   )
   
   val searchForm = Form(
@@ -228,11 +227,16 @@ disallow: /
     
         // Whether we're creating or editing depends on whether thing is specified:
         val thing = rc.thing
-
+        
         // Go through all of the form fields that we got from the client, and extract the actual
         // properties there based on their names:
         val fieldIds:List[FieldIds] = rawForm.data.keys.map(key => DisplayPropVal.propPathFromName(key, thing)).flatten.toList.sortBy(_.fullPropId)
         
+//        println("----> Raw form fields:")
+//        rawForm.data.foreach(pair => println(s"    ${pair._1}: ${pair._2}"))
+//        println("----> FieldIds:")
+//        fieldIds.foreach(fieldId => s"    ${fieldId.fullPropId}")
+
         // Since rebuildBundle can result in changes that build on each other, we need a thing that
         // responds to those changes.
         // TODO: we might want to redo this more properly functional, instead of relying on a var:
