@@ -14,10 +14,16 @@ class IntrospectionTests extends QuerkiTests {
     val prop5 = new TestProperty(Core.IntType, ExactlyOne, "Fifth Prop")
     
     val optProp = new TestProperty(Core.IntType, Optional, "Opt Prop")
+    val optProp2 = new TestProperty(Core.IntType, Optional, "Opt Prop 2")
+    val optProp3 = new TestProperty(Core.IntType, Optional, "Opt Prop 3")
     
     val modelWithOpt = new SimpleTestThing("Model with Opt", prop1(1), prop2(2), optProp(Core.QNone),
         Editor.InstanceProps(prop1, optProp, prop2))
     val thingWithOpt = new TestThing("Thing with Opt", modelWithOpt)
+    
+    val modelWithOpts = new SimpleTestThing("Model with Opts", optProp(0), optProp2(0), optProp3(0),
+        Editor.InstanceProps(optProp, optProp2, optProp3))
+    val thingWithOpts = new TestThing("Thing with Opts", modelWithOpts, optProp(Core.QNone), optProp2(4), optProp3(Core.QNone))    
     
     // props intentionally not quite in either alphabetical or numeric order:
     val bottomModel = new SimpleTestThing("Bottom Model", prop1(1), prop2(2), prop4(4), prop5(5), prop3(3),
@@ -67,6 +73,14 @@ class IntrospectionTests extends QuerkiTests {
             |Third Prop: 9
             |Fourth Prop: 4
             |Fifth Prop: 5""".stripReturns)
+    }
+    
+    "work with empty Optionals" in {
+      implicit val space = new TSpace
+      
+      // Note that the results are in order by Instance Props, not alphabetical:
+      pql("""[[Thing with Opts -> _foreachProperty(_if(_val -> _isNonEmpty, _val)) -> _bulleted]]""") should
+        equal("""* 4""".stripReturns)
     }
   }
   

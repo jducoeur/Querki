@@ -44,7 +44,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
             case None => Core.UnknownType
           }
         else
-          qvs.head.pType
+          qvs.find(qv => qv.pType != Core.UnknownType).map(_.pType).getOrElse(inv.getReturnType.getOrElse(Core.UnknownType))
       }
       val raw = qvs.flatten(_.cv)
       // TBD: is this reasonable? We're essentially eliding out the original Collections, in favor

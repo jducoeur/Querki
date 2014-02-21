@@ -126,7 +126,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	          context.parser.get.processPhrase(elseCase.ops, context).value
 	        } else {
 	          // TODO: the type here is chosen arbitrarily, but it *should* be the same type as the ifCase.
-	          EmptyValue(YesNoType)
+	          EmptyValue(Core.UnknownType)
 	        }
 	      }
 	      case _ => WarningValue("_if requires at least two parameters.")
