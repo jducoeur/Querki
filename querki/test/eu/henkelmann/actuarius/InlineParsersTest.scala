@@ -62,11 +62,11 @@ class InlineParsersTest extends FlatSpec with ShouldMatchers with InlineParsers{
         ("""[_localName](_localName)""",
          """<a href="_localName">_localName</a>""")
     )
-
-    val fastLinkTests = List(
-        ("""<http://www.example.com?foo=a&bar=b\*>""",
-         """<a href="http://www.example.com?foo=a&amp;bar=b*">http://www.example.com?foo=a&amp;bar=b*</a>""")
-    )
+//
+//    val fastLinkTests = List(
+//        ("""<http://www.example.com?foo=a&bar=b\*>""",
+//         """<a href="http://www.example.com?foo=a&amp;bar=b*">http://www.example.com?foo=a&amp;bar=b*</a>""")
+//    )
 
 
     val imageTests = List(
@@ -137,8 +137,8 @@ class InlineParsersTest extends FlatSpec with ShouldMatchers with InlineParsers{
     )
 
 
-    val allInlineTests = italicTests ++ boldTests ++ codeTests ++ linkTests ++ fastLinkTests ++ imageTests ++ brTests ++
-                         xmlStartTagTests ++ xmlEndTagTests ++ xmlInlineTests ++ dummyTests
+    val allInlineTests = italicTests ++ boldTests ++ codeTests ++ linkTests ++ /* fastLinkTests ++*/ imageTests ++ brTests ++
+                         /*xmlStartTagTests ++ xmlEndTagTests ++ xmlInlineTests ++*/ dummyTests
 
     it should "create italic text" in {
         runSucceedingParsingTests(emAsterisk(new InlineContext())|emUnderscore(new InlineContext()) , italicTests)
@@ -159,13 +159,13 @@ class InlineParsersTest extends FlatSpec with ShouldMatchers with InlineParsers{
     it should "create links" in {
         runSucceedingParsingTests(link(new InlineContext()), linkTests)
     }
-
-    it should "create fast links" in {
-        runSucceedingParsingTests(fastLink(new InlineContext()), fastLinkTests)
-        val p = fastLink(new InlineContext())
-        evaluating(apply(p, "<this is not a fast link<span>")) should produce[IllegalArgumentException]
-
-    }
+//
+//    it should "create fast links" in {
+//        runSucceedingParsingTests(fastLink(new InlineContext()), fastLinkTests)
+//        val p = fastLink(new InlineContext())
+//        evaluating(apply(p, "<this is not a fast link<span>")) should produce[IllegalArgumentException]
+//
+//    }
 
     it should "create images" in {
         runSucceedingParsingTests((elem('!')~>directImg), imageTests)
@@ -175,22 +175,22 @@ class InlineParsersTest extends FlatSpec with ShouldMatchers with InlineParsers{
         runSucceedingParsingTests(br, brTests)
     }
 
-    it should "parse simplified xml identifiers" in {
-        runSucceedingParsingTests(xmlName, xmlNameTests)
-        runExceptionParsingTests(xmlName, xmlNameExTests)
-    }
-
-    it should "parse opening xml tags and escape their attribute vals" in {
-        runSucceedingParsingTests(xmlStartOrEmptyTag, xmlStartTagTests)
-    }
-
-    it should "parse closing xml tags" in {
-        runSucceedingParsingTests(xmlEndTag, xmlEndTagTests)
-    }
-
-    it should "allow inline xml and escape its parameters" in {
-        runSucceedingParsingTests(inline(Map()), xmlInlineTests)
-    }
+//    it should "parse simplified xml identifiers" in {
+//        runSucceedingParsingTests(xmlName, xmlNameTests)
+//        runExceptionParsingTests(xmlName, xmlNameExTests)
+//    }
+//
+//    it should "parse opening xml tags and escape their attribute vals" in {
+//        runSucceedingParsingTests(xmlStartOrEmptyTag, xmlStartTagTests)
+//    }
+//
+//    it should "parse closing xml tags" in {
+//        runSucceedingParsingTests(xmlEndTag, xmlEndTagTests)
+//    }
+//
+//    it should "allow inline xml and escape its parameters" in {
+//        runSucceedingParsingTests(inline(Map()), xmlInlineTests)
+//    }
 
     it should "parse mixed inline cases" in {
         runSucceedingParsingTests(inline(Map()), mixedTests)

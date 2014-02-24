@@ -304,11 +304,11 @@ else in the doc, define the link:</p>
         apply("  --A Header-- \n------\n") should equal ("<h2>--A Header--</h2>\n")
     }
 
-
-    it should "parse xml-like blocks as is" in {
-        apply("<foo> bla\nblub <bar>hallo</bar>\n</foo>\n") should equal (
-              "<foo> bla\nblub <bar>hallo</bar>\n</foo>\n")
-    }
+//
+//    it should "parse xml-like blocks as is" in {
+//        apply("<foo> bla\nblub <bar>hallo</bar>\n</foo>\n") should equal (
+//              "<foo> bla\nblub <bar>hallo</bar>\n</foo>\n")
+//    }
     
     it should "parse fenced code blocks" in {
 apply(

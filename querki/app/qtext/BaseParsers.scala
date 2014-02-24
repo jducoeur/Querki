@@ -208,6 +208,14 @@ trait BaseParsers extends RegexParsers {
         xmlNameStartCharRanges ++ SortedMap('-' -> '-',  '.' -> '.', '0'->'9',
             '\u00b7'->'\u00b7', '\u0300' -> '\u0369', '\u203F' -> '\u2040')
 
+    /**
+     * Super-conservative legal attribute values for the time being. This will probably need to expand and
+     * get smarter, but for now this is good, and prevents XSS injection since it doesn't contain ':'.
+     */
+    val xmlConservativeAttrRanges:SortedMap[Char,Char] =
+      SortedMap('A' -> 'Z', 'a' -> 'z', '0' -> '9', ' ' -> ' ', '_' -> '_', '-' -> '-')
+    def xmlConservativeAttrChar:Parser[Char] = ranges(xmlConservativeAttrRanges)
+
     /**Parser for one char that starts an XML name.
       * According to W3C specs except that range #x10000 to #xEFFFF
      * is excluded (cannot be expressed by char literals)
@@ -217,16 +225,30 @@ trait BaseParsers extends RegexParsers {
      */
     def xmlNameChar:Parser[Char] = ranges(xmlNameCharRanges)
     /** Parses an XML name (tag or attribute name)
+     *  
+     *  We are currently *whitelisting* tags. If it doesn't appear here, it's illegal.
      */
-    def xmlName:Parser[String] = xmlNameStartChar ~ (xmlNameChar*) ^^ {case c ~ cs => c + cs.mkString}
+//    def xmlName:Parser[String] = xmlNameStartChar ~ (xmlNameChar*) ^^ {case c ~ cs => c + cs.mkString}
+    def xmlName:Parser[String] = "div" | "span"
+    
     /** Parses a Simplified xml attribute: everything between quotes ("foo")
      * everything between the quotes is run through the escape handling
      * That way you can omit xml escaping when writing inline XML in markdown.
+     * 
+     * For the moment, while we are whitelisting, we only allow a few chars in attributes.
      */
-    def xmlAttrVal:Parser[String] = '"' ~> ((not('"') ~> aChar)*) <~ '"' ^^ {'"' + _.mkString + '"'}
+//    def xmlAttrVal:Parser[String] = '"' ~> ((not('"') ~> aChar)*) <~ '"' ^^ {'"' + _.mkString + '"'}
+    def xmlAttrVal:Parser[String] =  '"' ~> (xmlConservativeAttrChar*) <~ '"' ^^ {'"' + _.mkString + '"'}
+    
+    /**
+     * The legal attributes. For now, we're being pretty dumb with attributes (rather than matching
+     * legal tags and attributes), but attributes are, again, whitelisted.
+     */
+    def xmlAttrName:Parser[String] = "class" | "id"
+    
     /** Parses an XML Attribute with simplified value handling like xmlAttrVal.
      */
-    def xmlAttr:Parser[String] = ws ~ xmlName ~ '=' ~ xmlAttrVal ^^ {
+    def xmlAttr:Parser[String] = ws ~ xmlAttrName ~ '=' ~ xmlAttrVal ^^ {
         case w ~ name ~ _ ~ value => w + name + '=' + value
     }
     /** Parses an xml start or empty tag, attribute values are escaped.

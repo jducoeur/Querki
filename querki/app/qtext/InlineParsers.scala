@@ -139,7 +139,7 @@ trait InlineParsers extends BaseParsers {
             in.first match {
                 case ' ' => br(in)
                 case '`' => code(in)
-                case '<' => (xmlTag | fastLink(ctx))(in)
+                case '<' => xmlTag(in)
                 case '[' => link(ctx)(in)
                 case '*' => spanAsterisk(ctx)(in)
                 case '_' => spanUnderscore(ctx)(in)
@@ -186,15 +186,15 @@ trait InlineParsers extends BaseParsers {
     val xmlTag:Parser[String] = if (deco.allowVerbatimXml) (xmlEndTag | xmlStartOrEmptyTag)
                                 else failure("Inline XML processing disabled.")
 
-
-    /** A shortcut markdown link of the form <http://example.com>
-     */
-    def fastLink(ctx:InlineContext):Parser[String] =
-        if (ctx.tags.contains("a")){
-            failure("Cannot nest a link in a link.")
-        } else {
-            elem('<') ~> markdownText(Set('>',' ', '<', '\n'), true) <~ '>' ^^ { u => deco.decorateLink(u, u, None) }
-        }
+//
+//    /** A shortcut markdown link of the form <http://example.com>
+//     */
+//    def fastLink(ctx:InlineContext):Parser[String] =
+//        if (ctx.tags.contains("a")){
+//            failure("Cannot nest a link in a link.")
+//        } else {
+//            elem('<') ~> markdownText(Set('>',' ', '<', '\n'), true) <~ '>' ^^ { u => deco.decorateLink(u, u, None) }
+//        }
 
     /** A link started by square brackets, either a reference or a a link with the full URL.
      */
