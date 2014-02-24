@@ -57,20 +57,20 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
 //  }
   
   // TODO: refactor this with Collection.fromUser():
-  def propValFromUser(prop:Property[_,_], on:Option[Thing], form:Form[_], context:QLContext, containers:Option[FieldIds]):FormFieldInfo = {
+  def propValFromUser(fieldIds:FieldIds, on:Option[Thing], form:Form[_], context:QLContext):FormFieldInfo = {
+    val prop = fieldIds.p
     implicit val s = context.state
     // TODO: this Ecot has a lot of incestuous tests of NameType. I'm leaving these ugly for now. Find a better solution,
     // like lifting out a more public trait to test against.
     if (prop.cType == QSet && (prop.pType.isInstanceOf[querki.core.IsNameType] || prop.pType == LinkType || prop.pType == NewTagSetType)) {
-      handleTagSet(prop, on, form, context)
+      handleTagSet(fieldIds, on, form, context)
     } else {
-      val fieldIds = FieldIds(on, prop)
       val spec = for (
         formV <- form(fieldIds.inputControlId).value;
         specialized <- handleSpecializedForm(prop, formV)
           )
         yield specialized
-      spec.getOrElse(prop.cType.fromUser(on, form, prop, prop.pType, containers, context.state))
+      spec.getOrElse(prop.cType.fromUser(on, form, prop, prop.pType, fieldIds.container, context.state))
     }
   }
   
@@ -320,9 +320,9 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   
   // TODO: TagSets come from Manifest, and the end result is similar to QList.fromUser(). Figure out
   // how to refactor these together, if possible.
-  def handleTagSet(prop:Property[_,_], on:Option[Thing], form:Form[_], context:QLContext):FormFieldInfo = {
+  def handleTagSet(fieldIds:FieldIds, on:Option[Thing], form:Form[_], context:QLContext):FormFieldInfo = {
+    val prop = fieldIds.p
     implicit val s = context.state
-    val fieldIds = FieldIds(on, prop)
     // TODO: this stuff testing for empty isn't really type-specific -- indeed, it is handling the button that is
     // rendered in editThing.html. So it probably belongs at a higher level?
     val empty = form(fieldIds.emptyControlId).value map (_.toBoolean) getOrElse false

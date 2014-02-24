@@ -243,7 +243,7 @@ disallow: /
         var updatingThing = thing
         val rawProps:List[FormFieldInfo] = fieldIds map { fieldId =>
           val higherFieldIdsOpt = fieldId.container
-          val actualFormFieldInfo = HtmlRenderer.propValFromUser(fieldId.p, updatingThing, rawForm, context, higherFieldIdsOpt)
+          val actualFormFieldInfo = HtmlRenderer.propValFromUser(fieldId, updatingThing, rawForm, context)
           val result = {
             higherFieldIdsOpt match {
               case Some(higherFieldIds) => {

@@ -23,7 +23,7 @@ package object tags {
 
   trait Tags extends EcologyInterface {
     def TagSetType:PType[String] with PTypeBuilder[String,String]
-    def NewTagSetType:PType[PlainText]
+    def NewTagSetType:PType[PlainText] with PTypeBuilder[PlainText, String]
     
     def ShowUnknownProp:Property[QLText,String]
     
