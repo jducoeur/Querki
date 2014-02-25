@@ -36,7 +36,7 @@ Types.Int.tooHigh=Values of {0} can be no more than {1}
 Types.Name.empty=Names must have non-zero length
 Types.Name.tooLong=Names should not be excessively long
 Types.Name.badChars=Names may only contain letters, digits, and spaces
-Types.Number.badFormat=Numbers should only contain digits
+Types.Number.badFormat=Illegal number {0}; numbers should only contain digits
 Types.Text.tooShort={0} must be at least {1} characters long, not counting spaces at the beginning and end
 
 UI.transform.htmlRequired=The {0} function only works with raw HTML values (such as those produced by _edit) or Text blocks

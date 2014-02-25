@@ -381,7 +381,7 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
     def doDeserialize(v:String)(implicit state:SpaceState) = try {
       java.lang.Integer.parseInt(v)
     } catch {
-      case ex:java.lang.NumberFormatException => throw new PublicException("Types.Number.badFormat")
+      case ex:java.lang.NumberFormatException => throw new PublicException("Types.Number.badFormat", v)
     }
     
     def doSerialize(v:Int)(implicit state:SpaceState) = v.toString

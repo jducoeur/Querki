@@ -6,6 +6,7 @@ import Thing.{PropFetcher, emptyProps}
 
 import querki.ecology.Ecology
 import querki.ql.Invocation
+import querki.util.QLog
 import querki.values._
 
 /**
@@ -23,7 +24,17 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecology
    * type.
    */
   def doDeserialize(ser:String)(implicit state:SpaceState):VT
-  final def deserialize(ser:String)(implicit state:SpaceState):ElemValue = ElemValue(doDeserialize(ser), this)
+  final def deserialize(ser:String)(implicit state:SpaceState):ElemValue = 
+    try {
+      ElemValue(doDeserialize(ser), this)
+    } catch {
+      case error:Exception => {
+        QLog.error(s"Type ${displayName}: error trying to deserialize string '$ser'", error)
+        // Give up and use the default value. This is specifically an error-stop, so that corruptions in one
+        // property value don't prevent the entire Thing from loading:
+        default
+      }
+    }
   
   /**
    * Also required for all PTypes, to serialize values of this type.
