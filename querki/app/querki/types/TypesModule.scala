@@ -80,7 +80,9 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
     }
       yield newQV
       
-    result.getOrElse(ExactlyOne(childBundle))
+    // Note: this originally said ExactlyOne, which was Very Very Bad: it's important that we produce the same Collection
+    // as the Property, or we can wind up serializing the value incorrectly.
+    result.getOrElse(modelProp.cType(childBundle))
   }
   
   /**

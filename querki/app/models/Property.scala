@@ -10,6 +10,7 @@ import querki.ql.{Invocation, PartiallyAppliedFunction, QLFunction, QLPhrase}
 import querki.time.DateTime
 import querki.types.Types
 
+import querki.util.QLog
 import querki.values._
 
 /**
@@ -79,6 +80,15 @@ case class Property[VT, -RT](
   
   def validate(str:String, state:SpaceState) = pType.validate(str, this, state)
   
+  def validatingQValue[R](v:QValue)(f: => R):R = {
+    if (v.cType != cType)
+      QLog.error(s"Property $displayName Validation Failed: expected collection ${cType.displayName}, but got ${v.cType.displayName}")
+    if (v.pType != pType)
+      QLog.error(s"Property $displayName Validation Failed: expected type ${pType.displayName}, but got ${v.pType.displayName}")
+      
+    f
+  }
+  
   // TODO: this clearly isn't correct. How are we actually going to handle more complex types?
   def toUser(v:QValue)(implicit state:SpaceState):String = {
     val cv = castVal(v)
@@ -88,7 +98,7 @@ case class Property[VT, -RT](
       pType.toUser(cType.first(cv))
   }
   
-  def serialize(v:QValue)(implicit state:SpaceState):String = v.serialize(pType)
+  def serialize(v:QValue)(implicit state:SpaceState):String = validatingQValue(v){ v.serialize(pType) }
   def deserialize(str:String)(implicit state:SpaceState):QValue = cType.deserialize(str, pType)
   
   // TODO: these two methods are probably obsolete. Can they consistently be replaced by
