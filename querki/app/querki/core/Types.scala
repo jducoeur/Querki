@@ -195,7 +195,7 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
   /**
    * Marker type, used to signify "no real type" in empty collections.
    */
-  class UnknownType extends PType[Unit](UnknownOID, UnknownOID, UnknownOID, () => models.Thing.emptyProps) {
+  class UnknownType extends PType[Unit](UnknownOID, UnknownOID, UnknownOID, toProps(setName("Unknown Type"))) {
     def doDeserialize(v:String)(implicit state:SpaceState) = throw new Exception("Trying to use UnknownType!")
     def doSerialize(v:Unit)(implicit state:SpaceState) = throw new Exception("Trying to use UnknownType!")
     def doWikify(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None) = throw new Exception("Trying to use UnknownType!")

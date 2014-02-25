@@ -243,7 +243,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
       // TODO: this isn't good enough for the long run -- we'll have to do something more
       // sophisticated when we get to complex Types. But it's a start.
       if (v.length() == 0)
-        Some(FormFieldInfo(prop, Some(QNone), false, true))
+        Some(FormFieldInfo(prop, Some(Empty(elemT)), false, true))
       else
         None
     }
