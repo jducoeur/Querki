@@ -7,13 +7,15 @@ import querki.ql.QLPhrase
 import querki.values._
 
 object MOIDs extends EcotIds(9) {
-  val OrMethodOID = sysId(49)
+  val FirstNonEmptyMethodOID = sysId(49)
   val NotOID = sysId(57)
   val IfMethodOID = sysId(64)
   val EqualsMethodOID = sysId(94)
   
   val TrueOID = moid(1)
   val FalseOID = moid(2)
+  val OrMethodOID = moid(3)
+  val AndMethodOID = moid(4)
 }
 
 /**
@@ -30,17 +32,13 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
    * FUNCTIONS
    ******************************************/
 	
-	class OrMethod extends InternalMethod(OrMethodOID,
+	class FirstNonEmptyMethod extends InternalMethod(FirstNonEmptyMethodOID,
 	    toProps(
-	      setName("_or"),
-	      Summary("""The short-circuiting "or" operator."""),
+	      setName("_firstNonEmpty"),
+	      Summary("""Produces the first parameter that is not empty."""),
 	      Details("""    RECEIVED -> _or(CLAUSE1, CLAUSE2, ...) -> RESULT
 	          |_or takes any number of parameters. It runs through each of them, applying the incoming context.
-	          |It produces the first one that returns a non-empty result, or None iff all of them come out empty. 
-	          |
-	          |IMPORTANT: this method is going to change in the future! We will likely enhance it so that it does
-	          |the obvious thing if the clauses return a single True/False result. (Or if there is a single parameter,
-	          |or'ing together the results from that.)""".stripMargin)))
+	          |It produces the first one that returns a non-empty result, or None iff all of them come out empty.""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QValue = {
 	    val context = inv.context
@@ -66,7 +64,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	        // suss that?
 	        result.getOrElse(EmptyValue(context.value.pType))
 	      }
-	      case None => WarningValue("The _or() operator is meaningless if you don't give it any parameters")
+	      case None => WarningValue("_firstNonEmpty() is meaningless if you don't give it any parameters")
 	    }
 	  }
 	}
@@ -168,11 +166,53 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	  }
 	}
 	
+  lazy val OrMethod = new InternalMethod(OrMethodOID,
+      toProps(
+        setName("_or"),
+        Summary("Produces true iff any of the parameters are true"),
+        Details("""    _if(_or(VAL1, VAL2, VAL3...), RESULTS)
+            |_or takes one or more parameters, and produces true if and only if at least one of those parameters
+            |is true.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      val results = for {
+        dummy <- inv.returnsType(YesNoType)
+        paramNum <- inv.iter(0 until inv.numParams, None)
+        paramVal <- inv.processParamFirstAs(paramNum, YesNoType)
+      }
+        yield paramVal
+        
+      results.get.exists(v => v)
+    }
+  }
+	
+  lazy val AndMethod = new InternalMethod(AndMethodOID,
+      toProps(
+        setName("_and"),
+        Summary("Produces true iff all of the parameters are true"),
+        Details("""    _if(_and(VAL1, VAL2, VAL3...), RESULTS)
+            |_and takes one or more parameters, and produces true if and only if all of those parameters
+            |are true.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      val results = for {
+        dummy <- inv.returnsType(YesNoType)
+        paramNum <- inv.iter(0 until inv.numParams, None)
+        paramVal <- inv.processParamFirstAs(paramNum, YesNoType)
+      }
+        yield paramVal
+        
+      !results.get.exists(v => !v)
+    }
+  }
+	
   override lazy val props = Seq(
-    new OrMethod,
+    new FirstNonEmptyMethod,
     new NotMethod,
     new IfMethod,
-    new EqualsMethod
+    new EqualsMethod,
+    OrMethod,
+    AndMethod
   )
 
   /******************************************
