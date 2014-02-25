@@ -118,7 +118,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
   /**
    * This is a fake PType, which exists so that we can persist embedded Texts in the pipeline.
    */
-  lazy val ParsedTextType = new SystemType[Wikitext](UnknownOID, () => Thing.emptyProps) with SimplePTypeBuilder[Wikitext]
+  lazy val ParsedTextType = new SystemType[Wikitext](UnknownOID, toProps(setName("Parsed Text Type"))) with SimplePTypeBuilder[Wikitext]
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = throw new Exception("Can't deserialize ParsedText!")
     def doSerialize(v:Wikitext)(implicit state:SpaceState) = throw new Exception("Can't serialize ParsedText!")

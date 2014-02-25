@@ -246,11 +246,16 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
     }  
   }
   
+  // TODO: merge these two functions. They're mostly alike...
   def processParam(paramNum:Int, processContext:QLContext = context):InvocationValue[QValue] = {
     paramsOpt match {
       case Some(params) if (params.length >= (paramNum - 1)) => {
         val processed = context.parser.get.processPhrase(params(paramNum).ops, processContext).value
-        InvocationValueImpl(this, Some(processed), None)
+        processed.firstAs(QL.ErrorTextType) match {
+          // If there was an error, keep the error, and stop processing:
+          case Some(errorText) => InvocationValueImpl(this, None, Some(new PublicException("General.public", errorText))) 
+          case None => InvocationValueImpl(this, Some(processed), None)
+        }
       }
       case _ => error("Func.missingParam", displayName)
     }    
@@ -260,9 +265,14 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
     paramsOpt match {
       case Some(params) if (params.length >= (paramNum - 1)) => {
         val processed = context.parser.get.processPhrase(params(paramNum).ops, processContext).value
-        processed.firstAs(pt) match {
-          case Some(v) => InvocationValueImpl(this, Some(v), None)
-          case None => error("Func.paramNotThing", displayName, paramNum.toString)
+        processed.firstAs(QL.ErrorTextType) match {
+          case Some(errorText) => InvocationValueImpl(this, None, Some(new PublicException("General.public", errorText)))
+          case None => {
+	        processed.firstAs(pt) match {
+	          case Some(v) => InvocationValueImpl(this, Some(v), None)
+	          case None => error("Func.paramNotThing", displayName, paramNum.toString)
+	        }
+          }
         }
       }
       case _ => error("Func.missingParam", displayName)

@@ -1,4 +1,5 @@
 General=Unexpected error. The details have been logged, and we will look into it. Sorry for the inconvenience.
+General.public={0}
 
 Editor.temp.InstanceEditorRequired=For the time being, _edit can only be used on Things that have the Instance Edit View Property set.
 

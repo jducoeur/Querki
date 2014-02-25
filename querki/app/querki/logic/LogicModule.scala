@@ -117,14 +117,19 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	        val predicatePhrase = params(0)
 	        val ifCase = params(1)
 	        val predResult = context.parser.get.processPhrase(predicatePhrase.ops, context)
-	        if (toBoolean(predResult.value)) {
-	          context.parser.get.processPhrase(ifCase.ops, context).value
-	        } else if (params.length > 2) {
-	          val elseCase = params(2)
-	          context.parser.get.processPhrase(elseCase.ops, context).value
-	        } else {
-	          // TODO: the type here is chosen arbitrarily, but it *should* be the same type as the ifCase.
-	          EmptyValue(Core.UnknownType)
+	        predResult.value.firstAs(QL.ErrorTextType) match {
+	          case Some(errMsg) => predResult.value
+	          case None => {
+		        if (toBoolean(predResult.value)) {
+		          context.parser.get.processPhrase(ifCase.ops, context).value
+		        } else if (params.length > 2) {
+		          val elseCase = params(2)
+		          context.parser.get.processPhrase(elseCase.ops, context).value
+		        } else {
+		          // TODO: the type here is chosen arbitrarily, but it *should* be the same type as the ifCase.
+		          EmptyValue(Core.UnknownType)
+		        }
+	          }
 	        }
 	      }
 	      case _ => WarningValue("_if requires at least two parameters.")

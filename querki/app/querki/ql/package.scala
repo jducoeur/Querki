@@ -245,6 +245,7 @@ package object ql {
     
     def UnknownNameType:PType[String] with PTypeBuilder[String,String]
     def ParsedTextType:PType[Wikitext] with PTypeBuilder[Wikitext,Wikitext]
+    def ErrorTextType:PType[QLText] with PTypeBuilder[QLText,String]
     
     def WarningValue(msg:String):QValue
     def ErrorValue(msg:String):QValue
