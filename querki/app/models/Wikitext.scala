@@ -175,8 +175,8 @@ object Wikitext {
 
 class QuerkiTransformer extends Transformer with Decorator {
     override def deco() = this
-    // We no longer allow XML in QText. However, internal systems can inject HTML by using a
-    override def allowVerbatimXml():Boolean = false
+    // We now allow XML in QText, but note that the parser only allows a few, whitelisted constructs:
+    override def allowVerbatimXml():Boolean = true
     // We use <div> instead of a real <p>, because it turns out that older versions of IE (specifically IE9)
     // do not permit <form>s inside of <p> -- and restructure the HTML to prevent it, breaking our forms.
     override def decorateParagraphOpen():String = """<div class="para">"""
@@ -185,14 +185,14 @@ class QuerkiTransformer extends Transformer with Decorator {
 
 class RawTransformer extends Transformer with Decorator {
     override def deco() = this
-    override def allowVerbatimXml():Boolean = false
+    override def allowVerbatimXml():Boolean = true
     override def decorateParagraphOpen():String = ""
     override def decorateParagraphClose():String = ""    
 }
 
 class SpanTransformer extends Transformer with Decorator {
     override def deco() = this
-    override def allowVerbatimXml():Boolean = false
+    override def allowVerbatimXml():Boolean = true
     override def decorateParagraphOpen():String = "<span>"
     override def decorateParagraphClose():String = "</span>"    
 }

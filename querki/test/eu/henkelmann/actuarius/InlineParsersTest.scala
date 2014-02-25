@@ -4,15 +4,7 @@ import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
 import org.junit.runner.RunWith
 
-/**
- * Tests Inline Parsing, i.e. emphasis , strong text, links, escapes etc.
- */
-//@RunWith(classOf[JUnitRunner])
-class InlineParsersTest extends FlatSpec with ShouldMatchers with InlineParsers{
-
-    ///////////////////////////////////////////////////////////////
-    // Inline parsing Tests                                      //
-    ///////////////////////////////////////////////////////////////
+trait InlineBase { this:InlineParsers with ShouldMatchers =>
     def runSucceedingParsingTests(p:Parser[String], l:List[(String, String)]) {
         for ((a, b) <- l) {
             try {
@@ -21,12 +13,22 @@ class InlineParsersTest extends FlatSpec with ShouldMatchers with InlineParsers{
                 case e:Throwable => println("Input causing the failure was: '" + a + "'."); throw e;
             }
         }
-    }
-
+    }  
+    
     def runExceptionParsingTests(p:Parser[String], l:List[String]) {
         for (s <- l) evaluating{apply(p, s)} should produce[IllegalArgumentException]
     }
+}
 
+/**
+ * Tests Inline Parsing, i.e. emphasis , strong text, links, escapes etc.
+ */
+//@RunWith(classOf[JUnitRunner])
+class InlineParsersTest extends FlatSpec with ShouldMatchers with InlineParsers with InlineBase {
+
+    ///////////////////////////////////////////////////////////////
+    // Inline parsing Tests                                      //
+    ///////////////////////////////////////////////////////////////
     val italicTests:List[(String, String)] = List(
         ("*italic*", "<em>italic</em>"),
         ("*italic * italic*", "<em>italic * italic</em>"),
