@@ -66,6 +66,15 @@ class CollectionsTests extends QuerkiTests {
       pql("""[[Flood -> Artists -> _isEmpty]]""") should
         equal("false")      
     }
+    
+    "work correctly with a parameter" in {
+      implicit val s = new CDSpace
+      
+      pql("""[[Classical Randomness ->  _isEmpty(Artists)]]""") should
+        equal("true")
+      pql("""[[Flood -> _isEmpty(Artists)]]""") should
+        equal("false")      
+    }
   }
   
   // === _isNonEmpty ===
@@ -85,6 +94,15 @@ class CollectionsTests extends QuerkiTests {
       pql("""[[Classical Randomness -> Artists -> _isNonEmpty]]""") should
         equal("false")
       pql("""[[Flood -> Artists -> _isNonEmpty]]""") should
+        equal("true")      
+    }
+    
+    "work correctly with a parameter" in {
+      implicit val s = new CDSpace
+      
+      pql("""[[Classical Randomness -> _isNonEmpty(Artists)]]""") should
+        equal("false")
+      pql("""[[Flood -> _isNonEmpty(Artists)]]""") should
         equal("true")      
     }
   }

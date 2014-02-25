@@ -106,9 +106,13 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	      Details("""    THING -> PROP._isNonEmpty
 	          |or
 	          |    RECEIVED -> _isNonEmpty
+	          |or
+	          |    RECEIVED -> _isNonEmpty(PARAM)
 	          |The first form produces true iff PROP is defined on THING, and this instance contains at least one element.
 	          |
 	          |The second form produces true iff RECEIVED contains at least one element.
+	          |
+	          |The third form runs the PARAM on the RECEIVED value, and produces true iff the result contains at least one element.
 	          |
 	          |This is usually used on a List, Set or Optional, but you *can* use it on an ExactlyOne value. (In which
 	          |case it will always produce True.)""".stripMargin)))
@@ -116,8 +120,11 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	  override def qlApply(inv:Invocation):QValue = {
 	    if (inv.definingContext.isDefined)
 	      boolean2YesNoQValue(!isEmpty(inv))
-	    else
-	      boolean2YesNoQValue(!inv.context.value.isEmpty)
+	    else 
+	      for {
+	        v <- inv.firstParamOrContextValue
+	      }
+	        yield boolean2YesNoQValue(!v.isEmpty)
 	  }
 	}
 	
@@ -128,9 +135,13 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	      Details("""    THING -> PROP._isEmpty
 	          |or
 	          |    RECEIVED -> _isEmpty
+	          |or
+	          |    RECEIVED -> _isEmpty(PARAM)
 	          |The first form produces true iff PROP is not defined on THING, or the value is empty.
 	          |
 	          |The second form produces true iff RECEIVED is empty.
+	          |
+	          |The third form runs the PARAM on the RECEIVED value, and produces true iff the result is empty.
 	          |
 	          |This is usually used on a List, Set or Optional, but you *can* use it on an ExactlyOne value. (In which
 	          |case it will always produce False.)""".stripMargin)))
@@ -139,7 +150,10 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    if (inv.definingContext.isDefined)
 	      boolean2YesNoQValue(isEmpty(inv))
 	    else
-  	      boolean2YesNoQValue(inv.context.value.isEmpty)
+	      for {
+	        v <- inv.firstParamOrContextValue
+	      }
+  	        yield boolean2YesNoQValue(v.isEmpty)
 	  }
 	}
 	

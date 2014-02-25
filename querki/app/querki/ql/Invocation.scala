@@ -117,6 +117,10 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
     }
   }
   
+  def contextValue:InvocationValue[QValue] = {
+    InvocationValueImpl(this, Some(context.value), None)
+  }
+  
   def opt[T](opt:Option[T], errOpt:Option[PublicException] = None):InvocationValue[T] = {
     opt match {
       case Some(v) => InvocationValueImpl(this, Some(v), None)
@@ -263,6 +267,13 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
       }
       case _ => error("Func.missingParam", displayName)
     }
+  }
+  
+  def firstParamOrContextValue:InvocationValue[QValue] = {
+    if (paramsOpt.isDefined && paramsOpt.get.length > 0)
+      processParam(0)
+    else
+      contextValue
   }
   
   def WarningValue(msg:String) = QL.WarningValue(msg)

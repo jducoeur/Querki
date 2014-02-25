@@ -90,6 +90,12 @@ package object ql {
      * things to short-circuit.)
      */
     def returnsType(pt:PType[_]):InvocationValue[Boolean]
+    
+    /**
+     * The simplest accessor -- simply returns the received value (context.v), unmodified. Mostly sugar for
+     * wrapping that in an InvocationValue.
+     */
+    def contextValue:InvocationValue[QValue]
 
     /**
      * If the context's value is of the specified type (which need not be a PType), return
@@ -167,6 +173,13 @@ package object ql {
      * Get the specified parameter's first value, which should be of the given Type.
      */
     def processParamFirstAs[VT](paramNum:Int, pt:PType[VT], processContext:QLContext = context):InvocationValue[VT]
+    
+    /**
+     * This looks rather specialized, but isn't actually: it represents the non-terribly-unusual situation where
+     * a function operates on a single value, and should either use the parameter if there is one, or the received
+     * context if not.
+     */
+    def firstParamOrContextValue:InvocationValue[QValue]
     
     //////////////
     //
