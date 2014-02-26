@@ -1,0 +1,59 @@
+@(rc:PlayRequestContext)
+
+@import play.api.Logger
+
+@Core = @{ rc.interface[querki.core.Core] }
+
+@space = @{ rc.state.get }
+@thing = @{
+  rc.thing match {
+    case Some(t) => t
+    case None => space
+  }
+}
+@title = @{ "Querki Explorer" }
+@user = @{ rc.requester }
+@rawThingId = @{ thing.id.toThingId.toString }
+
+@modelOpt = @{ thing.getModelOpt(space) }
+
+@main(QuerkiTemplate.Thing, title, rc, true) {
+
+  <script type="text/javascript" src='@routes.ExploreController.javascriptRoutes()'></script>
+
+  <script>
+    function evaluate() {
+      var qlText = $("#_qlInput").val();
+      jsExploreRoutes.controllers.ExploreController.evaluate("@space.owner.toThingId", "@space.id.toThingId", "@thing.toThingId", qlText).ajax({
+        success: function (result) {
+          $("#_results").html(result);
+        },
+        error: function (err) {
+          $("#_results").html("<b>" + err + "</b>");
+        }
+      });    
+    }
+  
+    $(function() {
+      $("#_evalButton").click(evaluate);
+    });
+  </script>
+
+  <div class="row-fluid">
+    <div class="span2">
+      @Html(thing.displayName + " -> [[")
+    </div>
+    
+    <div class="span9"><textarea id="_qlInput" placeholder="Enter QL here" style="width:100%"></textarea></div>
+    
+    <div class="span1">
+      @Html("]]")
+    </div>
+  </div>
+    
+  <input id="_evalButton" type="button" class="btn" value="Evaluate">
+  
+  <hr/>
+  
+  <div id="_results" class="span12"></div>
+}

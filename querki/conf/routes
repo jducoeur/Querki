@@ -31,6 +31,9 @@ GET     /u/:userName/:spaceId/_getModelType @controllers.Application.getModelTyp
 GET     /u/:userName/:spaceId/_exportModel @controllers.Application.exportModel(userName, spaceId, modelId, format:Int)
 GET     /u/:userName/:spaceId/_advanced @controllers.Application.showAdvancedCommands(userName, spaceId, modelId)
 
+GET     /u/:userName/:spaceId/_explorer @controllers.ExploreController.showExplorer(userName, spaceId, thingId)
+POST    /u/:userName/:spaceId/_evaluate @controllers.ExploreController.evaluate(userName, spaceId, thingId, ql)
+
 GET     /u/:userName/:spaceId/edit @controllers.Application.editThing(userName, spaceId, thingId)
 POST    /u/:userName/:spaceId/edit @controllers.Application.doEditThing(userName, spaceId, thingId)
 GET     /u/:userName/:spaceId/_changeModel @controllers.Application.changeModel(userName, spaceId, thingId)
@@ -73,6 +76,7 @@ GET     /adminJs                    @controllers.AdminController.javascriptRoute
 GET     /showTestAjax               @controllers.Application.showTestAjax
 POST    /testAjax                   @controllers.Application.testAjax(i1, i2)
 GET     /javascriptRoutes           @controllers.Application.javascriptRoutes
+GET     /exploreRoutes              @controllers.ExploreController.javascriptRoutes
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
