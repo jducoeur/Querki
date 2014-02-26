@@ -162,8 +162,8 @@ class LineTokenizer() extends Parsers {
             (firstChar(line), indicatorChar(line)) match {
                 //link definitions have absolute precedence
                 case (_, '[') => linkDefinition(in)
-                //then filter out xml blocks if allowed
-                case ('<', _) if (allowXmlBlocks) => xmlChunk(in)
+//                //then filter out xml blocks if allowed
+//                case ('<', _) if (allowXmlBlocks) => xmlChunk(in)
                 //no token for preprocessing
                 case _        => Failure("No preprocessing token.", in)
             }

@@ -440,7 +440,11 @@ trait BlockParsers extends Parsers {
     /**
      * parses first level blocks (all blocks, including xml)
      */
-    def outerBlock:Parser[MarkdownBlock] = (verbatimXml <~ optEmptyLines) | innerBlock
+//    def outerBlock:Parser[MarkdownBlock] = (verbatimXml <~ optEmptyLines) | innerBlock
+    // For the time being at least, we're simply disabling the notion of "block XML". I don't
+    // think it brings much to the party, and it produces wildly unintuitive effects when applied
+    // naively.
+    def outerBlock:Parser[MarkdownBlock] = innerBlock
 
     /**
      * speed up block processing by looking ahead

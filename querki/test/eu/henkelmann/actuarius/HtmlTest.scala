@@ -15,6 +15,25 @@ class HtmlTest extends QuerkiTests with Transformer {
     }    
   }
   
+  // This is a major difference from Actuarius, which has an elaborate system for managing "XML blocks"
+  // if you put the XML at the beginning of the line. It interacts *very* poorly with the rest of QText,
+  // so I've simply disabled it. Thanks to Darker for the test example.
+  "HTML blocks" should {
+    "just be handled like any other XML" in {
+      apply("""<div class="effects-box">
+
+Foo foo foo
+
+Foo foo
+
+</div>""".stripReturns) should equal ("""<p><div class="effects-box"></p>
+<p>Foo foo foo</p>
+<p>Foo foo</p>
+<p></div></p>
+    |""".stripReturns)
+    }
+  }
+  
   "Legal class attributes" should {
     "parse cleanly" in {
       apply("""Hello <div class="class-1 class_2">there</div>""") should equal ("""<p>Hello <div class="class-1 class_2">there</div></p>
