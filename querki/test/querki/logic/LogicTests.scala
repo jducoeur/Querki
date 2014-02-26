@@ -71,6 +71,16 @@ class LogicTests extends QuerkiTests {
       processQText(commonThingAsContext(_.sandbox), """[[_if(False, ""Yes"", ""No"")]]""") should 
         equal ("""No""")      
     }
+    
+    "propagate errors in the predicate" in {
+      class TSpace extends CommonSpace {
+        val intProp = new TestProperty(Core.IntType, ExactlyOne, "My Num")
+        val myThing = new SimpleTestThing("My Thing", intProp(5))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[_if(Trivial -> _equals(Name, My Thing -> My Num), ""hello"")]]""") should equal ("{{_warning:Logic.equals.typeMismatch}}")            
+    }
   }
   
   // === _or ===
