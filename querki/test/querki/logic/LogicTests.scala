@@ -51,6 +51,16 @@ class LogicTests extends QuerkiTests {
       pql("""[[Trivial -> _equals(""Floob"", Name)]]""") should equal ("false")
       pql("""[[Trivial -> _equals(My Thing -> My Optional Text, Name)]]""") should equal ("true")
     }
+    
+    "fail if there is a hard Type mismatch" in {
+      class TSpace extends CommonSpace {
+        val intProp = new TestProperty(Core.IntType, ExactlyOne, "My Num")
+        val myThing = new SimpleTestThing("My Thing", intProp(5))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Trivial -> _equals(Name, My Thing -> My Num)]]""") should equal ("{{_warning:Logic.equals.typeMismatch}}")      
+    }
   }
   
   // === _if ===
