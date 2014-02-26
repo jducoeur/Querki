@@ -14,6 +14,8 @@ Func.unknownPropOID=Encountered unknown Property {0}; did you delete it?
 
 Imexport.exportNotAllowed=You aren't allowed to read {0}, so you can't export its instances.
 
+Logic.equals.typeMismatch=The parameters to _equals must be the same Type: got _equals({0}, {1})
+
 Space.create.alreadyExists=You already have a Space with the name {0}. Please choose a different name.
 Space.create.illegalName={0} is not a legal name for a Space. Space names should consist of just letters, digits and spaces.
 Space.create.maxSpaces=You are only allowed to create {0} Spaces at this time. This limit will be raised in the future.

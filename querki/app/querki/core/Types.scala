@@ -120,7 +120,6 @@ trait NameTypeBasis { self:CoreEcot with NameUtils =>
   abstract class NameTypeBase(tid:OID, pf:PropFetcher) extends SystemType[String](tid, pf) 
     with SimplePTypeBuilder[String] with NameableType with IsNameType
   {
-        
     def doDeserialize(v:String)(implicit state:SpaceState) = toDisplay(v)
     def doSerialize(v:String)(implicit state:SpaceState) = toInternal(v)
     
@@ -150,6 +149,18 @@ trait NameTypeBasis { self:CoreEcot with NameUtils =>
     def doDefault(implicit state:SpaceState) = ""
       
     override def doMatches(left:String, right:String):Boolean = equalNames(left, right)
+    
+    override def canCoerceTo(other:PType[_]):Boolean = {
+      other.isInstanceOf[IsTextType] || other == QL.ParsedTextType
+    }
+    override def coerceTo(other:PType[_], elem:ElemValue):ElemValue = {
+      if (other == QL.ParsedTextType)
+        QL.ParsedTextType(Wikitext(get(elem)))
+      else other match {
+        case tt:IsTextType => new ElemValue(QLText(get(elem)), other)
+        case _ => throw new Exception(s"Can not coerce NameTypeBase to ${other.displayName}")
+      }
+    }
   }  
 }
 

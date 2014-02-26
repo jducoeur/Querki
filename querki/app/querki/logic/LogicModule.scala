@@ -1,9 +1,10 @@
 package querki.logic
 
-import models.{OID, ThingState}
+import models.{OID, PType, ThingState}
 
 import querki.ecology._
 import querki.ql.QLPhrase
+import querki.util.PublicException
 import querki.values._
 
 object MOIDs extends EcotIds(9) {
@@ -154,11 +155,22 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	    
 	    paramsOpt match {
 	      case Some(params) if (params.length > 1) => {
-	        val first = context.parser.get.processPhrase(params(0).ops, context).value
-	        val second = context.parser.get.processPhrase(params(1).ops, context).value
+	        var first = context.parser.get.processPhrase(params(0).ops, context).value
+	        var second = context.parser.get.processPhrase(params(1).ops, context).value
+	        
+	        // TODO: conceptually, this is probably common code for any time where we care about multiple
+	        // values being the same Type. Not sure where it belongs, though.
 	        if (first.pType != second.pType) {
-	          WarningValue("The parameters to _equals must be the same Type: got _equals(" + first.pType.displayName + ", " + second.pType.displayName + ")")
-	        } else if (first.size == second.size) {
+	          first.coerceTo(second.pType) match {
+	            case Some(coerced) => first = coerced
+	            case None => second.coerceTo(first.pType) match {
+	              case Some(coerced) => second = coerced
+	              case None => throw new PublicException("Logic.equals.typeMismatch", first.pType.displayName, second.pType.displayName)
+	            }
+	          }
+	        }
+	        
+	       if (first.size == second.size) {
 	          val pt = first.pType
 	          val pairs = first.cv.zip(second.cv)
 	          pairs.forall(pair => pt.matches(pair._1, pair._2))

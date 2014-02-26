@@ -118,6 +118,9 @@ trait QValue {
   /**
    * The primary transformer from one QValue to another. Takes a function that transforms the underlying
    * data types, and does the unwrapping, transforming of each element, and re-wrapping.
+   * 
+   * Note that, if you're just trying to convert one type to another in the default way with no transform,
+   * just use coerceTo instead.
    */
   def map[VT, DT, RT](sourceType:PType[VT], destType:PType[DT] with PTypeBuilder[DT, RT])(cb:VT => RT):QValue = {
     val iter = cv.map { elem => 
@@ -126,6 +129,17 @@ trait QValue {
       destType(result)
     }
     cType.makePropValue(iter, destType)
+  }
+  
+  /**
+   * Attempts to coerce this Value to the other PType, if it knows how to do so.
+   */
+  def coerceTo(destType:PType[_]):Option[QValue] = {
+    if (pType.canCoerceTo(destType)) {
+      val iter = cv.map (elem => pType.coerceTo(destType, elem))
+      Some(cType.makePropValue(iter, destType))
+    } else
+      None
   }
   
   def rawList[VT](elemT:PType[VT]):List[VT] = {

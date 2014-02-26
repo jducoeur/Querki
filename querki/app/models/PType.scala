@@ -177,6 +177,17 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecology
    * Defaults to 6, but any editable Type really ought to set this.
    */
   def editorSpan(prop:Property[_,_]):Int = 6
+  
+  /**
+   * Should return true iff this PType can be coerced to the other.
+   */
+  def canCoerceTo(other:PType[_]):Boolean = false
+  
+  /**
+   * Turn the given element of this Type into the other Type. This should only be called if you have
+   * previously checked canCoerceTo!
+   */
+  def coerceTo(other:PType[_], elem:ElemValue):ElemValue = throw new Exception(s"PType $displayName can not be coerced to ${other.displayName}!")
 }
 
 /**

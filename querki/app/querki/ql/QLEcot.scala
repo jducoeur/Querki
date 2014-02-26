@@ -124,7 +124,8 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
     def doSerialize(v:Wikitext)(implicit state:SpaceState) = throw new Exception("Can't serialize ParsedText!")
     def doWikify(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None) = v
   
-    override def doComp(context:QLContext)(left:Wikitext, right:Wikitext):Boolean = { left.plaintext < right.plaintext } 
+    override def doComp(context:QLContext)(left:Wikitext, right:Wikitext):Boolean = { left.plaintext < right.plaintext }
+    override def doMatches(left:Wikitext, right:Wikitext):Boolean = { left.plaintext == right.plaintext }
     override def doDebugRender(context:QLContext)(v:Wikitext) = v.contents.map(_.internal).mkString
   
     def doDefault(implicit state:SpaceState) = Wikitext("")
