@@ -212,6 +212,9 @@ class DelegatingType[VT](resolver: => PType[VT])(implicit e:Ecology) extends PTy
 
   def doDefault(implicit state:SpaceState) = realType.doDefault
   
+  override def canCoerceTo(other:PType[_]):Boolean = realType.canCoerceTo(other)
+  override def coerceTo(other:PType[_], elem:ElemValue):ElemValue = realType.coerceTo(other, elem)
+  
   override def toString = super.toString + ": " + realType.toString()
 }
 

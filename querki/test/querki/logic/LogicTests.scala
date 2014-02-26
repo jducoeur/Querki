@@ -37,6 +37,20 @@ class LogicTests extends QuerkiTests {
       processQText(thingAsContext[TSpace](space, _.falseThing), """[[_if(_equals(Boolean Prop, False), ""Yes"", ""No"")]]""") should 
         equal ("""Yes""")      
     }
+    
+    "be able to test Name against Text" in {
+      class TSpace extends CommonSpace {
+        val myThing = new SimpleTestThing("My Thing", optTextProp("Trivial"))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Trivial -> _equals(Name, ""Trivial"")]]""") should equal ("true")
+      pql("""[[Trivial -> _equals(Name, ""Floob"")]]""") should equal ("false")
+      pql("""[[Trivial -> _equals(Name, My Thing -> My Optional Text)]]""") should equal ("true")
+      pql("""[[Trivial -> _equals(""Trivial"", Name)]]""") should equal ("true")
+      pql("""[[Trivial -> _equals(""Floob"", Name)]]""") should equal ("false")
+      pql("""[[Trivial -> _equals(My Thing -> My Optional Text, Name)]]""") should equal ("true")
+    }
   }
   
   // === _if ===

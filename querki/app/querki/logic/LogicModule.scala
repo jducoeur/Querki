@@ -160,10 +160,10 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	        
 	        // TODO: conceptually, this is probably common code for any time where we care about multiple
 	        // values being the same Type. Not sure where it belongs, though.
-	        if (first.pType != second.pType) {
-	          first.coerceTo(second.pType) match {
+	        if (first.pType.realType != second.pType.realType) {
+	          first.coerceTo(second.pType.realType) match {
 	            case Some(coerced) => first = coerced
-	            case None => second.coerceTo(first.pType) match {
+	            case None => second.coerceTo(first.pType.realType) match {
 	              case Some(coerced) => second = coerced
 	              case None => throw new PublicException("Logic.equals.typeMismatch", first.pType.displayName, second.pType.displayName)
 	            }
