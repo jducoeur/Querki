@@ -38,15 +38,35 @@
       $("#_evalButton").click(evaluate);
     });
   </script>
+  
+  <style>
+  #_queryRow {
+    height: 100px;
+  }
+  
+  ._surround {
+    position: relative;
+    top: 40px;
+    color: #999999;
+  }
+  
+  #_qlInputDiv {
+    height: 100%;
+  }
+  
+  #_qlInput {
+    height: 100%;
+  }
+  </style>
 
-  <div class="row-fluid">
-    <div class="span2">
+  <div id="_queryRow" class="row-fluid">
+    <div class="span2 _surround">
       @Html(thing.displayName + " -> [[")
     </div>
     
-    <div class="span9"><textarea id="_qlInput" placeholder="Enter QL here" style="width:100%"></textarea></div>
+    <div id="_qlInputDiv" class="span9"><textarea id="_qlInput" placeholder="Enter QL here" style="width:100%"></textarea></div>
     
-    <div class="span1">
+    <div class="span1 _surround">
       @Html("]]")
     </div>
   </div>
