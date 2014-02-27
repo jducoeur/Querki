@@ -22,9 +22,38 @@
   <script type="text/javascript" src='@routes.ExploreController.javascriptRoutes()'></script>
 
   <script>
+    var originalRootId = "@thing.id.toString()";
+    var rootId = originalRootId;
+
+    (function( $ ) {
+
+      $.fn.asThingPrompt = function () {
+        this.each(function () {
+          $(this).marcoPolo({
+            // Note that we intentionally leave propId blank for this purpose:
+		    url: 'getLinks?propId=',
+		    minChars: 1,
+		    required: true,
+		    formatData: function(data) { return data; },
+		    formatItem: function(data, $item) { return data.display; },
+		    formatNoResults: function(q, $item) { return "Nothing named <b>" + q + "</b> found."; },
+		    onSelect: function(data, $item) {
+		      rootId = data.id;
+		      $("#_thingName").val(data.display);
+		      evaluate();
+		    }  
+          });
+        });
+      }
+
+    }( jQuery ));
+
     function evaluate() {
       var qlText = $("#_qlInput").val();
-      jsExploreRoutes.controllers.ExploreController.evaluate("@space.owner.toThingId", "@space.id.toThingId", "@thing.toThingId", qlText).ajax({
+      if (qlText.length == 0) {
+        qlText = "_foreachProperty";
+      }
+      jsExploreRoutes.controllers.ExploreController.evaluate("@space.owner.toThingId", "@space.id.toThingId", "." + rootId, qlText).ajax({
         success: function (result) {
           $("#_results").html(result);
         },
@@ -48,12 +77,24 @@
           return false;
         }
       });
+      
+      $("#_thingName").asThingPrompt();
+      $("#_thingName").change(function () {
+        if ($(this).val().length == 0) {
+          rootId = originalRootId;
+          evaluate();
+        }
+      });
     });
   </script>
   
   <style>
   #_queryRow {
     height: 100px;
+  }
+  
+  #_thingName {
+    width: 70%;
   }
   
   ._surround {
@@ -74,11 +115,14 @@
   <p><b>Enter a QL expression below, and press Tab to see what it generates:</b></p>
   
   <div id="_queryRow" class="row-fluid">
-    <div class="span2 _surround">
-      @Html(thing.displayName + " -> [[")
+    <div class="span3 _surround">
+      <p>
+        <input id="_thingName" type="text" placeholder="@{thing.displayName}"/>
+        -&gt; [[
+      </p>
     </div>
     
-    <div id="_qlInputDiv" class="span9"><textarea id="_qlInput" placeholder="Enter QL here" style="width:100%"></textarea></div>
+    <div id="_qlInputDiv" class="span8"><textarea id="_qlInput" placeholder="_foreachProperty" style="width:100%"></textarea></div>
     
     <div class="span1 _surround">
       @Html("]]")

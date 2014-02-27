@@ -575,7 +575,7 @@ disallow: /
         yield Tags.fetchTags(space, prop).filter(_.toLowerCase().contains(lowerQ))
         
     val tagsSorted = tagsOpt.map(tags => tags.toList.sorted)
-    val thingsSorted = propOpt.map(prop => getLinksFromSpace(space, prop, lowerQ)).getOrElse(Seq.empty).map(_._1)
+    val thingsSorted = propOpt.map(prop => getLinksFromSpace(space, propOpt, lowerQ)).getOrElse(Seq.empty).map(_._1)
         
     val tagsAndThings = 
       tagsSorted match {
@@ -588,7 +588,7 @@ disallow: /
     Ok(JSONtags)
   }
   
-  def getLinksFromSpace(spaceIn:SpaceState, prop:Property[_,_], lowerQ:String):Seq[(String,OID)] = {
+  def getLinksFromSpace(spaceIn:SpaceState, propOpt:Option[Property[_,_]], lowerQ:String):Seq[(String,OID)] = {
     implicit val space = spaceIn
     
     val thingsSorted = {
@@ -597,6 +597,7 @@ disallow: /
       // Filter the options if there is a valid Link Model:
       val thingsFiltered = {
         val filteredOpt = for (
+          prop <- propOpt;
           linkModelProp <- prop.getPropOpt(Links.LinkModelProp);
           targetModel <- linkModelProp.firstOpt
             )
@@ -609,7 +610,7 @@ disallow: /
     }
     
     space.app match {
-      case Some(app) => thingsSorted ++ getLinksFromSpace(app, prop, lowerQ)
+      case Some(app) => thingsSorted ++ getLinksFromSpace(app, propOpt, lowerQ)
       case None => thingsSorted
     }
   }
@@ -617,12 +618,14 @@ disallow: /
   def getLinks(ownerId:String, spaceId:String, propId:String, q:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
     val lowerQ = q.toLowerCase()
     val space = rc.state.get
-    val propOpt = space.prop(ThingId(propId))
+    val propOpt = {
+      if (propId.length() > 0)
+        space.prop(ThingId(propId))
+      else
+        None
+    }
     
-    val results = propOpt match {
-      case Some(prop) => getLinksFromSpace(space, prop, lowerQ)
-      case None => Seq.empty
-    } 
+    val results = getLinksFromSpace(space, propOpt, lowerQ)
     
     // TODO: introduce better JSONification for the AJAX code:
     val items = results.map(item => "{\"display\":\"" + item._1 + "\", \"id\":\"" + item._2 + "\"}")
