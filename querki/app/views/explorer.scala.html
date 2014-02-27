@@ -35,7 +35,19 @@
     }
   
     $(function() {
-      $("#_evalButton").click(evaluate);
+      $("#_qlInput").keydown(function (event) {
+        if (event.which === 9) {
+          evaluate();
+          event.preventDefault();
+          return false;
+        }
+      });
+      $("#_qlInput").keyup(function (event) {
+        if (event.which === 9) {
+          event.preventDefault();
+          return false;
+        }
+      });
     });
   </script>
   
@@ -59,6 +71,8 @@
   }
   </style>
 
+  <p><b>Enter a QL expression below, and press Tab to see what it generates:</b></p>
+  
   <div id="_queryRow" class="row-fluid">
     <div class="span2 _surround">
       @Html(thing.displayName + " -> [[")
@@ -70,10 +84,10 @@
       @Html("]]")
     </div>
   </div>
-    
-  <input id="_evalButton" type="button" class="btn" value="Evaluate">
+  
+  <p><b>Results:</b></p>
   
   <hr/>
   
-  <div id="_results" class="span12"></div>
+  <div id="_results"></div>
 }

@@ -15,7 +15,6 @@ class ExploreController extends ApplicationBase {
   }
   
   def evaluate(ownerId:String, spaceId:String, thingId:String, ql:String) = withThing(true, ownerId, spaceId, thingId) { implicit rc =>
-    println("----> Asked to evaluate " + ql)
     if (AccessControl.isMember(rc.requesterOrAnon, rc.state.get)) {
       val context = rc.thing.get.thisAsContext
       val result = QL.processMethod(QLText(ql), context).wikify(context).display.toString
