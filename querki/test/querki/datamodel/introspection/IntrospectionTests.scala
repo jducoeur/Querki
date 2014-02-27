@@ -82,6 +82,19 @@ class IntrospectionTests extends QuerkiTests {
       pql("""[[Thing with Opts -> _foreachProperty(_if(_val -> _isNonEmpty, _val)) -> _bulleted]]""") should
         equal("""* 4""".stripReturns)
     }
+    
+    "work without a parameter" in {
+      implicit val space = new TSpace
+      
+      // Note that the results are in order by Instance Props, not alphabetical:
+      pql("""[[My Complex Thing -> Complex Prop -> _foreachProperty]]""") should
+        equal("""
+            |: First Prop : 1 (inherited)
+            |: Second Prop : 2 (inherited)
+            |: Third Prop : 9
+            |: Fourth Prop : 4 (inherited)
+            |: Fifth Prop : 5 (inherited)""".stripReturns)
+    }
   }
   
   "_isInherited" should {

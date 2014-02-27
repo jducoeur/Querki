@@ -121,6 +121,10 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
     InvocationValueImpl(this, Some(context.value), None)
   }
   
+  def wrap[T](v:T):InvocationValue[T] = {
+    InvocationValueImpl(this, Some(v), None)
+  }
+  
   def opt[T](opt:Option[T], errOpt:Option[PublicException] = None):InvocationValue[T] = {
     opt match {
       case Some(v) => InvocationValueImpl(this, Some(v), None)

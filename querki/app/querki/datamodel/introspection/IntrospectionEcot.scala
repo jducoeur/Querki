@@ -37,11 +37,11 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
     
     def doWikify(context:QLContext)(v:DisplayPropVal, displayOpt:Option[Wikitext] = None) = { 
       val propName = v.prop.displayName
-      val vDisplay = v.v match {
+      val vDisplay = v.effectiveV match {
         case Some(v) => v.wikify(context, displayOpt) 
         case None => Wikitext.empty
       }
-      Wikitext(s"$propName: $vDisplay")
+      Wikitext(s": $propName : ") + vDisplay + (if (v.isInherited) Wikitext(" (inherited)") else Wikitext.empty)
     }
     
     def doDefault(implicit state:SpaceState) = ???  
@@ -50,6 +50,26 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   /***********************************************
    * FUNCTIONS
    ***********************************************/
+  def bundle2Props(bundle:PropertyBundle)(implicit state:SpaceState):Iterable[QValue] = {
+    bundle.getModelOpt match {
+      case Some(model) => {
+        val propList = PropListMgr.from(bundle)
+        val orderedList = PropListMgr.prepPropList(propList, model, state)
+        orderedList.filterNot(_._2.effectiveV.isEmpty).map { propListEntry =>
+          val (prop, displayVal) = propListEntry
+          ExactlyOne(PropAndValType(displayVal))
+        }
+      }
+        
+      case None => bundle.props.map{ pair =>
+        val propOpt = state.prop(pair._1)
+        propOpt match {
+          case Some(prop) => ExactlyOne(PropAndValType(DisplayPropVal(Some(bundle), prop, Some(pair._2))))
+          case None => throw new PublicException("Func.unknownPropOID", pair._1)
+        }
+      }
+    }
+  }    
   
   lazy val foreachPropertyMethod = new InternalMethod(ForeachPropertyMethodOID,
     toProps(
@@ -61,39 +81,24 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
           |It takes all of the Properties found in there, turns each into a PropAndValue, and hands it off to the
           |code contained in the parameter. The results are then bundled back up as a collection, and produced together.
           |
+          |Alternate Usage:
+          |    THING or MODEL VALUE -> _foreachProperty -> LIST OF PROPANDVALUES
+          |
+          |If you use _foreachProperty with no parameter, it simply produces the list of PropAndValues, for later code
+          |to use. These render reasonably sensibly, so this is a convenient way to simply display all the Properties
+          |on this Thing.
+          |
           |Note that the PropAndValue passed into the code is a combination of both the link to the Property *and*
           |the Value of that Property in this Thing or Model Value. You can access those parts using the _prop and _val
           |functions.""".stripMargin)))
   {
-    def bundle2Props(bundle:PropertyBundle)(implicit state:SpaceState):Iterable[QValue] = {
-      bundle.getModelOpt match {
-        
-        case Some(model) => {
-          val propList = PropListMgr.from(bundle)
-          val orderedList = PropListMgr.prepPropList(propList, model, state)
-          orderedList.filterNot(_._2.effectiveV.isEmpty).map { propListEntry =>
-            val (prop, displayVal) = propListEntry
-            ExactlyOne(PropAndValType(displayVal))
-          }
-        }
-        
-        case None => bundle.props.map{ pair =>
-          val propOpt = state.prop(pair._1)
-          propOpt match {
-            case Some(prop) => ExactlyOne(PropAndValType(DisplayPropVal(Some(bundle), prop, Some(pair._2))))
-            case None => throw new PublicException("Func.unknownPropOID", pair._1)
-          }
-        }
-      }
-    }
-    
     override def qlApply(invIn:Invocation):QValue = {
       val inv = invIn.preferDefiningContext
       implicit val state = inv.state
       for {
         bundle <- inv.contextAllBundles
         propAndVal <- inv.iter(bundle2Props(bundle))
-        result <- inv.processParam(0, inv.context.next(propAndVal))
+        result <- { if (inv.numParams == 0) inv.wrap(propAndVal) else inv.processParam(0, inv.context.next(propAndVal)) }
       }
         yield result
     }

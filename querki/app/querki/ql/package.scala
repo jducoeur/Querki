@@ -71,6 +71,11 @@ package object ql {
     def preferDefiningContext:Invocation
     
     /**
+     * Turns an arbitrary value into an InvocationValue, for use in a for comprehension.
+     */
+    def wrap[T](v:T):InvocationValue[T]
+    
+    /**
      * Turns an Option value into an InvocationValue, so they can be used in a for comprehension together.
      */
     def opt[T](opt:Option[T], errOpt:Option[PublicException] = None):InvocationValue[T]
