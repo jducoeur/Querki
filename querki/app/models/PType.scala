@@ -74,7 +74,7 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecology
   final def toUser(v:ElemValue)(implicit state:SpaceState):String = doToUser(get(v))
   
   /**
-   * This compares two values. It is used to sort Collections.
+   * This compares two values. It is used to sort Collections. It should return true iff left is "less than" right.
    */
   def doComp(context:QLContext)(left:VT, right:VT):Boolean = {
     implicit val s = context.state

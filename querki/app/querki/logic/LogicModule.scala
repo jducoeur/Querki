@@ -17,6 +17,8 @@ object MOIDs extends EcotIds(9) {
   val FalseOID = moid(2)
   val OrMethodOID = moid(3)
   val AndMethodOID = moid(4)
+  val LessThanMethodOID = moid(5)
+  val GreaterThanMethodOID = moid(6)
 }
 
 /**
@@ -163,25 +165,47 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
       }	  
 	}
 	
-	class EqualsMethod extends InternalMethod(EqualsMethodOID,
-	    toProps(
-	      setName("_equals"),
-	      Summary("Do these parameters match?"),
-	      Details("""    _equals(EXP1, EXP2) -> YES OR NO
-	          |_equals produces Yes iff the expressions in the two parameters match each other. The definition
-	          |of "match" is type-dependent, but by and large is similar to == in most programming languages.
-	          |
-	          |Note that we are likely to enhance this method in the future, to do more, but this is the
-	          |important core functionality.""".stripMargin)))
-	{  
-	  override def qlApply(inv:Invocation):QValue = {
-	    for {
-	      first <- inv.processParamNofM(0, 2)
-	      second <- inv.processParamNofM(1, 2)
-	    }
-	      yield boolean2YesNoQValue(compareValues(first, second) ( (pt, elem1, elem2) => pt.matches(elem1, elem2) ))
+  lazy val EqualsMethod = new InternalMethod(EqualsMethodOID,
+	  toProps(
+	    setName("_equals"),
+	    Summary("Do these parameters match?"),
+	    Details("""    _equals(EXP1, EXP2) -> YES OR NO
+	        |_equals produces Yes iff the expressions in the two parameters match each other. The definition
+	        |of "match" is type-dependent, but by and large is similar to == in most programming languages.
+	        |
+	        |Alternate version:
+	        |    VALUE -> _equals(EXP) -> YES OR NO
+	        |This receives a VALUE, and tells you whether it matches the given EXP.""".stripMargin)))
+  {  
+	override def qlApply(inv:Invocation):QValue = {
+	  for {
+	    first <- inv.processParamNofM(0, 2)
+	    second <- inv.processParamNofM(1, 2)
 	  }
+	    yield boolean2YesNoQValue(compareValues(first, second) ( (pt, elem1, elem2) => pt.matches(elem1, elem2) ))
 	}
+  }
+	
+  lazy val LessThanMethod = new InternalMethod(LessThanMethodOID,
+	  toProps(
+	    setName("_lessThan"),
+	    Summary("Is the first parameter less than the second?"),
+	    Details("""    _lessThan(EXP1, EXP2) -> YES OR NO
+	        |_lessThan produces Yes iff the value in the first expression is less than the second. The definition
+	        |of "less than" is type-dependent, but by and large is similar to < in most programming languages.
+	        |
+	        |Alternate version:
+	        |    VALUE -> _lessThan(EXP) -> YES OR NO
+	        |This receives a VALUE, and tells you whether it is less than the given EXP.""".stripMargin)))
+  {  
+	override def qlApply(inv:Invocation):QValue = {
+	  for {
+	    first <- inv.processParamNofM(0, 2)
+	    second <- inv.processParamNofM(1, 2)
+	  }
+	    yield boolean2YesNoQValue(compareValues(first, second) ( (pt, elem1, elem2) => pt.comp(inv.context)(elem1, elem2) ))
+	}
+  }
 	
   lazy val OrMethod = new InternalMethod(OrMethodOID,
       toProps(
@@ -227,7 +251,8 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
     new FirstNonEmptyMethod,
     new NotMethod,
     new IfMethod,
-    new EqualsMethod,
+    EqualsMethod,
+    LessThanMethod,
     OrMethod,
     AndMethod
   )

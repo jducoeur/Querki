@@ -417,6 +417,8 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
         throw new PublicException("Types.Int.tooHigh", prop.displayName, maxVal)
     }  
     
+   override def doComp(context:QLContext)(left:Int, right:Int):Boolean = { left < right } 
+    
    override def editorSpan(prop:Property[_,_]):Int = 1    
     /**
      * TODO: eventually, we may want a more nuanced Int inputter. But this will do to start.
