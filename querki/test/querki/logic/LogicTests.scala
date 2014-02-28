@@ -97,6 +97,36 @@ class LogicTests extends QuerkiTests {
     }
   }
   
+  // === _greaterThan ===
+  "_greaterThan" should {    
+    "compare numbers correctly" in {
+      class TSpace extends CommonSpace {
+        val numProp = new TestProperty(Core.IntType, ExactlyOne, "My Num")
+        
+        val thing1 = new SimpleTestThing("Thing 1", numProp(3))
+        val thing2 = new SimpleTestThing("Thing 2", numProp(3))
+        val thing3 = new SimpleTestThing("Thing 3", numProp(12))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[_greaterThan(Thing 1 -> My Num, Thing 2 -> My Num)]]""") should equal ("false")
+      pql("""[[_greaterThan(Thing 1 -> My Num, Thing 3 -> My Num)]]""") should equal ("false")
+      pql("""[[_greaterThan(Thing 3 -> My Num, Thing 2 -> My Num)]]""") should equal ("true")
+      
+      pql("""[[_greaterThan(Thing 1 -> My Num, 1)]]""") should equal ("true")
+      pql("""[[_greaterThan(Thing 1 -> My Num, 14)]]""") should equal ("false")
+      
+      pql("""[[Thing 1 -> My Num -> _greaterThan(4)]]""") should equal ("false")
+    }  
+    
+    "compare strings correctly" in {
+      implicit val s = commonSpace
+      
+      pql("""[[_greaterThan(""hello"", ""there"")]]""") should equal ("false")
+      pql("""[[_greaterThan(""there"", ""hello"")]]""") should equal ("true")
+    }
+  }
+  
   // === _if ===
   "_if" should {
     "work correctly with True and False predicates" in {

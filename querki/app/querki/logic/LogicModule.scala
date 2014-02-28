@@ -140,30 +140,41 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	  }
 	}
 	
-	def compareValues(firstIn:QValue, secondIn:QValue)(comparer:(PType[_], ElemValue, ElemValue) => Boolean):Boolean = {
-	  var first = firstIn
-	  var second = secondIn
+  def compareValues(firstIn:QValue, secondIn:QValue)(comparer:(PType[_], ElemValue, ElemValue) => Boolean):Boolean = {
+	var first = firstIn
+	var second = secondIn
 	  
-      // TODO: conceptually, this is probably common code for any time where we care about multiple
-      // values being the same Type. Not sure where it belongs, though.
-      if (first.pType.realType != second.pType.realType) {
-        first.coerceTo(second.pType.realType) match {
-          case Some(coerced) => first = coerced
-          case None => second.coerceTo(first.pType.realType) match {
-            case Some(coerced) => second = coerced
-            case None => throw new PublicException("Logic.equals.typeMismatch", first.pType.displayName, second.pType.displayName)
-          }
+    // TODO: conceptually, this is probably common code for any time where we care about multiple
+    // values being the same Type. Not sure where it belongs, though.
+    if (first.pType.realType != second.pType.realType) {
+      first.coerceTo(second.pType.realType) match {
+        case Some(coerced) => first = coerced
+        case None => second.coerceTo(first.pType.realType) match {
+          case Some(coerced) => second = coerced
+          case None => throw new PublicException("Logic.equals.typeMismatch", first.pType.displayName, second.pType.displayName)
         }
       }
+    }
         
-     if (first.size == second.size) {
-        val pt = first.pType
-        val pairs = first.cv.zip(second.cv)
-        pairs.forall(pair => comparer(pt, pair._1, pair._2))
-      } else {
-        false
-      }	  
+    if (first.size == second.size) {
+      val pt = first.pType
+      val pairs = first.cv.zip(second.cv)
+      pairs.forall(pair => comparer(pt, pair._1, pair._2))
+    } else {
+      false
+    }	  
+  }
+
+  /**
+   * The general pattern for binary operators.
+   */
+  def binaryComparer(inv:Invocation)(comparer:(PType[_], ElemValue, ElemValue) => Boolean):QValue = {
+	for {
+	  first <- inv.processParamNofM(0, 2)
+	  second <- inv.processParamNofM(1, 2)
 	}
+	  yield boolean2YesNoQValue(compareValues(first, second)(comparer))    
+  }
 	
   lazy val EqualsMethod = new InternalMethod(EqualsMethodOID,
 	  toProps(
@@ -178,11 +189,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	        |This receives a VALUE, and tells you whether it matches the given EXP.""".stripMargin)))
   {  
 	override def qlApply(inv:Invocation):QValue = {
-	  for {
-	    first <- inv.processParamNofM(0, 2)
-	    second <- inv.processParamNofM(1, 2)
-	  }
-	    yield boolean2YesNoQValue(compareValues(first, second) ( (pt, elem1, elem2) => pt.matches(elem1, elem2) ))
+	  binaryComparer(inv)( (pt, elem1, elem2) => pt.matches(elem1, elem2) )
 	}
   }
 	
@@ -199,11 +206,28 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	        |This receives a VALUE, and tells you whether it is less than the given EXP.""".stripMargin)))
   {  
 	override def qlApply(inv:Invocation):QValue = {
-	  for {
-	    first <- inv.processParamNofM(0, 2)
-	    second <- inv.processParamNofM(1, 2)
+	  binaryComparer(inv)( (pt, elem1, elem2) => pt.comp(inv.context)(elem1, elem2) )
+	}
+  }
+	
+  lazy val GreaterThanMethod = new InternalMethod(GreaterThanMethodOID,
+	  toProps(
+	    setName("_greaterThan"),
+	    Summary("Is the first parameter greater than the second?"),
+	    Details("""    _greaterThan(EXP1, EXP2) -> YES OR NO
+	        |_lessThan produces Yes iff the value in the first expression is greater than the second. The definition
+	        |of "greater than" is type-dependent, but by and large is similar to > in most programming languages.
+	        |
+	        |Alternate version:
+	        |    VALUE -> _greaterThan(EXP) -> YES OR NO
+	        |This receives a VALUE, and tells you whether it is greater than the given EXP.""".stripMargin)))
+  {  
+	override def qlApply(inv:Invocation):QValue = {
+	  binaryComparer(inv) { (pt, elem1, elem2) =>
+	    // This one's slightly complex. pt.comp() returns false iff the second value is greater than *or* equal to
+	    // the first. So we need to also do an equality comparison.
+	    !pt.comp(inv.context)(elem1, elem2) && !pt.matches(elem1, elem2) 
 	  }
-	    yield boolean2YesNoQValue(compareValues(first, second) ( (pt, elem1, elem2) => pt.comp(inv.context)(elem1, elem2) ))
 	}
   }
 	
@@ -253,6 +277,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
     new IfMethod,
     EqualsMethod,
     LessThanMethod,
+    GreaterThanMethod,
     OrMethod,
     AndMethod
   )
