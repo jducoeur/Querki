@@ -55,6 +55,23 @@ class LogicTests extends QuerkiTests {
       pql("""[[_equals(Thing 1 -> My Num, 14)]]""") should equal ("false")
     }
     
+    "be able to receive the first value as context" in {
+      class TSpace extends CommonSpace {
+        val numProp = new TestProperty(Core.IntType, ExactlyOne, "My Num")
+        
+        val thing1 = new SimpleTestThing("Thing 1", numProp(3))
+        val thing2 = new SimpleTestThing("Thing 2", numProp(3))
+        val thing3 = new SimpleTestThing("Thing 3", numProp(12))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Thing 1 -> My Num -> _equals(Thing 2 -> My Num)]]""") should equal ("true")
+      pql("""[[Thing 1 -> My Num -> _equals(Thing 3 -> My Num)]]""") should equal ("false")
+      
+      pql("""[[Thing 1 -> My Num -> _equals(3)]]""") should equal ("true")
+      pql("""[[Thing 1 -> My Num -> _equals(14)]]""") should equal ("false")
+    }
+    
     "be able to test Name against Text" in {
       class TSpace extends CommonSpace {
         val myThing = new SimpleTestThing("My Thing", optTextProp("Trivial"))

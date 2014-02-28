@@ -186,6 +186,18 @@ package object ql {
      */
     def firstParamOrContextValue:InvocationValue[QValue]
     
+    /**
+     * The general case for Functions that may take their first value as either an explicit parameter or
+     * as the context.
+     * 
+     * IMPORTANT: paramNum is the *index* of the parameter, expectedParams is the expected *length*. So
+     * firstParamOrContextValue, for a single-parameter Function, is equivalent to
+     * processParamNofM(0, 1).
+     * 
+     * Produces an error if the actual number of params is less than (expectedParams - 1).
+     */
+    def processParamNofM(paramNum:Int, expectedParams:Int, processContext:QLContext = context):InvocationValue[QValue]
+    
     //////////////
     //
     // These are the raw fields. By and large, you should prefer *not* to use these, and some of them

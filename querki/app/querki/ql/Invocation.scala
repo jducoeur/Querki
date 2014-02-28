@@ -284,10 +284,20 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
   }
   
   def firstParamOrContextValue:InvocationValue[QValue] = {
-    if (paramsOpt.isDefined && paramsOpt.get.length > 0)
-      processParam(0)
-    else
-      contextValue
+    processParamNofM(0, 1)
+  }
+  
+  def processParamNofM(paramNum:Int, expectedParams:Int, processContext:QLContext = context):InvocationValue[QValue] = {
+    if (numParams < (expectedParams - 1))
+      InvocationValueImpl(this, None, Some(new PublicException("Func.insufficientParams", displayName, (expectedParams - 1))))
+    else {
+      if (numParams >= expectedParams)
+        processParam(paramNum, processContext)
+      else if (paramNum == 0)
+        contextValue
+      else
+        processParam(paramNum - 1, processContext)
+    }
   }
   
   def WarningValue(msg:String) = QL.WarningValue(msg)

@@ -138,6 +138,31 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	  }
 	}
 	
+	def compareValues(firstIn:QValue, secondIn:QValue)(comparer:(PType[_], ElemValue, ElemValue) => Boolean):Boolean = {
+	  var first = firstIn
+	  var second = secondIn
+	  
+      // TODO: conceptually, this is probably common code for any time where we care about multiple
+      // values being the same Type. Not sure where it belongs, though.
+      if (first.pType.realType != second.pType.realType) {
+        first.coerceTo(second.pType.realType) match {
+          case Some(coerced) => first = coerced
+          case None => second.coerceTo(first.pType.realType) match {
+            case Some(coerced) => second = coerced
+            case None => throw new PublicException("Logic.equals.typeMismatch", first.pType.displayName, second.pType.displayName)
+          }
+        }
+      }
+        
+     if (first.size == second.size) {
+        val pt = first.pType
+        val pairs = first.cv.zip(second.cv)
+        pairs.forall(pair => comparer(pt, pair._1, pair._2))
+      } else {
+        false
+      }	  
+	}
+	
 	class EqualsMethod extends InternalMethod(EqualsMethodOID,
 	    toProps(
 	      setName("_equals"),
@@ -150,36 +175,11 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	          |important core functionality.""".stripMargin)))
 	{  
 	  override def qlApply(inv:Invocation):QValue = {
-	    val context = inv.context
-	    val paramsOpt = inv.paramsOpt
-	    
-	    paramsOpt match {
-	      case Some(params) if (params.length > 1) => {
-	        var first = context.parser.get.processPhrase(params(0).ops, context).value
-	        var second = context.parser.get.processPhrase(params(1).ops, context).value
-	        
-	        // TODO: conceptually, this is probably common code for any time where we care about multiple
-	        // values being the same Type. Not sure where it belongs, though.
-	        if (first.pType.realType != second.pType.realType) {
-	          first.coerceTo(second.pType.realType) match {
-	            case Some(coerced) => first = coerced
-	            case None => second.coerceTo(first.pType.realType) match {
-	              case Some(coerced) => second = coerced
-	              case None => throw new PublicException("Logic.equals.typeMismatch", first.pType.displayName, second.pType.displayName)
-	            }
-	          }
-	        }
-	        
-	       if (first.size == second.size) {
-	          val pt = first.pType
-	          val pairs = first.cv.zip(second.cv)
-	          pairs.forall(pair => pt.matches(pair._1, pair._2))
-	        } else {
-	          false
-	        }
-	      }
-	      case _ => WarningValue("_equals requires two parameters")
+	    for {
+	      first <- inv.processParamNofM(0, 2)
+	      second <- inv.processParamNofM(1, 2)
 	    }
+	      yield boolean2YesNoQValue(compareValues(first, second) ( (pt, elem1, elem2) => pt.matches(elem1, elem2) ))
 	  }
 	}
 	

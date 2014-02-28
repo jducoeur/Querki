@@ -3,6 +3,7 @@ General.public={0}
 
 Editor.temp.InstanceEditorRequired=For the time being, _edit can only be used on Things that have the Instance Edit View Property set.
 
+Func.insufficientParams={0} requires at least {1} parameters
 Func.missingParam={0} is meaningless without a parameter
 Func.notThing={0} didn't receive a Thing value
 Func.paramNotThing={0}'s parameter {1} should be a Thing
