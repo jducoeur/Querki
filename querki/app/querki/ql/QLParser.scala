@@ -85,6 +85,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None)
       // If we haven't use the backslash for that, then just eat it as a normal character:
       "\\\\".r | 
       partialDelimiterRegex) ^^ { UnQLText(_) }
+  def qlNumber[QLNumber] = "\\s*".r ~> "\\d+".r ^^ { intStr => QLNumber(java.lang.Integer.parseInt(intStr)) }
   def qlSafeName[QLSafeName] = name ^^ { QLSafeName(_) }
   def qlDisplayName[QLDisplayName] = "`" ~> "[^`]*".r <~ "`" ^^ { QLDisplayName(_) }
   def qlName:Parser[QLName] = qlBinding | qlSafeName | qlDisplayName
@@ -94,7 +95,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None)
   def qlTextStage:Parser[QLTextStage] = (opt("\\*\\s*".r) <~ "\"\"") ~ qlText <~ ("\"\"" | failure("Reached the end of the QL expression, but missing the closing \"\" for a Text expression in it") ) ^^ {
     case collFlag ~ text => QLTextStage(text, collFlag) }
   def qlBinding:Parser[QLBinding] = "\\s*\\$".r ~> name ^^ { QLBinding(_) } 
-  def qlStage:Parser[QLStage] = qlCall | qlTextStage
+  def qlStage:Parser[QLStage] = qlNumber | qlCall | qlTextStage
   def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, qlSpace ~ "->".r ~ qlSpace) ^^ { QLPhrase(_) }
   def qlExp:Parser[QLExp] = opt(qlSpace) ~> repsep(qlPhrase, "\\s*\\r?\\n|\\s*;\\s*".r) <~ opt(qlSpace) ^^ { QLExp(_) }
   def qlLink:Parser[QLLink] = qlText ^^ { QLLink(_) }
@@ -208,6 +209,12 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None)
     }
   }
   
+  private def processNumber(num:QLNumber, context:QLContext):QLContext = {
+    logContext("processNumber " + num.n, context) {
+      context.next(Core.ExactlyOne(Core.IntType(num.n)))
+    }
+  }
+  
   private def processStage(stage:QLStage, contextIn:QLContext, isParam:Boolean):QLContext = {
     val context = 
       if (contextIn.depth > contextIn.maxDepth)
@@ -220,6 +227,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None)
 	    stage match {
 	      case name:QLCall => processCall(name, context, isParam)
 	      case subText:QLTextStage => processTextStage(subText, context)
+	      case num:QLNumber => processNumber(num, context)
 //        case QLPlainTextStage(text) => context.next(TextValue(text))
 	    }
     }

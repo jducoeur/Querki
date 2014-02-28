@@ -11,6 +11,10 @@ package querki.ql
 //
 // **************************************************
 
+case class QLNumber(n:Int) extends QLStage(None) {
+  def reconstructString = n.toString
+}
+
 case class QLPhrase(ops:Seq[QLStage]) {
   def reconstructString = ops.map(_.reconstructString).mkString(" -> ")
 }

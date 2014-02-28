@@ -38,6 +38,23 @@ class LogicTests extends QuerkiTests {
         equal ("""Yes""")      
     }
     
+    "compare numbers correctly" in {
+      class TSpace extends CommonSpace {
+        val numProp = new TestProperty(Core.IntType, ExactlyOne, "My Num")
+        
+        val thing1 = new SimpleTestThing("Thing 1", numProp(3))
+        val thing2 = new SimpleTestThing("Thing 2", numProp(3))
+        val thing3 = new SimpleTestThing("Thing 3", numProp(12))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[_equals(Thing 1 -> My Num, Thing 2 -> My Num)]]""") should equal ("true")
+      pql("""[[_equals(Thing 1 -> My Num, Thing 3 -> My Num)]]""") should equal ("false")
+      
+      pql("""[[_equals(Thing 1 -> My Num, 3)]]""") should equal ("true")
+      pql("""[[_equals(Thing 1 -> My Num, 14)]]""") should equal ("false")
+    }
+    
     "be able to test Name against Text" in {
       class TSpace extends CommonSpace {
         val myThing = new SimpleTestThing("My Thing", optTextProp("Trivial"))
