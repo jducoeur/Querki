@@ -120,5 +120,15 @@ class MethodTests extends QuerkiTests
       processQText(thingAsContext[TSpace](space, _.theModel), """[[Referring Model._instances -> _sort(Reference -> Prop to Sort) -> ""[[Name]]: [[Reference -> Prop to Sort]]""]]""") should
         equal ("\nReference 1a: \nReference 3: \nReference 6: \nReference 5: Alphabetical!\nReference 2: Check!\nReference 4: Floobity!\nReference 1: Kazam!")      
     }
+    
+    "handle numbers correctly" in {
+      class TSpace extends CommonSpace {
+        val numProp = new TestProperty(Core.IntType, Core.QList, "List of Ints")
+        val myThing = new SimpleTestThing("My Thing", numProp(12, 83, 0, 44, 92873, 6))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[My Thing -> List of Ints -> _sort -> _commas]]""") should equal ("0, 6, 12, 44, 83, 92873")
+    }
   }
 }
