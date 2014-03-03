@@ -578,6 +578,11 @@ $.Widget.prototype = {
 
       return self;
     },
+    
+    // Clear the cache, so that future requests will go to the server.
+    invalidateCache: function () {
+      cache = {};
+    },
 
     // Programmatically change the input value without triggering a search
     // request (use the 'search' method for that). If the value is different
@@ -1606,7 +1611,7 @@ $.Widget.prototype = {
           // Add the selected Marco Polo item to the Manifest list unless
           // 'onSelect' explicitly returns 'false'.
           if (add !== false) {
-            self.add(mpData, $mpItem, true, false);
+            self.add(mpData, $mpItem, true, false, false);
           }
         },
         required: options.required
@@ -1710,7 +1715,7 @@ $.Widget.prototype = {
 
       // Add any initial values to the list.
       if (options.values) {
-        self.add(options.values, null, false, true);
+        self.add(options.values, null, false, true, false);
       }
 
       self
@@ -1759,7 +1764,7 @@ $.Widget.prototype = {
         case 'values':
           // Although normally set on initialization, if this option is called
           // later, append the values to the list just like the 'add' method.
-          self.add(value, null, false, false);
+          self.add(value, null, false, false, false);
 
           break;
 
@@ -1826,7 +1831,7 @@ $.Widget.prototype = {
 
             // Add the current input value if there is any.
             if ($input.val()) {
-              self.add($input.val(), null, true, false);
+              self.add($input.val(), null, true, false, true);
             }
 
             return;
@@ -1905,7 +1910,7 @@ $.Widget.prototype = {
 
             // Add the current input value if there is any.
             if ($input.val()) {
-              self.add($input.val(), null, true, false);
+              self.add($input.val(), null, true, false, true);
             }
           }
         })
@@ -1920,7 +1925,7 @@ $.Widget.prototype = {
             // Split the pasted value by separator and add each value if
             // arbitrary values are allowed.
             if (!options.required && $input.val()) {
-              self.add(self._splitBySeparator($input.val()), null, true, false);
+              self.add(self._splitBySeparator($input.val()), null, true, false, true);
             }
           }, 1);
         })
@@ -1943,7 +1948,7 @@ $.Widget.prototype = {
               }
               // Add the input value since arbitrary values are allowed.
               else if ($input.val()) {
-                self.add($input.val(), null, true, false);
+                self.add($input.val(), null, true, false, true);
               }
             }
           }, 1);
@@ -2024,7 +2029,7 @@ $.Widget.prototype = {
             self._resizeInput();
           }
           else if ($input.val()) {
-            self.add($input.val(), null, true, false);
+            self.add($input.val(), null, true, false, true);
           }
         }
       });
@@ -2043,7 +2048,7 @@ $.Widget.prototype = {
     },
 
     // Add one or more items to the end of the list.
-    add: function (data, $mpItem, clearInputValue, initial) {
+    add: function (data, $mpItem, clearInputValue, initial, arbitrary) {
       var self = this,
           $input = self.$input,
           options = self.options,
@@ -2081,6 +2086,15 @@ $.Widget.prototype = {
                }
              });
           };
+          
+      // FORKED by jducoeur, to allow cache invalidation for Querki.
+      if (arbitrary) {
+        // This was an "arbitrary" input, that didn't come from the given list. In this case,
+        // it may mean that we've just created a new Tag, so we need to clear the cache.
+        // TODO: ideally, this would be smarter, and only clear the bits of cache that might
+        // be relevant to this new string. But one thing at a time.
+        $input.marcoPolo('invalidateCache');
+      }
 
       for (var i = 0, length = values.length; i < length; i++) {
         value = values[i];
@@ -2144,7 +2158,7 @@ $.Widget.prototype = {
       }
 
       if (values.length) {
-        self.add(values, null, true, true);
+        self.add(values, null, true, true, false);
       }
 
       return self;

@@ -80,9 +80,10 @@ function finishStatus(msg) {
             // TODO: this ought to be merged with the similar code in thing.scala.html, but note that this
             // comes by the serialized form very differently. The problem is that "this" isn't what we
             // need to serialize; instead, the form is composed of a bunch of hidden fields with names
-            // ending with "_values".
+            // ending with "_values". Note that we also precede this with an *empty* copy of the property,
+            // to clear it before we set the current values -- otherwise, deletions don't always take.
 	        jsRoutes.controllers.Application.setProperty2(ownerId, spaceId, thingId).ajax({
-	          data: "addedProperty=&model=&" + serialized,
+	          data: "addedProperty=&model=&" + myId + "=&" + serialized,
 	          success: function (result) {
 	            finishStatus("Saved");
 	          },
