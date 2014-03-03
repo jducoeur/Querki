@@ -84,6 +84,14 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     }
   }
   
+  lazy val DeletedValue:QValue = new QValue {
+    override def isDeleted = true
+    
+    val cType = Core.QUnit
+    def cv = ???
+    def pType = ???
+  }
+  
   /***********************************************
    * PROPERTIES
    ***********************************************/  

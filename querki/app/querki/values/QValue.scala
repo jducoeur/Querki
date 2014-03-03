@@ -26,6 +26,9 @@ trait QValue {
   // We are cutting iff the constructor mixed in CutProcessing:
   def cut = this.isInstanceOf[CutProcessing]
   
+  // Expose special behaviour so that we can express "this Property has been deleted":
+  def isDeleted:Boolean = false
+  
   val cType:Collection
   type cType = cType.implType
   def cv:cType

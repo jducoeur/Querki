@@ -40,5 +40,13 @@ package object editing {
      * is not always the correct way to look at the problem -- use with care.
      */
     def instancePropsForModel(model:PropertyBundle, state:SpaceState):Seq[Property[_,_]]
+    
+    /**
+     * Given a Bundle, which Properties are defined in it and *not* in its Model?
+     * 
+     * TODO: this really shouldn't be public, but the whole problem of "which properties are editable on this Thing?"
+     * is currently scattered around too much.
+     */
+    def propsNotInModel(thing:PropertyBundle, state:SpaceState):Iterable[OID]
   }
 }

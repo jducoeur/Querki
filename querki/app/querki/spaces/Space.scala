@@ -384,7 +384,16 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
     }
     
     case ChangeProps(who, owner, spaceThingId, thingId, changedProps) => {
-      modifyThing(who, owner, spaceThingId, thingId, None, (_.props ++ changedProps))
+      modifyThing(who, owner, spaceThingId, thingId, None, { thing =>
+        (thing.props /: changedProps) { (current, pair) =>
+          val (propId, v) = pair
+          if (v.isDeleted)
+            // The caller has sent the special signal to delete this Property:
+            current - propId
+          else
+            current + pair
+        }
+      })
     }
     
     case ModifyThing(who, owner, spaceThingId, thingId, modelId, newProps) => {

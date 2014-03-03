@@ -54,7 +54,7 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
     bundle.getModelOpt match {
       case Some(model) => {
         val propList = PropListMgr.from(bundle)
-        val orderedList = PropListMgr.prepPropList(propList, model, state)
+        val orderedList = PropListMgr.prepPropList(propList, Some(bundle), model, state)
         orderedList.filterNot(_._2.effectiveV.isEmpty).map { propListEntry =>
           val (prop, displayVal) = propListEntry
           ExactlyOne(PropAndValType(displayVal))

@@ -113,6 +113,6 @@ package object core {
     def apply(pairs:(Property[_,_], DisplayPropVal)*):PropList
     def inheritedProps(thing:Option[PropertyBundle], model:Thing)(implicit state:SpaceState):PropList
     def from(thing:PropertyBundle)(implicit state:SpaceState):PropList
-    def prepPropList(propList:PropList, model:Thing, state:SpaceState):Seq[(Property[_,_], DisplayPropVal)]
+    def prepPropList(propList:PropList, thing:Option[PropertyBundle], model:Thing, state:SpaceState):Seq[(Property[_,_], DisplayPropVal)]
   }
 }

@@ -106,13 +106,19 @@ class PropListManagerEcot(e:Ecology) extends QuerkiEcot(e) with PropListManager 
     def from(thing:PropertyBundle)(implicit state:SpaceState):PropList = {
       fromRec(thing, Some(thing))
     }
-    
-  def prepPropList(propList:PropList, model:Thing, state:SpaceState):Seq[(Property[_,_], DisplayPropVal)] = {
+
+  // TODO: this overlaps horribly with code in EditorModel. This determines the Properties in the old Editor; that has the ones
+  // in the live Editor. Merge them together!
+  def prepPropList(propList:PropList, thingOpt:Option[PropertyBundle], model:Thing, state:SpaceState):Seq[(Property[_,_], DisplayPropVal)] = {
     val propsToEdit = model.getPropOpt(Editor.InstanceProps)(state).map(_.rawList)
     propsToEdit match {
       // If the model specifies which properties we actually want to edit, then use just those, in that order:
       case Some(editList) => {
-        val withOpts = (Seq.empty[(Property[_,_], Option[DisplayPropVal])] /: editList) { (list, oid) =>
+        val fullEditList = thingOpt match {
+          case Some(thing) => editList ++ Editor.propsNotInModel(thing, state)
+          case None => editList
+        }
+        val withOpts = (Seq.empty[(Property[_,_], Option[DisplayPropVal])] /: fullEditList) { (list, oid) =>
           val propOpt = state.prop(oid)
           propOpt match {
             case Some(prop) => {

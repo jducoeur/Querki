@@ -63,6 +63,7 @@ class Application extends ApplicationBase {
   lazy val QL = interface[querki.ql.QL]
   lazy val Types = interface[querki.types.Types]
   lazy val Imexport = interface[querki.imexport.Imexport]
+  lazy val DataModel = interface[querki.datamodel.DataModelAccess]
   
   lazy val UrProp = Core.UrProp  
   lazy val AppliesToKindProp = Core.AppliesToKindProp
@@ -167,9 +168,9 @@ disallow: /
     }
   }
   
-  def showEditPage(rc: PlayRequestContext, model:Thing, props:PropList, errorMsg:Option[String] = None) = {
+  def showEditPage(rc: PlayRequestContext, thingOpt:Option[Thing], model:Thing, props:PropList, errorMsg:Option[String] = None) = {
     implicit val state = rc.state.get
-    val propList = PropListMgr.prepPropList(props, model, rc.state.get).
+    val propList = PropListMgr.prepPropList(props, thingOpt, model, rc.state.get).
       // If the name is being derived, don't show it in the Editor UI:
       filter(DeriveName.filterNameIfDerived(state, model, props, _))
     try { 
@@ -196,12 +197,13 @@ disallow: /
     val modelThingIdOpt = modelIdOpt map (ThingId(_))
     val modelOpt = modelThingIdOpt flatMap (rc.state.get.anything(_))
     val model = modelOpt getOrElse Basic.SimpleThing
-    showEditPage(rc, model, PropListMgr.inheritedProps(None, model))
+    showEditPage(rc, None, model, PropListMgr.inheritedProps(None, model))
   }
   
   def createProperty(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
     showEditPage(
         rc, 
+        None,
         UrProp,
         PropListMgr.inheritedProps(None, UrProp)(rc.state.get))
   }
@@ -209,6 +211,8 @@ disallow: /
   def doCreateThing(ownerId:String, spaceId:String, subCreate:Option[Boolean]) = {
     editThingInternal(ownerId, spaceId, None, false)
   }
+  
+  lazy val doLogEdits = Config.getBoolean("querki.test.logEdits", false)
   
   def editThingInternal(ownerId:String, spaceId:String, thingIdStr:Option[String], partial:Boolean, 
       successCb:Option[(SpaceState, Thing, OID) => SimpleResult[_]] = None,
@@ -232,10 +236,12 @@ disallow: /
         // properties there based on their names:
         val fieldIds:List[FieldIds] = rawForm.data.keys.map(key => DisplayPropVal.propPathFromName(key, thing)).flatten.toList.sortBy(_.fullPropId)
         
-//        println("----> Raw form fields:")
-//        rawForm.data.foreach(pair => println(s"    ${pair._1}: ${pair._2}"))
-//        println("----> FieldIds:")
-//        fieldIds.foreach(fieldId => s"    ${fieldId.fullPropId}")
+        if (doLogEdits) {
+          QLog.spew("Raw form fields:")
+          rawForm.data.foreach(pair => QLog.spew(s"    ${pair._1}: ${pair._2}"))
+          QLog.spew("FieldIds:")
+          fieldIds.foreach(fieldId => QLog.spew(s"    ${fieldId.fullPropId}"))
+        }
 
         // Since rebuildBundle can result in changes that build on each other, we need a thing that
         // responds to those changes.
@@ -314,7 +320,7 @@ disallow: /
         val redisplayStr = rawForm("redisplay").value.getOrElse("")
         
         if (redisplayStr.length() > 0 && redisplayStr.toBoolean) {
-          showEditPage(rc, oldModel, makeProps(rawProps))
+          showEditPage(rc, updatingThing, oldModel, makeProps(rawProps))
 //        } else if (info.newModel.length > 0) {
 //          // User is changing models. Replace the empty Properties with ones
 //          // appropriate to the new model, and continue:
@@ -342,10 +348,28 @@ disallow: /
                 // but we certainly need to be able to in the general case.
                 // TODO: refactor these two clauses together. ModifyThing is inappropriate when InstanceEditProps is
                 // set, because it expects to be editing the *complete* list of properties, not just a subset.
-                // The right answer is probably to enhance the PropMap to be able to describe a deleted property,
-                // possibly with a constant pseudo-PropValue. Then have the editor keep track of the deleted
-                // properties, and send the deletions as a pro-active change when finished.
-                ChangeProps(user, rc.ownerId, ThingId(spaceId), thing.get.id.toThingId, props)
+                // Now that we can signal deletions in ChangeProps, and InstanceProps is becoming standard, ModifyThing may become vestigial...
+                val deletions:Thing.PropMap = {
+                  updatingThing match {
+                    case Some(thing) => {
+                      val locals = Editor.propsNotInModel(thing, state)
+                      (Map.empty[OID, QValue] /: locals) { (curMap, propId) =>
+                        if (!props.contains(propId))
+                          curMap + (propId -> DataModel.DeletedValue)
+                        else
+                          curMap
+                      }
+                    }
+                    case None => Map.empty
+                  }
+                }
+                
+                if (doLogEdits) {
+                  QLog.spew("Deletions:")
+                  deletions.foreach(deletion => QLog.spew(s"      ${deletion._1}"))
+                }
+                
+                ChangeProps(user, rc.ownerId, ThingId(spaceId), thing.get.id.toThingId, props ++ deletions)
               } else {
                 // Editing an existing Thing. If InstanceEditPropsOID isn't set, we're doing a full edit, and
                 // expect to have received the full list of properties.
@@ -364,7 +388,7 @@ disallow: /
                   val thing = newState.anything(thingId).get
                   
                   if (makeAnother)
-                    showEditPage(rc.copy(state = Some(newState)), oldModel, PropListMgr.inheritedProps(None, oldModel)(newState))
+                    showEditPage(rc.copy(state = Some(newState)), Some(thing), oldModel, PropListMgr.inheritedProps(None, oldModel)(newState))
                   else if (rc.isTrue("subCreate")) {
                     Ok(views.html.subCreate(rc, thing));
                   } else if (fromAPI) {
@@ -381,7 +405,7 @@ disallow: /
                   if (fromAPI) {
                     NotAcceptable(msg)
                   } else {
-                    showEditPage(rc, oldModel, makeProps(rawProps), Some(msg))
+                    showEditPage(rc, updatingThing, oldModel, makeProps(rawProps), Some(msg))
                   }
                 }                
               }
@@ -396,7 +420,7 @@ disallow: /
               if (fromAPI) {
                 NotAcceptable(errorMsg)
               } else {
-                showEditPage(rc, oldModel, makeProps(rawProps), Some(errorMsg))
+                showEditPage(rc, updatingThing, oldModel, makeProps(rawProps), Some(errorMsg))
               }
             }
           }
@@ -418,7 +442,7 @@ disallow: /
         model.getPropOpt(Tags.ShowUnknownProp).orElse(state.getPropOpt(Tags.ShowUnknownProp)).
           map(_.v).
           getOrElse(Core.ExactlyOne(Core.LargeTextType(querki.tags.defaultDisplayText)))
-      showEditPage(rc, model, 
+      showEditPage(rc, None, model, 
           PropListMgr.inheritedProps(None, model) ++
           PropListMgr(DisplayNameProp -> DisplayPropVal(None, DisplayNameProp, Some(Core.ExactlyOne(Basic.PlainTextType(name)))),
                    (Basic.DisplayTextProp -> DisplayPropVal(None, Basic.DisplayTextProp, Some(defaultText)))))
@@ -428,7 +452,7 @@ disallow: /
     val thing = rc.thing.get
     // TODO: security check that I'm allowed to edit this
 	val model = thing.getModel
-	showEditPage(rc, model, PropListMgr.from(thing))
+	showEditPage(rc, Some(thing), model, PropListMgr.from(thing))
   }
   
   def editInstances(ownerId:String, spaceId:String, modelIdStr:String) = withThing(true, ownerId, spaceId, modelIdStr) { implicit rc =>

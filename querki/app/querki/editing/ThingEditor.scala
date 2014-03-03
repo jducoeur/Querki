@@ -99,13 +99,29 @@ trait ThingEditor { self:EditorModule =>
         true
     }
     
+    // This returns only the properties that are defined on this Thing and *not* on its Model:
+    def propsNotInModel(thing:PropertyBundle, state:SpaceState):Iterable[OID] = {
+      implicit val s = state
+      thing.getModelOpt match {
+        case Some(model) => {
+          for {
+            propId <- thing.props.keys
+            if (!model.hasProp(propId))
+          }
+            yield propId
+        }
+        case None => Iterable.empty
+      }
+    }
+    
     private def propsToEditForThing(thing:PropertyBundle, state:SpaceState):Iterable[Property[_,_]] = {
       implicit val s = state
-      val result = for (
-        propsToEdit <- thing.getPropOpt(InstanceProps);
-        propIds = propsToEdit.v.rawList(LinkType);
-        props = propIds.map(state.prop(_)).flatten    
-          )
+      val result = for {
+        propsToEdit <- thing.getPropOpt(InstanceProps)
+        // If we are using the InstanceProps, then also add in the instance-local properties:
+        propIds = propsToEdit.v.rawList(LinkType) ++ propsNotInModel(thing, state)
+        props = propIds.map(state.prop(_)).flatten
+      }
         yield props
 
       // Note that the toList here implicitly sorts the PropList, more or less by display name:
