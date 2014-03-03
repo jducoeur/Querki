@@ -159,7 +159,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
             |
             |[[_currentSpace ->
             |  _allThings ->
-            |  _filter(_hasProperty($_context)) ->
+            |  _filter(_hasProperty($_context._self)) ->
             |  _sort ->
             |  _bulleted]]
             |""".stripMargin)))
