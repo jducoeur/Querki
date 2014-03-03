@@ -334,6 +334,7 @@ disallow: /
           val illegalVals = rawProps.filterNot(_.isValid)
           if (illegalVals.isEmpty) {
             val filledProps = rawProps.filterNot(_.isEmpty)
+            val emptyProps = rawProps.filter(_.isEmpty)
             // Everything parses, anyway, so send it on to the Space for processing:
             val propPairs = filledProps.map { pair =>
               val FormFieldInfo(prop, value, _, _, _, _) = pair
@@ -353,9 +354,17 @@ disallow: /
                   updatingThing match {
                     case Some(thing) => {
                       val locals = Editor.propsNotInModel(thing, state)
-                      (Map.empty[OID, QValue] /: locals) { (curMap, propId) =>
+                      // First, we delete the local properties:
+                      val localDeletions = (Map.empty[OID, QValue] /: locals) { (curMap, propId) =>
                         if (!props.contains(propId))
                           curMap + (propId -> DataModel.DeletedValue)
+                        else
+                          curMap
+                      }
+                      // Then, any inherited Properties that were defined but are now empty:
+                      (localDeletions /: emptyProps) { (curMap, formFieldInfo) =>
+                        if (thing.props.contains(formFieldInfo.propId))
+                          curMap + (formFieldInfo.propId -> DataModel.DeletedValue)
                         else
                           curMap
                       }
