@@ -96,18 +96,20 @@
   padding: 0;
 }
 
-.sortableList li {
+.sortableList > li {
   width: 100%;
   margin: 0 3px 7px 3px;
   padding-left: 1.5em;
+/* Why was this here? It gets inherited in sub-nodes, and causes problems:
   font-size: 1.4em;
+*/
 }
 
-.sortableList li input[type="text"] {
+.sortableList > li input[type="text"] {
   width: 80%;
 }
 
-.sortableList li .icon-move { 
+.sortableList > li .icon-move { 
   position: absolute;
   margin-left: -1.3em;
 }

@@ -28,6 +28,12 @@ function finishStatus(msg) {
 
   $.fn.asManifest = function (ownerId, spaceId) {
     this.each(function () {
+      // We don't want to Manifest-ize stuff in a template, because that gets in the way of proper
+      // initialization later, when we instantiate that template:
+      if ($(this).parents(".inputTemplate").length > 0) {
+        return;
+      }
+    
       var propId = $(this).data('prop');
       var isNames = $(this).data('isnames');
       var current = $(this).data('current');
@@ -176,7 +182,7 @@ function finishStatus(msg) {
       newLi.append(delButton);
       list.append(newLi);
       sizeField.val(curSize + 1);
-      cb(list.parent());
+      cb(list.parent(), newLi);
       return false;
     }
     
@@ -437,8 +443,13 @@ function finalSetup(ownerId, spaceId, root) {
   // TODO: SelectBoxIt is nice in principle, but I keep hitting annoying edge cases. So disabling it for now.
   //$("select").filter(":not(.sortableList select)").selectBoxIt();
   
+  function onListItemAdded(listRoot, newItem) {
+    finalSetup(ownerId, spaceId, newItem);
+    updateIfLive(listRoot);
+  }
+  
   // Invoke the List mechanisms, if appropriate:
-  root.find(".add-item-button").addListItemButton(updateIfLive);
+  root.find(".add-item-button").addListItemButton(onListItemAdded);
   root.find(".delete-item-button").deleteListItemButton(updateIfLive);
   root.find(".sortableList").sortable({
     stop:function(evt, ui) {
@@ -453,6 +464,7 @@ function finalSetup(ownerId, spaceId, root) {
   root.find("._withTooltip").tooltip({ delay: 250 });
   
   root.find("._tagSetInput").asManifest(ownerId, spaceId);
+  
   root.find(".controls ._largeTextEdit").addClass("span10");
   root.find("._largeTextEdit").autosize();
   root.find(".controls input[type='text']").filter(".propEditor").addClass("span10");
