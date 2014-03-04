@@ -351,7 +351,13 @@ disallow: /
                 // set, because it expects to be editing the *complete* list of properties, not just a subset.
                 // Now that we can signal deletions in ChangeProps, and InstanceProps is becoming standard, ModifyThing may become vestigial...
                 val deletions:Thing.PropMap = {
-                  updatingThing match {
+                  if (partial)
+                    // If it's a partial, don't go messing with deletions -- probably only one property was specified, and
+                    // it's intentional:
+                    Map.empty
+                  else updatingThing match {
+                    // It's not a partial, but since there are Instance Properties at play, we have to dance around
+                    // to figure out whether anything got cleared or deleted:
                     case Some(thing) => {
                       val locals = Editor.propsNotInModel(thing, state)
                       // First, we delete the local properties:
