@@ -1,6 +1,6 @@
 package querki
 
-import models.{Property, PropertyBundle, PType, PTypeBuilder, Thing, Wikitext}
+import models.{Collection, Property, PropertyBundle, PType, PTypeBuilder, Thing, Wikitext}
 
 import querki.core.QLText
 import querki.ecology._
@@ -50,9 +50,12 @@ package object ql {
     def flatMap[R](f:T => InvocationValue[R]):InvocationValue[R]
     def withFilter(f:T => Boolean):WithFilter[T]
     
+    // Access to the results of the computation. Most calling code should ignore this, and allow
+    // inv2QValue to tie it all back together again.
     def get:Iterable[T]
     def getError:Option[QValue]
     def getReturnType:Option[PType[_]]
+    def preferredColl:Option[Collection]
   }
   
   /**
@@ -95,6 +98,18 @@ package object ql {
      * things to short-circuit.)
      */
     def returnsType(pt:PType[_]):InvocationValue[Boolean]
+    
+    /**
+     * Says what Collection is expected from this invocation.
+     * 
+     * By the nature of the way Querki Collections work, it is tricky to automatically suss this correctly;
+     * there is a tendency for QValues to wind up as ExactlyOne if they only contain one element. This method
+     * allows the Function to declare that, no really, we want this to produce a List.
+     * 
+     * In theory, we might be able to make this more automated, but attempts to do so have so far tended to
+     * have unfortunate side-effects. So for now, we're taking this conservative approach.
+     */
+    def preferCollection(coll:Collection):InvocationValue[Boolean]
     
     /**
      * The simplest accessor -- simply returns the received value (context.v), unmodified. Mostly sugar for

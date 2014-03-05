@@ -32,6 +32,12 @@ object QLog {
   
   def spew(msg:String) = info("----> " + msg)
   
+  def spewRet[T](block: => T):T = {
+    val ret:T = block
+    spew(ret.toString)
+    ret
+  }
+  
   def renderBundle(t:PropertyBundle)(implicit state:SpaceState):String = {
       try {
         val props = t.props

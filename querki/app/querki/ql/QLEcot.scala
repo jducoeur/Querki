@@ -33,7 +33,6 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
       val qvs = inv.get
       // This code originally lived in QLContext.collect(). It is still kind of iffy, but is
       // conceptually Iterable[QValue].flatten:
-      // This part is iffy. How do we infer the correct PType if the result is empty?
       val pt = {
         if (qvs.isEmpty)
           inv.getReturnType match {
@@ -46,20 +45,34 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
         else
           qvs.find(qv => qv.pType != Core.UnknownType).map(_.pType).getOrElse(inv.getReturnType.getOrElse(Core.UnknownType))
       }
-      val raw = qvs.flatten(_.cv)
-      // TBD: is this reasonable? We're essentially eliding out the original Collections, in favor
-      // of inferring it from the ordinal of the result. The original version in QLContext.collect()
-      // actually used the initial Collection if possible, and tweaked only if necessary. That might
-      // be more correct, but would require passing the Collections hand-to-hand through
-      // InvocationValue, and having a formalism for how to combine them. (Which is, I suspect,
-      // reinventing MonadTransformers?)
-      val newCT = 
-        if (raw.isEmpty)
+      val ct = {
+        if (inv.preferredColl.isDefined)
+          inv.preferredColl.get
+        else if (qvs.isEmpty)
           Core.Optional
-        else if (raw.size == 1)
-          Core.ExactlyOne
         else
-          Core.QList
+          qvs.head.cType
+      }
+      val raw = qvs.flatten(_.cv)
+      // Rationalize the Collection. If the Collection we got from the invocation works with the number of
+      // elements, keep it; otherwise, slam it to something sensible.
+      // TODO: this mechanism needs to be generalized.
+      val newCT = 
+        if (raw.isEmpty) {
+          if (ct == Core.ExactlyOne)
+            Core.Optional
+          else
+            ct
+        } else if (raw.size == 1)
+          // Any Collection can have one element:
+          ct
+        else {
+          // There are two or more elements:
+          if (ct == Core.ExactlyOne || ct == Core.Optional)
+            Core.QList
+          else
+            ct
+        }
       newCT.makePropValue(raw, pt)
     }
   }

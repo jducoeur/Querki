@@ -80,7 +80,8 @@ class IntrospectionTests extends QuerkiTests {
       
       // Note that the results are in order by Instance Props, not alphabetical:
       pql("""[[Thing with Opts -> _foreachProperty(_if(_val -> _isNonEmpty, _val)) -> _bulleted]]""") should
-        equal("""* 4""".stripReturns)
+        equal("""
+            |* 4""".stripReturns)
     }
     
     "work without a parameter" in {
