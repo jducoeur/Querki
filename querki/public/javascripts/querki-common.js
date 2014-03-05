@@ -182,6 +182,8 @@ function finishStatus(msg) {
       newLi.append(delButton);
       list.append(newLi);
       sizeField.val(curSize + 1);
+      // Do our best to set focus to the first relevant field of the new element:
+      newLi.find(".propEditor,input,textarea").first().focus();
       cb(list.parent(), newLi);
       return false;
     }
