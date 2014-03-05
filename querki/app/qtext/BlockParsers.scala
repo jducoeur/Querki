@@ -155,7 +155,7 @@ trait BlockParsers extends Parsers {
             //lines.foreach(line => out.append(indent(level)).append(escapeXml(line.content)))
 
             //drop last newline so paragraph closing tag ends the line
-            if (!out.isEmpty && out.charAt(out.length-1) == '\n') out.deleteCharAt(out.length-1)
+            if (!out.isEmpty && !rawLines && out.charAt(out.length-1) == '\n') out.deleteCharAt(out.length-1)
         }
     }
 

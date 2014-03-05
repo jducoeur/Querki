@@ -458,7 +458,8 @@ sed diam nonumy eirmod tempor invidunt ut</p>
                 |sed diam nonumy eirmod tempor invidunt ut</p>
                 |Lorem ipsum dolor sit amet,<br />
             	|consetetur sadipscing elitr,<br />
-            	|sed diam nonumy eirmod tempor invidunt ut<br /><p>Lorem ipsum dolor sit amet,
+            	|sed diam nonumy eirmod tempor invidunt ut<br />
+                |<p>Lorem ipsum dolor sit amet,
                 |consetetur sadipscing elitr,
                 |sed diam nonumy eirmod tempor invidunt ut</p>
                 |""".stripReturns)
