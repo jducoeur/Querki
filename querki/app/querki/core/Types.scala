@@ -179,11 +179,13 @@ trait LinkUtils { self:CoreEcot =>
         if (candidates.isEmpty) {
           Seq(<option value={UnknownOID.toString}><i>None defined</i></option>)
         } else {
+          // Note: the unsafeDisplayNames below are because Scala's XML interpolator appears to be doing the
+          // name sanitizing for us:
           candidates map { candidate:Thing =>
             if(candidate.id == v.elem) {
-              <option value={candidate.id.toString} selected="selected">{candidate.displayName}</option>        
+              <option value={candidate.id.toString} selected="selected">{candidate.unsafeDisplayName}</option>        
             } else {
-              <option value={candidate.id.toString}>{candidate.displayName}</option>
+              <option value={candidate.id.toString}>{candidate.unsafeDisplayName}</option>
             }
           }
         }
