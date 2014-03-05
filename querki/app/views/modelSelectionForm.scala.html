@@ -16,7 +16,7 @@
     <div id="@formId" title="@formTitle" style="display:none">
       <p>@prompt</p>
         <select name="@selectorId" id="@selectorId">
-          <option value="">Choose a Model</option>
+          <option value="@{Basic.SimpleThing.toThingId}">Simple Thing</option>
           @createOptGroups(s)
         </select>
     </div>
