@@ -421,4 +421,45 @@ And now to something completely different.
     it should "be careful about unknown schemes" in {
       apply("[Weird](thingamahoozie:Is-My-Name)") should equal ("<p><a href=\"./thingamahoozie:Is-My-Name\">Weird</a></p>\n")
     }
+    
+
+    it should "ignore random flags" in {
+        apply(
+"""Lorem ipsum dolor sit amet,
+!foo=bar
+consetetur sadipscing elitr,
+sed diam nonumy eirmod tempor invidunt ut
+""") should equal (
+"""<p>Lorem ipsum dolor sit amet,
+consetetur sadipscing elitr,
+sed diam nonumy eirmod tempor invidunt ut</p>
+""".stripReturns)
+    }
+
+    it should "apply rawLines appropriately" in {
+        apply("""Lorem ipsum dolor sit amet,
+            |consetetur sadipscing elitr,
+            |sed diam nonumy eirmod tempor invidunt ut
+            |
+            |!rawLines=on
+            |Lorem ipsum dolor sit amet,
+            |consetetur sadipscing elitr,
+            |sed diam nonumy eirmod tempor invidunt ut
+            |
+            |!rawLines=off
+            |Lorem ipsum dolor sit amet,
+            |consetetur sadipscing elitr,
+            |sed diam nonumy eirmod tempor invidunt ut
+            |""".stripReturns) should equal (
+                """<p>Lorem ipsum dolor sit amet,
+                |consetetur sadipscing elitr,
+                |sed diam nonumy eirmod tempor invidunt ut</p>
+                |Lorem ipsum dolor sit amet,<br />
+            	|consetetur sadipscing elitr,<br />
+            	|sed diam nonumy eirmod tempor invidunt ut<br /><p>Lorem ipsum dolor sit amet,
+                |consetetur sadipscing elitr,
+                |sed diam nonumy eirmod tempor invidunt ut</p>
+                |""".stripReturns)
+    }
+
 }

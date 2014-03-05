@@ -122,14 +122,24 @@ trait BlockParsers extends Parsers {
     /**
      * Represents a paragraph of text
      */
-    class Paragraph(lines:List[MarkdownLine], lookup:Map[String, LinkDefinition])
+    class Paragraph(lines:List[MarkdownLine], lookup:Map[String, LinkDefinition], flags:Map[String, ParseFlag])
             extends MarkdownBlock{
+      
+      // TODO: we shouldn't be checking these flags by string value, but by some fast and well-defined
+      // enumeration.
+      lazy val rawLines = flags.contains("rawLines")
 
         def addResult(level:Int, out:StringBuilder) {
-            out.append(indent(level)).append(deco.decorateParagraphOpen)
+            if (!rawLines) { out.append(indent(level)).append(deco.decorateParagraphOpen) }
             addResultPlain(level, out)
-            out.append(indent(level)).append(deco.decorateParagraphClose)
+            if (!rawLines) { out.append(indent(level)).append(deco.decorateParagraphClose) }
         }
+      
+      def replaceLineEnd(str:String) = 
+        if (rawLines) 
+          str.replace("\n", deco.decorateBreak + "\n")
+        else 
+          str
 
         /**
          * Adds the result without any decoration, (no wrapping tags)
@@ -140,7 +150,7 @@ trait BlockParsers extends Parsers {
             val temp = new StringBuilder()
             lines.foreach(line => temp.append(indent(level)).append(line.payload).append('\n'))
             val result = applyInline(temp.toString, lookup)
-            out.append(result)
+            out.append(replaceLineEnd(result))
 
             //lines.foreach(line => out.append(indent(level)).append(escapeXml(line.content)))
 
@@ -311,6 +321,14 @@ trait BlockParsers extends Parsers {
         //why is the instanceof necessary? re-declaring type Input above does not change anything :(
         Success(in.asInstanceOf[MarkdownLineReader].lookup, in)
     }
+    
+    /**
+     * Returns the current flags from the reader
+     * always succeeds, never consumes input
+     */
+    def flags:Parser[Map[String, ParseFlag]] = Parser { in =>
+      Success(in.asInstanceOf[MarkdownLineReader].flags, in)
+    }
 
     ///////////////////
     // Block parsers //
@@ -366,7 +384,7 @@ trait BlockParsers extends Parsers {
     /** a consecutive block of paragraph lines
      *  returns the content of the matched block wrapped in <p> tags
      */
-    def paragraph:Parser[Paragraph] = lookup ~ (line(classOf[OtherLine])+) ^^ {case lu ~ ls => new Paragraph(ls, lu)}
+    def paragraph:Parser[Paragraph] = lookup ~ flags ~ (line(classOf[OtherLine])+) ^^ {case lu ~ lf ~ ls => new Paragraph(ls, lu, lf)}
 
     /**
      * Parses a blockquote fragment: a block starting with a blockquote line followed

@@ -133,6 +133,7 @@ class LineTokenizer() extends Parsers {
         } else {
             val line      = in.first
             (firstChar(line), indicatorChar(line)) match {
+                case ('!', _) => p(lineParsers.parseFlag)(in)
                 case ('=', _) => p(lineParsers.setextHeader1)(in)
                 case ('-', _) => p(lineParsers.setext2OrRuler)(in)
                 case ('#', _) => p(lineParsers.atxHeader)(in)

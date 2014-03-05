@@ -99,24 +99,51 @@ case class LinkDefinitionStart(id:String, url:String) {
 }
 
 /**
+ * A flag that changes the state of the document.
+ */
+case class ParseFlag(name:String, v:String) extends MarkdownLine(name, v)
+
+/**
  * This class allows us to reference a map with link definitions resulting from the line parsing during block parsing.
  * It extends a Reader for MarkdownLines and allows us to add the said map to the parsing context.
  * This is basically a modification of the parser monad's state. 
  */
-case class MarkdownLineReader private (val lines:Seq[MarkdownLine],
+case class MarkdownLineReader private (val linesIn:Seq[MarkdownLine],
                                        val lookup:Map[String, LinkDefinition],
-                                       val lineCount:Int)
+                                       val lineCountIn:Int,
+                                       val flagsIn:Map[String, ParseFlag])
         extends Reader[MarkdownLine] {
     /** Not existing line that signals EOF.
      * This object cannot be referenced by any other code so it will fail all line parsers. 
      */
     private object EofLine extends MarkdownLine("\nEOF\n")
+    
+    def handleFlag(curFlags:Map[String, ParseFlag], flag:ParseFlag):Map[String, ParseFlag] = {
+      // For now, we only deal with simple binary flags:
+      flag.v match {
+        case "on" => curFlags + (flag.name -> flag)
+        case "off" => curFlags - flag.name
+        case _ => curFlags
+      }
+    }
+    
+    def handleFlagsRec(curLines:Seq[MarkdownLine], curLineCount:Int, curFlags:Map[String, ParseFlag]):(Seq[MarkdownLine], Int, Map[String, ParseFlag]) = {
+      if (curLines.isEmpty)
+        (curLines, curLineCount, curFlags)
+      else curLines.head match {
+        case flag:ParseFlag => handleFlagsRec(curLines.tail, curLineCount + 1, handleFlag(curFlags, flag))
+        case _ => (curLines, curLineCount, curFlags)
+      }
+    }
+    
+    // Strip off any leading flag lines, and incorporate them into current processing:
+    val (lines, lineCount, flags) = handleFlagsRec(linesIn, lineCountIn, flagsIn)
 
 
-    def this(ls:Seq[MarkdownLine], lu:Map[String, LinkDefinition]) = this(ls, lu, 1)
+    def this(ls:Seq[MarkdownLine], lu:Map[String, LinkDefinition]) = this(ls, lu, 1, Map.empty)
     def this(ls:Seq[MarkdownLine]) = this (ls, Map())
     def first = if (lines.isEmpty) EofLine else lines.head
-    def rest  = if (lines.isEmpty) this else new MarkdownLineReader(lines.tail, lookup, lineCount + 1)
+    def rest  = if (lines.isEmpty) this else new MarkdownLineReader(lines.tail, lookup, lineCount + 1, flags)
     def atEnd = lines.isEmpty
     def pos   = new Position {
         def line   = lineCount
@@ -172,6 +199,15 @@ trait LineParsers extends InlineParsers {
     /** A line not starting with an xml end tag
      */
     def notXmlBlockEndLine:Parser[String] = not(xmlEndTag) ~> rest
+    
+    
+    /////////////////
+    // Parse flags //
+    /////////////////
+    
+    def parseFlag:Parser[ParseFlag] = "!" ~> """\w+""".r ~ "=" ~ """\w+""".r ^^ {
+      case name ~ equals ~ value => ParseFlag(name, value)
+    }
 
 
     //////////////////////////////
