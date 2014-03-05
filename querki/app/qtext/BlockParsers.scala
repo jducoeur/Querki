@@ -122,7 +122,7 @@ trait BlockParsers extends Parsers {
     /**
      * Represents a paragraph of text
      */
-    class Paragraph(lines:List[MarkdownLine], lookup:Map[String, LinkDefinition], flags:Map[String, Int])
+    class Paragraph(lines:List[MarkdownLine], lookup:Map[String, LinkDefinition], flags:Map[String, Int], empties:List[MarkdownLine])
             extends MarkdownBlock{
       
       // TODO: we shouldn't be checking these flags by string value, but by some fast and well-defined
@@ -155,7 +155,11 @@ trait BlockParsers extends Parsers {
             //lines.foreach(line => out.append(indent(level)).append(escapeXml(line.content)))
 
             //drop last newline so paragraph closing tag ends the line
-            if (!out.isEmpty && !rawLines && out.charAt(out.length-1) == '\n') out.deleteCharAt(out.length-1)
+            if (rawLines) {
+              empties.foreach(empty => out.append(deco.decorateBreak).append('\n'))
+            } else {
+              if (!out.isEmpty && out.charAt(out.length-1) == '\n') out.deleteCharAt(out.length-1)
+            }
         }
     }
 
@@ -309,7 +313,7 @@ trait BlockParsers extends Parsers {
     /**accepts zero or more empty lines
      */
     def optEmptyLines:Parser[List[MarkdownLine]] = emptyLine*
-
+    
     /** accepts one or more empty lines
      */
     def emptyLines:Parser[List[MarkdownLine]] = emptyLine+
@@ -384,7 +388,7 @@ trait BlockParsers extends Parsers {
     /** a consecutive block of paragraph lines
      *  returns the content of the matched block wrapped in <p> tags
      */
-    def paragraph:Parser[Paragraph] = lookup ~ flags ~ (line(classOf[OtherLine])+) ^^ {case lu ~ lf ~ ls => new Paragraph(ls, lu, lf)}
+    def paragraph:Parser[Paragraph] = lookup ~ flags ~ (line(classOf[OtherLine])+) ~ (emptyLine*) ^^ {case lu ~ lf ~ ls ~ empties => new Paragraph(ls, lu, lf, empties)}
 
     /**
      * Parses a blockquote fragment: a block starting with a blockquote line followed
