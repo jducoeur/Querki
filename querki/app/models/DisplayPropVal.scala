@@ -77,6 +77,10 @@ object DisplayPropVal {
     val suffix = 
       if (suffixIn.contains("_values["))
         suffixIn.substring(0, suffixIn.indexOf("_values["))
+      else if (suffixIn.contains("-item["))
+        // It is deeply sad that we need to know this.
+        // TODO: merge QList's notion of indexes with the one in here, to make things consistent!
+        suffixIn.substring(0, suffixIn.indexOf("-item["))
       else
         suffixIn
         
@@ -110,6 +114,8 @@ object DisplayPropVal {
       propPathFromSuffix(publicName.substring(2), bundle)
     else if (publicName.startsWith("empty-"))
       propPathFromSuffix(publicName.substring(6), bundle)
+    else if (publicName.startsWith("coll-"))
+      propPathFromSuffix(publicName.substring(5), bundle)
     else
       // This clearly isn't the right format, on its face:
       None
