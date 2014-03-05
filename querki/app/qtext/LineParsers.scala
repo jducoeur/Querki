@@ -111,23 +111,35 @@ case class ParseFlag(name:String, v:String) extends MarkdownLine(name, v)
 case class MarkdownLineReader private (val linesIn:Seq[MarkdownLine],
                                        val lookup:Map[String, LinkDefinition],
                                        val lineCountIn:Int,
-                                       val flagsIn:Map[String, ParseFlag])
+                                       val flagsIn:Map[String, Int])
         extends Reader[MarkdownLine] {
     /** Not existing line that signals EOF.
      * This object cannot be referenced by any other code so it will fail all line parsers. 
      */
     private object EofLine extends MarkdownLine("\nEOF\n")
     
-    def handleFlag(curFlags:Map[String, ParseFlag], flag:ParseFlag):Map[String, ParseFlag] = {
+    def handleFlag(curFlags:Map[String, Int], flag:ParseFlag):Map[String, Int] = {
       // For now, we only deal with simple binary flags:
       flag.v match {
-        case "on" => curFlags + (flag.name -> flag)
-        case "off" => curFlags - flag.name
+        case "+" => {
+          if (curFlags.contains(flag.name))
+            curFlags + (flag.name -> (curFlags(flag.name) + 1))
+          else
+            curFlags + (flag.name -> 1)
+        }
+        case "-" => {
+          val curLevelOpt = curFlags.get(flag.name)
+          curLevelOpt match {
+            case Some(n) if (n > 1) => curFlags + (flag.name -> (n - 1))
+            case Some(n) => curFlags - flag.name
+            case None => curFlags
+          }
+        }
         case _ => curFlags
       }
     }
     
-    def handleFlagsRec(curLines:Seq[MarkdownLine], curLineCount:Int, curFlags:Map[String, ParseFlag]):(Seq[MarkdownLine], Int, Map[String, ParseFlag]) = {
+    def handleFlagsRec(curLines:Seq[MarkdownLine], curLineCount:Int, curFlags:Map[String, Int]):(Seq[MarkdownLine], Int, Map[String, Int]) = {
       if (curLines.isEmpty)
         (curLines, curLineCount, curFlags)
       else curLines.head match {
@@ -205,8 +217,8 @@ trait LineParsers extends InlineParsers {
     // Parse flags //
     /////////////////
     
-    def parseFlag:Parser[ParseFlag] = "!" ~> """\w+""".r ~ "=" ~ """\w+""".r ^^ {
-      case name ~ equals ~ value => ParseFlag(name, value)
+    def parseFlag:Parser[ParseFlag] = "!" ~> """\+|\-""".r ~ """\w+""".r ^^ {
+      case ind ~ name => ParseFlag(name, ind)
     }
 
 

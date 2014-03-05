@@ -426,7 +426,7 @@ And now to something completely different.
     it should "ignore random flags" in {
         apply(
 """Lorem ipsum dolor sit amet,
-!foo=bar
+!+foo
 consetetur sadipscing elitr,
 sed diam nonumy eirmod tempor invidunt ut
 """) should equal (
@@ -441,12 +441,14 @@ sed diam nonumy eirmod tempor invidunt ut</p>
             |consetetur sadipscing elitr,
             |sed diam nonumy eirmod tempor invidunt ut
             |
-            |!rawLines=on
+            |!+rawLines
             |Lorem ipsum dolor sit amet,
             |consetetur sadipscing elitr,
+            |!+rawLines
             |sed diam nonumy eirmod tempor invidunt ut
+            |!-rawLines
             |
-            |!rawLines=off
+            |!-rawLines
             |Lorem ipsum dolor sit amet,
             |consetetur sadipscing elitr,
             |sed diam nonumy eirmod tempor invidunt ut

@@ -122,7 +122,7 @@ trait BlockParsers extends Parsers {
     /**
      * Represents a paragraph of text
      */
-    class Paragraph(lines:List[MarkdownLine], lookup:Map[String, LinkDefinition], flags:Map[String, ParseFlag])
+    class Paragraph(lines:List[MarkdownLine], lookup:Map[String, LinkDefinition], flags:Map[String, Int])
             extends MarkdownBlock{
       
       // TODO: we shouldn't be checking these flags by string value, but by some fast and well-defined
@@ -326,7 +326,7 @@ trait BlockParsers extends Parsers {
      * Returns the current flags from the reader
      * always succeeds, never consumes input
      */
-    def flags:Parser[Map[String, ParseFlag]] = Parser { in =>
+    def flags:Parser[Map[String, Int]] = Parser { in =>
       Success(in.asInstanceOf[MarkdownLineReader].flags, in)
     }
 
