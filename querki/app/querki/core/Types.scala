@@ -2,7 +2,7 @@ package querki.core
 
 import scala.xml.NodeSeq
 
-import models.{DisplayPropVal, OID, Property, PType, PTypeBuilder, PTypeBuilderBase, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
+import models.{DelegatingType, DisplayPropVal, OID, Property, PType, PTypeBuilder, PTypeBuilderBase, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
 import models.Thing.PropFetcher
 
 import querki.ecology._
@@ -205,7 +205,7 @@ trait LinkUtils { self:CoreEcot =>
   
 }
 
-trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTypeBasis with LinkUtils with NameUtils =>
+trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTypeBasis with LinkUtils with NameUtils with CoreModule =>
 
   /**
    * Marker type, used to signify "no real type" in empty collections.
@@ -258,7 +258,32 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
   }
   
   class NameType extends NameTypeBase(NameTypeOID, 
-      toProps(setName("Name Type"))) {
+      toProps(
+        setName("Name Type"),
+        Summary("A Name that may or may not be on a Thing"),
+        Details("""A "Name" is exactly that -- a name that can be applied to a Thing. It does not
+            |necessarily mean a name that is currently in use: the Name can be for a Thing that already
+            |exists, or it can simply be a Name with no actual Thing named by it yet.
+            |
+            |Names are very restricted: they can contain only letter, numbers, spaces, dashes and underscores.
+            |User-defined names may not start with underscore. (System-defined names often do.)
+            |
+            |Any given Space may contain at most one Thing with any given Name -- you can't duplicate Names.
+            |
+            |When you choose "Name Type", the system will say "Link to which Model?". This is optional, but sometimes
+            |helpful. When you are editing a Name Property, the system will prompt you with existing Names. If you
+            |choose a Model at creation time, it will only prompt you with Names of Instances of that Model. So if
+            |you know what sorts of Things you will be naming in this Property, it is worth specifying that Model here.
+            |
+            |Note that Names are different from the more-common Display Names, which you will usually use. These
+            |have far fewer restrictions, and are usually what you will see in practice. Most of the time, a Thing's
+            |Name is derived automatically from its Display Name when the Thing is first created, by stripping
+            |out the illegal characters.
+            |
+            |Names are used mainly to generate the URLs for each Thing, and are therefore sometimes called Link Names.
+            |
+            |Names are fairly advanced -- most users usually won't want to create a Name Property.""".stripMargin))) 
+  {
     override def editorSpan(prop:Property[_,_]):Int = 3
     
     def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext(toDisplay(v))    
@@ -269,7 +294,18 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
    */
   class TextType extends TextTypeBase(TextTypeOID,
       toProps(
-        setName("Text Type")
+        setName("Text Type"),
+        (querki.conventions.MOIDs.PropSummaryOID -> 
+            ExactlyOne(ElemValue(
+                QLText("A single line of text, which may contain QL expressions"), 
+                new DelegatingType(TextType)))),
+        (querki.conventions.MOIDs.PropDetailsOID -> 
+        	ExactlyOne(ElemValue(QLText("""Text Type is almost the same as Large Text Type -- see Large Text Type for most of the details.
+            |
+            |The only real difference is that the input field for a Text Type Property is only a single line, and
+            |Text Properties are usually intended to be relatively short. As a rule of thumb, if you can imagine
+            |this Property ever holding more than a paragraph, use Large Text instead.""".stripMargin),
+            new DelegatingType(LargeTextType))))
         )) with PTypeBuilder[QLText,String] 
   {
     override def editorSpan(prop:Property[_,_]):Int = 12    
@@ -280,7 +316,59 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
    */
   class LargeTextType extends TextTypeBase(LargeTextTypeOID,
       toProps(
-        setName("Large Text Type")
+        setName("Large Text Type"),
+        (querki.conventions.MOIDs.PropSummaryOID -> 
+            ExactlyOne(ElemValue(
+                QLText("A block of text, which may contain QL expressions"),
+                new DelegatingType(TextType)))),
+        (querki.conventions.MOIDs.PropDetailsOID -> 
+        	ExactlyOne(ElemValue(QLText("""Large Text is one of the central Types in Querki: it is an arbitrarily long block of text,
+            |which may contain QL expressions in it. Most Querki Spaces use Large Text Properties frequently.
+            |
+            |When you edit a Large Text, you will see a multi-line input box. This will grow automatically as
+            |you enter more text, and can get pretty much as large as you like. (There are limits, but they
+            |are pretty substantial -- multi-page Large Texts are not unusual.)
+            |
+            |Every Thing automatically has one Large Text Property available, named Default View. This is what
+            |gets shown when you simply look at this Thing in the browser. Most of the time, you want to fill in
+            |the Default View on your Model, with a page that includes all the interesting Properties on the Model.
+            |Then, all of the Instances of that Model will automatically pick up that Default View, and look right.
+            |
+            |Large Text is the most-commonly used text type in Querki, but there are a couple of others. Text Type
+            |is identical to Large Text, just smaller -- it only has a one-line input box, and is intended for short
+            |texts of a paragraph or less. Plain Text can not contain QL expressions, so it is only for simple, literal
+            |blocks of text.
+            |
+            |#### QText
+            |
+            |Large Text Properties are mainly composed of QText -- an easy-to-use "markup" format, that lets you
+            |describe concepts like boldface, paragraphs, links, bullet lists and so on in fairly intuitive ways, without
+            |needing to use HTML. For details on all the different things you can do with QText, see
+            |the [QText Reference](http://www.querki.net/u/systemUser/documentation/QText-Reference).
+            |
+            |#### QL
+            |
+            |A Large Text Property may also contain QL expressions. These are simple expressions contained in
+            |double-square-brackets. The tutorial for QL is still being written, but for new users, you really only
+            |need two kinds of QL expressions to get going.
+            |
+            |First, say that your Space has a page named Instructions, and you want another page to link to that.
+            |You show that link by simply saying:
+            |```
+            |\[[Instructions\]]
+            |```
+            |It's as easy as that, but keep in mind that you need to use the other page's Link Name, which may be
+            |slightly different from its Display Name. If you're not sure, look in the small subtitle line on
+            |that page -- it should give the "Link Name", which is what you should use.
+            |
+            |Second -- Querki is all about Things with Properties. Say that you want to show the value of the Property
+            |named "Details" on your Thing. You would just say:
+            |```
+            |\[[Details\]]
+            |```
+            |That's it -- Querki is smart enough to know that, since you're naming a Property, it should just insert the
+        	|value of that Property here.""".stripMargin),
+            new DelegatingType(LargeTextType))))
         )) with PTypeBuilder[QLText,String] 
   {
     override def editorSpan(prop:Property[_,_]):Int = 12

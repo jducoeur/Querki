@@ -335,6 +335,26 @@
         }
       }
       
+      function handleTypeChoice(evt) {
+        var typeSelect = $("option:selected", this);
+        var typeId = typeSelect.val();
+        var typeName = typeSelect.text();
+        if (typeId.length > 0 && typeId != @createTypeIndicator) {
+		  // TODO: nasty abstraction break here. Do we need a Javascript library for generating ThingIds?
+          var typeThingId = "." + typeId;
+	      jsRoutes.controllers.Application.getPropertyDisplay("@space.owner.toThingId", "@space.id.toThingId", typeThingId, "@PropDetails.id.toThingId").ajax({
+	        success: function (result) {
+	          $("#_typeInfo").html("<p><b>" + typeName + "</b></p>" + result);
+	        },
+	        error: function (err) {
+	          showStatus("Unable to fetch type info!");
+	        }
+	      });
+        } else {
+          $("#_typeInfo").text(" ");
+        }
+      }
+      
       function newPropName() { return $("#_newPropName").val(); }
       function newPropTypeSelection() { return $("#_newPropType :selected"); }
       function newPropType() { return newPropTypeSelection().val(); }
@@ -462,6 +482,7 @@
         $("#_newPropType, #_newPropName").change(checkCreateButton);
         $("#_newPropType").change(checkIfLinkType);
         $("#_newPropType").change(checkTypeCollection);
+        $("#_newPropType").change(handleTypeChoice);
         
         @if(thing.isDefined) {
 			$("#changeModelBtn").on("click", function(evt) {
@@ -577,38 +598,49 @@
           
           <div id="_createNewPropertyBox" style="display:none;">
             <p>Describe the new property to create, or press "Add an Existing Property" to use one that already exists.</p>
-            <p><input type="text" id="_newPropName" placeholder="Name (required)..."></p>
-            <select id="_newPropType">
-                <option value="">Choose the Property's type (required)...</option>
-                @for(aType <- space.allTypes.values.
-                       filterNot(_.ifSet(Core.InternalProp)(space)).
-                       filterNot(_.ifSet(Basic.DeprecatedProp)(space)).
-                       filterNot(_.isInstanceOf[querki.types.ModelTypeBase]).
-                       toSeq.sortBy(_.displayName)) {
-                  <option value="@aType.id.toString" @collForType(aType)>@aType.displayName</option>
-                }
-                <option value=@createTypeIndicator>Based on a Model</option>
-            </select>
-            <select id="_newPropLinkModel" style="display:none;">
-                <option value="">Link to which Model? (optional)...</option>
-                @for(aModel <- space.allModels.toSeq.sortBy(_.displayName)) {
-                  <option value="@aModel.id.toString">@aModel.displayName</option>
-                }
-            </select>
-            <select id="_newTypeModel" style="display:none;">
-                <option value="">Based on which Model?...</option>
-                @for(aModel <- space.models.toSeq.sortBy(_.displayName).filter(_.hasProp(Editor.InstanceProps)(space))) {
-                  <option value="@aModel.id.toThingId">@aModel.displayName</option>
-                }
-            </select>
-		    <div id="_newPropColl" class="btn-group offset1" data-toggle="buttons-radio">
-			    <button id="_newPropOne" type="button" class="btn btn-primary active" value="@{ExactlyOne.id.toString}">Exactly One</button>
-			    <button id="_newPropOptional" type="button" class="btn btn-primary" value="@{Optional.id.toString}">Optional</button>
-			    <button id="_newPropList" type="button" class="btn btn-primary" value="@{QList.id.toString}">List</button>
-			    <button id="_newPropSet" type="button" class="btn btn-primary" value="@{QSet.id.toString}">Set</button>
+            <div class="row-fluid">
+              <div class="span6">
+                <div class="row-fluid">
+		            <input type="text" id="_newPropName" class="span6" placeholder="Name (required)...">
+		            <select id="_newPropType" class="span6">
+		                <option value="">Choose the Property's type (required)...</option>
+		                @for(aType <- space.allTypes.values.
+		                       filterNot(_.ifSet(Core.InternalProp)(space)).
+		                       filterNot(_.ifSet(Basic.DeprecatedProp)(space)).
+		                       filterNot(_.isInstanceOf[querki.types.ModelTypeBase]).
+		                       toSeq.sortBy(_.displayName)) {
+		                  <option value="@aType.id.toString" @collForType(aType)>@aType.displayName</option>
+		                }
+		                <option value=@createTypeIndicator>Based on a Model</option>
+		            </select>
+		        </div>
+		        <div class="row-fluid">
+				    <div id="_newPropColl" class="btn-group span6" data-toggle="buttons-radio" style="margin-left: 0px;">
+					    <button id="_newPropOne" type="button" class="btn btn-primary active" value="@{ExactlyOne.id.toString}">Exactly One</button>
+					    <button id="_newPropOptional" type="button" class="btn btn-primary" value="@{Optional.id.toString}">Optional</button>
+					    <button id="_newPropList" type="button" class="btn btn-primary" value="@{QList.id.toString}">List</button>
+					    <button id="_newPropSet" type="button" class="btn btn-primary" value="@{QSet.id.toString}">Set</button>
+					</div>
+		            <select id="_newPropLinkModel" style="display:none;" class="span6">
+		                <option value="">Link to which Model? (optional)...</option>
+		                @for(aModel <- space.allModels.toSeq.sortBy(_.displayName)) {
+		                  <option value="@aModel.id.toString">@aModel.displayName</option>
+		                }
+		            </select>
+		            <select id="_newTypeModel" style="display:none;" class="span6">
+		                <option value="">Based on which Model?...</option>
+		                @for(aModel <- space.models.toSeq.sortBy(_.displayName).filter(_.hasProp(Editor.InstanceProps)(space))) {
+		                  <option value="@aModel.id.toThingId">@aModel.displayName</option>
+		                }
+		            </select>
+		        </div>
+				<p><input type="text" id="_newPropSummary" class="span8" placeholder="One-line summary (optional)..."></p>
+				<p><textarea id="_newPropDetails" class="_largeTextEdit span8" placeholder="Detailed description (optional)..."></textarea></p>
+	  		  </div>
+			  <div class="span6">
+			    <p id="_typeInfo" style="height:250px; overflow:auto">&nbsp;</p>
+			  </div>
 			</div>
-			<p><input type="text" id="_newPropSummary" class="span8" placeholder="One-line summary (optional)..."></p>
-			<p><textarea id="_newPropDetails" class="_largeTextEdit span8" placeholder="Detailed description (optional)..."></textarea></p>
             <p class="offset1">
                 <input type="button" value="Create" id="_createNewPropertyButton" class="btn btn-info">
                 <input type="button" value="Cancel" id="_cancelCreatePropertyButton" class="btn">
