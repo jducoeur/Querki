@@ -23,7 +23,8 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
    * TYPES
    ***********************************************/
   
-  lazy val PlainTextType = new PlainTextType(PlainTextOID, "Plain Text Type") 
+  lazy val PlainTextType = new PlainTextType(PlainTextOID, 
+      toProps(setName("Plain Text Type"))) 
   {
     override def editorSpan(prop:Property[_,_]):Int = 6
   }

@@ -31,7 +31,18 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   lazy val TagSetType = new NameTypeBase(TagSetOID, 
       toProps(
         setName("Old Tag Set Type"),
-        Basic.DeprecatedProp(true))) 
+        Basic.DeprecatedProp(true),
+        Summary("The original version of Tags"),
+        Details("""This Type was originally what you would get if you created a Tag Set Property.
+            |It is now deprecated, and you should no longer create Properties of this Type.
+            |
+            |Technically, Old Tag Sets were built on top of Name Type -- each Tag was technically a Name.
+            |We discovered that, in practice, this was too limiting, since the Name Type only allows a very
+            |small fraction of the possible text; things would break if you did something as simple as put
+            |an apostrophe in a Tag.
+            |
+            |So this Type was replaced by what is now called Tag Set Type, which is built on top of Plain Text Type
+            |and is much more powerful and flexible.""".stripMargin))) 
   {
     override def editorSpan(prop:Property[_,_]):Int = 12
     
@@ -48,7 +59,31 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     }
   }
 
-  lazy val NewTagSetType = new PlainTextType(NewTagSetOID, "Tag Set Type") {
+  lazy val NewTagSetType = new PlainTextType(NewTagSetOID, 
+      toProps(
+        setName("Tag Set Type"),
+        Summary("A collection of arbitrary Tags that apply to this Thing"),
+        Details("""A Tag Set is a way to add a bunch of "tags" to a Thing. It is typically used to
+            |list the characteristics of this Thing.
+            |
+            |Note that a Tag is, technically just a Plain Text value, and can contain almost anything.
+            |However, if it matches the Display Name of a Thing, it will generally display as a link to that
+            |Thing if you simply show it, and if it doesn't match a Thing, clicking on it will allow you to
+            |create a Thing by that name. This way, you can add additional details about what this Tag means.
+            |
+            |A Tag Set is, by definition, a Set -- when you select the Tag Set Type, it does not let you choose
+            |any kind of Collection other than Set. If you really want ExactlyOne, or a List, or such, use the
+            |Plain Text Type instead, and it will work essentially the same way. But in practice, we have found
+            |that Tag Set is one of the most useful Types in Querki, and you should consider it before reaching
+            |for ExactlyOne -- it allows you flexibility in how many Tags you assign, and most of the time that
+            |turns out to be helpful.
+            |
+            |When you select Tag Set Type, the Editor will ask you if you want to Link to a Model. This is optional,
+            |but can be very useful -- if it is set, it restricts the Tags that get offered to you when you are
+            |doing data entry. If this Property has any sort of meaning -- if the Tag Set isn't completely open-ended
+            |and arbitrary -- consider first creating a Model (which doesn't need anything more than a Display Name),
+            |and using it as the Link Model for the Property. That will help keep your Tags better-organized.""".stripMargin))) 
+  {
     override def editorSpan(prop:Property[_,_]):Int = 12
   
     override def requiredColl = Some(Core.QSet)

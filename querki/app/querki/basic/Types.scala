@@ -11,10 +11,8 @@ import querki.values.{ElemValue, QLContext, SpaceState}
 import MOIDs._
 
 trait PlainTextBaseType { self:QuerkiEcot with TextTypeBasis =>
-  abstract class PlainTextType(tid:OID, actualName:String) extends SystemType[PlainText](tid,
-    toProps(
-      setName(actualName)
-    )) with PTypeBuilder[PlainText,String] with IsTextType with NameableType with TextTypeUtils
+  abstract class PlainTextType(tid:OID, pf:PropFetcher) extends SystemType[PlainText](tid, pf) 
+    with PTypeBuilder[PlainText,String] with IsTextType with NameableType with TextTypeUtils
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = PlainText(v)
     def doSerialize(v:PlainText)(implicit state:SpaceState) = v.text
