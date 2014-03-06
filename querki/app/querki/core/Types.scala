@@ -244,7 +244,9 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
   class InternalMethodType extends SystemType[String](InternalMethodOID,
     toProps(
       setName("Internal Method Type"),
-      setInternal
+      setInternal,
+      Summary("A system-created Function"),
+      Details("""A system-created Function. You can not create these, and generally shouldn't worry about this Type.""".stripMargin)
     )) with SimplePTypeBuilder[String]
   {
     def boom = throw new Exception("InternalMethodType cannot be used conventionally. It simply wraps code.")
