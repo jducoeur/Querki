@@ -77,7 +77,22 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   
   class EmailAddressType(tid:OID) extends SystemType[EmailAddress](tid,
       toProps(
-        setName("Email")
+        setName("Email Address Type"),
+        Core.InternalProp(true),
+        Summary("Represents an email address"),
+        Details("""This Type represents an email address.
+            |
+            |For the time being, Email Address Type is marked Internal, so you can't create an Email Address Property.
+            |This is because the entire email stack has been undergoing massive revisions since the initial Querki
+            |prototype, and is not available for routine end-user use yet. We do expect to add limited email capabilities
+            |back in, but they will fall under the more-general Notifications system when that happens. (That is, you
+            |won't be able to explicitly send an email from Querki, but you will be able to send Notifications to Members
+            |of this Space; how those Notifications are actually sent will be up to the recipients.)
+            |
+            |If you don't need to send emails, but have a particular use for Email Address as a data type, please ask:
+            |it would not be terribly difficult to add back. However, note that mass mailings are *not* an intended
+            |use for Querki, and using Querki for spam, abuse or anything that looks similar to them will be considered
+            |grounds for termination and deletion of your account. Don't do it.""".stripMargin)
       )) with PTypeBuilder[EmailAddress,String]
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = EmailAddress(v)
