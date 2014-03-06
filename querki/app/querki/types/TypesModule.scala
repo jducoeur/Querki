@@ -26,7 +26,16 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
   class WrappedValueType(tid:OID) extends SystemType[QValue](tid,
       toProps(
         setName("Wrapped Value Type"),
-        (InternalPropOID -> ExactlyOne(YesNoType(true)))
+        (InternalPropOID -> ExactlyOne(YesNoType(true))),
+        Summary("A wrapper that can contain any Value"),
+        Details("""There are a few cases where you would really like a Property to be able to take
+            |*any* value, not just a single Type. The Wrapped Value Type exists for those cases.
+            |
+            |This is *extremely* half-baked at this time, and is only used as a way for system Properties
+            |to declare a Default Value. It would be really nice for user Properties to also be able to
+            |declare a Default Value, but this is pretty hard: there are complications around both the
+            |user interface and persistence. So for the time being, Wrapped Value Type and Default Value
+            |are for system use only.""".stripMargin)
       )) with SimplePTypeBuilder[QValue]
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = { throw new Exception("WrappedValueType does not implement doDeserialize") }

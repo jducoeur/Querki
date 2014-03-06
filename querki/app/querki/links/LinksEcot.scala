@@ -18,7 +18,15 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
   
   lazy val ExternalLinkType = new SystemType[QURL](ExternalLinkTypeOID,
     toProps(
-      setName("URL Type")
+      setName("URL Type"),
+      Summary("The URL of a web page"),
+      Details("""This Property holds simply a pointer to a webpage, any webpage. The syntax is currently
+          |pretty forgiving, but don't count on that -- it may get stricter about requiring a well-formed URL
+          |in the future, so it is only recommended that this be used with full URLs.
+          |
+          |This Type is useful, but not as useful as one would wish, since it doesn't allow you to give a description
+          |of what this URL is linking to. That is why its name was changed from "External Link Type". A new, more
+          |sophisticated External Link Type will be added in the near future.""".stripMargin)
     )) with PTypeBuilder[QURL, String] with URLableType
   {
     override def editorSpan(prop:Property[_,_]):Int = 6
