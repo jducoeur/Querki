@@ -87,10 +87,6 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     override def editorSpan(prop:Property[_,_]):Int = 12
   
     override def requiredColl = Some(Core.QSet)
- 
-    def equalNames(str1:PlainText, str2:PlainText):Boolean = {
-      str1.text.toLowerCase.contentEquals(str2.text.toLowerCase())
-    }
   
     override def doWikify(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None) = {
       val display = displayOpt.getOrElse(Wikitext(v.text))
@@ -98,10 +94,6 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
       // since that danger is there in ordinary QText as well.
       Wikitext("[") + display + Wikitext(s"](${SafeUrl(v.text)})") 
     }
-  
-    override def doComp(context:QLContext)(left:PlainText, right:PlainText):Boolean = { left.text < right.text } 
-      
-    override def doMatches(left:PlainText, right:PlainText):Boolean = equalNames(left, right)
     
     override def renderProperty(prop:Property[_,_])(implicit request:RequestContext):Option[Wikitext] = {
       Some(QL.process(QLText("""These tags are currently being used:
