@@ -382,7 +382,20 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
    */
   class LinkType extends SystemType[OID](LinkTypeOID,
       toProps(
-        setName("Link Type")
+        setName("Link Type"),
+        Summary("A pointer to a specific Thing"),
+        Details("""A Link points to a single Thing in this Space. It can point to any Thing: an Instance, a Model,
+            |a Property -- even a Type or the Space itself.
+            |
+            |The editing interface for Links is currently very different for a Set of Links (which is almost identical
+            |to that for a Tag Set), as opposed to a single Link. But under the hood, they're both letting you do the
+            |same thing: choose one or more Things.
+            |
+            |When you choose "Link Type", the system will say "Link to which Model?". This is optional, but usually
+            |helpful. When you are editing a Link Property, the system will prompt you with existing Things. If you
+            |choose a Model at creation time, it will only prompt you with existing Instances of that Model. So if
+            |you know what sorts of Things you will be using in this Property, it is worth specifying that Model here.            
+            |""".stripMargin)
         )) with SimplePTypeBuilder[OID] with NameableType with URLableType
   {
     override def editorSpan(prop:Property[_,_]):Int = 6    
@@ -476,7 +489,20 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
    */
   class IntType extends SystemType[Int](IntTypeOID,
       toProps(
-        setName("Whole Number Type")
+        setName("Whole Number Type"),
+        Summary("A number"),
+        Details("""A Whole Number Property contains a number with no fractional part. That is, you can
+            |give 0, 12, or 309298474, but you can't say 14.98 or 9 3/4. (Floating point and fractional
+            |numbers will come eventually -- if you have a serious need for them, please raise it as an issue.)
+            |
+            |These sorts of numbers are called "Integers" in most programming languages.
+            |
+            |If your Property is Optional Whole Number, you may leave the input empty (simply backspace out
+            |to clear the number) to indicate that you don't have any number to put here.
+            |
+            |At the moment, Querki only accepts positive numbers, not negative ones. If you need to use
+            |negative numbers, please raise it as an issue. (It isn't hard to add, but hasn't come up as
+            |a high priority yet.)""".stripMargin)
         )) with SimplePTypeBuilder[Int]
   {
     override val displayEmptyAsBlank:Boolean = true
@@ -522,7 +548,15 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
    */
   class YesNoType extends SystemType[Boolean](YesNoTypeOID,
       toProps(
-        setName("YesNo Type")
+        setName("YesNo Type"),
+        Summary("A yes/no, true/false value"),
+        Details("""A YesNo Property allows you to say whether something is true or false.
+            |
+            |If you say that your Property is Optional YesNo, that essentially introduces the
+            |concept of "Maybe" -- a value that is neither True nor False.
+            |
+            |YesNo values are called "Boolean" in most programming languages; we are deliberately
+            |avoiding that particular bit of computer-science jargon.""".stripMargin)
         )) with SimplePTypeBuilder[Boolean]
   {
     override def editorSpan(prop:Property[_,_]):Int = 1
