@@ -30,7 +30,29 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
   
   class QDateTime(tid:OID) extends SystemType[DateTime](tid,
       toProps(
-        setName("Date and Time Type")
+        setName("Date and Time Type"),
+        Core.InternalProp(true),
+        Summary("Represents a particular date and time"),
+        Details("""A value of this Type indicates a specific moment in time.
+            |
+            |At the moment, the only way to get a DateTime is through the _modTime function, which
+            |produces the DateTime when the given Thing was last changed.
+            |
+            |ADVANCED: under the hood, DateTimes are based on the [Joda-Time](http://www.joda.org/joda-time/)
+            |library, and you can use Joda-Time format strings when displaying a DataTime. For example,
+            |if you say:
+            |```
+            |\[[My Thing -> _modTime -> \""\__KK:mm MMM dd 'yy\__\""\]]
+            |```
+            |it will display as something like "09:24 Mar 10 '96".
+            |
+            |In the long time, we will probably add functions corresponding to most of the capabilities
+            |of Joda-Time. If there are specific functions or features that you need, please ask for them.
+            |
+            |There is no UI for entering DateTime values yet. (At least, not one that real people
+            |can use.) For that reason, Date and Time Type is currently marked as Internal -- you can't
+            |create a Data and Time Property yet. This will change in the future: if DateTimes are
+            |important to your use case, please say so, and we may prioritize it higher.""".stripMargin)
       )) with SimplePTypeBuilder[DateTime]
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = new DateTime(v.toLong)

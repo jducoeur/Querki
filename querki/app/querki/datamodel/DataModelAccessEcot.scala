@@ -206,6 +206,18 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     }
   
   })
+
+  lazy val AllTypesMethod = new SingleThingMethod(AllTypesMethodOID, "_allTypes", "What are the Types in this Space?", 
+    """    SPACE -> _allTypes -> TYPES
+    |
+    |This receives a link to a Space, and produces all of the Types defined in that Space.""".stripMargin,
+  { (thing, context) => 
+    thing match {
+      case s:SpaceState => Core.listFrom(s.types.values.toSeq.sortBy(_.displayName), Core.LinkFromThingBuilder) 
+      case _ => QL.WarningValue("_allTypes must receive a Space")
+    }
+  
+  })
   
   class ChildrenMethod extends SingleThingMethod(ChildrenMethodOID, "_children", "This produces the immediate children of the received Model.",
     """    MODEL -> _children -> LIST OF CHILDREN
@@ -373,6 +385,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     new SpaceMethod,
     new ExternalRootsMethod,
     new AllPropsMethod,
+    AllTypesMethod,
     new ChildrenMethod,
     new IsModelMethod,
     new IsDefinedMethod,
