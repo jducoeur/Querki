@@ -45,7 +45,40 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
    */
   lazy val QLType = new TextTypeBase(QLTypeOID,
     toProps(
-      setName("Function")
+      setName("Function"),
+      SkillLevel(SkillLevelAdvanced),
+      Summary("A QL Expression, that you can use from other expressions"),
+      Details("""Functions are basically how you do serious programming in Querki. They are, therefore,
+          |very advanced, and are not recommended for anyone aside from programmers.
+          |
+          |Technically, a Function is simply an "inside-out" Large Text Property, containing the stuff that
+          |would normally go inside square brackets -- a single QL expression of arbitrary complexity. It is
+          |not often strictly necessary to pull code out into a Function, but is occasionally the only way to
+          |deal with a complex problem such as recursion, and is often helpful for factoring a complex expression.
+          |
+          |Note that QL and QText can contain each other, to a nearly arbitrary level of recursion. Just as a Text
+          |Property can contain QL expressions in double-square-brackets, a Function can contain QText in
+          |double-double-quotes.
+          |
+          |When a Function is invoked from a QL expression, it receives the passed-in context (the value on the
+          |left-hand side of the "->"), and that will be received by the first stage of this Function. The received
+          |context can also be accessed from anywhere in the Function, as $\_context. If the Function is called with
+          |parameters in parentheses, those can be used as $\_1, $\_2, etc.
+          |
+          |Functions are still pretty new, and it is not clear that all of the kinks have been ironed out yet.
+          |If you encounter behaviour that seems to be wrong, please ask about it, and feel free to log an Issue
+          |if you find a bug.
+          |
+          |In the future, Functions will be **greatly** enhanced. Among other things, we plan to add:
+          |* Named parameters
+          |* The ability to declare a Function Signature, specifying the legal Types for the context and params
+          |* The ability to specify the return Type of the Function
+          |* Name bindings for values (basically, the immutable version of variables)
+          |* Mechanisms for changing the Space programmatically
+          |* Type inference, which will attempt to automatically detect the signature and return Type
+          |
+          |That is all down the road, however -- for now, a Function is simply a raw block of code, with no
+          |type checking, so use them with care. If you need specific language features, please ask.""".stripMargin)
     )) with PTypeBuilder[QLText,String] 
   {
     override def editorSpan(prop:Property[_,_]):Int = 12   
