@@ -229,6 +229,14 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
   class UrType extends PType[Unit](UrTypeOID, SystemIds.systemOID, querki.core.MOIDs.RootOID, 
       toProps(
         setName("Root Type"),
+        (querki.conventions.MOIDs.PropSummaryOID -> 
+            ExactlyOne(ElemValue(
+                QLText("The Ur-Type, from which all others descend"), 
+                new DelegatingType(TextType)))),
+        (querki.conventions.MOIDs.PropDetailsOID -> 
+        	ExactlyOne(ElemValue(QLText("""Querki Types are just like any other Things -- they have Models and Instances.
+        	    |The Root Type is essentially the Model for all the other Types. It must never be used directly.""".stripMargin),
+            new DelegatingType(LargeTextType)))),
         setInternal))
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = throw new Exception("Trying to use UrType!")
