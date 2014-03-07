@@ -89,7 +89,6 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
     toProps(
       setName("Stylesheet Link"),
       Links.LinkModelProp(StylesheetBase),
-      AppliesToKindProp(Kind.Thing),
       Summary("Describes how to render Things when displaying them in the browser"),
       Details("""If you add the Stylesheet Link Property to a Thing, it should point to a
           |Stylesheet whose CSS describes some page layout. That CSS will be used when displaying
