@@ -89,7 +89,9 @@ disallow: /
   }
     
   def space(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId) { implicit rc =>
-    Ok(views.html.thing(rc))
+    // This entry point is deprecated -- we're moving to always look at the Space Thing itself, since
+    // there are functions that only appear that way:
+    Redirect(routes.Application.thing(ownerId, spaceId, spaceId))
   }
   
   def thing(ownerId:String, spaceId:String, thingId:String) = withThing(false, ownerId, spaceId, thingId, Some({ 
@@ -123,7 +125,7 @@ disallow: /
         TryTrans[Unit, Result] { Core.NameProp.validate(name, System.State) }.
           onSucc { _ =>
             askSpaceMgr[ThingResponse](CreateSpace(requester, name)) {
-              case ThingFound(_, state) => Redirect(routes.Application.space(requester.mainIdentity.handle, state.toThingId))
+              case ThingFound(_, state) => Redirect(routes.Application.thing(requester.mainIdentity.handle, state.toThingId, state.toThingId))
               case ThingError(ex, _) => doError(routes.Application.newSpace, ex)
             }
           }.

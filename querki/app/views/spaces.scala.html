@@ -15,7 +15,7 @@
 		<h3>Spaces You Own</h3>
 		<ul>
 	    @for(space <- mySpaces) {
-	        <li><a href="/u/@space.ownerHandle/@space.handle/">@space.display</a></li>
+	        <li><a href="/u/@space.ownerHandle/@space.handle/@space.handle">@space.display</a></li>
 	    }
 	    </ul>
       </div>
@@ -24,7 +24,7 @@
 		<h3>Spaces You are a Member of</h3>
 		<ul>
 	    @for(space <- memberOf) {
-	        <li><a href="/u/@space.ownerHandle/@space.handle/">@space.display</a></li>
+	        <li><a href="/u/@space.ownerHandle/@space.handle/@space.handle">@space.display</a></li>
 	    }
 	    </ul>
       </div>
