@@ -266,7 +266,9 @@
       
       function beginAddProperty() {
         $("#_addPropertyButtonGroup").hide();
-        $("#_addPropertyBox").fadeIn();
+        $("#_addPropertyBox").show();
+        instantScrollToBottom();
+        return false;
       }
       
       function closeAddProperty() {
