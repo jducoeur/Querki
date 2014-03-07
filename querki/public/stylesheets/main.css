@@ -206,6 +206,13 @@
   font-size: x-small;
 }
 
+._mainFooter {
+  margin-top: 0px;
+  width: 100%;
+  font-size: x-small;
+  text-align: center;
+}
+
 ._warning {
   font-weight: bold;
   background-color: #FAD2DF;
