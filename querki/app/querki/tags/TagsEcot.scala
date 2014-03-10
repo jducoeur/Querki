@@ -192,7 +192,6 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   lazy val ShowUnknownProp = new SystemProperty(ShowUnknownOID, LargeTextType, ExactlyOne,
     toProps(
       setName("Undefined Tag View"),
-      AppliesToKindProp(Kind.Space),
       Summary("What should be displayed when you click on a Tag that isn't a Thing?"),
       Details("""In Querki, it is entirely legal to refer to the name of something you haven't written yet --
           |for instance, Tags are often names with no definition. So the question becomes, what should be
