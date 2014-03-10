@@ -414,7 +414,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
     }
   }
   
-  lazy val foreachMethod = new InternalMethod(NextInListOID,
+  lazy val foreachMethod = new InternalMethod(ForeachMethodOID,
       toProps(
         setName("_foreach"),
         Summary("Applies the parameter to each element in the received collection, and produces a collection of the results"),
