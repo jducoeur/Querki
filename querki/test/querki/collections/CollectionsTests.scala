@@ -3,6 +3,34 @@ package querki.collections
 import querki.test._
 
 class CollectionsTests extends QuerkiTests {
+  // === _contains ===
+  "_contains" should {
+    "work with simple numbers" in {
+      class TSpace extends CommonSpace {
+        val listProp = new TestProperty(Core.IntType, QList, "My Prop")
+        val myThing = new SimpleTestThing("My Thing", listProp(5, 9, 92))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[My Thing -> My Prop -> _contains(9)]]""") should equal ("true")
+      pql("""[[My Thing -> My Prop -> _contains(42)]]""") should equal ("false")
+    }
+    
+    "work with links" in {
+      class TSpace extends CommonSpace {
+        val listProp = new TestProperty(Core.LinkType, QList, "My Prop")
+        val thing1 = new SimpleTestThing("Thing 1")
+        val thing2 = new SimpleTestThing("Thing 2")
+        val thing3 = new SimpleTestThing("Thing 3")
+        val myThing = new SimpleTestThing("My Thing", listProp(thing1, thing3))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[My Thing -> My Prop -> _contains(Thing 3)]]""") should equal ("true")
+      pql("""[[My Thing -> My Prop -> _contains(Thing 2)]]""") should equal ("false")
+    }
+  }
+  
   // === _count ===
   "_count" should {
     "work normally with a list input" in {

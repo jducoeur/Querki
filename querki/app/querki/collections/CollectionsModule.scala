@@ -19,11 +19,13 @@ object MOIDs extends EcotIds(6) {
   val PrevInListOID = moid(1)
   val NextInListOID = moid(2)
   val ForeachMethodOID = moid(3)
+  val ContainsMethodOID = moid(4)
 }
 
 class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with querki.logic.YesNoUtils {
   import MOIDs._
 
+  lazy val Logic = interface[querki.logic.Logic]
   lazy val QL = interface[querki.ql.QL]
   
   /***********************************************
@@ -430,6 +432,29 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
         yield elemResult
     }
   }
+  
+  lazy val containsMethod = new InternalMethod(ContainsMethodOID,
+      toProps(
+        setName("_contains"),
+        Summary("Produces true if the received List contains the specified value"),
+        Details("""    LIST -> _contains(VALUE) -> TRUE or FALSE
+            |This checks each value in the received LIST; if any of them are _equal to the given VALUE,
+            |this produces True.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+	  val results:QValue = for {
+	    compareTo <- inv.processParam(0)
+	    elem <- inv.contextElements
+	    elemV = elem.value
+	  }
+	    yield boolean2YesNoQValue(Logic.compareValues(elemV, compareTo)( (pt, elem1, elem2) => pt.matches(elem1, elem2) ))
+	    
+	  if (results.rawList(YesNoType).contains(true)) 
+	    boolean2YesNoQValue(true)
+	  else 
+	    boolean2YesNoQValue(false)
+    }
+  }
 
   override lazy val props = Seq(
     FirstMethod,
@@ -444,7 +469,8 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
       
     prevInListMethod,
     nextInListMethod,
-    foreachMethod
+    foreachMethod,
+    containsMethod
   )
   
 }

@@ -28,7 +28,7 @@ object MOIDs extends EcotIds(9) {
  * but that should be fixed. This should absorb YesNoType, and all of the predicate-oriented
  * methods.
  */
-class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.core.MethodDefs {
+class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.core.MethodDefs with Logic {
   import MOIDs._
 
   /******************************************
