@@ -48,7 +48,7 @@ POST    /u/:userName/:spaceId/_inviteMembers @controllers.LoginController.invite
 GET     /u/:userName/:spaceId/_handleInvite @controllers.LoginController.handleInvite(userName, spaceId)
 POST    /u/:userName/:spaceId/_handleInvite @controllers.LoginController.signup(userName, spaceId)
 POST    /u/:userName/:spaceId/_joinLogin  @controllers.LoginController.joinlogin(userName, spaceId)
-GET     /u/:userName/:spaceId/_join       @controllers.LoginController.joinSpace(userName, spaceId)
+GET     /u/:userName/:spaceId/_joinSpace  @controllers.LoginController.joinSpace(userName, spaceId)
 
 # GET     /u/:userName/:spaceId/export @controllers.Application.exportThing(userName, spaceId, thingId)
 
