@@ -15,6 +15,8 @@ package object time {
   type DateTime = com.github.nscala_time.time.Imports.DateTime
   val DateTime = com.github.nscala_time.time.Imports.DateTime
   
+  implicit val DateTimeOrdering = com.github.nscala_time.time.Imports.DateTimeOrdering
+  
   // The epoch, typically used for "We don't really have a time for this":
   val epoch = new DateTime(0)
   

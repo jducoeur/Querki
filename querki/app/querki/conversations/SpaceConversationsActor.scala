@@ -8,6 +8,7 @@ import querki.conversations.messages._
 import querki.ecology._
 import querki.spaces.SpacePersistenceFactory
 import querki.spaces.messages._
+import querki.time.DateTimeOrdering
 import querki.util.{PublicException, Requester}
 import querki.values.SpaceState
 
@@ -49,8 +50,30 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
     }
   }
   
-  // TODO
-  def buildConversations(comments:Seq[Comment]):ThingConversations = ???
+  def buildConversations(comments:Seq[Comment]):ThingConversations = {
+    val (dependencies, roots) = ((Map.empty[CommentId, Seq[Comment]], Seq.empty[Comment]) /: comments) { (info, comment) =>
+      val (dep, roots) = info
+      comment.responseTo match {
+        case Some(parentId) => {
+          dep.get(parentId) match {
+            case Some(children) => (dep + (parentId -> (children :+ comment)), roots)
+            case None => (dep + (parentId -> Seq(comment)), roots)
+          }
+        }
+        case None => (dep, roots :+ comment)
+      }
+    }
+    
+    def buildNodes(branches:Seq[Comment]):Seq[ConversationNode] = {
+      val nodes = (Seq.empty[ConversationNode] /: branches) { (seq, branch) =>
+        val children = buildNodes(dependencies(branch.id))
+        seq :+ ConversationNode(branch, children)
+      }
+      nodes.sortBy(node => node.comment.createTime)
+    }
+    
+    ThingConversations(buildNodes(roots))
+  }
   
   def normalReceive:Receive = {
     /**
@@ -85,5 +108,4 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
         
     }
   }
-
 }
