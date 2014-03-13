@@ -19,6 +19,8 @@ package object tags {
     val ShowUnknownOID = sysId(73)
     val TagsForPropertyOID = sysId(74)
     val NewTagSetOID = sysId(102)
+    
+    val ResolveTagsOID = moid(1)
   }
 
   trait Tags extends EcologyInterface {

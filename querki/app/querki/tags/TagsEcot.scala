@@ -303,10 +303,35 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
       }    
     }
   }
+  
+  lazy val resolveTagsMethod = new InternalMethod(ResolveTagsOID,
+    toProps(
+      setName("_resolveTags"),
+      Summary("Turns any of the received Tags that name actual Things into Links to those Things"),
+      Details("""    TAGS -> _resolveTags -> LINKS
+          |A Tag is essentially a name -- it may or may not be the name of an actual Thing.
+          |Occasionally, you want to be able to get to those Things -- for example, you might want
+          |to use one of the Properties of the Thing if it exists. This function helps you do that.
+          |
+          |For each Tag that is received by _resolveTags, the system checks if it names a Thing. If
+          |so, it produces a Link to that Thing; if not, it ignores the Tag.
+          |
+          |Like most Querki Functions, this works equally well with a List of Tags, a Set of Tags,
+          |or a single passed-in Tag.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      for {
+        tag <- inv.contextAllAs(NewTagSetType)
+        thing <- inv.opt(inv.state.anythingByName(tag.text))
+      }
+        yield ExactlyOne(Core.LinkType(thing.id))
+    }
+  }
 
   override lazy val props = Seq(
     ShowUnknownProp,
     TagRefsMethod,
-    TagsForPropertyMethod
+    TagsForPropertyMethod,
+    resolveTagsMethod
   )
 }

@@ -119,14 +119,23 @@ class QuerkiTests
   }
   
   /**
+   * The standard rendering for a single Link that makes its way to the output.
+   */
+  def linkText(t:Thing):String = {
+    val display = t.displayName
+    val name = t.canonicalName.map(querki.core.NameUtils.toUrl(_)).getOrElse(display)
+    "[" + display + "](" + name + ")"     
+  }
+  
+  /**
    * Given a list of expected Things that comes out at the end of a QL expression, this is the
-   * wikitext for their rendered Links.
+   * wikitext for their rendered Links. Note that this is *specifically* for a List or Set.
+   * If you have ExactlyOne or Optional, use linkText() instead -- the rendering is slightly
+   * different.
    */
   def listOfLinkText(things:Thing*):String = {
     val lines = things.map { t =>
-      val display = t.displayName
-      val name = t.canonicalName.map(querki.core.NameUtils.toUrl(_)).getOrElse(display)
-      "\n[" + display + "](" + name + ")" 
+      "\n" + linkText(t)
     }
     lines.mkString
   }
