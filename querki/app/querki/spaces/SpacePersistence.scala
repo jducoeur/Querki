@@ -20,6 +20,8 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
   def backupTable(id:OID, version:Int) = thingTable(id) + "_Backup" + version
   // The name of the Space's Attachments Table
   def attachTable(id:OID) = "a" + sid(id)
+  // The name of the Space's Conversations Table
+  def convTable(id:OID) = "c" + sid(id)
 
 
   // TODO: this escape/unescape is certainly too simplistic to cope with recursive types.
@@ -41,7 +43,10 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
    * If you need to use the {bname} parameter, you must pass in a version number.
    */
   def SpaceSQL(spaceId:OID, query:String, version:Int = 0):SqlQuery = {
-    val replQuery = query.replace("{tname}", thingTable(spaceId)).replace("{bname}", backupTable(spaceId, version))
+    val replQuery = query.
+    		replace("{tname}", thingTable(spaceId)).
+    		replace("{bname}", backupTable(spaceId, version)).
+    		replace("{cname}", convTable(spaceId))
     SQL(replQuery)
   }
   

@@ -12,9 +12,14 @@ object SqlHelpers {
    * to be gentle if the code and DB have somehow gotten out of sync.
    */
   implicit class EnhancedSqlRow(row:SqlRow) {
-    def string(name:String) = row.get[String](name).get
+    def load[A](name:String)(implicit c:anorm.Column[A]) = row.get[A](name).get
+    def opt[A](name:String)(implicit c:anorm.Column[A]) = load[Option[A]](name)
+    
+    def string(name:String) = load[String](name)
     def oid(name:String) = OID(row.get[Long](name).get)
-    def int(name:String) = row.get[Int](name).get
-    def long(name:String) = row.get[Long](name).get
+    def optOid(name:String) = row.get[Option[Long]](name).get.map(OID(_))
+    def int(name:String) = load[Int](name)
+    def long(name:String) = load[Long](name)
+    def bool(name:String) = load[Boolean](name)
   }
 }

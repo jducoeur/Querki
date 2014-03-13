@@ -4,7 +4,7 @@ import akka.actor.{ActorContext, ActorRef, Props}
 import akka.actor.SupervisorStrategy._
 import akka.routing.{DefaultResizer, FromConfig, SmallestMailboxRouter}
 
-import querki.ecology.Ecology
+import querki.ecology._
 
 import models.OID
 
@@ -15,9 +15,13 @@ import models.OID
 trait SpacePersistenceFactory {
   def getSpacePersister(spaceId:OID)(implicit context:ActorContext):ActorRef
   def getSpaceManagerPersister(implicit context:ActorContext):ActorRef
+  def getConversationPersister(spaceId:OID)(implicit context:ActorContext):ActorRef
 }
 
-class DBSpacePersistenceFactory(val ecology:Ecology) extends SpacePersistenceFactory {
+class DBSpacePersistenceFactory(val ecology:Ecology) extends SpacePersistenceFactory with EcologyMember {
+  
+  lazy val Conversations = interface[querki.conversations.Conversations]
+  
   def getSpacePersister(spaceId:OID)(implicit context:ActorContext):ActorRef = {
     // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
     // with "Props(classOf(Space), ...)". See:
@@ -35,5 +39,9 @@ class DBSpacePersistenceFactory(val ecology:Ecology) extends SpacePersistenceFac
             resizer = Some(DefaultResizer(lowerBound = 2, upperBound = 10)))), 
       "space-manager-persist")
 //    context.actorOf(Props[SpaceManagerPersister].withRouter(FromConfig(supervisorStrategy = stoppingStrategy)), "space-manager-persist")    
+  }
+  
+  def getConversationPersister(spaceId:OID)(implicit context:ActorContext):ActorRef = {
+    context.actorOf(Conversations.conversationPersisterProps(spaceId))
   }
 }

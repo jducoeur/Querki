@@ -61,6 +61,7 @@ object SystemCreator {
     new querki.spaces.SpaceChangeManagerEcot(ecology)              // 32    
     new querki.imexport.ImexportEcot(ecology)                      // 33
     new querki.datamodel.introspection.IntrospectionEcot(ecology)  // 34
+    new querki.conversations.ConversationEcot(ecology)             // 35
   }
   
   def createAllEcots(ecology:Ecology):Ecology = {

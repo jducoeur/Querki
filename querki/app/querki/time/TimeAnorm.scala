@@ -18,5 +18,9 @@ object TimeAnorm {
       case _ => Left(TypeDoesNotMatch("Cannot convert " + value + ":" + value.asInstanceOf[AnyRef].getClass) )
     }
   }
+  
+  implicit class DateTimeSqlRow(row:SqlRow) {
+    def dateTime(name:String) = row.get[DateTime](name).get
+  }
 
 }

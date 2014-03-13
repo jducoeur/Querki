@@ -8,6 +8,7 @@ import MIMEType.MIMEType
 import models.Thing.PropMap
 import models.{AsOID, OID, ThingId, UnknownOID}
 
+import querki.conversations.messages.ConversationMessage
 import querki.identity.User
 import querki.values.SpaceState
 import querki.util.PublicException
@@ -58,6 +59,11 @@ case class GetThing(req:User, own:OID, space:ThingId, thing:Option[ThingId]) ext
 
 case class DeleteThing(req:User, own:OID, space:ThingId, thing:ThingId) extends SpaceMessage(req, own, space)
 
+/**
+ * All Conversation-oriented messages get wrapped in a ConversationRequest.
+ */
+case class ConversationRequest(req:User, own:OID, space:ThingId, payload:ConversationMessage) extends SpaceMessage(req, own, space)
+
 object SpaceError {  
   val CreateNotAllowed = "Space.createThing.notAllowed"
   val ModifyNotAllowed = "Space.modifyThing.notAllowed"
@@ -67,6 +73,10 @@ object SpaceError {
   val UnknownPath = "Thing.find.noSuch"
 }
 import SpaceError._
+
+// General message published from a Space to its subscribers. Possibly still a bit half-baked, but is likely to become
+// important.
+case class CurrentState(state:SpaceState)
 
 // This is the most common response when you create/fetch any sort of Thing
 sealed trait SpaceResponse

@@ -53,8 +53,6 @@ import PersistMessages._
  * An Actor's name is based on its OID, as is its Thing Table in the DB. Use Space.sid()
  * to get the name. Note that this has *nothing* to do with the Space's Display Name, which
  * is user-defined. (And unique only to that user.)
- * 
- * TODO: Space really should take the Ecology as a parameter, instead of accessing it statically.
  */
 private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory) 
   extends Actor with Requester with EcologyMember with ModelTypeDefiner 
