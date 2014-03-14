@@ -1,6 +1,6 @@
 package querki
 
-import models.{DisplayPropVal, FormFieldInfo, IndexedOID, OID, Property, PropertyBundle, PType, Thing}
+import models.{DisplayPropVal, FormFieldInfo, IndexedOID, OID, Property, PropertyBundle, PType, PTypeBuilder, Thing}
 
 import querki.core.PropList
 import querki.ecology._
@@ -29,6 +29,11 @@ package object types {
   }
   
   trait Types extends EcologyInterface {
+    /**
+     * An internal Type that can be wrapped around *any* value. Currently has no UI, so use with caution.
+     */
+    def WrappedValueType:PType[QValue] with PTypeBuilder[QValue,QValue]
+    
     /**
      * The ModelForTypeProp is the pointer from a Model Type to the actual Model that it is wrapped around.
      * This is generally only needed for save/load and other type-construction operations.

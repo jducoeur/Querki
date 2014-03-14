@@ -133,6 +133,8 @@ abstract class QuerkiEcot(ecologyIn:Ecology) extends CoreEcot(ecologyIn) {
   lazy val YesNoType = Core.YesNoType
   
   override def setName(str:String):(OID,QValue) = Core.setName(str)
+  
+  def setInternal = Core.InternalProp(true)
 
   // Common Property constructors, so they can be used in Thing declarations without introducing init
   // dependencies:
