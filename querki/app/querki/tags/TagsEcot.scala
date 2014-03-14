@@ -296,7 +296,10 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
       applyToIncomingThing(inv.preferDefiningContext) { (shouldBeProp, _) =>
         shouldBeProp match {
           case prop:Property[_,_] if (prop.pType == TagSetType || prop.pType == NewTagSetType) => {
-            Core.listFrom(fetchTags(inv.state, prop), TagSetType)
+            prop.pType match {
+              case TagSetType => Core.listFrom(fetchTags(inv.state, prop), TagSetType)
+              case NewTagSetType => Core.listFrom(fetchTags(inv.state, prop), NewTagSetType)
+            }
           }
           case _ => WarningValue("The _tagsForProperty method can only be used on Tag Set Properties")
         } 
