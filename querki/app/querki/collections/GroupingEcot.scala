@@ -34,6 +34,11 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
         setInternal,
         Summary("The key of a single grouping that comes from _groupBy")))
   
+  /**
+   * This is the heart of what is limiting us to just Things on the input. If this became WrappedValueType
+   * instead, we could work with anything. But that requires beefing up WrappedValueType to have sensible
+   * delegation of all the standard PType methods in order for the contents to be useful.
+   */
   lazy val groupMembersProperty = new SystemProperty(GroupMembersPropOID, Core.LinkType, QList,
       toProps(
         setName("_groupMembers"),
@@ -89,14 +94,20 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
             |        ""**Score:** [[_groupKey]]   **Members:** [[_groupMembers -> _sort -> _commas]]""\]]
             |
             |This Function is still pretty delicate. If the parameter doesn't evaluate properly on
-            |all of the Things, you will likely get an error.""".stripMargin)))
+            |all of the Things, you will likely get an error.
+            |
+            |ADVANCED: in principle, the data structure returned by _groupBy is a Map. It is pretty likely
+            |that, somewhere down the line, we will add Map as an official Collection, and rewrite this in
+            |terms of that.
+            |
+            |In the future, this will probably be enhanced to work with a List of any Type. Please speak up if that
+            |would be especially helpful for you.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QValue = {
       val keyThingsWrapped = for {
-        // TODO: this should really be contextAllBundles, but we need to figure out what Type
-        // groupMembersProperty should be. I don't think we yet have a Type that represents a
-        // Bundle.
         elemContext <- inv.contextElements
+        // TODO: this should really not be imposing a Type on the elements -- we should just take the
+        // value, whatever it is, and use it as a raw QValue, wrapping it in WrappedValueType later.
         thing <- inv.opt(elemContext.value.firstAs(LinkType))
         key <- inv.processParam(0, elemContext)
       }
