@@ -91,7 +91,7 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
             |I can separate out all of the Instances of My Model based on Score, and print each group,
             |by saying:
             |    \[[My Model._instances -> _groupBy(Score) -> 
-            |        ""**Score:** [[_groupKey]]   **Members:** [[_groupMembers -> _sort -> _commas]]""\]]
+            |        \""**Score:** \[[_groupKey\]]   **Members:** \[[_groupMembers -> _sort -> _commas\]]\""\]]
             |
             |This Function is still pretty delicate. If the parameter doesn't evaluate properly on
             |all of the Things, you will likely get an error.
