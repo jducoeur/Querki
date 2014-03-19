@@ -41,7 +41,7 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
    */
   lazy val groupMembersProperty = new SystemProperty(GroupMembersPropOID, Core.LinkType, QList,
       toProps(
-        setName("_groupMembers"),
+        setName("_groupElements"),
         setInternal,
         Summary("The Things in a single grouping from _groupBy")))
   
@@ -85,13 +85,13 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
             |
             |The result of this is a List of _groupModel values. _groupModel has two Properties:
             |* _groupKey -- the key that identifies everything in this group
-            |* _groupMembers -- the list of Things in this group
+            |* _groupElements -- the list of Things in this group
             |
             |For example, say that My Model has a Property named Score, which is a number from 1-5.
             |I can separate out all of the Instances of My Model based on Score, and print each group,
             |by saying:
             |    \[[My Model._instances -> _groupBy(Score) -> 
-            |        \""**Score:** \[[_groupKey\]]   **Members:** \[[_groupMembers -> _sort -> _commas\]]\""\]]
+            |        \""**Score:** \[[_groupKey\]]   **Members:** \[[_groupElements -> _sort -> _commas\]]\""\]]
             |
             |This Function is still pretty delicate. If the parameter doesn't evaluate properly on
             |all of the Things, you will likely get an error.

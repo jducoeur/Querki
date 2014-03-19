@@ -23,7 +23,7 @@ class GroupingTests extends QuerkiTests {
       implicit val s = new TSpace
       
       pql("""[[Grouping Model._instances -> _groupBy(My Key) -> ""
-          |Key: [[_groupKey]] [[_groupMembers -> _sort]]""]]""".stripReturns) should 
+          |Key: [[_groupKey]] [[_groupElements -> _sort]]""]]""".stripReturns) should 
         equal(s"""
           |
           |Key: 1 ${listOfLinkText(s.thing1, s.thing6, s.thing7)}
