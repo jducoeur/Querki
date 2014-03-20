@@ -26,6 +26,8 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
   // TBD: this checks whether this person is a Member based on the Person records in the Space. Should we use
   // the SpaceMembership table instead? In general, there is a worrying semantic duplication here. We should
   // probably clarify the meaning of the Person record vs. the row in SpaceMembership.
+  // TODO: is this method simply broken conceptually? Shouldn't we be checking whether an *Identity* is a Member
+  // of the Space? Is it ever appropriate for this to be the User that we're checking?
   def isMember(who:User, state:SpaceState):Boolean = {
     implicit val s = state
     val members = state.descendants(Person.PersonModel.id, false, true)
@@ -34,6 +36,23 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
       personIdentityOpt.map { personIdentity =>
         val oid = personIdentity.first
         who.hasIdentity(oid)
+      }.getOrElse(false)
+    }
+  }
+
+  // This code is intentionally duplicated from the above; I think this version is more correct, and should
+  // probably supercede the other one.
+  // TBD: this checks whether this person is a Member based on the Person records in the Space. Should we use
+  // the SpaceMembership table instead? In general, there is a worrying semantic duplication here. We should
+  // probably clarify the meaning of the Person record vs. the row in SpaceMembership.
+  def isMember(identityId:OID, state:SpaceState):Boolean = {
+    implicit val s = state
+    val members = state.descendants(Person.PersonModel.id, false, true)
+    members.exists { person =>
+      val personIdentityOpt = person.getPropOpt(Person.IdentityLink)
+      personIdentityOpt.map { personIdentity =>
+        val oid = personIdentity.first
+        oid == identityId
       }.getOrElse(false)
     }
   }

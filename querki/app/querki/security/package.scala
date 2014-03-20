@@ -24,8 +24,12 @@ package object security {
     def MembersTag:Thing
     def OwnerTag:Thing
     
+    // Checks whether this User *has* an Identity that is a Member of the Space. Use with caution!
+    // Usage of this suggests a design bug!
     def isMember(who:User, state:SpaceState):Boolean
-    
+    // Checks whether an *Identity* is a Member of the Space. This is more conceptually correct.
+    def isMember(identityId:OID, state:SpaceState):Boolean
+
     def canCreate(state:SpaceState, who:User, modelId:OID):Boolean
     def canRead(state:SpaceState, who:User, thingId:OID):Boolean
     def canEdit(state:SpaceState, who:User, thingIdIn:OID):Boolean

@@ -15,4 +15,9 @@ private[conversations] object PersistMessages {
    * Response to LoadCommentsFor().
    */
   case class AllCommentsFor(thingId:OID, comments:Seq[Comment])
+  
+  /**
+   * Store a single Comment.
+   */
+  case class AddComment(comment:Comment, state:SpaceState)
 }

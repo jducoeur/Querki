@@ -6,9 +6,10 @@ import models.OID
 
 import querki.conversations.messages._
 import querki.ecology._
+import querki.identity.User
 import querki.spaces.SpacePersistenceFactory
 import querki.spaces.messages._
-import querki.time.DateTimeOrdering
+import querki.time.{DateTime, DateTimeOrdering}
 import querki.util.{PublicException, Requester}
 import querki.values.SpaceState
 
@@ -19,18 +20,28 @@ import PersistMessages._
  * same as the Space itself -- it is created when the Space is, and shuts down when the Space is unloaded.
  * Unlike the Space, though, it does not keep all the Conversations in memory all the time: it loads and unloads
  * them as needed.
+ * 
+ * Note that this Actor is an especially good candidate to become an EventSourcedProcessor. We really should rework
+ * it at some point, replacing the persister with Akka Persistence.
+ * 
+ * IMPORTANT: this implies that all changes should happen in EventSourced style, to make the evolution easier when it
+ * happens. We should receive a Command, validate that Command, and then persist an Event that makes the actual change
+ * to the state.
  */
 private [conversations] class SpaceConversationsActor(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, val spaceId:OID, val space:ActorRef)
   extends Actor with Requester with EcologyMember
 {
   import context._
   
+  lazy val AccessControl = interface[querki.security.AccessControl]
+  
   lazy val persister = persistenceFactory.getConversationPersister(spaceId)
   
   /**
    * The Conversations that are currently loaded into memory.
    * 
-   * TODO: these should time out after a few minutes of disuse. Maybe a PriorityQueue?
+   * TODO: these should time out after a few minutes of disuse. Maybe a PriorityQueue? Or should we have a sub-Actor for
+   * each Thing, which would be more compatible with evolving to EventSourcedProcessor?
    */
   var loadedConversations:Map[OID, ThingConversations] = Map.empty
   
@@ -39,6 +50,11 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
    * in a rudimentary state, and don't become useful until it is received.
    */
   var state:SpaceState = null
+  
+  /**
+   * The next CommentId to assign to a newly-created Comment.
+   */
+  var nextId:CommentId = 1
   
   def receive = {
     /**
@@ -50,6 +66,9 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
     }
   }
   
+  /**
+   * Given a bunch of Comments, stitch them together into Conversations.
+   */
   def buildConversations(comments:Seq[Comment]):ThingConversations = {
     val (dependencies, roots) = ((Map.empty[CommentId, Seq[Comment]], Seq.empty[Comment]) /: comments) { (info, comment) =>
       val (dep, roots) = info
@@ -75,6 +94,87 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
     ThingConversations(buildNodes(roots))
   }
   
+  def canReadComments(req:User, thingId:OID) = {
+    // TODO: this will eventually need its own permission
+    state.canRead(req, thingId)
+  }
+  
+  def canWriteComments(identity:OID, thingId:OID) = {
+    // TODO: this will eventually need its own permission
+    AccessControl.isMember(identity, state)
+  }
+  
+  /**
+   * Core abstraction for "do something with the Conversations for this Thing". Ensures that
+   * the conversations are loaded into memory, then runs the given function on them.
+   * 
+   * IMPORTANT: this is asynchronous! Assume that f() may be run either immediately or at some
+   * time in the future. If it is in the future, it will be run by Requester, so it may access
+   * the Actor state arbitrarily, but be careful about any local data you close over!
+   */
+  def withConversations(thingId:OID)(f:ThingConversations => Unit) = {
+    loadedConversations.get(thingId) match {
+      case Some(convs) => f(convs)
+      case None => {
+        persister.request(LoadCommentsFor(thingId, state)) {
+          case AllCommentsFor(_, comments) => {
+            val convs = buildConversations(comments)
+            loadedConversations += (thingId -> convs)
+            f(convs)
+          }
+        }
+      }
+    }    
+  }
+  
+  /**
+   * Finds and mutates the specified node, and returns the resulting tree.
+   * 
+   * TODO: this is too rigid to make really nasty topological changes, sadly. Is there a better way to do this?
+   */
+  def replaceNode(commentId:CommentId, convs:ThingConversations)(f:ConversationNode => ConversationNode):ThingConversations = {
+    
+    def replaceChildNodes(children:Seq[ConversationNode]):(Seq[ConversationNode], Option[ConversationNode], Seq[ConversationNode]) = {
+      ((Seq.empty[ConversationNode], Option.empty[ConversationNode], Seq.empty[ConversationNode]) /: children) { (state, child) =>
+        val (sPre, found, sPost) = state
+        found match {
+          // We're after the match
+          case Some(f) => (sPre, found, sPost :+ child)
+          case None => {
+            replaceNodeRec(child) match {
+              // This one's the match
+              case Some(changed) => (sPre, Some(changed), sPost)
+              // Haven't found the match yet:
+              case None => (sPre :+ child, None, sPost)
+            }
+          }
+        }
+      }      
+    }
+    
+    def replaceNodeRec(node:ConversationNode):Option[ConversationNode] = {
+      if (node.comment.id == commentId) {
+        Some(f(node))
+      } else {
+        // Go through my direct children; if one of them contains the result, restitch things together
+        val (pre, theOne, post) = replaceChildNodes(node.responses)
+        
+        theOne match {
+          case Some(changedChild) => {
+            // Okay, a child has changed, so I need to change:
+            Some(node.copy(responses = (pre :+ changedChild) ++ post))
+          }
+          case None => None
+        }
+      }
+    }
+    
+    val (pre, theOne, post) = replaceChildNodes(convs.comments)
+    // TODO: iff theOne is empty, it means something weird has happened -- we didn't find the specified parent.
+    // Should we report an error?
+    convs.copy(comments = pre ++ theOne ++ post)
+  }
+  
   def normalReceive:Receive = {
     /**
      * Update from the Space Actor that the state has been changed.
@@ -83,29 +183,94 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
       state = current
     }
     
-    /**
-     * Requester is fetching the current Conversations for this Thing.
-     */
-    case ConversationRequest(req, _, _, GetConversations(thingId)) => {
-      if (!state.canRead(req, thingId)) {
-        // You aren't allowed to read the Conversations about a Thing unless you are allowed to read the Thing:
-        sender ! ThingError(new PublicException(SpaceError.UnknownID))
-      }
-      else if (loadedConversations.contains(thingId)) {
-        loadedConversations.get(thingId) match {
-          case Some(convs) => sender ! convs
-          case None => {
-            persister.request(LoadCommentsFor(thingId, state)) {
-              case AllCommentsFor(_, comments) => {
-                val convs = buildConversations(comments)
-                loadedConversations += (thingId -> convs)
-                sender ! convs
-              }
-            }
-          }
+    case ConversationRequest(req, _, _, msg) => {
+      msg match {
+	    /**
+	     * Requester is fetching the current Conversations for this Thing.
+	     */
+        case GetConversations(thingId) => {
+	      if (!canReadComments(req, thingId)) {
+	        // You aren't allowed to read the Conversations about a Thing unless you are allowed to read the Thing:
+	        sender ! ThingError(new PublicException(SpaceError.UnknownID))
+	      } else {
+	        // TODO: if the requester is not a Moderator, strip out needsModeration comments.
+	        // TODO: strip out isDeleted comments.
+	        withConversations(thingId) { convs => sender ! convs }
+	      }           
         }
-      }
         
+        /**
+         * Requester has sent a new Comment to be appended.
+         */
+        case NewComment(commentIn) => {
+          val comment = commentIn.copy(id = nextId, createTime = DateTime.now)
+          nextId += 1
+          val thingId:OID = comment.thingId
+	      if (!canWriteComments(comment.authorId, thingId)) {
+	        // TODO: if Moderation is enabled for comments on this Thing, add it with needsModeration turned on, and
+	        // send a Notification to the moderator(s), instead of rejecting it outright like this:
+	        sender ! ThingError(new PublicException(SpaceError.ModifyNotAllowed))
+	      } else {
+	        // Fetch the Conversations for this Thing. Note that the innards here may be async!
+	        withConversations(thingId) { convs =>
+	          // Insert the comment into the Conversations list in the appropriate place. This
+	          // may involve tweaking the comment a bit in case of race conditions.
+	          val (parent, node) = comment.responseTo.flatMap(convs.findNode(_)) match {
+	            
+	            // The comment is being inserted into an existing Conversation
+	            case Some(rawParentNode) => {
+	              // Find the actual parent node to insert this under, and amend the comment if
+	              // necessary:
+	              val commentWithCorrectedParent = {
+	                if (!comment.primaryResponse || rawParentNode.responses.isEmpty)
+	                  // Either way, this comment is simply being inserted directly under the parent. This
+	                  // is the common case:
+	                  comment
+	                else {
+	                  // Race condition: there is already a "primary" response, and this is also trying to
+	                  // be one. This can happen if multiple people both reply directly to the comment, and
+	                  // don't see each other's new comment. Tack this new one onto the
+	                  // end of the conversation instead. We find that by recursing down the primary
+	                  // responses:
+	                  def currentConvEnd(parentNode:ConversationNode):ConversationNode = {
+	                    parentNode.responses.find(_.comment.primaryResponse) match {
+	                      case Some(primaryChild) => currentConvEnd(primaryChild)
+	                      case None => parentNode
+	                    }
+	                  }
+	                  comment.copy(responseTo = Some(currentConvEnd(rawParentNode).comment.id))
+	                }
+	              }
+
+	              // Okay, now we know what the correct parent is, so modify the tree to insert it:
+	              val node = ConversationNode(commentWithCorrectedParent)
+	              var pNode:Option[ConversationNode] = None
+	              val newConvs = replaceNode(commentWithCorrectedParent.responseTo.get, convs) { parentNode =>
+	                pNode = Some(parentNode)
+	                parentNode.copy(responses = parentNode.responses :+ node)
+	              }
+	              loadedConversations += (thingId -> newConvs)
+	              (pNode, node)
+	            }
+	            
+	            // The comment is starting a new Conversation
+	            case None => {
+	              val node = ConversationNode(comment)
+	              loadedConversations += (thingId -> convs.copy(comments = convs.comments :+ node))
+	              (None, node)
+	            }
+	          }
+	          
+	          // Okay, we have now placed the comment in the tree. Persist it. This is simply
+	          // fire-and-forget:
+	          persister ! AddComment(node.comment, state)
+	          
+	          // Finally, send the ack of the newly-created comment, saying where to place it:
+	          sender ! AddedNode(parent.map(_.comment.id), node)
+	        }
+	      }
+	    }        
+      }
     }
   }
 }

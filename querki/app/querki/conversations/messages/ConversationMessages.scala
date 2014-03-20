@@ -16,3 +16,13 @@ sealed trait ConversationMessage
  * This should get a ThingConversations as its response.
  */
 case class GetConversations(thing:OID) extends ConversationMessage
+
+/**
+ * Someone has submitted a new Comment for this Space. This should get an AddedNode in response.
+ */
+case class NewComment(comment:Comment) extends ConversationMessage
+
+/**
+ * Message informing us about a newly-added Comment.
+ */
+case class AddedNode(parentId:Option[CommentId], node:ConversationNode)

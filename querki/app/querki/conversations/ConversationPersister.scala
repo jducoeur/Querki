@@ -55,7 +55,29 @@ private[conversations] class ConversationPersister(val spaceId:OID, implicit val
             )
         }
         
+        // TBD: this may be conceptually inappropriate. If we want to think in EventSourcedProcessor terms, we should probably
+        // instead send a stream of AddComment messages, I think.
         sender ! AllCommentsFor(thingId, comments.force)
+      }
+    }
+    
+    case AddComment(comment, state) => {
+      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+        // Note that a bunch of the Booleans simply default to false, and are irrelevant for a new Comment:
+        SpaceSQL("""
+            INSERT INTO {cname}
+            ( id,   thingId,   authorId,   authorizedBy,   props,   createTime,   responseTo,   needsModeration,   primaryResponse) VALUES
+            ({id}, {thingId}, {authorId}, {authorizedBy}, {props}, {createTime}, {responseTo}, {needsModeration}, {primaryResponse})
+            """).on(
+                "id" -> comment.id,
+                "thingId" -> comment.thingId.raw,
+                "authorId" -> comment.authorId.raw,
+                "authorizedBy" -> comment.authorizedBy.map(_.id.raw),
+                "props" -> SpacePersistence.serializeProps(comment.props, state),
+                "createTime" -> comment.createTime,
+                "responseTo" -> comment.responseTo,
+                "needsModeration" -> comment.needsModeration,
+                "primaryResponse" -> comment.primaryResponse).executeUpdate
       }
     }
   }

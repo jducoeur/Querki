@@ -75,11 +75,39 @@ case class ConversationNode(
      * The direct responses to this Comment. The head of the list is considered the "primary"; the
      * rest are considered tangents.
      */
-    responses:Seq[ConversationNode]
+    responses:Seq[ConversationNode] = Seq.empty
   )
 
 /**
  * Container that holds all of the Conversations for a given Thing. This is just the roots of each Conversation tree;
  * the bulk of the contents is under each root.
  */
-case class ThingConversations(comments:Seq[ConversationNode])
+case class ThingConversations(comments:Seq[ConversationNode]) {
+  
+  /**
+   * Looks up a specific comment's node in the Conversations.
+   * 
+   * Note that we are very explicitly assuming that the number of Comments per Thing is smallish,
+   * so it is easier to do a depth-first search instead of building a Map for lookups.
+   */
+  def findNode(commentId:CommentId):Option[ConversationNode] = {
+    def findNodeRec(nodes:Seq[ConversationNode]):Option[ConversationNode] = {
+      // Look -- I found the right way to deconstruct a Seq! Yay!
+      nodes match {
+        case node +: rest => {
+          // Is this node the one we want?
+          if (node.comment.id == commentId)
+            Some(node)
+          else {
+            // Try the children, and then the successors in the list:
+            findNodeRec(node.responses) orElse findNodeRec(rest)
+          }
+        }
+        // We've hit a dead end:
+        case Seq() => None
+      }
+    }
+    
+    findNodeRec(comments)
+  }
+}
