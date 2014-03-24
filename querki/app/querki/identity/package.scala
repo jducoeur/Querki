@@ -61,6 +61,10 @@ package object identity {
     def hasPerson(user:User, personId:OID)(implicit state:SpaceState):Boolean
     def hasPerson(user:User, person:Thing)(implicit state:SpaceState):Boolean
     def isPerson(identity:Identity, person:Thing)(implicit state:SpaceState):Boolean
+    /**
+     * Returns the Identities (if any) that are Members of this Space.
+     */
+    def localIdentities(user:User)(implicit state:SpaceState):Iterable[Identity]
     def localPerson(identity:Identity)(implicit state:SpaceState):Option[Thing]
   }
   

@@ -2,7 +2,7 @@ package querki.conversations.messages
 
 import models.OID
 import models.Thing.PropMap
-import querki.time.DateTime
+import querki.time.{DateTime, epoch}
 
 /**
  * The public representation of a single Comment. Nominally part of the package interface, but Eclipse complains.
@@ -33,34 +33,34 @@ case class Comment(
      */
     props:PropMap,
     /**
-     * When this Comment was created. Does *not* change if the Comment gets edited, because
-     * this is mainly relevant to figure out the order to render the Conversation.
-     */
-    createTime:DateTime,
-    /**
      * Which Comment this one was in response to.
      */
     responseTo:Option[CommentId],
-    /**
-     * True iff this Comment is in the Moderation queue (and therefore shouldn't be displayed except to Mods).
-     */
-    needsModeration:Boolean,
     /**
      * True iff this Comment is nominally the "primary" one to the previous. Mainly relevant for rendering.
      */
     primaryResponse:Boolean,
     /**
+     * When this Comment was created. Does *not* change if the Comment gets edited, because
+     * this is mainly relevant to figure out the order to render the Conversation.
+     */
+    createTime:DateTime = epoch,
+    /**
+     * True iff this Comment is in the Moderation queue (and therefore shouldn't be displayed except to Mods).
+     */
+    needsModeration:Boolean = false,
+    /**
      * True iff this Comment has been edited since it was created.
      */
-    isEdited:Boolean,
+    isEdited:Boolean = false,
     /**
      * True iff this Comment has been deleted. (In which case, this Comment usually will not be visible to user code.)
      */
-    isDeleted:Boolean,
+    isDeleted:Boolean = false,
     /**
      * True iff this COmment has been archived. (So it shouldn't be immediately shown, but is available.)
      */
-    isArchived:Boolean
+    isArchived:Boolean = false
   ) 
   
 /**

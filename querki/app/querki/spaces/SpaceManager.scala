@@ -143,4 +143,17 @@ object SpaceManager {
 //    (ref ? msg).mapTo[A].map(cb)
     akka.pattern.ask(ref, msg).mapTo[A].map(cb)
   }
+  
+  /**
+   * Simplified version of ask, which doesn't try to be excessively clever. This
+   * one has a small disadvantage: it doesn't provide compile-time thoroughness checking
+   * of the results. But on the plus side, it copes cleanly with errors from the back
+   * end, which the older ask() does not.
+   * 
+   * TODO: this must be removed from this global scope! _ref should be owned by an Ecot,
+   * and this ask function should be exposed normally through the Ecology!
+   */
+  def ask2[B](msg:SpaceMgrMsg)(cb: PartialFunction[Any, B]):Future[B] = {
+    akka.pattern.ask(ref, msg).map(cb)
+  }
 }

@@ -45,6 +45,8 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
   // TBD: this checks whether this person is a Member based on the Person records in the Space. Should we use
   // the SpaceMembership table instead? In general, there is a worrying semantic duplication here. We should
   // probably clarify the meaning of the Person record vs. the row in SpaceMembership.
+  // TODO: this code is highly duplicative of stuff in PersonModule. It belongs in one or t'other, and should
+  // be rationalized.
   def isMember(identityId:OID, state:SpaceState):Boolean = {
     implicit val s = state
     val members = state.descendants(Person.PersonModel.id, false, true)

@@ -68,12 +68,15 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
   lazy val PropTypeMigrator = interface[PropTypeMigrator]
   lazy val SpaceChangeManager = interface[SpaceChangeManager]
   lazy val DataModel = interface[querki.datamodel.DataModelAccess]
+  lazy val Conversations = interface[querki.conversations.Conversations]
   
   /**
    * This is the Actor that manages all persistence (DB) operations. We do things this
    * way so that it can be stubbed out for testing.
    */
   lazy val persister = persistenceFactory.getSpacePersister(id)
+  
+  var myConversations:ActorRef = null
   
   /**
    * Our requests are going mainly to the Persister, which is talking to the DB, so give them
@@ -168,6 +171,9 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
       case Loaded(state) => {
         _currentState = Some(state)
         checkOwnerIsMember()
+        // Okay, we're up and running. Fire up the Conversations for this Space:
+        myConversations = context.actorOf(Conversations.conversationActorProps(persistenceFactory, id, self), "Conversations") 
+        myConversations ! CurrentState(state)
       }
       case _ => QLog.error("Got an error!")
     }
@@ -426,6 +432,11 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
         // TODO: is this the most semantically appropriate response?
         sender ! ThingFound(UnknownOID, state)
       }
+    }
+    
+    case req @ ConversationRequest => {
+      // We simply pass Conversation stuff on to the manager for those:
+      myConversations.forward(req)
     }
   }
 }

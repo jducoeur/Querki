@@ -59,9 +59,6 @@ POST    /u/:userName/:spaceId/search      @controllers.Application.search(userNa
 
 GET     /u/:userName/:spaceId/a/:attachmentId @controllers.Application.attachment(userName, spaceId, attachmentId)
 
-# Note that Things can have slashes in their names!
-GET     /u/:userName/:spaceId/*thingId    @controllers.Application.thing(userName, spaceId, thingId)
-
 
 POST    /dologin                    @controllers.LoginController.dologin
 GET     /logout                     @controllers.LoginController.logout
@@ -71,6 +68,16 @@ GET     /admin/manageUsers          @controllers.AdminController.manageUsers
 GET     /admin/upgradePendingUser   @controllers.AdminController.upgradePendingUser(userId)
 GET     /admin/makeAdmin            @controllers.AdminController.makeAdmin(userId)
 GET     /adminJs                    @controllers.AdminController.javascriptRoutes
+
+# Conversations
+GET     /u/:userName/:spaceId/__getConv @controllers.ConversationController.getConversations(userName, spaceId, thingId)
+POST    /u/:userName/:spaceId/__addComment @controllers.ConversationController.addComment(userName, spaceId, thingId, text, responseTo)
+GET     /convJs                     @controllers.ConversationController.javascriptRoutes
+
+# Fetch a Thing by ThingId
+# Note that Things can have slashes in their names!
+# IMPORTANT: this needs to come *after* all Space-based special-purpose pages!
+GET     /u/:userName/:spaceId/*thingId    @controllers.Application.thing(userName, spaceId, thingId)
 
 # AJAX test stuff:
 GET     /showTestAjax               @controllers.Application.showTestAjax

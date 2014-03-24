@@ -45,10 +45,10 @@ private[conversations] class ConversationPersister(val spaceId:OID, implicit val
               row.oid("authorId"),
               row.optOid("authorizedBy"),
               SpacePersistence.deserializeProps(row.string("props"), state),
-              row.dateTime("createTime"),
               row.opt[Int]("responseTo"),
-              row.bool("needsModeration"),
               row.bool("primaryResponse"),
+              row.dateTime("createTime"),
+              row.bool("needsModeration"),
               row.bool("isEdited"),
               row.bool("isDeleted"),
               row.bool("isArchived")

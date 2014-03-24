@@ -5,7 +5,9 @@ import akka.actor.{ActorRef, Props}
 import models.OID
 
 import querki.ecology._
+import querki.identity.User
 import querki.spaces.SpacePersistenceFactory
+import querki.values.SpaceState
 
 package object conversations {
   /**
@@ -24,5 +26,16 @@ package object conversations {
      * The interface to build the Persister for a Space's Conversations.
      */
     def conversationPersisterProps(spaceId:OID):Props
+    
+    /**
+     * Says whether this User is allowed to read comments on this Thing.
+     */
+    def canReadComments(req:User, thingId:OID, state:SpaceState):Boolean
+    
+    /**
+     * Says whether this *Identity* is allowed to write comments on this Thing. Not User -- the difference is subtle, but important,
+     * since the Identity is what gets given access.
+     */
+    def canWriteComments(identity:OID, thingId:OID, state:SpaceState):Boolean
   }
 }

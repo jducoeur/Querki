@@ -108,6 +108,18 @@ class ApplicationBase extends Controller with EcologyMember {
   }
   
   /**
+   * Newer and simpler version of askSpaceMgr. Note that the callback can and should do something
+   * appropriate with resulting errors!
+   * 
+   * TODO: we should generalize the error handling here.
+   */
+  def askSpace(msg:SpaceMgrMsg)(cb: PartialFunction[Any, Result]) = {
+    Async {
+      SpaceManager.ask2(msg)(cb)
+    }
+  }
+  
+  /**
    * Given a Space, this fetches that Space's current state before calling the core logic.
    * 
    * TBD: Why the ridiculous return signature? Because I am getting cryptic errors about withSpace

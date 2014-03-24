@@ -33,8 +33,8 @@ class EvolutionsEcot(e:Ecology) extends QuerkiEcot(e) with Evolutions {
   // make this more robust at some point.
   private lazy val stepList:Seq[Step] = Seq(
     new Step2,
-    new Step3/*,
-    new Step4*/
+    new Step3,
+    new Step4
   )
   
   private lazy val steps:Map[Int, Step] = Map(stepList.map(step => (step.version, step)):_*)

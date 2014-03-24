@@ -1,0 +1,29 @@
+@(rc:PlayRequestContext, thingIdRaw:OID)
+
+@space = @{ rc.state.get }
+@ownerId = @{ space.owner.toThingId }
+@spaceId = @{ space.toThingId }
+@thingId = @{ thingIdRaw.toThingId }
+@requester = @{ rc.requesterOrAnon }
+@thing = @{ rc.thing.get }
+
+@Conversations = @{ rc.interface[querki.conversations.Conversations] }
+
+@localIdentityOpt = @{ rc.localIdentity }
+
+@canComment = @{ localIdentityOpt.map(identity => Conversations.canWriteComments(identity.id, thing, space)).getOrElse(false) }
+
+<script type="text/javascript" src='@routes.ConversationController.javascriptRoutes()'></script>
+<script src="@routes.Assets.at("javascripts/conversations.js")"></script>
+<link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/conversations.css")">
+
+<script>
+  // Initialize and load the conversations when this pane is loaded:
+  $(function() {
+    loadConversations("@ownerId", "@spaceId", "@thingId", $('#conversations'), @canComment);
+  });
+</script>
+
+<!-- Conversations will be injected dynamically into this div. -->
+<a name="conversations"><div id="conversations">
+</div></a>

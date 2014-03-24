@@ -6,7 +6,7 @@ import models.Thing
 
 import querki.ecology._
 
-import querki.identity.User
+import querki.identity.{Identity, User}
 
 import querki.ui.UIRenderer
 
@@ -35,6 +35,8 @@ abstract class RequestContext(
     val thing:Option[Thing],
     val ecology:Ecology) extends EcologyMember
 {
+  lazy val Person = interface[querki.identity.Person]
+  
   def requesterOrAnon = requester getOrElse User.Anonymous
   def requesterOID = requester map (_.id) getOrElse UnknownOID  
   def ownerHandle = state.map(_.ownerHandle).getOrElse(ownerId.toThingId.toString)
@@ -56,4 +58,19 @@ abstract class RequestContext(
    * The UIRenderer to use for displaying stuff to the user in this context.
    */
   def renderer:UIRenderer
+  
+  /**
+   * The identity that is making this request.
+   * 
+   * TODO: we need a much, much better concept of "the Identity that I am using within this Space", if we're
+   * going to truly support Identity separation properly.
+   */
+  def localIdentity:Option[Identity] = {
+    for {
+      req <- requester
+      s <- state
+      firstIdentity <- Person.localIdentities(req)(s).headOption
+    }
+      yield firstIdentity
+  }
 }

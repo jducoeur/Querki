@@ -351,6 +351,15 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     val idOpt = getPersonIdentity(person)
     idOpt.map(_ == identity.id).getOrElse(false)
   }
+  
+  def localIdentities(user:User)(implicit state:SpaceState):Iterable[Identity] = {
+    for {
+      person <- state.descendants(MOIDs.PersonOID, false, true)
+      identity <- user.identities
+      if (isPerson(identity, person))
+    }
+      yield identity
+  }
 
   def localPerson(identity:Identity)(implicit state:SpaceState):Option[Thing] = {
     state.
