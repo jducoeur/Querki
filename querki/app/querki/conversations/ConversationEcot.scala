@@ -8,11 +8,13 @@ import querki.spaces.SpacePersistenceFactory
 import querki.values.SpaceState
 
 object MOIDs extends EcotIds(35) {
-  
+  val CommentTextOID = moid(1)
 }
 import MOIDs._
 
 class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
+  
+  val Basic = initRequires[querki.basic.Basic]
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   
@@ -37,4 +39,17 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
     // TODO: this will eventually need its own permission
     AccessControl.isMember(identity, state)
   }
+  
+  /***********************************************
+   * PROPERTIES
+   ***********************************************/
+  
+  lazy val CommentText = new SystemProperty(CommentTextOID, Basic.PlainTextType, Optional,
+      toProps(
+        setName("Comment Text"),
+        setInternal))
+  
+  override lazy val props = Seq(
+    CommentText
+  )
 }

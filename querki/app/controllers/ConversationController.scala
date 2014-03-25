@@ -10,14 +10,15 @@ import play.api.libs.json._
 import play.api.mvc._
 
 import models.{OID, UnknownOID}
-import models.Thing.emptyProps
 
 import querki.conversations.messages._
 import querki.spaces.messages._
 import querki.util._
 
 class ConversationController extends ApplicationBase {
-  
+
+  lazy val Conversations = interface[querki.conversations.Conversations]
+  lazy val Core = interface[querki.core.Core]
   lazy val Person = interface[querki.identity.Person]
   
   /**
@@ -88,7 +89,8 @@ class ConversationController extends ApplicationBase {
         // TODO: we need a better concept of "my current identity in this Space"!
         rc.localIdentity.map(_.id).getOrElse(UnknownOID),
         None,
-        emptyProps,  // TODO: the actual content
+        Core.toProps(
+          Conversations.CommentText(text))(),
         responseTo,
         true     // TODO: primaryResponse
     )

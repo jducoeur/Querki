@@ -22,5 +22,10 @@ object TimeAnorm {
   implicit class DateTimeSqlRow(row:SqlRow) {
     def dateTime(name:String) = row.get[DateTime](name).get
   }
-
+  
+  implicit val dateTimeToStatement = new ToStatement[DateTime] {
+    def set(s: java.sql.PreparedStatement, index: Int, aValue: DateTime): Unit = {
+      s.setTimestamp(index, new java.sql.Timestamp(aValue.withMillisOfSecond(0).getMillis()) )
+    }
+  }
 }

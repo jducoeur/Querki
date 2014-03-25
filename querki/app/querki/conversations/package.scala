@@ -2,8 +2,9 @@ package querki
 
 import akka.actor.{ActorRef, Props}
 
-import models.OID
+import models.{OID, Property}
 
+import querki.basic.PlainText
 import querki.ecology._
 import querki.identity.User
 import querki.spaces.SpacePersistenceFactory
@@ -17,6 +18,12 @@ package object conversations {
    * through the Ecology. There is one Actor per Space which is in charge of managing that Space's Conversations.
    */
   trait Conversations extends EcologyInterface {
+    
+    /**
+     * The actual text body of a Comment.
+     */
+    def CommentText:Property[PlainText, String]
+    
     /**
      * The public interface to create a SpaceConversationsActor.
      */
