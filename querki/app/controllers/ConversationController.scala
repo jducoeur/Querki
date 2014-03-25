@@ -30,7 +30,8 @@ class ConversationController extends ApplicationBase {
     def writes(c:Comment):JsValue = {
       Json.obj(
         "id" -> c.id,
-        "authorId" -> c.authorId.toThingId.toString
+        "authorId" -> c.authorId.toThingId.toString,
+        "text" -> Conversations.CommentText.firstOpt(c.props).map(_.text)
       )
     }
   }

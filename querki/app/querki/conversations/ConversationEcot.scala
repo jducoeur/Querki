@@ -44,6 +44,10 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
    * PROPERTIES
    ***********************************************/
   
+  /**
+   * TODO: this shouldn't really be PlainText -- it should be a Type that is explicitly Wikitext for now.
+   * Model this on QL.ParsedTextType, but make it realer.
+   */
   lazy val CommentText = new SystemProperty(CommentTextOID, Basic.PlainTextType, Optional,
       toProps(
         setName("Comment Text"),
