@@ -8,6 +8,7 @@ import scala.util._
 import scala.concurrent.Await
 
 import akka.actor._
+import akka.event.LoggingReceive
 import akka.pattern.ask
 import akka.util.Timeout
 
@@ -361,7 +362,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
     }
   }
   
-  def receive = {
+  def receive = LoggingReceive {
     case req:CreateSpace => {
       sender ! ThingFound(UnknownOID, state)
     }
@@ -434,7 +435,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
       }
     }
     
-    case req @ ConversationRequest => {
+    case req:ConversationRequest => {
       // We simply pass Conversation stuff on to the manager for those:
       myConversations.forward(req)
     }

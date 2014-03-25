@@ -100,7 +100,11 @@ trait Requester { me:Actor =>
   abstract override def unhandled(message: Any): Unit = {
     message match {
       case resp:RequestedResponse => resp.invoke
-      case other => me.unhandled(other)
+      case other => {
+        // TODO: how do we make this work correctly? At the moment, it is causing infinite loops, so this
+        // clearly isn't right...
+        //me.unhandled(other)
+      }
     }
   }
 }

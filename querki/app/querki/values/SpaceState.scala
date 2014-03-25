@@ -58,6 +58,8 @@ case class SpaceState(
   lazy val IsFunctionProp = DataModel.IsFunctionProp
   lazy val InternalProp = Core.InternalProp
   
+  override def toString = s"SpaceState '${toThingId}' (${id.toThingId})"
+  
   // *******************************************
   //
   // Calculated and cached tables

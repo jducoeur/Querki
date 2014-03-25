@@ -1,6 +1,7 @@
 package querki.conversations
 
 import akka.actor._
+import akka.event.LoggingReceive
 
 import models.OID
 
@@ -56,7 +57,7 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
    */
   var nextId:CommentId = 1
   
-  def receive = {
+  def receive = LoggingReceive {
     /**
      * This Actor can't become properly active until we receive the current state to work with:
      */
@@ -165,7 +166,7 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
     convs.copy(comments = pre ++ theOne ++ post)
   }
   
-  def normalReceive:Receive = {
+  def normalReceive:Receive = LoggingReceive {
     /**
      * Update from the Space Actor that the state has been changed.
      */
