@@ -30,6 +30,13 @@ private[conversations] class ConversationPersister(val spaceId:OID, implicit val
   def SpaceSQL(query:String):SqlQuery = SpacePersistence.SpaceSQL(spaceId, query)
   
   def receive = {
+    case GetMaxCommentId => {
+      DB.withConnection(dbName(ShardKind.User)) { implicit conn =>
+        val nOpt = SpaceSQL("""SELECT MAX(id) as max from {cname}""")().map(_.int("max")).headOption
+        sender ! CurrentMaxCommentId(nOpt.getOrElse(0))
+      }
+    }
+    
     case LoadCommentsFor(thingId, state) => {
       DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
         val commentStream = SpaceSQL("""

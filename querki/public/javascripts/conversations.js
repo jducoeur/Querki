@@ -37,6 +37,7 @@ function loadConversations(ownerId, spaceId, thingId, convContainer, canComment)
         var threadDisplay = $("#_convThreadTemplate").clone(true).attr('id', '_convThread' + id);
         threadDisplay.show();
         convContainer.append(threadDisplay);
+        commentContainer = threadDisplay.find("._commentContainer");
         
         var author = comment.authorId;
         // Note that, for the date, we use the moment library, which is loaded by convPane:
@@ -49,7 +50,7 @@ function loadConversations(ownerId, spaceId, thingId, convContainer, canComment)
         commentDisplay.find("._commentTime").html(createdDisplay);
         commentDisplay.find("._commentText").html(text);
         commentDisplay.show();
-        threadDisplay.append(commentDisplay);
+        commentContainer.append(commentDisplay);
         
         // TODO: deal recursively with node.responses, inside the threadDisplay!
       });

@@ -7,6 +7,14 @@ import querki.values.SpaceState
 
 private[conversations] object PersistMessages {
   /**
+   * Fetch the current maximum ID for comments, so we know where to start next. Returns
+   * CurrentMaxCommentId.
+   */
+  case object GetMaxCommentId
+  
+  case class CurrentMaxCommentId(n:Int)
+  
+  /**
    * Request to load all of the Comments for the specified Thing.
    */
   case class LoadCommentsFor(thingId:OID, state:SpaceState)

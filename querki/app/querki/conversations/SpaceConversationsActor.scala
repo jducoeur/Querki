@@ -63,7 +63,12 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
      */
     case CurrentState(current) => {
       state = current
-      become(normalReceive)
+      persister.request(GetMaxCommentId) {
+        case CurrentMaxCommentId(n) => {
+          nextId = n + 1
+          become(normalReceive)
+        }
+      }
     }
   }
   

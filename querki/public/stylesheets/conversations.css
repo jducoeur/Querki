@@ -10,6 +10,15 @@
   width: 100%;
 }
 
+._commentContainer {
+  border-style: solid;
+  border-width: 1px;
+  border-color: #dddddd;
+  border-radius: 11px;
+  padding: 7px;
+  margin-top: 10px;
+}
+
 ._comment {
   
 }
