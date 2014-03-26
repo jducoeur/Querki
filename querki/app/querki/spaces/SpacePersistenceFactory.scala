@@ -42,6 +42,6 @@ class DBSpacePersistenceFactory(val ecology:Ecology) extends SpacePersistenceFac
   }
   
   def getConversationPersister(spaceId:OID)(implicit context:ActorContext):ActorRef = {
-    context.actorOf(Conversations.conversationPersisterProps(spaceId))
+    context.actorOf(Conversations.conversationPersisterProps(spaceId), "Persist")
   }
 }

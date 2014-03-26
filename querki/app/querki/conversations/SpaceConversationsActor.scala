@@ -86,7 +86,7 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
     
     def buildNodes(branches:Seq[Comment]):Seq[ConversationNode] = {
       val nodes = (Seq.empty[ConversationNode] /: branches) { (seq, branch) =>
-        val children = buildNodes(dependencies(branch.id))
+        val children = dependencies.get(branch.id).map(buildNodes(_)).getOrElse(Seq.empty[ConversationNode])
         seq :+ ConversationNode(branch, children)
       }
       nodes.sortBy(node => node.comment.createTime)
