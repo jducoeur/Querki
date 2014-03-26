@@ -81,11 +81,13 @@ function loadConversations(ownerId, spaceId, thingId, convContainer, canComment)
         replyPlaceholder.show();
       });
     realReply.hide();
-    replyPlaceholder.click(function (evt) {
+    function showRealReply(evt) {
       realReply.show();
       replyPlaceholder.hide();
-      realReply.find("._commentInput").focus();      
-    });
+      realReply.find("._commentInput").focus();    
+    }
+    replyPlaceholder.click(showRealReply);
+    replyPlaceholder.keydown(showRealReply);
     
     function addResponses(n) {
       var responses = n.responses;
