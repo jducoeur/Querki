@@ -43,10 +43,12 @@ function loadConversations(ownerId, spaceId, thingId, convContainer, canComment)
     var id = comment.id;
     
     var threadDisplay = existingThread
+    var isNewThread = false;
     if (threadDisplay == null) {
       threadDisplay = $("#_convThreadTemplate").clone(true).attr('id', '_convThread' + id);
       threadDisplay.show();
       convContainer.append(threadDisplay);
+      isNewThread = true;
     }
     commentContainer = threadDisplay.find("._commentContainer");
     
@@ -67,27 +69,33 @@ function loadConversations(ownerId, spaceId, thingId, convContainer, canComment)
     
     insertComment(comment);
     
-    var replyPlaceholder = threadDisplay.find("._replyPlaceholder");
-    var realReply = newConversationInput(replyPlaceholder, threadDisplay, "Reply...", 
-      function () {
-        // TODO: this is *not* correct yet! It should actually run down to the end of the
-        // replies, and return the ID of that one. We probably want a data structure to track
-        // the topology of the comments...
-        return id;
-      },
-      function () {
-        // This is called when we successfully post.
-        realReply.hide();
-        replyPlaceholder.show();
-      });
-    realReply.hide();
-    function showRealReply(evt) {
-      realReply.show();
-      replyPlaceholder.hide();
-      realReply.find("._commentInput").focus();    
+    if (isNewThread) {
+	    var replyPlaceholder = threadDisplay.find("._replyPlaceholder");
+	    var realReply = newConversationInput(replyPlaceholder, threadDisplay, "Reply...", 
+	      function () {
+	        // TODO: this is *not* correct yet! It should actually run down to the end of the
+	        // replies, and return the ID of that one. We probably want a data structure to track
+	        // the topology of the comments...
+	        return id;
+	      },
+	      function () {
+	        // This is called when we successfully post.
+	        realReply.hide();
+	        replyPlaceholder.show();
+	      });
+	    realReply.hide();
+	    function showRealReply(evt) {
+	      realReply.show();
+	      replyPlaceholder.hide();
+	      realReply.find("._commentInput").focus();    
+	    }
+	    replyPlaceholder.click(showRealReply);
+	    replyPlaceholder.keydown(showRealReply);
+	    realReply.blur(function (evt) {
+	      replyPlaceholder.show();
+	      realReply.hide();
+	    });
     }
-    replyPlaceholder.click(showRealReply);
-    replyPlaceholder.keydown(showRealReply);
     
     function addResponses(n) {
       var responses = n.responses;
