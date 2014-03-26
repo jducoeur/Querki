@@ -41,8 +41,7 @@ class ConversationController extends ApplicationBase {
       c.id,
       // TODO: No! Horrible! Inefficient! This must be replaced!
       UserAccess.getIdentity(c.authorId).map(_.name).getOrElse("Unknown"),
-      // TODO: this text needs to be QText-rendered first!
-      Conversations.CommentText.firstOpt(c.props).map(_.text).getOrElse(""),
+      Conversations.CommentText.firstOpt(c.props).map(_.text).map(Wikitext(_).display.toString).getOrElse(""),
       c.primaryResponse,
       c.createTime)
   }
