@@ -8,10 +8,11 @@ function loadConversations(ownerId, spaceId, thingId, convContainer, canComment)
   function newConversationInput() {
     var inputArea = $("#_addCommentTemplate").clone(true).attr('id', '_addComment');
     inputArea.show();
-    convContainer.append(inputArea);
+    convContainer.after(inputArea);
     
     var postButton = inputArea.find("._postCommentButton");
     var textArea = inputArea.find("._commentInput");
+    textArea.attr("placeholder", "Start a new conversation...");
     
     postButton.click(function (evt) {
       var text = textArea.val();
