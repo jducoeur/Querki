@@ -14,6 +14,7 @@
 @canComment = @{ localIdentityOpt.map(identity => Conversations.canWriteComments(identity.id, thing, space)).getOrElse(false) }
 
 <script type="text/javascript" src='@routes.ConversationController.javascriptRoutes()'></script>
+<script src="@routes.Assets.at("javascripts/moment.min.js")"></script>
 <script src="@routes.Assets.at("javascripts/conversations.js")"></script>
 <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/conversations.css")">
 
@@ -27,10 +28,25 @@
 <h4 class="_commentsHeader">Comments</h4>
 
 <!-- Conversations will be injected dynamically into this div. -->
-<a name="conversations"><div id="conversations">
-</div></a>
+<a name="conversations"></a>
+<div id="conversations" class="_conversations container"></div>
 
-<div id="_addCommentTemplate" class="_addComment offset2 span8" style="display:none">
-  <textarea class="_commentInput _largeTextEdit" placeholder="Type your comment here..."></textarea>
-  <input type="button" value="Post Comment" class="_postCommentButton btn btn-info btn-mini">
+<div id="_addCommentTemplate" class="_addComment row-fluid" style="display:none">
+  <div class="offset2 span8">
+    <textarea class="_commentInput _largeTextEdit" placeholder="Type your comment here..."></textarea>
+    <input type="button" value="Post Comment" class="_postCommentButton btn btn-info btn-mini">
+  </div>
+</div>
+
+<div id="_convThreadTemplate" class="_convThread row-fluid" style="display:none">
+</div>
+
+<div id="_commentTemplate" class="_comment offset2 span8" style="display:none">
+  <a name="" class="_commentLink">&nbsp;</a>
+  <div class="_commentHeader">
+    <span class="_commentAuthor"></span>
+    <span class="_commentTime"></span>
+  </div>
+  <div class="_commentText">
+  </div>
 </div>

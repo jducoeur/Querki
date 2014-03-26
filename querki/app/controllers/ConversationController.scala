@@ -31,7 +31,9 @@ class ConversationController extends ApplicationBase {
       Json.obj(
         "id" -> c.id,
         "authorId" -> c.authorId.toThingId.toString,
-        "text" -> Conversations.CommentText.firstOpt(c.props).map(_.text)
+        // TODO: this text needs to be QText-rendered first!
+        "text" -> Conversations.CommentText.firstOpt(c.props).map(_.text),
+        "createTime" -> c.createTime
       )
     }
   }
@@ -67,7 +69,7 @@ class ConversationController extends ApplicationBase {
     askSpace(msg) {
       case ThingConversations(convs) => {
         val convJson = Json.toJson(convs)
-        Ok(convJson.toString)
+        Ok(convJson)
       }
       case ThingError(ex, stateOpt) => {
         BadRequest(ex.display(Some(rc)))
@@ -98,7 +100,7 @@ class ConversationController extends ApplicationBase {
     val msg = ConversationRequest(rc.requesterOrAnon, rc.ownerId, state.id, NewComment(comment))
     askSpace(msg) {
       case reply @ AddedNode(parentId, node) => {
-        Ok(Json.toJson(reply).toString)
+        Ok(Json.toJson(reply))
       }
       case ThingError(ex, stateOpt) => {
         BadRequest(ex.display(Some(rc)))

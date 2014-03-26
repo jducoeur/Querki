@@ -1,7 +1,31 @@
-._addComment {
+._conversations {
+  width: 100%;
+}
 
+._addComment {
+  
 }
 
 ._addComment ._commentInput {
+  width: 100%;
+}
+
+._comment {
+  
+}
+
+._comment ._commentHeader {
+  width: 100%;
+}
+
+._comment ._commentAuthor {
+  font-weight: bold;
+}
+
+._comment ._commentTime {
+  font-style: italic;
+}
+
+._comment ._commentText {
   width: 100%;
 }
