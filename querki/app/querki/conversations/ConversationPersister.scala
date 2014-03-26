@@ -32,7 +32,7 @@ private[conversations] class ConversationPersister(val spaceId:OID, implicit val
   def receive = {
     case GetMaxCommentId => {
       DB.withConnection(dbName(ShardKind.User)) { implicit conn =>
-        val nOpt = SpaceSQL("""SELECT MAX(id) as max from {cname}""")().map(_.int("max")).headOption
+        val nOpt = SpaceSQL("""SELECT MAX(id) as max from {cname}""")().flatMap(_.opt[Int]("max")).headOption
         sender ! CurrentMaxCommentId(nOpt.getOrElse(0))
       }
     }
