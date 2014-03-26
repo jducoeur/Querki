@@ -12,6 +12,7 @@ function loadConversations(ownerId, spaceId, thingId, convContainer, canComment)
     
     var postButton = inputArea.find("._postCommentButton");
     var textArea = inputArea.find("._commentInput");
+    textArea.autosize();
     textArea.attr("placeholder", "Start a new conversation...");
     
     postButton.click(function (evt) {
