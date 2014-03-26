@@ -20,7 +20,11 @@
 }
 
 ._comment {
-  
+  margin-bottom: 10px;
+}
+
+._comment:last-child {
+  margin-bottom: 0px;
 }
 
 ._comment ._commentHeader {

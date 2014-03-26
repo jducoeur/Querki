@@ -61,6 +61,7 @@ class ConversationController extends ApplicationBase {
         "id" -> c.id,
         "author" -> c.author,
         "html" -> c.html,
+        "primary" -> c.primaryResponse,
         "createTime" -> c.createTime
       )
     }
@@ -70,7 +71,7 @@ class ConversationController extends ApplicationBase {
     def writes(n:NodeDisplay):JsValue = {
       Json.obj(
         "comment" -> n.comment,
-        "responses" -> Json.arr(n.responses.map(Json.toJson(_)))
+        "responses" -> n.responses
       )
     }
   }
