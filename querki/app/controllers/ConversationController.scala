@@ -9,10 +9,11 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc._
 
-import models.{OID, UnknownOID}
+import models.{OID, UnknownOID, Wikitext}
 
 import querki.conversations.messages._
 import querki.spaces.messages._
+import querki.time.DateTime
 import querki.util._
 
 class ConversationController extends ApplicationBase {
@@ -22,35 +23,55 @@ class ConversationController extends ApplicationBase {
   lazy val Person = interface[querki.identity.Person]
   
   /**
-   * The wire representation of a Comment, which is generated from the real thing.
-   * 
-   * TODO: once we've proven the serialization scheme, fill this in for real.
+   * What we actually send to the client.
    */
-  implicit val commentWrites = new Writes[Comment] {
-    def writes(c:Comment):JsValue = {
+  case class CommentDisplay(
+    id:CommentId,
+    author:String,
+    html:String,
+    primaryResponse:Boolean,
+    createTime:DateTime)
+    
+  case class NodeDisplay(
+    comment:CommentDisplay,
+    responses:Seq[NodeDisplay])
+    
+  def comment2Display(c:Comment):CommentDisplay = {
+    CommentDisplay(
+      c.id,
+      // TODO: No! Horrible! Inefficient! This must be replaced!
+      UserAccess.getIdentity(c.authorId).map(_.name).getOrElse("Unknown"),
+      // TODO: this text needs to be QText-rendered first!
+      Conversations.CommentText.firstOpt(c.props).map(_.text).getOrElse(""),
+      c.primaryResponse,
+      c.createTime)
+  }
+  
+  def node2Display(n:ConversationNode):NodeDisplay = {
+    NodeDisplay(
+      comment2Display(n.comment),
+      n.responses.map(node2Display(_)))
+  }
+  
+  /**
+   * The wire representation of a Comment, which is generated from the real thing.
+   */
+  implicit val commentWrites = new Writes[CommentDisplay] {
+    def writes(c:CommentDisplay):JsValue = {
       Json.obj(
         "id" -> c.id,
-        "authorId" -> c.authorId.toThingId.toString,
-        // TODO: this text needs to be QText-rendered first!
-        "text" -> Conversations.CommentText.firstOpt(c.props).map(_.text),
+        "author" -> c.author,
+        "html" -> c.html,
         "createTime" -> c.createTime
       )
     }
   }
   
-  implicit val nodeWrites:Writes[ConversationNode] = new Writes[ConversationNode] {
-    def writes(n:ConversationNode):JsValue = {
+  implicit val nodeWrites:Writes[NodeDisplay] = new Writes[NodeDisplay] {
+    def writes(n:NodeDisplay):JsValue = {
       Json.obj(
         "comment" -> n.comment,
         "responses" -> Json.arr(n.responses.map(Json.toJson(_)))
-      )
-    }
-  }
-  
-  implicit val convsWrites = new Writes[ThingConversations] {
-    def writes(convs:ThingConversations):JsValue = {
-      Json.obj(
-        "convs" -> Json.arr(convs.comments.map(Json.toJson(_)))
       )
     }
   }
@@ -59,7 +80,7 @@ class ConversationController extends ApplicationBase {
     def writes(msg:AddedNode):JsValue = {
       Json.obj(
         "parentId" -> msg.parentId,
-        "node" -> msg.node
+        "node" -> node2Display(msg.node)
       )
     }
   }
@@ -68,7 +89,7 @@ class ConversationController extends ApplicationBase {
     val msg = ConversationRequest(rc.requesterOrAnon, rc.ownerId, rc.state.get.id, GetConversations(rc.thing.get.id))
     askSpace(msg) {
       case ThingConversations(convs) => {
-        val convJson = Json.toJson(convs)
+        val convJson = Json.toJson(convs.map(node2Display(_)))
         Ok(convJson)
       }
       case ThingError(ex, stateOpt) => {
