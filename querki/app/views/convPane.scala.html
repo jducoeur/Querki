@@ -41,9 +41,11 @@
 <div id="_convThreadTemplate" class="_convThread row-fluid" style="display:none">
   <div class="_commentContainer offset1 span9">
   </div>
-  <div class="_replyContainer offset1 span9">
-    <input class="_replyPlaceholder" type="text" placeholder="Click here to reply...">
-  </div>
+  @if(canComment) {
+    <div class="_replyContainer offset1 span9">
+      <input class="_replyPlaceholder" type="text" placeholder="Click here to reply...">
+    </div>
+  }
 </div>
 
 <div id="_commentTemplate" class="_comment" style="display:none">

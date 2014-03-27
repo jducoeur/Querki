@@ -6,6 +6,10 @@
 function loadConversations(ownerId, spaceId, thingId, convContainer, canComment) {
 
   function newConversationInput(placement, container, placeholder, responseToCb, postedCb) {
+    if (!canComment) {
+      return null;
+    }
+    
     var inputArea = $("#_addCommentTemplate").clone(true).attr('id', '_addComment');
     inputArea.show();
     placement.after(inputArea);
@@ -69,7 +73,7 @@ function loadConversations(ownerId, spaceId, thingId, convContainer, canComment)
     
     insertComment(comment);
     
-    if (isNewThread) {
+    if (isNewThread && canComment) {
 	    var replyPlaceholder = threadDisplay.find("._replyPlaceholder");
 	    var realReply = newConversationInput(replyPlaceholder, threadDisplay, "Reply...", 
 	      function () {
@@ -91,10 +95,6 @@ function loadConversations(ownerId, spaceId, thingId, convContainer, canComment)
 	    }
 	    replyPlaceholder.click(showRealReply);
 	    replyPlaceholder.keydown(showRealReply);
-	    realReply.blur(function (evt) {
-	      replyPlaceholder.show();
-	      realReply.hide();
-	    });
     }
     
     function addResponses(n) {
