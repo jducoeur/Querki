@@ -4,7 +4,7 @@ import akka.actor._
 
 import querki.ecology._
 
-import querki.spaces.{DBSpacePersistenceFactory, SpaceManager}
+import querki.spaces.{DBSpacePersistenceFactory, SpaceManager, SpaceOps}
 
 /**
  * The master root for all of Querki's back end. Note that this does *not* control the front end
@@ -35,7 +35,7 @@ class QuerkiRoot extends Actor {
       // with "Props(classOf(Space), ...)". See:
       //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
       val ref = context.actorOf(Props(new SpaceManager(ecology, new DBSpacePersistenceFactory(ecology))), name="SpaceManager")
-      SpaceManager.setSpaceManager(ref)
+      ecology.api[SpaceOps].setSpaceManager(ref)
       
       println("... Querki running.")
       sender ! Initialized(ecology)

@@ -41,6 +41,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   lazy val Links = interface[querki.links.Links]
   lazy val HtmlUI = interface[querki.html.HtmlUI]
   lazy val UserAccess = interface[querki.identity.UserAccess]
+  lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
   lazy val EmailAddressProp = Email.EmailAddressProp
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
@@ -251,7 +252,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
           AccessControl.CanReadProp(AccessControl.OwnerTag))()
       val msg = CreateThing(rc.requester.get, rc.ownerId, updatedState.toThingId, Kind.Thing, PersonOID, propMap)
       implicit val timeout = Timeout(5 seconds)
-      val future = SpaceManager.ref ? msg
+      val future = SpaceOps.spaceManager ? msg
       // TODO: EEEEVIL! This code is quick and dirty but wrong. This should all be Async, using SpaceManager.ask:
       Await.result(future, 5 seconds) match {
         case ThingFound(id, newState) => { updatedState = newState; newState.anything(id).get }
@@ -327,7 +328,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
             IdentityLink(identity.id),
             DisplayNameProp(identity.name))())
     )
-      yield SpaceManager.ask[ThingResponse, B](changeRequest)(cb)
+      yield SpaceOps.askSpaceManager[ThingResponse, B](changeRequest)(cb)
   }
        
   def getPersonIdentity(person:Thing)(implicit state:SpaceState):Option[OID] = {

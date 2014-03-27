@@ -30,6 +30,7 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   val Links = initRequires[querki.links.Links]
   
   lazy val QL = interface[querki.ql.QL]
+  lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
   lazy val QLType = Basic.QLType
   
@@ -388,7 +389,7 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
 	      case None => resultingList
 	    } 
 	    val changeRequest = ChangeProps(req.requester.get, state.owner, state.id, t.toThingId, toProps(SentToOID -> fullSentTo)())
-	    SpaceManager.ask(changeRequest) { resp:ThingResponse =>
+	    SpaceOps.askSpaceManager(changeRequest) { resp:ThingResponse =>
 	      resp match {
 	        case ThingFound(id, state) => Logger.info("Noted email recipients")
 	        // TODO: what should we do in case of failure?

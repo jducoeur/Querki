@@ -63,6 +63,7 @@ object SystemCreator {
     new querki.datamodel.introspection.IntrospectionEcot(ecology)  // 34
     new querki.conversations.ConversationEcot(ecology)             // 35
     new querki.collections.GroupingEcot(ecology)                   // 36
+    new querki.spaces.SpaceEcot(ecology)                           // 37
   }
   
   def createAllEcots(ecology:Ecology):Ecology = {

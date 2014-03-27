@@ -18,7 +18,8 @@ class ApplicationBase extends Controller with EcologyMember {
   
   lazy val UserAccess = interface[querki.identity.UserAccess]
   lazy val PageEventManager = interface[controllers.PageEventManager]
-  
+  lazy val SpaceOps = interface[querki.spaces.SpaceOps]
+    
   /**
    * Standard error handler. Iff you get an error and the correct response is to redirect to
    * another page, use this. The only exception is iff you need to preserve data, and thus want
@@ -103,7 +104,7 @@ class ApplicationBase extends Controller with EcologyMember {
    */
   def askSpaceMgr[A](msg:SpaceMgrMsg)(cb: A => Result)(implicit m:Manifest[A]) = {
     Async {
-      SpaceManager.ask[A, Result](msg)(cb)
+      SpaceOps.askSpaceManager[A, Result](msg)(cb)
     }
   }
   
@@ -115,7 +116,7 @@ class ApplicationBase extends Controller with EcologyMember {
    */
   def askSpace(msg:SpaceMgrMsg)(cb: PartialFunction[Any, Result]) = {
     Async {
-      SpaceManager.ask2(msg)(cb)
+      SpaceOps.askSpaceManager2(msg)(cb)
     }
   }
   
