@@ -12,13 +12,13 @@ import models.OID
  * This is the abstract factory that creates persistence Actors. It is pulled out into
  * a trait so that test harnesses can stub it with well-controlled mocks.
  */
-trait SpacePersistenceFactory {
+trait SpacePersistenceFactory extends EcologyInterface {
   def getSpacePersister(spaceId:OID)(implicit context:ActorContext):ActorRef
   def getSpaceManagerPersister(implicit context:ActorContext):ActorRef
   def getConversationPersister(spaceId:OID)(implicit context:ActorContext):ActorRef
 }
 
-class DBSpacePersistenceFactory(val ecology:Ecology) extends SpacePersistenceFactory with EcologyMember {
+class DBSpacePersistenceFactory(e:Ecology) extends QuerkiEcot(e) with SpacePersistenceFactory with EcologyMember {
   
   lazy val Conversations = interface[querki.conversations.Conversations]
   

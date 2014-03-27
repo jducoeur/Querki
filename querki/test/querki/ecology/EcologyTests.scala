@@ -25,7 +25,7 @@ class EcologyTests extends WordSpec
     // The Ecology itself assumes that Core is registered, and System is needed to finish things up:
     new querki.core.CoreModule(eco)
     new querki.system.SystemEcot(eco)
-    eco.manager.init(querki.system.InitialSystemState.create(eco))
+    eco.manager.init(querki.system.InitialSystemState.create(eco), { (props, name) => None })
   }
   
   "The Ecology" should {

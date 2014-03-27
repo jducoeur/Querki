@@ -38,7 +38,10 @@ import querki.util.SqlHelpers._
 
 import PersistMessages._
 
-class SpaceManager(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory) extends Actor with Requester with EcologyMember {
+class SpaceManager(val ecology:Ecology) extends Actor with Requester with EcologyMember {
+  
+  lazy val persistenceFactory = interface[SpacePersistenceFactory]
+  
   /**
    * This Actor deals with all DB-style operations for the SpaceManager.
    */

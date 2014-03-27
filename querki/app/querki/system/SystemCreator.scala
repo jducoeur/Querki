@@ -16,6 +16,7 @@ object SystemCreator {
    */
   def createDBEcots(ecology:Ecology) = {
     new querki.identity.UserPersistence(ecology)                   // 30    
+    new querki.spaces.DBSpacePersistenceFactory(ecology)           // 38
   }
   
   /**
@@ -57,6 +58,7 @@ object SystemCreator {
     new querki.links.LinksEcot(ecology)                            // 27
     new querki.spaces.SpacePersistenceEcot(ecology)                // 28
     new querki.evolutions.EvolutionsEcot(ecology)                  // 29
+                                                                   // 30
     new controllers.PageEventManagerEcot(ecology)                  // 31
     new querki.spaces.SpaceChangeManagerEcot(ecology)              // 32    
     new querki.imexport.ImexportEcot(ecology)                      // 33
@@ -64,6 +66,7 @@ object SystemCreator {
     new querki.conversations.ConversationEcot(ecology)             // 35
     new querki.collections.GroupingEcot(ecology)                   // 36
     new querki.spaces.SpaceEcot(ecology)                           // 37
+                                                                   // 38
   }
   
   def createAllEcots(ecology:Ecology):Ecology = {

@@ -3,6 +3,8 @@ package querki.ecology
 import scala.reflect.runtime.{universe => ru}
 import scala.reflect.runtime.universe._
 
+import akka.actor.{ActorRef, Props}
+
 import querki.values.SpaceState
 
 class EcologyImpl extends Ecology with EcologyManager {
@@ -33,9 +35,11 @@ class EcologyImpl extends Ecology with EcologyManager {
     runtimeMirror.classSymbol(clazz).toType
   }
   
-  def init(initialSpaceState:SpaceState):SpaceState = {
+  def init(initialSpaceState:SpaceState, createActorCb:CreateActorFunc):SpaceState = {
     println("Starting Ecology initialization...")
-    initializeRemainingEcots(_registeredEcots, initialSpaceState)
+    val finalState = initializeRemainingEcots(_registeredEcots, initialSpaceState)
+    initializeActors(createActorCb)
+    finalState
   }
   
   def term():Unit = {
@@ -161,5 +165,9 @@ class EcologyImpl extends Ecology with EcologyManager {
         }
       }
     }
+  }
+  
+  private def initializeActors(createActorCb:CreateActorFunc) = {
+    _initializedEcots.foreach(_.createActors(createActorCb))
   }
 }

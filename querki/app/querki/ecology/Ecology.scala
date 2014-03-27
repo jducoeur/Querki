@@ -1,5 +1,7 @@
 package querki.ecology
 
+import akka.actor.{ActorRef, Props}
+
 import scala.reflect.runtime.universe.TypeTag
 
 import querki.values.SpaceState
@@ -56,7 +58,7 @@ trait EcologyManager {
   /**
    * Initializes the world, and returns the resulting SpaceState.
    */
-  def init(initialSpaceState:SpaceState):SpaceState
+  def init(initialSpaceState:SpaceState, createActorCb:CreateActorFunc):SpaceState
   
   /**
    * Terminates the world.
@@ -270,4 +272,15 @@ trait Ecot extends EcologyMember {
    * automatically.
    */
   def addSystemObjects(state:SpaceState):SpaceState
+  
+  /**
+   * If this Ecot manages any Actors, they should be created in here. This is called after
+   * main Ecology initialization is complete, but there is currently no mechanism for
+   * dependencies between the Actors at setup time! We'll add that if we need to.
+   * 
+   * The createActorCb contains the ActorContext to use for creating the Actor; Ecots should
+   * use this instead of any other mechanism for creating it, so that the Actor is hooked into
+   * the overall ActorSystem properly.
+   */
+  def createActors(createActorCb:CreateActorFunc):Unit = {}
 }

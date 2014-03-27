@@ -20,22 +20,16 @@ class QuerkiRoot extends Actor {
   
   var ecology:Ecology = null
   
+  def createActor(props:Props, name:String):Option[ActorRef] = Some(context.actorOf(props, name))
+  
   def receive = {
     case Initialize => {
       println("Creating the Ecology...")
       ecology = new EcologyImpl
       SystemCreator.createAllEcots(ecology)
       println("... initializing the Ecology...")
-      val finalState = ecology.manager.init(InitialSystemState.create(ecology))
+      val finalState = ecology.manager.init(InitialSystemState.create(ecology), createActor)
       ecology.api[SystemManagement].setState(finalState)
-    
-      // Note that the SpacePersistenceFactory is intentionally defined all the way up here. That is
-      // specifically for testing, so that we can stub it out and replace it with a mock version.
-      // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
-      // with "Props(classOf(Space), ...)". See:
-      //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-      val ref = context.actorOf(Props(new SpaceManager(ecology, new DBSpacePersistenceFactory(ecology))), name="SpaceManager")
-      ecology.api[SpaceOps].setSpaceManager(ref)
       
       println("... Querki running.")
       sender ! Initialized(ecology)

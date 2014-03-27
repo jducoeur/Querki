@@ -23,11 +23,6 @@ package object spaces {
   
   trait SpaceOps extends EcologyInterface {
     /**
-     * TEMP: exposed solely for system setup. Do not use anywhere else! This should go away.
-     */
-    def setSpaceManager(ref:ActorRef):Unit
-    
-    /**
      * Fetch a reference to a SpaceManager Actor, to which you can send requests. This is the
      * only legal entry point to the Space Management system from Play! 
      */
