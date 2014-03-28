@@ -67,6 +67,7 @@ object SystemCreator {
     new querki.collections.GroupingEcot(ecology)                   // 36
     new querki.spaces.SpaceEcot(ecology)                           // 37
                                                                    // 38
+    new querki.identity.IdentityEcot(ecology)                      // 39
   }
   
   def createAllEcots(ecology:Ecology):Ecology = {

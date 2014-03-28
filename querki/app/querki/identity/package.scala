@@ -1,5 +1,6 @@
 package querki
 
+import scala.concurrent.Future
 import scala.util.Try
 
 // TODO: this is an unfortunate abstraction break:
@@ -68,6 +69,28 @@ package object identity {
     def localPerson(identity:Identity)(implicit state:SpaceState):Option[Thing]
   }
   
+  /**
+   * Provides a cached front end to working with Identities. Note that this sits in front of an Actor, and
+   * all calls are asynchronous!
+   */
+  trait IdentityAccess extends EcologyInterface {
+    /**
+     * The recommended way to fetch a single Identity.
+     */
+    def getIdentity(id:OID):Future[Option[PublicIdentity]]
+    
+    /**
+     * Fetch a number of identities at once.
+     */
+    def getIdentities(ids:Seq[OID]):Future[Map[OID, PublicIdentity]]
+  }
+  
+  /**
+   * LOW-LEVEL INTERFACE.
+   * 
+   * This is full of blocking calls that go to the database. It should be considered deprecated for most
+   * code. Use IdentityAccess instead where possible.
+   */
   trait UserAccess extends EcologyInterface {
     def addSpaceMembership(identityId:OID, spaceId:OID):Boolean
     def changePassword(requester:User, identity:Identity, newPassword:String):Try[User]

@@ -1,5 +1,9 @@
 package controllers
 
+// TODO: these are both essentially bugs, to deal with the sync/async mismatches.
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
 import play.api._
 import play.api.data._
 import play.api.data.Forms._
@@ -12,6 +16,7 @@ import play.api.mvc._
 import models.{OID, UnknownOID, Wikitext}
 
 import querki.conversations.messages._
+import querki.identity.PublicIdentity
 import querki.spaces.messages._
 import querki.time.DateTime
 import querki.util._
@@ -21,6 +26,7 @@ class ConversationController extends ApplicationBase {
   lazy val Conversations = interface[querki.conversations.Conversations]
   lazy val Core = interface[querki.core.Core]
   lazy val Person = interface[querki.identity.Person]
+  lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   
   /**
    * What we actually send to the client.
@@ -36,20 +42,27 @@ class ConversationController extends ApplicationBase {
     comment:CommentDisplay,
     responses:Seq[NodeDisplay])
     
-  def comment2Display(c:Comment):CommentDisplay = {
+  case class AddedNodeDisplay(
+    parentId:Option[CommentId],
+    node:NodeDisplay)
+    
+  def comment2Display(c:Comment)(implicit ids:Map[OID, PublicIdentity]):CommentDisplay = {
     CommentDisplay(
       c.id,
-      // TODO: No! Horrible! Inefficient! This must be replaced!
-      UserAccess.getIdentity(c.authorId).map(_.name).getOrElse("Unknown"),
+      ids.get(c.authorId).map(_.name).getOrElse("Unknown"),
       Conversations.CommentText.firstOpt(c.props).map(_.text).map(Wikitext(_).display.toString).getOrElse(""),
       c.primaryResponse,
       c.createTime)
   }
   
-  def node2Display(n:ConversationNode):NodeDisplay = {
+  def node2Display(n:ConversationNode)(implicit ids:Map[OID, PublicIdentity]):NodeDisplay = {
     NodeDisplay(
       comment2Display(n.comment),
       n.responses.map(node2Display(_)))
+  }
+  
+  def addedNode2Display(a:AddedNode)(implicit ids:Map[OID, PublicIdentity]):AddedNodeDisplay = {
+    AddedNodeDisplay(a.parentId, node2Display(a.node))
   }
   
   /**
@@ -76,19 +89,34 @@ class ConversationController extends ApplicationBase {
     }
   }
   
-  implicit val addedNodeWrites = new Writes[AddedNode] {
-    def writes(msg:AddedNode):JsValue = {
+  implicit val addedNodeWrites = new Writes[AddedNodeDisplay] {
+    def writes(msg:AddedNodeDisplay):JsValue = {
       Json.obj(
         "parentId" -> msg.parentId,
-        "node" -> node2Display(msg.node)
+        "node" -> msg.node
       )
     }
+  }
+  
+  def getIds(node:ConversationNode):Set[OID] = {
+    getIds(node.responses) + node.comment.authorId
+  }
+  
+  def getIds(nodes:Seq[ConversationNode]):Set[OID] = {
+    (Set.empty[OID] /: nodes) { (set, node) => set ++ getIds(node) }
+  }
+  
+  def getIdentities(nodes:Seq[ConversationNode]):Map[OID, PublicIdentity] = {
+    val ids = getIds(nodes)
+    // TODO: fix this Await!
+    Await.result(IdentityAccess.getIdentities(ids.toSeq), (5 seconds))
   }
   
   def getConversations(ownerId:String, spaceId:String, thingId:String) = withThing(false, ownerId, spaceId, thingId) { implicit rc =>
     val msg = ConversationRequest(rc.requesterOrAnon, rc.ownerId, rc.state.get.id, GetConversations(rc.thing.get.id))
     askSpace(msg) {
       case ThingConversations(convs) => {
+        implicit val identityMap = getIdentities(convs)
         val convJson = Json.toJson(convs.map(node2Display(_)))
         Ok(convJson)
       }
@@ -121,7 +149,8 @@ class ConversationController extends ApplicationBase {
     val msg = ConversationRequest(rc.requesterOrAnon, rc.ownerId, state.id, NewComment(comment))
     askSpace(msg) {
       case reply @ AddedNode(parentId, node) => {
-        Ok(Json.toJson(reply))
+        implicit val identities = getIdentities(Seq(node))
+        Ok(Json.toJson(addedNode2Display(reply)))
       }
       case ThingError(ex, stateOpt) => {
         BadRequest(ex.display(Some(rc)))

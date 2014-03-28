@@ -161,4 +161,13 @@ object IdentityKind {
 }
 import IdentityKind._
 
-case class Identity(id:OID, email:EmailAddress, auth:String, handle:String, name:String, kind:IdentityKind)
+/**
+ * This represents the information that others can see about someone.
+ */
+trait PublicIdentity {
+  def id:OID
+  def handle:String
+  def name:String
+}
+
+case class Identity(id:OID, email:EmailAddress, auth:String, handle:String, name:String, kind:IdentityKind) extends PublicIdentity
