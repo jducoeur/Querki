@@ -13,6 +13,8 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
 {
   import MOIDs._
   
+  lazy val Links = interface[querki.links.Links]
+  
   def LinkKindProp(kind:Kind.Kind) = (querki.links.MOIDs.LinkKindOID -> ExactlyOne(IntType(kind)))
   def LinkAllowAppsProp(b:Boolean) = (querki.links.MOIDs.LinkAllowAppsOID -> ExactlyOne(YesNoType(b)))
 

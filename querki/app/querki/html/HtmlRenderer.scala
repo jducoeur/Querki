@@ -32,6 +32,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   lazy val Links = interface[querki.links.Links]
   lazy val Tags = interface[querki.tags.Tags]
   
+  lazy val InternalProp = Core.InternalProp
   lazy val NameType = Core.NameType
   lazy val NewTagSetType = Tags.NewTagSetType
   

@@ -2,7 +2,7 @@ package querki.core
 
 import scala.xml.NodeSeq
 
-import models.{DelegatingType, DisplayPropVal, OID, Property, PType, PTypeBuilder, PTypeBuilderBase, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
+import models.{DelegatingType, DisplayPropVal, Kind, OID, Property, PType, PTypeBuilder, PTypeBuilderBase, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
 import models.Thing.PropFetcher
 
 import querki.ecology._
@@ -167,13 +167,78 @@ trait NameTypeBasis { self:CoreEcot with NameUtils =>
 }
 
 trait LinkUtils { self:CoreEcot =>
+  
+  def InternalProp:Property[Boolean,Boolean]
+  def Links:querki.links.Links
+  
+  /**
+   * Given a Link Property, return all of the appropriate candidates for that property to point to.
+   * 
+   * The Property passed into here should usually be of LinkType -- while in theory that's not required,
+   * it would be surprising for it to be used otherwise.
+   */
+  def linkCandidates(state:SpaceState, Links:querki.links.Links, prop:Property[_,_]):Iterable[Thing] = {
+    implicit val s = state
     
+    val locals = linkCandidatesLocal(state, Links, prop)
+    if (state.app.isDefined && prop.hasProp(Links.LinkAllowAppsProp) && prop.first(Links.LinkAllowAppsProp))
+      locals ++: linkCandidates(state.app.get, Links, prop)
+    else
+      locals
+  }
+
+  /**
+   * This enumerates all of the plausible candidates for the given property within this Space.
+   */
+  def linkCandidatesLocal(state:SpaceState, Links:querki.links.Links, prop:Property[_,_]):Iterable[Thing] = {
+    implicit val s = state
+    
+    // First, filter the candidates based on LinkKind:
+    val allCandidates = if (prop.hasProp(Links.LinkKindProp)) {
+      val allowedKinds = prop.getPropVal(Links.LinkKindProp).cv
+      def fetchKind(wrappedVal:ElemValue):Iterable[Thing] = {
+        val kind = Links.LinkKindProp.pType.get(wrappedVal)
+        kind match {
+          case Kind.Thing => state.things.values
+          case Kind.Property => state.spaceProps.values
+          case Kind.Type => state.types.values
+          case Kind.Collection => state.colls.values
+          // TODO: distinguish Things and Attachments?
+          case _ => Iterable.empty[Thing]
+        }
+      }
+      (Iterable.empty[Thing] /: allowedKinds)((it, kind) => it ++: fetchKind(kind))
+    } else {
+      // No LinkKind specified, so figure that they only want Things:
+      state.things.values
+    }
+    
+    // Now, if they've specified a particular Model to be the limit of the candidate
+    // tree -- essentially, they've specified what type you can link to -- filter for
+    // that:
+    val filteredByModel = if (prop.hasProp(Links.LinkModelProp)) {
+      val limitOpt = prop.firstOpt(Links.LinkModelProp)
+      limitOpt.map(limit => allCandidates filter (_.isAncestor(limit))).getOrElse(allCandidates)
+    } else {
+      allCandidates
+    }
+    
+    val filteredAsModel = if (prop.ifSet(Links.LinkToModelsOnlyProp)) {
+      filteredByModel filter (_.isModel)
+    } else {
+      filteredByModel
+    }
+    
+    filteredAsModel.filterNot(_.ifSet(InternalProp))
+  }    
+  
     def renderInputXmlGuts(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
       val state = rc.state.get
+      val Links = interface[querki.links.Links]
       // Give the Property a chance to chime in on which candidates belong here:
       val candidates = prop match {
         case f:LinkCandidateProvider => f.getLinkCandidates(state, currentValue)
-        case _ => state.linkCandidates(prop).toSeq.sortBy(_.displayName)
+        case _ => linkCandidates(state, Links, prop).toSeq.sortBy(_.displayName)
       }
       val realOptions =
         if (candidates.isEmpty) {
@@ -189,7 +254,6 @@ trait LinkUtils { self:CoreEcot =>
             }
           }
         }
-      val Links = interface[querki.links.Links]
       val linkModel = prop.getPropOpt(Links.LinkModelProp)(state)
       linkModel match {
         case Some(propAndVal) if (!propAndVal.isEmpty) => {

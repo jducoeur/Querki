@@ -52,7 +52,6 @@ case class SpaceState(
   lazy val Person = interface[querki.identity.Person]  
   lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   lazy val DataModel = interface[querki.datamodel.DataModelAccess]
-  lazy val Links = interface[querki.links.Links]
   
   lazy val IsFunctionProp = DataModel.IsFunctionProp
   lazy val InternalProp = Core.InternalProp
@@ -270,67 +269,6 @@ case class SpaceState(
         stripModels.filter(_.isModel(this))
         
      stripInstances
-  }
-  
-  /**
-   * Given a Link Property, return all of the appropriate candidates for that property to point to.
-   * 
-   * The Property passed into here should usually be of LinkType -- while in theory that's not required,
-   * it would be surprising for it to be used otherwise.
-   */
-  def linkCandidates(prop:Property[_,_]):Iterable[Thing] = {
-    implicit val s = this
-    
-    val locals = linkCandidatesLocal(prop)
-    if (app.isDefined && prop.hasProp(Links.LinkAllowAppsProp) && prop.first(Links.LinkAllowAppsProp))
-      locals ++: app.get.linkCandidates(prop)
-    else
-      locals
-  }
-
-  /**
-   * This enumerates all of the plausible candidates for the given property within this Space.
-   */
-  def linkCandidatesLocal(prop:Property[_,_]):Iterable[Thing] = {
-    implicit val s = this
-    
-    // First, filter the candidates based on LinkKind:
-    val allCandidates = if (prop.hasProp(Links.LinkKindProp)) {
-      val allowedKinds = prop.getPropVal(Links.LinkKindProp).cv
-      def fetchKind(wrappedVal:ElemValue):Iterable[Thing] = {
-        val kind = Links.LinkKindProp.pType.get(wrappedVal)
-        kind match {
-          case Kind.Thing => things.values
-          case Kind.Property => spaceProps.values
-          case Kind.Type => types.values
-          case Kind.Collection => colls.values
-          // TODO: distinguish Things and Attachments?
-          case _ => Iterable.empty[Thing]
-        }
-      }
-      (Iterable.empty[Thing] /: allowedKinds)((it, kind) => it ++: fetchKind(kind))
-    } else {
-      // No LinkKind specified, so figure that they only want Things:
-      things.values
-    }
-    
-    // Now, if they've specified a particular Model to be the limit of the candidate
-    // tree -- essentially, they've specified what type you can link to -- filter for
-    // that:
-    val filteredByModel = if (prop.hasProp(Links.LinkModelProp)) {
-      val limitOpt = prop.firstOpt(Links.LinkModelProp)
-      limitOpt.map(limit => allCandidates filter (_.isAncestor(limit))).getOrElse(allCandidates)
-    } else {
-      allCandidates
-    }
-    
-    val filteredAsModel = if (prop.ifSet(Links.LinkToModelsOnlyProp)) {
-      filteredByModel filter (_.isModel)
-    } else {
-      filteredByModel
-    }
-    
-    filteredAsModel.filterNot(_.ifSet(InternalProp))
   }
 }
 
