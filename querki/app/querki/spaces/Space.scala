@@ -112,7 +112,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
   }
   
   def canRead(who:User, thingId:OID):Boolean = AccessControl.canRead(state, who, thingId)
-  def canCreate(who:User, modelId:OID):Boolean = state.canCreate(who, modelId)
+  def canCreate(who:User, modelId:OID):Boolean = AccessControl.canCreate(state, who, modelId)
   def canEdit(who:User, thingId:OID):Boolean = state.canEdit(who, thingId)
   
   def changedProperties(oldProps:PropMap, newProps:PropMap):Seq[OID] = {

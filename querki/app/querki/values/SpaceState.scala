@@ -334,10 +334,6 @@ case class SpaceState(
     filteredAsModel.filterNot(_.ifSet(InternalProp))
   }
   
-  def canCreate(who:User, modelId:OID):Boolean = {
-    AccessControl.canCreate(this, who, modelId)
-  }
-  
   def canEdit(who:User, thingId:OID):Boolean = {
     AccessControl.canEdit(this, who, thingId)
   }

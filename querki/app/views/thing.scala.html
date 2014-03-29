@@ -2,6 +2,7 @@
 
 @import play.api.Logger
 
+@AccessControl = @{ rc.interface[querki.security.AccessControl] }
 @Core = @{ rc.interface[querki.core.Core] }
 
 @space = @{ rc.state.get }
@@ -20,7 +21,7 @@
 }
 
 @canCreate(t:Thing) = @{
-  user.isDefined && modelOpt.isDefined && space.canCreate(user.get, t)
+  user.isDefined && modelOpt.isDefined && AccessControl.canCreate(space, user.get, t)
 }
 
 @modelOpt = @{ thing.getModelOpt(space) }

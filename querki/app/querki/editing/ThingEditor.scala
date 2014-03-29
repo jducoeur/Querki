@@ -154,7 +154,7 @@ trait ThingEditor { self:EditorModule =>
     }
     
     def createInstanceButton(model:Thing, context:QLContext):Wikitext = {
-      if (context.state.canCreate(context.request.requesterOrAnon, model.id)) {
+      if (AccessControl.canCreate(context.state, context.request.requesterOrAnon, model.id)) {
         HtmlUI.toWikitext(<input type="button" class="_createAnother btn" data-model={model.id.toString} value={s"Create another ${model.displayName}"}></input>)
       } else {
         Wikitext("")
