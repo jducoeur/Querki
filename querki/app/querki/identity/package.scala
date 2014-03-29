@@ -67,6 +67,19 @@ package object identity {
      */
     def localIdentities(user:User)(implicit state:SpaceState):Iterable[Identity]
     def localPerson(identity:Identity)(implicit state:SpaceState):Option[Thing]
+      
+    /**
+     * All the people who have been invited into this Space.
+     */
+    def people(implicit state:SpaceState):Iterable[Thing]
+    /**
+     * All the people who have been invited into this Space who have not yet accepted.
+     */
+    def invitees(implicit state:SpaceState):Iterable[Thing]
+    /**
+     * All the people who have joined this Space.
+     */
+    def members(implicit state:SpaceState):Iterable[Thing]
   }
   
   /**

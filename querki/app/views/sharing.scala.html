@@ -14,8 +14,10 @@
   "Sharing and Security for " + space.displayName
 }
 
+@Person = @{ rc.interface[querki.identity.Person] }
+
 @from = @{ rc.interface[querki.email.Email].from }
-@InviteText = @{ rc.interface[querki.identity.Person].InviteText }
+@InviteText = @{ Person.InviteText }
 
 @HtmlRenderer = @{ rc.interface[querki.html.HtmlRenderer] }
 
@@ -92,7 +94,7 @@
         <p>The following invitations have been sent but not yet accepted.</p>
         
         <table class="table table-hover">
-          @for(invitee <- space.invitees;
+          @for(invitee <- Person.invitees(space);
                propVal <- invitee.getPropOpt(rc.interface[querki.email.Email].EmailAddressProp)(space);
                emailAddr <- propVal.firstOpt;
                addr = emailAddr.addr) {
@@ -107,7 +109,7 @@
         <p>The following people are members of this Space.</p>
         
         <table class="table table-hover">
-          @for(member <- space.members) {
+          @for(member <- Person.members(space)) {
             <tr class="info"><td>@member.unsafeDisplayName</td></tr>
           }
         </table>

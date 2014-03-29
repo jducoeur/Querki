@@ -73,7 +73,7 @@ class LoginController extends ApplicationBase {
         doError(routes.Application.sharing(ownerId, spaceId), errorMsg) 
       },
       emailStrs => {
-        val nCurrentMembers = rc.state.get.people.size
+        val nCurrentMembers = Person.people(rc.state.get).size
         // TODO: internationalize these messages!
         val resultMsg =
 	        if (!rc.requesterOrAnon.isAdmin && (nCurrentMembers + emailStrs.size) > maxMembers) {

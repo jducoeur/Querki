@@ -56,6 +56,19 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   override def term = {
     PageEventManager.requestReceived -= InviteLoginChecker
   }
+  
+  /**
+   * All the people who have been invited into this Space.
+   */
+  def people(implicit state:SpaceState):Iterable[Thing] = state.descendants(PersonOID, false, true)
+  /**
+   * All the people who have been invited into this Space who have not yet accepted.
+   */
+  def invitees(implicit state:SpaceState):Iterable[Thing] = people.filterNot(_.hasProp(IdentityLink))
+  /**
+   * All the people who have joined this Space.
+   */
+  def members(implicit state:SpaceState):Iterable[Thing] = people.filter(_.hasProp(IdentityLink))
 
   /***********************************************
    * EXTERNAL REFS

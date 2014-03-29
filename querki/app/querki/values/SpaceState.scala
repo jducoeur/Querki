@@ -49,7 +49,6 @@ case class SpaceState(
     e:Ecology) 
   extends Thing(s, s, m, Kind.Space, pf, mt)(e) with EcologyMember 
 {
-  lazy val Person = interface[querki.identity.Person]  
   lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   lazy val DataModel = interface[querki.datamodel.DataModelAccess]
   
@@ -282,21 +281,6 @@ object SpaceState {
    * here instead.
    */
   implicit class SpaceStateExtras(state:SpaceState) {
-    /**
-     * All the people who have been invited into this Space.
-     */
-    def people:Iterable[Thing] = state.descendants(querki.identity.MOIDs.PersonOID, false, true)
-    /**
-     * All the people who have been invited into this Space who have not yet accepted.
-     */
-    def invitees:Iterable[Thing] = people.filterNot(_.hasProp(state.Person.IdentityLink)(state))
-    /**
-     * All the people who have joined this Space.
-     */
-    def members:Iterable[Thing] = people.filter(_.hasProp(state.Person.IdentityLink)(state))
-    
-    // *************************************
-    
     def ownerName:String = state.ownerIdentity.map(_.name).getOrElse(state.owner.toThingId)
     def ownerHandle:String = state.ownerIdentity.map(_.handle).getOrElse(state.owner.toThingId)
     
