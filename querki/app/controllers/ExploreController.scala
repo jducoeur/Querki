@@ -7,7 +7,6 @@ import querki.core.QLText
 
 class ExploreController extends ApplicationBase {
   
-  lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val QL = interface[querki.ql.QL]
   
   def showExplorer(ownerId:String, spaceId:String, thingId:String) = withThing(true, ownerId, spaceId, thingId) { implicit rc =>

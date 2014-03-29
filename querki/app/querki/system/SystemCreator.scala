@@ -68,6 +68,7 @@ object SystemCreator {
     new querki.spaces.SpaceEcot(ecology)                           // 37
                                                                    // 38
     new querki.identity.IdentityEcot(ecology)                      // 39
+    new controllers.NavSectionEcot(ecology)                        // 40
   }
   
   def createAllEcots(ecology:Ecology):Ecology = {

@@ -8,10 +8,11 @@
 
 @Basic = @{ rc.interface[querki.basic.Basic] }
 @PageEventManager = @{ rc.interface[controllers.PageEventManager] }
+@NavSectionMgr = @{ rc.interface[controllers.NavSectionMgr] }
 
 @space = @{ rc.state }
 @thing = @{ rc.thing }
-@nav = @{ NavSection.nav(rc) }
+@nav = @{ NavSectionMgr.nav(rc) }
 
 @formErrors = @{
   val formsWithErrors = forms.filter(_.hasErrors)
@@ -298,7 +299,7 @@
                       }
                     </ul>
                     <ul class="nav pull-right">
-                      @defining(NavSection.loginNav(rc)) { section =>
+                      @defining(NavSectionMgr.loginNav(rc)) { section =>
                         @displayNavigable(section)
                       }
 	                </ul>

@@ -11,6 +11,9 @@ import querki.values.RequestContext
 object MOIDs extends EcotIds(19)
 
 class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search {
+  
+  lazy val AccessControl = interface[querki.security.AccessControl]
+  
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
   
   def search(rc:RequestContext, searchStr:String):Option[SearchResults] = {
@@ -28,7 +31,7 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search {
         // TODO: this isn't strictly correct -- ideally, this is a subtle combination of Can Read and Can View Source.
         // If the user Can View Source, then it's fine; otherwise, if he Can Read, we should really be checking the
         // *rendered* view of this Thing. But that's challenging, so this should probably become Can View Source for now.
-        if (!space.canRead(requester, t.id))
+        if (!AccessControl.canRead(space, requester, t.id))
           Seq()
         else if (t.unsafeDisplayName.toLowerCase().contains(searchComp)) {
           Seq(SearchResult(t, DisplayNameProp, 1.0, t.unsafeDisplayName, List(t.unsafeDisplayName.toLowerCase().indexOf(searchComp))))

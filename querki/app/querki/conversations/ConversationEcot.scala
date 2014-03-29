@@ -32,7 +32,7 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
       
   def canReadComments(req:User, thingId:OID, state:SpaceState) = {
     // TODO: this will eventually need its own permission
-    state.canRead(req, thingId)
+    AccessControl.canRead(state, req, thingId)
   }
   
   def canWriteComments(identity:OID, thingId:OID, state:SpaceState) = {

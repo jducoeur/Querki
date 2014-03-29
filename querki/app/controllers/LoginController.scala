@@ -57,7 +57,6 @@ class LoginController extends ApplicationBase {
   )
   
   lazy val Person = interface[querki.identity.Person]
-  lazy val AccessControl = interface[querki.security.AccessControl]
   
   lazy val maxMembers = Config.getInt("querki.public.maxMembersPerSpace", 100)
   

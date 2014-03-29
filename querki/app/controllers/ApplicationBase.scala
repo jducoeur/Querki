@@ -16,6 +16,7 @@ class ApplicationBase extends Controller with EcologyMember {
   
   implicit var ecology:Ecology = null
   
+  lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   lazy val PageEventManager = interface[controllers.PageEventManager]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
@@ -157,7 +158,7 @@ class ApplicationBase extends Controller with EcologyMember {
 	      val state = stateOpt.get
 	      val result =
 	        if ((requireLogin && filledRC.requester.isEmpty) || 
-	            (!allowAnyone && !state.canRead(filledRC.requester.getOrElse(User.Anonymous), thingOpt.map(_.id).getOrElse(state))))
+	            (!allowAnyone && !AccessControl.canRead(state, filledRC.requester.getOrElse(User.Anonymous), thingOpt.map(_.id).getOrElse(state))))
 	          onUnauthorized(filledRC.request)
 	        else
 	          cb(filledRC)

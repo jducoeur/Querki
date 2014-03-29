@@ -63,6 +63,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
   
   def id = OID(self.path.name)
   
+  lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Person = interface[querki.identity.Person]
   lazy val Core = interface[querki.core.Core]
@@ -110,7 +111,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
     _currentState = Some(newState)
   }
   
-  def canRead(who:User, thingId:OID):Boolean = state.canRead(who, thingId)
+  def canRead(who:User, thingId:OID):Boolean = AccessControl.canRead(state, who, thingId)
   def canCreate(who:User, modelId:OID):Boolean = state.canCreate(who, modelId)
   def canEdit(who:User, thingId:OID):Boolean = state.canEdit(who, thingId)
   
