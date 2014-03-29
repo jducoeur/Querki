@@ -130,7 +130,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
     
     def canEdit(context:QLContext, requester:User, thing:PropertyBundle):Boolean = {
       thing match {
-        case t:Thing => context.state.canEdit(requester, t.id)
+        case t:Thing => AccessControl.canEdit(context.state, requester, t.id)
         // TODO: this isn't right. It should return true iff the requester can edit the Thing
         // this bundle is contained in. Hmm...
         case _ => true

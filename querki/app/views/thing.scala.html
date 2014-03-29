@@ -17,7 +17,7 @@
 @rawThingId = @{ thing.id.toThingId.toString }
 
 @canEdit = @{
-  user.isDefined && space.canEdit(user.get, thing)
+  user.isDefined && AccessControl.canEdit(space, user.get, thing)
 }
 
 @canCreate(t:Thing) = @{

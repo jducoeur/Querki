@@ -50,7 +50,6 @@ case class SpaceState(
   extends Thing(s, s, m, Kind.Space, pf, mt)(e) with EcologyMember 
 {
   lazy val Person = interface[querki.identity.Person]  
-  lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   lazy val DataModel = interface[querki.datamodel.DataModelAccess]
   lazy val Links = interface[querki.links.Links]
@@ -332,14 +331,6 @@ case class SpaceState(
     }
     
     filteredAsModel.filterNot(_.ifSet(InternalProp))
-  }
-  
-  def canEdit(who:User, thingId:OID):Boolean = {
-    AccessControl.canEdit(this, who, thingId)
-  }
-  
-  def canChangePropertyValue(who:User, propId:OID):Boolean = {
-    AccessControl.canChangePropertyValue(this, who, propId)
   }
 }
 

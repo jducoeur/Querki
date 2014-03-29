@@ -113,7 +113,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
   
   def canRead(who:User, thingId:OID):Boolean = AccessControl.canRead(state, who, thingId)
   def canCreate(who:User, modelId:OID):Boolean = AccessControl.canCreate(state, who, modelId)
-  def canEdit(who:User, thingId:OID):Boolean = state.canEdit(who, thingId)
+  def canEdit(who:User, thingId:OID):Boolean = AccessControl.canEdit(state, who, thingId)
   
   def changedProperties(oldProps:PropMap, newProps:PropMap):Seq[OID] = {
     val allIds = oldProps.keySet ++ newProps.keySet
@@ -133,7 +133,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
   // TODO: Note that this is not fully implemented in AccessControlModule yet. We'll need to flesh it out further there
   // before we generalize this feature.
   def canChangeProperties(who:User, oldThingOpt:Option[Thing], newProps:PropMap):Unit = {
-    val failedProp = changedProperties(oldThingOpt.map(_.props).getOrElse(Map.empty), newProps).find(!state.canChangePropertyValue(who, _))
+    val failedProp = changedProperties(oldThingOpt.map(_.props).getOrElse(Map.empty), newProps).find(!AccessControl.canChangePropertyValue(state, who, _))
     failedProp match {
       case Some(propId) => throw new PublicException("Space.modifyThing.propNotAllowed", state.anything(propId).get.displayName)
       case _ => oldThingOpt.map(PropTypeMigrator.checkLegalChange(state, _, newProps))
