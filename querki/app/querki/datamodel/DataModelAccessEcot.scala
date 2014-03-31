@@ -193,7 +193,15 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     |by that Space.
     |
     |User code will rarely care about this function, but it is part of how the [[All Things._self]] display works.""".stripMargin,
-  { (thing, context) => Core.listFrom(context.state.thingRoots, LinkType) })
+  { (thing, context) => 
+    implicit val state = context.state
+    val thingRoots:Iterable[OID] = {
+      ((Set.empty[OID] /: state.allThings) ((set, t) => set + state.root(t))).
+        filterNot(oid => state.anything(oid).map(_.ifSet(Core.InternalProp)).getOrElse(false))
+    }
+    
+    Core.listFrom(thingRoots, LinkType) 
+  })
 
   class AllPropsMethod extends SingleThingMethod(AllPropsMethodOID, "_allProps", "What are the Properties in this Space?", 
     """    SPACE -> _allProps -> PROPS
