@@ -1,8 +1,7 @@
 package controllers
 
-// TODO: these are both essentially bugs, to deal with the sync/async mismatches.
-import scala.concurrent.Await
-import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 import play.api._
 import play.api.data._
@@ -106,19 +105,22 @@ class ConversationController extends ApplicationBase {
     (Set.empty[OID] /: nodes) { (set, node) => set ++ getIds(node) }
   }
   
-  def getIdentities(nodes:Seq[ConversationNode]):Map[OID, PublicIdentity] = {
+  def getIdentities(nodes:Seq[ConversationNode]):Future[Map[OID, PublicIdentity]] = {
     val ids = getIds(nodes)
-    // TODO: fix this Await!
-    Await.result(IdentityAccess.getIdentities(ids.toSeq), (5 seconds))
+    IdentityAccess.getIdentities(ids.toSeq)
   }
   
   def getConversations(ownerId:String, spaceId:String, thingId:String) = withThing(false, ownerId, spaceId, thingId) { implicit rc =>
     val msg = ConversationRequest(rc.requesterOrAnon, rc.ownerId, rc.state.get.id, GetConversations(rc.thing.get.id))
     askSpace(msg) {
       case ThingConversations(convs) => {
-        implicit val identityMap = getIdentities(convs)
-        val convJson = Json.toJson(convs.map(node2Display(_)))
-        Ok(convJson)
+        Async {
+          // TODO: cope with errors returned from here!
+          getIdentities(convs).map { implicit identityMap =>
+            val convJson = Json.toJson(convs.map(node2Display(_)))
+            Ok(convJson)
+          }
+        }
       }
       case ThingError(ex, stateOpt) => {
         BadRequest(ex.display(Some(rc)))
@@ -149,8 +151,12 @@ class ConversationController extends ApplicationBase {
     val msg = ConversationRequest(rc.requesterOrAnon, rc.ownerId, state.id, NewComment(comment))
     askSpace(msg) {
       case reply @ AddedNode(parentId, node) => {
-        implicit val identities = getIdentities(Seq(node))
-        Ok(Json.toJson(addedNode2Display(reply)))
+        Async {
+          // TODO: cope with errors returned from here!
+          getIdentities(Seq(node)).map { implicit identityMap =>
+            Ok(Json.toJson(addedNode2Display(reply)))      
+          }
+        }
       }
       case ThingError(ex, stateOpt) => {
         BadRequest(ex.display(Some(rc)))
