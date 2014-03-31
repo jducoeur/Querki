@@ -23,6 +23,10 @@ class SkillLevelModule(e:Ecology) extends QuerkiEcot(e) with SkillLevel with Con
     SpaceChangeManager.updateStateCache += this
   }
   
+  override def term = {
+    SpaceChangeManager.updateStateCache -= this    
+  }
+  
   object StateCacheKeys {
     val propsBySkill = "PropsBySkill"
   }

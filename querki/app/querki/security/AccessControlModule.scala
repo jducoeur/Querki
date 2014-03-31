@@ -30,7 +30,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
   // of the Space? Is it ever appropriate for this to be the User that we're checking?
   def isMember(who:User, state:SpaceState):Boolean = {
     implicit val s = state
-    val members = state.descendants(Person.PersonModel.id, false, true)
+    val members = Person.members(state)
     members.exists { person =>
       val personIdentityOpt = person.getPropOpt(Person.IdentityLink)
       personIdentityOpt.map { personIdentity =>
@@ -49,7 +49,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
   // be rationalized.
   def isMember(identityId:OID, state:SpaceState):Boolean = {
     implicit val s = state
-    val members = state.descendants(Person.PersonModel.id, false, true)
+    val members = Person.members(state)
     members.exists { person =>
       val personIdentityOpt = person.getPropOpt(Person.IdentityLink)
       personIdentityOpt.map { personIdentity =>

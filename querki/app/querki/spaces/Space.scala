@@ -178,8 +178,8 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
     val persistFuture = persister ? Load
     val result = Await.result(persistFuture, scala.concurrent.duration.Duration(5, "seconds"))
     result match {
-      case Loaded(state) => {
-        updateState(state)
+      case Loaded(s) => {
+        updateState(s)
         checkOwnerIsMember()
         // Okay, we're up and running. Fire up the Conversations for this Space:
         myConversations = context.actorOf(Conversations.conversationActorProps(persistenceFactory, id, self), "Conversations") 

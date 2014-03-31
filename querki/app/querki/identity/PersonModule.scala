@@ -13,7 +13,7 @@ import querki.core.QLText
 import querki.ecology._
 import querki.email.emailSepChar
 import querki.ql.QLPhrase
-import querki.spaces.SpaceManager
+import querki.spaces.{CacheUpdate, SpaceManager}
 import querki.spaces.messages.{ChangeProps, CreateThing, ThingError, ThingFound, ThingResponse}
 import querki.util._
 import querki.values._
@@ -31,11 +31,12 @@ import play.api.Logger
  * TODO: this should probably be split into two modules, with all of the HTTP-specific stuff
  * surrounding Cookies brought into the controllers instead. But it'll do for now.
  */
-class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core.MethodDefs {
+class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core.MethodDefs with Contributor[CacheUpdate, CacheUpdate] {
   
   val Email = initRequires[querki.email.Email]
   val Basic = initRequires[querki.basic.Basic]
   val PageEventManager = initRequires[controllers.PageEventManager]
+  val SpaceChangeManager = initRequires[querki.spaces.SpaceChangeManager]
   
   lazy val QL = interface[querki.ql.QL]
   lazy val Links = interface[querki.links.Links]
@@ -51,16 +52,38 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   
   override def init = {
     PageEventManager.requestReceived += InviteLoginChecker
+    SpaceChangeManager.updateStateCache += this
   }
   
   override def term = {
     PageEventManager.requestReceived -= InviteLoginChecker
+    SpaceChangeManager.updateStateCache -= this
+  }
+  
+  object StateCacheKeys {
+    val people = "People"
+  }
+  
+  /**
+   * This gets called whenever a SpaceState is updated. We take that opportunity to build up a cached
+   * mapping of Properties by SkillLevel.
+   */
+  def notify(evt:CacheUpdate, sender:Publisher[CacheUpdate, CacheUpdate]):CacheUpdate = {
+    implicit val state = evt.current
+    val calculated:Map[OID, Thing] = state.descendants(PersonOID, false, true).map(person => (person.id -> person)).toMap
+        
+    evt.updateCacheWith(MOIDs.ecotId, StateCacheKeys.people, calculated)
   }
   
   /**
    * All the people who have been invited into this Space.
    */
-  def people(implicit state:SpaceState):Iterable[Thing] = state.descendants(PersonOID, false, true)
+  def people(implicit state:SpaceState):Iterable[Thing] = {
+    state.cache.get(StateCacheKey(MOIDs.ecotId, StateCacheKeys.people)) match {
+      case Some(rawEntry) => { rawEntry.asInstanceOf[Map[OID, Thing]].values }
+      case None => { QLog.error("PersonModule couldn't find its state cache in Space " + state.id); Iterable.empty }
+    }
+  }
   /**
    * All the people who have been invited into this Space who have not yet accepted.
    */
@@ -368,7 +391,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   
   def localIdentities(user:User)(implicit state:SpaceState):Iterable[Identity] = {
     for {
-      person <- state.descendants(MOIDs.PersonOID, false, true)
+      person <- people
       identity <- user.identities
       if (isPerson(identity, person))
     }
@@ -376,15 +399,13 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   }
 
   def localPerson(identity:Identity)(implicit state:SpaceState):Option[Thing] = {
-    state.
-      descendants(MOIDs.PersonOID, false, true).
+    people.
       filter(person => isPerson(identity, person)).
       headOption
   }
   
   def localPerson(user:User)(implicit state:SpaceState):Option[Thing] = {
-    state.
-      descendants(MOIDs.PersonOID, false, true).
+    people.
       filter(person => hasPerson(user, person)).
       headOption
   }
