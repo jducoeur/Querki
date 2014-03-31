@@ -20,5 +20,8 @@ package object skilllevel {
     
     def apply(thing:Thing)(implicit state:SpaceState):OID
     def isAdvanced(thing:Thing)(implicit state:SpaceState):Boolean
+    
+    def standardProps(implicit state:SpaceState):Seq[Property[_,_]]
+    def advancedProps(implicit state:SpaceState):Seq[Property[_,_]]
   }
 }

@@ -4,7 +4,7 @@ import akka.actor._
 
 import querki.ecology._
 
-import querki.spaces.{DBSpacePersistenceFactory, SpaceManager, SpaceOps}
+import querki.spaces.{CacheUpdate, DBSpacePersistenceFactory, SpaceManager, SpaceOps}
 
 /**
  * The master root for all of Querki's back end. Note that this does *not* control the front end
@@ -29,7 +29,10 @@ class QuerkiRoot extends Actor {
       SystemCreator.createAllEcots(ecology)
       println("... initializing the Ecology...")
       val finalState = ecology.manager.init(InitialSystemState.create(ecology), createActor)
-      ecology.api[SystemManagement].setState(finalState)
+      
+      // Allow all the systems to cache their stuff into System:
+      val withCache = ecology.api[querki.spaces.SpaceChangeManager].updateStateCache(CacheUpdate(None, None, finalState))
+      ecology.api[SystemManagement].setState(withCache.current)
       
       println("... Querki running.")
       sender ! Initialized(ecology)

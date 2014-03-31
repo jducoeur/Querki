@@ -12,7 +12,7 @@ import models.Thing.PropMap
 import querki.ecology._
 import querki.spaces.messages.SpaceMgrMsg
 import querki.util.Sequencer
-import querki.values.SpaceState
+import querki.values.{SpaceState, StateCacheKey}
 
 package object spaces {
   // This is a pure marker trait, indicating that this PropValue didn't load correctly yet:
@@ -66,6 +66,15 @@ package object spaces {
   }
     
   case class ThingChangeRequest(state:SpaceState, modelIdOpt:Option[OID], thingOpt:Option[Thing], newProps:PropMap)
+  
+  case class CacheUpdate(evt:Option[querki.spaces.messages.SpaceMessage], old:Option[SpaceState], current:SpaceState) {
+    /**
+     * Listeners to updateStateCache should usually call this at the end to update the cache with their particular value.
+     */
+    def updateCacheWith(ecotId:Short, key:String, v:Any):CacheUpdate = {
+      copy(current = current.copy(cache = current.cache + (StateCacheKey(ecotId, key) -> v)))
+    }
+  }
 
   trait SpaceChangeManager extends EcologyInterface {
     /**
@@ -74,5 +83,15 @@ package object spaces {
      * IMPORTANT: this is called by the Space, so it MUST NOT BLOCK.
      */
     def thingChanges:Sequencer[ThingChangeRequest]
+    
+    /**
+     * Called whenever the state changes. Listeners should update their cache entries in the "current" field.
+     * 
+     * IMPORTANT: this is called by the Space with every change. It much not block, and it must be decently
+     * efficient. Ecots should use the cache when they have information that is (a) used frequently (more than
+     * once per State change on average); (b) moderately expensive to calculate that often; (c) based strictly
+     * on the SpaceState. Do *not* over-use it, but sometimes it's just the thing.
+     */
+    def updateStateCache:Sequencer[CacheUpdate]
   }
 }

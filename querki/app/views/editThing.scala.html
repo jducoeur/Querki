@@ -30,6 +30,7 @@
 @Editor = @{ rc.interface[querki.editing.Editor] }
 @Tags = @{ rc.interface[querki.tags.Tags] }
 @Basic = @{ rc.interface[querki.basic.Basic] }
+@SkillLevel = @{ rc.interface[querki.identity.skilllevel.SkillLevel] }
 @Types = @{ rc.interface[querki.types.Types] }
 
 @ExactlyOne = @{ Core.ExactlyOne }
@@ -81,13 +82,13 @@
 
 @propsInSpace(s:SpaceState) = {
     <optgroup label="Properties in @s.displayName">
-      @for(prop <- filterPropsByKind(s.standardProps, s).sortBy(_.displayName)) {
+      @for(prop <- filterPropsByKind(SkillLevel.standardProps(s), s).sortBy(_.displayName)) {
         <option value="@prop.id.toString">@prop.displayName</option>
       }
     </optgroup>
-    @if(s.advancedProps.length > 0) {
+    @if(SkillLevel.advancedProps(s).length > 0) {
     <optgroup label="Advanced Properties in @s.displayName">
-      @for(prop <- filterPropsByKind(s.advancedProps, s).sortBy(_.displayName)) {
+      @for(prop <- filterPropsByKind(SkillLevel.advancedProps(s), s).sortBy(_.displayName)) {
         <option value="@prop.id.toString">@prop.displayName</option>
       }
     </optgroup>    

@@ -107,8 +107,16 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
     }
   }
   // TODO: keep the previous states here in the Space, so we can undo/history
-  def updateState(newState:SpaceState) = {
-    _currentState = Some(newState)
+  /**
+   * Change to a new State.
+   * 
+   * This sends notifications to all of the Cache listeners, allowing them to update their particular
+   * cache entries. They may use the evt to optimize their updates, so the message should be included
+   * here when possible.
+   */
+  def updateState(newState:SpaceState, evt:Option[SpaceMessage] = None) = {
+    val withCaches = SpaceChangeManager.updateStateCache(CacheUpdate(evt, _currentState, newState))
+    _currentState = Some(withCaches.current)
   }
   
   def canRead(who:User, thingId:OID):Boolean = AccessControl.canRead(state, who, thingId)
@@ -171,7 +179,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
     val result = Await.result(persistFuture, scala.concurrent.duration.Duration(5, "seconds"))
     result match {
       case Loaded(state) => {
-        _currentState = Some(state)
+        updateState(state)
         checkOwnerIsMember()
         // Okay, we're up and running. Fire up the Conversations for this Space:
         myConversations = context.actorOf(Conversations.conversationActorProps(persistenceFactory, id, self), "Conversations") 

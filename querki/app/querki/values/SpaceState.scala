@@ -19,6 +19,12 @@ import querki.util._
 import querki.values._
 
 /**
+ * The keys for the SpaceState's cache. Each element is owned by a specific Ecot, which assigns
+ * an arbitrary id.
+ */
+case class StateCacheKey(ecotId:Short, id:String)
+
+/**
  * A Space is the Querki equivalent of a database -- a collection of related Things,
  * Properties and Types.
  * 
@@ -46,36 +52,13 @@ case class SpaceState(
     things:Map[OID, ThingState],
     colls:Map[OID, Collection],
     ownerIdentity:Option[querki.identity.Identity],
-    e:Ecology) 
+    e:Ecology,
+    cache:Map[StateCacheKey, Any] = Map.empty) 
   extends Thing(s, s, m, Kind.Space, pf, mt)(e) with EcologyMember 
 {
-  lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
-  lazy val DataModel = interface[querki.datamodel.DataModelAccess]
-  
-  lazy val IsFunctionProp = DataModel.IsFunctionProp
   lazy val InternalProp = Core.InternalProp
   
   override def toString = s"SpaceState '${toThingId}' (${id.toThingId})"
-  
-  // *******************************************
-  //
-  // Calculated and cached tables
-  //
-  // In some cases, it is worthwhile for us to cache some calculations on the SpaceState. Don't go overboard on
-  // these, but put them here as lazy vals.
-  //
-  
-  /**
-   * This is a bit specialized, but is the list of Properties available to add in the Editor.
-   */
-  lazy val publicPropsBySkill:Map[OID, Seq[Property[_,_]]] = {
-    implicit val s = this
-    propList.toSeq.
-      filterNot(_.ifSet(Basic.DeprecatedProp)).
-      filterNot(_.ifSet(InternalProp)).
-      filterNot(_.ifSet(IsFunctionProp)).
-      groupBy(SkillLevel(_))
-  }
   
   // *******************************************
   
@@ -283,13 +266,5 @@ object SpaceState {
   implicit class SpaceStateExtras(state:SpaceState) {
     def ownerName:String = state.ownerIdentity.map(_.name).getOrElse(state.owner.toThingId)
     def ownerHandle:String = state.ownerIdentity.map(_.handle).getOrElse(state.owner.toThingId)
-    
-    // *************************************
-    
-    private def propsForLevel(level:OID):Seq[Property[_,_]] = {
-      state.publicPropsBySkill.get(level).getOrElse(Seq.empty)
-    }
-    def standardProps:Seq[Property[_,_]] = propsForLevel(querki.identity.skilllevel.MOIDs.SkillLevelStandardOID)
-    def advancedProps:Seq[Property[_,_]] = propsForLevel(querki.identity.skilllevel.MOIDs.SkillLevelAdvancedOID)
   }
 }

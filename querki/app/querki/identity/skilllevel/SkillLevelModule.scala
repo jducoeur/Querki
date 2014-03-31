@@ -6,12 +6,55 @@ import models.{OID, Thing, ThingState}
 
 import querki.ecology._
 
-import querki.values.SpaceState
+import querki.spaces.CacheUpdate
+import querki.util.{Contributor, Publisher, QLog}
+import querki.values.{SpaceState, StateCacheKey}
 
-class SkillLevelModule(e:Ecology) extends QuerkiEcot(e) with SkillLevel {
+class SkillLevelModule(e:Ecology) extends QuerkiEcot(e) with SkillLevel with Contributor[CacheUpdate, CacheUpdate] {
   import querki.identity.skilllevel.MOIDs._
   
   val Links = initRequires[querki.links.Links]
+  val SpaceChangeManager = initRequires[querki.spaces.SpaceChangeManager]
+  
+  lazy val Basic = interface[querki.basic.Basic]
+  lazy val DataModel = interface[querki.datamodel.DataModelAccess]
+  
+  override def init = {
+    SpaceChangeManager.updateStateCache += this
+  }
+  
+  object StateCacheKeys {
+    val propsBySkill = "PropsBySkill"
+  }
+  
+  /**
+   * This gets called whenever a SpaceState is updated. We take that opportunity to build up a cached
+   * mapping of Properties by SkillLevel.
+   */
+  def notify(evt:CacheUpdate, sender:Publisher[CacheUpdate, CacheUpdate]):CacheUpdate = {
+    implicit val state = evt.current
+    val calculated:Map[OID, Seq[Property[_,_]]] =
+      state.propList.toSeq.
+        filterNot(_.ifSet(Basic.DeprecatedProp)).
+        filterNot(_.ifSet(Core.InternalProp)).
+        filterNot(_.ifSet(DataModel.IsFunctionProp)).
+        groupBy(apply(_))
+        
+    evt.updateCacheWith(MOIDs.ecotId, StateCacheKeys.propsBySkill, calculated)
+  }
+  
+  private def publicPropsBySkill(implicit state:SpaceState):Map[OID, Seq[Property[_,_]]] = {
+    state.cache.get(StateCacheKey(MOIDs.ecotId, StateCacheKeys.propsBySkill)) match {
+      case Some(rawEntry) => { rawEntry.asInstanceOf[Map[OID, Seq[Property[_,_]]]] }
+      case None => { QLog.error("SkillLevel couldn't find its state cache in Space " + state.id); Map.empty }
+    }
+  }
+   
+  private def propsForLevel(level:OID)(implicit state:SpaceState):Seq[Property[_,_]] = {
+    publicPropsBySkill.get(level).getOrElse(Seq.empty)
+  }
+  def standardProps(implicit state:SpaceState):Seq[Property[_,_]] = propsForLevel(querki.identity.skilllevel.MOIDs.SkillLevelStandardOID)
+  def advancedProps(implicit state:SpaceState):Seq[Property[_,_]] = propsForLevel(querki.identity.skilllevel.MOIDs.SkillLevelAdvancedOID)
   
   /***********************************************
    * PROPERTIES

@@ -8,10 +8,12 @@ import querki.ecology._
 import querki.util._
 import querki.values._
 
+import messages.SpaceMessage
+
 case class TypeChangeInfo(typeChanged:Boolean, newType:PType[Any] with PTypeBuilder[Any, Any], serializedValues:Map[Thing, String],
     prop:Property[_,_])
 {
-  def finish(newProp:Property[_,_], stateIn:SpaceState, updateState:SpaceState => Unit):Unit = {
+  def finish(newProp:Property[_,_], stateIn:SpaceState, updateState:(SpaceState, Option[SpaceMessage]) => Unit):Unit = {
     if (typeChanged) {
       // Now, run through all of the previously-serialized values, and rebuild them with the new Type:
       val newState = (stateIn /: serializedValues) { (state, oldPair) =>
@@ -28,7 +30,7 @@ case class TypeChangeInfo(typeChanged:Boolean, newType:PType[Any] with PTypeBuil
         }
       }
       
-      updateState(newState)
+      updateState(newState, None)
     }    
   } 
 }

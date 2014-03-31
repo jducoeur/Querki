@@ -21,4 +21,7 @@ class SpaceChangeManagerEcot(e:Ecology) extends QuerkiEcot(e) with SpaceChangeMa
   val thingChanges = new ThingChangeUpdater
 
   class ThingChangeUpdater extends Sequencer[ThingChangeRequest]
+  
+  val updateStateCache = new CacheUpdater
+  class CacheUpdater extends Sequencer[CacheUpdate]
 }
