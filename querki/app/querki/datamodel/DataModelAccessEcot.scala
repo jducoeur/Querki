@@ -261,6 +261,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   {
     override def qlApply(inv:Invocation):QValue = {
       for {
+        dummy <- inv.preferCollection(QList)
         prop <- inv.definingContextAsPropertyOf(LinkType)
         // Build the list of possible paths once, since it's a fairly intensive process:
         paths = pathsToProperty(prop)(inv.state)

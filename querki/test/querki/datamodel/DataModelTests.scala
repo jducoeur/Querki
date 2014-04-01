@@ -263,7 +263,7 @@ class DataModelTests extends QuerkiTests {
       }
       implicit val s = new TSpace
       
-      pql("""[[Link 1 -> My Link Prop._refs -> _sort]]""") should
+      pql("""[[Link 1 -> My Link Prop._refs]]""") should
         equal(listOfLinkText(s.instance1))
       pql("""[[Link 2 -> My Link Prop._refs -> _sort]]""") should
         equal(listOfLinkText(s.instance2, s.instance3))
