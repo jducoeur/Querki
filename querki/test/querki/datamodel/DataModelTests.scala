@@ -3,6 +3,7 @@ package querki.datamodel
 import querki.test._
 
 import querki.spaces.ThingChangeRequest
+import querki.types.{ModelTypeDefiner, SimplePropertyBundle}
 
 class DataModelTests extends QuerkiTests {
   lazy val DataModelAccess = interface[querki.datamodel.DataModelAccess]
@@ -237,6 +238,35 @@ class DataModelTests extends QuerkiTests {
       
       pql("""[[My Favorites -> Favorite Artists -> Artists._refs -> _sort]]""") should
         equal (listOfLinkText(space.factoryShowroom, space.firesAtMight, space.flood, space.ghostOfARose, space.shadowOfTheMoon))        
+    }
+    
+    // Test for Issue .3y285gi
+    "find references from inside Model Types" in {
+      class TSpace extends CommonSpace with ModelTypeDefiner {
+        val linkModel = new SimpleTestThing("Link Model")
+        val link1 = new TestThing("Link 1", linkModel)
+        val link2 = new TestThing("Link 2", linkModel)
+        
+        val linkProp = new TestProperty(LinkType, QSet, "My Link Prop")
+        
+        val subModel = new SimpleTestThing("SubModel", linkProp())
+        val modelType = new ModelType(toid, subModel.id, 
+          Core.toProps(
+            Core.setName("My Model Type")))
+        registerType(modelType)
+    
+        val propOfModelType = new TestProperty(modelType, Optional, "Complex Prop")
+        
+        val topModel = new SimpleTestThing("My Model", propOfModelType(), linkProp())
+        val instance1 = new TestThing("Thing 1", topModel, linkProp(link1))
+        val instance2 = new TestThing("Thing 2", topModel, propOfModelType(SimplePropertyBundle(linkProp(link2))))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Link 1 -> My Link Prop._refs -> _sort]]""") should
+        equal(listOfLinkText(s.instance1))
+      pql("""[[Link 2 -> My Link Prop._refs -> _sort]]""") should
+        equal(listOfLinkText(s.instance2))
     }
   }
 }
