@@ -8,7 +8,7 @@ import models.Thing.PropFetcher
 
 import querki.core.MOIDs._
 import querki.ecology._
-import querki.types.{ModeledPropertyBundle, ModelTypeDefiner}
+import querki.types.{ModeledPropertyBundle, ModelTypeDefiner, SimplePropertyBundle}
 import querki.values._
 import querki.identity.{FullUser, Identity, IdentityKind, User, UserLevel}
 import querki.identity.UserLevel._
@@ -101,7 +101,7 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
     extends TestThing(toid, name, pairs:_*)
   
   object TestModelProperty {
-    def apply(name:String, model:Thing, coll:Collection):TestProperty[ModeledPropertyBundle,_] = {
+    def apply(name:String, model:Thing, coll:Collection):TestProperty[ModeledPropertyBundle,SimplePropertyBundle] = {
       val modelType = new ModelType(toid, model.id, 
         Core.toProps(
           Core.setName(model.canonicalName + " Type")))

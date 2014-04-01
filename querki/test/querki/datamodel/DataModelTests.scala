@@ -250,23 +250,23 @@ class DataModelTests extends QuerkiTests {
         val linkProp = new TestProperty(LinkType, QSet, "My Link Prop")
         
         val subModel = new SimpleTestThing("SubModel", linkProp())
-        val modelType = new ModelType(toid, subModel.id, 
-          Core.toProps(
-            Core.setName("My Model Type")))
-        registerType(modelType)
-    
-        val propOfModelType = new TestProperty(modelType, Optional, "Complex Prop")
+        val propOfModelType = TestModelProperty("Complex Prop", subModel, Optional)
         
-        val topModel = new SimpleTestThing("My Model", propOfModelType(), linkProp())
+        val midModel = new SimpleTestThing("MidModel", propOfModelType())
+        val propOfMidModelType = TestModelProperty("Deep Prop", midModel, Optional)
+        
+        val topModel = new SimpleTestThing("My Model", propOfModelType(), propOfMidModelType(), linkProp())
         val instance1 = new TestThing("Thing 1", topModel, linkProp(link1))
         val instance2 = new TestThing("Thing 2", topModel, propOfModelType(SimplePropertyBundle(linkProp(link2))))
+        val instance3 = new TestThing("Thing 3", topModel,
+            propOfMidModelType(SimplePropertyBundle(propOfModelType(SimplePropertyBundle(linkProp(link2))))))
       }
       implicit val s = new TSpace
       
       pql("""[[Link 1 -> My Link Prop._refs -> _sort]]""") should
         equal(listOfLinkText(s.instance1))
       pql("""[[Link 2 -> My Link Prop._refs -> _sort]]""") should
-        equal(listOfLinkText(s.instance2))
+        equal(listOfLinkText(s.instance2, s.instance3))
     }
   }
 }
