@@ -8,6 +8,7 @@ import models.Thing.PropFetcher
 
 import querki.core.MOIDs._
 import querki.ecology._
+import querki.types.{ModeledPropertyBundle, ModelTypeDefiner}
 import querki.values._
 import querki.identity.{FullUser, Identity, IdentityKind, User, UserLevel}
 import querki.identity.UserLevel._
@@ -48,7 +49,7 @@ case class SpaceMember(user:User, person:ThingState)
  * In general, you should construct a class based on TestSpace, that fills in the
  * bits you need.
  */
-trait TestSpace extends EcologyMember {
+trait TestSpace extends EcologyMember with ModelTypeDefiner {
   
   lazy val Core = interface[querki.core.Core]
   lazy val Person = interface[querki.identity.Person]
@@ -98,6 +99,17 @@ trait TestSpace extends EcologyMember {
   }
   class SimpleTestThing(name:String, pairs:(OID, QValue)*)
     extends TestThing(toid, name, pairs:_*)
+  
+  object TestModelProperty {
+    def apply(name:String, model:Thing, coll:Collection):TestProperty[ModeledPropertyBundle,_] = {
+      val modelType = new ModelType(toid, model.id, 
+        Core.toProps(
+          Core.setName(model.canonicalName + " Type")))
+      registerType(modelType)
+    
+      new TestProperty(modelType, coll, name)      
+    }
+  }
   
   // ================================
   

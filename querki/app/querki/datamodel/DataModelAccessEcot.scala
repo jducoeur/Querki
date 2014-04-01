@@ -150,7 +150,9 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   }
   
   /**
-   * A way to get to a Property, which might be contained in Model Properties.
+   * A way to get to a Property, which might be contained in Model Properties. Most important for
+   * the getPropOpt() method, which is similar to Thing.getPropOpt(prop), but in this case is
+   * Path.getPropOpt(thing) -- what property values does this Path return for this Thing.
    * 
    * This may want to get used more generally, in which case it should all move to Types, but for now
    * we'll use it where we need it.
@@ -259,11 +261,13 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   {
     override def qlApply(inv:Invocation):QValue = {
       for {
-        thing <- inv.contextAllThings
         prop <- inv.definingContextAsPropertyOf(LinkType)
+        // Build the list of possible paths once, since it's a fairly intensive process:
         paths = pathsToProperty(prop)(inv.state)
+        thing <- inv.contextAllThings
         candidateThing <- inv.iter(inv.state.allThings)
-        propAndVal <- inv.opt(candidateThing.getPropOpt(prop)(inv.state))
+        path <- inv.iter(paths)
+        propAndVal <- inv.iter(path.getPropOpt(candidateThing)(inv.state))
         if (propAndVal.contains(thing.id))
       }
         yield ExactlyOne(LinkType(candidateThing.id))
