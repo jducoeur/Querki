@@ -188,7 +188,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
       implicit val s = state
       val parentStylesheetStr = if (thing.hasModel) stylesheetsForThing(state, thing.getModel) else ""
       val localStylesheetOpt =
-        for (propVal <- thing.getPropOpt(StylesheetProp);
+        for (propVal <- thing.localProp(StylesheetProp);
              stylesheetOID = propVal.first)
           yield state.thing(stylesheetOID)
       val localStylesheetStr = localStylesheetOpt.map(stylesheet => "<style type=\"text/css\">" + stylesheet.first(CSSProp) + "</style>")
