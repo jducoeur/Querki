@@ -16,6 +16,8 @@
 @user = @{ rc.requester }
 @rawThingId = @{ thing.id.toThingId.toString }
 
+@isRealThing = @{ thing.id != UnknownOID }
+
 @canEdit = @{
   user.isDefined && AccessControl.canEdit(space, user.get, thing)
 }
@@ -81,9 +83,10 @@
 	
         @Html(thing.render(rc).display)
         
-        <hr/>
-        
-        @convPane(rc, thing.id)
+        @if(isRealThing) {
+          <hr/>    
+          @convPane(rc, thing.id)
+        }
 	  
 	  </div>
 	}
