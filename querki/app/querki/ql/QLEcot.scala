@@ -155,12 +155,12 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
 	      Summary("Get a Link to this Thing"),
 	      Details("""*thing*._self simply produces *thing*.
 	          |
-	          |This seems silly, but it is useful for overriding the usual _apply behavior. In particular,
-	          |*property*._self is the way to get a link to the property itself, instead of fetching the value
+	          |This seems silly, but it is useful for overriding the usual \_apply behavior. In particular,
+	          |*property*.\_self is the way to get a link to the property itself, instead of fetching the value
 	          |of the property on the received Thing.
 	          |
-	          |More formally, _self is the way to override the usual [[_apply]] behaviour on a Thing, to get a
-	          |Link to that Thing. It is never necessary for ordinary Things, but frequently useful when _apply
+	          |More formally, \_self is the way to override the usual \[[\_apply\]] behaviour on a Thing, to get a
+	          |Link to that Thing. It is never necessary for ordinary Things, but frequently useful when \_apply
 	          |has been defined on it.""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QValue = {
