@@ -214,6 +214,24 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
    * FUNCTIONS
    ***********************************************/  
 
+  def hasName(pv:PropAndVal[_], name:String, plaintext:PlainText, prop:Property[_,_]):Boolean = {
+    prop.pType match {
+      case TagSetType => {
+	    val candidateTags:List[String] = pv.v.rawList(TagSetType)
+	    candidateTags.exists { candidateName => equalNames(candidateName, name) }
+      }
+      case NewTagSetType => {
+        val candidateTags:List[PlainText] = pv.v.rawList(NewTagSetType)
+        candidateTags.exists { candidateName => NewTagSetType.equalNames(candidateName, plaintext) }                
+      }
+    }
+  }
+
+  /**
+   * TODO: man, this code is horrible. It needs a *lot* of cleanup. It is extraordinarily inefficient -- enough
+   * so that it may be better for us to precalculate all of the references and stick them into the State Cache
+   * instead.
+   */
   lazy val TagRefsMethod = new InternalMethod(TagRefsOID,
     toProps(
       setName("_tagRefs"),
@@ -229,42 +247,59 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
           |at some point combine them for simplicity.""".stripMargin)))
   { 
     override def qlApply(inv:Invocation):QValue = {
-      val context = inv.context
-      
-      val elemT = context.value.pType
-      elemT match {
-        case nameable:NameableType => {
-          val allProps = context.state.allProps.values
-          val tagProps = allProps.filter(prop => prop.pType == TagSetType || prop.pType == NewTagSetType)
-          val name = nameable.getName(context)(context.value.first)
-          val thingOpt = elemT match {
-            case LinkType => Core.followLink(context)
+      for {
+        dummy <- inv.preferCollection(QSet)
+        nameableType <- inv.contextTypeAs[NameableType]
+        // TODO: this only works with a single received name. It should work with any number!
+        oldName = nameableType.getName(inv.context)(inv.context.value.first)
+        tagProps = inv.state.propList.filter(prop => prop.pType == TagSetType || prop.pType == NewTagSetType)
+        thingOpt = nameableType match {
+            case LinkType => Core.followLink(inv.context)
             case _ => None
           }
-          val namePt = thingOpt.map(thing => PlainText(thing.unsafeDisplayName)).getOrElse(PlainText(name))
-          val candidates = context.state.allThings
-        
-          def hasThisTag(candidate:Thing):Boolean = {
-            tagProps.exists{ prop =>
-              val propAndVal = candidate.localProp(prop)
-              val found = prop.pType match {
-                case TagSetType => {
-	              val candidateTags:Option[List[String]] = propAndVal.map(_.v.rawList(TagSetType))
-	              candidateTags.map(_.exists { candidateName => equalNames(candidateName, name) })
-                }
-                case NewTagSetType => {
-	              val candidateTags:Option[List[PlainText]] = propAndVal.map(_.v.rawList(NewTagSetType))
-	              candidateTags.map(_.exists { candidateName => NewTagSetType.equalNames(candidateName, namePt) })                
-                }
-              }
-              found.getOrElse(false)
-            }
-          }
-        
-          Core.listFrom(candidates.filter(hasThisTag), Core.LinkFromThingBuilder)
-        }
-        case _ => WarningValue("_tagRefs can only be used with a Tag or Link, not " + elemT.displayName)
+        namePt = thingOpt.map(thing => PlainText(thing.unsafeDisplayName)).getOrElse(PlainText(oldName))
+        candidate <- inv.iter(inv.context.state.allThings)
+        prop <- inv.iter(tagProps)
+        propAndVal <- inv.opt(candidate.localProp(prop))
+        if (hasName(propAndVal, oldName, namePt, prop))
       }
+        yield ExactlyOne(LinkType(candidate))
+//      val context = inv.context
+//      
+//      val elemT = context.value.pType
+//      elemT match {
+//        case nameable:NameableType => {
+//          val allProps = context.state.allProps.values
+//          val tagProps = allProps.filter(prop => prop.pType == TagSetType || prop.pType == NewTagSetType)
+//          val name = nameable.getName(context)(context.value.first)
+//          val thingOpt = elemT match {
+//            case LinkType => Core.followLink(context)
+//            case _ => None
+//          }
+//          val namePt = thingOpt.map(thing => PlainText(thing.unsafeDisplayName)).getOrElse(PlainText(name))
+//          val candidates = context.state.allThings
+//        
+//          def hasThisTag(candidate:Thing):Boolean = {
+//            tagProps.exists{ prop =>
+//              val propAndVal = candidate.localProp(prop)
+//              val found = prop.pType match {
+//                case TagSetType => {
+//	              val candidateTags:Option[List[String]] = propAndVal.map(_.v.rawList(TagSetType))
+//	              candidateTags.map(_.exists { candidateName => equalNames(candidateName, name) })
+//                }
+//                case NewTagSetType => {
+//	              val candidateTags:Option[List[PlainText]] = propAndVal.map(_.v.rawList(NewTagSetType))
+//	              candidateTags.map(_.exists { candidateName => NewTagSetType.equalNames(candidateName, namePt) })                
+//                }
+//              }
+//              found.getOrElse(false)
+//            }
+//          }
+//        
+//          Core.listFrom(candidates.filter(hasThisTag), Core.LinkFromThingBuilder)
+//        }
+//        case _ => WarningValue("_tagRefs can only be used with a Tag or Link, not " + elemT.displayName)
+//      }
     }
   }
 

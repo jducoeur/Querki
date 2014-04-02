@@ -2,6 +2,8 @@ package querki.tags
 
 import querki.test._
 
+import querki.types.SimplePropertyBundle
+
 class TagTests extends QuerkiTests {
   lazy val Tags = interface[querki.tags.Tags]
   
@@ -30,6 +32,48 @@ class TagTests extends QuerkiTests {
       
       pql("""[[Unresolved -> List of Tags -> _resolveTags]]""") should
         equal("")      
+    }
+  }
+  
+  // === _tagRefs ===
+  "_tagRefs" should {
+    "work with a single result" in {
+      implicit val s = new CDSpace
+      
+      pql("""[[Weird -> _tagRefs]]""") should
+        equal(listOfLinkText(s.tmbg))
+    }
+    
+    "work with multiple results" in {
+      implicit val s = new CDSpace
+      
+      pql("""[[Rock -> _tagRefs -> _sort]]""") should
+        equal(listOfLinkText(s.blackmores, s.eurythmics, s.tmbg))
+    }
+    
+    // Test for Issue .3y285gi
+    "find references from inside Model Types" in {
+      class TSpace extends CommonSpace {
+        val tagProp = new TestProperty(Tags.NewTagSetType, QSet, "My Tag Prop")
+        
+        val subModel = new SimpleTestThing("SubModel", tagProp())
+        val propOfModelType = TestModelProperty("Complex Prop", subModel, Optional)
+        
+        val midModel = new SimpleTestThing("MidModel", propOfModelType())
+        val propOfMidModelType = TestModelProperty("Deep Prop", midModel, Optional)
+        
+        val topModel = new SimpleTestThing("My Model", propOfModelType(), propOfMidModelType(), tagProp())
+        val instance1 = new TestThing("Thing 1", topModel, tagProp("Tag-1"))
+        val instance2 = new TestThing("Thing 2", topModel, propOfModelType(SimplePropertyBundle(tagProp("Tag-2"))))
+        val instance3 = new TestThing("Thing 3", topModel,
+            propOfMidModelType(SimplePropertyBundle(propOfModelType(SimplePropertyBundle(tagProp("Tag-2"))))))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Tag 1 -> _tagRefs]]""") should
+        equal(listOfLinkText(s.instance1))
+      pql("""[[Tag 2 -> _tagRefs -> _sort]]""") should
+        equal(listOfLinkText(s.instance2, s.instance3))
     }
   }
   

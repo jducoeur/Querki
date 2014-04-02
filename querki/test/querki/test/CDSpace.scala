@@ -10,7 +10,7 @@ class CDSpace(implicit ecologyIn:Ecology) extends CommonSpace {
   val artistModel = new SimpleTestThing("Artist")
   val genreModel = new SimpleTestThing("Genre")
   
-  val genres = new TestProperty(interface[querki.tags.Tags].TagSetType, QSet, "Genres")
+  val genres = new TestProperty(interface[querki.tags.Tags].NewTagSetType, QSet, "Genres")
     
   val eurythmics = new TestThing("Eurythmics", artistModel, genres("Rock"))
   val tmbg = new TestThing("They Might Be Giants", artistModel, genres("Rock", "Weird"))
