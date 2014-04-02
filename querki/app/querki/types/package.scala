@@ -79,4 +79,20 @@ package object types {
     def filterNameIfDerived(state:SpaceState, model:Thing, props:PropList, propPair:(Property[_,_], DisplayPropVal)):Boolean
     def nameIsDerived(thing:Thing, state:SpaceState):Boolean
   }
+  
+  /**
+   * This Ecot manages the concept of "paths" to Properties. Use it on the relatively rare occasions where you
+   * are trying to figure out all the different ways to get *to* a particular Property, including via Model Types.
+   * 
+   * See the PropPath trait for more details.
+   */
+  trait PropPaths extends EcologyInterface {
+    /**
+     * Get all of the paths for accessing this Property in this Space. You then usually use getPropOpt() on
+     * those Paths to test whether specific Things can access it.
+     * 
+     * Note that this is a pretty intensive call; it is usually best to call it *before* your tight loops if possible.
+     */
+    def pathsToProperty[VT](prop:Property[VT,_])(implicit state:SpaceState):Seq[PropPath[VT,_]]
+  }
 }

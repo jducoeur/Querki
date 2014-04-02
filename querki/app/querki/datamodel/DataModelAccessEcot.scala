@@ -1,14 +1,12 @@
 package querki.datamodel
 
 import querki.ecology._
-
-import models.{Kind, PropertyBundle, PType}
-
+import models.{Kind, PType}
 import querki.ql.{QLCall, QLPhrase}
 import querki.spaces.ThingChangeRequest
-import querki.types.{ModeledPropertyBundle, ModelTypeBase}
 import querki.util.{Contributor, PublicException, Publisher}
 import querki.values._
+import querki.types.PropPath
 
 /**
  * This Ecot mainly is about defining Functions that give QL access to the Ecology,
@@ -34,6 +32,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   lazy val QL = interface[querki.ql.QL]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Links = interface[querki.links.Links]
+  lazy val PropPaths = interface[querki.types.PropPaths]
   
   private object PropCopier extends Contributor[ThingChangeRequest, ThingChangeRequest] {
     // This is called whenever we get a Create or Modify request.
@@ -149,96 +148,6 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     }
   }
   
-  /**
-   * A way to get to a Property, which might be contained in Model Properties. Most important for
-   * the getPropOpt() method, which is similar to Thing.getPropOpt(prop), but in this case is
-   * Path.getPropOpt(thing) -- what property values does this Path return for this Thing.
-   * 
-   * This may want to get used more generally, in which case it should all move to Types, but for now
-   * we'll use it where we need it.
-   */
-  sealed trait PropPath[VT,WT] {
-    /**
-     * The actual underlying Property that this is all about.
-     */
-    def prop:Property[VT,_]
-    /**
-     * The Property we are looking for while we build things out.
-     */
-    def lookingUp:Property[WT,_]
-    
-    /**
-     * Actually look up this Property value via this path. Note that this can return multiple values
-     * if, for instance, the Model Property in the middle is List-valued.
-     */
-    def getPropOpt(thing:PropertyBundle)(implicit state:SpaceState):Iterable[PropAndVal[VT]]
-  }
-  case class TrivialPropPath[VT](prop:Property[VT,_]) extends PropPath[VT,VT] {
-    def lookingUp = prop
-    def getPropOpt(thing:PropertyBundle)(implicit state:SpaceState):Iterable[PropAndVal[VT]] = thing.getPropOpt(prop)
-  }
-  case class ContainedPropPath[VT](container:Property[ModeledPropertyBundle,_], path:PropPath[VT,_]) extends PropPath[VT,ModeledPropertyBundle] {
-    def lookingUp = container
-    def prop = path.prop
-    def getPropOpt(thing:PropertyBundle)(implicit state:SpaceState):Iterable[PropAndVal[VT]] = {
-      thing.getPropOpt(container) match {
-        case Some(contPV) => {
-          val wrappedValues = for {
-            containerElem <- contPV.rawList
-          }
-            yield path.getPropOpt(containerElem)
-            
-          wrappedValues.flatten
-        }
-        case None => Iterable.empty
-      }
-    }
-  }
-
-  /**
-   * Given a particular Property's path, this returns all of paths that can get to it from Model Properties.
-   */
-  def modelPropertiesWithPath[VT](allModelTypes:Iterable[ModelTypeBase], wrapping:PropPath[VT,_])(implicit state:SpaceState):Iterable[PropPath[VT,ModeledPropertyBundle]] = {
-    val prop = wrapping.lookingUp
-    val modelTypes = for {
-      modelType <- allModelTypes
-      modeledType <- state.anything(modelType.basedOn)
-      if modeledType.hasProp(prop)
-    }
-      // Okay, this Type's model contains the Property we are looking for.
-      yield modelType
-      
-    val paths = for {
-      modelType <- modelTypes
-      candidateProp <- state.propList
-      propOfType <- candidateProp.confirmType(modelType)
-      path = ContainedPropPath(propOfType, wrapping)
-    }
-      yield path
-      
-    val indirectPaths = paths.map(modelPropertiesWithPath(allModelTypes, _)).flatten
-      
-    paths ++ indirectPaths
-  }
-  
-  /**
-   * This produces all of the ways to get *to* this Property in this Space, both directly and via Model Types.
-   */
-  def pathsToProperty[VT](prop:Property[VT,_])(implicit state:SpaceState):Seq[PropPath[VT,_]] = {
-    val allModelTypes = for {
-      typ <- state.types.values
-      modelType <- 
-        typ match {
-          case mtb:ModelTypeBase => Some(mtb)
-          case _ => None
-        }
-    }
-      yield modelType
-      
-    val trivialPath = TrivialPropPath(prop)
-    modelPropertiesWithPath(allModelTypes, trivialPath).toSeq :+ trivialPath
-  }
-  
   class RefsMethod extends InternalMethod(RefsMethodOID, 
     toProps(
       setName("_refs"),
@@ -264,7 +173,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
         dummy <- inv.preferCollection(QList)
         prop <- inv.definingContextAsPropertyOf(LinkType)
         // Build the list of possible paths once, since it's a fairly intensive process:
-        paths = pathsToProperty(prop)(inv.state)
+        paths = PropPaths.pathsToProperty(prop)(inv.state)
         thing <- inv.contextAllThings
         candidateThing <- inv.iter(inv.state.allThings)
         path <- inv.iter(paths)
