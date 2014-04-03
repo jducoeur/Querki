@@ -117,6 +117,7 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
 	lazy val LinkToModelsOnlyProp = new SystemProperty(LinkToModelsOnlyOID, YesNoType, ExactlyOne,
 	    toProps(
 	      setName("Link to Models Only"),
+	      AppliesToKindProp(Kind.Property),
 	      (querki.identity.skilllevel.MOIDs.SkillLevelPropOID -> ExactlyOne(LinkType(querki.identity.skilllevel.MOIDs.SkillLevelAdvancedOID))),
 	      Summary("Only allow this Property to Link to Models"),
 	      Details("""If set to true, this Link Property will only show Models as options to link to in the editor.
