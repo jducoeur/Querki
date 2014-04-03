@@ -97,12 +97,9 @@
 }
 
 .sortableList > li {
-  width: 100%;
+  width: auto;
   margin: 0 3px 7px 3px;
-  padding-left: 1.5em;
-/* Why was this here? It gets inherited in sub-nodes, and causes problems:
-  font-size: 1.4em;
-*/
+  padding-left: 21px;
 }
 
 .sortableList > li input[type="text"] {
@@ -121,7 +118,7 @@
 
 ._instanceEditor {
   background-color: #f3f3f3;
-  width: 100%;
+  width: auto;
   padding: 8px;
   margin-bottom: 10px;
   position: relative;
