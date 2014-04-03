@@ -12,6 +12,13 @@
 // This is an ugly global variable, but it's a useful state switch of whether to
 // allow things to live-update or not.
 var querkiLiveUpdate = true;
+
+// Adds the :notUnder() pseudo-selector to jQuery, which selects only elements that are not contained
+// by the specified selector. See: 
+// http://stackoverflow.com/questions/965816/what-jquery-selector-excludes-items-with-a-parent-that-matches-a-given-selector
+jQuery.expr[':'].notUnder = function(a,i,m){
+    return jQuery(a).parents(m[3]).length < 1;
+};
         
 function showStatus(msg) {
   $("#statusText").text(msg);
@@ -468,7 +475,10 @@ function finalSetup(ownerId, spaceId, root) {
   root.find("._tagSetInput").asManifest(ownerId, spaceId);
   
   root.find(".controls ._largeTextEdit").addClass("span10");
-  root.find("._largeTextEdit").autosize();
+  // We specifically need to *not* apply autosize to the template elements, or else it won't
+  // successfully apply to them when we actually instantiate them.
+  // Note that we define the :notUnder selector at the top of this file:
+  root.find("._largeTextEdit").filter(":notUnder(.inputTemplate)").autosize();
   root.find(".controls input[type='text']").filter(".propEditor").addClass("span10");
 
   root.find(".propEditor").change(updateValue);
