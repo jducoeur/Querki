@@ -63,6 +63,11 @@ GET     /u/:userName/:spaceId/a/:attachmentId @controllers.Application.attachmen
 POST    /dologin                    @controllers.LoginController.dologin
 GET     /logout                     @controllers.LoginController.logout
 
+GET     /sendPasswordReset          @controllers.LoginController.sendPasswordReset
+POST    /sendPasswordReset          @controllers.LoginController.doSendPasswordReset
+GET     /resetPassword              @controllers.LoginController.resetPassword(email, expires:Long, hash)
+POST    /resetPassword              @controllers.LoginController.doResetPassword(email, expiresMillis:Long, hash)
+
 # Admin functionality
 GET     /admin/manageUsers          @controllers.AdminController.manageUsers
 GET     /admin/upgradePendingUser   @controllers.AdminController.upgradePendingUser(userId)

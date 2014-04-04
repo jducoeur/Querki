@@ -40,4 +40,17 @@ package object security {
     def CanEditChildrenProp:Property[OID,OID]
     def CanReadProp:Property[OID,OID]
   }
+  
+  trait Encryption extends EcologyInterface {
+    /**
+     * Given a text String, this returns its hashed form, including the salt that was used
+     * to generate the hash.
+     */
+    def calcHash(original:String):String
+        
+    /**
+     * Does the provided original match the hash information?
+     */
+    def authenticate(original:String, rawHash:String):Boolean
+  }
 }

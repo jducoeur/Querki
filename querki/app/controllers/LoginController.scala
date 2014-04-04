@@ -11,14 +11,20 @@ import play.api.mvc._
 import models._
 
 import querki.ecology._
+import querki.email.EmailAddress
 import querki.identity._
 import querki.spaces.messages.{ThingError, ThingFound}
+import querki.time.DateTime
 import querki.util._
 import querki.values.QLRequestContext
 
 case class PasswordChangeInfo(password:String, newPassword:String, newPasswordAgain:String)
 
 class LoginController extends ApplicationBase {
+
+  lazy val Email = interface[querki.email.Email]
+  lazy val Encryption = interface[querki.security.Encryption]
+  lazy val Person = interface[querki.identity.Person]
   
   case class UserForm(name:String, password:String)
   val userForm = Form(
@@ -56,7 +62,9 @@ class LoginController extends ApplicationBase {
     )(PasswordChangeInfo.apply)(PasswordChangeInfo.unapply)
   )
   
-  lazy val Person = interface[querki.identity.Person]
+  val resetPasswordForm = Form(
+    mapping("name" -> nonEmptyText)((handle) => handle)((handle:String) => Some(handle))
+  )
   
   lazy val maxMembers = Config.getInt("querki.public.maxMembersPerSpace", 100)
   
@@ -233,6 +241,84 @@ class LoginController extends ApplicationBase {
         }
       }
     )
+  }
+  
+  def sendPasswordReset() = withUser(false) { rc =>
+    Ok(views.html.sendPasswordReset(rc))
+  }
+  
+  def resetValidationStr(email:String, expires:Long) = s"${email} ${expires}"
+  
+  def doSendPasswordReset() = withUser(false) { rc =>
+    implicit val request = rc.request
+    val rawForm = resetPasswordForm.bindFromRequest
+    // We show the same error in all cases, to avoid information leakage
+    def showError = {
+      doError(routes.LoginController.sendPasswordReset, "That isn't a known login handle or email address")
+    }
+    rawForm.fold(
+      errorForm => showError,
+      handle => {
+        val successOpt = for {
+          user <- UserAccess.getUserByHandleOrEmail(handle)
+          identity <- user.loginIdentity
+          email = identity.email.addr
+          expires = DateTime.now.plusDays(2).getMillis()
+          hash = Encryption.calcHash(resetValidationStr(email, expires))
+          subject = Wikitext("Reset your Querki password")
+          body = Wikitext(s"""We received a request to reset the password for your account, ${user.mainIdentity.handle}.
+            |If you made this request, please [click here](${routes.LoginController.resetPassword(email, expires, hash).absoluteURL(false)(rc.request)}), which will take you to a page
+            |where you can enter a new password for your Querki account. This link will only be valid for the next two days, so please act
+            |on it soon!
+            |
+            |If you did not make this request, please just ignore this email, and nothing will be changed.""".stripMargin)
+          result = Email.sendSystemEmail(identity, subject, body)
+        }
+          yield true
+          
+        successOpt match {
+          case Some(true) => doInfo(routes.Application.index, "Password update email has been sent")
+          case _ => showError
+        }
+      }
+    )
+  }
+  
+  def resetPassword(email:String, expiresMillis:Long, hash:String) = withUser(false) { rc =>
+    val initialPasswordForm = PasswordChangeInfo(hash, "", "")
+    Ok(views.html.resetPassword(rc, email, expiresMillis, hash, passwordChangeForm.fill(initialPasswordForm)))
+  }
+  
+  def doResetPassword(email:String, expiresMillis:Long, hash:String) = withUser(false) { rc =>
+    def showError() = doError(routes.LoginController.resetPassword(email, expiresMillis, hash), "Invalid password change")
+    if (!Encryption.authenticate(resetValidationStr(email, expiresMillis), hash))
+      showError()
+    else {
+      val expires = new DateTime(expiresMillis)
+      if (expires.isBeforeNow())
+        showError()
+      else {
+        implicit val request = rc.request
+        val rawForm = passwordChangeForm.bindFromRequest
+        rawForm.fold(
+          errorForm => showError(),
+          info => {
+            if (info.newPassword == info.newPasswordAgain) {
+              UserAccess.getUserByHandleOrEmail(email) match {
+                case Some(user) => {
+                  val identity = user.loginIdentity.get
+                  val newUser = UserAccess.changePassword(user, identity, info.newPassword)
+                  Redirect(routes.Application.index).flashing("info" -> "Password changed")
+                }
+                case None => showError()
+              }              
+            } else {
+              doError(routes.LoginController.resetPassword(email, expiresMillis, hash), "The passwords didn't match")
+            }
+          }
+        )
+      }
+    }
   }
   
   // TODO: that onUnauthorized will infinite-loop if it's ever invoked. What should we do instead?

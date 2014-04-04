@@ -39,6 +39,10 @@ class ApplicationBase extends Controller with EcologyMember {
   
   def doError(redirectTo:Call, ex:PublicException)(implicit rc:PlayRequestContext):PlainResult = doError(redirectTo, ex.display(rc.request))
   
+  def doInfo(redirectTo:Call, msg:String):PlainResult = {
+    Redirect(redirectTo).flashing("info" -> msg)
+  }
+  
   def getIdentityByThingId(thingIdStr:String):OID = {
     val thingId = ThingId(thingIdStr)
     thingId match {

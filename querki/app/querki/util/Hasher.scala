@@ -1,8 +1,6 @@
 package querki.util
 
-import java.security._
-import javax.crypto.SecretKeyFactory
-import javax.crypto.spec.PBEKeySpec
+import java.security.SecureRandom
 
 import play.api.libs.Crypto
 
@@ -36,24 +34,6 @@ object HashInfo {
   private def stripByte(ba: Array[Byte]): Array[Byte] = ba.slice(1,ba.size)
 }
 
-/**
- * Represents a hash, suitable for storing passwords and such. Note that the salt
- * is not necessarily private: it is a one-time random collection of data, to keep
- * rainbow tables from working. You will need the salt in order to authenticate,
- * though.
- */
-case class EncryptedHash(salt:HashInfo, hash:HashInfo) {
-  override def toString = salt.toString + "." + hash.toString
-}
-object EncryptedHash {
-  def apply(str:String):EncryptedHash = {
-    str.split('.') match {
-      case Array(salt, hash, _*) => EncryptedHash(salt, hash)
-      case _ => throw new Exception("Malformed hash: " + str)
-    }
-  }
-}
-
 case class SignedHash(signature:String, salt:String, msg:String, sep:Char) {
   override def toString = signature + sep + salt + sep + msg
 }
@@ -75,6 +55,11 @@ object SignedHash {
  * for many purposes. (Eg, invitation links.) But for hard-core password storage,
  * we may want to upgrade to scrypt. That's more expensive to compute, but current
  * theory is that it's *probably* more secure, since it is even harder to crack.
+ * 
+ * TODO: this should become an Ecot! Note that parts of it have been pulled out into
+ * querki.security.EncryptionEcot. The remainder is currently Play-dependent; we should
+ * decide if we are willing/able to strip out the Play dependency and put it all in
+ * there, unifying the code.
  */
 object Hasher {
   /**
@@ -83,32 +68,12 @@ object Hasher {
    * Note that calling code shouldn't usually need to call this explicitly; it is
    * called from inside calcHash().
    */
-  private def makeSalt():Array[Byte] = {
+  def makeSalt():Array[Byte] = {
     val randomizer = SecureRandom.getInstance("SHA1PRNG")
     val salt = new Array[Byte](8)
     randomizer.nextBytes(salt)
     salt
   }
-  
-  lazy val iterations = Config.getInt("querki.security.hashIterations", 20000)
-  
-  def doCalcHash(salt:Array[Byte], original:String):EncryptedHash = {
-    // The 160 here matches the SHA-1 algorithm we're using:
-    val keySpec = new PBEKeySpec(original.toCharArray, salt, iterations, 160)
-    val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")
-    EncryptedHash(HashInfo(salt), HashInfo(factory.generateSecret(keySpec).getEncoded()))    
-  }
-  
-  /**
-   * Given a text String, this returns its hashed form, and the salt that was used
-   * to generate the hash.
-   */
-  def calcHash(original:String):EncryptedHash = doCalcHash(makeSalt, original)
-  
-  /**
-   * Does the provided original match the hash information?
-   */
-  def authenticate(original:String, hash:EncryptedHash):Boolean = hash.hash.equals(doCalcHash(hash.salt.raw, original).hash)
   
   /**
    * Sign the given string, with some salt for good measure.

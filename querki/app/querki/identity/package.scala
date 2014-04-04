@@ -115,6 +115,8 @@ package object identity {
     def getIdentity(rawHandle:String):Option[OID]
     def getIdentity(id:OID):Option[Identity]
     def getIdentity(thingId:ThingId):Option[(Identity, UserLevel.UserLevel)]
+    // WARNING: this should *not* often be used! It is dangerous from an Identity-security POV!
+    def getUserByHandleOrEmail(raw:String):Option[User]
     def setTOSVersion(userId:OID, version:Int):Option[User]
   }
 }

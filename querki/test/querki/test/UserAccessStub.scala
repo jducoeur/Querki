@@ -31,6 +31,7 @@ class UserAccessStub(e:Ecology) extends QuerkiEcot(e) with UserAccess with UserT
   def getAllForAdmin(requester:User):Seq[User] = ???
   def getIdentity(rawHandle:String):Option[OID] = ???
   def getIdentity(thingId:ThingId):Option[(Identity, UserLevel.UserLevel)] = ???
+  def getUserByHandleOrEmail(raw:String):Option[User] = ???
   def setTOSVersion(userId:OID, version:Int):Option[User] = ???
   
   // Implemented stubs

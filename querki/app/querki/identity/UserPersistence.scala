@@ -23,6 +23,8 @@ object UserMOIDs extends EcotIds(30)
 
 class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   
+  lazy val Encryption = interface[querki.security.Encryption]
+  
   /**
    * TODO: RE-ADD CACHING
    * 
@@ -148,6 +150,13 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     loadByHandle(rawHandle, None).flatMap(_.identityByHandle(rawHandle)).map(_.id)
   }
   
+  def getUserByHandleOrEmail(raw:String):Option[User] = {
+    if (raw.contains("@"))
+      loadByEmail(EmailAddress(raw), None)
+    else
+      loadByHandle(raw, None)
+  }
+  
   private def getUserForIdentity(id:OID):Option[User] = {
     val query = userLoadSqlWhere("Identity.id={id}").on("id" -> id.raw)
     getUser(query)
@@ -161,7 +170,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
       email, 
       Some({ user:User => 
         val identityOpt = user.identityBy(_.email.addr == email.addr)
-        identityOpt.map(identity => Hasher.authenticate(passwordEntered, EncryptedHash(identity.auth))).getOrElse(false) 
+        identityOpt.map(identity => Encryption.authenticate(passwordEntered, identity.auth)).getOrElse(false) 
       })
     )
   }
@@ -175,7 +184,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
         login, 
         Some({ user:User => 
           val identityOpt = user.identityByHandle(login)
-          identityOpt.map(identity => Hasher.authenticate(passwordEntered, EncryptedHash(identity.auth))).getOrElse(false) 
+          identityOpt.map(identity => Encryption.authenticate(passwordEntered, identity.auth)).getOrElse(false) 
         })
       )
     }
@@ -220,7 +229,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
             "kind" -> IdentityKind.QuerkiLogin,
             "handle" -> info.handle,
             "email" -> info.email,
-            "authentication" -> Hasher.calcHash(info.password).toString)
+            "authentication" -> Encryption.calcHash(info.password))
         identityInsert.execute
 //      if (!identityInsert.execute)
 //        throw new Exception("Unable to create new Identity!")
@@ -241,7 +250,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
              SET authentication = {authentication}
            WHERE id = {id}
           """).on(
-            "authentication" -> Hasher.calcHash(newPassword).toString,
+            "authentication" -> Encryption.calcHash(newPassword),
             "id" -> identity.id.raw
               )
        update.executeUpdate
