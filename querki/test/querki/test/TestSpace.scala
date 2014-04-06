@@ -8,6 +8,7 @@ import models.Thing.PropFetcher
 
 import querki.core.MOIDs._
 import querki.ecology._
+import querki.spaces.CacheUpdate
 import querki.types.{ModeledPropertyBundle, ModelTypeDefiner, SimplePropertyBundle}
 import querki.values._
 import querki.identity.{FullUser, Identity, IdentityKind, User, UserLevel}
@@ -53,6 +54,7 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
   
   lazy val Core = interface[querki.core.Core]
   lazy val Person = interface[querki.identity.Person]
+  lazy val SpaceChangeManager = interface[querki.spaces.SpaceChangeManager]
   lazy val System = interface[querki.system.System]
 
   // ================================
@@ -188,8 +190,8 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
    * The *INITIAL* state of this Space for the test. If you plan to evolve the State, the test
    * will need to fire up a Space Actor to manage that, or do it some other way.
    */
-  lazy val state:SpaceState =
-    SpaceState(
+  lazy val state:SpaceState = {
+    val s = SpaceState(
       toid(),    // This Space's OID
       app.id,    // This Space's Model
       sProps,    // This Space's own props
@@ -204,4 +206,9 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
       None,      // The Owner's actual Identity
       ecology
     )
+    
+    val results = SpaceChangeManager.updateStateCache(CacheUpdate(None, None, s))
+    
+    results.current
+  }
 }
