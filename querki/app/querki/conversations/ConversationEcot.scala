@@ -54,7 +54,7 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
         setInternal))
   
   lazy val CanComment = AccessControl.definePermission(CanCommentPermOID, "Can Comment", "Who can comment on this Thing (or generally in this Space)",
-      Seq(AccessControl.OwnerTag, AccessControl.MembersTag))
+      Seq(AccessControl.OwnerTag, AccessControl.MembersTag), false)
   
   override lazy val props = Seq(
     CommentText,

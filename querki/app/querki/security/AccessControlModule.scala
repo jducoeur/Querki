@@ -59,10 +59,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
     }
   }
   
-  // TODO: this needs to become *much* more complete. But it's a start -- for the given permission,
-  // we check whether it is defined on the Thing; if not, whether it is defined on the Space; and if
-  // not, we use the provided default.
-  def hasPermission(aclProp:Property[OID,_], state:SpaceState, who:User, thingId:OID, default:Boolean, publicAllowed:Boolean):Boolean = {
+  def hasPermission(aclProp:Property[OID,_], state:SpaceState, who:User, thingId:OID):Boolean = {
     // TODO: this really ought to be who.isSuperadmin, instead of SystemUserOID?
     if (who.hasIdentity(state.owner) || who.id == querki.identity.MOIDs.SystemUserOID)
       true
@@ -80,6 +77,8 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
           thing.flatMap(_.getPropOpt(aclProp))
         }
       
+      val publicAllowed = aclProp.firstOpt(PublicAllowedProp).getOrElse(false)
+      
       def checkPerms(perms:PropAndVal[OID]):Boolean = {
         if (publicAllowed && perms.contains(MOIDs.PublicTagOID))
           true
@@ -93,24 +92,29 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
           false          
       }
       
+      // Try the permissions directly on this Thing...
       thingPermsOpt.map(checkPerms(_)).getOrElse(
-          state.getPropOpt(aclProp).map{checkPerms(_)}.getOrElse(default))
+          // ... or the permissions on the Space...
+          state.getPropOpt(aclProp).map{checkPerms(_)}.getOrElse(
+          // ... or the default permissions for this ACL...
+          aclProp.getPropOpt(DefaultPermissionProp).map(checkPerms(_)).getOrElse(
+          // ... or just give up and say no.
+          false)))
     }
   }
   
   def canCreate(state:SpaceState, who:User, modelId:OID):Boolean = {
-    hasPermission(CanCreateProp, state, who, modelId, false, false)
+    hasPermission(CanCreateProp, state, who, modelId)
   }
   
   def canRead(state:SpaceState, who:User, thingId:OID):Boolean = {
-    hasPermission(CanReadProp, state, who, thingId, true, true)    
+    hasPermission(CanReadProp, state, who, thingId)    
   }
   
   def canEdit(state:SpaceState, who:User, thingIdIn:OID):Boolean = {
     // Sadly, Edit turns out to be more complex than Create and Read -- simple inheritance of the value,
     // while conceptually elegant, doesn't actually work in practice. So we need to juggle two properties
     // instead.
-//    hasPermission(canEditProp, state, who, thingIdIn, false, false)
     // TODO: refactor this with the hasPermission() method above.
     // TODO: this really ought to be who.isSuperadmin, instead of SystemUserOID?
     val thingId = { if (thingIdIn == UnknownOID) state.id else thingIdIn}
@@ -204,7 +208,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
    * PROPERTIES
    ***********************************************/
   
-  def definePermission(id:OID, name:String, summary:String, defaults:Seq[OID]):Property[OID,OID] = {
+  def definePermission(id:OID, name:String, summary:String, defaults:Seq[OID], publicAllowed:Boolean = false):Property[OID,OID] = {
     new SystemProperty(id, LinkType, QSet,
       toProps(
         setName(name),
@@ -212,7 +216,8 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         SkillLevel(SkillLevelAdvanced),
         LinkModelProp(abstractPerson),
         Summary(summary),
-        DefaultPermissionProp(defaults:_*)))
+        DefaultPermissionProp(defaults:_*),
+        PublicAllowedProp(publicAllowed)))
   }
   
   lazy val isPermissionProp = new SystemProperty(IsPermissionOID, YesNoType, ExactlyOne,
@@ -228,7 +233,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         SkillLevel(SkillLevelAdvanced),
         Summary("Who else can edit this Thing")))
 
-  lazy val CanReadProp = definePermission(CanReadPropOID, "Who Can Read", "Who else can read Things in this Space", Seq(PublicTag, OwnerTag))
+  lazy val CanReadProp = definePermission(CanReadPropOID, "Who Can Read", "Who else can read Things in this Space", Seq(PublicTag, OwnerTag), true)
 
   lazy val CanEditProp = new SystemProperty(CanEditPropOID, LinkType, QSet,
       toProps(
@@ -259,7 +264,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
             |Note that this differs from the ordinary [[Who Can Edit._self]] Property, which says who can
             |edit *this* specific Thing.""".stripMargin)))
 
-  lazy val CanCreateProp = definePermission(CanCreatePropOID, "Who Can Create", "Who else can make new Things in this Space", Seq(OwnerTag))
+  lazy val CanCreateProp = definePermission(CanCreatePropOID, "Who Can Create", "Who else can make new Things in this Space", Seq(OwnerTag), false)
   
   lazy val DefaultPermissionProp = new SystemProperty(DefaultPermissionPropOID, LinkType, QSet,
       toProps(
@@ -270,6 +275,13 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         // TODO: ideally, we'd like it to only apply to permissions:
         AppliesToKindProp(Kind.Property),
         Summary("Iff this Permission Property isn't set at all for a Thing, what values should be used?")))
+  
+  lazy val PublicAllowedProp = new SystemProperty(PublicAllowedPropOID, YesNoType, Optional,
+      toProps(
+        setName("_publicAllowed"),
+        setInternal,
+        AppliesToKindProp(Kind.Property),
+        Summary("Set this on a Permission Property to allow Public as a legal value; otherwise, it will not be.")))
 
   override lazy val props = Seq(
 //    canEditCustomProp,
