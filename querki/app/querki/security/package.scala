@@ -18,9 +18,11 @@ package object security {
     val CanCreatePropOID = moid(7)
     val IsPermissionOID = moid(8)
     val CanEditChildrenPropOID = moid(9)
+    val DefaultPermissionPropOID = moid(10)
   }
 
   trait AccessControl extends EcologyInterface {
+    def PublicTag:Thing
     def MembersTag:Thing
     def OwnerTag:Thing
     
@@ -29,6 +31,8 @@ package object security {
     def isMember(who:User, state:SpaceState):Boolean
     // Checks whether an *Identity* is a Member of the Space. This is more conceptually correct.
     def isMember(identityId:OID, state:SpaceState):Boolean
+    
+    def definePermission(id:OID, name:String, summary:String, defaults:Seq[OID]):Property[OID,OID]
 
     def canCreate(state:SpaceState, who:User, modelId:OID):Boolean
     def canRead(state:SpaceState, who:User, thingId:OID):Boolean

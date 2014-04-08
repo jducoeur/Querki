@@ -14,6 +14,112 @@ class AccessControlTests extends QuerkiTests {
   lazy val AccessControl = interface[querki.security.AccessControl]
   
   "A Space" should {
+    "allow the Owner to Read everything" in {
+      val owner = commonSpace.owner
+      
+      // The Space, implicitly
+      assert(AccessControl.canRead(commonState, owner, UnknownOID))
+      // The Space, explicitly
+      assert(AccessControl.canRead(commonState, owner, commonState.id))
+      // Model
+      assert(AccessControl.canRead(commonState, owner, commonSpace.testModel.id))
+      // Thing
+      assert(AccessControl.canRead(commonState, owner, commonSpace.instance.id))      
+    }
+    
+    "allow a Member to Read everything" in {
+      val user = commonSpace.member1.user
+      
+      // The Space, implicitly
+      assert(AccessControl.canRead(commonState, user, UnknownOID))
+      // The Space, explicitly
+      assert(AccessControl.canRead(commonState, user, commonState.id))
+      // Model
+      assert(AccessControl.canRead(commonState, user, commonSpace.testModel.id))
+      // Thing
+      assert(AccessControl.canRead(commonState, user, commonSpace.instance.id))      
+    }
+    
+    "allow a non-Member to Read everything by default" in {
+      val user = commonSpace.nonMember
+      
+      // The Space, implicitly
+      assert(AccessControl.canRead(commonState, user, UnknownOID))
+      // The Space, explicitly
+      assert(AccessControl.canRead(commonState, user, commonState.id))
+      // Model
+      assert(AccessControl.canRead(commonState, user, commonSpace.testModel.id))
+      // Thing
+      assert(AccessControl.canRead(commonState, user, commonSpace.instance.id))      
+    }
+    
+    "allow the Owner to restrict Read access to a Thing to just Members" in {
+      class TSpace extends CommonSpace {
+        val allowedThing = new SimpleTestThing("Allowed to Members", AccessControl.CanReadProp(AccessControl.MembersTag))
+      }
+      val space = new TSpace
+      
+      assert(AccessControl.canRead(space.state, space.member1.user, space.allowedThing))
+      assert(!AccessControl.canRead(space.state, space.nonMember, space.allowedThing))      
+    }
+    
+    "allow the Owner to restrict Read access to the entire Space to just Members" in {
+      class TSpace extends CommonSpace {
+        override def otherSpaceProps = Seq(AccessControl.CanReadProp(AccessControl.MembersTag))
+      }
+      val space = new TSpace
+      
+      assert(AccessControl.canRead(space.state, space.member1.user, space.instance))
+      assert(!AccessControl.canRead(space.state, space.nonMember, space.instance))      
+    }
+    
+    "allow the Owner to restrict Read access to a Thing to just the Owner" in {
+      class TSpace extends CommonSpace {
+        val allowedThing = new SimpleTestThing("Allowed to Owner", AccessControl.CanReadProp(AccessControl.OwnerTag))
+      }
+      val space = new TSpace
+      
+      assert(!AccessControl.canRead(space.state, space.member1.user, space.allowedThing))
+      assert(!AccessControl.canRead(space.state, space.nonMember, space.allowedThing))      
+    }
+    
+    "allow only the Owner to create Things by default" in {
+      assert(AccessControl.canCreate(commonState, commonSpace.owner, commonSpace.testModel.id))
+      assert(!AccessControl.canCreate(commonState, commonSpace.member1.user, commonSpace.testModel.id))
+      assert(!AccessControl.canCreate(commonState, commonSpace.nonMember, commonSpace.testModel.id))
+    }
+    
+    "allow the Owner to let Members create a specific Model" in {
+      class TSpace extends CommonSpace {
+        val allowedThing = new SimpleTestThing("Allowed Model", AccessControl.CanCreateProp(AccessControl.MembersTag))
+      }
+      val space = new TSpace
+      
+      assert(AccessControl.canCreate(space.state, space.member1.user, space.allowedThing))
+      assert(!AccessControl.canCreate(space.state, space.member1.user, space.testModel))      
+    }
+    
+    "allow the Owner to let Members create anything" in {
+      class TSpace extends CommonSpace {
+        override def otherSpaceProps = Seq(AccessControl.CanCreateProp(AccessControl.MembersTag))
+      }
+      val space = new TSpace
+      
+      assert(AccessControl.canCreate(space.state, space.member1.user, space.testModel))
+      assert(!AccessControl.canCreate(space.state, space.nonMember, space.testModel))      
+    }
+    
+    // TODO: this will change once we have Moderation, but for now, the Public simply can't Create:
+    "not allow the Owner to let non-Members create Things" in {
+      class TSpace extends CommonSpace {
+        override def otherSpaceProps = Seq(AccessControl.CanCreateProp(AccessControl.PublicTag))
+      }
+      val space = new TSpace
+      
+      assert(!AccessControl.canCreate(space.state, space.member1.user, space.testModel))
+      assert(!AccessControl.canCreate(space.state, space.nonMember, space.testModel))      
+    }
+    
     "allow the Owner to Edit everything" in {
       val owner = commonSpace.owner
       

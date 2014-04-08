@@ -173,7 +173,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
    * THINGS
    ***********************************************/
   
-  lazy val publicTag = ThingState(PublicTagOID, systemOID, abstractPerson,
+  lazy val PublicTag = ThingState(PublicTagOID, systemOID, abstractPerson,
       toProps(
         setName("Public"),
         Summary("""
@@ -195,7 +195,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
 """)))
     
   override lazy val things = Seq(
-    publicTag,
+    PublicTag,
     MembersTag,
     OwnerTag
   )
@@ -203,6 +203,17 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
   /***********************************************
    * PROPERTIES
    ***********************************************/
+  
+  def definePermission(id:OID, name:String, summary:String, defaults:Seq[OID]):Property[OID,OID] = {
+    new SystemProperty(id, LinkType, QSet,
+      toProps(
+        setName(name),
+        isPermissionProp(true),
+        SkillLevel(SkillLevelAdvanced),
+        LinkModelProp(abstractPerson),
+        Summary(summary),
+        DefaultPermissionProp(defaults:_*)))
+  }
   
   lazy val isPermissionProp = new SystemProperty(IsPermissionOID, YesNoType, ExactlyOne,
       toProps(
@@ -217,13 +228,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         SkillLevel(SkillLevelAdvanced),
         Summary("Who else can edit this Thing")))
 
-  lazy val CanReadProp = new SystemProperty(CanReadPropOID, LinkType, QSet,
-      toProps(
-        setName("Who Can Read"),
-        isPermissionProp(true),
-        SkillLevel(SkillLevelAdvanced),
-        LinkModelProp(abstractPerson),
-        Summary("Who else can read Things in this Space")))
+  lazy val CanReadProp = definePermission(CanReadPropOID, "Who Can Read", "Who else can read Things in this Space", Seq(PublicTag, OwnerTag))
 
   lazy val CanEditProp = new SystemProperty(CanEditPropOID, LinkType, QSet,
       toProps(
@@ -254,13 +259,17 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
             |Note that this differs from the ordinary [[Who Can Edit._self]] Property, which says who can
             |edit *this* specific Thing.""".stripMargin)))
 
-  lazy val CanCreateProp = new SystemProperty(CanCreatePropOID, LinkType, QSet,
+  lazy val CanCreateProp = definePermission(CanCreatePropOID, "Who Can Create", "Who else can make new Things in this Space", Seq(OwnerTag))
+  
+  lazy val DefaultPermissionProp = new SystemProperty(DefaultPermissionPropOID, LinkType, QSet,
       toProps(
-        setName("Who Can Create"),
+        setName("_defaultPermission"),
         SkillLevel(SkillLevelAdvanced),
-        isPermissionProp(true),
-        LinkModelProp(abstractPerson),
-        Summary("Who else can make new Things in this Space")))
+        // TODO: eventually, when we have user-defined permissions, we'll make this public:
+        setInternal,
+        // TODO: ideally, we'd like it to only apply to permissions:
+        AppliesToKindProp(Kind.Property),
+        Summary("Iff this Permission Property isn't set at all for a Thing, what values should be used?")))
 
   override lazy val props = Seq(
 //    canEditCustomProp,
@@ -268,6 +277,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
     CanCreateProp,
     CanEditProp,
     CanEditChildrenProp,
-    CanReadProp
+    CanReadProp,
+    DefaultPermissionProp
   )
 }

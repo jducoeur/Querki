@@ -9,14 +9,14 @@ import querki.values.SpaceState
 
 object MOIDs extends EcotIds(35) {
   val CommentTextOID = moid(1)
+  val CanCommentPermOID = moid(2)
 }
 import MOIDs._
 
 class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
-  
+    
+  val AccessControl = initRequires[querki.security.AccessControl]
   val Basic = initRequires[querki.basic.Basic]
-  
-  lazy val AccessControl = interface[querki.security.AccessControl]
   
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
   // with "Props(classOf(Space), ...)". See:
@@ -53,7 +53,11 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
         setName("Comment Text"),
         setInternal))
   
+  lazy val CanComment = AccessControl.definePermission(CanCommentPermOID, "Can Comment", "Who can comment on this Thing (or generally in this Space)",
+      Seq(AccessControl.OwnerTag, AccessControl.MembersTag))
+  
   override lazy val props = Seq(
-    CommentText
+    CommentText,
+    CanComment
   )
 }
