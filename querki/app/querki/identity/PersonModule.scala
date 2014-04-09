@@ -384,6 +384,16 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     idOpt.map(user.hasIdentity(_)).getOrElse(false)
   }
   
+  def isPerson(identityId:OID, personId:OID)(implicit state:SpaceState):Boolean = {
+    val resultOpt = for {
+      person <- state.anything(personId)
+      personIdentity <- getPersonIdentity(person)
+    }
+      yield personIdentity == identityId
+      
+    resultOpt.getOrElse(false)
+  }
+  
   def isPerson(identity:Identity, person:Thing)(implicit state:SpaceState):Boolean = {
     val idOpt = getPersonIdentity(person)
     idOpt.map(_ == identity.id).getOrElse(false)

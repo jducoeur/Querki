@@ -10,6 +10,7 @@ import querki.values.SpaceState
 object MOIDs extends EcotIds(35) {
   val CommentTextOID = moid(1)
   val CanCommentPermOID = moid(2)
+  val CanReadCommentsPermOID = moid(3)
 }
 import MOIDs._
 
@@ -31,13 +32,11 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
     Props(new ConversationPersister(spaceId, ecology))
       
   def canReadComments(req:User, thingId:OID, state:SpaceState) = {
-    // TODO: this will eventually need its own permission
-    AccessControl.canRead(state, req, thingId)
+    AccessControl.hasPermission(CanReadComments, state, req, thingId)
   }
   
   def canWriteComments(identity:OID, thingId:OID, state:SpaceState) = {
-    // TODO: this will eventually need its own permission
-    AccessControl.isMember(identity, state)
+    AccessControl.hasPermission(CanComment, state, identity, thingId)
   }
   
   /***********************************************
@@ -55,9 +54,13 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
   
   lazy val CanComment = AccessControl.definePermission(CanCommentPermOID, "Can Comment", "Who can comment on this Thing (or generally in this Space)",
       Seq(AccessControl.OwnerTag, AccessControl.MembersTag), false)
+      
+  lazy val CanReadComments = AccessControl.definePermission(CanReadCommentsPermOID, "Can Read Comments", "Who can read the comments on this Thing?",
+      Seq(AccessControl.OwnerTag, AccessControl.PublicTag), true)
   
   override lazy val props = Seq(
     CommentText,
-    CanComment
+    CanComment,
+    CanReadComments
   )
 }

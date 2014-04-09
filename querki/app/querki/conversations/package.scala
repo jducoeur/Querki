@@ -25,6 +25,16 @@ package object conversations {
     def CommentText:Property[PlainText, String]
     
     /**
+     * Who is allowed to write Comments on this.
+     */
+    def CanComment:Property[OID,OID]
+    
+    /**
+     * Who can read Comments on this.
+     */
+    def CanReadComments:Property[OID,OID]
+    
+    /**
      * The public interface to create a SpaceConversationsActor.
      */
     def conversationActorProps(persistenceFactory:SpacePersistenceFactory, spaceId:OID, space:ActorRef):Props

@@ -6,7 +6,7 @@ import querki.util._
 import querki.values._
 
 import querki.ecology._
-import querki.identity.User
+import querki.identity.{Identity, User}
 
 import play.api.Logger
 
@@ -60,14 +60,15 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
   }
   
   def hasPermission(aclProp:Property[OID,_], state:SpaceState, who:User, thingId:OID):Boolean = {
-    // TODO: this really ought to be who.isSuperadmin, instead of SystemUserOID?
-    if (who.hasIdentity(state.owner) || who.id == querki.identity.MOIDs.SystemUserOID)
+    who.identities.exists(identity => hasPermission(aclProp, state, identity.id, thingId))
+  }
+  
+  def hasPermission(aclProp:Property[OID,_], state:SpaceState, identityId:OID, thingId:OID):Boolean = {
+    if (identityId == state.owner || identityId == querki.identity.MOIDs.SystemIdentityOID)
       true
     else {
       implicit val s = state
-      val (isLocalUser, whoId) = who match {
-        case _ => (isMember(who, state), who.id)        
-      }
+      val isLocalUser = isMember(identityId, state)
       
       val thingPermsOpt =
         if (thingId == UnknownOID)
@@ -84,7 +85,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
           true
         else if (isLocalUser && perms.contains(MOIDs.MembersTagOID))
           true
-        else if (perms.exists(Person.hasPerson(who, _)))
+        else if (perms.exists(Person.isPerson(identityId, _)))
           true
         else
           // *NOT* default. If the properly exists, and is left unset, then we

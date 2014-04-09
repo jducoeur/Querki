@@ -39,6 +39,16 @@ package object security {
     def canRead(state:SpaceState, who:User, thingId:OID):Boolean
     def canEdit(state:SpaceState, who:User, thingIdIn:OID):Boolean
     def canChangePropertyValue(state:SpaceState, who:User, propId:OID):Boolean
+    /**
+     * The general-case permission checker. Ecots that define their own permissions should use this call to
+     * test whether they are set on the current User.
+     */
+    def hasPermission(aclProp:Property[OID,_], state:SpaceState, who:User, thingId:OID):Boolean
+    /**
+     * This version checks whether a specific Identity has the given permission. You should usually favor this
+     * call if possible, to preserve Identity Separation.
+     */
+    def hasPermission(aclProp:Property[OID,_], state:SpaceState, identityId:OID, thingId:OID):Boolean
     
     def CanCreateProp:Property[OID,OID]
     def CanEditProp:Property[OID,OID]
