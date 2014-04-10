@@ -195,12 +195,22 @@
 }
 
 ._defaultTitle {
+  margin-top: 0px;
   margin-bottom: 0px;
 }
 
 ._smallSubtitle {
   margin-top: 0px;
   font-size: x-small;
+}
+
+._spaceLink {
+  margin-top: 10px;
+  margin-bottom: 0px;
+}
+
+.page-header {
+  margin-top: 0px;
 }
 
 ._mainFooter {

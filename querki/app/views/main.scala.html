@@ -14,6 +14,8 @@
 @thing = @{ rc.thing }
 @nav = @{ NavSectionMgr.nav(rc) }
 
+@showSpaceLink = @{ space.isDefined && (thing.isEmpty || thing.get.id != space.get.id) }
+
 @formErrors = @{
   val formsWithErrors = forms.filter(_.hasErrors)
   if (formsWithErrors.isEmpty)
@@ -34,14 +36,14 @@
 
 @ownerId = @{
   space match {
-    case Some(s) => s.owner.toThingId
+    case Some(s) => s.owner.toThingId.toString
     case None => ""
   }
 }
 
 @spaceId = @{
   space match {
-    case Some(s) => s.toThingId
+    case Some(s) => s.toThingId.toString
     case None => ""
   }
 }
@@ -354,6 +356,11 @@
 			}
 	      }
 	      
+	      @if(showSpaceLink) {
+	        <div class="_smallSubtitle _spaceLink"><a href="@routes.Application.thing(ownerId, spaceId, spaceId)">@space.get.displayName</a></div>
+	      } else {
+	        <div class="_smallSubtitle _spaceLink">&nbsp;</div>
+	      }
           @content
 	
 		</div><!--/span12-->

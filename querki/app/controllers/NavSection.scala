@@ -74,10 +74,6 @@ class NavSectionEcot(e:Ecology) extends QuerkiEcot(e) with NavSectionMgr {
     val thingIsSpace = rc.thing.isDefined && (rc.thing.get.id == rc.state.get.id)
     val actualThing = rc.thing.flatMap(t => if (thingIsSpace) None else Some(t))
     
-    val spaceSection = rc.state map { state =>
-      NavLink(truncateName(state.displayName), routes.Application.thing(owner, spaceId, spaceId))
-    }
-    
     val thingSection = actualThing map { thing =>
       val thingId = thing.toThingId
       NavLink(truncateName(thing.displayName), routes.Application.thing(owner, spaceId, thingId))
@@ -134,7 +130,7 @@ class NavSectionEcot(e:Ecology) extends QuerkiEcot(e) with NavSectionMgr {
       } else
         None
     
-    val sections = Seq(spaceSection, thingSection, actionSection, adminSection).flatten
+    val sections = Seq(thingSection, actionSection, adminSection).flatten
     NavSections(sections)
   }
 }
