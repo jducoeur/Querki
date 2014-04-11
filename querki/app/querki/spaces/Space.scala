@@ -284,6 +284,12 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
 	        
           implicit val e = ecology
 	      // TODO: this needs a clause for each Kind you can get:
+          // TODO: (IMPORTANT) there is currently a race condition in all of the below clauses.
+          // If a new change for the given Thing comes in while the request is out to the persister,
+          // the two changes can get interleaved. The likely result is that one of the changes will get
+          // lost; worse, the on-disk state might get inconsistent with the in-memory. We need to
+          // introduce a versioning mechanism, and provide hard guarantees atomicity here: this is one
+          // of the more important places in the architecture.
           oldThing match {
             case t:Attachment => {
               persister.request(Change(state, thingId, modelId, newProps, None)) {
