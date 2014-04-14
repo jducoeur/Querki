@@ -22,6 +22,8 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
   def attachTable(id:OID) = "a" + sid(id)
   // The name of the Space's Conversations Table
   def convTable(id:OID) = "c" + sid(id)
+  // The name of the Space's User Values Table
+  def userValuesTable(id:OID) = "uv" + sid(id)
 
 
   // TODO: this escape/unescape is certainly too simplistic to cope with recursive types.
@@ -46,7 +48,8 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
     val replQuery = query.
     		replace("{tname}", thingTable(spaceId)).
     		replace("{bname}", backupTable(spaceId, version)).
-    		replace("{cname}", convTable(spaceId))
+    		replace("{cname}", convTable(spaceId)).
+    		replace("{uvname}", userValuesTable(spaceId))
     SQL(replQuery)
   }
   

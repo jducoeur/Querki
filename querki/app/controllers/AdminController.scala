@@ -9,6 +9,7 @@ import models._
 
 class AdminController extends ApplicationBase {
   
+  lazy val AdminOps = interface[querki.admin.AdminOps]
   lazy val Email = interface[querki.email.Email]
   
   def withAdmin(f: PlayRequestContext => Result) = {
@@ -32,6 +33,23 @@ class AdminController extends ApplicationBase {
   def manageUsers = withAdmin { rc =>
     val users = UserAccess.getAllForAdmin(rc.requesterOrAnon)
     Ok(views.html.manageUsers(rc, users))
+  }
+  
+  def showSpaceStatus = withAdmin { rc =>
+    Async {
+      AdminOps.getSpacesStatus(rc.requesterOrAnon) { status =>
+        val sortedSpaces = status.spaces.sortBy(_.name)
+        val spaceDisplays = sortedSpaces.map { spaceStatus => s"* **${spaceStatus.name}:** ${spaceStatus.thingConvs} active Things" }
+        val contents = Wikitext(s"""# ADMIN: Current Space Status
+            |
+            |------
+            |
+            |The following Spaces are currently live:
+            |
+            |${spaceDisplays.mkString("\n")}""".stripMargin)
+        Ok(views.html.main(QuerkiTemplate.Admin, "Space Status", rc)(contents.display.html))
+      }
+    }
   }
   
   /**

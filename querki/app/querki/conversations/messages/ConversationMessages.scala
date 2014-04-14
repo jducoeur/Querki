@@ -6,6 +6,17 @@ import querki.conversations._
 import querki.identity.User
 
 /**
+ * Request from the Space to the Conversation system, to find out how many Things are currently loaded
+ * in Conversations.
+ */
+case object GetActiveThings
+
+/**
+ * Response to GetActiveThings -- for now, simply the number of Things that are loaded with Conversations.
+ */
+case class ActiveThings(n:Int)
+
+/**
  * Note that ConversationMessages are never sent directly on their own; instead, they are wrapped in a
  * ConversationRequest, and routed through the Space. The subclasses of ConversationMessage are the
  * payloads of ConversationRequest.

@@ -64,6 +64,15 @@ class SpaceManager(val ecology:Ecology) extends Actor with Requester with Ecolog
   def receive = {
     // This is entirely a DB operation, so just have the Persister deal with it:
     case req @ ListMySpaces(owner) => persister.forward(req)
+    
+    case req @ GetSpacesStatus(requester) => {
+      if (requester.isAdmin) {
+        // Each Space responds for itself:
+        context.children.foreach(space => space.forward(req))
+      } else {
+        QLog.error("Illegal request for GetSpacesStatus, from user " + requester.id)
+      }
+    } 
 
     case req @ CreateSpace(requester, display) => {
       Tryer 

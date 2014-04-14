@@ -25,6 +25,9 @@ sealed trait ListMySpacesResponse
 case class SpaceDetails(handle:ThingId, id:OID, display:String, ownerHandle:ThingId)
 case class MySpaces(ownedByMe:Seq[SpaceDetails], memberOf:Seq[SpaceDetails]) extends ListMySpacesResponse
 
+case class GetSpacesStatus(val requester:User) extends SpaceMgrMsg
+case class SpaceStatus(spaceId:OID, name:String, thingConvs:Int)
+
 // This responds eventually with a ThingFound:
 case class CreateSpace(requester:User, name:String) extends SpaceMgrMsg
 
@@ -84,4 +87,3 @@ sealed trait ThingResponse extends SpaceResponse
 case class ThingFound(id:OID, state:SpaceState) extends ThingResponse
 case class ThingError(ex:PublicException, stateOpt:Option[SpaceState] = None) extends ThingResponse
 case class AttachmentContents(id:OID, size:Int, mime:MIMEType, content:Array[Byte]) extends SpaceResponse
-

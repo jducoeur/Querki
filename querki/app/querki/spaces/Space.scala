@@ -21,6 +21,7 @@ import messages._
 import Kind._
 import Thing.PropMap
 
+import querki.conversations.messages.{ActiveThings, GetActiveThings}
 import querki.core.NameUtils
 
 import querki.ecology._
@@ -380,6 +381,15 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
   def receive = LoggingReceive {
     case req:CreateSpace => {
       sender ! ThingFound(UnknownOID, state)
+    }
+    
+    // Admin has asked all of the Spaces to give a quick status report:
+    case GetSpacesStatus(requester) => {
+      myConversations.request(GetActiveThings) {
+        case ActiveThings(n) => {
+          sender ! SpaceStatus(id, state.displayName, n)
+        }
+      }
     }
 
     case CreateThing(who, owner, spaceId, kind, modelId, props) => {

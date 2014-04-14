@@ -179,6 +179,8 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
       state = current
     }
     
+    case GetActiveThings => sender ! ActiveThings(loadedConversations.size)
+    
     case ConversationRequest(req, _, _, msg) => {
       msg match {
 	    /**

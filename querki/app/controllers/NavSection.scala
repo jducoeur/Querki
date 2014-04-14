@@ -125,7 +125,8 @@ class NavSectionEcot(e:Ecology) extends QuerkiEcot(e) with NavSectionMgr {
     val adminSection =
       if (rc.requesterOrAnon.isAdmin) {
         Some(NavSection("Admin", Seq(
-          NavLink("Manage Users", routes.AdminController.manageUsers)
+          NavLink("Manage Users", routes.AdminController.manageUsers),
+          NavLink("Show Space Status", routes.AdminController.showSpaceStatus)
         )))
       } else
         None
