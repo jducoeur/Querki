@@ -6,6 +6,7 @@ import akka.event.LoggingReceive
 import models.OID
 
 import querki.ecology._
+import querki.session.messages._
 import querki.spaces.messages.{SessionRequest, CurrentState}
 import querki.values.SpaceState
 
@@ -24,6 +25,8 @@ private [session] class UserSessions(val ecology:Ecology, val spaceId:OID)
       state = Some(s)
       sessions.values.foreach(session => session.forward(msg))
     }
+    
+    case GetActiveSessions => sender ! ActiveSessions(sessions.size)
 
     /**
      * Message to forward to a UserSession. Create the session, if needed.

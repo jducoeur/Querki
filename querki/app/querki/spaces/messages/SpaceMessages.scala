@@ -27,7 +27,7 @@ case class SpaceDetails(handle:ThingId, id:OID, display:String, ownerHandle:Thin
 case class MySpaces(ownedByMe:Seq[SpaceDetails], memberOf:Seq[SpaceDetails]) extends ListMySpacesResponse
 
 case class GetSpacesStatus(val requester:User) extends SpaceMgrMsg
-case class SpaceStatus(spaceId:OID, name:String, thingConvs:Int)
+case class SpaceStatus(spaceId:OID, name:String, thingConvs:Int, nSessions:Int)
 
 // This responds eventually with a ThingFound:
 case class CreateSpace(requester:User, name:String) extends SpaceMgrMsg

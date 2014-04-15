@@ -39,7 +39,7 @@ class AdminController extends ApplicationBase {
     Async {
       AdminOps.getSpacesStatus(rc.requesterOrAnon) { status =>
         val sortedSpaces = status.spaces.sortBy(_.name)
-        val spaceDisplays = sortedSpaces.map { spaceStatus => s"* **${spaceStatus.name}:** ${spaceStatus.thingConvs} active Things" }
+        val spaceDisplays = sortedSpaces.map { spaceStatus => s"* **${spaceStatus.name}:** ${spaceStatus.thingConvs} active ThingConversations; ${spaceStatus.nSessions} active Sessions" }
         val contents = Wikitext(s"""# ADMIN: Current Space Status
             |
             |------

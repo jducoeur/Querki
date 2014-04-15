@@ -8,6 +8,7 @@ import models.OID
 import querki.conversations.messages.{ActiveThings, GetActiveThings}
 import querki.ecology._
 import querki.session.UserSessions
+import querki.session.messages._
 import querki.spaces.messages._
 import querki.util.Requester
 import querki.values.SpaceState
@@ -58,8 +59,12 @@ private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpaceP
      */
     case GetSpacesStatus(requester) => {
       conversations.request(GetActiveThings) {
-        case ActiveThings(n) => {
-          sender ! SpaceStatus(spaceId, state.displayName, n)
+        case ActiveThings(nConvs) => {
+          sessions.request(GetActiveSessions) {
+            case ActiveSessions(nSessions) => {
+              sender ! SpaceStatus(spaceId, state.displayName, nConvs, nSessions)
+            }
+          }
         }
       }
     }
