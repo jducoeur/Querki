@@ -10,6 +10,7 @@ import models.{AsOID, OID, ThingId, UnknownOID}
 
 import querki.conversations.messages.ConversationMessage
 import querki.identity.User
+import querki.session.messages.SessionMessage
 import querki.values.SpaceState
 import querki.util.PublicException
 
@@ -58,14 +59,17 @@ case class GetAttachment(req:User, own:OID, space:ThingId, attachId:ThingId) ext
 // TODO: this message needs cleanup before we start using it, to match the rest:
 case class CreateProperty(id:OID, req:User, model:OID, pType:OID, cType:OID, props:PropMap) extends SpaceMessage(req, UnknownOID, AsOID(id))
 
-case class GetThing(req:User, own:OID, space:ThingId, thing:Option[ThingId]) extends SpaceMessage(req, own, space)
-
 case class DeleteThing(req:User, own:OID, space:ThingId, thing:ThingId) extends SpaceMessage(req, own, space)
 
 /**
  * All Conversation-oriented messages get wrapped in a ConversationRequest.
  */
 case class ConversationRequest(req:User, own:OID, space:ThingId, payload:ConversationMessage) extends SpaceMessage(req, own, space)
+
+/**
+ * All User Session-oriented messages get wrapped in a SessionRequest.
+ */
+case class SessionRequest(req:User, own:OID, space:ThingId, payload:SessionMessage) extends SpaceMessage(req, own, space)
 
 object SpaceError {  
   val CreateNotAllowed = "Space.createThing.notAllowed"

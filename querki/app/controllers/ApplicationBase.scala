@@ -7,6 +7,7 @@ import models._
 
 import querki.ecology._
 import querki.identity._
+import querki.session.messages.GetThing
 import querki.spaces.SpaceManager
 import querki.spaces.messages._
 import querki.util._
@@ -168,7 +169,7 @@ class ApplicationBase extends Controller with EcologyMember {
 	          cb(filledRC)
 	      result
 	    }
-	    askSpaceMgr[ThingResponse](GetThing(requester, ownerId, ThingId(spaceId), thingId)) {
+	    askSpaceMgr[ThingResponse](SessionRequest(requester, ownerId, ThingId(spaceId), GetThing(thingId))) {
 	      case ThingFound(id, state) => {
 	        val thingOpt = id match {
 	          case UnknownOID => None

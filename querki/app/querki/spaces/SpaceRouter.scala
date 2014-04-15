@@ -7,18 +7,19 @@ import models.OID
 
 import querki.conversations.messages.{ActiveThings, GetActiveThings}
 import querki.ecology._
+import querki.session.UserSessions
 import querki.spaces.messages._
 import querki.util.Requester
 import querki.values.SpaceState
 
 /**
- * The SpaceRouter is the root of the "hive" for a single Space. It owns all of the Actors that
+ * The SpaceRouter is the root of the "troupe" of Actors for a single Space. It owns all of the Actors that
  * are involved with this specific Space, routes messages to them, and deals with the Space's lifecycle.
  * It is factored out separately so that the Space doesn't have the overhead of all that routing, and
  * for separations of concerns in general. The only downside is that this *does* need to know about all
  * the message types coming to the Space, and where each one goes.
  * 
- * IMPORTANT: the entire hive for a single Space should live on the same Node as the SpaceRouter. This
+ * IMPORTANT: the entire troupe for a single Space should live on the same Node as the SpaceRouter. This
  * is mainly for efficiency -- the hive passes the SpaceState around frequently, and we do *not* want to
  * be serializing that.
  */
@@ -28,17 +29,20 @@ private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpaceP
   
   lazy val Conversations = interface[querki.conversations.Conversations]
   
+  // The components of the troupe:
   var conversations:ActorRef = null
   var space:ActorRef = null
+  var sessions:ActorRef = null
   
   var state:SpaceState = null
 
   override def preStart() = {
     space = context.actorOf(Space.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
+    sessions = context.actorOf(UserSessions.actorProps(ecology, spaceId), "Sessions")
     conversations = context.actorOf(Conversations.conversationActorProps(persistenceFactory, spaceId, self), "Conversations") 
   }
   
-  def receive = {
+  def receive = LoggingReceive {
     
     /**
      * The Space has sent an updated State, so tell everyone about it.
@@ -46,6 +50,7 @@ private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpaceP
     case msg @ CurrentState(curState) => {
       state = curState
       conversations.forward(msg)
+      sessions.forward(msg)
     }
     
     /**
@@ -59,14 +64,13 @@ private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpaceP
       }
     }
     
-    /**
-     * Message for the Conversation system.
-     */
-    case req:ConversationRequest => {
-      conversations.forward(req)
-    }
+    // Message for the Conversation system:
+    case req:ConversationRequest => conversations.forward(req)
     
-    // Simple forwards to the Space:
+    // Message for a Session:
+    case req:SessionRequest => sessions.forward(req)
+    
+    // Message for the Space:
     case msg:CreateSpace => space.forward(msg)
     case msg:SpaceMessage => space.forward(msg)
   }

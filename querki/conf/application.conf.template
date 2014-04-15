@@ -44,6 +44,12 @@ querki {
   }
 }
 
+# Dispatcher for UserSessions    
+session-dispatcher {
+  # UserSession Actors need a DequeBasedMailbox, so they can use Stash:
+  mailbox-type = "akka.dispatch.UnboundedDequeBasedMailbox"
+}
+
 #akka {
 #  actor {
 #    deployment {

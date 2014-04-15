@@ -37,6 +37,7 @@
 
 ._comment ._commentTime {
   font-style: italic;
+  font-size: smaller;
 }
 
 ._comment ._commentText {

@@ -419,32 +419,6 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
     case DeleteThing(who, owner, spaceThingId, thingId) => {
       deleteThing(who, spaceThingId, thingId)
     }
-    
-    case GetThing(req, owner, space, thingIdOpt) => {
-      val thingId = thingIdOpt.flatMap(state.anything(_)).map(_.id).getOrElse(UnknownOID)
-      // NOTE: Responsibility for this canRead() check has been pulled out to the Application level for now,
-      // by necessity. We don't even necessarily know *who* the requester is until Application gets the
-      // State back, because a locally-defined Identity requires the State.
-//      if (!canRead(req, thingId))
-//        sender ! ThingError(SpaceNotFound, "Space not found")
-//      else 
-      if (thingIdOpt.isDefined) {
-        val thingOpt = state.anything(thingIdOpt.get)
-        if (thingOpt.isDefined) {
-          sender ! ThingFound(thingOpt.get.id, state)
-        } else {
-          thingIdOpt.get match {
-            // TODO: this potentially leaks information. It is frequently legal to see the Space if the name is unknown --
-            // that is how tags work -- but we should think through how to keep that properly controlled.
-            case AsName(name) => sender ! ThingError(new PublicException(UnknownName), Some(state))
-            case AsOID(id) => sender ! ThingError(new PublicException(UnknownID))
-          }
-        }
-      } else {
-        // TODO: is this the most semantically appropriate response?
-        sender ! ThingFound(UnknownOID, state)
-      }
-    }
   }
 }
 
