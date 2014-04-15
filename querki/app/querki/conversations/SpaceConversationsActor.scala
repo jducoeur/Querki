@@ -114,8 +114,17 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
       case None => {
         persister.request(LoadCommentsFor(thingId, state)) {
           case AllCommentsFor(_, comments) => {
-            val convs = buildConversations(comments)
-            loadedConversations += (thingId -> convs)
+            // Race condition check: some other request might have loaded this Thing's conversations while
+            // we were in the roundtrip. In that case, the already-existing copy is authoritative, because it
+            // might have mutated. (In other words, don't keep chasing the race round and round.)
+            val convs = loadedConversations.get(thingId) match {
+              case Some(newCs) => newCs
+              case None => {
+                val cs = buildConversations(comments)
+                loadedConversations += (thingId -> cs)
+                cs
+              }
+            }
             f(convs)
           }
         }
