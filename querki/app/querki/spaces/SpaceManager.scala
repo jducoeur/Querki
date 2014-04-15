@@ -58,7 +58,7 @@ class SpaceManager(val ecology:Ecology) extends Actor with Requester with Ecolog
   def getSpace(spaceId:OID):ActorRef = {
     val mySid = sid(spaceId)
     // Fetch the existing Space Actor, or fire it up:
-    context.child(mySid).getOrElse(context.actorOf(Space.actorProps(ecology, persistenceFactory), mySid))
+    context.child(mySid).getOrElse(context.actorOf(SpaceRouter.actorProps(ecology, persistenceFactory, spaceId), mySid))
   }
   
   def receive = {

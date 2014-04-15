@@ -21,7 +21,6 @@ import messages._
 import Kind._
 import Thing.PropMap
 
-import querki.conversations.messages.{ActiveThings, GetActiveThings}
 import querki.core.NameUtils
 
 import querki.ecology._
@@ -56,13 +55,11 @@ import PersistMessages._
  * to get the name. Note that this has *nothing* to do with the Space's Display Name, which
  * is user-defined. (And unique only to that user.)
  */
-private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory) 
+private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, stateRouter:ActorRef, id:OID) 
   extends Actor with Requester with EcologyMember with ModelTypeDefiner 
 {
   
   import context._
-  
-  def id = OID(self.path.name)
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
@@ -78,8 +75,6 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
    * way so that it can be stubbed out for testing.
    */
   lazy val persister = persistenceFactory.getSpacePersister(id)
-  
-  var myConversations:ActorRef = null
   
   /**
    * Our requests are going mainly to the Persister, which is talking to the DB, so give them
@@ -118,6 +113,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
   def updateState(newState:SpaceState, evt:Option[SpaceMessage] = None) = {
     val withCaches = SpaceChangeManager.updateStateCache(CacheUpdate(evt, _currentState, newState))
     _currentState = Some(withCaches.current)
+    stateRouter ! CurrentState(_currentState.get)
   }
   
   def canRead(who:User, thingId:OID):Boolean = AccessControl.canRead(state, who, thingId)
@@ -182,9 +178,8 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
       case Loaded(s) => {
         updateState(s)
         checkOwnerIsMember()
-        // Okay, we're up and running. Fire up the Conversations for this Space:
-        myConversations = context.actorOf(Conversations.conversationActorProps(persistenceFactory, id, self), "Conversations") 
-        myConversations ! CurrentState(state)
+        // Okay, we're up and running. Tell any listeners about the current state:
+        stateRouter ! CurrentState(state)
       }
       case _ => QLog.error("Got an error!")
     }
@@ -382,15 +377,6 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
     case req:CreateSpace => {
       sender ! ThingFound(UnknownOID, state)
     }
-    
-    // Admin has asked all of the Spaces to give a quick status report:
-    case GetSpacesStatus(requester) => {
-      myConversations.request(GetActiveThings) {
-        case ActiveThings(n) => {
-          sender ! SpaceStatus(id, state.displayName, n)
-        }
-      }
-    }
 
     case CreateThing(who, owner, spaceId, kind, modelId, props) => {
       createSomething(spaceId, who, modelId, props, kind, None)
@@ -459,11 +445,6 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
         sender ! ThingFound(UnknownOID, state)
       }
     }
-    
-    case req:ConversationRequest => {
-      // We simply pass Conversation stuff on to the manager for those:
-      myConversations.forward(req)
-    }
   }
 }
 
@@ -474,5 +455,5 @@ object Space {
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
   // with "Props(classOf(Space), ...)". See:
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-  def actorProps(ecology:Ecology, persistenceFactory:SpacePersistenceFactory):Props = Props(new Space(ecology, persistenceFactory))
+  def actorProps(ecology:Ecology, persistenceFactory:SpacePersistenceFactory, stateRouter:ActorRef, id:OID):Props = Props(new Space(ecology, persistenceFactory, stateRouter, id))
 }
