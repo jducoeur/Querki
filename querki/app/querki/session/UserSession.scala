@@ -9,11 +9,11 @@ import querki.ecology._
 import querki.session.messages._
 import querki.spaces.messages.{CurrentState, ThingError, ThingFound}
 import querki.spaces.messages.SpaceError._
-import querki.util.PublicException
+import querki.util.{PublicException, TimeoutChild}
 import querki.values.SpaceState
 
 private [session] class UserSession(val ecology:Ecology, val spaceId:OID)
-  extends Actor with Stash with EcologyMember
+  extends Actor with Stash with EcologyMember with TimeoutChild
 {
   
   /**

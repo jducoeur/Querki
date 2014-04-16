@@ -8,14 +8,20 @@ import models.OID
 import querki.ecology._
 import querki.session.messages._
 import querki.spaces.messages.{SessionRequest, CurrentState}
+import querki.util._
 import querki.values.SpaceState
 
 private [session] class UserSessions(val ecology:Ecology, val spaceId:OID)
-  extends Actor with EcologyMember
+  extends Actor with EcologyMember with RoutingParent[OID]
 {
   var state:Option[SpaceState] = None
   
-  var sessions = Map.empty[OID, ActorRef]
+  def createChild(key:OID):ActorRef = {
+    // Sessions need a special dispatcher so they can use Stash. (Seriously? Unfortunate leakage in the Akka API.)
+    context.actorOf(UserSession.actorProps(ecology, spaceId).withDispatcher("session-dispatcher"), key.toString)
+  }
+  
+  override def initChild(child:ActorRef) = state.map(child ! CurrentState(_))
   
   def receive = LoggingReceive {
     /**
@@ -23,29 +29,15 @@ private [session] class UserSessions(val ecology:Ecology, val spaceId:OID)
      */
     case msg @ CurrentState(s) => {
       state = Some(s)
-      sessions.values.foreach(session => session.forward(msg))
+      children.foreach(session => session.forward(msg))
     }
     
-    case GetActiveSessions => sender ! ActiveSessions(sessions.size)
+    case GetActiveSessions => sender ! ActiveSessions(children.size)
 
     /**
      * Message to forward to a UserSession. Create the session, if needed.
      */
-    case SessionRequest(requester, _, _, payload) => {
-      val reqId = requester.id
-      val session = sessions.get(reqId) match {
-        case Some(s) => s
-        case None => {
-          // Sessions need a special dispatcher so they can use Stash. (Seriously? Unfortunate leakage in the Akka API.)
-          val s = context.actorOf(UserSession.actorProps(ecology, spaceId).withDispatcher("session-dispatcher"), reqId.toString)
-          sessions = sessions + (reqId -> s)
-          // If possible, send the current state along, to bootstrap the session:
-          state.map(s ! CurrentState(_))
-          s
-        }
-      }
-      session.forward(payload)
-    }
+    case SessionRequest(requester, _, _, payload) => routeToChild(requester.id, payload)
   }
 
 }
