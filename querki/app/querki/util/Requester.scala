@@ -63,7 +63,7 @@ import akka.util.Timeout
  * may no longer be in a compatible state by the time the response is received. Requester is mainly intended
  * for Actors that spend most or all of their time in a single state; it generally works quite well for those.
  */
-trait Requester { me:Actor =>
+trait Requester extends Actor {
   
   implicit class RequestableActorRef(a:ActorRef) {
     def request(msg:Any)(handler:Actor.Receive) = doRequest(a, msg)(handler)
@@ -97,14 +97,10 @@ trait Requester { me:Actor =>
     }
   }
   
-  abstract override def unhandled(message: Any): Unit = {
+  override def unhandled(message: Any): Unit = {
     message match {
       case resp:RequestedResponse => resp.invoke
-      case other => {
-        // TODO: how do we make this work correctly? At the moment, it is causing infinite loops, so this
-        // clearly isn't right...
-        //me.unhandled(other)
-      }
+      case other => super.unhandled(other)
     }
   }
 }
