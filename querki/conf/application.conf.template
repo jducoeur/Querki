@@ -22,6 +22,11 @@ querki {
     urlRoot : "PUBLIC URL OF THIS SITE"
   }
   
+  session {
+    # Time before a UserSession times out for inactivity
+    timeout : 5 minutes
+  }
+  
   mail {
     smtpHost : SMTP HOST
     from : EMAIL ADDRESS TO SEND FROM

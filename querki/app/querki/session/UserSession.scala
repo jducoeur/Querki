@@ -22,6 +22,8 @@ private [session] class UserSession(val ecology:Ecology, val spaceId:OID)
    */
   var _state:Option[SpaceState] = None
   def state = _state.get
+  
+  val timeoutConfig = "querki.session.timeout"
 
   /**
    * Initial state: stash everything until we get the SpaceState. CurrentState will *typically* come first, but

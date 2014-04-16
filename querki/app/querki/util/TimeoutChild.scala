@@ -14,9 +14,16 @@ case object KillMe
  * The child of a RoutingParent, which has a built-in inactivity timeout.
  */
 trait TimeoutChild extends Actor {
+  
+  /**
+   * Instances must define this -- it is the name of the config string that defines how long
+   * the timeout interval is.
+   */
+  def timeoutConfig:String
+  
   override def preStart() = {
-    // TODO: this should become configurable:
-    context.setReceiveTimeout(30 seconds)
+    val timeout = context.system.settings.config.getMilliseconds(timeoutConfig)
+    context.setReceiveTimeout(Duration(timeout, MILLISECONDS))
     super.preStart()
   }
   
