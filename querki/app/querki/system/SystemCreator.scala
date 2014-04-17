@@ -72,6 +72,7 @@ object SystemCreator {
     new querki.types.PropPathEcot(ecology)                         // 41
     new querki.security.EncryptionEcot(ecology)                    // 42
     new querki.admin.AdminEcot(ecology)                            // 43
+    new querki.uservalues.UserValueEcot(ecology)                   // 44
   }
   
   def createAllEcots(ecology:Ecology):Ecology = {

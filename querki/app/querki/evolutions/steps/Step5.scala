@@ -17,7 +17,7 @@ class Step5(implicit val ecology:Ecology) extends Step {
         |  userId bigint NOT NULL,
         |  propValue MEDIUMTEXT NOT NULL,
         |  modTime datetime NOT NULL,
-        |  PRIMARY KEY (thingId, propertyId, userId)
+        |  PRIMARY KEY (userId, thingId, propertyId)
         |);
         |""".stripMargin).execute
   }
