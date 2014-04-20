@@ -229,7 +229,7 @@ trait BaseParsers extends RegexParsers {
      *  We are currently *whitelisting* tags. If it doesn't appear here, it's illegal.
      */
 //    def xmlName:Parser[String] = xmlNameStartChar ~ (xmlNameChar*) ^^ {case c ~ cs => c + cs.mkString}
-    def xmlName:Parser[String] = "div" | "span" | "i"
+    def xmlName:Parser[String] = "div" | "span" | "i" | "strike"
     
     /** Parses a Simplified xml attribute: everything between quotes ("foo")
      * everything between the quotes is run through the escape handling
