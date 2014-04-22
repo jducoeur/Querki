@@ -18,7 +18,7 @@ package object html {
   object RenderSpecialization extends Enumeration {
     type RenderSpecialization = Value
   
-    val Unspecialized, PickList, WithAdd = Value
+    val Unspecialized, PickList, WithAdd, FromEditFunction = Value
   }
 
   /**

@@ -188,6 +188,11 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecology
    * previously checked canCoerceTo!
    */
   def coerceTo(other:PType[_], elem:ElemValue):ElemValue = throw new Exception(s"PType $displayName can not be coerced to ${other.displayName}!")
+  
+  /**
+   * This exists so that certain "wrapper" types can expose the value they are wrapping, for editing.
+   */
+  def wrappedValue(v:QValue):Option[QValue] = Some(v)
 }
 
 /**

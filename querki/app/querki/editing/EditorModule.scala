@@ -124,7 +124,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   {
     def specialization(mainContext:QLContext, mainThing:PropertyBundle, 
       partialContext:QLContext, prop:Property[_,_],
-      params:Option[Seq[QLPhrase]]):Set[RenderSpecialization] = Set(Unspecialized)
+      params:Option[Seq[QLPhrase]]):Set[RenderSpecialization] = Set(FromEditFunction)
   
     def cantEditFallback(inv:Invocation):QValue
     
@@ -395,7 +395,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
           )
         yield true
         
-      hasAddOpt.map(_ => Set(PickList, WithAdd)).getOrElse(Set(PickList))
+      hasAddOpt.map(_ => Set(PickList, WithAdd, FromEditFunction)).getOrElse(Set(PickList, FromEditFunction))
     }
   }
 

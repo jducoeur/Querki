@@ -59,12 +59,20 @@ trait PropertyBundle {
   
   def getDisplayPropVal[VT, _](prop:Property[VT, _])(implicit state:SpaceState):DisplayPropVal = {
     val local = localPropVal(prop)
+    def getInherited() = {
+      val inheritedVal = getPropOpt(prop)
+      DisplayPropVal(Some(this), prop, None, inheritedVal.map(_.v).flatMap(prop.pType.wrappedValue(_)))      
+    }
     local match {
-      case Some(v) => DisplayPropVal(Some(this), prop, Some(v))
-      case None => {
-        val inheritedVal = getPropOpt(prop)
-        DisplayPropVal(Some(this), prop, None, inheritedVal.map(_.v))
+      case Some(v) => {
+        // Note that we return the "wrappedValue" here. This is mainly to allow UserValueTypes to
+        // return the UserValue itself, instead of the wrapper.
+        prop.pType.wrappedValue(v) match {
+          case Some(innerV) => DisplayPropVal(Some(this), prop, Some(innerV))
+          case None => getInherited()
+        }
       }
+      case None => getInherited()
     }
   }
   

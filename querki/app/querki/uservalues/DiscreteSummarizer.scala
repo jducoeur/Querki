@@ -70,13 +70,15 @@ class DiscreteSummarizer[UVT](userType:PType[UVT]) extends Summarizer[UVT,Discre
   def doDeserialize(ser:String)(implicit state:SpaceState):DiscreteSummary[UVT] = {
     // TODO: this should unescape "," and ":", so we can cope with arbitrary Strings:
     val pairStrs = ser.split(",")
-    val pairs = pairStrs.map { pairStr =>
-      val parts = pairStr.split(":")
-      if (parts.length != 2)
-        throw new Exception(s"DiscreteSummarizer.doDeserialize got a bad pair: $pairStr")
+    // Filter out the empty-string case:
+    val pairs = if (pairStrs.length > 0 && pairStrs(0).length() > 0) pairStrs.map { pairStr =>
+        val parts = pairStr.split(":")
+        if (parts.length != 2)
+          throw new Exception(s"DiscreteSummarizer.doDeserialize got a bad pair: $pairStr")
       
-      (userType.doDeserialize(parts(0)), java.lang.Integer.parseInt(parts(1)))
-    }
+        (userType.doDeserialize(parts(0)), java.lang.Integer.parseInt(parts(1)))
+    } else
+      Array.empty[(UVT,Int)]
     
     DiscreteSummary(Map(pairs:_*))
   }

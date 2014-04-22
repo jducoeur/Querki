@@ -10,6 +10,7 @@ import models._
 
 import querki.ecology._
 
+import querki.uservalues.TUserValue
 import querki.util.XmlHelpers
 import querki.values._
 
@@ -44,7 +45,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     val state = rc.state.get
     val cType = prop.cType
     val pType = prop.pType
-    val rendered = renderSpecialized(cType, pType, rc, prop, currentValue, specialization).getOrElse(cType.renderInput(prop, rc, currentValue, pType))
+    val rendered = doRender(cType, pType, rc, prop, currentValue, specialization)
     val xml3 = addEditorAttributes(rendered, currentValue, prop, currentValue.inputControlId)
     // TODO: this is *very* suspicious, but we need to find a solution. RenderTagSet is trying to pass JSON structures in the
     // value field, but for that to be JSON-legal, the attributes need to be single-quoted, and the strings in them double-quoted.
@@ -127,10 +128,22 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     }
   }
   
+  def doRender(cType:Collection, pType:PType[_], rc:RequestContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):NodeSeq = {
+    renderSpecialized(cType, pType, rc, prop, currentValue, specialization).getOrElse(cType.renderInput(prop, rc, currentValue, pType))
+  }
+  
   def renderSpecialized(cType:Collection, pType:PType[_], rc:RequestContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):Option[NodeSeq] = {
     // TODO: make this more data-driven. There should be a table of these.
     val state = rc.state.get
-    if (cType == Optional && pType == YesNoType)
+    val userValueRendered = pType match {
+      case uvt:TUserValue if (specialization.contains(FromEditFunction)) => {
+        Some(doRender(cType, uvt.userType, rc, prop, currentValue, specialization)) 
+      }
+      case _ => None
+    }
+    if (userValueRendered.isDefined)
+      userValueRendered
+    else if (cType == Optional && pType == YesNoType)
       Some(renderOptYesNo(state, prop, currentValue))
     else if (cType == Optional && pType == LinkType)
       Some(renderOptLink(rc, prop, currentValue))

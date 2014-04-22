@@ -7,6 +7,7 @@ import models.Thing.PropFetcher
 
 import querki.core.TypeUtils.SystemType
 import querki.ecology._
+import querki.util.QLog
 import querki.values.{ElemValue, QLContext, QValue, RequestContext, SpaceState}
 
 case class UserValueWrapper[UVT,ST](userValue:Option[QValue], summary:Option[ST])
@@ -19,14 +20,9 @@ case class UserValueWrapper[UVT,ST](userValue:Option[QValue], summary:Option[ST]
  * 
  * Ratings and Reviews are the archetypal UserValueTypes.
  */
-abstract class UserValueType[UVT, ST](tid:OID, pf:PropFetcher)(implicit e:Ecology) extends SystemType[UserValueWrapper[UVT,ST]](tid,pf) {
+abstract class UserValueType[UVT, ST](tid:OID, pf:PropFetcher)(implicit e:Ecology) extends SystemType[UserValueWrapper[UVT,ST]](tid,pf) with TUserValue {
   
   type Wrapper = UserValueWrapper[UVT,ST]
-  
-  def extractUserDisplayPropVal(dpv:DisplayPropVal):DisplayPropVal = {
-    val wrapperOpt = dpv.v.flatMap(_.firstAs(this))
-    wrapperOpt.map(wrapper => dpv.copy(v = wrapper.userValue)).getOrElse(dpv)
-  }
   
   /**
    * Note that these all operate on the *summary*, not the userValue itself.
@@ -36,9 +32,18 @@ abstract class UserValueType[UVT, ST](tid:OID, pf:PropFetcher)(implicit e:Ecolog
   def doWikify(context:QLContext)(v:Wrapper, displayOpt:Option[Wikitext] = None):Wikitext = 
     v.summary.map(summarizer.doWikify(context)(_, displayOpt)).getOrElse(Wikitext.empty)
   def doDefault(implicit state:SpaceState):Wrapper = UserValueWrapper(None, Some(summarizer.doDefault))
-  // *Editing* a UserValueType means editing the underlying userType.
   override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = 
-    userType.renderInputXml(prop, rc, extractUserDisplayPropVal(currentValue), v)
+    <p><i>User Value Property -- use {prop.displayName}._edit to set the value.</i></p>
+  
+  override def wrappedValue(v:QValue):Option[QValue] = {
+    v.firstAs(this) match {
+      case Some(wrapper) => wrapper.userValue
+      case None => {
+        QLog.error("UserValueType.wrappedValue got handed a QValue that doesn't seem to be of this type: " + v)
+        Some(v)
+      }
+    }
+  }
   
   // TODO: go through the rest of the PType methods, and see what else should be delegated to userType or summarizer
   
