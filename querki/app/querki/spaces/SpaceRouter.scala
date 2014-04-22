@@ -39,7 +39,7 @@ private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpaceP
 
   override def preStart() = {
     space = context.actorOf(Space.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
-    sessions = context.actorOf(UserSessions.actorProps(ecology, spaceId), "Sessions")
+    sessions = context.actorOf(UserSessions.actorProps(ecology, spaceId, self), "Sessions")
     conversations = context.actorOf(Conversations.conversationActorProps(persistenceFactory, spaceId, self), "Conversations") 
   }
   

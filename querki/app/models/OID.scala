@@ -23,6 +23,9 @@ import querki.db.ShardKind._
  * that the upper 32 bits describe where it currently resides. This model is designed to
  * make it easy to distribute object creation, while having confidence that there won't
  * be overlap.
+ * 
+ * TODO: for Scala 2.11, change this to a Value Type (it is exactly the right use case for
+ * those).
  */
 class OID(val raw:Long) {
   override def toString = java.lang.Long.toString(raw, 36)

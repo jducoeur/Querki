@@ -18,7 +18,7 @@ import querki.ecology._
 import querki.identity._
 
 import querki.html.HtmlRenderer
-
+import querki.session.messages._
 import querki.spaces.messages._
 import SpaceError._
 
@@ -386,7 +386,7 @@ disallow: /
                   deletions.foreach(deletion => QLog.spew(s"      ${deletion._1}"))
                 }
                 
-                ChangeProps(user, rc.ownerId, ThingId(spaceId), thing.get.id.toThingId, props ++ deletions)
+                SessionRequest(user, rc.ownerId, ThingId(spaceId), ChangeProps2(thing.get.id.toThingId, props ++ deletions))
               } else {
                 // Editing an existing Thing. If InstanceEditPropsOID isn't set, we're doing a full edit, and
                 // expect to have received the full list of properties.

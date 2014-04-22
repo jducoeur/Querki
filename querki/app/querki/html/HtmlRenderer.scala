@@ -32,6 +32,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   
   lazy val Links = interface[querki.links.Links]
   lazy val Tags = interface[querki.tags.Tags]
+  lazy val UserValues = interface[querki.uservalues.UserValues]
   
   lazy val InternalProp = Core.InternalProp
   lazy val NameType = Core.NameType
@@ -67,12 +68,16 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     if (prop.cType == QSet && (prop.pType.isInstanceOf[querki.core.IsNameType] || prop.pType == LinkType || prop.pType == NewTagSetType)) {
       handleTagSet(fieldIds, on, form, context)
     } else {
-      val spec = for (
-        formV <- form(fieldIds.inputControlId).value;
-        specialized <- handleSpecializedForm(prop, formV)
-          )
-        yield specialized
-      spec.getOrElse(prop.cType.fromUser(on, form, prop, prop.pType, fieldIds.container, context.state))
+      def withType(pType:PType[_]):FormFieldInfo = {
+        val spec = for (
+          formV <- form(fieldIds.inputControlId).value;
+          specialized <- handleSpecializedForm(prop, pType, formV)
+            )
+          yield specialized
+        spec.getOrElse(prop.cType.fromUser(on, form, prop, pType, fieldIds.container, context.state))
+      }
+
+      withType(UserValues.getUserType(prop.pType).getOrElse(prop.pType))
     }
   }
   
@@ -135,9 +140,10 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   def renderSpecialized(cType:Collection, pType:PType[_], rc:RequestContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):Option[NodeSeq] = {
     // TODO: make this more data-driven. There should be a table of these.
     val state = rc.state.get
-    val userValueRendered = pType match {
-      case uvt:TUserValue if (specialization.contains(FromEditFunction)) => {
-        Some(doRender(cType, uvt.userType, rc, prop, currentValue, specialization)) 
+    val userType = UserValues.getUserType(pType)
+    val userValueRendered = userType match {
+      case Some(uvt) if (specialization.contains(FromEditFunction)) => {
+        Some(doRender(cType, uvt, rc, prop, currentValue, specialization)) 
       }
       case _ => None
     }
@@ -315,10 +321,10 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   }
   
   // TODO: refactor this together with the above. It's going to require some fancy type math, though:
-  def handleSpecializedForm(prop:Property[_,_], newVal:String)(implicit state:SpaceState):Option[FormFieldInfo] = {
-    if (prop.cType == Optional && prop.pType == YesNoType)
+  def handleSpecializedForm(prop:Property[_,_], pType:PType[_], newVal:String)(implicit state:SpaceState):Option[FormFieldInfo] = {
+    if (prop.cType == Optional && pType == YesNoType)
       Some(handleOptionalForm(prop, newVal, YesNoType, (_ == "maybe")))
-    else if (prop.cType == Optional && prop.pType == LinkType)
+    else if (prop.cType == Optional && pType == LinkType)
       Some(handleOptionalForm(prop, newVal, LinkType, (OID(_) == UnknownOID)))
     else
       None

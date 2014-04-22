@@ -13,6 +13,16 @@ import querki.values.{ElemValue, QLContext, QValue, RequestContext, SpaceState}
 case class UserValueWrapper[UVT,ST](userValue:Option[QValue], summary:Option[ST])
 
 /**
+ * Handle for a PType that descends from UserValueType. Lets you get at the bits.
+ */
+private[uservalues] trait TUserValue {
+  /**
+   * The PType that we are presenting to the user.
+   */
+  def userType:PType[_]
+}
+
+/**
  * A specialized kind of PType that presents two faces. To the user, it is a User Value,
  * where each User gets to enter their own Value of the underlying UVT. It also presents
  * an optional Summarizer of type VT, which is a summary of all of the User Values, and

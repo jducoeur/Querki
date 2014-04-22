@@ -1,13 +1,23 @@
 package querki.uservalues
 
+import models.PType
+
 import querki.ecology._
 
 object MOIDs extends EcotIds(44) {
   val RatingTypeOID = moid(1)
 }
 
-class UserValueEcot(e:Ecology) extends QuerkiEcot(e) {
+class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues {
   import MOIDs._
+  
+  def getUserType(pt:PType[_]):Option[PType[_]] = {
+    // This really ought to work with a simple match, but it doesn't. Why not? I am mystified...
+    if (pt.isInstanceOf[TUserValue])
+      Some(pt.asInstanceOf[TUserValue].userType)
+    else
+      None
+  }
       
   /******************************************
    * TYPES
