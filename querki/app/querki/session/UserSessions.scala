@@ -6,19 +6,24 @@ import akka.event.LoggingReceive
 import models.OID
 
 import querki.ecology._
+import querki.identity.User
 import querki.session.messages._
 import querki.spaces.messages.{SessionRequest, CurrentState}
 import querki.util._
 import querki.values.SpaceState
 
 private [session] class UserSessions(val ecology:Ecology, val spaceId:OID, val spaceRouter:ActorRef)
-  extends Actor with EcologyMember with RoutingParent[OID]
+  extends Actor with EcologyMember with RoutingParent[User]
 {
+  lazy val SpacePersistenceFactory = interface[querki.spaces.SpacePersistenceFactory]
+  
+  val persister = SpacePersistenceFactory.getUserValuePersister(spaceId)
+  
   var state:Option[SpaceState] = None
   
-  def createChild(key:OID):ActorRef = {
+  def createChild(key:User):ActorRef = {
     // Sessions need a special dispatcher so they can use Stash. (Seriously? Unfortunate leakage in the Akka API.)
-    context.actorOf(UserSession.actorProps(ecology, spaceId, spaceRouter).withDispatcher("session-dispatcher"), key.toString)
+    context.actorOf(UserSession.actorProps(ecology, spaceId, key, spaceRouter, persister).withDispatcher("session-dispatcher"), key.id.toString)
   }
   
   override def initChild(child:ActorRef) = state.map(child ! CurrentState(_))
@@ -37,7 +42,7 @@ private [session] class UserSessions(val ecology:Ecology, val spaceId:OID, val s
     /**
      * Message to forward to a UserSession. Create the session, if needed.
      */
-    case msg @ SessionRequest(requester, _, _, payload) => routeToChild(requester.id, msg)
+    case msg @ SessionRequest(requester, _, _, payload) => routeToChild(requester, msg)
   }
 
 }

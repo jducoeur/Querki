@@ -86,6 +86,18 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
     serializedProps.mkString("{", ";", "}")
   }    
   
+  def deserializeProp(propStr:String)(implicit space:SpaceState):(OID, QValue) = {
+    val (idStr, valStrAndColon) = propStr.splitAt(propStr.indexOf(':'))
+    val valStr = unescape(valStrAndColon.drop(1))
+    val id = OID(idStr)
+    val propOpt = space.prop(id)
+    val v = propOpt match {
+      case Some(prop) => prop.deserialize(valStr)
+      case None => UnresolvedProp(UnresolvedPropType(valStr))
+    }
+    (id, v)    
+  }
+  
   def deserializeProps(str:String, space:SpaceState):PropMap = {
     implicit val s = space
     // Strip the surrounding {} pair:
@@ -94,17 +106,7 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
     // a little tricky to express in regex -- the weird bit is saying "things that aren't backslashes,
     // non-capturing".
     val propStrs = stripExt.split("""(?<=[^\\]);""")
-    val propPairs = propStrs.filter(_.trim.length() > 0).map { propStr =>
-      val (idStr, valStrAndColon) = propStr.splitAt(propStr.indexOf(':'))
-      val valStr = unescape(valStrAndColon.drop(1))
-      val id = OID(idStr)
-      val propOpt = space.prop(id)
-      val v = propOpt match {
-        case Some(prop) => prop.deserialize(valStr)
-        case None => UnresolvedProp(UnresolvedPropType(valStr))
-      }
-      (id, v)
-    }
+    val propPairs = propStrs.filter(_.trim.length() > 0).map(deserializeProp(_))
     toProps(propPairs:_*)()
   }
 

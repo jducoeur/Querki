@@ -1,5 +1,7 @@
 package querki.uservalues
 
+import akka.actor.Props
+
 import models.PType
 
 import querki.ecology._
@@ -18,6 +20,19 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues {
     else
       None
   }
+  
+  def wrapUserValue(uv:QValue, pt:PType[_], oldWrapperOpt:Option[QValue]):QValue = {
+    if (pt.isInstanceOf[UserValueType[_,_]]) {
+      pt.asInstanceOf[UserValueType[_,_]].wrapValue(uv, oldWrapperOpt)
+    } else
+      throw new Exception("UserValueEcot asked to wrap something in a PType that isn't UserValueType!")
+  }
+  
+  // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
+  // with "Props(classOf(Space), ...)". See:
+  //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
+  def userValuePersisterProps(spaceId:OID):Props = 
+    Props(new UserValuePersister(spaceId, ecology))
       
   /******************************************
    * TYPES

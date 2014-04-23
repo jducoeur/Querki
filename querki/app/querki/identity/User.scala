@@ -119,6 +119,16 @@ trait User {
     else
       throw new InternalException("Illegal attempt to call a function that requires admin rights. Caller is " + toThingId)
   }
+  
+  // Equality is based on the user ID. Recipe from http://www.artima.com/pins1ed/object-equality.html#28.4
+  def canEqual(other:Any):Boolean = other.isInstanceOf[User]
+  override def equals(other:Any):Boolean = {
+    other match {
+      case that:User => (that canEqual this) && (that.id == id)
+      case _ => false
+    }
+  }
+  override def hashCode:Int = 41 * (41 + id.hashCode)
 }
 
 case class FullUser(id:OID, name:String, identities:Seq[Identity] = Seq.empty, level:UserLevel = UnknownUserLevel, tosVersion:Int = 0) extends User

@@ -16,11 +16,13 @@ trait SpacePersistenceFactory extends EcologyInterface {
   def getSpacePersister(spaceId:OID)(implicit context:ActorContext):ActorRef
   def getSpaceManagerPersister(implicit context:ActorContext):ActorRef
   def getConversationPersister(spaceId:OID)(implicit context:ActorContext):ActorRef
+  def getUserValuePersister(spaceId:OID)(implicit context:ActorContext):ActorRef
 }
 
 class DBSpacePersistenceFactory(e:Ecology) extends QuerkiEcot(e) with SpacePersistenceFactory with EcologyMember {
   
   lazy val Conversations = interface[querki.conversations.Conversations]
+  lazy val UserValues = interface[querki.uservalues.UserValues]
   
   def getSpacePersister(spaceId:OID)(implicit context:ActorContext):ActorRef = {
     // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
@@ -44,4 +46,8 @@ class DBSpacePersistenceFactory(e:Ecology) extends QuerkiEcot(e) with SpacePersi
   def getConversationPersister(spaceId:OID)(implicit context:ActorContext):ActorRef = {
     context.actorOf(Conversations.conversationPersisterProps(spaceId), "Persist")
   }
+  
+  def getUserValuePersister(spaceId:OID)(implicit context:ActorContext):ActorRef = {
+    context.actorOf(UserValues.userValuePersisterProps(spaceId), "Persist")
+  }  
 }

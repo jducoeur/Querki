@@ -12,7 +12,7 @@ import models.Thing.PropMap
 import querki.ecology._
 import querki.spaces.messages.SpaceMgrMsg
 import querki.util.Sequencer
-import querki.values.{SpaceState, StateCacheKey}
+import querki.values.{QValue, SpaceState, StateCacheKey}
 
 package object spaces {
   // This is a pure marker trait, indicating that this PropValue didn't load correctly yet:
@@ -62,6 +62,7 @@ package object spaces {
 
     def serializeProps(props:PropMap, space:SpaceState):String
     def deserializeProps(str:String, space:SpaceState):PropMap
+    def deserializeProp(propStr:String)(implicit space:SpaceState):(OID, QValue)
     def createThingInSql(thingId:OID, spaceId:OID, modelId:OID, kind:Int, props:PropMap, serialContext:SpaceState)(implicit conn:java.sql.Connection):Int
   }
     

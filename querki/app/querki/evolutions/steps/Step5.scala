@@ -14,10 +14,10 @@ class Step5(implicit val ecology:Ecology) extends Step {
         |CREATE TABLE {uvname} (
         |  thingId bigint NOT NULL,
         |  propertyId bigint NOT NULL,
-        |  userId bigint NOT NULL,
+        |  identityId bigint NOT NULL,
         |  propValue MEDIUMTEXT NOT NULL,
         |  modTime datetime NOT NULL,
-        |  PRIMARY KEY (userId, thingId, propertyId)
+        |  PRIMARY KEY (identityId, thingId, propertyId)
         |);
         |""".stripMargin).execute
   }

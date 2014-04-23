@@ -2,7 +2,7 @@ package querki.uservalues
 
 import scala.xml.NodeSeq
 
-import models.{DisplayPropVal, OID, Property, PType, Wikitext}
+import models.{DisplayPropVal, OID, Property, PType, SimplePTypeBuilder, Wikitext}
 import models.Thing.PropFetcher
 
 import querki.core.TypeUtils.SystemType
@@ -30,7 +30,9 @@ private[uservalues] trait TUserValue {
  * 
  * Ratings and Reviews are the archetypal UserValueTypes.
  */
-abstract class UserValueType[UVT, ST](tid:OID, pf:PropFetcher)(implicit e:Ecology) extends SystemType[UserValueWrapper[UVT,ST]](tid,pf) with TUserValue {
+abstract class UserValueType[UVT, ST](tid:OID, pf:PropFetcher)(implicit e:Ecology) extends SystemType[UserValueWrapper[UVT,ST]](tid,pf) 
+  with TUserValue with SimplePTypeBuilder[UserValueWrapper[UVT,ST]] 
+{
   
   type Wrapper = UserValueWrapper[UVT,ST]
   
@@ -53,6 +55,20 @@ abstract class UserValueType[UVT, ST](tid:OID, pf:PropFetcher)(implicit e:Ecolog
         Some(v)
       }
     }
+  }
+  
+  def wrapValue(uv:QValue, oldWrapperOpt:Option[QValue]):QValue = {
+    val summaryOpt = {
+      val wOpt = for {
+        oldWrapperV <- oldWrapperOpt
+        oldWrapper <- oldWrapperV.firstAs(this)
+      }
+        yield oldWrapper.summary
+        
+      wOpt.flatten
+    }
+    
+    Core.ExactlyOne(this(UserValueWrapper(Some(uv), summaryOpt)))
   }
   
   // TODO: go through the rest of the PType methods, and see what else should be delegated to userType or summarizer
