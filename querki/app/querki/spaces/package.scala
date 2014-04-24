@@ -66,7 +66,7 @@ package object spaces {
     def createThingInSql(thingId:OID, spaceId:OID, modelId:OID, kind:Int, props:PropMap, serialContext:SpaceState)(implicit conn:java.sql.Connection):Int
   }
     
-  case class ThingChangeRequest(state:SpaceState, modelIdOpt:Option[OID], thingOpt:Option[Thing], newProps:PropMap)
+  case class ThingChangeRequest(state:SpaceState, modelIdOpt:Option[OID], thingOpt:Option[Thing], newProps:PropMap, changedProps:Seq[OID])
   
   case class CacheUpdate(evt:Option[querki.spaces.messages.SpaceMessage], old:Option[SpaceState], current:SpaceState) {
     /**

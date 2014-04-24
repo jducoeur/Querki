@@ -137,8 +137,8 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
   // properties. (At the least, we specifically do *not* allow any Tom, Dick and Harry to change permissions!)
   // TODO: Note that this is not fully implemented in AccessControlModule yet. We'll need to flesh it out further there
   // before we generalize this feature.
-  def canChangeProperties(who:User, oldThingOpt:Option[Thing], newProps:PropMap):Unit = {
-    val failedProp = changedProperties(oldThingOpt.map(_.props).getOrElse(Map.empty), newProps).find(!AccessControl.canChangePropertyValue(state, who, _))
+  def canChangeProperties(who:User, changedProps:Seq[OID], oldThingOpt:Option[Thing], newProps:PropMap):Unit = {
+    val failedProp = changedProps.find(!AccessControl.canChangePropertyValue(state, who, _))
     failedProp match {
       case Some(propId) => throw new PublicException("Space.modifyThing.propNotAllowed", state.anything(propId).get.displayName)
       case _ => oldThingOpt.map(PropTypeMigrator.checkLegalChange(state, _, newProps))
@@ -199,11 +199,12 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
   def createSomething(spaceThingId:ThingId, who:User, modelId:OID, propsIn:PropMap, kind:Kind, attachmentInfo:Option[AttachmentInfo]) = 
   {
     val spaceId = checkSpaceId(spaceThingId)
+    val changedProps = changedProperties(Map.empty, propsIn)
     // Give listeners a chance to make alterations
-    val props = SpaceChangeManager.thingChanges(ThingChangeRequest(state, Some(modelId), None, propsIn)).newProps
+    val props = SpaceChangeManager.thingChanges(ThingChangeRequest(state, Some(modelId), None, propsIn, changedProps)).newProps
     val name = Core.NameProp.firstOpt(props)
     val canChangeTry = 
-      TryTrans[Unit, Boolean] { canChangeProperties(who, None, props) }.
+      TryTrans[Unit, Boolean] { canChangeProperties(who, changedProps, None, props) }.
         onSucc { _ => true }.
         onFail { ex => sender ! ThingError(ex); false }.
         result
@@ -261,9 +262,10 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
       oldThingOpt map { oldThing =>
         val thingId = oldThing.id
         val rawNewProps = pf(oldThing)
-        val newProps = SpaceChangeManager.thingChanges(ThingChangeRequest(state, modelIdOpt, Some(oldThing), rawNewProps)).newProps
+        val changedProps = changedProperties(oldThing.props, rawNewProps)
+        val newProps = SpaceChangeManager.thingChanges(ThingChangeRequest(state, modelIdOpt, Some(oldThing), rawNewProps, changedProps)).newProps
         val canChangeTry = 
-          TryTrans[Unit, Boolean] { canChangeProperties(who, Some(oldThing), newProps) }.
+          TryTrans[Unit, Boolean] { canChangeProperties(who, changedProps, Some(oldThing), newProps) }.
             onSucc { _ => true }.
             onFail { ex => sender ! ThingError(ex); false }.
             result

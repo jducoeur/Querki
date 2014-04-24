@@ -77,6 +77,14 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
         spec.getOrElse(prop.cType.fromUser(on, form, prop, pType, fieldIds.container, context.state))
       }
 
+      // TODO: this is arguably not quite right for UserValueTypes. We are currently always using the userType here if there is one,
+      // but that is *not* correct when we're in the old-style Editor, and the userType is being elided. The result is that, from
+      // the old-style Editor, we are always winding up with a missing input, so we're always return the default of the userType,
+      // which is completely incorrect. The only thing saving us is that we're detecting this way down inside the system, and eliminating
+      // it -- basically, we're using the existence of the wrong type as a signal that we shouldn't be recording this property change at all.
+      // We fix this up inside UserValueEcot.UserValueUpdateFilter, which screens these out.
+      //
+      // Icky, but currently functional. In the long run, though, should we be creating the wrapper here?
       withType(UserValues.getUserType(prop.pType).getOrElse(prop.pType))
     }
   }

@@ -39,7 +39,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     def notify(evt:ThingChangeRequest, sender:Publisher[ThingChangeRequest,ThingChangeRequest]):ThingChangeRequest = {
       evt match {
         // We only worry about it if there is a Model and there isn't a Thing, so this is a Create:
-        case ThingChangeRequest(state, Some(modelId), None, props) => {
+        case ThingChangeRequest(state, Some(modelId), None, props, changedProps) => {
           implicit val s = state
           state.anything(modelId) match {
             case Some(model) => {
@@ -61,7 +61,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
                   }
               }
               
-              ThingChangeRequest(state, Some(modelId), None, newProps)
+              ThingChangeRequest(state, Some(modelId), None, newProps, changedProps)
             }
             // TODO: this is actually a strange error -- what should we do here?
             case None => evt

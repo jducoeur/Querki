@@ -27,7 +27,7 @@ class DataModelTests extends QuerkiTests {
       
       // TODO: this is a pretty low-level test. Once we actually have unit testing working for the Space Actor,
       // we should test that way, to get a more realistic functional test:
-      val actualProps = SpaceChangeManager.thingChanges(ThingChangeRequest(s.state, Some(s.myModel.id), None, s.myInstance.props)).newProps
+      val actualProps = SpaceChangeManager.thingChanges(ThingChangeRequest(s.state, Some(s.myModel.id), None, s.myInstance.props, s.myInstance.props.keys.toSeq)).newProps
 
       // In other words, myProp is being copied into the actual properties, but otherProp is not:
       assert(actualProps.contains(s.myProp.id))
