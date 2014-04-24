@@ -101,7 +101,7 @@ private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val us
    * currently communicating User where they should be communicating Identity. So for now, we're calculating
    * the best option here, which is the local Identity if one is available, and the primary Identity if not.
    */
-  lazy val identity = Person.localIdentities(user)(state).headOption.getOrElse(user.mainIdentity) 
+  lazy val identity = Person.localIdentities(user)(_rawState.get).headOption.getOrElse(user.mainIdentity) 
 
   /**
    * Initial state: stash everything until we get the SpaceState. CurrentState will *typically* come first, but
@@ -122,6 +122,7 @@ private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val us
     }
     
     case ValuesForUser(identityId, uvs) => {
+      clearEnhancedState()
       userValues = uvs
       // Okay, ready to roll:
       unstashAll()
