@@ -30,6 +30,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   lazy val HtmlUI = interface[querki.html.HtmlUI]
   lazy val QL = interface[querki.ql.QL]
   lazy val DeriveName = interface[querki.types.DeriveName]
+  lazy val UserValues = interface[querki.uservalues.UserValues]
   
   lazy val PlainTextType = Basic.PlainTextType
   
@@ -128,9 +129,15 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   
     def cantEditFallback(inv:Invocation):QValue
     
-    def canEdit(context:QLContext, requester:User, thing:PropertyBundle):Boolean = {
+    def canEdit(context:QLContext, requester:User, thing:PropertyBundle, prop:Property[_,_]):Boolean = {
       thing match {
-        case t:Thing => AccessControl.canEdit(context.state, requester, t.id)
+        case t:Thing => {
+          implicit val state = context.state
+          if (UserValues.isUserValueProp(prop))
+            AccessControl.hasPermission(UserValues.UserValuePermission, state, requester, t.id)
+          else
+            AccessControl.canEdit(context.state, requester, t.id)
+        }
         // TODO: this isn't right. It should return true iff the requester can edit the Thing
         // this bundle is contained in. Hmm...
         case _ => true
@@ -142,7 +149,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       params:Option[Seq[QLPhrase]]):QValue =
     {
       mainContext.request.requester match {
-        case Some(requester) if (canEdit(mainContext, requester, mainThing)) => {
+        case Some(requester) if (canEdit(mainContext, requester, mainThing, prop)) => {
           val currentValue = mainThing.getDisplayPropVal(prop)(mainContext.state).copy(cont = mainContext.currentValue)
 	      // TODO: conceptually, this is a bit off -- the rendering style shouldn't be hard-coded here. We
   	      // probably need to have the Context contain the desire to render in HTML, and delegate to the

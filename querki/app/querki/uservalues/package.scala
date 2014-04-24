@@ -2,7 +2,7 @@ package querki
 
 import akka.actor.Props
 
-import models.{OID, PType}
+import models.{OID, Property, PType}
 
 import querki.ecology._
 import querki.values.{QValue, SpaceState}
@@ -10,6 +10,11 @@ import querki.values.{QValue, SpaceState}
 package object uservalues {
   trait UserValues extends EcologyInterface {
     def RatingType:PType[_]
+    
+    /**
+     * Is a given user allowed to have User Values?
+     */
+    def UserValuePermission:Property[OID,_]
     
     /**
      * If this is a UserValue wrapping type, this returns the underlying type.

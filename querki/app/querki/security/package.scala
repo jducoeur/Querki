@@ -33,6 +33,14 @@ package object security {
     // Checks whether an *Identity* is a Member of the Space. This is more conceptually correct.
     def isMember(identityId:OID, state:SpaceState):Boolean
     
+    /**
+     * Ecots should use this to define their own Permissions. Keep in mind that, as always, the OID *MUST* be
+     * permanently stable, like any other OID in System.
+     * 
+     * If you are going to use this, your Ecot should depend upon AccessControl, and you should call this as
+     * the definition of a lazy val, that gets referenced in your props collection, as usual for defining a
+     * Property.
+     */
     def definePermission(id:OID, name:String, summary:String, defaults:Seq[OID], publicAllowed:Boolean):Property[OID,OID]
 
     def canCreate(state:SpaceState, who:User, modelId:OID):Boolean

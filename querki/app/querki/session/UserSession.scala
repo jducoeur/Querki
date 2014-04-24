@@ -20,6 +20,7 @@ import querki.uservalues.PersistMessages._
 private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
   extends Actor with Stash with EcologyMember with TimeoutChild
 {
+  lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Person = interface[querki.identity.Person]
   lazy val UserValues = interface[querki.uservalues.UserValues]
   
@@ -179,11 +180,17 @@ private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val us
 	        case Some((uvt, propId, v)) => {
 	          state.anything(thingId) match {
 	            case Some(thing) => {
-	              val uv = OneUserValue(thing.id, propId, v, DateTime.now)
-	              val existed = addUserValue(uv)
-       	          persister ! SaveUserValue(identity.id, uv, state, existed)
-	              // TODO: ask the Space to update the summary!
-	              sender ! ThingFound(thing.id, state)
+	              if (AccessControl.hasPermission(UserValues.UserValuePermission, state, identity.id, thing.id)) {
+  	                val uv = OneUserValue(thing.id, propId, v, DateTime.now)
+	                val existed = addUserValue(uv)
+       	            persister ! SaveUserValue(identity.id, uv, state, existed)
+	                // TODO: ask the Space to update the summary!
+	                sender ! ThingFound(thing.id, state)
+	              } else {
+	                // Should we log a warning here? It *is* possible to get here, if the permission changed between the
+	                // time the user loaded the page and the time they submitted it.
+	                sender ! ThingError(new PublicException(ModifyNotAllowed))
+	              }
 	            }
 	            case None => sender ! ThingError(UnexpectedPublicException, Some(state))
 	          }

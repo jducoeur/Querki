@@ -11,11 +11,13 @@ import querki.values.{SpaceState, StateCacheKey}
 
 object MOIDs extends EcotIds(44) {
   val RatingTypeOID = moid(1)
+  val UserValuePermissionOID = moid(2)
 }
 
 class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues {
   import MOIDs._
   
+  val AccessControl = initRequires[querki.security.AccessControl]
   val SpaceChangeManager = initRequires[querki.spaces.SpaceChangeManager]
   
   override def init = {
@@ -149,5 +151,19 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues {
   
   override lazy val types = Seq(
     RatingType
+  )
+    
+  /***********************************************
+   * PROPERTIES
+   ***********************************************/
+  
+  lazy val UserValuePermission = AccessControl.definePermission(
+      UserValuePermissionOID, 
+      "Who Can Have User Values", 
+      "Who is allowed to define their own User Values (such as Ratings or Reviews)",
+      Seq(AccessControl.OwnerTag, AccessControl.MembersTag), false)
+
+  override lazy val props = Seq(
+    UserValuePermission
   )
 }
