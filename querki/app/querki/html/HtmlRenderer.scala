@@ -10,7 +10,6 @@ import models._
 
 import querki.ecology._
 
-import querki.uservalues.TUserValue
 import querki.util.XmlHelpers
 import querki.values._
 
@@ -32,7 +31,6 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   
   lazy val Links = interface[querki.links.Links]
   lazy val Tags = interface[querki.tags.Tags]
-  lazy val UserValues = interface[querki.uservalues.UserValues]
   
   lazy val InternalProp = Core.InternalProp
   lazy val NameType = Core.NameType
