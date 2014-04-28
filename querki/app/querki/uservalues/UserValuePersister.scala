@@ -41,12 +41,12 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
           val valStr = row.string("propValue")
           val modTime = row.dateTime("modTime")
           val v = state.prop(propId) match {
-            case Some(prop) => {
-              UserValues.getUserType(prop.pType) match {
-                // Ideally, this would be prop.deserialize(), but we need to use the userType:
-                case Some(uvType) => prop.cType.deserialize(valStr, uvType)
-                case None => { QLog.error("LoadValuesForUser.deserialize found non-UV Property " + propId); EmptyValue.untyped }
-              }
+            case Some(prop) => { prop.deserialize(valStr)
+//              UserValues.getUserType(prop.pType) match {
+//                // Ideally, this would be prop.deserialize(), but we need to use the userType:
+//                case Some(uvType) => prop.cType.deserialize(valStr, uvType)
+//                case None => { QLog.error("LoadValuesForUser.deserialize found non-UV Property " + propId); EmptyValue.untyped }
+//              }
             }
             case None => { QLog.error("LoadValuesForUser got unknown Property " + propId); EmptyValue.untyped }
           }
@@ -61,9 +61,10 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
       DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
         implicit val s = state
         val prop = state.prop(uv.propId).getOrElse(throw new Exception("SaveUserValue is trying to serialize unknown Property " + uv.propId))
-        val uvType = UserValues.getUserType(prop.pType).getOrElse(throw new Exception("SaveUserValue is trying to serialize non-UV Property " + uv.propId))
+//        val uvType = UserValues.getUserType(prop.pType).getOrElse(throw new Exception("SaveUserValue is trying to serialize non-UV Property " + uv.propId))
         
         // Have I ever mentioned how much I despise SQL's lack of a standard UPSERT operator?
+        // TODO: replace these clauses with a single MySQL INSERT ... ON DUPLICATE KEY ...
         if (update) {
           SpaceSQL("""
             UPDATE {uvname}
@@ -73,8 +74,7 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
                 "thingId" -> uv.thingId.raw,
                 "propertyId" -> uv.propId.raw,
                 "identityId" -> identityId.raw,
-                // Again, would be ideal to use prop.serialize(), but we need to be using the userType instead:
-                "propValue" -> uv.v.serialize(uvType),
+                "propValue" -> prop.serialize(uv.v),
                 "modTime" -> uv.modTime).executeUpdate
         } else {
           // Note that a bunch of the Booleans simply default to false, and are irrelevant for a new Comment:
@@ -86,7 +86,7 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
                 "thingId" -> uv.thingId.raw,
                 "propertyId" -> uv.propId.raw,
                 "identityId" -> identityId.raw,
-                "propValue" -> uv.v.serialize(uvType),
+                "propValue" -> prop.serialize(uv.v),
                 "modTime" -> uv.modTime).executeUpdate
         }
       }

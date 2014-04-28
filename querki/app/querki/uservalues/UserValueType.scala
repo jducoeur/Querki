@@ -30,7 +30,7 @@ private[uservalues] trait TUserValue {
  * 
  * Ratings and Reviews are the archetypal UserValueTypes.
  */
-abstract class UserValueType[UVT, ST](tid:OID, pf:PropFetcher)(implicit e:Ecology) extends SystemType[UserValueWrapper[UVT,ST]](tid,pf) 
+abstract class OldUserValueType[UVT, ST](tid:OID, pf:PropFetcher)(implicit e:Ecology) extends SystemType[UserValueWrapper[UVT,ST]](tid,pf) 
   with TUserValue with SimplePTypeBuilder[UserValueWrapper[UVT,ST]] 
 {
   
@@ -51,7 +51,7 @@ abstract class UserValueType[UVT, ST](tid:OID, pf:PropFetcher)(implicit e:Ecolog
     v.firstAs(this) match {
       case Some(wrapper) => wrapper.userValue
       case None => {
-        QLog.error("UserValueType.wrappedValue got handed a QValue that doesn't seem to be of this type: " + v)
+        QLog.error("OldUserValueType.wrappedValue got handed a QValue that doesn't seem to be of this type: " + v)
         Some(v)
       }
     }

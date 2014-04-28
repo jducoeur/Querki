@@ -11,7 +11,6 @@ import querki.session.messages._
 import querki.spaces.messages.{ChangeProps, CurrentState, SessionRequest, ThingError, ThingFound}
 import querki.spaces.messages.SpaceError._
 import querki.time.DateTime
-import querki.uservalues.UserValueWrapper
 import querki.util.{PublicException, QLog, TimeoutChild, UnexpectedPublicException}
 import querki.values.{QValue, SpaceState}
 
@@ -43,9 +42,7 @@ private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val us
         (rs /: userValues) { (curState, uv) =>
           curState.anything(uv.thingId) match {
             case Some(thing:ThingState) => {
-              val prop = curState.prop(uv.propId).getOrElse(throw new Exception("Trying to enhance with unknown Property " + uv.propId))
-              val wrapper = UserValues.wrapUserValue(uv.v, prop.pType, thing.localProp(prop).map(_.v))
-              val newThing = thing.copy(pf = () => thing.props + (uv.propId -> wrapper))
+              val newThing = thing.copy(pf = () => thing.props + (uv.propId -> uv.v))
               curState.copy(things = curState.things + (newThing.id -> newThing))
             }
             // Yes, this looks like an error, but it isn't: it means that there was a UserValue
@@ -141,9 +138,6 @@ private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val us
         case GetActiveSessions => QLog.error("UserSession received GetActiveSessions! WTF?")
         
 	    case GetThing(thingIdOpt) => {
-	      // TODO: enhance the returned state with the UserValues for this Thing, if any. Actually,
-	      // we may need to maintain a fully-enhanced version of the state, to make QL expressions look
-	      // correct for this user.
 	      val thingId = thingIdOpt.flatMap(state.anything(_)).map(_.id).getOrElse(UnknownOID)
 	      if (thingIdOpt.isDefined) {
 	        val thingOpt = state.anything(thingIdOpt.get)
@@ -166,18 +160,19 @@ private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val us
 	    case ChangeProps2(thingId, props) => {
 	      // For the time being, we cope only with a single UserValue property being set at a time.
 	      // TODO: generalize this properly!
-	      val uvPropPairOpt:Option[(PType[_], OID, QValue)] = 
+	      val uvPropPairOpt:Option[(OID, QValue)] = 
 	        if (props.size == 1) {
 	          val (propId, v) = props.head
-	          state.prop(propId).flatMap{ prop =>
-	            UserValues.getUserType(prop.pType).map((_, propId, v))
-	          }
+	          if (UserValues.isUserValueProp(propId)(state))
+	            Some((propId, v))
+	          else
+	            None
 	        } else
 	          None
 	          
 	      uvPropPairOpt match {
 	        // It's a UserValue, so persist it that way:
-	        case Some((uvt, propId, v)) => {
+	        case Some((propId, v)) => {
 	          state.anything(thingId) match {
 	            case Some(thing) => {
 	              if (AccessControl.hasPermission(UserValues.UserValuePermission, state, identity.id, thing.id)) {
