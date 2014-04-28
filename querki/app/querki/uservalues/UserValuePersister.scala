@@ -1,6 +1,7 @@
 package querki.uservalues
 
 import akka.actor._
+import akka.event.LoggingReceive
 
 import anorm.{Success=>AnormSuccess,_}
 import play.api.db._
@@ -26,7 +27,7 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
   
   def SpaceSQL(query:String):SqlQuery = SpacePersistence.SpaceSQL(spaceId, query)
   
-  def receive = {
+  def receive = LoggingReceive {
     case LoadValuesForUser(identityId, state) => {
       DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
         val valueStream = SpaceSQL("""

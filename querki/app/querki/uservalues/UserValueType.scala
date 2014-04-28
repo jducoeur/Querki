@@ -10,7 +10,7 @@ import querki.ecology._
 import querki.util.QLog
 import querki.values.{ElemValue, QLContext, QValue, RequestContext, SpaceState}
 
-case class UserValueWrapper[UVT,ST](userValue:Option[QValue], summary:Option[ST])
+case class OldUserValueWrapper[UVT,ST](userValue:Option[QValue], summary:Option[ST])
 
 /**
  * Handle for a PType that descends from UserValueType. Lets you get at the bits.
@@ -30,20 +30,20 @@ private[uservalues] trait TUserValue {
  * 
  * Ratings and Reviews are the archetypal UserValueTypes.
  */
-abstract class OldUserValueType[UVT, ST](tid:OID, pf:PropFetcher)(implicit e:Ecology) extends SystemType[UserValueWrapper[UVT,ST]](tid,pf) 
-  with TUserValue with SimplePTypeBuilder[UserValueWrapper[UVT,ST]] 
+abstract class OldUserValueType[UVT, ST](tid:OID, pf:PropFetcher)(implicit e:Ecology) extends SystemType[OldUserValueWrapper[UVT,ST]](tid,pf) 
+  with TUserValue with SimplePTypeBuilder[OldUserValueWrapper[UVT,ST]] 
 {
   
-  type Wrapper = UserValueWrapper[UVT,ST]
+  type Wrapper = OldUserValueWrapper[UVT,ST]
   
   /**
    * Note that these all operate on the *summary*, not the userValue itself.
    */
-  def doDeserialize(ser:String)(implicit state:SpaceState):Wrapper = UserValueWrapper(None, Some(summarizer.doDeserialize(ser)))
+  def doDeserialize(ser:String)(implicit state:SpaceState):Wrapper = OldUserValueWrapper(None, Some(summarizer.doDeserialize(ser)))
   def doSerialize(v:Wrapper)(implicit state:SpaceState):String = v.summary.map(summarizer.doSerialize(_)).getOrElse("")
   def doWikify(context:QLContext)(v:Wrapper, displayOpt:Option[Wikitext] = None):Wikitext = 
     v.summary.map(summarizer.doWikify(context)(_, displayOpt)).getOrElse(Wikitext.empty)
-  def doDefault(implicit state:SpaceState):Wrapper = UserValueWrapper(None, Some(summarizer.doDefault))
+  def doDefault(implicit state:SpaceState):Wrapper = OldUserValueWrapper(None, Some(summarizer.doDefault))
   override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = 
     <p><i>User Value Property -- use {prop.displayName}._edit to set the value.</i></p>
   
@@ -68,7 +68,7 @@ abstract class OldUserValueType[UVT, ST](tid:OID, pf:PropFetcher)(implicit e:Eco
       wOpt.flatten
     }
     
-    Core.ExactlyOne(this(UserValueWrapper(Some(uv), summaryOpt)))
+    Core.ExactlyOne(this(OldUserValueWrapper(Some(uv), summaryOpt)))
   }
   
   // TODO: go through the rest of the PType methods, and see what else should be delegated to userType or summarizer

@@ -75,18 +75,19 @@ private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val us
   
   /**
    * Add the given UserValue to the known ones. If there was previously a value, overwrite it and return true.
+   * 
+   * NOTE: this code runs through userValues twice, which seems redundant. That's true, but my attempt to write
+   * a side-effecting version that figured out ret while doing the filtering got spoiled by the compiler being
+   * *way* too clever, and apparently rearranging the order of operations to produce the wrong result. As so
+   * often, side-effects in functional code are a dangerous idea.
    */
   def addUserValue(uv:OneUserValue):Boolean = {
-    var ret = false
-    userValues = 
-      userValues.
-        filterNot { oldUv => 
-          val isMatch = (oldUv.thingId == uv.thingId) && (oldUv.propId == uv.propId)
-          if (isMatch) ret = true
-          isMatch
-        } :+ uv
+    def isMatch(oldUv:OneUserValue) = (oldUv.thingId == uv.thingId) && (oldUv.propId == uv.propId)
+    
+    var existed = userValues.exists(isMatch(_))
+    userValues = userValues.filterNot(isMatch(_)) :+ uv
     clearEnhancedState()
-    ret
+    existed
   }
   
   val timeoutConfig = "querki.session.timeout"
