@@ -9,7 +9,7 @@ import querki.values.{ElemValue, PropAndVal, QLContext, QValue, SpaceState}
 
 class CoreModule(e:Ecology) extends CoreEcot(e) with Core
   with BootUtils with CollectionBase with CollectionCreation
-  with TextTypeBasis with LinkUtils with NameUtils with NameTypeBasis with TypeCreation 
+  with TextTypeBasis with IntTypeBasis with LinkUtils with NameUtils with NameTypeBasis with TypeCreation 
 {
   import MOIDs._
   

@@ -2,7 +2,7 @@ package querki.uservalues
 
 import akka.actor.Props
 
-import models.{Kind, PType}
+import models.{Kind, PType, ThingState}
 
 import querki.ecology._
 import querki.spaces.{CacheUpdate, ThingChangeRequest}
@@ -10,6 +10,7 @@ import querki.util.{Contributor, Publisher, QLog}
 import querki.values.{SpaceState, StateCacheKey}
 
 object MOIDs extends EcotIds(44) {
+  val SummarizerBaseOID = moid(1)
   val UserValuePermissionOID = moid(2)
   val IsUserValueFlagOID = moid(3)
 }
@@ -61,6 +62,26 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues {
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
   def userValuePersisterProps(spaceId:OID):Props = 
     Props(new UserValuePersister(spaceId, ecology))
+      
+  /***********************************************
+   * THINGS
+   ***********************************************/
+    
+  /**
+   * Base Model for all Summarizers, just so we can talk about them in an organized way.
+   * 
+   * Note that, for the moment, we aren't bothering to call this a Type, since it really isn't.
+   * Is there any reason to believe this is a problem? I don't think so.
+   */
+  lazy val SummarizerBase = ThingState(SummarizerBaseOID, systemOID, RootOID,
+    toProps(
+      setName("_summarizerBase"),
+      Core.IsModelProp(true),
+      setInternal))
+  
+  override lazy val things = Seq(
+    SummarizerBase
+  )
     
   /***********************************************
    * PROPERTIES

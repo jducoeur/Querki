@@ -166,6 +166,51 @@ trait NameTypeBasis { self:CoreEcot with NameUtils =>
   }  
 }
 
+trait IntTypeBasis { self:CoreEcot =>
+  /**
+   * The Type for integers
+   */
+  class IntTypeBase(tid:OID, pf:PropFetcher) extends SystemType[Int](tid, pf) with SimplePTypeBuilder[Int]
+  {
+    override val displayEmptyAsBlank:Boolean = true
+    
+    def doDeserialize(v:String)(implicit state:SpaceState) = try {
+      java.lang.Integer.parseInt(v)
+    } catch {
+      case ex:java.lang.NumberFormatException => throw new PublicException("Types.Number.badFormat", v)
+    }
+    
+    def doSerialize(v:Int)(implicit state:SpaceState) = v.toString
+    def doWikify(context:QLContext)(v:Int, displayOpt:Option[Wikitext] = None) = Wikitext(v.toString)
+
+    def doDefault(implicit state:SpaceState) = 0
+    
+    override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = {
+      implicit val s = state
+      for (
+        minValPO <- prop.getPropOpt(Types.MinIntValueProp)(state);
+        minVal <- minValPO.firstOpt;
+        if (doDeserialize(v) < minVal)
+          )
+        throw new PublicException("Types.Int.tooLow", prop.displayName, minVal)
+      
+      for (
+        maxValPO <- prop.getPropOpt(Types.MaxIntValueProp)(state);
+        maxVal <- maxValPO.firstOpt;
+        if (doDeserialize(v) > maxVal)
+          )
+        throw new PublicException("Types.Int.tooHigh", prop.displayName, maxVal)
+    }  
+    
+   override def doComp(context:QLContext)(left:Int, right:Int):Boolean = { left < right } 
+    
+   override def editorSpan(prop:Property[_,_]):Int = 1    
+    /**
+     * TODO: eventually, we may want a more nuanced Int inputter. But this will do to start.
+     */
+  }
+}
+
 trait LinkUtils { self:CoreEcot =>
   
   def InternalProp:Property[Boolean,Boolean]
@@ -269,7 +314,7 @@ trait LinkUtils { self:CoreEcot =>
   
 }
 
-trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTypeBasis with LinkUtils with NameUtils with CoreModule =>
+trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTypeBasis with IntTypeBasis with LinkUtils with NameUtils with CoreModule =>
 
   /**
    * Marker type, used to signify "no real type" in empty collections.
@@ -561,7 +606,7 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
   /**
    * The Type for integers
    */
-  class IntType extends SystemType[Int](IntTypeOID,
+  class IntType extends IntTypeBase(IntTypeOID,
       toProps(
         setName("Whole Number Type"),
         Summary("A number"),
@@ -577,45 +622,7 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
             |At the moment, Querki only accepts positive numbers, not negative ones. If you need to use
             |negative numbers, please raise it as an issue. (It isn't hard to add, but hasn't come up as
             |a high priority yet.)""".stripMargin)
-        )) with SimplePTypeBuilder[Int]
-  {
-    override val displayEmptyAsBlank:Boolean = true
-    
-    def doDeserialize(v:String)(implicit state:SpaceState) = try {
-      java.lang.Integer.parseInt(v)
-    } catch {
-      case ex:java.lang.NumberFormatException => throw new PublicException("Types.Number.badFormat", v)
-    }
-    
-    def doSerialize(v:Int)(implicit state:SpaceState) = v.toString
-    def doWikify(context:QLContext)(v:Int, displayOpt:Option[Wikitext] = None) = Wikitext(v.toString)
-
-    def doDefault(implicit state:SpaceState) = 0
-    
-    override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = {
-      implicit val s = state
-      for (
-        minValPO <- prop.getPropOpt(Types.MinIntValueProp)(state);
-        minVal <- minValPO.firstOpt;
-        if (doDeserialize(v) < minVal)
-          )
-        throw new PublicException("Types.Int.tooLow", prop.displayName, minVal)
-      
-      for (
-        maxValPO <- prop.getPropOpt(Types.MaxIntValueProp)(state);
-        maxVal <- maxValPO.firstOpt;
-        if (doDeserialize(v) > maxVal)
-          )
-        throw new PublicException("Types.Int.tooHigh", prop.displayName, maxVal)
-    }  
-    
-   override def doComp(context:QLContext)(left:Int, right:Int):Boolean = { left < right } 
-    
-   override def editorSpan(prop:Property[_,_]):Int = 1    
-    /**
-     * TODO: eventually, we may want a more nuanced Int inputter. But this will do to start.
-     */
-  }
+        ))
   
   /**
    * The YesNo Type -- or Boolean, as us geeks think of it
