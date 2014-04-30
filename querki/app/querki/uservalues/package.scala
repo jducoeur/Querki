@@ -15,6 +15,11 @@ package object uservalues {
     def SummaryLink:Property[OID,_]
     
     /**
+     * The optional link from a Summary Property to the Property that it is summarizing.
+     */
+    def SummarizesPropertyLink:Property[OID,_]
+    
+    /**
      * Is a given user allowed to have User Values?
      */
     def UserValuePermission:Property[OID,_]

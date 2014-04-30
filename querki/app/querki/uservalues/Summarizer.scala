@@ -1,18 +1,14 @@
 package querki.uservalues
 
+import scala.reflect.runtime.universe._
 import scala.xml.NodeSeq
 
-import models.{DisplayPropVal, OID, Property, PType, PTypeBuilder, Wikitext}
+import models.{DisplayPropVal, OID, Property, PropertyBundle, PType, PTypeBuilder, Wikitext}
 
 import querki.ecology._
+import querki.types.{ModelTypeBase, PropPath}
 import querki.util.QLog
 import querki.values.{ElemValue, QLContext, QValue, RequestContext, SpaceState}
-
-/**
- * This message is sent from the UserSession, through the Space to the UserValueSpacePlugin,
- * telling it to do create a Summary in a properly synchronized way.
- */
-case class SummarizeChange[UVT](tid:OID, fromProp:Property[UVT,_], summaryId:OID, previous:Option[QValue], current:Option[QValue])
 
 case class DiscreteSummary[UVT](content:Map[UVT,Int])
 
@@ -24,10 +20,15 @@ trait Summarizer[UVT,VT] {
    * Based on the previous and current User Values for a single User, produce an updated summary
    * value for this Thing.
    */
-  def addToSummary(tid:OID, fromProp:Property[UVT,_], prop:Property[VT,_], previous:Option[QValue], current:Option[QValue])(implicit state:SpaceState):QValue
+  def addToSummary(tid:OID, fromProp:Property[_,_], prop:Property[VT,_], previous:Option[QValue], current:Option[QValue])(implicit state:SpaceState):QValue
 }
 
 trait SummarizerDefs { self:QuerkiEcot =>
+  lazy val PropPaths = interface[querki.types.PropPaths]
+  lazy val UserValues = interface[UserValues]
+  
+  lazy val SummarizesPropertyLink = UserValues.SummarizesPropertyLink
+  
   /**
    * Base implementation for all Summarizers.
    * 
@@ -37,8 +38,57 @@ trait SummarizerDefs { self:QuerkiEcot =>
   abstract class SummarizerBase[UVT,VT](tid:OID, pf:PropFetcher)(implicit e:Ecology) 
     extends PType[VT](tid, SystemIds.systemOID, MOIDs.SummarizerBaseOID, pf)(e) with Summarizer[UVT,VT]
   {
-    def addToSummary(tid:OID, fromProp:Property[UVT,_], prop:Property[VT,_], previous:Option[QValue], current:Option[QValue])(implicit state:SpaceState):QValue = {
-      ExactlyOne(ElemValue(doAddToSummary(tid, prop, previous.flatMap(_.firstAs(fromProp.pType)), current.flatMap(_.firstAs(fromProp.pType))), this))
+    // HACK: so far, I haven't come up with a compile-time way to deal with this, so we need to do the typechecking at runtime.
+    // The problem is that fromProp *might* be of UVT, but it might also be a ModelType.
+    // TODO: this really ought to be typechecking that elem *is* a UVT, but erasure makes that hard. How do we do this? So far,
+    // my attempts with TypeTags haven't worked.
+    def castToUVT(vOpt:Option[QValue]):Option[UVT] = {
+      try {
+	      for {
+	        v <- vOpt
+	        first <- v.firstOpt
+	        elemV = first.elem
+	      }
+	        yield elemV.asInstanceOf[UVT]
+      } catch {
+        // TODO: this needs to become *much* better:
+        case ex:Exception => None
+      }
+    }
+    
+    def rightPath(paths:Seq[PropPath[_,_]], bundle:PropertyBundle)(implicit state:SpaceState):Option[PropPath[_,_]] = {
+      paths.find(path => !(path.getPropOpt(bundle).isEmpty))
+    }
+    
+    def viaPath(bundleOpt:Option[PropertyBundle], path:PropPath[_,_])(implicit state:SpaceState):Option[UVT] = {
+      for {
+        bundle <- bundleOpt
+        pv <- path.getPropOpt(bundle).headOption
+        v = pv.v
+        result <- castToUVT(Some(v))
+      }
+        yield result
+    }
+    
+    def addToSummary(tid:OID, fromProp:Property[_,_], prop:Property[VT,_], previous:Option[QValue], current:Option[QValue])(implicit state:SpaceState):QValue = {
+      val resultViaPath = fromProp.pType match {
+        case mt:ModelTypeBase => {
+	      for {
+	        fromBundleProp <- fromProp.confirmType(mt)
+	        summarizesPropPV <- prop.getPropOpt(SummarizesPropertyLink)
+	        summarizesPropId <- summarizesPropPV.firstOpt
+	        summarizesProp <- state.prop(summarizesPropId)
+	        previousBundle = previous.flatMap(_.firstAs(mt))
+	        currentBundle = current.flatMap(_.firstAs(mt))
+	        checkBundle <- previousBundle orElse currentBundle 
+	        path <- rightPath(PropPaths.pathsToProperty(summarizesProp), checkBundle)
+	      }
+	        yield ExactlyOne(ElemValue(doAddToSummary(tid, prop, viaPath(previousBundle, path), viaPath(currentBundle, path)), this))
+        }
+        case _ => None
+      }
+      
+      resultViaPath.getOrElse(ExactlyOne(ElemValue(doAddToSummary(tid, prop, castToUVT(previous), castToUVT(current)), this)))
     }
     def doAddToSummary(tid:OID, prop:Property[VT,_], previous:Option[UVT], current:Option[UVT])(implicit state:SpaceState):VT
   }

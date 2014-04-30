@@ -24,16 +24,16 @@ sealed trait PropPath[VT,WT] {
    * Actually look up this Property value via this path. Note that this can return multiple values
    * if, for instance, the Model Property in the middle is List-valued.
    */
-  def getPropOpt(thing:PropertyBundle)(implicit state:SpaceState):Iterable[PropAndVal[VT]]
+  def getPropOpt(thing:PropertyBundle)(implicit state:SpaceState):Seq[PropAndVal[VT]]
 }
 case class TrivialPropPath[VT](prop:Property[VT,_]) extends PropPath[VT,VT] {
   def lookingUp = prop
-  def getPropOpt(thing:PropertyBundle)(implicit state:SpaceState):Iterable[PropAndVal[VT]] = thing.getPropOpt(prop)
+  def getPropOpt(thing:PropertyBundle)(implicit state:SpaceState):Seq[PropAndVal[VT]] = thing.getPropOpt(prop).toSeq
 }
 case class ContainedPropPath[VT](container:Property[ModeledPropertyBundle,_], path:PropPath[VT,_]) extends PropPath[VT,ModeledPropertyBundle] {
   def lookingUp = container
   def prop = path.prop
-  def getPropOpt(thing:PropertyBundle)(implicit state:SpaceState):Iterable[PropAndVal[VT]] = {
+  def getPropOpt(thing:PropertyBundle)(implicit state:SpaceState):Seq[PropAndVal[VT]] = {
     thing.getPropOpt(container) match {
       case Some(contPV) => {
         val wrappedValues = for {
@@ -43,7 +43,7 @@ case class ContainedPropPath[VT](container:Property[ModeledPropertyBundle,_], pa
           
         wrappedValues.flatten
       }
-      case None => Iterable.empty
+      case None => Seq.empty
     }
   }
 }
@@ -85,6 +85,10 @@ class PropPathEcot(e:Ecology) extends QuerkiEcot(e) with PropPaths {
   
   /**
    * This produces all of the ways to get *to* this Property in this Space, both directly and via Model Types.
+   * 
+   * TODO: now that the State Cache exists, it is probably worthwhile to simply precompute and cache *all* non-trivial paths
+   * to *all* Properties, making this an O(1) operation the rest of the time. The precomputation wouldn't be
+   * terribly hard: just run down all of the Model Properties and build paths to everything in them.
    */
   def pathsToProperty[VT](prop:Property[VT,_])(implicit state:SpaceState):Seq[PropPath[VT,_]] = {
     val allModelTypes = for {

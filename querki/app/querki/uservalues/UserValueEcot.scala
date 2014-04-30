@@ -19,6 +19,7 @@ object MOIDs extends EcotIds(44) {
   val UserValuePermissionOID = moid(2)
   val IsUserValueFlagOID = moid(3)
   val SummaryLinkOID = moid(4)
+  val SummarizesPropertyLinkOID = moid(5)
 }
 
 class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpacePluginProvider {
@@ -157,10 +158,29 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
             |This is a very advanced Property, and you should only use it if you know what you are doing. The Summary's
             |Type must be compatible with that of the User Value it is summarizing. In the long run, we will wrap all
             |of this in an easier-to-use UI.""".stripMargin)))
+  
+  lazy val SummarizesPropertyLink = new SystemProperty(SummarizesPropertyLinkOID, LinkType, ExactlyOne,
+      toProps(
+        setName("Summarizes Property"),
+        AppliesToKindProp(Kind.Property),
+        Links.LinkKindProp(Kind.Property),
+        SkillLevel(SkillLevelAdvanced),
+        Summary("Optional pointer from a Summary Property to the Property that it summarizes"),
+        Details("""This link is sometimes necessary when you have a User Value Property that is a Model Type.
+            |If you want to summarize such a Property (in order to examine its statistics), you aren't actually
+            |summarizing the entire Property -- you're just summarizing a Property *inside* that Model Type.
+            |This lets you specify *which* Property of the Model Type should be summarized.
+            |
+            |For example, take the Review Property. The summary for that isn't based on the entire Review -- it
+            |is based on the Rating Property *inside* the Review. So the Summary needs to point to Rating, to
+            |know what to do.
+            |
+            |This is a very advanced Property, intended only for people who are building complex User Value Properties.""".stripMargin)))
 
   override lazy val props = Seq(
     UserValuePermission,
     IsUserValueFlag,
-    SummaryLink
+    SummaryLink,
+    SummarizesPropertyLink
   )
 }

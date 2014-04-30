@@ -24,7 +24,7 @@ package object types {
   /**
    * This is the "public face" of a Model Type, with the interesting stuff about it.
    */
-  trait ModelTypeBase extends PType[ModeledPropertyBundle] {
+  trait ModelTypeBase extends PType[ModeledPropertyBundle] with PTypeBuilder[ModeledPropertyBundle, SimplePropertyBundle]  {
     def basedOn:OID
   }
   
