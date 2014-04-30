@@ -8,14 +8,22 @@ import models.{AsName, AsOID, OID, PType, ThingState, UnknownOID}
 import querki.ecology._
 import querki.identity.{Identity, User}
 import querki.session.messages._
-import querki.spaces.messages.{ChangeProps, CurrentState, SessionRequest, ThingError, ThingFound}
+import querki.spaces.messages.{ChangeProps, CurrentState, SessionRequest, SpacePluginMsg, ThingError, ThingFound}
 import querki.spaces.messages.SpaceError._
 import querki.time.DateTime
+import querki.uservalues.SummarizeChange
+import querki.uservalues.PersistMessages._
 import querki.util.{PublicException, QLog, TimeoutChild, UnexpectedPublicException}
 import querki.values.{QValue, SpaceState}
 
-import querki.uservalues.PersistMessages._
-
+/**
+ * The Actor that controls an individual's relationship with a Space.
+ * 
+ * TODO: this is currently *very* incestuous with querki.uservalues. Should we refactor out the UserValue handlers,
+ * along the lines of how we do in Space? That would currently leave this class very hollowed-out, but I expect it
+ * to grow a lot in the future, and to become much more heterogeneous, so we may want to separate all of those
+ * concerns.
+ */
 private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
   extends Actor with Stash with EcologyMember with TimeoutChild
 {
@@ -81,13 +89,13 @@ private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val us
    * *way* too clever, and apparently rearranging the order of operations to produce the wrong result. As so
    * often, side-effects in functional code are a dangerous idea.
    */
-  def addUserValue(uv:OneUserValue):Boolean = {
+  def addUserValue(uv:OneUserValue):Option[QValue] = {
     def isMatch(oldUv:OneUserValue) = (oldUv.thingId == uv.thingId) && (oldUv.propId == uv.propId)
     
-    var existed = userValues.exists(isMatch(_))
+    var previous = userValues.find(isMatch(_)).map(_.v)
     userValues = userValues.filterNot(isMatch(_)) :+ uv
     clearEnhancedState()
-    existed
+    previous
   }
   
   val timeoutConfig = "querki.session.timeout"
@@ -177,10 +185,22 @@ private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val us
 	          state.anything(thingId) match {
 	            case Some(thing) => {
 	              if (AccessControl.hasPermission(UserValues.UserValuePermission, state, identity.id, thing.id)) {
+	                implicit val s = state
+	                // Persist the change...
   	                val uv = OneUserValue(thing.id, propId, v, DateTime.now)
-	                val existed = addUserValue(uv)
-       	            persister ! SaveUserValue(identity.id, uv, state, existed)
-	                // TODO: ask the Space to update the summary!
+	                val previous = addUserValue(uv)
+       	            persister ! SaveUserValue(identity.id, uv, state, previous.isDefined)
+       	            
+       	            // ... then tell the Space to summarize it, if there is a Summary Property...
+       	            val msg = for {
+       	              prop <- state.prop(propId) orElse QLog.warn(s"UserSession.ChangeProps2 got unknown Property $propId")
+       	              summaryLinkPV <- prop.getPropOpt(UserValues.SummaryLink)
+       	              summaryPropId <- summaryLinkPV.firstOpt
+       	            }
+  	                  yield SpacePluginMsg(SummarizeChange(thing.id, prop, summaryPropId, previous, Some(v)))
+  	                msg.map(spaceRouter ! _)
+  	                
+  	                // ... then tell the user we're set.
 	                sender ! ThingFound(thing.id, state)
 	              } else {
 	                // Should we log a warning here? It *is* possible to get here, if the permission changed between the

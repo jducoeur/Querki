@@ -10,6 +10,11 @@ import querki.values.{QValue, SpaceState}
 package object uservalues {
   trait UserValues extends EcologyInterface {
     /**
+     * The Link from a User Value Property to its Summary Property.
+     */
+    def SummaryLink:Property[OID,_]
+    
+    /**
      * Is a given user allowed to have User Values?
      */
     def UserValuePermission:Property[OID,_]

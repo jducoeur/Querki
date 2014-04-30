@@ -56,7 +56,7 @@ import PersistMessages._
  * is user-defined. (And unique only to that user.)
  */
 private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, stateRouter:ActorRef, id:OID) 
-  extends Actor with Requester with EcologyMember with ModelTypeDefiner 
+  extends Actor with Requester with EcologyMember with ModelTypeDefiner with SpaceAPI
 {
   
   import context._
@@ -83,6 +83,14 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
    * TODO: this should probably become config-driven, so testing can clamp it down?
    */
   override implicit val requestTimeout = Timeout(DurationInt(30) seconds)
+  
+  /**
+   * This is all of the SpacePluginProvider's plugin's receives, concatenated together.
+   * It is actually an important mechanism for separation of concerns. If external Ecots need
+   * to inject their own messages into Space processing, they should define a SpacePlugin. That
+   * will get picked up here, and added to the pipeline of processing when we receive messages.
+   */
+  val pluginReceive = SpaceChangeManager.spacePluginProviders.map(_.createPlugin(this).receive).reduce(_ orElse _)
   
   /**
    * TODO: now that I understand Akka better, this is probably better reimplemented as a
@@ -256,8 +264,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
     }    
   }
   
-  def modifyThing(who:User, owner:OID, spaceThingId:ThingId, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap)) = {
-      checkSpaceId(spaceThingId)
+  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap)) = {
       val oldThingOpt = state.anything(thingId)
       oldThingOpt map { oldThing =>
         val thingId = oldThing.id
@@ -375,7 +382,10 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
     }
   }
   
-  def receive = LoggingReceive {
+  // If it isn't a message that we know how to handle, let the plugins take a crack at it:
+  def receive = LoggingReceive(mainReceive orElse pluginReceive)
+  
+  def mainReceive:Receive = {
     case req:CreateSpace => {
       sender ! ThingFound(UnknownOID, state)
     }
@@ -402,7 +412,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
     }
     
     case ChangeProps(who, owner, spaceThingId, thingId, changedProps) => {
-      modifyThing(who, owner, spaceThingId, thingId, None, { thing =>
+      modifyThing(who, thingId, None, { thing =>
         (thing.props /: changedProps) { (current, pair) =>
           val (propId, v) = pair
           if (v.isDeleted)
@@ -415,7 +425,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
     }
     
     case ModifyThing(who, owner, spaceThingId, thingId, modelId, newProps) => {
-      modifyThing(who, owner, spaceThingId, thingId, Some(modelId), (_ => newProps))
+      modifyThing(who, thingId, Some(modelId), (_ => newProps))
     }
     
     case DeleteThing(who, owner, spaceThingId, thingId) => {

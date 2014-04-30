@@ -71,6 +71,15 @@ case class ConversationRequest(req:User, own:OID, space:ThingId, payload:Convers
  */
 case class SessionRequest(req:User, own:OID, space:ThingId, payload:SessionMessage) extends SpaceMessage(req, own, space)
 
+/**
+ * An open-ended variant of SpaceMgrMsg, which gets routed to Space and can contain anything. This is intended
+ * specifically for use by SpacePlugins.
+ * 
+ * (Why the indirection through payload? So that we can leave this mechanism open-ended, while still leaving SpaceMgrMsg and SpaceMessage
+ * sealed here.)
+ */
+case class SpacePluginMsg(payload:Any) extends SpaceMgrMsg 
+
 object SpaceError {  
   val CreateNotAllowed = "Space.createThing.notAllowed"
   val ModifyNotAllowed = "Space.modifyThing.notAllowed"

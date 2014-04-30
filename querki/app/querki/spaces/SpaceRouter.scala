@@ -78,6 +78,7 @@ private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpaceP
     // Message for the Space:
     case msg:CreateSpace => space.forward(msg)
     case msg:SpaceMessage => space.forward(msg)
+    case msg:SpacePluginMsg => space.forward(msg)
   }
 }
 

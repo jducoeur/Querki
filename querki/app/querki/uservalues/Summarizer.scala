@@ -6,7 +6,13 @@ import models.{DisplayPropVal, OID, Property, PType, PTypeBuilder, Wikitext}
 
 import querki.ecology._
 import querki.util.QLog
-import querki.values.{ElemValue, QLContext, RequestContext, SpaceState}
+import querki.values.{ElemValue, QLContext, QValue, RequestContext, SpaceState}
+
+/**
+ * This message is sent from the UserSession, through the Space to the UserValueSpacePlugin,
+ * telling it to do create a Summary in a properly synchronized way.
+ */
+case class SummarizeChange[UVT](tid:OID, fromProp:Property[UVT,_], summaryId:OID, previous:Option[QValue], current:Option[QValue])
 
 case class DiscreteSummary[UVT](content:Map[UVT,Int])
 
@@ -18,7 +24,7 @@ trait Summarizer[UVT,VT] {
    * Based on the previous and current User Values for a single User, produce an updated summary
    * value for this Thing.
    */
-  def addToSummary(tid:OID, prop:Property[VT,_], previous:Option[UVT], current:Option[UVT])(implicit state:SpaceState):VT  
+  def addToSummary(tid:OID, fromProp:Property[UVT,_], prop:Property[VT,_], previous:Option[QValue], current:Option[QValue])(implicit state:SpaceState):QValue
 }
 
 trait SummarizerDefs { self:QuerkiEcot =>
@@ -30,6 +36,12 @@ trait SummarizerDefs { self:QuerkiEcot =>
    */
   abstract class SummarizerBase[UVT,VT](tid:OID, pf:PropFetcher)(implicit e:Ecology) 
     extends PType[VT](tid, SystemIds.systemOID, MOIDs.SummarizerBaseOID, pf)(e) with Summarizer[UVT,VT]
+  {
+    def addToSummary(tid:OID, fromProp:Property[UVT,_], prop:Property[VT,_], previous:Option[QValue], current:Option[QValue])(implicit state:SpaceState):QValue = {
+      ExactlyOne(ElemValue(doAddToSummary(tid, prop, previous.flatMap(_.firstAs(fromProp.pType)), current.flatMap(_.firstAs(fromProp.pType))), this))
+    }
+    def doAddToSummary(tid:OID, prop:Property[VT,_], previous:Option[UVT], current:Option[UVT])(implicit state:SpaceState):VT
+  }
   
   /**
    * This Summarizer is intended for any Type with a limited number of discrete values. The Summary is one
@@ -38,7 +50,7 @@ trait SummarizerDefs { self:QuerkiEcot =>
    * The userType is the PType we are actually summarizing values of. We mostly need it for serialization.
    */
   class DiscreteSummarizer[UVT](tid:OID, userType:PType[UVT], p:PropFetcher) extends SummarizerBase[UVT,DiscreteSummary[UVT]](tid, p) {
-	def addToSummary(tid:OID, prop:Property[DiscreteSummary[UVT],_], previous:Option[UVT], current:Option[UVT])(implicit state:SpaceState):DiscreteSummary[UVT] = {
+	def doAddToSummary(tid:OID, prop:Property[DiscreteSummary[UVT],_], previous:Option[UVT], current:Option[UVT])(implicit state:SpaceState):DiscreteSummary[UVT] = {
 	  state.anything(tid) match {
 	    case Some(thing) => {
 	      thing.getPropOpt(prop) match {
@@ -119,11 +131,10 @@ trait SummarizerDefs { self:QuerkiEcot =>
 	  // TODO: this should become a fancy histogram. But for now, keep it simple:
 	  // TODO: to do this properly, including zero values, we need to know the range of
 	  // userType, so that we can iterate over it!
-	  val valueStrs = v.content.map { pair =>
+	  (Wikitext.empty /: v.content) { (curText, pair) =>
 	    val (key, num) = pair
-	    ": " + userType.doWikify(context)(key) + " : " + num.toString
+	    curText + Wikitext(": ") + userType.doWikify(context)(key) + Wikitext(" : " + num.toString + "\n")
 	  }
-	  Wikitext(valueStrs.mkString("\n", "\n", "\n"))
 	}
 	  
 	def doDefault(implicit state:SpaceState):DiscreteSummary[UVT] = DiscreteSummary(Map())

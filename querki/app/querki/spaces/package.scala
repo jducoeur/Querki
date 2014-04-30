@@ -94,5 +94,15 @@ package object spaces {
      * on the SpaceState. Do *not* over-use it, but sometimes it's just the thing.
      */
     def updateStateCache:Sequencer[CacheUpdate]
+    
+    /**
+     * Allows other Ecots to plug their own code into Space processing.
+     */
+    def registerPluginProvider(provider:SpacePluginProvider)
+    
+    /**
+     * Lets a Space get at all the SpacePluginProviders. Should not be used outside of Spaces.
+     */
+    def spacePluginProviders:Seq[SpacePluginProvider]
   }
 }

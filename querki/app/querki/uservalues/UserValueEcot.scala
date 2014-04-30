@@ -1,11 +1,16 @@
 package querki.uservalues
 
+import akka.actor.Actor.Receive
 import akka.actor.Props
+import akka.event.LoggingReceive
 
 import models.{Kind, PType, ThingState}
+import models.Thing.PropMap
 
 import querki.ecology._
-import querki.spaces.{CacheUpdate, ThingChangeRequest}
+import querki.identity.SystemUser
+import querki.spaces.{CacheUpdate, SpaceAPI, SpacePlugin, SpacePluginProvider, ThingChangeRequest}
+import querki.spaces.messages.SpacePluginMsg
 import querki.util.{Contributor, Publisher, QLog}
 import querki.values.{SpaceState, StateCacheKey}
 
@@ -13,20 +18,55 @@ object MOIDs extends EcotIds(44) {
   val SummarizerBaseOID = moid(1)
   val UserValuePermissionOID = moid(2)
   val IsUserValueFlagOID = moid(3)
+  val SummaryLinkOID = moid(4)
 }
 
-class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues {
+class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpacePluginProvider {
   import MOIDs._
   
   val AccessControl = initRequires[querki.security.AccessControl]
+  val Links = initRequires[querki.links.Links]
   val SpaceChangeManager = initRequires[querki.spaces.SpaceChangeManager]
   
   override def init = {
     SpaceChangeManager.updateStateCache += UserValueCacheUpdater
+    SpaceChangeManager.registerPluginProvider(this)
   }
   
   override def term = {
     SpaceChangeManager.updateStateCache -= UserValueCacheUpdater    
+  }
+  
+  def createPlugin(space:SpaceAPI):SpacePlugin = {
+    new UserValueSpacePlugin(space)
+  }
+  
+  /**
+   * When a UserSession changes a UserValue, it may send a SummarizeChange message to the Space, telling it to
+   * update the Summary for that Property. This handles the message in a plugin, so the Space code doesn't
+   * need to know about all that.
+   */
+  class UserValueSpacePlugin(s:SpaceAPI) extends SpacePlugin(s) {
+    def asSummarizer[UVT,VT](prop:Property[VT,_], msg:SummarizeChange[UVT]):Option[(Property[VT,_], Summarizer[UVT,VT])] = {
+      if (prop.pType.isInstanceOf[Summarizer[UVT,VT]])
+        Some((prop.asInstanceOf[Property[VT,_]], prop.pType.asInstanceOf[Summarizer[UVT,VT]]))
+      else
+        None
+    }
+    
+    def receive = {
+      case SpacePluginMsg(msg @ SummarizeChange(tid, fromProp, summaryId, previous, current)) => {
+        implicit val state = space.state
+        for {
+          rawProp <- state.prop(summaryId) orElse QLog.warn(s"UserValueSpacePlugin didn't find requested Summary Property $summaryId")
+          thing <- state.anything(tid) orElse QLog.warn(s"UserValueSpacePlugin didn't find requested Thing $tid")
+          (summaryProp, summarizer) <- asSummarizer(rawProp, msg)
+          newSummary = summarizer.addToSummary(tid, fromProp, summaryProp, previous, current)
+          newProps = thing.props + (summaryProp.id -> newSummary)
+        }
+          space.modifyThing(SystemUser, tid, None, (t:Thing) => newProps)
+      }
+    }
   }
   
   object StateCacheKeys {
@@ -99,9 +139,28 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues {
         AppliesToKindProp(Kind.Property),
         SkillLevel(SkillLevelAdvanced),
         Summary("Add this flag to a Property, and set it to true, if this Property should have a separate value for each user.")))
+  
+  lazy val SummaryLink = new SystemProperty(SummaryLinkOID, LinkType, ExactlyOne,
+      toProps(
+        setName("Summary Link"),
+        AppliesToKindProp(Kind.Property),
+        Links.LinkKindProp(Kind.Property),
+        SkillLevel(SkillLevelAdvanced),
+        Summary("Link to the Summary of this User Value"),
+        Details("""A User Value Property contains a separate value for each User. For instance, the Rating Property
+            |allows each User to give their own Rating to a given Thing. That is useful, but you often want to be
+            |able to look at the statistics about those Ratings. That is where the Summary comes in.
+            |
+            |The Summary stores the aggregate information about the User Value that points to it, and provides you
+            |with functions such as _average to use with that information.
+            |
+            |This is a very advanced Property, and you should only use it if you know what you are doing. The Summary's
+            |Type must be compatible with that of the User Value it is summarizing. In the long run, we will wrap all
+            |of this in an easier-to-use UI.""".stripMargin)))
 
   override lazy val props = Seq(
     UserValuePermission,
-    IsUserValueFlag
+    IsUserValueFlag,
+    SummaryLink
   )
 }

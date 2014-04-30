@@ -24,4 +24,10 @@ class SpaceChangeManagerEcot(e:Ecology) extends QuerkiEcot(e) with SpaceChangeMa
   
   val updateStateCache = new CacheUpdater
   class CacheUpdater extends Sequencer[CacheUpdate]
+  
+  var spacePluginProviders:Seq[SpacePluginProvider] = Seq.empty
+  
+  def registerPluginProvider(provider:SpacePluginProvider) = {
+    spacePluginProviders = spacePluginProviders :+ provider
+  }
 }

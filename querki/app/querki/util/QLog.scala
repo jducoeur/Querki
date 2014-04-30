@@ -22,6 +22,30 @@ object QLog {
     else
       println(message)
   }
+
+  /**
+   * warn() should be used for situations that are unexpected not plausible: inconsistencies
+   * in User Space that we don't *expect* to see, but could imagine arising under certain
+   * circumstances. Basically, stuff to keep an eye on, but which is not immediately alarming.
+   * 
+   * The Option signature here is so that you can say:
+   * {{{
+   * for {
+   *   myThingy <- getThingyOpt orElse QLog.warn("getThingOpt unexpectedly returned None!")
+   * }
+   *   ...
+   * }}}
+   * Basically, it helps with the very common case where you have unexpectedly gotten None inside
+   * of an Option for comprehension. (Yes, this is conceptually hackish, but it happens all the time.)
+   */
+  def warn[T](message: => String):Option[T] = {
+    if (inPlay)
+      Logger.warn(message)
+    else
+      println(message)
+    
+    None
+  }
   
   def info(message: => String) = {
     if (inPlay)
