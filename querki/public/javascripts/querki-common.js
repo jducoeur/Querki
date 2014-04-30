@@ -415,6 +415,8 @@ function finalSetup(ownerId, spaceId, root) {
         } else if (target.hasClass("coll-list-input")) {
           // Serialize each of the elements of this list:
           serialized = target.find(".list-input-element").serialize();
+        } else if (target.hasClass("rating")) {
+          serialized = target.prop("id") + "=" + target.value;
         } else {
           serialized = target.serialize();
         }
@@ -483,6 +485,20 @@ function finalSetup(ownerId, spaceId, root) {
 
   root.find(".propEditor").change(updateValue);
   root.find(".propEditor .radioBtn").click(updateValue);
+  
+  root.find(".rating").raty({
+    path:'/assets/img',
+    score: function() {
+      return $(this).attr('data-rating');
+    },
+    click: function(score, evt) {
+      $(this).each(function() {
+        var stars = $(this);
+        stars.value = score;
+        updateIfLive(stars);
+      });
+    }
+  });
   
   setupCreateFromLink(root);
   
