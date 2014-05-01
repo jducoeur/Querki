@@ -2,16 +2,16 @@ package querki.uservalues
 
 import scala.xml.NodeSeq
 
-import models.{DisplayPropVal, Kind}
+import models.{DisplayPropVal, Kind, Wikitext}
 
 import querki.core.IntTypeBasis
 import querki.ecology._
 import querki.util.QLog
-import querki.values.{ElemValue, RequestContext}
+import querki.values.{ElemValue, QLContext, RequestContext}
 
 object RatingMOIDs extends EcotIds(45) {
   val RatingTypeOID = moid(1)
-  val IntSummarizerOID = moid(2)  
+  val RatingSummarizerOID = moid(2)  
   val LabelsPropOID = moid(3)
 }
 
@@ -40,14 +40,31 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
     }
   }
   
-  lazy val IntSummarizer = new DiscreteSummarizer(IntSummarizerOID, Core.IntType,
+  lazy val RatingSummarizer = new DiscreteSummarizer(RatingSummarizerOID, RatingType,
     toProps(
-      setName("Number Summarizer"),
+      setName("Rating Summarizer"),
       Summary("Given a User Value Property made of numbers (such as Ratings), this provides functions such as _average.")))
+  {
+	override def wikifyKey(context:QLContext, fromProp:Option[Property[_,_]], key:Int):Wikitext = {
+	  implicit val state = context.state
+	  fromProp match {
+	    case Some(prop) => {
+	      val labels = prop.getProp(LabelsProp).rawList.map(_.text)
+	      val label = try {
+	        labels(key)
+	      } catch {
+	        case ex:IndexOutOfBoundsException => key.toString
+	      }
+	      Wikitext(label)
+	    }
+	    case None => super.wikifyKey(context, fromProp, key)
+	  }
+	}     
+  }
 
   override lazy val types = Seq(
     RatingType,
-    IntSummarizer
+    RatingSummarizer
   )
       
   /***********************************************

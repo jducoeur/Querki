@@ -3,14 +3,14 @@ package querki.uservalues
 import scala.reflect.runtime.universe._
 import scala.xml.NodeSeq
 
-import models.{DisplayPropVal, OID, Property, PropertyBundle, PType, PTypeBuilder, Wikitext}
+import models.{DisplayPropVal, OID, Property, PropertyBundle, PType, PTypeBuilder, UnknownOID, Wikitext}
 
 import querki.ecology._
 import querki.types.{ModelTypeBase, PropPath}
 import querki.util.QLog
 import querki.values.{ElemValue, QLContext, QValue, RequestContext, SpaceState}
 
-case class DiscreteSummary[UVT](content:Map[UVT,Int])
+case class DiscreteSummary[UVT](propId:OID, content:Map[UVT,Int])
 
 /**
  * Describes a mechanism for summarizing the User Values for a Property.
@@ -83,14 +83,14 @@ trait SummarizerDefs { self:QuerkiEcot =>
 	        checkBundle <- previousBundle orElse currentBundle 
 	        path <- rightPath(PropPaths.pathsToProperty(summarizesProp), checkBundle)
 	      }
-	        yield ExactlyOne(ElemValue(doAddToSummary(tid, prop, viaPath(previousBundle, path), viaPath(currentBundle, path)), this))
+	        yield ExactlyOne(ElemValue(doAddToSummary(tid, fromProp, prop, viaPath(previousBundle, path), viaPath(currentBundle, path)), this))
         }
         case _ => None
       }
       
-      resultViaPath.getOrElse(ExactlyOne(ElemValue(doAddToSummary(tid, prop, castToUVT(previous), castToUVT(current)), this)))
+      resultViaPath.getOrElse(ExactlyOne(ElemValue(doAddToSummary(tid, fromProp, prop, castToUVT(previous), castToUVT(current)), this)))
     }
-    def doAddToSummary(tid:OID, prop:Property[VT,_], previous:Option[UVT], current:Option[UVT])(implicit state:SpaceState):VT
+    def doAddToSummary(tid:OID, fromProp:Property[_,_], prop:Property[VT,_], previous:Option[UVT], current:Option[UVT])(implicit state:SpaceState):VT
   }
   
   /**
@@ -100,7 +100,7 @@ trait SummarizerDefs { self:QuerkiEcot =>
    * The userType is the PType we are actually summarizing values of. We mostly need it for serialization.
    */
   class DiscreteSummarizer[UVT](tid:OID, userType:PType[UVT], p:PropFetcher) extends SummarizerBase[UVT,DiscreteSummary[UVT]](tid, p) {
-	def doAddToSummary(tid:OID, prop:Property[DiscreteSummary[UVT],_], previous:Option[UVT], current:Option[UVT])(implicit state:SpaceState):DiscreteSummary[UVT] = {
+	def doAddToSummary(tid:OID, fromProp:Property[_,_], prop:Property[DiscreteSummary[UVT],_], previous:Option[UVT], current:Option[UVT])(implicit state:SpaceState):DiscreteSummary[UVT] = {
 	  state.anything(tid) match {
 	    case Some(thing) => {
 	      thing.getPropOpt(prop) match {
@@ -131,16 +131,16 @@ trait SummarizerDefs { self:QuerkiEcot =>
 		        // We've simply removed the previous value, without giving a new one:
 		        case _ => mapWithoutPrevious
 		      }
-		      DiscreteSummary(mapWithCurrent)
+		      DiscreteSummary(fromProp.id, mapWithCurrent)
 		    }
 		      
 		    case None => {
 		      current match {
 		        // First value for this Thing:
-		        case Some(curVal) => DiscreteSummary(Map(curVal -> 1))
+		        case Some(curVal) => DiscreteSummary(fromProp.id, Map(curVal -> 1))
 		        // TODO: should this be a warning? Kind of strange to get a "change" that contains no value, if
 		        // there wasn't one before. What's the change?
-		        case None => DiscreteSummary(Map())
+		        case None => DiscreteSummary(fromProp.id, Map())
 		      }
 		    }
 		  }        
@@ -148,14 +148,22 @@ trait SummarizerDefs { self:QuerkiEcot =>
 	      
 	    case None => {
 	      QLog.error(s"Got addToSummary for unknown Thing $tid")
-	      DiscreteSummary(Map())
+	      DiscreteSummary(fromProp.id, Map())
 	    }
 	  }
 	}
 	  
 	def doDeserialize(ser:String)(implicit state:SpaceState):DiscreteSummary[UVT] = {
-	  // TODO: this should unescape "," and ":", so we can cope with arbitrary Strings:
-	  val pairStrs = ser.split(",")
+	  // TODO: this should unescape " - ", "," and ":", so we can cope with arbitrary Strings:
+	  val (propId, values) = ser.split(" - ") match {
+	    case Array(propIdStr, valStr) => {
+	      (OID(propIdStr), valStr)
+	    }
+	    case Array(valStr) => (UnknownOID, valStr)
+	    case _ => (UnknownOID, "")
+	  }
+	  
+	  val pairStrs = values.split(",")
 	  // Filter out the empty-string case:
 	  val pairs = if (pairStrs.length > 0 && pairStrs(0).length() > 0) pairStrs.map { pairStr =>
 	    val parts = pairStr.split(":")
@@ -166,7 +174,7 @@ trait SummarizerDefs { self:QuerkiEcot =>
 	  } else
 	    Array.empty[(UVT,Int)]
 	    
-	  DiscreteSummary(Map(pairs:_*))
+	  DiscreteSummary(propId, Map(pairs:_*))
 	}
 	  
 	def doSerialize(summary:DiscreteSummary[UVT])(implicit state:SpaceState):String = {
@@ -174,19 +182,25 @@ trait SummarizerDefs { self:QuerkiEcot =>
 	    val (key, num) = pair
 	    userType.doSerialize(key) + ":" + num.toString
 	  }
-	  pairStrs.mkString(",")
+	  summary.propId.toString + " - " + pairStrs.mkString(",")
 	}
+	
+	// Split out so that subclasses can override this:
+	def wikifyKey(context:QLContext, fromProp:Option[Property[_,_]], key:UVT):Wikitext = {
+	  userType.doWikify(context)(key)
+	} 
 	  
 	def doWikify(context:QLContext)(v:DiscreteSummary[UVT], displayOpt:Option[Wikitext] = None):Wikitext = {
 	  // TODO: to do this properly, including zero values, we need to know the range of
 	  // userType, so that we can iterate over it!
+	  val fromProp = context.state.prop(v.propId)
 	  (Wikitext("""<dl class="histogram">""") /: v.content) { (curText, pair) =>
 	    val (key, num) = pair
-	    curText + Wikitext("<dt>") + userType.doWikify(context)(key) + Wikitext("</dt><dd>" + num.toString + "</dd>\n")
+	    curText + Wikitext("<dt>") + wikifyKey(context, fromProp, key) + Wikitext("</dt><dd>" + num.toString + "</dd>\n")
 	  } + Wikitext("</dl>\n")
 	}
 	  
-	def doDefault(implicit state:SpaceState):DiscreteSummary[UVT] = DiscreteSummary(Map())
+	def doDefault(implicit state:SpaceState):DiscreteSummary[UVT] = DiscreteSummary(UnknownOID, Map())
 	
 	def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq =
 	  <p><i>This will be calculated; you don't input it directly.</i></p>
