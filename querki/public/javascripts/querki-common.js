@@ -486,18 +486,24 @@ function finalSetup(ownerId, spaceId, root) {
   root.find(".propEditor").change(updateValue);
   root.find(".propEditor .radioBtn").click(updateValue);
   
-  root.find(".rating").raty({
-    path:'/assets/img',
-    score: function() {
-      return $(this).attr('data-rating');
-    },
-    click: function(score, evt) {
-      $(this).each(function() {
-        var stars = $(this);
-        stars.value = score;
-        updateIfLive(stars);
-      });
-    }
+  root.find(".rating").each(function () {
+    var rating = $(this);
+    var labels = rating.data("labels").split(',');
+	rating.raty({
+	    path:'/assets/img',
+	    score: function() {
+	      return $(this).attr('data-rating');
+	    },
+	    hints: labels,
+	    number: labels.length,
+	    click: function(score, evt) {
+	      $(this).each(function() {
+	        var stars = $(this);
+	        stars.value = score;
+	        updateIfLive(stars);
+	      });
+	    }
+	  });
   });
   
   root.find(".histogram").histogram();
