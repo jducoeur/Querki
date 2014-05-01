@@ -178,13 +178,12 @@ trait SummarizerDefs { self:QuerkiEcot =>
 	}
 	  
 	def doWikify(context:QLContext)(v:DiscreteSummary[UVT], displayOpt:Option[Wikitext] = None):Wikitext = {
-	  // TODO: this should become a fancy histogram. But for now, keep it simple:
 	  // TODO: to do this properly, including zero values, we need to know the range of
 	  // userType, so that we can iterate over it!
-	  (Wikitext.empty /: v.content) { (curText, pair) =>
+	  (Wikitext("""<dl class="histogram">""") /: v.content) { (curText, pair) =>
 	    val (key, num) = pair
-	    curText + Wikitext(": ") + userType.doWikify(context)(key) + Wikitext(" : " + num.toString + "\n")
-	  }
+	    curText + Wikitext("<dt>") + userType.doWikify(context)(key) + Wikitext("</dt><dd>" + num.toString + "</dd>\n")
+	  } + Wikitext("</dl>\n")
 	}
 	  
 	def doDefault(implicit state:SpaceState):DiscreteSummary[UVT] = DiscreteSummary(Map())

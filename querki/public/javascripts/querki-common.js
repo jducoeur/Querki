@@ -500,6 +500,8 @@ function finalSetup(ownerId, spaceId, root) {
     }
   });
   
+  root.find(".histogram").histogram();
+  
   setupCreateFromLink(root);
   
   // --------------------------

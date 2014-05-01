@@ -224,3 +224,34 @@
   font-weight: bold;
   background-color: #FAD2DF;
 }
+
+/********************************
+ * Default Histogram styles
+ */
+ 
+.generatedHistogram {
+  font-size: xx-small;
+  border-spacing: 0px;
+  line-height: 14px;
+}
+
+.histoName {
+  text-align: right;
+  padding: 0px 7px 0px 0px;
+}
+
+.histoScore {
+  text-align: center;
+  padding: 0px 2px 0px 0px;
+}
+
+.histoBar {
+  height: 14px;
+  padding: 0px;
+}
+
+.histoBar-0 { background-color:#DB3909; }
+.histoBar-1 { background-color:#DBA309; }
+.histoBar-2 { background-color:#0959DB; }
+.histoBar-3 { background-color:#A309DB; }
+.histoBar-4 { background-color:#06C906; }
