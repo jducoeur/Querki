@@ -5,9 +5,10 @@ import scala.xml.NodeSeq
 import models.{DisplayPropVal, Kind, Wikitext}
 
 import querki.core.IntTypeBasis
+import querki.core.TypeUtils.DiscreteType
 import querki.ecology._
 import querki.util.QLog
-import querki.values.{ElemValue, QLContext, RequestContext}
+import querki.values.{ElemValue, QLContext, RequestContext, SpaceState}
 
 object RatingMOIDs extends EcotIds(45) {
   val RatingTypeOID = moid(1)
@@ -29,7 +30,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
   
   lazy val RatingType = new IntTypeBase(RatingTypeOID,
     toProps(
-      setName("Rating Type")))
+      setName("Rating Type"))) with DiscreteType[Int]
   {
     override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
       implicit val s = rc.state.get
@@ -37,6 +38,14 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
       // So we don't expect this to ever be empty:
       val labels = prop.getProp(LabelsProp).rawList.map(_.text)
       <div class='rating' data-rating={get(v).toString} data-labels={labels.mkString(",")}></div>
+    }
+    
+    /**
+     * The Range of a Rating Property is based on the number of Labels available.
+     */
+    def range(prop:Property[Int,_])(implicit state:SpaceState) = {
+      val nLabels = prop.getProp(LabelsProp).v.cv.size
+      1 until (nLabels+1)
     }
   }
   
@@ -51,7 +60,8 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
 	    case Some(prop) => {
 	      val labels = prop.getProp(LabelsProp).rawList.map(_.text)
 	      val label = try {
-	        labels(key)
+	        // The Star ratings run from 1-n, so we need to adjust for the 0-based labels list:
+	        labels(key - 1)
 	      } catch {
 	        case ex:IndexOutOfBoundsException => key.toString
 	      }

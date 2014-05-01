@@ -5,6 +5,7 @@ import scala.xml.NodeSeq
 
 import models.{DisplayPropVal, OID, Property, PropertyBundle, PType, PTypeBuilder, UnknownOID, Wikitext}
 
+import querki.core.TypeUtils.DiscreteType
 import querki.ecology._
 import querki.types.{ModelTypeBase, PropPath}
 import querki.util.QLog
@@ -83,7 +84,7 @@ trait SummarizerDefs { self:QuerkiEcot =>
 	        checkBundle <- previousBundle orElse currentBundle 
 	        path <- rightPath(PropPaths.pathsToProperty(summarizesProp), checkBundle)
 	      }
-	        yield ExactlyOne(ElemValue(doAddToSummary(tid, fromProp, prop, viaPath(previousBundle, path), viaPath(currentBundle, path)), this))
+	        yield ExactlyOne(ElemValue(doAddToSummary(tid, summarizesProp, prop, viaPath(previousBundle, path), viaPath(currentBundle, path)), this))
         }
         case _ => None
       }
@@ -191,12 +192,24 @@ trait SummarizerDefs { self:QuerkiEcot =>
 	} 
 	  
 	def doWikify(context:QLContext)(v:DiscreteSummary[UVT], displayOpt:Option[Wikitext] = None):Wikitext = {
-	  // TODO: to do this properly, including zero values, we need to know the range of
-	  // userType, so that we can iterate over it!
-	  val fromProp = context.state.prop(v.propId)
-	  (Wikitext("""<dl class="histogram">""") /: v.content) { (curText, pair) =>
+	  implicit val s = context.state
+	  val fromPropOpt = context.state.prop(v.propId)
+	  // Iff this is coming from a DiscreteType, with a well-defined range, use that range to determine
+	  // everything to wikify:
+	  val range = fromPropOpt.flatMap { fromProp =>
+	    fromProp.pType match {
+	      case dt:DiscreteType[UVT] => Some(dt.range(fromProp.confirmType(dt).get))
+	      case _ => None
+	    }
+	  }
+	  val pairs = range match {
+	    case Some(keys:Seq[UVT]) => keys.map(key => (key, v.content.get(key).getOrElse(0)))
+	    case _ => v.content.toSeq
+	  }
+	  
+	  (Wikitext("""<dl class="histogram">""") /: pairs) { (curText, pair) =>
 	    val (key, num) = pair
-	    curText + Wikitext("<dt>") + wikifyKey(context, fromProp, key) + Wikitext("</dt><dd>" + num.toString + "</dd>\n")
+	    curText + Wikitext("<dt>") + wikifyKey(context, fromPropOpt, key) + Wikitext("</dt><dd>" + num.toString + "</dd>\n")
 	  } + Wikitext("</dl>\n")
 	}
 	  

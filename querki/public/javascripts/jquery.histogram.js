@@ -36,7 +36,11 @@
       return parseInt($(this).text()); 
     }).toArray();
     var maxscore = _.max(scores);
-    var scale = maxwidth / maxscore;
+    var scale;
+    if (maxscore == 0)
+      scale = 0
+    else
+      scale = maxwidth / maxscore;
     
     // Create the histogram:
     var pairs = _.zip(labels, scores);
@@ -44,7 +48,7 @@
     _.each(pairs, function (pair, index) {
       table.append($("<tr><td class='histoName'>" + pair[0] + 
          "</td><td class='histoScore'>" + pair[1] + 
-         "</td><td class='histoBar histoBar-" + index + "' style='width:" + (pair[1] * scale) + "px;'></td></tr>"));
+         "</td><td><div class='histoBar histoBar-" + index + "' style='width:" + (pair[1] * scale) + "px;'></div></td></tr>"));
     });
     dl.after(table);
     

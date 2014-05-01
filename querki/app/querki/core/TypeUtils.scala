@@ -59,4 +59,14 @@ object TypeUtils {
     // Iff a Type wants to render QNone as blank text instead of the default value, set this to true
     val displayEmptyAsBlank:Boolean = false
   }
+  
+  /**
+   * Optional side-trait that a Type can implement to advertise that it only allows specific discrete values.
+   */
+  trait DiscreteType[VT] extends PType[VT] {
+    /**
+     * The legal values of this Type on this Property, in order.
+     */
+    def range(prop:Property[VT,_])(implicit state:SpaceState):Seq[VT]
+  }
 }
