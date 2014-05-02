@@ -2,11 +2,12 @@ package querki.uservalues
 
 import scala.xml.NodeSeq
 
-import models.{DisplayPropVal, Kind, SimplePTypeBuilder, Wikitext}
+import models.{DisplayPropVal, Kind, SimplePTypeBuilder, ThingState, Wikitext}
 
 import querki.core.IntTypeBasis
 import querki.core.TypeUtils.DiscreteType
 import querki.ecology._
+import querki.types.ModelTypeDefiner
 import querki.util.QLog
 import querki.values.{ElemValue, QLContext, RequestContext, SpaceState}
 
@@ -18,12 +19,17 @@ object RatingMOIDs extends EcotIds(45) {
   val AverageFunctionOID = moid(5)
   val RatingPropOID = moid(6)
   val RatingSummaryPropOID = moid(7)
+  val ReviewModelOID = moid(8)
+  val ReviewPropOID = moid(9)
+  val ReviewCommentsPropOID = moid(10)
+  val ReviewTypeOID = moid(11)
 }
 
-class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with SummarizerDefs with querki.core.MethodDefs {
+class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with SummarizerDefs with querki.core.MethodDefs with ModelTypeDefiner {
   import RatingMOIDs._
   
   val Basic = initRequires[querki.basic.Basic]
+  val Editor = initRequires[querki.editing.Editor]
   val Types = initRequires[querki.types.Types]
   val UserValuesRaw = initRequires[UserValues]
   
@@ -33,6 +39,22 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
   lazy val PlainTextType = Basic.PlainTextType
   lazy val SummaryLink = UserValues.SummaryLink
       
+  /***********************************************
+   * MODELS
+   ***********************************************/
+  
+  lazy val ReviewModel = ThingState(ReviewModelOID, systemOID, RootOID,
+    toProps(
+      setName("_reviewModel"),
+      setInternal,
+      RatingProperty(),
+      ReviewCommentsProperty(),
+      Editor.InstanceProps(RatingProperty, ReviewCommentsProperty)))
+      
+  override lazy val things = Seq(
+    ReviewModel
+  )
+  
   /***********************************************
    * TYPES
    ***********************************************/
@@ -61,6 +83,10 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
     
     override def editorSpan(prop:Property[_,_]) = 2
   }
+  
+  lazy val ReviewType = new ModelType(ReviewTypeOID, ReviewModelOID,
+    toProps(
+      setName("Review Type")))
   
   case class RatingAverage(propId:OID, avg:Double)
   
@@ -120,7 +146,8 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
 
   override lazy val types = Seq(
     RatingType,
-    RatingSummarizer
+    RatingSummarizer,
+    ReviewType
   )
   
   /***********************************************
@@ -240,11 +267,45 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
             |and is only for advanced users for the time being. For most purposes, the built in
             |Rating and Review Properties should do fine.""".stripMargin)))
   
+  lazy val ReviewCommentsProperty = new SystemProperty(ReviewCommentsPropOID, LargeTextType, ExactlyOne,
+      toProps(
+        setName("Review Comments"),
+        setInternal,
+        Summary("The text part of a Review. Not intended for use on its own.")))
+  
+  lazy val ReviewProperty = new SystemProperty(ReviewPropOID, ReviewType, ExactlyOne,
+      toProps(
+        setName("Review"),
+        IsUserValueFlag(true),
+        SummaryLink(RatingSummaryProperty),
+        Summary("Allows people to provide their own reviews of this Thing."),
+        Details("""If you put this Property on a Thing or Model, you can simply say
+            |`\[[Review._edit\]]` in your Default View, and it will allow you to provide
+            |a Rating and a comment about this Thing.
+            |
+            |Review is a User Value Property -- each Member can give their own answer.
+            |
+            |By adding this Property, you will also wind up adding the Rating Summary Property
+            |on each Thing. You can say `\[[Rating Summary\]]` to display a small bar chart
+            |of how many people have given each rating, or `\[[Rating Summary -> _average\]]`
+            |to show the overall average of the ratings.
+            |
+            |If you just want a simple 1-5 star rating, use the Rating Property instead. (Do not use Rating and Review
+            |on the same Thing -- it will cause confusion.)
+            |
+            |If you want to do more sophisticated things (for instance, having multiple different
+            |Ratings or Reviews for different purposes on the same Thing), you can define your
+            |own Properties of Rating Type and Rating Summarizer. However, this is fairly complicated,
+            |and is only for advanced users for the time being. For most purposes, the built in
+            |Rating and Review Properties should do fine.""".stripMargin)))
+  
   override lazy val props = Seq(
     AverageFunction,
       
     LabelsProp,
     RatingSummaryProperty,
-    RatingProperty
+    RatingProperty,
+    ReviewCommentsProperty,
+    ReviewProperty
   )
 }
