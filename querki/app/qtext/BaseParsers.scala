@@ -213,7 +213,7 @@ trait BaseParsers extends RegexParsers {
      * get smarter, but for now this is good, and prevents XSS injection since it doesn't contain ':'.
      */
     val xmlConservativeAttrRanges:SortedMap[Char,Char] =
-      SortedMap('A' -> 'Z', 'a' -> 'z', '0' -> '9', ' ' -> ' ', '_' -> '_', '-' -> '-', ',' -> ',')
+      SortedMap('A' -> 'Z', 'a' -> 'z', '0' -> '9', ' ' -> ' ', '_' -> '_', '-' -> '-', ',' -> ',', '.' -> '.')
     def xmlConservativeAttrChar:Parser[Char] = ranges(xmlConservativeAttrRanges)
 
     /**Parser for one char that starts an XML name.
@@ -238,7 +238,9 @@ trait BaseParsers extends RegexParsers {
      * For the moment, while we are whitelisting, we only allow a few chars in attributes.
      */
 //    def xmlAttrVal:Parser[String] = '"' ~> ((not('"') ~> aChar)*) <~ '"' ^^ {'"' + _.mkString + '"'}
-    def xmlAttrVal:Parser[String] =  '"' ~> (xmlConservativeAttrChar*) <~ '"' ^^ {'"' + _.mkString + '"'}
+    def xmlAttrVal:Parser[String] =  oneOf(Set('"', '\'')) >> { delim => (xmlConservativeAttrChar*) ~ delim ^^ {
+      case v ~ delim => delim + v.mkString + delim
+    }}
     
     /**
      * Data attributes. Eventually, we'll need to split these into their own separate path, since the

@@ -52,6 +52,10 @@ Foo foo
       apply("""Hello <div data-thingy="firstValue,secondValue">there</div>""") should equal ("""<p>Hello <div data-thingy="firstValue,secondValue">there</div></p>
         |""".stripReturns)
     }
+    "parse with single quotes" in {
+      apply("""Hello <div data-thingy='firstValue'>there</div>""") should equal ("""<p>Hello <div data-thingy='firstValue'>there</div></p>
+        |""".stripReturns)
+    }
     "be escaped on bad name" in {
       apply("""Hello <div data-foo!="something">there</div>""") should equal ("""<p>Hello &lt;div data-foo!=&quot;something&quot;&gt;there</div></p>
         |""".stripReturns)      

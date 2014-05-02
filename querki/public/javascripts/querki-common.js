@@ -415,7 +415,7 @@ function finalSetup(ownerId, spaceId, root) {
         } else if (target.hasClass("coll-list-input")) {
           // Serialize each of the elements of this list:
           serialized = target.find(".list-input-element").serialize();
-        } else if (target.hasClass("rating")) {
+        } else if (target.hasClass("_rating")) {
           serialized = target.prop("id") + "=" + target.value;
         } else {
           serialized = target.serialize();
@@ -486,9 +486,14 @@ function finalSetup(ownerId, spaceId, root) {
   root.find(".propEditor").change(updateValue);
   root.find(".propEditor .radioBtn").click(updateValue);
   
-  root.find(".rating").each(function () {
+  root.find("._rating").each(function () {
     var rating = $(this);
     var labels = rating.data("labels").split(',');
+    var readonly = false;
+    var readonlyStr = rating.data("readonly");
+    if (readonlyStr === true) {
+      readonly = true;
+    }
 	rating.raty({
 	    path:'/assets/img',
 	    score: function() {
@@ -496,6 +501,7 @@ function finalSetup(ownerId, spaceId, root) {
 	    },
 	    hints: labels,
 	    number: labels.length,
+	    readOnly: readonly,
 	    click: function(score, evt) {
 	      $(this).each(function() {
 	        var stars = $(this);

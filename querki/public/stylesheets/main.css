@@ -225,6 +225,15 @@
   background-color: #FAD2DF;
 }
 
+._rating {
+  /* Ratings are div's, but we often want them inline: */
+  display: inline;
+}
+
+._ratingAvg {
+  font-size: xx-small;
+}
+
 /********************************
  * Default Histogram styles
  */
