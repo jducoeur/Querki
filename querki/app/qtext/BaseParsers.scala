@@ -213,7 +213,7 @@ trait BaseParsers extends RegexParsers {
      * get smarter, but for now this is good, and prevents XSS injection since it doesn't contain ':'.
      */
     val xmlConservativeAttrRanges:SortedMap[Char,Char] =
-      SortedMap('A' -> 'Z', 'a' -> 'z', '0' -> '9', ' ' -> ' ', '_' -> '_', '-' -> '-')
+      SortedMap('A' -> 'Z', 'a' -> 'z', '0' -> '9', ' ' -> ' ', '_' -> '_', '-' -> '-', ',' -> ',')
     def xmlConservativeAttrChar:Parser[Char] = ranges(xmlConservativeAttrRanges)
 
     /**Parser for one char that starts an XML name.
@@ -241,10 +241,19 @@ trait BaseParsers extends RegexParsers {
     def xmlAttrVal:Parser[String] =  '"' ~> (xmlConservativeAttrChar*) <~ '"' ^^ {'"' + _.mkString + '"'}
     
     /**
+     * Data attributes. Eventually, we'll need to split these into their own separate path, since the
+     * legal values of the attributes are especially broad.
+     */
+    val dataNameRanges:SortedMap[Char,Char] = SortedMap('A' -> 'Z', 'a' -> 'z', '0' -> '9')
+    def dataAttrName:Parser[String] = "data-" ~ (ranges(dataNameRanges)*) ^^ {
+      case prefix ~ name => prefix + name.mkString
+    }
+    
+    /**
      * The legal attributes. For now, we're being pretty dumb with attributes (rather than matching
      * legal tags and attributes), but attributes are, again, whitelisted.
      */
-    def xmlAttrName:Parser[String] = "class" | "id"
+    def xmlAttrName:Parser[String] = "class" | "id" | dataAttrName
     
     /** Parses an XML Attribute with simplified value handling like xmlAttrVal.
      */

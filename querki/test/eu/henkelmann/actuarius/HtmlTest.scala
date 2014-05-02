@@ -43,6 +43,21 @@ Foo foo
     }    
   }
   
+  "Data attributes" should {
+    "parse if single-valued" in {
+      apply("""Hello <div data-thingy="firstValue">there</div>""") should equal ("""<p>Hello <div data-thingy="firstValue">there</div></p>
+        |""".stripReturns)
+    }
+    "parse if multi-valued" in {
+      apply("""Hello <div data-thingy="firstValue,secondValue">there</div>""") should equal ("""<p>Hello <div data-thingy="firstValue,secondValue">there</div></p>
+        |""".stripReturns)
+    }
+    "be escaped on bad name" in {
+      apply("""Hello <div data-foo!="something">there</div>""") should equal ("""<p>Hello &lt;div data-foo!=&quot;something&quot;&gt;there</div></p>
+        |""".stripReturns)      
+    }
+  }
+  
   "Legal id attributes" should {
     "parse cleanly" in {
       apply("""Hello <div id="foo">there</div>""") should equal ("""<p>Hello <div id="foo">there</div></p>
