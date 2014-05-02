@@ -3,7 +3,7 @@ package querki.uservalues
 import scala.reflect.runtime.universe._
 import scala.xml.NodeSeq
 
-import models.{DisplayPropVal, OID, Property, PropertyBundle, PType, PTypeBuilder, UnknownOID, Wikitext}
+import models.{DisplayPropVal, OID, Property, PropertyBundle, PType, PTypeBuilder, SimplePTypeBuilder, UnknownOID, Wikitext}
 
 import querki.core.TypeUtils.DiscreteType
 import querki.ecology._
@@ -26,7 +26,8 @@ trait Summarizer[UVT,VT] {
 
 trait SummarizerDefs { self:QuerkiEcot =>
   lazy val PropPaths = interface[querki.types.PropPaths]
-  lazy val UserValues = interface[UserValues]
+  // Must be declared in the actual Ecot:
+  def UserValues:UserValues
   
   lazy val SummarizesPropertyLink = UserValues.SummarizesPropertyLink
   
@@ -38,6 +39,7 @@ trait SummarizerDefs { self:QuerkiEcot =>
    */
   abstract class SummarizerBase[UVT,VT](tid:OID, pf:PropFetcher)(implicit e:Ecology) 
     extends PType[VT](tid, SystemIds.systemOID, MOIDs.SummarizerBaseOID, pf)(e) with Summarizer[UVT,VT]
+    with SimplePTypeBuilder[VT]
   {
     // HACK: so far, I haven't come up with a compile-time way to deal with this, so we need to do the typechecking at runtime.
     // The problem is that fromProp *might* be of UVT, but it might also be a ModelType.

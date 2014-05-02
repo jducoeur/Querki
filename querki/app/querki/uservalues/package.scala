@@ -12,17 +12,22 @@ package object uservalues {
     /**
      * The Link from a User Value Property to its Summary Property.
      */
-    def SummaryLink:Property[OID,_]
+    def SummaryLink:Property[OID,OID]
     
     /**
      * The optional link from a Summary Property to the Property that it is summarizing.
      */
-    def SummarizesPropertyLink:Property[OID,_]
+    def SummarizesPropertyLink:Property[OID,OID]
     
     /**
      * Is a given user allowed to have User Values?
      */
-    def UserValuePermission:Property[OID,_]
+    def UserValuePermission:Property[OID,OID]
+    
+    /**
+     * Set this flag to indicate that a Property is a User Value.
+     */
+    def IsUserValueFlag:Property[Boolean,Boolean]
     
     /**
      * To create a UserValuePersister Actor.
