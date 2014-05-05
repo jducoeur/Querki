@@ -4,6 +4,9 @@ import akka.actor.Props
 
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
+import play.api.mvc.WithFilters
+
+import controllers.LoggingFilter
 
 import models._
 
@@ -11,7 +14,7 @@ import querki.ecology.Ecology
 import querki.system.QuerkiRoot
 import querki.system.QuerkiRoot._
 
-object Global extends GlobalSettings {
+object Global extends WithFilters(LoggingFilter) with GlobalSettings {
   
   lazy val root = Akka.system.actorOf(Props[QuerkiRoot], "querkiRoot")
   

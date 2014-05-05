@@ -16,6 +16,10 @@ querki {
     }
     # If enabled, this logs voluminous QL-parsing info
     logContexts : false
+    # This logs the details of Thing Edit requests
+    logEdits : false
+    # This logs the headers of *all* requests to the system. USE ONLY WHEN NECESSARY!
+    logAllRequests: false
   }
   
   app {
