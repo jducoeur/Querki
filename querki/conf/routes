@@ -5,7 +5,6 @@
 # Home page
 GET     /                           @controllers.Application.index
 GET     /robots.txt					@controllers.Application.robots
-GET     /login                      @controllers.LoginController.login
 GET     /spaces                     @controllers.Application.spaces
 GET     /newSpace                   @controllers.Application.newSpace
 POST    /doNewSpace                 @controllers.Application.doNewSpace

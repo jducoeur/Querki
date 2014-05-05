@@ -157,7 +157,7 @@ object User {
   object Anonymous extends User {
     val id = UnknownOID
     val name = ""
-    val identities = Seq.empty
+    val identities = Seq(Identity.AnonymousIdentity)
     val level = UnknownUserLevel
     val tosVersion = noTOSUserVersion
   }
@@ -166,6 +166,7 @@ object User {
 object IdentityKind {
   val SimpleEmail = 1
   val QuerkiLogin = 2
+  val Anonymous = 3
   
   type IdentityKind = Int
 }
@@ -181,3 +182,8 @@ trait PublicIdentity {
 }
 
 case class Identity(id:OID, email:EmailAddress, auth:String, handle:String, name:String, kind:IdentityKind) extends PublicIdentity
+
+object Identity {
+  val AnonymousOID = OID(-2)
+  object AnonymousIdentity extends Identity(AnonymousOID, EmailAddress("anonidentity@querki.net"), "", "Anonymous", "Anonymous", IdentityKind.Anonymous)
+}

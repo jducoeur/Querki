@@ -321,22 +321,13 @@ class LoginController extends ApplicationBase {
     }
   }
   
-  // TODO: that onUnauthorized will infinite-loop if it's ever invoked. What should we do instead?
-  def login = 
-    Security.Authenticated(forceUser, onUnauthorized) { user =>
-      Action { implicit request =>
-        if (user == User.Anonymous)
-          Ok(views.html.login(PlayRequestContext(request, None, UnknownOID, None, None, ecology)))
-        else {
-          Redirect(routes.Application.index)
-        }
-      }
-    }
+  // login now simply happens through the index page
+  def login = Redirect(routes.Application.index)
   
   def dologin = Action { implicit request =>
     val rc = PlayRequestContext(request, None, UnknownOID, None, None, ecology)
     userForm.bindFromRequest.fold(
-      errors => doError(routes.LoginController.login, "I didn't understand that"),
+      errors => doError(routes.Application.index, "I didn't understand that"),
       form => {
         val userOpt = UserAccess.checkQuerkiLogin(form.name, form.password)
         userOpt match {
@@ -347,7 +338,7 @@ class LoginController extends ApplicationBase {
 		      case None => Redirect(routes.Application.index).withSession(user.toSession:_*)
 		    }
           }
-          case None => doError(routes.LoginController.login, "Login failed. Please try again.")
+          case None => doError(routes.Application.index, "Login failed. Please try again.")
         }
       }
     )

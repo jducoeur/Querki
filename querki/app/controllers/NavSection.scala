@@ -58,7 +58,7 @@ class NavSectionEcot(e:Ecology) extends QuerkiEcot(e) with NavSectionMgr {
       ))
     } getOrElse {
       NavSection("Not logged in", Seq(
-        NavLink("Log in", routes.LoginController.login)
+        NavLink("Log in", routes.Application.index)
       ))
     }    
   }

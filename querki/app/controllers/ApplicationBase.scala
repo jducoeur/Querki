@@ -68,7 +68,7 @@ class ApplicationBase extends Controller with EcologyMember {
     // Send them over to the login page, but record that we want to return to this page
     // once they do log in:
     val rc = SimpleRequestHeaderParser(request, Seq.empty, true)
-    rc.updateSession(Redirect(routes.LoginController.login))
+    rc.updateSession(Redirect(routes.Application.index))
   }
 
   // Fetch the User from the session, or User.Anonymous if they're not found.
