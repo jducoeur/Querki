@@ -8,11 +8,20 @@ import akka.actor.{ActorRef, Props}
 import akka.pattern.ask
 import akka.util.Timeout
 
-import querki.ecology._
+import models.{SimplePTypeBuilder, Wikitext}
 
-import IdentityCache._
+import querki.ecology._
+import querki.values.{QLContext, SpaceState}
+
+import IdentityCacheMessages._
+
+object IdentityMOIDs extends EcotIds(39) {
+  val IdentityTypeOID = moid(1)  
+}
 
 class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess {
+  
+  import IdentityMOIDs._
   
   /**
    * The one true handle to the Identity Cache.
@@ -45,4 +54,33 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess {
       case _ => Map.empty
     }    
   }
+  
+  /***********************************************
+   * TYPES
+   ***********************************************/
+  
+  lazy val IdentityType = new SystemType[PublicIdentity](IdentityTypeOID,
+    toProps(
+      setName("_identityType"),
+      setInternal,
+      Summary("The Type of a Querki member, not necessarily a member of any particular Space.")))
+    with SimplePTypeBuilder[PublicIdentity]
+  {
+    def doWikify(context:QLContext)(v:PublicIdentity, displayOpt:Option[Wikitext] = None) = Wikitext(v.name)
+    
+    override def doComp(context:QLContext)(left:PublicIdentity, right:PublicIdentity):Boolean = {
+      math.Ordering.String.lt(left.name, right.name) 
+    }
+    
+    override def doMatches(left:PublicIdentity, right:PublicIdentity):Boolean = left.id == right.id 
+    
+    // None of these should be possible, so for now I'm not going to worry about them:
+    def doDeserialize(v:String)(implicit state:SpaceState) = ???
+    def doSerialize(v:PublicIdentity)(implicit state:SpaceState) = ???
+    def doDefault(implicit state:SpaceState) = ???
+  }
+  
+  override lazy val types = Seq(
+    IdentityType
+  )
 }

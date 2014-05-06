@@ -125,10 +125,10 @@ private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val us
       // In principle, we should probably parallelize waiting for the SpaceState and UserValues:
       // the current behaviour hits first-load latency slightly. OTOH, in the interest of not hammering
       // the DB too hard, we might leave it as it is...
-      persister ! LoadValuesForUser(identity.id, s)
+      persister ! LoadValuesForUser(identity, s)
     }
     
-    case ValuesForUser(identityId, uvs) => {
+    case ValuesForUser(uvs) => {
       clearEnhancedState()
       userValues = uvs
       // Okay, ready to roll:
@@ -187,9 +187,9 @@ private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val us
 	              if (AccessControl.hasPermission(UserValues.UserValuePermission, state, identity.id, thing.id)) {
 	                implicit val s = state
 	                // Persist the change...
-  	                val uv = OneUserValue(thing.id, propId, v, DateTime.now)
+  	                val uv = OneUserValue(identity, thing.id, propId, v, DateTime.now)
 	                val previous = addUserValue(uv)
-       	            persister ! SaveUserValue(identity.id, uv, state, previous.isDefined)
+       	            persister ! SaveUserValue(uv, state, previous.isDefined)
        	            
        	            // ... then tell the Space to summarize it, if there is a Summary Property...
        	            val msg = for {

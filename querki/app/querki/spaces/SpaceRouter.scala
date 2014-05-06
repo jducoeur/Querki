@@ -75,6 +75,9 @@ private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpaceP
     // Message for a Session:
     case req:SessionRequest => sessions.forward(req)
     
+    // HACK: messages heading for the User Value Persister:
+    case msg:UserValuePersistRequest => sessions.forward(msg)
+    
     // Message for the Space:
     case msg:CreateSpace => space.forward(msg)
     case msg:SpaceMessage => space.forward(msg)

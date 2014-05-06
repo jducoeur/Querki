@@ -16,7 +16,7 @@ import querki.ecology._
  */
 private[identity] class IdentityCache(val ecology:Ecology) extends Actor with EcologyMember {
   
-  import IdentityCache._
+  import IdentityCacheMessages._
   
   lazy val UserAccess = interface[UserAccess]
   
@@ -59,7 +59,7 @@ private[identity] class IdentityCache(val ecology:Ecology) extends Actor with Ec
   }
 }
 
-private[identity] object IdentityCache {
+object IdentityCacheMessages {
   case class GetIdentityRequest(id:OID)
   case class IdentityFound(identity:PublicIdentity)
   case object IdentityNotFound

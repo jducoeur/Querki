@@ -3,10 +3,12 @@ package querki
 import scala.concurrent.Future
 import scala.util.Try
 
+import akka.actor.ActorRef
+
 // TODO: this is an unfortunate abstraction break:
 import play.api.mvc.RequestHeader
 
-import models.{OID, Property, Thing, ThingId}
+import models.{OID, Property, PType, SimplePTypeBuilder, Thing, ThingId}
 
 import querki.ecology._
 
@@ -88,6 +90,17 @@ package object identity {
    * all calls are asynchronous!
    */
   trait IdentityAccess extends EcologyInterface {
+    /**
+     * The Identity Cache Actor. Other Actors are allowed to make requests directly to that instead
+     * of going through the Future-based wrappers below. Use the messages from the IdentityCache object.
+     */
+    def identityCache:ActorRef
+    
+    /**
+     * Wraps the notion of Identity in a QL-compatible Type.
+     */
+    def IdentityType:PType[PublicIdentity] with SimplePTypeBuilder[PublicIdentity]
+    
     /**
      * The recommended way to fetch a single Identity.
      */

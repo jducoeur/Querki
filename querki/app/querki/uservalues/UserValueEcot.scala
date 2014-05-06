@@ -10,8 +10,11 @@ import models.Thing.PropMap
 import querki.ecology._
 import querki.identity.SystemUser
 import querki.spaces.{CacheUpdate, SpaceAPI, SpacePlugin, SpacePluginProvider, ThingChangeRequest}
-import querki.spaces.messages.SpacePluginMsg
+import querki.spaces.messages.{SpacePluginMsg, UserValuePersistRequest}
+import querki.types.SimplePropertyBundle
+import querki.uservalues.PersistMessages.{LoadThingPropValues, ValuesForUser}
 import querki.util.{Contributor, Publisher, QLog}
+import querki.util.ActorHelpers._
 import querki.values.{SpaceState, StateCacheKey}
 
 object MOIDs extends EcotIds(44) {
@@ -20,14 +23,29 @@ object MOIDs extends EcotIds(44) {
   val IsUserValueFlagOID = moid(3)
   val SummaryLinkOID = moid(4)
   val SummarizesPropertyLinkOID = moid(5)
+  
+  val UserValuesFunctionOID = moid(6)
+  val ThingValuesFunctionOID = moid(7)
+  val UserValueFunctionOID = moid(8)
+  val UserValueModelOID = moid(9)
+  val UserValueTypeOID = moid(10)
+  val UVUserPropOID = moid(11)
+  val UVThingPropOID = moid(12)
+  val UVValPropOID = moid(13)
+  val UVPropPropOID = moid(14)
 }
 
-class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpacePluginProvider {
+class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpacePluginProvider with querki.core.MethodDefs with querki.types.ModelTypeDefiner {
   import MOIDs._
   
   val AccessControl = initRequires[querki.security.AccessControl]
+  val Basic = initRequires[querki.basic.Basic]
+  val IdentityAccess = initRequires[querki.identity.IdentityAccess]
   val Links = initRequires[querki.links.Links]
   val SpaceChangeManager = initRequires[querki.spaces.SpaceChangeManager]
+  val Types = initRequires[querki.types.Types]
+  
+  lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
   override def init = {
     SpaceChangeManager.updateStateCache += UserValueCacheUpdater
@@ -119,10 +137,85 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
       setName("_summarizerBase"),
       Core.IsModelProp(true),
       setInternal))
+      
+  lazy val UserValueModel = ThingState(UserValueModelOID, systemOID, RootOID,
+    toProps(
+      setName("_userValueModel"),
+      Core.IsModelProp(true),
+      setInternal,
+      UVUserProp(),
+      UVThingProp(),
+      UVPropProp(),
+      UVValProp(),
+      Summary("The _userValues and _thingValues functions return Sets of _userValueModel."),
+      Details("""This contains these Properties:
+          |* _userValueUser -- who set this value
+          |* _userValueThing -- the Thing that this value is on
+          |* _userValueProperty -- the Property that was set
+          |* _userValueValue -- the actual value""".stripMargin)))
   
   override lazy val things = Seq(
-    SummarizerBase
+    SummarizerBase,
+    UserValueModel
   )
+  
+  /***********************************************
+   * TYPES
+   ***********************************************/
+  
+  lazy val UserValueType = new ModelType(UserValueTypeOID, UserValueModelOID,
+    toProps(
+      setName("_userValueType"),
+      setInternal,
+      Summary("The Type you get from the _userValues and _thingValues functions.")))
+  
+  override lazy val types = Seq(
+    UserValueType
+  )
+  
+  /***********************************************
+   * FUNCTIONS
+   ***********************************************/
+  
+  /**
+   * TODO: EEEEVIL! This function, and the one below it, involve blocking calls! This is horrible,
+   * but kind of necessary at the moment. The implication is that the QL pipeline needs to become
+   * asynchronous. That will be a *major* pain in the ass, but it's going to have to happen. The notion
+   * should probably be that each Stage results in a Future, which is *usually* immediately redeemed,
+   * but can be put off.
+   * 
+   * Moreover, this really drives home that the QL processing should happen inside of a worker Actor
+   * affiliated with the Space under normal circumstances. As it is, we have to drill a hole through
+   * to the stateful Actor side of the world, which is pretty serious stuff.
+   */
+  lazy val UserValuesFunction = new InternalMethod(UserValuesFunctionOID,
+    toProps(
+      setName("_userValues"),
+      Summary("Fetch all of the User Values for this Property on this Thing, for all Users"),
+      Details("""    THING -> PROP._userValues -> USER VALUES""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      for {
+        // First, figure out the Thing and Prop we're working with:
+        thingId <- inv.contextAllAs(LinkType)
+        prop <- inv.definingContextAsProperty
+        msg = UserValuePersistRequest(
+                inv.context.request.requesterOrAnon, inv.state.ownerIdentity.map(_.id).get, inv.state.toThingId, 
+                LoadThingPropValues(thingId, prop.id, inv.state))
+        // Here is the moment of great evil -- this is actually a blocking request to the Space's User Value Persister:
+        uv <-  inv.iter(SpaceOps.spaceManager.askBlocking(msg) {
+                 case ValuesForUser(uvs) => uvs
+               })
+        // Finally, transform the results into a QL-pipeline-friendly form:
+        uvInstance = UserValueType(SimplePropertyBundle(
+                       UVUserProp(uv.identity),
+                       UVThingProp(uv.thingId),
+                       UVPropProp(uv.propId),
+                       UVValProp(uv.v)))
+      }
+        yield ExactlyOne(uvInstance)
+    }
+  }
     
   /***********************************************
    * PROPERTIES
@@ -176,11 +269,42 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
             |know what to do.
             |
             |This is a very advanced Property, intended only for people who are building complex User Value Properties.""".stripMargin)))
+  
+  lazy val UVUserProp = new SystemProperty(UVUserPropOID, IdentityAccess.IdentityType, ExactlyOne,
+      toProps(
+        setName("_userValueUser"),
+        setInternal,
+        Summary("The User who set a particular User Value")))
+  
+  lazy val UVThingProp = new SystemProperty(UVThingPropOID, LinkType, ExactlyOne,
+      toProps(
+        setName("_userValueThing"),
+        setInternal,
+        Summary("The Thing that a User Value is set on")))
+  
+  lazy val UVValProp = new SystemProperty(UVValPropOID, Types.WrappedValueType, ExactlyOne,
+      toProps(
+        setName("_userValueValue"),
+        setInternal,
+        Summary("The actual value of a User Value")))
+  
+  lazy val UVPropProp = new SystemProperty(UVPropPropOID, LinkType, ExactlyOne,
+      toProps(
+        setName("_userValueProperty"),
+        setInternal,
+        Summary("The Property of a User Value")))
 
   override lazy val props = Seq(
+    UserValuesFunction,
+      
     UserValuePermission,
     IsUserValueFlag,
     SummaryLink,
-    SummarizesPropertyLink
+    SummarizesPropertyLink,
+    
+    UVUserProp,
+    UVThingProp,
+    UVValProp,
+    UVPropProp
   )
 }

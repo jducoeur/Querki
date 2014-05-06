@@ -72,6 +72,12 @@ case class ConversationRequest(req:User, own:OID, space:ThingId, payload:Convers
 case class SessionRequest(req:User, own:OID, space:ThingId, payload:SessionMessage) extends SpaceMessage(req, own, space)
 
 /**
+ * TODO: HACK: this exposes the UserValues for a Space, outside that Space. It should really go away, but is necessary for
+ * _userValues and _thingValues.
+ */
+case class UserValuePersistRequest(req:User, own:OID, space:ThingId, payload:querki.uservalues.PersistMessages.ExternallyExposed) extends SpaceMessage(req, own, space)
+
+/**
  * An open-ended variant of SpaceMgrMsg, which gets routed to Space and can contain anything. This is intended
  * specifically for use by SpacePlugins.
  * 

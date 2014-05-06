@@ -8,7 +8,7 @@ import models.OID
 import querki.ecology._
 import querki.identity.User
 import querki.session.messages._
-import querki.spaces.messages.{SessionRequest, CurrentState}
+import querki.spaces.messages.{SessionRequest, CurrentState, UserValuePersistRequest}
 import querki.util._
 import querki.values.SpaceState
 
@@ -38,6 +38,9 @@ private [session] class UserSessions(val ecology:Ecology, val spaceId:OID, val s
     }
     
     case GetActiveSessions => sender ! ActiveSessions(children.size)
+    
+    // HACK: messages heading for the User Value Persister:
+    case msg:UserValuePersistRequest => persister.forward(msg)
 
     /**
      * Message to forward to a UserSession. Create the session, if needed.
