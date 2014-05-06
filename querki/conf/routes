@@ -9,7 +9,7 @@ GET     /spaces                     @controllers.Application.spaces
 GET     /newSpace                   @controllers.Application.newSpace
 POST    /doNewSpace                 @controllers.Application.doNewSpace
 
-GET     /help                       @controllers.Application.thing(userName = "systemUser", spaceId = "documentation", thingId = "documentation")
+GET     /help/                      @controllers.Application.thing(userName = "systemUser", spaceId = "documentation", thingId = "documentation")
 GET     /help/:thingId              @controllers.Application.thing(userName = "systemUser", spaceId = "documentation", thingId)
 
 GET     /TOS                        @controllers.TOSController.showTOS
