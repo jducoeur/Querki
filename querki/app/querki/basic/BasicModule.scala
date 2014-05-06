@@ -212,12 +212,19 @@ This often means that you've invoked it recursively without saying which Thing i
           |The exact meaning of Deprecated depends on the situation, but Querki will tend to hide Things marked as
           |Deprecated. If you see somewhere that a Deprecated Thing is visible and shouldn't be, please log a bug
           |report about it.""".stripMargin)))
+  
+  lazy val ExplicitProp = new SystemProperty(ExplicitPropOID, YesNoType, ExactlyOne,
+      toProps(
+        setName("_explicitlyShown"),
+        setInternal,
+        Summary("The inverse of InternalProp -- says that this *is* specifically to be shown to users, even though it otherwise wouldn't be.")))
 
   override lazy val props = Seq(
     ApplyMethod,
     DisplayNameProp,
     DisplayTextProp,
-    DeprecatedProp
+    DeprecatedProp,
+    ExplicitProp
   )
   
   /***********************************************

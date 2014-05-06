@@ -28,6 +28,8 @@ package object basic {
     val CommasMethodOID = sysId(80)
     val AllPropsThingOID = sysId(84)
     val DeprecatedOID = sysId(101)
+    
+    val ExplicitPropOID = moid(1)
   }
   
   /**
@@ -51,6 +53,7 @@ package object basic {
     def DeprecatedProp:Property[Boolean,Boolean]
     def DisplayNameProp:Property[PlainText,String]
     def DisplayTextProp:Property[QLText,String]
+    def ExplicitProp:Property[Boolean,Boolean]
     
     def SimpleThing:Thing
     

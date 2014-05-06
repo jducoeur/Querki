@@ -86,7 +86,9 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
   
   lazy val ReviewType = new ModelType(ReviewTypeOID, ReviewModelOID,
     toProps(
-      setName("Review Type")))
+      setName("Review Type"),
+      // We want to display this in the Editor, even though it is a Model Type:
+      Basic.ExplicitProp(true)))
   
   case class RatingAverage(propId:OID, avg:Double)
   
