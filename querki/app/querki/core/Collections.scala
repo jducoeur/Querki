@@ -80,10 +80,10 @@ trait CollectionBase { self:CoreEcot =>
       List(elemT.deserialize(ser))
     }
     def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = {
-      elemT.serialize(v.head)
+      elemT.serialize(v.headOption.getOrElse(elemT.default))
     }
     def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = {
-      elemT.wikify(context)(v.head, displayOpt)
+      elemT.wikify(context)(v.headOption.getOrElse(elemT.default(context.state)), displayOpt)
     }
     def doDefault(elemT:pType)(implicit state:SpaceState):implType = {
       List(elemT.default)
