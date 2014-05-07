@@ -247,6 +247,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
         setName("Rating"),
         IsUserValueFlag(true),
         SummaryLink(RatingSummaryProperty),
+        Editor.PromptProp(Core.QNone),
         Summary("Allows many people to rate how much they like this Thing"),
         Details("""If you put this Property on a Thing or Model, you can simply say
             |`\[[Rating._edit\]]` in your Default View, and it will allow you to rate
@@ -273,6 +274,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
       toProps(
         setName("Review Comments"),
         setInternal,
+        Editor.PromptProp("Comments:"),
         Summary("The text part of a Review. Not intended for use on its own.")))
   
   lazy val ReviewProperty = new SystemProperty(ReviewPropOID, ReviewType, ExactlyOne,

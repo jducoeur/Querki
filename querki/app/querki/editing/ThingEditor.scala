@@ -26,14 +26,18 @@ trait ThingEditor { self:EditorModule =>
     private case class EditorPropLayout(prop:Property[_,_])(implicit state:SpaceState) {
       def span = editorSpan(prop)
       def summaryTextOpt = prop.getPropOpt(Conventions.PropSummary).flatMap(_.firstOpt).map(_.text)
-      def displayNamePhrase = {
-        summaryTextOpt match {
-          case Some(summaryText) => s"""[[""${prop.displayName}"" -> _tooltip(""$summaryText"")]]"""
-          case None => prop.displayName
+      def displayNameOpt:Option[String] =
+        prop.getPropOpt(PromptProp) match {
+          case Some(promptPV) => promptPV.firstOpt.map(_.text)
+          case None => Some(prop.displayName)
         }
-      }
+      def displayNamePhrase:Option[String] =
+        displayNameOpt.map(displayName => summaryTextOpt match {
+          case Some(summaryText) => s"""[[""$displayName"" -> _tooltip(""$summaryText"")]]"""
+          case None => displayName
+        })
       def layout = s"""{{span$span:
-      |{{_propTitle: $displayNamePhrase:}}
+      |${displayNamePhrase.map(dnp => s"{{_propTitle: $dnp:}}").getOrElse("")}
       |
       |[[${prop.toThingId}._edit]]
       |}}
