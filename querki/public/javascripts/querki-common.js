@@ -494,6 +494,11 @@ function finalSetup(ownerId, spaceId, root) {
     if (readonlyStr === true) {
       readonly = true;
     }
+    var targetStr = rating.data("target");
+    var target;
+    if (typeof(targetStr) != "undefined") {
+      target = "#" + targetStr;
+    }
 	rating.raty({
 	    path:'/assets/img',
 	    score: function() {
@@ -502,6 +507,7 @@ function finalSetup(ownerId, spaceId, root) {
 	    hints: labels,
 	    number: labels.length,
 	    readOnly: readonly,
+	    target: target,
 	    click: function(score, evt) {
 	      $(this).each(function() {
 	        var stars = $(this);
