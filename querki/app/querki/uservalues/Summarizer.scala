@@ -205,7 +205,9 @@ trait SummarizerDefs { self:QuerkiEcot =>
 	    }
 	  }
 	  val pairs = range match {
-	    case Some(keys:Seq[UVT]) => keys.map(key => (key, v.content.get(key).getOrElse(0)))
+	    // TBD: the .reverse below is because we want to display star ratings from best to least in the
+	    // histogram. Is that always true? We may need to let subclasses chime in on this.
+	    case Some(keys:Seq[UVT]) => keys.map(key => (key, v.content.get(key).getOrElse(0))).reverse
 	    case _ => v.content.toSeq
 	  }
 	  
