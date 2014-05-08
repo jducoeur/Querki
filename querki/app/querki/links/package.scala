@@ -11,9 +11,11 @@ package object links {
     val LinkKindOID = sysId(33)
     val LinkAllowAppsOID = sysId(34)
     val LinkModelOID = sysId(35)
-    val ExternalLinkTypeOID = sysId(41)
+    val OldExternalLinkTypeOID = sysId(41)
     val LinkToModelsOnlyOID = sysId(70)
     val NoCreateThroughLinkOID = sysId(103)
+    
+    val WithParamFunctionOID = moid(1)
   }
 
   // Why not java.net.URL? Because it just plain can't cope with simply relative URLs -- it always wants
@@ -26,7 +28,7 @@ package object links {
   }
   
   trait Links extends EcologyInterface {
-    def ExternalLinkType:PType[QURL] with PTypeBuilder[QURL, String]
+    def OldExternalLinkType:PType[QURL] with PTypeBuilder[QURL, String]
     
     def LinkAllowAppsProp:Property[Boolean,Boolean]
     def LinkKindProp:Property[Int,Int]

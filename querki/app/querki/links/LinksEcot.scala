@@ -7,7 +7,7 @@ import querki.ecology._
 
 import querki.values.{ElemValue, QLContext, SpaceState}
 
-class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
+class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.MethodDefs {
   import MOIDs._
   
   def LinkValue(target:OID):QValue = ExactlyOne(LinkType(target))
@@ -16,7 +16,7 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
    * TYPES
    ***********************************************/
   
-  lazy val ExternalLinkType = new SystemType[QURL](ExternalLinkTypeOID,
+  lazy val OldExternalLinkType = new SystemType[QURL](OldExternalLinkTypeOID,
     toProps(
       setName("URL Type"),
       Summary("The URL of a web page"),
@@ -42,12 +42,17 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
       elem.getOpt(this).map(_.url)
     }
   
+    // For the simple URL Type, the display is the same as the URL:
+    def getDisplay(context:QLContext)(elem:ElemValue):Option[String] = {
+      elem.getOpt(this).map(_.url)
+    }
+  
     def doDefault(implicit state:SpaceState) = new QURL("")
     override def wrap(raw:String):valType = new QURL(raw)
   }
   
   override lazy val types = Seq(
-    ExternalLinkType
+    OldExternalLinkType
   )
     
   /***********************************************
@@ -139,12 +144,46 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
 	          |created all of the Instances of this Model that you ever expect to want, then it is simply annoying to have
 	          |that option. In that case, put this Property on your Model, and set it to True -- it will make that option
 	          |in the Editor go away.""".stripMargin)))
+      
+  /***********************************************
+   * FUNCTIONS
+   ***********************************************/  
+
+  lazy val WithParamFunction = new InternalMethod(WithParamFunctionOID,
+    toProps(
+      setName("_withParam"),
+      Summary("Adds the specified query parameter to a Link or URL"),
+      Details("""    LINK or URL -> _withParam(PARAMNAME, VALUE) -> URL""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      for {
+        pt <- inv.contextTypeAs[URLableType]
+        elemContext <- inv.contextElements
+        elemV <- inv.opt(elemContext.value.firstOpt)
+        urlStr <- inv.opt(pt.getURL(elemContext)(elemV))
+        paramNameElem <- inv.processParam(0, elemContext)
+	    paramName = paramNameElem.wikify(elemContext).raw.str
+        valElem <- inv.processParam(1, elemContext)
+        value = valElem.wikify(elemContext).raw.str
+      }
+        yield ExactlyOne(OldExternalLinkType(appendParam(urlStr, paramName, value)))
+    }
+    
+    def appendParam(url:String, paramName:String, paramVal:String):String = {
+      if (url.contains("?"))
+        url + "&" + paramName + "=" + paramVal
+      else
+        url + "?" + paramName + "=" + paramVal
+    }
+  }
 
   override lazy val props = Seq(
     LinkKindProp,
     LinkAllowAppsProp,
     LinkModelProp,
     LinkToModelsOnlyProp,
-    NoCreateThroughLinkProp
+    NoCreateThroughLinkProp,
+    
+    WithParamFunction
   )
 }

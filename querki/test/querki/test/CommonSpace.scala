@@ -25,7 +25,7 @@ class CommonSpace(implicit ecologyIn:Ecology) extends TestSpace {
   lazy val QList = Core.QList
   lazy val QSet = Core.QSet
   
-  lazy val ExternalLinkType = Links.ExternalLinkType
+  lazy val ExternalLinkType = Links.OldExternalLinkType
   lazy val TextType = Core.TextType
   lazy val LinkType = Core.LinkType
   

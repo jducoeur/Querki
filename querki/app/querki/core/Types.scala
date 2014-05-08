@@ -23,6 +23,7 @@ trait IsTextType
  */
 trait URLableType {
   def getURL(context:QLContext)(v:ElemValue):Option[String]
+  def getDisplay(context:QLContext)(v:ElemValue):Option[String]
 }
   
 /**
@@ -578,6 +579,14 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
         thing <- follow(context)(v)
           )
         yield thing.toThingId.toString()
+    }
+    
+    def getDisplay(context:QLContext)(elem:ElemValue):Option[String] = {
+      for (
+        v <- elem.getOpt(this);
+        thing <- follow(context)(v)
+          )
+        yield thing.displayName
     }
     
     // Links are sorted by their *display names*:

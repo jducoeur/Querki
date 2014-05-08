@@ -46,7 +46,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   
   lazy val EmailAddressProp = Email.EmailAddressProp
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
-  lazy val ExternalLinkType = Links.ExternalLinkType
+  lazy val ExternalLinkType = Links.OldExternalLinkType
   
   import MOIDs._
   

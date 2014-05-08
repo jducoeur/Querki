@@ -36,7 +36,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   lazy val Links = interface[querki.links.Links]
   lazy val QL = interface[querki.ql.QL]
   
-  lazy val ExternalLinkType = Links.ExternalLinkType
+  lazy val ExternalLinkType = Links.OldExternalLinkType
   lazy val ParsedTextType = QL.ParsedTextType
 
   /***********************************************
