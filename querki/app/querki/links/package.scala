@@ -2,6 +2,7 @@ package querki
 
 import models.{OID, Property, PType, PTypeBuilder}
 
+import querki.basic.PlainText
 import querki.ecology._
 
 import querki.values.QValue
@@ -16,6 +17,7 @@ package object links {
     val NoCreateThroughLinkOID = sysId(103)
     
     val WithParamFunctionOID = moid(1)
+    val ExternalLinkTypeOID = moid(2)
   }
 
   // Why not java.net.URL? Because it just plain can't cope with simply relative URLs -- it always wants
@@ -26,6 +28,8 @@ package object links {
     if (!url.matches(s"[$legalChars]*"))
       throw new Exception("Not a legal URL!")
   }
+  
+  case class QExtLink(display:PlainText, url:QURL)
   
   trait Links extends EcologyInterface {
     def OldExternalLinkType:PType[QURL] with PTypeBuilder[QURL, String]

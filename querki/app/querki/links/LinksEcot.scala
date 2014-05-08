@@ -1,7 +1,8 @@
 package querki.links
 
-import models.{Kind, PTypeBuilder, Wikitext}
+import models.{Kind, PTypeBuilder, SimplePTypeBuilder, Wikitext}
 
+import querki.basic.PlainText
 import querki.core.URLableType
 import querki.ecology._
 
@@ -49,6 +50,32 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Met
   
     def doDefault(implicit state:SpaceState) = new QURL("")
     override def wrap(raw:String):valType = new QURL(raw)
+  }
+  
+  lazy val ExternalLinkType = new SystemType[QExtLink](ExternalLinkTypeOID,
+    toProps(
+      setName("External Link Type"),
+      setInternal,
+      Summary("A link to some web page"),
+      Details("This Type is for internal use only, until we build some editing UI for it")))
+    with SimplePTypeBuilder[QExtLink] with URLableType
+  {
+    def doDeserialize(v:String)(implicit state:SpaceState) = ???
+    def doSerialize(v:QExtLink)(implicit state:SpaceState) = ???
+    def doDefault(implicit state:SpaceState) = QExtLink(PlainText(""), QURL(""))
+    
+    def doWikify(context:QLContext)(v:QExtLink, displayOpt:Option[Wikitext] = None) = {
+      val display = displayOpt.getOrElse(Wikitext(v.display.text))
+      Wikitext("[") + display + Wikitext("](" + v.url.url + ")")
+    }
+    
+    def getURL(context:QLContext)(elem:ElemValue):Option[String] = {
+      elem.getOpt(this).map(_.url.url)
+    }
+  
+    def getDisplay(context:QLContext)(elem:ElemValue):Option[String] = {
+      elem.getOpt(this).map(_.display.text)
+    }
   }
   
   override lazy val types = Seq(
@@ -161,19 +188,32 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Met
         elemContext <- inv.contextElements
         elemV <- inv.opt(elemContext.value.firstOpt)
         urlStr <- inv.opt(pt.getURL(elemContext)(elemV))
+        displayStr <- inv.opt(pt.getDisplay(elemContext)(elemV))
         paramNameElem <- inv.processParam(0, elemContext)
 	    paramName = paramNameElem.wikify(elemContext).raw.str
         valElem <- inv.processParam(1, elemContext)
-        value = valElem.wikify(elemContext).raw.str
+        value = vToParam(valElem, elemContext)(inv.state)
       }
-        yield ExactlyOne(OldExternalLinkType(appendParam(urlStr, paramName, value)))
+        yield ExactlyOne(ExternalLinkType(appendParam(urlStr, displayStr, paramName, value)))
     }
     
-    def appendParam(url:String, paramName:String, paramVal:String):String = {
+    def vToParam(v:QValue, context:QLContext)(implicit state:SpaceState):String = {
+      // We really want to serialize the value, so that _asType() will work on the receiving end,
+      // but we can't reliably do so -- many types don't implement serialization.
+      // TBD: should there be an asURLParam method on PType? What's the right way to deal with this
+      // problem?
+      try {
+        v.pType.serialize(v.first)
+      } catch {
+        case ex:Exception => v.wikify(context).raw.str
+      }
+    }
+    
+    def appendParam(url:String, display:String, paramName:String, paramVal:String):QExtLink = {
       if (url.contains("?"))
-        url + "&" + paramName + "=" + paramVal
+        QExtLink(PlainText(display), QURL(url + "&" + paramName + "=" + paramVal))
       else
-        url + "?" + paramName + "=" + paramVal
+        QExtLink(PlainText(display), QURL(url + "?" + paramName + "=" + paramVal))
     }
   }
 

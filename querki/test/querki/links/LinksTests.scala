@@ -13,7 +13,21 @@ class LinksTests extends QuerkiTests {
       implicit val s = new TSpace
       
       pql("""[[My Thing -> URL Prop -> _withParam(""foo"", ""bar"")]]""") should
-        equal ("[http://www.google.com/?foo=bar](http://www.google.com/?foo=bar)")
+        equal ("[http://www.google.com/](http://www.google.com/?foo=bar)")
+    }
+    
+    "work with a Link" in {
+      implicit val s = commonSpace
+      
+      pql("""[[Sandbox -> _withParam(""foo"", ""bar"")]]""") should
+        equal ("[Sandbox](Sandbox?foo=bar)")
+    }
+    
+    "work with a Link and a Link parameter" in {
+      implicit val s = commonSpace
+      
+      pql("""[[Sandbox -> _withParam(""foo"", My Instance)]]""") should
+        equal (s"[Sandbox](Sandbox?foo=${s.instance.id})")
     }
   }
 }
