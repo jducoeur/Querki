@@ -35,6 +35,21 @@ class DataModelTests extends QuerkiTests {
     }
   }
   
+  // === _asType ===
+  "_asType" should {
+    "convert one PlainText OID to a Link" in {
+      class TSpace extends CommonSpace {
+        val plaintext = sandbox.id.toString
+        val textProp = new TestProperty(Basic.PlainTextType, ExactlyOne, "My Text Prop")
+        val myThing = new SimpleTestThing("Test Thing", textProp(plaintext))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Test Thing -> My Text Prop -> _asType(Link Type)]]""") should
+        equal (linkText(s.sandbox))
+    }
+  }
+  
   // === _hasProperty ===
   "_hasProperty" should {
     "produce true iff the Thing has the Property" in {
