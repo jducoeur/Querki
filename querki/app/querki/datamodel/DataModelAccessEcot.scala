@@ -8,6 +8,30 @@ import querki.util.{Contributor, PublicException, Publisher}
 import querki.values._
 import querki.types.PropPath
 
+object MOIDs extends EcotIds(21) {
+  val InstancesMethodOID = sysId(44)
+  val RefsMethodOID = sysId(48)
+  val SpaceMethodOID = sysId(59)
+  val ExternalRootsOID = sysId(60)
+  val ChildrenMethodOID = sysId(62)
+  val IsModelMethodOID = sysId(63)
+  val PropsOfTypeOID = sysId(76)
+  val IsDefinedOID = sysId(78)
+  val AllPropsMethodOID = sysId(83)
+  val OIDMethodOID = sysId(90)
+  val KindMethodOID = sysId(91)
+  val CurrentSpaceMethodOID = sysId(92)
+  val IsMethodOID = sysId(93)
+  val IsFunctionOID = sysId(104)
+  
+  val HasPropertyMethodOID = moid(1)
+  val AllThingsOID = moid(2)
+  val CopyIntoInstancesOID = moid(3)
+  val AllTypesMethodOID = moid(4)
+  val AsTypeMethodOID = moid(5)
+}
+
+
 /**
  * This Ecot mainly is about defining Functions that give QL access to the Ecology,
  * sliced and diced in various ways.
@@ -388,6 +412,28 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
 	    case _ => QL.WarningValue("_allThings can only be used on a Space")
 	  }
 	})
+  
+  lazy val AsTypeMethod = new InternalMethod(AsTypeMethodOID,
+    toProps(
+      setName("_asType"),
+      SkillLevel(SkillLevelAdvanced),
+      Summary("Convert one or more values of one Type to another Type"),
+      Details("""This will not work for every possible conversion -- at the moment, it depends on whether
+          |the two types serialize in compatible ways. But it works in many cases.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      implicit val s = inv.state
+      for {
+        newTypeId <- inv.processParamFirstAs(0, LinkType)
+        newType <- inv.opt(inv.state.typ(newTypeId))
+        vContext <- inv.contextElements
+        qv = vContext.value
+        ser = qv.pType.serialize(qv.first)
+        newVal = newType.deserialize(ser)
+      }
+        yield ExactlyOne(newVal)
+    }
+  }
 
   override lazy val props = Seq(
     CopyIntoInstances,
@@ -408,6 +454,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     PropsOfTypeMethod,
     IsFunctionProp,
     HasPropertyMethod,
-    AllThingsMethod
+    AllThingsMethod,
+    AsTypeMethod
   )
 }
