@@ -27,8 +27,12 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None)
   
   implicit def ecology:Ecology = ci.state.ecology
   
+  lazy val Basic = interface[querki.basic.Basic]
   lazy val Core = interface[querki.core.Core]
   lazy val QL = interface[querki.ql.QL]
+  
+  lazy val ExactlyOne = Core.ExactlyOne
+  lazy val PlainTextType = Basic.PlainTextType
   
   def WarningValue = QL.WarningValue _
   
@@ -167,6 +171,17 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None)
     }
   }
   
+  private def processNormalBinding(binding:QLBinding, context:QLContext, isParam:Boolean, resolvingParser:QLParser):QLContext = {
+    // For now, we are only dealing with bindings from the query string of the URL
+    // TODO: deal with proper value bindings here, before the query string
+    val fromQuery = context.request.queryParam(binding.name)
+    fromQuery match {
+      case Seq() => context.next(WarningValue("Didn't find bound name $" + binding.name))
+      case Seq(item) => context.next(ExactlyOne(PlainTextType(item)))
+      case _ => context.next(Core.QList.makePropValue(fromQuery.map(PlainTextType(_)), PlainTextType))
+    }
+  }
+  
   private def processInternalBinding(binding:QLBinding, context:QLContext, isParam:Boolean, resolvingParser:QLParser):QLContext = {
     if (binding.name == "_context") {
       resolvingParser.initialContext
@@ -205,7 +220,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None)
       if (binding.name.startsWith("_"))
         processInternalBinding(binding, context, isParam, resolvingParser)
       else
-        context.next(WarningValue("Only internal bindings, starting with $_, are allowed at the moment."))
+        processNormalBinding(binding, context, isParam, resolvingParser)
     }
   }
   

@@ -217,6 +217,27 @@ class QLTests extends QuerkiTests {
     }
   }
   
+  "Query bindings" should {
+    "work for a single value" in {
+      val thing = commonSpace.sandbox
+      val rc = SimpleTestRequestContext(commonSpace.owner.mainIdentity.id, commonSpace.state, thing, ecology, 
+          Map("foo" -> Seq("bar")))
+      val context = thing.thisAsContext(rc)
+      processQText(context, "[[$foo]]") should equal ("bar")
+    }
+
+    "work for multiple values" in {
+      val thing = commonSpace.sandbox
+      val rc = SimpleTestRequestContext(commonSpace.owner.mainIdentity.id, commonSpace.state, thing, ecology, 
+          Map("foo" -> Seq("bar", "baz", "bletch")))
+      val context = thing.thisAsContext(rc)
+      processQText(context, "[[$foo]]") should equal ("""
+          |bar
+          |baz
+          |bletch""".stripReturns)
+    }
+  }
+  
   "Comments" should {
     "work as the whole body" in {
       processQText(commonThingAsContext(_.sandbox), "[[// This is a comment, which does nothing]]") should
