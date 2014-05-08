@@ -37,6 +37,7 @@ package object identity {
     val ChromelessInvitesOID = moid(7)
     val InviteTextOID = moid(8)
     val SpaceInviteOID = moid(9)
+    val PersonIdentityFunctionOID = moid(10)
   }
 
   case class InvitationResult(invited:Seq[EmailAddress], alreadyInvited:Seq[EmailAddress])

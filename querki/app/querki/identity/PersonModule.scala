@@ -41,6 +41,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   lazy val QL = interface[querki.ql.QL]
   lazy val Links = interface[querki.links.Links]
   lazy val HtmlUI = interface[querki.html.HtmlUI]
+  lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
@@ -110,30 +111,6 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
         setName("Person to Identity Link"),
         Core.InternalProp(true),
         Summary("INTERNAL: points from a Space-scoped Person to a System-scoped Identity")))
-
-  lazy val meMethod = new InternalMethod(MeMethodOID,
-      toProps(
-        setName("_me"),
-        Summary("If the current user is a Person in the current Space, return that Person"),
-        Details("""_me is the usual way to customize a Space based on who is looking at it. If the page is being viewed by
-            |a logged-in User, *and* they are a Member of this Space, it produces their Person record. If the viewer isn't
-            |logged in, or isn't a Member, this will produce a Warning.
-            |
-            |TODO: this specifically does *not* currently work for the Owner of the Space. This is a bug, and we have to
-            |figure out how to address it.
-            |
-            |NOTE: the high concept of _me is important, and will be continuing, but the details are likely to evolve a great
-            |deal, to make it more usable. So don't get too invested in the current behaviour.""".stripMargin)))
-  {
-    override def qlApply(inv:Invocation):QValue = {
-      val context = inv.context
-      
-      val userOpt = context.request.requester
-      implicit val state = context.state
-      val personOpt = userOpt.flatMap(localPerson(_))
-      personOpt.map(person => Links.LinkValue(person)).getOrElse(WarningValue("You are not a member of this Space"))
-    }
-  }
   
   lazy val chromelessInvites = new SystemProperty(ChromelessInvitesOID, YesNoType, ExactlyOne,
       toProps(
@@ -160,17 +137,65 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
             |
             |This is included in the Sharing and Security page, so you don't usually need to do anything
             |directly with it.""".stripMargin)))
+      
+  /***********************************************
+   * FUNCTIONS
+   ***********************************************/
+
+  lazy val meMethod = new InternalMethod(MeMethodOID,
+      toProps(
+        setName("_me"),
+        Summary("If the current user is a Person in the current Space, return that Person"),
+        Details("""_me is the usual way to customize a Space based on who is looking at it. If the page is being viewed by
+            |a logged-in User, *and* they are a Member of this Space, it produces their Person record. If the viewer isn't
+            |logged in, or isn't a Member, this will produce a Warning.
+            |
+            |TODO: this specifically does *not* currently work for the Owner of the Space. This is a bug, and we have to
+            |figure out how to address it.
+            |
+            |NOTE: the high concept of _me is important, and will be continuing, but the details are likely to evolve a great
+            |deal, to make it more usable. So don't get too invested in the current behaviour.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      val context = inv.context
+      
+      val userOpt = context.request.requester
+      implicit val state = context.state
+      val personOpt = userOpt.flatMap(localPerson(_))
+      personOpt.map(person => Links.LinkValue(person)).getOrElse(WarningValue("You are not a member of this Space"))
+    }
+  }
+  
+  /**
+   * TODO: in order to run efficiently, this function cheats -- it builds a PublicIdentity from the information in
+   * the Person record, rather than actually going to the IdentityCache. In theory this should work; in practice, it's
+   * a bit suspicious. Once QL is able to cope better with asynchronous functions, rewrite this to be more honest.
+   */
+  lazy val PersonIdentityFunction = new InternalMethod(PersonIdentityFunctionOID,
+    toProps(
+      setName("_personIdentity"),
+      Summary("Given a Person (such as a Member), this produces the Identity corresponding to that Person")))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      implicit val s = inv.state
+      for {
+        person <- inv.contextAllThings
+        identityPV <- inv.opt(person.getPropOpt(IdentityLink))
+        identityId <- inv.opt(identityPV.firstOpt)
+        name = person.displayName
+      }
+        yield ExactlyOne(IdentityAccess.IdentityType(SimpleIdentity(identityId, name, name)))
+    }
+  }
 
   override lazy val props = Seq(
     IdentityLink,
+    chromelessInvites,
+    InviteText,
+    spaceInvite,
     
     meMethod,
-    
-    chromelessInvites,
-    
-    InviteText,
-    
-    spaceInvite
+    PersonIdentityFunction
   )
   
   /***********************************************

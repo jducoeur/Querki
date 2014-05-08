@@ -181,6 +181,8 @@ trait PublicIdentity {
   def name:String
 }
 
+case class SimpleIdentity(id:OID, handle:String, name:String) extends PublicIdentity
+
 case class Identity(id:OID, email:EmailAddress, auth:String, handle:String, name:String, kind:IdentityKind) extends PublicIdentity
 
 object Identity {
