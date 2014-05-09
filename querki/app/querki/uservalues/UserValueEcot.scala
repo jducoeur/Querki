@@ -4,18 +4,18 @@ import akka.actor.Actor.Receive
 import akka.actor.Props
 import akka.event.LoggingReceive
 
-import models.{Kind, PType, ThingState}
+import models.{Kind, PropertyBundle, PType, ThingState, Wikitext}
 import models.Thing.PropMap
 
 import querki.ecology._
 import querki.identity.SystemUser
 import querki.spaces.{CacheUpdate, SpaceAPI, SpacePlugin, SpacePluginProvider, ThingChangeRequest}
 import querki.spaces.messages.{SpacePluginMsg, UserValuePersistRequest}
-import querki.types.SimplePropertyBundle
-import querki.uservalues.PersistMessages.{LoadThingPropValues, ValuesForUser}
+import querki.types.{ModeledPropertyBundle, SimplePropertyBundle}
+import querki.uservalues.PersistMessages.{LoadThingPropValues, LoadUserPropValues, ValuesForUser}
 import querki.util.{Contributor, Publisher, QLog}
 import querki.util.ActorHelpers._
-import querki.values.{SpaceState, StateCacheKey}
+import querki.values.{QLContext, SpaceState, StateCacheKey}
 
 object MOIDs extends EcotIds(44) {
   val SummarizerBaseOID = moid(1)
@@ -46,6 +46,8 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
   val Types = initRequires[querki.types.Types]
   
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
+  
+  lazy val IdentityType = IdentityAccess.IdentityType
   
   override def init = {
     SpaceChangeManager.updateStateCache += UserValueCacheUpdater
@@ -168,6 +170,25 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
       setName("_userValueType"),
       setInternal,
       Summary("The Type you get from the _userValues and _thingValues functions.")))
+  {
+    override def doWikify(context:QLContext)(bundle:ModeledPropertyBundle, displayOpt:Option[Wikitext]) = {
+      implicit val state = context.state
+      val result = for {
+        identityPV <- bundle.getPropOpt(UVUserProp)
+        identityRendered = identityPV.v.wikify(context, displayOpt)
+        thingPV <- bundle.getPropOpt(UVThingProp)
+        thingRendered = thingPV.v.wikify(context, displayOpt)
+        propPV <- bundle.getPropOpt(UVPropProp)
+        propRendered = propPV.v.wikify(context, displayOpt)
+        valPV <- bundle.getPropOpt(UVValProp)
+        valRendered = valPV.v.wikify(context, displayOpt)
+      }
+        yield identityRendered + Wikitext(" -- ") + thingRendered + Wikitext(":") + propRendered +
+          Wikitext.nl + Wikitext.nl + valRendered + Wikitext.nl + Wikitext.nl
+          
+      result.getOrElse(Wikitext.empty)
+    }
+  }
   
   override lazy val types = Seq(
     UserValueType
@@ -202,6 +223,36 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
         msg = UserValuePersistRequest(
                 inv.context.request.requesterOrAnon, inv.state.ownerIdentity.map(_.id).get, inv.state.toThingId, 
                 LoadThingPropValues(thingId, prop.id, inv.state))
+        // Here is the moment of great evil -- this is actually a blocking request to the Space's User Value Persister:
+        uv <-  inv.iter(SpaceOps.spaceManager.askBlocking(msg) {
+                 case ValuesForUser(uvs) => uvs
+               })
+        // Finally, transform the results into a QL-pipeline-friendly form:
+        uvInstance = UserValueType(SimplePropertyBundle(
+                       UVUserProp(uv.identity),
+                       UVThingProp(uv.thingId),
+                       UVPropProp(uv.propId),
+                       UVValProp(uv.v)))
+      }
+        yield ExactlyOne(uvInstance)
+    }
+  }
+  
+  lazy val ThingValuesFunction = new InternalMethod(ThingValuesFunctionOID,
+    toProps(
+      setName("_thingValues"),
+      Summary("Fetch all of this User's User Values"),
+      Details("""    IDENTITY -> _thingValues -> USER VALUES
+          |
+          |Note that, for the moment, this fetches all of the User Values for *all* Properties. We will
+          |probably add a Property-specific variant eventually, but this seems more generally useful.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      for {
+        identity <- inv.contextAllAs(IdentityType)
+        msg = UserValuePersistRequest(
+                inv.context.request.requesterOrAnon, inv.state.ownerIdentity.map(_.id).get, inv.state.toThingId, 
+                LoadUserPropValues(identity, inv.state))
         // Here is the moment of great evil -- this is actually a blocking request to the Space's User Value Persister:
         uv <-  inv.iter(SpaceOps.spaceManager.askBlocking(msg) {
                  case ValuesForUser(uvs) => uvs
@@ -296,6 +347,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
 
   override lazy val props = Seq(
     UserValuesFunction,
+    ThingValuesFunction,
       
     UserValuePermission,
     IsUserValueFlag,

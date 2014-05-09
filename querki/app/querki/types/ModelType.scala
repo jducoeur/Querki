@@ -124,7 +124,7 @@ trait ModelTypeDefiner { self:EcologyMember =>
      * hampered by the fact that we've already wikitexted it by this point. Should we be passing the AST into here instead of the
      * wikitext?
      */
-    def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None) = {
+    def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext]) = {
       implicit val state = context.state
       // Introduce a bit of indirection, so we can sort the properties by display name:
       val propInfo = relevantProps(v).map { pair =>

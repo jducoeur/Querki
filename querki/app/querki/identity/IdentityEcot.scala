@@ -2,13 +2,13 @@ package querki.identity
 
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits._
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 
 import akka.actor.{ActorRef, Props}
 import akka.pattern.ask
 import akka.util.Timeout
 
-import models.{SimplePTypeBuilder, Wikitext}
+import models.{SimplePTypeBuilder, ThingState, Wikitext}
 
 import querki.ecology._
 import querki.values.{QLContext, SpaceState}
@@ -17,11 +17,15 @@ import IdentityCacheMessages._
 
 object IdentityMOIDs extends EcotIds(39) {
   val IdentityTypeOID = moid(1)  
+  val DisplayIdentityOID = moid(2)
+  val ResolveIdentityOID = moid(3)
 }
 
-class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess {
+class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with querki.core.MethodDefs {
   
   import IdentityMOIDs._
+  
+  val Basic = initRequires[querki.basic.Basic]
   
   /**
    * The one true handle to the Identity Cache.
@@ -56,6 +60,27 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess {
   }
   
   /***********************************************
+   * THINGS
+   ***********************************************/
+  
+  /**
+   * TODO: this page calls a couple of Highly Evil functions. It works, but blocks far too much.
+   */
+  lazy val DisplayIdentity = ThingState(DisplayIdentityOID, systemOID, querki.basic.MOIDs.SimpleThingOID,
+    toProps(
+      setName("_displayIdentity"),
+      Basic.DisplayTextProp("""[[$identity -> _asType(Link Type) -> _resolveIdentity -> ""
+          |### ____
+          |
+          |#### User Values
+          |
+          |[[_thingValues]]""]]""".stripMargin)))
+          
+  override lazy val things = Seq(
+    DisplayIdentity
+  )
+  
+  /***********************************************
    * TYPES
    ***********************************************/
   
@@ -66,7 +91,9 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess {
       Summary("The Type of a Querki member, not necessarily a member of any particular Space.")))
     with SimplePTypeBuilder[PublicIdentity]
   {
-    def doWikify(context:QLContext)(v:PublicIdentity, displayOpt:Option[Wikitext] = None) = Wikitext(v.name)
+    def doWikify(context:QLContext)(v:PublicIdentity, displayOpt:Option[Wikitext] = None) = {
+      Wikitext(s"[${v.name}](_displayIdentity?identity=${v.id})")
+    }
     
     override def doComp(context:QLContext)(left:PublicIdentity, right:PublicIdentity):Boolean = {
       math.Ordering.String.lt(left.name, right.name) 
@@ -82,5 +109,32 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess {
   
   override lazy val types = Seq(
     IdentityType
+  )
+  
+  /***********************************************
+   * FUNCTIONS
+   ***********************************************/
+  
+  /**
+   * TODO: EEEEVIL! Contains a blocking call!
+   */
+  lazy val ResolveIdentity = new InternalMethod(ResolveIdentityOID,
+    toProps(
+      setName("_resolveIdentity"),
+      Summary("Given a Link to an Identity, this fetches that Identity"),
+      Details("This function is currently a bit problematic. Please don't over-use it. Eventually it will be less dangerous.")))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      for {
+        link <- inv.contextAllAs(Core.LinkType)
+        // EEEEVIL!
+        identity <- inv.opt(Await.result(getIdentity(link), (5 seconds)))
+      }
+        yield ExactlyOne(IdentityType(identity))
+    }    
+  }
+  
+  override lazy val props = Seq(
+    ResolveIdentity
   )
 }

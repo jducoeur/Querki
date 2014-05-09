@@ -100,6 +100,30 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
       }
     }
     
+    case UserValuePersistRequest(req, own, space, LoadUserPropValues(identity, state)) => {
+      val tuples = DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+        val valueStream = SpaceSQL("""
+	          SELECT * FROM {uvname} 
+               WHERE identityId = {identityId}
+	          """).on("identityId" -> identity.id.raw)()
+	          
+	    implicit val s = state
+	    val uvs = valueStream.map { row =>
+	      val identId = row.oid("identityId")
+          val propId = row.oid("propertyId")
+          val thingId = row.oid("thingId")
+          val valStr = row.string("propValue")
+          val modTime = row.dateTime("modTime")
+          val v = state.prop(propId) match {
+            case Some(prop) => prop.deserialize(valStr)
+            case None => { QLog.error("LoadValuesForUser got unknown Property " + propId); EmptyValue.untyped }
+          }
+          OneUserValue(identity, thingId, propId, v, modTime)
+        }
+        sender ! ValuesForUser(uvs.force)
+      }
+    }
+    
     case SaveUserValue(uv, state, update) => {
       DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
         implicit val s = state

@@ -34,4 +34,9 @@ object PersistMessages {
    * Loads all of the User Values for the specified Thing/Property. Returns a ValuesForUser.
    */
   case class LoadThingPropValues(thingId:OID, propId:OID, state:SpaceState) extends ExternallyExposed
+  
+  /**
+   * Loads all of the User Values for the specified Identity. Returns a ValuesForUser.
+   */
+  case class LoadUserPropValues(identity:PublicIdentity, state:SpaceState) extends ExternallyExposed
 }
