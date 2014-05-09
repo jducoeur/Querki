@@ -488,7 +488,13 @@ function finalSetup(ownerId, spaceId, root) {
   
   root.find("._rating").each(function () {
     var rating = $(this);
-    var labels = rating.data("labels").split(',');
+    var labeldata = rating.data("labels"); 
+    var labels;
+    if (typeof(labeldata) != "undefined") {
+      labels = labeldata.split(',');
+    } else {
+      labels = rating.raty.defaults.hints;
+    }
     var readonly = false;
     var readonlyStr = rating.data("readonly");
     if (readonlyStr === true) {

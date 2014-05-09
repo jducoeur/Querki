@@ -82,6 +82,13 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
     }
     
     override def editorSpan(prop:Property[_,_]) = 2
+    
+    // TODO: this really ought to include the appropriate labels for this value, but we don't know the Property!
+    // Do we need to change this Type to include the PropId? Is that even feasible?
+    override def doWikify(context:QLContext)(v:Int, displayOpt:Option[Wikitext] = None) = {
+      implicit val state = context.state
+      Wikitext(s"""<div class='_rating' data-rating='$v' data-readonly='true'></div>""".stripMargin)
+    }
   }
   
   lazy val ReviewType = new ModelType(ReviewTypeOID, ReviewModelOID,
