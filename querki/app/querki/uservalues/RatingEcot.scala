@@ -7,7 +7,7 @@ import models.{DisplayPropVal, Kind, SimplePTypeBuilder, ThingState, Wikitext}
 import querki.core.IntTypeBasis
 import querki.core.TypeUtils.DiscreteType
 import querki.ecology._
-import querki.types.ModelTypeDefiner
+import querki.types.{ModeledPropertyBundle, ModelTypeDefiner}
 import querki.util.QLog
 import querki.values.{ElemValue, QLContext, RequestContext, SpaceState}
 
@@ -96,6 +96,20 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
       setName("Review Type"),
       // We want to display this in the Editor, even though it is a Model Type:
       Basic.ExplicitProp(true)))
+  {
+    override def doWikify(context:QLContext)(bundle:ModeledPropertyBundle, displayOpt:Option[Wikitext]) = {
+      implicit val state = context.state
+      val result = for {
+        ratingPV <- bundle.getPropOpt(RatingProperty)
+        ratingRendered = ratingPV.v.wikify(context, displayOpt)
+        commentsPV <- bundle.getPropOpt(ReviewCommentsProperty)
+        commentsRendered = commentsPV.v.wikify(context, displayOpt)
+      }
+        yield ratingRendered + Wikitext(" -- ") + commentsRendered
+        
+      result.getOrElse(Wikitext.empty)
+    }
+  }
   
   case class RatingAverage(propId:OID, avg:Double)
   
