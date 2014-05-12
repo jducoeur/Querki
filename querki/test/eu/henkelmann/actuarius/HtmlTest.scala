@@ -120,11 +120,11 @@ Foo foo
           |
           |content after the div.""".stripReturns) should equal("""<p>My initial content</p>
           |<div class="thingy">
-          |<div class="subdiv">
-          |<div class="deepdiv">
+          |  <div class="subdiv">
+          |        <div class="deepdiv">
           |<p>Stuff in the div</p>
-          |</div>
-          |</div>
+          |        </div>
+          |  </div>
           |</div>
           |<p>content after the div.</p>
           |""".stripReturns)
@@ -142,11 +142,32 @@ Foo foo
           |  </div>  </div>
           |
           |content after the div.""".stripReturns) should equal("""<p>My initial content</p>
-          |<div class="thingy"><div class="subdiv">
-          |<div class="deepdiv">
+          |  <div class="thingy"><div class="subdiv">
+          |        <div class="deepdiv">
           |<p>Stuff in the div</p>
+          |        </div>
+          |  </div></div>
+          |<p>content after the div.</p>
+          |""".stripReturns)
+    }
+    
+    "Cope correctly when run-on with a paragraph" in {
+      apply("""My initial content
+          |<div class="thingy">
+          |  <div class="subdiv">
+          |        <div class="deepdiv">
+          |Stuff in the div
+          |        </div>
+          |  </div>
           |</div>
-          |</div></div>
+          |content after the div.""".stripReturns) should equal("""<p>My initial content</p>
+          |<div class="thingy">
+          |  <div class="subdiv">
+          |        <div class="deepdiv">
+          |<p>Stuff in the div</p>
+          |        </div>
+          |  </div>
+          |</div>
           |<p>content after the div.</p>
           |""".stripReturns)
     }
