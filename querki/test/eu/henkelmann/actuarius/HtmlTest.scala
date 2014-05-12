@@ -15,21 +15,18 @@ class HtmlTest extends QuerkiTests with Transformer {
     }    
   }
   
-  // This is a major difference from Actuarius, which has an elaborate system for managing "XML blocks"
-  // if you put the XML at the beginning of the line. It interacts *very* poorly with the rest of QText,
-  // so I've simply disabled it. Thanks to Darker for the test example.
   "HTML blocks" should {
-    "just be handled like any other XML" in {
+    "work correctly now" in {
       apply("""<div class="effects-box">
 
 Foo foo foo
 
 Foo foo
 
-</div>""".stripReturns) should equal ("""<p><div class="effects-box"></p>
+</div>""".stripReturns) should equal ("""<div class="effects-box">
 <p>Foo foo foo</p>
 <p>Foo foo</p>
-<p></div></p>
+</div>
     |""".stripReturns)
     }
   }
@@ -88,5 +85,70 @@ Foo foo
       apply("""Hello <div class="javascript:stuff">there</div>""") should equal ("""<p>Hello &lt;div class=&quot;javascript:stuff&quot;&gt;there</div></p>
         |""".stripReturns)      
     }    
+  }
+  
+  "Pure HTML lines" should {
+    "parse with the HTML at start of line" in {
+      apply("""My initial content
+          |
+          |<div class="thingy">
+          |
+          |Stuff in the div
+          |
+          |</div>
+          |
+          |content after the div.""".stripReturns) should equal ("""<p>My initial content</p>
+          |<div class="thingy">
+          |<p>Stuff in the div</p>
+          |</div>
+          |<p>content after the div.</p>
+          |""".stripReturns)
+    }
+    
+    "parse with the HTML inset various amounts" in {
+      apply("""My initial content
+          |
+          |<div class="thingy">
+          |  <div class="subdiv">
+          |        <div class="deepdiv">
+          |
+          |Stuff in the div
+          |
+          |        </div>
+          |  </div>
+          |</div>
+          |
+          |content after the div.""".stripReturns) should equal("""<p>My initial content</p>
+          |<div class="thingy">
+          |<div class="subdiv">
+          |<div class="deepdiv">
+          |<p>Stuff in the div</p>
+          |</div>
+          |</div>
+          |</div>
+          |<p>content after the div.</p>
+          |""".stripReturns)
+    }
+    
+    "parse multiple HTML tags on a line" in {
+      apply("""My initial content
+          |
+          |  <div class="thingy">  <div class="subdiv">
+          |        <div class="deepdiv">
+          |
+          |Stuff in the div
+          |
+          |        </div>
+          |  </div>  </div>
+          |
+          |content after the div.""".stripReturns) should equal("""<p>My initial content</p>
+          |<div class="thingy"><div class="subdiv">
+          |<div class="deepdiv">
+          |<p>Stuff in the div</p>
+          |</div>
+          |</div></div>
+          |<p>content after the div.</p>
+          |""".stripReturns)
+    }
   }
 }

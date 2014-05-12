@@ -78,6 +78,16 @@ class LineTokenizer() extends Parsers {
         else                line.charAt(i)
     }
 
+    /**Similar to indicatorChar, but returns the first non-whitespace character, regardless of what it is.
+     */
+    def firstNonSpaceChar(line:String):Char = {
+        var i = 0
+        while (i < line.length && line.charAt(i) == ' ') i += 1
+        //return the next char after the spaces or a newline if there are no more
+        if (i==line.length) '\n'
+        else                line.charAt(i)
+    }
+
     ////////////////////////
     // Link definitions   //
     ////////////////////////
@@ -121,8 +131,11 @@ class LineTokenizer() extends Parsers {
 
     /** Very dumb parser for XML chunks.
      */
-    def xmlChunk = xmlChunkStart ~ (notXmlChunkEnd*) ~ xmlChunkEnd ^^ {
-        case s ~ ms ~ e => new XmlChunk(s + "\n" + ms.mkString("\n") + "\n" + e + "\n")
+//    def xmlChunk = xmlChunkStart ~ (notXmlChunkEnd*) ~ xmlChunkEnd ^^ {
+//        case s ~ ms ~ e => new XmlChunk(s + "\n" + ms.mkString("\n") + "\n" + e + "\n")
+//    }
+    def xmlChunk = p(lineParsers.pureXmlLine) ^^ {
+        case xml => new XmlChunk(xml + "\n")
     }
 
     /** Parses Markdown Lines. Always succeeds.
@@ -160,14 +173,18 @@ class LineTokenizer() extends Parsers {
             Failure("End of Input.", in)
         } else {
             val line      = in.first
-            (firstChar(line), indicatorChar(line)) match {
-                //link definitions have absolute precedence
-                case (_, '[') => linkDefinition(in)
-//                //then filter out xml blocks if allowed
-//                case ('<', _) if (allowXmlBlocks) => xmlChunk(in)
-                //no token for preprocessing
-                case _        => Failure("No preprocessing token.", in)
-            }
+            if (firstNonSpaceChar(line) == '<') {
+              xmlChunk(in)
+            } else
+              Failure("No preprocessing token.", in)
+//            (firstChar(line), indicatorChar(line)) match {
+//                //link definitions have absolute precedence
+//                case (_, '[') => linkDefinition(in)
+////                //then filter out xml blocks if allowed
+////                case ('<', _) if (allowXmlBlocks) => xmlChunk(in)
+//                //no token for preprocessing
+//                case _        => Failure("No preprocessing token.", in)
+//            }
         }
     }
 
@@ -184,7 +201,7 @@ class LineTokenizer() extends Parsers {
         val lines = new ArrayBuffer[MarkdownLine]()
         val lookup = new HashMap[String, LinkDefinition]()
         for (t <- ts) { t match {
-            case ld:LinkDefinition => lookup(ld.id) = ld
+//            case ld:LinkDefinition => lookup(ld.id) = ld
             case ml:MarkdownLine   => lines.append(ml)
         } }
         new MarkdownLineReader(lines.toList, lookup.toMap)

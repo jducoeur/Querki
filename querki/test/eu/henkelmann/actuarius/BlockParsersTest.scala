@@ -31,4 +31,25 @@ class BlockParsersTest extends FlatSpec with ShouldMatchers with BlockParsers{
         apply(p, List(new CodeLine("    ", "code"))) should equal (new CodeLine("    ", "code"))
         evaluating(apply(p, List(new OtherLine("foo")))) should produce[IllegalArgumentException]
     }
+    
+    it should "cope with HTML" in {
+      val p = markdown
+      val lines = List(
+          OtherLine("My initial content"),
+          EmptyLine(""),
+          XmlChunk("""<div class="thingy">
+              |""".stripMargin),
+          EmptyLine(""),
+          OtherLine("Stuff in the div"),
+          EmptyLine(""),
+          XmlChunk("""</div>
+              |""".stripMargin),
+          EmptyLine(""),
+          OtherLine("content after the div.")
+          )
+      val result = apply(p, lines)
+      
+      // TODO: this should properly test the result!
+      println(result)
+    }
 }

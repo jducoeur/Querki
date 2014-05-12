@@ -352,7 +352,7 @@ trait BlockParsers extends Parsers {
 
     /** parses a verbatim xml block
      */
-    def verbatimXml:Parser[VerbatimXml] = line(classOf[XmlChunk]) ^^ {new VerbatimXml(_)}
+    def verbatimXml:Parser[VerbatimXml] = line(classOf[XmlChunk]) <~ optEmptyLines ^^ { new VerbatimXml(_) }
 
     /** parses a code block
      */
@@ -461,12 +461,10 @@ trait BlockParsers extends Parsers {
 
     /**
      * parses first level blocks (all blocks, including xml)
+     * 
+     * Note that verbatimXml processing has changed significantly since Actuarius!
      */
-//    def outerBlock:Parser[MarkdownBlock] = (verbatimXml <~ optEmptyLines) | innerBlock
-    // For the time being at least, we're simply disabling the notion of "block XML". I don't
-    // think it brings much to the party, and it produces wildly unintuitive effects when applied
-    // naively.
-    def outerBlock:Parser[MarkdownBlock] = innerBlock
+    def outerBlock:Parser[MarkdownBlock] = verbatimXml | innerBlock
 
     /**
      * speed up block processing by looking ahead

@@ -266,16 +266,16 @@ paragraph"""
         apply("**foo* bar**\n") should equal ("<p><strong>foo* bar</strong></p>\n")
         apply("** foo* bar **\n") should equal ("<p>** foo* bar **</p>\n")
     }
-
-    it should "resolve referenced links" in {
-        apply("""An [example][id]. Then, anywhere
-else in the doc, define the link:
-
-  [id]: http://example.com/  "Title"
-""") should equal ("""<p>An <a href="http://example.com/" title="Title">example</a>. Then, anywhere
-else in the doc, define the link:</p>
-""".stripReturns)
-    }
+//
+//    it should "resolve referenced links" in {
+//        apply("""An [example][id]. Then, anywhere
+//else in the doc, define the link:
+//
+//  [id]: http://example.com/  "Title"
+//""") should equal ("""<p>An <a href="http://example.com/" title="Title">example</a>. Then, anywhere
+//else in the doc, define the link:</p>
+//""".stripReturns)
+//    }
 
     it should "parse atx style headings" in {
         apply("#A Header\n")               should equal ("<h1>A Header</h1>\n")

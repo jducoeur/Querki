@@ -229,7 +229,9 @@ trait BaseParsers extends RegexParsers {
      *  We are currently *whitelisting* tags. If it doesn't appear here, it's illegal.
      */
 //    def xmlName:Parser[String] = xmlNameStartChar ~ (xmlNameChar*) ^^ {case c ~ cs => c + cs.mkString}
-    def xmlName:Parser[String] = "div" | "span" | "i" | "strike" | "dl" | "dd" | "dt"
+    def xmlName:Parser[String] = "div" | "span" | "i" | "strike" | 
+      "dl" | "dd" | "dt" |
+      "table" | "tr" | "th" | "td"
     
     /** Parses a Simplified xml attribute: everything between quotes ("foo")
      * everything between the quotes is run through the escape handling
@@ -255,7 +257,9 @@ trait BaseParsers extends RegexParsers {
      * The legal attributes. For now, we're being pretty dumb with attributes (rather than matching
      * legal tags and attributes), but attributes are, again, whitelisted.
      */
-    def xmlAttrName:Parser[String] = "class" | "id" | dataAttrName
+    def xmlAttrName:Parser[String] = "class" | "id" |
+      "colspan" | "rowspan" |
+      dataAttrName
     
     /** Parses an XML Attribute with simplified value handling like xmlAttrVal.
      */
