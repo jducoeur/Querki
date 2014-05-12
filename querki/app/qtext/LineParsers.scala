@@ -212,7 +212,7 @@ trait LineParsers extends InlineParsers {
      */
     def notXmlBlockEndLine:Parser[String] = not(xmlEndTag) ~> rest
     
-    def pureXmlLine:Parser[String] = opt(ws) ~ rep1sep(xmlTag | xmlEndTag, ws) ^^ { case ws ~ xml => ws.getOrElse("") + xml.mkString }
+    def pureXmlLine:Parser[String] = opt(ws) ~ rep1sep(xmlTag | xmlEndTag, opt(ws)) ^^ { case ws ~ xml => ws.getOrElse("") + xml.mkString }
     
     
     /////////////////

@@ -109,22 +109,22 @@ Foo foo
       apply("""My initial content
           |
           |<div class="thingy">
-          |  <div class="subdiv">
+          |    <div class="subdiv">
           |        <div class="deepdiv">
           |
           |Stuff in the div
           |
           |        </div>
-          |  </div>
+          |    </div>
           |</div>
           |
           |content after the div.""".stripReturns) should equal("""<p>My initial content</p>
           |<div class="thingy">
-          |  <div class="subdiv">
+          |    <div class="subdiv">
           |        <div class="deepdiv">
           |<p>Stuff in the div</p>
           |        </div>
-          |  </div>
+          |    </div>
           |</div>
           |<p>content after the div.</p>
           |""".stripReturns)
@@ -139,7 +139,7 @@ Foo foo
           |Stuff in the div
           |
           |        </div>
-          |  </div>  </div>
+          |  </div></div>
           |
           |content after the div.""".stripReturns) should equal("""<p>My initial content</p>
           |  <div class="thingy"><div class="subdiv">
