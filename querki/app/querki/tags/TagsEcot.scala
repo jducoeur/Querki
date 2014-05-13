@@ -63,7 +63,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
 
   lazy val NewTagSetType = new PlainTextType(NewTagSetOID, 
       toProps(
-        setName("Tag Set Type"),
+        setName("Tag Type"),
         Summary("A collection of arbitrary Tags that apply to this Thing"),
         Details("""A Tag Set is a way to add a bunch of "tags" to a Thing. It is typically used to
             |list the characteristics of this Thing.
@@ -73,12 +73,10 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
             |Thing if you simply show it, and if it doesn't match a Thing, clicking on it will allow you to
             |create a Thing by that name. This way, you can add additional details about what this Tag means.
             |
-            |A Tag Set is, by definition, a Set -- when you select the Tag Set Type, it does not let you choose
-            |any kind of Collection other than Set. If you really want ExactlyOne, or a List, or such, use the
-            |Plain Text Type instead, and it will work essentially the same way. But in practice, we have found
-            |that Tag Set is one of the most useful Types in Querki, and you should consider it before reaching
-            |for ExactlyOne -- it allows you flexibility in how many Tags you assign, and most of the time that
-            |turns out to be helpful.
+            |It is strongly recommended that you create Sets of Tags -- there is special UI support for this,
+            |and we've found that Sets of Tags are one of the most useful sorts of data in Querki. But you
+            |are no longer required to do so. (Originally, this was called "Tag Set Type", and could only be
+            |a Set, but we decided to make it less restrictive.)
             |
             |When you select Tag Set Type, the Editor will ask you if you want to Link to a Model. This is optional,
             |but can be very useful -- if it is set, it restricts the Tags that get offered to you when you are
@@ -87,8 +85,6 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
             |and using it as the Link Model for the Property. That will help keep your Tags better-organized.""".stripMargin))) 
   {
     override def editorSpan(prop:Property[_,_]):Int = 12
-  
-    override def requiredColl = Some(Core.QSet)
   
     override def doWikify(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None) = {
       val display = displayOpt.getOrElse(Wikitext(v.text))

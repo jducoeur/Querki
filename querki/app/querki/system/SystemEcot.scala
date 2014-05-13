@@ -29,7 +29,7 @@ class SystemEcot(e:Ecology) extends QuerkiEcot(e) with System with SystemManagem
         Basic.DisplayTextProp("""### Things in [[Display Name]]
             |[[All Things]]
             |
-            |[[Tag Set Type -> 
+            |[[Tag Type -> 
             |_propsOfType ->
             |_sort ->
             |_section(
