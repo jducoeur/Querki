@@ -468,4 +468,34 @@ sed diam nonumy eirmod tempor invidunt ut</p>
                 |""".stripReturns)
     }
 
+    it should "apply noLines appropriately" in {
+      apply("""This is some miscellaneous text,
+          |which goes on for a couple of lines,
+          |and then stops.
+          |
+          |!+noLines
+          |<div class="thingy"><div class="subthingy">My Title</div>
+          |Here is some **stuff**.</div>
+          |!-noLines
+          |
+          |And now we are back to normal paragraphs again.
+          |
+          |Now, here we have a paragraph
+          |!+noLines
+          |<div class="stuff">with some HTML stuff in the middle of it</div>
+          |!-noLines
+          |where the paragraph extends on both sides.
+          |
+          |Correct?""".stripReturns) should equal ("""<p>This is some miscellaneous text,
+          |which goes on for a couple of lines,
+          |and then stops.</p>
+          |<div class="thingy"><div class="subthingy">My Title</div>
+          |Here is some <strong>stuff</strong>.</div>
+          |<p>And now we are back to normal paragraphs again.</p>
+          |<p>Now, here we have a paragraph
+          |<div class="stuff">with some HTML stuff in the middle of it</div>
+          |where the paragraph extends on both sides.</p>
+          |<p>Correct?</p>
+          |""".stripReturns)
+    }
 }

@@ -126,17 +126,24 @@ trait BlockParsers extends Parsers {
             extends MarkdownBlock{
       
       // TODO: we shouldn't be checking these flags by string value, but by some fast and well-defined
-      // enumeration.
+      // enumeration. Or possibly, flags should be an intelligent structure, and expose these lazy vals itself;
+      // that might be even faster.
+      // rawLines: newlines in the original become <br> tags:
       lazy val rawLines = flags.contains("rawLines")
+      // noLines: newlines in the original are simply ignored:
+      lazy val noLines = flags.contains("noLines")
+      
+      lazy val suppressPara = rawLines || noLines
+      lazy val addBreaks = rawLines
 
         def addResult(level:Int, out:StringBuilder) {
-            if (!rawLines) { out.append(indent(level)).append(deco.decorateParagraphOpen) }
+            if (!suppressPara) { out.append(indent(level)).append(deco.decorateParagraphOpen) }
             addResultPlain(level, out)
-            if (!rawLines) { out.append(indent(level)).append(deco.decorateParagraphClose) }
+            if (!suppressPara) { out.append(indent(level)).append(deco.decorateParagraphClose) }
         }
       
       def replaceLineEnd(str:String) = 
-        if (rawLines) 
+        if (addBreaks) 
           str.replace("\n", deco.decorateBreak + "\n")
         else 
           str
@@ -154,10 +161,11 @@ trait BlockParsers extends Parsers {
 
             //lines.foreach(line => out.append(indent(level)).append(escapeXml(line.content)))
 
-            //drop last newline so paragraph closing tag ends the line
-            if (rawLines) {
+            if (addBreaks) {
+              // Add the empty lines that are following this:
               empties.foreach(empty => out.append(deco.decorateBreak).append('\n'))
-            } else {
+            } else if (!suppressPara) {
+              // drop last newline so paragraph closing tag ends the line:
               if (!out.isEmpty && out.charAt(out.length-1) == '\n') out.deleteCharAt(out.length-1)
             }
         }
