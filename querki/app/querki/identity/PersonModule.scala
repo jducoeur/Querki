@@ -150,9 +150,6 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
             |a logged-in User, *and* they are a Member of this Space, it produces their Person record. If the viewer isn't
             |logged in, or isn't a Member, this will produce a Warning.
             |
-            |TODO: this specifically does *not* currently work for the Owner of the Space. This is a bug, and we have to
-            |figure out how to address it.
-            |
             |NOTE: the high concept of _me is important, and will be continuing, but the details are likely to evolve a great
             |deal, to make it more usable. So don't get too invested in the current behaviour.""".stripMargin)))
   {
