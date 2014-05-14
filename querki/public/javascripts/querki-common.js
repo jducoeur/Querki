@@ -505,6 +505,11 @@ function finalSetup(ownerId, spaceId, root) {
     if (typeof(targetStr) != "undefined") {
       target = "#" + targetStr;
     }
+    var targetKeepStr = rating.data("targetkeep");
+    var targetKeep = false;
+    if (typeof(targetKeepStr) != "undefined") {
+      targetKeep = targetKeepStr;
+    }
 	rating.raty({
 	    path:'/assets/img',
 	    score: function() {
@@ -514,6 +519,7 @@ function finalSetup(ownerId, spaceId, root) {
 	    number: labels.length,
 	    readOnly: readonly,
 	    target: target,
+	    targetKeep: targetKeep,
 	    click: function(score, evt) {
 	      $(this).each(function() {
 	        var stars = $(this);
