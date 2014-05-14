@@ -1,8 +1,10 @@
 package querki.tags
 
+import scala.xml.NodeSeq
+
 import querki.ecology._
 
-import models.{AsDisplayName, Collection, Kind, Thing, ThingId, UnknownOID, Wikitext}
+import models.{AsDisplayName, Collection, DisplayPropVal, Kind, Thing, ThingId, UnknownOID, Wikitext}
 
 import querki.basic.{PlainText, PlainTextBaseType}
 import querki.core.{NameableType, NameTypeBasis, NameUtils, QLText, TextTypeBasis}
@@ -85,6 +87,12 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
             |and using it as the Link Model for the Property. That will help keep your Tags better-organized.""".stripMargin))) 
   {
     override def editorSpan(prop:Property[_,_]):Int = 12
+    
+    override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
+      renderAnyText(prop, rc, currentValue, v, this) { cv =>
+        <input type="text" class="_tagInput" data-isnames="true" value={cv}/>
+      }
+    }
   
     override def doWikify(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None) = {
       val display = displayOpt.getOrElse(Wikitext(v.text))

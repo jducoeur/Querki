@@ -33,6 +33,64 @@ function finishStatus(msg) {
 // JQuery plugin for Manifest-izing a control
 (function( $ ) {
 
+  // TODO: can we factor these MarcoPolo and Manifest sections together?
+  $.fn.asMarcoPolo = function (ownerId, spaceId) {
+    this.each(function () {
+      // We don't want to Manifest-ize stuff in a template, because that gets in the way of proper
+      // initialization later, when we instantiate that template:
+      if ($(this).parents(".inputTemplate").length > 0) {
+        return;
+      }
+    
+      var inputControl = $(this);
+      var propId = $(this).data('prop');
+      var isNames = $(this).data('isnames');
+      var current = $(this).data('current');
+            
+      var entryPoint = 'getLinks';
+      var required = true;
+      var typeName = 'thing';
+      if (isNames) { 
+        entryPoint = 'getTags';
+        required = false;
+        typeName = 'tag';
+      }
+      
+      $(this).marcoPolo({
+        url: entryPoint + '?propId=' + propId,
+		minChars: 1,
+		required: required,
+		formatData: function(data) { return data; },
+		formatItem: function(data, $item) { return data.display; },
+		formatNoResults: function(q, $item) { return "No existing " + typeName + " with <b>" + q + "</b> found."; },
+        onSelect: function(data, $item, initial) {
+          if (!initial && querkiLiveUpdate) {
+            var myId = this.prop('name');
+	        var prop = this.data("propid");
+	        var thingId = this.data("thing");
+            inputControl.val(data.display);
+          
+            // TODO: this ought to be merged with the similar code in thing.scala.html, but note that this
+            // comes by the serialized form very differently. The problem is that "this" isn't what we
+            // need to serialize; instead, the form is composed of a bunch of hidden fields with names
+            // ending with "_values". Note that we also precede this with an *empty* copy of the property,
+            // to clear it before we set the current values -- otherwise, deletions don't always take.
+	        jsRoutes.controllers.Application.setProperty2(ownerId, spaceId, thingId).ajax({
+	          data: "addedProperty=&model=&" + myId + "=" + data.id,
+	          success: function (result) {
+	            finishStatus("Saved");
+	          },
+	          error: function (err) {
+	            showStatus("Error trying to save. Please reload this page and try again.");
+	          }
+	        });
+	        showStatus("Saving...");
+	      }
+		}  
+      });
+    });
+  }
+
   $.fn.asManifest = function (ownerId, spaceId) {
     this.each(function () {
       // We don't want to Manifest-ize stuff in a template, because that gets in the way of proper
@@ -475,6 +533,7 @@ function finalSetup(ownerId, spaceId, root) {
   root.find("._withTooltip").tooltip({ delay: 250 });
   
   root.find("._tagSetInput").asManifest(ownerId, spaceId);
+  root.find("._tagInput").asMarcoPolo(ownerId, spaceId);
   
   root.find(".controls ._largeTextEdit").addClass("span10");
   // We specifically need to *not* apply autosize to the template elements, or else it won't
