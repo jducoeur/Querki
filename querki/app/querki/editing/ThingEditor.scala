@@ -157,9 +157,10 @@ trait ThingEditor { self:EditorModule =>
       QL.process(editText, thingContext, inv)
     }
     
-    def createInstanceButton(model:Thing, context:QLContext):Wikitext = {
+    def createInstanceButton(model:Thing, context:QLContext, labelOpt:Option[String] = None):Wikitext = {
       if (AccessControl.canCreate(context.state, context.request.requesterOrAnon, model.id)) {
-        HtmlUI.toWikitext(<input type="button" class="_createAnother btn" data-model={model.id.toString} value={s"Create another ${model.displayName}"}></input>)
+        val label = labelOpt.getOrElse(s"Create another ${model.displayName}")
+        HtmlUI.toWikitext(<input type="button" class="_createAnother btn" data-model={model.id.toString} value={label}></input>)
       } else {
         Wikitext("")
       }

@@ -434,6 +434,30 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	    }
 	  }
 	}
+	
+  lazy val CreateButtonFunction = new InternalMethod(CreateButtonOID,
+    toProps(
+      setName("_createButton"),
+      Summary("Becomes a Create button for the received Model"),
+      Details("""    MODEL -> _createButton(LABEL)
+          |
+          |This displays a button, with the given LABEL, if the user is allowed to create Instances of that Model.
+          |
+          |When the user presses the button, it will create a new Instance of that Model, and display a Thing Editor
+          |for the user to fill in. This allows you to simply do Instance creation in-page, which can often be the
+          |quickest and easiest way to do it.
+          |
+          |This button is more or less identical to the one that shows up at the bottom of the Edit All Instances page.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      for {
+        model <- inv.contextAllThings
+        labelWikitext <- inv.processParamFirstAs(0, QL.ParsedTextType)
+        label = labelWikitext.raw.str
+      }
+        yield QL.WikitextValue(createInstanceButton(model, inv.context, Some(label)))
+    }
+  }
   
   override lazy val props = Seq(
     PlaceholderTextProp,
@@ -444,6 +468,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
     editOrElseMethod,
     editAsPicklistMethod,
     editWidthProp,
-    FormLineMethod
+    FormLineMethod,
+    CreateButtonFunction
   )
 }
