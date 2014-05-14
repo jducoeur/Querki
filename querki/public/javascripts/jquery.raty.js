@@ -6,7 +6,9 @@
  *
  * Licensed under The MIT License
  *
- * @version        2.5.2
+ * Tweaked for Querki
+ *
+ * @version        2.5.2.1
  * @since          2010.06.11
  * @author         Washington Botelho
  * @documentation  wbotelhos.com/raty
@@ -222,7 +224,11 @@
 
         icon = this.opt.path + this.opt[icon];
 
-        $('<img />', { src : icon, alt: i, title: title }).appendTo(this);
+        if (this.opt.target) {
+          $('<img />', { src : icon, alt: i }).appendTo(this);
+        } else {
+          $('<img />', { src : icon, alt: i, title: title }).appendTo(this);
+        }
 
         if (this.opt.space) {
           that.append((i < this.opt.number) ? '&#160;' : '');
