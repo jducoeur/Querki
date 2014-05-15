@@ -11,6 +11,7 @@ import querki.ecology._
 
 import models.{DisplayPropVal, FieldIds, FormFieldInfo, Property, Thing, Wikitext}
 
+import querki.core.QLText
 import querki.ui.UIRenderer
 import querki.values.{QLContext, QValue, RequestContext, SpaceState}
 
@@ -35,6 +36,8 @@ package object html {
   }
   
   trait HtmlUI extends EcologyInterface {
+    def PageHeaderProperty:Property[QLText,String]
+    
     def HtmlValue(html:Html):QValue
     def HtmlValue(str:String):QValue
     def HtmlValue(xml:NodeSeq):QValue

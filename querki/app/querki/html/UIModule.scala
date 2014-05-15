@@ -23,6 +23,7 @@ object UIMOIDs extends EcotIds(11) {
   val ClassMethodOID = moid(1)
   val TooltipMethodOID = moid(2)
   val DataMethodOID = moid(3)
+  val PageHeaderPropOID = moid(4)
 }
 
 /**
@@ -173,6 +174,16 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       XmlHelpers.mapElems(nodes)(_ % Attribute(s"data-$paramText", Text(dataBlock), Null))
     }
   }
+  
+  lazy val PageHeaderProperty = new SystemProperty(PageHeaderPropOID, LargeTextType, Optional,
+    toProps(
+      setName("Page Header"),
+      SkillLevel(SkillLevelAdvanced),
+      Summary("Allows you to define the top of the page when looking at this Thing"),
+      Details("""Normally, Querki displays each Thing with a fairly complex predefined header,
+          |which includes its Display Name, Space, Model, edit buttons and so on. This works well
+          |for most cases, but if you want more control over the look and feel of your display, you
+          |can override that by setting this Property.""".stripMargin)))
 
   /***********************************************
    * FUNCTIONS
@@ -385,6 +396,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     classMethod,
     tooltipMethod,
     dataMethod,
+    PageHeaderProperty,
     
     new SectionMethod,
     new LinkButtonMethod,

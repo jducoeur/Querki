@@ -4,6 +4,7 @@
 
 @AccessControl = @{ rc.interface[querki.security.AccessControl] }
 @Core = @{ rc.interface[querki.core.Core] }
+@HtmlUI = @{ rc.interface[querki.html.HtmlUI] }
 
 @space = @{ rc.state.get }
 @thing = @{
@@ -17,6 +18,9 @@
 @rawThingId = @{ thing.id.toThingId.toString }
 
 @isRealThing = @{ thing.id != UnknownOID }
+
+@pageHeaderPV = @{ thing.getPropOpt(HtmlUI.PageHeaderProperty)(space) }
+@pageHeader = @{ pageHeaderPV.map(_.v.wikify(thing.thisAsContext(rc)).display.html) }
 
 @canEdit = @{
   user.isDefined && AccessControl.canEdit(space, user.get, thing)
@@ -42,24 +46,12 @@
 
 @main(QuerkiTemplate.Thing, title, rc, true) {
 
-    <script>
-      $(function() {
-        $(".clickToEdit").on("dblclick", function() {
-        // TODO (justin 5/22/13): personally, I like this, but I suspect it is begging for disaster to have it
-        // be universal. Later, we should add it back in as an optional user preference.
-        //  window.location = "@routes.Application.editThing(rc.ownerHandle, space.toThingId, thing.toThingId)";
-        });
-      });
-    </script>
-    
     @if(rc.hasProp) {
     
       @Html(thing.render(rc, rc.prop).display)
 
     } else {
-	  <div class="clickToEdit">
-
-        @if(!rc.chromeless) {
+      @if(pageHeaderPV.isEmpty) {
 	    <div class="page-header">
 	      <h1 class="_defaultTitle">@Html(title) 
 	        @if(canEdit) { <a class="btn btn-mini btn-primary" title="Edit @Html(title)" href="@routes.Application.editThing(rc.ownerHandle, space.toThingId, thing.toThingId)"><i class="icon-edit icon-white"></i></a> }
@@ -79,14 +71,14 @@
 	        case _ => {}
 	      }
 	    </div>
-	    }
+	  } else {
+	    @pageHeader
+	  }
 	
-        @Html(thing.render(rc).display)
+      @Html(thing.render(rc).display)
         
-        @if(isRealThing) {
-          @convPane(rc, thing.id)
-        }
-	  
-	  </div>
+      @if(isRealThing) {
+        @convPane(rc, thing.id)
+      }
 	}
 }
