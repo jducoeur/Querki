@@ -29,6 +29,7 @@ object MOIDs extends EcotIds(21) {
   val CopyIntoInstancesOID = moid(3)
   val AllTypesMethodOID = moid(4)
   val AsTypeMethodOID = moid(5)
+  val ModelFunctionOID = moid(6)
 }
 
 
@@ -434,6 +435,19 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
         yield ExactlyOne(newVal)
     }
   }
+  
+  lazy val ModelFunction = new InternalMethod(ModelFunctionOID,
+    toProps(
+      setName("_model"),
+      Summary("Produces the Model of the received Thing")))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      for {
+        thing <- inv.contextAllThings
+      }
+        yield ExactlyOne(LinkType(thing.model))
+    }
+  }
 
   override lazy val props = Seq(
     CopyIntoInstances,
@@ -455,6 +469,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     IsFunctionProp,
     HasPropertyMethod,
     AllThingsMethod,
-    AsTypeMethod
+    AsTypeMethod,
+    ModelFunction
   )
 }

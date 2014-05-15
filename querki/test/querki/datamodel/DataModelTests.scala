@@ -232,6 +232,26 @@ class DataModelTests extends QuerkiTests {
     }
   }
   
+  "_model" should {
+    "work for an Instance" in {
+      implicit val s = commonSpace
+      pql("""[[My Instance -> _model]]""") should equal(linkText(s.testModel))
+    }
+    
+    "work for a Model" in {
+      implicit val s = commonSpace
+      pql("""[[My Model -> _model]]""") should equal(linkText(Basic.Page))
+    }
+    
+    "work for a list of Things" in {
+      class TSpace extends CommonSpace {
+        val thingWithList = new SimpleTestThing("Thing With List", listLinksProp(instance, testModel))
+      }
+      implicit val s = new TSpace
+      pql("""[[Thing With List -> My List of Links -> _model]]""") should equal(listOfLinkText(s.testModel, Basic.Page))
+    }
+  }
+  
   // === _refs ===
   "_refs" should {
     "find a bunch of ordinary Links" in {

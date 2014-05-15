@@ -55,6 +55,7 @@ package object basic {
     def DisplayTextProp:Property[QLText,String]
     def ExplicitProp:Property[Boolean,Boolean]
     
+    def Page:Thing
     def SimpleThing:Thing
     
     def TextValue(msg:String):QValue
