@@ -9,15 +9,30 @@ import querki.ecology._
 import querki.identity.{Identity, User}
 
 import play.api.Logger
+  
+private object MOIDs extends EcotIds(4) {
+  val CanEditCustomOID = moid(1)
+  val PublicTagOID = moid(2)
+  val MembersTagOID = moid(3)
+  val OwnerTagOID = moid(4)
+  val CanReadPropOID = moid(5)
+  val CanEditPropOID = moid(6)
+  val CanCreatePropOID = moid(7)
+  val IsPermissionOID = moid(8)
+  val CanEditChildrenPropOID = moid(9)
+  val DefaultPermissionPropOID = moid(10)
+  val PublicAllowedPropOID = moid(11)
+  val HasPermissionFunctionOID = moid(12)
+}
 
-class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
+class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl with querki.core.MethodDefs with querki.logic.YesNoUtils {
   
   import MOIDs._
 
   val Basic = initRequires[querki.basic.Basic]
   val Links = initRequires[querki.links.Links]
   val Person = initRequires[querki.identity.Person]
-  
+    
   lazy val QLType = Basic.QLType
   
   lazy val LinkModelProp = Links.LinkModelProp
@@ -81,9 +96,9 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
       val publicAllowed = aclProp.firstOpt(PublicAllowedProp).getOrElse(false)
       
       def checkPerms(perms:PropAndVal[OID]):Boolean = {
-        if (publicAllowed && perms.contains(MOIDs.PublicTagOID))
+        if (publicAllowed && perms.contains(PublicTagOID))
           true
-        else if (isLocalUser && perms.contains(MOIDs.MembersTagOID))
+        else if (isLocalUser && perms.contains(MembersTagOID))
           true
         else if (perms.exists(Person.isPerson(identityId, _)))
           true
@@ -135,7 +150,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl {
       def checkPerms(perms:PropAndVal[OID]):Boolean = {
         /* if (publicAllowed && perms.contains(MOIDs.PublicTagOID))
           true
-        else */ if (isLocalUser && perms.contains(MOIDs.MembersTagOID))
+        else */ if (isLocalUser && perms.contains(MembersTagOID))
           true
         else if (perms.exists(Person.hasPerson(who, _)))
           true
@@ -283,6 +298,42 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         setInternal,
         AppliesToKindProp(Kind.Property),
         Summary("Set this on a Permission Property to allow Public as a legal value; otherwise, it will not be.")))
+  
+  /***********************************************
+   * FUNCTIONS
+   ***********************************************/
+  
+  lazy val HasPermissionFunction = new InternalMethod(HasPermissionFunctionOID,
+    toProps(
+      setName("_hasPermission"),
+      Summary("Produces true if the current user has the named permission on the received Thing"),
+      Details("""    THING -> _hasPermission(PERMISSION._self) -> true or false
+          |
+          |Permission should be any Permission Property, such as Can Edit or Can Have User Values. It
+          |is usually safe to assume that the current user Can Read, since they have already gotten to
+          |this point.
+          |
+          |Note that you must include "._self" after the Permission's name, at least for the time being.
+          |
+          |This is typically used in _filter or _if.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      val resultInv = for {
+        dummy <- inv.returnsType(YesNoType)
+        thing <- inv.contextAllThings
+        permId <- inv.processParamFirstAs(0, LinkType)
+        propRaw <- inv.opt(inv.state.prop(permId))
+        prop <- inv.opt(propRaw.confirmType(LinkType))
+        who <- inv.opt(inv.context.request.localIdentity)
+      }
+        yield ExactlyOne(hasPermission(prop, inv.state, who.id, thing))
+        
+      if (resultInv.get.isEmpty)
+        ExactlyOne(False)
+      else
+        resultInv
+    }
+  }
 
   override lazy val props = Seq(
 //    canEditCustomProp,
@@ -291,6 +342,8 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
     CanEditProp,
     CanEditChildrenProp,
     CanReadProp,
-    DefaultPermissionProp
+    DefaultPermissionProp,
+    
+    HasPermissionFunction
   )
 }

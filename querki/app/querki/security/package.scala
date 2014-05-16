@@ -7,20 +7,6 @@ import querki.identity.User
 import querki.values.SpaceState
 
 package object security {
-  
-  object MOIDs extends EcotIds(4) {
-    val CanEditCustomOID = moid(1)
-    val PublicTagOID = moid(2)
-    val MembersTagOID = moid(3)
-    val OwnerTagOID = moid(4)
-    val CanReadPropOID = moid(5)
-    val CanEditPropOID = moid(6)
-    val CanCreatePropOID = moid(7)
-    val IsPermissionOID = moid(8)
-    val CanEditChildrenPropOID = moid(9)
-    val DefaultPermissionPropOID = moid(10)
-    val PublicAllowedPropOID = moid(11)
-  }
 
   trait AccessControl extends EcologyInterface {
     def PublicTag:Thing
