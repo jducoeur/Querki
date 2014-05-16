@@ -23,6 +23,7 @@ object RatingMOIDs extends EcotIds(45) {
   val ReviewPropOID = moid(9)
   val ReviewCommentsPropOID = moid(10)
   val ReviewTypeOID = moid(11)
+  val RatingShowTargetOID = moid(12)
 }
 
 class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with SummarizerDefs with querki.core.MethodDefs with ModelTypeDefiner {
@@ -70,7 +71,16 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
       // Note that we are intentionally demanding a result here. If it's not defined, we expect to get LabelsProp's default.
       // So we don't expect this to ever be empty:
       val labels = getLabels(prop)
-      <div class='_rating' data-rating={get(v).toString} data-labels={labels.mkString(",")}></div>
+      
+      if (prop.ifSet(RatingShowTargetProperty)) {
+        val targetId = "target" + currentValue.suffix
+        // HACK: the _ratingTargetWrapper is there because *both* of the top-level nodes will get their ids set by HtmlRenderer. Do we
+        // have any good way of preventing it from doing so to the _ratingTarget?
+        <div class='_rating' data-rating={get(v).toString} data-labels={labels.mkString(",")} data-target={targetId} data-targetkeep='true'></div> :+
+        <div class='_ratingTargetWrapper'><div id={targetId} class='_ratingTarget'></div></div>
+        
+      } else
+        <div class='_rating' data-rating={get(v).toString} data-labels={labels.mkString(",")}></div>
     }
     
     /**
@@ -325,6 +335,16 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
             |and is only for advanced users for the time being. For most purposes, the built in
             |Rating and Review Properties should do fine.""".stripMargin)))
   
+  lazy val RatingShowTargetProperty = new SystemProperty(RatingShowTargetOID, YesNoType, ExactlyOne,
+    toProps(
+      setName("Show External Rating Hint"),
+      SkillLevel(SkillLevelAdvanced),
+      Summary("Displays the current Rating Hint in its own text field, on the side."),
+      Details("""Every Rating Property includes "hints", defined by the Chart Labels property -- basically text
+          |descriptions of what each star means, such as "Poor" or "Excellent". Normally, these are shown as hover
+          |text, displayed when you pause over a star for a second. If you would instead prefer to show the hint
+          |immediately, next to the stars, add this to your Rating Property and set it to true.""".stripMargin)))
+  
   override lazy val props = Seq(
     AverageFunction,
       
@@ -332,6 +352,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
     RatingSummaryProperty,
     RatingProperty,
     ReviewCommentsProperty,
-    ReviewProperty
+    ReviewProperty,
+    RatingShowTargetProperty
   )
 }

@@ -230,6 +230,16 @@
   display: inline;
 }
 
+._ratingTargetWrapper {
+  display: inline;
+  padding-left: 8px;
+}
+
+._ratingTarget {
+  display: inline;
+  height: 15px;
+}
+
 ._ratingAvg {
   font-size: xx-small;
 }
