@@ -26,7 +26,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   lazy val PlainTextType = Basic.PlainTextType
   lazy val NameType = Core.NameType
     
-  lazy val LinkModelOID = querki.links.MOIDs.LinkModelOID
+  lazy val LinkModelOID = querki.links.PublicMOIDs.LinkModelOID
 
   /***********************************************
    * TYPES

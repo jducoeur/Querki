@@ -1,14 +1,16 @@
 package querki.links
 
-import models.{Kind, PTypeBuilder, SimplePTypeBuilder, Wikitext}
+import models.{Kind, PTypeBuilder, Wikitext}
 
-import querki.basic.PlainText
 import querki.core.URLableType
 import querki.ecology._
-
 import querki.values.{ElemValue, QLContext, SpaceState}
 
-class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.MethodDefs {
+object MOIDs extends EcotIds(27) {
+}
+
+class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
+  import PublicMOIDs._
   import MOIDs._
   
   def LinkValue(target:OID):QValue = ExactlyOne(LinkType(target))
@@ -51,33 +53,7 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Met
     def doDefault(implicit state:SpaceState) = new QURL("")
     override def wrap(raw:String):valType = new QURL(raw)
   }
-  
-  lazy val ExternalLinkType = new SystemType[QExtLink](ExternalLinkTypeOID,
-    toProps(
-      setName("External Link Type"),
-      setInternal,
-      Summary("A link to some web page"),
-      Details("This Type is for internal use only, until we build some editing UI for it")))
-    with SimplePTypeBuilder[QExtLink] with URLableType
-  {
-    def doDeserialize(v:String)(implicit state:SpaceState) = ???
-    def doSerialize(v:QExtLink)(implicit state:SpaceState) = ???
-    def doDefault(implicit state:SpaceState) = QExtLink(PlainText(""), QURL(""))
-    
-    def doWikify(context:QLContext)(v:QExtLink, displayOpt:Option[Wikitext] = None) = {
-      val display = displayOpt.getOrElse(Wikitext(v.display.text))
-      Wikitext("[") + display + Wikitext("](" + v.url.url + ")")
-    }
-    
-    def getURL(context:QLContext)(elem:ElemValue):Option[String] = {
-      elem.getOpt(this).map(_.url.url)
-    }
-  
-    def getDisplay(context:QLContext)(elem:ElemValue):Option[String] = {
-      elem.getOpt(this).map(_.display.text)
-    }
-  }
-  
+
   override lazy val types = Seq(
     OldExternalLinkType
   )
@@ -171,59 +147,12 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Met
 	          |created all of the Instances of this Model that you ever expect to want, then it is simply annoying to have
 	          |that option. In that case, put this Property on your Model, and set it to True -- it will make that option
 	          |in the Editor go away.""".stripMargin)))
-      
-  /***********************************************
-   * FUNCTIONS
-   ***********************************************/  
-
-  lazy val WithParamFunction = new InternalMethod(WithParamFunctionOID,
-    toProps(
-      setName("_withParam"),
-      Summary("Adds the specified query parameter to a Link or URL"),
-      Details("""    LINK or URL -> _withParam(PARAMNAME, VALUE) -> URL""".stripMargin)))
-  {
-    override def qlApply(inv:Invocation):QValue = {
-      for {
-        pt <- inv.contextTypeAs[URLableType]
-        elemContext <- inv.contextElements
-        elemV <- inv.opt(elemContext.value.firstOpt)
-        urlStr <- inv.opt(pt.getURL(elemContext)(elemV))
-        displayStr <- inv.opt(pt.getDisplay(elemContext)(elemV))
-        paramNameElem <- inv.processParam(0, elemContext)
-	    paramName = paramNameElem.wikify(elemContext).raw.str
-        valElem <- inv.processParam(1, elemContext)
-        value = vToParam(valElem, elemContext)(inv.state)
-      }
-        yield ExactlyOne(ExternalLinkType(appendParam(urlStr, displayStr, paramName, value)))
-    }
-    
-    def vToParam(v:QValue, context:QLContext)(implicit state:SpaceState):String = {
-      // We really want to serialize the value, so that _asType() will work on the receiving end,
-      // but we can't reliably do so -- many types don't implement serialization.
-      // TBD: should there be an asURLParam method on PType? What's the right way to deal with this
-      // problem?
-      try {
-        v.pType.serialize(v.first)
-      } catch {
-        case ex:Exception => v.wikify(context).raw.str
-      }
-    }
-    
-    def appendParam(url:String, display:String, paramName:String, paramVal:String):QExtLink = {
-      if (url.contains("?"))
-        QExtLink(PlainText(display), QURL(url + "&" + paramName + "=" + paramVal))
-      else
-        QExtLink(PlainText(display), QURL(url + "?" + paramName + "=" + paramVal))
-    }
-  }
 
   override lazy val props = Seq(
     LinkKindProp,
     LinkAllowAppsProp,
     LinkModelProp,
     LinkToModelsOnlyProp,
-    NoCreateThroughLinkProp,
-    
-    WithParamFunction
+    NoCreateThroughLinkProp
   )
 }
