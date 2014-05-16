@@ -21,6 +21,7 @@
 
 ._comment {
   margin-bottom: 10px;
+  position: relative;
 }
 
 ._comment:last-child {
@@ -46,4 +47,29 @@
 
 ._comment ._commentText .para:last-child {
   margin-bottom: 0px;
+}
+
+/*
+ * TODO: the _deleteCommentButton code is essentially identical to _deleteInstanceButton.
+ * We should really port over to LESS, and refactor these.
+ */
+
+._comment ._deleteCommentButton {
+  position: absolute;
+  right: 5px;
+  line-height: 14px;
+  background-color: lightpink;
+  width: 10px;
+  height: 15px;
+  text-align: center;
+  border: 1px solid;
+  cursor: pointer;
+}
+
+._comment ._deleteCommentButton {
+  display: none;
+}
+
+._comment:hover ._deleteCommentButton {
+  display: inherit;
 }

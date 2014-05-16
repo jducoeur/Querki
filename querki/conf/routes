@@ -80,6 +80,7 @@ GET     /admin/showSpaceStatus      @controllers.AdminController.showSpaceStatus
 # Conversations
 GET     /u/:userName/:spaceId/__getConv @controllers.ConversationController.getConversations(userName, spaceId, thingId)
 POST    /u/:userName/:spaceId/__addComment @controllers.ConversationController.addComment(userName, spaceId, thingId, text, responseTo)
+GET     /u/:userName/:spaceId/__deleteComment @controllers.ConversationController.deleteComment(userName, spaceId, thingId, commentId)
 GET     /convJs                     @controllers.ConversationController.javascriptRoutes
 
 # Fetch a Thing by ThingId

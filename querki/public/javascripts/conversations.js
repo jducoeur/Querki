@@ -42,8 +42,48 @@ function loadConversations(ownerId, spaceId, thingId, convContainer, canComment)
   
   newConversationInput(convContainer, null, "Start a new conversation...", function() { return ""; });
   
+  // TODO: the next two functions are near-copies of reallyDelete() and deleteInstance(). They should be refactored
+  // together! Only reason I'm not doing so yet is because most of this code is likely to go away soon...
+  function reallyDeleteComment(evt) {
+    var deleteButton = $(this);
+    var comment = deleteButton.parents("._comment");
+    var commentId = comment.data("commentId");
+    convJsRoutes.controllers.ConversationController.deleteComment(ownerId, spaceId, thingId, commentId).ajax({
+      data: "API=true",
+      success: function(result) {
+        comment.hide(400, function () { comment.remove(); });
+      },
+      error: function (err) {
+        showStatus("Error: " + err);
+      }
+    });  
+  }
+  
+  // Confirmation: we show a popover, and give the user a couple of seconds to press delete
+  // again to really do it. Otherwise, auto-cancel.
+  function deleteComment(evt) {
+    var deleteButton = $(this);
+    deleteButton.popover({
+      content: "Click again to delete",
+      placement: 'left',
+      trigger: 'manual'
+    });
+    deleteButton.popover('show');
+    deleteButton.off('click', null, deleteComment);
+    deleteButton.on('click', null, reallyDeleteComment);
+    var timeout = setTimeout(
+      function () {
+        deleteButton.popover('hide');
+        deleteButton.off('click', null, reallyDeleteComment);
+        deleteButton.on('click', null, deleteComment);
+      },
+      2000
+    );
+  }
+    
   function insertNode(node, existingThread) {
     var comment = node.comment;
+    // Note that this is the ID of the head node!
     var id = comment.id;
     
     var threadDisplay = existingThread
@@ -57,16 +97,30 @@ function loadConversations(ownerId, spaceId, thingId, convContainer, canComment)
     commentContainer = threadDisplay.find("._commentContainer");
     
     function insertComment(c) {
+      if (c.isDeleted) {
+        // TBD: display something here to indicate there is a deleted comment? Certainly need to
+        // do so if we are going to allow undelete.
+        return;
+      }
+      
+      var commentId = c.id;
       var author = c.author;
       // Note that, for the date, we use the moment library, which is loaded by convPane:
       var created = moment(c.createTime);
       var createdDisplay = created.calendar();
       var text = c.html;
-      var commentDisplay = $("#_commentTemplate").clone(true).attr('id', '_comment' + id)
-      commentDisplay.find("._commentLink").prop('name', 'comment' + id);
+      var commentDisplay = $("#_commentTemplate").clone(true).attr('id', '_comment' + commentId);
+      commentDisplay.data("commentId", commentId);
+      commentDisplay.find("._commentLink").prop('name', 'comment' + commentId);
       commentDisplay.find("._commentAuthor").html(author);
       commentDisplay.find("._commentTime").html(createdDisplay);
       commentDisplay.find("._commentText").html(text);
+      if (!c.canDelete) {
+        // If the current viewer can't delete this comment, don't show the button:
+        commentDisplay.find("._deleteCommentButton").remove();
+      } else {
+        commentDisplay.on('click', "._deleteCommentButton", deleteComment)
+      }
       commentDisplay.show();
       commentContainer.append(commentDisplay);
     }

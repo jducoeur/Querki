@@ -37,3 +37,10 @@ case class NewComment(comment:Comment) extends ConversationMessage
  * Message informing us about a newly-added Comment.
  */
 case class AddedNode(parentId:Option[CommentId], node:ConversationNode)
+
+/**
+ * Request to delete an existing Comment.
+ */
+case class DeleteComment(thingId:OID, commentId:CommentId) extends ConversationMessage
+case object CommentDeleted
+case object CommentNotDeleted

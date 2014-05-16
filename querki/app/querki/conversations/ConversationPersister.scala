@@ -87,5 +87,25 @@ private[conversations] class ConversationPersister(val spaceId:OID, implicit val
                 "primaryResponse" -> comment.primaryResponse).executeUpdate
       }
     }
+    
+    case UpdateComment(comment, state) => {
+      // Note that we tacitly assume that many fields are immutable; we only update the ones that can change:
+      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+        SpaceSQL("""
+            UPDATE {cname}
+               SET authorizedBy = {authorizedBy}, props = {props}, needsModeration = {needsModeration}, primaryResponse = {primaryResponse},
+                   isEdited = {isEdited}, isDeleted = {isDeleted}, isArchived = {isArchived} 
+             WHERE id = {id}
+            """).on(
+                "id" -> comment.id,
+                "authorizedBy" -> comment.authorizedBy.map(_.id.raw),
+                "props" -> SpacePersistence.serializeProps(comment.props, state),
+                "needsModeration" -> comment.needsModeration,
+                "primaryResponse" -> comment.primaryResponse,
+                "isEdited" -> comment.isEdited,
+                "isDeleted" -> comment.isDeleted,
+                "isArchived" -> comment.isArchived).executeUpdate
+      }
+    }
   }
 }

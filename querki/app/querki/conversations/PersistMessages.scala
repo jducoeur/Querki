@@ -28,4 +28,9 @@ private[conversations] object PersistMessages {
    * Store a single Comment.
    */
   case class AddComment(comment:Comment, state:SpaceState)
+  
+  /**
+   * Changes a single Comment. Used for deleting, editing, archiving, etc.
+   */
+  case class UpdateComment(comment:Comment, state:SpaceState)
 }

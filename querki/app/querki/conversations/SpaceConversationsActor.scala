@@ -280,7 +280,31 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
 	          sender ! AddedNode(parent.map(_.comment.id), node)
 	        }
 	      }
-	    }        
+	    }
+        
+        case DeleteComment(thingId, commentId) => {
+          withConversations(thingId) { convs =>
+            convs.findNode(commentId) match {
+              case Some(node) => {
+                if (req.hasIdentity(state.owner) || req.hasIdentity(node.comment.authorId)) {
+                  // Create the tweaked node...
+                  val deleted = node.comment.copy(isDeleted = true)
+                  // ... create an updated ThingConversations with it...
+                  val newConvs = replaceNode(commentId, convs)(_.copy(comment = deleted))
+                  // ... update the world...
+                  loadedConversations += (thingId -> newConvs)
+                  // ... persist the deletion (this is fire-and-forget)...
+                  persister ! UpdateComment(deleted, state)
+                  // ... and tell the requester we are done:
+                  sender ! CommentDeleted
+                } else {
+                  sender ! CommentNotDeleted
+                }
+              }
+              case None => sender ! CommentNotDeleted
+            }
+          }
+        }
       }
     }
   }

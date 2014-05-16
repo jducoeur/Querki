@@ -19,6 +19,7 @@ import querki.identity.PublicIdentity
 import querki.spaces.messages._
 import querki.time.DateTime
 import querki.util._
+import querki.values.RequestContext
 
 class ConversationController extends ApplicationBase {
 
@@ -35,7 +36,9 @@ class ConversationController extends ApplicationBase {
     author:String,
     html:String,
     primaryResponse:Boolean,
-    createTime:DateTime)
+    createTime:DateTime,
+    canDelete:Boolean,
+    isDeleted:Boolean)
     
   case class NodeDisplay(
     comment:CommentDisplay,
@@ -45,22 +48,24 @@ class ConversationController extends ApplicationBase {
     parentId:Option[CommentId],
     node:NodeDisplay)
     
-  def comment2Display(c:Comment)(implicit ids:Map[OID, PublicIdentity]):CommentDisplay = {
+  def comment2Display(c:Comment)(implicit ids:Map[OID, PublicIdentity], rc:RequestContext):CommentDisplay = {
     CommentDisplay(
       c.id,
       ids.get(c.authorId).map(_.name).getOrElse("Unknown"),
       Conversations.CommentText.firstOpt(c.props).map(_.text).map(Wikitext(_).display.toString).getOrElse(""),
       c.primaryResponse,
-      c.createTime)
+      c.createTime,
+      rc.isOwner || rc.requesterOrAnon.hasIdentity(c.authorId),
+      c.isDeleted)
   }
   
-  def node2Display(n:ConversationNode)(implicit ids:Map[OID, PublicIdentity]):NodeDisplay = {
+  def node2Display(n:ConversationNode)(implicit ids:Map[OID, PublicIdentity], rc:RequestContext):NodeDisplay = {
     NodeDisplay(
       comment2Display(n.comment),
       n.responses.map(node2Display(_)))
   }
   
-  def addedNode2Display(a:AddedNode)(implicit ids:Map[OID, PublicIdentity]):AddedNodeDisplay = {
+  def addedNode2Display(a:AddedNode)(implicit ids:Map[OID, PublicIdentity], rc:RequestContext):AddedNodeDisplay = {
     AddedNodeDisplay(a.parentId, node2Display(a.node))
   }
   
@@ -74,7 +79,9 @@ class ConversationController extends ApplicationBase {
         "author" -> c.author,
         "html" -> c.html,
         "primary" -> c.primaryResponse,
-        "createTime" -> c.createTime
+        "createTime" -> c.createTime,
+        "canDelete" -> c.canDelete,
+        "isDeleted" -> c.isDeleted
       )
     }
   }
@@ -164,12 +171,21 @@ class ConversationController extends ApplicationBase {
     }
   }
   
+  def deleteComment(ownerId:String, spaceId:String, thingId:String, commentIdStr:String) = withThing(true, ownerId, spaceId, thingId) { implicit rc =>
+    val commentId = java.lang.Integer.parseInt(commentIdStr)
+    askSpace(ConversationRequest(rc.requesterOrAnon, rc.ownerId, rc.state.get.id, DeleteComment(rc.thing.get.id, commentId))) {
+      case CommentDeleted => Ok("Deleted")
+      case CommentNotDeleted => BadRequest("Unable to delete comment")
+    }
+  }
+  
   def javascriptRoutes = Action { implicit request =>
     import routes.javascript._
     Ok(
       Routes.javascriptRouter("convJsRoutes")(
         routes.javascript.ConversationController.getConversations,
-        routes.javascript.ConversationController.addComment
+        routes.javascript.ConversationController.addComment,
+        routes.javascript.ConversationController.deleteComment
       )
     ).as("text/javascript")
   }
