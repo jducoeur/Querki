@@ -111,7 +111,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
     }
   }
   
-  case class RatingAverage(propId:OID, avg:Double)
+  case class RatingAverage(propId:OID, avg:Double, n:Int)
   
   /**
    * At least for now, rating averages get their own Type, because they display differently from other
@@ -128,12 +128,12 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
         case Some(prop) => {
           val labels = getLabels(prop)
           Wikitext(s"""<div class='_rating' data-rating='${"%.2f" format v.avg}' data-labels='${labels.mkString(",")}' data-readonly='true'></div> 
-          |<span class="_ratingAvg">${"%.2f" format v.avg}</span>""".stripMargin)
+          |<span class="_ratingAvg">${"%.2f" format v.avg} (${v.n})</span>""".stripMargin)
         }
         case None => {
           QLog.warn(s"_ratingAverageType called on unknown Property ${v.propId}")
           Wikitext(s"""<div class='_rating' data-rating='${"%.2f" format v.avg}' data-readonly='true'></div>
-          |<span class="_ratingAvg">${"%.2f" format v.avg}</span>""".stripMargin)
+          |<span class="_ratingAvg">${"%.2f" format v.avg} (${v.n})</span>""".stripMargin)
         }
       }
     }
@@ -208,8 +208,9 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
       for {
         summary <- inv.contextAllAs(RatingSummarizer)
         avg = calcAverage(summary.content.toSeq)
+        n = summary.content.size
       }
-        yield ExactlyOne(RatingAverageType(RatingAverage(summary.propId, avg)))
+        yield ExactlyOne(RatingAverageType(RatingAverage(summary.propId, avg, n)))
     }
     
     def calcAverage(pairs:Seq[(Int, Int)]):Double = {
