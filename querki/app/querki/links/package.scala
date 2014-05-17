@@ -21,9 +21,9 @@ package object links {
   // to wind up with an absolute URL. But that's silly: we frequently want a relative URL, and specifically
   // *don't* want to be encoding the whole damned thing here.
   case class QURL(url:String) {
-    val legalChars = """\w\d\-\._\~:/\?#\[\]@!$&'\(\)\*\+,;="""
+    val legalChars = """\w\d\-\._\~:/\?#\[\]@!$&'\(\)\*\+,;=%"""
     if (!url.matches(s"[$legalChars]*"))
-      throw new Exception("Not a legal URL!")
+      throw new Exception("Not a legal URL: " + url)
   }
   
   trait Links extends EcologyInterface {

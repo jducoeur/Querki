@@ -30,4 +30,12 @@ class LinksTests extends QuerkiTests {
         equal (s"[Sandbox](Sandbox?foo=${s.instance.id})")
     }
   }
+  
+  // === QURL ===
+  "QURL" should {
+    // This example taken from a URL I found in the wild, which was failing:
+    "cope with a messy URL" in {
+      QURL("http://gallica.bnf.fr/ark:/12148/btv1b8451602n/f241.image.r=Latin%2010286.langEN")
+    }
+  }
 }
