@@ -249,6 +249,9 @@ disallow: /
         // responds to those changes.
         // TODO: we might want to redo this more properly functional, instead of relying on a var:
         var updatingThing = thing
+        // HACK: if we are creating a new Thing, we need *something* for rebuildBundle to work on! I think this
+        // suggests that this algorithm is well and truly fucked up at this point.
+        var createBundle:ThingState = ThingState(UnknownOID, UnknownOID, UnknownOID, () => Map.empty)
         val rawProps:List[FormFieldInfo] = fieldIds map { fieldId =>
           val higherFieldIdsOpt = fieldId.container
           val actualFormFieldInfo = HtmlRenderer.propValFromUser(fieldId, updatingThing, rawForm, context)
@@ -263,13 +266,17 @@ disallow: /
                     case None => List(thisId)
                   }
                 }
-                Types.rebuildBundle(updatingThing, toHigherIds(higherFieldIds), actualFormFieldInfo).
+                Types.rebuildBundle(updatingThing orElse Some(createBundle), toHigherIds(higherFieldIds), actualFormFieldInfo).
                   getOrElse(FormFieldInfo(UrProp, None, true, false, None, Some(new PublicException("Didn't get bundle"))))         
               }
               case None => actualFormFieldInfo
             }
           }
           updatingThing match {
+            case None if (result.isValid && !result.isEmpty) => {
+              val newProps = createBundle.props + (result.propId -> result.value.get)
+              createBundle = createBundle.copy(pf = () => newProps)              
+            }
             case Some(ts @ ThingState(_, _, _, _, _, _)) if (result.isValid && !result.isEmpty) => {
               val newProps = ts.props + (result.propId -> result.value.get)
               updatingThing = Some(ts.copy(pf = () => newProps))
