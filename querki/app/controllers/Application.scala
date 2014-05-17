@@ -243,6 +243,7 @@ disallow: /
           rawForm.data.foreach(pair => QLog.spew(s"    ${pair._1}: ${pair._2}"))
           QLog.spew("FieldIds:")
           fieldIds.foreach(fieldId => QLog.spew(s"    ${fieldId.fullPropId}"))
+          QLog.spew("Processing:")
         }
 
         // Since rebuildBundle can result in changes that build on each other, we need a thing that
@@ -253,8 +254,10 @@ disallow: /
         // suggests that this algorithm is well and truly fucked up at this point.
         var createBundle:ThingState = ThingState(UnknownOID, UnknownOID, UnknownOID, () => Map.empty)
         val rawProps:List[FormFieldInfo] = fieldIds map { fieldId =>
+          if (doLogEdits) QLog.spew(s"  $fieldId...")
           val higherFieldIdsOpt = fieldId.container
           val actualFormFieldInfo = HtmlRenderer.propValFromUser(fieldId, updatingThing, rawForm, context)
+          if (doLogEdits) QLog.spew(s"    actual: $actualFormFieldInfo")
           val result = {
             higherFieldIdsOpt match {
               case Some(higherFieldIds) => {
@@ -272,6 +275,7 @@ disallow: /
               case None => actualFormFieldInfo
             }
           }
+          if (doLogEdits) QLog.spew(s"    result: $result")
           updatingThing match {
             case None if (result.isValid && !result.isEmpty) => {
               val newProps = createBundle.props + (result.propId -> result.value.get)

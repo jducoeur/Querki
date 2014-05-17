@@ -175,6 +175,10 @@ trait QValue {
   }
   
   def elemAt(index:Int):ElemValue = cv.toList(index)
+  
+  override def toString = {
+    cType.displayName + " " + pType.displayName + ": " + cv
+  }
 }
 
 object QValue {

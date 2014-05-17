@@ -72,6 +72,10 @@ case class ModeledPropertyBundle(modelType:ModelTypeDefiner#ModelType, basedOn:O
     val propAndVal = getProp(prop)
     propAndVal.map(destType)(cb)    
   }
+  
+  override def toString = {
+    "ModeledPropertyBundle " + modelType.displayName + ": " + props
+  }
 }
 
 /**
