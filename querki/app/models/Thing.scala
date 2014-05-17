@@ -116,7 +116,11 @@ abstract class Thing(
     if (localName.isEmpty)
       DisplayText(id.toThingId.toString)
     else {
-      localName.get.renderPlain.raw
+      val rendered = localName.get.renderPlain.raw
+      if (rendered.str.length() > 0)
+        rendered
+      else
+        DisplayText(id.toThingId.toString)
     }    
   }
   
@@ -132,12 +136,16 @@ abstract class Thing(
     if (localName.isEmpty)
       id.toString
     else {
-      localName.get.renderPlain.plaintext
+      val rendered = localName.get.renderPlain.plaintext
+      if (rendered.length() > 0)
+        rendered
+      else
+        id.toString
     }    
   }
   
   lazy val canonicalName:Option[String] = {
-    NameProp.firstOpt(props)
+    NameProp.firstOpt(props).filter(_.length() > 0)
   }
   
   lazy val toThingId:ThingId = {
