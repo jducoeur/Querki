@@ -39,12 +39,6 @@ case class ModeledPropertyBundle(modelType:ModelTypeDefiner#ModelType, basedOn:O
   
   def thisAsContext(implicit request:RequestContext):QLContext = QLContext(interface[querki.core.Core].ExactlyOne(ElemValue(this, modelType)), Some(request))
   
-  def hasProp(propId:OID)(implicit state:SpaceState):Boolean = {
-    props.contains(propId) || { 
-      getModelOpt.map(_.hasProp(propId)).getOrElse(false)
-    }
-  }
-  
   def getPropOpt[VT](prop:Property[VT, _])(implicit state:SpaceState):Option[PropAndVal[VT]] = {
     if (hasProp(prop))
       Some(getProp(prop))

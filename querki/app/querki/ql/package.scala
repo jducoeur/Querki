@@ -159,8 +159,19 @@ package object ql {
     
     /**
      * Similar to contextAllBundles, but this provides you with the Context as well.
+     * 
+     * Note that bundlesAndContextsForProp is *usually* more correct. Only use this when you aren't
+     * resolving a real Property. (For example, _edit, which syntactically looks like a Method, but
+     * really isn't.)
      */
     def contextBundlesAndContexts:InvocationValue[(PropertyBundle, QLContext)]
+    
+    /**
+     * Given a Property that we have invoked, find the likeliest thing to invoke it *on*.
+     * 
+     * Conceptually, this is a bit too powerful to go here, but we need to invoke it from several different places.
+     */
+    def bundlesAndContextsForProp(prop:Property[_,_]):InvocationValue[(PropertyBundle, QLContext)]
     
     /**
      * Returns the first Thing in the received context.
@@ -265,7 +276,7 @@ package object ql {
      * The input text should be a block of QLText (with the text on the "outside"). This parses
      * that, uses the given context and params to process it, and returns the resulting Wikitext.
      */
-    def process(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None):Wikitext
+    def process(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext
     
     /**
      * Process a QL Function into a QValue.
@@ -273,7 +284,7 @@ package object ql {
      * The input text should be a block of QL (with any text on the "inside"). This parses that,
      * uses the given context and params to process it, and returns the resulting QValue.
      */
-    def processMethod(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None):QValue
+    def processMethod(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, lexicalThing:Option[PropertyBundle] = None):QValue
     
     def UnknownNameType:PType[String] with PTypeBuilder[String,String]
     def ParsedTextType:PType[Wikitext] with PTypeBuilder[Wikitext,Wikitext]

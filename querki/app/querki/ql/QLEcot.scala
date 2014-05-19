@@ -5,7 +5,7 @@ import play.api.templates.Html
 
 import querki.ecology._
 
-import models.{PType, PTypeBuilder, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
+import models.{PropertyBundle, PType, PTypeBuilder, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
 
 import querki.core.QLText
 import querki.util.QLog
@@ -77,13 +77,13 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
     }
   }
   
-  def process(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None):Wikitext = {
-    val parser = new QLParser(input, ci, invOpt)
+  def process(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = {
+    val parser = new QLParser(input, ci, invOpt, lexicalThing)
     parser.process
   }
   
-  def processMethod(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None):QValue = {
-    val parser = new QLParser(input, ci, invOpt)
+  def processMethod(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, lexicalThing:Option[PropertyBundle] = None):QValue = {
+    val parser = new QLParser(input, ci, invOpt, lexicalThing)
     parser.processMethod.value
   }
   

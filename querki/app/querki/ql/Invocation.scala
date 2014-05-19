@@ -240,6 +240,57 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
     } 
   }
   
+  def bundlesAndContextsForProp(prop:Property[_,_]):InvocationValue[(PropertyBundle, QLContext)] = {
+    
+    def withLexicalContext:Option[PropertyBundle] = {
+      for {
+        parser <- context.parser
+        lex <- parser.lexicalThing
+      }
+        yield lex
+    }
+    
+    if (definingContext.isDefined) {
+      // If there is a defining context, that is where we should be working from:
+      val result = for {
+        dc <- definingContext
+        id <- dc.value.firstAs(Core.LinkType)
+        thing <- state.anything(id)
+      }
+        yield InvocationValueImpl(this, Some((thing.asInstanceOf[PropertyBundle], context.next(dc.value))), None)
+        
+      result.getOrElse(error("Func.notThing", displayName))
+    } else if (context.value.matchesType(Core.LinkType)) {
+      val ids = context.value.flatMap(Core.LinkType)(Some(_))
+      val thingsOpt = ids.map(state.anything(_))
+      if (thingsOpt.forall(_.isDefined)) {
+        val things = thingsOpt.flatten
+        if (things.exists(_.hasProp(prop)))
+          InvocationValueImpl(this, things.map(t => (t, context.next(Core.ExactlyOne(Core.LinkType(t))))), None)
+        else {
+          // Hmm. None of the received values have this Property. Is it on the lexical context?
+          withLexicalContext match {
+            // IMPORTANT SUBTLETY: note that we're passing through the *bundle* of the lexical context, but the actual contexts are the received context!
+            case Some(bundle) if (bundle.hasProp(prop)) => InvocationValueImpl(this, things.map(t => (bundle, context.next(Core.ExactlyOne(Core.LinkType(t))))), None)
+            case _ => {
+              // TODO: if this bundle isn't a Thing, walk up the context chain.
+              // Can't find the target Property, so it seems to be a noop, but it *is* legal. Note that this
+              // collection will be empty, but correctly typed:
+              InvocationValueImpl(this, things.map(t => (t, context.next(Core.ExactlyOne(Core.LinkType(t))))), None)
+            }
+          }
+        }
+      } else
+        error("Func.unknownThing", displayName)      
+    } else context.value.pType match {
+      case mt:ModelTypeBase => {
+        val pairs = context.value.cv.map(elem => (elem.get(mt), context.next(Core.ExactlyOne(elem))))
+        InvocationValueImpl(this, pairs, None)
+      }
+      case _ => error("Func.notThing", displayName)
+    } 
+  }
+  
   def definingContextAsProperty:InvocationValue[Property[_,_]] = {
     definingContext match {
       case Some(defining) => {

@@ -4,6 +4,12 @@ import querki.test._
 
 class EditorTests extends QuerkiTests {
   "_edit" should {
+    
+    "let me edit a single Property" in {
+      implicit val s = commonSpace
+      println(pql("""[[My Instance -> My Optional Text._edit]]"""))
+    }
+    
     "enable me to edit a simple Thing" in {
       // Need to have editing rights to the Space:
       implicit val user = commonSpace.owner

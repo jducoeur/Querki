@@ -309,14 +309,6 @@ abstract class Thing(
   }
   
   /**
-   * Returns true iff this Thing or any ancestor has the specified property defined on it.
-   * Note that this ignores defaults.
-   */
-  def hasProp(propId:OID)(implicit state:SpaceState):Boolean = {
-    props.contains(propId) || getModelOpt.map(_.hasProp(propId)).getOrElse(false)
-  }
-  
-  /**
    * Convenience method -- returns either the value of the specified property or None.
    */
   def getPropOpt(propId:OID)(implicit state:SpaceState):Option[PropAndVal[_]] = {
@@ -329,6 +321,8 @@ abstract class Thing(
   // the less-powerful OID version of getPropOpt instead of the one I want, presumably through the implicit
   // conversion of Property to OID.
   def getPropOpt[VT](prop:Property[VT, _])(implicit state:SpaceState):Option[PropAndVal[VT]] = {
+    // TODO: this is inefficient -- it's traversing the tree twice, first to test whether the value
+    // exists, then to fetch it. Rework all three of these methods to fix that.
     if (hasProp(prop))
       Some(getProp(prop))
     else
@@ -404,7 +398,7 @@ abstract class Thing(
     applyOpt match {
       case Some(apply) => {
         val qlText = apply.first
-        QL.processMethod(qlText, context.forProperty(apply.prop), Some(inv))
+        QL.processMethod(qlText, context.forProperty(apply.prop), Some(inv), Some(this))
       }
       case None => Core.ExactlyOne(Core.LinkType(id))
     }

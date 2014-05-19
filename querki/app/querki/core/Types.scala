@@ -70,8 +70,9 @@ trait TextTypeBasis { self:CoreEcot =>
         // TODO: this should become a more general concept! We should be declaring this transform at
         // the Type level, I think.
         dummy <- inv.returnsType(QL.ParsedTextType)
-        // For each received Thing...
-        (bundle, elemContext) <- inv.preferDefiningContext.contextBundlesAndContexts
+        // For each received Thing (note that the bundle is where the prop is defined on, which may be
+        // different from the elemContext!)...
+        (bundle, elemContext) <- inv.bundlesAndContextsForProp(prop)
         // ... get this Property's value on the Thing...
         pv <- inv.opt(bundle.getPropOpt(prop))
         // ... tell the system which Collection we expect to produce...
@@ -80,7 +81,7 @@ trait TextTypeBasis { self:CoreEcot =>
         qlText <- inv.iter(pv.v.rawList(this))
       }
         // ... and process that element through QL.
-        yield Core.ExactlyOne(QL.ParsedTextType(QL.process(qlText, elemContext, Some(inv))))
+        yield Core.ExactlyOne(QL.ParsedTextType(QL.process(qlText, elemContext, Some(inv), Some(bundle))))
         
       Some(result)
     }

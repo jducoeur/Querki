@@ -88,6 +88,14 @@ trait PropertyBundle {
   def getPropVal[VT, CT](prop:Property[VT, _])(implicit state:SpaceState):QValue
   
   /**
+   * Returns true iff this Thing or any ancestor has the specified property defined on it.
+   * Note that this ignores defaults.
+   */
+  def hasProp(propId:OID)(implicit state:SpaceState):Boolean = {
+    props.contains(propId) || getModelOpt.map(_.hasProp(propId)).getOrElse(false)
+  }
+  
+  /**
    * The good, safe way to retrieve the value of a Property, and transform it into something else.
    * Will *always* return a QValue, which will be empty iff the property isn't defined or the value
    * is empty.

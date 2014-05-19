@@ -144,19 +144,19 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       }
     }
   
-    def applyToPropAndThing(inv:Invocation, mainContext:QLContext, mainThing:PropertyBundle, 
-      partialContext:QLContext, prop:Property[_,_],
+    def applyToPropAndThing(inv:Invocation, elemContext:QLContext, mainThing:PropertyBundle, 
+      definingContext:QLContext, prop:Property[_,_],
       params:Option[Seq[QLPhrase]]):QValue =
     {
-      mainContext.request.requester match {
-        case Some(requester) if (canEdit(mainContext, requester, mainThing, prop)) => {
-          val currentValue = mainThing.getDisplayPropVal(prop)(mainContext.state).copy(cont = mainContext.currentValue)
+      elemContext.request.requester match {
+        case Some(requester) if (canEdit(elemContext, requester, mainThing, prop)) => {
+          val currentValue = mainThing.getDisplayPropVal(prop)(elemContext.state).copy(cont = elemContext.currentValue)
 	      // TODO: conceptually, this is a bit off -- the rendering style shouldn't be hard-coded here. We
   	      // probably need to have the Context contain the desire to render in HTML, and delegate to the
 	      // HTML renderer indirectly. In other words, the Context should know the renderer to use, and pass
 	      // that into here:
-	      val inputControl = HtmlRenderer.renderPropertyInput(mainContext.request, prop, currentValue, 
-	          specialization(mainContext, mainThing, partialContext, prop, params))
+	      val inputControl = HtmlRenderer.renderPropertyInput(elemContext.request, prop, currentValue, 
+	          specialization(elemContext, mainThing, definingContext, prop, params))
 	      HtmlUI.HtmlValue(inputControl)    
         }
         case _ => cantEditFallback(inv)
@@ -165,7 +165,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   
     override def qlApply(inv:Invocation):QValue = {
       val mainContext = inv.context
-      val partialContext = inv.definingContext.getOrElse(inv.context)
+      val partialContextOpt = inv.definingContext
       val params = inv.paramsOpt
       
       // TODO: this belongs in Invocation as a general mechanism:
@@ -235,34 +235,40 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
           Wikitext("")
       }
       
-      applyToIncomingThing(inv.preferDefiningContext) { (partialThing, _) =>
-        partialThing match {
-          case prop:Property[_,_] => {
-            applyToIncomingProps(inv) { (mainThing, _) =>
-              applyToPropAndThing(inv, mainContext, mainThing, partialContext, prop, params)
-            }
-          }
-          
-          case thing:ThingState => {
-            implicit val state = partialContext.state
-            if (thing.ifSet(Core.IsModelProp)) {
-              val allInstances = state.descendants(thing.id, false, true).toSeq.sortBy(_.displayName)
-              val page = intParam("page", 1) - 1
-              val pageSize = intParam("pageSize", 10)
-              val startAt = pageSize * page
-              val instances = allInstances.drop(startAt).take(pageSize)
-              val wikitexts = 
-                instances.map { instance => instanceEditorForThing(instance, instance.thisAsContext(partialContext.request), Some(inv)) } :+
-                createInstanceButton(thing, mainContext)
-              Core.listFrom(paginator(partialContext.request.asInstanceOf[controllers.PlayRequestContext], allInstances, startAt, pageSize) +: wikitexts, QL.ParsedTextType)
-            } else {
-              QL.WikitextValue(instanceEditorForThing(thing, partialContext, Some(inv)))
-            }
-          }
-          
-          case _ => QL.WarningValue("The " + displayName + " method can only be used on Properties, Models and Instances")
-        } 
+      def editThing(thing:Thing, context:QLContext)(implicit state:SpaceState):QValue = {
+        if (thing.ifSet(Core.IsModelProp)) {
+          val allInstances = state.descendants(thing.id, false, true).toSeq.sortBy(_.displayName)
+          val page = intParam("page", 1) - 1
+          val pageSize = intParam("pageSize", 10)
+          val startAt = pageSize * page
+          val instances = allInstances.drop(startAt).take(pageSize)
+          val wikitexts = 
+            instances.map { instance => instanceEditorForThing(instance, instance.thisAsContext(context.request), Some(inv)) } :+
+            createInstanceButton(thing, mainContext)
+          Core.listFrom(paginator(context.request.asInstanceOf[controllers.PlayRequestContext], allInstances, startAt, pageSize) +: wikitexts, QL.ParsedTextType)
+        } else {
+          QL.WikitextValue(instanceEditorForThing(thing, context, Some(inv)))
+        }
       }
+      
+      partialContextOpt match {
+        case Some(definingContext) => {
+          // [[THINGS -> PROP._edit]] -- there is a PROP specified
+          for {
+            prop <- inv.definingContextAsProperty
+            (bundle, elemContext) <- inv.contextBundlesAndContexts
+          }
+            yield applyToPropAndThing(inv, elemContext, bundle, definingContext, prop, params)
+        }
+        
+        case None => {
+          // [[THINGS -> _edit]] -- there is no PROP specified
+          for {
+            thing <- inv.contextAllThings
+          }
+            yield editThing(thing, inv.context)(inv.state)
+        }
+      } 
     }
   }
     

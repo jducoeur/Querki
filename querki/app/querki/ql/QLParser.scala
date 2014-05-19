@@ -17,7 +17,7 @@ class PartiallyAppliedFunction(partialContext:QLContext, action:(Invocation) => 
   }
 }
 
-class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None) extends RegexParsers with EcologyMember {
+class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, val lexicalThing:Option[PropertyBundle] = None) extends RegexParsers with EcologyMember {
   
   // Add the parser to the context, so that methods can call back into it. Note that we are treating this as essentially
   // a modification, rather than another level of depth:

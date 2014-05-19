@@ -491,7 +491,7 @@ disallow: /
         |[[_edit]]
         |
         |[[_linkButton(""Done"")]]""".stripMargin)
-    val wikitext = QL.process(editText, thing.thisAsContext, None)
+    val wikitext = QL.process(editText, thing.thisAsContext, None, Some(thing))
     val html = wikitext.display.html
     Ok(views.html.main(QuerkiTemplate.Thing, s"Editing instances of ${thing.displayName}", rc, true)(html))
   }
@@ -799,7 +799,7 @@ disallow: /
         |**[Export all Instances of [[Name]] as a CSV file](_exportModel?modelId=[[_oid]]&format=1)**
         |
         |[[_linkButton(""Done"")]]""".stripMargin)
-    val wikitext = QL.process(editText, thing.thisAsContext, None)
+    val wikitext = QL.process(editText, thing.thisAsContext, None, Some(thing))
     val html = wikitext.display.html
     Ok(views.html.main(QuerkiTemplate.Thing, s"Editing instances of ${thing.displayName}", rc, true)(html))    
   }
