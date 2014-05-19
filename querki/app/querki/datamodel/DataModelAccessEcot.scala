@@ -58,6 +58,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Links = interface[querki.links.Links]
   lazy val PropPaths = interface[querki.types.PropPaths]
+  lazy val Tags = interface[querki.tags.Tags]
   
   private object PropCopier extends Contributor[ThingChangeRequest, ThingChangeRequest] {
     // This is called whenever we get a Create or Modify request.
@@ -276,10 +277,25 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |with this name?", so that you can handle it differently depending on whether there is or not.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QValue = {
-      // If there is a defining context, we use that. But it's kind of an edge case, since QL syntax will
-      // never allow this to return false if the defining name *doesn't* exist. (It'll become an UnknownNameType,
-      // but not passed into methods.) We might change this eventually; we'll see.
-      inv.preferDefiningContext.context.value.pType != QL.UnknownNameType
+      for {
+        dummy <- inv.returnsType(YesNoType)
+        elem <- inv.contextElements
+        qv <- inv.contextValue
+      }
+        yield ExactlyOne(qvIsReal(qv)(inv.state))
+    }
+    
+    def qvIsReal(qv:QValue)(implicit state:SpaceState):Boolean = {
+      if (qv.pType == QL.UnknownNameType)
+        false
+      else if (qv.pType == Tags.NewTagSetType)
+        state.anythingByName(qv.firstAs(Tags.NewTagSetType).get.text).isDefined
+      else if (qv.pType == Tags.TagSetType)
+        state.anythingByName(qv.firstAs(Tags.TagSetType).get).isDefined
+      else if (qv.pType == LinkType)
+        state.anything(qv.firstAs(LinkType).get).isDefined
+      else
+        false
     }
   }
 

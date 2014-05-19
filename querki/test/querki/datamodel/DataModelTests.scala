@@ -8,6 +8,7 @@ import querki.types.{ModelTypeDefiner, SimplePropertyBundle}
 class DataModelTests extends QuerkiTests {
   lazy val DataModelAccess = interface[querki.datamodel.DataModelAccess]
   lazy val SpaceChangeManager = interface[querki.spaces.SpaceChangeManager]
+  lazy val Tags = interface[querki.tags.Tags]
   
   // === Copy Into Instances ===
   "Copy Into Instances" should {
@@ -223,12 +224,22 @@ class DataModelTests extends QuerkiTests {
     
     "work in received position with something that does exist" in {
       implicit val s = commonSpace
-      pql("""[[My Optional URL -> _isDefined]]""") should equal ("true")
+      pql("""[[My Optional URL._self -> _isDefined]]""") should equal ("true")
     }
     
     "work in received position with something that doesn't exist" in {
       implicit val s = commonSpace
       pql("""[[Floob -> _isDefined]]""") should equal ("false")
+    }
+    
+    "work on a Tag Set" in {
+      class TSpace extends CommonSpace {
+        val tagSetProp = new TestProperty(Tags.TagSetType, Core.QSet, "My Tag Set")
+        
+        val myThing = new SimpleTestThing("My Test Thing", tagSetProp("My Instance", "floobity", "Trivial"))
+      }
+      implicit val s = new TSpace
+      pql("""[[My Tag Set._tagsForProperty -> _filter(_isDefined)]]""") should equal(listOfLinkText(s.instance, s.trivialThing))
     }
   }
   

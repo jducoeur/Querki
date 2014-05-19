@@ -213,7 +213,7 @@ trait BaseParsers extends RegexParsers {
      * get smarter, but for now this is good, and prevents XSS injection since it doesn't contain ':'.
      */
     val xmlConservativeAttrRanges:SortedMap[Char,Char] =
-      SortedMap('A' -> 'Z', 'a' -> 'z', '0' -> '9', ' ' -> ' ', '_' -> '_', '-' -> '-', ',' -> ',', '.' -> '.')
+      SortedMap('A' -> 'Z', 'a' -> 'z', '0' -> '9', ' ' -> ' ', '_' -> '_', '-' -> '-', ',' -> ',', '.' -> '.', '!' -> '!')
     def xmlConservativeAttrChar:Parser[Char] = ranges(xmlConservativeAttrRanges)
 
     /**Parser for one char that starts an XML name.
@@ -229,7 +229,7 @@ trait BaseParsers extends RegexParsers {
      *  We are currently *whitelisting* tags. If it doesn't appear here, it's illegal.
      */
 //    def xmlName:Parser[String] = xmlNameStartChar ~ (xmlNameChar*) ^^ {case c ~ cs => c + cs.mkString}
-    def xmlName:Parser[String] = "div" | "span" | "i" | "strike" | 
+    def xmlName:Parser[String] = "div" | "span" | "i" | "strike" | "br" |
       "dl" | "dd" | "dt" |
       "table" | "tr" | "th" | "td"
     
