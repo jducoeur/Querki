@@ -9,10 +9,12 @@ import querki.test._
 class ComplexSpace(implicit ec:Ecology) extends CommonSpace with ModelTypeDefiner {
   val numberProp = new TestProperty(Core.IntType, ExactlyOne, "Number in Model")
   val textProp = new TestProperty(TextType, ExactlyOne, "Text in Model")
+  val referencingProp = new TestProperty(TextType, ExactlyOne, "Referencing")
     
   val modelForType = new SimpleTestThing("Model for Type",
       numberProp(0),
-      textProp(""))
+      textProp(""),
+      referencingProp("[[Top Level Property]]"))
     
   val modelType = new ModelType(toid, modelForType.id, 
       Core.toProps(
@@ -37,7 +39,9 @@ class ComplexSpace(implicit ec:Ecology) extends CommonSpace with ModelTypeDefine
   registerType(metaType)
   val metaProp = new TestProperty(metaType, QList, "Meta Property")
   
-  val metaThing = new SimpleTestThing("Top level Thing",
+  val topLevelProp = new TestProperty(TextType, ExactlyOne, "Top Level Property")
+  
+  val metaThing = new SimpleTestThing("Top level Thing", topLevelProp("From the Top"),
       metaProp(
         SimplePropertyBundle(propOfModelType(SimplePropertyBundle(numberProp(100), textProp("Top Text 1")))),
         SimplePropertyBundle(propOfModelType(SimplePropertyBundle(numberProp(200), textProp("Top Text 2"))))))
@@ -111,6 +115,14 @@ class ModelTypeTests extends QuerkiTests {
       
       pql("""[[Top Level Thing -> Meta Property -> _first -> Complex Prop -> Text in Model]]""") should
         equal("Top Text 1")
+    }
+    
+    "be able to access properties from its Thing" in {
+      implicit val s = new ComplexSpace
+      
+      // This is horribly messy, but Referencing then refers back to a Property defined all the way up
+      // at the top:
+      pql("""[[Top Level Thing -> Meta Property -> _first -> Complex Prop -> Referencing]]""") should equal ("From the Top")
     }
   }
   

@@ -108,6 +108,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
   lazy val Types = interface[querki.types.Types]
   
   lazy val displayName = invokedOn.displayName
+  lazy val LinkType = Core.LinkType
   
   def error[VT](name:String, params:String*) = InvocationValueImpl[VT](this, None, Some(PublicException(name, params:_*)))
   
@@ -242,12 +243,59 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
   
   def bundlesAndContextsForProp(prop:Property[_,_]):InvocationValue[(PropertyBundle, QLContext)] = {
     
+    def wrapContexts(bundle:PropertyBundle):Iterable[(PropertyBundle, QLContext)] = {
+      context.value.cv.map(elem => (bundle, context.next(Core.ExactlyOne(elem))))
+    }
+    
     def withLexicalContext:Option[PropertyBundle] = {
       for {
         parser <- context.parser
         lex <- parser.lexicalThing
       }
         yield lex
+    }
+
+    // Note that the elemContexts returned here are the same as the bundles. It isn't strictly clear that
+    // that is correct -- conceptually, when we've walked back up the stack, we should be using the received
+    // context as the elemContexts, I think. But things get weirdly multiplicative when we do that, and I'm
+    // not sure how to correctly tame that.
+    def withCurrentContext(current:QLContext):Option[InvocationValue[(PropertyBundle, QLContext)]] = {
+      if (current.value.matchesType(Core.LinkType)) {
+        val ids = current.value.flatMap(Core.LinkType)(Some(_))
+        val thingsOpt = ids.map(state.anything(_))
+        val things = thingsOpt.flatten
+        val pairs = things.map(t => (t, context.next(Core.ExactlyOne(Core.LinkType(t)))))
+        if (things.exists(_.hasProp(prop)))
+          Some(InvocationValueImpl(this, pairs, None))
+        else
+          None
+      } else current.value.pType match {
+        case mt:ModelTypeBase => {
+          val pairs = current.value.cv.map(elem => (elem.get(mt), context.next(Core.ExactlyOne(elem))))
+          if (pairs.exists(_._1.hasProp(prop)))
+            Some(InvocationValueImpl(this, pairs, None))
+          else
+            None
+        }
+        case _ => None
+      }
+    }
+
+    // Walk recursively back the Context chain, until we find one that was a Thing (that is, a LinkType), or
+    // we run out of Contexts. Note that we start with the one that was *already* tried, because we need to
+    // inject lexical checking into this pathway:
+    def walkNonThingContexts(previous:QLContext):InvocationValue[(PropertyBundle, QLContext)] = {
+      if (previous.parentOpt.isEmpty || previous.value.matchesType(LinkType))
+        // Either we hit the end of the chain, or we hit a Link -- either way, time to stop:
+        InvocationValueImpl(this, None, None, IVMetadata(returnType = Some(LinkType)))
+      else {
+        // Keep walking back up the chain, to see if we find something:
+        val current = previous.parent
+        withCurrentContext(current) match {
+          case Some(result) => result
+          case None => walkNonThingContexts(current)
+        }
+      }
     }
     
     if (definingContext.isDefined) {
@@ -260,35 +308,23 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
         yield InvocationValueImpl(this, Some((thing.asInstanceOf[PropertyBundle], context.next(dc.value))), None)
         
       result.getOrElse(error("Func.notThing", displayName))
-    } else if (context.value.matchesType(Core.LinkType)) {
-      val ids = context.value.flatMap(Core.LinkType)(Some(_))
-      val thingsOpt = ids.map(state.anything(_))
-      if (thingsOpt.forall(_.isDefined)) {
-        val things = thingsOpt.flatten
-        if (things.exists(_.hasProp(prop)))
-          InvocationValueImpl(this, things.map(t => (t, context.next(Core.ExactlyOne(Core.LinkType(t))))), None)
-        else {
-          // Hmm. None of the received values have this Property. Is it on the lexical context?
+    } else {
+      // No defining context -- does the received context have the property?
+      withCurrentContext(context) match {
+        case Some(result) => result
+        case None => {
+          // Nope. Does the lexical context?
           withLexicalContext match {
             // IMPORTANT SUBTLETY: note that we're passing through the *bundle* of the lexical context, but the actual contexts are the received context!
-            case Some(bundle) if (bundle.hasProp(prop)) => InvocationValueImpl(this, things.map(t => (bundle, context.next(Core.ExactlyOne(Core.LinkType(t))))), None)
+            case Some(bundle) if (bundle.hasProp(prop)) => InvocationValueImpl(this, wrapContexts(bundle), None)
             case _ => {
-              // TODO: if this bundle isn't a Thing, walk up the context chain.
-              // Can't find the target Property, so it seems to be a noop, but it *is* legal. Note that this
-              // collection will be empty, but correctly typed:
-              InvocationValueImpl(this, things.map(t => (t, context.next(Core.ExactlyOne(Core.LinkType(t))))), None)
+              // If this bundle isn't a Thing, walk up the context chain.
+              walkNonThingContexts(context)
             }
-          }
+          }          
         }
-      } else
-        error("Func.unknownThing", displayName)      
-    } else context.value.pType match {
-      case mt:ModelTypeBase => {
-        val pairs = context.value.cv.map(elem => (elem.get(mt), context.next(Core.ExactlyOne(elem))))
-        InvocationValueImpl(this, pairs, None)
       }
-      case _ => error("Func.notThing", displayName)
-    } 
+    }
   }
   
   def definingContextAsProperty:InvocationValue[Property[_,_]] = {
