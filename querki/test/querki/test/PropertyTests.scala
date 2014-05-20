@@ -63,5 +63,22 @@ class PropertyTests extends QuerkiTests {
       
       pql("""[[Caller -> Outer Text]]""") should equal ("From the outside: The number is 42")
     }
+    
+    "use the defining context" in {
+      class TSpace extends CommonSpace {
+        val myTextProp = new TestProperty(TextType, ExactlyOne, "My Text Prop")
+        val outerText = new TestProperty(TextType, ExactlyOne, "Outer Text")
+        val myNumber = new TestProperty(Core.IntType, ExactlyOne, "My Number")
+        
+        val callingThing = 
+          new SimpleTestThing("Caller", 
+              myTextProp("The number is [[My Number]]"),
+              outerText("From the outside: [[Other -> My Text Prop]]"))
+        val otherThing = new SimpleTestThing("Other", myNumber(42))        
+      }
+      implicit val s = new TSpace
+      
+      pql("[[Other -> My Number -> Caller.My Text Prop]]") should equal ("The number is 42")
+    }
   }
 }

@@ -305,7 +305,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
         id <- dc.value.firstAs(Core.LinkType)
         thing <- state.anything(id)
       }
-        yield InvocationValueImpl(this, Some((thing.asInstanceOf[PropertyBundle], context.next(dc.value))), None)
+        yield InvocationValueImpl(this, wrapContexts(thing), None)
         
       result.getOrElse(error("Func.notThing", displayName))
     } else {
