@@ -25,6 +25,25 @@ class FunctionTests extends QuerkiTests {
       pql("""[[Caller -> Outer Text]]""") should equal ("From the outside: 42")      
     }
     
+    "be able to resolve using an instance's lexical context" in {
+      // Note that this has outerText invoking myTextProp *lexically*, not via the received context
+      class TSpace extends CommonSpace {
+        val myFunc = new TestProperty(QLType, ExactlyOne, "My Function")
+        val outerText = new TestProperty(TextType, ExactlyOne, "Outer Text")
+        val myNumber = new TestProperty(Core.IntType, ExactlyOne, "My Number")
+        val otherNumber = new TestProperty(Core.IntType, ExactlyOne, "Other Number")
+        
+        val callingModel = new SimpleTestThing("Calling Model", myFunc("My Number"))
+        val callingThing = 
+          new TestThing("Caller", callingModel,
+              outerText("From the outside: [[Other -> My Function]]"))
+        val otherThing = new SimpleTestThing("Other", myNumber(42), otherNumber(13))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Caller -> Outer Text]]""") should equal ("From the outside: 42")      
+    }
+    
     "resolve using the calling context if applicable" in {
       // Since Other has My Function defined on it, we use that by preference:
       class TSpace extends CommonSpace {
