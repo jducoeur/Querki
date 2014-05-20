@@ -40,11 +40,11 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
    * PUBLIC API
    *********************************/
   
-  def renderPropertyInput(rc:RequestContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization] = Set(Unspecialized)):Html = {
-    val state = rc.state.get
+  def renderPropertyInput(context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization] = Set(Unspecialized)):Html = {
+    val state = context.state
     val cType = prop.cType
     val pType = prop.pType
-    val rendered = doRender(cType, pType, rc, prop, currentValue, specialization)
+    val rendered = doRender(cType, pType, context, prop, currentValue, specialization)
     val xml3 = addEditorAttributes(rendered, currentValue, prop, currentValue.inputControlId)
     // TODO: this is *very* suspicious, but we need to find a solution. RenderTagSet is trying to pass JSON structures in the
     // value field, but for that to be JSON-legal, the attributes need to be single-quoted, and the strings in them double-quoted.
@@ -131,17 +131,17 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     }
   }
   
-  def doRender(cType:Collection, pType:PType[_], rc:RequestContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):NodeSeq = {
-    renderSpecialized(cType, pType, rc, prop, currentValue, specialization).getOrElse(cType.renderInput(prop, rc, currentValue, pType))
+  def doRender(cType:Collection, pType:PType[_], context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):NodeSeq = {
+    renderSpecialized(cType, pType, context, prop, currentValue, specialization).getOrElse(cType.renderInput(prop, context, currentValue, pType))
   }
   
-  def renderSpecialized(cType:Collection, pType:PType[_], rc:RequestContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):Option[NodeSeq] = {
+  def renderSpecialized(cType:Collection, pType:PType[_], context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):Option[NodeSeq] = {
     // TODO: make this more data-driven. There should be a table of these.
-    val state = rc.state.get
+    val state = context.state
     if (cType == Optional && pType == YesNoType)
       Some(renderOptYesNo(state, prop, currentValue))
     else if (cType == Optional && pType == LinkType)
-      Some(renderOptLink(rc, prop, currentValue))
+      Some(renderOptLink(context, prop, currentValue))
     else if (cType == QSet && (pType == Core.NameType || pType == Tags.TagSetType || pType == LinkType || pType == NewTagSetType)) {
       if (specialization.contains(PickList))
         Some(renderPickList(state, prop, currentValue, specialization))
@@ -175,8 +175,8 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       <span class="btn-group" data-toggle="buttons-radio" name={currentValue.inputControlId + "-wrapper"}>{oneButton("Yes", "true", (isSet && v))}{oneButton("Maybe", "maybe", (!isSet))}{oneButton("No", "false", (isSet && !v))}</span>
   }
   
-  def renderOptLink(rc:RequestContext, prop:Property[_,_], currentValue:DisplayPropVal):NodeSeq = {
-    implicit val s = rc.state.get
+  def renderOptLink(context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal):NodeSeq = {
+    implicit val s = context.state
     val pType = LinkType
     val pair = currentValue.effectiveV.map(propVal => if (propVal.cv.isEmpty) (false, pType.default) else (true, propVal.first)).getOrElse((false, pType.default))
     val isSet = pair._1
@@ -185,7 +185,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     val results = <select class="_linkSelect"> 
       <option value={UnknownOID.id.toString}>Nothing selected</option>
       {
-      renderInputXmlGuts(prop, rc, currentValue, ElemValue(v, LinkType))
+      renderInputXmlGuts(prop, context, currentValue, ElemValue(v, LinkType))
     } </select>
     results
   }

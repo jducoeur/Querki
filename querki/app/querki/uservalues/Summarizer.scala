@@ -219,7 +219,7 @@ trait SummarizerDefs { self:QuerkiEcot =>
 	  
 	def doDefault(implicit state:SpaceState):DiscreteSummary[UVT] = DiscreteSummary(UnknownOID, Map())
 	
-	def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq =
+	def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq =
 	  <p><i>This will be calculated; you don't input it directly.</i></p>
   }  
 }

@@ -1,12 +1,21 @@
 @(rc:PlayRequestContext, prop:Property[_,_], v:DisplayPropVal, i:Int)
 
+@import querki.values.QLRequestContext
+
 @space = @{ rc.state.get }
 
 @Editor = @{ rc.interface[querki.editing.Editor] }
 @NameProp = @{ rc.interface[querki.core.Core].NameProp }
 
+@qlContext = @{
+  rc.thing match {
+    case Some(t) => t.thisAsContext(rc)
+    case None => QLRequestContext(rc)
+  }
+}
+
 @showInputControl(prop:Property[_,_], v:DisplayPropVal, i:Int) = {
-  @rc.interface[querki.html.HtmlRenderer].renderPropertyInput(rc, prop, v)
+  @rc.interface[querki.html.HtmlRenderer].renderPropertyInput(qlContext, prop, v)
 }
 
 @editButtonClass(v:DisplayPropVal) = @{

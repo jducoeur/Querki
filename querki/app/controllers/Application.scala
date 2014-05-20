@@ -606,7 +606,7 @@ disallow: /
     val resultOpt = 
       for (
         thing <- rc.thing;
-        wikitext = Editor.getInstanceEditor(thing, rc)
+        wikitext = Editor.getInstanceEditor(thing, QLRequestContext(rc))
       )
         yield wikitext.display.toString
         

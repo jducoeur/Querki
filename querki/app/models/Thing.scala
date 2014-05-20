@@ -63,7 +63,7 @@ abstract class Thing(
 {
   lazy val props:PropMap = propFetcher()
   
-  def thisAsContext(implicit request:RequestContext) = QLContext(Core.ExactlyOne(Core.LinkType(this.id)), Some(request))
+  def thisAsQValue:QValue = Core.ExactlyOne(Core.LinkType(this.id))
   
   // These are defs instead of vals, because any vals defined here will be for every single Thing in the
   // world. Don't val-ify too casually. In this case, I believe we're willing to accept a little lookup

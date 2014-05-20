@@ -279,8 +279,8 @@ trait LinkUtils { self:CoreEcot =>
     filteredAsModel.filterNot(_.ifSet(InternalProp))
   }    
   
-    def renderInputXmlGuts(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
-      val state = rc.state.get
+    def renderInputXmlGuts(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
+      val state = context.state
       val Links = interface[querki.links.Links]
       // Give the Property a chance to chime in on which candidates belong here:
       val candidates = prop match {
@@ -326,7 +326,7 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
     def doSerialize(v:Unit)(implicit state:SpaceState) = throw new Exception("Trying to use UnknownType!")
     def doWikify(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None) = throw new Exception("Trying to use UnknownType!")
   
-    def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = 
+    def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = 
       throw new Exception("Trying to use UnknownType!")
 
     def doDefault(implicit state:SpaceState) = throw new Exception("Trying to use UnknownType!")
@@ -354,7 +354,7 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
     def doSerialize(v:Unit)(implicit state:SpaceState) = throw new Exception("Trying to use UrType!")
     def doWikify(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None) = throw new Exception("Trying to use UrType!")
   
-    def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = 
+    def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = 
       throw new Exception("Trying to use UrType!")
 
     def doDefault(implicit state:SpaceState) = throw new Exception("Trying to use UrType!")    
@@ -494,8 +494,8 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
   {
     override def editorSpan(prop:Property[_,_]):Int = 12
     
-    override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq =
-      renderLargeText(prop, rc, currentValue, v, this)
+    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq =
+      renderLargeText(prop, context, currentValue, v, this)
   }
     
   /**
@@ -599,9 +599,9 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
 
     def doDefault(implicit state:SpaceState) = UnknownOID
     
-    override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
+    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
         <select class="_linkSelect"> {
-          renderInputXmlGuts(prop, rc, currentValue, v)
+          renderInputXmlGuts(prop, context, currentValue, v)
         } </select>
     }
     
@@ -688,7 +688,7 @@ trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTy
     
     def doDefault(implicit state:SpaceState) = false
     
-    override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
+    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
       if (get(v))
         <input type="checkbox" checked="checked" />
       else

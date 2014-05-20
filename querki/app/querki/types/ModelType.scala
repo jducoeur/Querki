@@ -37,7 +37,7 @@ case class ModeledPropertyBundle(modelType:ModelTypeDefiner#ModelType, basedOn:O
     state.anything(modelType.basedOn)
   }
   
-  def thisAsContext(implicit request:RequestContext):QLContext = QLContext(interface[querki.core.Core].ExactlyOne(ElemValue(this, modelType)), Some(request))
+  def thisAsQValue:QValue = interface[querki.core.Core].ExactlyOne(ElemValue(this, modelType))
   
   def getPropOpt[VT](prop:Property[VT, _])(implicit state:SpaceState):Option[PropAndVal[VT]] = {
     if (hasProp(prop))
@@ -154,9 +154,9 @@ trait ModelTypeDefiner { self:EcologyMember =>
       ModeledPropertyBundle(this, basedOn, raw.props)
     }
     
-    override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
+    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
       val bundle = get(v)
-      val wikitext = Editor.getInstanceEditor(bundle, rc, Some(currentValue))
+      val wikitext = Editor.getInstanceEditor(bundle, context, Some(currentValue))
       wikitext.display.xml
     }
   }

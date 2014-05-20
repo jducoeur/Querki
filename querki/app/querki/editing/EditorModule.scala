@@ -37,8 +37,8 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   lazy val DisplayTextProp = Basic.DisplayTextProp
   lazy val NameProp = Core.NameProp
   
-  def getInstanceEditor(thing:PropertyBundle, rc:RequestContext, currentValue:Option[DisplayPropVal] = None):Wikitext = {
-    instanceEditorForThing(thing, thing.thisAsContext(rc).copy(currentValue = currentValue), None)
+  def getInstanceEditor(thing:PropertyBundle, context:QLContext, currentValue:Option[DisplayPropVal] = None):Wikitext = {
+    instanceEditorForThing(thing, context.next(thing.thisAsQValue).copy(currentValue = currentValue), None)
   }
   
   /***********************************************
@@ -100,7 +100,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	  }
 	}
 
-  lazy val instanceEditViewProp = new SystemProperty(InstanceEditViewOID, LargeTextType, ExactlyOne,
+  lazy val InstanceEditViewProp = new SystemProperty(InstanceEditViewOID, LargeTextType, ExactlyOne,
       toProps(
         setName("Instance Edit View"),
         Summary("Defines the Edit View for Instances of this Model"),
@@ -155,7 +155,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   	      // probably need to have the Context contain the desire to render in HTML, and delegate to the
 	      // HTML renderer indirectly. In other words, the Context should know the renderer to use, and pass
 	      // that into here:
-	      val inputControl = HtmlRenderer.renderPropertyInput(elemContext.request, prop, currentValue, 
+	      val inputControl = HtmlRenderer.renderPropertyInput(elemContext, prop, currentValue, 
 	          specialization(elemContext, mainThing, definingContext, prop, params))
 	      HtmlUI.HtmlValue(inputControl)    
         }
@@ -469,7 +469,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
     PlaceholderTextProp,
     PromptProp,
     InstanceProps,
-    instanceEditViewProp,
+    InstanceEditViewProp,
     editMethod,
     editOrElseMethod,
     editAsPicklistMethod,

@@ -37,10 +37,15 @@ trait PropertyBundle {
   def getModelOpt(implicit state:SpaceState):Option[Thing]
   
   /**
+   * Wraps this Bundle in a QValue.
+   */
+  def thisAsQValue:QValue
+  
+  /**
    * Given the request we're operating within, this produces a Context you can use for
    * handle QL expressions.
    */
-  def thisAsContext(implicit request:RequestContext):QLContext
+  def thisAsContext(implicit request:RequestContext):QLContext = QLContext(thisAsQValue, Some(request))
   
   /**
    * Fetch the actual Property values contained in this Bundle.

@@ -6,7 +6,7 @@ import models.{DisplayPropVal, OID, Property, PType}
 import models.Thing.PropFetcher
 
 import querki.ecology._
-import querki.values.{ElemValue, RequestContext, SpaceState}
+import querki.values.{ElemValue, QLContext, SpaceState}
 
 private[core] trait BootUtils { self:CoreModule =>
   def setInternal:(OID, QValue)
@@ -14,26 +14,26 @@ private[core] trait BootUtils { self:CoreModule =>
 
 object TypeUtils {
   trait CommonInputRenderers { self:SystemType[_] =>
-    def renderAnyText(prop:Property[_, _], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_])(doRender: (String) => NodeSeq):NodeSeq = {
-      val str = elemT.toUser(v)(rc.state.get)
+    def renderAnyText(prop:Property[_, _], context:QLContext, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_])(doRender: (String) => NodeSeq):NodeSeq = {
+      val str = elemT.toUser(v)(context.state)
       val xml = doRender(str)
       xml
     }
   
-    def renderLargeText(prop:Property[_, _], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_]):NodeSeq = {
-      renderAnyText(prop, rc, currentValue, v, elemT) { cv =>
+    def renderLargeText(prop:Property[_, _], context:QLContext, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_]):NodeSeq = {
+      renderAnyText(prop, context, currentValue, v, elemT) { cv =>
         <textarea class="_largeTextEdit" rows="2">{cv}</textarea>
       }
     }
   
-    def renderText(prop:Property[_, _], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_]):NodeSeq = {
-      renderAnyText(prop, rc, currentValue, v, elemT) { cv =>
+    def renderText(prop:Property[_, _], context:QLContext, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_]):NodeSeq = {
+      renderAnyText(prop, context, currentValue, v, elemT) { cv =>
         <input type="text" value={cv}/>
       }
     }
   
-    def renderBlank(prop:Property[_, _], rc:RequestContext, currentValue:DisplayPropVal, elemT:PType[_]):NodeSeq = {
-      renderText(prop, rc, currentValue, Core.TextType(""), Core.TextType)
+    def renderBlank(prop:Property[_, _], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):NodeSeq = {
+      renderText(prop, context, currentValue, Core.TextType(""), Core.TextType)
     }
   }
 
@@ -43,7 +43,7 @@ object TypeUtils {
     // Types is where the various validators and such live:
     lazy val Types = interface[querki.types.Types]
     
-    def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
+    def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
       // TBD: this is smelly -- the fact that we need to know here how to render Optional is a nasty abstraction
       // break. But in general, rendering probably doesn't belong here: ultimately, rendering depends on the
       // Collection/Type matrix, and there doesn't seem to be a nice clean division of responsibilities...
@@ -51,9 +51,9 @@ object TypeUtils {
         ev <- currentValue.effectiveV;
         if (displayEmptyAsBlank && ev.cType == Core.Optional && ev.isEmpty)
           )
-        yield renderBlank(prop, rc, currentValue, this)
+        yield renderBlank(prop, context, currentValue, this)
       
-      renderedBlank.getOrElse(renderText(prop, rc, currentValue, v, this))
+      renderedBlank.getOrElse(renderText(prop, context, currentValue, v, this))
     }
   
     // Iff a Type wants to render QNone as blank text instead of the default value, set this to true

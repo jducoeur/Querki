@@ -66,8 +66,8 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
     toProps(
       setName("Rating Type"))) with DiscreteType[Int]
   {
-    override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
-      implicit val s = rc.state.get
+    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
+      implicit val s = context.state
       // Note that we are intentionally demanding a result here. If it's not defined, we expect to get LabelsProp's default.
       // So we don't expect this to ever be empty:
       val labels = getLabels(prop)

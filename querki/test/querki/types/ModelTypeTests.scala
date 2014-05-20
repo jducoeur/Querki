@@ -7,6 +7,8 @@ import querki.ecology._
 import querki.test._
 
 class ComplexSpace(implicit ec:Ecology) extends CommonSpace with ModelTypeDefiner {
+  lazy val Editor = interface[querki.editing.Editor] 
+  
   val numberProp = new TestProperty(Core.IntType, ExactlyOne, "Number in Model")
   val textProp = new TestProperty(TextType, ExactlyOne, "Text in Model")
   val referencingProp = new TestProperty(TextType, ExactlyOne, "Referencing")
@@ -14,7 +16,8 @@ class ComplexSpace(implicit ec:Ecology) extends CommonSpace with ModelTypeDefine
   val modelForType = new SimpleTestThing("Model for Type",
       numberProp(0),
       textProp(""),
-      referencingProp("[[Top Level Property]]"))
+      referencingProp("[[Top Level Property]]"),
+      Editor.InstanceEditViewProp("Reference from subModel: [[Top Level Property]]"))
     
   val modelType = new ModelType(toid, modelForType.id, 
       Core.toProps(
@@ -123,6 +126,12 @@ class ModelTypeTests extends QuerkiTests {
       // This is horribly messy, but Referencing then refers back to a Property defined all the way up
       // at the top:
       pql("""[[Top Level Thing -> Meta Property -> _first -> Complex Prop -> Referencing]]""") should equal ("From the Top")
+    }
+    
+    "be able to access its Thing from _edit" in {
+      implicit val s = new ComplexSpace
+      
+      pql("[[Top Level Thing -> Meta Property -> _first -> Complex Prop._edit]]") should include ("Reference from subModel: From the Top")
     }
   }
   

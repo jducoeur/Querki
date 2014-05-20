@@ -88,8 +88,8 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   {
     override def editorSpan(prop:Property[_,_]):Int = 12
     
-    override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
-      renderAnyText(prop, rc, currentValue, v, this) { cv =>
+    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
+      renderAnyText(prop, context, currentValue, v, this) { cv =>
         <input type="text" class="_tagInput" data-isnames="true" value={cv}/>
       }
     }

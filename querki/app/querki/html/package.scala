@@ -30,7 +30,7 @@ package object html {
     // If nodes is itself an Elem, this uses that; otherwise, it expects nodes to be a sequence of Elems:
     def addClasses(nodes:NodeSeq, addedClasses:String):NodeSeq
     def propValFromUser(fieldIds:FieldIds, on:Option[Thing], form:Form[_], context:QLContext):FormFieldInfo
-    def renderPropertyInput(rc:RequestContext, prop:Property[_,_], 
+    def renderPropertyInput(context:QLContext, prop:Property[_,_], 
         currentValue:DisplayPropVal, 
         specialization:Set[RenderSpecialization.RenderSpecialization] = Set(RenderSpecialization.Unspecialized)):Html
   }

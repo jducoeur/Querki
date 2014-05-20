@@ -10,7 +10,7 @@
 
 @import models.Property._
 
-@import querki.values.SpaceState
+@import querki.values.{QLRequestContext, SpaceState}
 
 @thing = @{ rc.thing }
 @space = @{ rc.state.get }
@@ -104,8 +104,15 @@
   }
 }
 
+@qlContext = @{
+  thing match {
+    case Some(t) => t.thisAsContext(rc)
+    case None => QLRequestContext(rc)
+  }
+}
+
 @showInputControl(prop:Property[_,_], v:DisplayPropVal, i:Int) = {
-  @HtmlRenderer.renderPropertyInput(rc, prop, v)
+  @HtmlRenderer.renderPropertyInput(qlContext, prop, v)
 }
 
 @editButtonClass(v:DisplayPropVal) = @{

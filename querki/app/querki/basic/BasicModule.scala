@@ -95,8 +95,8 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
   {
     override def editorSpan(prop:Property[_,_]):Int = 12   
   
-    override def renderInputXml(prop:Property[_,_], rc:RequestContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq =
-      renderLargeText(prop, rc, currentValue, v, this)
+    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq =
+      renderLargeText(prop, context, currentValue, v, this)
 
     // TBD: in principle, we really want this to return a *context*, not a *value*. This is a special
     // case of a growing concern: that we could be losing information by returning QValue from

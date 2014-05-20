@@ -134,7 +134,7 @@ trait ThingEditor { self:EditorModule =>
     
     private def editorLayoutForThing(thing:PropertyBundle, state:SpaceState):QLText = {
       implicit val s = state
-      thing.getPropOpt(instanceEditViewProp).flatMap(_.v.firstTyped(LargeTextType)) match {
+      thing.getPropOpt(InstanceEditViewProp).flatMap(_.v.firstTyped(LargeTextType)) match {
         // There's a predefined Instance Edit View, so use that:
         case Some(editText) => editText
         // Generate the View based on the Thing:
