@@ -5,7 +5,7 @@ import play.Project._
 object ApplicationBuild extends Build {
 
     val appName         = "Querki"
-    val appVersion      = "0.8.6.1"
+    val appVersion      = "0.8.6.2"
 
     val appDependencies = Seq(
 	  // Main Play dependencies
