@@ -49,12 +49,10 @@ trait MethodDefs { self:QuerkiEcot =>
     ))
   {
     override def qlApply(inv:Invocation):QValue = {
-      try {
-        applyToIncomingThing(inv)(handleThing)
-      } catch {
-        case error:Exception => QLog.error("Error while running internal method", error)
-        interface[querki.ql.QL].ErrorValue("Error while running internal method")
+      for {
+        thing <- inv.contextFirstThing
       }
+        yield handleThing(thing, inv.context)
     }
   
     /**

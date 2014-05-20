@@ -335,20 +335,24 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |    ... -> _if(_equals(_kind, _kind(Property)), ...)
           |""".stripMargin)))
   { 
-  override def qlApply(inv:Invocation):QValue = {
-    val paramsOpt = inv.paramsOpt
-    
-    // If there is a parameter, this will produce its value:
-    val paramResult = for (
-      params <- paramsOpt;
-      param = params(0);
-      QLCall(kindName, _, _, _) = param.ops(0)
-        )
-      yield Kind.fromName(kindName.name).map(kind => ExactlyOne(IntType(kind))).getOrElse(WarningValue("Unknown Kind: " + kindName))
+    override def qlApply(inv:Invocation):QValue = {
+      inv.paramsOpt match {
+        // First version of this function: if there is a parameter, it should be the name of a Kind:
+        case Some(params) => {
+          val param = params(0);
+          val QLCall(kindName, _, _, _) = param.ops(0)
+          Kind.fromName(kindName.name).map(kind => ExactlyOne(IntType(kind))).getOrElse(WarningValue("Unknown Kind: " + kindName))
+        }
       
-    // If not, produce the incoming Thing's value:
-    paramResult.getOrElse(applyToIncomingThing(inv) { (thing, context) => ExactlyOne(IntType(thing.kind)) })
-  }
+        // Second version: return the Kind of the received value:
+        case None => {
+          for {
+            thing <- inv.contextAllThings
+          }
+            yield ExactlyOne(IntType(thing.kind))
+        }
+      }
+    }
   }
 
   class CurrentSpaceMethod extends SingleThingMethod(CurrentSpaceMethodOID, "_currentSpace", "What Space are we looking at?", 

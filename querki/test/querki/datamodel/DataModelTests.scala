@@ -51,6 +51,14 @@ class DataModelTests extends QuerkiTests {
     }
   }
   
+  // === _currentSpace ===
+  "_currentSpace" should {
+    "return the current Space" in {
+      implicit val s = commonSpace
+      pql("""[[_currentSpace]]""") should equal (linkText(commonState))
+    }
+  }
+  
   // === _hasProperty ===
   "_hasProperty" should {
     "produce true iff the Thing has the Property" in {
@@ -240,6 +248,18 @@ class DataModelTests extends QuerkiTests {
       }
       implicit val s = new TSpace
       pql("""[[My Tag Set._tagsForProperty -> _filter(_isDefined)]]""") should equal(listOfLinkText(s.instance, s.trivialThing))
+    }
+  }
+  
+  "_kind" should {
+    "work with the common Types" in {
+      implicit val s = commonSpace
+      
+      pql("[[My Model -> _kind]]") should equal ("0")
+      pql("[[Text Type -> _kind]]") should equal ("1")
+      pql("[[My List of Links._self -> _kind]]") should equal ("2")
+      pql("[[Test Space -> _kind]]") should equal ("3")
+      pql("[[Optional -> _kind]]") should equal ("4")
     }
   }
   
