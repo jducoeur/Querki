@@ -6,7 +6,8 @@ import models.{OID, PType, SimplePTypeBuilder, UnknownOID, Wikitext}
 import models.Thing.PropMap
 
 import querki.ecology._
-
+import querki.time.DateTime
+import querki.time.TimeAnorm._
 import querki.values.{ElemValue, QLContext, SpaceState}
 
 object SpacePersistenceMOIDs extends EcotIds(28)
@@ -55,16 +56,18 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
   
   def AttachSQL(spaceId:OID, query:String):SqlQuery = SQL(query.replace("{tname}", attachTable(spaceId)))
     
-  def createThingInSql(thingId:OID, spaceId:OID, modelId:OID, kind:Int, props:PropMap, serialContext:SpaceState)(implicit conn:java.sql.Connection):Int = {
-    SpaceSQL(spaceId, """
+  def createThingInSql(thingId:OID, spaceId:OID, modelId:OID, kind:Int, props:PropMap, modTime:DateTime, serialContext:SpaceState)(implicit conn:java.sql.Connection):Int = {
+    val sql = SpaceSQL(spaceId, """
         INSERT INTO {tname}
-        (id, model, kind, props) VALUES
-        ({thingId}, {modelId}, {kind}, {props})
+        (id, model, kind, modified, props) VALUES
+        ({thingId}, {modelId}, {kind}, {modTime}, {props})
         """
         ).on("thingId" -> thingId.raw,
              "modelId" -> modelId.raw,
              "kind" -> kind,
-             "props" -> serializeProps(props, serialContext)).executeUpdate()    
+             "modTime" -> modTime,
+             "props" -> serializeProps(props, serialContext))
+    sql.executeUpdate()    
   }
   
   def serializeProps(props:PropMap, space:SpaceState):String = {

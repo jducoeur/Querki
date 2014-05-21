@@ -16,27 +16,21 @@ import models.{Kind, MIMEType}
 import models.{AsOID, AsName, OID, ThingId, UnknownOID}
 import models.{Attachment, Collection, Property, PType, PTypeBuilder, Thing, ThingState}
 import models.Thing.emptyProps
-import messages._
-
+import MIMEType.MIMEType
 import Kind._
 import Thing.PropMap
 
 import querki.core.NameUtils
-
 import querki.ecology._
-
 import querki.identity.User
-
-import messages._
-import SpaceError._
-
-import MIMEType.MIMEType
-
+import querki.time.DateTime
 import querki.types.ModelTypeDefiner
 import querki.types.MOIDs.ModelForTypePropOID
 import querki.util._
 import querki.values.SpaceState
 
+import messages._
+import SpaceError._
 import PersistMessages._
 
 /**
@@ -223,8 +217,9 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
     } else if (name.isDefined && state.anythingByName(name.get).isDefined)
       sender ! ThingError(new PublicException(NameExists, name.get))
     else {
-      persister.request(Create(state, modelId, kind, props, attachmentInfo)) {
-        case Changed(thingId, modTime) => {
+      val modTime = DateTime.now
+      persister.request(Create(state, modelId, kind, props, modTime, attachmentInfo)) {
+        case Changed(thingId, _) => {
           implicit val e = ecology
           kind match {
             case Kind.Thing => {
@@ -288,6 +283,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
 	      }
 	        
           implicit val e = ecology
+          val modTime = DateTime.now
 	      // TODO: this needs a clause for each Kind you can get:
           // TODO: (IMPORTANT) there is currently a race condition in all of the below clauses.
           // If a new change for the given Thing comes in while the request is out to the persister,
@@ -297,8 +293,8 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
           // of the more important places in the architecture.
           oldThing match {
             case t:Attachment => {
-              persister.request(Change(state, thingId, modelId, newProps, None)) {
-                case Changed(_, modTime) => {
+              persister.request(Change(state, thingId, modelId, modTime, newProps, None)) {
+                case Changed(_, _) => {
 	              val newThingState = t.copy(m = modelId, pf = () => newProps, mt = modTime)
 	              updateState(state.copy(things = state.things + (thingId -> newThingState))) 
                   sender ! ThingFound(thingId, state)
@@ -306,8 +302,8 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
               }              
             }
             case t:ThingState => {
-              persister.request(Change(state, thingId, modelId, newProps, None)) {
-                case Changed(_, modTime) => {
+              persister.request(Change(state, thingId, modelId, modTime, newProps, None)) {
+                case Changed(_, _) => {
 	              val newThingState = t.copy(m = modelId, pf = () => newProps, mt = modTime)
 	              updateState(state.copy(things = state.things + (thingId -> newThingState))) 
                   sender ! ThingFound(thingId, state)
@@ -315,8 +311,8 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
               }
             }
             case prop:Property[_,_] => {
-              persister.request(Change(state, thingId, modelId, newProps, None)) {
-                case Changed(_, modTime) => {
+              persister.request(Change(state, thingId, modelId, modTime, newProps, None)) {
+                case Changed(_, _) => {
                   // If the Type has changed, alter the Property itself accordingly:
                   val typeChange = PropTypeMigrator.prepChange(state, prop, newProps)
 	              
@@ -347,8 +343,8 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
               } else {
                 None
               }
-              persister.request(Change(state, thingId, modelId, newProps, spaceChange)) {
-                case Changed(_, modTime) => {
+              persister.request(Change(state, thingId, modelId, modTime, newProps, spaceChange)) {
+                case Changed(_, _) => {
                   updateState(state.copy(m = modelId, pf = () => newProps, name = newName, mt = modTime))
 	              sender ! ThingFound(thingId, state)
                 }

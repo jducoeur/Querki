@@ -11,6 +11,7 @@ import models.Thing.PropMap
 
 import querki.ecology._
 import querki.spaces.messages.SpaceMgrMsg
+import querki.time.DateTime
 import querki.util.Sequencer
 import querki.values.{QValue, SpaceState, StateCacheKey}
 
@@ -63,7 +64,7 @@ package object spaces {
     def serializeProps(props:PropMap, space:SpaceState):String
     def deserializeProps(str:String, space:SpaceState):PropMap
     def deserializeProp(propStr:String)(implicit space:SpaceState):(OID, QValue)
-    def createThingInSql(thingId:OID, spaceId:OID, modelId:OID, kind:Int, props:PropMap, serialContext:SpaceState)(implicit conn:java.sql.Connection):Int
+    def createThingInSql(thingId:OID, spaceId:OID, modelId:OID, kind:Int, props:PropMap, modTime:DateTime, serialContext:SpaceState)(implicit conn:java.sql.Connection):Int
   }
     
   case class ThingChangeRequest(state:SpaceState, modelIdOpt:Option[OID], thingOpt:Option[Thing], newProps:PropMap, changedProps:Seq[OID])

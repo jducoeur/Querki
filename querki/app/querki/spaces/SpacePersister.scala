@@ -170,19 +170,18 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
     
     /***************************/
     
-    case Change(state, thingId, modelId, props, spaceChangeOpt) => {
+    case Change(state, thingId, modelId, modTime, props, spaceChangeOpt) => {
       DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
         SpaceSQL("""
           UPDATE {tname}
-          SET model = {modelId}, props = {props}
+          SET model = {modelId}, modified = {modified}, props = {props}
           WHERE id = {thingId}
           """
           ).on("thingId" -> thingId.raw,
                "modelId" -> modelId.raw,
+               "modified" -> modTime,
                "props" -> SpacePersistence.serializeProps(props, state)).executeUpdate()
                
-        // TODO: in principle, this should come from the DB's timestamp:
-        val modTime = DateTime.now
         sender ! Changed(thingId, modTime)
       }
       
@@ -204,14 +203,11 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
     
     /***************************/
     
-    case Create(state:SpaceState, modelId:OID, kind:Kind, props:PropMap, attachmentInfo:Option[AttachmentInfo]) => {
+    case Create(state:SpaceState, modelId:OID, kind:Kind, props:PropMap, modTime:DateTime, attachmentInfo:Option[AttachmentInfo]) => {
       DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
         val thingId = OID.next(ShardKind.User)
         // TODO: add a history record
-        SpacePersistence.createThingInSql(thingId, id, modelId, kind, props, state)
-        // TBD: this isn't quite right -- we really should be taking the DB's definition of the timestamp
-        // instead:
-        val modTime = DateTime.now
+        SpacePersistence.createThingInSql(thingId, id, modelId, kind, props, modTime, state)
       
         attachmentInfo.map { info =>
           val AttachmentInfo(content, mime, size) = info

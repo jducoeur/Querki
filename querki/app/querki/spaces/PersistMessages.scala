@@ -41,13 +41,13 @@ private [spaces] object PersistMessages {
    * Command to alter the specified Thing. spaceChange should be given iff the Thing is the Space
    * itself. Should response with Changed().
    */
-  case class Change(state:SpaceState, thingId:OID, modelId:OID, props:PropMap, spaceChange:Option[SpaceChange])
+  case class Change(state:SpaceState, thingId:OID, modelId:OID, modTime:DateTime, props:PropMap, spaceChange:Option[SpaceChange])
   
   case class AttachmentInfo(content:Array[Byte], mime:MIMEType, size:Int)
   /**
    * Command to create a new Thing. attachmentInfo should be given if the Kind is Attachment.
    */
-  case class Create(state:SpaceState, modelId:OID, kind:Kind, props:PropMap, attachmentInfo:Option[AttachmentInfo])
+  case class Create(state:SpaceState, modelId:OID, kind:Kind, props:PropMap, modTime:DateTime, attachmentInfo:Option[AttachmentInfo])
   
   /**
    * Response from a Change() or Create().
