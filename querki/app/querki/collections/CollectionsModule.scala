@@ -217,8 +217,15 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |numeric if the results are numeric. It is essential that EXP return the same type for all elements, and it should return
 	          |ExactlyOne value. (If it returns a List, only the first will be used. The behaviour is undefined if it returns a Set, or None.)
 	          |
-	          |At the moment, _sort is mainly designed for Links -- that is, pointers to Things -- since that is what 95% of use cases require. 
-	          |We plan to make it more general, when folks come up with use cases that need it.
+	          |If you need to sort on multiple fields, list them as additional parameters. For example, if you have
+	          |
+	          |    LIST -> _sort(A, B, C) -> SORTED
+	          |
+	          |This will try to sort the list on A. When it finds multiple Things with the same value for A, it will sort them on B instead, then
+	          |C, and so on.
+	          |
+	          |_sort is focused on Links, and as mentioned above, will default to sorting those by Display Name. You can also sort lists of Numbers,
+	          |and many Types just work correctly, but not all. If you need to sort something, and can't make it work, please speak up.
 	          |
 	          |Most of the time, you will want EXP to simply be the name of a Property. For example, this:
 	          |
@@ -229,12 +236,15 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |
 	          |If you need to reverse the order of the sort, use the [[_desc._self]] method inside of it.
 	          |
-	          |If two or more elements being sorted have the same sort value, they will be sorted by Display Name.
-	          |
-	          |There is currently no way to define your own customized sort order. It'll probably happen someday, but will depend on user
-	          |demand. It is likely that we will add the ability to sort by multiple keys (sort on Property A, then Property B if those are
-	          |identical) in the not-too-distant future -- yell if this proves important for you.""".stripMargin)))
+	          |If two or more elements being sorted have the same sort value, they will be sorted by Display Name.""".stripMargin)))
 	{
+	  // Note that we intentionally need to keep the type to compare on separate from the actual ElemValue.
+	  // That is because the compType might be, eg, a _desc() wrapper around the actual PType.
+	  sealed trait SortTerm
+	  case object EmptySortTerm extends SortTerm
+	  case class RealSortTerm(elem:ElemValue, compType:PType[_]) extends SortTerm
+	  case class SortTerms(t:Thing, terms:Seq[SortTerm], displayName:String)
+	  
 	  override def qlApply(inv:Invocation):QValue = {
 	    val context = inv.context
 	    val paramsOpt = inv.paramsOpt
@@ -242,40 +252,103 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    implicit val s = context.state
 	    implicit val rc = context.request
 	
-	    // TODO: this is awfully inefficient -- we're recomputing the processPhrase repeatedly during
-	    // the sort process. We should probably instead map the parameter over the list, and then
-	    // sort using the results:
-	    def thingSortFunc(left:Thing, right:Thing):Boolean = {
-	      val sortResult =
-	        for (
-	            params <- paramsOpt;
+	    /**
+	     * Compare two SortTerms.
+	     */
+	    def thingSortFunc(left:SortTerms, right:SortTerms):Boolean = {
+	      val matchedTerms = left.terms zip right.terms
+	      // Iterate over the paired elements, which correspond to the parameters to _sort. Use the first
+	      // result where they don't match:
+	      val resultOpt = (Option.empty[Boolean] /: matchedTerms) { (current, terms) =>
+	        current match {
+	          // We've already found a valid pair to sort on, so skip the rest:
+	          case Some(b) => current
+	          
+	          // Still trying, so let's see how this pair does:
+	          case None => {
+	            val (left, right) = terms
+	            left match {
+	              case EmptySortTerm => {
+	                right match {
+	                  // Both empty, so move along to the next term...
+	                  case EmptySortTerm => None
+	                  // Left is empty, right isn't -- left is "less than" right
+	                  case _ => Some(true)
+	                }
+	              }
+	              case RealSortTerm(leftElem, compType) => {
+	                right match {
+	                  // Left is real, right is empty -- right is "less than" left
+	                  case EmptySortTerm => Some(false)
+	                  case RealSortTerm(rightElem, _) => {
+	                    // Okay, they're both non-empty:
+	                    // NOTE: why do we have to check that the types match? Because Querki is weakly typed, so left and right
+	                    // could wind up producing different types from the same test expression.
+	                    // TBD: in the long run, we might wind up with "subtype" relationships, in which case this test
+	                    // will need to become more sophisticated:
+			            if (leftElem.pType.realType == rightElem.pType.realType && !compType.matches(leftElem, rightElem))
+			              // They're the same type, and don't match, so let's compare:
+			              Some(compType.comp(context)(leftElem, rightElem))
+			            else
+			              // Either they're not matching types, or they're identical, so move along:
+			              None
+	                  }
+	                }
+	              }
+	            }
+	          }
+	        }
+	      }
+	      
+	      // When all else fails, compare display names:
+	      resultOpt.getOrElse(left.displayName < right.displayName)
+	    }
+	    
+	    /**
+	     * For a given Thing, compute its sort terms based on the parameters. The last element of the tuple is the display name,
+	     * which is the final fallback for sorting.
+	     */
+	    def computeSortTerms(t:Thing):SortTerms = {
+	      paramsOpt match {
+	        case Some(params) => {
+	          val terms = for {
+	            param <- params
 	            // This may return a wrapped Delegating Type. (Eg, DescendingType.)
-	            leftCalc = context.parser.get.processPhrase(params(0).ops, context.next(ExactlyOne(LinkType(left)))).value;
-	            // IMPORTANT: leftResult is the ElemValue, and its pType may *not* be the same as leftCalc! The ElemValue
-	            // is the real element, which is likely to be of the underlying PType, without any _desc wrapper:
-	            leftResult <- leftCalc.firstOpt orElse { Some(leftCalc.pType.default) };
-	            rightCalc = context.parser.get.processPhrase(params(0).ops, context.next(ExactlyOne(LinkType(right)))).value;
-	            rightResult <- rightCalc.firstOpt orElse { Some(rightCalc.pType.default) };
-	            if (leftResult.pType.realType == rightResult.pType.realType);
-	            // If the two values are equal, fall through to the default:
-	            if (!leftCalc.pType.matches(leftResult, rightResult))
-	          )
-	          yield leftCalc.pType.comp(context)(leftResult, rightResult)
-	
-	      // Default to sorting by displayName if anything doesn't work correctly:
-	      sortResult.getOrElse(left.displayName < right.displayName)
+	            tCalc = context.parser.get.processPhrase(param.ops, context.next(ExactlyOne(LinkType(t)))).value
+	            tRawResultOpt = tCalc.firstOpt
+	            // Note that tResultOpt will be None iff the processing came up empty, or as UnknownOID. (The latter
+	            // is very common iff the sort expression including a Property not defined on the received Bundle.)
+	            tResultOpt = {
+	              tRawResultOpt match {
+	                case None => None
+	                case Some(result) => {
+	                  result.getOpt(LinkType) match {
+	                    // This is the heart of this big clause: translate UnknownOID to EmptySortTerm
+	                    case Some(oid) => if (oid == UnknownOID) None else Some(result)
+	                    case None => Some(result)
+	                  }
+	                }
+	              }
+	            }
+	          }
+	            // IMPORTANT: tResult is the ElemValue, and its pType may *not* be the same as tCalc! The ElemValue
+	            // is the real element, which is likely to be of the underlying PType, without any _desc wrapper
+	            yield tResultOpt.map(tResult => RealSortTerm(tResult, tCalc.pType)).getOrElse(EmptySortTerm)
+	            
+	          SortTerms(t, terms, t.displayName)
+	        }
+	        // The simple case: there are no sort parameters, so we're just sorting on displayName.
+	        case None => SortTerms(t, Seq.empty, t.displayName)
+	      }
 	    }
 	    
 	    val start = context.value.cv.toSeq
 	    val pType = context.value.pType
 	    pType match {
 	      case LinkType => {
-	        // TODO: we probably don't need to translate these to Things any more:
 	        val asThings = start.map(elemV => context.state.anything(LinkType.get(elemV))).flatten
-	        val sortedOIDs = asThings.sortWith(thingSortFunc).map(_.id)
-	        // TODO: there is obviously a refactoring screaming to break free here, but it involves some fancy
-	        // type math. How do we lift things so that we can do QList.from() an arbitrary PType? (Remember that
-	        // it expects a PTypeBuilder, *and* requires that the input Iterable be of the expected RT.)
+	        val terms = asThings.map(computeSortTerms)
+	        val sortedOIDs = terms.sortWith(thingSortFunc).map(_.t.id)
 	        Core.listFrom(sortedOIDs, LinkType)
 	      }
 	      case _ => {
