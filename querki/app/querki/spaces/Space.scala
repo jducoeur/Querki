@@ -284,52 +284,39 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
 	        
           implicit val e = ecology
           val modTime = DateTime.now
+          // Make the change in-memory...
 	      // TODO: this needs a clause for each Kind you can get:
-          // TODO: (IMPORTANT) there is currently a race condition in all of the below clauses.
-          // If a new change for the given Thing comes in while the request is out to the persister,
-          // the two changes can get interleaved. The likely result is that one of the changes will get
-          // lost; worse, the on-disk state might get inconsistent with the in-memory. We need to
-          // introduce a versioning mechanism, and provide hard guarantees atomicity here: this is one
-          // of the more important places in the architecture.
-          oldThing match {
+          val spaceChangeOpt = oldThing match {
             case t:Attachment => {
-              persister.request(Change(state, thingId, modelId, modTime, newProps, None)) {
-                case Changed(_, _) => {
-	              val newThingState = t.copy(m = modelId, pf = () => newProps, mt = modTime)
-	              updateState(state.copy(things = state.things + (thingId -> newThingState))) 
-                  sender ! ThingFound(thingId, state)
-                }
-              }              
+              val newThingState = t.copy(m = modelId, pf = () => newProps, mt = modTime)
+              updateState(state.copy(things = state.things + (thingId -> newThingState))) 
+              sender ! ThingFound(thingId, state)     
+              None
             }
             case t:ThingState => {
-              persister.request(Change(state, thingId, modelId, modTime, newProps, None)) {
-                case Changed(_, _) => {
-	              val newThingState = t.copy(m = modelId, pf = () => newProps, mt = modTime)
-	              updateState(state.copy(things = state.things + (thingId -> newThingState))) 
-                  sender ! ThingFound(thingId, state)
-                }
-              }
+              val newThingState = t.copy(m = modelId, pf = () => newProps, mt = modTime)
+              updateState(state.copy(things = state.things + (thingId -> newThingState))) 
+              sender ! ThingFound(thingId, state)
+              None
             }
             case prop:Property[_,_] => {
-              persister.request(Change(state, thingId, modelId, modTime, newProps, None)) {
-                case Changed(_, _) => {
-                  // If the Type has changed, alter the Property itself accordingly:
-                  val typeChange = PropTypeMigrator.prepChange(state, prop, newProps)
-	              
-	              val newProp = {
-                    if (typeChange.typeChanged)
-                      prop.copy(pType = typeChange.newType, m = modelId, pf = () => newProps, mt = modTime)
-                    else
-                      prop.copy(m = modelId, pf = () => newProps, mt = modTime)
-                  }
-                  
-	              updateState(state.copy(spaceProps = state.spaceProps + (thingId -> newProp)))
-	              
-	              typeChange.finish(newProp, state, updateState)
-	              
-	              sender ! ThingFound(thingId, state)
-                }
+              // If the Type has changed, alter the Property itself accordingly:
+              val typeChange = PropTypeMigrator.prepChange(state, prop, newProps)
+              
+              val newProp = {
+                if (typeChange.typeChanged)
+                  prop.copy(pType = typeChange.newType, m = modelId, pf = () => newProps, mt = modTime)
+                else
+                  prop.copy(m = modelId, pf = () => newProps, mt = modTime)
               }
+              
+              updateState(state.copy(spaceProps = state.spaceProps + (thingId -> newProp)))
+              
+              typeChange.finish(newProp, state, updateState)
+              
+              sender ! ThingFound(thingId, state)
+              
+              None
             }
             case s:SpaceState => {
               // TODO: handle changing the owner or apps of the Space. (Different messages?)
@@ -343,14 +330,25 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
               } else {
                 None
               }
-              persister.request(Change(state, thingId, modelId, modTime, newProps, spaceChange)) {
-                case Changed(_, _) => {
-                  updateState(state.copy(m = modelId, pf = () => newProps, name = newName, mt = modTime))
-	              sender ! ThingFound(thingId, state)
-                }
-              }
+              
+              updateState(state.copy(m = modelId, pf = () => newProps, name = newName, mt = modTime))
+              sender ! ThingFound(thingId, state)
+              
+              spaceChange
             }
 	      }
+          
+          // ... and persist the change. Note that this is fire-and-forget, and happens after we respond to the caller!
+          persister.request(Change(state, thingId, modelId, modTime, newProps, spaceChangeOpt)) {
+            case Changed(_, _) => {
+              // Do we do anything? This just signifies success
+            }
+            case err:Any => {
+              // TODO: this is one of those relatively rare situations where we potentially want to
+              // raise Big Red Flags -- serialization failure is Bad.
+              QLog.error(s"Attempt to serialize $thingId in space ${state.id} failed!!! New props were $newProps, and returned value was $err")
+            }
+          }
 	    }
       } getOrElse {
         sender ! ThingError(new PublicException(UnknownPath))
