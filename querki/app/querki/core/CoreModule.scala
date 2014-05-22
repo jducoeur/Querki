@@ -8,8 +8,8 @@ import querki.ecology._
 import querki.values.{ElemValue, PropAndVal, QLContext, QValue, SpaceState}
 
 class CoreModule(e:Ecology) extends CoreEcot(e) with Core
-  with BootUtils with CollectionBase with CollectionCreation
-  with TextTypeBasis with IntTypeBasis with LinkUtils with NameUtils with NameTypeBasis with TypeCreation 
+  with CollectionBase with CollectionCreation with CoreExtra
+  with TextTypeBasis with IntTypeBasis with LinkUtils with NameUtils with NameTypeBasis with TypeCreation
 {
   import MOIDs._
   
@@ -156,7 +156,10 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
             |
             |[[Details]]
             |
-            |[[_if(Is User Value Property, ""[[_QLButton(""Recalculate Summaries"", _updatePropSumaries, ""_recalcResult"")]]<div id="_recalcResult"></div>"")]]
+            |[[_if(Is User Value Property, ""If this Property was recently modified, the Summaries may be out of sync.
+            |Press this button to make sure that they are correctly calculated.
+            |
+            |[[_QLButton(""Recalculate Summaries"", _updatePropSumaries, ""_recalcResult"")]]<div id="_recalcResult"></div>"")]]
             |
             |#### Things that use ____
             |

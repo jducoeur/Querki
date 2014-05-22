@@ -197,7 +197,7 @@ trait CollectionBase { self:CoreEcot =>
 
 }
 
-trait CollectionCreation { self:CoreEcot with CollectionBase with BootUtils =>
+trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
 
   /**
    * Root Collection type. Exists solely so that there is a common runtime root, in case

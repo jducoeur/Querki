@@ -316,7 +316,13 @@ trait LinkUtils { self:CoreEcot =>
   
 }
 
-trait TypeCreation { self:CoreEcot with BootUtils with TextTypeBasis with NameTypeBasis with IntTypeBasis with LinkUtils with NameUtils with CoreModule =>
+trait CoreExtra {
+  def Summary(text:String):(OID,QValue)
+  def Details(text:String):(OID,QValue)
+  def setInternal:(OID, QValue)
+}
+
+trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with IntTypeBasis with LinkUtils with NameUtils with Core with CoreExtra =>
 
   /**
    * Marker type, used to signify "no real type" in empty collections.

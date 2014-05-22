@@ -8,10 +8,6 @@ import models.Thing.PropFetcher
 import querki.ecology._
 import querki.values.{ElemValue, QLContext, SpaceState}
 
-private[core] trait BootUtils { self:CoreModule =>
-  def setInternal:(OID, QValue)
-}
-
 object TypeUtils {
   trait CommonInputRenderers { self:SystemType[_] =>
     def renderAnyText(prop:Property[_, _], context:QLContext, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_])(doRender: (String) => NodeSeq):NodeSeq = {
