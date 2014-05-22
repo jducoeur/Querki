@@ -413,6 +413,13 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
     }
   }
   
+  def rawParam(paramNum:Int):InvocationValue[QLPhrase] = {
+    paramsOpt match {
+      case Some(params) if (params.length >= (paramNum - 1)) => InvocationValueImpl(this, Some(params(paramNum)), None)
+      case _ => error("Func.missingParam", displayName)
+    }
+  }
+  
   def WarningValue(msg:String) = QL.WarningValue(msg)
   
   /**

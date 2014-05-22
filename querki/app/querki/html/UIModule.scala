@@ -24,6 +24,7 @@ object UIMOIDs extends EcotIds(11) {
   val TooltipMethodOID = moid(2)
   val DataMethodOID = moid(3)
   val PageHeaderPropOID = moid(4)
+  val QLButtonOID = moid(5)
 }
 
 /**
@@ -391,6 +392,40 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	  }
 	})
 
+  lazy val QLButton = new InternalMethod(QLButtonOID,
+    toProps(
+      setName("_QLButton"),
+      Summary("Shows a button that, when pressed, executes some QL and can show the result"),
+      SkillLevel(SkillLevelAdvanced),
+      Details("""    THING -> _QLButton(LABEL, QL, TARGET)
+          |
+          |This function is unusual, in that it is a way to do something only if the user presses a button.
+          |It displays a button with the given LABEL; if the user presses that, it evaluates the given QL
+          |(using the received THING as its context). If a TARGET is specified, that should be the id of a
+          |div or span to put the results into.
+          |
+          |In the long run, we will probably add better ways to handle user interaction. But this one is
+          |relatively quick and easy for a few situations.""".stripMargin)))
+	{
+	  override def qlApply(inv:Invocation):QValue = {
+	    for {
+	      thing <- inv.contextFirstThing
+	      labelWiki <- inv.processParamFirstAs(0, ParsedTextType)
+	      label = HtmlEscape.escapeQuotes(labelWiki.raw.str.trim)
+	      qlRaw <- inv.rawParam(1)
+	      ql = HtmlEscape.escapeQuotes(qlRaw.reconstructString)
+	      targetOptWiki = {
+	        if (inv.numParams > 2)
+	          inv.processParamFirstAs(2, ParsedTextType).get.headOption
+	        else
+	          None
+	      }
+	      targetOpt = targetOptWiki.map(_.raw.str.trim)
+	      targetClause = targetOpt.map(target => s"""data-target="$target"""").getOrElse("")
+	    }
+  	      yield HtmlValue(s"""<input type="button" value="$label" class="btn btn-primary _qlInvoke" data-thingid="${thing.toThingId}" $targetClause data-ql="$ql" href="#"></input>""")
+	  }
+	}
   
   override lazy val props = Seq(
     classMethod,
@@ -403,6 +438,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     new IconButtonMethod,
     new ShowLinkMethod,
     new PropLinkMethod,
-    new CreateInstanceLinkMethod
+    new CreateInstanceLinkMethod,
+    QLButton
   )
 }

@@ -168,6 +168,30 @@ function finishStatus(msg) {
 	  });
     });
   }
+  
+  $.fn.asEvalButton = function (ownerId, spaceId) {
+    this.each(function () {
+      var button = $(this);
+      
+      var thingId = button.data("thingid");
+      var qlText = button.data("ql");
+      var targetOpt = button.data("target");
+      
+      button.click(function (evt) {
+        jsExploreRoutes.controllers.ExploreController.evaluate(ownerId, spaceId, thingId, qlText).ajax({
+          success: function (result) {
+            if (typeof(targetOpt) != "undefined") {
+              $("#" + targetOpt).html(result);
+            }
+            // TODO: what should the default be? Animate the button in some fashion?
+          },
+          error: function (err) {
+            showStatus(err);
+          }
+        });    
+      });
+    });
+  }
         
 }( jQuery ));
 
@@ -534,6 +558,8 @@ function finalSetup(ownerId, spaceId, root) {
   
   root.find("._tagSetInput").asManifest(ownerId, spaceId);
   root.find("._tagInput").asMarcoPolo(ownerId, spaceId);
+  
+  root.find("._qlInvoke").asEvalButton(ownerId, spaceId);
   
   root.find(".controls ._largeTextEdit").addClass("span10");
   // We specifically need to *not* apply autosize to the template elements, or else it won't

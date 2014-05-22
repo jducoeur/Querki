@@ -14,6 +14,8 @@ class ExploreController extends ApplicationBase {
   }
   
   def evaluate(ownerId:String, spaceId:String, thingId:String, ql:String) = withThing(true, ownerId, spaceId, thingId) { implicit rc =>
+    // TODO: this check should be able to go away once we have access control more generally right -- the lower levels should
+    // protect us from a user trying to do anything he can't.
     if (AccessControl.isMember(rc.requesterOrAnon, rc.state.get)) {
       val context = rc.thing.get.thisAsContext
       val result = QL.processMethod(QLText(ql), context, None, Some(rc.thing.get)).wikify(context).display.toString

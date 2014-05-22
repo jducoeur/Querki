@@ -81,8 +81,8 @@ Foo foo
   }
   
   "Illegal attribute values" should {
-    "be escaped and passed through" in {
-      apply("""Hello <div class="javascript:stuff">there</div>""") should equal ("""<p>Hello &lt;div class=&quot;javascript:stuff&quot;&gt;there</div></p>
+    "be caught" in {
+      apply("""Hello <div class="javascript:stuff">there</div>""") should equal ("""<p>Hello <div class="ILLEGAL ATTRIBUTE">there</div></p>
         |""".stripReturns)      
     }    
   }

@@ -103,6 +103,15 @@ class UITests extends QuerkiTests {
     }
   }
   
+  "_QLButton" should {
+    "produce the right button" in {
+      implicit val s = commonSpace
+      
+      pql("""[[My Instance -> _QLButton(""Label"", My Optional Text, ""myTarget"")]]""") should
+        equal ("""<input type="button" value="Label" class="btn btn-primary _qlInvoke" data-thingid="My-Instance" data-target="myTarget" data-ql="My Optional Text" href="#"></input>""")
+    }
+  }
+  
   // === _showLink ===
   "_showLink" should {
     "work with a Link to Thing" in {

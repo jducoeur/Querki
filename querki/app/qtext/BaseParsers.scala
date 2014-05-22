@@ -236,12 +236,16 @@ trait BaseParsers extends RegexParsers {
     /** Parses a Simplified xml attribute: everything between quotes ("foo")
      * everything between the quotes is run through the escape handling
      * That way you can omit xml escaping when writing inline XML in markdown.
-     * 
-     * For the moment, while we are whitelisting, we only allow a few chars in attributes.
      */
 //    def xmlAttrVal:Parser[String] = '"' ~> ((not('"') ~> aChar)*) <~ '"' ^^ {'"' + _.mkString + '"'}
-    def xmlAttrVal:Parser[String] =  oneOf(Set('"', '\'')) >> { delim => (xmlConservativeAttrChar*) ~ delim ^^ {
-      case v ~ delim => delim + v.mkString + delim
+    def xmlAttrVal:Parser[String] =  oneOf(Set('"', '\'')) >> { delim => ((not(delim) ~> aChar)*) ~ delim ^^ {
+      case v ~ delim => {
+        val content = v.mkString
+        if (content.toLowerCase().startsWith("javascript:"))
+          delim + "ILLEGAL ATTRIBUTE" + delim
+        else
+          delim + content + delim
+      } 
     }}
     
     /**

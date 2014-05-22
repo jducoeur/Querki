@@ -12,7 +12,7 @@ import querki.identity.SystemUser
 import querki.spaces.{CacheUpdate, SpaceAPI, SpacePlugin, SpacePluginProvider, ThingChangeRequest}
 import querki.spaces.messages.{SpacePluginMsg, UserValuePersistRequest}
 import querki.types.{ModeledPropertyBundle, SimplePropertyBundle}
-import querki.uservalues.PersistMessages.{LoadThingPropValues, LoadUserPropValues, ValuesForUser}
+import querki.uservalues.PersistMessages._
 import querki.util.{Contributor, Publisher, QLog}
 import querki.util.ActorHelpers._
 import querki.values.{QLContext, SpaceState, StateCacheKey}
@@ -33,6 +33,7 @@ object MOIDs extends EcotIds(44) {
   val UVThingPropOID = moid(12)
   val UVValPropOID = moid(13)
   val UVPropPropOID = moid(14)
+  val UpdatePropSummariesFunctionOID = moid(15)
 }
 
 class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpacePluginProvider with querki.core.MethodDefs with querki.types.ModelTypeDefiner {
@@ -267,6 +268,44 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
         yield ExactlyOne(uvInstance)
     }
   }
+  
+  lazy val UpdatePropSummariesFunction = new InternalMethod(UpdatePropSummariesFunctionOID,
+    toProps(
+      setName("_updatePropSumaries"),
+      setInternal,
+      Summary("Check the Summaries for all of the User Values for this Property, for all Things."),
+      Details("""This function is expensive, and should not be called unless you have reason to believe that
+          |something has gotten out of sync. It is usually invoked from a button on the Property's own page.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      var propOpt:Option[Property[_,_]] = None
+      val values:QValue = for {
+        prop <- inv.preferDefiningContext.definingContextAsProperty
+        msg = UserValuePersistRequest(
+                  inv.context.request.requesterOrAnon, inv.state.ownerIdentity.map(_.id).get, inv.state.toThingId, 
+                  LoadAllPropValues(prop, inv.state))
+        dummy = { propOpt = Some(prop); None}
+        // Here is the moment of great evil -- this is actually a blocking request to the Space's User Value Persister:
+        uv <-  inv.iter(SpaceOps.spaceManager.askBlocking(msg) {
+                 case ValuesForUser(uvs) => uvs
+               })
+        // Finally, transform the results into a QL-pipeline-friendly form:
+        uvInstance = UserValueType(SimplePropertyBundle(
+                       UVUserProp(uv.identity),
+                       UVThingProp(uv.thingId),
+                       UVPropProp(uv.propId),
+                       UVValProp(uv.v)))
+      }
+        yield ExactlyOne(uvInstance)
+        
+      // TODO: send the roundtrip message to the Space
+        
+      propOpt match {
+        case Some(prop) => Basic.TextValue(s"Rechecking ${values.size} User Value Summaries for ${prop.displayName}")
+        case None => WarningValue("Unknown Property!")
+      }
+    }
+  }
     
   /***********************************************
    * PROPERTIES
@@ -348,6 +387,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
   override lazy val props = Seq(
     UserValuesFunction,
     ThingValuesFunction,
+    UpdatePropSummariesFunction,
       
     UserValuePermission,
     IsUserValueFlag,

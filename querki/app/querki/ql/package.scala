@@ -224,6 +224,12 @@ package object ql {
      */
     def processParamNofM(paramNum:Int, expectedParams:Int, processContext:QLContext = context):InvocationValue[QValue]
     
+    /**
+     * Returns the numbered parameter if it exists, in raw parse-tree form. You only use this for "meta" functions that
+     * are operating at the syntactic level, which aren't simply processing the parameter as usual.
+     */
+    def rawParam(paramNum:Int):InvocationValue[QLPhrase]
+    
     //////////////
     //
     // These are the raw fields. By and large, you should prefer *not* to use these, and some of them

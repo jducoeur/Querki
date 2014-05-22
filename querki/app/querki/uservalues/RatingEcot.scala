@@ -8,7 +8,7 @@ import querki.core.IntTypeBasis
 import querki.core.TypeUtils.DiscreteType
 import querki.ecology._
 import querki.types.{ModeledPropertyBundle, ModelTypeDefiner}
-import querki.util.QLog
+import querki.util.{HtmlEscape, QLog}
 import querki.values.{ElemValue, QLContext, RequestContext, SpaceState}
 
 object RatingMOIDs extends EcotIds(45) {
@@ -70,7 +70,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
       implicit val s = context.state
       // Note that we are intentionally demanding a result here. If it's not defined, we expect to get LabelsProp's default.
       // So we don't expect this to ever be empty:
-      val labels = getLabels(prop)
+      val labels = getLabels(prop).map(HtmlEscape.escapeQuotes(_))
       
       if (prop.ifSet(RatingShowTargetProperty)) {
         val targetId = "target" + currentValue.suffix
