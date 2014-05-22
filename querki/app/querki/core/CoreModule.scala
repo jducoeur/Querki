@@ -154,8 +154,9 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
             |  ""**METHOD**"",
             |  ""Collection: [[Property Collection]] Type: [[Property Type]]"")]]
             |
-            |
             |[[Details]]
+            |
+            |[[_if(Is User Value Property, ""[[_QLButton(""Recalculate Summaries"", _updatePropSumaries, ""_recalcResult"")]]<div id="_recalcResult"></div>"")]]
             |
             |#### Things that use ____
             |

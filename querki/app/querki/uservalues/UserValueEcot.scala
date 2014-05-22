@@ -46,6 +46,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
   val SpaceChangeManager = initRequires[querki.spaces.SpaceChangeManager]
   val Types = initRequires[querki.types.Types]
   
+  lazy val Html = interface[querki.html.HtmlUI]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
   lazy val IdentityType = IdentityAccess.IdentityType
@@ -301,7 +302,11 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
       // TODO: send the roundtrip message to the Space
         
       propOpt match {
-        case Some(prop) => Basic.TextValue(s"Rechecking ${values.size} User Value Summaries for ${prop.displayName}")
+        // TODO: ideally, this should display a spinner, and indicate when the process is complete:
+        case Some(prop) => Html.HtmlValue(s"""<div class="alert">
+            |<button type="button" class="close" data-dismiss="alert">&times;</button>
+            |Rebuilding Summaries for ${values.size} user values for ${prop.displayName}. This should be ready in a moment.
+            |</div>""".stripMargin)
         case None => WarningValue("Unknown Property!")
       }
     }

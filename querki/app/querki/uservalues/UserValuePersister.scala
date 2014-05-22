@@ -124,6 +124,48 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
       }
     }
     
+    // TODO: this should probably get refactored with LoadThingPropValues above -- they are close
+    // to identical:
+    case UserValuePersistRequest(req, own, space, LoadAllPropValues(propId, state)) => {
+      val tuples = DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+        val valueStream = SpaceSQL("""
+	          SELECT * FROM {uvname} 
+               WHERE propertyId = {propertyId}
+	          """).on("propertyId" -> propId.raw)()
+	          
+	    implicit val s = state
+	    val uvs = valueStream.map { row =>
+	      val identId = row.oid("identityId")
+          val propId = row.oid("propertyId")
+          val thingId = row.oid("thingId")
+          val valStr = row.string("propValue")
+          val modTime = row.dateTime("modTime")
+          val v = state.prop(propId) match {
+            case Some(prop) => prop.deserialize(valStr)
+            case None => { QLog.error("LoadAllPropValues got unknown Property " + propId); EmptyValue.untyped }
+          }
+          (identId, thingId, propId, v, modTime)
+        }
+        uvs.force
+      }
+      
+      // This must happen *after* we close the Transaction, because we're about to do an asynchronous roundtrip to
+      // the IdentityCache:
+      val idents = tuples.map(_._1)
+      identityCache.request(GetIdentities(idents)) {
+        case IdentitiesFound(identities) => {
+          val results = tuples.map(tuple => 
+            OneUserValue(
+              identities.get(tuple._1).getOrElse(Identity.AnonymousIdentity),
+              tuple._2,
+              tuple._3,
+              tuple._4,
+              tuple._5))
+          sender ! ValuesForUser(results)
+        }
+      }
+    }
+    
     case SaveUserValue(uv, state, update) => {
       DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
         implicit val s = state
