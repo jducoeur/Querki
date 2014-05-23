@@ -1,5 +1,7 @@
 package querki.uservalues
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import akka.actor.Actor.Receive
 import akka.actor.Props
 import akka.event.LoggingReceive
@@ -9,6 +11,7 @@ import models.Thing.PropMap
 
 import querki.ecology._
 import querki.identity.SystemUser
+import querki.ql.InvocationValue
 import querki.spaces.{CacheUpdate, SpaceAPI, SpacePlugin, SpacePluginProvider, ThingChangeRequest}
 import querki.spaces.messages.{SpacePluginMsg, UserValuePersistRequest}
 import querki.types.{ModeledPropertyBundle, SimplePropertyBundle}
@@ -64,13 +67,17 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
     new UserValueSpacePlugin(space)
   }
   
+  case class RecalculateSummaries[UVT](fromProp:Property[UVT,_], summaryId:OID, values:Seq[OneUserValue])
+  
   /**
    * When a UserSession changes a UserValue, it may send a SummarizeChange message to the Space, telling it to
    * update the Summary for that Property. This handles the message in a plugin, so the Space code doesn't
    * need to know about all that.
    */
   class UserValueSpacePlugin(s:SpaceAPI) extends SpacePlugin(s) {
-    def asSummarizer[UVT,VT](prop:Property[VT,_], msg:SummarizeChange[UVT]):Option[(Property[VT,_], Summarizer[UVT,VT])] = {
+    // This is a bit weird and hairy, but allows us to use the received message's type parameters to sanity-check that
+    // the Summarizer Property actually matches the values we are passing in to it:
+    def asSummarizer[UVT,MSG[UVT],VT](prop:Property[VT,_], msg:MSG[UVT]):Option[(Property[VT,_], Summarizer[UVT,VT])] = {
       if (prop.pType.isInstanceOf[Summarizer[UVT,VT]])
         Some((prop.asInstanceOf[Property[VT,_]], prop.pType.asInstanceOf[Summarizer[UVT,VT]]))
       else
@@ -78,7 +85,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
     }
     
     def receive = {
-      case SpacePluginMsg(msg @ SummarizeChange(tid, fromProp, summaryId, previous, current)) => {
+      case SpacePluginMsg(_, _, _, msg @ SummarizeChange(tid, fromProp, summaryId, previous, current)) => {
         implicit val state = space.state
         for {
           rawProp <- state.prop(summaryId) orElse QLog.warn(s"UserValueSpacePlugin didn't find requested Summary Property $summaryId")
@@ -88,6 +95,18 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
           newProps = thing.props + (summaryProp.id -> newSummary)
         }
           space.modifyThing(SystemUser, tid, None, (t:Thing) => newProps)
+      }
+      
+      case SpacePluginMsg(_, _, _, msg @ RecalculateSummaries(fromProp, summaryId, values)) => {
+        implicit val state = space.state
+        for {
+          rawProp <- state.prop(summaryId) orElse QLog.warn(s"UserValueSpacePlugin didn't find requested Summary Property $summaryId")
+          (summaryProp, summarizer) <- asSummarizer(rawProp, msg)
+          // IMPORTANT: note that we'll get one result for each change that is needed. This can produce a
+          // non-trivial number of modifyThing requests:
+          (tid, newSummary) <- summarizer.recalculate(fromProp, summaryProp, values)
+        }
+          space.modifyThing(SystemUser, tid, None, ((t:Thing) => t.props + (summaryProp.id -> newSummary)))
       }
     }
   }
@@ -279,35 +298,49 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
           |something has gotten out of sync. It is usually invoked from a button on the Property's own page.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QValue = {
-      var propOpt:Option[Property[_,_]] = None
-      val values:QValue = for {
+      // Make sure that the parameters are valid...
+      val prepInv:InvocationValue[(Property[_,_], OID)] = for {
         prop <- inv.preferDefiningContext.definingContextAsProperty
-        msg = UserValuePersistRequest(
+        // Make sure the specified Property *has* a summary:
+        summaryPropPV <- inv.opt(prop.getPropOpt(SummaryLink)(inv.state))
+        summaryPropId <- inv.opt(summaryPropPV.firstOpt)        
+      }
+        yield (prop, summaryPropId)
+      
+      prepInv.get.headOption match {
+        case Some((prop, summaryId)) => {
+          // ... go fetch the actual User Values for this Property...
+          val msg = UserValuePersistRequest(
                   inv.context.request.requesterOrAnon, inv.state.ownerIdentity.map(_.id).get, inv.state.toThingId, 
                   LoadAllPropValues(prop, inv.state))
-        dummy = { propOpt = Some(prop); None}
-        // Here is the moment of great evil -- this is actually a blocking request to the Space's User Value Persister:
-        uv <-  inv.iter(SpaceOps.spaceManager.askBlocking(msg) {
-                 case ValuesForUser(uvs) => uvs
-               })
-        // Finally, transform the results into a QL-pipeline-friendly form:
-        uvInstance = UserValueType(SimplePropertyBundle(
-                       UVUserProp(uv.identity),
-                       UVThingProp(uv.thingId),
-                       UVPropProp(uv.propId),
-                       UVValProp(uv.v)))
-      }
-        yield ExactlyOne(uvInstance)
-        
-      // TODO: send the roundtrip message to the Space
-        
-      propOpt match {
-        // TODO: ideally, this should display a spinner, and indicate when the process is complete:
-        case Some(prop) => Html.HtmlValue(s"""<div class="alert">
+          // IMPORTANT: note that this wanders off into asynchrony. It is *not* fundamentally evil, since we don't
+          // block on the response, but we don't actually give the user any interesting feedback.
+          // TODO: once QL has the ability to cope with asynchronous functions, this should become one.
+          val fut = SpaceOps.askSpaceManager2(msg) {
+            case ValuesForUser(values) => {
+              // ... and tell the SpaceManager to recompute the Summaries. (Note that the handler for this is above.)
+	          val msg = SpacePluginMsg(inv.context.request.requesterOrAnon, inv.state.owner, inv.state.id, RecalculateSummaries(prop, summaryId, values))
+	          // End of the line -- just fire and forget at this point:
+	          SpaceOps.spaceManager ! msg
+            }
+            case other => QLog.error(s"LoadAllPropValues for ${prop.displayName} in Space ${inv.state} got response $other")
+          }
+          // Force the Future to evaluate once it is ready:
+          fut.onComplete(t => {})
+          
+          Html.HtmlValue(s"""<div class="alert">
             |<button type="button" class="close" data-dismiss="alert">&times;</button>
-            |Rebuilding Summaries for ${values.size} user values for ${prop.displayName}. This should be ready in a moment.
-            |</div>""".stripMargin)
-        case None => WarningValue("Unknown Property!")
+            |Rebuilding User Value Summaries for ${prop.displayName}. This should be ready in a moment.
+            |</div>""".stripMargin) 
+        }
+        case None => {
+          // Huh -- how did we get here? The button to invoke _updatePropSummaries is displayed in CoreEcot, and isn't
+          // supposed to display unless this Property has a Summary Link:
+          Html.HtmlValue(s"""<div class="alert">
+            |<button type="button" class="close" data-dismiss="alert">&times;</button>
+            |ERROR: That Property doesn't have a Summary Link defined!
+            |</div>""".stripMargin)          
+        }
       }
     }
   }

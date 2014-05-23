@@ -84,7 +84,7 @@ case class UserValuePersistRequest(req:User, own:OID, space:ThingId, payload:que
  * (Why the indirection through payload? So that we can leave this mechanism open-ended, while still leaving SpaceMgrMsg and SpaceMessage
  * sealed here.)
  */
-case class SpacePluginMsg(payload:Any) extends SpaceMgrMsg 
+case class SpacePluginMsg(req:User, own:OID, space:ThingId, payload:Any) extends SpaceMessage(req, own, space) 
 
 object SpaceError {  
   val CreateNotAllowed = "Space.createThing.notAllowed"

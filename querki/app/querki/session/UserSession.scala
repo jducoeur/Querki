@@ -197,7 +197,7 @@ private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val us
        	              summaryLinkPV <- prop.getPropOpt(UserValues.SummaryLink)
        	              summaryPropId <- summaryLinkPV.firstOpt
        	            }
-  	                  yield SpacePluginMsg(SummarizeChange(thing.id, prop, summaryPropId, previous, Some(v)))
+  	                  yield SpacePluginMsg(req, own, space, SummarizeChange(thing.id, prop, summaryPropId, previous, Some(v)))
   	                msg.map(spaceRouter ! _)
   	                
   	                // ... then tell the user we're set.

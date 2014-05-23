@@ -156,7 +156,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
             |
             |[[Details]]
             |
-            |[[_if(Is User Value Property, ""If this Property was recently modified, the Summaries may be out of sync.
+            |[[_if(_and(Is User Value Property, _hasProperty(Summary Link._self)), ""If this Property was recently modified, the Summaries may be out of sync.
             |Press this button to make sure that they are correctly calculated.
             |
             |[[_QLButton(""Recalculate Summaries"", _updatePropSumaries, ""_recalcResult"")]]<div id="_recalcResult"></div>"")]]

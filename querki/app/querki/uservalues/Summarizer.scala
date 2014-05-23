@@ -8,10 +8,19 @@ import models.{DisplayPropVal, OID, Property, PropertyBundle, PType, PTypeBuilde
 import querki.core.TypeUtils.DiscreteType
 import querki.ecology._
 import querki.types.{ModelTypeBase, PropPath}
+import querki.uservalues.PersistMessages.OneUserValue
 import querki.util.QLog
 import querki.values.{ElemValue, QLContext, QValue, RequestContext, SpaceState}
 
-case class DiscreteSummary[UVT](propId:OID, content:Map[UVT,Int])
+case class DiscreteSummary[UVT](propId:OID, content:Map[UVT,Int]) 
+{
+  override def equals(other:Any):Boolean = {
+    other match {
+      case otherSummary:DiscreteSummary[UVT] => (otherSummary.propId == propId) && (otherSummary.content == content) 
+      case _ => false
+    }
+  }
+}
 
 /**
  * Describes a mechanism for summarizing the User Values for a Property.
@@ -22,6 +31,11 @@ trait Summarizer[UVT,VT] {
    * value for this Thing.
    */
   def addToSummary(tid:OID, fromProp:Property[_,_], prop:Property[VT,_], previous:Option[QValue], current:Option[QValue])(implicit state:SpaceState):QValue
+  
+  /**
+   * Goes through all of the existing UserValues, and recomputes their summaries. Returns the *changes* that need to be made, as ThingId/Value pairs.
+   */
+  def recalculate(fromProp:Property[_,_], prop:Property[VT,_], values:Seq[OneUserValue])(implicit state:SpaceState):Iterable[(OID, QValue)]
 }
 
 trait SummarizerDefs { self:QuerkiEcot =>
@@ -73,6 +87,8 @@ trait SummarizerDefs { self:QuerkiEcot =>
         yield result
     }
     
+    // ===========================================================
+    
     def addToSummary(tid:OID, fromProp:Property[_,_], prop:Property[VT,_], previous:Option[QValue], current:Option[QValue])(implicit state:SpaceState):QValue = {
       val resultViaPath = fromProp.pType match {
         case mt:ModelTypeBase => {
@@ -94,6 +110,47 @@ trait SummarizerDefs { self:QuerkiEcot =>
       resultViaPath.getOrElse(ExactlyOne(ElemValue(doAddToSummary(tid, fromProp, prop, castToUVT(previous), castToUVT(current)), this)))
     }
     def doAddToSummary(tid:OID, fromProp:Property[_,_], prop:Property[VT,_], previous:Option[UVT], current:Option[UVT])(implicit state:SpaceState):VT
+    
+    // ===========================================================
+    
+    def recalculate(fromProp:Property[_,_], prop:Property[VT,_], values:Seq[OneUserValue])(implicit state:SpaceState):Iterable[(OID, QValue)] = {
+      val pathOpt:Option[(ModelTypeBase, PropPath[_,_], Property[_,_])] = fromProp.pType match {
+        case mt:ModelTypeBase => {
+	      for {
+	        fromBundleProp <- fromProp.confirmType(mt)
+	        summarizesPropPV <- prop.getPropOpt(SummarizesPropertyLink)
+	        summarizesPropId <- summarizesPropPV.firstOpt
+	        summarizesProp <- state.prop(summarizesPropId)
+	        checkBundle <- values.find(!_.v.isEmpty).flatMap(_.v.firstAs(mt))
+	        path <- rightPath(PropPaths.pathsToProperty(summarizesProp), checkBundle)
+	      }
+	        yield (mt, path, summarizesProp)
+        }
+        case _ => None
+      }
+      
+      def recalculateOneThing(tid:OID, values:Seq[OneUserValue]):Option[(OID,QValue)] = {
+        pathOpt match {
+          case Some((mt, path, summarizesProp)) => {
+            val vs = values.map(_.v)
+            val bundles = vs.map(_.firstAs(mt))
+            val uvts = bundles.map(viaPath(_,path)).flatten
+            doRecalculateOneThing(tid, summarizesProp, prop, uvts).map(result => (tid, ExactlyOne(ElemValue(result, this))))
+          }
+          case None => {
+            val vs = values.map(_.v)
+            val uvts = vs.map(v => castToUVT(Some(v))).flatten
+            doRecalculateOneThing(tid, fromProp, prop, uvts).map(result => (tid, ExactlyOne(ElemValue(result, this))))
+          }
+        }
+      }
+
+      val byThing:Map[OID,Seq[OneUserValue]] = values.groupBy(_.thingId)      
+      val recalculations = byThing.map(pair => recalculateOneThing(pair._1, pair._2))
+      recalculations.flatten
+    }
+    // This should return a non-empty result *if* the summary has changed from its existing value:
+    def doRecalculateOneThing(tid:OID, fromProp:Property[_,_], prop:Property[VT,_], values:Seq[UVT])(implicit state:SpaceState):Option[VT]
   }
   
   /**
@@ -153,6 +210,36 @@ trait SummarizerDefs { self:QuerkiEcot =>
 	      QLog.error(s"Got addToSummary for unknown Thing $tid")
 	      DiscreteSummary(fromProp.id, Map())
 	    }
+	  }
+	}
+	
+	def doRecalculateOneThing(tid:OID, fromProp:Property[_,_], prop:Property[DiscreteSummary[UVT],_], values:Seq[UVT])(implicit state:SpaceState):Option[DiscreteSummary[UVT]] = {
+	  val recalculated = {
+	    val m = (Map.empty[UVT,Int] /: values) { (totals, v) =>
+	      totals.get(v) match {
+	        case Some(count) => totals + (v -> (count + 1))
+	        case None => totals + (v -> 1)
+	      }
+	    }
+	    DiscreteSummary(fromProp.id, m)
+	  }
+	  
+	  val existingOpt = for {
+	    thing <- state.anything(tid)
+	    existingPV <- thing.getPropOpt(prop)
+	    ex <- existingPV.firstOpt
+	  }
+	    yield ex
+	    
+	  existingOpt match {
+	    case Some(existing) => {
+	      if (existing == recalculated)
+	        // No change
+	        None
+	      else
+	        Some(recalculated)
+	    }
+	    case None => Some(recalculated)
 	  }
 	}
 	  
