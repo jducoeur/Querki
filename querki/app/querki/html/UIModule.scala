@@ -401,8 +401,15 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           |
           |This function is unusual, in that it is a way to do something only if the user presses a button.
           |It displays a button with the given LABEL; if the user presses that, it evaluates the given QL
-          |(using the received THING as its context). If a TARGET is specified, that should be the id of a
-          |div or span to put the results into.
+          |(using the received THING as its context). 
+          |
+          |If a TARGET is specified, that should be the id of a div or span to put the results into; if it
+          |is not given, the results will be displayed below the button.
+          |
+          |As an example of how to use this, say you have a complex Model Property that you want to make
+          |editable on the Thing's page, but you only want to show it when needed. You can say:
+          |
+          |    \[[_QLButton(\""Edit My Model Property\"", My Model Property._edit)\]]
           |
           |In the long run, we will probably add better ways to handle user interaction. But this one is
           |relatively quick and easy for a few situations.""".stripMargin)))
@@ -420,10 +427,15 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	        else
 	          None
 	      }
-	      targetOpt = targetOptWiki.map(_.raw.str.trim)
-	      targetClause = targetOpt.map(target => s"""data-target="$target"""").getOrElse("")
+	      targetName = targetOptWiki.map(_.raw.str.trim).getOrElse("target-" + scala.util.Random.nextInt.toString)
+	      targetDiv = {
+	        if (targetOptWiki.isEmpty)
+	          s"""<div id="$targetName"></div>"""
+	        else
+	          ""
+	      }
 	    }
-  	      yield HtmlValue(s"""<input type="button" value="$label" class="btn btn-primary _qlInvoke" data-thingid="${thing.toThingId}" $targetClause data-ql="$ql" href="#"></input>""")
+  	      yield HtmlValue(s"""<input type="button" value="$label" class="btn btn-primary _qlInvoke" data-thingid="${thing.toThingId}" data-target="$targetName" data-ql="$ql" href="#"></input>$targetDiv""")
 	  }
 	}
   
