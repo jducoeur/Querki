@@ -181,7 +181,9 @@ function finishStatus(msg) {
         jsExploreRoutes.controllers.ExploreController.evaluate(ownerId, spaceId, thingId, qlText).ajax({
           success: function (result) {
             if (typeof(targetOpt) != "undefined") {
-              $("#" + targetOpt).html(result);
+              var target = $("#" + targetOpt);
+              target.html(result);
+              finalSetup(ownerId, spaceId, target);
             }
             // TODO: what should the default be? Animate the button in some fashion?
           },
