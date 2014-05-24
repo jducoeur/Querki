@@ -165,7 +165,11 @@ trait BaseParsers extends RegexParsers {
     escapedXmlChars('>') = "&gt;"
     escapedXmlChars('"') = "&quot;"
     escapedXmlChars('\'') = "&apos;"
-    escapedXmlChars('&') = "&amp;"
+    // TBD: this one screws everything else up. The problem is, if '&' gets escaped naively, then we have
+    // no way of properly passing in escaped quotes as &quot; and &apos;.
+    // TODO: think this through more carefully. Do we need to escape &? If so, we need to do so with more
+    // awareness of XML entities.
+//    escapedXmlChars('&') = "&amp;"
 
     /**
      * Escapes the given char for XML. Returns Either the

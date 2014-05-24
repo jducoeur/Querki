@@ -60,6 +60,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
    * TYPES
    ***********************************************/
   
+  // Pay attention to escaping the quotes from this!
   def getLabels(prop:Property[_,_])(implicit state:SpaceState) = prop.getProp(LabelsProp).rawList.map(_.text)
   
   lazy val RatingType = new IntTypeBase(RatingTypeOID,
@@ -70,7 +71,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
       implicit val s = context.state
       // Note that we are intentionally demanding a result here. If it's not defined, we expect to get LabelsProp's default.
       // So we don't expect this to ever be empty:
-      val labels = getLabels(prop).map(HtmlEscape.escapeQuotes(_))
+      val labels = getLabels(prop)
       
       if (prop.ifSet(RatingShowTargetProperty)) {
         val targetId = "target" + currentValue.suffix
@@ -136,7 +137,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
       implicit val state = context.state
       state.prop(v.propId) match {
         case Some(prop) => {
-          val labels = getLabels(prop)
+          val labels = getLabels(prop).map(HtmlEscape.escapeQuotes(_))
           Wikitext(s"""<div class='_rating' data-rating='${"%.2f" format v.avg}' data-labels='${labels.mkString(",")}' data-readonly='true'></div> 
           |<span class="_ratingAvg">${"%.2f" format v.avg} (${v.n})</span>""".stripMargin)
         }
