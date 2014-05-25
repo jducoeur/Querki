@@ -53,7 +53,9 @@
       }
       jsExploreRoutes.controllers.ExploreController.evaluate("@space.owner.toThingId", "@space.id.toThingId", "." + rootId, qlText).ajax({
         success: function (result) {
-          $("#_results").html(result);
+          var resultDiv = $("#_results");
+          resultDiv.html(result);
+          finalSetup("@space.owner.toThingId", "@space.id.toThingId", resultDiv);
         },
         error: function (err) {
           $("#_results").html("<b>" + err + "</b>");
