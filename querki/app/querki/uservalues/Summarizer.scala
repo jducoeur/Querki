@@ -298,10 +298,13 @@ trait SummarizerDefs { self:QuerkiEcot =>
 	    case _ => v.content.toSeq
 	  }
 	  
-	  (Wikitext("""<dl class="histogram">""") /: pairs) { (curText, pair) =>
+	  (Wikitext("""
+	              |!+noLines
+	              |<dl class="histogram">""".stripMargin) /: pairs) 
+	  { (curText, pair) =>
 	    val (key, num) = pair
 	    curText + Wikitext("<dt>") + wikifyKey(context, fromPropOpt, key) + Wikitext("</dt><dd>" + num.toString + "</dd>\n")
-	  } + Wikitext("</dl>\n")
+	  } + Wikitext("</dl>\n!-noLines\n")
 	}
 	  
 	def doDefault(implicit state:SpaceState):DiscreteSummary[UVT] = DiscreteSummary(UnknownOID, Map())
