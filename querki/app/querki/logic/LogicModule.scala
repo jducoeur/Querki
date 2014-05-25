@@ -3,7 +3,7 @@ package querki.logic
 import models.{OID, PType, ThingState}
 
 import querki.ecology._
-import querki.ql.QLPhrase
+import querki.ql.{InvocationValue, QLPhrase}
 import querki.util.{PublicException, QLog}
 import querki.values._
 
@@ -230,6 +230,24 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	  }
 	}
   }
+  
+  /**
+   * Goes through a parameter list full of YesNo expressions, and returns the results.
+   */
+  private def computeBooleans(inv:Invocation):InvocationValue[Boolean] = {
+    for {
+        dummy <- inv.returnsType(YesNoType)
+        paramNum <- inv.iter(0 until inv.numParams, None)
+        paramVal <- inv.processParam(paramNum)
+        paramResult = {
+          if (paramVal.isEmpty)
+            false
+          else
+            paramVal.firstAs(YesNoType).getOrElse(false)
+        }
+      }
+        yield paramResult
+  }
 	
   lazy val OrMethod = new InternalMethod(OrMethodOID,
       toProps(
@@ -240,12 +258,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
             |is true.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QValue = {
-      val results = for {
-        dummy <- inv.returnsType(YesNoType)
-        paramNum <- inv.iter(0 until inv.numParams, None)
-        paramVal <- inv.processParamFirstAs(paramNum, YesNoType)
-      }
-        yield paramVal
+      val results = computeBooleans(inv)
         
       results.get.exists(v => v)
     }
@@ -260,18 +273,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
             |are true.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QValue = {
-      val results = for {
-        dummy <- inv.returnsType(YesNoType)
-        paramNum <- inv.iter(0 until inv.numParams, None)
-        paramVal <- inv.processParam(paramNum)
-        paramResult = {
-          if (paramVal.isEmpty)
-            false
-          else
-            paramVal.firstAs(YesNoType).getOrElse(false)
-        }
-      }
-        yield paramResult
+      val results = computeBooleans(inv)
         
       !results.get.exists(v => !v)
     }

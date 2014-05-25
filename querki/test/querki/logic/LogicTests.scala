@@ -197,5 +197,16 @@ class LogicTests extends QuerkiTests {
       pql("""[[_or(False)]]""") should equal ("false")
       pql("""[[_or(True)]]""") should equal ("true")
     }
+    
+    "work correctly with empty QL parameters" in {
+      class TSpace extends CommonSpace {
+        val boolProp = new TestProperty(Core.YesNoType, ExactlyOne, "Boolean Prop")
+        
+        val theThing = new SimpleTestThing("My Thing")
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[My Thing -> _or(Boolean Prop, true)]]""") should equal ("true")
+    }
   }
 }
