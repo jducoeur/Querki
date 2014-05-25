@@ -318,8 +318,6 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
           // TODO: once QL has the ability to cope with asynchronous functions, this should become one.
           val fut = SpaceOps.askSpaceManager2(msg) {
             case ValuesForUser(values) => {
-              // TEMP:
-              QLog.spew(s"_updatePropSummaries received ${values.length} user values")
               // ... and tell the SpaceManager to recompute the Summaries. (Note that the handler for this is above.)
 	          val msg = SpacePluginMsg(inv.context.request.requesterOrAnon, inv.state.owner, inv.state.id, RecalculateSummaries(prop, summaryId, values))
 	          // End of the line -- just fire and forget at this point:
