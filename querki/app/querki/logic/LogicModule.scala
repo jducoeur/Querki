@@ -4,7 +4,7 @@ import models.{OID, PType, ThingState}
 
 import querki.ecology._
 import querki.ql.QLPhrase
-import querki.util.PublicException
+import querki.util.{PublicException, QLog}
 import querki.values._
 
 object MOIDs extends EcotIds(9) {
@@ -263,9 +263,15 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
       val results = for {
         dummy <- inv.returnsType(YesNoType)
         paramNum <- inv.iter(0 until inv.numParams, None)
-        paramVal <- inv.processParamFirstAs(paramNum, YesNoType)
+        paramVal <- inv.processParam(paramNum)
+        paramResult = {
+          if (paramVal.isEmpty)
+            false
+          else
+            paramVal.firstAs(YesNoType).getOrElse(false)
+        }
       }
-        yield paramVal
+        yield paramResult
         
       !results.get.exists(v => !v)
     }
