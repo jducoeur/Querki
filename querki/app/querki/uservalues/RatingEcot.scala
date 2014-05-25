@@ -218,21 +218,20 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
     override def qlApply(inv:Invocation):QValue = {
       for {
         summary <- inv.contextAllAs(RatingSummarizer)
-        avg = calcAverage(summary.content.toSeq)
-        n = summary.content.size
+        (avg, n) = calcAverage(summary.content.toSeq)
       }
         yield ExactlyOne(RatingAverageType(RatingAverage(summary.propId, avg, n)))
     }
     
-    def calcAverage(pairs:Seq[(Int, Int)]):Double = {
+    def calcAverage(pairs:Seq[(Int, Int)]):(Double, Int) = {
       val (sum, n) = ((0, 0) /: pairs) { (accum, pair) =>
         val (curTotal, curEntries) = accum
         val (key, numEntries) = pair
         (curTotal + (key * numEntries), curEntries + numEntries)
       }
       n match {
-        case 0 => 0
-        case _ => sum.toDouble / n.toDouble
+        case 0 => (0, 0)
+        case _ => (sum.toDouble / n.toDouble, n)
       }
     }
   }
