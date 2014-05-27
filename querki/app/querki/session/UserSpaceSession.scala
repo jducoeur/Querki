@@ -24,7 +24,7 @@ import querki.values.{QValue, SpaceState}
  * to grow a lot in the future, and to become much more heterogeneous, so we may want to separate all of those
  * concerns.
  */
-private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
+private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
   extends Actor with Stash with EcologyMember with TimeoutChild
 {
   lazy val AccessControl = interface[querki.security.AccessControl]
@@ -59,7 +59,7 @@ private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val us
           }
         }
       }
-      case None => throw new Exception("UserSession trying to enhance state before there is a rawState!")
+      case None => throw new Exception("UserSpaceSession trying to enhance state before there is a rawState!")
     }
   }
   /**
@@ -103,7 +103,7 @@ private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val us
   /**
    * The Identity that we are using in this Space.
    * 
-   * TODO: this isn't quite right. This UserSession really ought to be for the Identity in the first place,
+   * TODO: this isn't quite right. This UserSpaceSession really ought to be for the Identity in the first place,
    * but we don't have enough of the Identity infrastructure at all levels -- in particular, the messages are
    * currently communicating User where they should be communicating Identity. So for now, we're calculating
    * the best option here, which is the local Identity if one is available, and the primary Identity if not.
@@ -144,7 +144,7 @@ private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val us
     
     case SessionRequest(req, own, space, payload) => { 
       payload match {
-        case GetActiveSessions => QLog.error("UserSession received GetActiveSessions! WTF?")
+        case GetActiveSessions => QLog.error("UserSpaceSession received GetActiveSessions! WTF?")
         
 	    case GetThing(thingIdOpt) => {
 	      val thingId = thingIdOpt.flatMap(state.anything(_)).map(_.id).getOrElse(UnknownOID)
@@ -193,7 +193,7 @@ private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val us
        	            
        	            // ... then tell the Space to summarize it, if there is a Summary Property...
        	            val msg = for {
-       	              prop <- state.prop(propId) orElse QLog.warn(s"UserSession.ChangeProps2 got unknown Property $propId")
+       	              prop <- state.prop(propId) orElse QLog.warn(s"UserSpaceSession.ChangeProps2 got unknown Property $propId")
        	              summaryLinkPV <- prop.getPropOpt(UserValues.SummaryLink)
        	              summaryPropId <- summaryLinkPV.firstOpt
        	            }
@@ -220,9 +220,9 @@ private [session] class UserSession(val ecology:Ecology, val spaceId:OID, val us
   }
 }
 
-object UserSession {
+object UserSpaceSession {
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
   // with "Props(classOf(Space), ...)". See:
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-  def actorProps(ecology:Ecology, spaceId:OID, user:User, spaceRouter:ActorRef, persister:ActorRef):Props = Props(new UserSession(ecology, spaceId, user, spaceRouter, persister))
+  def actorProps(ecology:Ecology, spaceId:OID, user:User, spaceRouter:ActorRef, persister:ActorRef):Props = Props(new UserSpaceSession(ecology, spaceId, user, spaceRouter, persister))
 }

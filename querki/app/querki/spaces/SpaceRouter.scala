@@ -7,7 +7,7 @@ import models.OID
 
 import querki.conversations.messages.{ActiveThings, GetActiveThings}
 import querki.ecology._
-import querki.session.UserSessions
+import querki.session.UserSpaceSessions
 import querki.session.messages._
 import querki.spaces.messages._
 import querki.util.Requester
@@ -39,7 +39,7 @@ private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpaceP
 
   override def preStart() = {
     space = context.actorOf(Space.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
-    sessions = context.actorOf(UserSessions.actorProps(ecology, spaceId, self), "Sessions")
+    sessions = context.actorOf(UserSpaceSessions.actorProps(ecology, spaceId, self), "Sessions")
     conversations = context.actorOf(Conversations.conversationActorProps(persistenceFactory, spaceId, self), "Conversations") 
   }
   

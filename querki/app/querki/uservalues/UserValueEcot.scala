@@ -70,7 +70,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
   case class RecalculateSummaries[UVT](fromProp:Property[UVT,_], summaryId:OID, values:Seq[OneUserValue])
   
   /**
-   * When a UserSession changes a UserValue, it may send a SummarizeChange message to the Space, telling it to
+   * When a UserSpaceSession changes a UserValue, it may send a SummarizeChange message to the Space, telling it to
    * update the Summary for that Property. This handles the message in a plugin, so the Space code doesn't
    * need to know about all that.
    */
