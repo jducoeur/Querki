@@ -111,6 +111,14 @@ package object identity {
      * Fetch a number of identities at once.
      */
     def getIdentities(ids:Seq[OID]):Future[Map[OID, PublicIdentity]]
+    
+    /**
+     * Tells the system that, if this Identity is currently cached, we should clear that cache and reload it.
+     * 
+     * IMPORTANT: this is a fire-and-forget asynchronous call! Do not count upon it instantly taking effect!
+     * It will take effect the next time someone tries to fetch this identity, but races can and will occur!
+     */
+    def invalidateCache(id:OID):Unit
   }
   
   /**
@@ -122,6 +130,7 @@ package object identity {
   trait UserAccess extends EcologyInterface {
     def addSpaceMembership(identityId:OID, spaceId:OID):Boolean
     def changePassword(requester:User, identity:Identity, newPassword:String):Try[User]
+    def changeDisplayName(requester:User, identity:Identity, newDisplay:String):Try[User]
     def changeUserLevel(userId:OID, requester:User, level:UserLevel.UserLevel):Option[User]
     def checkQuerkiLogin(login:String, passwordEntered:String):Option[User]
     def createProvisional(info:SignupInfo):Try[User]

@@ -59,6 +59,10 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
     }    
   }
   
+  def invalidateCache(id:OID):Unit = {
+    identityCache ! InvalidateCacheForIdentity(id)
+  }
+  
   /***********************************************
    * THINGS
    ***********************************************/

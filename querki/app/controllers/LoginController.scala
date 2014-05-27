@@ -62,6 +62,10 @@ class LoginController extends ApplicationBase {
     )(PasswordChangeInfo.apply)(PasswordChangeInfo.unapply)
   )
   
+  val displayNameChangeForm = Form(
+    mapping("newName" -> nonEmptyText)((name) => name)((name:String) => Some(name))
+  )
+  
   val resetPasswordForm = Form(
     mapping("name" -> nonEmptyText)((handle) => handle)((handle:String) => Some(handle))
   )
@@ -317,6 +321,30 @@ class LoginController extends ApplicationBase {
             }
           }
         )
+      }
+    }
+  }
+  
+  def changeDisplayName(identityIdStr:String) = withUser(true) { rc =>
+    implicit val request = rc.request
+    val rawForm = displayNameChangeForm.bindFromRequest
+    // We show the same error in all cases, to avoid information leakage
+    def showError = {
+      doError(routes.LoginController.userByName(rc.requesterOrAnon.mainIdentity.handle), "That isn't a legal Display Name")
+    }
+    
+    val identityId = OID(identityIdStr)
+    rc.requesterOrAnon.identityById(identityId) match {
+      case None => showError
+      case Some(identity) => {
+	    rawForm.fold(
+	      errorForm => showError,
+	      name => {
+	        val newUser = UserAccess.changeDisplayName(rc.requesterOrAnon, identity:Identity, name)
+	        Redirect(routes.LoginController.userByName(identity.handle)).
+	          flashing("info" -> s"Display Name changed to $name. This change will show up in your Spaces the next time you use them.")
+	      }
+	    )
       }
     }
   }

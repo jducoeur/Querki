@@ -24,6 +24,7 @@ object UserMOIDs extends EcotIds(30)
 class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   
   lazy val Encryption = interface[querki.security.Encryption]
+  lazy val IdentityAccess = interface[IdentityAccess]
   
   /**
    * TODO: RE-ADD CACHING
@@ -257,6 +258,28 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     }
     
     checkQuerkiLogin(identity.handle, newPassword).getOrElse(throw new Exception("Unable to load newly-created Identity!"))
+  }
+  
+  def changeDisplayName(requester:User, identity:Identity, newDisplay:String):Try[User] = Try {
+    if (!requester.isAdmin && !requester.hasIdentity(identity.id))
+      throw new Exception("Illegal attempt to change password!")
+    
+    DB.withTransaction(dbName(System)) { implicit conn =>
+      val update = SQL("""
+          UPDATE Identity
+             SET name = {display}
+           WHERE id = {id}
+          """).on(
+            "display" -> newDisplay,
+            "id" -> identity.id.raw
+              )
+       update.executeUpdate
+    }
+    
+    // Tell the cache to reload at the next opportunity:
+    IdentityAccess.invalidateCache(identity.id)
+    
+    getUserForIdentity(identity.id).getOrElse(throw new Exception("Unable to reload user record!"))
   }
   
   def addSpaceMembership(identityId:OID, spaceId:OID):Boolean = {

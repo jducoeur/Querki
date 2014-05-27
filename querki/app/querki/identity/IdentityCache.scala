@@ -56,6 +56,9 @@ private[identity] class IdentityCache(val ecology:Ecology) extends Actor with Ec
       sender ! IdentitiesFound(result)
     }
     
+    case InvalidateCacheForIdentity(id) => {
+      identities = identities - id
+    }
   }
 }
 
@@ -66,4 +69,6 @@ object IdentityCacheMessages {
   
   case class GetIdentities(ids:Seq[OID])
   case class IdentitiesFound(identities:Map[OID,Identity])
+  
+  case class InvalidateCacheForIdentity(id:OID)
 }

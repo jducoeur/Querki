@@ -69,6 +69,7 @@ GET     /sendPasswordReset          @controllers.LoginController.sendPasswordRes
 POST    /sendPasswordReset          @controllers.LoginController.doSendPasswordReset
 GET     /resetPassword              @controllers.LoginController.resetPassword(email, expires:Long, hash)
 POST    /resetPassword              @controllers.LoginController.doResetPassword(email, expiresMillis:Long, hash)
+POST    /changeDisplayName          @controllers.LoginController.changeDisplayName(identityIdStr)
 
 # Admin functionality
 GET     /admin/manageUsers          @controllers.AdminController.manageUsers

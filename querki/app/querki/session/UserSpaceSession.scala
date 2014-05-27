@@ -3,7 +3,7 @@ package querki.session
 import akka.actor._
 import akka.event.LoggingReceive
 
-import models.{AsName, AsOID, OID, PType, ThingState, UnknownOID}
+import models.{AsName, AsOID, OID, PType, ThingId, ThingState, UnknownOID}
 
 import querki.ecology._
 import querki.identity.{Identity, User}
@@ -28,6 +28,7 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
   extends Actor with Stash with EcologyMember with TimeoutChild
 {
   lazy val AccessControl = interface[querki.security.AccessControl]
+  lazy val Basic = interface[querki.basic.Basic]
   lazy val Person = interface[querki.identity.Person]
   lazy val UserValues = interface[querki.uservalues.UserValues]
   
@@ -108,7 +109,44 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
    * currently communicating User where they should be communicating Identity. So for now, we're calculating
    * the best option here, which is the local Identity if one is available, and the primary Identity if not.
    */
-  lazy val identity = Person.localIdentities(user)(_rawState.get).headOption.getOrElse(user.mainIdentity) 
+  var _identity:Option[Identity] = None
+  def identity = {
+    _identity match {
+      case Some(ident) => ident
+      case None => {
+        _identity = Some(Person.localIdentities(user)(_rawState.get).headOption.getOrElse(user.mainIdentity))
+        _identity.get
+      }
+    }
+  }
+  
+  def localPerson = Person.localPerson(identity)(_rawState.get)
+  
+  /**
+   * This is here in order to check that the user's Display Name hasn't changed.
+   * 
+   * TODO: we're currently checking this on every SessionRequest, which is certainly overkill. Once we have a
+   * real UserSession object, and it knows about the UserSpaceSessions, that should instead pro-actively notify
+   * all of them about the change, so we don't have to hack around it.
+   * 
+   * TBD: in general, the way we have denormalized the Display Name between Identity and Person is kind of suspicious.
+   * There are good efficiency arguments for it, but I am suspicious.
+   */
+  def checkDisplayName(req:User, own:OID, space:ThingId) = {
+    localPerson match {
+      case Some(person) => {
+	    val curIdentity = Person.localIdentities(req)(_rawState.get).headOption.getOrElse(user.mainIdentity)
+	    val curDisplayName = curIdentity.name
+	    if (person.displayName != curDisplayName) {
+	      // Tell the Space to alter the name of the Person record to fit our new expectations:
+	      spaceRouter ! ChangeProps(req, own, space, person.id, Map(Basic.DisplayNameProp(curDisplayName)))
+	      // Update the local identity:
+	      _identity = Some(curIdentity)
+	    }
+      }
+      case None => {}
+    }
+  }
 
   /**
    * Initial state: stash everything until we get the SpaceState. CurrentState will *typically* come first, but
@@ -143,6 +181,7 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
     case CurrentState(s) => setRawState(s)
     
     case SessionRequest(req, own, space, payload) => { 
+      checkDisplayName(req, own, space)
       payload match {
         case GetActiveSessions => QLog.error("UserSpaceSession received GetActiveSessions! WTF?")
         

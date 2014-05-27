@@ -48,6 +48,16 @@
           
           <input type="submit" value="Change Password" class="btn btn-primary">
 	    }
+	    
+	    <h3>Change Your Display Name</h3>
+	    
+	    <p>Your Display Name is currently @identity.name. Use the form below if you would like to change it.</p>
+	    
+	    @form(routes.LoginController.changeDisplayName(identity.id.toString), 'class -> "form-inline") {
+	      <input type="text" name="newName" id="newName" value="" placeholder="New Display Name">
+	      <input type="submit" value="Change Display Name" class="btn btn-primary">
+	    }
+	    
       </div>
     }
 }
