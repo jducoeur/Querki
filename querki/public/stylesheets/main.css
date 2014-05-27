@@ -59,6 +59,14 @@
 }
 
 /*
+ * Bullet lists are tightly packed, and paragraphs shouldn't mess that up.
+ */
+
+._bullet > .para:last-of-type {
+  margin-bottom: 0px;
+}
+
+/*
  * Buttonset hack.
  *
  * There are well-known horrible conflicts between jQuery UI and Bootstrap. One of them causes

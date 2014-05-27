@@ -235,6 +235,7 @@ trait BaseParsers extends RegexParsers {
 //    def xmlName:Parser[String] = xmlNameStartChar ~ (xmlNameChar*) ^^ {case c ~ cs => c + cs.mkString}
     def xmlName:Parser[String] = "div" | "span" | "i" | "strike" | "br" |
       "dl" | "dd" | "dt" |
+      "ul" | "ol" | "li" |
       "table" | "tr" | "th" | "td"
     
     /** Parses a Simplified xml attribute: everything between quotes ("foo")
