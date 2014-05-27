@@ -258,10 +258,10 @@ just upload a photograph, and you'll get one of these.
 object Bulleted extends ThingState(BulletedOID, systemOID, RootOID,
     toProps(
       setName("_bulleted"),
-      ApplyMethod("""""<ul>
-          |[[_foreach(""<li class="_bullet">
+      ApplyMethod("""* ""<ul>
+          |[[""<li class="_bullet">
           |____
-          |</li>"")]]
+          |</li>""]]
           |</ul>""""".stripMargin),
       DisplayTextProp("""    LIST -> _bulleted
           |This method takes a LIST, and render its elements as a bullet list, one per line. It is simply syntactic sugar for

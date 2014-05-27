@@ -163,6 +163,7 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
   def next(v:QValue) = copy(value = v, parentOpt = Some(this), depth = depth + 1)
   
   def asCollection = copy(parentOpt = Some(this), depth = depth + 1, useCollection = true)
+  def clearAsCollection = copy(parentOpt = Some(this), depth = depth + 1, useCollection = false)
   
   def forProperty(prop:Property[_,_]) = copy(parentOpt = Some(this), depth = depth + 1, propOpt = Some(prop))
   

@@ -53,11 +53,14 @@ private[ql] sealed abstract class QLStage(collFlag:Option[String]) {
     case Some(_) => true
     case None => false
   }
+  def clearUseCollection:Boolean = false
   
   override def toString = reconstructString
 }
 private[ql] case class QLTextStage(contents:ParsedQLText, collFlag:Option[String]) extends QLStage(collFlag) {
   def reconstructString = collFlag.getOrElse("") + "\"\"" + contents.reconstructString + "\"\""
+  
+  override def clearUseCollection = collFlag.isEmpty
 }
 private[ql] case class QLExp(phrases:Seq[QLPhrase]) extends QLTextPart {
   def reconstructString = "[[" + phrases.map(_.reconstructString).mkString + "]]"

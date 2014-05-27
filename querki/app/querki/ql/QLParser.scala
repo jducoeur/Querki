@@ -235,7 +235,9 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
       if (contextIn.depth > contextIn.maxDepth)
         contextIn.next(WarningValue("Too many levels of calls -- you can only have up to " + contextIn.maxDepth + " calls in a phrase."));
       else if (stage.useCollection) 
-        contextIn.asCollection 
+        contextIn.asCollection
+      else if (stage.clearUseCollection)
+        contextIn.clearAsCollection
       else 
         contextIn
     logContext("processStage " + stage, context) {
