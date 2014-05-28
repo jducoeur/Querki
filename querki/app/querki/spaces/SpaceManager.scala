@@ -38,7 +38,7 @@ import querki.util.SqlHelpers._
 
 import PersistMessages._
 
-class SpaceManager(val ecology:Ecology) extends Actor with Requester with EcologyMember {
+class SpaceManager(val ecology:Ecology) extends Actor with Requester with EcologyMember with RoutingParent[OID] {
   
   lazy val persistenceFactory = interface[SpacePersistenceFactory]
   
@@ -48,18 +48,11 @@ class SpaceManager(val ecology:Ecology) extends Actor with Requester with Ecolog
   lazy val persister = persistenceFactory.getSpaceManagerPersister
   
   // Cache of the mapping from Space Name to OID.
-  // TODO: in the long-term architecture, we should *always* be putting stuff into this cache,
-  // even when the original lookup wasn't by name. This cache will also be fully distributed.
-  // TODO: expire entries from this cache, at least on inactivity.
   // TODO: forcibly expire this cache on Space Name change.
   private case class SpaceInfo(id:OID, name:String)
   private var spaceNameCache:Map[String,SpaceInfo] = Map.empty
   
-  def getSpace(spaceId:OID):ActorRef = {
-    val mySid = sid(spaceId)
-    // Fetch the existing Space Actor, or fire it up:
-    context.child(mySid).getOrElse(context.actorOf(SpaceRouter.actorProps(ecology, persistenceFactory, spaceId), mySid))
-  }
+  def createChild(key:OID):ActorRef = context.actorOf(SpaceRouter.actorProps(ecology, persistenceFactory, key), sid(key))
   
   def receive = {
     // This is entirely a DB operation, so just have the Persister deal with it:
@@ -68,7 +61,7 @@ class SpaceManager(val ecology:Ecology) extends Actor with Requester with Ecolog
     case req @ GetSpacesStatus(requester) => {
       if (requester.isAdmin) {
         // Each Space responds for itself:
-        context.children.foreach(space => space.forward(req))
+        children.foreach(space => space.forward(req))
       } else {
         QLog.error("Illegal request for GetSpacesStatus, from user " + requester.id)
       }
@@ -88,24 +81,23 @@ class SpaceManager(val ecology:Ecology) extends Actor with Requester with Ecolog
           persister.request(CreateSpacePersist(requester.mainIdentity.id, userMaxSpaces, NameUtils.canonicalize(display), display)) {
             case err:ThingError => sender ! err
             // Now, let the Space Actor finish the process once it is ready:
-            case Changed(spaceId, _) => getSpace(spaceId).forward(req)
+            case Changed(spaceId, _) => routeToChild(spaceId, req)
           }
         }  
         { sender ! ThingError(_) }
     }
 
-    // TODO: we need a pseudo-Space for System!
     case req:SpaceMessage => {
       req match {
-        case SpaceMessage(_, _, AsOID(spaceId)) => getSpace(spaceId).forward(req)
+        case SpaceMessage(_, _, AsOID(spaceId)) => routeToChild(spaceId, req)
         case SpaceMessage(_, ownerId, AsName(spaceName)) => {
           val canonName = NameUtils.canonicalize(spaceName)
           spaceNameCache.get(canonName) match {
-            case Some(SpaceInfo(spaceId, name)) => getSpace(spaceId).forward(req)
+            case Some(SpaceInfo(spaceId, name)) => routeToChild(spaceId, req)
             case None => {
 	          persister.request(GetSpaceByName(ownerId, canonName)) {
 	            case SpaceId(spaceId) => {
-	              getSpace(spaceId).forward(req)
+	              routeToChild(spaceId, req)
 	              spaceNameCache = spaceNameCache + (canonName -> SpaceInfo(spaceId, canonName))
 	            }
 	            case err:ThingError => sender ! err

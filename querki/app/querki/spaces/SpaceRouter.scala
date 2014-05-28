@@ -10,7 +10,7 @@ import querki.ecology._
 import querki.session.UserSpaceSessions
 import querki.session.messages._
 import querki.spaces.messages._
-import querki.util.Requester
+import querki.util.{Requester, TimeoutChild}
 import querki.values.SpaceState
 
 /**
@@ -25,10 +25,13 @@ import querki.values.SpaceState
  * be serializing that.
  */
 private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, val spaceId:OID) 
-  extends Actor with EcologyMember with Requester
+  extends Actor with EcologyMember with Requester with TimeoutChild
 {
   
   lazy val Conversations = interface[querki.conversations.Conversations]
+  
+  // How long we can be inactive before timing out this entire hive:
+  def timeoutConfig:String = "querki.space.timeout"
   
   // The components of the troupe:
   var conversations:ActorRef = null
@@ -41,6 +44,7 @@ private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpaceP
     space = context.actorOf(Space.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
     sessions = context.actorOf(UserSpaceSessions.actorProps(ecology, spaceId, self), "Sessions")
     conversations = context.actorOf(Conversations.conversationActorProps(persistenceFactory, spaceId, self), "Conversations") 
+    super.preStart()
   }
   
   def receive = LoggingReceive {

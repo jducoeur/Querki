@@ -31,6 +31,11 @@ querki {
     timeout : 5 minutes
   }
   
+  space {
+    # Time before a Space times out for inactivity
+    timeout : 15 minutes
+  }
+  
   mail {
     smtpHost : SMTP HOST
     from : EMAIL ADDRESS TO SEND FROM
