@@ -74,6 +74,16 @@ class QuerkiTests
   implicit class testableString(str:String) {
     // Multi-line test strings should use this, to deal with Unix vs. Windows problems:
     def stripReturns:String = str.replace("\r", "").stripMargin
+    
+    def trimStart(str:String):String = {
+      str.indexWhere(c => c != ' ' && c != '\t') match {
+        case -1 => ""
+        case n => str.substring(n)
+      }
+    }
+    
+    // Similar to stripReturns, but instead of using stripMargin, we trim the front of the line.
+    def strip:String = str.replace("\r", "").lines.map(trimStart(_)).mkString("\n")
   }
     
   // Just for efficiency, we create the CommonSpace once -- it is immutable, and good enough for
