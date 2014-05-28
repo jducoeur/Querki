@@ -22,7 +22,21 @@ class TypeTests extends QuerkiTests {
         println(wikified.display)
       
       processQText(thingAsContext[TSpace](space, (_.myThing)), "[[My Text Set -> _bulleted]]") should
-        equal ("\n* First Value\n* Second Value, with *emphasis*\n* Third Value\n* Fourth Value")
+        equal ("""
+            |<ul>
+			|<li class="_bullet">
+			|First Value
+			|</li>
+			|<li class="_bullet">
+			|Second Value, with *emphasis*
+			|</li>
+			|<li class="_bullet">
+			|Third Value
+			|</li>
+			|<li class="_bullet">
+			|Fourth Value
+			|</li>
+			|</ul>""".stripReturns)
     }
   }
 

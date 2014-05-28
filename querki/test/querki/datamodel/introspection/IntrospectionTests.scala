@@ -52,11 +52,23 @@ class IntrospectionTests extends QuerkiTests {
       // Note that the results are in order by Instance Props, not alphabetical:
       pql("""[[My Complex Thing -> Complex Prop -> _foreachProperty(""Name: [[_prop -> Name]]; Value: [[_val]]"") -> _bulleted]]""") should
         equal("""
-            |* Name: First Prop; Value: 1
-            |* Name: Second Prop; Value: 2
-            |* Name: Third Prop; Value: 9
-            |* Name: Fourth Prop; Value: 4
-            |* Name: Fifth Prop; Value: 5""".stripReturns)
+            |<ul>
+            |<li class="_bullet">
+            |Name: First Prop; Value: 1
+            |</li>
+            |<li class="_bullet">
+            |Name: Second Prop; Value: 2
+            |</li>
+            |<li class="_bullet">
+            |Name: Third Prop; Value: 9
+            |</li>
+            |<li class="_bullet">
+            |Name: Fourth Prop; Value: 4
+            |</li>
+            |<li class="_bullet">
+            |Name: Fifth Prop; Value: 5
+            |</li>
+            |</ul>""".stripReturns)
     }
     
     "work with a non-quoted Expression" in {
@@ -81,7 +93,11 @@ class IntrospectionTests extends QuerkiTests {
       // Note that the results are in order by Instance Props, not alphabetical:
       pql("""[[Thing with Opts -> _foreachProperty(_if(_val -> _isNonEmpty, _val)) -> _bulleted]]""") should
         equal("""
-            |* 4""".stripReturns)
+            |<ul>
+            |<li class="_bullet">
+            |4
+            |</li>
+            |</ul>""".stripReturns)
     }
     
     "work without a parameter" in {
@@ -113,16 +129,38 @@ class IntrospectionTests extends QuerkiTests {
       
       pql("""[[Bottom Model._instances -> _sort -> _foreachProperty(""Name: [[_prop -> Name]]; Value: [[_val]]; On: [[_definedOn -> Name]]"") -> _bulleted]]""")  should
         equal ("""
-            |* Name: First Prop; Value: 1; On: Bottom 1
-            |* Name: Second Prop; Value: 2; On: Bottom 1
-            |* Name: Third Prop; Value: 3; On: Bottom 1
-            |* Name: Fourth Prop; Value: 4; On: Bottom 1
-            |* Name: Fifth Prop; Value: 5; On: Bottom 1
-            |* Name: First Prop; Value: 1; On: Bottom 2
-            |* Name: Second Prop; Value: 2; On: Bottom 2
-            |* Name: Third Prop; Value: 3; On: Bottom 2
-            |* Name: Fourth Prop; Value: 4; On: Bottom 2
-            |* Name: Fifth Prop; Value: 5; On: Bottom 2""".stripReturns)
+            |<ul>
+			|<li class="_bullet">
+			|Name: First Prop; Value: 1; On: Bottom 1
+			|</li>
+			|<li class="_bullet">
+			|Name: Second Prop; Value: 2; On: Bottom 1
+			|</li>
+			|<li class="_bullet">
+			|Name: Third Prop; Value: 3; On: Bottom 1
+			|</li>
+			|<li class="_bullet">
+			|Name: Fourth Prop; Value: 4; On: Bottom 1
+			|</li>
+			|<li class="_bullet">
+			|Name: Fifth Prop; Value: 5; On: Bottom 1
+			|</li>
+			|<li class="_bullet">
+			|Name: First Prop; Value: 1; On: Bottom 2
+			|</li>
+			|<li class="_bullet">
+			|Name: Second Prop; Value: 2; On: Bottom 2
+			|</li>
+			|<li class="_bullet">
+			|Name: Third Prop; Value: 3; On: Bottom 2
+			|</li>
+			|<li class="_bullet">
+			|Name: Fourth Prop; Value: 4; On: Bottom 2
+			|</li>
+			|<li class="_bullet">
+			|Name: Fifth Prop; Value: 5; On: Bottom 2
+			|</li>
+			|</ul>""".stripReturns)
     }    
   }
 }

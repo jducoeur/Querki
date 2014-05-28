@@ -258,8 +258,7 @@ just upload a photograph, and you'll get one of these.
 object Bulleted extends ThingState(BulletedOID, systemOID, RootOID,
     toProps(
       setName("_bulleted"),
-      ApplyMethod("""* ""<ul>
-          |[[""<li class="_bullet">
+      ApplyMethod("""* ""<ul>[[""<li class="_bullet">
           |____
           |</li>""]]
           |</ul>""""".stripMargin),

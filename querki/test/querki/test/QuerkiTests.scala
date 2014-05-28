@@ -88,7 +88,7 @@ class QuerkiTests
   def processQText(context:QLContext, text:String):String = {
     val qt = QLText(text)
     val wikitext = QL.process(qt, context)
-    wikitext.plaintext
+    wikitext.plaintext.stripReturns
   }
   
   def spaceAndThing[S <: CommonSpace](space:S, f: S => Thing):(SpaceState, Thing) = {
