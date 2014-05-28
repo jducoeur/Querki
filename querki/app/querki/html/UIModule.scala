@@ -232,7 +232,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       val wikitext = if (context.isEmpty) {
         parser.contextsToWikitext(emptyOpt.map(empty => Seq(parser.processPhrase(empty.ops, context.root))).getOrElse(Seq.empty))
       } else {
-        val processedHeader = parser.contextsToWikitext(Seq(parser.processPhrase(header.ops, context.asCollection)))
+        val processedHeader = parser.contextsToWikitext(Seq(parser.processPhrase(header.ops, context.forceAsCollection)))
         val processedDetails = detailsOpt.map(details => Seq(parser.processPhrase(details.ops, context)))
         // TODO: why are we transforming this to Wikitext this early? Is there any reason to? Shouldn't we just turn all
         // of this into a new List Context and pass it on through? Conceptually that would be more correct. The only problem

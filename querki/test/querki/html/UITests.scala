@@ -112,6 +112,28 @@ class UITests extends QuerkiTests {
     }
   }
   
+  // === _section ===
+  "_section" should {
+    "work normally" in {
+      class TSpace extends CommonSpace {
+        val numProp = new TestProperty(Core.IntType, QList, "Numbers")
+        
+        val myThing = new SimpleTestThing("Test Thing", numProp(1,2,3,4,5))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Test Thing -> Numbers -> _section(""Nums: "", ""____"")]]""") should
+        equal ("""
+			Nums: 
+			
+			1
+			2
+			3
+			4
+			5""".strip)
+    }
+  }
+  
   // === _showLink ===
   "_showLink" should {
     "work with a Link to Thing" in {

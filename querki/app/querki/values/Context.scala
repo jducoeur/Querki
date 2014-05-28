@@ -13,7 +13,7 @@ trait DebugRenderable {
 }
 
 case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:Option[QLContext] = None, 
-                     parser:Option[QLParser] = None, depth:Int = 0, useCollection:Boolean = false, propOpt:Option[Property[_,_]] = None,
+                     parser:Option[QLParser] = None, depth:Int = 0, useCollStack:Int = 0, propOpt:Option[Property[_,_]] = None,
                      currentValue:Option[DisplayPropVal] = None) 
   extends DebugRenderable with EcologyMember
 {
@@ -63,7 +63,7 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
       List(cb(this))
     } else {
       value.cv map { elem =>
-        val elemContext = next(ExactlyOne(elem))
+        val elemContext = next(ExactlyOne(elem)).clearAsCollection
         cb(elemContext)
       }
     }
@@ -89,7 +89,7 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
       }
     } else {
       value.cv flatMap { elem =>
-        val elemContext = next(ExactlyOne(elem))
+        val elemContext = next(ExactlyOne(elem)).clearAsCollection
         cb(elemContext)
       }
     }
@@ -161,9 +161,33 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
    * Convenience method to build the successor to this context, in typical chained situations.
    */
   def next(v:QValue) = copy(value = v, parentOpt = Some(this), depth = depth + 1)
-  
-  def asCollection = copy(parentOpt = Some(this), depth = depth + 1, useCollection = true)
-  def clearAsCollection = copy(parentOpt = Some(this), depth = depth + 1, useCollection = false)
+
+  /**
+   * asCollection means "right now, evaluate the very next operation as a collection."
+   */
+  def asCollection = copy(parentOpt = Some(this), depth = depth + 1, useCollStack = 1)
+  /**
+   * forceAsCollection means "evaluate the operation that is contained somewhere down inside this as a collection."
+   */
+  def forceAsCollection = copy(parentOpt = Some(this), depth = depth + 1, useCollStack = 2)
+  /**
+   * This seems a little delicate, and it is. clearAsCollection is dealing with the tension where the
+   * inner Text of this phrase:
+   * 
+   *     * ""Some header info: [[""An interior item: ____""]]""
+   *     
+   * gets handled element-by-element, but the parameter in this:
+   * 
+   *     _section(""My header"", ""An interior item: ____"")
+   *     
+   * is handled at the list level.
+   * 
+   * Basically, forceAsCollection tells the system that the next clearAsCollection won't do it -- you have
+   * to go down a second level before it actually will clear the flag.
+   */
+  def clearAsCollection = copy(parentOpt = Some(this), depth = depth + 1, 
+      useCollStack = { if (useCollStack > 0) useCollStack - 1 else 0 })
+  def useCollection = useCollStack > 0
   
   def forProperty(prop:Property[_,_]) = copy(parentOpt = Some(this), depth = depth + 1, propOpt = Some(prop))
   
