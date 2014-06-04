@@ -39,6 +39,7 @@ class EcologyImpl extends Ecology with EcologyManager {
     println("Starting Ecology initialization...")
     val finalState = initializeRemainingEcots(_registeredEcots, initialSpaceState)
     initializeActors(createActorCb)
+    postInitialize(_registeredEcots)
     finalState
   }
   
@@ -169,5 +170,9 @@ class EcologyImpl extends Ecology with EcologyManager {
   
   private def initializeActors(createActorCb:CreateActorFunc) = {
     _initializedEcots.foreach(_.createActors(createActorCb))
+  }
+  
+  private def postInitialize(ecots:Set[Ecot]) = {
+    ecots.foreach(_.postInit)
   }
 }
