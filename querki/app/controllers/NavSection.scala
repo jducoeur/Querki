@@ -126,7 +126,8 @@ class NavSectionEcot(e:Ecology) extends QuerkiEcot(e) with NavSectionMgr {
       if (rc.requesterOrAnon.isAdmin) {
         Some(NavSection("Admin", Seq(
           NavLink("Manage Users", routes.AdminController.manageUsers),
-          NavLink("Show Space Status", routes.AdminController.showSpaceStatus)
+          NavLink("Show Space Status", routes.AdminController.showSpaceStatus),
+          NavLink("Send System Message", routes.AdminController.sendSystemMessage)
         )))
       } else
         None

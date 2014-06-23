@@ -39,6 +39,18 @@ package object identity {
     val SpaceInviteOID = moid(9)
     val PersonIdentityFunctionOID = moid(10)
   }
+  
+  /**
+   * Type alias to clarify when we are working specifically with Identities.
+   * 
+   * TODO: learn more about scalaz/shapeless Type Tags, and see if we can use them to make this safer.
+   */
+  type IdentityId = OID
+  
+  /**
+   * Type alias to clarify when we are working with Users.
+   */
+  type UserId = OID
 
   case class InvitationResult(invited:Seq[EmailAddress], alreadyInvited:Seq[EmailAddress])
   
@@ -138,6 +150,7 @@ package object identity {
     def getAllForAdmin(requester:User):Seq[User]
     def getIdentity(rawHandle:String):Option[OID]
     def getIdentity(id:OID):Option[Identity]
+    def getFullIdentity(id:IdentityId):Option[FullIdentity]
     def getIdentity(thingId:ThingId):Option[(Identity, UserLevel.UserLevel)]
     // WARNING: this should *not* often be used! It is dangerous from an Identity-security POV!
     def getUserByHandleOrEmail(raw:String):Option[User]

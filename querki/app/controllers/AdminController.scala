@@ -1,6 +1,8 @@
 package controllers
 
 import play.api.Routes
+import play.api.data._
+import play.api.data.Forms._
 import play.api.mvc._
 
 import querki.ecology._
@@ -11,6 +13,15 @@ class AdminController extends ApplicationBase {
   
   lazy val AdminOps = interface[querki.admin.AdminOps]
   lazy val Email = interface[querki.email.Email]
+  
+  case class SystemMessageForm(header:String, body:String)
+  val systemMessageForm = Form(
+    mapping(
+      "header" -> nonEmptyText,
+      "body" -> nonEmptyText
+    )((header, body) => SystemMessageForm(header, body))
+     ((form:SystemMessageForm) => Some((form.header, form.body)))
+  )
   
   def withAdmin(f: PlayRequestContext => Result) = {
     withUser(true) { rc =>
@@ -85,6 +96,28 @@ class AdminController extends ApplicationBase {
     val userId = OID(userIdStr)
     val newUserOpt = UserAccess.changeUserLevel(userId, rc.requesterOrAnon, UserLevel.AdminUser)
     Ok(newUserOpt.map(_.level.toString).getOrElse(UserLevel.PendingUser.toString))
+  }
+  
+  def sendSystemMessage = withAdmin { rc =>
+    Ok(views.html.systemMessage(rc))
+  }
+  
+  // TODO: in the long run, there is *way* too much boilerplate for this feature! We have a Play template; a
+  // controller; a function in the AdminEcot; and a message to the AdminActor; all just to call Notifications.
+  // Instead, we should be looking for a standard way for the webpage to send a message directly to the AdminActor,
+  // without all the intervening BS. Figure this out once we begin to rewrite the UI in Scala -- this is a great
+  // candidate for an early rewrite. (But make sure we are checking credentials somewhere!)
+  def doSendSystemMessage = withAdmin { rc =>
+    implicit val request = rc.request
+    val rawForm = systemMessageForm.bindFromRequest
+    rawForm.fold(
+      errorForm => doError(routes.AdminController.sendSystemMessage, "That isn't a legal system message"),
+      msg => {
+        // TODO: parse the message, show it to the Admin, and get confirmation before sending
+        AdminOps.sendSystemMessage(rc.requesterOrAnon, msg.header, msg.body)
+        Redirect(routes.Application.index).flashing("info" -> "System Message sent")
+      }
+    )
   }
   
   def javascriptRoutes = Action { implicit request =>

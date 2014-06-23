@@ -77,6 +77,8 @@ GET     /admin/upgradePendingUser   @controllers.AdminController.upgradePendingU
 GET     /admin/makeAdmin            @controllers.AdminController.makeAdmin(userId)
 GET     /adminJs                    @controllers.AdminController.javascriptRoutes
 GET     /admin/showSpaceStatus      @controllers.AdminController.showSpaceStatus
+GET     /admin/sendSystemMessage    @controllers.AdminController.sendSystemMessage
+POST    /admin/sendSystemMessage    @controllers.AdminController.doSendSystemMessage
 
 # Conversations
 GET     /u/:userName/:spaceId/__getConv @controllers.ConversationController.getConversations(userName, spaceId, thingId)

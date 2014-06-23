@@ -165,6 +165,8 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   
   def getIdentity(id:OID):Option[Identity] = getUserForIdentity(id).flatMap(_.identityById(id))
   
+  def getFullIdentity(id:IdentityId):Option[FullIdentity] = getUserForIdentity(id).flatMap(_.fullIdentityById(id))
+  
   // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
   private def checkQuerkiLoginByEmail(email:EmailAddress, passwordEntered:String):Option[User] = {
     loadByEmail(

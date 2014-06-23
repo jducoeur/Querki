@@ -49,16 +49,24 @@ object UserLevel {
       
     case _ => "Unknown: " + level.toString
   }
+  
+  def isAdmin(level:UserLevel) = (level == AdminUser || level == SuperadminUser)
 }
 
 import UserLevel._
 
 case class SignupInfo(email:String, password:String, handle:String, display:String)
   
+/**
+ * TODO: we need to tease a more abstract interface out of here, which is all that should be visible to
+ * most subsystems. Nobody outside the Identity system itself should be able to easily access the
+ * mapping from Users to Identities. I suspect that teasing this apart will reveal some leaks.
+ */
 trait User {
   def id:OID
   // TODO: this should be Option[String]!
   def name:String
+  // TODO: this doesn't belong in the base User trait -- it leaks Identity info!
   def identities:Seq[Identity]
   def level:UserLevel
   def tosVersion:Int
@@ -92,6 +100,13 @@ trait User {
   def identityByHandle(handle:String) = identityBy(_.handle.equalsIgnoreCase(handle))
   def identityById(identityId:OID) = identityBy(_.id == identityId)
   
+  def fullIdentityById(identityId:IdentityId) = {
+    for {
+      identity <- identityById(identityId)
+    }
+      yield FullIdentity(identity.id, identity.handle, identity.name, id)
+  }
+  
   // TODO: this is a bit crude so far, and doesn't cope with the notion that I might have
   // multiple logins. But it's a useful shortcut to start.
   // WARNING: should only be used by Admin!!!
@@ -106,7 +121,7 @@ trait User {
    */
   def canOwnSpaces = level >= FreeUser
   
-  def isAdmin = (level == AdminUser || level == SuperadminUser)
+  def isAdmin = UserLevel.isAdmin(level)
   
   /**
    * If you have a function that is high-security, and should not be accessible by non-Admins, wrap the guts
@@ -184,6 +199,8 @@ trait PublicIdentity {
 case class SimpleIdentity(id:OID, handle:String, name:String) extends PublicIdentity
 
 case class Identity(id:OID, email:EmailAddress, auth:String, handle:String, name:String, kind:IdentityKind) extends PublicIdentity
+
+case class FullIdentity(id:OID, handle:String, name:String, userId:UserId) extends PublicIdentity
 
 object Identity {
   val AnonymousOID = OID(-2)

@@ -20,14 +20,14 @@ private[identity] class IdentityCache(val ecology:Ecology) extends Actor with Ec
   
   lazy val UserAccess = interface[UserAccess]
   
-  var identities = Map.empty[OID, Identity] 
+  var identities = Map.empty[OID, FullIdentity]
   
   def receive = {
     case GetIdentityRequest(id) => {
       identities.get(id) match {
         case Some(identity) => sender ! IdentityFound(identity)
         case None => {
-          UserAccess.getIdentity(id) match {
+          UserAccess.getFullIdentity(id) match {
             case Some(identity) => {
               identities += (id -> identity)
               sender ! IdentityFound(identity)
@@ -39,11 +39,11 @@ private[identity] class IdentityCache(val ecology:Ecology) extends Actor with Ec
     }
     
     case GetIdentities(ids) => {
-      val result = (Map.empty[OID, Identity] /: ids) { (curmap, id) =>
+      val result = (Map.empty[OID, PublicIdentity] /: ids) { (curmap, id) =>
         identities.get(id) match {
           case Some(identity) => curmap + (id -> identity)
           case None => {
-            UserAccess.getIdentity(id) match {
+            UserAccess.getFullIdentity(id) match {
               case Some(identity) => {
                 identities += (id -> identity)
                 curmap + (id -> identity)
@@ -68,7 +68,7 @@ object IdentityCacheMessages {
   case object IdentityNotFound
   
   case class GetIdentities(ids:Seq[OID])
-  case class IdentitiesFound(identities:Map[OID,Identity])
+  case class IdentitiesFound(identities:Map[OID,PublicIdentity])
   
   case class InvalidateCacheForIdentity(id:OID)
 }
