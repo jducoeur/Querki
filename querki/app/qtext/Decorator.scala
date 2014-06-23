@@ -49,8 +49,8 @@ trait Decorator {
         url  
     }
     def decorateLink(text:String, url:String, title:Option[String]):String = title match {
-        case None    => "<a href=\"" + javascriptNeutralized(url) + "\">" + text + "</a>"
-        case Some(t) => "<a href=\"" + javascriptNeutralized(url) + "\" title=\"" + t + "\">" + text + "</a>"
+        case None    => "<a href=\"" + javascriptNeutralized(url) + "\" rel=\"nofollow\">" + text + "</a>"
+        case Some(t) => "<a href=\"" + javascriptNeutralized(url) + "\" title=\"" + t + "\" rel=\"nofollow\">" + text + "</a>"
     }
     /** Used to print image elements (default: <img ...)
      */
