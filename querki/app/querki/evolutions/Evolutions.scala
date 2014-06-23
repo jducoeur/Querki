@@ -1,10 +1,11 @@
 package querki.evolutions
 
-import querki.ecology._
-
 import models.OID
 
 import steps._
+
+import querki.ecology._
+import querki.identity.UserId
 
 object MOIDs extends EcotIds(29)
 
@@ -27,7 +28,7 @@ object MOIDs extends EcotIds(29)
  * To add a Step, simply create it in querki.evolutions.steps (make sure its version is set!), and
  * add it to stepList below.
  */
-class EvolutionsEcot(e:Ecology) extends QuerkiEcot(e) with Evolutions {
+class EvolutionsEcot(e:Ecology) extends QuerkiEcot(e) with Evolutions with UserEvolutions {
   // All Steps must be registered in this list.
   // NOTE: for the moment, we are *not* tolerant of gaps in the numeric sequence. We might need to
   // make this more robust at some point.
@@ -57,6 +58,29 @@ class EvolutionsEcot(e:Ecology) extends QuerkiEcot(e) with Evolutions {
       val step = steps(next)
       step.evolveUp(spaceId)
       checkEvolution(spaceId, next)
+    }
+  }
+  
+  /********************************************
+   * User Evolutions
+   * 
+   * TBD: the code for User Evolution is awfully duplicative of that for Space Evolutions. We may want
+   * to lift some abstractions out of this.
+   ********************************************/
+  
+  private lazy val userStepList:Seq[UserStep] = Seq(
+  )
+  
+  private lazy val userSteps:Map[Int, UserStep] = Map(userStepList.map(step => (step.version, step)):_*)
+  
+  lazy val currentUserVersion = userSteps.keys.max
+  
+  def checkUserEvolution(userId:UserId, version:Int):Unit = {
+    if (version < currentVersion) {
+      val next = version + 1
+      val step = steps(next)
+      step.evolveUp(userId)
+      checkUserEvolution(userId, next)
     }
   }
 }

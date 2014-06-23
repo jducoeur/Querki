@@ -131,6 +131,11 @@ package object identity {
      * It will take effect the next time someone tries to fetch this identity, but races can and will occur!
      */
     def invalidateCache(id:OID):Unit
+    
+    /**
+     * Given the specified header from Play, fetch the User itself.
+     */
+    def userFromSession(req:RequestHeader):Option[User]
   }
   
   /**
@@ -154,6 +159,7 @@ package object identity {
     def getIdentity(thingId:ThingId):Option[(Identity, UserLevel.UserLevel)]
     // WARNING: this should *not* often be used! It is dangerous from an Identity-security POV!
     def getUserByHandleOrEmail(raw:String):Option[User]
+    def getUserByHandle(handle:String):Option[User]
     def setTOSVersion(userId:OID, version:Int):Option[User]
   }
 }

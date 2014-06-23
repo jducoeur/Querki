@@ -1,9 +1,13 @@
 package querki
 
+import akka.actor.Props
+
+import anorm.SqlQuery
+
 import models.Thing.PropMap
 
 import querki.ecology._
-import querki.identity.{IdentityId, PublicIdentity, User}
+import querki.identity.{IdentityId, PublicIdentity, User, UserId}
 
 package object notifications {
   /**
@@ -43,5 +47,17 @@ package object notifications {
      * Send this Notification to all of the specified Recipients. Fire and Forget!
      */
     def send(req:User, as:PublicIdentity, recipients:Recipients, note:Notification)
+  }
+  
+  /**
+   * API for actually working with the DB.
+   * 
+   * Note that this is partial -- for a lot of the utilities, see SpacePersistence.
+   */
+  trait NotificationPersistence extends EcologyInterface {
+    def noteTable(id:UserId):String
+    def UserSQL(userId:UserId, query:String, version:Int = 0):SqlQuery
+    def loadUserInfo(userId:UserId):Option[UserInfo]
+    def notificationPersisterProps(userId:UserId):Props
   }
 }

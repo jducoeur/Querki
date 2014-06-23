@@ -118,6 +118,8 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
    * If we find the username in the current session, return a populated Some(User); otherwise, None.
    * 
    * TODO: cache the full record in the cookie! Note that this is closely related to User.toSession().
+   * 
+   * TODO: remove this -- it is moving into Session instead.
    */
   def get(request:RequestHeader) = {
     val username = request.session.get(Security.username)
@@ -150,6 +152,8 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   def getIdentity(rawHandle:String) = {
     loadByHandle(rawHandle, None).flatMap(_.identityByHandle(rawHandle)).map(_.id)
   }
+  
+  def getUserByHandle(handle:String):Option[User] = loadByHandle(handle, None)
   
   def getUserByHandleOrEmail(raw:String):Option[User] = {
     if (raw.contains("@"))

@@ -8,12 +8,16 @@ import akka.actor.{ActorRef, Props}
 import akka.pattern.ask
 import akka.util.Timeout
 
+import play.api.mvc.{RequestHeader, Security}
+
 import models.{SimplePTypeBuilder, ThingState, Wikitext}
 
 import querki.ecology._
+import querki.util.ActorHelpers._
 import querki.values.{QLContext, SpaceState}
 
 import IdentityCacheMessages._
+import UserCacheMessages._
 
 object IdentityMOIDs extends EcotIds(39) {
   val IdentityTypeOID = moid(1)  
@@ -33,11 +37,15 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
   var _ref:Option[ActorRef] = None
   lazy val identityCache = _ref.get
   
+  var _userRef:Option[ActorRef] = None
+  lazy val userCache = _userRef.get
+  
   override def createActors(createActorCb:CreateActorFunc):Unit = {
     // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
     // with "Props(classOf(Space), ...)". See:
     //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
     _ref = createActorCb(Props(new IdentityCache(ecology)), "IdentityCache")
+    _userRef = createActorCb(Props(new UserCache(ecology)), "UserCache")
   }
   
   implicit val cacheTimeout = Timeout(5 seconds)
@@ -62,6 +70,19 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
   def invalidateCache(id:OID):Unit = {
     identityCache ! InvalidateCacheForIdentity(id)
   }
+  
+  /**
+   * If we find the username in the current session, return a populated Some(User); otherwise, None.
+   * 
+   * TODO: cache the full record in the cookie! Note that this is closely related to User.toSession().
+   */
+  def userFromSession(request:RequestHeader):Option[User] = {
+    val usernameOpt = request.session.get(Security.username)
+    usernameOpt.flatMap(username => userCache.askBlocking(GetUserByHandle(username)) {
+      case UserFound(user) => Some(user)
+      case UserNotFound => None
+    })
+  }  
   
   /***********************************************
    * THINGS

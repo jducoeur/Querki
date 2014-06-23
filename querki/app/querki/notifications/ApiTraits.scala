@@ -2,7 +2,7 @@ package querki.notifications
 
 import models.{OID, Wikitext}
 
-import querki.identity.{IdentityId, UserLevel}
+import querki.identity.{IdentityId, UserId, UserLevel}
 import querki.time.DateTime
 import querki.values.QLContext
 
@@ -10,6 +10,15 @@ import querki.values.QLContext
  * Identifies a particular Notifier. Used so that we know who handles a given Notification.
  */
 case class NotifierId(ecotId:Short, notificationType:Short)
+  
+/**
+ * The basic information about a given User.
+ * 
+ * TODO: this is a bad smell. It is here because NotificationPersister is loading it. It probably
+ * shouldn't be doing so.
+ */
+case object LoadInfo
+case class UserInfo(userId:UserId, version:Int)
 
 /**
  * A plugin that is published by some Ecot, which encapsulates the handling for one particular kind of Notification.

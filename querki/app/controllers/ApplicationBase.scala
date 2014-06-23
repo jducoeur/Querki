@@ -18,6 +18,7 @@ class ApplicationBase extends Controller with EcologyMember {
   implicit var ecology:Ecology = null
   
   lazy val AccessControl = interface[querki.security.AccessControl]
+  lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   lazy val PageEventManager = interface[controllers.PageEventManager]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
@@ -58,7 +59,7 @@ class ApplicationBase extends Controller with EcologyMember {
     }
   }
   
-  def userFromSession(request:RequestHeader) = UserAccess.get(request)
+  def userFromSession(request:RequestHeader) = IdentityAccess.userFromSession(request) //UserAccess.get(request)
   // Workaround to deal with the fact that Security.Authenticated has to get a non-empty
   // result in order to let things through. So if a registered user is *optional*, we need to
   // return something:
