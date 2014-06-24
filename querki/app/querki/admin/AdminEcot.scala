@@ -12,7 +12,7 @@ import models.Wikitext
 
 import querki.core.QLText
 import querki.ecology._
-import querki.identity.{PublicIdentity, User}
+import querki.identity.{Identity, PublicIdentity, User}
 import querki.notifications._
 import querki.spaces.messages.{GetSpacesStatus, SpaceStatus}
 import querki.time.DateTime
@@ -100,6 +100,7 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
     Notification(
       EmptyNotificationId,
       from.id, 
+      Identity.AnonymousIdentity.id,
       SystemMessageNotifier.id,
       DateTime.now,
       None, 

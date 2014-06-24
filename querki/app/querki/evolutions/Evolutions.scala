@@ -69,6 +69,7 @@ class EvolutionsEcot(e:Ecology) extends QuerkiEcot(e) with Evolutions with UserE
    ********************************************/
   
   private lazy val userStepList:Seq[UserStep] = Seq(
+    new UserStep1
   )
   
   private lazy val userSteps:Map[Int, UserStep] = Map(userStepList.map(step => (step.version, step)):_*)
@@ -76,12 +77,11 @@ class EvolutionsEcot(e:Ecology) extends QuerkiEcot(e) with Evolutions with UserE
   lazy val currentUserVersion = userSteps.keys.max
   
   def checkUserEvolution(userId:UserId, version:Int):Unit = {
-    // TODO:
-//    if (version < currentVersion) {
-//      val next = version + 1
-//      val step = steps(next)
-//      step.evolveUp(userId)
-//      checkUserEvolution(userId, next)
-//    }
+    if (version < currentUserVersion) {
+      val next = version + 1
+      val step = userSteps(next)
+      step.evolveUp(userId)
+      checkUserEvolution(userId, next)
+    }
   }
 }

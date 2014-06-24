@@ -11,11 +11,11 @@ import querki.identity.{IdentityId, PublicIdentity, User, UserId}
 
 package object notifications {
   /**
-   * The ID used for each Notification. This implementation is highly subject to change. 
+   * The ID used for each Notification. Note that this is scoped by the receiver.
    */
-  type NotificationId = String
+  type NotificationId = Int
   
-  val EmptyNotificationId = ""
+  val EmptyNotificationId = -1
   
   /**
    * How we represent the guts of a Notification. This may continue to be exactly a PropMap, but

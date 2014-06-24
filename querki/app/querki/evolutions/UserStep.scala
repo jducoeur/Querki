@@ -11,7 +11,7 @@ import querki.db.ShardKind._
 import querki.ecology._
 import querki.identity.UserId
 
-trait UserStep {
+trait UserStep extends EcologyMember {
   /**
    * Each Step must specify this version stamp, which must be unique!
    */
@@ -19,8 +19,8 @@ trait UserStep {
   
   implicit def ecology:Ecology
   
-//  lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
-//  def SpaceSQL(spaceId:OID, query:String, version:Int = 0):SqlQuery = SpacePersistence.SpaceSQL(spaceId, query, version)
+  lazy val NotificationPersistence = interface[querki.notifications.NotificationPersistence]
+  def UserSQL(userId:OID, query:String, version:Int = 0):SqlQuery = NotificationPersistence.UserSQL(userId, query, version)
   
   def evolveUp(userId:UserId) = {
     // TBD: is there any way to do this all within a single transaction? Since it spans DBs,
@@ -37,7 +37,7 @@ trait UserStep {
     }
     DB.withTransaction(dbName(System)) { implicit conn =>
       SQL("""
-          UPDATE User SET version = {version} WHERE id = {id}
+          UPDATE User SET userVersion = {version} WHERE id = {id}
           """).on("version" -> version, "id" -> userId.raw).executeUpdate
     }
   }
@@ -68,5 +68,5 @@ trait UserStep {
 case class UserInfo(id:UserId, version:Int)(implicit val ecology:Ecology) extends EcologyMember {
 }
 object UserInfo {
-  def apply(row:SqlRow)(implicit ecology:Ecology):UserInfo = UserInfo(OID(row.get[Long]("id").get), row.get[Int]("version").get)
+  def apply(row:SqlRow)(implicit ecology:Ecology):UserInfo = UserInfo(OID(row.get[Long]("id").get), row.get[Int]("userVersion").get)
 }
