@@ -76,11 +76,12 @@ class EvolutionsEcot(e:Ecology) extends QuerkiEcot(e) with Evolutions with UserE
   lazy val currentUserVersion = userSteps.keys.max
   
   def checkUserEvolution(userId:UserId, version:Int):Unit = {
-    if (version < currentVersion) {
-      val next = version + 1
-      val step = steps(next)
-      step.evolveUp(userId)
-      checkUserEvolution(userId, next)
-    }
+    // TODO:
+//    if (version < currentVersion) {
+//      val next = version + 1
+//      val step = steps(next)
+//      step.evolveUp(userId)
+//      checkUserEvolution(userId, next)
+//    }
   }
 }

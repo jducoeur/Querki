@@ -30,15 +30,14 @@ class NotificationPersister(val userId:UserId, implicit val ecology:Ecology) ext
     }
     
     case Load => {
-      // TODO: return CurrentNotifications
+      // TODO: make this real:
+      sender ! CurrentNotifications(5)
     }
   }
 }
 
 object NotificationPersister {
   case object Load
-  
-  case class CurrentNotifications()
   
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
   // with "Props(classOf(Space), ...)". See:

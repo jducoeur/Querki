@@ -13,7 +13,7 @@ import querki.identity.UserId
 
 object PersistenceMOIDs extends EcotIds(49)
 
-class NotificationPersistenceEcot(e:Ecology) extends QuerkiEcot(e) {
+class NotificationPersistenceEcot(e:Ecology) extends QuerkiEcot(e) with NotificationPersistence {
   // The name of the User's Notification Table
   def noteTable(id:UserId):String = "note" + id.toString
   

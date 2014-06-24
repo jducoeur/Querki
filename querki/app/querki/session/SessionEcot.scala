@@ -1,12 +1,17 @@
 package querki.session
 
+import scala.concurrent.duration._
 import scala.concurrent.Future
 
 import akka.actor.{ActorRef, Props}
+import akka.pattern.ask
+import akka.util.Timeout
 
 import querki.ecology._
 import querki.identity.User
 import querki.util.ActorHelpers._
+
+import UserSession._
 
 private object MOIDs extends EcotIds(47)
 
@@ -28,8 +33,10 @@ class SessionEcot(e:Ecology) extends QuerkiEcot(e) with Session {
    * Implementation of the Session interface
    **************************************************/
   
+  implicit val timeout = Timeout(5 seconds)
+  
   def getSessionInfo(user:User):Future[UserSessionInfo] = {
-    // TODO: make this real:
-    Future.successful(UserSessionInfo(querki.notifications.CurrentNotifications(3)))
+    val fut = sessionManager ? FetchSessionInfo(user.id)
+    fut.mapTo[UserSessionInfo]
   }
 }
