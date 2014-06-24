@@ -135,7 +135,7 @@ package object identity {
     /**
      * Given the specified header from Play, fetch the User itself.
      */
-    def userFromSession(req:RequestHeader):Option[User]
+    def userFromSession(req:RequestHeader):Future[Option[User]]
   }
   
   /**

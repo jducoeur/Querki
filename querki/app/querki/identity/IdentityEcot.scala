@@ -15,6 +15,7 @@ import models.{SimplePTypeBuilder, ThingState, Wikitext}
 import querki.ecology._
 import querki.util.ActorHelpers._
 import querki.values.{QLContext, SpaceState}
+import querki.util.QLog
 
 import IdentityCacheMessages._
 import UserCacheMessages._
@@ -76,13 +77,18 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
    * 
    * TODO: cache the full record in the cookie! Note that this is closely related to User.toSession().
    */
-  def userFromSession(request:RequestHeader):Option[User] = {
-    val usernameOpt = request.session.get(Security.username)
-    usernameOpt.flatMap(username => userCache.askBlocking(GetUserByHandle(username)) {
-      case UserFound(user) => Some(user)
-      case UserNotFound => None
-    })
-  }  
+  def userFromSession(request:RequestHeader):Future[Option[User]] = {
+    request.session.get(Security.username) match {
+      case Some(username) => {
+        val fut = userCache ? GetUserByHandle(username)
+        fut map {
+          case UserFound(user) => Some(user)
+          case _ => None
+        }
+      }
+      case None => Future.successful(None)
+    }
+  }
   
   /***********************************************
    * THINGS

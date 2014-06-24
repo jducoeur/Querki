@@ -1,5 +1,8 @@
 package controllers
 
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits._
+
 import play.api.Logger
 import play.api.mvc._
 
@@ -59,11 +62,11 @@ class ApplicationBase extends Controller with EcologyMember {
     }
   }
   
-  def userFromSession(request:RequestHeader) = IdentityAccess.userFromSession(request) //UserAccess.get(request)
+  def userFromSession(request:RequestHeader):Future[Option[User]] = IdentityAccess.userFromSession(request)
   // Workaround to deal with the fact that Security.Authenticated has to get a non-empty
   // result in order to let things through. So if a registered user is *optional*, we need to
   // return something:
-  def forceUser(request: RequestHeader) = userFromSession(request) orElse Some(User.Anonymous)
+  def forceUser(request: RequestHeader):Option[Future[User]] = Some(userFromSession(request).map(_ getOrElse User.Anonymous))
 
   def onUnauthorized(request: RequestHeader) = {
     // Send them over to the login page, but record that we want to return to this page
@@ -74,8 +77,15 @@ class ApplicationBase extends Controller with EcologyMember {
 
   // Fetch the User from the session, or User.Anonymous if they're not found.
   def withAuth(f: => User => Request[AnyContent] => Result):EssentialAction = {
-    val handler = { user:User =>
-      Action(request => f(user)(request))
+    val handler = { userFut:Future[User] =>
+      Action { request =>
+        // When we've resolved who is asking, then keep going...
+        Async {
+          userFut map { user =>
+            f(user)(request) 
+          }
+        }
+      }
     }
     // Note that forceUsername can never fail, it just returns empty string
     Security.Authenticated(forceUser, onUnauthorized)(handler)
