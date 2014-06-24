@@ -95,6 +95,27 @@
   }
 }
 
+@displayNotifications(n:Int) = {
+  <ul class="nav pull-right">
+    <li><a href="#">
+      @if(n == 0) {
+        <i class="icon-bell"></i>
+      } else {
+        <i class="icon-bell icon-white"></i> @n
+      }
+    </a></li>
+  </ul>
+}
+
+@displayNotificationsIfLoggedIn = @{
+  rc.requester match {
+    case Some(user) => {
+      displayNotifications(rc.numNotifications)      
+    }
+    case None => {}
+  }
+}
+
 <!DOCTYPE html>
 
 @*********************
@@ -313,6 +334,7 @@
                         <input id="searchInput" name="searchInput" type="text" class="search-query" placeholder="Search">
                       }
                     }
+                    @displayNotificationsIfLoggedIn
 	              </div>
 	            </div>
 	          </div>

@@ -33,7 +33,8 @@ abstract class RequestContext(
     val ownerId:OID, 
     val state:Option[SpaceState], 
     val thing:Option[Thing],
-    val ecology:Ecology) extends EcologyMember
+    val ecology:Ecology,
+    val numNotifications:Int = 0) extends EcologyMember
 {
   lazy val Person = interface[querki.identity.Person]
   

@@ -2,3 +2,6 @@
 
 # This User's version; very similar to the version number on Space.
 ALTER TABLE User ADD COLUMN userVersion int DEFAULT 0;
+
+# The last time this User looked at their Notifications.
+ALTER TABLE User ADD COLUMN lastNoteChecked datetime DEFAULT NULL;
