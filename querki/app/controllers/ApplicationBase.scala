@@ -110,7 +110,7 @@ class ApplicationBase extends Controller with EcologyMember {
       userParam match {
         case Some(u) => Async {
           UserSessionMgr.getSessionInfo(user) map { info =>
-            f(PlayRequestContext(request, userParam, UnknownOID, None, None, ecology, numNotifications = info.notes.numNew))          
+            f(PlayRequestContext(request, userParam, UnknownOID, None, None, ecology, numNotifications = info.numNewNotes))          
           }
         }
         case None => f(PlayRequestContext(request, userParam, UnknownOID, None, None, ecology))

@@ -3,11 +3,15 @@ package querki.session
 import akka.actor._
 import akka.event.LoggingReceive
 
+// TEMP: while hacking the timestamps:
+import com.github.nscala_time.time.Imports._
+
 import querki.ecology._
 import querki.identity.UserId
 import querki.notifications.{CurrentNotifications, LoadInfo, UserInfo}
 import querki.notifications.NotificationPersister.Load
 import querki.spaces.SpacePersistenceFactory
+import querki.time.DateTime
 import querki.util._
 
 class UserSession(val ecology:Ecology, val userId:UserId) extends Actor with Stash with Requester 
@@ -23,6 +27,20 @@ class UserSession(val ecology:Ecology, val userId:UserId) extends Actor with Sta
   lazy val notePersister = PersistenceFactory.getNotificationPersister(userId)
   
   var _currentNotes:Option[CurrentNotifications] = None
+  
+  // TODO: make this real:
+  var _lastCheckedNotes:DateTime = DateTime.now - 1.month
+  
+  // How many of the Notifications are new since this User last looked at the Notifications Window?
+  def numNewNotes:Int = {
+    _currentNotes match {
+      case Some(curr) => {
+        val newNotes = curr.notes.filter(note => note.sentTime.isAfter(_lastCheckedNotes) && !note.isRead)
+        newNotes.size
+      }
+      case None => 0
+    }
+  }
   
   override def preStart() = {
     notePersister ! LoadInfo
@@ -55,7 +73,7 @@ class UserSession(val ecology:Ecology, val userId:UserId) extends Actor with Sta
   def mainReceive:Receive = LoggingReceive {
     case FetchSessionInfo(_) => {
       // TODO: make this real
-      sender ! UserSessionInfo(_currentNotes.get)
+      sender ! UserSessionInfo(numNewNotes)
     }
   }
 }

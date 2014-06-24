@@ -58,9 +58,9 @@ object SummarizeAt {
 case class SummarizedNotifications(headline:Wikitext, content:Wikitext, notes:Seq[Notification])
 
 /**
- * Info exposed to the top level about the current Notifications to show to the user.
+ * The Notifications that are currently unread for this User.
  */
-case class CurrentNotifications(numNew:Int)
+case class CurrentNotifications(notes:Seq[Notification])
 
 /**
  * A single Notification in the system.

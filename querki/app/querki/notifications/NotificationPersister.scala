@@ -7,8 +7,15 @@ import anorm.{Success=>AnormSuccess,_}
 import play.api.db._
 import play.api.Play.current
 
+// TEMP: while hacking the timestamps:
+import com.github.nscala_time.time.Imports._
+
+import models.OID
+
 import querki.ecology._
-import querki.identity.UserId
+import querki.identity.{Identity, UserId}
+import querki.time.DateTime
+import querki.values.QValue
 
 /**
  * The Actor that manages the DB side of persisting Notifications for a single User. Created
@@ -31,7 +38,11 @@ class NotificationPersister(val userId:UserId, implicit val ecology:Ecology) ext
     
     case Load => {
       // TODO: make this real:
-      sender ! CurrentNotifications(5)
+      sender ! CurrentNotifications(Seq(
+        Notification("3", Identity.AnonymousIdentity.id, NotifierId(1,1), DateTime.now - 15.days, None, None, Map.empty[OID,QValue]),
+        Notification("2", Identity.AnonymousIdentity.id, NotifierId(1,1), DateTime.now - 25.days, None, None, Map.empty[OID,QValue]),
+        Notification("1", Identity.AnonymousIdentity.id, NotifierId(1,1), DateTime.now - 90.days, None, None, Map.empty[OID,QValue])
+      ))
     }
   }
 }
