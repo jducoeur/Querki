@@ -58,6 +58,11 @@ object SummarizeAt {
 case class SummarizedNotifications(headline:Wikitext, content:Wikitext, notes:Seq[Notification])
 
 /**
+ * Info exposed to the top level about the current Notifications to show to the user.
+ */
+case class CurrentNotifications(numNew:Int)
+
+/**
  * A single Notification in the system.
  */
 case class Notification(id:NotificationId, sender:IdentityId, notifier:NotifierId, sentTime:DateTime, spaceId:Option[OID], thingId:Option[OID], payload:NotificationPayload, 

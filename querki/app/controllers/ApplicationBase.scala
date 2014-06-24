@@ -24,6 +24,7 @@ class ApplicationBase extends Controller with EcologyMember {
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   lazy val PageEventManager = interface[controllers.PageEventManager]
+  lazy val UserSessionMgr = interface[querki.session.Session]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
     
   /**
@@ -106,7 +107,14 @@ class ApplicationBase extends Controller with EcologyMember {
     } else {
       // Iff requireLogin was false, we might not have a real user here, so massage it:
       val userParam = if (user == User.Anonymous) None else Some(user)
-      f(PlayRequestContext(request, userParam, UnknownOID, None, None, ecology))
+      userParam match {
+        case Some(u) => Async {
+          UserSessionMgr.getSessionInfo(user) map { info =>
+            f(PlayRequestContext(request, userParam, UnknownOID, None, None, ecology, numNotifications = info.notes.numNew))          
+          }
+        }
+        case None => f(PlayRequestContext(request, userParam, UnknownOID, None, None, ecology))
+      }
     }
   }
   
