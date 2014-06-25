@@ -100,7 +100,7 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
     Notification(
       EmptyNotificationId,
       from.id, 
-      Identity.AnonymousIdentity.id,
+      None,
       SystemMessageNotifier.id,
       DateTime.now,
       None, 

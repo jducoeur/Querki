@@ -19,7 +19,9 @@ class UserStep1(implicit val ecology:Ecology) extends UserStep {
           thingId bigint DEFAULT NULL,
           props mediumtext NOT NULL,
           isRead boolean NOT NULL,
-          isDeleted boolean NOT NULL
+          isDeleted boolean NOT NULL,
+          PRIMARY KEY (id),
+          INDEX current_notes_idx (sentTime, isDeleted)
         )
         """).execute()
   }

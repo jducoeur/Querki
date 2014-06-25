@@ -58,6 +58,7 @@ package object notifications {
     def noteTable(id:UserId):String
     def UserSQL(userId:UserId, query:String, version:Int = 0):SqlQuery
     def loadUserInfo(userId:UserId):Option[UserInfo]
+    def loadCurrent(userId:UserId):CurrentNotifications
     def notificationPersisterProps(userId:UserId):Props
   }
 }

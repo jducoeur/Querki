@@ -37,12 +37,8 @@ class NotificationPersister(val userId:UserId, implicit val ecology:Ecology) ext
     }
     
     case Load => {
-      // TODO: make this real:
-      sender ! CurrentNotifications(Seq(
-        Notification(3, Identity.AnonymousIdentity.id, Identity.AnonymousIdentity.id, NotifierId(1,1), DateTime.now - 15.days, None, None, Map.empty[OID,QValue]),
-        Notification(2, Identity.AnonymousIdentity.id, Identity.AnonymousIdentity.id, NotifierId(1,1), DateTime.now - 25.days, None, None, Map.empty[OID,QValue]),
-        Notification(1, Identity.AnonymousIdentity.id, Identity.AnonymousIdentity.id, NotifierId(1,1), DateTime.now - 90.days, None, None, Map.empty[OID,QValue])
-      ))
+      val current = NotificationPersistence.loadCurrent(userId)
+      sender ! current
     }
   }
 }

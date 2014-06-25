@@ -20,6 +20,7 @@ object SqlHelpers {
     def optOid(name:String) = row.get[Option[Long]](name).get.map(OID(_))
     def int(name:String) = load[Int](name)
     def long(name:String) = load[Long](name)
+    def short(name:String) = load[Short](name)
     def bool(name:String) = load[Boolean](name)
   }
 }
