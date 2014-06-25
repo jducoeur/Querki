@@ -97,7 +97,7 @@
 
 @displayNotifications(n:Int) = {
   <ul class="nav pull-right">
-    <li><a href="#">
+    <li><a href="@routes.NotificationController.showNotifications">
       @if(n == 0) {
         <i class="icon-bell"></i>
       } else {

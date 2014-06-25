@@ -26,6 +26,7 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
   
   lazy val notePersister = PersistenceFactory.getNotificationPersister(userId)
 
+  // This is kept in most-recent-first order:
   var currentNotes:Seq[Notification] = Seq.empty
   
   var nextNoteId:Int = EmptyNotificationId
@@ -54,7 +55,7 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
 	  
 	  notePersister.request(Load) {
 	    case notes:CurrentNotifications => {
-	      currentNotes = notes.notes
+	      currentNotes = notes.notes.sortBy(_.id).reverse
 	      
 	      nextNoteId = 
 	        if (currentNotes.isEmpty)
@@ -84,7 +85,11 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
       nextNoteId += 1
       notePersister ! NewNotification(userId, note)
       
-      currentNotes :+= note
+      currentNotes = note +: currentNotes
+    }
+    
+    case GetRecent(_) => {
+      sender ! RecentNotifications(currentNotes)
     }
   }
 }
@@ -100,6 +105,12 @@ object UserSessionMessages {
    * Fire-and-forget message, telling this UserSession that they are receiving a new Notification.
    */
   case class NewNotification(userId:UserId, note:Notification) extends UserSessionMsg
+  
+  /**
+   * Fetches the recent Notifications for this user.
+   */
+  case class GetRecent(userId:UserId) extends UserSessionMsg
+  case class RecentNotifications(notes:Seq[Notification])
 }
 
 object UserSession {

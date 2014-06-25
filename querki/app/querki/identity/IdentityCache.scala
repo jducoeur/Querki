@@ -39,7 +39,7 @@ private[identity] class IdentityCache(val ecology:Ecology) extends Actor with Ec
     }
     
     case GetIdentities(ids) => {
-      val result = (Map.empty[OID, PublicIdentity] /: ids) { (curmap, id) =>
+      val result = (Map.empty[OID, PublicIdentity] /: ids.toSet) { (curmap, id) =>
         identities.get(id) match {
           case Some(identity) => curmap + (id -> identity)
           case None => {

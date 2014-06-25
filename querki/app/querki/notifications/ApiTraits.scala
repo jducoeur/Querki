@@ -38,6 +38,11 @@ trait Notifier {
    * Takes a bunch of unread Notifications, and returns a summary of them.
    */
   def summarizeNew(context:QLContext, notes:Seq[Notification]):SummarizedNotifications
+  
+  /**
+   * Says how to display this Notification.
+   */
+  def render(context:QLContext, note:Notification):RenderedNotification
 }
 
 /**
@@ -56,6 +61,11 @@ object SummarizeAt {
  * Subject/Body pair, but I don't want to bias the semantics.
  */
 case class SummarizedNotifications(headline:Wikitext, content:Wikitext, notes:Seq[Notification])
+
+/**
+ * How to display a single Notification.
+ */
+case class RenderedNotification(headline:Wikitext, content:Wikitext)
 
 /**
  * The Notifications that are currently unread for this User.

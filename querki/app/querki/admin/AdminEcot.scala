@@ -80,6 +80,11 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
         throw new Exception("SystemMessageNotifier.summarizeNew expects exactly one notification at a time!")
       
       val note = notes.head
+      val rendered = render(context, note)
+      SummarizedNotifications(rendered.headline, rendered.content, notes)
+    }
+    
+    def render(context:QLContext, note:Notification):RenderedNotification = {
       val payload = note.payload
       val resultOpt = for {
         headerQV <- payload.get(HeaderOID)
@@ -89,7 +94,7 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
         bodyQL <- bodyQV.firstAs(TextType)
         body = QL.process(bodyQL, context)
       }
-        yield SummarizedNotifications(header, body, notes)
+        yield RenderedNotification(header, body)
         
       resultOpt.getOrElse(throw new Exception("SystemMessageNotifier received badly-formed Notification?"))
     }

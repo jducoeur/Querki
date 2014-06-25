@@ -22,6 +22,14 @@ package object session {
      * Asynchronously gets the current info to show this user.
      */
     def getSessionInfo(user:User):Future[UserSessionInfo]
+    
+    /**
+     * Asynchronously fetches the notifications for this user, in reverse chronological order.
+     * 
+     * TODO: this is way too static. We *should* have a distinctly stream-oriented model for dealing
+     * with this.
+     */
+    def getNotifications(user:User):Future[UserSessionMessages.RecentNotifications]
   }
   
 }

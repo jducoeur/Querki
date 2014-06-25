@@ -86,6 +86,9 @@ POST    /u/:userName/:spaceId/__addComment @controllers.ConversationController.a
 GET     /u/:userName/:spaceId/__deleteComment @controllers.ConversationController.deleteComment(userName, spaceId, thingId, commentId)
 GET     /convJs                     @controllers.ConversationController.javascriptRoutes
 
+# Notifications
+GET     /_notifications             @controllers.NotificationController.showNotifications
+
 # Fetch a Thing by ThingId
 # Note that Things can have slashes in their names!
 # IMPORTANT: this needs to come *after* all Space-based special-purpose pages!

@@ -10,6 +10,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 
 import querki.ecology._
 import querki.identity.{PublicIdentity, User}
+import querki.values.{QLRequestContext, RequestContext}
 
 private object MOIDs extends EcotIds(48)
 
@@ -51,5 +52,11 @@ class NotificationEcot(e:Ecology) extends QuerkiEcot(e) with NotifierRegistry wi
   
   def send(req:User, as:PublicIdentity, recipients:Recipients, note:Notification) = {
     noteActor ! SendNotification(req, as, recipients, note)
+  }
+  
+  def render(rc:RequestContext, note:Notification):RenderedNotification = {
+    val notifier = notifiers(note.notifier)
+    val context = QLRequestContext(rc)
+    notifier.render(context, note)
   }
 }
