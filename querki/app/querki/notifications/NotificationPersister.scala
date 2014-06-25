@@ -46,6 +46,10 @@ class NotificationPersister(val userId:UserId, implicit val ecology:Ecology) ext
     case UserSessionMessages.NewNotification(_, note) => {
       NotificationPersistence.createNotification(userId, note)
     }
+    
+    case UpdateLastChecked(lastChecked) => {
+      NotificationPersistence.updateLastChecked(userId, lastChecked)
+    }
   }
 }
 

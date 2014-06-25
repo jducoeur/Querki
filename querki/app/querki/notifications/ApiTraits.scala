@@ -18,7 +18,12 @@ case class NotifierId(ecotId:Short, notificationType:Short)
  * shouldn't be doing so.
  */
 case object LoadInfo
-case class UserInfo(userId:UserId, version:Int)
+case class UserInfo(userId:UserId, version:Int, lastNoteChecked:Int)
+
+/**
+ * Signal to update the last-checked Notification for this user.
+ */
+case class UpdateLastChecked(lastChecked:Int)
 
 /**
  * A plugin that is published by some Ecot, which encapsulates the handling for one particular kind of Notification.

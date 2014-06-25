@@ -8,7 +8,7 @@ import com.github.nscala_time.time.Imports._
 
 import querki.ecology._
 import querki.identity.UserId
-import querki.notifications.{CurrentNotifications, EmptyNotificationId, LoadInfo, Notification, UserInfo}
+import querki.notifications.{CurrentNotifications, EmptyNotificationId, LoadInfo, Notification, UpdateLastChecked, UserInfo}
 import querki.notifications.NotificationPersister.Load
 import querki.spaces.SpacePersistenceFactory
 import querki.time.DateTime
@@ -28,17 +28,22 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
 
   // This is kept in most-recent-first order:
   var currentNotes:Seq[Notification] = Seq.empty
-  
-  var nextNoteId:Int = EmptyNotificationId
-  
-  // TODO: make this real:
-  var _lastCheckedNotes:DateTime = DateTime.now - 1.month
+    
+  var lastNoteChecked:Int = 0
   
   // How many of the Notifications are new since this User last looked at the Notifications Window?
   def numNewNotes:Int = {
-    val newNotes = currentNotes.filter(note => note.sentTime.isAfter(_lastCheckedNotes) && !note.isRead)
+    val newNotes = currentNotes.filter(note => (note.id > lastNoteChecked) && !note.isRead)
     newNotes.size
   }
+  
+  def currentMaxNote = {
+    if (currentNotes.isEmpty)
+      0
+    else
+      currentNotes.map(_.id).max    
+  }
+  def nextNoteId:Int = currentMaxNote + 1
   
   override def preStart() = {
     notePersister ! LoadInfo
@@ -48,7 +53,9 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
    * The initial receive just handles setup, and then switches to mainReceive once it is ready:
    */
   def receive = LoggingReceive {
-    case UserInfo(id, version) => {
+    case UserInfo(id, version, lastChecked) => {
+      lastNoteChecked = lastChecked
+      
       // NOTE: this can take a long time! This is the point where we evolve the User to the
 	  // current version:
 	  UserEvolutions.checkUserEvolution(userId, version)
@@ -57,19 +64,14 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
 	    case notes:CurrentNotifications => {
 	      currentNotes = notes.notes.sortBy(_.id).reverse
 	      
-	      nextNoteId = 
-	        if (currentNotes.isEmpty)
-	          0
-	        else
-	          currentNotes.map(_.id).max + 1
-	      
 	      // Okay, we're ready to roll:
 	      unstashAll()
 	      context.become(mainReceive)
 	    }
 	  }
     }
-    
+
+    // Hold everything else off until we've created them all:
     case msg:UserSessionMsg => stash()
   }
   
@@ -82,7 +84,6 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
     case NewNotification(_, noteRaw) => {
       // We decide what the actual Notification Id is:
       val note = noteRaw.copy(id = nextNoteId)
-      nextNoteId += 1
       notePersister ! NewNotification(userId, note)
       
       currentNotes = note +: currentNotes
@@ -90,6 +91,8 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
     
     case GetRecent(_) => {
       sender ! RecentNotifications(currentNotes)
+      lastNoteChecked = currentMaxNote
+      notePersister ! UpdateLastChecked(lastNoteChecked)
     }
   }
 }
