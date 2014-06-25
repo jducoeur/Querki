@@ -14,6 +14,7 @@ import models.OID
 
 import querki.ecology._
 import querki.identity.{Identity, UserId}
+import querki.session.UserSessionMessages
 import querki.time.DateTime
 import querki.values.QValue
 
@@ -29,6 +30,7 @@ class NotificationPersister(val userId:UserId, implicit val ecology:Ecology) ext
   lazy val NotificationPersistence = interface[NotificationPersistence]
 
   def receive = {
+    // TODO: this doesn't really belong here:
     case LoadInfo => {
       NotificationPersistence.loadUserInfo(userId) match {
         case Some(userInfo) => sender ! userInfo
@@ -39,6 +41,10 @@ class NotificationPersister(val userId:UserId, implicit val ecology:Ecology) ext
     case Load => {
       val current = NotificationPersistence.loadCurrent(userId)
       sender ! current
+    }
+    
+    case UserSessionMessages.NewNotification(_, note) => {
+      NotificationPersistence.createNotification(userId, note)
     }
   }
 }

@@ -8,16 +8,16 @@ import com.github.nscala_time.time.Imports._
 
 import querki.ecology._
 import querki.identity.UserId
-import querki.notifications.{CurrentNotifications, LoadInfo, UserInfo}
+import querki.notifications.{CurrentNotifications, EmptyNotificationId, LoadInfo, Notification, UserInfo}
 import querki.notifications.NotificationPersister.Load
 import querki.spaces.SpacePersistenceFactory
 import querki.time.DateTime
 import querki.util._
 
-class UserSession(val ecology:Ecology, val userId:UserId) extends Actor with Stash with Requester 
+private [session] class UserSession(val ecology:Ecology, val userId:UserId) extends Actor with Stash with Requester 
   with TimeoutChild with EcologyMember 
 {
-  import UserSession._
+  import UserSessionMessages._
   
   lazy val PersistenceFactory = interface[querki.spaces.SpacePersistenceFactory]
   lazy val UserEvolutions = interface[querki.evolutions.UserEvolutions]
@@ -25,21 +25,18 @@ class UserSession(val ecology:Ecology, val userId:UserId) extends Actor with Sta
   def timeoutConfig:String = "querki.userSession.timeout"
   
   lazy val notePersister = PersistenceFactory.getNotificationPersister(userId)
+
+  var currentNotes:Seq[Notification] = Seq.empty
   
-  var _currentNotes:Option[CurrentNotifications] = None
+  var nextNoteId:Int = EmptyNotificationId
   
   // TODO: make this real:
   var _lastCheckedNotes:DateTime = DateTime.now - 1.month
   
   // How many of the Notifications are new since this User last looked at the Notifications Window?
   def numNewNotes:Int = {
-    _currentNotes match {
-      case Some(curr) => {
-        val newNotes = curr.notes.filter(note => note.sentTime.isAfter(_lastCheckedNotes) && !note.isRead)
-        newNotes.size
-      }
-      case None => 0
-    }
+    val newNotes = currentNotes.filter(note => note.sentTime.isAfter(_lastCheckedNotes) && !note.isRead)
+    newNotes.size
   }
   
   override def preStart() = {
@@ -57,8 +54,13 @@ class UserSession(val ecology:Ecology, val userId:UserId) extends Actor with Sta
 	  
 	  notePersister.request(Load) {
 	    case notes:CurrentNotifications => {
-	      // TODO: store the Notifications in some table here
-	      _currentNotes = Some(notes)
+	      currentNotes = notes.notes
+	      
+	      nextNoteId = 
+	        if (currentNotes.isEmpty)
+	          0
+	        else
+	          currentNotes.map(_.id).max + 1
 	      
 	      // Okay, we're ready to roll:
 	      unstashAll()
@@ -75,18 +77,34 @@ class UserSession(val ecology:Ecology, val userId:UserId) extends Actor with Sta
       // TODO: make this real
       sender ! UserSessionInfo(numNewNotes)
     }
+    
+    case NewNotification(_, noteRaw) => {
+      // We decide what the actual Notification Id is:
+      val note = noteRaw.copy(id = nextNoteId)
+      nextNoteId += 1
+      notePersister ! NewNotification(userId, note)
+      
+      currentNotes :+= note
+    }
   }
+}
+
+object UserSessionMessages {
+  sealed trait UserSessionMsg {
+    def userId:UserId
+  }
+  
+  case class FetchSessionInfo(userId:UserId) extends UserSessionMsg
+  
+  /**
+   * Fire-and-forget message, telling this UserSession that they are receiving a new Notification.
+   */
+  case class NewNotification(userId:UserId, note:Notification) extends UserSessionMsg
 }
 
 object UserSession {
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
   // with "Props(classOf(Space), ...)". See:
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-  def actorProps(ecology:Ecology, id:UserId):Props = Props(new UserSession(ecology, id))
-  
-  sealed trait UserSessionMsg {
-    def userId:UserId
-  }
-  
-  case class FetchSessionInfo(userId:UserId) extends UserSessionMsg
+  def actorProps(ecology:Ecology, id:UserId):Props = Props(new UserSession(ecology, id)) 
 }

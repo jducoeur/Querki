@@ -3,8 +3,9 @@ package querki.identity
 import akka.actor._
 
 import querki.ecology._
+import querki.util.QLog
 
-private[identity] class UserCache(val ecology:Ecology) extends Actor with EcologyMember {
+private [identity] class UserCache(val ecology:Ecology) extends Actor with EcologyMember {
   
   import UserCacheMessages._
   
@@ -27,6 +28,11 @@ private[identity] class UserCache(val ecology:Ecology) extends Actor with Ecolog
         }
       }
     }
+    
+    case GetAllUserIdsForAdmin(req) => req.requireAdmin {
+      val userIds = UserAccess.getAllIdsForAdmin(req)
+      sender ! AllUserIds(userIds)
+    }
   }
 }
 
@@ -36,4 +42,13 @@ object UserCacheMessages {
   sealed trait UserLookupResult
   case class UserFound(user:User) extends UserLookupResult
   case object UserNotFound extends UserLookupResult
+  
+  /**
+   * Note that only Admins are allowed to call this!
+   * 
+   * TODO: this is a scalability bug! We need to come up with more stream-compatible ways to do this!
+   * This will fail horribly once we're past a few thousand users!
+   */
+  case class GetAllUserIdsForAdmin(req:User)  
+  case class AllUserIds(users:Seq[UserId])
 }

@@ -110,6 +110,12 @@ package object identity {
     def identityCache:ActorRef
     
     /**
+     * The User Cache Actor. Other Actors are allowed to make requested directly to that instead
+     * of going through the Future-based wrappers below. Use the messages from the UserCache object.
+     */
+    def userCache:ActorRef
+    
+    /**
      * Wraps the notion of Identity in a QL-compatible Type.
      */
     def IdentityType:PType[PublicIdentity] with SimplePTypeBuilder[PublicIdentity]
@@ -143,6 +149,9 @@ package object identity {
    * 
    * This is full of blocking calls that go to the database. It should be considered deprecated for most
    * code. Use IdentityAccess instead where possible.
+   * 
+   * TODO: use of this trait outside of identity should now be considered a bug. Wrap all accesses behind
+   * IdentityCache and UserCache instead!
    */
   trait UserAccess extends EcologyInterface {
     def addSpaceMembership(identityId:OID, spaceId:OID):Boolean
@@ -152,7 +161,12 @@ package object identity {
     def checkQuerkiLogin(login:String, passwordEntered:String):Option[User]
     def createProvisional(info:SignupInfo):Try[User]
     def get(request:RequestHeader):Option[User]
+    
+    // TODO: neither of these calls are scalable! We need to come up with better ways to implement both of
+    // them, which will probably involve changing all calls to them!
     def getAllForAdmin(requester:User):Seq[User]
+    def getAllIdsForAdmin(requester:User):Seq[UserId]
+    
     def getIdentity(rawHandle:String):Option[OID]
     def getIdentity(id:OID):Option[Identity]
     def getFullIdentity(id:IdentityId):Option[FullIdentity]

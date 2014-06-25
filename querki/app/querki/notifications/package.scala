@@ -59,6 +59,7 @@ package object notifications {
     def UserSQL(userId:UserId, query:String, version:Int = 0):SqlQuery
     def loadUserInfo(userId:UserId):Option[UserInfo]
     def loadCurrent(userId:UserId):CurrentNotifications
+    def createNotification(userId:UserId, note:Notification):Unit
     def notificationPersisterProps(userId:UserId):Props
   }
 }

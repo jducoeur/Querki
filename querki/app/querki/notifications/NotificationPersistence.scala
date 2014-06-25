@@ -73,5 +73,27 @@ class NotificationPersistenceEcot(e:Ecology) extends QuerkiEcot(e) with Notifica
     }
   }
   
+  def createNotification(userId:UserId, note:Notification) = {
+    DB.withConnection(dbName(User)) { implicit conn =>
+      UserSQL(userId, """
+          INSERT INTO {notename}
+          ( id,   sender,   toIdentity,   ecotId,   noteType,   sentTime,   spaceId,   thingId,   props,   isRead,   isDeleted) VALUES
+          ({id}, {sender}, {toIdentity}, {ecotId}, {noteType}, {sentTime}, {spaceId}, {thingId}, {props}, {isRead}, {isDeleted})
+          """).on(
+            "id" -> note.id,
+            "sender" -> note.sender.raw,
+            "toIdentity" -> note.toIdentity.map(_.raw),
+            "ecotId" -> note.notifier.ecotId,
+            "noteType" -> note.notifier.notificationType,
+            "sentTime" -> note.sentTime,
+            "spaceId" -> note.spaceId.map(_.raw),
+            "thingId" -> note.thingId.map(_.raw),
+            "props" -> SpacePersistence.serializeProps(note.payload, SystemState),
+            "isRead" -> note.isRead,
+            "isDeleted" -> note.isDeleted
+          ).executeUpdate
+    }
+  }
+  
   def notificationPersisterProps(userId:UserId):Props = NotificationPersister.actorProps(ecology, userId)
 }

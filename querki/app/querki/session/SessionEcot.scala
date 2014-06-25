@@ -11,7 +11,7 @@ import querki.ecology._
 import querki.identity.User
 import querki.util.ActorHelpers._
 
-import UserSession._
+import UserSessionMessages._
 
 private object MOIDs extends EcotIds(47)
 

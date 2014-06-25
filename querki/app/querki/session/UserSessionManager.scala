@@ -16,6 +16,6 @@ class UserSessionManager(val ecology:Ecology) extends Actor with EcologyMember w
 
   def receive = LoggingReceive {
     // The main job here is to route to the children:
-    case msg:UserSession.UserSessionMsg => routeToChild(msg.userId, msg)
+    case msg:UserSessionMessages.UserSessionMsg => routeToChild(msg.userId, msg)
   }
 }

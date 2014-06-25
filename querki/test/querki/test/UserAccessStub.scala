@@ -30,6 +30,7 @@ class UserAccessStub(e:Ecology) extends QuerkiEcot(e) with UserAccess with UserT
   def createProvisional(info:SignupInfo):Try[User] = ???
   def get(request:RequestHeader):Option[User] = ???
   def getAllForAdmin(requester:User):Seq[User] = ???
+  def getAllIdsForAdmin(requester:User):Seq[UserId] = ???
   def getIdentity(rawHandle:String):Option[OID] = ???
   def getFullIdentity(id:IdentityId):Option[FullIdentity] = ???
   def getIdentity(thingId:ThingId):Option[(Identity, UserLevel.UserLevel)] = ???
