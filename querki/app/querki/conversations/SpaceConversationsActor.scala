@@ -11,6 +11,7 @@ import querki.identity.User
 import querki.spaces.SpacePersistenceFactory
 import querki.spaces.messages._
 import querki.time.{DateTime, DateTimeOrdering}
+import querki.uservalues.PersistMessages._
 import querki.util.{PublicException, Requester}
 import querki.values.SpaceState
 
@@ -47,6 +48,8 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
    */
   var loadedConversations:Map[OID, ThingConversations] = Map.empty
   
+  var commentNotifyPrefs:Seq[OneUserValue] = Seq.empty
+  
   /**
    * IMPORTANT: this must be set before we begin any serious work! This is why we start
    * in a rudimentary state, and don't become useful until it is received.
@@ -67,7 +70,12 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
       persister.request(GetMaxCommentId) {
         case CurrentMaxCommentId(n) => {
           nextId = n + 1
-          become(normalReceive)
+          space.request(UserValuePersistRequest(User.Anonymous, state.owner, state.toThingId, LoadAllPropValues(NotifyComments.GetCommentNotesPref, state))) {
+            case ValuesForUser(prefs) => {
+              commentNotifyPrefs = prefs
+              become(normalReceive)
+            }
+          }
         }
       }
     }
@@ -281,7 +289,7 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
 	          sender ! AddedNode(parent.map(_.comment.id), node)
 	          
 	          // Finally, send out Notifications -- fire-and-forget, will get there eventually:
-	          NotifyComments.notifyComment(req, comment)(state)
+	          NotifyComments.notifyComment(req, comment, commentNotifyPrefs)(state)
 	        }
 	      }
 	    }

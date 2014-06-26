@@ -7,6 +7,7 @@ import models.{HtmlWikitext, PType, Wikitext}
 import querki.ecology._
 import querki.identity.User
 import querki.notifications._
+import querki.uservalues.PersistMessages.OneUserValue
 import querki.util.QLog
 import querki.values.{QLContext, SpaceState}
 
@@ -17,19 +18,14 @@ private [conversations] object CommentNotifierMOIDs extends EcotIds(50) {
   val CommentBodyOID = moid(2)
   val CommentIdOID = moid(3)
   val CommentSpaceOwnerOID = moid(4)
-}
-
-private [conversations] trait NotifyComments extends EcologyInterface {
-  /**
-   * When a new comment is created, call this to send out notifications.
-   */
-  def notifyComment(req:User, comment:Comment)(implicit state:SpaceState)
+  val GetCommentNotesOID = moid(5)
 }
 
 class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with NotifyComments {
   import CommentNotifierMOIDs._
   
   val Basic = initRequires[querki.basic.Basic]
+  val UserValues = initRequires[querki.uservalues.UserValues]
   
   lazy val Conversations = interface[Conversations]
   lazy val Notifications = interface[querki.notifications.Notifications]
@@ -64,7 +60,7 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
     SummarizedNotifications(rendered.headline, rendered.content, notes)
   }
     
-  def notifyComment(req:User, comment:Comment)(implicit state:SpaceState) = {
+  def notifyComment(req:User, comment:Comment, commentNotifyPrefs:Seq[OneUserValue])(implicit state:SpaceState) = {
     val thingNameOpt = for {
       thing <- state.anything(comment.thingId)
     }
@@ -99,12 +95,33 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
       true,
       false)
       
+    val recipients = (Set(state.owner) /: commentNotifyPrefs) { (recip, onePref) => 
+      if (onePref.thingId == state.id || onePref.thingId == comment.thingId) {
+        onePref.v.firstAs(YesNoType) match {
+          case Some(bool) => {
+            if (bool) {
+              recip + onePref.identity.id
+            } else {
+              recip - onePref.identity.id
+            }
+          }
+          case None => {
+            QLog.error("CommentNotifier got a commentNotifyPref that isn't a YesNo: " + onePref)
+            recip
+          }
+        }
+      } else {
+        // It's not relevant to this comment
+        recip
+      }
+    }
+      
     // Don't send the notification to the person who wrote the comment:
     // TODO: all members of the Space should be able to opt into receiving comments, and the owner should
     // be able to opt out:
-    val recipients = Seq(state.owner).filterNot(_ == comment.authorId)
+    val recipientsNotAuthor = recipients.filterNot(_ == comment.authorId).toSeq
     
-    Notifications.send(req, ExplicitRecipients(recipients), note)
+    Notifications.send(req, ExplicitRecipients(recipientsNotAuthor), note)
   }
   
   // TODO: this should become a standard utility:
@@ -173,10 +190,17 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
       setName("_commentNotifySpaceOwner"),
       setInternal))
   
+  lazy val GetCommentNotesPref = new SystemProperty(GetCommentNotesOID, YesNoType, Optional,
+    toProps(
+      setName("_getCommentNotifications"),
+      setInternal,
+      UserValues.IsUserValueFlag(true)))
+  
   override lazy val props = Seq(
     CommentThingName,
     CommentBody,
     CommentId,
-    CommentSpaceOwner
+    CommentSpaceOwner,
+    GetCommentNotesPref
   )
 }
