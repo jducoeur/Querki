@@ -49,7 +49,11 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
     _rawState match {
       case Some(rs) => {
         (rs /: userValues) { (curState, uv) =>
-          curState.anything(uv.thingId) match {
+          if (uv.thingId == curState.id) {
+            // We're enhancing the Space itself:
+            curState.copy(pf = () => (curState.props + (uv.propId -> uv.v)))
+          }
+          else curState.anything(uv.thingId) match {
             case Some(thing:ThingState) => {
               val newThing = thing.copy(pf = () => thing.props + (uv.propId -> uv.v))
               curState.copy(things = curState.things + (newThing.id -> newThing))
