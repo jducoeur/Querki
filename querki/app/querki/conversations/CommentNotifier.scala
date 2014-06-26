@@ -1,6 +1,8 @@
 package querki.conversations
 
-import models.Wikitext
+import play.api.templates.Html
+
+import models.{HtmlWikitext, PType, Wikitext}
 
 import querki.ecology._
 import querki.identity.User
@@ -13,6 +15,8 @@ import messages.Comment
 private [conversations] object CommentNotifierMOIDs extends EcotIds(50) {
   val CommentThingNameOID = moid(1)
   val CommentBodyOID = moid(2)
+  val CommentIdOID = moid(3)
+  val CommentSpaceOwnerOID = moid(4)
 }
 
 private [conversations] trait NotifyComments extends EcologyInterface {
@@ -77,7 +81,9 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
         // NOTE: yes, CommentBody seems redundant with CommentText. But in the medium term, we plan to allow QL in
         // CommentText, and that is absolutely *not* allowed in the contents of a Notification. So we will need to
         // run the QL here, and put the results into CommentBody.
-        CommentBody(bodyOpt.get.text)
+        CommentBody(bodyOpt.get.text),
+        CommentId(comment.id),
+        CommentSpaceOwner(state.owner)
       )()
     // IMPORTANT TODO: we're currently generating notifications as already Read, because there is no way for the
     // user to mark them as Read yet. Once we have the needed UI, change the parameter below.
@@ -100,17 +106,42 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
     
     Notifications.send(req, ExplicitRecipients(recipients), note)
   }
+  
+  // TODO: this should become a standard utility:
+  class RichPropMap(payload:NotificationPayload) {
+    def getProp[VT](prop:Property[VT,_], as:PType[VT]):Option[VT] = {
+      for {
+        qv <- payload.get(prop)
+        v <- qv.firstAs(as)
+      }
+        yield v
+    }
+  }
+  implicit def payload2Rich(payload:NotificationPayload):RichPropMap = new RichPropMap(payload)
+  
+  def commentLink(note:Notification):Option[String] = {
+    val payload = note.payload
+    for {
+      ownerId <- payload.getProp(CommentSpaceOwner, LinkType)
+      spaceId <- note.spaceId
+      thingId <- note.thingId
+      commentId <- payload.getProp(CommentId, IntType)
+    }
+      // TODO: ideally, this path shouldn't be hardcoded like this. But we don't really expect it to change:
+      yield s""" <a href="/u/${ownerId.toThingId}/${spaceId.toThingId}/${thingId.toThingId}#comment$commentId" title="Click to go to this comment">""" +
+             """<i class="icon-share-alt"></i></a>"""
+  }
     
   def render(context:QLContext, note:Notification):RenderedNotification = {
     val payload = note.payload
     val resultOpt = for {
-      thingNameQV <- payload.get(CommentThingNameOID)
-      thingName <- thingNameQV.firstAs(PlainTextType)
-      header = s"""Comment on "${thingName.text}""""
+      thingName <- payload.getProp(CommentThingName, PlainTextType)
+      link = commentLink(note)
+      header = s"""Comment on "${thingName.text}"""" + commentLink(note).getOrElse("")
       bodyQV <- payload.get(CommentBodyOID)
       body = bodyQV.wikify(context)
     }
-      yield RenderedNotification(Wikitext(header), body)
+      yield RenderedNotification(HtmlWikitext(Html(header)), body)
         
     resultOpt.getOrElse {
       QLog.error("CommentNotifier got badly-formed Notification: " + note)
@@ -132,8 +163,20 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
       setName("_commentNotifyBody"),
       setInternal))
   
+  lazy val CommentId = new SystemProperty(CommentIdOID, IntType, ExactlyOne,
+    toProps(
+      setName("_commentNotifyId"),
+      setInternal))
+  
+  lazy val CommentSpaceOwner = new SystemProperty(CommentSpaceOwnerOID, LinkType, ExactlyOne,
+    toProps(
+      setName("_commentNotifySpaceOwner"),
+      setInternal))
+  
   override lazy val props = Seq(
     CommentThingName,
-    CommentBody
+    CommentBody,
+    CommentId,
+    CommentSpaceOwner
   )
 }
