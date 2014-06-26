@@ -35,6 +35,7 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
   import context._
   
   lazy val ConvEcot = interface[Conversations]
+  lazy val NotifyComments = interface[NotifyComments]
   
   lazy val persister = persistenceFactory.getConversationPersister(spaceId)
   
@@ -276,8 +277,11 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
 	          // fire-and-forget:
 	          persister ! AddComment(node.comment, state)
 	          
-	          // Finally, send the ack of the newly-created comment, saying where to place it:
+	          // Send the ack of the newly-created comment, saying where to place it:
 	          sender ! AddedNode(parent.map(_.comment.id), node)
+	          
+	          // Finally, send out Notifications -- fire-and-forget, will get there eventually:
+	          NotifyComments.notifyComment(req, comment)(state)
 	        }
 	      }
 	    }
@@ -297,6 +301,9 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
                   persister ! UpdateComment(deleted, state)
                   // ... and tell the requester we are done:
                   sender ! CommentDeleted
+                  
+                  // TODO: we really should delete the notifications, but we have no mechanism for doing so
+                  // currently. Hmm...
                 } else {
                   sender ! CommentNotDeleted
                 }

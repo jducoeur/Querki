@@ -8,7 +8,8 @@ import models.Thing.PropMap
 import querki.ecology._
 import querki.time.DateTime
 import querki.time.TimeAnorm._
-import querki.values.{ElemValue, QLContext, SpaceState}
+import querki.util.QLog
+import querki.values.{ElemValue, EmptyValue, QLContext, SpaceState}
 
 object SpacePersistenceMOIDs extends EcotIds(28)
 
@@ -82,7 +83,11 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
             ":" + 
             escape(prop.serialize(prop.castVal(v)))
         }
-        case None => ""  // This is *very* weird
+        case None => {
+          // This is *very* weird, and typically means that an Ecot has failed to register a Property in System Space: 
+          QLog.error(s"Attempting to serialize Property $ptr, but could not find it in Space ${space.displayName}")
+          s"$ptr:"
+        }
       }
     }
     
@@ -90,15 +95,22 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
   }    
   
   def deserializeProp(propStr:String)(implicit space:SpaceState):(OID, QValue) = {
-    val (idStr, valStrAndColon) = propStr.splitAt(propStr.indexOf(':'))
-    val valStr = unescape(valStrAndColon.drop(1))
-    val id = OID(idStr)
-    val propOpt = space.prop(id)
-    val v = propOpt match {
-      case Some(prop) => prop.deserialize(valStr)
-      case None => UnresolvedProp(UnresolvedPropType(valStr))
+    try {
+      val (idStr, valStrAndColon) = propStr.splitAt(propStr.indexOf(':'))
+      val valStr = unescape(valStrAndColon.drop(1))
+      val id = OID(idStr)
+      val propOpt = space.prop(id)
+      val v = propOpt match {
+        case Some(prop) => prop.deserialize(valStr)
+        case None => UnresolvedProp(UnresolvedPropType(valStr))
+      }
+      (id, v)
+    } catch {
+      case e:Exception => {
+        QLog.error(s"""Exception while trying to deserialize property string "$propStr":""", e)
+        (UnknownOID, EmptyValue.untyped)
+      }
     }
-    (id, v)    
   }
   
   def deserializeProps(str:String, space:SpaceState):PropMap = {

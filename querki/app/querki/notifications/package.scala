@@ -47,7 +47,7 @@ package object notifications {
     /**
      * Send this Notification to all of the specified Recipients. Fire and Forget!
      */
-    def send(req:User, as:PublicIdentity, recipients:Recipients, note:Notification)
+    def send(req:User, recipients:Recipients, note:Notification)
     
     /**
      * Figures out how to display the given Notification.

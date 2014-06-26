@@ -84,6 +84,7 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
     case NewNotification(_, noteRaw) => {
       // We decide what the actual Notification Id is:
       val note = noteRaw.copy(id = nextNoteId)
+      
       notePersister ! NewNotification(userId, note)
       
       currentNotes = note +: currentNotes
@@ -100,19 +101,28 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
 object UserSessionMessages {
   sealed trait UserSessionMsg {
     def userId:UserId
+    // This is a somewhat clumsy mechanism to deal with the fact that you can't call copy() on a trait.
+    // TODO: this kinda sucks. How can we restructure these to make it suck less?
+    def copyTo(userId:UserId):UserSessionMsg
   }
   
-  case class FetchSessionInfo(userId:UserId) extends UserSessionMsg
+  case class FetchSessionInfo(userId:UserId) extends UserSessionMsg {
+    def copyTo(userId:UserId) = copy(userId = userId)
+  }
   
   /**
    * Fire-and-forget message, telling this UserSession that they are receiving a new Notification.
    */
-  case class NewNotification(userId:UserId, note:Notification) extends UserSessionMsg
+  case class NewNotification(userId:UserId, note:Notification) extends UserSessionMsg {
+    def copyTo(userId:UserId) = copy(userId = userId)
+  }
   
   /**
    * Fetches the recent Notifications for this user.
    */
-  case class GetRecent(userId:UserId) extends UserSessionMsg
+  case class GetRecent(userId:UserId) extends UserSessionMsg {
+    def copyTo(userId:UserId) = copy(userId = userId)
+  }
   case class RecentNotifications(notes:Seq[Notification])
 }
 

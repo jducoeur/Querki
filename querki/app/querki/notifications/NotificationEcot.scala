@@ -50,8 +50,8 @@ class NotificationEcot(e:Ecology) extends QuerkiEcot(e) with NotifierRegistry wi
    * Notifications IMPLEMENTATION
    ***********************************************/
   
-  def send(req:User, as:PublicIdentity, recipients:Recipients, note:Notification) = {
-    noteActor ! SendNotification(req, as, recipients, note)
+  def send(req:User, recipients:Recipients, note:Notification) = {
+    noteActor ! SendNotification(req, recipients, note)
   }
   
   def render(rc:RequestContext, note:Notification):RenderedNotification = {

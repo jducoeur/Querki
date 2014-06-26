@@ -42,7 +42,7 @@ private[admin] class AdminActor(val ecology:Ecology) extends Actor with EcologyM
     
     case SendSystemMessage(req, header, body) => {
       val note = AdminInternal.createMsg(req.mainIdentity, header, body)
-      Notifications.send(req, req.mainIdentity, AllUsers, note)
+      Notifications.send(req, AllUsers, note)
     }
   }
   

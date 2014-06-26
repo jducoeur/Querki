@@ -3,7 +3,7 @@ package querki.notifications
 import akka.actor._
 
 import querki.ecology._
-import querki.identity.{PublicIdentity, User, UserCacheMessages, UserLevel}
+import querki.identity.{IdentityCacheMessages, PublicIdentity, User, UserCacheMessages, UserLevel}
 import querki.session.UserSessionMessages
 import querki.util._
 
@@ -20,11 +20,12 @@ private[notifications] class NotificationActor(val ecology:Ecology) extends Acto
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val SessionAccess = interface[querki.session.Session]
   
+  lazy val identityCache = IdentityAccess.identityCache
   lazy val sessionManager = SessionAccess.sessionManager
   lazy val userCache = IdentityAccess.userCache
   
   def receive = {
-    case msg @ SendNotification(req, as, recipients, note) => {
+    case msg @ SendNotification(req, recipients, note) => {
       
       val identities = recipients match {
         case AllUsers => {
@@ -46,7 +47,8 @@ private[notifications] class NotificationActor(val ecology:Ecology) extends Acto
         }
         
         case ExplicitRecipients(identityIds) => {
-          // TODO
+          // The actual UserIds will be filled in by the router:
+          identityCache ! IdentityCacheMessages.RouteToUsers(identityIds, UserSessionMessages.NewNotification(User.Anonymous.id, note))
         }
       }
     }
@@ -54,5 +56,5 @@ private[notifications] class NotificationActor(val ecology:Ecology) extends Acto
 }
 
 object NotificationActor {
-  case class SendNotification(req:User, as:PublicIdentity, recipients:Recipients, note:Notification)
+  case class SendNotification(req:User, recipients:Recipients, note:Notification)
 }
