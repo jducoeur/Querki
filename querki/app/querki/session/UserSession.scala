@@ -33,7 +33,8 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
   
   // How many of the Notifications are new since this User last looked at the Notifications Window?
   def numNewNotes:Int = {
-    val newNotes = currentNotes.filter(note => (note.id > lastNoteChecked) && !note.isRead)
+    // TODO: once we have machinery to mark notes as Read, we should filter on that here:
+    val newNotes = currentNotes.filter(note => (note.id > lastNoteChecked)/* && !note.isRead*/)
     newNotes.size
   }
   

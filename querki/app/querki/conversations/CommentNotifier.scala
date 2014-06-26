@@ -79,6 +79,8 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
         // run the QL here, and put the results into CommentBody.
         CommentBody(bodyOpt.get.text)
       )()
+    // IMPORTANT TODO: we're currently generating notifications as already Read, because there is no way for the
+    // user to mark them as Read yet. Once we have the needed UI, change the parameter below.
     val note = Notification(
       EmptyNotificationId,
       comment.authorId, 
@@ -87,7 +89,9 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
       comment.createTime,
       Some(comment.spaceId), 
       Some(comment.thingId), 
-      payload)
+      payload,
+      true,
+      false)
       
     // Don't send the notification to the person who wrote the comment:
     // TODO: all members of the Space should be able to opt into receiving comments, and the owner should
