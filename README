@@ -11,4 +11,4 @@ Or to put it another way: Querki is to Rails essentially as a wiki is to a stati
 
 (Which isn't to say that it doesn't have power -- Querki's object-oriented data model makes a lot of messy problems much easier than a traditional RDBMS. But it is currently aimed at data sets of hundreds or thousands of records, not millions.)
 
-For more information, see the ever-growing Wiki -- https://github.com/jducoeur/Querki/wiki -- or the Querki Documentation Space: http://www.querki.net/help/
+For more information, see the original Wiki -- https://github.com/jducoeur/Querki/wiki -- or the Querki Documentation Space: http://www.querki.net/help/
