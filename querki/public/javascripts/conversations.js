@@ -111,7 +111,8 @@ function loadConversations(ownerId, spaceId, thingId, convContainer, canComment)
       var text = c.html;
       var commentDisplay = $("#_commentTemplate").clone(true).attr('id', '_comment' + commentId);
       commentDisplay.data("commentId", commentId);
-      commentDisplay.find("._commentLink").prop('name', 'comment' + commentId);
+      var commentName = 'comment' + commentId;
+      commentDisplay.find("._commentLink").prop('name', commentName);
       commentDisplay.find("._commentAuthor").html(author);
       commentDisplay.find("._commentTime").html(createdDisplay);
       commentDisplay.find("._commentText").html(text);
@@ -123,6 +124,11 @@ function loadConversations(ownerId, spaceId, thingId, convContainer, canComment)
       }
       commentDisplay.show();
       commentContainer.append(commentDisplay);
+      
+      if (window.location.hash == ("#" + commentName)) {
+        // We're trying to navigate to this specific comment, so try it again:
+        window.location = window.location
+      }
     }
     
     insertComment(comment);

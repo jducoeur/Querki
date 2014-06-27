@@ -11,6 +11,7 @@ import querki.identity.User
 import querki.spaces.SpacePersistenceFactory
 import querki.spaces.messages._
 import querki.time.{DateTime, DateTimeOrdering}
+import querki.uservalues.PersistMessages._
 import querki.util.{PublicException, Requester}
 import querki.values.SpaceState
 
@@ -35,6 +36,7 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
   import context._
   
   lazy val ConvEcot = interface[Conversations]
+  lazy val NotifyComments = interface[NotifyComments]
   
   lazy val persister = persistenceFactory.getConversationPersister(spaceId)
   
@@ -45,6 +47,8 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
    * each Thing, which would be more compatible with evolving to EventSourcedProcessor?
    */
   var loadedConversations:Map[OID, ThingConversations] = Map.empty
+  
+  var commentNotifyPrefs:Seq[OneUserValue] = Seq.empty
   
   /**
    * IMPORTANT: this must be set before we begin any serious work! This is why we start
@@ -66,7 +70,12 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
       persister.request(GetMaxCommentId) {
         case CurrentMaxCommentId(n) => {
           nextId = n + 1
-          become(normalReceive)
+          space.request(UserValuePersistRequest(User.Anonymous, state.owner, state.toThingId, LoadAllPropValues(NotifyComments.GetCommentNotesPref, state))) {
+            case ValuesForUser(prefs) => {
+              commentNotifyPrefs = prefs
+              become(normalReceive)
+            }
+          }
         }
       }
     }
@@ -276,8 +285,11 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
 	          // fire-and-forget:
 	          persister ! AddComment(node.comment, state)
 	          
-	          // Finally, send the ack of the newly-created comment, saying where to place it:
+	          // Send the ack of the newly-created comment, saying where to place it:
 	          sender ! AddedNode(parent.map(_.comment.id), node)
+	          
+	          // Finally, send out Notifications -- fire-and-forget, will get there eventually:
+	          NotifyComments.notifyComment(req, comment, commentNotifyPrefs)(state)
 	        }
 	      }
 	    }
@@ -297,6 +309,9 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
                   persister ! UpdateComment(deleted, state)
                   // ... and tell the requester we are done:
                   sender ! CommentDeleted
+                  
+                  // TODO: we really should delete the notifications, but we have no mechanism for doing so
+                  // currently. Hmm...
                 } else {
                   sender ! CommentNotDeleted
                 }

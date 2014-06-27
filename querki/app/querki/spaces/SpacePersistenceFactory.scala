@@ -5,6 +5,7 @@ import akka.actor.SupervisorStrategy._
 import akka.routing.{DefaultResizer, FromConfig, SmallestMailboxRouter}
 
 import querki.ecology._
+import querki.identity.UserId
 
 import models.OID
 
@@ -17,11 +18,13 @@ trait SpacePersistenceFactory extends EcologyInterface {
   def getSpaceManagerPersister(implicit context:ActorContext):ActorRef
   def getConversationPersister(spaceId:OID)(implicit context:ActorContext):ActorRef
   def getUserValuePersister(spaceId:OID)(implicit context:ActorContext):ActorRef
+  def getNotificationPersister(userId:UserId)(implicit context:ActorContext):ActorRef
 }
 
 class DBSpacePersistenceFactory(e:Ecology) extends QuerkiEcot(e) with SpacePersistenceFactory with EcologyMember {
   
   lazy val Conversations = interface[querki.conversations.Conversations]
+  lazy val NotificationPersistence = interface[querki.notifications.NotificationPersistence]
   lazy val UserValues = interface[querki.uservalues.UserValues]
   
   def getSpacePersister(spaceId:OID)(implicit context:ActorContext):ActorRef = {
@@ -49,5 +52,9 @@ class DBSpacePersistenceFactory(e:Ecology) extends QuerkiEcot(e) with SpacePersi
   
   def getUserValuePersister(spaceId:OID)(implicit context:ActorContext):ActorRef = {
     context.actorOf(UserValues.userValuePersisterProps(spaceId), "Persist")
-  }  
+  }
+  
+  def getNotificationPersister(userId:UserId)(implicit context:ActorContext):ActorRef = {
+    context.actorOf(NotificationPersistence.notificationPersisterProps(userId), sid(userId) + "-persist")
+  }
 }

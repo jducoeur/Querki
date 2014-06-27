@@ -4,13 +4,19 @@ import scala.concurrent.duration._
 
 import akka.actor._
 
-import querki.ecology._
-import querki.spaces.messages.{GetSpacesStatus, SpaceStatus}
+import models.Wikitext
 
-case object StatusTimeout
+import querki.ecology._
+import querki.identity.User
+import querki.notifications.{AllUsers}
+import querki.spaces.messages.{GetSpacesStatus, SpaceStatus}
 
 private[admin] class AdminActor(val ecology:Ecology) extends Actor with EcologyMember {
   
+  import AdminActor._
+  
+  lazy val AdminInternal = interface[AdminInternal]
+  lazy val Notifications = interface[querki.notifications.Notifications]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
   var statusRequestFrom:ActorRef = null
@@ -33,6 +39,17 @@ private[admin] class AdminActor(val ecology:Ecology) extends Actor with EcologyM
       // Everyone's had enough time to respond. Wrap it all up...
       statusRequestFrom ! SystemStatus(statuses)
     }
+    
+    case SendSystemMessage(req, header, body) => {
+      val note = AdminInternal.createMsg(req.mainIdentity, header, body)
+      Notifications.send(req, AllUsers, note)
+    }
   }
   
+}
+
+private[admin] object AdminActor {
+  case object StatusTimeout
+  
+  case class SendSystemMessage(req:User, header:String, body:String)
 }

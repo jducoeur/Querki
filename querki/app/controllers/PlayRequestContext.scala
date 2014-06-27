@@ -69,8 +69,9 @@ case class PlayRequestContext(
     sessionUpdates:Seq[(String,String)] = Seq.empty,
     redirectTo:Option[Call] = None,
     spaceIdOpt:Option[String] = None,
-    reqOwnerHandle:Option[String] = None) 
-  extends RequestContext(requester, ownerId, state, thing, ecology)
+    reqOwnerHandle:Option[String] = None,
+    override val numNotifications:Int = 0) 
+  extends RequestContext(requester, ownerId, state, thing, ecology, numNotifications)
   with RequestHeaderParser
 {
   def renderer:UIRenderer = interface[querki.html.HtmlRenderer]

@@ -75,6 +75,10 @@ object SystemCreator {
     new querki.uservalues.UserValueEcot(ecology)                   // 44
     new querki.uservalues.RatingEcot(ecology)                      // 45
     new querki.links.ExternalLinkEcot(ecology)                     // 46
+    new querki.session.SessionEcot(ecology)                        // 47
+    new querki.notifications.NotificationEcot(ecology)             // 48
+    new querki.notifications.NotificationPersistenceEcot(ecology)  // 49
+    new querki.conversations.CommentNotifierEcot(ecology)          // 50
   }
   
   def createAllEcots(ecology:Ecology):Ecology = {

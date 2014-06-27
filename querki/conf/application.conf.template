@@ -27,8 +27,13 @@ querki {
   }
   
   session {
-    # Time before a UserSession times out for inactivity
+    # Time before a UserSpaceSession times out for inactivity
     timeout : 5 minutes
+  }
+  
+  userSession {
+    # Time before an entire UserSession times out for inactivity
+    timeout : 30 minutes
   }
   
   space {

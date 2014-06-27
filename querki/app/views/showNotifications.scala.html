@@ -1,0 +1,32 @@
+@(rc:PlayRequestContext, notes:querki.session.UserSessionMessages.RecentNotifications, identities:Map[OID, querki.identity.PublicIdentity])
+
+@import helper._
+@import helper.twitterBootstrap._
+
+@import querki.ecology._
+
+@Notifications = @{ rc.interface[querki.notifications.Notifications] }
+
+@main(QuerkiTemplate.View, "Recent Messages", rc) {
+
+  <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/notifications.css")">
+
+  <h1>Recent Messages</h1>
+  
+  <p>NOTE: yes, we will be replacing this page with a fancy popup notifications pane, a la Facebook and Google+, when we have
+  time to do so. Please bear with us for the time being.</p>
+
+  <div class="notePage">
+    @for(note <- notes.notes) {
+      <hr/>
+    
+      @defining(Notifications.render(rc, note)) { rendered =>
+        <p>From <span class="noteSender">@{identities(note.sender).name}</span> <span class="noteTime">(@{note.sentTime.toString("MMM d K:ma")})</span></p>
+        
+        <div class="noteHeadline">@rendered.headline.display.html</div>
+        
+        <div class="noteContent">@rendered.content.display.html</div>
+      }
+    }
+  </div>
+}

@@ -216,6 +216,18 @@ trait Ecot extends EcologyMember {
   def init = {}
   
   /**
+   * Called after everything has finished initializing, but before we open the gates. This
+   * is useful because you can call interfaces from here without introducing initRequires
+   * dependencies. It is often useful for things like registering callbacks. By this point,
+   * the main system Actors have been created, so you can *send* them messages, but preferably
+   * should not block on the responses, since their Troupes may still be setting up.
+   * 
+   * postInit is not called in any particular order, and you should make no assumptions
+   * about it.
+   */
+  def postInit = {}
+  
+  /**
    * Termination call, which may be overridden by the Module on system shutdown.
    */
   def term = {}

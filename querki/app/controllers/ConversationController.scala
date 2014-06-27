@@ -26,7 +26,6 @@ class ConversationController extends ApplicationBase {
   lazy val Conversations = interface[querki.conversations.Conversations]
   lazy val Core = interface[querki.core.Core]
   lazy val Person = interface[querki.identity.Person]
-  lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   
   /**
    * What we actually send to the client.

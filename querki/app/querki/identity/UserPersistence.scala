@@ -103,9 +103,6 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     getUser(userQuery)    
   }
   
-  /**
-   * WARNING: this should only be called in the context of an admin call!
-   */
   def getAllForAdmin(requester:User):Seq[User] = requester.requireAdmin {
     val userQuery = userLoadSqlWhere("""User.level != 0""")
     DB.withConnection(dbName(System)) { implicit conn =>
@@ -114,10 +111,22 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     }
   }
   
+  def getAllIdsForAdmin(requester:User):Seq[UserId] = requester.requireAdmin {
+    DB.withConnection(dbName(System)) { implicit conn =>
+      val result = SQL("""
+          SELECT id
+            FROM User
+          """)()
+      result.map(_.oid("id")).force
+    }    
+  }
+  
   /**
    * If we find the username in the current session, return a populated Some(User); otherwise, None.
    * 
    * TODO: cache the full record in the cookie! Note that this is closely related to User.toSession().
+   * 
+   * TODO: remove this -- it is moving into Session instead.
    */
   def get(request:RequestHeader) = {
     val username = request.session.get(Security.username)
@@ -151,6 +160,8 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     loadByHandle(rawHandle, None).flatMap(_.identityByHandle(rawHandle)).map(_.id)
   }
   
+  def getUserByHandle(handle:String):Option[User] = loadByHandle(handle, None)
+  
   def getUserByHandleOrEmail(raw:String):Option[User] = {
     if (raw.contains("@"))
       loadByEmail(EmailAddress(raw), None)
@@ -164,6 +175,8 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   }
   
   def getIdentity(id:OID):Option[Identity] = getUserForIdentity(id).flatMap(_.identityById(id))
+  
+  def getFullIdentity(id:IdentityId):Option[FullIdentity] = getUserForIdentity(id).flatMap(_.fullIdentityById(id))
   
   // TODO: this shouldn't be synchronous! There's a DB call in it, so it should be async.
   private def checkQuerkiLoginByEmail(email:EmailAddress, passwordEntered:String):Option[User] = {

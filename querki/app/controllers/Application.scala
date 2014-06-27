@@ -798,6 +798,11 @@ disallow: /
         |
         |**[Export all Instances of [[Name]] as a CSV file](_exportModel?modelId=[[_oid]]&format=1)**
         |
+        |[[_if(_hasPermission(Can Read Comments._self), 
+        |  ""**Send me a Message whenever someone comments in this Space:** [[_space -> _getCommentNotifications._edit]]
+        |("Maybe" means the default: Yes if you are the owner of this space, No otherwise.)
+        |**Note:** this may not take effect for a few hours."")]]
+        |
         |[[_linkButton(""Done"")]]""".stripMargin)
     val wikitext = QL.process(editText, thing.thisAsContext, None, Some(thing))
     val html = wikitext.display.html

@@ -77,12 +77,17 @@ GET     /admin/upgradePendingUser   @controllers.AdminController.upgradePendingU
 GET     /admin/makeAdmin            @controllers.AdminController.makeAdmin(userId)
 GET     /adminJs                    @controllers.AdminController.javascriptRoutes
 GET     /admin/showSpaceStatus      @controllers.AdminController.showSpaceStatus
+GET     /admin/sendSystemMessage    @controllers.AdminController.sendSystemMessage
+POST    /admin/sendSystemMessage    @controllers.AdminController.doSendSystemMessage
 
 # Conversations
 GET     /u/:userName/:spaceId/__getConv @controllers.ConversationController.getConversations(userName, spaceId, thingId)
 POST    /u/:userName/:spaceId/__addComment @controllers.ConversationController.addComment(userName, spaceId, thingId, text, responseTo)
 GET     /u/:userName/:spaceId/__deleteComment @controllers.ConversationController.deleteComment(userName, spaceId, thingId, commentId)
 GET     /convJs                     @controllers.ConversationController.javascriptRoutes
+
+# Notifications
+GET     /_notifications             @controllers.NotificationController.showNotifications
 
 # Fetch a Thing by ThingId
 # Note that Things can have slashes in their names!

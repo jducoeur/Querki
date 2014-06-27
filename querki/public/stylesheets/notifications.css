@@ -1,0 +1,16 @@
+.notePage .noteSender {
+  font-weight: bold;
+}
+
+.notePage .noteTime {
+  font-style: italic;
+  font-size: x-small;
+}
+
+.notePage .noteHeadline {
+  font-weight: bold;
+}
+
+.notePage .noteContent {
+
+}
