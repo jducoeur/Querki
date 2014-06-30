@@ -5,6 +5,7 @@
 @import helper._
 
 @import querki.values.SpaceState
+@import querki.values.SpaceState._
 
 @Basic = @{ rc.interface[querki.basic.Basic] }
 @PageEventManager = @{ rc.interface[controllers.PageEventManager] }
@@ -36,7 +37,7 @@
 
 @ownerId = @{
   space match {
-    case Some(s) => s.owner.toThingId.toString
+    case Some(s) => s.ownerHandle
     case None => ""
   }
 }
