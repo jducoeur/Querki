@@ -43,7 +43,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
    * That might actually make more sense. Do some profiling of how we are using these records, to see.
    */
   
-  private def rowToUser(row:SqlRow):User = {
+  private def rowToUser(row:Row):User = {
     val email = EmailAddress(row.string("email"))
     val identityOID = row.oid("id")
     FullUser(row.oid("userId"), row.string("name"),

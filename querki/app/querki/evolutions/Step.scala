@@ -75,5 +75,5 @@ case class SpaceInfo(id:OID, version:Int)(implicit val ecology:Ecology) extends 
   def thingTable = interface[querki.spaces.SpacePersistence].thingTable(id)
 }
 object SpaceInfo {
-  def apply(row:SqlRow)(implicit ecology:Ecology):SpaceInfo = SpaceInfo(OID(row.get[Long]("id").get), row.get[Int]("version").get)
+  def apply(row:Row)(implicit ecology:Ecology):SpaceInfo = SpaceInfo(OID(row[Long]("id")), row[Int]("version"))
 }

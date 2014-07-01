@@ -2,6 +2,7 @@ package querki.email.impl
 
 import querki.email._
 
+import scala.concurrent.Future
 import scala.util._
 
 import javax.activation.DataHandler
@@ -391,9 +392,9 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
 	    val changeRequest = ChangeProps(req.requester.get, state.owner, state.id, t.toThingId, toProps(SentToOID -> fullSentTo)())
 	    SpaceOps.askSpaceManager(changeRequest) { resp:ThingResponse =>
 	      resp match {
-	        case ThingFound(id, state) => Logger.info("Noted email recipients")
+	        case ThingFound(id, state) => Logger.info("Noted email recipients"); Future.successful {}
 	        // TODO: what should we do in case of failure?
-	        case ThingError(error, stateOpt) => Logger.error("Unable to record email recipients: " + error.msgName)
+	        case ThingError(error, stateOpt) => Logger.error("Unable to record email recipients: " + error.msgName); Future.successful {}
 	      }
 	    }
 	    

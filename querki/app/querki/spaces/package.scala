@@ -41,7 +41,7 @@ package object spaces {
      * Type B is the type of the callback. I'm a little surprised that this isn't
      * inferred -- I suspect I'm doing something wrong syntactically.
      */ 
-    def askSpaceManager[A,B](msg:SpaceMgrMsg)(cb: A => B)(implicit m:Manifest[A]):Future[B]
+    def askSpaceManager[A,B](msg:SpaceMgrMsg)(cb: A => Future[B])(implicit m:Manifest[A]):Future[B]
     
     /**
      * Simplified version of ask, which doesn't try to be excessively clever. This
@@ -49,7 +49,7 @@ package object spaces {
      * of the results. But on the plus side, it copes cleanly with errors from the back
      * end, which the older ask() does not.
      */
-    def askSpaceManager2[B](msg:SpaceMgrMsg)(cb: PartialFunction[Any, B]):Future[B]
+    def askSpaceManager2[B](msg:SpaceMgrMsg)(cb: PartialFunction[Any, Future[B]]):Future[B]
   }
     
   trait SpacePersistence extends EcologyInterface {

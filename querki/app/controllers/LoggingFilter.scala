@@ -37,7 +37,7 @@ object LoggingFilter extends Filter {
       QLog.info(s"+++ $reqId -- ${rh.method} ${rh.uri} from ${rh.session.get(Security.username)}...")
       val start = System.currentTimeMillis
 
-      def logTime(result: PlainResult): Result = {
+      def logTime(result: Result): Result = {
         val time = System.currentTimeMillis - start
         // ... and (possibly asynchronously) the end...
         QLog.info(s"... $reqId -- took ${time}ms and returned $result")
@@ -45,10 +45,9 @@ object LoggingFilter extends Filter {
       }
 
       try {
-        next(rh) match {
-          case plain: PlainResult => logTime(plain)
-          case async: AsyncResult => async.transform(logTime)
-        }
+        val res = next(rh)
+        logTime(res)
+        res
       } catch {
         case ex:Exception => {
           QLog.error(s"!!! $reqId -- threw Exception", ex)

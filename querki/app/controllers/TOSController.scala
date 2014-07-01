@@ -1,5 +1,7 @@
 package controllers
 
+import scala.concurrent.Future
+
 import play.api.data._
 import play.api.data.Forms._
 import play.api.mvc._
@@ -35,7 +37,8 @@ class TOSController extends ApplicationBase {
     // the bog-standard "on" response from the checkbox:
     if (response == "on" || response == "true") {
       // TODO: use redirectTo to return to where we were before this started.
-      Tryer[querki.identity.User, PlainResult]
+      // TODO: since we should now be returning a Future anyway, Tryer should probably be reworked:
+      Tryer[querki.identity.User, Future[Result]]
         { TOS.recordAccept(rc.requesterOrAnon, rawForm.data("version").toInt) }
         { user => rc.returnToPreviousOr(routes.Application.index) }
         { ex => doError(routes.TOSController.showTOS, ex) }

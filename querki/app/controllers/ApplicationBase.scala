@@ -26,6 +26,12 @@ class ApplicationBase extends Controller with EcologyMember {
   lazy val PageEventManager = interface[controllers.PageEventManager]
   lazy val UserSessionMgr = interface[querki.session.Session]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
+  
+  def fRes(res:Result) = Future.successful(res)
+  
+  // TBD: this is kind of horrifyingly over-clever, but useful given how variable we are in having
+  // immediate vs. future results. Is it a decent answer?
+  implicit def result2Future(res:Result):Future[Result] = Future.successful(res)
     
   /**
    * Standard error handler. Iff you get an error and the correct response is to redirect to
@@ -33,7 +39,7 @@ class ApplicationBase extends Controller with EcologyMember {
    * to simply redisplay the current page; in that case, set the error in the RequestContext before
    * constructing the page.
    */
-  def doError(redirectTo:Call, errorMsg:String):PlainResult = {
+  def doError(redirectTo:Call, errorMsg:String):Future[Result] = {
     // TODO: figure out a better way to do this, and make it configurable:
     try {
       throw new Exception("Got error; redirecting: " + errorMsg)
@@ -43,9 +49,9 @@ class ApplicationBase extends Controller with EcologyMember {
     Redirect(redirectTo).flashing("error" -> errorMsg)
   }
   
-  def doError(redirectTo:Call, ex:PublicException)(implicit rc:PlayRequestContext):PlainResult = doError(redirectTo, ex.display(rc.request))
+  def doError(redirectTo:Call, ex:PublicException)(implicit rc:PlayRequestContext):Future[Result] = doError(redirectTo, ex.display(rc.request))
   
-  def doInfo(redirectTo:Call, msg:String):PlainResult = {
+  def doInfo(redirectTo:Call, msg:String):Result = {
     Redirect(redirectTo).flashing("info" -> msg)
   }
   
@@ -77,14 +83,12 @@ class ApplicationBase extends Controller with EcologyMember {
   }
 
   // Fetch the User from the session, or User.Anonymous if they're not found.
-  def withAuth(f: => User => Request[AnyContent] => Result):EssentialAction = {
+  def withAuth(f: => User => Request[AnyContent] => Future[Result]):EssentialAction = {
     val handler = { userFut:Future[User] =>
-      Action { request =>
+      Action.async { request =>
         // When we've resolved who is asking, then keep going...
-        Async {
-          userFut map { user =>
-            f(user)(request) 
-          }
+        userFut flatMap { user =>
+          f(user)(request) 
         }
       }
     }
@@ -101,15 +105,15 @@ class ApplicationBase extends Controller with EcologyMember {
   // This reflects the fact that there are many more or less public pages. It is the responsibility
   // of the caller to use this flag sensibly. Note that RequestContext.requester is guaranteed to
   // be set iff requireLogin is true.
-  def withUser(requireLogin:Boolean)(f: PlayRequestContext => Result) = withAuth { user => implicit request =>
+  def withUser(requireLogin:Boolean)(f: PlayRequestContext => Future[Result]) = withAuth { user => implicit request =>
     if (requireLogin && user == User.Anonymous) {
-      onUnauthorized(request)
+      Future.successful(onUnauthorized(request))
     } else {
       // Iff requireLogin was false, we might not have a real user here, so massage it:
       val userParam = if (user == User.Anonymous) None else Some(user)
       userParam match {
-        case Some(u) => Async {
-          UserSessionMgr.getSessionInfo(user) map { info =>
+        case Some(u) => {
+          UserSessionMgr.getSessionInfo(user) flatMap { info =>
             f(PlayRequestContext(request, userParam, UnknownOID, None, None, ecology, numNotifications = info.numNewNotes))          
           }
         }
@@ -127,10 +131,8 @@ class ApplicationBase extends Controller with EcologyMember {
    * @param msg The message to send to the SpaceManager.
    * @param cb A partial function that takes the SpaceManager response and produces a result.
    */
-  def askSpaceMgr[A](msg:SpaceMgrMsg)(cb: A => Result)(implicit m:Manifest[A]) = {
-    Async {
-      SpaceOps.askSpaceManager[A, Result](msg)(cb)
-    }
+  def askSpaceMgr[A](msg:SpaceMgrMsg)(cb: A => Future[Result])(implicit m:Manifest[A]) = {
+    SpaceOps.askSpaceManager[A, Result](msg)(cb)
   }
   
   /**
@@ -139,10 +141,8 @@ class ApplicationBase extends Controller with EcologyMember {
    * 
    * TODO: we should generalize the error handling here.
    */
-  def askSpace(msg:SpaceMgrMsg)(cb: PartialFunction[Any, Result]) = {
-    Async {
-      SpaceOps.askSpaceManager2(msg)(cb)
-    }
+  def askSpace(msg:SpaceMgrMsg)(cb: PartialFunction[Any, Future[Result]]):Future[Result] = {
+    SpaceOps.askSpaceManager2(msg)(cb)
   }
   
   /**
@@ -163,7 +163,7 @@ class ApplicationBase extends Controller with EcologyMember {
         // This is a pretty rare parameter. It should only be used if we want to execute this function
         // even if the requester does not have read access to this Space. (As during invitation handling.)
         allowAnyone:Boolean = false
-      )(f: (PlayRequestContext => Result)):EssentialAction = withUser(false) { originalRC =>
+      )(f: (PlayRequestContext => Future[Result])):EssentialAction = withUser(false) { originalRC =>
     val requester = originalRC.requester getOrElse User.Anonymous
     val thingId = thingIdStr map (ThingId(_))
     val ownerId = getIdentityByThingId(ownerIdStr)
@@ -175,12 +175,12 @@ class ApplicationBase extends Controller with EcologyMember {
     val rcWithPath = originalRC.copy(spaceIdOpt = Some(spaceId), reqOwnerHandle = Some(ownerIdStr))
     val updatedRC = PageEventManager.requestReceived(rcWithPath)
     if (updatedRC.redirectTo.isDefined) {
-      updatedRC.updateSession(Redirect(updatedRC.redirectTo.get))      
+      Future.successful(updatedRC.updateSession(Redirect(updatedRC.redirectTo.get)))      
     } else {
-	    def withFilledRC(rc:PlayRequestContext, stateOpt:Option[SpaceState], thingOpt:Option[Thing])(cb:PlayRequestContext => Result):Result = {
+	    def withFilledRC(rc:PlayRequestContext, stateOpt:Option[SpaceState], thingOpt:Option[Thing])(cb:PlayRequestContext => Future[Result]):Future[Result] = {
 	      val filledRC = rc.copy(ownerId = ownerId, state = stateOpt, thing = thingOpt)
 	      val state = stateOpt.get
-	      val result =
+	      val result:Future[Result] =
 	        if ((requireLogin && filledRC.requester.isEmpty) || 
 	            (!allowAnyone && !AccessControl.canRead(state, filledRC.requester.getOrElse(User.Anonymous), thingOpt.map(_.id).getOrElse(state))))
 	          onUnauthorized(filledRC.request)
@@ -205,7 +205,7 @@ class ApplicationBase extends Controller with EcologyMember {
 	      case err @ ThingError(error, stateOpt) => {
 	        if (stateOpt.isDefined)
 	          withFilledRC(updatedRC, stateOpt, None) { implicit filledRC =>
-	            errorHandler.flatMap(_.lift((err, filledRC))).getOrElse(doError(routes.Application.index, error))
+	            errorHandler.flatMap(_.lift((err, filledRC))).map(fRes(_)).getOrElse(doError(routes.Application.index, error))
 	          }
 	        else
 	          onUnauthorized(updatedRC.request)	        

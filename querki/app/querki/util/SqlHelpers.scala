@@ -11,13 +11,13 @@ object SqlHelpers {
    * Note that these methods will all throw exceptions if the column isn't found! This is not designed
    * to be gentle if the code and DB have somehow gotten out of sync.
    */
-  implicit class EnhancedSqlRow(row:SqlRow) {
-    def load[A](name:String)(implicit c:anorm.Column[A]) = row.get[A](name).get
+  implicit class EnhancedSqlRow(row:Row) {
+    def load[A](name:String)(implicit c:anorm.Column[A]) = row[A](name)
     def opt[A](name:String)(implicit c:anorm.Column[A]) = load[Option[A]](name)
     
     def string(name:String) = load[String](name)
-    def oid(name:String) = OID(row.get[Long](name).get)
-    def optOid(name:String) = row.get[Option[Long]](name).get.map(OID(_))
+    def oid(name:String) = OID(row[Long](name))
+    def optOid(name:String) = row[Option[Long]](name).map(OID(_))
     def int(name:String) = load[Int](name)
     def long(name:String) = load[Long](name)
     def short(name:String) = load[Int](name).toShort

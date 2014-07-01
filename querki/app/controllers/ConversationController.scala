@@ -120,13 +120,11 @@ class ConversationController extends ApplicationBase {
     val msg = ConversationRequest(rc.requesterOrAnon, rc.ownerId, rc.state.get.id, GetConversations(rc.thing.get.id))
     askSpace(msg) {
       case ThingConversations(convs) => {
-        Async {
           // TODO: cope with errors returned from here!
           getIdentities(convs).map { implicit identityMap =>
             val convJson = Json.toJson(convs.map(node2Display(_)))
             Ok(convJson)
           }
-        }
       }
       case ThingError(ex, stateOpt) => {
         BadRequest(ex.display(Some(rc)))
@@ -157,11 +155,9 @@ class ConversationController extends ApplicationBase {
     val msg = ConversationRequest(rc.requesterOrAnon, rc.ownerId, state.id, NewComment(comment))
     askSpace(msg) {
       case reply @ AddedNode(parentId, node) => {
-        Async {
-          // TODO: cope with errors returned from here!
-          getIdentities(Seq(node)).map { implicit identityMap =>
-            Ok(Json.toJson(addedNode2Display(reply)))      
-          }
+        // TODO: cope with errors returned from here!
+        getIdentities(Seq(node)).map { implicit identityMap =>
+          Ok(Json.toJson(addedNode2Display(reply)))      
         }
       }
       case ThingError(ex, stateOpt) => {

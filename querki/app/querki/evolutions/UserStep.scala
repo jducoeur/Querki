@@ -68,5 +68,5 @@ trait UserStep extends EcologyMember {
 case class UserInfo(id:UserId, version:Int)(implicit val ecology:Ecology) extends EcologyMember {
 }
 object UserInfo {
-  def apply(row:SqlRow)(implicit ecology:Ecology):UserInfo = UserInfo(OID(row.get[Long]("id").get), row.get[Int]("userVersion").get)
+  def apply(row:Row)(implicit ecology:Ecology):UserInfo = UserInfo(OID(row[Long]("id")), row[Int]("userVersion"))
 }

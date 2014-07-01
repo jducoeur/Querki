@@ -206,7 +206,7 @@ class LoginController extends ApplicationBase {
       case ThingError(error, stateOpt) => doError(routes.Application.index, error)
     }
     joinOpt match {
-      case Some(f) => Async { f }
+      case Some(f) => f
       case None => doError(routes.Application.index, "Something went wrong during joining -- sorry!")
     }
   }
@@ -352,7 +352,7 @@ class LoginController extends ApplicationBase {
   // login now simply happens through the index page
   def login = Redirect(routes.Application.index)
   
-  def dologin = Action { implicit request =>
+  def dologin = Action.async { implicit request =>
     val rc = PlayRequestContext(request, None, UnknownOID, None, None, ecology)
     userForm.bindFromRequest.fold(
       errors => doError(routes.Application.index, "I didn't understand that"),

@@ -122,7 +122,7 @@ case class PlayRequestContext(
    * This looks for a previously-set returnToHere. If found, it redirects there; otherwise, it redirects to the
    * specified other Call.
    */
-  def returnToPreviousOr(other: Call):PlainResult = {
+  def returnToPreviousOr(other: Call):Result = {
     val redirectOpt = sessionCookie(returnToParam)
     redirectOpt match {
       case Some(redirect) => {

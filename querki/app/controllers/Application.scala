@@ -2,6 +2,7 @@ package controllers
 
 import language.existentials
 
+import scala.concurrent.Future
 import scala.util._
 
 import play.api._
@@ -122,7 +123,7 @@ disallow: /
     newSpaceForm.bindFromRequest.fold(
       errors => doError(routes.Application.newSpace, "You have to specify a legal space name"),
       name => {
-        TryTrans[Unit, Result] { Core.NameProp.validate(name, System.State) }.
+        TryTrans[Unit, Future[Result]] { Core.NameProp.validate(name, System.State) }.
           onSucc { _ =>
             askSpaceMgr[ThingResponse](CreateSpace(requester, name)) {
               case ThingFound(_, state) => Redirect(routes.Application.thing(requester.mainIdentity.handle, state.toThingId, state.toThingId))
@@ -217,8 +218,8 @@ disallow: /
   lazy val doLogEdits = Config.getBoolean("querki.test.logEdits", false)
   
   def editThingInternal(ownerId:String, spaceId:String, thingIdStr:Option[String], partial:Boolean, 
-      successCb:Option[(SpaceState, Thing, OID) => SimpleResult[_]] = None,
-      errorCb:Option[(String, Thing, List[FormFieldInfo]) => SimpleResult[_]] = None) = 
+      successCb:Option[(SpaceState, Thing, OID) => Result] = None,
+      errorCb:Option[(String, Thing, List[FormFieldInfo]) => Result] = None) = 
   withSpace(true, ownerId, spaceId, thingIdStr) { implicit rc =>
     implicit val request = rc.request
     implicit val state = rc.state.get
@@ -412,7 +413,7 @@ disallow: /
               case ThingFound(thingId, newState) => {
                 // TODO: the default pathway described here really ought to be in the not-yet-used callback, and get it out of here.
                 // Indeed, all of this should be refactored:
-                successCb.map(cb => cb(newState, oldModel, thingId)).getOrElse {
+                successCb.map(cb => cb(newState, oldModel, thingId)).map(fRes(_)).getOrElse {
                   val thing = newState.anything(thingId).get
                   
                   if (makeAnother)
@@ -429,7 +430,7 @@ disallow: /
               }
               case ThingError(error, stateOpt) => {
                 val msg = error.display
-                errorCb.map(cb => cb(msg, oldModel, rawProps)).getOrElse {
+                errorCb.map(cb => cb(msg, oldModel, rawProps)).map(fRes(_)).getOrElse {
                   if (fromAPI) {
                     NotAcceptable(msg)
                   } else {
@@ -444,7 +445,7 @@ disallow: /
               info.prop.displayName + info.error.map(": " + _.display).getOrElse("")
             }
             val errorMsg = "Illegal values -- " + badProps.mkString(", ")
-            errorCb.map(cb => cb(errorMsg, oldModel, rawProps)).getOrElse {
+            errorCb.map(cb => cb(errorMsg, oldModel, rawProps)).map(fRes(_)).getOrElse {
               if (fromAPI) {
                 NotAcceptable(errorMsg)
               } else {
@@ -554,7 +555,7 @@ disallow: /
       searchInput => {
         import querki.search._
         val resultsOpt = Search.search(rc, searchInput)
-        resultsOpt.map(results => Ok(views.html.searchResults(rc, results))).getOrElse(doError(routes.Application.space(ownerId, spaceId), "That wasn't a legal search"))
+        resultsOpt.map(results => Ok(views.html.searchResults(rc, results))).map(fRes(_)).getOrElse(doError(routes.Application.space(ownerId, spaceId), "That wasn't a legal search"))
       }
     )
   }

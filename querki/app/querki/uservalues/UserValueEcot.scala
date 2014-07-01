@@ -1,5 +1,6 @@
 package querki.uservalues
 
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import akka.actor.Actor.Receive
@@ -322,8 +323,9 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
 	          val msg = SpacePluginMsg(inv.context.request.requesterOrAnon, inv.state.owner, inv.state.id, RecalculateSummaries(prop, summaryId, values))
 	          // End of the line -- just fire and forget at this point:
 	          SpaceOps.spaceManager ! msg
+	          Future.successful {}
             }
-            case other => QLog.error(s"LoadAllPropValues for ${prop.displayName} in Space ${inv.state} got response $other")
+            case other => QLog.error(s"LoadAllPropValues for ${prop.displayName} in Space ${inv.state} got response $other"); Future.successful {}
           }
           // Force the Future to evaluate once it is ready:
           fut.onComplete(t => {})

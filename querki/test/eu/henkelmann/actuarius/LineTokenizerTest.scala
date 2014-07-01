@@ -1,14 +1,14 @@
 package eu.henkelmann.actuarius
 
 import org.scalatest.matchers.ShouldMatchers
-import org.scalatest.FlatSpec
+import org.scalatest.FlatSpecLike
 import org.junit.runner.RunWith
 
 /**
  * Tests the Line Tokenizer that prepares input for parsing.
  */
 //@RunWith(classOf[JUnitRunner])
-class LineTokenizerTest extends LineTokenizer with FlatSpec with ShouldMatchers{
+class LineTokenizerTest extends LineTokenizer with FlatSpecLike with ShouldMatchers{
 
     "The LineTokenizer" should "split input lines correctly" in {
         splitLines("line1\nline2\n") should equal (List("line1", "line2"))

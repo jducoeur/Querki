@@ -9,14 +9,12 @@ class NotificationController extends ApplicationBase {
   lazy val UserSession = interface[querki.session.Session]
 
   def showNotifications = withUser(true) { rc =>
-    Async {
-      // IMPORTANT: this is a comprehension of Futures!
-      for {
-        recentNotes <- UserSession.getNotifications(rc.requesterOrAnon)
-        identityIds = recentNotes.notes.map(_.sender)
-        identities <- IdentityAccess.getIdentities(identityIds)
-      }
-        yield Ok(views.html.showNotifications(rc, recentNotes, identities))
+    // IMPORTANT: this is a comprehension of Futures!
+    for {
+      recentNotes <- UserSession.getNotifications(rc.requesterOrAnon)
+      identityIds = recentNotes.notes.map(_.sender)
+      identities <- IdentityAccess.getIdentities(identityIds)
     }
+      yield Ok(views.html.showNotifications(rc, recentNotes, identities))
   }
 }

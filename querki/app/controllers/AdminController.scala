@@ -1,5 +1,8 @@
 package controllers
 
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits._
+
 import play.api.Routes
 import play.api.data._
 import play.api.data.Forms._
@@ -23,23 +26,23 @@ class AdminController extends ApplicationBase {
      ((form:SystemMessageForm) => Some((form.header, form.body)))
   )
   
-  def withAdmin(f: PlayRequestContext => Result) = {
+  def withAdmin(f: PlayRequestContext => Future[Result]) = {
     withUser(true) { rc =>
       if (rc.requesterOrAnon.isAdmin)
         f(rc)
       else
         doError(routes.Application.index, "You must be an administrator to use this page")
     }
-  } 
+  }
 
-  def withSuperadmin(f: PlayRequestContext => Result) = {
+  def withSuperadmin(f: PlayRequestContext => Future[Result]) = {
     withUser(true) { rc =>
       if (rc.requesterOrAnon.level == UserLevel.SuperadminUser)
         f(rc)
       else
         doError(routes.Application.index, "You must be the super-administrator to use this page")
     }
-  } 
+  }
 
   def manageUsers = withAdmin { rc =>
     val users = UserAccess.getAllForAdmin(rc.requesterOrAnon)
@@ -47,8 +50,7 @@ class AdminController extends ApplicationBase {
   }
   
   def showSpaceStatus = withAdmin { rc =>
-    Async {
-      AdminOps.getSpacesStatus(rc.requesterOrAnon) { status =>
+    AdminOps.getSpacesStatus(rc.requesterOrAnon) { status =>
         val sortedSpaces = status.spaces.sortBy(_.name)
         val spaceDisplays = sortedSpaces.map { spaceStatus => s"* **${spaceStatus.name}:** ${spaceStatus.thingConvs} active ThingConversations; ${spaceStatus.nSessions} active Sessions" }
         val contents = Wikitext(s"""# ADMIN: Current Space Status
@@ -59,7 +61,6 @@ class AdminController extends ApplicationBase {
             |
             |${spaceDisplays.mkString("\n")}""".stripMargin)
         Ok(views.html.main(QuerkiTemplate.Admin, "Space Status", rc)(contents.display.html))
-      }
     }
   }
   

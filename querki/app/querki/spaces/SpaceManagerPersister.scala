@@ -57,12 +57,12 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
               WHERE owner = Identity.id
               """).on("owner" -> owner.raw)()
           spaceStream.force.map { row =>
-            val id = OID(row.get[Long]("id").get)
-            val name = row.get[String]("name").get
-            val display = row.get[String]("display").get
+            val id = OID(row[Long]("id"))
+            val name = row[String]("name")
+            val display = row[String]("display")
             // TODO: this is clearly wrong -- eventually, we will allow handle to be NULL. So we need to also
             // fetch Identity.id, and ThingId that if we don't find a handle:
-            val ownerHandle = row.get[String]("handle").get
+            val ownerHandle = row[String]("handle")
             SpaceDetails(AsName(name), id, display, AsName(ownerHandle))
           }
         } ++ { if (owner == querki.identity.MOIDs.SystemUserOID) { Seq(SpaceDetails(AsName("System"), SystemIds.systemOID, SystemInterface.State.name, AsName("systemUser"))) } else Seq.empty }
@@ -79,12 +79,12 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
               WHERE Spaces.id = SpaceMembership.spaceId
               """).on("owner" -> owner.raw)()
           spaceStream.force.map { row =>
-            val id = OID(row.get[Long]("id").get)
-            val name = row.get[String]("name").get
-            val display = row.get[String]("display").get
+            val id = OID(row[Long]("id"))
+            val name = row[String]("name")
+            val display = row[String]("display")
             // TODO: this is clearly wrong -- eventually, we will allow handle to be NULL. So we need to also
             // fetch Identity.id, and ThingId that if we don't find a handle:
-            val ownerHandle = row.get[String]("handle").get
+            val ownerHandle = row[String]("handle")
             SpaceDetails(AsName(name), id, display, AsName(ownerHandle))
           }
         }
@@ -98,7 +98,7 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
         val numWithName = SQL("""
           SELECT COUNT(*) AS c from Spaces 
            WHERE owner = {owner} AND name = {name}
-          """).on("owner" -> owner.raw, "name" -> name).apply().headOption.get.get[Long]("c").get
+          """).on("owner" -> owner.raw, "name" -> name).apply().headOption.get[Long]("c")
         if (numWithName > 0) {
           throw new PublicException("Space.create.alreadyExists", name)
         }
@@ -158,7 +158,7 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
         val rowOption = SQL("""
             SELECT id from Spaces WHERE owner = {ownerId} AND name = {name}
             """).on("ownerId" -> ownerId.raw, "name" -> name)().headOption
-        rowOption.map(row => OID(row.get[Long]("id").get))
+        rowOption.map(row => OID(row[Long]("id")))
       }
       result match {
         case Some(id) => sender ! SpaceId(id)

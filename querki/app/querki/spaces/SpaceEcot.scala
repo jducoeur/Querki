@@ -29,11 +29,11 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps {
     _ref = createActorCb(Props(new SpaceManager(ecology)), "SpaceManager")
   }
     
-  def askSpaceManager[A,B](msg:SpaceMgrMsg)(cb: A => B)(implicit m:Manifest[A]):Future[B] = {
-    akka.pattern.ask(spaceManager, msg)(Timeout(5 seconds)).mapTo[A].map(cb)
+  def askSpaceManager[A,B](msg:SpaceMgrMsg)(cb: A => Future[B])(implicit m:Manifest[A]):Future[B] = {
+    akka.pattern.ask(spaceManager, msg)(Timeout(5 seconds)).mapTo[A].flatMap(cb)
   }
   
-  def askSpaceManager2[B](msg:SpaceMgrMsg)(cb: PartialFunction[Any, B]):Future[B] = {
-    akka.pattern.ask(spaceManager, msg)(Timeout(5 seconds)).map(cb)
+  def askSpaceManager2[B](msg:SpaceMgrMsg)(cb: PartialFunction[Any, Future[B]]):Future[B] = {
+    akka.pattern.ask(spaceManager, msg)(Timeout(5 seconds)).flatMap(cb)
   }
 }

@@ -19,8 +19,8 @@ object TimeAnorm {
     }
   }
   
-  implicit class DateTimeSqlRow(row:SqlRow) {
-    def dateTime(name:String) = row.get[DateTime](name).get
+  implicit class DateTimeSqlRow(row:Row) {
+    def dateTime(name:String) = row[DateTime](name)
   }
   
   implicit val dateTimeToStatement = new ToStatement[DateTime] {

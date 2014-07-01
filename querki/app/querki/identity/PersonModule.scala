@@ -370,7 +370,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
    * 
    * TODO: this depends on Play, so it should be in controllers!
    */
-  def acceptInvitation[B](rc:PlayRequestContext)(cb:ThingResponse => B):Option[Future[B]] = {
+  def acceptInvitation[B](rc:PlayRequestContext)(cb:ThingResponse => Future[B]):Option[Future[B]] = {
     for (
       personIdStr <- rc.sessionCookie(personParam);
       personId = OID(personIdStr);
