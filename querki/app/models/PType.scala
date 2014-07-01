@@ -218,7 +218,7 @@ class DelegatingType[VT](resolver: => PType[VT])(implicit e:Ecology) extends PTy
   override def toString = super.toString + ": " + realType.toString()
 }
 
-trait PTypeBuilderBase[VT, -RT] {
+trait PTypeBuilderBase[VT, RT] {
   
   def pType:PType[VT]
   
@@ -227,7 +227,7 @@ trait PTypeBuilderBase[VT, -RT] {
   def wrap(raw:RT):VT
   def apply(raw:RT):ElemValue = ElemValue(wrap(raw), pType)  
 }
-trait PTypeBuilder[VT, -RT] extends PTypeBuilderBase[VT, RT] { this:PType[VT] =>
+trait PTypeBuilder[VT, RT] extends PTypeBuilderBase[VT, RT] { this:PType[VT] =>
   def pType = this
 }
 trait SimplePTypeBuilder[VT] extends PTypeBuilder[VT, VT] { this:PType[VT] =>

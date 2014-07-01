@@ -16,7 +16,7 @@ abstract class CoreEcot(ecologyIn:Ecology) extends Ecot {
   // Common classes:
   type SystemType[T] = querki.core.TypeUtils.SystemType[T]
   type OID = models.OID
-  type Property[VT, -RT] = models.Property[VT,RT]
+  type Property[VT, RT] = models.Property[VT,RT]
   type PropFetcher = models.Thing.PropFetcher
   type QValue = querki.values.QValue
   type Thing = models.Thing
@@ -73,7 +73,7 @@ abstract class CoreEcot(ecologyIn:Ecology) extends Ecot {
   }
   
   // The standard convenience sugar for defining a Property in an Ecot:
-  class SystemProperty[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:models.Thing.PropFetcher) 
+  class SystemProperty[VT, RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:models.Thing.PropFetcher) 
     extends Property[VT, RT](pid, systemOID, querki.core.MOIDs.UrPropOID, t, c, p, querki.time.epoch)
 }
 

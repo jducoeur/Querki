@@ -17,7 +17,7 @@ import querki.values._
  * A Property is a field that may exist on a Thing. It is, itself, a Thing with a
  * specific Type.
  */
-case class Property[VT, -RT](
+case class Property[VT, RT](
     i:OID, 
     s:OID, 
     m:OID, 
