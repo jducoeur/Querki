@@ -1,7 +1,7 @@
 package querki.ql
 
 // TODO: this is an abstraction break!!! It should be replaced by use of Scala's XHtml instead.
-import play.api.templates.Html
+import play.twirl.api.Html
 
 import querki.ecology._
 
@@ -108,7 +108,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
     try {
       throw new Exception("dummy")
     } catch {
-      case e:Exception => QLog.error(s"Displaying error $msg; stack trace:\n${e.getStackTraceString}")  
+      case e:Exception => QLog.error(s"Displaying error $msg; stack trace:\n${e.getStackTrace.toString()}")  
     }
     WarningValue(msg)
   }

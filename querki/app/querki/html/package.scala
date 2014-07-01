@@ -1,7 +1,7 @@
 package querki
 
 // TODO: this is unfortunate abstraction leakage:
-import play.api.templates.Html
+import play.twirl.api.Html
 
 import scala.xml.NodeSeq
 

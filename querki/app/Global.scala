@@ -1,6 +1,9 @@
 import play.api._
 
+import scala.concurrent.duration._
+
 import akka.actor.Props
+import akka.util.Timeout
 
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
@@ -20,12 +23,15 @@ object Global extends WithFilters(LoggingFilter) with GlobalSettings {
   
   var ecology:Ecology = null
   
+  val initTermDuration = 30 seconds
+  implicit val initTermTimeout = Timeout(initTermDuration)
+  
   override def onStart(app: Application) {
     // Tell the QuerkiRoot to initialize and wait for it to be ready. Yes, this is one of those
     // very rare times when we really and for true want to block, because we don't want to consider
     // ourselves truly started until it's done:
-    val fut = akka.pattern.ask(root, QuerkiRoot.Initialize)(akka.util.Timeout(30000))
-    val result = scala.concurrent.Await.result(fut, scala.concurrent.duration.Duration("30 seconds"))
+    val fut = akka.pattern.ask(root, QuerkiRoot.Initialize)
+    val result = scala.concurrent.Await.result(fut, initTermDuration)
     result match {
       case Initialized(e) => ecology = e
       case _ => Logger.error("Got an unexpected result from QuerkiRoot.Initialize!!!")
@@ -37,8 +43,8 @@ object Global extends WithFilters(LoggingFilter) with GlobalSettings {
   override def onStop(app: Application) {
     Logger.info("Querki shutting down...")
     
-    val fut = akka.pattern.ask(root, QuerkiRoot.Terminate)(akka.util.Timeout(30000))
-    scala.concurrent.Await.result(fut, scala.concurrent.duration.Duration("30 seconds"))
+    val fut = akka.pattern.ask(root, QuerkiRoot.Terminate)
+    scala.concurrent.Await.result(fut, initTermDuration)
     
     Logger.info("... Done")
   }

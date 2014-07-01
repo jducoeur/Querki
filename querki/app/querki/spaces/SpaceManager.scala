@@ -105,6 +105,9 @@ class SpaceManager(val ecology:Ecology) extends Actor with Requester with Ecolog
             }
           }
         }
+        // I sincerely don't believe this case is possible, but Scala is now insisting that the match is
+        // not exhaustive without it:
+        case _ => QLog.error("Got a weirdly formed SpaceMessage! This should be impossible, shouldn't it?")
       }
     }
   }

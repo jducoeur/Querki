@@ -3,7 +3,7 @@ package models
 import scala.xml.NodeSeq
 
 // TODO: this is a bad smell, and should be lifted into either controllers or at least querki.html:
-import play.api.templates.Html
+import play.twirl.api.Html
 
 import language.implicitConversions
 
@@ -103,7 +103,7 @@ case class QWikitext(wiki:String) extends Wikitext {
    * Octal 266 is Hex 182, aka the paragraph character. Enter on the numeric keypad as
    * Alt-0182.
    */
-  def internal = wiki.replace('\266', '\n')
+  def internal = wiki.replace('\u00b6', '\n')
   
   /**
    * This is the nearly raw, unprocessed text. It should only be used when we are *not* sending

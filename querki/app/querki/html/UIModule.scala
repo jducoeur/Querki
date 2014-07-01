@@ -2,7 +2,7 @@ package querki.html
 
 import scala.xml.{Attribute, NodeSeq, Null, Text, Xhtml}
 
-import play.api.templates.Html
+import play.twirl.api.Html
 
 import models.{DisplayText, HtmlWikitext, OID, QWikitext, SimplePTypeBuilder, UnknownOID, Wikitext}
 

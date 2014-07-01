@@ -322,7 +322,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     }
     val escapedMsg = s"<b>Syntax error in $propStr line ${pos.line}:</b> " + scala.xml.Utility.escape(msg)
     val escapedError = scala.xml.Utility.escape(pos.longString)
-    HtmlWikitext(play.api.templates.Html(
+    HtmlWikitext(play.twirl.api.Html(
         "<p>" + escapedMsg + ":<p>\n" +
         "<pre>" + escapedError + "</pre>\n"))
   }

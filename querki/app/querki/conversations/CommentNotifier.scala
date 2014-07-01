@@ -1,6 +1,7 @@
 package querki.conversations
 
-import play.api.templates.Html
+// TODO: this is a bad smell:
+import play.twirl.api.Html
 
 import models.{HtmlWikitext, PType, Wikitext}
 
