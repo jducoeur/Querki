@@ -2,7 +2,7 @@ package querki.spaces
 
 import akka.actor.{ActorContext, ActorRef, Props}
 import akka.actor.SupervisorStrategy._
-import akka.routing.{DefaultResizer, FromConfig, SmallestMailboxRouter}
+import akka.routing.{DefaultResizer, FromConfig, SmallestMailboxPool}
 
 import querki.ecology._
 import querki.identity.UserId
@@ -40,8 +40,7 @@ class DBSpacePersistenceFactory(e:Ecology) extends QuerkiEcot(e) with SpacePersi
     // TODO: this really ought to be defined in config, but there doesn't appear to be a way in 2.1.4
     // to define the supervisorStrategy with FromConfig() yet. So for now, we do it by hand:
     context.actorOf(Props(new SpaceManagerPersister(ecology)).withRouter(
-        SmallestMailboxRouter(supervisorStrategy = stoppingStrategy,
-            resizer = Some(DefaultResizer(lowerBound = 2, upperBound = 10)))), 
+        SmallestMailboxPool(2, resizer = Some(DefaultResizer(lowerBound = 2, upperBound = 10)), supervisorStrategy = stoppingStrategy)), 
       "space-manager-persist")
 //    context.actorOf(Props[SpaceManagerPersister].withRouter(FromConfig(supervisorStrategy = stoppingStrategy)), "space-manager-persist")    
   }
