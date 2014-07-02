@@ -73,14 +73,14 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
   def registerType(pt:PType[_]) = { types = types :+ pt }
   
   def registerProp(p:Property[_,_]) = { props = props :+ p }
-  class TestPropertyBase[VT, -RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
+  class TestPropertyBase[VT, RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
     extends Property[VT, RT](pid, spaceId, UrPropOID, t, c, p, querki.time.epoch)
   {
     lazy val iid:IndexedOID = IndexedOID(id)
     
     registerProp(this)
   }
-  class TestProperty[VT, -RT](t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, name:String, pairs:(OID,QValue)*)
+  class TestProperty[VT, RT](t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, name:String, pairs:(OID,QValue)*)
     extends TestPropertyBase(toid(), t, c, makePropFetcher(name, pairs))
   
   def registerThing(t:ThingState) = { things = things :+ t }

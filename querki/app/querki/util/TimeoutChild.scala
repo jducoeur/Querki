@@ -22,7 +22,7 @@ trait TimeoutChild extends Actor {
   def timeoutConfig:String
   
   override def preStart() = {
-    val timeout = context.system.settings.config.getMilliseconds(timeoutConfig)
+    val timeout = context.system.settings.config.getDuration(timeoutConfig, java.util.concurrent.TimeUnit.MILLISECONDS)
     context.setReceiveTimeout(Duration(timeout, MILLISECONDS))
     super.preStart()
   }
