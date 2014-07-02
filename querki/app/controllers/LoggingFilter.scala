@@ -1,5 +1,7 @@
 package controllers
 
+import scala.concurrent.Future
+
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc._
 
@@ -27,7 +29,7 @@ object LoggingFilter extends Filter {
   // whole logic of a request!
   var nextRequestId:Int = 0
   
-  def apply(next: (RequestHeader) => Result)(rh: RequestHeader) = {
+  def apply(next: (RequestHeader) => Future[Result])(rh: RequestHeader):Future[Result] = {
     if (logAllRequests) {
       // TODO: this isn't sufficiently atomic. See above comment: we need a proper mechanism for
       // this eventually.
@@ -45,9 +47,9 @@ object LoggingFilter extends Filter {
       }
 
       try {
-        val res = next(rh)
-        logTime(res)
-        res
+        next(rh).map { res =>
+          logTime(res)
+        }
       } catch {
         case ex:Exception => {
           QLog.error(s"!!! $reqId -- threw Exception", ex)
