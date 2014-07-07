@@ -42,6 +42,7 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
   
   lazy val Core = interface[querki.core.Core]
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
+  lazy val Evolutions = interface[querki.evolutions.Evolutions]
   lazy val SystemInterface = interface[querki.system.System]
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
 
@@ -117,8 +118,12 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
     
       val spaceId = OID.next(ShardKind.User)
     
-      // NOTE: we have to do this as two separate Transactions, because part goes into the User DB and
+      // NOTE: we have to do this as several separate Transactions, because part goes into the User DB and
       // part into System. That's unfortunate, but kind of a consequence of the architecture.
+      // TODO: disturbingly, we don't seem to be rolling back these transactions if we get, say, an exception
+      // thrown during this code! WTF?!? Dig into this more carefully: we have deeper problems if we can't count
+      // upon reliable rollback. Yes, each of these is a separate transaction, but I've seen instances where one
+      // of the updates in the first transaction block failed, and the table was nonetheless created.
       DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
         SpacePersistence.SpaceSQL(spaceId, """
             CREATE TABLE {tname} (
@@ -136,8 +141,6 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
               content mediumblob NOT NULL,
               PRIMARY KEY (id))
             """).executeUpdate()
-        val initProps = Core.toProps(Core.setName(name), DisplayNameProp(display))()
-        SpacePersistence.createThingInSql(spaceId, spaceId, SystemIds.systemOID, Kind.Space, initProps, DateTime.now, SystemInterface.State)
       }
       DB.withTransaction(dbName(System)) { implicit conn =>
         SQL("""
@@ -146,6 +149,12 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
             ({sid}, {shard}, {name}, {display}, {ownerId}, 0)
             """).on("sid" -> spaceId.raw, "shard" -> 1.toString, "name" -> name,
                     "display" -> display, "ownerId" -> owner.raw).executeUpdate()
+      }
+      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+        // We need to evolve the Space before we try to create anything in it:
+        Evolutions.checkEvolution(spaceId, 1)
+        val initProps = Core.toProps(Core.setName(name), DisplayNameProp(display))()
+        SpacePersistence.createThingInSql(spaceId, spaceId, SystemIds.systemOID, Kind.Space, initProps, DateTime.now, SystemInterface.State)        
       }
       
       Changed(spaceId, DateTime.now)      
