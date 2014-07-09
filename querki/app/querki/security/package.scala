@@ -12,6 +12,7 @@ package object security {
     def PublicTag:Thing
     def MembersTag:Thing
     def OwnerTag:Thing
+    def RoleModel:Thing
     
     // Checks whether this User *has* an Identity that is a Member of the Space. Use with caution!
     // Usage of this suggests a design bug!
@@ -43,6 +44,8 @@ package object security {
      * call if possible, to preserve Identity Separation.
      */
     def hasPermission(aclProp:Property[OID,_], state:SpaceState, identityId:OID, thingId:OID):Boolean
+    
+    def RolePermissionsProp:Property[OID,OID]
     
     def CanCreateProp:Property[OID,OID]
     def CanEditProp:Property[OID,OID]

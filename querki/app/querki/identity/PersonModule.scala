@@ -416,9 +416,13 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     resultOpt.getOrElse(false)
   }
   
-  def isPerson(identity:Identity, person:Thing)(implicit state:SpaceState):Boolean = {
+  def isPerson(identity:IdentityId, person:Thing)(implicit state:SpaceState):Boolean = {
     val idOpt = getPersonIdentity(person)
-    idOpt.map(_ == identity.id).getOrElse(false)
+    idOpt.map(_ == identity).getOrElse(false)
+  }
+  
+  def isPerson(identity:Identity, person:Thing)(implicit state:SpaceState):Boolean = {
+    isPerson(identity.id, person)
   }
   
   def localIdentities(user:User)(implicit state:SpaceState):Iterable[Identity] = {
@@ -431,6 +435,12 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   }
 
   def localPerson(identity:Identity)(implicit state:SpaceState):Option[Thing] = {
+    people.
+      filter(person => isPerson(identity, person)).
+      headOption
+  }
+
+  def localPerson(identity:IdentityId)(implicit state:SpaceState):Option[Thing] = {
     people.
       filter(person => isPerson(identity, person)).
       headOption
