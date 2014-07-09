@@ -70,7 +70,14 @@ class Application extends ApplicationBase {
   lazy val AppliesToKindProp = Core.AppliesToKindProp
 
   def index = withUser(false) { rc =>
-    Ok(views.html.index(rc))
+    rc.requester match {
+      case Some(requester) => {
+	    askSpaceMgr[ListMySpacesResponse](ListMySpaces(requester.id)) { 
+	      case MySpaces(mySpaces, memberOf) => Ok(views.html.spaces(rc, mySpaces, memberOf))
+	    }        
+      }
+      case _ => Ok(views.html.index(rc))
+    }
  }    
   
   // TODO: in the long run, we will want spidering of the main system pages, and allow users to

@@ -52,7 +52,9 @@ class NavSectionEcot(e:Ecology) extends QuerkiEcot(e) with NavSectionMgr {
   def loginNav(rc:PlayRequestContext) = {
     rc.requester map { user =>
       NavSection("Logged in as " + truncateName(user.name), Seq(
-        NavLink("Your Spaces", routes.Application.spaces),
+        // TBD: for the time being, this is redundant with the index page,
+        // so de-emphasize it. Think about whether we need smaller/fuller lists:
+//        NavLink("Your Spaces", routes.Application.spaces),
         NavLink("Your Profile", routes.LoginController.userByName(user.mainIdentity.handle)),
         NavLink("Log out", routes.LoginController.logout)
       ))
