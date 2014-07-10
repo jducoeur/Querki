@@ -152,9 +152,9 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
    * 
    * For now, we only have one basic class of Member. Later, we'll have to get into groups/roles/etc.
    */
-  def member(name:String, handle:String, level:UserLevel):SpaceMember = {
+  def member(name:String, handle:String, level:UserLevel, pairs:(OID, QValue)*):SpaceMember = {
     val user = userAs(name, handle, level)
-    val person = new TestThing(name, Person.PersonModel, Person.IdentityLink(user.mainIdentity.id))
+    val person = new TestThing(name, Person.PersonModel, (pairs :+ Person.IdentityLink(user.mainIdentity.id)):_*)
     SpaceMember(user, person)
   }
 

@@ -140,12 +140,12 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
       
       // Try the permissions directly on this Thing...
       thingPermsOpt.map(checkPerms(_)).getOrElse(
+          // ... or the Person has a Role that gives them the permission...
+          // NOTE: this has to happen after Thing/Model, but before Space, since that is the semantic: Roles override
+          // the Space settings, but are overridden by Thing/Model.
+          hasRole.getOrElse(
           // ... or the permissions on the Space...
           state.getPropOpt(aclProp).map{checkPerms(_)}.getOrElse(
-          // ... or the Person has a Role that gives them the permission...
-          // NOTE: this has to happen after the more-explicit versions, so that the Space, Model or Thing can
-          // turn *off* a permission that the Role grants!
-          hasRole.getOrElse(
           // ... or the default permissions for this ACL...
           aclProp.getPropOpt(DefaultPermissionProp).map(checkPerms(_)).getOrElse(
           // ... or just give up and say no.
@@ -194,6 +194,34 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
           false          
       }
       
+      def roleHasPerm(roleId:OID):Boolean = {
+        val result = for {
+          role <- state.anything(roleId)
+          perms <- role.getPropOpt(RolePermissionsProp)
+        }
+          yield perms.contains(CanEditChildrenProp)
+            
+        result.getOrElse(false)
+      }
+        
+      /**
+       * Note that this never actually returns Some(false); it returns either Some(true) or None, to make it
+       * easier to use.
+       */
+      def hasRole:Option[Boolean] = {  
+        val result = for {
+          identity <- Person.localIdentities(who).headOption
+          person <- Person.localPerson(identity.id)
+          rolesPV <- person.getPropOpt(PersonRolesProp)
+        }
+          yield rolesPV.exists(roleHasPerm(_))
+          
+        result match {
+          case Some(b) => if (b) Some(true) else None
+          case _ => None
+        }
+      }
+      
       // TODO: wow, that's a horror. Can we turn this into a well-behaved for comprehension or something?
       // Would Scalaz's "|" (or) operator help?
       thingPermsOpt.map(checkPerms(_)).getOrElse(
@@ -202,8 +230,9 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
             // Don't consider the Space to be its own child:
             false 
           else
+            hasRole.getOrElse(
             state.getPropOpt(CanEditChildrenProp).map(checkPerms(_)).getOrElse(
-              false)))
+              false))))
     }    
   }
   

@@ -46,6 +46,7 @@ package object security {
     def hasPermission(aclProp:Property[OID,_], state:SpaceState, identityId:OID, thingId:OID):Boolean
     
     def RolePermissionsProp:Property[OID,OID]
+    def PersonRolesProp:Property[OID,OID]
     
     def CanCreateProp:Property[OID,OID]
     def CanEditProp:Property[OID,OID]
@@ -64,5 +65,12 @@ package object security {
      * Does the provided original match the hash information?
      */
     def authenticate(original:String, rawHash:String):Boolean
+  }
+  
+  trait Roles extends EcologyInterface {
+    def CommentatorRole:Thing
+    def ContributorRole:Thing
+    def EditorRole:Thing
+    def ManagerRole:Thing
   }
 }

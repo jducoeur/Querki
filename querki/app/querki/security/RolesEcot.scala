@@ -16,7 +16,7 @@ private [security] object RolesMOIDs extends EcotIds(51) {
  * for dependency reasons: whereas AccessControl is fairly central (core of the onion), this depends on lots of stuff
  * (outer layer of the onion).
  */
-class RolesEcot(e:Ecology) extends QuerkiEcot(e) {
+class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
   import RolesMOIDs._
   
   val AccessControl = initRequires[AccessControl]
