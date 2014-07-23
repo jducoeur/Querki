@@ -216,13 +216,21 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
         setName("_explicitlyShown"),
         setInternal,
         Summary("The inverse of InternalProp -- says that this *is* specifically to be shown to users, even though it otherwise wouldn't be.")))
+  
+  lazy val SystemOnlyProp = new SystemProperty(SystemOnlyPropOID, YesNoType, ExactlyOne,
+      toProps(
+        setName("System Only Property"),
+        (SystemOnlyPropOID -> ExactlyOne(YesNoType(true))),
+        AppliesToKindProp(Kind.Property),
+        Summary("A sort of weak version of InternalProp -- this is a Property that users can not add to Things, but you can read and use it.")))
 
   override lazy val props = Seq(
     ApplyMethod,
     DisplayNameProp,
     DisplayTextProp,
     DeprecatedProp,
-    ExplicitProp
+    ExplicitProp,
+    SystemOnlyProp
   )
   
   /***********************************************

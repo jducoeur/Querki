@@ -58,6 +58,8 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with quer
   val Time = initRequires[querki.time.Time]
   val Types = initRequires[querki.types.Types]
   
+  lazy val SystemOnly = Basic.SystemOnlyProp(true)
+  
   /**
    * The one true handle to the Photo Upload Manager for this node.
    */
@@ -85,46 +87,55 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with quer
   lazy val ImageHeightProp = new SystemProperty(ImageHeightOID, IntType, Optional,
     toProps(
       setName("Image Height"),
+      SystemOnly,
       Core.AppliesToKindProp(Kind.Property)))
   
   lazy val ImageWidthProp = new SystemProperty(ImageWidthOID, IntType, Optional,
     toProps(
       setName("Image Width"),
+      SystemOnly,
       Core.AppliesToKindProp(Kind.Property)))
   
   lazy val ImageMIMETypeProp = new SystemProperty(ImageMIMETypeOID, Basic.PlainTextType, Optional,
     toProps(
       setName("Image MIME Type"),
+      SystemOnly,
       Core.AppliesToKindProp(Kind.Property)))
   
   lazy val ImageFilenameProp = new SystemProperty(ImageFilenameOID, Basic.PlainTextType, Optional,
     toProps(
       setName("Image Filename"),
+      SystemOnly,
       Core.AppliesToKindProp(Kind.Property))) 
   
   lazy val ImageTimestampProp = new SystemProperty(ImageTimestampOID, Time.QDateTime, Optional,
     toProps(
       setName("Image Timestamp"),
+      SystemOnly,
       Core.AppliesToKindProp(Kind.Property)))
   
   lazy val ImageSizeProp = new SystemProperty(ImageSizeOID, IntType, Optional,
     toProps(
       setName("Image Size"),
+      SystemOnly,
       Core.AppliesToKindProp(Kind.Property)))
   
   lazy val ImageThumbnailFilenameProp = new SystemProperty(ImageThumbnailFilenameOID, Basic.PlainTextType, Optional,
     toProps(
       setName("Image Thumbnail Filename"),
+      SystemOnly,
       Core.AppliesToKindProp(Kind.Property)))
   
   lazy val ImageThumbnailHeightProp = new SystemProperty(ImageThumbnailHeightOID, IntType, Optional,
     toProps(
       setName("Image Thumbnail Height"),
+      SystemOnly,
       Core.AppliesToKindProp(Kind.Property)))
   
   lazy val ImageThumbnailWidthProp = new SystemProperty(ImageThumbnailWidthOID, IntType, Optional,
     toProps(
       setName("Image Thumbnail Width"),
+      SystemOnly,
       Core.AppliesToKindProp(Kind.Property)))
   
   lazy val PreferredImageSizeProp = new SystemProperty(PreferredImageSizeOID, IntType, Optional,

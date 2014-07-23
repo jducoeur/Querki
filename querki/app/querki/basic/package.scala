@@ -30,6 +30,7 @@ package object basic {
     val DeprecatedOID = sysId(101)
     
     val ExplicitPropOID = moid(1)
+    val SystemOnlyPropOID = moid(2)
   }
   
   /**
@@ -54,6 +55,7 @@ package object basic {
     def DisplayNameProp:Property[PlainText,String]
     def DisplayTextProp:Property[QLText,String]
     def ExplicitProp:Property[Boolean,Boolean]
+    def SystemOnlyProp:Property[Boolean,Boolean]
     
     def Page:Thing
     def SimpleThing:Thing

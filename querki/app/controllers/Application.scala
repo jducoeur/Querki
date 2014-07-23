@@ -148,7 +148,10 @@ disallow: /
     // This lists all of the visible properties that aren't in the existing list, and removes the
     // InternalProps:
     implicit val s = state
-    val candidates = (state.allProps.values.toSet -- existingProps).toSeq.filterNot(_.ifSet(Core.InternalProp))
+    val candidates = (state.allProps.values.toSet -- existingProps)
+    	.toSeq
+    	.filterNot(_.ifSet(Core.InternalProp))
+    	.filterNot(_.ifSet(Basic.SystemOnlyProp))
 
     // TODO: sort alphabetically
     
