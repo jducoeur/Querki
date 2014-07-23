@@ -78,7 +78,7 @@ private [photos] class PhotoUploadActor(val ecology:Ecology) extends Actor with 
         resizedImage.flush()
         val digest = digester.digest(outputStream.toByteArray)
         val digestInt = new BigInteger(1, digest)
-        val filename = digestInt.toString(16) + ".jpg"
+        val filename = state.id.toString + "/" + digestInt.toString(16) + ".jpg"
         (outputStream, filename, resizedImage.getHeight(), resizedImage.getWidth())
       }
       
