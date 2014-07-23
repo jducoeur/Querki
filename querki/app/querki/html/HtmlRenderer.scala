@@ -138,17 +138,23 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   def renderSpecialized(cType:Collection, pType:PType[_], context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):Option[NodeSeq] = {
     // TODO: make this more data-driven. There should be a table of these.
     val state = context.state
-    if (cType == Optional && pType == YesNoType)
-      Some(renderOptYesNo(state, prop, currentValue))
-    else if (cType == Optional && pType == LinkType)
-      Some(renderOptLink(context, prop, currentValue))
-    else if (cType == QSet && (pType == Core.NameType || pType == Tags.TagSetType || pType == LinkType || pType == NewTagSetType)) {
-      if (specialization.contains(PickList))
-        Some(renderPickList(state, prop, currentValue, specialization))
-      else
-        Some(renderTagSet(state, prop, currentValue))
-    } else
-      None
+    pType match {
+      // If the Type wants to own the rendering, on its head be it:
+      case renderingType:FullInputRendering => Some(renderingType.renderInputFull(prop, context, currentValue))
+      case _ => {
+	    if (cType == Optional && pType == YesNoType)
+	      Some(renderOptYesNo(state, prop, currentValue))
+	    else if (cType == Optional && pType == LinkType)
+	      Some(renderOptLink(context, prop, currentValue))
+	    else if (cType == QSet && (pType == Core.NameType || pType == Tags.TagSetType || pType == LinkType || pType == NewTagSetType)) {
+	      if (specialization.contains(PickList))
+	        Some(renderPickList(state, prop, currentValue, specialization))
+	      else
+	        Some(renderTagSet(state, prop, currentValue))
+	    } else
+	      None
+      }
+    }
   }
   
   def renderOptYesNo(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):NodeSeq = {

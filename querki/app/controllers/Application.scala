@@ -715,7 +715,11 @@ disallow: /
   def doUpload(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
     implicit val state = rc.state.get
     val user = rc.requester.get
-    rc.request.body.asMultipartFormData flatMap(_.file("uploadedFile")) map { filePart =>
+    val body = rc.request.body match {
+      case r:AnyContent => r
+      case _ => throw new Exception("Somehow got a weird body content in doUpload!")
+    }
+    body.asMultipartFormData flatMap(_.file("uploadedFile")) map { filePart =>
       val filename = filePart.filename
 	  val tempfile = filePart.ref.file
 	  // TBD: Note that this codec forces everything to be treated as pure-binary. That's

@@ -60,6 +60,7 @@ GET     /u/:userName/:spaceId/getLinks    @controllers.Application.getLinks(user
 POST    /u/:userName/:spaceId/search      @controllers.Application.search(userName, spaceId)
 
 GET     /u/:userName/:spaceId/a/:attachmentId @controllers.Application.attachment(userName, spaceId, attachmentId)
+POST    /u/:userName/:spaceId/_photoUpload   @controllers.PhotoController.upload(userName, spaceId, thingId)
 
 
 POST    /dologin                    @controllers.LoginController.dologin

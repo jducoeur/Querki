@@ -61,6 +61,14 @@ querki {
     # How many Members you can have in a Space
     maxMembersPerSpace : 500
   }
+  
+  aws {
+    username : "AWS USER NAME"
+    accessKeyId : "IMA ACCESS KEY ID"
+    secretAccessKey : "IMA SECRET KEY"
+    bucket : "S3 BUCKET"
+    bucketUrl : "BASE URL, NO TRAILING SLASH"
+  }
 }
 
 # Dispatcher for UserSessions    

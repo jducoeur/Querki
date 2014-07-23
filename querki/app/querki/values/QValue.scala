@@ -176,6 +176,16 @@ trait QValue {
   
   def elemAt(index:Int):ElemValue = cv.toList(index)
   
+  /**
+   * See Collection.append() for details on what this does.
+   */
+  def append(elem:ElemValue):(QValue,Option[ElemValue]) = {
+    if (!elem.matchesType(pType))
+      throw new Exception("QValue.append got the wrong type!")
+    
+    cType.append(cv, elem)
+  }
+  
   override def toString = {
     cType.displayName + " " + pType.displayName + ": " + cv
   }

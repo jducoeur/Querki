@@ -17,7 +17,9 @@ val appDependencies = Seq(
       "com.sun.mail" % "smtp" % "1.5.0",
       "com.sun.mail" % "mailapi" % "1.5.0",
       "com.github.nscala-time" %% "nscala-time" % "1.2.0",
-      "com.typesafe.akka" %% "akka-testkit" % "2.3.4"
+      "com.typesafe.akka" %% "akka-testkit" % "2.3.4",
+      "org.imgscalr" % "imgscalr-lib" % "4.2",
+      "com.amazonaws" % "aws-java-sdk" % "1.8.4"
 )
 
 libraryDependencies ++= appDependencies

@@ -199,6 +199,110 @@ function finishStatus(msg) {
 
 // **********************************************
 //
+// jQuery plugin for photo editing
+//
+ 
+(function( $ ) {
+  $.fn.asPhotoEditButton = function (ownerId, spaceId) {
+    this.each(function () {
+      
+    });
+  }
+}( jQuery ));
+
+function takePhotoSimple(evt) {
+  $(this).each(function () {
+    var photoElem = $(this);
+    var propId = photoElem.data("propid");
+    var fileInput = $('#photo-input-elem');
+    var fileProgress = $('#photo-progress');
+    var fileProgressBar = fileProgress.find('.bar');
+    var fileStatus = $('#photo-status');
+    fileInput.fileupload({
+      url: photoUploadRoute() + "&propId=" + propId,
+      multipart: false,
+      maxFileSize: 5000000, // 5 MB
+      // Enable image resizing, except for Android and Opera,
+      // which actually support image resizing, but fail to
+      // send Blob objects via XHR requests:
+      disableImageResize: /Android(?!.*Chrome)|Opera/.test(window.navigator.userAgent),
+      // Cap it at 1000 on a side, which is the current Querki maximum. Note that the server
+      // may reduce this further based on user preference, but we leave it to do further
+      // reduction there, since the server's algorithm does it more cleanly, with less aliasing.
+      // Here, we are reducing it mainly to reduce unnecessary transmission time. 
+      imageMaxWidth: 1000,
+      imageMaxHeight: 1000,
+      start: function (e) {
+        fileStatus.text('Uploading...');
+      },
+      progress: function (e, data) {
+        var percent = parseInt(data.loaded / data.total * 100, 10);
+        console.log("Progress: " + percent);
+        fileProgressBar.css('width', (percent + "%"));
+        if (data.loaded == data.total) {
+          fileStatus.text('Processing...');
+        }
+      },
+      done: function (e, data) {
+        fileProgress.removeClass('active');
+        fileStatus.html('Done!');
+        console.log(data.result);
+        // TODO: for now, we're just hard-reloading the page to refresh the images. This is crude:
+        // we should build a smarter protocol, and just refresh the relevant images.
+        location.reload();
+      }
+    });
+    
+    fileInput.change(function(evt) {
+      var f = evt.target.files[0];
+      if (!f.type.match('image.*')) {
+        $("#photo-input-content").append($('<p>I dont know what that is -- the type is ' + f.type + '</p>'));
+      } else {
+        var reader = new FileReader();
+        reader.onload = (function(theFile) {
+          return function(e) {
+            // Render thumbnail.
+            var span = document.createElement('span');
+            span.innerHTML = ['<img style="height:120px" src="', e.target.result,
+                            '" title="', escape(theFile.name), '"/>'].join('');
+            $("#photo-input-content").append($(span));            
+          };
+        })(f);        
+        reader.readAsDataURL(f);
+      }
+    });
+    
+  });
+  
+  $("#photo-input").modal("show");
+  return false;          
+}
+
+function showFull(evt) {
+  $(this).each(function() {
+    var fullsrc = $(this).data("fullsrc");
+    var fullwidth = $(this).data("fullwidth");
+    var fullheight = $(this).data("fullheight");
+    $("#photo-full-dialog").width(fullwidth + 31).height(fullheight + 50).css({'max-height':'100%', 'margin-left':'-'+(fullwidth/2)+'px'});
+    $("#photo-full-content").css({'max-height':'100%'});
+    $("#photo-full-image").attr("src", fullsrc).width(fullwidth).height(fullheight);
+    $("#photo-full-dialog").modal("show");
+  });
+}
+
+function setupPhotoInput(root) {
+  $("#photo-input").modal({
+    show: false
+  });
+
+  root.find("._photoEdit").click(takePhotoSimple);
+  
+  root.find("._photoThumbnail").click(showFull);
+  root.find("._photoThumbnail").tooltip({'title':'Click to see full sized'});
+}
+
+// **********************************************
+//
 // jQuery plugin for re-arrangeable Lists
 //
 
@@ -620,6 +724,7 @@ function finalSetup(ownerId, spaceId, root) {
   root.find(".histogram").histogram();
   
   setupCreateFromLink(root);
+  setupPhotoInput(root);
   
   // --------------------------
   // Pick List Management

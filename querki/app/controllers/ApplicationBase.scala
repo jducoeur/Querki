@@ -84,8 +84,11 @@ class ApplicationBase extends Controller with EcologyMember {
 
   // Fetch the User from the session, or User.Anonymous if they're not found.
   def withAuth(f: => User => Request[AnyContent] => Future[Result]):EssentialAction = {
+    withAuth(BodyParsers.parse.anyContent)(f)
+  }
+  def withAuth[B](parser:BodyParser[B])(f: => User => Request[B] => Future[Result]):EssentialAction = {
     val handler = { userFut:Future[User] =>
-      Action.async { request =>
+      Action.async(parser) { request =>
         // When we've resolved who is asking, then keep going...
         userFut flatMap { user =>
           f(user)(request) 
@@ -105,7 +108,7 @@ class ApplicationBase extends Controller with EcologyMember {
   // This reflects the fact that there are many more or less public pages. It is the responsibility
   // of the caller to use this flag sensibly. Note that RequestContext.requester is guaranteed to
   // be set iff requireLogin is true.
-  def withUser(requireLogin:Boolean)(f: PlayRequestContext => Future[Result]) = withAuth { user => implicit request =>
+  def withUser[B](requireLogin:Boolean, parser:BodyParser[B] = BodyParsers.parse.anyContent)(f: PlayRequestContext => Future[Result]) = withAuth(parser) { user => implicit request =>
     if (requireLogin && user == User.Anonymous) {
       Future.successful(onUnauthorized(request))
     } else {
@@ -114,10 +117,10 @@ class ApplicationBase extends Controller with EcologyMember {
       userParam match {
         case Some(u) => {
           UserSessionMgr.getSessionInfo(user) flatMap { info =>
-            f(PlayRequestContext(request, userParam, UnknownOID, None, None, ecology, numNotifications = info.numNewNotes))          
+            f(PlayRequestContextFull(request, userParam, UnknownOID, None, None, ecology, numNotifications = info.numNewNotes))          
           }
         }
-        case None => f(PlayRequestContext(request, userParam, UnknownOID, None, None, ecology))
+        case None => f(PlayRequestContextFull(request, userParam, UnknownOID, None, None, ecology))
       }
     }
   }
@@ -154,7 +157,7 @@ class ApplicationBase extends Controller with EcologyMember {
    * TODO: this is fundamentally broken at the moment. withUser() is potentially long-running -- it can
    * involve DB lookups -- so we need to think about how to restructure things accordingly.
    */
-  def withSpace(
+  def withSpace[B](
         requireLogin:Boolean, 
         ownerIdStr:String,
         spaceId:String, 
@@ -162,8 +165,9 @@ class ApplicationBase extends Controller with EcologyMember {
         errorHandler:Option[PartialFunction[(ThingResponse, PlayRequestContext), Result]] = None,
         // This is a pretty rare parameter. It should only be used if we want to execute this function
         // even if the requester does not have read access to this Space. (As during invitation handling.)
-        allowAnyone:Boolean = false
-      )(f: (PlayRequestContext => Future[Result])):EssentialAction = withUser(false) { originalRC =>
+        allowAnyone:Boolean = false,
+        parser:BodyParser[B] = BodyParsers.parse.anyContent
+      )(f: (PlayRequestContext => Future[Result])):EssentialAction = withUser(false, parser) { originalRC =>
     val requester = originalRC.requester getOrElse User.Anonymous
     val thingId = thingIdStr map (ThingId(_))
     val ownerId = getIdentityByThingId(ownerIdStr)
@@ -218,8 +222,10 @@ class ApplicationBase extends Controller with EcologyMember {
    * Convenience wrapper for withSpace -- use this for pages that are talking about
    * a specific Thing.
    */
-  def withThing(requireLogin:Boolean, ownerId:String, spaceId:String, thingIdStr:String,
-        errorHandler:Option[PartialFunction[(ThingResponse, PlayRequestContext), Result]] = None) = { 
-    withSpace(requireLogin, ownerId, spaceId, Some(thingIdStr), errorHandler) _
+  def withThing[B](requireLogin:Boolean, ownerId:String, spaceId:String, thingIdStr:String,
+        errorHandler:Option[PartialFunction[(ThingResponse, PlayRequestContext), Result]] = None, 
+        parser:BodyParser[B] = BodyParsers.parse.anyContent) = 
+  { 
+    withSpace(requireLogin, ownerId, spaceId, Some(thingIdStr), errorHandler, parser = parser) _
   }
 }

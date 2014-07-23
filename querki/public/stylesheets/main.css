@@ -282,3 +282,20 @@
 .histoBar-2 { background-color:#0959DB; }
 .histoBar-3 { background-color:#DBA309; }
 .histoBar-4 { background-color:#DB3909; }
+
+/*******************************
+ * Photo styles
+ */
+
+ #photo-full-header {
+   padding: 2px 15px;
+ }
+ 
+ #photo-full-header .close {
+   margin-top: 0px;
+ }
+ 
+ #photo-full-header p {
+   margin-bottom: 0px;
+ }
+ 

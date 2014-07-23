@@ -117,6 +117,18 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecolog
     v.toSeq.patch(index, Seq(elem), 1).asInstanceOf[implType]
   }
   
+  /**
+   * Given a QValue of this Collection, and a new element, this appends that element to the collection.
+   * 
+   * Note that the definition of "append" will depend on the Collection. ExactlyOne will replace the
+   * existing value. Optional will replace the existing value if there is one. QList will add the new
+   * value to the Collection. QSet will add the value if it is non-duplicating.
+   * 
+   * Since this may result in dropping an existing value, this returns the dropped value iff there was one,
+   * so that resources can be cleaned up if necessary.
+   */
+  def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue])
+  
   final def isEmpty(v:QValue):Boolean = v.cv.isEmpty
   
   implicit def toIterable(v:implType):Iterable[ElemValue] = v.asInstanceOf[Iterable[ElemValue]]

@@ -381,9 +381,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	    |
 	    |You will usually then feed this into, eg, _linkButton or _iconButton as a way to display the Link.""".stripMargin,
 	{ (thing, context) => 
-	  import controllers.PlayRequestContext
+	  import controllers.PlayRequestContextFull
 	  context.request match {
-	    case PlayRequestContext(request, _, _, _, _, _, _, _, _, _, _, _) => {
+	    case PlayRequestContextFull(request, _, _, _, _, _, _, _, _, _, _, _) => {
 	      implicit val req = request
 	      ExactlyOne(
 	        ExternalLinkType(routes.Application.createThing(context.request.ownerId.toThingId, context.state.toThingId, Some(thing.toThingId)).absoluteURL()))

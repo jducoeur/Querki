@@ -56,6 +56,13 @@
   }
 }
 
+@photoUploadRoute = @{
+  thing match {
+    case Some(t) => routes.PhotoController.upload(rc.ownerHandle, spaceId, t.toThingId)
+    case _ => ""
+  }
+}
+
 @displayNavLink(display:String, url:Call, idStr:String, enabled:Boolean) = {
   @if(enabled) {
     <li><a href="@url" @idStr>@Html(display)</a></li>
@@ -163,6 +170,13 @@
         <script src="@routes.Assets.at("javascripts/jquery.histogram.js")"></script>
         <script src="@routes.Assets.at("javascripts/querki-common.js")"></script>
         
+		<script src="@routes.Assets.at("javascripts/load-image.min.js")"></script>
+		<script src="@routes.Assets.at("javascripts/canvas-to-blob.min.js")"></script>
+        <script src="@routes.Assets.at("javascripts/jquery.iframe-transport.js")"></script>
+        <script src="@routes.Assets.at("javascripts/jquery.fileupload.js")"></script>
+        <script src="@routes.Assets.at("javascripts/jquery.fileupload-process.js")"></script>
+        <script src="@routes.Assets.at("javascripts/jquery.fileupload-image.js")"></script>
+        
         <script type="text/javascript" src='@routes.Application.javascriptRoutes()'></script>
         <script type="text/javascript" src='@routes.ExploreController.javascriptRoutes()'></script>
 
@@ -252,6 +266,9 @@
 		// HACK: provide the route for Thing creation, for querki-common to use:
 		function createThingRoute() {
 		  return "@createThingRoute";
+		}
+		function photoUploadRoute() {
+		  return "@photoUploadRoute";
 		}
 		</script>
 		
@@ -349,6 +366,34 @@
     
     <div id="create-instance-dialog" title="" style="display:none">
       <iframe id="create-instance-iframe" src="" style="width: 95%; height: 95%"></iframe>
+    </div>
+    
+    <div id="photo-input" class="modal hide" tabindex="-1" role="dialog" style="display:none" aria-labelledby="myModalLabel" aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
+        <h3>Take a photo</h3>
+      </div>
+      <div id="photo-input-content" class="modal-body">
+        <p>Press the button below, then choose "Camera" to take a photo now:</p>
+        <p><input id="photo-input-elem" type="file" accept="image/*;capture=camera"></p>
+        <p id="photo-status">&nbsp;</p>
+        <div id="photo-progress" class="progress progress-striped active">
+          <div class="bar" style="width: 0%;"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+      </div>
+    </div>
+    
+    <div id="photo-full-dialog" class="modal hide" title="View Photo" style="display:none">
+      <div id="photo-full-header" class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
+        <p><b>View Image</b></p>
+      </div>
+      <div id="photo-full-content" class="modal-body">
+        <img id="photo-full-image"/>
+      </div>      
     </div>
 	
 	@if(thing.isDefined) {
