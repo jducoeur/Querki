@@ -16,7 +16,7 @@ import querki.basic.PlainText
 import querki.ecology._
 import querki.time.DateTime
 import querki.types.{ModeledPropertyBundle, ModelTypeDefiner, SimplePropertyBundle}
-import querki.util.Config
+import querki.util.{Config,QLog}
 import querki.values.{ElemValue, QLContext, SpaceState}
 
 private [photos] object MOIDs extends EcotIds(52) {
@@ -33,6 +33,7 @@ private [photos] object MOIDs extends EcotIds(52) {
   val ImageThumbnailWidthOID = moid(11)
   val ThumbnailFuncOID = moid(12)
   val PreferredImageSizeOID = moid(13)
+  val PhotoTargetFuncOID = moid(14)
 }
 
 private [photos] trait PhotosInternal extends EcologyInterface {
@@ -179,6 +180,39 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with quer
 	}
   }
   
+  lazy val PhotoTargetFunction = new InternalMethod(PhotoTargetFuncOID,
+    toProps(
+      setName("_photoTarget"),
+      Summary("The target location to show one of a List of Photos"),
+      Details("""    LIST OF PHOTOS PROPERTY -> _photoTarget
+          |
+          |When you have a List of Photos, you usually don't want to show all of them full-sized on the page. Instead,
+          |you usually want to show one full-sized Photo somewhere and some thumbnails; when you click on a thumbnail, it
+          |should change the full-sized Photo. That is what _photoTarget is for.
+          |
+          |When you pass a List of Photos into _photoTarget, it displays only the *first* Photo in that list. But if you
+          |display the thumbnails somewhere else on the page like this --
+          |
+          |    LIST OF PHOTOS PROPERTY -> _thumbnail
+          |
+          |Then whenever a user clicks on a thumbnail, it will replace the full-sized picture. This way, you can have a
+          |lot of Photos, but only take up a bit of display space on the page.
+          |
+          |It is legal, but usually pointless, to use this function with Exactly One or Optional Photo.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      for {
+        dummy <- inv.returnsType(PhotoType)
+        // Note that we intentionally only use the first one, but we need to guard against the received value
+        // being empty:
+        rawValue <- inv.contextValue
+        if (rawValue.size > 0)
+        bundle <- inv.contextFirstAs(PhotoType)
+      }
+        yield ExactlyOne(ElemValue(bundle, TargetType))
+    }
+  }
+  
   override lazy val props = Seq(
     ImageHeightProp,
     ImageWidthProp,
@@ -191,7 +225,8 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with quer
     ImageThumbnailWidthProp,
     PreferredImageSizeProp,
     
-    ThumbnailFunction
+    ThumbnailFunction,
+    PhotoTargetFunction
   )
 
   /******************************************
@@ -275,6 +310,8 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with quer
     }
   }
   
+  def fromPropStr(context:QLContext) = context.fromPropertyOfType(PhotoType).map(prop => s""" data-fromprop="${prop.id.toString}" """).getOrElse("")
+  
   /**
    * A variant of PhotoType, which differs only in that it renders as the thumbnail instead of the actual
    * image. This is what comes out of the _thumbnail function.
@@ -282,6 +319,9 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with quer
   lazy val ThumbnailType = new DelegatingType(PhotoType) {
     override def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None):Wikitext = {
       implicit val s = context.state
+      
+      val fromProp = fromPropStr(context)
+      
       val result = for {
         filename <- v.getFirstOpt(ImageThumbnailFilenameProp)
         width <- v.getFirstOpt(ImageThumbnailWidthProp)
@@ -289,12 +329,32 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with quer
         fullFilename <- v.getFirstOpt(ImageFilenameProp)
         fullWidth <- v.getFirstOpt(ImageWidthProp)
         fullHeight <- v.getFirstOpt(ImageHeightProp)
+        fromPropOpt = context.fromPropertyOfType(PhotoType)
       }
         yield HtmlWikitext(s"""<img src="$bucketUrl/${filename.raw}" class="img-polaroid _photoThumbnail" width="$width" height="$height"""" +
-            s""" data-fullsrc="$bucketUrl/${fullFilename.raw}" data-fullwidth="$fullWidth" data-fullheight="$fullHeight" alt="${filename.raw}" />""")
+            s""" data-fullsrc="$bucketUrl/${fullFilename.raw}" data-fullwidth="$fullWidth" data-fullheight="$fullHeight" alt="${filename.raw}" $fromProp/>""")
         
       result.getOrElse(Wikitext(""))
     }
+  }
+  
+  /**
+   * A variant of PhotoType, which comes from the _photoTarget function. Basically the same as PhotoType, but marks itself as
+   * the target for thumbnails.
+   */
+  lazy val TargetType = new DelegatingType(PhotoType) {
+    override def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None):Wikitext = {
+      implicit val s = context.state
+      val fromProp = fromPropStr(context)
+      val result = for {
+        filename <- v.getFirstOpt(ImageFilenameProp)
+        width <- v.getFirstOpt(ImageWidthProp)
+        height <- v.getFirstOpt(ImageHeightProp)
+      }
+        yield HtmlWikitext(s"""<img class="_photoTarget" src="$bucketUrl/${filename.raw}" width="$width" height="$height" alt="${filename.raw}" $fromProp/>""")
+        
+      result.getOrElse(Wikitext(""))
+    }    
   }
   
   override lazy val types = Seq(

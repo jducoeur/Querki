@@ -199,16 +199,8 @@ function finishStatus(msg) {
 
 // **********************************************
 //
-// jQuery plugin for photo editing
+// jQuery plugin (well, not really) for photo editing
 //
- 
-(function( $ ) {
-  $.fn.asPhotoEditButton = function (ownerId, spaceId) {
-    this.each(function () {
-      
-    });
-  }
-}( jQuery ));
 
 function takePhotoSimple(evt) {
   $(this).each(function () {
@@ -283,10 +275,18 @@ function showFull(evt) {
     var fullsrc = $(this).data("fullsrc");
     var fullwidth = $(this).data("fullwidth");
     var fullheight = $(this).data("fullheight");
-    $("#photo-full-dialog").width(fullwidth + 31).height(fullheight + 50).css({'max-height':'100%', 'margin-left':'-'+(fullwidth/2)+'px'});
-    $("#photo-full-content").css({'max-height':'100%'});
-    $("#photo-full-image").attr("src", fullsrc).width(fullwidth).height(fullheight);
-    $("#photo-full-dialog").modal("show");
+    var fromProp = $(this).data("fromprop");
+    var target = $("._photoTarget[data-fromprop='" + fromProp + "']");
+    if (target.length == 0) {
+      // No _photoTarget, so display it as a dialog:
+      $("#photo-full-dialog").width(fullwidth + 31).height(fullheight + 50).css({'max-height':'100%', 'margin-left':'-'+(fullwidth/2)+'px'});
+      $("#photo-full-content").css({'max-height':'100%'});
+      $("#photo-full-image").attr("src", fullsrc).width(fullwidth).height(fullheight);
+      $("#photo-full-dialog").modal("show");
+    } else {
+      // We have a target, so show the thumbnail there:
+      target.attr("src", fullsrc).width(fullwidth).height(fullheight);
+    }
   });
 }
 
