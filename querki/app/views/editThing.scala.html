@@ -1,4 +1,4 @@
-@(rc:PlayRequestContext, model:Thing, candidateModels:Iterable[Thing], propsSoFar:Seq[(Property[_,_], DisplayPropVal)], otherProps:Seq[Property[_,_]])
+@(rc:PlayRequestContext, model:Thing, candidateModels:Iterable[Thing], propsSoFar:Seq[(Property[_,_], DisplayPropVal)])
 
 @import language.existentials
 
@@ -76,19 +76,20 @@
   result.getOrElse(false)
 }
 
-@filterPropsByKind(props:Seq[Property[_,_]], s:SpaceState) = @{
-  props.filterNot(propIsWrongKind(_, s))
+@filterProps(props:Seq[Property[_,_]], s:SpaceState) = @{
+  implicit val state = s
+  props.filterNot(propIsWrongKind(_, s)).filterNot(_.ifSet(Core.InternalProp)).filterNot(_.ifSet(Basic.SystemOnlyProp))
 }
 
 @propsInSpace(s:SpaceState) = {
     <optgroup label="Properties in @s.displayName">
-      @for(prop <- filterPropsByKind(SkillLevel.standardProps(s), s).sortBy(_.displayName)) {
+      @for(prop <- filterProps(SkillLevel.standardProps(s), s).sortBy(_.displayName)) {
         <option value="@prop.id.toString">@prop.displayName</option>
       }
     </optgroup>
     @if(SkillLevel.advancedProps(s).length > 0) {
     <optgroup label="Advanced Properties in @s.displayName">
-      @for(prop <- filterPropsByKind(SkillLevel.advancedProps(s), s).sortBy(_.displayName)) {
+      @for(prop <- filterProps(SkillLevel.advancedProps(s), s).sortBy(_.displayName)) {
         <option value="@prop.id.toString">@prop.displayName</option>
       }
     </optgroup>    

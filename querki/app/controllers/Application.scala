@@ -142,33 +142,6 @@ disallow: /
       }
     )
   }
-  
-  def getOtherProps(state:SpaceState, kind:Kind.Kind, existing:PropList):Seq[Property[_,_]] = {
-    val existingProps = existing.keys                                                                                                  
-    // This lists all of the visible properties that aren't in the existing list, and removes the
-    // InternalProps:
-    implicit val s = state
-    val candidates = (state.allProps.values.toSet -- existingProps)
-    	.toSeq
-    	.filterNot(_.ifSet(Core.InternalProp))
-    	.filterNot(_.ifSet(Basic.SystemOnlyProp))
-
-    // TODO: sort alphabetically
-    
-    // Now, filter out ones that aren't applicable to the target Kind:
-    val propsToShow = candidates filter { candidate =>
-      // TODO: this pattern -- "if this QList property exists, then do something to each value" -- seems
-      // common. Find the right factoring for it:
-      if (candidate.hasProp(AppliesToKindProp)) {
-        val allowedKinds = candidate.getPropVal(AppliesToKindProp).cv
-        (false /: allowedKinds)((current, allowedKind) => current || (AppliesToKindProp.pType.get(allowedKind) == kind))
-      } else {
-        true
-      }
-    }
-    
-    propsToShow.sortBy(_.displayName)
-  }
 
   def otherModels(state:SpaceState, mainModel:Thing):Iterable[Thing] = {
     mainModel.kind match {
@@ -191,8 +164,7 @@ disallow: /
         rc.copy(error = errorMsg),
         model,
         otherModels(state, model),
-        propList,
-        getOtherProps(state, model.kind, props)
+        propList
       )
       if (errorMsg.isDefined)
         BadRequest(page)
