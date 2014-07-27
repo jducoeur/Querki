@@ -279,7 +279,9 @@ trait LinkUtils { self:CoreEcot =>
     filteredAsModel.filterNot(_.ifSet(InternalProp))
   }    
   
-    def renderInputXmlGuts(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
+    def renderInputXmlGuts(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue, allowEmpty:Boolean):NodeSeq = {
+      <select class="_linkSelect"> 
+      {
       val state = context.state
       val Links = interface[querki.links.Links]
       // Give the Property a chance to chime in on which candidates belong here:
@@ -301,17 +303,23 @@ trait LinkUtils { self:CoreEcot =>
             }
           }
         }
+      val withOpt =
+        if (allowEmpty)
+          <option value={UnknownOID.id.toString}>Nothing selected</option> +: realOptions
+        else
+          realOptions
       val linkModel = prop.getPropOpt(Links.LinkModelProp)(state)
       linkModel match {
         case Some(propAndVal) if (!propAndVal.isEmpty) => {
           val model = state.anything(propAndVal.first).get
           if (model.ifSet(Links.NoCreateThroughLinkProp)(state))
-            realOptions
+            withOpt
           else
-            realOptions :+ <option class="_createNewFromModel" data-model={model.toThingId} value={UnknownOID.id.toString}>Create a New {model.displayName}</option>
+            withOpt :+ <option class="_createNewFromModel" data-model={model.toThingId} value={UnknownOID.id.toString}>Create a New {model.displayName}</option>
         }
-        case _ => realOptions
+        case _ => withOpt
       }
+      } </select>
     }
   
 }
@@ -606,9 +614,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
     def doDefault(implicit state:SpaceState) = UnknownOID
     
     override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
-        <select class="_linkSelect"> {
-          renderInputXmlGuts(prop, context, currentValue, v)
-        } </select>
+      renderInputXmlGuts(prop, context, currentValue, v, false)
     }
     
     override def doToUser(v:OID)(implicit state:SpaceState):String = {

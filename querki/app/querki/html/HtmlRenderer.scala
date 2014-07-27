@@ -188,12 +188,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     val isSet = pair._1
     val v = pType.get(pair._2)
     
-    val results = <select class="_linkSelect"> 
-      <option value={UnknownOID.id.toString}>Nothing selected</option>
-      {
-      renderInputXmlGuts(prop, context, currentValue, ElemValue(v, LinkType))
-    } </select>
-    results
+    renderInputXmlGuts(prop, context, currentValue, ElemValue(v, LinkType), true)
   }
   
   def getTagSetNames(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Option[Iterable[(String,String)]] = {

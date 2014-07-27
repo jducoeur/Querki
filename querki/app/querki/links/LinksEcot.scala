@@ -136,7 +136,7 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
 	
 	lazy val NoCreateThroughLinkProp = new SystemProperty(NoCreateThroughLinkOID, YesNoType, ExactlyOne,
 	    toProps(
-	      setName("Enumerated Category"),
+	      setName("Is a Choice"),
 	      NotInherited,
 	      Summary("Set this to prevent new instances from being created accidentally."),
 	      Details("""When you create a Link Property in the Editor, you can set the "Link Model" -- the sort of Thing
