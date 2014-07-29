@@ -5,6 +5,7 @@ import models.{Property, PropertyBundle, Thing, Wikitext}
 import querki.core.QLText
 import querki.ecology._
 import querki.ql.Invocation
+import querki.util.QLog
 import querki.values.{QLContext, SpaceState}
 
 trait ThingEditor { self:EditorModule =>
@@ -19,11 +20,16 @@ trait ThingEditor { self:EditorModule =>
      */
     def editorSpan(prop:Property[_,_])(implicit state:SpaceState):Int = prop.getPropOpt(editWidthProp).flatMap(_.firstOpt).getOrElse(prop.pType.editorSpan(prop)) 
     
+    trait LayoutElement {
+      def span:Int
+      def layout:String
+    }
+    
     /**
      * This wrapper creates the actual layout bits for the default Instance Editor. Note that it is *highly*
      * dependent on the styles defined in main.css!
      */
-    private case class EditorPropLayout(prop:Property[_,_])(implicit state:SpaceState) {
+    private case class EditorPropLayout(prop:Property[_,_])(implicit state:SpaceState) extends LayoutElement {
       def span = editorSpan(prop)
       def summaryTextOpt = prop.getPropOpt(Conventions.PropSummary).flatMap(_.firstOpt).map(_.text)
       def displayNameOpt:Option[String] =
@@ -44,7 +50,15 @@ trait ThingEditor { self:EditorModule =>
       |""".stripMargin
     }
     
-    private case class EditorRowLayout(props:Seq[EditorPropLayout]) {
+    private case class EditorLinkButtonLayout() extends LayoutElement {
+      def span = 1
+      def layout = s"""{{span1:
+      |
+      |[[_iconButton(""icon-share-alt"", ""Click to go to this Thing"")]]
+      |}}""".stripMargin
+    }
+    
+    private case class EditorRowLayout(props:Seq[LayoutElement]) {
       def span = (0 /: props) { (sum, propLayout) => sum + propLayout.span }
       def layout = s"""{{row-fluid:
     		  |${props.map(_.layout).mkString}
@@ -59,7 +73,7 @@ trait ThingEditor { self:EditorModule =>
      * This takes the raw list of property layout objects, and breaks it into rows of no more
      * than 12 spans each.
      */
-    private def splitRows(propLayouts:Iterable[EditorPropLayout]):Seq[EditorRowLayout] = {
+    private def splitRows(propLayouts:Iterable[LayoutElement]):Seq[EditorRowLayout] = {
       (Seq(EditorRowLayout(Seq.empty)) /: propLayouts) { (rows, nextProp) =>
         val currentRow = rows.last
         if ((currentRow.span + nextProp.span) > maxSpanPerRow)
@@ -139,7 +153,7 @@ trait ThingEditor { self:EditorModule =>
         case Some(editText) => editText
         // Generate the View based on the Thing:
         case None => {
-          val layoutPieces = propsToEditForThing(thing, state).map(EditorPropLayout(_))
+          val layoutPieces:Seq[LayoutElement] = propsToEditForThing(thing, state).map(EditorPropLayout(_)).toSeq :+ EditorLinkButtonLayout()
           val layoutRows = splitRows(layoutPieces)
           val propsLayout = s"""[[""{{_instanceEditor:
               |${ if (thing.isThing) "{{_deleteInstanceButton:x}}" else "" }
