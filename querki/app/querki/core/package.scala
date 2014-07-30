@@ -81,7 +81,6 @@ package object core {
     
     def LinkFromThingBuilder:PTypeBuilderBase[OID, Thing]
     
-    def QNone:QValue
     def listFrom[RT,VT](in:Iterable[RT], builder:PTypeBuilderBase[VT,RT]):QValue
     def makeListValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue
     def makeSetValue(rawList:Seq[ElemValue], pt:PType[_], context:QLContext):QValue
@@ -100,6 +99,9 @@ package object core {
     def InternalProp:Property[Boolean,Boolean]
     def AppliesToKindProp:Property[Int,Int]
     
+    def QNone:QValue
+    // Empty Optional -- essentially the typed QNone. Use instead of QNone when possible:
+    def emptyOpt(pType:PType[_]):QValue
     def emptyListOf(pType:PType[_]):QValue
     def emptyList:QValue
   }
