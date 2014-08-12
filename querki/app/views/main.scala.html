@@ -306,21 +306,13 @@
 		._menuSection {
 		  color: white;
 		}
-		
-      .statusLine {
-        display: none;
-        position: absolute;
-        left: 30px;
-        top: 40px;
-        z-index: 100;
-      }
 	    
  	</style>
     </head>
     <body>
 
-	  <div id="statusLine" class="statusLine"><span id="statusText" class="label label-info">Status</span></div>
-	
+        <a id="statusLine" href="#"><span id="statusText"></span></a>
+	              
 	    @if(!rc.chromeless) {
 	    
 	      <!-- Bootstrap menus -->

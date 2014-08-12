@@ -27,7 +27,7 @@ function showStatus(msg) {
         
 function finishStatus(msg) {
   $("#statusText").text(msg);
-  $("#statusLine").show().delay(4000).hide("slow");
+  $("#statusText").show().delay(4000).hide("slow");
 }
 
 // JQuery plugin for Manifest-izing a control

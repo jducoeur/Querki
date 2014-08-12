@@ -297,5 +297,27 @@
  
  #photo-full-header p {
    margin-bottom: 0px;
- }
+ } 
+
+/*******************************
+ * Status styles
+ */
  
+#statusLine {
+  width: 50px;
+  position: fixed;
+  right: 0px;
+  top: 50px;
+  z-index: 100;
+  color: green;
+}
+ 
+#statusText {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  #statusLine {
+    top: 55px;
+  }
+}
