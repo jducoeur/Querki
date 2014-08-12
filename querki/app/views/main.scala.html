@@ -58,7 +58,9 @@
 
 @photoUploadRoute = @{
   thing match {
-    case Some(t) => routes.PhotoController.upload(rc.ownerHandle, spaceId, t.toThingId)
+    // TODO: this really should be generated from the routes file, but the thingId is determined dynamically
+    // in Javascript:
+    case Some(t) => s"/u/${rc.ownerHandle}/$spaceId/_photoUpload"
     case _ => ""
   }
 }

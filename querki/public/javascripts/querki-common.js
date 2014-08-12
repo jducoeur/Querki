@@ -206,12 +206,14 @@ function takePhotoSimple(evt) {
   $(this).each(function () {
     var photoElem = $(this);
     var propId = photoElem.data("propid");
+    var thingId = photoElem.data("thing");
     var fileInput = $('#photo-input-elem');
     var fileProgress = $('#photo-progress');
     var fileProgressBar = fileProgress.find('.bar');
     var fileStatus = $('#photo-status');
     fileInput.fileupload({
-      url: photoUploadRoute() + "&propId=" + propId,
+      // TODO: this is icky! photoUploadRoute() is a bit of a hack anyway. Rewrite this:
+      url: photoUploadRoute() + "?thingId=" + thingId + "&propId=" + propId,
       multipart: false,
       maxFileSize: 5000000, // 5 MB
       // Enable image resizing, except for Android and Opera,
