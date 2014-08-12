@@ -605,6 +605,13 @@ function finalSetup(ownerId, spaceId, root) {
           serialized = target.find(".list-input-element").serialize();
         } else if (target.hasClass("_rating")) {
           serialized = target.prop("id") + "=" + target.value;
+        } else if (target.attr("type") == "checkbox") {
+          if (target.prop("checked")) {
+            serialized = "on";
+          } else {
+            serialized = "off";
+          }
+          serialized = target.prop("name") + "=" + serialized;
         } else {
           serialized = target.serialize();
         }
