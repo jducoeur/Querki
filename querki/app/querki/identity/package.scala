@@ -41,6 +41,17 @@ package object identity {
   }
   
   /**
+   * The values that can be put into the SpaceMembership table.
+   * 
+   * Note that this is actually TINYINT, and must not be > 127!
+   */
+  type MembershipState = Int
+  object MembershipState {
+    val member:MembershipState = 0
+    val owner:MembershipState = 1
+  }
+  
+  /**
    * Type alias to clarify when we are working specifically with Identities.
    * 
    * TODO: learn more about scalaz/shapeless Type Tags, and see if we can use them to make this safer.
@@ -154,7 +165,7 @@ package object identity {
    * IdentityCache and UserCache instead!
    */
   trait UserAccess extends EcologyInterface {
-    def addSpaceMembership(identityId:OID, spaceId:OID):Boolean
+    def addSpaceMembership(identityId:OID, spaceId:OID, membershipState:MembershipState = MembershipState.member):Boolean
     def changePassword(requester:User, identity:Identity, newPassword:String):Try[User]
     def changeDisplayName(requester:User, identity:Identity, newDisplay:String):Try[User]
     def changeUserLevel(userId:OID, requester:User, level:UserLevel.UserLevel):Option[User]
