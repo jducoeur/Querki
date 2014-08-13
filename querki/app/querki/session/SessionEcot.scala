@@ -8,7 +8,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 
 import querki.ecology._
-import querki.identity.User
+import querki.identity.{Identity, PublicIdentity, User}
 import querki.util.ActorHelpers._
 
 import UserSessionMessages._
@@ -43,5 +43,10 @@ class SessionEcot(e:Ecology) extends QuerkiEcot(e) with Session {
   def getNotifications(user:User):Future[RecentNotifications] = {
     val fut = sessionManager ? GetRecent(user.id)
     fut.mapTo[RecentNotifications]
+  }
+  
+  def getAcquaintances(user:User, identity:Identity, term:String):Future[Acquaintances] = {
+    val fut = sessionManager ? GetAcquaintances(user.id, identity.id, term)
+    fut.mapTo[Acquaintances]
   }
 }

@@ -7,7 +7,7 @@ import akka.event.LoggingReceive
 import com.github.nscala_time.time.Imports._
 
 import querki.ecology._
-import querki.identity.UserId
+import querki.identity.{IdentityCacheMessages, IdentityId, PublicIdentity, UserId}
 import querki.notifications.{CurrentNotifications, EmptyNotificationId, LoadInfo, Notification, UpdateLastChecked, UserInfo}
 import querki.notifications.NotificationPersister.Load
 import querki.spaces.SpacePersistenceFactory
@@ -19,7 +19,9 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
 {
   import UserSessionMessages._
   
+  lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val PersistenceFactory = interface[querki.spaces.SpacePersistenceFactory]
+  lazy val UserAccess = interface[querki.identity.UserAccess]
   lazy val UserEvolutions = interface[querki.evolutions.UserEvolutions]
   
   def timeoutConfig:String = "querki.userSession.timeout"
@@ -96,6 +98,16 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
       lastNoteChecked = currentMaxNote
       notePersister ! UpdateLastChecked(lastNoteChecked)
     }
+    
+    case GetAcquaintances(_, identityId, term) => {
+      // TODO: should this be here? It is arguably incestuous. Should this call be buried behind the IdentityCache?
+      val acquaintanceIds = UserAccess.getAcquaintanceIds(identityId)
+      IdentityAccess.identityCache.request(IdentityCacheMessages.GetIdentities(acquaintanceIds)) {
+        case IdentityCacheMessages.IdentitiesFound(identities) => {
+          sender ! Acquaintances(identities.values)
+        }
+      }
+    }
   }
 }
 
@@ -125,6 +137,14 @@ object UserSessionMessages {
     def copyTo(userId:UserId) = copy(userId = userId)
   }
   case class RecentNotifications(notes:Seq[Notification])
+  
+  /**
+   * Fetches the people who share Spaces with this Identity.
+   */
+  case class GetAcquaintances(userId:UserId, identityId:IdentityId, term:String) extends UserSessionMsg {
+    def copyTo(userId:UserId) = copy(userId = userId)    
+  }
+  case class Acquaintances(acs:Iterable[PublicIdentity])
 }
 
 object UserSession {

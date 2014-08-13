@@ -186,5 +186,6 @@ package object identity {
     def getUserByHandleOrEmail(raw:String):Option[User]
     def getUserByHandle(handle:String):Option[User]
     def setTOSVersion(userId:OID, version:Int):Option[User]
+    def getAcquaintanceIds(identityId:IdentityId):Seq[IdentityId]
   }
 }

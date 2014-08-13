@@ -26,6 +26,8 @@ private[identity] class IdentityCache(val ecology:Ecology) extends Actor with Ec
   
   var identities = Map.empty[OID, FullIdentity]
   
+  // TODO: this Actor is getting to be too central to be doing its own DB lookups. The call to
+  // UserAccess should be doled out to a pool of workers, and fetch() should be asynchronous:
   def fetch(id:OID):Option[FullIdentity] = {
     identities.get(id) match {
       case Some(identity) => Some(identity)
