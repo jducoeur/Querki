@@ -63,7 +63,7 @@ package object identity {
    */
   type UserId = OID
 
-  case class InvitationResult(invited:Seq[EmailAddress], alreadyInvited:Seq[EmailAddress])
+  case class InvitationResult(invited:Seq[String], alreadyInvited:Seq[String])
   
   // The cookie parameter that indicates the email address of the target identity. The
   // fact that we have to expose this here suggests we have an abstraction break to fix...

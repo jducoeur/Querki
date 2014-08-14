@@ -18,6 +18,7 @@ import querki.session.UserSessionMessages.UserSessionMsg
 private[identity] class IdentityCache(val ecology:Ecology) extends Actor with EcologyMember {
   
   import IdentityCacheMessages._
+  import FullIdentityMessages._
   
   lazy val UserAccess = interface[UserAccess]
   lazy val UserSessions = interface[querki.session.Session]
@@ -61,6 +62,16 @@ private[identity] class IdentityCache(val ecology:Ecology) extends Actor with Ec
       sender ! IdentitiesFound(result)
     }
     
+    case GetFullIdentities(ids) => {
+      val result = (Map.empty[OID, FullIdentity] /: ids.toSet) { (curmap, id) =>
+        fetch (id) match {
+          case Some(identity) => curmap + (id -> identity)
+          case None => curmap
+        }
+      }
+      sender ! FullIdentitiesFound(result)
+    }
+    
     case InvalidateCacheForIdentity(id) => {
       identities = identities - id
     }
@@ -74,6 +85,18 @@ private[identity] class IdentityCache(val ecology:Ecology) extends Actor with Ec
       }
     }
   }
+}
+
+/**
+ * Messages that leak full Identity information. Can only be used inside the Identity namespace, intentionally.
+ */
+private [identity] object FullIdentityMessages {
+  
+  /**
+   * Fetches the *full* Identities for the specified OIDs.
+   */
+  case class GetFullIdentities(ids:Seq[OID])
+  case class FullIdentitiesFound(identities:Map[OID,FullIdentity])
 }
 
 object IdentityCacheMessages {

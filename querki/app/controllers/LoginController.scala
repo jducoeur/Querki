@@ -114,12 +114,12 @@ class LoginController extends ApplicationBase {
 	            val resultStr = 
 		          (
 		            if (result.invited.length > 0)
-		               result.invited.map(_.addr).mkString("Sent invitations to ", ", ", ". ")
+		               result.invited.mkString("Sent invitations to ", ", ", ". ")
 		            else
 		              ""
 		          ) + (
 		            if (result.alreadyInvited.length > 0)
-		               result.alreadyInvited.map(_.addr).mkString("Resent to ", ", ", ".") 
+		               result.alreadyInvited.mkString("Resent to ", ", ", ".") 
 		            else
 		              ""
 		          )
