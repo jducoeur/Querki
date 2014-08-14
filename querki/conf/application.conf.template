@@ -34,6 +34,10 @@ querki {
   userSession {
     # Time before an entire UserSession times out for inactivity
     timeout : 30 minutes
+    collaborators {
+      # Time before we recheck this person's list of collaborators
+      timeout : 15 minutes
+    }
   }
   
   space {

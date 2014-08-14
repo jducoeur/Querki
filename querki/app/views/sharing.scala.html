@@ -25,10 +25,39 @@
 
   <script>
      $(function() {
+     
        $("#invitees").manifest({
          marcoPolo: false,
          valuesName: "invitees"
        });
+       
+       $("#collaborators").manifest({
+        marcoPolo: {
+		  url: '_getCollaborators',
+		  minChars: 3,
+		  required: true,
+		  formatData: function(data) { return data; },
+		  formatItem: function(data, $item) { return data.display; },
+		  formatNoResults: function(q, $item) { return "No collaborator named <b>" + q + "</b> found."; }
+		},
+        formatDisplay: function (data, $item, $mpItem) {
+          if (_.isString(data))
+            return data;
+          else 
+            return data.display; 
+        },
+		formatValue: function(data, $value, $item, $mpItem) {
+		  if (_.isString(data))
+		    return data;
+		  else 
+		    return data.id; 
+		},
+		// Use Enter as the separator to create new items, as well as the default comma:
+	    separator: [13, ','],
+        required: true,
+        valuesName: "collaborators"
+       });
+       
      });
   </script>
 
@@ -74,9 +103,16 @@
         
 	    @form(routes.LoginController.inviteMembers(rc.ownerHandle, space.toThingId.toString), 'class -> "") {
           <div class="control-group">
-            <label class="control-label">Who to Invite (enter email addresses, comma-separated)</label>
+            <label class="control-label">Who to Invite by email (enter email addresses, comma-separated)</label>
             <div class="controls">
               <input type="text" id="invitees" name="inviteesRaw">
+            </div>
+          </div>
+          
+          <div class="control-group">
+            <label class="control-label">Or give the names or handles of collaborators you know from other Spaces:</label>
+            <div class="controls">
+              <input type="text" id="collaborators" name="collaboratorsRaw">
             </div>
           </div>
           

@@ -1,5 +1,6 @@
 package controllers
 
+import scala.concurrent.ExecutionContext.Implicits.global 
 import scala.util._
 
 import play.api.data._
@@ -25,6 +26,7 @@ class LoginController extends ApplicationBase {
   lazy val Email = interface[querki.email.Email]
   lazy val Encryption = interface[querki.security.Encryption]
   lazy val Person = interface[querki.identity.Person]
+  lazy val UserSession = interface[querki.session.Session]
   
   case class UserForm(name:String, password:String)
   val userForm = Form(
@@ -69,6 +71,15 @@ class LoginController extends ApplicationBase {
   val resetPasswordForm = Form(
     mapping("name" -> nonEmptyText)((handle) => handle)((handle:String) => Some(handle))
   )
+  
+  def getCollaborators(ownerId:String, spaceId:String, q:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
+    UserSession.getCollaborators(rc.requesterOrAnon, rc.localIdentity.get, q).map { collabs =>
+      // TODO: introduce better JSONification for the AJAX code:
+      // TODO: refactor this with getTags and getLinks; there is a common "return Manifest" function here:
+      val JSONcollabs = "[" + collabs.acs.map(identity => "{\"display\":\"" + identity.name + "\", \"id\":\"" + identity.id + "\"}").mkString(",") + "]"
+      Ok(JSONcollabs)
+    }
+  }
   
   lazy val maxMembers = Config.getInt("querki.public.maxMembersPerSpace", 100)
   
