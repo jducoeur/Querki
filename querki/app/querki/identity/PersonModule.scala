@@ -3,8 +3,10 @@ package querki.identity
 // For talking to the SpaceManager:
 import akka.pattern._
 import akka.util.Timeout
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global 
 import scala.concurrent.Future
 
 import models._
@@ -270,10 +272,8 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   /**
    * Invite some people to join this Space. rc.state must be established (and authentication dealt with) before
    * we get here.
-   * 
-   * TODO: restructure this to be Async!
    */
-  def inviteMembers(rc:RequestContext, invitees:Seq[EmailAddress]):InvitationResult = {
+  def inviteMembers(rc:RequestContext, inviteeEmails:Seq[EmailAddress], collaboratorIds:Seq[OID]):Future[InvitationResult] = {
     val originalState = rc.state.get
     
     // Filter out any of these email addresses that have already been invited:
@@ -289,49 +289,68 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
       filter(pair => (pair._1.isDefined && !pair._1.get.isEmpty)).
       map(entry => (entry._1.get.first.addr.toLowerCase(), entry._2)).
       toMap
-    val (existingEmails, newEmails) = invitees.partition(newEmail => currentEmails.contains(newEmail.addr.toLowerCase()))
+    val (existingEmails, newEmails) = inviteeEmails.partition(newEmail => currentEmails.contains(newEmail.addr.toLowerCase()))
     
-    val existingPeople = existingEmails.flatMap(email => currentEmails.get(email.addr.toLowerCase()))
+    // TODO: merge this clause with the above one, instead of running through the whole list twice. Maybe rethink the
+    // whole bloody approach, which is fairly ancient. In general, note that we are doing a lot of duplication of fairly
+    // similar processes, one with email addresses and one with OIDs; there is almost certainly a higher-level function
+    // or three crying to get factored out here.
+    val currentCollabs = currentMembers.
+      map(member => (member.getPropOptTyped(IdentityLink)(originalState) -> member)).
+      filter(pair => (pair._1.isDefined && !pair._1.get.isEmpty)).
+      map(entry => (entry._1.get.first, entry._2)).
+      toMap
+    val (existingCollabs, newCollabs) = collaboratorIds.partition(collabId => currentCollabs.contains(collabId))
+    
+    val existingPeople = 
+      existingEmails.flatMap(email => currentEmails.get(email.addr.toLowerCase())) ++
+      existingCollabs.flatMap(id => currentCollabs.get(id))
     
     // Create Person records for all the new ones:
-    // TODO: add a CreateThings message that allows me to do multi-create:
-    // TODO: this is an icky side-effectful way of getting the current state:
-    var updatedState = originalState
-    val people = newEmails.map { address =>
-      // Create a Display Name. No, we're not going to worry about uniqueness -- Display Names are allowed
-      // to be duplicated:
-      val prefix = address.addr.takeWhile(_ != '@')
-      val displayName = "Invitee " + prefix
+    // We need to do this as a fairly complex fold, instead of simply blasting out the asks in parallel, to
+    // make sure that we end correctly with the *last* version of the state:
+    // TODO: add a CreateThings message that allows me to do multi-create, so we can avoid this complexity:
+    val start = Future.successful((originalState, Seq.empty[Thing]))
+    val futs = (start /: newEmails) { (fut, address) =>
+      fut.flatMap { case (state, things) =>
+        // Create a Display Name. No, we're not going to worry about uniqueness -- Display Names are allowed
+        // to be duplicated:
+        val prefix = address.addr.takeWhile(_ != '@')
+        val displayName = "Invitee " + prefix
       
-      val propMap = 
-        toProps(
-          EmailAddressProp(address.addr),
-          DisplayNameProp(displayName),
-          AccessControl.CanReadProp(AccessControl.OwnerTag))()
-      val msg = CreateThing(rc.requester.get, rc.ownerId, updatedState.toThingId, Kind.Thing, PersonOID, propMap)
-      implicit val timeout = Timeout(5 seconds)
-      val future = SpaceOps.spaceManager ? msg
-      // TODO: EEEEVIL! This code is quick and dirty but wrong. This should all be Async, using SpaceManager.ask:
-      Await.result(future, 5 seconds) match {
-        case ThingFound(id, newState) => { updatedState = newState; newState.anything(id).get }
-        case err => throw new Exception("Error trying to create an invitee: " + err) // TODO: improve this error path!
+        // TODO: this really shouldn't hold the email address, since that is privileged information:
+        val propMap = 
+          toProps(
+            EmailAddressProp(address.addr),
+            DisplayNameProp(displayName),
+            AccessControl.CanReadProp(AccessControl.OwnerTag))()
+        val msg = CreateThing(rc.requester.get, rc.ownerId, state.toThingId, Kind.Thing, PersonOID, propMap)
+        implicit val timeout = Timeout(5 seconds)
+        val nextFuture = SpaceOps.spaceManager ? msg
+        nextFuture.mapTo[ThingFound].map { case ThingFound(id, newState) =>
+          (newState, things :+ newState.anything(id).get)
+        }        
       }
     }
     
-    implicit val finalState = updatedState
-    val newRc = rc.withUpdatedState(updatedState)
-    val context = updatedState.thisAsContext(newRc)
-    val subjectQL = QLText(rc.ownerName + " has invited you to join the Space " + updatedState.displayName)
-    val inviteLink = QLText("""
-      |
-      |------
-      |
-      |[[_spaceInvitation]]""".stripMargin)
-    val bodyQL = updatedState.getPropOpt(InviteText).flatMap(_.firstOpt).getOrElse(QLText("")) + inviteLink
-    // TODO: we probably should test that sentTo includes everyone we expected:
-    val sentTo = Email.sendToPeople(context, people ++ existingPeople, subjectQL, bodyQL)
+    futs.map { case (updatedState, people) =>
+      implicit val finalState = updatedState
+      val newRc = rc.withUpdatedState(updatedState)
+      val context = updatedState.thisAsContext(newRc)
+      val subjectQL = QLText(rc.ownerName + " has invited you to join the Space " + updatedState.displayName)
+      val inviteLink = QLText("""
+        |
+        |------
+        |
+        |[[_spaceInvitation]]""".stripMargin)
+      val bodyQL = updatedState.getPropOpt(InviteText).flatMap(_.firstOpt).getOrElse(QLText("")) + inviteLink
+      // TODO: we probably should test that sentTo includes everyone we expected:
+      // TODO: this shouldn't be explicitly email. Instead, this should be sending a Notification, which goes
+      // to email under certain circumstances:
+      val sentTo = Email.sendToPeople(context, people ++ existingPeople, subjectQL, bodyQL)
     
-    InvitationResult(newEmails, existingEmails)
+      InvitationResult(newEmails, existingEmails)  
+    }
   }
   
   import controllers.PlayRequestContext

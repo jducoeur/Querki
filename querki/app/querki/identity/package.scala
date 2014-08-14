@@ -77,7 +77,7 @@ package object identity {
     def IdentityLink:Property[OID,OID]
     def InviteText:Property[QLText, String]    
    
-    def inviteMembers(rc:RequestContext, invitees:Seq[EmailAddress]):InvitationResult
+    def inviteMembers(rc:RequestContext, invitees:Seq[EmailAddress], collaboratorIds:Seq[OID]):Future[InvitationResult]
     
     // TODO: this is a horrible abstraction break. Do we really need PlayRequestContext here? Odds are
     // that this method doesn't belong in Person at all, given that *all* of its parameters involve weird
