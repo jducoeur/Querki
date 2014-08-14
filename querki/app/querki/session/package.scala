@@ -32,9 +32,9 @@ package object session {
     def getNotifications(user:User):Future[UserSessionMessages.RecentNotifications]
     
     /**
-     * Asynchronously fetch all of this Identity's Acquaintances -- people they share Spaces with --  who fit the given search term.
+     * Asynchronously fetch all of this Identity's Collaborators -- people they share Spaces with --  who fit the given search term.
      */
-    def getAcquaintances(user:User, identity:Identity, term:String):Future[UserSessionMessages.Acquaintances]
+    def getCollaborators(user:User, identity:Identity, term:String):Future[UserSessionMessages.Collaborators]
   }
   
 }
