@@ -181,8 +181,10 @@
         
         <script type="text/javascript" src='@routes.Application.javascriptRoutes()'></script>
         <script type="text/javascript" src='@routes.ExploreController.javascriptRoutes()'></script>
-
+        
         @PageEventManager.addHeaders(rc, template)
+
+        <link rel="stylesheet" media="print" href="@routes.Assets.at("stylesheets/print.css")">
 
         <link rel="shortcut icon" href="@routes.Assets.at("images/Capital.png")">
         
@@ -317,7 +319,7 @@
 	    
 	      <!-- Bootstrap menus -->
 	      <div class="container">
-	        <div class="navbar navbar-fixed-top">
+	        <div class="navbar navbar-fixed-top _noPrint">
 	          <div class="navbar-inner">
 	            <div class="container">
 	            
@@ -422,9 +424,9 @@
 	      }
 	      
 	      @if(showSpaceLink) {
-	        <div class="_smallSubtitle _spaceLink"><a href="@routes.Application.thing(ownerId, spaceId, spaceId)">@space.get.displayName</a></div>
+	        <div class="_smallSubtitle _spaceLink _noPrint"><a href="@routes.Application.thing(ownerId, spaceId, spaceId)">@space.get.displayName</a></div>
 	      } else {
-	        <div class="_smallSubtitle _spaceLink">&nbsp;</div>
+	        <div class="_smallSubtitle _spaceLink _noPrint">&nbsp;</div>
 	      }
           @content
 	
@@ -432,9 +434,9 @@
       </div><!--/row-->
 
       @if(!rc.chromeless) {
-      <hr>
+      <hr class="_noPrint">
 
-      <footer class="_mainFooter">
+      <footer class="_mainFooter _noPrint">
         &copy; Querki 2013-2014 | <a href="http://www.querki.net/help/">Help</a> | <a href="/TOS">Terms of Service</a>
       </footer>
       }
