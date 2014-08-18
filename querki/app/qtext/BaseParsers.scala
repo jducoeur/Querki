@@ -266,7 +266,7 @@ trait BaseParsers extends RegexParsers {
      * The legal attributes. For now, we're being pretty dumb with attributes (rather than matching
      * legal tags and attributes), but attributes are, again, whitelisted.
      */
-    def xmlAttrName:Parser[String] = "class" | "id" |
+    def xmlAttrName:Parser[String] = "class" | "id" | "title" |
       "colspan" | "rowspan" |
       dataAttrName
     

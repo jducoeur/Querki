@@ -163,8 +163,9 @@
   right: 10px;
   line-height: 14px;
   background-color: lightpink;
-  width: 10px;
-  height: 15px;
+  width: 18px;
+  height: 18px;
+  padding-top: 2px;
   text-align: center;
   border: 1px solid;
   cursor: pointer;
@@ -175,6 +176,27 @@
 }
 
 ._instanceEditor:hover ._deleteInstanceButton {
+  display: inherit;
+}
+
+._instanceEditor ._advancedEditButton {
+  position: absolute;
+  right: 35px;
+  line-height: 14px;
+  background-color: lightgreen;
+  width: 18px;
+  height: 18px;
+  padding-top: 2px;
+  text-align: center;
+  border: 1px solid;
+  cursor: pointer;
+}
+
+._instanceEditor ._advancedEditButton {
+  display: none;
+}
+
+._instanceEditor:hover ._advancedEditButton {
   display: inherit;
 }
 

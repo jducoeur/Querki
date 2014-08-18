@@ -555,6 +555,15 @@ function finalSetup(ownerId, spaceId, root) {
   }
   root.on('click', "._deleteInstanceButton", deleteInstance)
   
+  function advancedEdit(evt) {
+    var editButton = $(this);
+    var editor = editButton.parents("._instanceEditor");
+    var thingId = editor.data("thingid");
+    // TODO: this should be going through reverse routing!
+    window.location = "edit?thingId=" + thingId;   
+  }
+  root.on('click', "._advancedEditButton", advancedEdit)
+  
   function renumberModelList(target) {
     var prop = target.data("propid");
     var thingId = target.data("thing").substring(1);

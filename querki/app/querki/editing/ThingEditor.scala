@@ -146,6 +146,9 @@ trait ThingEditor { self:EditorModule =>
       result.getOrElse(PropListMgr.from(thing).toList.map(_._1).filterNot(SkillLevel.isAdvanced(_)).filter(specialFilter(thing, _)))
     }
     
+    val thingButtons = """{{_advancedEditButton:<i class="icon-edit _withTooltip" title="Click to open the Advanced Editor"></i>}}
+      |{{_deleteInstanceButton:<i class="icon-trash _withTooltip" title="Click to delete this"></i>}}""".stripMargin
+    
     private def editorLayoutForThing(thing:PropertyBundle, state:SpaceState):QLText = {
       implicit val s = state
       thing.getPropOpt(InstanceEditViewProp).flatMap(_.v.firstTyped(LargeTextType)) match {
@@ -156,7 +159,7 @@ trait ThingEditor { self:EditorModule =>
           val layoutPieces:Seq[LayoutElement] = propsToEditForThing(thing, state).map(EditorPropLayout(_)).toSeq :+ EditorLinkButtonLayout()
           val layoutRows = splitRows(layoutPieces)
           val propsLayout = s"""[[""{{_instanceEditor:
-              |${ if (thing.isThing) "{{_deleteInstanceButton:x}}" else "" }
+              |${ if (thing.isThing) thingButtons else "" }
               |${layoutRows.map(_.layout).mkString}
               |}}"" ${ if (thing.isThing) s"""-> _data(""thingId"", ""${thing.asInstanceOf[Thing].toThingId}"")""" else "" }]]
               |""".stripMargin
