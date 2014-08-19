@@ -225,7 +225,7 @@
 				      if (modelId && (modelId.length > 0)) {
 				        // TBD: Bit of an abstraction break here -- the Javascript needs to know the URL syntax for
 				        // model creation. Can we do this better somehow? 
-				        window.location = "@routes.Application.createThing(rc.ownerHandle, space.get.toThingId, None)" + "?model=" + modelId;
+				        window.location = "_createAndEdit?model=" + modelId;
 				      } else {
 				        // TODO: The Create button should really be disabled unless a legit option
 				        // is picked; not quite sure how to do that in jQuery UI. 
@@ -437,7 +437,7 @@
       <hr class="_noPrint">
 
       <footer class="_mainFooter _noPrint">
-        &copy; Querki 2013-2014 | <a href="http://www.querki.net/help/">Help</a> | <a href="/TOS">Terms of Service</a>
+        &copy; Querki 2013-2014 | <a href="http://www.querki.net/help/">Help</a> | <a href="/TOS">Terms of Service</a> | Connected from @{rc.request.remoteAddress}
       </footer>
       }
 

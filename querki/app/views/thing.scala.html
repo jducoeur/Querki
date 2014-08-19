@@ -58,12 +58,12 @@
 	      <h1 class="_defaultTitle">@Html(title) 
 	        @if(thing.ifSet(Core.IsModelProp)(space)) { 
 	          @if(canEdit) { <a class="btn btn-mini btn-primary _noPrint" title="Edit @Html(title)" href="@routes.Application.editThing(rc.ownerHandle, space.toThingId, thing.toThingId)"><i class="icon-edit icon-white"></i></a> }
-	          @if(canCreate(thing)) { <a class="btn btn-mini btn-primary _noPrint" title="Create a @Html(title)" href="@routes.Application.createThing(rc.ownerHandle, space.toThingId, Some(thing.toThingId))"><i class="icon-plus-sign icon-white"></i></a> }
+	          @if(canCreate(thing)) { <a class="btn btn-mini btn-primary _noPrint" title="Create a @Html(title)" href="@routes.Application.doCreateThing2(rc.ownerHandle, space.toThingId, thing.id.toString)"><i class="icon-plus-sign icon-white"></i></a> }
 	          <a class="btn btn-mini btn-primary _noPrint" title="Edit all instances of @Html(title)" href="@routes.Application.editInstances(rc.ownerHandle, space.toThingId, thing.toThingId)"><i class="icon-edit icon-white"></i><i class="icon-edit icon-white"></i><i class="icon-edit icon-white"></i>...</a>
 	        } else {
 	          @if(canEdit) { <a class="btn btn-mini btn-primary _noPrint _qlInvoke" title="Edit @Html(title)" data-thingid="@thing.toThingId" data-target="_topEdit" data-ql="_edit" href="#"><i class="icon-edit icon-white"></i></a> }
 	          @if(modelOpt.isDefined && canCreate(modelOpt.get)) {
-	            <a class="btn btn-mini btn-primary _noPrint" title="Create another @{modelOpt.get.displayName}" href="@routes.Application.createThing(rc.ownerHandle, space.toThingId, Some(modelOpt.get.toThingId))"><i class="icon-plus-sign icon-white"></i>...</a>
+	            <a class="btn btn-mini btn-primary _noPrint" title="Create another @{modelOpt.get.displayName}" href="@routes.Application.doCreateThing2(rc.ownerHandle, space.toThingId, modelOpt.get.id.toString)"><i class="icon-plus-sign icon-white"></i>...</a>
 	          }
 	        }
 	      </h1>

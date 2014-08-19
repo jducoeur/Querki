@@ -244,7 +244,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
           val instances = allInstances.drop(startAt).take(pageSize)
           val wikitexts = 
             instances.map { instance => instanceEditorForThing(instance, instance.thisAsContext(context.request), Some(inv)) } :+
-            createInstanceButton(thing, mainContext)
+            createInstanceButton(thing, mainContext, true)
           Core.listFrom(paginator(context.request.asInstanceOf[controllers.PlayRequestContext], allInstances, startAt, pageSize) +: wikitexts, QL.ParsedTextType)
         } else {
           QL.WikitextValue(instanceEditorForThing(thing, context, Some(inv)))
@@ -461,7 +461,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
         labelWikitext <- inv.processParamFirstAs(0, QL.ParsedTextType)
         label = labelWikitext.raw.str
       }
-        yield QL.WikitextValue(createInstanceButton(model, inv.context, Some(label)))
+        yield QL.WikitextValue(createInstanceButton(model, inv.context, false, Some(label)))
     }
   }
   

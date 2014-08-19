@@ -197,10 +197,33 @@ disallow: /
     editThingInternal(ownerId, spaceId, None, false)
   }
   
+  /**
+   * Alternate create route -- this creates the new Thing, expecting fields to mainly be empty, then displays
+   * the Thing Editor to edit it.
+   * 
+   * TODO: this is currently referred to in a lot of places. Can we expose a single entry point to compute this
+   * instead? Might be cleaner.
+   */
+  def doCreateThing2(ownerId:String, spaceId:String, model:String) = {
+    editThingInternal(ownerId, spaceId, None, false, Some({ (state, model, thingId, rc) =>
+      implicit val implRc = rc
+      state.anything(thingId) match {
+        case Some(thing) => {
+	      val context = thing.thisAsContext
+	      val result = QL.process(QLText(s"""### New ${model.displayName}
+	          |
+	          |[[_edit]]""".stripMargin), context, None, Some(thing)).display.html
+	      Ok(views.html.main(QuerkiTemplate.Edit, "Creating a new " + model.displayName, rc)(result))
+        }
+        case None => NotAcceptable("Unable to create " + model.displayName)
+      }
+    }))
+  }
+  
   lazy val doLogEdits = Config.getBoolean("querki.test.logEdits", false)
   
   def editThingInternal(ownerId:String, spaceId:String, thingIdStr:Option[String], partial:Boolean, 
-      successCb:Option[(SpaceState, Thing, OID) => Result] = None,
+      successCb:Option[(SpaceState, Thing, OID, PlayRequestContext) => Result] = None,
       errorCb:Option[(String, Thing, List[FormFieldInfo]) => Result] = None) = 
   withSpace(true, ownerId, spaceId, thingIdStr) { implicit rc =>
     implicit val request = rc.request
@@ -395,11 +418,12 @@ disallow: /
               case ThingFound(thingId, newState) => {
                 // TODO: the default pathway described here really ought to be in the not-yet-used callback, and get it out of here.
                 // Indeed, all of this should be refactored:
-                successCb.map(cb => cb(newState, oldModel, thingId)).map(fRes(_)).getOrElse {
+                val newRc = rc.copy(state = Some(newState))
+                successCb.map(cb => cb(newState, oldModel, thingId, newRc)).map(fRes(_)).getOrElse {
                   val thing = newState.anything(thingId).get
                   
                   if (makeAnother)
-                    showEditPage(rc.copy(state = Some(newState)), Some(thing), oldModel, PropListMgr.inheritedProps(None, oldModel)(newState))
+                    showEditPage(newRc, Some(thing), oldModel, PropListMgr.inheritedProps(None, oldModel)(newState))
                   else if (rc.isTrue("subCreate")) {
                     Ok(views.html.subCreate(rc, thing));
                   } else if (fromAPI) {

@@ -283,6 +283,8 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	  }
 	}
 
+	// TODO: once we have named parameters, both _iconButton and _mixedButton should be reprecated, and _linkButton
+	// should take named params of "icon=", "label=" and "tooltip=". That would be much cleaner and more consistent.
 	class LinkButtonMethod extends ButtonBase(LinkButtonOID,
 	    toProps(
 	      setName("_linkButton"),
@@ -407,7 +409,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	    case PlayRequestContextFull(request, _, _, _, _, _, _, _, _, _, _, _) => {
 	      implicit val req = request
 	      ExactlyOne(
-	        ExternalLinkType(routes.Application.createThing(context.request.ownerId.toThingId, context.state.toThingId, Some(thing.toThingId)).absoluteURL()))
+	        ExternalLinkType(routes.Application.doCreateThing2(context.request.ownerId.toThingId, context.state.toThingId, thing.id.toString).absoluteURL()))
 	    }
 	    case _ => QL.WarningValue("_createInstanceLink does not currently work outside of Play")
 	  }
