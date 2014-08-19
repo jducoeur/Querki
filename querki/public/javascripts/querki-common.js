@@ -182,6 +182,7 @@ function finishStatus(msg) {
           success: function (result) {
             if (typeof(targetOpt) != "undefined") {
               var target = $("#" + targetOpt);
+              target.show();
               target.html(result);
               finalSetup(ownerId, spaceId, target);
             }

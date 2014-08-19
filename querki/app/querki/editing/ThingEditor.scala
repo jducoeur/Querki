@@ -51,11 +51,8 @@ trait ThingEditor { self:EditorModule =>
     }
     
     private case class EditorLinkButtonLayout() extends LayoutElement {
-      def span = 1
-      def layout = s"""{{span1:
-      |
-      |[[_iconButton(""icon-share-alt"", ""Click to go to this Thing"")]]
-      |}}""".stripMargin
+      def span = 12
+      def layout = s"""[[_mixedButton(""icon-share-alt"", ""Done"")]]""".stripMargin
     }
     
     private case class EditorRowLayout(props:Seq[LayoutElement]) {
@@ -156,8 +153,8 @@ trait ThingEditor { self:EditorModule =>
         case Some(editText) => editText
         // Generate the View based on the Thing:
         case None => {
-          val layoutPieces:Seq[LayoutElement] = propsToEditForThing(thing, state).map(EditorPropLayout(_)).toSeq :+ EditorLinkButtonLayout()
-          val layoutRows = splitRows(layoutPieces)
+          val layoutPieces = propsToEditForThing(thing, state).map(EditorPropLayout(_))
+          val layoutRows = splitRows(layoutPieces) :+ EditorRowLayout(Seq(EditorLinkButtonLayout()))
           val propsLayout = s"""[[""{{_instanceEditor:
               |${ if (thing.isThing) thingButtons else "" }
               |${layoutRows.map(_.layout).mkString}
