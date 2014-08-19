@@ -1,6 +1,6 @@
 name := "Querki"
 
-version := "0.10.4"
+version := "0.10.5"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
