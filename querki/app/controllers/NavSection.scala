@@ -83,6 +83,7 @@ class NavSectionEcot(e:Ecology) extends QuerkiEcot(e) with NavSectionMgr {
     
     val spaceLinksOpt = rc.state map { state =>
       Seq(
+        NavLink("Design a Model", emptyCall, Some("designModel")),
         NavLink("Create any Thing", emptyCall, Some("createThing")),
         NavLink("Add a Property", routes.Application.createProperty(owner, spaceId)),
         NavLink("Show all Things", routes.Application.thing(owner, spaceId, "All-Things")),

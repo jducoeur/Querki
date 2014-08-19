@@ -210,7 +210,15 @@
 			});
 			
 			@if(space.isDefined) {
+			  var designingModel = false;
+			  
 				$("#createThing").on("click", function(evt) {
+				  designingModel = false;
+				  $("#create-dialog").dialog("open");
+				});
+			
+				$("#designModel").on("click", function(evt) {
+				  designingModel = true;
 				  $("#create-dialog").dialog("open");
 				});
 			
@@ -224,8 +232,12 @@
 				      var modelId = $("#newModel :selected").first().val()
 				      if (modelId && (modelId.length > 0)) {
 				        // TBD: Bit of an abstraction break here -- the Javascript needs to know the URL syntax for
-				        // model creation. Can we do this better somehow? 
-				        window.location = "_createAndEdit?model=" + modelId;
+				        // model creation. Can we do this better somehow?
+				        if (designingModel) {
+						  window.location = "@routes.Application.createThing(rc.ownerHandle, space.get.toThingId, None)" + "?model=" + modelId;				        
+				        } else {
+				          window.location = "_createAndEdit?model=" + modelId;
+				        }
 				      } else {
 				        // TODO: The Create button should really be disabled unless a legit option
 				        // is picked; not quite sure how to do that in jQuery UI. 
