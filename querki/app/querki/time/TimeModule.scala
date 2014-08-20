@@ -56,7 +56,7 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
       )) with SimplePTypeBuilder[DateTime]
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = new DateTime(v.toLong)
-    def doSerialize(v:DateTime)(implicit state:SpaceState) = v.millis.toString
+    def doSerialize(v:DateTime)(implicit state:SpaceState) = v.getMillis().toString
     val defaultRenderFormat = DateTimeFormat.mediumDateTime
     
     def doWikify(context:QLContext)(v:DateTime, displayOpt:Option[Wikitext] = None) = {

@@ -87,6 +87,21 @@ Foo foo
     }    
   }
   
+  "Simple tags" should {
+    "work" in {
+      apply("""This is <i>italics</i>.""") should equal ("""<p>This is <i>italics</i>.</p>
+          |""".stripReturns)
+    }
+  }
+  
+  "Input tags" should {
+    "work" in {
+      apply("""Does this work? <input type="button" class="btn" value="Something"/>.""") should
+      equal("""<p>Does this work? <input type="button" class="btn" value="Something"/>.</p>
+          |""".stripReturns)
+    }
+  }
+  
   "Pure HTML lines" should {
     "parse with the HTML at start of line" in {
       apply("""My initial content

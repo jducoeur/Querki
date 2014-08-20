@@ -111,4 +111,16 @@ trait PropertyBundle {
    * Fetches the values of the given Property on this Thing, or None if it isn't defined.
    */
   def getPropOpt[VT](prop:Property[VT, _])(implicit state:SpaceState):Option[PropAndVal[VT]]
+  
+  /**
+   * Fetches the first value of the given Property on this Thing, if there is one.
+   * 
+   * Only use this if you are confident that it can have at most one value!
+   * 
+   * TODO: I believe this renders Thing.firstOpt() redundant, but look at that carefully -- they aren't
+   * identical, by any means.
+   */
+  def getFirstOpt[VT](prop:Property[VT, _])(implicit state:SpaceState):Option[VT] = {
+    getPropOpt(prop).flatMap(_.firstOpt)
+  }
 }

@@ -80,6 +80,7 @@ object SystemCreator {
     new querki.notifications.NotificationPersistenceEcot(ecology)  // 49
     new querki.conversations.CommentNotifierEcot(ecology)          // 50
     new querki.security.RolesEcot(ecology)                         // 51
+    new querki.photos.PhotoEcot(ecology)                           // 52
   }
   
   def createAllEcots(ecology:Ecology):Ecology = {

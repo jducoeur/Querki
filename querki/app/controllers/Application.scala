@@ -142,30 +142,6 @@ disallow: /
       }
     )
   }
-  
-  def getOtherProps(state:SpaceState, kind:Kind.Kind, existing:PropList):Seq[Property[_,_]] = {
-    val existingProps = existing.keys                                                                                                  
-    // This lists all of the visible properties that aren't in the existing list, and removes the
-    // InternalProps:
-    implicit val s = state
-    val candidates = (state.allProps.values.toSet -- existingProps).toSeq.filterNot(_.ifSet(Core.InternalProp))
-
-    // TODO: sort alphabetically
-    
-    // Now, filter out ones that aren't applicable to the target Kind:
-    val propsToShow = candidates filter { candidate =>
-      // TODO: this pattern -- "if this QList property exists, then do something to each value" -- seems
-      // common. Find the right factoring for it:
-      if (candidate.hasProp(AppliesToKindProp)) {
-        val allowedKinds = candidate.getPropVal(AppliesToKindProp).cv
-        (false /: allowedKinds)((current, allowedKind) => current || (AppliesToKindProp.pType.get(allowedKind) == kind))
-      } else {
-        true
-      }
-    }
-    
-    propsToShow.sortBy(_.displayName)
-  }
 
   def otherModels(state:SpaceState, mainModel:Thing):Iterable[Thing] = {
     mainModel.kind match {
@@ -188,8 +164,7 @@ disallow: /
         rc.copy(error = errorMsg),
         model,
         otherModels(state, model),
-        propList,
-        getOtherProps(state, model.kind, props)
+        propList
       )
       if (errorMsg.isDefined)
         BadRequest(page)
@@ -222,10 +197,33 @@ disallow: /
     editThingInternal(ownerId, spaceId, None, false)
   }
   
+  /**
+   * Alternate create route -- this creates the new Thing, expecting fields to mainly be empty, then displays
+   * the Thing Editor to edit it.
+   * 
+   * TODO: this is currently referred to in a lot of places. Can we expose a single entry point to compute this
+   * instead? Might be cleaner.
+   */
+  def doCreateThing2(ownerId:String, spaceId:String, model:String) = {
+    editThingInternal(ownerId, spaceId, None, false, Some({ (state, model, thingId, rc) =>
+      implicit val implRc = rc
+      state.anything(thingId) match {
+        case Some(thing) => {
+	      val context = thing.thisAsContext
+	      val result = QL.process(QLText(s"""### New ${model.displayName}
+	          |
+	          |[[_edit]]""".stripMargin), context, None, Some(thing)).display.html
+	      Ok(views.html.main(QuerkiTemplate.Edit, "Creating a new " + model.displayName, rc)(result))
+        }
+        case None => NotAcceptable("Unable to create " + model.displayName)
+      }
+    }))
+  }
+  
   lazy val doLogEdits = Config.getBoolean("querki.test.logEdits", false)
   
   def editThingInternal(ownerId:String, spaceId:String, thingIdStr:Option[String], partial:Boolean, 
-      successCb:Option[(SpaceState, Thing, OID) => Result] = None,
+      successCb:Option[(SpaceState, Thing, OID, PlayRequestContext) => Result] = None,
       errorCb:Option[(String, Thing, List[FormFieldInfo]) => Result] = None) = 
   withSpace(true, ownerId, spaceId, thingIdStr) { implicit rc =>
     implicit val request = rc.request
@@ -420,11 +418,12 @@ disallow: /
               case ThingFound(thingId, newState) => {
                 // TODO: the default pathway described here really ought to be in the not-yet-used callback, and get it out of here.
                 // Indeed, all of this should be refactored:
-                successCb.map(cb => cb(newState, oldModel, thingId)).map(fRes(_)).getOrElse {
+                val newRc = rc.copy(state = Some(newState))
+                successCb.map(cb => cb(newState, oldModel, thingId, newRc)).map(fRes(_)).getOrElse {
                   val thing = newState.anything(thingId).get
                   
                   if (makeAnother)
-                    showEditPage(rc.copy(state = Some(newState)), Some(thing), oldModel, PropListMgr.inheritedProps(None, oldModel)(newState))
+                    showEditPage(newRc, Some(thing), oldModel, PropListMgr.inheritedProps(None, oldModel)(newState))
                   else if (rc.isTrue("subCreate")) {
                     Ok(views.html.subCreate(rc, thing));
                   } else if (fromAPI) {
@@ -715,7 +714,11 @@ disallow: /
   def doUpload(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
     implicit val state = rc.state.get
     val user = rc.requester.get
-    rc.request.body.asMultipartFormData flatMap(_.file("uploadedFile")) map { filePart =>
+    val body = rc.request.body match {
+      case r:AnyContent => r
+      case _ => throw new Exception("Somehow got a weird body content in doUpload!")
+    }
+    body.asMultipartFormData flatMap(_.file("uploadedFile")) map { filePart =>
       val filename = filePart.filename
 	  val tempfile = filePart.ref.file
 	  // TBD: Note that this codec forces everything to be treated as pure-binary. That's

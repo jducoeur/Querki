@@ -57,8 +57,8 @@ case class SimpleRequestHeaderParser(request:RequestHeader, sessionUpdates:Seq[(
  * at the Play level, and should not generally be exposed anywhere else. (There is some old cruft pointing to it
  * from the lower levels -- those should be considered refactoring targets.)
  */
-case class PlayRequestContext(
-    request:Request[AnyContent], 
+case class PlayRequestContextFull[B](
+    request:Request[B], 
     override val requester:Option[User], 
     // Note that this is an *identity*
     override val ownerId:OID, 

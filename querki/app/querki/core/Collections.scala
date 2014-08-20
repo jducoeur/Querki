@@ -98,6 +98,11 @@ trait CollectionBase { self:CoreEcot =>
 
     def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = ExactlyOnePropValue(cv.toList, this, elemT)
     protected case class ExactlyOnePropValue(cv:implType, cType:ExactlyOneBase, pType:PType[_]) extends QValue
+    
+    def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = {
+      val old = v.headOption
+      (makePropValue(List(elem), elem.pType), old)
+    }
   }
   
   abstract class QListBase(cid:OID, pf:PropFetcher) extends SystemCollection(cid, pf) 
@@ -193,6 +198,10 @@ trait CollectionBase { self:CoreEcot =>
     }
     protected case class QListPropValue(cv:implType, cType:QListBase, pType:PType[_]) extends QValue    
     def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = QListPropValue(cv.toList, this, elemT)
+    
+    def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = {
+      (makePropValue(v :+ elem, elem.pType), None)
+    }
   }
 
 }
@@ -227,6 +236,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
 	  throw new Error("Trying to render input on root collection!")
 	def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo =
 	  throw new Error("Trying to fromUser on root collection!")
+	def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = ???
   }
   
   class ExactlyOne(implicit e:Ecology) extends ExactlyOneBase(ExactlyOneOID)
@@ -287,7 +297,12 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
     }
 
     val QNone:QValue = makePropValue(Nil, UnknownType)
-    def Empty(elemT:pType):QValue = makePropValue(Nil, elemT) 
+    def Empty(elemT:pType):QValue = makePropValue(Nil, elemT)
+        
+    def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = {
+      val old = v.headOption
+      (makePropValue(List(elem), elem.pType), old)
+    }
   }
   
   class QList extends QListBase(QListOID,
@@ -364,6 +379,8 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
 
     def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo =
 	  throw new Error("Trying to fromUser on Unit!")
+    
+    def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = ???
   }
 
   /**
@@ -396,5 +413,10 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
     }
 
     private case class bootPropValue(cv:implType, cType:bootCollection, pType:PType[_]) extends QValue {}  
+       
+    def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = {
+      val old = v.headOption
+      (makePropValue(List(elem), elem.pType), old)
+    }
   }
 }

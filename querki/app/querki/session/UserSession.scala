@@ -7,7 +7,7 @@ import akka.event.LoggingReceive
 import com.github.nscala_time.time.Imports._
 
 import querki.ecology._
-import querki.identity.UserId
+import querki.identity.{CollaboratorCache, IdentityId, PublicIdentity, UserId}
 import querki.notifications.{CurrentNotifications, EmptyNotificationId, LoadInfo, Notification, UpdateLastChecked, UserInfo}
 import querki.notifications.NotificationPersister.Load
 import querki.spaces.SpacePersistenceFactory
@@ -25,6 +25,8 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
   def timeoutConfig:String = "querki.userSession.timeout"
   
   lazy val notePersister = PersistenceFactory.getNotificationPersister(userId)
+  
+  lazy val collaborators = context.actorOf(CollaboratorCache.actorProps(ecology, userId))
 
   // This is kept in most-recent-first order:
   var currentNotes:Seq[Notification] = Seq.empty
@@ -96,6 +98,8 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
       lastNoteChecked = currentMaxNote
       notePersister ! UpdateLastChecked(lastNoteChecked)
     }
+    
+    case msg:GetCollaborators => collaborators.forward(msg)
   }
 }
 
@@ -125,6 +129,14 @@ object UserSessionMessages {
     def copyTo(userId:UserId) = copy(userId = userId)
   }
   case class RecentNotifications(notes:Seq[Notification])
+  
+  /**
+   * Fetches the people who share Spaces with this Identity.
+   */
+  case class GetCollaborators(userId:UserId, identityId:IdentityId, term:String) extends UserSessionMsg {
+    def copyTo(userId:UserId) = copy(userId = userId)    
+  }
+  case class Collaborators(acs:Iterable[PublicIdentity])
 }
 
 object UserSession {

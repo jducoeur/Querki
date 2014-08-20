@@ -49,7 +49,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    val sourceColl = context.value
 	    val result = 
 	      if (sourceColl.isEmpty)
-	        Core.QNone
+	        Core.emptyOpt(sourceColl.pType)
 	      else
 	        Optional(sourceColl.cv.head)
 	    result

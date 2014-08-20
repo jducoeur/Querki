@@ -14,7 +14,7 @@ trait DebugRenderable {
 
 case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:Option[QLContext] = None, 
                      parser:Option[QLParser] = None, depth:Int = 0, useCollStack:Int = 0, propOpt:Option[Property[_,_]] = None,
-                     currentValue:Option[DisplayPropVal] = None) 
+                     currentValue:Option[DisplayPropVal] = None, fromTransformOpt:Option[Thing] = None) 
   extends DebugRenderable with EcologyMember
 {
   lazy val Core = interface[querki.core.Core]
@@ -161,6 +161,11 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
    * Convenience method to build the successor to this context, in typical chained situations.
    */
   def next(v:QValue) = copy(value = v, parentOpt = Some(this), depth = depth + 1)
+  
+  /**
+   * Variant that indicates which "transformation" (Property or Function) caused this value to be calculated.
+   */
+  def nextFrom(v:QValue, transform:Thing) = copy(value = v, parentOpt = Some(this), depth = depth + 1, fromTransformOpt = Some(transform))  
 
   /**
    * asCollection means "right now, evaluate the very next operation as a collection."
@@ -191,6 +196,9 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
   
   def forProperty(prop:Property[_,_]) = copy(parentOpt = Some(this), depth = depth + 1, propOpt = Some(prop))
   
+  /**
+   * The Text Property that we are currently processing. Mainly used for error reporting, currently.
+   */
   def getProp:Option[Property[_,_]] = {
     propOpt match {
       case Some(prop) => Some(prop)
@@ -200,6 +208,19 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
           case None => None
         }
       }
+    }
+  }
+  
+  /**
+   * Looks up the stack to find the Property of the specified Type. Usually used to figure out where a
+   * value came from.
+   */
+  def fromPropertyOfType[VT](pt:PType[VT]):Option[Property[VT,_]] = {
+    def tryParent:Option[Property[VT,_]] = parentOpt.flatMap(_.fromPropertyOfType(pt))
+    
+    fromTransformOpt match {
+      case Some(prop:Property[_,_]) => prop.confirmType(pt).orElse(tryParent)
+      case _ => tryParent
     }
   }
   

@@ -1,5 +1,7 @@
 package controllers
 
+import scala.concurrent.ExecutionContext.Implicits.global 
+import scala.concurrent.Future
 import scala.util._
 
 import play.api.data._
@@ -25,6 +27,7 @@ class LoginController extends ApplicationBase {
   lazy val Email = interface[querki.email.Email]
   lazy val Encryption = interface[querki.security.Encryption]
   lazy val Person = interface[querki.identity.Person]
+  lazy val UserSession = interface[querki.session.Session]
   
   case class UserForm(name:String, password:String)
   val userForm = Form(
@@ -35,11 +38,13 @@ class LoginController extends ApplicationBase {
      ((user: UserForm) => Some((user.name, "")))
   )
   
+  case class InviteeForm(emails:List[String], collabs:List[String])
   val inviteForm = Form(
     mapping(
-      "invitees" -> list(email)
-    )((invitees) => invitees)
-     ((invitees:List[String]) => Some(invitees))
+      "invitees" -> list(email),
+      "collaborators" -> list(nonEmptyText)
+    )((emails, collaborators) => InviteeForm(emails, collaborators))
+     ((invitees:InviteeForm) => Some((invitees.emails, invitees.collabs)))
   )
   
   // TODO: SignupInfo and its related form are actually written according to the Play
@@ -70,6 +75,15 @@ class LoginController extends ApplicationBase {
     mapping("name" -> nonEmptyText)((handle) => handle)((handle:String) => Some(handle))
   )
   
+  def getCollaborators(ownerId:String, spaceId:String, q:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
+    UserSession.getCollaborators(rc.requesterOrAnon, rc.localIdentity.get, q).map { collabs =>
+      // TODO: introduce better JSONification for the AJAX code:
+      // TODO: refactor this with getTags and getLinks; there is a common "return Manifest" function here:
+      val JSONcollabs = "[" + collabs.acs.map(identity => "{\"display\":\"" + identity.name + "\", \"id\":\"" + identity.id + "\"}").mkString(",") + "]"
+      Ok(JSONcollabs)
+    }
+  }
+  
   lazy val maxMembers = Config.getInt("querki.public.maxMembersPerSpace", 100)
   
   def inviteMembers(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
@@ -84,32 +98,36 @@ class LoginController extends ApplicationBase {
         // TODO: this ought to reuse errorForm, to leave the invitees filled-in, but I'm not yet clear on how to do that:
         doError(routes.Application.sharing(ownerId, spaceId), errorMsg) 
       },
-      emailStrs => {
+      inviteeForm => {
+        val emailStrs = inviteeForm.emails
+        val collabs = inviteeForm.collabs.map(OID(_))
         val nCurrentMembers = Person.people(rc.state.get).size
         // TODO: internationalize these messages!
-        val resultMsg =
-	        if (!rc.requesterOrAnon.isAdmin && (nCurrentMembers + emailStrs.size) > maxMembers) {
-	          s"Sorry: at the moment you are limited to $maxMembers members per Space, and this would make more than that."
+        val resultFut =
+	        if (!rc.requesterOrAnon.isAdmin && (nCurrentMembers + emailStrs.size + collabs.size) > maxMembers) {
+	          Future.successful(s"Sorry: at the moment you are limited to $maxMembers members per Space, and this would make more than that.")
 	        } else {
 	          val context = QLRequestContext(rc)
 	        
-	          val invitees = emailStrs.map(querki.email.EmailAddress(_))
-	          val result = Person.inviteMembers(rc, invitees)
-	        
-	          (
-	            if (result.invited.length > 0)
-	               result.invited.map(_.addr).mkString("Sent invitations to ", ", ", ". ")
-	            else
-	              ""
-	          ) + (
-	            if (result.alreadyInvited.length > 0)
-	               result.alreadyInvited.map(_.addr).mkString("Resent to ", ", ", ".") 
-	            else
-	              ""
-	          )
+	          val inviteeEmails = emailStrs.map(querki.email.EmailAddress(_))
+	          Person.inviteMembers(rc, inviteeEmails, collabs).map { result =>
+	            val resultStr = 
+		          (
+		            if (result.invited.length > 0)
+		               result.invited.mkString("Sent invitations to ", ", ", ". ")
+		            else
+		              ""
+		          ) + (
+		            if (result.alreadyInvited.length > 0)
+		               result.alreadyInvited.mkString("Resent to ", ", ", ".") 
+		            else
+		              ""
+		          )
+		        resultStr
+	          }
 	        }
         
-        Redirect(routes.Application.sharing(ownerId, spaceId)).flashing("info" -> resultMsg)
+        resultFut.map(msg => Redirect(routes.Application.sharing(ownerId, spaceId)).flashing("info" -> msg))
       }
     )
   }
@@ -353,7 +371,7 @@ class LoginController extends ApplicationBase {
   def login = Redirect(routes.Application.index)
   
   def dologin = Action.async { implicit request =>
-    val rc = PlayRequestContext(request, None, UnknownOID, None, None, ecology)
+    val rc = PlayRequestContextFull(request, None, UnknownOID, None, None, ecology)
     userForm.bindFromRequest.fold(
       errors => doError(routes.Application.index, "I didn't understand that"),
       form => {

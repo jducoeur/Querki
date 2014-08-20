@@ -126,6 +126,9 @@ case class HtmlWikitext(html:Html) extends Wikitext {
   def plaintext = str
   val keepRaw = true
 }
+object HtmlWikitext {
+  def apply(html:String):HtmlWikitext = HtmlWikitext(Html(html))
+}
 
 case class CompositeWikitext(left:Wikitext, right:Wikitext, insertNewline:Boolean) extends Wikitext {
   

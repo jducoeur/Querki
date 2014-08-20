@@ -19,7 +19,7 @@ import querki.db.ShardKind
 import ShardKind._
 
 import querki.ecology._
-
+import querki.identity.MembershipState
 import querki.util._
 import querki.util.SqlHelpers._
 
@@ -77,8 +77,9 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
                 JOIN Identity AS RequesterIdentity ON userid={owner}
                 JOIN SpaceMembership ON identityId=RequesterIdentity.id
                 JOIN Identity AS OwnerIdentity ON OwnerIdentity.id=Spaces.owner
-              WHERE Spaces.id = SpaceMembership.spaceId
-              """).on("owner" -> owner.raw)()
+               WHERE Spaces.id = SpaceMembership.spaceId
+                 AND SpaceMembership.membershipState != {ownerState}
+              """).on("owner" -> owner.raw, "ownerState" -> MembershipState.owner)()
           spaceStream.force.map { row =>
             val id = OID(row[Long]("id"))
             val name = row[String]("name")

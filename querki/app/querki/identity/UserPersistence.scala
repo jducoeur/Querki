@@ -295,14 +295,14 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     getUserForIdentity(identity.id).getOrElse(throw new Exception("Unable to reload user record!"))
   }
   
-  def addSpaceMembership(identityId:OID, spaceId:OID):Boolean = {
+  def addSpaceMembership(identityId:OID, spaceId:OID, membershipState:MembershipState):Boolean = {
     DB.withConnection(dbName(System)) { implicit conn =>
       val insert = SQL("""
           INSERT SpaceMembership
-            (identityId, spaceId)
+            (identityId, spaceId, membershipState)
             VALUES
-            ({identityId}, {spaceId})
-          """).on("identityId" -> identityId.raw, "spaceId" -> spaceId.raw)
+            ({identityId}, {spaceId}, {membershipState})
+          """).on("identityId" -> identityId.raw, "spaceId" -> spaceId.raw, "membershipState" -> membershipState)
       insert.execute
     }
   }
@@ -330,6 +330,20 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
       update.executeUpdate
       
       loadByUserId(userId)
+    }
+  }
+  
+  def getAcquaintanceIds(identityId:IdentityId):Seq[IdentityId] = {
+    DB.withConnection(dbName(System)) { implicit conn =>
+      val stream = SQL("""
+          SELECT DISTINCT OtherMember.identityId FROM SpaceMembership
+            JOIN SpaceMembership AS OtherMember ON OtherMember.spaceId = SpaceMembership.spaceId
+           WHERE SpaceMembership.identityId = {identityId}
+             AND OtherMember.identityId != {identityId}
+          """).on("identityId" -> identityId.raw)()
+      stream.force.map { row =>
+        row.oid("identityId")
+      }
     }
   }
 }

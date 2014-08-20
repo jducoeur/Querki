@@ -119,11 +119,13 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
   
   lazy val SystemMsgHeader = new SystemProperty(HeaderOID, LargeTextType, ExactlyOne,
     toProps(
-      setName("_systemMessageHeader")))
+      setName("_systemMessageHeader"),
+      setInternal))
   
   lazy val SystemMsgBody = new SystemProperty(BodyOID, TextType, ExactlyOne,
     toProps(
-      setName("_systemMessageBody")))
+      setName("_systemMessageBody"),
+      setInternal))
   
   override lazy val props = Seq(
     SystemMsgHeader,

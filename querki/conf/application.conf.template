@@ -34,6 +34,10 @@ querki {
   userSession {
     # Time before an entire UserSession times out for inactivity
     timeout : 30 minutes
+    collaborators {
+      # Time before we recheck this person's list of collaborators
+      timeout : 15 minutes
+    }
   }
   
   space {
@@ -60,6 +64,14 @@ querki {
     maxSpaces : 5
     # How many Members you can have in a Space
     maxMembersPerSpace : 500
+  }
+  
+  aws {
+    username : "AWS USER NAME"
+    accessKeyId : "IMA ACCESS KEY ID"
+    secretAccessKey : "IMA SECRET KEY"
+    bucket : "S3 BUCKET"
+    bucketUrl : "BASE URL, NO TRAILING SLASH"
   }
 }
 

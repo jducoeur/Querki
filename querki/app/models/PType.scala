@@ -233,3 +233,11 @@ trait PTypeBuilder[VT, RT] extends PTypeBuilderBase[VT, RT] { this:PType[VT] =>
 trait SimplePTypeBuilder[VT] extends PTypeBuilder[VT, VT] { this:PType[VT] =>
   def wrap(raw:VT) = raw
 }
+
+/**
+ * This side-trait can be declared by a Type; if used, it indicates that this Type wants to own the overall
+ * rendering of the edit control, regardless of the containing Collection. Use this with care!
+ */
+trait FullInputRendering {
+  def renderInputFull(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal):NodeSeq
+}

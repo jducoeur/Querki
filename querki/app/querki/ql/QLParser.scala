@@ -128,7 +128,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   private def processCall(call:QLCall, context:QLContext, isParam:Boolean):QLContext = {
     logContext("processCall " + call, context) {
       
-      def processThing(t:Thing):QValue = {
+      def processThing(t:Thing):(QValue, Thing) = {
         // If there are parameters to the call, they are a collection of phrases.
         val params = call.params
         val methodOpt = call.methodName.flatMap(context.state.anythingByName(_))
@@ -137,16 +137,16 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
             case Some(method) => {
               val definingContext = context.next(Core.ExactlyOne(Core.LinkType(t.id)))
               val partialFunction = method.partiallyApply(definingContext)
-              partialFunction.qlApply(InvocationImpl(t, context, Some(definingContext), params))
+              (partialFunction.qlApply(InvocationImpl(t, context, Some(definingContext), params)), method)
             }
             case None => {
               val inv = InvocationImpl(t, context, None, params)
-              t.qlApply(inv)
+              (t.qlApply(inv), t)
             }
           }
         } catch {
-          case ex:PublicException => WarningValue(ex.display(context.requestOpt))
-          case error:Exception => QLog.error("Error during QL Processing", error); WarningValue(UnexpectedPublicException.display(context.requestOpt))
+          case ex:PublicException => (WarningValue(ex.display(context.requestOpt)), t)
+          case error:Exception => QLog.error("Error during QL Processing", error); (WarningValue(UnexpectedPublicException.display(context.requestOpt)), t)
         }      
       }  
       
@@ -160,12 +160,18 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
           }
             yield thing
           
-          tOpt.map(t => context.next(processThing(t))).getOrElse(resolvedBinding)
+          tOpt.map { t =>
+            val res = processThing(t)
+            context.nextFrom(res._1, res._2 ) 
+          }.getOrElse(resolvedBinding)
         }
         case _ => {
           val tOpt = context.state.anythingByName(call.name.name)
         
-          tOpt.map(t => context.next(processThing(t))).getOrElse(context.next(Core.ExactlyOne(QL.UnknownNameType(call.name.name))))
+          tOpt.map { t =>
+            val res = processThing(t)
+            context.nextFrom(res._1, res._2 ) 
+          }.getOrElse(context.next(Core.ExactlyOne(QL.UnknownNameType(call.name.name))))
         }
       }
     }

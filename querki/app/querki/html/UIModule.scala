@@ -25,6 +25,7 @@ object UIMOIDs extends EcotIds(11) {
   val DataMethodOID = moid(3)
   val PageHeaderPropOID = moid(4)
   val QLButtonOID = moid(5)
+  val MixedButtonOID = moid(6)
 }
 
 /**
@@ -282,6 +283,8 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	  }
 	}
 
+	// TODO: once we have named parameters, both _iconButton and _mixedButton should be reprecated, and _linkButton
+	// should take named params of "icon=", "label=" and "tooltip=". That would be much cleaner and more consistent.
 	class LinkButtonMethod extends ButtonBase(LinkButtonOID,
 	    toProps(
 	      setName("_linkButton"),
@@ -313,6 +316,26 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	  
 	  def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem = {
 	    <a class="btn btn-mini btn-primary" href={url} title={params(1).raw}><i class={params(0).raw + " icon-white"}></i></a>
+	  }
+	}
+	
+	class MixedButtonMethod extends ButtonBase(MixedButtonOID,
+	    toProps(
+	      setName("_mixedButton"),
+	      Summary("Displays a button showing an icon and a text label, that goes to a linked page when you press it."),
+	      Details("""    LINK -> _mixedButton(ICON, LABEL)
+	          |_mixedButton receives a Link or External Link, and displays that
+	          |link as a button. The first parameter identifies the icon to use for the button; the second is the
+	          |text that follows the icon. Both parameters are required. This is essentially a combo of _iconButton
+	          |and _linkButton.
+	          |
+	          |For icons, you may use anything from the [Bootstrap Glyphicon](http://getbootstrap.com/2.3.2/base-css.html#icons) set.
+	          |Just use the name of the icon (in double-double quotes) in the parameter.""".stripMargin)))
+	  {
+	  val numParams = 2
+	  
+	  def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem = {
+	    <a class="btn btn-primary" href={url}><i class={params(0).raw + " icon-white"}></i> {params(1).raw}</a>
 	  }
 	}
 	
@@ -381,12 +404,12 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	    |
 	    |You will usually then feed this into, eg, _linkButton or _iconButton as a way to display the Link.""".stripMargin,
 	{ (thing, context) => 
-	  import controllers.PlayRequestContext
+	  import controllers.PlayRequestContextFull
 	  context.request match {
-	    case PlayRequestContext(request, _, _, _, _, _, _, _, _, _, _, _) => {
+	    case PlayRequestContextFull(request, _, _, _, _, _, _, _, _, _, _, _) => {
 	      implicit val req = request
 	      ExactlyOne(
-	        ExternalLinkType(routes.Application.createThing(context.request.ownerId.toThingId, context.state.toThingId, Some(thing.toThingId)).absoluteURL()))
+	        ExternalLinkType(routes.Application.doCreateThing2(context.request.ownerId.toThingId, context.state.toThingId, thing.id.toString).absoluteURL()))
 	    }
 	    case _ => QL.WarningValue("_createInstanceLink does not currently work outside of Play")
 	  }
@@ -451,6 +474,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     new ShowLinkMethod,
     new PropLinkMethod,
     new CreateInstanceLinkMethod,
-    QLButton
+    QLButton,
+    new MixedButtonMethod
   )
 }

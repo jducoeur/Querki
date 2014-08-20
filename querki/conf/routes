@@ -24,6 +24,8 @@ GET     /u/:userName/:spaceId/      @controllers.Application.space(userName, spa
 GET     /u/:userName/:spaceId/createThing @controllers.Application.createThing(userName, spaceId, model:Option[String])
 GET     /u/:userName/:spaceId/createProperty @controllers.Application.createProperty(userName, spaceId)
 POST    /u/:userName/:spaceId/createThing @controllers.Application.doCreateThing(userName, spaceId, subCreate:Option[Boolean])
+GET     /u/:userName/:spaceId/_createAndEdit @controllers.Application.doCreateThing2(userName, spaceId, model)
+POST    /u/:userName/:spaceId/_createAndEdit @controllers.Application.doCreateThing2(userName, spaceId, model)
 POST    /u/:userName/:spaceId/setProperty2 @controllers.Application.setProperty2(userName, spaceId, thingId)
 GET		/u/:userName/:spaceId/getPropertyDisplay @controllers.Application.getPropertyDisplay(userName, spaceId, thingId, prop)
 GET     /u/:userName/:spaceId/getPropertyEditor @controllers.Application.getPropertyEditor(userName, spaceId, thingId, prop, i:Int)
@@ -51,6 +53,7 @@ GET     /u/:userName/:spaceId/_handleInvite @controllers.LoginController.handleI
 POST    /u/:userName/:spaceId/_handleInvite @controllers.LoginController.signup(userName, spaceId)
 POST    /u/:userName/:spaceId/_joinLogin  @controllers.LoginController.joinlogin(userName, spaceId)
 GET     /u/:userName/:spaceId/_joinSpace  @controllers.LoginController.joinSpace(userName, spaceId)
+GET     /u/:userName/:spaceId/_getCollaborators @controllers.LoginController.getCollaborators(userName, spaceId, q)
 
 # GET     /u/:userName/:spaceId/export @controllers.Application.exportThing(userName, spaceId, thingId)
 
@@ -60,6 +63,7 @@ GET     /u/:userName/:spaceId/getLinks    @controllers.Application.getLinks(user
 POST    /u/:userName/:spaceId/search      @controllers.Application.search(userName, spaceId)
 
 GET     /u/:userName/:spaceId/a/:attachmentId @controllers.Application.attachment(userName, spaceId, attachmentId)
+POST    /u/:userName/:spaceId/_photoUpload   @controllers.PhotoController.upload(userName, spaceId, thingId)
 
 
 POST    /dologin                    @controllers.LoginController.dologin

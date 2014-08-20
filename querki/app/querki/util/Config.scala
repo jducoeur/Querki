@@ -1,5 +1,7 @@
 package querki.util
 
+import scala.concurrent.duration._
+
 import play.api.{Configuration,Play}
 
 /**
@@ -31,6 +33,11 @@ object Config {
   def getInt(key:String, default:Int*):Int = getTyped(key, default, (_.getInt(key)), (_.toInt))
   def getString(key:String, default:String*) = getTyped(key, default, (_.getString(key)), (_.toString()))
   def getBoolean(key:String, default:Boolean*) = getTyped(key, default, (_.getBoolean(key)), (_.toBoolean))
+  def getDuration(key:String, default:FiniteDuration*):FiniteDuration = getTyped(key, default, { config =>
+    config.getMilliseconds(key).map(Duration(_, MILLISECONDS))
+  }, { str =>
+    throw new Exception("Config.getDuration can not yet handle local strings!")
+  })
   
   /***********************************
    * MOCKUPS FOR TESTING

@@ -5,7 +5,7 @@ import scala.concurrent.Future
 import akka.actor.ActorRef
 
 import querki.ecology._
-import querki.identity.User
+import querki.identity.{Identity, PublicIdentity, User}
 
 package object session {
 
@@ -30,6 +30,11 @@ package object session {
      * with this.
      */
     def getNotifications(user:User):Future[UserSessionMessages.RecentNotifications]
+    
+    /**
+     * Asynchronously fetch all of this Identity's Collaborators -- people they share Spaces with --  who fit the given search term.
+     */
+    def getCollaborators(user:User, identity:Identity, term:String):Future[UserSessionMessages.Collaborators]
   }
   
 }

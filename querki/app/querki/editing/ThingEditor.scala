@@ -5,6 +5,7 @@ import models.{Property, PropertyBundle, Thing, Wikitext}
 import querki.core.QLText
 import querki.ecology._
 import querki.ql.Invocation
+import querki.util.QLog
 import querki.values.{QLContext, SpaceState}
 
 trait ThingEditor { self:EditorModule =>
@@ -19,11 +20,16 @@ trait ThingEditor { self:EditorModule =>
      */
     def editorSpan(prop:Property[_,_])(implicit state:SpaceState):Int = prop.getPropOpt(editWidthProp).flatMap(_.firstOpt).getOrElse(prop.pType.editorSpan(prop)) 
     
+    trait LayoutElement {
+      def span:Int
+      def layout:String
+    }
+    
     /**
      * This wrapper creates the actual layout bits for the default Instance Editor. Note that it is *highly*
      * dependent on the styles defined in main.css!
      */
-    private case class EditorPropLayout(prop:Property[_,_])(implicit state:SpaceState) {
+    private case class EditorPropLayout(prop:Property[_,_])(implicit state:SpaceState) extends LayoutElement {
       def span = editorSpan(prop)
       def summaryTextOpt = prop.getPropOpt(Conventions.PropSummary).flatMap(_.firstOpt).map(_.text)
       def displayNameOpt:Option[String] =
@@ -44,7 +50,12 @@ trait ThingEditor { self:EditorModule =>
       |""".stripMargin
     }
     
-    private case class EditorRowLayout(props:Seq[EditorPropLayout]) {
+    private case class EditorLinkButtonLayout() extends LayoutElement {
+      def span = 12
+      def layout = s"""[[_mixedButton(""icon-share-alt"", ""Done"")]]""".stripMargin
+    }
+    
+    private case class EditorRowLayout(props:Seq[LayoutElement]) {
       def span = (0 /: props) { (sum, propLayout) => sum + propLayout.span }
       def layout = s"""{{row-fluid:
     		  |${props.map(_.layout).mkString}
@@ -59,7 +70,7 @@ trait ThingEditor { self:EditorModule =>
      * This takes the raw list of property layout objects, and breaks it into rows of no more
      * than 12 spans each.
      */
-    private def splitRows(propLayouts:Iterable[EditorPropLayout]):Seq[EditorRowLayout] = {
+    private def splitRows(propLayouts:Iterable[LayoutElement]):Seq[EditorRowLayout] = {
       (Seq(EditorRowLayout(Seq.empty)) /: propLayouts) { (rows, nextProp) =>
         val currentRow = rows.last
         if ((currentRow.span + nextProp.span) > maxSpanPerRow)
@@ -132,6 +143,9 @@ trait ThingEditor { self:EditorModule =>
       result.getOrElse(PropListMgr.from(thing).toList.map(_._1).filterNot(SkillLevel.isAdvanced(_)).filter(specialFilter(thing, _)))
     }
     
+    val thingButtons = """{{_advancedEditButton:<i class="icon-edit _withTooltip" title="Click to open the Advanced Editor"></i>}}
+      |{{_deleteInstanceButton:<i class="icon-trash _withTooltip" title="Click to delete this"></i>}}""".stripMargin
+    
     private def editorLayoutForThing(thing:PropertyBundle, state:SpaceState):QLText = {
       implicit val s = state
       thing.getPropOpt(InstanceEditViewProp).flatMap(_.v.firstTyped(LargeTextType)) match {
@@ -140,9 +154,9 @@ trait ThingEditor { self:EditorModule =>
         // Generate the View based on the Thing:
         case None => {
           val layoutPieces = propsToEditForThing(thing, state).map(EditorPropLayout(_))
-          val layoutRows = splitRows(layoutPieces)
+          val layoutRows = splitRows(layoutPieces) :+ EditorRowLayout(Seq(EditorLinkButtonLayout()))
           val propsLayout = s"""[[""{{_instanceEditor:
-              |${ if (thing.isThing) "{{_deleteInstanceButton:x}}" else "" }
+              |${ if (thing.isThing) thingButtons else "" }
               |${layoutRows.map(_.layout).mkString}
               |}}"" ${ if (thing.isThing) s"""-> _data(""thingId"", ""${thing.asInstanceOf[Thing].toThingId}"")""" else "" }]]
               |""".stripMargin
@@ -157,10 +171,15 @@ trait ThingEditor { self:EditorModule =>
       QL.process(editText, thingContext, inv)
     }
     
-    def createInstanceButton(model:Thing, context:QLContext, labelOpt:Option[String] = None):Wikitext = {
+    def createInstanceButton(model:Thing, context:QLContext, inPlace:Boolean, labelOpt:Option[String] = None):Wikitext = {
       if (AccessControl.canCreate(context.state, context.request.requesterOrAnon, model.id)) {
         val label = labelOpt.getOrElse(s"Create another ${model.displayName}")
-        HtmlUI.toWikitext(<input type="button" class="_createAnother btn" data-model={model.id.toString} value={label}></input>)
+        val createClass =
+          if (inPlace)
+            "_createAnother"
+          else
+            "_createLink"
+        HtmlUI.toWikitext(<input type="button" class={createClass + " btn"} data-model={model.id.toString} value={label}></input>)
       } else {
         Wikitext("")
       }

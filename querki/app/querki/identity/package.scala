@@ -41,6 +41,17 @@ package object identity {
   }
   
   /**
+   * The values that can be put into the SpaceMembership table.
+   * 
+   * Note that this is actually TINYINT, and must not be > 127!
+   */
+  type MembershipState = Int
+  object MembershipState {
+    val member:MembershipState = 0
+    val owner:MembershipState = 1
+  }
+  
+  /**
    * Type alias to clarify when we are working specifically with Identities.
    * 
    * TODO: learn more about scalaz/shapeless Type Tags, and see if we can use them to make this safer.
@@ -52,7 +63,7 @@ package object identity {
    */
   type UserId = OID
 
-  case class InvitationResult(invited:Seq[EmailAddress], alreadyInvited:Seq[EmailAddress])
+  case class InvitationResult(invited:Seq[String], alreadyInvited:Seq[String])
   
   // The cookie parameter that indicates the email address of the target identity. The
   // fact that we have to expose this here suggests we have an abstraction break to fix...
@@ -66,7 +77,7 @@ package object identity {
     def IdentityLink:Property[OID,OID]
     def InviteText:Property[QLText, String]    
    
-    def inviteMembers(rc:RequestContext, invitees:Seq[EmailAddress]):InvitationResult
+    def inviteMembers(rc:RequestContext, invitees:Seq[EmailAddress], collaboratorIds:Seq[OID]):Future[InvitationResult]
     
     // TODO: this is a horrible abstraction break. Do we really need PlayRequestContext here? Odds are
     // that this method doesn't belong in Person at all, given that *all* of its parameters involve weird
@@ -155,7 +166,7 @@ package object identity {
    * IdentityCache and UserCache instead!
    */
   trait UserAccess extends EcologyInterface {
-    def addSpaceMembership(identityId:OID, spaceId:OID):Boolean
+    def addSpaceMembership(identityId:OID, spaceId:OID, membershipState:MembershipState = MembershipState.member):Boolean
     def changePassword(requester:User, identity:Identity, newPassword:String):Try[User]
     def changeDisplayName(requester:User, identity:Identity, newDisplay:String):Try[User]
     def changeUserLevel(userId:OID, requester:User, level:UserLevel.UserLevel):Option[User]
@@ -176,5 +187,6 @@ package object identity {
     def getUserByHandleOrEmail(raw:String):Option[User]
     def getUserByHandle(handle:String):Option[User]
     def setTOSVersion(userId:OID, version:Int):Option[User]
+    def getAcquaintanceIds(identityId:IdentityId):Seq[IdentityId]
   }
 }

@@ -116,7 +116,11 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
    * This is essentially a pseudo-Thing, produced when you navigate to an unknown Name. It basically
    * exists to support the display of the Undefined Tag View.
    */
-  case class TagThing(name:String, space:SpaceState)(implicit e:Ecology) extends Thing(UnknownOID, space.id, UnknownOID, Kind.Thing, () => Thing.emptyProps, querki.time.epoch)(e) {
+  case class TagThing(nameIn:String, space:SpaceState)(implicit e:Ecology) extends Thing(UnknownOID, space.id, UnknownOID, Kind.Thing, () => Thing.emptyProps, querki.time.epoch)(e) {
+    // Undo the effects of SafeUrl.
+    // TODO: this arguably doesn't belong here. Should we be dealing with this up in Application instead? Are
+    // real Thing names working properly with complex characters? If so, how?
+    val name = SafeUrl.decode(nameIn)
     override lazy val displayName = name
     override lazy val canonicalName = Some(name)
     override lazy val toThingId:ThingId = new AsDisplayName(name)

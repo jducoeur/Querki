@@ -1,0 +1,46 @@
+/*******************************
+ * Print styles
+ */
+ 
+@media print {
+  ._noPrint {
+    display: none;
+  }
+  
+  ._deleteCommentButton {
+    display: none;
+  }
+  
+  ._commentContainer {
+    margin-left: 20px;
+  }
+  
+  ._comment {
+    margin-top: 10px;
+  }
+  
+  ._commentAuthor {
+    font-weight: bold;
+  }
+  
+  ._commentTime {
+    font-size: xx-small;
+    font-face: italic;
+  }
+  
+  ._addComment {
+    display: none;
+  }
+  
+  ._commentInput {
+    display: none;
+  }
+  
+  ._postCommentButton {
+    display: none;
+  }
+  
+  ._replyContainer {
+    display: none;
+  }
+}

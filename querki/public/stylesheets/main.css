@@ -163,8 +163,9 @@
   right: 10px;
   line-height: 14px;
   background-color: lightpink;
-  width: 10px;
-  height: 15px;
+  width: 18px;
+  height: 18px;
+  padding-top: 2px;
   text-align: center;
   border: 1px solid;
   cursor: pointer;
@@ -175,6 +176,27 @@
 }
 
 ._instanceEditor:hover ._deleteInstanceButton {
+  display: inherit;
+}
+
+._instanceEditor ._advancedEditButton {
+  position: absolute;
+  right: 35px;
+  line-height: 14px;
+  background-color: lightgreen;
+  width: 18px;
+  height: 18px;
+  padding-top: 2px;
+  text-align: center;
+  border: 1px solid;
+  cursor: pointer;
+}
+
+._instanceEditor ._advancedEditButton {
+  display: none;
+}
+
+._instanceEditor:hover ._advancedEditButton {
   display: inherit;
 }
 
@@ -282,3 +304,42 @@
 .histoBar-2 { background-color:#0959DB; }
 .histoBar-3 { background-color:#DBA309; }
 .histoBar-4 { background-color:#DB3909; }
+
+/*******************************
+ * Photo styles
+ */
+
+ #photo-full-header {
+   padding: 2px 15px;
+ }
+ 
+ #photo-full-header .close {
+   margin-top: 0px;
+ }
+ 
+ #photo-full-header p {
+   margin-bottom: 0px;
+ } 
+
+/*******************************
+ * Status styles
+ */
+ 
+#statusLine {
+  width: 50px;
+  position: fixed;
+  right: 0px;
+  top: 50px;
+  z-index: 100;
+  color: green;
+}
+ 
+#statusText {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  #statusLine {
+    top: 55px;
+  }
+}
