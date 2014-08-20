@@ -3,6 +3,7 @@ package querki.security
 import models.ThingState
 
 import querki.ecology._
+import querki.values.SpaceState
 
 private [security] object RolesMOIDs extends EcotIds(51) {
   val CommentatorOID = moid(1)
@@ -22,6 +23,15 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
   val AccessControl = initRequires[AccessControl]
   val Conversations = initRequires[querki.conversations.Conversations]
   val UserValues = initRequires[querki.uservalues.UserValues]
+  
+  def allRoles(state:SpaceState):Seq[Thing] = {
+    Seq(
+      CommentatorRole,
+      ContributorRole,
+      EditorRole,
+      ManagerRole
+    )
+  }
     
   /***********************************************
    * THINGS

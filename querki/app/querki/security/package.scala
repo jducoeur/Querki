@@ -45,6 +45,11 @@ package object security {
      */
     def hasPermission(aclProp:Property[OID,_], state:SpaceState, identityId:OID, thingId:OID):Boolean
     
+    /**
+     * Convenience function for fetching the Roles that this Person has.
+     */
+    def personRoles(person:Thing)(implicit state:SpaceState):Iterable[Thing]
+    
     def RolePermissionsProp:Property[OID,OID]
     def PersonRolesProp:Property[OID,OID]
     
@@ -68,6 +73,11 @@ package object security {
   }
   
   trait Roles extends EcologyInterface {
+    /**
+     * Fetches all of the Roles defined for this Space, in display order.
+     */
+    def allRoles(state:SpaceState):Seq[Thing]
+    
     def CommentatorRole:Thing
     def ContributorRole:Thing
     def EditorRole:Thing

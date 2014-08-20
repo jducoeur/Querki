@@ -617,7 +617,10 @@ function finalSetup(ownerId, spaceId, root) {
           serialized = serialized + "&" + editControl.serialize();
         });
       } else {
-        if (target.hasClass("radioBtn")) {
+        var customserializer = target.data('customserializer');
+        if (customserializer) {
+          serialized = customserializer(target);
+        } else if (target.hasClass("radioBtn")) {
           serialized = target.prop("name") + "=" + target.prop("value");
         } else if (target.hasClass("coll-list-input")) {
           // Serialize each of the elements of this list:
