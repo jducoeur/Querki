@@ -10,6 +10,7 @@ private [security] object RolesMOIDs extends EcotIds(51) {
   val ContributorOID = moid(2)
   val EditorOID = moid(3)
   val ManagerOID = moid(4)
+  val BasicMemberOID = moid(5)
 }
 
 /**
@@ -26,6 +27,7 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
   
   def allRoles(state:SpaceState):Seq[Thing] = {
     Seq(
+      BasicMemberRole,
       CommentatorRole,
       ContributorRole,
       EditorRole,
@@ -43,7 +45,13 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
       AccessControl.RolePermissionsProp(perms.map(_.id):_*),
       Summary(desc)))
       
-  lazy val commentatorPerms = Seq(AccessControl.CanReadProp, Conversations.CanReadComments, Conversations.CanComment, UserValues.UserValuePermission)
+  lazy val basicMemberPerms = Seq(AccessControl.CanReadProp, Conversations.CanReadComments)
+  lazy val BasicMemberRole =
+    defineRole(BasicMemberOID, "Basic Member Role",
+      """Basic Member -- can read Things and Comments in this Space, but that's it.""".stripMargin,
+      basicMemberPerms)
+      
+  lazy val commentatorPerms = Seq(Conversations.CanComment, UserValues.UserValuePermission) ++ basicMemberPerms
   lazy val CommentatorRole =
     defineRole(CommentatorOID, "Commentator Role",
       """Commentator -- can read Things, leave Comments, and provide Ratings and Reviews""".stripMargin,

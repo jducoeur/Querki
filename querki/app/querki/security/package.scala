@@ -48,7 +48,7 @@ package object security {
     /**
      * Convenience function for fetching the Roles that this Person has.
      */
-    def personRoles(person:Thing)(implicit state:SpaceState):Iterable[Thing]
+    def personRoles(person:Thing)(implicit state:SpaceState):Seq[Thing]
     
     def RolePermissionsProp:Property[OID,OID]
     def PersonRolesProp:Property[OID,OID]
@@ -78,6 +78,7 @@ package object security {
      */
     def allRoles(state:SpaceState):Seq[Thing]
     
+    def BasicMemberRole:Thing
     def CommentatorRole:Thing
     def ContributorRole:Thing
     def EditorRole:Thing

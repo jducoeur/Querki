@@ -27,8 +27,11 @@
 
 @renderMember(member:Thing) = @{
   val roles = AccessControl.personRoles(member)(space)
-  val rolesStr = roles.map(_.displayName).mkString(", ")
-  Html(s"""${member.unsafeDisplayName} -- <span class="_chooseRole" data-personid="${member.id.toThingId}" data-selectorname="${roleSelectorName(member)}">
+  // TODO: this should cope with a list of Roles, but we're not going to deal with that yet:
+  val currentRole = roles.headOption.getOrElse(Roles.BasicMemberRole)
+  val rolesStr = currentRole.displayName
+  Html(s"""${member.unsafeDisplayName} -- 
+           |<span class="_chooseRole" data-personid="${member.id.toThingId}" data-selectorname="${roleSelectorName(member)}" data-current="${currentRole.id.toString}">
            |Role: $rolesStr</span>""".stripMargin)
 } 
 
@@ -85,6 +88,8 @@
            var selected = target.find(':selected');
            return target.prop('name') + "[0]=" + selected.val();
          });
+         var current = memberLine.data('current');
+         roleSelector.val(current);
          var roleWrapper = $('<div></div>');
          roleWrapper.append(roleSelector);
          memberLine.replaceWith(roleWrapper);

@@ -252,7 +252,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
     hasPermissionOpt.getOrElse(true)
   }
   
-  def personRoles(person:Thing)(implicit state:SpaceState):Iterable[Thing] = {
+  def personRoles(person:Thing)(implicit state:SpaceState):Seq[Thing] = {
     val rolesOpt = for {
       rolesPV <- person.getPropOpt(PersonRolesProp)
       roleIds = rolesPV.rawList
@@ -260,7 +260,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
     }
       yield roles
       
-    rolesOpt.getOrElse(Iterable.empty[Thing])
+    rolesOpt.getOrElse(Seq.empty[Thing])
   }
   
   /***********************************************
