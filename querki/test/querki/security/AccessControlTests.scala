@@ -209,6 +209,8 @@ class AccessControlTests extends QuerkiTests {
       assert(!AccessControl.canEdit(space.state, space.member2.user, UnknownOID))
     }
     
+    lazy val Conversations = interface[querki.conversations.Conversations]
+      
     class RoleSpace extends CommonSpace {
       import Roles._
       val commentator = member("My Commentator", "commentatorHandle", PaidUser, PersonRolesProp(CommentatorRole))
@@ -220,7 +222,18 @@ class AccessControlTests extends QuerkiTests {
       override def otherSpaceProps = Seq(
           AccessControl.CanReadProp(AccessControl.OwnerTag),
           AccessControl.CanCreateProp(AccessControl.OwnerTag),
-          AccessControl.CanEditChildrenProp(AccessControl.OwnerTag))
+          AccessControl.CanEditChildrenProp(AccessControl.OwnerTag),
+          Conversations.CanComment(AccessControl.OwnerTag))
+    }
+    
+    "allow only the appropriate Roles to comment" in {
+      implicit val space = new RoleSpace
+      
+      assert(!Conversations.canWriteComments(space.member1.user.mainIdentity.id, space.instance, space.state))
+      assert(Conversations.canWriteComments(space.commentator.user.mainIdentity.id, space.instance, space.state))
+      assert(Conversations.canWriteComments(space.contributor.user.mainIdentity.id, space.instance, space.state))
+      assert(Conversations.canWriteComments(space.editor.user.mainIdentity.id, space.instance, space.state))
+      assert(Conversations.canWriteComments(space.manager.user.mainIdentity.id, space.instance, space.state))
     }
     
     "allow only the appropriate Roles to read" in {
