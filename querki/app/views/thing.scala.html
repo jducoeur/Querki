@@ -1,6 +1,7 @@
 @(rc:PlayRequestContext)
 
 @import play.api.Logger
+@import querki.tags.IsTag
 
 @AccessControl = @{ rc.interface[querki.security.AccessControl] }
 @Core = @{ rc.interface[querki.core.Core] }
@@ -18,6 +19,13 @@
 @rawThingId = @{ thing.id.toThingId.toString }
 
 @isRealThing = @{ thing.id != UnknownOID }
+
+@isTag = @{
+  thing match {
+    case t:IsTag => true
+    case _ => false
+  }
+}
 
 @pageHeaderPV = @{ thing.getPropOpt(HtmlUI.PageHeaderProperty)(space) }
 @pageHeader = @{ pageHeaderPV.map(_.v.wikify(thing.thisAsContext(rc)).display.html) }
@@ -61,7 +69,13 @@
 	          @if(canCreate(thing)) { <a class="btn btn-mini btn-primary _noPrint" title="Create a @Html(title)" href="@routes.Application.doCreateThing2(rc.ownerHandle, space.toThingId, thing.id.toString)"><i class="icon-plus-sign icon-white"></i></a> }
 	          <a class="btn btn-mini btn-primary _noPrint" title="Edit all instances of @Html(title)" href="@routes.Application.editInstances(rc.ownerHandle, space.toThingId, thing.toThingId)"><i class="icon-edit icon-white"></i><i class="icon-edit icon-white"></i><i class="icon-edit icon-white"></i>...</a>
 	        } else {
-	          @if(canEdit) { <a class="btn btn-mini btn-primary _noPrint _qlInvoke" title="Edit @Html(title)" data-thingid="@thing.toThingId" data-target="_topEdit" data-ql="_edit" href="#"><i class="icon-edit icon-white"></i></a> }
+	          @if(canEdit) { 
+	            @if(isTag) {
+	              <a class="btn btn-mini btn-primary _noPrint" title="Edit @Html(title)" href="@routes.Application.editThing(rc.ownerHandle, space.toThingId, thing.toThingId)"><i class="icon-edit icon-white"></i></a>
+	            } else {
+  	              <a class="btn btn-mini btn-primary _noPrint _qlInvoke" title="Edit @Html(title)" data-thingid="@thing.toThingId" data-target="_topEdit" data-ql="_edit" href="#"><i class="icon-edit icon-white"></i></a>
+  	            } 
+	          }
 	          @if(modelOpt.isDefined && canCreate(modelOpt.get)) {
 	            <a class="btn btn-mini btn-primary _noPrint" title="Create another @{modelOpt.get.displayName}" href="@routes.Application.doCreateThing2(rc.ownerHandle, space.toThingId, modelOpt.get.id.toString)"><i class="icon-plus-sign icon-white"></i>...</a>
 	          }

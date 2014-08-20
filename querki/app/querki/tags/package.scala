@@ -22,6 +22,10 @@ package object tags {
     
     val ResolveTagsOID = moid(1)
   }
+  
+  // HACK: this is a marker trait so that we can treat Tags a bit differently in thing.scala.html.
+  // TODO: find a more elegant solution to this.
+  trait IsTag
 
   trait Tags extends EcologyInterface {
     def TagSetType:PType[String] with PTypeBuilder[String,String]
