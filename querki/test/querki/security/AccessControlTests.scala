@@ -240,6 +240,9 @@ class AccessControlTests extends QuerkiTests {
       implicit val space = new RoleSpace
       
       assert(!AccessControl.canRead(space.state, space.member1.user, space.instance))
+      // TODO: this *should* work, but doesn't, because the Who Can Read on the Space itself short
+      // circuits the test for the Role.
+//      assert(AccessControl.canRead(space.state, space.commentator.user, space.state))
       assert(AccessControl.canRead(space.state, space.commentator.user, space.instance))
       assert(AccessControl.canRead(space.state, space.contributor.user, space.instance))
       assert(AccessControl.canRead(space.state, space.editor.user, space.instance))

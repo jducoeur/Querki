@@ -45,13 +45,13 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
       AccessControl.RolePermissionsProp(perms.map(_.id):_*),
       Summary(desc)))
       
-  lazy val basicMemberPerms = Seq(AccessControl.CanReadProp, Conversations.CanReadComments)
+  lazy val basicMemberPerms = Seq.empty[Property[OID,OID]]
   lazy val BasicMemberRole =
     defineRole(BasicMemberOID, "Basic Member Role",
       """Basic Member -- can read Things and Comments in this Space, but that's it.""".stripMargin,
       basicMemberPerms)
       
-  lazy val commentatorPerms = Seq(Conversations.CanComment, UserValues.UserValuePermission) ++ basicMemberPerms
+  lazy val commentatorPerms = Seq(AccessControl.CanReadProp, Conversations.CanReadComments, Conversations.CanComment, UserValues.UserValuePermission) ++ basicMemberPerms
   lazy val CommentatorRole =
     defineRole(CommentatorOID, "Commentator Role",
       """Commentator -- can read Things, leave Comments, and provide Ratings and Reviews""".stripMargin,
