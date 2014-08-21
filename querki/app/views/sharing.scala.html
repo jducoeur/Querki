@@ -25,15 +25,31 @@
 
 @roleSelectorName(member:Thing) = @{ new FieldIds(Some(member), AccessControl.PersonRolesProp).inputControlId + "_values" }
 
+@renderRole(member:Thing, currentRole:Thing) = @{
+  val rolesStr = currentRole.displayName
+  s"""<span class="_chooseRole label label-info" data-personid="${member.id.toThingId}" data-selectorname="${roleSelectorName(member)}" data-current="${currentRole.id.toString}">
+    |$rolesStr</span>""".stripMargin
+}
+
 @renderMember(member:Thing) = @{
   val roles = AccessControl.personRoles(member)(space)
   // TODO: this should cope with a list of Roles, but we're not going to deal with that yet:
   val currentRole = roles.headOption.getOrElse(Roles.BasicMemberRole)
-  val rolesStr = currentRole.displayName
-  Html(s"""${member.unsafeDisplayName} -- 
-           |<span class="_chooseRole label label-info" data-personid="${member.id.toThingId}" data-selectorname="${roleSelectorName(member)}" data-current="${currentRole.id.toString}">
-           |$rolesStr</span>""".stripMargin)
-} 
+  Html(s"""${member.unsafeDisplayName} -- """ + renderRole(member, currentRole))
+}
+
+@renderDefaultRole = @{
+  // The default Role is the value of PersonRolesProp on the Space itself:
+  val currentDefaultOpt:Option[Thing] = for {
+    rolesPV <- space.getPropOpt(AccessControl.PersonRolesProp)(space)
+    roleId <- rolesPV.firstOpt
+    role <- space.anything(roleId)
+  }
+    yield role
+      
+  val currentDefault = currentDefaultOpt.getOrElse(Roles.BasicMemberRole)
+  Html(renderRole(space, currentDefault))
+}
 
 @main(QuerkiTemplate.View, pageTitle, rc) {
 
@@ -171,6 +187,12 @@
             <label class="control-label">Or give the names or handles of collaborators you know from other Spaces:</label>
             <div class="controls">
               <input type="text" id="collaborators" name="collaboratorsRaw">
+            </div>
+          </div>
+          
+          <div class="control-group">
+            <div class="controls">
+              These people should be invited as @renderDefaultRole
             </div>
           </div>
           
