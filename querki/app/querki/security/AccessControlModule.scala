@@ -23,6 +23,9 @@ private object MOIDs extends EcotIds(4) {
   val DefaultPermissionPropOID = moid(10)
   val PublicAllowedPropOID = moid(11)
   val HasPermissionFunctionOID = moid(12)
+  val RoleModelOID = moid(13)
+  val RolePermissionsOID = moid(14)
+  val PersonRolesOID = moid(15)
 }
 
 class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl with querki.core.MethodDefs with querki.logic.YesNoUtils {
@@ -108,14 +111,45 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
           false          
       }
       
+      def roleHasPerm(roleId:OID):Boolean = {
+        val result = for {
+          role <- state.anything(roleId)
+          perms <- role.getPropOpt(RolePermissionsProp)
+        }
+          yield perms.contains(aclProp)
+            
+        result.getOrElse(false)
+      }
+        
+      /**
+       * Note that this never actually returns Some(false); it returns either Some(true) or None, to make it
+       * easier to use.
+       */
+      def hasRole:Option[Boolean] = {  
+        val result = for {
+          person <- Person.localPerson(identityId)
+          rolesPV <- person.getPropOpt(PersonRolesProp)
+        }
+          yield rolesPV.exists(roleHasPerm(_))
+          
+        result match {
+          case Some(b) => if (b) Some(true) else None
+          case _ => None
+        }
+      }
+      
       // Try the permissions directly on this Thing...
       thingPermsOpt.map(checkPerms(_)).getOrElse(
+          // ... or the Person has a Role that gives them the permission...
+          // NOTE: this has to happen after Thing/Model, but before Space, since that is the semantic: Roles override
+          // the Space settings, but are overridden by Thing/Model.
+          hasRole.getOrElse(
           // ... or the permissions on the Space...
           state.getPropOpt(aclProp).map{checkPerms(_)}.getOrElse(
           // ... or the default permissions for this ACL...
           aclProp.getPropOpt(DefaultPermissionProp).map(checkPerms(_)).getOrElse(
           // ... or just give up and say no.
-          false)))
+          false))))
     }
   }
   
@@ -160,6 +194,34 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
           false          
       }
       
+      def roleHasPerm(roleId:OID):Boolean = {
+        val result = for {
+          role <- state.anything(roleId)
+          perms <- role.getPropOpt(RolePermissionsProp)
+        }
+          yield perms.contains(CanEditChildrenProp)
+            
+        result.getOrElse(false)
+      }
+        
+      /**
+       * Note that this never actually returns Some(false); it returns either Some(true) or None, to make it
+       * easier to use.
+       */
+      def hasRole:Option[Boolean] = {  
+        val result = for {
+          identity <- Person.localIdentities(who).headOption
+          person <- Person.localPerson(identity.id)
+          rolesPV <- person.getPropOpt(PersonRolesProp)
+        }
+          yield rolesPV.exists(roleHasPerm(_))
+          
+        result match {
+          case Some(b) => if (b) Some(true) else None
+          case _ => None
+        }
+      }
+      
       // TODO: wow, that's a horror. Can we turn this into a well-behaved for comprehension or something?
       // Would Scalaz's "|" (or) operator help?
       thingPermsOpt.map(checkPerms(_)).getOrElse(
@@ -168,8 +230,9 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
             // Don't consider the Space to be its own child:
             false 
           else
+            hasRole.getOrElse(
             state.getPropOpt(CanEditChildrenProp).map(checkPerms(_)).getOrElse(
-              false)))
+              false))))
     }    
   }
   
@@ -187,6 +250,17 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
       yield who.hasIdentity(state.owner)
       
     hasPermissionOpt.getOrElse(true)
+  }
+  
+  def personRoles(person:Thing)(implicit state:SpaceState):Seq[Thing] = {
+    val rolesOpt = for {
+      rolesPV <- person.getPropOpt(PersonRolesProp)
+      roleIds = rolesPV.rawList
+      roles = roleIds.map(state.anything(_)).flatten
+    }
+      yield roles
+      
+    rolesOpt.getOrElse(Seq.empty[Thing])
   }
   
   /***********************************************
@@ -213,11 +287,26 @@ Use this Tag in Can Read if you want your Space or Thing to be readable by membe
         Summary("""
 Use this Tag in Can Read if you want your Space or Thing to be readable only by the owner and specific other people.
 """)))
+
+  lazy val RoleModel = ThingState(RoleModelOID, systemOID, abstractPerson,
+      toProps(
+        setName("Role"),
+        Core.IsModelProp(true),
+        SkillLevel(SkillLevelAdvanced),
+        // Concrete Roles should define their RolePermissions:
+        RolePermissionsProp(),
+        Summary("""Defines a Role that a Member of this Space can take, such as Contributor or Editor.
+            |Each Role defines certain actions that the Member can take, such as commenting on Things or
+            |contributing new ones.
+            |
+            |The built in Roles should suffice for most purposes, but if you need a new one, create a child
+            |of this Model, add the desired permission Properties to it, and assign Members to the new Role.""".stripMargin)))
     
   override lazy val things = Seq(
     PublicTag,
     MembersTag,
-    OwnerTag
+    OwnerTag,
+    RoleModel
   )
   
   /***********************************************
@@ -299,6 +388,24 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         AppliesToKindProp(Kind.Property),
         Summary("Set this on a Permission Property to allow Public as a legal value; otherwise, it will not be.")))
   
+  lazy val RolePermissionsProp = new SystemProperty(RolePermissionsOID, LinkType, QSet,
+      toProps(
+        setName("Role Permissions"),
+        SkillLevel(SkillLevelAdvanced),
+        // TODO: this really should set LinkModel to a Model that all Permissions are under, but we
+        // don't have that concept yet:
+        Links.LinkKindProp(Kind.Property),
+        Summary("""This Property is only relevant to Roles. It defines the Permissions that are granted to all Members
+            |of this Role.""".stripMargin)))
+  
+  lazy val PersonRolesProp = new SystemProperty(PersonRolesOID, LinkType, QSet,
+      toProps(
+        setName("Person Roles"),
+        SkillLevel(SkillLevelAdvanced),
+        Links.LinkModelProp(RoleModel),
+        Summary("""This Property is only useful on Persons. It defines the Roles that this Person has.
+            |You do not assign it directly; use the Sharing and Security page to manage which Roles each Person has.""".stripMargin)))
+  
   /***********************************************
    * FUNCTIONS
    ***********************************************/
@@ -343,6 +450,8 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
     CanEditChildrenProp,
     CanReadProp,
     DefaultPermissionProp,
+    RolePermissionsProp,
+    PersonRolesProp,
     
     HasPermissionFunction
   )

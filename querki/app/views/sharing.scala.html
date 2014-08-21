@@ -14,14 +14,50 @@
   "Sharing and Security for " + space.displayName
 }
 
+@AccessControl = @{ rc.interface[querki.security.AccessControl] }
 @Person = @{ rc.interface[querki.identity.Person] }
+@Roles = @{ rc.interface[querki.security.Roles] }
 
 @from = @{ rc.interface[querki.email.Email].from }
 @InviteText = @{ Person.InviteText }
 
 @HtmlRenderer = @{ rc.interface[querki.html.HtmlRenderer] }
 
+@roleSelectorName(member:Thing) = @{ new FieldIds(Some(member), AccessControl.PersonRolesProp).inputControlId + "_values" }
+
+@renderRole(member:Thing, currentRole:Thing) = @{
+  val rolesStr = currentRole.displayName
+  s"""<span class="_chooseRole label label-info" data-personid="${member.id.toThingId}" data-selectorname="${roleSelectorName(member)}" data-current="${currentRole.id.toString}">
+    |$rolesStr</span>""".stripMargin
+}
+
+@renderMember(member:Thing) = @{
+  val roles = AccessControl.personRoles(member)(space)
+  // TODO: this should cope with a list of Roles, but we're not going to deal with that yet:
+  val currentRole = roles.headOption.getOrElse(Roles.BasicMemberRole)
+  Html(s"""${member.unsafeDisplayName} -- """ + renderRole(member, currentRole))
+}
+
+@renderDefaultRole = @{
+  // The default Role is the value of PersonRolesProp on the Space itself:
+  val currentDefaultOpt:Option[Thing] = for {
+    rolesPV <- space.getPropOpt(AccessControl.PersonRolesProp)(space)
+    roleId <- rolesPV.firstOpt
+    role <- space.anything(roleId)
+  }
+    yield role
+      
+  val currentDefault = currentDefaultOpt.getOrElse(Roles.BasicMemberRole)
+  Html(renderRole(space, currentDefault))
+}
+
 @main(QuerkiTemplate.View, pageTitle, rc) {
+
+  <style>
+    ._chooseRole {
+      cursor: pointer;
+    }
+  </style>
 
   <script>
      $(function() {
@@ -58,8 +94,46 @@
         valuesName: "collaborators"
        });
        
+       $("._chooseRole").click(function (evt) {
+         var memberLine = $(this);
+         var personid = memberLine.data("personid");
+         var roleSelector = 
+           $("#_rolesTemplate").clone(true)
+           .attr('id', '_roleSelector' + personid)
+           .prop('name', memberLine.data('selectorname'))
+           .addClass('propEditor')
+           .data('propid', '@{AccessControl.PersonRolesProp.id.toString}')
+           .data('thing', personid);
+         // HACK: since we're setting a Set Property to a single value, we have to massage
+         // the line protocol a little:
+         roleSelector.data('customserializer', function(target) {
+           var selected = target.find(':selected');
+           return target.prop('name') + "[0]=" + selected.val();
+         });
+         // After saving the new value, go back to the original UI:
+         roleSelector.data('savecallback', function(target) {
+           var selection = target.find(':selected');
+           memberLine.text(selection.text());
+           roleWrapper.replaceWith(memberLine);
+           roleWrapper.remove();
+         });
+         var current = memberLine.data('current');
+         roleSelector.val(current);
+         var roleWrapper = $('<div></div>');
+         roleWrapper.append(roleSelector);
+         memberLine.replaceWith(roleWrapper);
+         finalSetup("space.owner.toThingId", "@space.toThingId", roleWrapper);
+         roleSelector.show();
+       });
+       
      });
   </script>
+  
+  <select id="_rolesTemplate" style="display:none;">
+    @for(role <- Roles.allRoles(space)) {
+      <option value="@{role.id.toString}">@{role.displayName}</option>
+    }
+  </select>
 
   <div class="page-header">
 	<h1 class="_defaultTitle">@pageTitle <a class="cancelButton btn" href="@routes.Application.thing(rc.ownerHandle, space.toThingId, space.toThingId)">Done</a></h1>
@@ -118,6 +192,12 @@
           
           <div class="control-group">
             <div class="controls">
+              These people should be invited as @renderDefaultRole
+            </div>
+          </div>
+          
+          <div class="control-group">
+            <div class="controls">
               <input type="submit" value="Invite Members">
             </div>
           </div>
@@ -142,11 +222,11 @@
       <section id="members">
         <h2>Members</h2>
         
-        <p>The following people are members of this Space.</p>
+        <p>The following people are members of this Space. Click on a member's Role in order to change it.</p>
         
         <table class="table table-hover">
           @for(member <- Person.members(space)) {
-            <tr class="info"><td>@member.unsafeDisplayName</td></tr>
+            <tr class="info"><td>@renderMember(member)</td></tr>
           }
         </table>
       </section>

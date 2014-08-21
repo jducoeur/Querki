@@ -44,6 +44,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   lazy val Links = interface[querki.links.Links]
   lazy val HtmlUI = interface[querki.html.HtmlUI]
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
+  lazy val Roles = interface[querki.security.Roles]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
@@ -283,6 +284,16 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     // TODO: this is much too arbitrary:
     implicit val timeout = Timeout(30 seconds)
     
+    val inviteeRole = {
+	  val currentDefaultOpt = for {
+	    rolesPV <- originalState.getPropOpt(AccessControl.PersonRolesProp)(originalState)
+	    roleId <- rolesPV.firstOpt
+	  }
+	    yield roleId
+	      
+	  currentDefaultOpt.getOrElse(Roles.BasicMemberRole.id)
+    }
+    
     // Filter out any of these email addresses that have already been invited:
     val currentMembers = originalState.descendants(PersonOID, false, true)
     // This is a Map[address,Person] of all the members of this Space:
@@ -350,6 +361,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
 	          toProps(
 	            EmailAddressProp(invitee.email.addr),
 	            DisplayNameProp(invitee.display),
+	            AccessControl.PersonRolesProp(inviteeRole),
 	            AccessControl.CanReadProp(AccessControl.OwnerTag))()
 	        val msg = CreateThing(rc.requester.get, rc.ownerId, state.toThingId, Kind.Thing, PersonOID, propMap)
 	        val nextFuture = SpaceOps.spaceManager ? msg
@@ -463,9 +475,13 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     resultOpt.getOrElse(false)
   }
   
-  def isPerson(identity:Identity, person:Thing)(implicit state:SpaceState):Boolean = {
+  def isPerson(identity:IdentityId, person:Thing)(implicit state:SpaceState):Boolean = {
     val idOpt = getPersonIdentity(person)
-    idOpt.map(_ == identity.id).getOrElse(false)
+    idOpt.map(_ == identity).getOrElse(false)
+  }
+  
+  def isPerson(identity:Identity, person:Thing)(implicit state:SpaceState):Boolean = {
+    isPerson(identity.id, person)
   }
   
   def localIdentities(user:User)(implicit state:SpaceState):Iterable[Identity] = {
@@ -478,6 +494,12 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   }
 
   def localPerson(identity:Identity)(implicit state:SpaceState):Option[Thing] = {
+    people.
+      filter(person => isPerson(identity, person)).
+      headOption
+  }
+
+  def localPerson(identity:IdentityId)(implicit state:SpaceState):Option[Thing] = {
     people.
       filter(person => isPerson(identity, person)).
       headOption

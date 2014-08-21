@@ -12,6 +12,7 @@ package object security {
     def PublicTag:Thing
     def MembersTag:Thing
     def OwnerTag:Thing
+    def RoleModel:Thing
     
     // Checks whether this User *has* an Identity that is a Member of the Space. Use with caution!
     // Usage of this suggests a design bug!
@@ -44,6 +45,14 @@ package object security {
      */
     def hasPermission(aclProp:Property[OID,_], state:SpaceState, identityId:OID, thingId:OID):Boolean
     
+    /**
+     * Convenience function for fetching the Roles that this Person has.
+     */
+    def personRoles(person:Thing)(implicit state:SpaceState):Seq[Thing]
+    
+    def RolePermissionsProp:Property[OID,OID]
+    def PersonRolesProp:Property[OID,OID]
+    
     def CanCreateProp:Property[OID,OID]
     def CanEditProp:Property[OID,OID]
     def CanEditChildrenProp:Property[OID,OID]
@@ -61,5 +70,18 @@ package object security {
      * Does the provided original match the hash information?
      */
     def authenticate(original:String, rawHash:String):Boolean
+  }
+  
+  trait Roles extends EcologyInterface {
+    /**
+     * Fetches all of the Roles defined for this Space, in display order.
+     */
+    def allRoles(state:SpaceState):Seq[Thing]
+    
+    def BasicMemberRole:Thing
+    def CommentatorRole:Thing
+    def ContributorRole:Thing
+    def EditorRole:Thing
+    def ManagerRole:Thing
   }
 }

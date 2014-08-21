@@ -1,17 +1,19 @@
-package querki.access
+package querki.security
 
 import org.scalatest.Assertions._
-
 import models.UnknownOID
-
 import querki.ecology._
 import querki.identity._
 import querki.identity.UserLevel._
-
 import querki.test._
+import models.OID.thing2OID
+import scala.reflect.runtime.universe
 
 class AccessControlTests extends QuerkiTests {
   lazy val AccessControl = interface[querki.security.AccessControl]
+  lazy val Roles = interface[querki.security.Roles]
+  
+  lazy val PersonRolesProp = AccessControl.PersonRolesProp
   
   "A Space" should {
     "allow the Owner to Read everything" in {
@@ -205,6 +207,63 @@ class AccessControlTests extends QuerkiTests {
       assert(AccessControl.canEdit(space.state, space.member1.user, UnknownOID))
       assert(AccessControl.canEdit(space.state, space.member1.user, space.state.id))      
       assert(!AccessControl.canEdit(space.state, space.member2.user, UnknownOID))
+    }
+    
+    lazy val Conversations = interface[querki.conversations.Conversations]
+      
+    class RoleSpace extends CommonSpace {
+      import Roles._
+      val commentator = member("My Commentator", "commentatorHandle", PaidUser, PersonRolesProp(CommentatorRole))
+      val contributor = member("My Contributor", "contributorHandle", PaidUser, PersonRolesProp(ContributorRole))
+      val editor = member("My Editor", "editorHandle", PaidUser, PersonRolesProp(EditorRole))
+      val manager = member("My Manager", "managerHandle", PaidUser, PersonRolesProp(ManagerRole))
+      
+      // No one can read unless they have an appropriate Role:
+      override def otherSpaceProps = Seq(
+          AccessControl.CanReadProp(AccessControl.OwnerTag),
+          AccessControl.CanCreateProp(AccessControl.OwnerTag),
+          AccessControl.CanEditChildrenProp(AccessControl.OwnerTag),
+          Conversations.CanComment(AccessControl.OwnerTag))
+    }
+    
+    "allow only the appropriate Roles to comment" in {
+      implicit val space = new RoleSpace
+      
+      assert(!Conversations.canWriteComments(space.member1.user.mainIdentity.id, space.instance, space.state))
+      assert(Conversations.canWriteComments(space.commentator.user.mainIdentity.id, space.instance, space.state))
+      assert(Conversations.canWriteComments(space.contributor.user.mainIdentity.id, space.instance, space.state))
+      assert(Conversations.canWriteComments(space.editor.user.mainIdentity.id, space.instance, space.state))
+      assert(Conversations.canWriteComments(space.manager.user.mainIdentity.id, space.instance, space.state))
+    }
+    
+    "allow only the appropriate Roles to read" in {
+      implicit val space = new RoleSpace
+      
+      assert(!AccessControl.canRead(space.state, space.member1.user, space.instance))
+      assert(AccessControl.canRead(space.state, space.commentator.user, space.instance))
+      assert(AccessControl.canRead(space.state, space.contributor.user, space.instance))
+      assert(AccessControl.canRead(space.state, space.editor.user, space.instance))
+      assert(AccessControl.canRead(space.state, space.manager.user, space.instance))
+    }
+    
+    "allow only the appropriate Roles to create" in {
+      implicit val space = new RoleSpace
+      
+      assert(!AccessControl.canCreate(space.state, space.member1.user, space.testModel))
+      assert(!AccessControl.canCreate(space.state, space.commentator.user, space.testModel))
+      assert(AccessControl.canCreate(space.state, space.contributor.user, space.testModel))
+      assert(AccessControl.canCreate(space.state, space.editor.user, space.testModel))
+      assert(AccessControl.canCreate(space.state, space.manager.user, space.testModel))
+    }
+    
+    "allow only the appropriate Roles to edit" in {
+      implicit val space = new RoleSpace
+      
+      assert(!AccessControl.canEdit(space.state, space.member1.user, space.instance))
+      assert(!AccessControl.canEdit(space.state, space.commentator.user, space.instance))
+      assert(AccessControl.canEdit(space.state, space.contributor.user, space.instance))
+      assert(AccessControl.canEdit(space.state, space.editor.user, space.instance))
+      assert(AccessControl.canEdit(space.state, space.manager.user, space.instance))
     }
   }
 }
