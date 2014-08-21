@@ -647,6 +647,10 @@ function finalSetup(ownerId, spaceId, root) {
           if (typeof(successCb) != "undefined") {
             successCb();
           }
+          var saveCb = target.data('savecallback');
+          if (saveCb) {
+            saveCb(target);
+          }
         },
         error: function (err) {
           showStatus("Error trying to save. Please reload this page and try again.");

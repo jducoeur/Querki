@@ -31,11 +31,17 @@
   val currentRole = roles.headOption.getOrElse(Roles.BasicMemberRole)
   val rolesStr = currentRole.displayName
   Html(s"""${member.unsafeDisplayName} -- 
-           |<span class="_chooseRole" data-personid="${member.id.toThingId}" data-selectorname="${roleSelectorName(member)}" data-current="${currentRole.id.toString}">
-           |Role: $rolesStr</span>""".stripMargin)
+           |<span class="_chooseRole label label-info" data-personid="${member.id.toThingId}" data-selectorname="${roleSelectorName(member)}" data-current="${currentRole.id.toString}">
+           |$rolesStr</span>""".stripMargin)
 } 
 
 @main(QuerkiTemplate.View, pageTitle, rc) {
+
+  <style>
+    ._chooseRole {
+      cursor: pointer;
+    }
+  </style>
 
   <script>
      $(function() {
@@ -87,6 +93,13 @@
          roleSelector.data('customserializer', function(target) {
            var selected = target.find(':selected');
            return target.prop('name') + "[0]=" + selected.val();
+         });
+         // After saving the new value, go back to the original UI:
+         roleSelector.data('savecallback', function(target) {
+           var selection = target.find(':selected');
+           memberLine.text(selection.text());
+           roleWrapper.replaceWith(memberLine);
+           roleWrapper.remove();
          });
          var current = memberLine.data('current');
          roleSelector.val(current);
@@ -187,7 +200,7 @@
       <section id="members">
         <h2>Members</h2>
         
-        <p>The following people are members of this Space.</p>
+        <p>The following people are members of this Space. Click on a member's Role in order to change it.</p>
         
         <table class="table table-hover">
           @for(member <- Person.members(space)) {
