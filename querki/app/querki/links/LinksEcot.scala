@@ -19,7 +19,7 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
    * TYPES
    ***********************************************/
   
-  lazy val OldExternalLinkType = new SystemType[QURL](OldExternalLinkTypeOID,
+  lazy val URLType = new SystemType[QURL](URLTypeOID,
     toProps(
       setName("URL Type"),
       Summary("The URL of a web page"),
@@ -55,7 +55,7 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
   }
 
   override lazy val types = Seq(
-    OldExternalLinkType
+    URLType
   )
     
   /***********************************************

@@ -38,4 +38,13 @@ class LinksTests extends QuerkiTests {
       QURL("http://gallica.bnf.fr/ark:/12148/btv1b8451602n/f241.image.r=Latin%2010286.langEN")
     }
   }
+  
+  "_oidLink" should {
+    "work" in {
+      implicit val s = commonSpace
+      
+      pql("""[[My Instance -> _oidLink]]""") should
+        equal(s"[My Instance](${s.instance.id.toThingId})")
+    }
+  }
 }

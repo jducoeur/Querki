@@ -12,7 +12,7 @@ package object links {
     val LinkKindOID = sysId(33)
     val LinkAllowAppsOID = sysId(34)
     val LinkModelOID = sysId(35)
-    val OldExternalLinkTypeOID = sysId(41)
+    val URLTypeOID = sysId(41)
     val LinkToModelsOnlyOID = sysId(70)
     val NoCreateThroughLinkOID = sysId(103)
   }
@@ -27,7 +27,7 @@ package object links {
   }
   
   trait Links extends EcologyInterface {
-    def OldExternalLinkType:PType[QURL] with PTypeBuilder[QURL, String]
+    def URLType:PType[QURL] with PTypeBuilder[QURL, String]
     
     def LinkAllowAppsProp:Property[Boolean,Boolean]
     def LinkKindProp:Property[Int,Int]

@@ -12,6 +12,7 @@ object ExternalLinkMOIDs extends EcotIds(46) {
   val ExternalLinkModelOID = moid(2)
   val ExternalLinkUrlOID = moid(3)
   val WithParamFunctionOID = moid(4)
+  val OIDLinkOID = moid(5)
 }
 
 class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with querki.types.ModelTypeDefiner {
@@ -91,7 +92,7 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
    * PROPERTIES
    ***********************************************/
   
-  lazy val ExternalLinkUrlProp = new SystemProperty(ExternalLinkUrlOID, Links.OldExternalLinkType, ExactlyOne,
+  lazy val ExternalLinkUrlProp = new SystemProperty(ExternalLinkUrlOID, Links.URLType, ExactlyOne,
     toProps(
       setName("_url"),
       setInternal,
@@ -147,9 +148,38 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
           Basic.DisplayNameProp(display))
     }
   }
+  
+  lazy val OIDLinkFunction = new InternalMethod(OIDLinkOID, 
+    toProps(
+      setName("_oidLink"),
+      SkillLevel(SkillLevelAdvanced),
+      Summary("Get the OID Link from a Thing"),
+      Details("""    THING -> _oidLink -> External Link
+          |
+          |Most of the time, you create a link to a Thing simply by naming the Thing. The resulting link is by the
+          |"ThingId" -- the Link Name if it has one, otherwise the OID. Occasionally, though, you may want to specifically
+          |link via OID. (For example, if you think the Link Name might change out from under you.) That is what
+          |_oidLink is for: it takes the Thing and produces an External Link using the OID.
+          |
+          |You may then feed this into something like _iconButton in order to display the
+          |resulting Link as a button, if you like.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      for {
+        t <- inv.contextAllThings
+      }
+        yield 
+          ExactlyOne(
+            ExternalLinkType(
+              SimplePropertyBundle(
+                ExternalLinkUrlProp(t.id.toThingId),
+                Basic.DisplayNameProp(t.displayName))))
+    }
+  }
 
   override lazy val props = Seq(
     ExternalLinkUrlProp,
-    WithParamFunction
+    WithParamFunction,
+    OIDLinkFunction
   )
 }

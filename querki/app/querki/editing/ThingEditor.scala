@@ -52,7 +52,7 @@ trait ThingEditor { self:EditorModule =>
     
     private case class EditorLinkButtonLayout() extends LayoutElement {
       def span = 12
-      def layout = s"""[[_mixedButton(""icon-share-alt"", ""Done"")]]""".stripMargin
+      def layout = s"""[[_oidLink -> _mixedButton(""icon-share-alt"", ""Done"")]]""".stripMargin
     }
     
     private case class EditorRowLayout(props:Seq[LayoutElement]) {
