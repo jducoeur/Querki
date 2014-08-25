@@ -11,13 +11,15 @@ class DateTimeTests extends QuerkiTests {
   
   "DateTime" should {
     
-    val jodaTime1 = new DateTime(2013, 3, 15, 10, 30)
-    
     class TSpace extends CommonSpace {
       val dateProp = new TestProperty(Time.QDateTime, ExactlyOne, "DateTime Prop")
       
       val theModel = new SimpleTestThing("DateTime Model")
-      val thing1 = new TestThing("Thing 1", theModel, dateProp(jodaTime1))
+      val thing1 = new TestThing("Thing 1", theModel, dateProp(new DateTime(2013, 3, 15, 10, 30)))
+      val thing2 = new TestThing("Thing 2", theModel, dateProp(new DateTime(2013, 4, 15, 10, 30)))
+      val thing3 = new TestThing("Thing 3", theModel, dateProp(new DateTime(2013, 2, 15, 10, 30)))
+      val thing4 = new TestThing("Thing 4", theModel, dateProp(new DateTime(2013, 3, 15, 10, 29)))
+      val thing5 = new TestThing("Thing 5", theModel, dateProp(new DateTime(2013, 3, 16, 10, 30)))
     }
     
     "wikify in default format" in {
@@ -32,6 +34,13 @@ class DateTimeTests extends QuerkiTests {
       
       processQText(thingAsContext[TSpace](space, _.thing1), """[[DateTime Prop -> ""__MMM dd, hh:mm a__""]]""") should 
         equal ("""Mar 15, 10:30 AM""")      
+    }
+    
+    "sort correctly" in {
+      implicit val s = new TSpace
+      
+      pql("""[[DateTime Model._instances -> _sort(DateTime Prop)]]""") should
+        equal(listOfLinkText(s.thing3, s.thing4, s.thing1, s.thing5, s.thing2))
     }
   }
 }
