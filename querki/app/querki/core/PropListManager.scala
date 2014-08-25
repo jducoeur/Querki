@@ -68,7 +68,11 @@ class PropListManagerEcot(e:Ecology) extends QuerkiEcot(e) with PropListManager 
           // TBD: we might generalize this concept of "use the Name Property primarily" into a
           // meta-Property, but let's see if we care first.
           result
-        } else if (prop.first(NotInheritedProp))
+        } else if (prop.ifSet(Core.ModelOnlyProp))
+          // This is a Property whose *existence* is specifically not inherited:
+          result
+        else if (prop.first(NotInheritedProp))
+          // This is a Property whose *value* is not inherited:
           result + (prop -> DisplayPropVal(thing, prop, None))
         else if (v.v.isDefined)
           result + (prop -> DisplayPropVal(thing, prop, None, v.v, Some(model)))

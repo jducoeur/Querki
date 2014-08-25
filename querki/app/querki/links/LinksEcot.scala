@@ -138,6 +138,7 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
 	    toProps(
 	      setName("Is a Choice"),
 	      NotInherited,
+	      Core.ModelOnlyProp(true),
 	      Summary("Set this to prevent new instances from being created accidentally."),
 	      Details("""When you create a Link Property in the Editor, you can set the "Link Model" -- the sort of Thing
 	          |that this Property points to. The Editor then lets you choose from all of the existing Instances of that

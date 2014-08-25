@@ -198,6 +198,14 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
           |Models to Things. This is a very advanced Property, and not intended for ordinary use.""".stripMargin)
       ))
   
+  lazy val ModelOnlyProp = new SystemProperty(ModelOnlyPropOID, YesNoType, ExactlyOne,
+    toProps(
+      setName("Model Only Property"),
+      SkillLevel(SkillLevelAdvanced),
+      Summary("Set this flag on a Property if that Property should be defined *only* on the Model, not on Instances"),
+      Details("""This is very advanced, and rarely useful in user code. In most cases, you should achieve the same
+          |effect simply by setting the Instance Properties appropriately.""".stripMargin)))
+  
   /**
    * The formal Name of a Thing. Note that system-created Names mostly use bootCollection instead of
    * ExactlyOne, to avoid initialization loops.
@@ -314,6 +322,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
     CollectionProp,
     IsModelProp,
     AppliesToKindProp,
-    InternalProp
+    InternalProp,
+    ModelOnlyProp
   )
 }

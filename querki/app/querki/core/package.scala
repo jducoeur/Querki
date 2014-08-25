@@ -41,6 +41,7 @@ package object core {
     val QSetOID = sysId(79)
     
     val UrTypeOID = moid(1)
+    val ModelOnlyPropOID = moid(2)
   }
     
   /**
@@ -98,6 +99,7 @@ package object core {
     def CollectionProp:Property[OID,OID]
     def InternalProp:Property[Boolean,Boolean]
     def AppliesToKindProp:Property[Int,Int]
+    def ModelOnlyProp:Property[Boolean,Boolean]
     
     def QNone:QValue
     // Empty Optional -- essentially the typed QNone. Use instead of QNone when possible:
