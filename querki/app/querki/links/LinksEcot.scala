@@ -7,6 +7,7 @@ import querki.ecology._
 import querki.values.{ElemValue, QLContext, SpaceState}
 
 object MOIDs extends EcotIds(27) {
+  val ChoiceOrderOID = moid(1)
 }
 
 class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
@@ -139,7 +140,7 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
 	      setName("Is a Choice"),
 	      NotInherited,
 	      Core.ModelOnlyProp(true),
-	      Summary("Set this to prevent new instances from being created accidentally."),
+	      Summary("Set this to declare that this Model is a Choice, and its Instances are the options to choose from."),
 	      Details("""When you create a Link Property in the Editor, you can set the "Link Model" -- the sort of Thing
 	          |that this Property points to. The Editor then lets you choose from all of the existing Instances of that
 	          |Model, and also lets you create a new one.
@@ -148,12 +149,18 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
 	          |created all of the Instances of this Model that you ever expect to want, then it is simply annoying to have
 	          |that option. In that case, put this Property on your Model, and set it to True -- it will make that option
 	          |in the Editor go away.""".stripMargin)))
+  
+  lazy val ChoiceOrderProp = new SystemProperty(ChoiceOrderOID, LinkType, QList,
+    toProps(
+      setName("Choice Order"),
+      Summary("If this is set on a Choice Model, it declares the order in which the options should be listed.")))
 
   override lazy val props = Seq(
     LinkKindProp,
     LinkAllowAppsProp,
     LinkModelProp,
     LinkToModelsOnlyProp,
-    NoCreateThroughLinkProp
+    NoCreateThroughLinkProp,
+    ChoiceOrderProp
   )
 }

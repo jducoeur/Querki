@@ -8,7 +8,7 @@ import models.Thing.PropFetcher
 import querki.ecology._
 
 import querki.ql.QLPhrase
-import querki.util.PublicException
+import querki.util.{PublicException, QLog}
 import querki.values.{ElemValue, QLContext, QValue, RequestContext, SpaceState}
 
 import MOIDs._
@@ -224,7 +224,7 @@ trait LinkUtils { self:CoreEcot =>
    * The Property passed into here should usually be of LinkType -- while in theory that's not required,
    * it would be surprising for it to be used otherwise.
    */
-  def linkCandidates(state:SpaceState, Links:querki.links.Links, prop:Property[_,_]):Iterable[Thing] = {
+  def linkCandidates(state:SpaceState, Links:querki.links.Links, prop:Property[_,_]):Seq[Thing] = {
     implicit val s = state
     
     val locals = linkCandidatesLocal(state, Links, prop)
@@ -237,11 +237,11 @@ trait LinkUtils { self:CoreEcot =>
   /**
    * This enumerates all of the plausible candidates for the given property within this Space.
    */
-  def linkCandidatesLocal(state:SpaceState, Links:querki.links.Links, prop:Property[_,_]):Iterable[Thing] = {
+  def linkCandidatesLocal(state:SpaceState, Links:querki.links.Links, prop:Property[_,_]):Seq[Thing] = {
     implicit val s = state
     
     // First, filter the candidates based on LinkKind:
-    val allCandidates = if (prop.hasProp(Links.LinkKindProp)) {
+    val allCandidatesIt = if (prop.hasProp(Links.LinkKindProp)) {
       val allowedKinds = prop.getPropVal(Links.LinkKindProp).cv
       def fetchKind(wrappedVal:ElemValue):Iterable[Thing] = {
         val kind = Links.LinkKindProp.pType.get(wrappedVal)
@@ -259,15 +259,30 @@ trait LinkUtils { self:CoreEcot =>
       // No LinkKind specified, so figure that they only want Things:
       state.things.values
     }
+    val allCandidates = allCandidatesIt.toSeq
     
     // Now, if they've specified a particular Model to be the limit of the candidate
     // tree -- essentially, they've specified what type you can link to -- filter for
     // that:
+    // TODO: we really should be building and caching the entire hierarchy, and if there
+    // is a LinkModelProp just use the children of that. As it stands, that isAncestor() call
+    // is n**2 (maybe worse) in context.
     val filteredByModel = if (prop.hasProp(Links.LinkModelProp)) {
-      val limitOpt = prop.firstOpt(Links.LinkModelProp)
-      limitOpt.map(limit => allCandidates filter (_.isAncestor(limit))).getOrElse(allCandidates)
+      prop.firstOpt(Links.LinkModelProp) match {
+        case Some(modelId) => {
+          val explicitChoices = for {
+            model <- state.anything(modelId)
+            pv <- model.getPropOpt(Links.ChoiceOrderProp)
+            instanceIds = pv.rawList
+          }
+            yield instanceIds.map(state.anything(_)).flatten
+          
+          explicitChoices.getOrElse(allCandidates filter (_.isAncestor(modelId)) sortBy (_.displayName))
+        }
+        case None => allCandidates sortBy (_.displayName)
+      }
     } else {
-      allCandidates
+      allCandidates sortBy (_.displayName)
     }
     
     val filteredAsModel = if (prop.ifSet(Links.LinkToModelsOnlyProp)) {
@@ -287,7 +302,7 @@ trait LinkUtils { self:CoreEcot =>
       // Give the Property a chance to chime in on which candidates belong here:
       val candidates = prop match {
         case f:LinkCandidateProvider => f.getLinkCandidates(state, currentValue)
-        case _ => linkCandidates(state, Links, prop).toSeq.sortBy(_.displayName)
+        case _ => linkCandidates(state, Links, prop)
       }
       val realOptions =
         if (candidates.isEmpty) {

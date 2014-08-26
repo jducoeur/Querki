@@ -15,6 +15,8 @@ package object links {
     val URLTypeOID = sysId(41)
     val LinkToModelsOnlyOID = sysId(70)
     val NoCreateThroughLinkOID = sysId(103)
+    
+    // See also MOIDs!
   }
 
   // Why not java.net.URL? Because it just plain can't cope with simply relative URLs -- it always wants
@@ -34,6 +36,7 @@ package object links {
     def LinkModelProp:Property[OID,OID]
     def LinkToModelsOnlyProp:Property[Boolean,Boolean]
     def NoCreateThroughLinkProp:Property[Boolean,Boolean]
+    def ChoiceOrderProp:Property[OID,OID]
     
     def LinkValue(target:OID):QValue
   }
