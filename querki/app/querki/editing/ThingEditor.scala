@@ -156,7 +156,11 @@ trait ThingEditor { self:EditorModule =>
         // Generate the View based on the Thing:
         case None => {
           val layoutPieces = propsToEditForThing(thing, state).map(EditorPropLayout(_))
-          val layoutRows = splitRows(layoutPieces) :+ EditorRowLayout(Seq(EditorLinkButtonLayout()))
+          val layoutRows = thing match {
+            // Only add the Done button if this is an actual Thing to link to:
+            case t:Thing => splitRows(layoutPieces) :+ EditorRowLayout(Seq(EditorLinkButtonLayout()))
+            case _ => splitRows(layoutPieces)
+          }
           val propsLayout = s"""[[""{{_instanceEditor:
               |${ if (thing.isThing) thingButtons else "" }
               |${layoutRows.map(_.layout).mkString}
