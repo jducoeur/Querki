@@ -40,7 +40,6 @@ class TOSModule(e:Ecology) extends QuerkiEcot(e) with TermsOfService {
     UserAccess.setTOSVersion(user.id, version).get
   }
   
-  import controllers.PlayRequestContext
   /**
    * This is called via callbacks when we are beginning to render a page. It looks to see whether the
    * URL is an invitation to join this Space, and goes to the Invitation workflow if so.

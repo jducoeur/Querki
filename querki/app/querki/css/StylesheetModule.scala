@@ -1,12 +1,11 @@
 package querki.css
 
 // TODO: these are all abstraction breaks!
-import controllers.PageEventManager
+import controllers.{HtmlEvent, PageEventManager, QuerkiTemplate}
 import models._
 import querki.ecology._
 import querki.util._
 import querki.values._
-import controllers._
 
 import querki.ql.CodeType
 import MOIDs.CSSOID
