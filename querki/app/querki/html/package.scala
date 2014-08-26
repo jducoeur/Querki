@@ -9,7 +9,7 @@ import play.api.data.Form
 
 import querki.ecology._
 
-import models.{DisplayPropVal, FieldIds, FormFieldInfo, Property, Thing, Wikitext}
+import models.{DisplayPropVal, FieldIds, FormFieldInfo, OID, Property, Thing, Wikitext}
 
 import querki.core.QLText
 import querki.ui.UIRenderer
@@ -43,5 +43,14 @@ package object html {
     def HtmlValue(xml:NodeSeq):QValue
     
     def toWikitext(xml:NodeSeq):Wikitext
+  }
+  
+  // Note that, while this interface is defined here, it is actually implemented in controllers. It exists so
+  // that code "inside the onion" doesn't need to know about controllers, and particularly not about the reverse router.
+  trait PublicUrls extends EcologyInterface {
+    /**
+     * Returns the URL to create a new Instance of the specified Model and begin editing it.
+     */
+    def createAndEditUrl(rc:RequestContext, modelId:OID):String
   }
 }

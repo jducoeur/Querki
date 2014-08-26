@@ -10,6 +10,8 @@ import querki.values.{QLContext, SpaceState}
 
 trait ThingEditor { self:EditorModule =>
   
+  lazy val PublicUrls = interface[querki.html.PublicUrls]
+  
     /**
      * How wide (in Bootstrap spans) should the editor control for this Property be?
      * 
@@ -178,7 +180,7 @@ trait ThingEditor { self:EditorModule =>
           if (inPlace)
             <input type="button" class="_createAnother btn" data-model={model.id.toString} value={label}></input>
           else
-            <a class="btn" href={"_createAndEdit?model=" + model.id.toString}>{label}</a>
+            <a class="btn" href={PublicUrls.createAndEditUrl(context.request, model)}>{label}</a>
         HtmlUI.toWikitext(xml)
       } else {
         Wikitext("")

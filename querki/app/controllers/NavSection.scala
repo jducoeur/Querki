@@ -17,6 +17,9 @@ case class NavSection(val title:String, val links:Seq[Navigable]) extends Naviga
  * you use for the display parameter has been properly HTML-neutered! 
  */
 case class NavLink(display:String, url:Call, id:Option[String] = None, enabled:Boolean = true) extends Navigable
+object NavLink {
+  def apply(display:String, url:String):NavLink = NavLink(display, new Call("GET", url))
+}
 
 case object NavDivider extends Navigable
 
@@ -33,6 +36,7 @@ trait NavSectionMgr extends EcologyInterface {
 class NavSectionEcot(e:Ecology) extends QuerkiEcot(e) with NavSectionMgr {
   
   lazy val AccessControl = interface[querki.security.AccessControl]
+  lazy val PublicUrls = interface[querki.html.PublicUrls]
   
   object homeNav extends NavSections(Seq())
   
@@ -104,7 +108,7 @@ class NavSectionEcot(e:Ecology) extends QuerkiEcot(e) with NavSectionMgr {
         if (thingIsSpace)
           None
         else
-          Some(NavLink("Create a " + thing.displayName, routes.Application.doCreateThing2(owner, spaceId, thing.id.toString())))
+          Some(NavLink("Create a " + thing.displayName, PublicUrls.createAndEditUrl(rc, thing)))
       }
       Seq(
         NavDivider,

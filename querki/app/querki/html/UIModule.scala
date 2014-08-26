@@ -37,6 +37,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
   lazy val Links = interface[querki.links.Links]
+  lazy val PublicUrls = interface[PublicUrls]
   lazy val QL = interface[querki.ql.QL]
   
   lazy val ExternalLinkType = Links.URLType
@@ -393,27 +394,13 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	  }
 	}
 	
-	// TODO: this is so full of abstraction breaks it isn't funny. Using routes here is inappropriate; indeed, the fact that we're referring
-	// to Play at all in this level is inappropriate. This probably needs to be routed through the rendering system, so that it takes the
-	// current rendering environment and produces a relative control appropriate within it. But it'll do for the short term.
-	import controllers.routes
 	class CreateInstanceLinkMethod extends SingleThingMethod(CreateInstanceLinkOID, "_createInstanceLink", 
 	    "Given a received Model, this produces a Link to create an instance of that Model.",
 	    """    MODEL -> _createInstanceLink -> _linkButton(LABEL)
 	    |This is how you implement a "Create" button. _createInstanceLink takes a MODEL, and produces an External Link to the page to create a new Instance of it.
 	    |
 	    |You will usually then feed this into, eg, _linkButton or _iconButton as a way to display the Link.""".stripMargin,
-	{ (thing, context) => 
-	  import controllers.PlayRequestContextFull
-	  context.request match {
-	    case PlayRequestContextFull(request, _, _, _, _, _, _, _, _, _, _, _) => {
-	      implicit val req = request
-	      ExactlyOne(
-	        ExternalLinkType(routes.Application.doCreateThing2(context.request.ownerId.toThingId, context.state.toThingId, thing.id.toString).absoluteURL()))
-	    }
-	    case _ => QL.WarningValue("_createInstanceLink does not currently work outside of Play")
-	  }
-	})
+	{ (thing, context) => ExactlyOne(ExternalLinkType(PublicUrls.createAndEditUrl(context.request, thing)))	})
 
   lazy val QLButton = new InternalMethod(QLButtonOID,
     toProps(
