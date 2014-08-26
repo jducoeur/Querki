@@ -109,6 +109,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       // If there is already a name specified, leave it in place. This is occasionally *very* important, as
       // in renderOptionalYesNo -- that needs the usual name to be on the *buttons*, not on the wrapper:
       val newName = elem.attribute("name").map(_.head.text).getOrElse(currentValue.inputControlId)
+      val newId = elem.attribute("id").map(_.head.text).getOrElse(id)
       val asEditor = {
         // HACK: if this is an intermediate Model Property, we must *not* add propEditor, or we wind
         // up with that conflicting with the propEditor of the actual fields underneath it. There might
@@ -122,7 +123,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       	Attribute("name", Text(newName),
     	Attribute("data-prop", Text(prop.id.toThingId),
     	Attribute("data-propId", Text(currentValue.fullPropId),
-    	Attribute("id", Text(id), Null))))
+    	Attribute("id", Text(newId), Null))))
       val xml3 = currentValue.thingId match {
         case Some(thing) => xml2 % Attribute("data-thing", Text(thing), Null)
         case None => xml2
@@ -167,9 +168,13 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     def oneButton(label:String, value:String, checked:Boolean):NodeSeq = {
       def inputElem = {
         if (checked)
-          <button type="button" class="radioBtn btn btn-primary active" value={value}>{label}</button>
+          <button type="button" class="radioBtn btn btn-primary active" value={value}
+            onclick={"$('#" + currentValue.inputControlId + "').val($(this).val())"}
+          >{label}</button>
         else
-          <button type="button" class="radioBtn btn btn-primary" value={value}>{label}</button>
+          <button type="button" class="radioBtn btn btn-primary" value={value}
+            onclick={"$('#" + currentValue.inputControlId + "').val($(this).val())"}
+          >{label}</button>
       }
       val id = currentValue.inputControlId + "-" + label
       val name = currentValue.inputControlId
@@ -178,7 +183,15 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       addEditorAttributes(inputElem, currentValue, prop, id) // ++ <label for={id}>{label}</label>
     }
     
-      <span class="btn-group" data-toggle="buttons-radio" name={currentValue.inputControlId + "-wrapper"}>{oneButton("Yes", "true", (isSet && v))}{oneButton("Maybe", "maybe", (!isSet))}{oneButton("No", "false", (isSet && !v))}</span>
+    // To make this work on conventional forms like the Advanced Editor, we need a shim to hold the chosen value, because
+    // the buttons aren't submittable form elements. Hence the hidden field below: when we click on a button, that gets
+    // changed:
+      <span class="btn-group" data-toggle="buttons-radio" name={currentValue.inputControlId + "-wrapper"} id={currentValue.inputControlId + "-wrapper"}>
+        {oneButton("Yes", "true", (isSet && v))}{oneButton("Maybe", "maybe", (!isSet))}{oneButton("No", "false", (isSet && !v))}
+        <input type="hidden" id={currentValue.inputControlId} name={currentValue.inputControlId}
+          value={if (isSet) {v.toString} else "maybe"}
+        />
+      </span>
   }
   
   def renderOptLink(context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal):NodeSeq = {
