@@ -518,13 +518,6 @@ function finalSetup(ownerId, spaceId, root) {
   }
   root.find("._createAnother").click(createAnotherThing);
   
-  function doCreateLink(evt) {
-    var modelId = $(this).data("model");
-    // TODO: this should go through the reverse router!
-    window.location = "_createAndEdit?model=" + modelId;    
-  }
-  root.find("._createLink").click(doCreateLink);
-  
   function reallyDelete(evt) {
     var deleteButton = $(this);
     var editor = deleteButton.parents("._instanceEditor");
