@@ -211,7 +211,7 @@
         
         <table class="table table-hover">
           @for(invitee <- Person.invitees(space)) {
-            <tr class="warning"><td>@invitee.displayName</td></tr>
+            <tr class="warning"><td>@renderMember(invitee)</td></tr>
           }
         </table>
       </section>
