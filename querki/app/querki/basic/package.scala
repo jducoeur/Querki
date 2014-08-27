@@ -31,6 +31,7 @@ package object basic {
     
     val ExplicitPropOID = moid(1)
     val SystemOnlyPropOID = moid(2)
+    val ModelViewOID = moid(3)
   }
   
   /**
@@ -56,6 +57,7 @@ package object basic {
     def DisplayTextProp:Property[QLText,String]
     def ExplicitProp:Property[Boolean,Boolean]
     def SystemOnlyProp:Property[Boolean,Boolean]
+    def ModelViewProp:Property[QLText,String]
     
     def Page:Thing
     def SimpleThing:Thing

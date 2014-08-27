@@ -2,6 +2,8 @@ package eu.henkelmann.actuarius
 
 import language.postfixOps
 
+import querki.util.XmlHelpers
+
 /**
  * A parser for inline markdown, markdown escapes and XML escapes.
  * This is used by the result classes of the block parsers to handle
@@ -79,7 +81,7 @@ trait InlineParsers extends BaseParsers {
             //process chars until we hit a special char or the end
             while (i<end && !special.contains(s.charAt(i))) {
                 val c = s.charAt(i)
-                val xmlEscape = escapeFastForXml(c)
+                val xmlEscape = XmlHelpers.escapeFastForXml(c)
                 if (markdownEscapes && c == '\\' && i+1 < end && escapableMarkdownChars(s.charAt(i+1))!=null) {
                     result.append(s.subSequence(start, i).toString)
                     result.append(escapableMarkdownChars(s.charAt(i+1)))
@@ -373,7 +375,7 @@ trait InlineParsers extends BaseParsers {
         while (i<end) {
             val out = s.charAt(i)
             //if it is a an xml reserved char, xml escape it, else just add it
-            val xmlEscape = escapeFastForXml(out)
+            val xmlEscape = XmlHelpers.escapeFastForXml(out)
             if (xmlEscape != null) result.append(xmlEscape)
             else                   result.append(out)
             //advance a char

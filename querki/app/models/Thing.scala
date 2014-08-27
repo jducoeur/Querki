@@ -374,7 +374,11 @@ abstract class Thing(
    */
   def render(implicit request:RequestContext, prop:Option[Property[_,_]] = None):Wikitext = {
     implicit val state = request.state.get
-    val actualProp = prop.getOrElse(Basic.DisplayTextProp)
+    val actualProp = 
+      if (ifSet(Core.IsModelProp))
+        prop.getOrElse(Basic.ModelViewProp)
+      else
+        prop.getOrElse(Basic.DisplayTextProp)
     val renderedOpt = for (
       pv <- getPropOpt(actualProp);
       if (!pv.isEmpty)

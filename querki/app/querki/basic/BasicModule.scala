@@ -197,6 +197,23 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
         		|look at it as a web page. It can say almost anything you like, but usually consists of a mix of
         		|text and QL expressions. (Where a "QL Expression" is anything inside double-square-brackets.)""".stripMargin)
         ))
+  
+  lazy val ModelViewProp = new SystemProperty(ModelViewOID, LargeTextType, Optional,
+      toProps(
+        setName("Model View"),
+        SkillLevel(SkillLevelAdvanced),
+        NotInherited,
+        Core.ModelOnlyProp(true),
+        Summary("How this Model will be displayed"),
+        Details("""One of the most important Properties in Querki is [[Default View._self]], which says how Instances should be
+            |displayed. However, you usually do not want to look at a Model the same way you do its Instances: the fields
+            |are usually empty, and it simply isn't very useful.
+            |
+            |So Models use the Model View Property instead. If you set Model View, that says how to display this specific
+            |Model. It is not inherited to the Instances.
+            |
+            |You can usually ignore Model View -- the default serves reasonably well most of the time. But it is available
+            |if you would like to do something different.""".stripMargin)))
 
   lazy val DeprecatedProp = new SystemProperty(DeprecatedOID, YesNoType, ExactlyOne,
     toProps(
@@ -230,7 +247,8 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
     DisplayTextProp,
     DeprecatedProp,
     ExplicitProp,
-    SystemOnlyProp
+    SystemOnlyProp,
+    ModelViewProp
   )
   
   /***********************************************

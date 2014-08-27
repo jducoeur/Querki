@@ -1,9 +1,10 @@
 package querki.datamodel.introspection
 
-import models.{DisplayPropVal, PropertyBundle, SimplePTypeBuilder, UnknownOID, Wikitext}
+import models.{DisplayPropVal, HtmlWikitext, PropertyBundle, SimplePTypeBuilder, UnknownOID, Wikitext}
 
 import querki.ecology._
-import querki.util.PublicException
+import querki.ql.CodeType
+import querki.util.{PublicException, QLog, XmlHelpers}
 import querki.values.{QLContext, SpaceState}
 
 object MOIDs extends EcotIds(34) {
@@ -12,6 +13,7 @@ object MOIDs extends EcotIds(34) {
   val PropMethodOID = moid(3)  
   val DefinedOnMethodOID = moid(4)
   val IsInheritedMethodOID = moid(5)
+  val RawValMethodOID = moid(6)
 }
 
 class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
@@ -122,6 +124,43 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
           case Some(v) => v
           case None => Core.QNone
         }
+     }
+  }
+  
+  lazy val rawValMethod = new InternalMethod(RawValMethodOID,
+      toProps(
+        setName("_rawVal"),
+        SkillLevel(SkillLevelAdvanced),
+        Summary("Produces a raw, unprocessed value"),
+        Details("""This advanced function prevents the usual QL and QText processing of a value. It
+            |is typically used with something like _foreachProperty, like this:
+            |
+            |    THING -> _foreachProperty -> _val -> _rawVal
+            |
+            |This mainly affects Text types. Whereas the output of _val would usually be further
+            |processed if it contained any QL, feeding it into _rawVal turns it into simple text,
+            |which is rendered completely plain.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      for {
+        oneContext <- inv.contextElements
+        v = oneContext.value
+      }
+        yield transformV(inv, v)
+    }
+    
+    def transformV(inv:Invocation, v:QValue):QValue = {
+      if (v.isEmpty)
+        v  
+      else v.pType match {
+        case codeType:CodeType => {
+          val elem = v.first
+          val code = codeType.code(elem)
+          val escaped = s"""<pre><code>${XmlHelpers.escapeForXml(code)}</code></pre>"""
+          QL.WikitextValue(HtmlWikitext(escaped))
+        }
+        case _ => v
+      }
     }
   }
   
@@ -176,6 +215,7 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   override lazy val props = Seq(
     foreachPropertyMethod,
     valMethod,
+    rawValMethod,
     propMethod,
     definedOnMethod,
     isInheritedMethod

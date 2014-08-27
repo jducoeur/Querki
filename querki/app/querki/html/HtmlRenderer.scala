@@ -8,6 +8,7 @@ import play.twirl.api.Html
 
 import models._
 
+import querki.core.QLText
 import querki.ecology._
 
 import querki.util.XmlHelpers
@@ -30,6 +31,7 @@ object MOIDs extends EcotIds(26)
 class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with querki.core.LinkUtils {
   
   lazy val Links = interface[querki.links.Links]
+  lazy val QL = interface[querki.ql.QL]
   lazy val Tags = interface[querki.tags.Tags]
   
   lazy val InternalProp = Core.InternalProp
@@ -79,18 +81,28 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     }
   }
   
+  // TODO: I don't love having this renderer level dependent on QL. Think about whether this is the right place
+  // for this code.
   def renderThingDefault(thing:Thing)(implicit rc:RequestContext):Wikitext = {
-    val listMap = thing.props.map { entry =>
-      val propOpt = rc.state.get.prop(entry._1)
-      propOpt match {
-        case Some(prop) => {
-          val pv = prop.pair(entry._2)
-          "<dt>" + prop.displayName + "</dt><dd>" + pv.render(thing.thisAsContext).display + "</dd>"
-        }
-        case None => "<dt>" + entry._1 + "</dt><dd>Property not found!</dd>"
-      }
-    }
-    HtmlWikitext(Html(listMap.mkString("<dl>", "", "</dl>")))    
+    querki.util.QLog.spew(s"renderThingDefault: thing is ${thing.displayName}")
+    val text = """
+        |<dl>
+        |[[_foreachProperty -> 
+        |  _sort -> 
+        |  ""<dt>[[_prop]]</dt><dd>[[_val -> _rawVal]]</dd>""
+        |]]
+        |</dl>""".stripMargin
+    val fullText =
+      if (thing.ifSet(Core.IsModelProp)(rc.state.get)) {
+        text + """
+        |------
+        |
+        |#### Instances of ____
+        |
+        |[[_instances -> _sort -> _bulleted]]""".stripMargin
+      } else
+        text
+    QL.process(QLText(fullText), thing.thisAsContext, None, Some(thing))
   }
   
   /*********************************
