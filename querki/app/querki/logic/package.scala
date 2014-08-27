@@ -14,5 +14,8 @@ package object logic {
      * comparer stepwise to each pair of elements. Returns true iff the comparer was true in all cases.
      */
     def compareValues(firstIn:QValue, secondIn:QValue)(comparer:(PType[_], ElemValue, ElemValue) => Boolean):Boolean
+    
+    def True:ElemValue
+    def False:ElemValue
   }
 }

@@ -84,7 +84,6 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   // TODO: I don't love having this renderer level dependent on QL. Think about whether this is the right place
   // for this code.
   def renderThingDefault(thing:Thing)(implicit rc:RequestContext):Wikitext = {
-    querki.util.QLog.spew(s"renderThingDefault: thing is ${thing.displayName}")
     val text = """
         |<dl>
         |[[_foreachProperty -> 

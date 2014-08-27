@@ -8,6 +8,7 @@
 @import querki.values.SpaceState._
 
 @Basic = @{ rc.interface[querki.basic.Basic] }
+@Core = @{ rc.interface[querki.core.Core] }
 @PageEventManager = @{ rc.interface[controllers.PageEventManager] }
 @NavSectionMgr = @{ rc.interface[controllers.NavSectionMgr] }
 
@@ -235,9 +236,15 @@
 				        // TBD: Bit of an abstraction break here -- the Javascript needs to know the URL syntax for
 				        // model creation. Can we do this better somehow?
 				        if (designingModel) {
-						  window.location = "@routes.Application.createThing(rc.ownerHandle, space.get.toThingId, None)" + "?model=" + modelId;				        
+						  window.location = 
+						    "@routes.Application.createThing(rc.ownerHandle, space.get.toThingId, None)" 
+						    + "?model=" + modelId
+						    + "&asModel=true";
 				        } else {
-				          window.location = "_createAndEdit?model=" + modelId;
+				          // HACK: HORRIBLE HACK! This is a consequence of using ThingIds in some places and OIDs in
+				          // others: we have to strip the dot off the modelId here to make it work. Ick. Time to fix
+				          // editThingInternal to stop expecting raw OIDs!
+				          window.location = "_createAndEdit?model=" + modelId.substring(1);
 				        }
 				      } else {
 				        // TODO: The Create button should really be disabled unless a legit option

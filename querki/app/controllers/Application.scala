@@ -52,22 +52,23 @@ class Application extends ApplicationBase {
   
   lazy val Core = interface[querki.core.Core]
   lazy val Basic = interface[querki.basic.Basic]
-  lazy val DisplayNameProp = Basic.DisplayNameProp
+  lazy val DataModel = interface[querki.datamodel.DataModelAccess]
   lazy val DeriveName = interface[querki.types.DeriveName]
   lazy val Editor = interface[querki.editing.Editor]
-  lazy val System = interface[querki.system.System]
-  lazy val Search = interface[querki.search.Search]
-  lazy val PropListMgr = interface[querki.core.PropListManager]
-  lazy val Tags = interface[querki.tags.Tags]
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
-  lazy val Links = interface[querki.links.Links]
-  lazy val QL = interface[querki.ql.QL]
-  lazy val Types = interface[querki.types.Types]
   lazy val Imexport = interface[querki.imexport.Imexport]
-  lazy val DataModel = interface[querki.datamodel.DataModelAccess]
+  lazy val Links = interface[querki.links.Links]
+  lazy val Logic = interface[querki.logic.Logic]
+  lazy val PropListMgr = interface[querki.core.PropListManager]
+  lazy val QL = interface[querki.ql.QL]
+  lazy val Search = interface[querki.search.Search]
+  lazy val System = interface[querki.system.System]
+  lazy val Tags = interface[querki.tags.Tags]
+  lazy val Types = interface[querki.types.Types]
   
-  lazy val UrProp = Core.UrProp  
   lazy val AppliesToKindProp = Core.AppliesToKindProp
+  lazy val DisplayNameProp = Basic.DisplayNameProp
+  lazy val UrProp = Core.UrProp  
 
   def index = withUser(false) { rc =>
     rc.requester match {
@@ -182,7 +183,14 @@ disallow: /
     val modelThingIdOpt = modelIdOpt map (ThingId(_))
     val modelOpt = modelThingIdOpt flatMap (rc.state.get.anything(_))
     val model = modelOpt getOrElse Basic.SimpleThing
-    showEditPage(rc, None, model, PropListMgr.inheritedProps(None, model))
+    val createModel = rc.isTrue("asModel")
+    val inherited = PropListMgr.inheritedProps(None, model)
+    val allProps =
+      if (createModel) {
+        inherited + (Core.IsModelProp -> DisplayPropVal(None, Core.IsModelProp, Some(Core.ExactlyOne(Logic.True))))
+      } else
+        inherited
+    showEditPage(rc, None, model, allProps)
   }
   
   def createProperty(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>

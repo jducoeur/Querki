@@ -7,7 +7,7 @@
 @createOptGroups(s:SpaceState) = {
         <optgroup label="Models in @s.displayName">
           @for(model <- s.models.toSeq.filterNot(_.ifSet(Basic.DeprecatedProp)(s)).sortBy(_.displayName)) {
-            <option value="@model.id.toString">@model.displayName</option>
+            <option value="@model.id.toThingId">@model.displayName</option>
           }
         </optgroup>
   @s.app.map { app => @createOptGroups(app) }
@@ -16,7 +16,7 @@
     <div id="@formId" title="@formTitle" style="display:none">
       <p>@prompt</p>
         <select name="@selectorId" id="@selectorId">
-          <option value="@{Basic.SimpleThing.id.toString}">Simple Thing</option>
+          <option value="@{Basic.SimpleThing.id.toThingId}">Simple Thing</option>
           @createOptGroups(s)
         </select>
     </div>
