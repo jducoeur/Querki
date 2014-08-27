@@ -44,6 +44,11 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
       Wikitext(s": $propName : ") + vDisplay + (if (v.isInherited) Wikitext(" (inherited)") else Wikitext.empty)
     }
     
+    // We sort these by Property Name, for lack of a better idea:
+    override def doComp(context:QLContext)(left:DisplayPropVal, right:DisplayPropVal):Boolean = {
+      left.prop.displayName < right.prop.displayName
+    }
+    
     def doDefault(implicit state:SpaceState) = ???  
   }
   
