@@ -210,11 +210,8 @@
         <p>The following invitations have been sent but not yet accepted.</p>
         
         <table class="table table-hover">
-          @for(invitee <- Person.invitees(space);
-               propVal <- invitee.getPropOpt(rc.interface[querki.email.Email].EmailAddressProp)(space);
-               emailAddr <- propVal.firstOpt;
-               addr = emailAddr.addr) {
-            <tr class="warning"><td>@addr</td></tr>
+          @for(invitee <- Person.invitees(space)) {
+            <tr class="warning"><td>@invitee.displayName</td></tr>
           }
         </table>
       </section>
