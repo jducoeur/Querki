@@ -8,7 +8,7 @@ import models.{DisplayText, FieldIds, HtmlWikitext, OID, PropertyBundle, QWikite
 
 import querki.core.URLableType
 import querki.ecology._
-import querki.ql.{QLPhrase, Signature, RequiredParam}
+import querki.ql.{InvocationValue, QLPhrase, Signature, RequiredParam}
 import querki.util._
 import querki.values._
 
@@ -26,6 +26,7 @@ object UIMOIDs extends EcotIds(11) {
   val PageHeaderPropOID = moid(4)
   val QLButtonOID = moid(5)
   val MixedButtonOID = moid(6)
+  val CreateButtonOID = moid(7)
 }
 
 /**
@@ -394,22 +395,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	  }
 	}
 	
-  lazy val CreateInstanceLinkMethod = new InternalMethod(CreateInstanceLinkOID,
-    toProps(
-      setName("_createInstanceLink"),
-      Summary("Given a received Model, this produces a Link to create an instance of that Model."),
-      Details("""    MODEL -> _createInstanceLink -> _linkButton(LABEL)
-	    |This is how you implement a "Create" button. _createInstanceLink takes a MODEL, and produces an External Link to the page to create a new Instance of it.
-	    |
-	    |You will usually then feed this into, eg, _linkButton or _iconButton as a way to display the Link.
-        |
-        |    MODEL -> LINK PROPERTY._createInstanceLink -> _linkButton(LABEL)
-        |
-        |You may optionally specify a Link Property with _createInstanceLink. That means that the newly-created Instance
-        |should point back to *this* Thing -- the one where you have the button -- through the specified Link Property.
-        |This is very useful for creating "child" Thing easily.""".stripMargin)))
-  {
-    override def qlApply(inv:Invocation):QValue = {
+  def getCreateInstanceUrl(inv:Invocation):InvocationValue[String] = {
       // First, figure out the linkback if there is one:
       val linkParam = inv.definingContext match {
         case Some(definingContext) => {
@@ -429,7 +415,56 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         thing <- inv.contextFirstThing
         url = PublicUrls.createAndEditUrl(inv.context.request, thing) + linkParam
       }
+        yield url
+  }
+	
+  lazy val CreateInstanceLinkMethod = new InternalMethod(CreateInstanceLinkOID,
+    toProps(
+      setName("_createInstanceLink"),
+      Summary("Given a received Model, this produces a Link to create an instance of that Model."),
+      Details("""    MODEL -> _createInstanceLink -> _linkButton(LABEL)
+	    |This is how you implement a "Create" button. _createInstanceLink takes a MODEL, and produces an External Link to the page to create a new Instance of it.
+	    |
+	    |You will usually then feed this into, eg, _linkButton or _iconButton as a way to display the Link.
+        |
+        |    MODEL -> LINK PROPERTY._createInstanceLink -> _linkButton(LABEL)
+        |
+        |You may optionally specify a Link Property with _createInstanceLink. That means that the newly-created Instance
+        |should point back to *this* Thing -- the one where you have the button -- through the specified Link Property.
+        |This is very useful for creating "child" Thing easily.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      for {
+        url <- getCreateInstanceUrl(inv)
+      }
         yield ExactlyOne(ExternalLinkType(url))
+    }
+  }
+	
+  lazy val CreateButtonFunction = new InternalMethod(CreateButtonOID,
+    toProps(
+      setName("_createButton"),
+      Summary("Becomes a Create button for the received Model"),
+      Details("""    MODEL -> LINK PROPERTY._createButton(LABEL)
+          |
+          |This displays a button, with the given LABEL, if the user is allowed to create Instances of that Model.
+          |
+          |This button is essentially a shortcut for:
+          |
+          |    MODEL -> LINK PROPERTY._createInstanceLink -> _linkButton(LABEL)
+          |
+          |As with [[_createInstanceLink._self]], the LINK PROPERTY is optional. If you give one, it says that
+          |Querki should set LINK PROPERTY on the newly-created Thing, pointing back to the Thing that it showing the
+          |button.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      for {
+        url <- getCreateInstanceUrl(inv)
+        labelWikitext <- inv.processParamFirstAs(0, QL.ParsedTextType)
+        label = labelWikitext.raw.str
+        xml = <a class="btn" href={url}>{label}</a>
+      }
+        yield QL.WikitextValue(toWikitext(xml))
     }
   }
 
@@ -492,6 +527,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     new ShowLinkMethod,
     new PropLinkMethod,
     CreateInstanceLinkMethod,
+    CreateButtonFunction,
     QLButton,
     new MixedButtonMethod
   )
