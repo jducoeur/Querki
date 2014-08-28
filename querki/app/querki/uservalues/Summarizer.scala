@@ -280,7 +280,7 @@ trait SummarizerDefs { self:QuerkiEcot =>
 	  userType.doWikify(context)(key)
 	} 
 	  
-	def doWikify(context:QLContext)(v:DiscreteSummary[UVT], displayOpt:Option[Wikitext] = None):Wikitext = {
+	def doWikify(context:QLContext)(v:DiscreteSummary[UVT], displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = {
 	  implicit val s = context.state
 	  val fromPropOpt = context.state.prop(v.propId)
 	  // Iff this is coming from a DiscreteType, with a well-defined range, use that range to determine

@@ -2,7 +2,7 @@ package querki.core
 
 import scala.xml.NodeSeq
 
-import models.{DelegatingType, DisplayPropVal, Kind, OID, Property, PType, PTypeBuilder, PTypeBuilderBase, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
+import models.{DelegatingType, DisplayPropVal, Kind, OID, Property, PropertyBundle, PType, PTypeBuilder, PTypeBuilderBase, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
 import models.Thing.PropFetcher
 
 import querki.ecology._
@@ -54,8 +54,8 @@ trait TextTypeBasis { self:CoreEcot =>
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = QLText(v)
     def doSerialize(v:QLText)(implicit state:SpaceState) = v.text
-    def doWikify(context:QLContext)(v:QLText, displayOpt:Option[Wikitext] = None) = {
-      QL.process(v, context)
+    def doWikify(context:QLContext)(v:QLText, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
+      QL.process(v, context, lexicalThing = lexicalThing)
     }
     def doDefault(implicit state:SpaceState) = QLText("")
     def wrap(raw:String):valType = QLText(raw)
@@ -183,7 +183,7 @@ trait IntTypeBasis { self:CoreEcot =>
     }
     
     def doSerialize(v:Int)(implicit state:SpaceState) = v.toString
-    def doWikify(context:QLContext)(v:Int, displayOpt:Option[Wikitext] = None) = Wikitext(v.toString)
+    def doWikify(context:QLContext)(v:Int, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = Wikitext(v.toString)
 
     def doDefault(implicit state:SpaceState) = 0
     
@@ -353,7 +353,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
   class UnknownType extends PType[Unit](UnknownOID, UnknownOID, UnknownOID, toProps(setName("Unknown Type"))) {
     def doDeserialize(v:String)(implicit state:SpaceState) = throw new Exception("Trying to use UnknownType!")
     def doSerialize(v:Unit)(implicit state:SpaceState) = throw new Exception("Trying to use UnknownType!")
-    def doWikify(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None) = throw new Exception("Trying to use UnknownType!")
+    def doWikify(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = throw new Exception("Trying to use UnknownType!")
   
     def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = 
       throw new Exception("Trying to use UnknownType!")
@@ -381,7 +381,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = throw new Exception("Trying to use UrType!")
     def doSerialize(v:Unit)(implicit state:SpaceState) = throw new Exception("Trying to use UrType!")
-    def doWikify(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None) = throw new Exception("Trying to use UrType!")
+    def doWikify(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = throw new Exception("Trying to use UrType!")
   
     def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = 
       throw new Exception("Trying to use UrType!")
@@ -401,7 +401,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
     def doDeserialize(v:String)(implicit state:SpaceState) = boom
     def doSerialize(v:String)(implicit state:SpaceState) = boom
 
-    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext("Internal Method")
+    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = Wikitext("Internal Method")
     
     def doDefault(implicit state:SpaceState) = ""
     override def wrap(raw:String):valType = boom 
@@ -436,7 +436,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
   {
     override def editorSpan(prop:Property[_,_]):Int = 3
     
-    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext(toDisplay(v))    
+    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = Wikitext(toDisplay(v))    
   }
 
   /**
@@ -575,7 +575,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
       Wikitext("[") + display + Wikitext("](" + pathAdjustments(context) + thing.toThingId + ")")
     }
 
-    def doWikify(context:QLContext)(v:OID, displayOpt:Option[Wikitext] = None) = {
+    def doWikify(context:QLContext)(v:OID, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
       val target = follow(context)(v)
       val text = target match {
         case Some(t) => {
@@ -711,7 +711,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
       }
     }
     def doSerialize(v:Boolean)(implicit state:SpaceState) = v.toString
-    def doWikify(context:QLContext)(v:Boolean, displayOpt:Option[Wikitext] = None) = Wikitext(v.toString())
+    def doWikify(context:QLContext)(v:Boolean, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = Wikitext(v.toString())
     
     def doDefault(implicit state:SpaceState) = false
     

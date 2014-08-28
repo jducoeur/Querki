@@ -10,7 +10,7 @@ import akka.util.Timeout
 
 import play.api.mvc.{RequestHeader, Security}
 
-import models.{SimplePTypeBuilder, ThingState, Wikitext}
+import models.{PropertyBundle, SimplePTypeBuilder, ThingState, Wikitext}
 
 import querki.ecology._
 import querki.util.ActorHelpers._
@@ -122,7 +122,7 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
       Summary("The Type of a Querki member, not necessarily a member of any particular Space.")))
     with SimplePTypeBuilder[PublicIdentity]
   {
-    def doWikify(context:QLContext)(v:PublicIdentity, displayOpt:Option[Wikitext] = None) = {
+    def doWikify(context:QLContext)(v:PublicIdentity, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
       Wikitext(s"[${v.name}](_displayIdentity?identity=${v.id})")
     }
     

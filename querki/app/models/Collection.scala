@@ -45,7 +45,7 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecolog
    * Takes a value of this type, and turns it into displayable form. Querki
    * equivalent to toString.
    */
-  def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext
+  def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext
   
   /**
    * Takes a value of this type, and renders it for showing in debug messages.

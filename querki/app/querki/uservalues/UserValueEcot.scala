@@ -193,17 +193,17 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
       setInternal,
       Summary("The Type you get from the _userValues and _thingValues functions.")))
   {
-    override def doWikify(context:QLContext)(bundle:ModeledPropertyBundle, displayOpt:Option[Wikitext]) = {
+    override def doWikify(context:QLContext)(bundle:ModeledPropertyBundle, displayOpt:Option[Wikitext], lexicalThing:Option[PropertyBundle] = None) = {
       implicit val state = context.state
       val result = for {
         identityPV <- bundle.getPropOpt(UVUserProp)
-        identityRendered = identityPV.v.wikify(context, displayOpt)
+        identityRendered = identityPV.v.wikify(context, displayOpt, lexicalThing)
         thingPV <- bundle.getPropOpt(UVThingProp)
-        thingRendered = thingPV.v.wikify(context, displayOpt)
+        thingRendered = thingPV.v.wikify(context, displayOpt, lexicalThing)
         propPV <- bundle.getPropOpt(UVPropProp)
-        propRendered = propPV.v.wikify(context, displayOpt)
+        propRendered = propPV.v.wikify(context, displayOpt, lexicalThing)
         valPV <- bundle.getPropOpt(UVValProp)
-        valRendered = valPV.v.wikify(context, displayOpt)
+        valRendered = valPV.v.wikify(context, displayOpt, lexicalThing)
       }
         yield identityRendered + Wikitext(" -- ") + thingRendered + Wikitext(":") + propRendered +
           Wikitext.nl + Wikitext.nl + valRendered + Wikitext.nl + Wikitext.nl

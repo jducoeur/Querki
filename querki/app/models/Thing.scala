@@ -383,7 +383,7 @@ abstract class Thing(
       pv <- getPropOpt(actualProp);
       if (!pv.isEmpty)
         )
-      yield pv.render(thisAsContext.forProperty(pv.prop))
+      yield pv.render(thisAsContext.forProperty(pv.prop), Some(this))
     
     renderedOpt.getOrElse(renderDefault)
   }

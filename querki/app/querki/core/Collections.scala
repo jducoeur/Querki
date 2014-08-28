@@ -82,8 +82,8 @@ trait CollectionBase { self:CoreEcot =>
     def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = {
       elemT.serialize(v.headOption.getOrElse(elemT.default))
     }
-    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = {
-      elemT.wikify(context)(v.headOption.getOrElse(elemT.default(context.state)), displayOpt)
+    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = {
+      elemT.wikify(context)(v.headOption.getOrElse(elemT.default(context.state)), displayOpt, lexicalThing)
     }
     def doDefault(elemT:pType)(implicit state:SpaceState):implType = {
       List(elemT.default)
@@ -126,8 +126,8 @@ trait CollectionBase { self:CoreEcot =>
         mkString("[", "," ,"]")
     }
     
-    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = {
-      val renderedElems = v.map(elem => elemT.wikify(context)(elem, displayOpt))
+    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = {
+      val renderedElems = v.map(elem => elemT.wikify(context)(elem, displayOpt, lexicalThing))
       // Concatenate the rendered elements, with newlines in-between:
       (Wikitext.empty /: renderedElems) ((soFar, next) => soFar.+(next, true))
     }
@@ -224,7 +224,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
       throw new Error("Trying to deserialize root collection!")
     def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = 
       throw new Error("Trying to serialize root collection!")
-    def doWikify(context:QLContext)(ser:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = 
+    def doWikify(context:QLContext)(ser:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = 
       throw new Error("Trying to render root collection!")
     def doDefault(elemT:pType)(implicit state:SpaceState):implType = 
       throw new Error("Trying to default root collection!")    
@@ -275,9 +275,9 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
       }
     }
     
-    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = {
+    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = {
       v match {
-        case List(elem) => elemT.wikify(context)(elem, displayOpt)
+        case List(elem) => elemT.wikify(context)(elem, displayOpt, lexicalThing)
         case Nil => Wikitext("")
       }
     }
@@ -365,7 +365,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
     
     def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = ""
     
-    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = Wikitext("")
+    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = Wikitext("")
     
     def doDefault(elemT:pType)(implicit state:SpaceState):implType = Nil
     
@@ -397,8 +397,8 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
 
     def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = elemT.serialize(v.head)
 
-    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None):Wikitext = {
-      elemT.wikify(context)(v.head, displayOpt)
+    def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = {
+      elemT.wikify(context)(v.head, displayOpt, lexicalThing)
     }
     def doDefault(elemT:pType)(implicit state:SpaceState):implType = {
       List(elemT.default)

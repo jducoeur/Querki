@@ -1,6 +1,6 @@
 package querki.links
 
-import models.{ThingState, Wikitext}
+import models.{PropertyBundle, ThingState, Wikitext}
 
 import querki.core.URLableType
 import querki.ecology._
@@ -66,7 +66,7 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
         yield text.text      
     }
     
-    override def doWikify(context:QLContext)(bundle:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None) = {
+    override def doWikify(context:QLContext)(bundle:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
       implicit val s = context.state
       
       val urlOpt = for {

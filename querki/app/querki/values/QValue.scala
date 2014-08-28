@@ -48,7 +48,8 @@ trait QValue {
     else
       first.getOpt(elemT)
   }
-  def wikify(context:QLContext, displayOpt:Option[Wikitext] = None):Wikitext = cType.doWikify(context)(cv, pType, displayOpt)
+  def wikify(context:QLContext, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = 
+    cType.doWikify(context)(cv, pType, displayOpt, lexicalThing)
   
   /**
    * Fetch the nth value in here, which is expected to be the specified type.

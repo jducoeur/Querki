@@ -41,7 +41,8 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
     def doDeserialize(v:String)(implicit state:SpaceState) = { throw new Exception("WrappedValueType does not implement doDeserialize") }
     def doSerialize(v:QValue)(implicit state:SpaceState) = { throw new Exception("WrappedValueType does not implement doSerialize") }
     
-    def doWikify(context:QLContext)(v:QValue, displayOpt:Option[Wikitext] = None) = v.wikify(context, displayOpt)
+    def doWikify(context:QLContext)(v:QValue, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = 
+      v.wikify(context, displayOpt, lexicalThing)
     
     def doDefault(implicit state:SpaceState) = { throw new Exception("WrappedValueType does not implement doDefault") }
   }

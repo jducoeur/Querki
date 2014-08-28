@@ -2,7 +2,7 @@ package querki.spaces
 
 import anorm.{Success=>AnormSuccess,_}
 
-import models.{OID, PType, SimplePTypeBuilder, UnknownOID, Wikitext}
+import models.{OID, PropertyBundle, PType, SimplePTypeBuilder, UnknownOID, Wikitext}
 import models.Thing.PropMap
 
 import querki.ecology._
@@ -139,7 +139,7 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = v
     def doSerialize(v:String)(implicit state:SpaceState) = v
-    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext("Unresolved property value!")
+    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = Wikitext("Unresolved property value!")
   
     def doDefault(implicit state:SpaceState) = ""
   }

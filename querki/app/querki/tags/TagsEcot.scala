@@ -4,7 +4,7 @@ import scala.xml.NodeSeq
 
 import querki.ecology._
 
-import models.{AsDisplayName, Collection, DisplayPropVal, Kind, Thing, ThingId, UnknownOID, Wikitext}
+import models.{AsDisplayName, Collection, DisplayPropVal, Kind, PropertyBundle, Thing, ThingId, UnknownOID, Wikitext}
 
 import querki.basic.{PlainText, PlainTextBaseType}
 import querki.core.{NameableType, NameTypeBasis, NameUtils, QLText, TextTypeBasis}
@@ -55,7 +55,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     // TODO: this should probably get refactored with LinkType? They're different ways of
     // expressing the same concepts; it's just that Links are OID-based, whereas Names/Tags are
     // name-based.
-    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = nameToLink(context)(v)
+    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = nameToLink(context)(v)
     
     override def renderProperty(prop:Property[_,_])(implicit request:RequestContext):Option[Wikitext] = {
       Some(QL.process(querki.core.QLText("""These tags are currently being used:
@@ -94,7 +94,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
       }
     }
   
-    override def doWikify(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None) = {
+    override def doWikify(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
       val display = displayOpt.getOrElse(Wikitext(v.text))
       // NOTE: yes, there is danger of Javascript injection here. We deal with that at the QText layer,
       // since that danger is there in ordinary QText as well.

@@ -2,7 +2,7 @@ package querki.basic
 
 import querki.ecology._
 
-import models.{OID, Property, PTypeBuilder, Wikitext}
+import models.{OID, Property, PropertyBundle, PTypeBuilder, Wikitext}
 
 import querki.core.{IsTextType, NameableType, TextTypeBasis}
 
@@ -26,7 +26,7 @@ trait PlainTextBaseType { self:QuerkiEcot with TextTypeBasis =>
 
     // TODO: in most cases, this should render as a link, the same was Tag Set does. But that breaks
     // Display Name. Hmm. Should we special case Display Name?
-    def doWikify(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None) = Wikitext(v.text)
+    def doWikify(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = Wikitext(v.text)
     
     override def doComp(context:QLContext)(left:PlainText, right:PlainText):Boolean = { left.text < right.text } 
       

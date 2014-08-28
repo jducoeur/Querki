@@ -20,7 +20,7 @@ import querki.ecology._
 case class PropAndVal[VT](prop:Property[VT, _], v:QValue) extends EcologyMember {
   implicit def ecology:Ecology = prop.ecology
   
-  def render(context:QLContext) = v.wikify(context)
+  def render(context:QLContext, lexicalThing:Option[PropertyBundle] = None) = v.wikify(context, lexicalThing = lexicalThing)
   def renderPlain = render(EmptyContext(ecology))
   def renderOr(context:QLContext)(other: => Wikitext) = if (v.isEmpty) other else render(context)
   def renderPlainOr(other: => Wikitext) = renderOr(EmptyContext(ecology))(other)

@@ -46,13 +46,14 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecology
    * Takes a value of this type, and turns it into displayable form. Querki
    * equivalent to toString.
    */
-  def doWikify(context:QLContext)(v:VT, displayOpt:Option[Wikitext] = None):Wikitext
+  def doWikify(context:QLContext)(v:VT, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext
   /**
    * Take a value of this type and turn it into a Wikitext. Formerly called "render", but that conflicts
    * in weird signature ways with Thing.render. (It appears that you can't have multiple overloads with
    * default values, even if the previous parameters differentiate between the overloads.)
    */
-  final def wikify(context:QLContext)(v:ElemValue, displayOpt:Option[Wikitext] = None):Wikitext = doWikify(context)(get(v), displayOpt)
+  final def wikify(context:QLContext)(v:ElemValue, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = 
+    doWikify(context)(get(v), displayOpt, lexicalThing)
   
   /**
    * Takes a value of this type, and renders it for showing in debug messages.
@@ -203,7 +204,8 @@ class DelegatingType[VT](resolver: => PType[VT])(implicit e:Ecology) extends PTy
   
   def doDeserialize(v:String)(implicit state:SpaceState) = realType.doDeserialize(v)
   def doSerialize(v:VT)(implicit state:SpaceState) = realType.doSerialize(v)
-  def doWikify(context:QLContext)(v:VT, displayOpt:Option[Wikitext] = None) = realType.doWikify(context)(v)
+  def doWikify(context:QLContext)(v:VT, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = 
+    realType.doWikify(context)(v, displayOpt, lexicalThing)
   
   override def doMatches(left:VT, right:VT) = realType.doMatches(left, right)
   

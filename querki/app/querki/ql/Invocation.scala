@@ -431,6 +431,8 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
   implicit def state:SpaceState = context.state
   
   def parser = context.parser
+  
+  def lexicalThing = parser.flatMap(_.lexicalThing)
     
   def numParams:Int = paramsOpt match {
     case Some(params) => params.length

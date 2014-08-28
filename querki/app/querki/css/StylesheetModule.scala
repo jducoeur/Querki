@@ -65,7 +65,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
     
     def doDeserialize(v:String)(implicit state:SpaceState) = v
     def doSerialize(v:String)(implicit state:SpaceState) = v
-    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = Wikitext(v)
+    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = Wikitext(v)
 
     def doDefault(implicit state:SpaceState) = ""
     

@@ -123,7 +123,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
    * This is a fake PType, used when we encounter a name we don't know.
    */
   lazy val UnknownNameType = new NameTypeBase(UnknownOID, toProps(setName("_unknownNameType"))) {
-    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None) = {
+    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
       Wikitext("{{_unknownName:") + nameToLink(context)(v, displayOpt) + Wikitext("}}")
     }
   }
@@ -135,7 +135,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = throw new Exception("Can't deserialize ParsedText!")
     def doSerialize(v:Wikitext)(implicit state:SpaceState) = throw new Exception("Can't serialize ParsedText!")
-    def doWikify(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None) = v
+    def doWikify(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = v
   
     override def doComp(context:QLContext)(left:Wikitext, right:Wikitext):Boolean = { left.plaintext < right.plaintext }
     override def doMatches(left:Wikitext, right:Wikitext):Boolean = { left.plaintext == right.plaintext }

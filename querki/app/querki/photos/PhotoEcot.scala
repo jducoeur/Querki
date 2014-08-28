@@ -9,7 +9,7 @@ import akka.actor.{ActorRef, Props}
 import akka.pattern.ask
 import akka.util.Timeout
 
-import models.{Collection, DelegatingType, DisplayPropVal, FullInputRendering, HtmlWikitext, Kind, Property, PType, PTypeBuilder, ThingState, Wikitext}
+import models.{Collection, DelegatingType, DisplayPropVal, FullInputRendering, HtmlWikitext, Kind, Property, PropertyBundle, PType, PTypeBuilder, ThingState, Wikitext}
 import models.MIMEType.MIMEType
 
 import querki.basic.PlainText
@@ -247,7 +247,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with quer
       Basic.ExplicitProp(true),
       Summary("A single Photograph in Querki"))) with FullInputRendering
   {
-    override def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None):Wikitext = {
+    override def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = {
       implicit val s = context.state
       val result = for {
         filename <- v.getFirstOpt(ImageFilenameProp)
@@ -312,7 +312,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with quer
    * image. This is what comes out of the _thumbnail function.
    */
   lazy val ThumbnailType = new DelegatingType(PhotoType) {
-    override def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None):Wikitext = {
+    override def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = {
       implicit val s = context.state
       
       val fromProp = fromPropStr(context)
@@ -338,7 +338,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with quer
    * the target for thumbnails.
    */
   lazy val TargetType = new DelegatingType(PhotoType) {
-    override def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None):Wikitext = {
+    override def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = {
       implicit val s = context.state
       val fromProp = fromPropStr(context)
       val result = for {

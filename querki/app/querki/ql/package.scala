@@ -259,6 +259,11 @@ package object ql {
     def definingContext:Option[QLContext]
     
     /**
+     * The Thing that this QL expression was defined in.
+     */
+    def lexicalThing:Option[PropertyBundle]
+    
+    /**
      * How many parameters were actually given?
      */
     def numParams:Int

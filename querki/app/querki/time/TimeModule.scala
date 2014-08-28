@@ -59,7 +59,7 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
     def doSerialize(v:DateTime)(implicit state:SpaceState) = v.getMillis().toString
     val defaultRenderFormat = DateTimeFormat.mediumDateTime
     
-    def doWikify(context:QLContext)(v:DateTime, displayOpt:Option[Wikitext] = None) = {
+    def doWikify(context:QLContext)(v:DateTime, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
       val formatter = displayOpt match {
         case Some(displayText) => DateTimeFormat.forPattern(displayText.plaintext)
         case None => defaultRenderFormat

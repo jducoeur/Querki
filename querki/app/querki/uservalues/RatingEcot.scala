@@ -2,7 +2,7 @@ package querki.uservalues
 
 import scala.xml.NodeSeq
 
-import models.{DisplayPropVal, Kind, SimplePTypeBuilder, ThingState, Wikitext}
+import models.{DisplayPropVal, Kind, PropertyBundle, SimplePTypeBuilder, ThingState, Wikitext}
 
 import querki.core.IntTypeBasis
 import querki.core.TypeUtils.DiscreteType
@@ -96,7 +96,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
     
     // TODO: this really ought to include the appropriate labels for this value, but we don't know the Property!
     // Do we need to change this Type to include the PropId? Is that even feasible?
-    override def doWikify(context:QLContext)(v:Int, displayOpt:Option[Wikitext] = None) = {
+    override def doWikify(context:QLContext)(v:Int, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
       implicit val state = context.state
       Wikitext(s"""<div class='_rating' data-rating='$v' data-readonly='true'></div>""".stripMargin)
     }
@@ -108,13 +108,13 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
       // We want to display this in the Editor, even though it is a Model Type:
       Basic.ExplicitProp(true)))
   {
-    override def doWikify(context:QLContext)(bundle:ModeledPropertyBundle, displayOpt:Option[Wikitext]) = {
+    override def doWikify(context:QLContext)(bundle:ModeledPropertyBundle, displayOpt:Option[Wikitext], lexicalThing:Option[PropertyBundle] = None) = {
       implicit val state = context.state
       val result = for {
         ratingPV <- bundle.getPropOpt(RatingProperty)
-        ratingRendered = ratingPV.v.wikify(context, displayOpt)
+        ratingRendered = ratingPV.v.wikify(context, displayOpt, lexicalThing)
         commentsPV <- bundle.getPropOpt(ReviewCommentsProperty)
-        commentsRendered = commentsPV.v.wikify(context, displayOpt)
+        commentsRendered = commentsPV.v.wikify(context, displayOpt, lexicalThing)
       }
         yield ratingRendered + Wikitext(" -- ") + commentsRendered
         
@@ -133,7 +133,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
       setName("_ratingAverageType"),
       setInternal)) with SimplePTypeBuilder[RatingAverage]
   {
-    def doWikify(context:QLContext)(v:RatingAverage, displayOpt:Option[Wikitext] = None) = {
+    def doWikify(context:QLContext)(v:RatingAverage, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
       implicit val state = context.state
       state.prop(v.propId) match {
         case Some(prop) => {

@@ -37,10 +37,10 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
     def doDeserialize(v:String)(implicit state:SpaceState) = ???
     def doSerialize(v:DisplayPropVal)(implicit state:SpaceState) = ???
     
-    def doWikify(context:QLContext)(v:DisplayPropVal, displayOpt:Option[Wikitext] = None) = { 
+    def doWikify(context:QLContext)(v:DisplayPropVal, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = { 
       val propName = v.prop.displayName
       val vDisplay = v.effectiveV match {
-        case Some(v) => v.wikify(context, displayOpt) 
+        case Some(v) => v.wikify(context, displayOpt, lexicalThing) 
         case None => Wikitext.empty
       }
       Wikitext(s": $propName : ") + vDisplay + (if (v.isInherited) Wikitext(" (inherited)") else Wikitext.empty)
