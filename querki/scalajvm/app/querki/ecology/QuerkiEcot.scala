@@ -88,9 +88,7 @@ abstract class CoreEcot(ecologyIn:Ecology) extends Ecot {
  * adds a large number of convenience methods that shadow types and calls that get used
  * frequently, to reduce the number of boilerplate imports.
  * 
- * =================
- * Building an Ecot
- * =================
+ * ==Building an Ecot==
  * 
  * An Ecot will typically includes a number of Thing definitions -- these *must* be declared
  * as lazy vals, and referenced in an overridden types, props or things (as appropriate).

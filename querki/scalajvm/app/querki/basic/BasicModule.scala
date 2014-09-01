@@ -45,7 +45,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
    * but whereas the "outer" layer of QLText is expected to be QText, with QL in
    * subclauses, the outer layer of a QL field is QL, with wikitext in subclauses.
    * 
-   * In other words, it is like QLText, but just the stuff inside the [[ ]] parts.
+   * In other words, it is like QLText, but just the stuff inside the square brackets.
    * 
    * QL fields are also processed a bit differently. QLText is fully processed and
    * rendered, producing QText. QL fields are essentially methods, which get *called*

@@ -1,12 +1,20 @@
-name := "Querki"
+// This horrible magic is the build.sbt rough equivalent of Build.scala's much simpler:
+//
+//   override def rootProject = Some(scalajvm)
+//
+// In this case (if I'm understanding correctly), we're actually reloading an internal sbt that is
+// set to the correct project.
+onLoad in Global := { Command.process("project scalajvm", _: State) } compose (onLoad in Global).value
 
-version := "0.10.6.3"
+lazy val appName = "Querki"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala)
+lazy val appVersion = "0.10.6.3"
 
-scalaVersion := "2.11.1"
+lazy val useScalaVersion = "2.11.1"
 
-val appDependencies = Seq(
+lazy val scalajvm = (project in file("scalajvm")).enablePlugins(PlayScala).settings(scalajvmSettings: _*)
+
+lazy val scalajvmDependencies = Seq(
 	  // Main Play dependencies
 	  jdbc,
 	  anorm,
@@ -22,4 +30,9 @@ val appDependencies = Seq(
       "com.amazonaws" % "aws-java-sdk" % "1.8.4"
 )
 
-libraryDependencies ++= appDependencies
+lazy val scalajvmSettings = Seq(
+  name := appName,
+  version := appVersion,
+  scalaVersion := useScalaVersion,
+  libraryDependencies ++= scalajvmDependencies
+)

@@ -178,13 +178,13 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
   /**
    * This seems a little delicate, and it is. clearAsCollection is dealing with the tension where the
    * inner Text of this phrase:
-   * 
+   * {{{
    *     * ""Some header info: [[""An interior item: ____""]]""
-   *     
+   * }}}    
    * gets handled element-by-element, but the parameter in this:
-   * 
+   * {{{
    *     _section(""My header"", ""An interior item: ____"")
-   *     
+   * }}}    
    * is handled at the list level.
    * 
    * Basically, forceAsCollection tells the system that the next clearAsCollection won't do it -- you have
