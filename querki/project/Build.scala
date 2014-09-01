@@ -8,6 +8,8 @@ import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
 
 object ApplicationBuild extends Build with UniversalKeys {
 
-//  override def rootProject = Some(scalajvm)
+  var scalajvmProject:Option[Project] = None
+
+  override def rootProject = { scalajvmProject }
 
 }

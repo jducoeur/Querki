@@ -4,7 +4,9 @@
 //
 // In this case (if I'm understanding correctly), we're actually reloading an internal sbt that is
 // set to the correct project.
-onLoad in Global := { Command.process("project scalajvm", _: State) } compose (onLoad in Global).value
+//onLoad in Global := { Command.process("project scalajvm", _: State) } compose (onLoad in Global).value
+
+val dummy = { scalajvmProject = Some(scalajvm); true }
 
 lazy val appName = "Querki"
 
