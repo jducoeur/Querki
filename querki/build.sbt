@@ -43,8 +43,18 @@ lazy val scalajvmSettings = Seq(
   name := appName,
   version := appVersion,
   scalaVersion := useScalaVersion,
-  libraryDependencies ++= scalajvmDependencies
-)
+  libraryDependencies ++= scalajvmDependencies,
+//  scalajsOutputDir := (crossTarget in Compile).value / "classes" / "public" / "javascripts",
+  compile in Compile <<= (compile in Compile) dependsOn (fastOptJS in (scalajs, Compile)),
+  dist <<= dist dependsOn (fullOptJS in (scalajs, Compile)),
+  commands += preStartCommand,
+  EclipseKeys.skipParents in ThisBuild := false
+//) ++ (
+//  // ask scalajs project to put its outputs in scalajsOutputDir
+//  Seq(packageExternalDepsJS, packageInternalDepsJS, packageExportedProductsJS, packageLauncher, fastOptJS, fullOptJS) map { packageJSKey =>
+//    crossTarget in (scalajs, Compile, packageJSKey) := scalajsOutputDir.value
+//  }
+) ++ sharedDirectorySettings
 
 lazy val sharedDirectorySettings = Seq(
   unmanagedSourceDirectories in Compile += new File((file(".") / sharedSrcDir / "src" / "main" / "scala").getCanonicalPath),
@@ -56,6 +66,13 @@ lazy val scalaSharedSettings =
     name := appName + "-shared",
     EclipseKeys.skipProject := true
   )
+  
+lazy val scalajsDependencies = Seq(
+	  "org.scala-lang.modules.scalajs" %%%! "scalajs-dom" % "0.6",
+      "org.scala-lang.modules.scalajs" %%%! "scalajs-jquery" % "0.6",
+      "org.scalatest" %% "scalatest" % "2.2.0" % "test",
+      "com.lihaoyi" %%%! "utest" % "0.2.3" % "test"
+    )
 
 lazy val scalajsSettings =
   scalaJSSettings ++ Seq(
@@ -64,10 +81,12 @@ lazy val scalajsSettings =
     scalaVersion := useScalaVersion,
     persistLauncher := true,
     persistLauncher in Test := false,
-    libraryDependencies ++= Seq(
-	  "org.scala-lang.modules.scalajs" %%% "scalajs-dom" % "0.6",
-      "org.scala-lang.modules.scalajs" %%% "scalajs-jquery" % "0.6",
-      "org.scalatest" %% "scalatest" % "2.2.0" % "test",
-      "com.lihaoyi" %%% "utest" % "0.2.3" % "test"
-    )
+    libraryDependencies ++= scalajsDependencies
   ) ++ sharedDirectorySettings
+
+
+// The new 'start' command optimises the JS before calling the Play 'start' renamed 'play-start'
+val preStartCommand = Command.args("start", "<port>") { (state: State, args: Seq[String]) =>
+  Project.runTask(fullOptJS in (scalajs, Compile), state)
+  state.copy(remainingCommands = ("play-start " + args.mkString(" ")) +: state.remainingCommands)
+}
