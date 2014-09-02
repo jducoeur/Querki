@@ -39,11 +39,26 @@ lazy val scalajvmDependencies = Seq(
       "com.amazonaws" % "aws-java-sdk" % "1.8.4"
 )
 
+//scalajsOutputDir := (crossTarget in Compile).value / "classes" / "public" / "javascripts"
+
+//crossTarget in (scalajs, Compile, packageExternalDepsJS) := scalajsOutputDir.value
+
+//crossTarget in (scalajs, Compile, packageInternalDepsJS) := scalajsOutputDir.value
+
+//crossTarget in (scalajs, Compile, packageExportedProductsJS) := scalajsOutputDir.value
+
+//crossTarget in (scalajs, Compile, packageLauncher) := scalajsOutputDir.value
+
+//crossTarget in (scalajs, Compile, fastOptJS) := scalajsOutputDir.value
+
+//crossTarget in (scalajs, Compile, fullOptJS) := scalajsOutputDir.value
+
 lazy val scalajvmSettings = Seq(
   name := appName,
   version := appVersion,
   scalaVersion := useScalaVersion,
   libraryDependencies ++= scalajvmDependencies,
+  // TODO: why doesn't this work? It causes an exception in sbt:
 //  scalajsOutputDir := (crossTarget in Compile).value / "classes" / "public" / "javascripts",
   compile in Compile <<= (compile in Compile) dependsOn (fastOptJS in (scalajs, Compile)),
   dist <<= dist dependsOn (fullOptJS in (scalajs, Compile)),
