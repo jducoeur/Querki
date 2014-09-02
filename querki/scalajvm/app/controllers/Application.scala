@@ -69,6 +69,10 @@ class Application extends ApplicationBase {
   lazy val AppliesToKindProp = Core.AppliesToKindProp
   lazy val DisplayNameProp = Basic.DisplayNameProp
   lazy val UrProp = Core.UrProp  
+  
+  def testHello = Action {
+    Ok(views.html.testHello())
+  }
 
   def index = withUser(false) { rc =>
     rc.requester match {

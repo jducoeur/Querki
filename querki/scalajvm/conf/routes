@@ -104,5 +104,7 @@ POST    /testAjax                   @controllers.Application.testAjax(i1, i2)
 GET     /javascriptRoutes           @controllers.Application.javascriptRoutes
 GET     /exploreRoutes              @controllers.ExploreController.javascriptRoutes
 
+GET     /testHello                  @controllers.Application.testHello
+
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
