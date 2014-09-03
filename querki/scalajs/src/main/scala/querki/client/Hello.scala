@@ -3,7 +3,7 @@ package querki.client
 import scala.scalajs.js.annotation.JSExport
 import scala.scalajs.js.JSApp
 
-import org.scalajs.jquery.jQuery
+import org.scalajs.jquery.{jQuery, JQueryEventObject}
 
 import querki.shared.Test
 
@@ -25,7 +25,14 @@ object Hello extends JSApp {
   }
 
   @JSExport
-  def addClickedMessage(): Unit = {
-    appendPar("You clicked the button again!")
+  def addClickedMessage(evt:JQueryEventObject): Unit = {
+    val yet = "yet "
+    val again = s"$yet again"
+    appendPar(s"You clicked the button $again!")
+  }
+  
+  @JSExport
+  def fetchAMessage(basis:String):String = {
+    s"$basis yourself!"
   }
 }

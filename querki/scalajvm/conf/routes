@@ -105,6 +105,10 @@ GET     /javascriptRoutes           @controllers.Application.javascriptRoutes
 GET     /exploreRoutes              @controllers.ExploreController.javascriptRoutes
 
 GET     /testHello                  @controllers.Application.testHello
+# Serve scala files under the scalajs subproject to be used by sourcemaps.
+# TODO: This route and its controller method should be removed for production
+GET     /scalajs/*file              @controllers.Application.scalajsFile(file)
+GET     /scala/*file                @controllers.Application.scalaSharedFile(file)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

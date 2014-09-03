@@ -73,6 +73,14 @@ class Application extends ApplicationBase {
   def testHello = Action {
     Ok(views.html.testHello())
   }
+  
+  def scalajsFile(file: String) = Action {
+    Ok.sendFile(new java.io.File(s"scalajs/$file"))
+  }
+
+  def scalaSharedFile(file: String) = Action {
+    Ok.sendFile(new java.io.File(s"scala/$file"))
+  }
 
   def index = withUser(false) { rc =>
     rc.requester match {

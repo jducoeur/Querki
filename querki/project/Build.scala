@@ -15,7 +15,7 @@ object ApplicationBuild extends Build with UniversalKeys {
   override def rootProject = Some(scalajvm)
 
   val sharedSrcDir = "scala"
-
+  
   lazy val scalajvm = Project(
     id = "scalajvm",
     base = file("scalajvm")
@@ -39,6 +39,7 @@ object ApplicationBuild extends Build with UniversalKeys {
       scalajsOutputDir := (crossTarget in Compile).value / "classes" / "public" / "javascripts",
       compile in Compile <<= (compile in Compile) dependsOn (fastOptJS in (scalajs, Compile)),
       dist <<= dist dependsOn (fullOptJS in (scalajs, Compile)),
+      stage <<= stage dependsOn (fullOptJS in (scalajs, Compile)),
       libraryDependencies ++= Dependencies.scalajvm,
       commands += preStartCommand,
       EclipseKeys.skipParents in ThisBuild := false
@@ -56,6 +57,7 @@ object ApplicationBuild extends Build with UniversalKeys {
       scalaVersion := Versions.scala,
       persistLauncher := true,
       persistLauncher in Test := false,
+	  relativeSourceMaps := true,
       libraryDependencies ++= Dependencies.scalajs
     ) ++ sharedDirectorySettings
 
