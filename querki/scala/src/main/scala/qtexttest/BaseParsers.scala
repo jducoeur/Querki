@@ -1,4 +1,4 @@
-package eu.henkelmann.actuarius
+package qtexttest
 
 import language.postfixOps
 import util.parsing.json.Parser

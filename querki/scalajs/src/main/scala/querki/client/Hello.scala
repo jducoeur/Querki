@@ -5,6 +5,8 @@ import scala.scalajs.js.JSApp
 
 import org.scalajs.jquery.{jQuery, JQueryEventObject}
 
+//import qtexttest.ActuariusTransformer
+
 import querki.shared.Test
 
 object Hello extends JSApp {
@@ -18,6 +20,10 @@ object Hello extends JSApp {
       .appendTo(jQuery("body"))
 	  
     appendPar(Test.hello)
+    
+    val myParser = new ParserTest
+    
+//    setupLiveWikitext()
   }
   
   def appendPar(text: String): Unit = {
@@ -35,4 +41,21 @@ object Hello extends JSApp {
   def fetchAMessage(basis:String):String = {
     s"$basis yourself!"
   }
+//  
+//  def body = jQuery("body")
+//  
+//  lazy val transformer = new ActuariusTransformer
+//  
+//  def setupLiveWikitext():Unit = {
+//    val inputArea = jQuery("""<textarea rows="5"></textarea>""")
+//      .appendTo(body)
+//    val outputArea = jQuery("""<div></div>""")
+//      .appendTo(body)
+//      
+//    inputArea.change { (evt:JQueryEventObject) =>
+//      val wikitext = inputArea.value.toString
+//      val html = transformer(wikitext)
+//      outputArea.html(html)
+//    }
+//  }
 }
