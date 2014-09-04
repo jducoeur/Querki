@@ -1,10 +1,6 @@
 package eu.henkelmann.actuarius
 
 import language.postfixOps
-import collection.immutable.StringOps
-import collection.mutable.ListBuffer
-import xml.{Group, Node, Text, NodeSeq, Elem => XmlElem, TopScope, XML}
-import xml.parsing.XhtmlParser
 import util.parsing.combinator.{Parsers, RegexParsers}
 
 /**

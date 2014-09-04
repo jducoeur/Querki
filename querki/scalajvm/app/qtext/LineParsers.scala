@@ -1,8 +1,6 @@
 package eu.henkelmann.actuarius
 
 import scala.util.parsing.input.{Position, Reader}
-import java.util.StringTokenizer
-import scala.collection.mutable.{HashMap, ArrayBuffer, ListBuffer}
 
 
 /**
