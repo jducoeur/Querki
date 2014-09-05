@@ -271,7 +271,7 @@ trait LineParsers extends InlineParsers {
      * Matches a line starting with up to three spaces followed by a colon, a space, a title, a space, a colon,
      * and any whitespace.
      */
-    val dItemStartLine:Parser[DItemStartLine] = (""" {0,3}: """.r) ~ ("""([^:]|(?<! ):)* """.r) ~ (""": [\t\v ]*""".r) ~ rest ^^ {
+    val dItemStartLine:Parser[DItemStartLine] = (""" {0,3}: """.r) ~ ("""(?:(?! :).)*""".r) ~ (""" : [\t\v ]*""".r) ~ rest ^^ {
         case start ~ title ~ end ~ payload => {
           val prefix = start + title + end
           new DItemStartLine(prefix, payload, title.trim)
