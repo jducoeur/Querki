@@ -111,7 +111,8 @@ object Dependencies {
 	  "org.scala-lang.modules.scalajs" %%%! "scalajs-dom" % "0.6",
       "org.scala-lang.modules.scalajs" %%%! "scalajs-jquery" % "0.6",
       "org.scalatest" %% "scalatest" % "2.2.0" % "test",
-      "com.lihaoyi" %%%! "utest" % "0.2.3" % "test"
+      "com.lihaoyi" %%%! "utest" % "0.2.3" % "test",
+	  "org.scalajs" %%%! "scala-parser-combinators" % "1.0.2-SNAPSHOT"
   ) ++ shared
 }
 
