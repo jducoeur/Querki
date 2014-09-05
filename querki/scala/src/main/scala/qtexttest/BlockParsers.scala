@@ -162,7 +162,7 @@ trait BlockParsers extends Parsers {
               empties.foreach(empty => out.append(deco.decorateBreak).append('\n'))
             } else if (!suppressPara) {
               // drop last newline so paragraph closing tag ends the line:
-              if (!out.isEmpty && out.charAt(out.length-1) == '\n') out.deleteCharAt(out.length-1)
+              if (!out.isEmpty && out.charAt(out.length-1) == '\n') out.setLength(out.length-1)
             }
         }
     }
