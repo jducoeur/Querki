@@ -1,9 +1,6 @@
-package querki.ecology
+package querki.ecology.test
 
-import scala.reflect.runtime.{universe => ru}
-import scala.reflect.runtime.universe._
-
-import querki.values.SpaceState
+import scala.reflect.ClassTag
 
 class EcologyImpl extends Ecology with EcologyManager {
   
@@ -13,10 +10,19 @@ class EcologyImpl extends Ecology with EcologyManager {
   //
   
   val ecology:Ecology = this
-  val runtimeMirror = ru.runtimeMirror(this.getClass().getClassLoader)
   
   def register(ecot:Ecot):Unit = {
     _registeredEcots = _registeredEcots + ecot
+    
+    // TEMP:
+    println(s"Registering ${ecot.getClass().getName()}")
+    val clazz = ecot.getClass()
+    println(s"  Superclass: ${clazz.getSuperclass().getName()}")
+    // Hmm -- neither of these exist:
+//    println("  Classes:")
+//    clazz.getClasses().foreach { superclazz => println(s"    ${superclazz.getName()}") }
+//    println("  Interfaces:")
+//    clazz.getInterfaces().foreach { superclazz => println(s"    ${superclazz.getName()}") }
     
     ecot.implements.foreach { interfaceClass => 
       if (_registeredInterfaces.contains(interfaceClass)) {
@@ -28,17 +34,10 @@ class EcologyImpl extends Ecology with EcologyManager {
     }
   }
   
-  private def getType[T](clazz: Class[T]):Type = {
-    val runtimeMirror = ru.runtimeMirror(clazz.getClassLoader)
-    runtimeMirror.classSymbol(clazz).toType
-  }
-  
-  def init(initialSpaceState:SpaceState, createActorCb:CreateActorFunc):SpaceState = {
+  def init():Unit = {
     println("Starting Ecology initialization...")
-    val finalState = initializeRemainingEcots(_registeredEcots, initialSpaceState)
-    initializeActors(createActorCb)
+    initializeRemainingEcots(_registeredEcots)
     postInitialize(_registeredEcots)
-    finalState
   }
   
   def term():Unit = {
@@ -46,11 +45,6 @@ class EcologyImpl extends Ecology with EcologyManager {
       println(s"Terminating ecot ${ecot.fullName}")
       ecot.term
     }
-  }
-
-  def isRegistered[C](implicit tag:TypeTag[C]):Boolean = {
-    val clazz = runtimeMirror.runtimeClass(tag.tpe.typeSymbol.asClass)
-    _registeredInterfaces.contains(clazz)
   }
   
   // ******************************************************
@@ -60,11 +54,11 @@ class EcologyImpl extends Ecology with EcologyManager {
   
   val manager:EcologyManager = this
   
-  def api[T <: EcologyInterface : TypeTag]:T = {
+  def api[T <: EcologyInterface : ClassTag](implicit tag:ClassTag[T]):T = {
     // This is a bit dubiously inefficient. But it is supposed to mainly be called via
     // InterfaceWrapper.get, which caches the result, so it shouldn't be called *too* often
     // after system initialization.
-    val clazz = runtimeMirror.runtimeClass(typeOf[T].typeSymbol.asClass)
+    val clazz = tag.runtimeClass
     try {
       _initializedInterfaces.get(clazz) match {
         case Some(ecot) => ecot.asInstanceOf[T]
@@ -121,15 +115,13 @@ class EcologyImpl extends Ecology with EcologyManager {
    */
   private var _termOrder:List[Ecot] = Nil
   
-  def initEcot(ecot:Ecot, currentState:SpaceState):SpaceState = {
+  def initEcot(ecot:Ecot):Unit = {
     // TODO: this should go through Log instead:
     println(s"Initializing ecot ${ecot.fullName}")
-    val newState = ecot.addSystemObjects(currentState)
     ecot.init
     _initializedEcots += ecot
     _termOrder = ecot :: _termOrder
     ecot.implements.foreach(interface =>_initializedInterfaces += (interface -> ecot))
-    newState
   }
   
   /**
@@ -139,15 +131,14 @@ class EcologyImpl extends Ecology with EcologyManager {
    * 
    * One practical detail that is Querki-specific: as we go, we add each Ecot's Things to the SystemSpace.
    */
-  private def initializeRemainingEcots(remaining:Set[Ecot], currentState:SpaceState):SpaceState = {
+  private def initializeRemainingEcots(remaining:Set[Ecot]):Unit = {
     if (remaining.isEmpty) {
       println("Ecology initialization complete")
-      currentState
     } else {
       remaining.find(_.dependsUpon.forall(_initializedInterfaces.contains(_))) match {
         case Some(readyEcot) => {
-          val newState = initEcot(readyEcot, currentState)
-          initializeRemainingEcots(remaining - readyEcot, newState)
+          initEcot(readyEcot)
+          initializeRemainingEcots(remaining - readyEcot)
         }
         // TODO: scan the remainder, and particularly their dependencies. If we find a dependency that
         // isn't in _registeredInterfaces, that means something isn't implemented yet. Otherwise, it
@@ -164,10 +155,6 @@ class EcologyImpl extends Ecology with EcologyManager {
         }
       }
     }
-  }
-  
-  private def initializeActors(createActorCb:CreateActorFunc) = {
-    _initializedEcots.foreach(_.createActors(createActorCb))
   }
   
   private def postInitialize(ecots:Set[Ecot]) = {

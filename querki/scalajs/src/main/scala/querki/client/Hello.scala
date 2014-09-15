@@ -7,8 +7,11 @@ import org.scalajs.jquery.{jQuery, JQueryEventObject}
 
 import querki.shared.Test
 
+import querki.ecology.test._
+
 object Hello extends JSApp {
   def main(): Unit = {
+    setupEcology()
     jQuery(setupUI _)
   }
   
@@ -35,4 +38,25 @@ object Hello extends JSApp {
   def fetchAMessage(basis:String):String = {
     s"$basis yourself!"
   }
+  
+  
+  var theEcology:EcologyImpl = null
+  
+  def setupEcology() = {
+    theEcology = new EcologyImpl
+    new TestEcot(theEcology)
+    theEcology.init
+  }
+}
+
+trait TestInterface1 extends EcologyInterface {
+  
+}
+
+trait TestInterface2 extends EcologyInterface {
+  
+}
+
+class TestEcot(val ecology:Ecology) extends Ecot with TestInterface1 with TestInterface2 {
+  
 }
