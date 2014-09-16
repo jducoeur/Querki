@@ -1,6 +1,7 @@
 package controllers
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits._
 
 import play.api.data._
 import play.api.data.Forms._
@@ -36,11 +37,11 @@ class TOSController extends ApplicationBase {
     // get the damned checkbox to be recognized properly. Far as I can tell, Play doesn't want to accept
     // the bog-standard "on" response from the checkbox:
     if (response == "on" || response == "true") {
-      // TODO: use redirectTo to return to where we were before this started.
-      // TODO: since we should now be returning a Future anyway, Tryer should probably be reworked:
-      Tryer[querki.identity.User, Future[Result]]
+      // Note that we wait for the Future to resolve -- this is to make sure that the UserCache has time to
+      // update properly:
+      Tryer[Future[querki.identity.User], Future[Result]]
         { TOS.recordAccept(rc.requesterOrAnon, rawForm.data("version").toInt) }
-        { user => rc.returnToPreviousOr(routes.Application.index) }
+        { userFut => userFut.map { user => rc.returnToPreviousOr(routes.Application.index) } }
         { ex => doError(routes.TOSController.showTOS, ex) }
     } else {
       doError(routes.TOSController.showTOS, "Please accept the terms and conditions")

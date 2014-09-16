@@ -186,7 +186,9 @@ package object identity {
     // WARNING: this should *not* often be used! It is dangerous from an Identity-security POV!
     def getUserByHandleOrEmail(raw:String):Option[User]
     def getUserByHandle(handle:String):Option[User]
-    def setTOSVersion(userId:OID, version:Int):Option[User]
+    // The Future will resolve once the UserCache has had time to properly update.
+    // TODO: any other entry points that change User state should be doing the same thing!
+    def setTOSVersion(userId:OID, version:Int):Future[Option[User]]
     def getAcquaintanceIds(identityId:IdentityId):Seq[IdentityId]
   }
 }

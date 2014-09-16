@@ -1,5 +1,7 @@
 package querki.identity
 
+import scala.concurrent.ExecutionContext.Implicits._
+import scala.concurrent.Future
 import scala.util.Try
 
 import anorm._
@@ -25,6 +27,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   
   lazy val Encryption = interface[querki.security.Encryption]
   lazy val IdentityAccess = interface[IdentityAccess]
+  lazy val UserCacheAccess = interface[UserCacheAccess]
   
   /**
    * TODO: RE-ADD CACHING
@@ -321,7 +324,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   }
 
   def setTOSVersion(userId:OID, version:Int) = {
-    DB.withConnection(dbName(System)) { implicit conn =>
+    val userOpt = DB.withConnection(dbName(System)) { implicit conn =>
       val update = SQL("""
           UPDATE User
              SET tosVersion={v}
@@ -330,6 +333,11 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
       update.executeUpdate
       
       loadByUserId(userId)
+    }
+    
+    userOpt match {
+      case Some(user) => UserCacheAccess.updateCacheAndThen(user).map(Some(_))
+      case None => Future.successful(None)
     }
   }
   

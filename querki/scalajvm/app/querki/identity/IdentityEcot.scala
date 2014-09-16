@@ -26,7 +26,15 @@ object IdentityMOIDs extends EcotIds(39) {
   val ResolveIdentityOID = moid(3)
 }
 
-class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with querki.core.MethodDefs {
+private [identity] trait UserCacheAccess extends EcologyInterface {
+  /**
+   * This is used by UserPersistence to kick the UserCache. Note that this returns a Future, which will resolve after
+   * the Cache has acknowledged the update.
+   */
+  def updateCacheAndThen(user:User):Future[User]
+}
+
+class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with querki.core.MethodDefs with UserCacheAccess {
   
   import IdentityMOIDs._
   
@@ -88,6 +96,11 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
       }
       case None => Future.successful(None)
     }
+  }
+  
+  def updateCacheAndThen(user:User):Future[User] = {
+    val fut = userCache ? UpdateUser(user)
+    fut.mapTo[UpdateAck].map(_.user)
   }
   
   /***********************************************
