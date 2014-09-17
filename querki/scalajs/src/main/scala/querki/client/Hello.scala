@@ -9,7 +9,7 @@ import qtexttest.ActuariusTransformer
 
 import querki.shared.Test
 
-import querki.ecology.test._
+//import querki.ecology.test._
 
 object Hello extends JSApp {
   def main(): Unit = {
@@ -59,23 +59,23 @@ object Hello extends JSApp {
     }
   }
   
-  var theEcology:EcologyImpl = null
+//  var theEcology:EcologyImpl = null
   
   def setupEcology() = {
-    theEcology = new EcologyImpl
-    new TestEcot(theEcology)
-    theEcology.init
+//    theEcology = new EcologyImpl
+//    new TestEcot(theEcology)
+//    theEcology.init
   }
 }
-
-trait TestInterface1 extends EcologyInterface {
-  
-}
-
-trait TestInterface2 extends EcologyInterface {
-  
-}
-
-class TestEcot(val ecology:Ecology) extends Ecot with TestInterface1 with TestInterface2 {
-  
-}
+//
+//trait TestInterface1 extends EcologyInterface {
+//  
+//}
+//
+//trait TestInterface2 extends EcologyInterface {
+//  
+//}
+//
+//class TestEcot(val ecology:Ecology) extends Ecot with TestInterface1 with TestInterface2 {
+//  
+//}

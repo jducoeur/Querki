@@ -1,5 +1,6 @@
 package querki.ecology
 
+import scala.reflect.ClassTag
 import scala.reflect.runtime.{universe => ru}
 import scala.reflect.runtime.universe._
 
@@ -48,8 +49,8 @@ class EcologyImpl extends Ecology with EcologyManager {
     }
   }
 
-  def isRegistered[C](implicit tag:TypeTag[C]):Boolean = {
-    val clazz = runtimeMirror.runtimeClass(tag.tpe.typeSymbol.asClass)
+  def isRegistered[C](implicit tag:ClassTag[C]):Boolean = {
+    val clazz = tag.runtimeClass
     _registeredInterfaces.contains(clazz)
   }
   
@@ -60,11 +61,11 @@ class EcologyImpl extends Ecology with EcologyManager {
   
   val manager:EcologyManager = this
   
-  def api[T <: EcologyInterface : TypeTag]:T = {
+  def api[T <: EcologyInterface](implicit tag:ClassTag[T]):T = {
     // This is a bit dubiously inefficient. But it is supposed to mainly be called via
     // InterfaceWrapper.get, which caches the result, so it shouldn't be called *too* often
     // after system initialization.
-    val clazz = runtimeMirror.runtimeClass(typeOf[T].typeSymbol.asClass)
+    val clazz = tag.runtimeClass
     try {
       _initializedInterfaces.get(clazz) match {
         case Some(ecot) => ecot.asInstanceOf[T]

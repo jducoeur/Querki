@@ -1,5 +1,6 @@
 package querki.ecology
 
+import scala.reflect.ClassTag
 import scala.reflect.runtime.universe.TypeTag
 
 import querki.values.SpaceState
@@ -24,7 +25,7 @@ trait Ecology {
    * Fetches the registered interface. Throws an exception if the interface is not
    * registered, or not initialized.
    */
-  def api[T <: EcologyInterface : TypeTag]:T
+  def api[T <: EcologyInterface](implicit tag:ClassTag[T]):T
 }
 
 /**
@@ -66,7 +67,7 @@ trait EcologyManager {
   /**
    * Mainly for testing and reporting.
    */
-  def isRegistered[C](implicit tag:TypeTag[C]):Boolean
+  def isRegistered[C](implicit tag:ClassTag[C]):Boolean
 }
 
 /**
@@ -87,17 +88,10 @@ trait EcologyMember {
    * This is the method that Ecots and EcologyMembers should use to access other parts of the Ecology, if they are
    * *not* needed at initialization time. 
    */
-  def interface[T <: EcologyInterface : TypeTag]:T = ecology.api[T]
+  def interface[T <: EcologyInterface : ClassTag]:T = ecology.api[T]
 }
 
-/**
- * This is a pure marker trait. All "interfaces" exposed through the Ecology *must* have this as their
- * first trait linearly. (Usually, it will be the only thing that an exposed interface extends, but
- * that is not required.)
- */
-trait EcologyInterface
-
-case class InterfaceWrapper[T <: EcologyInterface](ecology:Ecology)(implicit tag:TypeTag[T]) {
+case class InterfaceWrapper[T <: EcologyInterface](ecology:Ecology)(implicit tag:ClassTag[T]) {
   lazy val get:T = ecology.api[T]
 }
 
@@ -201,8 +195,8 @@ trait Ecot extends EcologyMember {
    * tells the Ecology that you have an init-time dependency), but the returned value can only be used
    * in lazy vals, or code that is called during init and later.
    */
-  def initRequires[T <: EcologyInterface](implicit tag:TypeTag[T]):InterfaceWrapper[T] = {
-    _dependencies += getClass(tag.tpe)
+  def initRequires[T <: EcologyInterface](implicit tag:ClassTag[T]):InterfaceWrapper[T] = {
+    _dependencies += tag.runtimeClass
     InterfaceWrapper[T](ecology)
   }
   private var _dependencies:Set[Class[_]] = Set.empty
