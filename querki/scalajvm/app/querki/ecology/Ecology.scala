@@ -14,12 +14,12 @@ import querki.values.SpaceState
  * (Stateful components must instead live inside the Akka side of the world, so that
  * their threading is properly managed.)
  */
-trait Ecology {
+trait EcologyBase[ST, ET <: EcotBase[ST, ET]] {
   /**
    * Gets the manager for this Ecology. Most of the time, you should be able to ignore
    * this -- it is mainly used for setup and shutdown.
    */
-  def manager:EcologyManager
+  def manager:EcologyManager[ST, ET]
   
   /**
    * Fetches the registered interface. Throws an exception if the interface is not
@@ -35,11 +35,11 @@ trait Ecology {
  * Don't rely on that, though. The traits are separated in order to separate concerns,
  * and it is quite possible that the implementations might be separated at some point.
  */
-trait EcologyManager {
+trait EcologyManager[ST, ET <: EcotBase[ST, ET]] {
   /**
    * Gets the Ecology that this is managing.
    */
-  def ecology:Ecology
+  def ecology:EcologyBase[ST, ET]
   
   /**
    * Adds the specified Ecot to this Ecology. Should be called during Ecot construction;
@@ -52,12 +52,7 @@ trait EcologyManager {
    * *not* violate this rule! However, Ecots are allowed to create child Ecots within their
    * own constructors.
    */
-  def register(ecot:Ecot):Unit
-  
-  /**
-   * Initializes the world, and returns the resulting SpaceState.
-   */
-  def init(initialSpaceState:SpaceState, createActorCb:CreateActorFunc):SpaceState
+  def register(ecot:ET):Unit
   
   /**
    * Terminates the world.
@@ -78,11 +73,11 @@ trait EcologyManager {
  * be an EcologyMember. This means that it needs to receive the Ecology in some fashion -- most often as
  * a constructor parameter, but it could also simply use a pointer to its parent, or something like that.
  */
-trait EcologyMember {
+trait EcologyMemberBase[ST, ET <: EcotBase[ST, ET]] {
   /**
    * A way to get from here to the Ecology.
    */
-  implicit def ecology:Ecology
+  implicit def ecology:EcologyBase[ST, ET]
   
   /**
    * This is the method that Ecots and EcologyMembers should use to access other parts of the Ecology, if they are
@@ -91,7 +86,7 @@ trait EcologyMember {
   def interface[T <: EcologyInterface : ClassTag]:T = ecology.api[T]
 }
 
-case class InterfaceWrapper[T <: EcologyInterface](ecology:Ecology)(implicit tag:ClassTag[T]) {
+case class InterfaceWrapperBase[ST, ET <: EcotBase[ST, ET], T <: EcologyInterface](ecology:EcologyBase[ST, ET])(implicit tag:ClassTag[T]) {
   lazy val get:T = ecology.api[T]
 }
 
@@ -164,11 +159,55 @@ object SystemIds extends EcotIds(0) {
  * 
  * TODO: a lot of implementation details have bled into this interface. Fix the relationship
  * between it and Module. (Which will become EcotImpl.)
+ * 
+ * @tparam ST The StateType that this Ecot type works with. Used in initialization, if we
+ *     are building up some sort of initial system state.
  */
-trait Ecot extends EcologyMember {
+trait EcotBase[ST, ET <: EcotBase[ST, ET]] extends EcologyMemberBase[ST, ET] { self:ET =>
 
-  import scala.reflect.runtime.{universe => ru}
-  import scala.reflect.runtime.universe._
+  /**
+   * Initialization call, which may be overridden by the Module. This should hook in
+   * all Listeners.
+   */
+  def init = {}
+  
+  /**
+   * Called after everything has finished initializing, but before we open the gates. This
+   * is useful because you can call interfaces from here without introducing initRequires
+   * dependencies. It is often useful for things like registering callbacks. By this point,
+   * the main system Actors have been created, so you can *send* them messages, but preferably
+   * should not block on the responses, since their Troupes may still be setting up.
+   * 
+   * postInit is not called in any particular order, and you should make no assumptions
+   * about it.
+   */
+  def postInit = {}
+  
+  /**
+   * Termination call, which may be overridden by the Module on system shutdown.
+   */
+  def term = {}
+  
+  /**
+   * If this Ecot needs to add something to the initial system state, do it here.
+   */
+  def addState(prevState:ST):ST = { prevState }
+  
+  /**
+   * Note that registration takes place during construction, not necessarily at the end
+   * of construction. You are explicitly *not* allowed to access the Ecology during construction,
+   * or make any assumptions about being registered -- that is what init() is for.
+   */
+  ecology.manager.register(this)
+  
+  /**
+   * This is intentionally left blank in EcotBase, because the implementation differs between
+   * the ScalaJVM side (which can do horribly clever things with Types) and the ScalaJS side
+   * (which can't).
+   * 
+   * TBD: can we rewrite implements() as a macro which would work on both sides? Maybe.
+   */
+  def implements:Set[Class[_]]
   
   /**
    * The EcologyInterfaces that this Ecot requires in order to initialize.
@@ -195,41 +234,22 @@ trait Ecot extends EcologyMember {
    * tells the Ecology that you have an init-time dependency), but the returned value can only be used
    * in lazy vals, or code that is called during init and later.
    */
-  def initRequires[T <: EcologyInterface](implicit tag:ClassTag[T]):InterfaceWrapper[T] = {
+  def initRequires[T <: EcologyInterface](implicit tag:ClassTag[T]):InterfaceWrapperBase[ST, ET, T] = {
     _dependencies += tag.runtimeClass
-    InterfaceWrapper[T](ecology)
+    InterfaceWrapperBase[ST, ET, T](ecology)
   }
   private var _dependencies:Set[Class[_]] = Set.empty
-  
+
   /**
-   * Initialization call, which may be overridden by the Module. This should hook in
-   * all Listeners.
+   * Mainly for printing.
    */
-  def init = {}
+  def fullName = this.getClass().getName()
+}
+
+trait EcotImpl extends Ecot {
   
-  /**
-   * Called after everything has finished initializing, but before we open the gates. This
-   * is useful because you can call interfaces from here without introducing initRequires
-   * dependencies. It is often useful for things like registering callbacks. By this point,
-   * the main system Actors have been created, so you can *send* them messages, but preferably
-   * should not block on the responses, since their Troupes may still be setting up.
-   * 
-   * postInit is not called in any particular order, and you should make no assumptions
-   * about it.
-   */
-  def postInit = {}
-  
-  /**
-   * Termination call, which may be overridden by the Module on system shutdown.
-   */
-  def term = {}
-  
-  /**
-   * Note that registration takes place during construction, not necessarily at the end
-   * of construction. You are explicitly *not* allowed to access the Ecology during construction,
-   * or make any assumptions about being registered -- that is what init() is for.
-   */
-  ecology.manager.register(this)
+  import scala.reflect.runtime.{universe => ru}
+  import scala.reflect.runtime.universe._
 
   private def mirror(clazz:Class[_]):Mirror = ru.runtimeMirror(clazz.getClassLoader)
   private def getType[T](clazz: Class[T]):Type = {
@@ -238,11 +258,6 @@ trait Ecot extends EcologyMember {
   private def getClass(tpe:Type):Class[_] = {
     mirror(this.getClass()).runtimeClass(tpe.typeSymbol.asClass)
   }
-
-  /**
-   * Mainly for printing.
-   */
-  def fullName = getType(this.getClass())
   
   /**
    * This is the set of all EcologyInterfaces that this Ecot implements.
@@ -264,6 +279,8 @@ trait Ecot extends EcologyMember {
     }
     interfaceSymbols.map(interface => mirror(clazz).runtimeClass(interface.asClass)).toSet
   }
+  
+  override def addState(prevState:SpaceState):SpaceState = addSystemObjects(prevState)
   
   /**
    * If the Module requires any specialized Things, Properties, Types or Collections,

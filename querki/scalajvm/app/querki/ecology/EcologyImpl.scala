@@ -6,23 +6,23 @@ import scala.reflect.runtime.universe._
 
 import querki.values.SpaceState
 
-class EcologyImpl extends Ecology with EcologyManager {
+class EcologyImplBase[ST, ET <: EcotBase[ST, ET]] extends EcologyBase[ST, ET] with EcologyManager[ST, ET] {
   
   // ******************************************************
   //
   // EcologyManager Implementation
   //
   
-  val ecology:Ecology = this
+  val ecology:EcologyBase[ST, ET] = this
   val runtimeMirror = ru.runtimeMirror(this.getClass().getClassLoader)
   
-  def register(ecot:Ecot):Unit = {
+  def register(ecot:ET):Unit = {
     _registeredEcots = _registeredEcots + ecot
     
     ecot.implements.foreach { interfaceClass => 
       if (_registeredInterfaces.contains(interfaceClass)) {
         val currentRegistrant = _registeredInterfaces(interfaceClass)
-        throw new AlreadyRegisteredInterfaceException(interfaceClass, currentRegistrant, ecot)
+        throw new AlreadyRegisteredInterfaceException[ST, ET](interfaceClass, currentRegistrant, ecot)
       } else {
         _registeredInterfaces = _registeredInterfaces + (interfaceClass -> ecot)
       }
@@ -34,10 +34,10 @@ class EcologyImpl extends Ecology with EcologyManager {
     runtimeMirror.classSymbol(clazz).toType
   }
   
-  def init(initialSpaceState:SpaceState, createActorCb:CreateActorFunc):SpaceState = {
+  def init(initialSpaceState:ST)(specializedInit:ST => ST):ST = {
     println("Starting Ecology initialization...")
-    val finalState = initializeRemainingEcots(_registeredEcots, initialSpaceState)
-    initializeActors(createActorCb)
+    val mainState = initializeRemainingEcots(_registeredEcots, initialSpaceState)
+    val finalState = specializedInit(mainState)
     postInitialize(_registeredEcots)
     finalState
   }
@@ -59,7 +59,7 @@ class EcologyImpl extends Ecology with EcologyManager {
   // Ecology Implementation
   //
   
-  val manager:EcologyManager = this
+  val manager:EcologyManager[ST, ET] = this
   
   def api[T <: EcologyInterface](implicit tag:ClassTag[T]):T = {
     // This is a bit dubiously inefficient. But it is supposed to mainly be called via
@@ -94,7 +94,7 @@ class EcologyImpl extends Ecology with EcologyManager {
   /**
    * All of the Ecots that have been registered, in no particular order.
    */
-  private var _registeredEcots:Set[Ecot] = Set.empty
+  private var _registeredEcots:Set[ET] = Set.empty
   
   /**
    * All of the EcologyInterfaces that have been registered, and which Ecot implements each.
@@ -103,29 +103,29 @@ class EcologyImpl extends Ecology with EcologyManager {
    * might be more efficient. And I don't think there is anything terribly public that has wound
    * up relying on Class -- we're actually mostly using TypeTag in the APIs.
    */
-  private var _registeredInterfaces:Map[Class[_], Ecot] = Map.empty
+  private var _registeredInterfaces:Map[Class[_], ET] = Map.empty
   
   /**
    * All of the Ecots that have been fully initialized.
    */
-  private var _initializedEcots:Set[Ecot] = Set.empty
+  protected var _initializedEcots:Set[ET] = Set.empty
   
   /**
    * All of the EcologyInterfaces that have been fully initialized. Once they have been initialized, other systems may
    * access them.
    */
-  private var _initializedInterfaces:Map[Class[_], Ecot] = Map.empty
+  private var _initializedInterfaces:Map[Class[_], ET] = Map.empty
   
   /**
    * The calculated order to terminate the world. This is basically the reverse of the order in which we
    * initialized, since we calculated the dependencies then.
    */
-  private var _termOrder:List[Ecot] = Nil
+  private var _termOrder:List[ET] = Nil
   
-  def initEcot(ecot:Ecot, currentState:SpaceState):SpaceState = {
+  def initEcot(ecot:ET, currentState:ST):ST = {
     // TODO: this should go through Log instead:
     println(s"Initializing ecot ${ecot.fullName}")
-    val newState = ecot.addSystemObjects(currentState)
+    val newState = ecot.addState(currentState)
     ecot.init
     _initializedEcots += ecot
     _termOrder = ecot :: _termOrder
@@ -140,7 +140,7 @@ class EcologyImpl extends Ecology with EcologyManager {
    * 
    * One practical detail that is Querki-specific: as we go, we add each Ecot's Things to the SystemSpace.
    */
-  private def initializeRemainingEcots(remaining:Set[Ecot], currentState:SpaceState):SpaceState = {
+  private def initializeRemainingEcots(remaining:Set[ET], currentState:ST):ST = {
     if (remaining.isEmpty) {
       println("Ecology initialization complete")
       currentState
@@ -157,21 +157,32 @@ class EcologyImpl extends Ecology with EcologyManager {
           remaining.foreach { ecot =>
             ecot.dependsUpon.foreach { dependency =>
               if (!_registeredInterfaces.contains(dependency))
-                throw new InitMissingInterfaceException(dependency, ecot)
+                throw new InitMissingInterfaceException[ST, ET](dependency, ecot)
             }
           }
           
-          throw new InitDependencyLoopException(remaining)
+          throw new InitDependencyLoopException[ST, ET](remaining)
         }
       }
     }
   }
   
-  private def initializeActors(createActorCb:CreateActorFunc) = {
-    _initializedEcots.foreach(_.createActors(createActorCb))
-  }
-  
-  private def postInitialize(ecots:Set[Ecot]) = {
+  private def postInitialize(ecots:Set[ET]) = {
     ecots.foreach(_.postInit)
   }
+}
+
+class EcologyImpl extends EcologyImplBase[SpaceState, EcotImpl] {
+
+  def init(initialSpaceState:SpaceState, createActorCb:CreateActorFunc):SpaceState = {
+    val finalState = init(initialSpaceState) { state =>
+      initializeActors(createActorCb)
+      state
+    }
+    finalState
+  }
+  
+  private def initializeActors(createActorCb:CreateActorFunc) = {
+    _initializedEcots.foreach(_.createActors(createActorCb))
+  }  
 }

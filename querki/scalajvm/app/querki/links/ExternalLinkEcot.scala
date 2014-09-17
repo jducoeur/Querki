@@ -16,7 +16,7 @@ object ExternalLinkMOIDs extends EcotIds(46) {
   val OIDLinkOID = moid(5)
 }
 
-class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with querki.types.ModelTypeDefiner {
+class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with querki.types.ModelTypeDefiner with EcologyMember {
   import ExternalLinkMOIDs._
     
   val Basic = initRequires[querki.basic.Basic]

@@ -25,10 +25,11 @@ class QuerkiRoot extends Actor {
   def receive = {
     case Initialize => {
       println("Creating the Ecology...")
-      ecology = new EcologyImpl
+      val ecologyImpl = new EcologyImpl
+      ecology = ecologyImpl
       SystemCreator.createAllEcots(ecology)
       println("... initializing the Ecology...")
-      val finalState = ecology.manager.init(InitialSystemState.create(ecology), createActor)
+      val finalState = ecologyImpl.init(InitialSystemState.create(ecology), createActor)
       
       // Allow all the systems to cache their stuff into System:
       val withCache = ecology.api[querki.spaces.SpaceChangeManager].updateStateCache(CacheUpdate(None, None, finalState))
