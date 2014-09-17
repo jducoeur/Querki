@@ -14,7 +14,6 @@ class EcologyImplBase[ST, ET <: EcotBase[ST, ET]] extends EcologyBase[ST, ET] wi
   //
   
   val ecology:EcologyBase[ST, ET] = this
-  val runtimeMirror = ru.runtimeMirror(this.getClass().getClassLoader)
   
   def register(ecot:ET):Unit = {
     _registeredEcots = _registeredEcots + ecot
@@ -27,11 +26,6 @@ class EcologyImplBase[ST, ET <: EcotBase[ST, ET]] extends EcologyBase[ST, ET] wi
         _registeredInterfaces = _registeredInterfaces + (interfaceClass -> ecot)
       }
     }
-  }
-  
-  private def getType[T](clazz: Class[T]):Type = {
-    val runtimeMirror = ru.runtimeMirror(clazz.getClassLoader)
-    runtimeMirror.classSymbol(clazz).toType
   }
   
   def init(initialSpaceState:ST)(specializedInit:ST => ST):ST = {
