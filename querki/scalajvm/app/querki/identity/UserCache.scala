@@ -33,6 +33,13 @@ private [identity] class UserCache(val ecology:Ecology) extends Actor with Ecolo
       val userIds = UserAccess.getAllIdsForAdmin(req)
       sender ! AllUserIds(userIds)
     }
+    
+    case UpdateUser(user) => {
+      user.identities.map { identity =>
+        usersByHandle += (identity.handle -> user)
+      }
+      sender ! UpdateAck(user)
+    }
   }
 }
 
@@ -51,4 +58,10 @@ object UserCacheMessages {
    */
   case class GetAllUserIdsForAdmin(req:User)  
   case class AllUserIds(users:Seq[UserId])
+  
+  /**
+   * This message tells the Cache to update the provided User record.
+   */
+  case class UpdateUser(user:User)
+  case class UpdateAck(user:User)
 }

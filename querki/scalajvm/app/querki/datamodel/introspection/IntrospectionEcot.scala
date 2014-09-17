@@ -4,7 +4,7 @@ import models.{DisplayPropVal, HtmlWikitext, PropertyBundle, SimplePTypeBuilder,
 
 import querki.ecology._
 import querki.ql.CodeType
-import querki.util.{PublicException, QLog, XmlHelpers}
+import querki.util.{PublicException, QLog, XmlEscape}
 import querki.values.{QLContext, SpaceState}
 
 object MOIDs extends EcotIds(34) {
@@ -156,7 +156,7 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
         case codeType:CodeType => {
           val elem = v.first
           val code = codeType.code(elem)
-          val escaped = s"""<pre><code>${XmlHelpers.escapeForXml(code)}</code></pre>"""
+          val escaped = s"""<pre><code>${XmlEscape.escapeForXml(code)}</code></pre>"""
           QL.WikitextValue(HtmlWikitext(escaped))
         }
         case _ => v

@@ -1,4 +1,4 @@
-package eu.henkelmann.actuarius
+package qtexttest
 
 import scala.util.parsing.input.{Position, Reader}
 

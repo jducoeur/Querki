@@ -1,5 +1,6 @@
 package querki.test
 
+import scala.concurrent.Future
 import scala.util.Try
 
 import play.api.mvc.RequestHeader
@@ -36,7 +37,7 @@ class UserAccessStub(e:Ecology) extends QuerkiEcot(e) with UserAccess with UserT
   def getIdentity(thingId:ThingId):Option[(Identity, UserLevel.UserLevel)] = ???
   def getUserByHandleOrEmail(raw:String):Option[User] = ???
   def getUserByHandle(handle:String):Option[User] = ???
-  def setTOSVersion(userId:OID, version:Int):Option[User] = ???
+  def setTOSVersion(userId:OID, version:Int):Future[Option[User]] = ???
   def getAcquaintanceIds(identityId:IdentityId):Seq[IdentityId] = ???
   
   // Implemented stubs

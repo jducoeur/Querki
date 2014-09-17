@@ -1,5 +1,7 @@
 package querki
 
+import scala.concurrent.Future
+
 import querki.ecology._
 
 import querki.identity.User
@@ -16,6 +18,6 @@ package object system {
   }
   
   trait TermsOfService extends EcologyInterface {
-    def recordAccept(user:User, version:Int):User
+    def recordAccept(user:User, version:Int):Future[User]
   }
 }

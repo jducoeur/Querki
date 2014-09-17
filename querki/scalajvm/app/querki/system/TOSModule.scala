@@ -1,5 +1,7 @@
 package querki.system
 
+import scala.concurrent.ExecutionContext.Implicits._
+import scala.concurrent.Future
 import scala.util.Try
 
 import controllers.{PageEventManager, PlayRequestContext}
@@ -36,8 +38,8 @@ class TOSModule(e:Ecology) extends QuerkiEcot(e) with TermsOfService {
   /**
    * Record that the User has accepted the TOS. May throw an exception, so use inside Tryer!
    */
-  def recordAccept(user:User, version:Int):User =  {
-    UserAccess.setTOSVersion(user.id, version).get
+  def recordAccept(user:User, version:Int):Future[User] =  {
+    UserAccess.setTOSVersion(user.id, version).map(_.get)
   }
   
   /**

@@ -111,12 +111,13 @@ object Dependencies {
 	  "org.scala-lang.modules.scalajs" %%%! "scalajs-dom" % "0.6",
       "org.scala-lang.modules.scalajs" %%%! "scalajs-jquery" % "0.6",
       "org.scalatest" %% "scalatest" % "2.2.0" % "test",
-      "com.lihaoyi" %%%! "utest" % "0.2.3" % "test"
+      "com.lihaoyi" %%%! "utest" % "0.2.3" % "test",
+	  "org.scalajs" %%%! "scala-parser-combinators" % "1.0.2"
   ) ++ shared
 }
 
 object Versions {
-  val app = "0.10.6.3"
+  val app = "0.10.7"
   val scala = "2.11.1"
   val scalajsDom = "0.6"
 }
