@@ -1,94 +1,8 @@
 package querki.ecology
 
 import scala.reflect.ClassTag
-import scala.reflect.runtime.universe.TypeTag
 
 import querki.values.SpaceState
-
-/**
- * The bundle that represents the entire universe.
- * 
- * The Ecology is all of the stateless functional parts of the system, wrapped up in
- * a single container. It is basically how Querki does dependency injection internally.
- * Essentially all *functional* components should live inside the Ecology as Ecots.
- * (Stateful components must instead live inside the Akka side of the world, so that
- * their threading is properly managed.)
- */
-trait EcologyBase[ST, ET <: EcotBase[ST, ET]] {
-  /**
-   * Gets the manager for this Ecology. Most of the time, you should be able to ignore
-   * this -- it is mainly used for setup and shutdown.
-   */
-  def manager:EcologyManager[ST, ET]
-  
-  /**
-   * Fetches the registered interface. Throws an exception if the interface is not
-   * registered, or not initialized.
-   */
-  def api[T <: EcologyInterface](implicit tag:ClassTag[T]):T
-}
-
-/**
- * Handles construction of the Ecology.
- * 
- * Yes, the EcologyManager and the Ecology are currently implemented in the same object.
- * Don't rely on that, though. The traits are separated in order to separate concerns,
- * and it is quite possible that the implementations might be separated at some point.
- */
-trait EcologyManager[ST, ET <: EcotBase[ST, ET]] {
-  /**
-   * Gets the Ecology that this is managing.
-   */
-  def ecology:EcologyBase[ST, ET]
-  
-  /**
-   * Adds the specified Ecot to this Ecology. Should be called during Ecot construction;
-   * *must* be called before system initialization.
-   * 
-   * Order of registration is *entirely irrelevant*, and you should not count on it in any
-   * way. Dependencies and initialization order are the important part.
-   * 
-   * IMPORTANT: for the time being, registration is assumed to be strictly synchronous. Do
-   * *not* violate this rule! However, Ecots are allowed to create child Ecots within their
-   * own constructors.
-   */
-  def register(ecot:ET):Unit
-  
-  /**
-   * Terminates the world.
-   */
-  def term():Unit
-  
-  /**
-   * Mainly for testing and reporting.
-   */
-  def isRegistered[C](implicit tag:ClassTag[C]):Boolean
-}
-
-/**
- * This is an abstraction for any object that lives inside the Ecology, and knows how to get to it.
- * This includes Ecots, but also many child objects of Ecots.
- * 
- * If at all possible, anything that "consumes" the Ecology -- anything that fetches interfaces -- should
- * be an EcologyMember. This means that it needs to receive the Ecology in some fashion -- most often as
- * a constructor parameter, but it could also simply use a pointer to its parent, or something like that.
- */
-trait EcologyMemberBase[ST, ET <: EcotBase[ST, ET]] {
-  /**
-   * A way to get from here to the Ecology.
-   */
-  implicit def ecology:EcologyBase[ST, ET]
-  
-  /**
-   * This is the method that Ecots and EcologyMembers should use to access other parts of the Ecology, if they are
-   * *not* needed at initialization time. 
-   */
-  def interface[T <: EcologyInterface : ClassTag]:T = ecology.api[T]
-}
-
-case class InterfaceWrapperBase[ST, ET <: EcotBase[ST, ET], T <: EcologyInterface](ecology:EcologyBase[ST, ET])(implicit tag:ClassTag[T]) {
-  lazy val get:T = ecology.api[T]
-}
 
 /**
  * Definition of the Ids for an Ecot.
@@ -144,106 +58,6 @@ class EcotIds(val ecotId:Short) {
 }
 object SystemIds extends EcotIds(0) {
   val systemOID = sysId(0)
-}
-
-/**
- * A single "module" of the system.
- * 
- * In the Ecology Pattern, the world is mainly composed of Ecots. An Ecot is a piece of
- * arbitrary functionality. It may inject Things into the System Space, and in the long
- * run may inject its own Apps. It may implement any number of interfaces that are exposed
- * to the rest of the system.
- * 
- * Yes, Ecot is a horrible piece of jargon. But it is helpful to have a unique term, so
- * that nobody gets confused by highly-overloaded words like "module".
- * 
- * TODO: a lot of implementation details have bled into this interface. Fix the relationship
- * between it and Module. (Which will become EcotImpl.)
- * 
- * @tparam ST The StateType that this Ecot type works with. Used in initialization, if we
- *     are building up some sort of initial system state.
- */
-trait EcotBase[ST, ET <: EcotBase[ST, ET]] extends EcologyMemberBase[ST, ET] { self:ET =>
-
-  /**
-   * Initialization call, which may be overridden by the Module. This should hook in
-   * all Listeners.
-   */
-  def init = {}
-  
-  /**
-   * Called after everything has finished initializing, but before we open the gates. This
-   * is useful because you can call interfaces from here without introducing initRequires
-   * dependencies. It is often useful for things like registering callbacks. By this point,
-   * the main system Actors have been created, so you can *send* them messages, but preferably
-   * should not block on the responses, since their Troupes may still be setting up.
-   * 
-   * postInit is not called in any particular order, and you should make no assumptions
-   * about it.
-   */
-  def postInit = {}
-  
-  /**
-   * Termination call, which may be overridden by the Module on system shutdown.
-   */
-  def term = {}
-  
-  /**
-   * If this Ecot needs to add something to the initial system state, do it here.
-   */
-  def addState(prevState:ST):ST = { prevState }
-  
-  /**
-   * Note that registration takes place during construction, not necessarily at the end
-   * of construction. You are explicitly *not* allowed to access the Ecology during construction,
-   * or make any assumptions about being registered -- that is what init() is for.
-   */
-  ecology.manager.register(this)
-  
-  /**
-   * This is intentionally left blank in EcotBase, because the implementation differs between
-   * the ScalaJVM side (which can do horribly clever things with Types) and the ScalaJS side
-   * (which can't).
-   * 
-   * TBD: can we rewrite implements() as a macro which would work on both sides? Maybe.
-   */
-  def implements:Set[Class[_]]
-  
-  /**
-   * The EcologyInterfaces that this Ecot requires in order to initialize.
-   * 
-   * Note that you will not usually set this manually.
-   */
-  def dependsUpon:Set[Class[_]] = _dependencies
-
-  /**
-   * This should be used by Ecots to pull in interfaces that they will need for initialization.
-   * (This specifically includes Properties that are used in Thing declarations!)
-   * 
-   * The correct protocol here is to call this and stick the results in a *NON*-lazy val. The
-   * returned value isn't the interface itself, but a wrapper that will dereference to the interface
-   * during and after init. So it looks like this:
-   * 
-   *     ...
-   *     val Foo = initRequires[querki.foo.Foo]
-   *     ...
-   *     lazy val MyProp = new SystemProperty(... stuff...,
-   *       Foo("This is a Foo value"))
-   *       
-   * The key is that initRequires should be called synchronously during the constructor (and thereby
-   * tells the Ecology that you have an init-time dependency), but the returned value can only be used
-   * in lazy vals, or code that is called during init and later.
-   */
-  def initRequires[T <: EcologyInterface](implicit tag:ClassTag[T]):InterfaceWrapperBase[ST, ET, T] = {
-    _dependencies += tag.runtimeClass
-    InterfaceWrapperBase[ST, ET, T](ecology)
-  }
-  private var _dependencies:Set[Class[_]] = Set.empty
-
-  /**
-   * Mainly for printing.
-   */
-  def fullName = this.getClass().getName()
 }
 
 trait EcotImpl extends Ecot {
@@ -304,4 +118,19 @@ trait EcotImpl extends Ecot {
    * the overall ActorSystem properly.
    */
   def createActors(createActorCb:CreateActorFunc):Unit = {}
+}
+
+class EcologyImpl extends EcologyImplBase[SpaceState, EcotImpl] {
+
+  def init(initialSpaceState:SpaceState, createActorCb:CreateActorFunc):SpaceState = {
+    val finalState = init(initialSpaceState) { state =>
+      initializeActors(createActorCb)
+      state
+    }
+    finalState
+  }
+  
+  private def initializeActors(createActorCb:CreateActorFunc) = {
+    _initializedEcots.foreach(_.createActors(createActorCb))
+  }  
 }
