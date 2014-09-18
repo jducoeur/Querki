@@ -1,4 +1,4 @@
-package eu.henkelmann.actuarius
+package querki.qtext
 
 import java.io.{InputStreamReader, StringWriter}
 

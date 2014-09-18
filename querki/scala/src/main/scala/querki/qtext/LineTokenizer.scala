@@ -1,4 +1,4 @@
-package eu.henkelmann.actuarius
+package querki.qtext
 
 import language.postfixOps
 import scala.util.parsing.combinator.Parsers

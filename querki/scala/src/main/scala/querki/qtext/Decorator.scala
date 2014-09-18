@@ -1,4 +1,4 @@
-package eu.henkelmann.actuarius
+package querki.qtext
 
 /**
  * This trait influences the behavior of the Markdown output of inline and block parsers

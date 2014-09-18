@@ -1,4 +1,4 @@
-package eu.henkelmann.actuarius
+package querki.qtext
 
 import language.postfixOps
 
@@ -243,7 +243,7 @@ trait InlineParsers extends BaseParsers {
                 val result = new StringBuilder()
                 for (chunk <- chunks) { chunk match {
                     case (text) ~ None    => result.append(text)
-                    case (text) ~ Some(s) => result.append(text).append(s)
+                    case (text) ~ Some(s:String) => result.append(text).append(s)
                 } }
                 Some(result.toString)
             }

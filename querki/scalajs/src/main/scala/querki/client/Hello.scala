@@ -5,11 +5,9 @@ import scala.scalajs.js.JSApp
 
 import org.scalajs.jquery.{jQuery, JQueryEventObject}
 
-import qtexttest.ActuariusTransformer
-
-import querki.shared.Test
-
 import querki.ecology._
+import querki.qtext.ActuariusTransformer
+import querki.shared.Test
 
 object Hello extends JSApp {
   def main(): Unit = {

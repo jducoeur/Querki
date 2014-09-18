@@ -7,7 +7,7 @@ import play.twirl.api.Html
 
 import language.implicitConversions
 
-import eu.henkelmann.actuarius.{Decorator, Transformer}
+import querki.qtext.{Decorator, Transformer}
 
 import querki.values.DebugRenderable
 import querki.util._
