@@ -20,7 +20,7 @@ import GroupingMOIDs._
  * Some of its ideas might yet wind up getting refactored or exposed elsewhere, but for now it is
  * nicely self-contained.
  */
-class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with ModelTypeDefiner {
+class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with ModelTypeDefiner with EcologyMember {
   
   val Types = initRequires[querki.types.Types]
   

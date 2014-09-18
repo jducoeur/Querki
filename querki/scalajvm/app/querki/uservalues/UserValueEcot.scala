@@ -40,7 +40,9 @@ object MOIDs extends EcotIds(44) {
   val UpdatePropSummariesFunctionOID = moid(15)
 }
 
-class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpacePluginProvider with querki.core.MethodDefs with querki.types.ModelTypeDefiner {
+class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpacePluginProvider with querki.core.MethodDefs 
+  with querki.types.ModelTypeDefiner with EcologyMember 
+{
   import MOIDs._
   
   val AccessControl = initRequires[querki.security.AccessControl]

@@ -9,8 +9,11 @@ import qtexttest.ActuariusTransformer
 
 import querki.shared.Test
 
+import querki.ecology._
+
 object Hello extends JSApp {
   def main(): Unit = {
+    setupEcology()
     jQuery(setupUI _)
   }
   
@@ -56,4 +59,24 @@ object Hello extends JSApp {
       outputArea.html(html)
     }
   }
+  
+  var theEcology:EcologyImpl = null
+  
+  def setupEcology() = {
+    theEcology = new EcologyImpl
+    new TestEcot(theEcology)
+    theEcology.init(ClientState()) { state => state }
+  }
+}
+
+trait TestInterface1 extends EcologyInterface {
+  
+}
+
+trait TestInterface2 extends EcologyInterface {
+  
+}
+
+class TestEcot(e:Ecology) extends ClientEcot(e) with TestInterface1 with TestInterface2 {
+  def implements = Set(classOf[TestInterface1], classOf[TestInterface2])
 }

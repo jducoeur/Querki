@@ -51,7 +51,9 @@ private [photos] trait PhotosInternal extends EcologyInterface {
   def PreferredImageSizeProp:Property[Int,Int]
 }
 
-class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with querki.core.MethodDefs with Photos with PhotosInternal {
+class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with EcologyMember with querki.core.MethodDefs
+  with Photos with PhotosInternal 
+{
   import MOIDs._
   import PhotoUploadActor._
   
