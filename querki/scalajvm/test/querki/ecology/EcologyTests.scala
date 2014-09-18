@@ -25,7 +25,8 @@ class EcologyTests extends WordSpec
     // The Ecology itself assumes that Core is registered, and System is needed to finish things up:
     new querki.core.CoreModule(eco)
     new querki.system.SystemEcot(eco)
-    eco.manager.init(querki.system.InitialSystemState.create(eco), { (props, name) => None })
+    // HACK: since init() differs depending on implementation, we need to cast to that:
+    eco.manager.asInstanceOf[EcologyImpl].init(querki.system.InitialSystemState.create(eco), { (props, name) => None })
   }
   
   "The Ecology" should {
@@ -35,7 +36,7 @@ class EcologyTests extends WordSpec
       class Ecot2(val moduleId:Short) extends QuerkiEcot(eco) with TestInterface1
       
       val ecot1 = new Ecot1(1)
-      intercept[AlreadyRegisteredInterfaceException] {
+      intercept[AlreadyRegisteredInterfaceException[_,_]] {
         val ecot2 = new Ecot2(2)
       }
     }
@@ -161,7 +162,7 @@ class EcologyTests extends WordSpec
       val ecot1 = new Ecot1(1)
       val ecot2 = new Ecot2(2)
 
-      intercept[InitMissingInterfaceException] {
+      intercept[InitMissingInterfaceException[_,_]] {
         val finalState = doInit(eco)
       }
     }
@@ -178,7 +179,7 @@ class EcologyTests extends WordSpec
       val ecot1 = new Ecot1(1)
       val ecot2 = new Ecot2(2)
 
-      intercept[InitDependencyLoopException] {
+      intercept[InitDependencyLoopException[_,_]] {
         val finalState = doInit(eco)
       }
     }    
