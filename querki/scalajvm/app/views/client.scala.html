@@ -24,9 +24,10 @@
       $(function() {
         var client = querki.client.QuerkiClient();
       
-        var root = $("#_root").get(0)
-        client.pageManager.setRoot(root)
+        var root = $("#_root").get(0);
+        client.pageManager.setRoot(root);
         client.dataSetting.setMainThing(mainThing);
+        client.pageManager.renderPage();
       });
     </script>
   </head>

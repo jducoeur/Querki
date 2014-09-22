@@ -13,9 +13,8 @@ class ClientDataEcot(e:Ecology) extends ClientEcot(e) with DataAccess with DataS
   def mainThing = currentThing
   def setMainThing(topt:Option[ThingInfo]):Unit = { 
     currentThing = topt
-    // TEMP:
-    println(s"The current Thing is ${currentThing.map(_.displayName)}")
   }
+  
   @JSExport
   def setMainThing(pickled:String):Unit = {
     val thing = read[Option[ThingInfo]](pickled)

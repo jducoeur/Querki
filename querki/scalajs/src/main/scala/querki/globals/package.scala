@@ -14,6 +14,11 @@ package object globals {
   
   type JSExport = scala.scalajs.js.annotation.JSExport
   
+  /**
+   * The main entry point into jQuery. I alias it to $, to match jQuery idiom.
+   */
+  val $ = org.scalajs.jquery.jQuery
+  
   type ClientEcot = querki.ecology.ClientEcot
   type Ecology = querki.ecology.Ecology
   type EcologyInterface = querki.ecology.EcologyInterface
