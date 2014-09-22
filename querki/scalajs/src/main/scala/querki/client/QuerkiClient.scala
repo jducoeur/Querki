@@ -47,6 +47,6 @@ object QuerkiClient extends JSApp with EcologyMember {
   }
   
   // Entry points, exposed for the Javascript layer:
-  @JSExport
-  def pageManager = interface[querki.display.PageManager]
+  @JSExport def dataSetting = interface[querki.data.DataSetting]
+  @JSExport def pageManager = interface[querki.display.PageManager]
 }

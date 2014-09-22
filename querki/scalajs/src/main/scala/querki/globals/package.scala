@@ -11,6 +11,9 @@ package querki
  * so be thoughtful about what belongs here!
  */
 package object globals {
+  
+  type JSExport = scala.scalajs.js.annotation.JSExport
+  
   type ClientEcot = querki.ecology.ClientEcot
   type Ecology = querki.ecology.Ecology
   type EcologyInterface = querki.ecology.EcologyInterface

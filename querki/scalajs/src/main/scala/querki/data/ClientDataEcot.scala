@@ -1,5 +1,7 @@
 package querki.data
 
+import upickle._
+
 import querki.globals._
 
 class ClientDataEcot(e:Ecology) extends ClientEcot(e) with DataAccess with DataSetting {
@@ -9,5 +11,14 @@ class ClientDataEcot(e:Ecology) extends ClientEcot(e) with DataAccess with DataS
   var currentThing:Option[ThingInfo] = None
   
   def mainThing = currentThing
-  def setMainThing(thing:ThingInfo) = { currentThing = Some(thing) }
+  def setMainThing(topt:Option[ThingInfo]):Unit = { 
+    currentThing = topt
+    // TEMP:
+    println(s"The current Thing is ${currentThing.map(_.displayName)}")
+  }
+  @JSExport
+  def setMainThing(pickled:String):Unit = {
+    val thing = read[Option[ThingInfo]](pickled)
+    setMainThing(thing)
+  }
 }

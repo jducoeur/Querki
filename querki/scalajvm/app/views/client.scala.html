@@ -2,6 +2,8 @@
 
 <!DOCTYPE html>
 
+@ClientApi = @{ rc.interface[querki.api.ClientApi] }
+
 @isProd = @{ play.api.Play.isProd(play.api.Play.current) }
 
 <html>
@@ -18,11 +20,13 @@
     <script src="@routes.Assets.at("javascripts/querki-client-launcher.js")" type="text/javascript"></script>
     
     <script>
+      var mainThing = '@Html(ClientApi.pickleThing(rc.thing))';
       $(function() {
         var client = querki.client.QuerkiClient();
       
         var root = $("#_root").get(0)
         client.pageManager.setRoot(root)
+        client.dataSetting.setMainThing(mainThing);
       });
     </script>
   </head>

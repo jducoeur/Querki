@@ -7,6 +7,9 @@ resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/release
 // Needed for Actuarius
 resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
 
+// Needed for Li Haoyi's stuff
+resolvers += "bintray/non" at "http://dl.bintray.com/non/maven"
+
 // Use the Play sbt plugin for Play projects
 addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.3.2")
 
