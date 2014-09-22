@@ -1,3 +1,4 @@
+/*
 package querki.client
 
 import scala.scalajs.js.annotation.JSExport
@@ -78,3 +79,4 @@ trait TestInterface2 extends EcologyInterface {
 class TestEcot(e:Ecology) extends ClientEcot(e) with TestInterface1 with TestInterface2 {
   def implements = Set(classOf[TestInterface1], classOf[TestInterface2])
 }
+*/
