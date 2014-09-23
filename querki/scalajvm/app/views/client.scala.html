@@ -50,6 +50,8 @@
         var root = $("#_root").get(0);
         client.pageManager.setRoot(root);
         
+        client.pageManager.setImagePath('@routes.Assets.at("images")');
+        
         client.dataSetting.unpickleRequest('@Html(ClientApi.pickleRequest(rc))');
         
         client.pageManager.renderPage();

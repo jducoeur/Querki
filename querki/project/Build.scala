@@ -114,7 +114,8 @@ object Dependencies {
       "org.scalatest" %% "scalatest" % "2.2.0" % "test",
       "com.lihaoyi" %%%! "utest" % "0.2.3" % "test",
 	  "org.scalajs" %%%! "scala-parser-combinators" % "1.0.2",
-	  "com.lihaoyi" %%%! "upickle" % "0.2.4"
+	  "com.lihaoyi" %%%! "upickle" % "0.2.4",
+	  "com.scalatags" %%%! "scalatags" % "0.4.0"
   ) ++ shared
 }
 
