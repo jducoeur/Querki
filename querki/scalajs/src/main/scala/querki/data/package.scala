@@ -12,6 +12,11 @@ package object data {
      * a little dicey, but broadly speaking this is the Thing that determines the current menus.
      */
     def mainThing:Option[ThingInfo]
+    
+    /**
+     * The Space we are currently operating in, if any.
+     */
+    def space:Option[ThingInfo]
   }
   
   /**

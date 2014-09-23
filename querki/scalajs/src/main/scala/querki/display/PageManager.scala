@@ -27,10 +27,13 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
    */
   @JSExport
   def renderPage() = {
-    val contents = DataAccess.mainThing match {
+    val contents = (DataAccess.mainThing match {
       case Some(thing) => s"We are showing ${thing.displayName} (${thing.oid})"
       case None => "We don't have a Thing!"
-    }
+    }) + (DataAccess.space match {
+      case Some(space) => s" in Space ${space.displayName} (${space.oid})"
+      case None => "No space!"
+    })
     
     $(displayRoot).html(s"""<h3>User ${UserAccess.name}</h3>
         |<p>$contents</p>""".stripMargin)
