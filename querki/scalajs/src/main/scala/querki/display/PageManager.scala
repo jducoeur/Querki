@@ -1,7 +1,5 @@
 package querki.display
 
-import scala.scalajs.js.annotation.JSExport
-
 import org.scalajs.dom
 
 import querki.globals._
@@ -10,6 +8,7 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   def implements = Set(classOf[PageManager])
   
   lazy val DataAccess = interface[querki.data.DataAccess]
+  lazy val UserAccess = interface[querki.identity.UserAccess]
   
   var _displayRoot:Option[dom.Element] = None
   def displayRoot = _displayRoot.get
@@ -33,6 +32,7 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
       case None => "We don't have a Thing!"
     }
     
-    $(displayRoot).html(s"<h4>$contents</h4>")
+    $(displayRoot).html(s"""<h3>User ${UserAccess.name}</h3>
+        |<p>$contents</p>""".stripMargin)
   }
 }

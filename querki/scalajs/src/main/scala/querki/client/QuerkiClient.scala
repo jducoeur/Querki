@@ -44,9 +44,11 @@ object QuerkiClient extends JSApp with EcologyMember {
   def createEcots(ecology:Ecology) = {
     new querki.data.ClientDataEcot(ecology)
     new querki.display.PageManagerEcot(ecology)
+    new querki.identity.UserManagerEcot(ecology)
   }
   
   // Entry points, exposed for the Javascript layer:
   @JSExport def dataSetting = interface[querki.data.DataSetting]
   @JSExport def pageManager = interface[querki.display.PageManager]
+  @JSExport def userManager = interface[querki.identity.UserAccess]
 }

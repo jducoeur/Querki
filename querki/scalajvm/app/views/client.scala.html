@@ -8,8 +8,32 @@
 
 <html>
   <head>
-    <title>Testing a simple hello</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>PLACE TITLE HERE</title>
+    
+    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/jquery-ui-1.10.0.custom.css")">
+    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap.css")">
+    <!-- This padding is needed for the top navbar. Bootstrap doc says to put it between the main and responsive CSS: -->
+    <style>
+      body {
+        padding-top: 40px;
+      }
+    </style>
+    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap-responsive.css")">
+    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/manifest.css")">
+    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
+    
+    <!-- TODO: these should come from a jQuery CDN, instead of locally -->
     <script src="@routes.Assets.at("javascripts/jquery-1.9.0.js")"></script>
+    <script src="@routes.Assets.at("javascripts/jquery.manifest-forked.min.js")"></script>
+    <script src="@routes.Assets.at("javascripts/jquery-ui-1.10.0.custom.js")"></script>
+    <script src="@routes.Assets.at("javascripts/jquery.ui.touch-punch.min.js")"></script>
+    <script src="@routes.Assets.at("javascripts/bootstrap.js")"></script>
+    <script src="@routes.Assets.at("javascripts/jquery.autosize-min.js")"></script>
+    <script src="@routes.Assets.at("javascripts/jquery.raty.min.js")"></script>
+    <script src="@routes.Assets.at("javascripts/jquery.histogram.js")"></script>
+    <script src="@routes.Assets.at("javascripts/querki-common.js")"></script>
     
     @if(isProd) {
       <script src="@routes.Assets.at("javascripts/querki-client-opt.js")" type="text/javascript"></script>
@@ -26,7 +50,11 @@
       
         var root = $("#_root").get(0);
         client.pageManager.setRoot(root);
+
+        client.userManager.setUser('@Html(ClientApi.pickleMe(rc))');        
+        
         client.dataSetting.setMainThing(mainThing);
+        
         client.pageManager.renderPage();
       });
     </script>
