@@ -94,26 +94,6 @@ trait NameableType {
   def getName(context:QLContext)(v:ElemValue):String
 }
 
-trait NameUtils {
-  def toInternal(str:String) = str.replaceAll(" ", "-")
-  def toDisplay(str:String) = str.replaceAll("-", " ")
-  // Note that this deliberately allows mixed-case, so that we can preserve Name case through
-  // the URL for Tags. (Since the desired case *only* exists in the URL.)
-  def toUrl = toInternal _
-  
-  def canonicalize(str:String):String = toInternal(str).toLowerCase  
-  
-  def compareNames(context:QLContext)(left:String, right:String):Boolean = { left < right } 
-      
-  def makeLegal(str:String):String = str.filter(c => c.isLetterOrDigit || c == ' ' || c == '-')
-    
-  def equalNames(str1:String, str2:String):Boolean = {
-    canonicalize(str1).contentEquals(canonicalize(str2))
-  }
-}
-// So that these functions can be used without mixing in NameUtils:
-object NameUtils extends NameUtils
-
 // Marker trait for NameTypeBase and everything that descends from it:
 trait IsNameType extends PType[String] 
 
@@ -148,7 +128,7 @@ trait NameTypeBasis { self:CoreEcot with NameUtils =>
       Wikitext("[") + display + Wikitext("](" + toUrl(v) + ")")
     }
     
-    override def doComp(context:QLContext)(left:String, right:String):Boolean = compareNames(context)(left,right)
+    override def doComp(context:QLContext)(left:String, right:String):Boolean = compareNames(left,right)
 
     def doDefault(implicit state:SpaceState) = ""
       
@@ -621,7 +601,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
     
     // Links are sorted by their *display names*:
     override def doComp(context:QLContext)(left:OID, right:OID):Boolean = { 
-      compareNames(context)(getNameFromId(context)(left), getNameFromId(context)(right))
+      compareNames(getNameFromId(context)(left), getNameFromId(context)(right))
     } 
     
     // TODO: define doFromUser()

@@ -8,25 +8,16 @@ class ClientDataEcot(e:Ecology) extends ClientEcot(e) with DataAccess with DataS
   
   def implements = Set(classOf[DataAccess], classOf[DataSetting])
   
-  var currentSpace:Option[ThingInfo] = None
-  var currentThing:Option[ThingInfo] = None
+  lazy val UserAccess = interface[querki.identity.UserAccess]
   
-  def mainThing = currentThing
-  def space = currentSpace
-  
-  def setMainThing(topt:Option[ThingInfo]):Unit = { 
-    currentThing = topt
-  }
+  var space:Option[ThingInfo] = None
+  var mainThing:Option[ThingInfo] = None
   
   @JSExport
-  def setMainThing(pickled:String):Unit = {
-    val thing = read[Option[ThingInfo]](pickled)
-    setMainThing(thing)
-  }
-  
-  @JSExport
-  def setSpace(pickled:String) = {
-    val space = read[Option[ThingInfo]](pickled)
-    currentSpace = space
+  def unpickleRequest(pickled:String) = {
+    val request = read[RequestInfo](pickled)
+    mainThing = request.thing
+    space = request.space
+    UserAccess.setUser(request.user)
   }
 }

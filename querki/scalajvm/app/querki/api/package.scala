@@ -9,15 +9,8 @@ import querki.values.RequestContext
 package object api {
   trait ClientApi extends EcologyInterface {
     /**
-     * Render the given Thing to a form suitable for sending to the Client. This pickles the Thing
-     * as a ThingInfo.
+     * Render the request into a form suitable for passing through to the client.
      */
-    def pickleThing(t:Option[Thing]):String
-    
-    /**
-     * Renders the current User (fetched from the RC) into pickled form. The end result will be an
-     * Option[UserInfo].
-     */
-    def pickleMe(t:RequestContext):String
+    def pickleRequest(rc:RequestContext):String
   }
 }

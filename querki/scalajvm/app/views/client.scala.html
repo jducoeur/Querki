@@ -49,11 +49,8 @@
       
         var root = $("#_root").get(0);
         client.pageManager.setRoot(root);
-
-        client.userManager.setUser('@Html(ClientApi.pickleMe(rc))');        
         
-        client.dataSetting.setSpace('@Html(ClientApi.pickleThing(rc.state))');
-        client.dataSetting.setMainThing('@Html(ClientApi.pickleThing(rc.thing))');
+        client.dataSetting.unpickleRequest('@Html(ClientApi.pickleRequest(rc))');
         
         client.pageManager.renderPage();
       });

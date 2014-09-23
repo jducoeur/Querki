@@ -12,8 +12,7 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
   
   var _user:Option[UserInfo] = None
   
-  @JSExport
-  def setUser(pickled:String) = _user = read[Option[UserInfo]](pickled)
+  def setUser(user:Option[UserInfo]) = _user = user
   
   def name = _user.map(_.mainIdentity.name).getOrElse("Not logged in")
 }

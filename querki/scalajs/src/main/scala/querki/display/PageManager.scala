@@ -28,7 +28,7 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   @JSExport
   def renderPage() = {
     val contents = (DataAccess.mainThing match {
-      case Some(thing) => s"We are showing ${thing.displayName} (${thing.oid})"
+      case Some(thing) => s"We are showing ${thing.displayName} (${thing.oid}, kind: ${thing.kind})"
       case None => "We don't have a Thing!"
     }) + (DataAccess.space match {
       case Some(space) => s" in Space ${space.displayName} (${space.oid})"
