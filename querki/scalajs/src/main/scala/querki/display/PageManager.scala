@@ -30,42 +30,18 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   def setImagePath(path:String) = {
     _imagePath = Some(path)
   }
-  
-  /**
-   * Utility, to make 
-   */
-  def data(name:String):Attr = scalatags.generic.Attr(s"data-$name")
+//  
+//  /**
+//   * Utility, to make it easier to define data attributes.
+//   */
+//  def data(name:String):Attr = scalatags.generic.Attr(s"data-$name")
   
   /**
    * Actually display the full page.
    */
   @JSExport
   def renderPage() = {
-    val menuBar =
-      div(cls:="container",
-        div(cls:="navbar navbar-fixed-top _noPrint",
-          div(cls:="navbar-inner",
-            div(cls:="container",
-              
-              // This is the collapsed menu icon that we show on a small screen:
-              a(cls:="btn btn-navbar",
-                data("toggle"):="collapse",
-                data("target"):=".nav-collapse",
-                span(cls:="icon-bar"),
-                span(cls:="icon-bar"),
-                span(cls:="icon-bar")
-              ),
-              
-              // Show the logo on the left-hand side:
-              a(cls:="brand",
-                // TODO: where should we define this call?
-                href:="/",
-                img(src:=s"$imagePath/Logo-menubar.png")
-              )
-            )
-          )
-        )
-      )
+    val menuBar = new MenuBar
       
     val guts =
       div(cls:="guts container-fluid",

@@ -10,5 +10,10 @@ package object display {
      * Actually render the page, inside the given root.
      */
     def setRoot(root:dom.Element):Unit
+    
+    /**
+     * The URL path to get to the system images.
+     */
+    def imagePath:String
   }
 }

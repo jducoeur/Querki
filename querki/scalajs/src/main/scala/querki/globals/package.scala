@@ -22,6 +22,7 @@ package object globals {
   type ClientEcot = querki.ecology.ClientEcot
   type Ecology = querki.ecology.Ecology
   type EcologyInterface = querki.ecology.EcologyInterface
+  type EcologyMember = querki.ecology.EcologyMember
   implicit def wrapper2Interface[T <: EcologyInterface](wrapper:querki.ecology.InterfaceWrapperBase[querki.ecology.ClientState, querki.ecology.EcotImpl, T]):T = {
     wrapper.get
   }
