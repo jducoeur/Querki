@@ -6,6 +6,8 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
+import querki.pages.PageIDs.PageID
+
 class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   def implements = Set(classOf[PageManager])
   
@@ -35,7 +37,7 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
    * Actually display the full page.
    */
   @JSExport
-  def renderPage() = {
+  def renderPage(pageID:PageID, pickled:String) = {
     val menuBar = new MenuBar
       
     val guts =

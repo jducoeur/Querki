@@ -1,4 +1,4 @@
-@(rc:PlayRequestContext)
+@(rc:PlayRequestContext, pageID:querki.pages.PageIDs.PageID, pickled:String)
 
 <!DOCTYPE html>
 
@@ -54,7 +54,7 @@
         
         client.dataSetting.unpickleRequest('@Html(ClientApi.pickleRequest(rc))');
         
-        client.pageManager.renderPage();
+        client.pageManager.renderPage(@pageID, @Html(pickled));
       });
     </script>
   </head>

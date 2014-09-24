@@ -45,6 +45,7 @@ object QuerkiClient extends JSApp with EcologyMember {
     new querki.data.ClientDataEcot(ecology)
     new querki.display.PageManagerEcot(ecology)
     new querki.identity.UserManagerEcot(ecology)
+    new querki.pages.PagesEcot(ecology)
   }
   
   // Entry points, exposed for the Javascript layer:
