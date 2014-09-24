@@ -6,7 +6,7 @@ import models.AsOID
 
 import querki.global._
 
-import querki.data.{IdentityInfo, RequestInfo, ThingInfo, UserInfo}
+import querki.data.{IdentityInfo, RequestInfo, SpaceInfo, ThingInfo, UserInfo}
 import querki.identity.User
 import querki.values.RequestContext
 
@@ -30,6 +30,16 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi {
     }
   }
   
+  def spaceInfo(topt:Option[SpaceState], rc:RequestContext):Option[SpaceInfo] = {
+    topt.map { t => 
+      SpaceInfo(
+        AsOID(t.id), 
+        t.linkName, 
+        t.unsafeDisplayName,
+        t.ownerHandle)
+    }
+  }
+  
   def userInfo(uopt:Option[User]):Option[UserInfo] = {
     uopt.map { user =>
       // TODO: this will need adjusting when we have multiple Identities. The mainIdentity should come first:
@@ -44,10 +54,10 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi {
     val info = 
       RequestInfo(
         userInfo(rc.requester), 
-        thingInfo(rc.state, rc), 
+        spaceInfo(rc.state, rc), 
         thingInfo(rc.thing, rc),
-        rc.ownerHandle,
-        rc.isOwner)
+        rc.isOwner,
+        rc.requesterOrAnon.isAdmin)
     write(info)
   }
 }

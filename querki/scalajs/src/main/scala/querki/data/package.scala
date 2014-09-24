@@ -8,6 +8,11 @@ package object data {
    */
   trait DataAccess extends EcologyInterface {
     /**
+     * The request that we are responding to.
+     */
+    def request:RequestInfo
+    
+    /**
      * The "primary" Thing that the user is currently looking at. The semantics here can get
      * a little dicey, but broadly speaking this is the Thing that determines the current menus.
      */
@@ -16,7 +21,7 @@ package object data {
     /**
      * The Space we are currently operating in, if any.
      */
-    def space:Option[ThingInfo]
+    def space:Option[SpaceInfo]
   }
   
   /**

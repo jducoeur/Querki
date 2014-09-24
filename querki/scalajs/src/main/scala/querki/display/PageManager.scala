@@ -30,11 +30,6 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   def setImagePath(path:String) = {
     _imagePath = Some(path)
   }
-//  
-//  /**
-//   * Utility, to make it easier to define data attributes.
-//   */
-//  def data(name:String):Attr = scalatags.generic.Attr(s"data-$name")
   
   /**
    * Actually display the full page.

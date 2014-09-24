@@ -6,7 +6,7 @@ package querki.data
  */
 case class RequestInfo(
   user:Option[UserInfo], 
-  space:Option[ThingInfo],
+  space:Option[SpaceInfo],
   thing:Option[ThingInfo],
-  ownerHandle:String,
-  isOwner:Boolean)
+  isOwner:Boolean,
+  isAdmin:Boolean)
