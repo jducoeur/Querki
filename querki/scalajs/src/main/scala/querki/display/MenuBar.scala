@@ -47,7 +47,9 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   def spacePath(pageName:String, params:(String,String)*):Call = {
     s"/u/${space.ownerHandle}/${space.urlName}/$pageName" + 
       (if (params.size > 0)
-        s"?${params.map(pair => s"${pair._1}=${pair._2}").mkString("&")}"
+         s"?${params.map(pair => s"${pair._1}=${pair._2}").mkString("&")}"
+       else
+         ""
       )
   }
   
@@ -141,19 +143,15 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
 
   val displayNavDivider = li(cls:="divider")
 
-  def strippedTitle(title:String) = title.filter(c => c.isLetterOrDigit || c == ' ')
-
   /**
    * Displays a NavSection == that is, a single menu.
    */
   def displayNavSection(title:String, links:Seq[Navigable]):Frag = {
-    val stripped = strippedTitle(title)
-    
     li(cls:="dropdown",
       // The clickable drop-down head of the menu
       a(cls:="dropdown-toggle",
-        data("target"):=s"#$stripped",
-        href:=s"#$stripped",
+        data("target"):=s"#$title",
+        href:=s"#$title",
         data("toggle"):="dropdown",
         title + " ",
         b(cls:="caret")
@@ -162,10 +160,10 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
       ul(cls:="dropdown-menu",
         role:="menu",
         for (link <- links)
-          displayNavigable(link)
+          yield displayNavigable(link)
       )
     )
-}
+  }
 
   def displayNavigable(section:Navigable) = {
     section match {
@@ -206,7 +204,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
               div(cls:="nav-collapse collapse",
                 ul(cls:="nav",
                   for (section <- sections)
-                    displayNavigable(section)
+                    yield displayNavigable(section)
                 )
               )
             )

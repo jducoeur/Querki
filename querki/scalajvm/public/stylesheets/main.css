@@ -1,4 +1,40 @@
 /*
+ * Styles for the top menubar.
+ */
+
+#querkiBar { margin: 0 0 0 0; }
+
+/*
+ * Workaround for what seems to be a bug in Bootstrap's theming: this is the text color for the
+ * links in the collapsed menus. Bootstrap produces this as grayDark, and I can't figure out how
+ * to make it right. 
+ */
+.nav-collapse .nav > li > a, 
+.nav-collapse .dropdown-menu a {
+  color: #ffffff;
+}
+.nav-collapse .dropdown-menu > .disabled > a {
+  color: #999999;
+}
+
+.navbar .brand {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+body {
+  margin: 0;
+}
+
+.guts {
+  margin: 8px;
+}
+
+._menuSection {
+  color: white;
+}
+
+/*
  * Miscellaneous style tweaks.
  */
  
