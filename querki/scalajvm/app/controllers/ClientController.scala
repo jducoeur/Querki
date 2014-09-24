@@ -1,11 +1,16 @@
 package controllers
 
+import upickle._
+
+import querki.pages.ThingPageInfo
 import querki.pages.PageIDs._
+
 import querki.spaces.messages.ThingError
 import querki.spaces.messages.SpaceError._
 
 class ClientController extends ApplicationBase {
   
+  lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Tags = interface[querki.tags.Tags]
   
   def thing(ownerId:String, spaceId:String, thingId:String) = withThing(false, ownerId, spaceId, thingId, Some({ 
@@ -17,11 +22,10 @@ class ClientController extends ApplicationBase {
   })) { implicit rc =>
     // Uncomment this to see details of the Thing we're displaying:
     //QLog.spewThing(rc.thing.getOrElse(rc.state.get))
-    // We need to split the lines into a format that Javascript isn't going to choke on, since it can't handle
-    // multiline Strings:
-    val rendered = 
-      rc.thing.get.render(rc).display.toString.replaceAllLiterally("'", "\\'").split('\n').map(line => s"'$line\\n'").mkString(" + \n")
-    Ok(views.html.client(rc, ThingPage, rendered))
+    
+    val thing = rc.thing
+    val rendered = thing.get.render(rc).display.toString
+    Ok(views.html.client(rc, ThingPage, write(ThingPageInfo(ClientApi.thingInfo(thing, rc).get, rendered))))
   }
 
 }

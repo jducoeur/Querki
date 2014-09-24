@@ -44,6 +44,8 @@
     <script src="@routes.Assets.at("javascripts/querki-client-launcher.js")" type="text/javascript"></script>
     
     <script>
+      var pickledJSON = @Html(pickled)
+      
       $(function() {
         var client = querki.client.QuerkiClient();
       
@@ -54,7 +56,7 @@
         
         client.dataSetting.unpickleRequest('@Html(ClientApi.pickleRequest(rc))');
         
-        client.pageManager.renderPage(@pageID, @Html(pickled));
+        client.pageManager.renderPage(@pageID, JSON.stringify(pickledJSON));
       });
     </script>
   </head>

@@ -1,17 +1,16 @@
 package querki.display
 
 import org.scalajs.dom
-
 import scalatags.JsDom.all._
 
 import querki.globals._
-
 import querki.pages.PageIDs.PageID
 
 class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   def implements = Set(classOf[PageManager])
   
   lazy val DataAccess = interface[querki.data.DataAccess]
+  lazy val Pages = interface[querki.pages.Pages]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
   var _displayRoot:Option[dom.Element] = None
@@ -39,26 +38,8 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   @JSExport
   def renderPage(pageID:PageID, pickled:String) = {
     val menuBar = new MenuBar
-      
-    val guts =
-      div(cls:="guts container-fluid",
-        div(cls:="row-fluid",
-          div(cls:="querki-content span12",
-            
-            h3(s"User ${UserAccess.name}"),
-            p(
-              (DataAccess.mainThing match {
-                case Some(thing) => s"We are showing ${thing.displayName} (${thing.oid}, kind: ${thing.kind})"
-                case None => "We don't have a Thing!"
-              }) + (DataAccess.space match {
-                case Some(space) => s" in Space ${space.displayName} (${space.oid})"
-                case None => "No space!"
-              })
-            )
-            
-          )
-        )
-      )
+    
+    val guts = Pages.constructPage(pageID, pickled)
       
     val page =
       div(menuBar, guts)
