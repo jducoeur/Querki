@@ -125,6 +125,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     // real Thing names working properly with complex characters? If so, how?
     val name = SafeUrl.decode(nameIn)
     override lazy val displayName = name
+    override lazy val unsafeDisplayName = name
     override lazy val canonicalName = Some(name)
     override lazy val toThingId:ThingId = new AsDisplayName(name)
   
