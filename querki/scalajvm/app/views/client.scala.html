@@ -13,7 +13,18 @@
   // All routes used by the Client should be placed in here. It doesn't provide proper
   // static typing, but it's better than doing things in a completely stringly fashion:
   play.api.Routes.javascriptRouter("clientRoutes")(
-    routes.javascript.Application.thing
+    routes.javascript.Application.createProperty,
+    routes.javascript.Application.editThing,
+    routes.javascript.Application.sharing,
+    routes.javascript.Application.showAdvancedCommands,
+    routes.javascript.Application.thing,
+    routes.javascript.Application.viewThing,
+    
+    routes.javascript.ExploreController.showExplorer,
+    
+    routes.javascript.AdminController.manageUsers,
+    routes.javascript.AdminController.showSpaceStatus,
+    routes.javascript.AdminController.sendSystemMessage
   )
 }
 

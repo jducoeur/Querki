@@ -6,6 +6,8 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
+import querki.comm._
+
 class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
   
   lazy val DataAccess = interface[querki.data.DataAccess]
@@ -13,6 +15,8 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   
   def spaceOpt = DataAccess.space
   def space = spaceOpt.get
+  def userName = space.ownerHandle
+  def spaceId = space.urlName
   def thingOpt = DataAccess.mainThing
   
   val maxNameDisplay = 25
@@ -41,24 +45,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
 
   case object NavDivider extends Navigable
   
-  def thing(thingName:String) = call(controllers.Application.thing(space.ownerHandle, space.urlName, thingName))
-  
-  def spacePath(pageName:String, params:(String,String)*):Call = {
-    s"/u/${space.ownerHandle}/${space.urlName}/$pageName" + 
-      (if (params.size > 0)
-         s"?${params.map(pair => s"${pair._1}=${pair._2}").mkString("&")}"
-       else
-         ""
-      )
-  }
-  
-  def thingIdPath(pageName:String):Call = {
-    spacePath(pageName, ("thingId" -> thingOpt.get.urlName))
-  }
-  
-  def adminPath(pageName:String):Call = {
-    s"/admin/$pageName"
-  }
+  def thing(thingName:String) = url(controllers.Application.thing(userName, spaceId, thingName))
   
   /**
    * Definition of the Menu Bar's data
@@ -83,22 +70,23 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
         // TODO: these first two currently hook into Javascript. They should instead be direct callbacks to Scala:
         NavLink("Design a Model", emptyCall, Some("designModel")),
         NavLink("Create any Thing", emptyCall, Some("createThing")),
-        NavLink("Add a Property", spacePath("createProperty")),
+        NavLink("Add a Property", url(controllers.Application.createProperty(userName, spaceId))),
         NavLink("Show all Things", thing("All-Things")),
         NavLink("Show all Properties", thing("All-Properties")),
-        NavLink("Sharing and Security", spacePath("_sharing"), enabled = DataAccess.request.isOwner)        
+        NavLink("Sharing and Security", url(controllers.Application.sharing(userName, spaceId)), enabled = DataAccess.request.isOwner)        
       )
     }
   }
   
   def thingLinks:Option[Seq[Navigable]] = {
     thingOpt.map { thing =>
+      val thingId = thing.urlName
       Seq(
         NavDivider,
-        NavLink("Edit " + thing.displayName, thingIdPath("edit"), enabled = thing.isEditable),
-        NavLink("View Source", thingIdPath("view")),
-        NavLink("Advanced...", thingIdPath("_advanced")),
-        NavLink("Explore...", thingIdPath("_explorer"), enabled = thing.isEditable),
+        NavLink("Edit " + thing.displayName, url(controllers.Application.editThing(userName, spaceId, thingId)), enabled = thing.isEditable),
+        NavLink("View Source", url(controllers.Application.viewThing(userName, spaceId, thingId))),
+        NavLink("Advanced...", url(controllers.Application.showAdvancedCommands(userName, spaceId, thingId))),
+        NavLink("Explore...", url(controllers.ExploreController.showExplorer(userName, spaceId, thingId)), enabled = thing.isEditable),
         NavLink("Delete " + thing.displayName, emptyCall, Some("deleteThing"), enabled = thing.isDeleteable))      
     }
   }
@@ -116,9 +104,9 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   def adminSection = {
     if (DataAccess.request.isAdmin)
       Some(NavSection("Admin", Seq(
-        NavLink("Manage Users", adminPath("manageUsers")),
-        NavLink("Show Space Status", adminPath("showSpaceStatus")),
-        NavLink("Send System Message", adminPath("sendSystemMessage"))
+        NavLink("Manage Users", url(controllers.AdminController.manageUsers())),
+        NavLink("Show Space Status", url(controllers.AdminController.showSpaceStatus())),
+        NavLink("Send System Message", url(controllers.AdminController.sendSystemMessage()))
       )))
     else
       None
