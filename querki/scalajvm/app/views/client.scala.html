@@ -10,6 +10,20 @@
 
 @clientRoutes = @{
   implicit val request = rc.request
+  
+  val callC = classOf[play.core.Router.JavascriptReverseRoute]
+  val cont = routes.javascript.AdminController
+  val contC:Class[_] = cont.getClass
+  println(s"contC is ${contC.getName}")
+  val allMethods = contC.getMethods
+  val calls = allMethods.filter { method =>
+    val returns = method.getReturnType()
+    callC.isAssignableFrom(returns)
+  }
+  calls.foreach(call => println(s"Call: ${call.getName} on ${call.getDeclaringClass.getName}"))
+  val myRoutes = calls.map { call => call.invoke(cont).asInstanceOf[play.core.Router.JavascriptReverseRoute] }
+  myRoutes.foreach(route => println(s"Route: ${route.name}"))
+  
   // All routes used by the Client should be placed in here. It doesn't provide proper
   // static typing, but it's better than doing things in a completely stringly fashion:
   play.api.Routes.javascriptRouter("clientRoutes")(
