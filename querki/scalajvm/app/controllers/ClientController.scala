@@ -4,7 +4,7 @@ import upickle._
 
 import models.Thing
 
-import querki.pages.ThingPageInfo
+import querki.pages.{RenderedThing, ThingPageInfo}
 import querki.pages.PageIDs._
 
 import querki.spaces.messages.ThingError
@@ -31,6 +31,9 @@ class ClientController extends ApplicationBase {
     pageForThing(rc, rc.thing.get)
   }
   
-//  def renderThing(ownerId:String, spaceId:String, thingId:String) = withThing(false, ownerId, spaceId, thingId)
+  def renderThing(ownerId:String, spaceId:String, thingId:String) = withThing(false, ownerId, spaceId, thingId) { implicit rc =>
+    val thing = rc.thing.get
+    Ok(write(RenderedThing(thing.render(rc).display.toString)))
+  }
 
 }

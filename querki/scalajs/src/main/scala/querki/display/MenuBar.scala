@@ -30,9 +30,6 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   // Menu-defining local types
   //
   
-  type Call = String
-  val emptyCall = ""
-  
   trait Navigable
   
   case class NavSection(val title:String, val links:Seq[Navigable]) extends Navigable
@@ -43,6 +40,8 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   case class NavLink(display:String, url:Call, id:Option[String] = None, enabled:Boolean = true) extends Navigable
 
   case object NavDivider extends Navigable
+  
+  def thing(thingName:String) = call(controllers.Application.thing(space.ownerHandle, space.urlName, thingName))
   
   def spacePath(pageName:String, params:(String,String)*):Call = {
     s"/u/${space.ownerHandle}/${space.urlName}/$pageName" + 
@@ -74,7 +73,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   
   def thingLink = {
     thingOpt.map { t =>
-      NavLink(truncateName(t.displayName), spacePath(t.urlName))
+      NavLink(truncateName(t.displayName), thing(t.urlName))
     }
   }
   
@@ -85,8 +84,8 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
         NavLink("Design a Model", emptyCall, Some("designModel")),
         NavLink("Create any Thing", emptyCall, Some("createThing")),
         NavLink("Add a Property", spacePath("createProperty")),
-        NavLink("Show all Things", spacePath("All-Things")),
-        NavLink("Show all Properties", spacePath("All-Properties")),
+        NavLink("Show all Things", thing("All-Things")),
+        NavLink("Show all Properties", thing("All-Properties")),
         NavLink("Sharing and Security", spacePath("_sharing"), enabled = DataAccess.request.isOwner)        
       )
     }

@@ -1,5 +1,7 @@
 package querki
 
+import scala.scalajs.js
+
 /**
  * This package provides the "global imports" that are commonly used across the client. It
  * is specifically intended that most files will say:
@@ -26,5 +28,10 @@ package object globals {
   implicit def wrapper2Interface[T <: EcologyInterface](wrapper:querki.ecology.InterfaceWrapperBase[querki.ecology.ClientState, querki.ecology.EcotImpl, T]):T = {
     wrapper.get
   }
-
+  
+  type Call = String
+  val emptyCall = ""
+  
+  val controllers = ClientRoutes.controllers
+  def call(c:js.Dynamic):Call = c.url.toString
 }

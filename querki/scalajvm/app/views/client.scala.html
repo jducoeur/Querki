@@ -1,10 +1,21 @@
 @(rc:PlayRequestContext, pageID:querki.pages.PageIDs.PageID, pickled:String)
 
+@import routes.javascript._
+
 <!DOCTYPE html>
 
 @ClientApi = @{ rc.interface[querki.api.ClientApi] }
 
 @isProd = @{ play.api.Play.isProd(play.api.Play.current) }
+
+@clientRoutes = @{
+  implicit val request = rc.request
+  // All routes used by the Client should be placed in here. It doesn't provide proper
+  // static typing, but it's better than doing things in a completely stringly fashion:
+  play.api.Routes.javascriptRouter("clientRoutes")(
+    routes.javascript.Application.thing
+  )
+}
 
 <html>
   <head>
@@ -42,6 +53,10 @@
     }
 
     <script src="@routes.Assets.at("javascripts/querki-client-launcher.js")" type="text/javascript"></script>
+    
+    <script>
+      @Html(clientRoutes.toString)
+    </script>
     
     <script>
       var pickledJSON = @Html(pickled)
