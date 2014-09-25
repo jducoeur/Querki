@@ -41,11 +41,11 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   /**
    * Represents a single link to be shown in a menu.
    */
-  case class NavLink(display:String, url:Call, id:Option[String] = None, enabled:Boolean = true) extends Navigable
+  case class NavLink(display:String, call:PlayCall, id:Option[String] = None, enabled:Boolean = true) extends Navigable
 
   case object NavDivider extends Navigable
   
-  def thing(thingName:String) = url(controllers.Application.thing(userName, spaceId, thingName))
+  def thing(thingName:String) = controllers.Application.thing(userName, spaceId, thingName)
   
   /**
    * Definition of the Menu Bar's data
@@ -68,12 +68,12 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
     spaceOpt.map { space =>
       Seq(
         // TODO: these first two currently hook into Javascript. They should instead be direct callbacks to Scala:
-        NavLink("Design a Model", emptyCall, Some("designModel")),
-        NavLink("Create any Thing", emptyCall, Some("createThing")),
-        NavLink("Add a Property", url(controllers.Application.createProperty(userName, spaceId))),
+        NavLink("Design a Model", EmptyCall, Some("designModel")),
+        NavLink("Create any Thing", EmptyCall, Some("createThing")),
+        NavLink("Add a Property", controllers.Application.createProperty(userName, spaceId)),
         NavLink("Show all Things", thing("All-Things")),
         NavLink("Show all Properties", thing("All-Properties")),
-        NavLink("Sharing and Security", url(controllers.Application.sharing(userName, spaceId)), enabled = DataAccess.request.isOwner)        
+        NavLink("Sharing and Security", controllers.Application.sharing(userName, spaceId), enabled = DataAccess.request.isOwner)        
       )
     }
   }
@@ -83,11 +83,11 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
       val thingId = thing.urlName
       Seq(
         NavDivider,
-        NavLink("Edit " + thing.displayName, url(controllers.Application.editThing(userName, spaceId, thingId)), enabled = thing.isEditable),
-        NavLink("View Source", url(controllers.Application.viewThing(userName, spaceId, thingId))),
-        NavLink("Advanced...", url(controllers.Application.showAdvancedCommands(userName, spaceId, thingId))),
-        NavLink("Explore...", url(controllers.ExploreController.showExplorer(userName, spaceId, thingId)), enabled = thing.isEditable),
-        NavLink("Delete " + thing.displayName, emptyCall, Some("deleteThing"), enabled = thing.isDeleteable))      
+        NavLink("Edit " + thing.displayName, controllers.Application.editThing(userName, spaceId, thingId), enabled = thing.isEditable),
+        NavLink("View Source", controllers.Application.viewThing(userName, spaceId, thingId)),
+        NavLink("Advanced...", controllers.Application.showAdvancedCommands(userName, spaceId, thingId)),
+        NavLink("Explore...", controllers.ExploreController.showExplorer(userName, spaceId, thingId), enabled = thing.isEditable),
+        NavLink("Delete " + thing.displayName, EmptyCall, Some("deleteThing"), enabled = thing.isDeleteable))      
     }
   }
   
@@ -104,9 +104,9 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   def adminSection = {
     if (DataAccess.request.isAdmin)
       Some(NavSection("Admin", Seq(
-        NavLink("Manage Users", url(controllers.AdminController.manageUsers())),
-        NavLink("Show Space Status", url(controllers.AdminController.showSpaceStatus())),
-        NavLink("Send System Message", url(controllers.AdminController.sendSystemMessage()))
+        NavLink("Manage Users", controllers.AdminController.manageUsers()),
+        NavLink("Show Space Status", controllers.AdminController.showSpaceStatus()),
+        NavLink("Send System Message", controllers.AdminController.sendSystemMessage())
       )))
     else
       None
@@ -114,10 +114,10 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   
   //////////////////////////////////////
   
-  def displayNavLink(display:String, url:Call, idStr:String, enabled:Boolean) = {
+  def displayNavLink(display:String, call:PlayCall, idStr:String, enabled:Boolean) = {
     if (enabled) {
       li(
-        a(href:=url,
+        a(href:=call.url,
           id:=idStr,
           display)
       )
@@ -154,12 +154,12 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
 
   def displayNavigable(section:Navigable) = {
     section match {
-      case NavLink(display, url, id, enabled) => {
+      case NavLink(display, call, id, enabled) => {
         val idStr = id match {
           case Some(i) => " id=" + i
           case None => ""
         }
-        displayNavLink(display, url, idStr, enabled)
+        displayNavLink(display, call, idStr, enabled)
       }
       case NavSection(title, links) => displayNavSection(title, links)
       case NavDivider => displayNavDivider
