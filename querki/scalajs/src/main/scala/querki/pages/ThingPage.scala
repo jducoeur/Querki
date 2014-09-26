@@ -22,19 +22,16 @@ class ThingPage(val ecology:Ecology, pickled:String) extends Page with EcologyMe
   def title = info.thing.displayName
   
   def pageContent = {
-    controllers.ClientController.renderThing(DataAccess.userName, DataAccess.spaceId, DataAccess.thingId).callAjax().onComplete { result =>
-      result match {
-        case Success(pickled) => {
-	      val rendered = read[RenderedThing](pickled)
-	      val html = rendered.rendered
-	      replaceContents(div(raw(html)).render)
-        }
-        case Failure(ex:PlayAjaxException) => {
-	      replaceContents(
-	        p(s"Got an error: ${ex.textStatus}").render
-	      )          
-        }
-        case Failure(ex) => {}
+    controllers.ClientController.renderThing(DataAccess.userName, DataAccess.spaceId, DataAccess.thingId).callAjax {
+      case AjaxSuccess(pickled, _, _) => {
+        val rendered = read[RenderedThing](pickled)
+	    val html = rendered.rendered
+	    replaceContents(div(raw(html)).render)
+      }
+      case AjaxFailure(_, textStatus, _) => {
+	    replaceContents(
+	      p(s"Got an error: ${textStatus}").render
+	    )
       }
     }
     

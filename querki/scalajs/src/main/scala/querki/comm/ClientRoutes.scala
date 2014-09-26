@@ -2,6 +2,7 @@ package querki.comm
   
 import scala.concurrent.{Future, Promise}
 import scala.scalajs.js
+import scala.util.{Failure, Success, Try}
 
 import org.scalajs.jquery.{JQueryAjaxSettings, JQueryDeferred}
 
@@ -66,6 +67,10 @@ trait PlayCall extends js.Object {
   def absoluteURL:URL = ???
 }
 
+sealed trait AjaxResult
+case class AjaxSuccess(data:String, textStatus:String, jqXHR:JQueryDeferred) extends AjaxResult
+case class AjaxFailure(jqXHR:JQueryDeferred, textStatus:String, errorThrown:String) extends AjaxResult
+
 case class PlayAjaxException(jqXHR:JQueryDeferred, textStatus:String, errorThrown:String) extends Exception 
 
 /**
@@ -85,5 +90,22 @@ class PlayAjax(call:PlayCall) {
     }
     
     promise.future
+  }
+  
+  def callAjax[U](cb:PartialFunction[AjaxResult, U]):Future[Try[U]] = {
+    val promise = Promise[Try[U]]
+    
+    val deferred = call.ajax().asInstanceOf[JQueryDeferred]
+    deferred.done { (data:String, textStatus:String, jqXHR:JQueryDeferred) => 
+      promise.success(Success(cb(AjaxSuccess(data, textStatus, jqXHR))))
+    }
+    deferred.fail { (jqXHR:JQueryDeferred, textStatus:String, errorThrown:String) => 
+      promise.success(Failure({
+        cb(AjaxFailure(jqXHR, textStatus, errorThrown))
+        PlayAjaxException(jqXHR, textStatus, errorThrown)
+      }))
+    }
+    
+    promise.future    
   }
 }
