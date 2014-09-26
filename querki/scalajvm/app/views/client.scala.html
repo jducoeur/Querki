@@ -11,34 +11,26 @@
 @clientRoutes = @{
   implicit val request = rc.request
   
+  import play.core.Router.JavascriptReverseRoute
+  
   val callC = classOf[play.core.Router.JavascriptReverseRoute]
-  val cont = routes.javascript.AdminController
-  val contC:Class[_] = cont.getClass
-  println(s"contC is ${contC.getName}")
-  val allMethods = contC.getMethods
-  val calls = allMethods.filter { method =>
-    val returns = method.getReturnType()
-    callC.isAssignableFrom(returns)
+  def getRoutes[T](cont:T):Seq[JavascriptReverseRoute] = {
+    val contC:Class[_] = cont.getClass
+    val allMethods = contC.getMethods
+    val calls = allMethods.filter { method =>
+      val returns = method.getReturnType()
+      callC.isAssignableFrom(returns)
+    }
+    calls.map { call => call.invoke(cont).asInstanceOf[play.core.Router.JavascriptReverseRoute] }
   }
-  calls.foreach(call => println(s"Call: ${call.getName} on ${call.getDeclaringClass.getName}"))
-  val myRoutes = calls.map { call => call.invoke(cont).asInstanceOf[play.core.Router.JavascriptReverseRoute] }
-  myRoutes.foreach(route => println(s"Route: ${route.name}"))
   
   // All routes used by the Client should be placed in here. It doesn't provide proper
   // static typing, but it's better than doing things in a completely stringly fashion:
   play.api.Routes.javascriptRouter("clientRoutes")(
-    routes.javascript.Application.createProperty,
-    routes.javascript.Application.editThing,
-    routes.javascript.Application.sharing,
-    routes.javascript.Application.showAdvancedCommands,
-    routes.javascript.Application.thing,
-    routes.javascript.Application.viewThing,
-    
-    routes.javascript.ExploreController.showExplorer,
-    
-    routes.javascript.AdminController.manageUsers,
-    routes.javascript.AdminController.showSpaceStatus,
-    routes.javascript.AdminController.sendSystemMessage
+    (getRoutes(routes.javascript.Application) ++
+     getRoutes(routes.javascript.ExploreController) ++
+     getRoutes(routes.javascript.AdminController)
+    ):_*
   )
 }
 
