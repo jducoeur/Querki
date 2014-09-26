@@ -8,7 +8,7 @@ import scalatags.JsDom.all._
  * Wrapper around Scalatags, to provide support for tracking and updating the rendered elements
  * as the underlying data changes.
  */
-trait Gadget[Output <: dom.Element] extends Frag {
+trait Gadget[Output <: dom.Element] extends scalatags.jsdom.Frag {
   /**
    * Concrete subclasses should fill this in with the actual guts of the Gadget.
    */
@@ -28,6 +28,4 @@ trait Gadget[Output <: dom.Element] extends Frag {
     _elem = Some(result)
     result
   }
-  
-  def applyTo(t:dom.Element) = underlyingTag.applyTo(t)
 }

@@ -4,7 +4,7 @@ import org.scalajs.dom
 import scalatags.JsDom.all._
 
 import querki.globals._
-import querki.display.Gadget
+import querki.display.{Gadget, WrapperDiv}
 
 trait Page extends Gadget[dom.HTMLDivElement] {
   
@@ -18,10 +18,16 @@ trait Page extends Gadget[dom.HTMLDivElement] {
    */
   def pageContent:Modifier
   
+  val contentDiv = new WrapperDiv
+  
+  def replaceContents(newContent:dom.Element) = {
+    contentDiv.replaceContents(newContent)
+  }
+  
   def doRender() = {
     div(cls:="guts container-fluid",
       div(cls:="row-fluid",
-        div(cls:="querki-content span12",
+        contentDiv(cls:="querki-content span12",
           pageContent
         )
       )

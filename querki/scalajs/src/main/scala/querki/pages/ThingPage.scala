@@ -22,9 +22,17 @@ class ThingPage(val ecology:Ecology, pickled:String) extends Page with EcologyMe
   def pageContent = {
     val request:PlayCall = controllers.ClientController.renderThing(DataAccess.userName, DataAccess.spaceId, DataAccess.thingId)
     val deferred = request.ajax().asInstanceOf[JQueryDeferred]
-    deferred.done((data:String, textStatus:String, jqXHR:JQueryDeferred) => println(s"AJAX success: got $data"))
-    deferred.fail((jqXHR:JQueryDeferred, textStatus:String, errorThrown:String) => println(s"Got an error"))
+    deferred.done { (data:String, textStatus:String, jqXHR:JQueryDeferred) => 
+      val rendered = read[RenderedThing](data)
+      val html = rendered.rendered
+      replaceContents(div(raw(html)).render)
+    }
+    deferred.fail { (jqXHR:JQueryDeferred, textStatus:String, errorThrown:String) => 
+      replaceContents(
+        p(s"Got an error: $textStatus").render
+      )
+    }
     
-    raw(info.rendered)
+    p("Loading...")
   }
 }
