@@ -1,5 +1,7 @@
 package querki.pages
 
+import scala.util.{Failure, Success}
+
 import upickle._
 
 import org.scalajs.dom
@@ -20,17 +22,20 @@ class ThingPage(val ecology:Ecology, pickled:String) extends Page with EcologyMe
   def title = info.thing.displayName
   
   def pageContent = {
-    val request:PlayCall = controllers.ClientController.renderThing(DataAccess.userName, DataAccess.spaceId, DataAccess.thingId)
-    val deferred = request.ajax().asInstanceOf[JQueryDeferred]
-    deferred.done { (data:String, textStatus:String, jqXHR:JQueryDeferred) => 
-      val rendered = read[RenderedThing](data)
-      val html = rendered.rendered
-      replaceContents(div(raw(html)).render)
-    }
-    deferred.fail { (jqXHR:JQueryDeferred, textStatus:String, errorThrown:String) => 
-      replaceContents(
-        p(s"Got an error: $textStatus").render
-      )
+    controllers.ClientController.renderThing(DataAccess.userName, DataAccess.spaceId, DataAccess.thingId).callAjax().onComplete { result =>
+      result match {
+        case Success(pickled) => {
+	      val rendered = read[RenderedThing](pickled)
+	      val html = rendered.rendered
+	      replaceContents(div(raw(html)).render)
+        }
+        case Failure(ex:PlayAjaxException) => {
+	      replaceContents(
+	        p(s"Got an error: ${ex.textStatus}").render
+	      )          
+        }
+        case Failure(ex) => {}
+      }
     }
     
     p("Loading...")

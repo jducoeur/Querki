@@ -26,4 +26,9 @@ package object globals {
   implicit def wrapper2Interface[T <: EcologyInterface](wrapper:querki.ecology.InterfaceWrapperBase[querki.ecology.ClientState, querki.ecology.EcotImpl, T]):T = {
     wrapper.get
   }
+  
+  /**
+   * The standard implicit ExecutionContext for Futures. Provide one explicitly if you want to do something different.
+   */
+  implicit val queue = scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 }

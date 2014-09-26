@@ -1,8 +1,9 @@
 package querki.comm
   
+import scala.concurrent.{Future, Promise}
 import scala.scalajs.js
 
-import org.scalajs.jquery.JQueryAjaxSettings
+import org.scalajs.jquery.{JQueryAjaxSettings, JQueryDeferred}
 
 /**
  * Provides access to the routing table.
@@ -63,4 +64,26 @@ trait PlayCall extends js.Object {
    * The absolute URL of this call.
    */
   def absoluteURL:URL = ???
+}
+
+case class PlayAjaxException(jqXHR:JQueryDeferred, textStatus:String, errorThrown:String) extends Exception 
+
+/**
+ * This wrapper around PlayCall exposes the Ajax stuff in a more Scala-idiomatic way, using Futures.
+ * It deliberately apes dom.extensions.Ajax.
+ */
+class PlayAjax(call:PlayCall) {
+  def callAjax():Future[String] = {
+    val promise = Promise[String]
+    
+    val deferred = call.ajax().asInstanceOf[JQueryDeferred]
+    deferred.done { (data:String, textStatus:String, jqXHR:JQueryDeferred) => 
+      promise.success(data)
+    }
+    deferred.fail { (jqXHR:JQueryDeferred, textStatus:String, errorThrown:String) => 
+      promise.failure(PlayAjaxException(jqXHR, textStatus, errorThrown))
+    }
+    
+    promise.future
+  }
 }
