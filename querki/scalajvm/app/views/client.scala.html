@@ -8,32 +8,6 @@
 
 @isProd = @{ play.api.Play.isProd(play.api.Play.current) }
 
-@clientRoutes = @{
-  implicit val request = rc.request
-  
-  import play.core.Router.JavascriptReverseRoute
-  
-  val callC = classOf[play.core.Router.JavascriptReverseRoute]
-  def getRoutes[T](cont:T):Seq[JavascriptReverseRoute] = {
-    val contC:Class[_] = cont.getClass
-    val allMethods = contC.getMethods
-    val calls = allMethods.filter { method =>
-      val returns = method.getReturnType()
-      callC.isAssignableFrom(returns)
-    }
-    calls.map { call => call.invoke(cont).asInstanceOf[play.core.Router.JavascriptReverseRoute] }
-  }
-  
-  // All routes used by the Client should be placed in here. It doesn't provide proper
-  // static typing, but it's better than doing things in a completely stringly fashion:
-  play.api.Routes.javascriptRouter("clientRoutes")(
-    (getRoutes(routes.javascript.Application) ++
-     getRoutes(routes.javascript.ExploreController) ++
-     getRoutes(routes.javascript.AdminController)
-    ):_*
-  )
-}
-
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -72,7 +46,33 @@
     <script src="@routes.Assets.at("javascripts/querki-client-launcher.js")" type="text/javascript"></script>
     
     <script>
-      @Html(clientRoutes.toString)
+      @Html({
+		  implicit val request = rc.request
+		  
+		  import play.core.Router.JavascriptReverseRoute
+		  
+		  val callC = classOf[play.core.Router.JavascriptReverseRoute]
+		  def getRoutes[T](cont:T):Seq[JavascriptReverseRoute] = {
+		    val contC:Class[_] = cont.getClass
+		    val allMethods = contC.getMethods
+		    val calls = allMethods.filter { method =>
+		      val returns = method.getReturnType()
+		      callC.isAssignableFrom(returns)
+		    }
+		    calls.map { call => call.invoke(cont).asInstanceOf[play.core.Router.JavascriptReverseRoute] }
+		  }
+		  
+		  // All routes used by the Client should be placed in here. It doesn't provide proper
+		  // static typing, but it's better than doing things in a completely stringly fashion.
+		  // Use getRoutes to expose all of the entry points in a controller, or else just name
+		  // those routes individually if you want more control:
+		  play.api.Routes.javascriptRouter("clientRoutes")(
+		    (getRoutes(routes.javascript.Application) ++
+		     getRoutes(routes.javascript.ExploreController) ++
+		     getRoutes(routes.javascript.AdminController)
+		    ):_*
+		  ).toString
+		})
     </script>
     
     <script>
