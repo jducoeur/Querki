@@ -69,7 +69,8 @@
 		  play.api.Routes.javascriptRouter("clientRoutes")(
 		    (getRoutes(routes.javascript.Application) ++
 		     getRoutes(routes.javascript.ExploreController) ++
-		     getRoutes(routes.javascript.AdminController)
+		     getRoutes(routes.javascript.AdminController) ++
+		     getRoutes(routes.javascript.ClientController)
 		    ):_*
 		  ).toString
 		})

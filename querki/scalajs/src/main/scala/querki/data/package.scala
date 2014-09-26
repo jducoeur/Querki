@@ -22,6 +22,24 @@ package object data {
      * The Space we are currently operating in, if any.
      */
     def space:Option[SpaceInfo]
+    
+    /**
+     * Convenience function to get the "userName" part of a typical path. Should only be used if
+     * you know that the space exists!
+     */
+    def userName = space.get.ownerHandle
+    
+    /**
+     * Convenience function to get the "spaceId" part of a typical path. Should only be used if
+     * you know that the space exists!
+     */
+    def spaceId = space.get.urlName
+    
+    /**
+     * Convenience function to get the "thingId" part of a typical path. Should only be used if
+     * you know that the thing exists!
+     */
+    def thingId = mainThing.get.urlName
   }
   
   /**
