@@ -21,10 +21,14 @@ package object global {
   
   type Ecology = querki.ecology.Ecology
   type EcologyInterface = querki.ecology.EcologyInterface
+  type EcologyMember = querki.ecology.EcologyMember
   type Ecot = querki.ecology.Ecot
   type QuerkiEcot = querki.ecology.QuerkiEcot
   implicit def wrapper2Interface[T <: EcologyInterface](wrapper:querki.ecology.InterfaceWrapperBase[SpaceState, querki.ecology.EcotImpl, T]):T = {
     wrapper.get
   }  
   
+  object Implicits {
+    implicit lazy val execContext = scala.concurrent.ExecutionContext.Implicits.global
+  }
 }

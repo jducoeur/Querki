@@ -74,4 +74,14 @@ abstract class RequestContext(
     }
       yield firstIdentity
   }
+  
+  /**
+   * Replace the State and return the modified RequestContext. Basically a limited copy() function.
+   */
+  def +(state:SpaceState):RequestContext
+  
+  /**
+   * Replace the State and return the modified RequestContext. Basically a limited copy() function.
+   */
+  def +(thing:Thing):RequestContext
 }

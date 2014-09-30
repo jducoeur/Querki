@@ -3,9 +3,15 @@ package querki.session
 import akka.actor._
 import akka.event.LoggingReceive
 
+import upickle._
+import autowire._
+
 import models.{AsName, AsOID, OID, PType, ThingId, ThingState, UnknownOID}
 
-import querki.ecology._
+import querki.global._
+import Implicits.execContext
+
+import querki.api.{ClientApis, ThingFunctions}
 import querki.identity.{Identity, User}
 import querki.session.messages._
 import querki.spaces.messages.{ChangeProps, CurrentState, SessionRequest, SpacePluginMsg, ThingError, ThingFound}
@@ -14,7 +20,28 @@ import querki.time.DateTime
 import querki.uservalues.SummarizeChange
 import querki.uservalues.PersistMessages._
 import querki.util.{PublicException, QLog, TimeoutChild, UnexpectedPublicException}
-import querki.values.{QValue, SpaceState}
+import querki.values.{QValue, RequestContext, SpaceState}
+
+/**
+ * The various UserSession-focused implementations should inherit from this. They then get mixed into
+ * UserSpaceSession, and use this trait to access the critical contextual info. 
+ */
+trait SessionApiImpl extends EcologyMember {
+  /**
+   * The User who is making this request.
+   */
+  def user:User
+  
+  /**
+   * The current state of the Space, as seen by this User.
+   */
+  def state:SpaceState
+  
+  /**
+   * The RequestContext for this request.
+   */
+  def rc:RequestContext
+}
 
 /**
  * The Actor that controls an individual's relationship with a Space.
@@ -26,6 +53,8 @@ import querki.values.{QValue, SpaceState}
  */
 private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
   extends Actor with Stash with EcologyMember with TimeoutChild
+  with autowire.Server[String, upickle.Reader, upickle.Writer]
+  with ThingFunctionsImpl
 {
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
@@ -181,12 +210,43 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
     case _ => stash()
   }
   
+  var _currentRc:Option[RequestContext] = None
+  def rc = _currentRc.get
+  def withRc(rc:RequestContext)(f: => Unit) = {
+    _currentRc = Some(rc)
+    try {
+      f
+    } finally {
+      _currentRc = None
+    }
+  }
+  
+  // Autowire functions
+  def write[Result: Writer](r: Result) = upickle.write(r)
+  def read[Result: Reader](p: String) = upickle.read[Result](p)
+  
   def normalReceive:Receive = LoggingReceive {
     case CurrentState(s) => setRawState(s)
     
     case SessionRequest(req, own, space, payload) => { 
       checkDisplayName(req, own, space)
       payload match {
+        
+        case ClientRequest(apiId, path, args, rc) => {
+          apiId match {
+            case ClientApis.ThingFunctionsId => {
+              withRc(rc + state) {
+                // route() is asynchronous, so we need to store away the sender!
+                val senderSaved = sender
+                route[ThingFunctions](this)(Core.Request(path, args)).foreach { result =>
+                  senderSaved ! ClientResponse(result)                  
+                }
+              }
+            }
+            case _ => { sender ! ClientError("Unknown API ID!") }
+          }
+        }
+        
         case GetActiveSessions => QLog.error("UserSpaceSession received GetActiveSessions! WTF?")
         
 	    case GetThing(thingIdOpt) => {

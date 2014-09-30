@@ -143,4 +143,7 @@ case class PlayRequestContextFull[B](
     // something wrong in the syntax. Fix it:
     state.flatMap(space => propStr.flatMap(id => space.prop(ThingId(id))))
   }  
+  
+  def +(state:SpaceState):RequestContext = copy(state = Some(state))
+  def +(thing:Thing):RequestContext = copy(thing = Some(thing))
 }
