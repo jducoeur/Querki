@@ -117,7 +117,8 @@ object Dependencies {
 	  "org.scalajs" %%%! "scala-parser-combinators" % "1.0.2",
 	  "com.lihaoyi" %%%! "upickle" % "0.2.4",
 	  "com.scalatags" %%%! "scalatags" % "0.4.0",
-	  "com.lihaoyi" %%%! "autowire" % "0.2.3"
+	  "com.lihaoyi" %%%! "autowire" % "0.2.3",
+	  "org.scala-lang.modules" %% "scala-async" % "0.9.2"
   ) ++ shared
 }
 

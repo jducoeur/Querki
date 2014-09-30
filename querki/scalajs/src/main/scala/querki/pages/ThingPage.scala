@@ -1,9 +1,9 @@
 package querki.pages
 
+import scala.async.Async._
 import scala.util.{Failure, Success}
 
 import upickle._
-// TODO: this is needed in order to get at autowire.clientFutureCallable(), which makes call() available:
 import autowire._
 
 import org.scalajs.dom
@@ -14,7 +14,6 @@ import scalatags.JsDom.all._
 import querki.globals._
 
 import querki.api.ThingFunctions
-import querki.client.MyClient
 import querki.comm._
 
 class ThingPage(val ecology:Ecology, pickled:String) extends Page with EcologyMember {
@@ -27,8 +26,9 @@ class ThingPage(val ecology:Ecology, pickled:String) extends Page with EcologyMe
   def title = info.thing.displayName
   
   def pageContent = {
-    Client[ThingFunctions].renderThing(DataAccess.thingId).call().foreach { rendered =>
-	  replaceContents(div(raw(rendered)).render)      
+    async {
+      val rendered = await(Client[ThingFunctions].renderThing(DataAccess.thingId).call())
+	  replaceContents(div(raw(rendered)).render)
     }
     
     p("Loading...")
