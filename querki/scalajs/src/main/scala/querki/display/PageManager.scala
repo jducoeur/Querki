@@ -37,12 +37,11 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
    */
   @JSExport
   def renderPage(pageID:PageID, pickled:String) = {
-    val menuBar = new MenuBar
-    
-    val guts = Pages.constructPage(pageID, pickled)
-      
     val page =
-      div(menuBar, guts)
+      div(
+        new MenuBar, 
+        Pages.constructPage(pageID, pickled), 
+        new StandardFooter)
     
     $(displayRoot).empty()
     $(displayRoot).append(page.render)
