@@ -108,7 +108,7 @@ object IdentityCacheMessages {
   case class IdentitiesFound(identities:Map[OID,PublicIdentity])
   
   case class InvalidateCacheForIdentity(id:OID)
-
+  
   /**
    * Sends the given msg to all of the UserSessions behind the given identityIds.
    */

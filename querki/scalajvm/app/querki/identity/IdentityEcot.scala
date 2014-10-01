@@ -68,6 +68,17 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
     }
   }
   
+  def getIdentity(handle:String):Future[Option[PublicIdentity]] = {
+    val fut = userCache ? GetUserByHandle(handle)
+    fut map {
+      case UserFound(user) => {
+        user.identityByHandle(handle)
+      }
+      case UserNotFound => None
+      case _ => None
+    }
+  }
+  
   def getIdentities(ids:Seq[OID]):Future[Map[OID, PublicIdentity]] = {
     val fut = identityCache ? GetIdentities(ids)
     fut map {

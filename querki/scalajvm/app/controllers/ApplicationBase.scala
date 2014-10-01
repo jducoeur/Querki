@@ -55,6 +55,7 @@ class ApplicationBase extends Controller with EcologyMember {
     Redirect(redirectTo).flashing("info" -> msg)
   }
   
+  @deprecated("getIdentityByThingId is being phased out, since it is an uncached synchronous DB call. Use getOwnerIdentity instead.", "0.11.0")
   def getIdentityByThingId(thingIdStr:String):OID = {
     val thingId = ThingId(thingIdStr)
     thingId match {
@@ -64,6 +65,20 @@ class ApplicationBase extends Controller with EcologyMember {
         else {
           val userOpt = UserAccess.getIdentity(name)
           userOpt getOrElse UnknownOID
+        }
+      }
+    }
+  }
+  
+  def getOwnerIdentity(thingIdStr:String):Future[OID] = {
+    val thingId = ThingId(thingIdStr)
+    thingId match {
+      case AsOID(oid) => Future.successful(oid)
+      case AsName(handle) => {
+        if (handle.length() == 0) Future.successful(UnknownOID)
+        else {
+          // getIdentity() returns Future[Option[PublicIdentity]]
+          IdentityAccess.getIdentity(handle).map(_.map(_.id).getOrElse(UnknownOID))
         }
       }
     }
@@ -149,6 +164,23 @@ class ApplicationBase extends Controller with EcologyMember {
   }
   
   /**
+   * Fetch enough routing information to be able to send messages through the SpaceManager.
+   * Note that this is the usual replacement for withSpace -- it fetches just enough info to
+   * send messages off to the UserSession level, and nothing more.
+   */
+  def withRouting
+    (ownerIdStr:String)
+    (f: (PlayRequestContext => Future[Result])):EssentialAction = 
+  withUser(false) { originalRC =>
+    for {
+      ownerId <- getOwnerIdentity(ownerIdStr)
+      rc = originalRC.copy(ownerId = ownerId)
+      result <- f(rc)
+    }
+      yield result
+  }
+  
+  /**
    * Given a Space, this fetches that Space's current state before calling the core logic.
    * 
    * TBD: Why the ridiculous return signature? Because I am getting cryptic errors about withSpace
@@ -157,6 +189,7 @@ class ApplicationBase extends Controller with EcologyMember {
    * TODO: this is fundamentally broken at the moment. withUser() is potentially long-running -- it can
    * involve DB lookups -- so we need to think about how to restructure things accordingly.
    */
+//  @deprecated("withSpace is fundamentally broken -- it requires fetching the SpaceState to the Play level. Gradually replace it.", "0.11.0")
   def withSpace[B](
         requireLogin:Boolean, 
         ownerIdStr:String,

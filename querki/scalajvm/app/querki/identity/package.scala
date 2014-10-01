@@ -136,6 +136,11 @@ package object identity {
      * The recommended way to fetch a single Identity.
      */
     def getIdentity(id:OID):Future[Option[PublicIdentity]]
+
+    /**
+     * Fetch an Identity from its Handle.
+     */
+    def getIdentity(handle:String):Future[Option[PublicIdentity]]
     
     /**
      * Fetch a number of identities at once.

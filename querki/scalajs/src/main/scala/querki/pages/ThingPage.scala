@@ -14,6 +14,7 @@ import scalatags.JsDom.all._
 import querki.globals._
 
 import querki.api.ThingFunctions
+import querki.data.ThingInfo
 import querki.comm._
 
 class ThingPage(val ecology:Ecology, pickled:String) extends Page with EcologyMember {
@@ -21,9 +22,9 @@ class ThingPage(val ecology:Ecology, pickled:String) extends Page with EcologyMe
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
   
-  val info = read[ThingPageInfo](pickled)
+  val info = read[ThingInfo](pickled)
   
-  def title = info.thing.displayName
+  def title = info.displayName
   
   def pageContent = {
     async {
