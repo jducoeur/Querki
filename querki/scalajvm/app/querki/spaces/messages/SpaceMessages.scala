@@ -50,12 +50,6 @@ case class ModifyThing(req:User, own:OID, space:ThingId, id:ThingId, modelId:OID
  */
 case class ChangeProps(req:User, own:OID, space:ThingId, id:ThingId, changedProps:PropMap) extends SpaceMessage(req, own, space)
 
-case class CreateAttachment(req:User, own:OID, space:ThingId, 
-    content:Array[Byte], mime:MIMEType, size:Int, 
-    modelId:OID, props:PropMap) extends SpaceMessage(req, own, space)
-
-case class GetAttachment(req:User, own:OID, space:ThingId, attachId:ThingId) extends SpaceMessage(req, own, space)
-
 // TODO: this message needs cleanup before we start using it, to match the rest:
 case class CreateProperty(id:OID, req:User, model:OID, pType:OID, cType:OID, props:PropMap) extends SpaceMessage(req, UnknownOID, AsOID(id))
 
@@ -105,4 +99,3 @@ sealed trait SpaceResponse
 sealed trait ThingResponse extends SpaceResponse
 case class ThingFound(id:OID, state:SpaceState) extends ThingResponse
 case class ThingError(ex:PublicException, stateOpt:Option[SpaceState] = None) extends ThingResponse
-case class AttachmentContents(id:OID, size:Int, mime:MIMEType, content:Array[Byte]) extends SpaceResponse

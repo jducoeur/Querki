@@ -14,7 +14,7 @@ import akka.util.Timeout
 
 import models.{Kind, MIMEType}
 import models.{AsOID, AsName, OID, ThingId, UnknownOID}
-import models.{Attachment, Collection, Property, PType, PTypeBuilder, Thing, ThingState}
+import models.{Collection, Property, PType, PTypeBuilder, Thing, ThingState}
 import models.Thing.emptyProps
 import MIMEType.MIMEType
 import Kind._
@@ -163,8 +163,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
             Core.setName(identity.handle),
             Basic.DisplayNameProp(identity.name),
             Person.IdentityLink(identity.id))(),
-          Kind.Thing,
-          None)
+          Kind.Thing)
       }
     }
   }
@@ -198,7 +197,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
     }
   }
 
-  def createSomething(spaceThingId:ThingId, who:User, modelId:OID, propsIn:PropMap, kind:Kind, attachmentInfo:Option[AttachmentInfo]) = 
+  def createSomething(spaceThingId:ThingId, who:User, modelId:OID, propsIn:PropMap, kind:Kind) = 
   {
     val spaceId = checkSpaceId(spaceThingId)
     val changedProps = changedProperties(Map.empty, propsIn)
@@ -218,17 +217,13 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
       sender ! ThingError(new PublicException(NameExists, name.get))
     else {
       val modTime = DateTime.now
-      persister.request(Create(state, modelId, kind, props, modTime, attachmentInfo)) {
+      persister.request(Create(state, modelId, kind, props, modTime)) {
         case Changed(thingId, _) => {
           implicit val e = ecology
           kind match {
             case Kind.Thing => {
               val thing = ThingState(thingId, spaceId, modelId, () => props, modTime, kind)
               updateState(state.copy(things = state.things + (thingId -> thing)))
-            }
-            case Kind.Attachment => {
-              val thing = new Attachment(thingId, spaceId, modelId, () => props, modTime)
-              updateState(state.copy(things = state.things + (thingId -> thing)))              
             }
             case Kind.Property => {
               val typ = state.typ(Core.TypeProp.first(props))
@@ -287,12 +282,6 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
           // Make the change in-memory...
 	      // TODO: this needs a clause for each Kind you can get:
           val spaceChangeOpt = oldThing match {
-            case t:Attachment => {
-              val newThingState = t.copy(m = modelId, pf = () => newProps, mt = modTime)
-              updateState(state.copy(things = state.things + (thingId -> newThingState))) 
-              sender ! ThingFound(thingId, state)     
-              None
-            }
             case t:ThingState => {
               val newThingState = t.copy(m = modelId, pf = () => newProps, mt = modTime)
               updateState(state.copy(things = state.things + (thingId -> newThingState))) 
@@ -385,24 +374,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
     }
 
     case CreateThing(who, owner, spaceId, kind, modelId, props) => {
-      createSomething(spaceId, who, modelId, props, kind, None)
-    }
-    
-    case CreateAttachment(who, owner, spaceId, content, mime, size, modelId, props) => {
-      createSomething(spaceId, who, modelId, props, Kind.Attachment, Some(AttachmentInfo(content, mime, size)))
-    }
-    
-    case GetAttachment(who, owner, space, attachId) => {
-        val attachOid = attachId match {
-          case AsOID(oid) => oid
-          // TODO: handle the case where this name is not recognized:
-          case AsName(name) => {
-            state.anythingByName(name).get.id
-          }
-        }
-        
-        // No need for further intervention -- the Persister will respond directly:
-        persister.forward(LoadAttachment(attachOid))
+      createSomething(spaceId, who, modelId, props, kind)
     }
     
     case ChangeProps(who, owner, spaceThingId, thingId, changedProps) => {

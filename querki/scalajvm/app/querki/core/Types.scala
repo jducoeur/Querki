@@ -230,7 +230,6 @@ trait LinkUtils { self:CoreEcot =>
           case Kind.Property => state.spaceProps.values
           case Kind.Type => state.types.values
           case Kind.Collection => state.colls.values
-          // TODO: distinguish Things and Attachments?
           case _ => Iterable.empty[Thing]
         }
       }

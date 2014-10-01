@@ -1,6 +1,6 @@
 package querki.spaces
 
-import models.{Attachment, Collection, Kind, OID, Property, PType, PTypeBuilder, Thing, ThingState}
+import models.{Collection, Kind, OID, Property, PType, PTypeBuilder, Thing, ThingState}
 import models.Thing.PropMap
 
 import querki.ecology.EcologyMember
@@ -132,11 +132,7 @@ trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
         new ThingState(thingId, id, modelId, () => propMap, modTime)        
       }
       
-      val attachments = getThings(Kind.Attachment) { (thingId, modelId, propMap, modTime) =>
-        new Attachment(thingId, id, modelId, () => propMap, modTime)        
-      }
-      
-      val allThings = things ++ attachments
+      val allThings = things
       curState = curState.copy(things = allThings)
       
       // Now we do a second pass, to resolve anything left unresolved:

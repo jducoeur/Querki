@@ -1,6 +1,6 @@
 package querki.test
 
-import models.{Attachment, ThingState}
+import models.{ThingState}
 import models.Kind
 
 import querki.ecology._
@@ -60,12 +60,6 @@ class CommonSpace(implicit ecologyIn:Ecology) extends TestSpace {
       optTextProp("Hello world")) 
   val withDisplayName = new SimpleTestThing("Interesting Display Name", interface[querki.basic.Basic].DisplayNameProp("""My name is "interesting"!"""))
   val trivialThing = new SimpleTestThing("Trivial")
-  
-  /**
-   * A simple imitation "photograph".
-   */
-  val photo = new Attachment(toid(), spaceId, querki.basic.MOIDs.PageOID, makePropFetcher("My Photo", Seq.empty))
-  registerThing(photo)
 
   /**
    * The generic "sandbox" Thing, which serves as a useful default if you don't

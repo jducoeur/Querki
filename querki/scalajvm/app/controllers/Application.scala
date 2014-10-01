@@ -158,7 +158,7 @@ disallow: /
 
   def otherModels(state:SpaceState, mainModel:Thing):Iterable[Thing] = {
     mainModel.kind match {
-      case Kind.Thing | Kind.Attachment => state.allModels
+      case Kind.Thing => state.allModels
       // For the time being, we're only allowing basic Properties. We might allow Properties to
       // serve as Models, but one thing at a time.
       case Kind.Property => Seq(UrProp)
@@ -710,75 +710,6 @@ disallow: /
     val items = results.map(item => "{\"display\":\"" + item._1 + "\", \"id\":\"" + item._2 + "\"}")
     val JSONtags = "[" + items.mkString(",") + "]"
     Ok(JSONtags)
-  }
-
-  def upload(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
-    Ok(views.html.upload(rc))
-  }
-
-  // TODO: I think this function is the straw that breaks the camel's back when it comes to code structure.
-  // It has too many nested levels, and they're only going to get worse. It needs a big rewrite.
-  //
-  // A better solution is probably to use 2.10's Try monad pretty rigorously. Say that askSpaceMgr returns
-  // a monadic response, that composes by calling the next step in the chain. If you get ThingFound, we
-  // continue; if you get ThingError, we fail the Try with an error. Done right, and all of this can
-  // become a nice for() statement, and will be much easier to reason about in the long run. That will
-  // have to wait until we have 2.10 going, though.
-  //
-  // TODO: generalize upload. You should be able to select the desired file type from a whitelist,
-  // and upload that type properly. There should be type-specific validation -- for instance, CSS should
-  // be Javascript-scrubbed. There should be type-specific post-processing -- for instance, photos
-  // should automatically generate thumbnails.
-  //
-  // TODO: limit the size of the uploaded file!!!
-  def doUpload(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
-    implicit val state = rc.state.get
-    val user = rc.requester.get
-    val body = rc.request.body match {
-      case r:AnyContent => r
-      case _ => throw new Exception("Somehow got a weird body content in doUpload!")
-    }
-    body.asMultipartFormData flatMap(_.file("uploadedFile")) map { filePart =>
-      val filename = filePart.filename
-	  val tempfile = filePart.ref.file
-	  // TBD: Note that this codec forces everything to be treated as pure-binary. That's
-	  // because we are trying to be consistent about attachments. Not clear whether
-	  // that's the right approach in the long run, though.
-	  val source = io.Source.fromFile(tempfile)(scala.io.Codec.ISO8859)
-	  val contents = try {
-	    // TODO: is there any way to get the damned file into the DB without copying it
-	    // through memory like this?
-	    source.map(_.toByte).toArray
-	  } finally {
-	    source.close()
-	  }
-	  val attachProps = Core.toProps(DisplayNameProp(filename))()
-	  askSpaceMgr[ThingResponse](
-	    CreateAttachment(user, rc.ownerId, state.id.toThingId, contents, MIMEType.JPEG, contents.size, querki.basic.MOIDs.PhotoBaseOID, attachProps)) {
-	    case ThingFound(attachmentId, state2) => {
-	      Redirect(routes.Application.thing(ownerId, state.toThingId, attachmentId.toThingId))
-	    }
-	    case ThingError(error, stateOpt) => {
-          doError(routes.Application.upload(ownerId, spaceId), error)
-	    }
-	  }
-	} getOrElse {
-      doError(routes.Application.upload(ownerId, spaceId), "You didn't specify a file")
-	}
-  }
-
-  // TODO: this is broken from a security POV. It should be rewritten in terms of GetSpace!
-  def attachment(ownerIdStr:String, spaceId:String, thingIdStr:String) = withUser(false) { rc =>
-    val ownerId = getIdentityByThingId(ownerIdStr)
-    askSpaceMgr[SpaceResponse](GetAttachment(rc.requesterOrAnon, ownerId, ThingId(spaceId), ThingId(thingIdStr))) {
-      case AttachmentContents(id, size, mime, content) => {
-        Ok(content).as(mime)
-      }
-      // TODO: this should probably include the error message in some form? As it is, you get a blank page
-      // if you try to download and it fails:
-      case ThingError(err, _) => BadRequest
-      case ThingFound(_, _) => QLog.error("Application.attachment somehow got a ThingFound back!"); BadRequest
-    }     
   }
   
   /**

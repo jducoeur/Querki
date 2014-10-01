@@ -1,6 +1,6 @@
 package querki.spaces
 
-import models.{Attachment, Property, PType, PTypeBuilder, Thing, ThingState}
+import models.{Property, PType, PTypeBuilder, Thing, ThingState}
 import models.Thing.PropMap
 
 import querki.core.IsTextType
@@ -23,7 +23,6 @@ case class TypeChangeInfo(typeChanged:Boolean, newType:PType[Any] with PTypeBuil
         val usingProps = usingThing.props + (prop.id -> newV)
         implicit val e = usingThing.ecology
         usingThing match {
-          case t:Attachment => state.copy(things = state.things + (usingThingId -> t.copy(pf = () => usingProps)))
           case t:ThingState => state.copy(things = state.things + (usingThingId -> t.copy(pf = () => usingProps)))
           case p:Property[_,_] => state.copy(spaceProps = state.spaceProps + (usingThingId -> p.copy(pf = () => usingProps)))
           case s:SpaceState => state.copy(pf = () => usingProps)

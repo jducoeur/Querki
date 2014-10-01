@@ -134,14 +134,6 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
               props MEDIUMTEXT NOT NULL,
               PRIMARY KEY (id))
             """).executeUpdate()
-        SpacePersistence.AttachSQL(spaceId, """
-            CREATE TABLE {tname} (
-              id bigint NOT NULL,
-              mime varchar(127) NOT NULL,
-              size int NOT NULL,
-              content mediumblob NOT NULL,
-              PRIMARY KEY (id))
-            """).executeUpdate()
       }
       DB.withTransaction(dbName(System)) { implicit conn =>
         SQL("""

@@ -324,7 +324,6 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |* Property: 2
           |* Space: 3
           |* Collection: 4
-          |* Attachment: 5
           |
           |By and large, though, you should never use these numbers directly. Instead, use
           |the second form of this method:

@@ -13,7 +13,6 @@ object Kind {
   val Property = 2
   val Space = 3
   val Collection = 4
-  val Attachment = 5
   
   def fromName(name:String):Option[Kind] = {
     val lower = name.toLowerCase()
@@ -23,7 +22,6 @@ object Kind {
       case "property" => Some(Property)
       case "space" => Some(Space)
       case "collection" => Some(Collection)
-      case "attachment" => Some(Attachment)
       case _ => None
     }
   }

@@ -43,21 +43,15 @@ private [spaces] object PersistMessages {
    */
   case class Change(state:SpaceState, thingId:OID, modelId:OID, modTime:DateTime, props:PropMap, spaceChange:Option[SpaceChange])
   
-  case class AttachmentInfo(content:Array[Byte], mime:MIMEType, size:Int)
   /**
-   * Command to create a new Thing. attachmentInfo should be given if the Kind is Attachment.
+   * Command to create a new Thing.
    */
-  case class Create(state:SpaceState, modelId:OID, kind:Kind, props:PropMap, modTime:DateTime, attachmentInfo:Option[AttachmentInfo])
+  case class Create(state:SpaceState, modelId:OID, kind:Kind, props:PropMap, modTime:DateTime)
   
   /**
    * Response from a Change() or Create().
    */
   case class Changed(thingId:OID, timestamp:DateTime)
-  
-  /**
-   * Command to load an attachment. Responds with SpaceMessages.AttachmentContents.
-   */
-  case class LoadAttachment(attachId:OID)
   
   // =====================================
   //

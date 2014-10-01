@@ -8,7 +8,7 @@ import play.api.db._
 import play.api.Play.current
 
 import models.{OID, UnknownOID}
-import models.{Attachment, Collection, Property, PType, PTypeBuilder, SimplePTypeBuilder, Kind, Thing, ThingState, Wikitext}
+import models.{Collection, Property, PType, PTypeBuilder, SimplePTypeBuilder, Kind, Thing, ThingState, Wikitext}
 import models.Kind._
 import models.MIMEType.MIMEType
 import models.Thing.PropMap
@@ -27,7 +27,6 @@ import querki.util._
 import querki.util.SqlHelpers._
 
 import PersistMessages._
-import messages.AttachmentContents
 
 /**
  * This actor manages the actual persisting of a Space to and from the database. This code
@@ -68,7 +67,6 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
   def historyTable(id:OID) = "h" + sid(id)
   
   def SpaceSQL(query:String):SqlQuery = SpacePersistence.SpaceSQL(id, query)
-  def AttachSQL(query:String):SqlQuery = SpacePersistence.AttachSQL(id, query)
   
   // Necessary in order to serialize attachments properly below:
   implicit object byteArrayToStatement extends ToStatement[Array[Byte]] {
@@ -208,62 +206,14 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
     
     /***************************/
     
-    case Create(state:SpaceState, modelId:OID, kind:Kind, props:PropMap, modTime:DateTime, attachmentInfo:Option[AttachmentInfo]) => {
+    case Create(state:SpaceState, modelId:OID, kind:Kind, props:PropMap, modTime:DateTime) => {
       DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
         val thingId = OID.next(ShardKind.User)
         // TODO: add a history record
         SpacePersistence.createThingInSql(thingId, id, modelId, kind, props, modTime, state)
-      
-        attachmentInfo.map { info =>
-          val AttachmentInfo(content, mime, size) = info
-          AttachSQL("""
-            INSERT INTO {tname}
-            (id, mime, size, content) VALUES
-            ({thingId}, {mime}, {size}, {content})
-          """
-          ).on("thingId" -> thingId.raw,
-               "mime" -> mime,
-               "size" -> size,
-               "content" -> content).executeUpdate()       
-        }
         
         sender ! Changed(thingId, modTime)
       }
-    }
-    
-    /***************************/
-    
-    case LoadAttachment(attachOid:OID) => {
-      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
-        // TODO: this will throw an error if the specified attachment doesn't exist
-        // Guard against that.
-        val results = AttachSQL("""
-            SELECT mime, size, content FROM {tname} where id = {id}
-            """).on("id" -> attachOid.raw)().map 
-        { row =>
-          // TODO: this code is temporarily commented out because somebody accidentally removed
-          // the unapply() function for Row. I expect it to come back, though -- see this
-          // pull request, from a couple of weeks ago as I write this:
-          //   https://github.com/playframework/playframework/pull/3049
-          // Given that, plus the fact that this attachment mechanism is likely to go
-          // away soon anyway, I'm just leaving this broken for the moment.
-          AttachmentContents(attachOid, 1, models.MIMEType.JPEG, Array.empty[Byte])
-//          // Note: this weird duplication is a historical artifact, due to the fact
-//          // that some of the attachment tables have "content" as a nullable column,
-//          // and some don't. We may eventually want to evolve everything into
-//          // consistency...
-//          case Row(Some(mime:MIMEType), Some(size:Int), Some(content:Array[Byte])) => {
-//            AttachmentContents(attachOid, size, mime, content)
-//          }
-//          case Row(mime:MIMEType, size:Int, Some(content:Array[Byte])) => {
-//            AttachmentContents(attachOid, size, mime, content)
-//          }
-//          case Row(mime:MIMEType, size:Int, content:Array[Byte]) => {
-//            AttachmentContents(attachOid, size, mime, content)
-//          }
-        }.head
-        sender ! results
-      }      
     }
   }
 }

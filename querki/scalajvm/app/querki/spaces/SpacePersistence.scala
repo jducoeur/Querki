@@ -20,8 +20,6 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
   def thingTable(id:OID):String = "s" + sid(id)
   // The name of a backup for the Thing Table
   def backupTable(id:OID, version:Int) = thingTable(id) + "_Backup" + version
-  // The name of the Space's Attachments Table
-  def attachTable(id:OID) = "a" + sid(id)
   // The name of the Space's Conversations Table
   def convTable(id:OID) = "c" + sid(id)
   // The name of the Space's User Values Table
@@ -54,8 +52,6 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
     		replace("{uvname}", userValuesTable(spaceId))
     SQL(replQuery)
   }
-  
-  def AttachSQL(spaceId:OID, query:String):SqlQuery = SQL(query.replace("{tname}", attachTable(spaceId)))
     
   def createThingInSql(thingId:OID, spaceId:OID, modelId:OID, kind:Int, props:PropMap, modTime:DateTime, serialContext:SpaceState)(implicit conn:java.sql.Connection):Int = {
     val sql = SpaceSQL(spaceId, """

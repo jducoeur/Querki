@@ -55,21 +55,6 @@ class ApplicationBase extends Controller with EcologyMember {
     Redirect(redirectTo).flashing("info" -> msg)
   }
   
-  @deprecated("getIdentityByThingId is being phased out, since it is an uncached synchronous DB call. Use getOwnerIdentity instead.", "0.11.0")
-  def getIdentityByThingId(thingIdStr:String):OID = {
-    val thingId = ThingId(thingIdStr)
-    thingId match {
-      case AsOID(oid) => oid
-      case AsName(name) => {
-        if (name.length() == 0) UnknownOID
-        else {
-          val userOpt = UserAccess.getIdentity(name)
-          userOpt getOrElse UnknownOID
-        }
-      }
-    }
-  }
-  
   def getOwnerIdentity(thingIdStr:String):Future[OID] = {
     val thingId = ThingId(thingIdStr)
     thingId match {
@@ -203,7 +188,6 @@ class ApplicationBase extends Controller with EcologyMember {
       )(f: (PlayRequestContext => Future[Result])):EssentialAction = withUser(false, parser) { originalRC =>
     val requester = originalRC.requester getOrElse User.Anonymous
     val thingId = thingIdStr map (ThingId(_))
-    val ownerId = getIdentityByThingId(ownerIdStr)
     // Give the listeners a chance to chime in. Note that this is where things like invitation
     // management come into play. This needs to happen *BEFORE* we try to fetch the Space, because
     // an invitation might be to someone who isn't allowed to read the Space. Things should
@@ -214,7 +198,7 @@ class ApplicationBase extends Controller with EcologyMember {
     if (updatedRC.redirectTo.isDefined) {
       Future.successful(updatedRC.updateSession(Redirect(updatedRC.redirectTo.get)))      
     } else {
-	    def withFilledRC(rc:PlayRequestContext, stateOpt:Option[SpaceState], thingOpt:Option[Thing])(cb:PlayRequestContext => Future[Result]):Future[Result] = {
+	    def withFilledRC(rc:PlayRequestContext, ownerId:OID, stateOpt:Option[SpaceState], thingOpt:Option[Thing])(cb:PlayRequestContext => Future[Result]):Future[Result] = {
 	      val filledRC = rc.copy(ownerId = ownerId, state = stateOpt, thing = thingOpt)
 	      val state = stateOpt.get
 	      val result:Future[Result] =
@@ -225,29 +209,31 @@ class ApplicationBase extends Controller with EcologyMember {
 	          cb(filledRC)
 	      result
 	    }
-	    askSpaceMgr[ThingResponse](SessionRequest(requester, ownerId, ThingId(spaceId), GetThing(thingId))) {
-	      case ThingFound(id, state) => {
-	        val thingOpt = id match {
-	          case UnknownOID => None
-	          case oid:OID => state.anything(oid)
-	        }
-	        // Log what we got back -- turn this on as needed:
-	        //QLog.spewThing(thingOpt.getOrElse(state))
-	        if (thingIdStr.isDefined && thingOpt.isEmpty)
-	          doError(routes.Application.index, "That wasn't a valid path")
-	        else {
-	          withFilledRC(updatedRC, Some(state), thingOpt)(f)
-	        }
-	      }
-	      case err @ ThingError(error, stateOpt) => {
-	        if (stateOpt.isDefined)
-	          withFilledRC(updatedRC, stateOpt, None) { implicit filledRC =>
-	            errorHandler.flatMap(_.lift((err, filledRC))).map(fRes(_)).getOrElse(doError(routes.Application.index, error))
-	          }
-	        else
-	          onUnauthorized(updatedRC.request)	        
-	      }
-	    }     
+	    getOwnerIdentity(ownerIdStr).flatMap { ownerId =>
+		    askSpaceMgr[ThingResponse](SessionRequest(requester, ownerId, ThingId(spaceId), GetThing(thingId))) {
+		      case ThingFound(id, state) => {
+		        val thingOpt = id match {
+		          case UnknownOID => None
+		          case oid:OID => state.anything(oid)
+		        }
+		        // Log what we got back -- turn this on as needed:
+		        //QLog.spewThing(thingOpt.getOrElse(state))
+		        if (thingIdStr.isDefined && thingOpt.isEmpty)
+		          doError(routes.Application.index, "That wasn't a valid path")
+		        else {
+		          withFilledRC(updatedRC, ownerId, Some(state), thingOpt)(f)
+		        }
+		      }
+		      case err @ ThingError(error, stateOpt) => {
+		        if (stateOpt.isDefined)
+		          withFilledRC(updatedRC, ownerId, stateOpt, None) { implicit filledRC =>
+		            errorHandler.flatMap(_.lift((err, filledRC))).map(fRes(_)).getOrElse(doError(routes.Application.index, error))
+		          }
+		        else
+		          onUnauthorized(updatedRC.request)	        
+		      }
+		    }     
+	    }
     }
   }
 

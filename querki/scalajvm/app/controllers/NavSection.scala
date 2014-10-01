@@ -98,12 +98,6 @@ class NavSectionEcot(e:Ecology) extends QuerkiEcot(e) with NavSectionMgr {
     val spaceLinks = spaceLinksOpt.getOrElse(Seq.empty[NavLink])
     val thingLinksOpt = rc.thing map { thing =>
       val thingId = thing.toThingId
-      def attachment:Option[NavLink] = {
-        thing.kind match {
-          case models.Kind.Attachment => Some(NavLink("Download", routes.Application.attachment(owner, spaceId, thingId)))
-          case _ => None
-        }
-      }
       def create:Option[NavLink] = {
         if (thingIsSpace)
           None
@@ -118,7 +112,7 @@ class NavSectionEcot(e:Ecology) extends QuerkiEcot(e) with NavSectionMgr {
         NavLink("Explore...", routes.ExploreController.showExplorer(owner, spaceId, thingId), None, AccessControl.canEdit(rc.state.get, rc.requesterOrAnon, thing.id)),
         // Note that the following route is bogus: we actually navigate in Javascript, after verifying they want to delete:
         NavLink("Delete " + thing.displayName, routes.Application.thing(owner, spaceId, thingId), Some("deleteThing"), deletable(thing, rc))
-      ) ++ create ++ attachment
+      ) ++ create
     }
     val thingLinks = thingLinksOpt.getOrElse(Seq.empty[NavLink])
     val actionLinks = spaceLinks ++ thingLinks

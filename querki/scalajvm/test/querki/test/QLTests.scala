@@ -6,14 +6,6 @@ import org.scalatest.matchers.ShouldMatchers
 class QLTests extends QuerkiTests {
   lazy val QLType = Basic.QLType
   
-  // === Attachments ===
-  "Photos" should {
-    "self-render when linked" in {
-      processQText(commonThingAsContext(_.sandbox), """[[My Photo]]""") should 
-        equal ("""![My Photo](a/My-Photo)""")
-    }
-  }
-  
   "Arrows" should {
     "work inline" in {
       processQText(commonThingAsContext(_.sandbox), """[[My Model._instances -> _sort]]""".stripMargin) should equal (listOfLinkText(commonSpace.instance))              

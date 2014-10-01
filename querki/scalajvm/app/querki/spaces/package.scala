@@ -59,7 +59,6 @@ package object spaces {
     def thingTable(id:OID):String
     
     def SpaceSQL(spaceId:OID, query:String, version:Int = 0):SqlQuery
-    def AttachSQL(spaceId:OID, query:String):SqlQuery
 
     def serializeProps(props:PropMap, space:SpaceState):String
     def deserializeProps(str:String, space:SpaceState):PropMap

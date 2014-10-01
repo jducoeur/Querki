@@ -269,18 +269,6 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
       IsModelProp(true),
       DeprecatedProp(true)))
 
-  lazy val PhotoBase = ThingState(PhotoBaseOID, systemOID, querki.basic.MOIDs.SimpleThingOID,
-    toProps(
-      setName("Photograph-Base"),
-      IsModelProp(true),
-      DisplayTextProp("""
-This is the Model for all uploaded photographs. You shouldn't try to base something on this directly --
-just upload a photograph, and you'll get one of these.
-""")),
-    querki.time.epoch,
-    Kind.Attachment
-    )
-
 object Bulleted extends ThingState(BulletedOID, systemOID, RootOID,
     toProps(
       setName("_bulleted"),
@@ -336,7 +324,6 @@ object AllProps extends ThingState(AllPropsThingOID, systemOID, RootOID,
   override lazy val things = Seq(
     SimpleThing,
     Page,
-    PhotoBase,
     Bulleted,
     Commas,
     DisplayThingTree,

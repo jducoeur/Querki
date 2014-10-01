@@ -48,9 +48,6 @@ GET     /u/:userName/:spaceId/delete  @controllers.Application.deleteThing(userN
 GET     /u/:userName/:spaceId/client @controllers.ClientController.thing(userName, spaceId, thingId)
 POST    /u/:userName/:spaceId/_apiRequest @controllers.ClientController.apiRequest(userName, spaceId, apiId:Int, pickledRequest)
 
-GET     /u/:userName/:spaceId/upload      @controllers.Application.upload(userName, spaceId)
-POST    /u/:userName/:spaceId/upload      @controllers.Application.doUpload(userName, spaceId)
-
 GET     /u/:userName/:spaceId/_sharing    @controllers.Application.sharing(userName, spaceId)
 POST    /u/:userName/:spaceId/_inviteMembers @controllers.LoginController.inviteMembers(userName, spaceId)
 GET     /u/:userName/:spaceId/_handleInvite @controllers.LoginController.handleInvite(userName, spaceId)
@@ -66,7 +63,6 @@ GET     /u/:userName/:spaceId/getLinks    @controllers.Application.getLinks(user
 
 POST    /u/:userName/:spaceId/search      @controllers.Application.search(userName, spaceId)
 
-GET     /u/:userName/:spaceId/a/:attachmentId @controllers.Application.attachment(userName, spaceId, attachmentId)
 POST    /u/:userName/:spaceId/_photoUpload   @controllers.PhotoController.upload(userName, spaceId, thingId)
 
 
