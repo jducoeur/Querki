@@ -17,14 +17,14 @@ import querki.api.ThingFunctions
 import querki.data.ThingInfo
 import querki.comm._
 
-class ThingPage(val ecology:Ecology, pickled:String) extends Page with EcologyMember {
+class ThingPage(val ecology:Ecology) extends Page with EcologyMember {
 
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
   
-  val info = read[ThingInfo](pickled)
+  val info = DataAccess.mainThing
   
-  def title = info.displayName
+  def title = info.map(_.displayName).getOrElse("Unknown Thing")
   
   def pageContent = {
     async {

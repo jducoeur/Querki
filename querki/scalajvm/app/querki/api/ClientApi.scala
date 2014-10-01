@@ -50,14 +50,15 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi {
     }
   }
   
-  def pickleRequest(rc:RequestContext):String = {
-    val info = 
+  def requestInfo(rc:RequestContext):RequestInfo =
       RequestInfo(
         userInfo(rc.requester), 
         spaceInfo(rc.state, rc), 
         thingInfo(rc.thing, rc),
         rc.isOwner,
         rc.requesterOrAnon.isAdmin)
-    write(info)
+  
+  def pickleRequest(rc:RequestContext):String = {
+    write(requestInfo(rc))
   }
 }

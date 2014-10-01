@@ -4,8 +4,6 @@
 
 <!DOCTYPE html>
 
-@ClientApi = @{ rc.interface[querki.api.ClientApi] }
-
 @isProd = @{ play.api.Play.isProd(play.api.Play.current) }
 
 <html>
@@ -87,9 +85,9 @@
         
         client.pageManager.setImagePath('@routes.Assets.at("images")');
         
-        client.dataSetting.unpickleRequest('@Html(ClientApi.pickleRequest(rc))');
+        client.dataSetting.unpickleRequest(JSON.stringify(pickledJSON));
         
-        client.pageManager.renderPage(@pageID, JSON.stringify(pickledJSON));
+        client.pageManager.renderPage(@pageID, "");
       });
     </script>
   </head>
