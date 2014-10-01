@@ -14,12 +14,13 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
   lazy val DataAccess = interface[querki.data.DataAccess]
   
   override def doCall(req: Request): Future[String] = {
+    // TODO: handle HTTP errors from this apiRequest call. What should we do with them?
+    // Put a message in the Status area?
     controllers.ClientController.apiRequest(
         DataAccess.userName, 
         DataAccess.spaceId, 
         ClientApis.ThingFunctionsId, 
-        req.path.mkString("/"), 
-        upickle.write(req.args)).callAjax()
+        upickle.write(req)).callAjax()
   }
 
   def read[Result: upickle.Reader](p: String) = upickle.read[Result](p)

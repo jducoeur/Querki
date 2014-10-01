@@ -232,13 +232,13 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
       checkDisplayName(req, own, space)
       payload match {
         
-        case ClientRequest(apiId, path, args, rc) => {
+        case ClientRequest(apiId, req, rc) => {
           apiId match {
             case ClientApis.ThingFunctionsId => {
               withRc(rc + state) {
                 // route() is asynchronous, so we need to store away the sender!
                 val senderSaved = sender
-                route[ThingFunctions](this)(Core.Request(path, args)).foreach { result =>
+                route[ThingFunctions](this)(req).foreach { result =>
                   senderSaved ! ClientResponse(result)                  
                 }
               }

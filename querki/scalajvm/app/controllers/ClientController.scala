@@ -42,9 +42,9 @@ class ClientController extends ApplicationBase {
   // askSpaceMgr, which currently assumes that you have *already* resolved ownerId! Feh. But we have to fix it,
   // because withSpace deeply violates the long-run architecture -- we want to eventually *never* send the SpaceState
   // back to the Play layer.
-  def apiRequest(ownerId:String, spaceId:String, apiId:Int, path:String, pickledArgs:String) = withSpace(false, ownerId, spaceId) { implicit rc =>
-    val args = read[Map[String,String]](pickledArgs)
-    askSpace(SessionRequest(rc.requesterOrAnon, rc.ownerId, ThingId(spaceId), ClientRequest(apiId, path.split('/'), args, rc))) {
+  def apiRequest(ownerId:String, spaceId:String, apiId:Int, pickledRequest:String) = withSpace(false, ownerId, spaceId) { implicit rc =>
+    val request = read[autowire.Core.Request[String]](pickledRequest)
+    askSpace(SessionRequest(rc.requesterOrAnon, rc.ownerId, ThingId(spaceId), ClientRequest(apiId, request, rc))) {
       case ClientResponse(pickled) => Ok(pickled)
       case ClientError(msg) => BadRequest(msg)
     }
