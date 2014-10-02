@@ -24,6 +24,11 @@ package object data {
     def space:Option[SpaceInfo]
     
     /**
+     * The Model of the mainThing.
+     */
+    def mainModel:Option[ThingInfo]
+    
+    /**
      * Convenience function to get the "userName" part of a typical path. Should only be used if
      * you know that the space exists!
      */

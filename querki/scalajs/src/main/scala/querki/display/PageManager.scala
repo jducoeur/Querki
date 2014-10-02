@@ -4,6 +4,7 @@ import org.scalajs.dom
 import scalatags.JsDom.all._
 
 import querki.globals._
+
 import querki.pages.PageIDs.PageID
 
 class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {

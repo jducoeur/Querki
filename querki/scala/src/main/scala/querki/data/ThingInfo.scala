@@ -22,9 +22,13 @@ case class ThingInfo(
   oid:String, 
   linkName:Option[String], 
   displayName:String,
+  modelOid:String,
   kind:Kind.Kind,
+  isModel:Boolean,
   isEditable:Boolean,
-  isDeleteable:Boolean) extends Urlable
+  isDeleteable:Boolean,
+  isInstantiatable:Boolean,
+  isTag:Boolean) extends Urlable
 {
 }
 

@@ -45,6 +45,10 @@ body {
   background-color: #0B5703;
 }
 
+.querki-icon-button {
+  margin-left: 5px;
+}
+
 /*
  * Our standard "paragraph" style. We use divs of this instead of <p>, to work around
  * idiosyncracies of nesting forms inside of <p>. These choices are taken from inspection
