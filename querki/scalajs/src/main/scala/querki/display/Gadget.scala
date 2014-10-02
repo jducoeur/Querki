@@ -52,17 +52,12 @@ trait Gadget[Output <: dom.Element] extends scalatags.jsdom.Frag {
    * Show a standard Querki icon button.
    */
   def iconButton(iconName:String, addlCls:Seq[String] = Seq.empty) = querkiButton(icon(iconName), addlCls)
-      
-  def spaceCall(call:js.Dynamic, params:js.Any*)(implicit ecology:Ecology):js.Dynamic = {
-    val DataAccess = ecology.api[querki.data.DataAccess]
-    call.apply((Seq[js.Any](DataAccess.userName, DataAccess.spaceId) ++ params):_*)
-  }
   
   /**
    * Shortcut for fetching the URL of a Thing.
    */
   def thingUrl(thing:ThingInfo)(implicit ecology:Ecology) = {
-    spaceCall(controllers.Application.thing, thing.urlName).url
+    controllers.Application.thing.spaceUrl(thing.urlName)
   }
   
   var _elem:Option[Output] = None

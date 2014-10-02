@@ -54,7 +54,7 @@ class StandardThingHeader(thing:ThingInfo)(implicit val ecology:Ecology) extends
   lazy val oldEditButton = 
     iconButton("edit")(
       title:=s"Edit $thingName",
-      href:=controllers.Application.editThing(DataAccess.userName, DataAccess.spaceId, thing.urlName).url)
+      href:=controllers.Application.editThing.spaceUrl(thing.urlName))
   
   def doRender =
     div(cls:="page-header",
@@ -69,11 +69,11 @@ class StandardThingHeader(thing:ThingInfo)(implicit val ecology:Ecology) extends
             if (thing.isInstantiatable) {
               iconButton("plus-sign")(
                 title:=s"Create a $thingName",
-                href:=controllers.Application.doCreateThing2(DataAccess.userName, DataAccess.spaceId, thing.urlName).url)
+                href:=controllers.Application.doCreateThing2.spaceUrl(thing.urlName))
             },
             querkiButton(MSeq(icon("edit"), icon("edit"), icon("edit"), "..."))(
               title:=s"Edit all instances of $thingName",
-              href:=controllers.Application.editInstances(DataAccess.userName, DataAccess.spaceId, thing.urlName).url)
+              href:=controllers.Application.editInstances.spaceUrl(thing.urlName))
           )
         } else {
           // Not a Model
@@ -94,7 +94,7 @@ class StandardThingHeader(thing:ThingInfo)(implicit val ecology:Ecology) extends
               case Some(model) if (model.isInstantiatable) => {
                 querkiButton(MSeq(icon("plus-sign"), "..."))(
                   title:=s"Create another ${model.displayName}",
-                  href:=controllers.Application.doCreateThing2(DataAccess.userName, DataAccess.spaceId, model.urlName).url)
+                  href:=controllers.Application.doCreateThing2.spaceUrl(model.urlName))
               }
               case None => {}
             }
@@ -105,7 +105,7 @@ class StandardThingHeader(thing:ThingInfo)(implicit val ecology:Ecology) extends
       modelOpt match {
         case Some(model) => {
           p(cls:="_smallSubtitle _noPrint",
-            "(OID: ", a(href:=controllers.Application.thing(DataAccess.userName, DataAccess.spaceId, thing.oid).url, thing.oid),
+            "(OID: ", a(href:=controllers.Application.thing.spaceUrl(thing.oid), thing.oid),
             thing.linkName.map { linkName =>
               MSeq(", Link Name: ", a(href:=thingUrl(thing), linkName))
             },
