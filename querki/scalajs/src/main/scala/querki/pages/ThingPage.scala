@@ -21,7 +21,7 @@ import querki.display.{Gadget, WrapperDiv}
 import querki.comm._
 
 
-class ThingPage(val ecology:Ecology) extends Page with EcologyMember {
+class ThingPage(e:Ecology) extends Page(e) with EcologyMember {
 
   lazy val Client = interface[querki.client.Client]
   
@@ -38,29 +38,27 @@ class ThingPage(val ecology:Ecology) extends Page with EcologyMember {
     }
     
     div(
-      new StandardThingHeader(ecology, thing),
+      new StandardThingHeader(thing),
       renderedContent(p("Loading..."))
     )
   }
 }
 
-class StandardThingHeader(val ecology:Ecology, thing:ThingInfo) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+class StandardThingHeader(thing:ThingInfo)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
   lazy val DataAccess = interface[querki.data.DataAccess]
   
   val thingName = thing.displayName
   
   val modelOpt = DataAccess.mainModel
   
-  def MSeq(xs:Modifier*) = Vector[Modifier](xs)
-  
   lazy val oldEditButton = 
-    a(cls:="btn btn-mini btn-primary _noPrint querki-icon-button",
+    iconButton("edit")(
       title:=s"Edit $thingName",
-      href:=controllers.Application.editThing(DataAccess.userName, DataAccess.spaceId, thing.urlName).url,
-      i(cls:="icon-edit icon-white"))
+      href:=controllers.Application.editThing(DataAccess.userName, DataAccess.spaceId, thing.urlName).url)
   
   def doRender =
     div(cls:="page-header",
+        
       h1(cls:="_defaultTitle", 
         thingName, " ",
         if (thing.isModel) {
@@ -69,15 +67,13 @@ class StandardThingHeader(val ecology:Ecology, thing:ThingInfo) extends Gadget[d
               oldEditButton
             },
             if (thing.isInstantiatable) {
-              a(cls:="btn btn-mini btn-primary _noPrint querki-icon-button",
+              iconButton("plus-sign")(
                 title:=s"Create a $thingName",
-                href:=controllers.Application.doCreateThing2(DataAccess.userName, DataAccess.spaceId, thing.urlName).url,
-                i(cls:="icon-plus-sign icon-white"))
+                href:=controllers.Application.doCreateThing2(DataAccess.userName, DataAccess.spaceId, thing.urlName).url)
             },
-            a(cls:="btn btn-mini btn-primary _noPrint querki-icon-button",
+            querkiButton(MSeq(icon("edit"), icon("edit"), icon("edit"), "..."))(
               title:=s"Edit all instances of $thingName",
-              href:=controllers.Application.editInstances(DataAccess.userName, DataAccess.spaceId, thing.urlName).url,
-              i(cls:="icon-edit icon-white"), i(cls:="icon-edit icon-white"), i(cls:="icon-edit icon-white"), "...")
+              href:=controllers.Application.editInstances(DataAccess.userName, DataAccess.spaceId, thing.urlName).url)
           )
         } else {
           // Not a Model
@@ -86,35 +82,34 @@ class StandardThingHeader(val ecology:Ecology, thing:ThingInfo) extends Gadget[d
               if (thing.isTag || thing.kind == Kind.Property) {
                 oldEditButton
               } else {
-                a(cls:="btn btn-mini btn-primary _noPrint _qlInvoke querki-icon-button",
+                iconButton("edit", Seq("_qlInvoke"))(
                   title:=s"Edit $thingName",
                   data("thingid"):=thing.urlName,
                   data("target"):="_topEdit",
                   data("ql"):="_edit",
-                  href:="#",
-                  i(cls:="icon-edit icon-white"))
+                  href:="#")
               }
             },
             modelOpt match {
               case Some(model) if (model.isInstantiatable) => {
-                a(cls:="btn btn-mini btn-primary _noPrint querki-icon-button",
+                querkiButton(MSeq(icon("plus-sign"), "..."))(
                   title:=s"Create another ${model.displayName}",
-                  href:=controllers.Application.doCreateThing2(DataAccess.userName, DataAccess.spaceId, model.urlName).url,
-                  i(cls:="icon-plus-sign icon-white"), "...")
+                  href:=controllers.Application.doCreateThing2(DataAccess.userName, DataAccess.spaceId, model.urlName).url)
               }
               case None => {}
             }
           )
         }
       ),
+      
       modelOpt match {
         case Some(model) => {
           p(cls:="_smallSubtitle _noPrint",
             "(OID: ", a(href:=controllers.Application.thing(DataAccess.userName, DataAccess.spaceId, thing.oid).url, thing.oid),
             thing.linkName.map { linkName =>
-              MSeq(", Link Name: ", a(href:=controllers.Application.thing(DataAccess.userName, DataAccess.spaceId, thing.urlName).url, linkName))
+              MSeq(", Link Name: ", a(href:=thingUrl(thing), linkName))
             },
-            ", Model: ", a(href:=controllers.Application.thing(DataAccess.userName, DataAccess.spaceId, model.urlName).url, model.displayName),
+            ", Model: ", a(href:=thingUrl(model), model.displayName),
             ")")
         }
         case None => {}

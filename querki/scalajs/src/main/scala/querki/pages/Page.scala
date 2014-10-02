@@ -8,7 +8,9 @@ import querki.globals._
 import querki.comm._
 import querki.display.{Gadget, WrapperDiv}
 
-trait Page extends Gadget[dom.HTMLDivElement] with EcologyMember {
+abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+  
+  implicit val ecology = e
   
   lazy val DataAccess = interface[querki.data.DataAccess]
   
