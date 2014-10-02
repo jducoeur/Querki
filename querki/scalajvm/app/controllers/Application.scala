@@ -220,9 +220,6 @@ disallow: /
   /**
    * Alternate create route -- this creates the new Thing, expecting fields to mainly be empty, then displays
    * the Thing Editor to edit it.
-   * 
-   * TODO: this is currently referred to in a lot of places. Can we expose a single entry point to compute this
-   * instead? Might be cleaner.
    */
   def doCreateThing2(ownerId:String, spaceId:String, model:String) = {
     editThingInternal(ownerId, spaceId, None, false, Some({ (state, model, thingId, rc) =>
@@ -318,9 +315,18 @@ disallow: /
           result
         }
         val oldModel =
-          if (info.model.length() > 0)
-            state.anything(OID(info.model)).get
-          else
+          if (info.model.length() > 0) {
+            try {
+              // Backwards compatibility: things originally insisted on OID, because I was dumb.
+              // TODO: this is inherently deprecated; remove it when possible.
+              state.anything(OID(info.model)).get
+            } catch {
+              case e:NumberFormatException => {
+                // Newer format: model should always be a ThingId:
+                state.anything(ThingId(info.model)).get
+              }
+            }
+          } else
             thing.map(_.getModel).getOrElse(throw new Exception("Trying to edit thing, but we don't know the model!"))
         
         val kind = oldModel.kind
@@ -427,11 +433,11 @@ disallow: /
               } else {
                 // Editing an existing Thing. If InstanceEditPropsOID isn't set, we're doing a full edit, and
                 // expect to have received the full list of properties.
-                ModifyThing(user, rc.ownerId, ThingId(spaceId), thing.get.id.toThingId, OID(info.model), props)
+                ModifyThing(user, rc.ownerId, ThingId(spaceId), thing.get.id.toThingId, oldModel.id, props)
               }
             } else {
               // Creating a new Thing
-              CreateThing(user, rc.ownerId, ThingId(spaceId), kind, OID(info.model), props)
+              CreateThing(user, rc.ownerId, ThingId(spaceId), kind, oldModel.id, props)
             }
         
             askSpaceMgr[ThingResponse](spaceMsg) {
