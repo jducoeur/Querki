@@ -16,6 +16,15 @@ import querki.ui.UIRenderer
 import querki.values.{QLContext, QValue, RequestContext, SpaceState}
 
 package object html {
+  /**
+   * The Html type. Anything marked as Html is, by definition, safe to render directly
+   * with no escaping!
+   * 
+   * Note that the definition of this type is different between the client and server!
+   */
+  type Html = play.twirl.api.Html
+  def Html(str:String) = play.twirl.api.Html(str)
+  
   object RenderSpecialization extends Enumeration {
     type RenderSpecialization = Value
   

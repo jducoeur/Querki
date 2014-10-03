@@ -1,5 +1,7 @@
 package querki.util
 
+import models.DisplayText
+
 import scala.xml._
 import scala.xml.parsing.XhtmlParser
 
@@ -48,4 +50,7 @@ object XmlHelpers {
     nodes
   }
 
+  def toNodes(displayText:DisplayText):NodeSeq = {
+    parseXhtmlFragment(displayText.str)
+  }
 }

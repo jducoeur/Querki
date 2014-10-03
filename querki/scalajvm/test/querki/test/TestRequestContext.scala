@@ -30,4 +30,6 @@ case class SimpleTestRequestContext(o:OID, s:SpaceState, t:Thing, e:Ecology, qs:
   def renderer = interface[querki.html.HtmlRenderer]
   
   def queryParam(paramName:String):Seq[String] = qs(paramName)
+  def +(state:SpaceState):RequestContext = copy(s = state)
+  def +(thing:Thing):RequestContext = copy(t = thing)
 }

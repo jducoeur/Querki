@@ -1,16 +1,10 @@
 package models
 
-import scala.xml.NodeSeq
-
-// TODO: this is a bad smell, and should be lifted into either controllers or at least querki.html:
-import play.twirl.api.Html
-
 import language.implicitConversions
 
 import querki.qtext.{Decorator, Transformer}
-
-import querki.values.DebugRenderable
-import querki.util._
+import querki.html.Html
+import querki.util.DebugRenderable
 
 case class DisplayText(val str:String) {
   override def toString() = str
@@ -19,7 +13,6 @@ case class DisplayText(val str:String) {
   // Since a DisplayText is already HTML-neutered, it is safe to encode as HTML:
   def html = Html(str)
   def htmlWikitext = HtmlWikitext(html)
-  def xml:NodeSeq = XmlHelpers.parseXhtmlFragment(str)
 }
 object DisplayText {
   implicit def displayText2String(disp:DisplayText) = disp.str

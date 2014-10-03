@@ -6,7 +6,7 @@ import models.{DisplayPropVal, OID, Property, PropertyBundle, PType, PTypeBuilde
 import models.Thing.{PropMap, emptyProps}
 
 import querki.ecology._
-import querki.util.QLog
+import querki.util.{QLog, XmlHelpers}
 import querki.values.{ElemValue, PropAndVal, QLContext, QValue, RequestContext, SpaceState}
 
 import MOIDs._
@@ -157,7 +157,7 @@ trait ModelTypeDefiner { self:EcologyMember =>
     override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
       val bundle = get(v)
       val wikitext = Editor.getInstanceEditor(bundle, context, Some(currentValue))
-      wikitext.display.xml
+      XmlHelpers.toNodes(wikitext.display)
     }
   }
   

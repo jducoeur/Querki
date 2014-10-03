@@ -2,8 +2,6 @@ package querki.html
 
 import scala.xml.{Attribute, NodeSeq, Null, Text, Xhtml}
 
-import play.twirl.api.Html
-
 import models.{DisplayText, FieldIds, HtmlWikitext, OID, PropertyBundle, QWikitext, SimplePTypeBuilder, UnknownOID, Wikitext}
 
 import querki.core.URLableType
@@ -101,7 +99,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         if (parsedParamOpt.isEmpty) 
           throw new PublicException("UI.transform.classRequired", name)
         val paramText = parsedParamOpt.get.raw.toString
-        val nodes = content.xml
+        val nodes = XmlHelpers.toNodes(content)
         val newXml = nodes.flatMap(node => doTransform(node, paramText, context, params))
         val newHtml = Html(Xhtml.toXhtml(newXml))
         HtmlWikitext(newHtml)        
