@@ -8,6 +8,7 @@ import querki.global._
 
 import querki.data.{IdentityInfo, RequestInfo, SpaceInfo, ThingInfo, UserInfo}
 import querki.identity.User
+import querki.pages.PageDetails
 import querki.tags.IsTag
 import querki.values.RequestContext
 
@@ -59,7 +60,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi {
     }
   }
   
-  def requestInfo(rc:RequestContext):RequestInfo = {
+  def requestInfo(rc:RequestContext, details:PageDetails):RequestInfo = {
     def relatedThings:Seq[ThingInfo] = {
       val modelOpt = for {
         thing <- rc.thing
@@ -79,10 +80,11 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi {
       thingInfo(rc.thing, rc),
       relatedThings,
       rc.isOwner,
-      rc.requesterOrAnon.isAdmin)
+      rc.requesterOrAnon.isAdmin,
+      details)
   }
   
-  def pickleRequest(rc:RequestContext):String = {
-    write(requestInfo(rc))
+  def pickleRequest(rc:RequestContext, details:PageDetails):String = {
+    write(requestInfo(rc, details))
   }
 }

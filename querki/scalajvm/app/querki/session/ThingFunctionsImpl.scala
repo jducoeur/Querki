@@ -6,11 +6,13 @@ import querki.global._
 
 import querki.api.ThingFunctions
 import querki.data.RequestInfo
+import querki.pages.ThingPageDetails
 import querki.values.RequestContext
 
 trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions {
   
   lazy val ClientApi = interface[querki.api.ClientApi]
+  lazy val HtmlUI = interface[querki.html.HtmlUI]
   lazy val Tags = interface[querki.tags.Tags]
   
   def withThing[R](thingId:String)(f:(Thing, RequestContext) => R):R = {
@@ -28,7 +30,13 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions {
   
   def getThingInfo(thingId:String):RequestInfo = {
     withThing(thingId) { (thing, rc) =>
-      ClientApi.requestInfo(rc)
+      implicit val state = rc.state.get
+      val pageHeaderOpt = for {
+        pv <- thing.getPropOpt(HtmlUI.PageHeaderProperty)
+      }
+        yield pv.v.wikify(thing.thisAsContext(rc)).display.toString
+        
+      ClientApi.requestInfo(rc, ThingPageDetails(pageHeaderOpt))
     }
   }
 }

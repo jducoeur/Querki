@@ -25,6 +25,8 @@ class ThingPage(e:Ecology) extends Page(e) with EcologyMember {
 
   lazy val Client = interface[querki.client.Client]
   
+  type DetailsType = ThingPageDetails
+  
   val thing = DataAccess.mainThing.get
   
   def title = thing.displayName
@@ -38,7 +40,10 @@ class ThingPage(e:Ecology) extends Page(e) with EcologyMember {
     }
     
     div(
-      new StandardThingHeader(thing),
+      details.customHeader match {
+        case Some(header) => raw(header)
+        case None => new StandardThingHeader(thing)
+      },
       renderedContent(p("Loading..."))
     )
   }

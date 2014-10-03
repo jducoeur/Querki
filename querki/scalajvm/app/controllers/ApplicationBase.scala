@@ -154,12 +154,12 @@ class ApplicationBase extends Controller with EcologyMember {
    * send messages off to the UserSession level, and nothing more.
    */
   def withRouting
-    (ownerIdStr:String)
+    (ownerIdStr:String, spaceId:String)
     (f: (PlayRequestContext => Future[Result])):EssentialAction = 
   withUser(false) { originalRC =>
     for {
       ownerId <- getOwnerIdentity(ownerIdStr)
-      rc = originalRC.copy(ownerId = ownerId)
+      rc = originalRC.copy(ownerId = ownerId, spaceIdOpt = Some(spaceId), reqOwnerHandle = Some(ownerIdStr))
       result <- f(rc)
     }
       yield result

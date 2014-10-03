@@ -20,20 +20,24 @@ class ClientController extends ApplicationBase {
   
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Tags = interface[querki.tags.Tags]
-  
-  def thing(ownerId:String, spaceId:String, thingId:String) = withRouting(ownerId) { implicit rc =>
-    class LocalClient extends autowire.Client[String, upickle.Reader, upickle.Writer] {
-	  override def doCall(req: Request): Future[String] = {
-	    SpaceOps.askSpaceManager2(SessionRequest(rc.requesterOrAnon, rc.ownerId, ThingId(spaceId), ClientRequest(ClientApis.ThingFunctionsId, req, rc))) {
-	      case ClientResponse(pickled) => Future.successful(pickled)
-	      case ClientError(msg) => Future.failed(new Exception(msg))
-	    }
+
+  /**
+   * Allows purely server-side code to invoke Session functions, the same way the Client does.
+   */
+  class LocalClient(rc:PlayRequestContext) extends autowire.Client[String, upickle.Reader, upickle.Writer] {
+	override def doCall(req: Request): Future[String] = {
+	  SpaceOps.askSpaceManager2(SessionRequest(rc.requesterOrAnon, rc.ownerId, ThingId(rc.spaceIdOpt.get), ClientRequest(ClientApis.ThingFunctionsId, req, rc))) {
+	    case ClientResponse(pickled) => Future.successful(pickled)
+	    case ClientError(msg) => Future.failed(new Exception(msg))
 	  }
-	
-	  def read[Result: upickle.Reader](p: String) = upickle.read[Result](p)
-	  def write[Result: upickle.Writer](r: Result) = upickle.write(r)
 	}
-    val client = new LocalClient
+	
+	def read[Result: upickle.Reader](p: String) = upickle.read[Result](p)
+	def write[Result: upickle.Writer](r: Result) = upickle.write(r)
+  }
+    
+  def thing(ownerId:String, spaceId:String, thingId:String) = withRouting(ownerId, spaceId) { implicit rc =>
+    val client = new LocalClient(rc)
     
     client[ThingFunctions].getThingInfo(thingId).call().map { requestInfo =>
       Ok(views.html.client(rc, ThingPage, write(requestInfo)))    
@@ -45,7 +49,7 @@ class ClientController extends ApplicationBase {
   // askSpaceMgr, which currently assumes that you have *already* resolved ownerId! Feh. But we have to fix it,
   // because withSpace deeply violates the long-run architecture -- we want to eventually *never* send the SpaceState
   // back to the Play layer.
-  def apiRequest(ownerId:String, spaceId:String, apiId:Int, pickledRequest:String) = withRouting(ownerId) { implicit rc =>
+  def apiRequest(ownerId:String, spaceId:String, apiId:Int, pickledRequest:String) = withRouting(ownerId, spaceId) { implicit rc =>
     val request = read[autowire.Core.Request[String]](pickledRequest)
     askSpace(SessionRequest(rc.requesterOrAnon, rc.ownerId, ThingId(spaceId), ClientRequest(apiId, request, rc))) {
       case ClientResponse(pickled) => Ok(pickled)

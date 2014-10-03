@@ -12,7 +12,12 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
   
   implicit val ecology = e
   
+  type DetailsType <: PageDetails
+  
   lazy val DataAccess = interface[querki.data.DataAccess]
+  
+  // HACK: this downcast is ugly and a bit dangerous. Can we do this in a more typesafe way?
+  lazy val details = DataAccess.request.pageDetails.asInstanceOf[DetailsType]
   
   /**
    * The title of this page. Concrete subclasses must fill this in.
