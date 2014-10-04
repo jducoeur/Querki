@@ -94,7 +94,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         throw new PublicException("UI.transform.classRequired", name)
       val params = paramsOpt.get
 
-      def processHtml(content:DisplayText):HtmlWikitext = {
+      def processHtml(content:DisplayText):Wikitext = {
         val parsedParamOpt = context.parser.get.processPhrase(params(0).ops, context).value.firstTyped(ParsedTextType)
         if (parsedParamOpt.isEmpty) 
           throw new PublicException("UI.transform.classRequired", name)

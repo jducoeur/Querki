@@ -1,6 +1,6 @@
 package querki.session
 
-import models.{Thing, ThingId}
+import models.{DisplayText, Thing, ThingId, Wikitext}
 
 import querki.global._
 
@@ -22,9 +22,9 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions {
     f(thing, rc + thing)
   }
   
-  def renderThing(thingId:String):String = {
+  def renderThing(thingId:String):Wikitext = {
     withThing(thingId) { (thing, rc) =>
-      thing.render(rc).display.toString    
+      thing.render(rc)
     }
   }
   

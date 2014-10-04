@@ -18,7 +18,7 @@ object DisplayText {
   implicit def displayText2String(disp:DisplayText) = disp.str
 }
 
-trait Wikitext extends DebugRenderable {
+sealed trait Wikitext extends DebugRenderable {
   
   def transform(builder: => Transformer)(str:String):String = {
     val transformer = builder
@@ -109,18 +109,22 @@ case class QWikitext(wiki:String) extends Wikitext {
 /**
  * Internal systems can inject HTML into the stream by creating an HtmlWikitext. This will not be
  * processed any further, just inserted directly.
+ * 
+ * Note that the companion object HtmlWikitext intentionally has a different name. This is because upickle.read
+ * appears to get confused if the case class has multiple apparent constructors. So construction is
+ * always done via the companion, and the actual case class isn't ever used directly.
  */
-case class HtmlWikitext(html:Html) extends Wikitext {
-  private def str = html.toString
+case class HtmlWikitextImpl(str:String) extends Wikitext {
   def display = DisplayText(str)
   def raw = DisplayText(str)
   def span = DisplayText(str)
-  def internal = html.toString
+  def internal = str
   def plaintext = str
   val keepRaw = true
 }
 object HtmlWikitext {
-  def apply(html:String):HtmlWikitext = HtmlWikitext(Html(html))
+  def apply(html:String) = HtmlWikitextImpl(html)
+  def apply(html:Html) = HtmlWikitextImpl(html.toString)
 }
 
 case class CompositeWikitext(left:Wikitext, right:Wikitext, insertNewline:Boolean) extends Wikitext {

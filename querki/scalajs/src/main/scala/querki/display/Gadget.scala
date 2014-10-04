@@ -6,6 +6,8 @@ import org.scalajs.dom
 
 import scalatags.JsDom.all._
 
+import models.Wikitext
+
 import querki.globals._
 
 import querki.comm._

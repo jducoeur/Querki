@@ -11,7 +11,7 @@ import org.scalajs.jquery._
 
 import scalatags.JsDom.all._
 
-import models.Kind
+import models.{Kind, Wikitext}
 
 import querki.globals._
 
@@ -36,7 +36,7 @@ class ThingPage(e:Ecology) extends Page(e) with EcologyMember {
     
     async {
       val rendered = await(Client[ThingFunctions].renderThing(DataAccess.thingId).call())
-	  renderedContent.replaceContents(div(raw(rendered)).render)
+	  renderedContent.replaceContents(div(raw(rendered.display.html.toString)).render)
     }
     
     div(

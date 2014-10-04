@@ -105,7 +105,7 @@ object Dependencies {
       "com.typesafe.akka" %% "akka-testkit" % "2.3.4",
       "org.imgscalr" % "imgscalr-lib" % "4.2",
       "com.amazonaws" % "aws-java-sdk" % "1.8.4",
-	  "com.lihaoyi" %% "upickle" % "0.2.4",
+	  "com.lihaoyi" %% "upickle" % "0.2.5",
 	  "com.lihaoyi" %% "autowire" % "0.2.3"
   ) ++ shared
 
@@ -115,7 +115,7 @@ object Dependencies {
       "org.scalatest" %% "scalatest" % "2.2.0" % "test",
       "com.lihaoyi" %%%! "utest" % "0.2.3" % "test",
 	  "org.scalajs" %%%! "scala-parser-combinators" % "1.0.2",
-	  "com.lihaoyi" %%%! "upickle" % "0.2.4",
+	  "com.lihaoyi" %%%! "upickle" % "0.2.5",
 	  "com.scalatags" %%%! "scalatags" % "0.4.0",
 	  "com.lihaoyi" %%%! "autowire" % "0.2.3",
 	  "org.scala-lang.modules" %% "scala-async" % "0.9.2"
