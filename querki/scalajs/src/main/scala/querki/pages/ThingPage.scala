@@ -17,9 +17,8 @@ import querki.globals._
 
 import querki.api.ThingFunctions
 import querki.data.ThingInfo
-import querki.display.{Gadget, WrapperDiv}
+import querki.display.{Gadget, QText, WrapperDiv}
 import querki.comm._
-
 
 class ThingPage(e:Ecology) extends Page(e) with EcologyMember {
 
@@ -36,12 +35,12 @@ class ThingPage(e:Ecology) extends Page(e) with EcologyMember {
     
     async {
       val rendered = await(Client[ThingFunctions].renderThing(DataAccess.thingId).call())
-	  renderedContent.replaceContents(div(wikitext(rendered)).render)
+	  renderedContent.replaceContents(new QText(rendered).render)
     }
     
     div(
       details.customHeader match {
-        case Some(header) => wikitext(header)
+        case Some(header) => new QText(header)
         case None => new StandardThingHeader(thing)
       },
       renderedContent(p("Loading..."))

@@ -24,7 +24,7 @@ object TypeUtils {
   
     def renderText(prop:Property[_, _], context:QLContext, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_]):NodeSeq = {
       renderAnyText(prop, context, currentValue, v, elemT) { cv =>
-        <input type="text" value={cv}/>
+        <input class="_textEdit" type="text" value={cv}/>
       }
     }
   

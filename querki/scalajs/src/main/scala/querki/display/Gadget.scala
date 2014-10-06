@@ -71,9 +71,15 @@ trait Gadget[Output <: dom.Element] extends scalatags.jsdom.Frag {
   
   var _elem:Option[Output] = None
   
+  /**
+   * Concrete Gadgets can override this to perform actions after we've created the actual Element.
+   */
+  def onCreate(elem:Output) = {}
+  
   def render:Output = {
     val result = underlyingTag.render
     _elem = Some(result)
+    onCreate(result)
     result
   }
 }
