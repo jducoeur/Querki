@@ -37,6 +37,13 @@ trait Gadget[Output <: dom.Element] extends scalatags.jsdom.Frag {
   def MSeq(xs:Modifier*) = Vector[Modifier](xs)
   
   /**
+   * Render some wikitext from the server.
+   * 
+   * This should be changing rapidly and dramatically, becoming a much more complex Gadget unto itself.
+   */
+  def wikitext(w:Wikitext) = raw(w.display.html.toString)
+  
+  /**
    * Convenience function for composing classes in Gadgets and functions.
    */
   def classes(cs:Seq[String]) = cls:=cs.mkString(" ")

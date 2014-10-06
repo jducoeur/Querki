@@ -36,12 +36,12 @@ class ThingPage(e:Ecology) extends Page(e) with EcologyMember {
     
     async {
       val rendered = await(Client[ThingFunctions].renderThing(DataAccess.thingId).call())
-	  renderedContent.replaceContents(div(raw(rendered.display.html.toString)).render)
+	  renderedContent.replaceContents(div(wikitext(rendered)).render)
     }
     
     div(
       details.customHeader match {
-        case Some(header) => raw(header.display.html.toString)
+        case Some(header) => wikitext(header)
         case None => new StandardThingHeader(thing)
       },
       renderedContent(p("Loading..."))
