@@ -41,7 +41,7 @@ class ThingPage(e:Ecology) extends Page(e) with EcologyMember {
     
     div(
       details.customHeader match {
-        case Some(header) => raw(header)
+        case Some(header) => raw(header.display.html.toString)
         case None => new StandardThingHeader(thing)
       },
       renderedContent(p("Loading..."))

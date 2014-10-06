@@ -34,7 +34,7 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions {
       val pageHeaderOpt = for {
         pv <- thing.getPropOpt(HtmlUI.PageHeaderProperty)
       }
-        yield pv.v.wikify(thing.thisAsContext(rc)).display.toString
+        yield pv.v.wikify(thing.thisAsContext(rc))
         
       ClientApi.requestInfo(rc, ThingPageDetails(pageHeaderOpt))
     }
