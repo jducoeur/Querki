@@ -10,7 +10,7 @@ import models.{Thing, ThingId}
 import querki.globals._
 import Implicits.execContext
 
-import querki.api.{ClientApis, ThingFunctions}
+import querki.api.ThingFunctions
 import querki.pages.PageIDs._
 import querki.session.messages.{ClientError, ClientRequest, ClientResponse}
 import querki.spaces.messages.{SessionRequest, SpaceMgrMsg, ThingError}
@@ -26,7 +26,7 @@ class ClientController extends ApplicationBase {
    */
   class LocalClient(rc:PlayRequestContext) extends autowire.Client[String, upickle.Reader, upickle.Writer] {
 	override def doCall(req: Request): Future[String] = {
-	  SpaceOps.askSpaceManager2(SessionRequest(rc.requesterOrAnon, rc.ownerId, ThingId(rc.spaceIdOpt.get), ClientRequest(ClientApis.ThingFunctionsId, req, rc))) {
+	  SpaceOps.askSpaceManager2(SessionRequest(rc.requesterOrAnon, rc.ownerId, ThingId(rc.spaceIdOpt.get), ClientRequest(req, rc))) {
 	    case ClientResponse(pickled) => Future.successful(pickled)
 	    case ClientError(msg) => Future.failed(new Exception(msg))
 	  }
@@ -49,9 +49,9 @@ class ClientController extends ApplicationBase {
   // askSpaceMgr, which currently assumes that you have *already* resolved ownerId! Feh. But we have to fix it,
   // because withSpace deeply violates the long-run architecture -- we want to eventually *never* send the SpaceState
   // back to the Play layer.
-  def apiRequest(ownerId:String, spaceId:String, apiId:Int, pickledRequest:String) = withRouting(ownerId, spaceId) { implicit rc =>
+  def apiRequest(ownerId:String, spaceId:String, pickledRequest:String) = withRouting(ownerId, spaceId) { implicit rc =>
     val request = read[autowire.Core.Request[String]](pickledRequest)
-    askSpace(SessionRequest(rc.requesterOrAnon, rc.ownerId, ThingId(spaceId), ClientRequest(apiId, request, rc))) {
+    askSpace(SessionRequest(rc.requesterOrAnon, rc.ownerId, ThingId(spaceId), ClientRequest(request, rc))) {
       case ClientResponse(pickled) => Ok(pickled)
       case ClientError(msg) => BadRequest(msg)
     }

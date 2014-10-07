@@ -319,7 +319,7 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
       checkDisplayName(req, own, space)
       payload match {
         
-        case ClientRequest(apiId, req, rc) => {
+        case ClientRequest(req, rc) => {
           withRc(rc + state) {
             // TODO: this matching approach is horrible, but at least doesn't duplicate any
             // information. Make it more formal and automated:

@@ -46,7 +46,7 @@ GET     /u/:userName/:spaceId/delete  @controllers.Application.deleteThing(userN
 
 # TODO: this should eventually replace the normal thing path, below:
 GET     /u/:userName/:spaceId/client @controllers.ClientController.thing(userName, spaceId, thingId)
-POST    /u/:userName/:spaceId/_apiRequest @controllers.ClientController.apiRequest(userName, spaceId, apiId:Int, pickledRequest)
+POST    /u/:userName/:spaceId/_apiRequest @controllers.ClientController.apiRequest(userName, spaceId, pickledRequest)
 
 GET     /u/:userName/:spaceId/_sharing    @controllers.Application.sharing(userName, spaceId)
 POST    /u/:userName/:spaceId/_inviteMembers @controllers.LoginController.inviteMembers(userName, spaceId)

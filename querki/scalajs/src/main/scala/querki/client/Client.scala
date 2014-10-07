@@ -4,7 +4,6 @@ import scala.concurrent.Future
 
 import querki.globals._
 
-import querki.api.ClientApis
 import querki.comm._
 
 class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
@@ -19,7 +18,6 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
     controllers.ClientController.apiRequest(
         DataAccess.userName, 
         DataAccess.spaceId, 
-        ClientApis.ThingFunctionsId, 
         upickle.write(req)).callAjax()
   }
 
