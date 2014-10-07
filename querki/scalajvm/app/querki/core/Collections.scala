@@ -60,6 +60,26 @@ trait CollectionBase { self:CoreEcot =>
     }
   
     def rawInterpretation(v:String, prop:Property[_,_], elemT:pType):Option[FormFieldInfo] = None
+    
+    def fromUserString(prop:AnyProp, v:String, elemT:pType, state:SpaceState):FormFieldInfo = {
+      implicit val s = state
+      rawInterpretation(v, prop, elemT).getOrElse {
+          TryTrans { elemT.validate(v, prop, state) }.
+            onSucc { _ => FormFieldInfo(prop, Some(apply(elemT.fromUser(v))), false, true, Some(v)) }.
+            onFail { ex => FormFieldInfo(prop, None, true, false, Some(v), Some(ex)) }.
+            result
+      }
+    }
+    
+    def fromUser(prop:AnyProp, vs:List[String], elemT:pType, state:SpaceState):FormFieldInfo = {
+      vs.headOption match {
+        case Some(v) => fromUserString(prop, v, elemT, state)
+        case None => {
+          QLog.error(s"ExactlyOne.fromUser() received an empty list of values!")
+          FormFieldInfo(prop, Some(apply(elemT.default(state))), true, true)
+        }
+      }
+    }
   }
   
   /**
@@ -199,6 +219,12 @@ trait CollectionBase { self:CoreEcot =>
     protected case class QListPropValue(cv:implType, cType:QListBase, pType:PType[_]) extends QValue    
     def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = QListPropValue(cv.toList, this, elemT)
     
+    def fromUser(prop:AnyProp, vs:List[String], elemT:pType, state:SpaceState):FormFieldInfo = {
+      implicit val s = state
+      val elems = vs.map(elemT.fromUser(_)).toList
+      FormFieldInfo(prop, Some(makePropValue(elems, elemT)), false, true)
+    }
+    
     def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = {
       (makePropValue(v :+ elem, elem.pType), None)
     }
@@ -237,6 +263,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
 	def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo =
 	  throw new Error("Trying to fromUser on root collection!")
 	def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = ???
+	def fromUser(prop:AnyProp, vs:List[String], elemT:pType, state:SpaceState):FormFieldInfo = ???
   }
   
   class ExactlyOne(implicit e:Ecology) extends ExactlyOneBase(ExactlyOneOID)
@@ -302,6 +329,13 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
     def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = {
       val old = v.headOption
       (makePropValue(List(elem), elem.pType), old)
+    }
+    
+    override def fromUser(prop:AnyProp, vs:List[String], elemT:pType, state:SpaceState):FormFieldInfo = {
+      vs.headOption match {
+        case Some(v) => fromUserString(prop, v, elemT, state)
+        case None => FormFieldInfo(prop, Some(Empty(elemT)), false, true)
+      }
     }
   }
   
@@ -381,6 +415,8 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
 	  throw new Error("Trying to fromUser on Unit!")
     
     def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = ???
+    
+    def fromUser(prop:AnyProp, vs:List[String], elemT:pType, state:SpaceState):FormFieldInfo = ???
   }
 
   /**

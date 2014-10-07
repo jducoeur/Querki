@@ -54,10 +54,6 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     Html(xmlFixedQuotes)
   }
   
-//  def propValFromUser(prop:Property[_,_], str:String)(implicit state:SpaceState):QValue = {
-//    handleSpecialized(prop, str).getOrElse(prop.cType.fromUser(str, prop, prop.pType))
-//  }
-  
   // TODO: refactor this with Collection.fromUser():
   def propValFromUser(fieldIds:FieldIds, on:Option[Thing], form:Form[_], context:QLContext):FormFieldInfo = {
     val prop = fieldIds.p
@@ -78,6 +74,27 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
 
       withType(prop.pType)
     }
+  }
+  
+  /**
+   * Simplified version, designed for the Client.
+   */
+  def propValFromUser(fieldIds:FieldIds, vs:List[String], context:QLContext):FormFieldInfo = {
+    val prop = fieldIds.p
+    val pType = prop.pType
+    implicit val s = context.state
+  
+    // TBD: Can we get Manifest working in the Client without this handleTagSet hackery?
+//    if (prop.cType == QSet && (prop.pType.isInstanceOf[querki.core.IsNameType] || prop.pType == LinkType || prop.pType == NewTagSetType)) {
+//      handleTagSet(fieldIds, vs, context)
+//    } else {
+      val spec = for {
+        v <- vs.headOption
+        specialized <- handleSpecializedForm(prop, pType, v)
+      }
+        yield specialized
+      spec.getOrElse(prop.cType.fromUser(prop, vs, pType, context.state))
+//    }    
   }
   
   // TODO: I don't love having this renderer level dependent on QL. Think about whether this is the right place
@@ -374,5 +391,5 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       val oldVals = oldRaw.map(pt.fromUser(_)).toList
       FormFieldInfo(prop, Some(Core.makeSetValue(oldVals, pt, context)), false, true)
     }
-  }
+  }  
 }

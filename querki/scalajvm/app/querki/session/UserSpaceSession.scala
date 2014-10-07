@@ -6,9 +6,10 @@ import akka.event.LoggingReceive
 import upickle._
 import autowire._
 
-import models.{AsName, AsOID, OID, PType, ThingId, ThingState, UnknownOID}
+import models.{AsName, AsOID, OID, PType, Thing, ThingId, ThingState, UnknownOID}
+import models.Thing.PropMap
 
-import querki.global._
+import querki.globals._
 import Implicits.execContext
 
 import querki.api.{ClientApis, ThingFunctions}
@@ -41,6 +42,16 @@ trait SessionApiImpl extends EcologyMember {
    * The RequestContext for this request.
    */
   def rc:RequestContext
+  
+  /**
+   * Obtains the specified Thing from the current State, and tweaks the RequestContext accordingly.
+   */
+  def withThing[R](thingId:String)(f:Thing => R):R
+  
+  /**
+   * Actually change the specified Properties on the specified Thing. The set of Properties may be partial.
+   */
+  def changeProps(thingId:ThingId, props:PropMap):Unit
 }
 
 /**
@@ -59,6 +70,7 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Person = interface[querki.identity.Person]
+  lazy val Tags = interface[querki.tags.Tags]
   lazy val UserValues = interface[querki.uservalues.UserValues]
   
   /**
@@ -212,12 +224,84 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
   
   var _currentRc:Option[RequestContext] = None
   def rc = _currentRc.get
-  def withRc(rc:RequestContext)(f: => Unit) = {
+  def withRc[R](rc:RequestContext)(f: => R):R = {
     _currentRc = Some(rc)
     try {
       f
     } finally {
       _currentRc = None
+    }
+  }
+  
+  var _currentRequest:Option[SessionRequest] = None
+  def currentRequest = _currentRequest.get
+  def withRequest(req:SessionRequest)(f: => Unit) = {
+    _currentRequest = Some(req)
+    try {
+      f
+    } finally {
+      _currentRequest = None
+    }
+  }
+  
+  def changeProps(thingId:ThingId, props:PropMap) = {
+    val SessionRequest(req, own, space, payload) = currentRequest
+    
+    // For the time being, we cope only with a single UserValue property being set at a time.
+    // TODO: generalize this properly!
+    val uvPropPairOpt:Option[(OID, QValue)] = 
+      if (props.size == 1) {
+        val (propId, v) = props.head
+        if (UserValues.isUserValueProp(propId)(state))
+          Some((propId, v))
+        else
+          None
+      } else
+        None
+          
+    uvPropPairOpt match {
+      // It's a UserValue, so persist it that way:
+      case Some((propId, v)) => {
+        state.anything(thingId) match {
+          case Some(thing) => {
+            if (AccessControl.hasPermission(UserValues.UserValuePermission, state, identity.id, thing.id)) {
+              implicit val s = state
+              // Persist the change...
+              val uv = OneUserValue(identity, thing.id, propId, v, DateTime.now)
+              val previous = addUserValue(uv)
+ 	            persister ! SaveUserValue(uv, state, previous.isDefined)
+   	            
+              // ... then tell the Space to summarize it, if there is a Summary Property...
+   	          val msg = for {
+   	            prop <- state.prop(propId) orElse QLog.warn(s"UserSpaceSession.ChangeProps2 got unknown Property $propId")
+   	            summaryLinkPV <- prop.getPropOpt(UserValues.SummaryLink)
+   	            summaryPropId <- summaryLinkPV.firstOpt
+   	          }
+                yield SpacePluginMsg(req, own, space, SummarizeChange(thing.id, prop, summaryPropId, previous, Some(v)))
+              msg.map(spaceRouter ! _)
+                
+              // ... then tell the user we're set.
+              sender ! ThingFound(thing.id, state)
+            } else {
+              // Should we log a warning here? It *is* possible to get here, if the permission changed between the
+              // time the user loaded the page and the time they submitted it.
+              sender ! ThingError(new PublicException(ModifyNotAllowed))
+            }
+          }
+          case None => sender ! ThingError(UnexpectedPublicException, Some(state))
+        }
+      }
+      // It's not a UserValue, so just tell the Space about the change:
+      case None => spaceRouter.forward(ChangeProps(req, own, space, thingId, props))
+    }    
+  }
+  
+  def withThing[R](thingId:String)(f:Thing => R):R = {
+    val oid = ThingId(thingId)
+    // Either show this actual Thing, or a synthetic TagThing if it's not found:
+    val thing = state.anything(oid).getOrElse(Tags.getTag(thingId, state))
+    withRc(rc + thing) {
+      f(thing)
     }
   }
   
@@ -228,7 +312,7 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
   def normalReceive:Receive = LoggingReceive {
     case CurrentState(s) => setRawState(s)
     
-    case SessionRequest(req, own, space, payload) => { 
+    case request @ SessionRequest(req, own, space, payload) => withRequest(request) { 
       checkDisplayName(req, own, space)
       payload match {
         
@@ -270,53 +354,7 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
 	    }
 	    
 	    case ChangeProps2(thingId, props) => {
-	      // For the time being, we cope only with a single UserValue property being set at a time.
-	      // TODO: generalize this properly!
-	      val uvPropPairOpt:Option[(OID, QValue)] = 
-	        if (props.size == 1) {
-	          val (propId, v) = props.head
-	          if (UserValues.isUserValueProp(propId)(state))
-	            Some((propId, v))
-	          else
-	            None
-	        } else
-	          None
-	          
-	      uvPropPairOpt match {
-	        // It's a UserValue, so persist it that way:
-	        case Some((propId, v)) => {
-	          state.anything(thingId) match {
-	            case Some(thing) => {
-	              if (AccessControl.hasPermission(UserValues.UserValuePermission, state, identity.id, thing.id)) {
-	                implicit val s = state
-	                // Persist the change...
-  	                val uv = OneUserValue(identity, thing.id, propId, v, DateTime.now)
-	                val previous = addUserValue(uv)
-       	            persister ! SaveUserValue(uv, state, previous.isDefined)
-       	            
-       	            // ... then tell the Space to summarize it, if there is a Summary Property...
-       	            val msg = for {
-       	              prop <- state.prop(propId) orElse QLog.warn(s"UserSpaceSession.ChangeProps2 got unknown Property $propId")
-       	              summaryLinkPV <- prop.getPropOpt(UserValues.SummaryLink)
-       	              summaryPropId <- summaryLinkPV.firstOpt
-       	            }
-  	                  yield SpacePluginMsg(req, own, space, SummarizeChange(thing.id, prop, summaryPropId, previous, Some(v)))
-  	                msg.map(spaceRouter ! _)
-  	                
-  	                // ... then tell the user we're set.
-	                sender ! ThingFound(thing.id, state)
-	              } else {
-	                // Should we log a warning here? It *is* possible to get here, if the permission changed between the
-	                // time the user loaded the page and the time they submitted it.
-	                sender ! ThingError(new PublicException(ModifyNotAllowed))
-	              }
-	            }
-	            case None => sender ! ThingError(UnexpectedPublicException, Some(state))
-	          }
-	        }
-	        // It's not a UserValue, so just tell the Space about the change:
-	        case None => spaceRouter.forward(ChangeProps(req, own, space, thingId, props))
-	      }
+	      changeProps(thingId, props)
 	    }     
       }
     }

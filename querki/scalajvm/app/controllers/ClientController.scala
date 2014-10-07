@@ -7,7 +7,7 @@ import autowire._
 
 import models.{Thing, ThingId}
 
-import querki.global._
+import querki.globals._
 import Implicits.execContext
 
 import querki.api.{ClientApis, ThingFunctions}

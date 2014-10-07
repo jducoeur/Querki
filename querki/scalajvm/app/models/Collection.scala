@@ -82,11 +82,9 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecolog
   def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo
   
   /**
-   * TODO: this needs to become much more sophisticated, but it's a start.
+   * Second version of accepting user input.
    */
-  def fromUser(newVal:String, prop:Property[_,_], elemT:pType)(implicit state:SpaceState):QValue = {
-    apply(elemT.fromUser(newVal))
-  }
+  def fromUser(prop:AnyProp, vs:List[String], elemT:pType, state:SpaceState):FormFieldInfo
   
   /**
    * Returns the head of the collection.

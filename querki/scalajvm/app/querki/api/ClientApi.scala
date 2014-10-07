@@ -4,7 +4,7 @@ import upickle._
 
 import models.AsOID
 
-import querki.global._
+import querki.globals._
 
 import querki.data.{IdentityInfo, RequestInfo, SpaceInfo, ThingInfo, UserInfo}
 import querki.identity.User

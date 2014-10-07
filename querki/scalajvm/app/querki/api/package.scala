@@ -2,7 +2,7 @@ package querki
 
 import models.{Thing}
 
-import querki.global._
+import querki.globals._
 
 import querki.data.{RequestInfo, ThingInfo}
 import querki.pages.PageDetails
