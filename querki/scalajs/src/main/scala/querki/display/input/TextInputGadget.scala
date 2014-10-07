@@ -13,7 +13,7 @@ class TextInputGadget(val rawElement:dom.Element)(implicit e:Ecology) extends In
   // TBD: do we need an unhook, to avoid leaks?
   def hook() = {
     $(element).change({ event:JQueryEventObject =>
-      println(s"""Text value is now "${element.value}"""")
+      saveChange(List(element.value))
     })
   }
   

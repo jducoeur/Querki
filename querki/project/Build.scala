@@ -36,6 +36,10 @@ object ApplicationBuild extends Build with UniversalKeys {
       name := "Querki",
       version := Versions.app,
       scalaVersion := Versions.scala,
+	  
+// Uncomment this line to unfold macros. WARNING: this produces copious output!
+//	  scalacOptions += "-Ymacro-debug-lite",
+	  
       scalajsOutputDir := (crossTarget in Compile).value / "classes" / "public" / "javascripts",
       compile in Compile <<= (compile in Compile) dependsOn (fastOptJS in (scalajs, Compile)),
       dist <<= dist dependsOn (fullOptJS in (scalajs, Compile)),

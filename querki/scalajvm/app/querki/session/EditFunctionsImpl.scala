@@ -4,11 +4,13 @@ import models.{DisplayPropVal, DisplayText, FieldIds, FormFieldInfo, IndexedOID,
 
 import querki.globals._
 
-import querki.api.{ChangePropertyValue, DeleteProperty, PropertyChange, PropertyChangeResponse, EditFunctions}
+import querki.api.EditFunctions
+import EditFunctions._
 import querki.values.{QLRequestContext, RequestContext}
 
 trait EditFunctionsImpl extends SessionApiImpl with EditFunctions {
   
+  lazy val Core = interface[querki.core.Core]
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
   lazy val Types = interface[querki.types.Types]
   
@@ -20,6 +22,8 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions {
       case ChangePropertyValue(vs) => {
   	    DisplayPropVal.propPathFromName(path, Some(thing)) match {
     	  case Some(fieldIds) => {
+    	    // Compute the *actual* fields to change. Note that this isn't trivial, since the actual change might be in 
+    	    // a Bundle:
     	    val context = QLRequestContext(rc)
     	    val actualFormFieldInfo = HtmlRenderer.propValFromUser(fieldIds, vs, context)
     	    val result = fieldIds.container match {
@@ -39,13 +43,19 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions {
               }
               case None => actualFormFieldInfo
     	    }
-
-    	    ???
+    	    
+    	    // Now that we know what we're actually changing, send the change to the Space itself:
+    	    val FormFieldInfo(prop, value, _, _, _, _) = result
+    	    val props = Core.toProps((prop, value.get))()
+    	    changeProps(thing.toThingId, props)
+    	    
+    	    // Finally, ack the change back to the client:
+    	    PropertyChanged
     	  }
-    	  case None => ???  // This is an error -- what should we return?
+    	  case None => PropertyChangeError("Invalid path -- did the model change out from under you?")
     	}
       }
-      case DeleteProperty => ???  // NYI
+      case DeleteProperty => PropertyChanged  // NYI
     }   
   }
 }

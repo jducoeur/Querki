@@ -77,7 +77,8 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   }
   
   /**
-   * Simplified version, designed for the Client.
+   * Simplified version, designed for the Client. Really no longer clear to me that this belongs in HtmlRenderer at this point.
+   * Maybe this should be at a more abstract level, with the Form-specific bits kept here at the HTML level?
    */
   def propValFromUser(fieldIds:FieldIds, vs:List[String], context:QLContext):FormFieldInfo = {
     val prop = fieldIds.p

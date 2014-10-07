@@ -12,7 +12,7 @@ import models.Thing.PropMap
 import querki.globals._
 import Implicits.execContext
 
-import querki.api.{ClientApis, ThingFunctions}
+import querki.api.{EditFunctions, ThingFunctions}
 import querki.identity.{Identity, User}
 import querki.session.messages._
 import querki.spaces.messages.{ChangeProps, CurrentState, SessionRequest, SpacePluginMsg, ThingError, ThingFound}
@@ -61,11 +61,14 @@ trait SessionApiImpl extends EcologyMember {
  * along the lines of how we do in Space? That would currently leave this class very hollowed-out, but I expect it
  * to grow a lot in the future, and to become much more heterogeneous, so we may want to separate all of those
  * concerns.
+ * 
+ * TODO: this is getting bigger and bigger, due to containing the FunctionsImpl traits. That "containerness" probably needs
+ * to be refactored somewhat.
  */
 private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
   extends Actor with Stash with EcologyMember with TimeoutChild
   with autowire.Server[String, upickle.Reader, upickle.Writer]
-  with ThingFunctionsImpl
+  with ThingFunctionsImpl with EditFunctionsImpl
 {
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
@@ -317,17 +320,26 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
       payload match {
         
         case ClientRequest(apiId, req, rc) => {
-          apiId match {
-            case ClientApis.ThingFunctionsId => {
-              withRc(rc + state) {
+          withRc(rc + state) {
+            // TODO: this matching approach is horrible, but at least doesn't duplicate any
+            // information. Make it more formal and automated:
+            req.path(2) match {
+              case "ThingFunctions" => {
                 // route() is asynchronous, so we need to store away the sender!
                 val senderSaved = sender
                 route[ThingFunctions](this)(req).foreach { result =>
                   senderSaved ! ClientResponse(result)                  
                 }
               }
+              case "EditFunctions" => {
+                // route() is asynchronous, so we need to store away the sender!
+                val senderSaved = sender
+                route[EditFunctions](this)(req).foreach { result =>
+                  senderSaved ! ClientResponse(result)                  
+                }
+              }
+              case _ => { sender ! ClientError("Unknown API ID!") }
             }
-            case _ => { sender ! ClientError("Unknown API ID!") }
           }
         }
         
