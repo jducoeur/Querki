@@ -25,9 +25,12 @@ trait MarcoPoloImpl extends SessionApiImpl {
         val tags = 
           Tags.fetchTags(state, prop).
             filter(_.toLowerCase().contains(lowerQ)).
-            toList.
-            map(tag => MarcoPoloItem(tag, tag))
-        tags ++ things.diff(tags)
+            toList
+        // Since it's a Tag Property, we don't want the OIDs
+        val thingNames = things.map(_.display)
+        // Strip out duplicates:
+        val allNames = tags ++ thingNames.diff(tags)
+        allNames.map(name => MarcoPoloItem(name, name))
       }
     val itemsSorted = allItems.sortBy(_.display)
     
