@@ -37,6 +37,13 @@ class TagSetInput(val rawElement:dom.Element)(implicit e:Ecology) extends InputG
   lazy val required = if (isNames) false else true
   lazy val typeName = if (isNames) "tag" else "thing"
     
+  def stringOrItem(data:js.Any)(f:ManifestItem => String) = {
+    if (data.isInstanceOf[js.prim.String]) 
+      data 
+    else 
+      f(data.asInstanceOf[ManifestItem])
+  }
+    
   // The constructor for the Manifest object itself. This prompts you when you start typing,
   // using MarcoPolo, and organizes results into a nice list.
   $(element).manifest(lit(
@@ -51,8 +58,8 @@ class TagSetInput(val rawElement:dom.Element)(implicit e:Ecology) extends InputG
     ),
     // Yes, these two are horrible, but represent an unfortunate quirk of Manifest: these sometimes get called with
     // items, sometimes with Strings:
-    formatDisplay = { (data:js.Any) => if (data.isInstanceOf[js.prim.String]) data else data.asInstanceOf[ManifestItem].display },
-    formatValue = { (data:js.Any) => if (data.isInstanceOf[js.prim.String]) data else data.asInstanceOf[ManifestItem].id },
+    formatDisplay = { (data:js.Any) => stringOrItem(data)(_.display) },
+    formatValue = { (data:js.Any) => stringOrItem(data)(_.id) },
     separator = Seq[Int](13).toJSArray,
     values = initialValuesJs,
     required = required
@@ -60,10 +67,10 @@ class TagSetInput(val rawElement:dom.Element)(implicit e:Ecology) extends InputG
   
   // TBD: do we need an unhook, to avoid leaks?
   def hook() = {
-//    $(element).change({ event:JQueryEventObject =>
-//      println("Have changed the Manifest!")
+    $(element).on("manifestchange", { (evt:JQueryEventObject, changeType:String, data:js.Any) =>
+      println(s"Have changed the Manifest with ${stringOrItem(data)(_.display)}!")
 //      saveChange(List(element.value))
-//    })
+    })
   }
   
   def doRender() =
