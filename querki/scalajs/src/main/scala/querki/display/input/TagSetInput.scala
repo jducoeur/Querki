@@ -10,6 +10,8 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
+import querki.comm._
+
 trait ManifestFacade extends JQuery {
   def manifest(cmd:String):Any = ???
   def manifest(config:js.Object):this.type = ???
@@ -48,9 +50,8 @@ class TagSetInput(val rawElement:dom.Element)(implicit e:Ecology) extends InputG
   // The constructor for the Manifest object itself. This prompts you when you start typing,
   // using MarcoPolo, and organizes results into a nice list.
   $(element).manifest(lit(
-    // TODO: marcoPolo should be going through the ClientController!
     marcoPolo = lit(
-      url = s"$entryPoint?propId=$propId",
+      url = controllers.ClientController.marcoPolo.spaceUrl(propId),
       minChars = 1,
       required = required,
       formatData = { data:js.Object => data },

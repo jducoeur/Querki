@@ -78,24 +78,20 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   
   /**
    * Simplified version, designed for the Client. Really no longer clear to me that this belongs in HtmlRenderer at this point.
-   * Maybe this should be at a more abstract level, with the Form-specific bits kept here at the HTML level?
+   * Maybe this should be at a more abstract level, with the Form-specific bits kept here at the HTML level? Especially now that
+   * this is being called from the client, and no longer has much to do with rendering...
    */
   def propValFromUser(fieldIds:FieldIds, vs:List[String], context:QLContext):FormFieldInfo = {
     val prop = fieldIds.p
     val pType = prop.pType
     implicit val s = context.state
   
-    // TBD: Can we get Manifest working in the Client without this handleTagSet hackery?
-//    if (prop.cType == QSet && (prop.pType.isInstanceOf[querki.core.IsNameType] || prop.pType == LinkType || prop.pType == NewTagSetType)) {
-//      handleTagSet(fieldIds, vs, context)
-//    } else {
-      val spec = for {
-        v <- vs.headOption
-        specialized <- handleSpecializedForm(prop, pType, v)
-      }
-        yield specialized
-      spec.getOrElse(prop.cType.fromUser(prop, vs, pType, context.state))
-//    }    
+    val spec = for {
+      v <- vs.headOption
+      specialized <- handleSpecializedForm(prop, pType, v)
+    }
+      yield specialized
+    spec.getOrElse(prop.cType.fromUser(prop, vs, pType, context.state))
   }
   
   // TODO: I don't love having this renderer level dependent on QL. Think about whether this is the right place
@@ -166,7 +162,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   
   def renderSpecialized(cType:Collection, pType:PType[_], context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):Option[NodeSeq] = {
     // TODO: make this more data-driven. There should be a table of these.
-    val state = context.state
+    implicit val state = context.state
     pType match {
       // If the Type wants to own the rendering, on its head be it:
       case renderingType:FullInputRendering => Some(renderingType.renderInputFull(prop, context, currentValue))
@@ -175,7 +171,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
 	      Some(renderOptYesNo(state, prop, currentValue))
 	    else if (cType == Optional && pType == LinkType)
 	      Some(renderOptLink(context, prop, currentValue))
-	    else if (cType == QSet && (pType == Core.NameType || pType == Tags.TagSetType || pType == LinkType || pType == NewTagSetType)) {
+	    else if (Tags.isTaggableProperty(prop)) {
 	      if (specialization.contains(PickList))
 	        Some(renderPickList(state, prop, currentValue, specialization))
 	      else

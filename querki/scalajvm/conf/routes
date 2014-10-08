@@ -44,10 +44,6 @@ GET     /u/:userName/:spaceId/_changeModel @controllers.Application.changeModel(
 GET     /u/:userName/:spaceId/view @controllers.Application.viewThing(userName, spaceId, thingId)
 GET     /u/:userName/:spaceId/delete  @controllers.Application.deleteThing(userName, spaceId, thingId)
 
-# TODO: this should eventually replace the normal thing path, below:
-GET     /u/:userName/:spaceId/client @controllers.ClientController.thing(userName, spaceId, thingId)
-POST    /u/:userName/:spaceId/_apiRequest @controllers.ClientController.apiRequest(userName, spaceId, pickledRequest)
-
 GET     /u/:userName/:spaceId/_sharing    @controllers.Application.sharing(userName, spaceId)
 POST    /u/:userName/:spaceId/_inviteMembers @controllers.LoginController.inviteMembers(userName, spaceId)
 GET     /u/:userName/:spaceId/_handleInvite @controllers.LoginController.handleInvite(userName, spaceId)
@@ -64,6 +60,12 @@ GET     /u/:userName/:spaceId/getLinks    @controllers.Application.getLinks(user
 POST    /u/:userName/:spaceId/search      @controllers.Application.search(userName, spaceId)
 
 POST    /u/:userName/:spaceId/_photoUpload   @controllers.PhotoController.upload(userName, spaceId, thingId)
+
+# API CALLS
+# TODO: this should eventually replace the normal thing path, below:
+GET     /u/:userName/:spaceId/client @controllers.ClientController.thing(userName, spaceId, thingId)
+POST    /u/:userName/:spaceId/_apiRequest @controllers.ClientController.apiRequest(userName, spaceId, pickledRequest)
+GET     /u/:userName/:spaceId/_marcoPolo @controllers.ClientController.marcoPolo(userName, spaceId, propId)
 
 
 POST    /dologin                    @controllers.LoginController.dologin

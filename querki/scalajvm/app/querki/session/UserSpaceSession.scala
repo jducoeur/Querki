@@ -68,7 +68,7 @@ trait SessionApiImpl extends EcologyMember {
 private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
   extends Actor with Stash with EcologyMember with TimeoutChild
   with autowire.Server[String, upickle.Reader, upickle.Writer]
-  with ThingFunctionsImpl with EditFunctionsImpl
+  with ThingFunctionsImpl with EditFunctionsImpl with MarcoPoloImpl
 {
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
@@ -367,7 +367,12 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
 	    
 	    case ChangeProps2(thingId, props) => {
 	      changeProps(thingId, props)
-	    }     
+	    }
+	    
+	    case MarcoPoloRequest(propId, q) => {
+	      val response = handleMarcoPoloRequest(propId, q)
+	      sender ! response
+	    }
       }
     }
   }

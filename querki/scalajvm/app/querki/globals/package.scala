@@ -18,6 +18,8 @@ package object globals {
   val QLog = querki.util.QLog
   type PublicException = querki.util.PublicException
   
+  type AnyProp = models.AnyProp
+  
   type SpaceState = querki.values.SpaceState
   
   type Ecology = querki.ecology.Ecology

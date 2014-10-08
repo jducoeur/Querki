@@ -4,7 +4,7 @@ import querki.ecology._
 
 import models.{Property, PType, PTypeBuilder, Thing}
 
-import querki.values.SpaceState
+import querki.globals._
 
 import querki.core.QLText
 import querki.basic.PlainText
@@ -36,5 +36,9 @@ package object tags {
     def getTag(name:String, state:SpaceState):Thing
     def fetchTags(space:SpaceState, propIn:Property[_,_]):Set[String]
     def preferredModelForTag(implicit state:SpaceState, nameIn:String):Thing
+    /**
+     * Returns true iff this Property is "taggable" -- that is, Manifest can treat it like a tag.
+     */
+    def isTaggableProperty(prop:AnyProp)(implicit state:SpaceState):Boolean
   }
 }

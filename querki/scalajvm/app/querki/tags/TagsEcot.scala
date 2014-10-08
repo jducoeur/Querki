@@ -6,6 +6,8 @@ import querki.ecology._
 
 import models.{AsDisplayName, Collection, DisplayPropVal, Kind, PropertyBundle, Thing, ThingId, UnknownOID, Wikitext}
 
+import querki.globals._
+
 import querki.basic.{PlainText, PlainTextBaseType}
 import querki.core.{NameableType, NameTypeBasis, NameUtils, QLText, TextTypeBasis}
 import querki.ql.QLPhrase
@@ -202,6 +204,12 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
 
       modelOpt.getOrElse(state.interface[querki.basic.Basic].SimpleThing)
     }
+  }
+  
+  def isTaggableProperty(prop:AnyProp)(implicit state:SpaceState):Boolean = {
+    val cType = prop.cType
+    val pType = prop.pType
+    (cType == QSet && (pType == Core.NameType || pType == TagSetType || pType == LinkType || pType == NewTagSetType))
   }
 
   lazy val ShowUnknownProp = new SystemProperty(ShowUnknownOID, LargeTextType, ExactlyOne,
