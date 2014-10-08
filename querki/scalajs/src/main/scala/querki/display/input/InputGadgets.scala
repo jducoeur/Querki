@@ -25,7 +25,8 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets {
    * reflection (and thus, dynamic construction) on the client side.
    */
   val registry = Map[String, InputConstr](
-    ("_textEdit" -> { new TextInputGadget(_) })
+    ("_textEdit" -> { new TextInputGadget(_) }),
+    ("_tagSetInput" -> { new TagSetInput(_) })
   )
   
   val jsUnit = 1:js.Any

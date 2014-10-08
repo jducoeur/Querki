@@ -13,6 +13,10 @@ import querki.api.EditFunctions
 import EditFunctions._
 import querki.display._
 
+/**
+ * Base class for input controls. When you create a new concrete class, make sure to add it to
+ * InputGadgets.registry.
+ */
 abstract class InputGadget(val ecology:Ecology) extends Gadget[dom.Element] with EcologyMember {
   
   type elemType <: dom.Element
