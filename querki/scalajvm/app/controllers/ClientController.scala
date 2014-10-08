@@ -79,12 +79,7 @@ class ClientController extends ApplicationBase {
     val q = rc.queryParam("q").head
     askUserSpaceSession(rc, MarcoPoloRequest(ThingId(propId), q)) {
       case MarcoPoloResponse(items) => {
-        // TBD: can we just do upickle.write(items) here?
-        val jsItems = items.map { item =>
-          Js.Obj(("display" -> Js.Str(item.display)), ("id" -> Js.Str(item.id)))
-        }
-        val jsArr = Js.Arr(jsItems:_*)
-        Ok(json.write(jsArr))
+        Ok(write(items))
       }
       case _ => BadRequest("Couldn't parse items.")
     }
