@@ -1,6 +1,7 @@
 package querki.display.input
 
 import scala.scalajs.js
+import js.JSConverters._
 import js.Dynamic.{literal => lit}
 
 import org.scalajs.dom
@@ -19,7 +20,7 @@ import ManifestFacade._
 
 trait ManifestItem extends js.Object {
   def display:String = ???
-  def id:js.UndefOr[String] = ???
+  def id:String = ???
 }
   
 class TagSetInput(val rawElement:dom.Element)(implicit e:Ecology) extends InputGadget(e) {
@@ -36,8 +37,6 @@ class TagSetInput(val rawElement:dom.Element)(implicit e:Ecology) extends InputG
   lazy val required = if (isNames) false else true
   lazy val typeName = if (isNames) "tag" else "thing"
     
-    println(s"isNames = $isNames; required = $required")
-  
   // The constructor for the Manifest object itself. This prompts you when you start typing,
   // using MarcoPolo, and organizes results into a nice list.
   $(element).manifest(lit(
@@ -54,7 +53,7 @@ class TagSetInput(val rawElement:dom.Element)(implicit e:Ecology) extends InputG
     // items, sometimes with Strings:
     formatDisplay = { (data:js.Any) => if (data.isInstanceOf[js.prim.String]) data else data.asInstanceOf[ManifestItem].display },
     formatValue = { (data:js.Any) => if (data.isInstanceOf[js.prim.String]) data else data.asInstanceOf[ManifestItem].id },
-//    separator = Array[Char](13, ','),
+    separator = Seq[Int](13).toJSArray,
     values = initialValuesJs,
     required = required
   ))
