@@ -11,7 +11,8 @@ import scalatags.JsDom.all._
 import querki.globals._
 
 trait ManifestFacade extends JQuery {
-  def manifest(config:Any):this.type = ???
+  def manifest(cmd:String):Any = ???
+  def manifest(config:js.Object):this.type = ???
 }
 object ManifestFacade {
   implicit def jq2Manifest(jq:JQuery):ManifestFacade = jq.asInstanceOf[ManifestFacade]
@@ -65,11 +66,18 @@ class TagSetInput(val rawElement:dom.Element)(implicit e:Ecology) extends InputG
     required = required
   ))
   
+  def values = { 
+    $(element).manifest("values").asInstanceOf[js.Array[String]].toList
+  }
+  
   // TBD: do we need an unhook, to avoid leaks?
   def hook() = {
+    // TODO: Note that Manifest actually tells us what's been added or removed, so in principle it's actually
+    // pretty easy for us to generate a *change* event here, not necessarily a full rewrite! We are currently
+    // grabbing and sending the full values list, but we could instead combine changeType and data into a
+    // proper change event.
     $(element).on("manifestchange", { (evt:JQueryEventObject, changeType:String, data:js.Any) =>
-      println(s"Have changed the Manifest with ${stringOrItem(data)(_.display)}!")
-//      saveChange(List(element.value))
+      saveChange(values)
     })
   }
   
