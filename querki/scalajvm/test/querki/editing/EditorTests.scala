@@ -21,7 +21,7 @@ class EditorTests extends QuerkiTests {
       // TODO: instead of this raw string check, we should be using XhtmlParser to parse the string, and examine the
       // structure:
       processQText(commonThingAsContext(_.trivialThing), """[[_edit]]""") should 
-        include (s"""<input value="" type="text" class="propEditor" name="v-q-$trivialOID" data-prop=".q" data-propId="q" id="v-q-$trivialOID" data-thing="$trivialThingId" />""")      
+        include (s"""<input value="" type="text" class="_textEdit propEditor" name="v-q-$trivialOID" data-prop=".q" data-propId="q" id="v-q-$trivialOID" data-thing="$trivialThingId" />""")      
     }
   }
 }
