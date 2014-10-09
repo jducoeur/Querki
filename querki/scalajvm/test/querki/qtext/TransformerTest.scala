@@ -1,7 +1,6 @@
 package querki.qtext
 
-import org.scalatest.matchers.ShouldMatchers
-import org.scalatest.FlatSpec
+import org.scalatest.{FlatSpec, Matchers}
 import org.junit.runner.RunWith
 
 /**
@@ -13,7 +12,7 @@ import org.junit.runner.RunWith
  * Package Explorer, and do File -> Convert Line Delimiters To -> Unix.
  */
 //@RunWith(classOf[JUnitRunner])
-class TransformerTest extends FlatSpec with ShouldMatchers with Transformer {
+class TransformerTest extends FlatSpec with Matchers with Transformer {
     
 
   implicit class testableString(str:String) {

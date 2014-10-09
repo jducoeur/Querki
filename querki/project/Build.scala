@@ -62,8 +62,10 @@ object ApplicationBuild extends Build with UniversalKeys {
       persistLauncher := true,
       persistLauncher in Test := false,
 	  relativeSourceMaps := true,
+	  // These are to give Rhino a pseudo-DOM for testing:
+	  jsDependencies += scala.scalajs.sbtplugin.RuntimeDOM,
       libraryDependencies ++= Dependencies.scalajs
-    ) ++ sharedDirectorySettings
+    ) ++ sharedDirectorySettings ++ utest.jsrunner.Plugin.utestJsSettings
 
   lazy val sharedScalaSettings =
     Seq(
@@ -117,7 +119,7 @@ object Dependencies {
 	  "org.scala-lang.modules.scalajs" %%%! "scalajs-dom" % "0.6",
       "org.scala-lang.modules.scalajs" %%%! "scalajs-jquery" % "0.6",
       "org.scalatest" %% "scalatest" % "2.2.0" % "test",
-      "com.lihaoyi" %%%! "utest" % "0.2.3" % "test",
+      "com.lihaoyi" %%%! "utest" % "0.2.4" % "test",
 	  "org.scalajs" %%%! "scala-parser-combinators" % "1.0.2",
 	  "com.lihaoyi" %%%! "upickle" % "0.2.5",
 	  "com.scalatags" %%%! "scalatags" % "0.4.0",

@@ -1,14 +1,13 @@
 package querki.qtext
 
-import org.scalatest.matchers.ShouldMatchers
-import org.scalatest.FlatSpecLike
+import org.scalatest.{FlatSpecLike, Matchers}
 import org.junit.runner.RunWith
 
 /**
  * Tests the Line Tokenizer that prepares input for parsing.
  */
 //@RunWith(classOf[JUnitRunner])
-class LineTokenizerTest extends LineTokenizer with FlatSpecLike with ShouldMatchers{
+class LineTokenizerTest extends LineTokenizer with FlatSpecLike with Matchers{
 
     "The LineTokenizer" should "split input lines correctly" in {
         splitLines("line1\nline2\n") should equal (List("line1", "line2"))

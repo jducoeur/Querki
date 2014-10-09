@@ -217,7 +217,7 @@ class EcologyImplBase[ST, ET <: EcotBase[ST, ET]] extends EcologyBase[ST, ET] wi
   }
   
   def init(initialSpaceState:ST)(specializedInit:ST => ST):ST = {
-    println("Starting Ecology initialization...")
+//    println("Starting Ecology initialization...")
     val mainState = initializeRemainingEcots(_registeredEcots, initialSpaceState)
     val finalState = specializedInit(mainState)
     postInitialize(_registeredEcots)
@@ -226,7 +226,7 @@ class EcologyImplBase[ST, ET <: EcotBase[ST, ET]] extends EcologyBase[ST, ET] wi
   
   def term():Unit = {
     _termOrder.foreach { ecot =>
-      println(s"Terminating ecot ${ecot.fullName}")
+//      println(s"Terminating ecot ${ecot.fullName}")
       ecot.term
     }
   }
@@ -306,7 +306,7 @@ class EcologyImplBase[ST, ET <: EcotBase[ST, ET]] extends EcologyBase[ST, ET] wi
   
   def initEcot(ecot:ET, currentState:ST):ST = {
     // TODO: this should go through Log instead:
-    println(s"Initializing ecot ${ecot.fullName}")
+//    println(s"Initializing ecot ${ecot.fullName}")
     val newState = ecot.addState(currentState)
     ecot.init
     _initializedEcots += ecot
@@ -324,7 +324,7 @@ class EcologyImplBase[ST, ET <: EcotBase[ST, ET]] extends EcologyBase[ST, ET] wi
    */
   private def initializeRemainingEcots(remaining:Set[ET], currentState:ST):ST = {
     if (remaining.isEmpty) {
-      println("Ecology initialization complete")
+//      println("Ecology initialization complete")
       currentState
     } else {
       remaining.find(_.dependsUpon.forall(_initializedInterfaces.contains(_))) match {

@@ -35,8 +35,6 @@ class TagSetInput(val rawElement:dom.Element)(implicit e:Ecology) extends InputG
   lazy val initialValuesJs = $(element).data("current")
   lazy val propId = $(element).data("prop").asInstanceOf[String]
   
-  // TEMP: while we're still using the old MarcoPolo entry points:
-  lazy val entryPoint = if (isNames) "getTags" else "getLinks"
   lazy val required = if (isNames) false else true
   lazy val typeName = if (isNames) "tag" else "thing"
     

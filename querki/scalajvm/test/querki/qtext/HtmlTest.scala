@@ -3,7 +3,6 @@ package querki.qtext
 import querki.test._
 
 import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
 
 class HtmlTest extends QuerkiTests with Transformer {
   "Simple, legal XHTML fragments" should {

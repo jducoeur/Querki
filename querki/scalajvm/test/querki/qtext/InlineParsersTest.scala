@@ -1,10 +1,9 @@
 package querki.qtext
 
-import org.scalatest.FlatSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.{FlatSpec, Matchers}
 import org.junit.runner.RunWith
 
-trait InlineBase { this:InlineParsers with ShouldMatchers =>
+trait InlineBase { this:InlineParsers with Matchers =>
     def runSucceedingParsingTests(p:Parser[String], l:List[(String, String)]) {
         for ((a, b) <- l) {
             try {
@@ -16,7 +15,7 @@ trait InlineBase { this:InlineParsers with ShouldMatchers =>
     }  
     
     def runExceptionParsingTests(p:Parser[String], l:List[String]) {
-        for (s <- l) evaluating{apply(p, s)} should produce[IllegalArgumentException]
+        for (s <- l) an [IllegalArgumentException] should be thrownBy{apply(p, s)}
     }
 }
 
@@ -24,7 +23,7 @@ trait InlineBase { this:InlineParsers with ShouldMatchers =>
  * Tests Inline Parsing, i.e. emphasis , strong text, links, escapes etc.
  */
 //@RunWith(classOf[JUnitRunner])
-class InlineParsersTest extends FlatSpec with ShouldMatchers with InlineParsers with InlineBase {
+class InlineParsersTest extends FlatSpec with Matchers with InlineParsers with InlineBase {
 
     ///////////////////////////////////////////////////////////////
     // Inline parsing Tests                                      //
@@ -161,13 +160,6 @@ class InlineParsersTest extends FlatSpec with ShouldMatchers with InlineParsers 
     it should "create links" in {
         runSucceedingParsingTests(link(new InlineContext()), linkTests)
     }
-//
-//    it should "create fast links" in {
-//        runSucceedingParsingTests(fastLink(new InlineContext()), fastLinkTests)
-//        val p = fastLink(new InlineContext())
-//        evaluating(apply(p, "<this is not a fast link<span>")) should produce[IllegalArgumentException]
-//
-//    }
 
     it should "create images" in {
         runSucceedingParsingTests((elem('!')~>directImg), imageTests)

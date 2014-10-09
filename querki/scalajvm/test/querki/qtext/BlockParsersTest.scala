@@ -1,14 +1,13 @@
 package querki.qtext
 
 import org.junit.runner.RunWith
-import org.scalatest.matchers.ShouldMatchers
-import org.scalatest.FlatSpec
+import org.scalatest.{FlatSpec, Matchers}
 
 /**
  * Tests the parsing on block level.
  */
 //@RunWith(classOf[JUnitRunner])
-class BlockParsersTest extends FlatSpec with ShouldMatchers with BlockParsers{
+class BlockParsersTest extends FlatSpec with Matchers with BlockParsers{
 
     "The BlockParsers" should "parse optional empty lines" in {
         val p = optEmptyLines
@@ -29,7 +28,7 @@ class BlockParsersTest extends FlatSpec with ShouldMatchers with BlockParsers{
     it should "detect line types" in {
         val p = line(classOf[CodeLine])
         apply(p, List(new CodeLine("    ", "code"))) should equal (new CodeLine("    ", "code"))
-        evaluating(apply(p, List(new OtherLine("foo")))) should produce[IllegalArgumentException]
+        an [IllegalArgumentException] should be thrownBy(apply(p, List(new OtherLine("foo"))))
     }
     
     it should "cope with HTML" in {

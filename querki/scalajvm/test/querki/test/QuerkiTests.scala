@@ -1,7 +1,6 @@
 package querki.test
 
-import org.scalatest.{WordSpec, BeforeAndAfterAll}
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.{WordSpec, BeforeAndAfterAll, Matchers}
 
 import models.{OID, Thing}
 
@@ -15,7 +14,7 @@ import querki.values.{QLContext, RequestContext, SpaceState}
 
 class QuerkiTests 
   extends WordSpec
-  with ShouldMatchers
+  with Matchers
   with BeforeAndAfterAll
   with EcologyMember
 {
