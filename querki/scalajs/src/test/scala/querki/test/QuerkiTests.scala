@@ -10,6 +10,7 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
+import querki.comm._
 import querki.data._
 import querki.ecology._
 import querki.pages.ThingPageDetails
@@ -37,29 +38,41 @@ trait QuerkiTests extends TestSuite with EcologyMember {
     new querki.identity.UserManagerEcot(ecology)
     new querki.pages.PagesEcot(ecology)
   }
-  
-  trait EntryPointStub {
-    def url:String
+
+  def rawEntryPoint0(name:String)() = {
+    lit(
+      url = s"/test/$name"
+    )
   }
-  case class SpaceEntryPointStub0(name:String, userName:String, spaceId:String)
-  def entryPoint(name:String)(userName:String, spaceId:String) = SpaceEntryPointStub0(name, userName, spaceId)
+  def entryPoint0(name:String)(userName:String, spaceId:String) = {
+    lit(
+      url = s"/test/$userName/$spaceId/$name"
+    )
+  }
+  def entryPoint1(name:String)(userName:String, spaceId:String, p1:String) = {
+    lit(
+      url = s"/test/$userName/$spaceId/$name/$p1"
+    )
+  }
   
   def setupStandardEntryPoints() = {
     def controllers = commStub.controllers
     
     // Entry points referenced in the MenuBar, so need to be present in essentially every Page:
-    controllers.Application.createProperty = { (userName:String, spaceId:String) =>  }
-    controllers.Application.editThing = { (userName:String, spaceId:String, thingId:String) => }
-    controllers.Application.sharing = { (userName:String, spaceId:String) => }
-    controllers.Application.showAdvancedCommands = { (userName:String, spaceId:String, thingId:String) => }
-    controllers.Application.thing = { (userName:String, spaceId:String, thingName:String) => }
-    controllers.Application.viewThing = { (userName:String, spaceId:String, thingId:String) => }
+    controllers.Application.createProperty = { entryPoint0("createProperty") _ }
+    controllers.Application.editThing = { entryPoint1("editThing") _ }
+    controllers.Application.sharing = { entryPoint0("sharing") _ }
+    controllers.Application.showAdvancedCommands = { entryPoint1("showAdvancedCommands") _ }
+    controllers.Application.thing = { entryPoint1("thing") _ }
+    controllers.Application.viewThing = { entryPoint1("viewThing") _ }
     
-    controllers.ExploreController.showExplorer = { (userName:String, spaceId:String, thingId:String) => }
+    controllers.ExploreController.showExplorer = { entryPoint1("showExplorer") _ }
     
-    controllers.AdminController.manageUsers = { () => }
-    controllers.AdminController.showSpaceStatus = { () => }
-    controllers.AdminController.sendSystemMessage = { () => }
+    controllers.AdminController.manageUsers = { rawEntryPoint0("manageUsers") _ }
+    controllers.AdminController.showSpaceStatus = { rawEntryPoint0("showSpaceStatus") _ }
+    controllers.AdminController.sendSystemMessage = { rawEntryPoint0("sendSystemMessage") _ }
+    
+    controllers.TOSController.showTOS = { rawEntryPoint0("showTOS") _ }
   }
 }
 
