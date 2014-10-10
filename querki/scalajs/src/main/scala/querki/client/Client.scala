@@ -10,6 +10,7 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
   
   def implements = Set(classOf[Client])
   
+  lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
   
   override def doCall(req: Request): Future[String] = {

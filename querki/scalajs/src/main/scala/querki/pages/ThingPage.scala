@@ -41,14 +41,16 @@ class ThingPage(e:Ecology) extends Page(e) with EcologyMember {
     div(
       details.customHeader match {
         case Some(header) => new QText(header)
-        case None => new StandardThingHeader(thing)
+        case None => new StandardThingHeader(thing, this)
       },
       renderedContent(p("Loading..."))
     )
   }
 }
 
-class StandardThingHeader(thing:ThingInfo)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+
+  lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
   
   val thingName = thing.displayName
@@ -111,9 +113,9 @@ class StandardThingHeader(thing:ThingInfo)(implicit val ecology:Ecology) extends
           p(cls:="_smallSubtitle _noPrint",
             "(OID: ", a(href:=controllers.Application.thing.spaceUrl(thing.oid), thing.oid),
             thing.linkName.map { linkName =>
-              MSeq(", Link Name: ", a(href:=thingUrl(thing), linkName))
+              MSeq(", Link Name: ", a(href:=page.thingUrl(thing), linkName))
             },
-            ", Model: ", a(href:=thingUrl(model), model.displayName),
+            ", Model: ", a(href:=page.thingUrl(model), model.displayName),
             ")")
         }
         case None => {}

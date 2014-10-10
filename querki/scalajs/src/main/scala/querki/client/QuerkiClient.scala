@@ -42,12 +42,13 @@ object QuerkiClient extends JSApp with EcologyMember {
    * Create all of the Ecots. Every time a new one is created, it should be placed here.
    */
   def createEcots(ecology:Ecology) = {
+    new querki.client.ClientImpl(ecology)
+    new querki.comm.ApiCommEcot(ecology)
     new querki.data.ClientDataEcot(ecology)
     new querki.display.PageManagerEcot(ecology)
+    new querki.display.input.InputGadgetsEcot(ecology)
     new querki.identity.UserManagerEcot(ecology)
     new querki.pages.PagesEcot(ecology)
-    new querki.client.ClientImpl(ecology)
-    new querki.display.input.InputGadgetsEcot(ecology)
   }
   
   // Entry points, exposed for the Javascript layer:

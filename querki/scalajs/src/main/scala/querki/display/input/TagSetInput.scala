@@ -2,7 +2,6 @@ package querki.display.input
 
 import scala.scalajs.js
 import js.JSConverters._
-import js.Dynamic.{literal => lit}
 
 import org.scalajs.dom
 import org.scalajs.jquery._
@@ -30,6 +29,8 @@ class TagSetInput(val rawElement:dom.Element)(implicit e:Ecology) extends InputG
   
   type elemType = dom.HTMLInputElement
 
+  lazy val controllers = interface[querki.comm.ApiComm].controllers
+  
   // Required data attributes of any Tag Set Input:
   lazy val isNames = $(element).data("isnames").asInstanceOf[Boolean]
   lazy val initialValuesJs = $(element).data("current")

@@ -10,6 +10,7 @@ import querki.comm._
 
 class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
   
+  lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val PageManager = interface[PageManager]
   

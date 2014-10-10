@@ -8,7 +8,13 @@ package object comm {
   
   type URL = String
   
-  val controllers = ClientRoutes.controllers
+  trait ApiComm extends EcologyInterface {
+    /**
+     * The root accessor for calling Play-level APIs. Note that most calls, though, go through the
+     * higher-level Client mechanism instead; this is for low-level HTTP calls.
+     */
+    def controllers:js.Dynamic
+  }
 
   /**
    * Yes, this is slightly horrible, but I don't think there's a safer way to do it.

@@ -6,6 +6,8 @@ import scala.util.{Failure, Success, Try}
 
 import org.scalajs.jquery.{JQueryAjaxSettings, JQueryDeferred}
 
+import querki.globals._
+
 /**
  * Provides access to the routing table.
  * 
@@ -21,8 +23,18 @@ import org.scalajs.jquery.{JQueryAjaxSettings, JQueryDeferred}
  * reflects on that, and generates the client-side glue code.
  */
 @scala.scalajs.js.annotation.JSName("clientRoutes")
-object ClientRoutes extends js.Object {
+private [comm] object ClientRoutes extends js.Object {
   def controllers:js.Dynamic = ???
+}
+
+class ApiCommEcot(e:Ecology) extends ClientEcot(e) with ApiComm {
+  
+  def implements = Set(classOf[ApiComm])
+  
+  /**
+   * This Ecot exists primarily to expose this accessor in a managed (and stubbable) way.
+   */
+  lazy val controllers = ClientRoutes.controllers
 }
 
 /**

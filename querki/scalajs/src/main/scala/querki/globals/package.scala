@@ -14,6 +14,8 @@ package object globals {
   
   type JSExport = scala.scalajs.js.annotation.JSExport
   
+  val lit = scala.scalajs.js.Dynamic.literal
+  
   /**
    * The main entry point into jQuery. I alias it to $, to match jQuery idiom.
    */

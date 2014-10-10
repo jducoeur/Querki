@@ -62,13 +62,6 @@ trait Gadget[Output <: dom.Element] extends scalatags.jsdom.Frag {
    */
   def iconButton(iconName:String, addlCls:Seq[String] = Seq.empty) = querkiButton(icon(iconName), addlCls)
   
-  /**
-   * Shortcut for fetching the URL of a Thing.
-   */
-  def thingUrl(thing:ThingInfo)(implicit ecology:Ecology) = {
-    controllers.Application.thing.spaceUrl(thing.urlName)
-  }
-  
   var _elem:Option[Output] = None
   
   /**
