@@ -14,12 +14,22 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
   lazy val DataAccess = interface[querki.data.DataAccess]
   
   override def doCall(req: Request): Future[String] = {
-    // TODO: handle HTTP errors from this apiRequest call. What should we do with them?
-    // Put a message in the Status area?
-    controllers.ClientController.apiRequest(
-        DataAccess.userName, 
-        DataAccess.spaceId, 
-        upickle.write(req)).callAjax()
+    try {
+      // TODO: handle HTTP errors from this apiRequest call. What should we do with them?
+      // Put a message in the Status area?
+      println(s"About to call ${controllers.ClientController.apiRequest}")
+      controllers.ClientController.apiRequest(
+          DataAccess.userName, 
+          DataAccess.spaceId, 
+          upickle.write(req)).callAjax()
+    } catch {
+      // Note that we need to catch and report exceptions here; otherwise, they tend to get
+      // lost inside Autowire:
+      case (ex:Exception) => {
+        println(s"Got exception in doCall: ${ex.getMessage()}")
+        throw ex
+      }
+    }
   }
 
   def read[Result: upickle.Reader](p: String) = upickle.read[Result](p)

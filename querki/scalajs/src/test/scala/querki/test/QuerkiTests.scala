@@ -51,7 +51,9 @@ trait QuerkiTests extends TestSuite with EcologyMember {
   }
   def entryPoint1(name:String)(userName:String, spaceId:String, p1:String) = {
     lit(
-      url = s"/test/$userName/$spaceId/$name/$p1"
+      url = s"/test/$userName/$spaceId/$name/$p1",
+      // TODO: this needs to return a JQueryDeferred:
+      ajax = { () => println(s"Got AJAX call to $name, with parameter $p1") }
     )
   }
   
@@ -73,6 +75,8 @@ trait QuerkiTests extends TestSuite with EcologyMember {
     controllers.AdminController.sendSystemMessage = { rawEntryPoint0("sendSystemMessage") _ }
     
     controllers.TOSController.showTOS = { rawEntryPoint0("showTOS") _ }
+    
+    controllers.ClientController.apiRequest = { entryPoint1("apiRequest") _ }
   }
 }
 
