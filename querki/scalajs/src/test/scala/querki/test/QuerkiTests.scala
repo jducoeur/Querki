@@ -94,17 +94,16 @@ trait QuerkiTests extends TestSuite with EcologyMember {
     }
   }
   var handlers = Map.empty[Seq[String], HandlerRecord[_]]
-  def registerApiHandler[T](handler:AutowireHandler)(implicit tag:scala.reflect.ClassTag[T]) = {
+  def registerApiHandler[T](methods:String*)(handler:AutowireHandler)(implicit tag:scala.reflect.ClassTag[T]) = {
     val packageAndTrait = tag.runtimeClass.getName().split("\\.")
     val splitLocal = packageAndTrait.flatMap(_.split("\\$")).toSeq
 
-    handlers += (splitLocal -> HandlerRecord[T](handler))
+    methods.foreach(method => handlers += ((splitLocal :+ method) -> HandlerRecord[T](handler)))
   }
   def genericApiHandler(request:Core.Request[String]):Future[String] = {
-    val traitPart = request.path.dropRight(1)
-    handlers.get(traitPart) match {
+    handlers.get(request.path) match {
       case Some(handlerRecord) => handlerRecord.handle(request)
-      case None => throw new Exception(s"Couldn't find handler for trait $traitPart")
+      case None => throw new Exception(s"Couldn't find handler for trait ${request.path}")
     }
   }
   

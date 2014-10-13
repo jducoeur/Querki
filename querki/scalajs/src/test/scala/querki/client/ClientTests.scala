@@ -31,7 +31,7 @@ object ClientTests extends QuerkiTests {
     
     "Test url and ajax calls" - {
       setup() 
-      registerApiHandler[ClientTestTrait](new ClientTestEmpty with AutowireHandler {
+      registerApiHandler[ClientTestTrait]("getMsg")(new ClientTestEmpty with AutowireHandler {
         override def getMsg(partial:String) = s"ClientTestImpl got the message $partial"
     
         def handle(request:Core.Request[String]):Future[String] = route[ClientTestTrait](this)(request)
