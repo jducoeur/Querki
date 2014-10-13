@@ -52,8 +52,25 @@ trait QuerkiTests extends TestSuite with EcologyMember {
   def entryPoint1(name:String)(userName:String, spaceId:String, p1:String) = {
     lit(
       url = s"/test/$userName/$spaceId/$name/$p1",
-      // TODO: this needs to return a JQueryDeferred:
-      ajax = { () => println(s"Got AJAX call to $name, with parameter $p1") }
+      
+      // This is returning a JQueryDeferred, essentially.
+      // TODO: make this pluggable!
+      ajax = { () =>
+        lit(
+          done = { (cb:js.Function3[String, String, JQueryDeferred, Any]) =>
+            // Note that we actually call the callback, and thus fulfill the Future in PlayAjax, synchronously.
+            // This is an inaccuracy that could lead to us missing some bugs, but does make the testing more
+            // deterministic.
+            // TODO: enhance the framework to fire the callbacks asynchronously. We'll have to make sure the
+            // Javascript framework doesn't exit prematurely, though, and the test will have to wait for results.
+            cb(s"I am the message from calling $name", "", lit().asInstanceOf[JQueryDeferred])
+          },
+          fail = { (cb:js.Function3[JQueryDeferred, String, String, Any]) =>
+            // We don't do anything here -- we're not failing for now.
+            // TODO: we should do some fail tests!
+          }
+        ) 
+      }
     )
   }
   
