@@ -80,9 +80,39 @@ trait QuerkiTests extends TestSuite with EcologyMember {
       }
     )
   }
-  import autowire.Core.Request
-  // Tests must implement this if they will be doing API requests:
-  def apiHandler(request:Request[String]):Future[String] = ???
+  import autowire._
+  
+//  def read[Result: upickle.Reader](p: String) = upickle.read[Result](p)
+//  def write[Result: upickle.Writer](r: Result) = upickle.write(r)
+//  
+//  // Tests must implement this if they will be doing API requests:
+//  def apiHandler(request:Core.Request[String]):Future[String] = ???
+//  
+  trait AutowireHandler extends autowire.Server[String, upickle.Reader, upickle.Writer] {
+    def read[Result: upickle.Reader](p: String) = upickle.read[Result](p)
+    def write[Result: upickle.Writer](r: Result) = upickle.write(r)
+    
+    def handle(request:Core.Request[String]):Future[String]
+  }
+  case class HandlerRecord[T](handler:AutowireHandler)(implicit tag:scala.reflect.ClassTag[T]) {
+    def handle(request:Core.Request[String]):Future[String] = {
+      handler.handle(request)
+    }
+  }
+  var handlers = Map.empty[Seq[String], HandlerRecord[_]]
+  def registerApiHandler[T](handler:AutowireHandler)(implicit tag:scala.reflect.ClassTag[T]) = {
+    val packageAndTrait = tag.runtimeClass.getName().split("\\.")
+    val splitLocal = packageAndTrait.flatMap(_.split("\\$")).toSeq
+
+    handlers += (splitLocal -> HandlerRecord[T](handler))
+  }
+  def genericApiHandler(request:Core.Request[String]):Future[String] = {
+    val traitPart = request.path.dropRight(1)
+    handlers.get(traitPart) match {
+      case Some(handlerRecord) => handlerRecord.handle(request)
+      case None => throw new Exception(s"Couldn't find handler for trait $traitPart")
+    }
+  }
   
   def setupStandardEntryPoints() = {
     def controllers = commStub.controllers
@@ -107,8 +137,9 @@ trait QuerkiTests extends TestSuite with EcologyMember {
       // Autowire functions
       def write[Result: Writer](r: Result) = upickle.write(r)
       def read[Result: Reader](p: String) = upickle.read[Result](p)
-      val request = read[Request[String]](pickledRequest)
-      apiHandler(request)
+      val request = read[Core.Request[String]](pickledRequest)
+      genericApiHandler(request)
+//      apiHandler(request)
     }) _ }
   }
   
