@@ -80,14 +80,8 @@ trait QuerkiTests extends TestSuite with EcologyMember {
       }
     )
   }
-  import autowire._
   
-//  def read[Result: upickle.Reader](p: String) = upickle.read[Result](p)
-//  def write[Result: upickle.Writer](r: Result) = upickle.write(r)
-//  
-//  // Tests must implement this if they will be doing API requests:
-//  def apiHandler(request:Core.Request[String]):Future[String] = ???
-//  
+  import autowire._
   trait AutowireHandler extends autowire.Server[String, upickle.Reader, upickle.Writer] {
     def read[Result: upickle.Reader](p: String) = upickle.read[Result](p)
     def write[Result: upickle.Writer](r: Result) = upickle.write(r)

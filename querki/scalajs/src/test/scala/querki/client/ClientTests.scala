@@ -26,29 +26,16 @@ object ClientTests extends QuerkiTests {
     def somethingElse():Int = ???
     def another(x:Int):String = ???  
   }
-  
-  object ClientTestImpl extends ClientTestEmpty with AutowireHandler {
-    override def getMsg(partial:String) = s"ClientTestImpl got the message $partial"
-    
-    def handle(request:Core.Request[String]):Future[String] = route[ClientTestTrait](this)(request)
-  }
-//  
-//  override def apiHandler(request:Core.Request[String]):Future[String] = {
-//    val packageAndTrait = classOf[ClientTestTrait].getName().split("\\.")
-//    val splitLocal = packageAndTrait.flatMap(_.split("\\$")).toSeq
-//    println(s"Path to the trait is $splitLocal")
-//    println(s"Path in request is ${request.path}")
-//    val traitPart = request.path.dropRight(1)
-//    println(s"Are they equal? ${splitLocal == traitPart}")
-//    
-//    route[ClientTestTrait](ClientTestImpl)(request)
-//  }
 
   def tests = TestSuite {
     
     "Test url and ajax calls" - {
       setup() 
-      registerApiHandler[ClientTestTrait](ClientTestImpl)
+      registerApiHandler[ClientTestTrait](new ClientTestEmpty with AutowireHandler {
+        override def getMsg(partial:String) = s"ClientTestImpl got the message $partial"
+    
+        def handle(request:Core.Request[String]):Future[String] = route[ClientTestTrait](this)(request)
+      })
       val controllers = interface[querki.comm.ApiComm].controllers
       val entryPoint:PlayCall = controllers.Application.thing("User", "Space", "Thing")
       val url = entryPoint.url
