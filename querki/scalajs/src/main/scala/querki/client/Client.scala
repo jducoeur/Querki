@@ -17,7 +17,6 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
     try {
       // TODO: handle HTTP errors from this apiRequest call. What should we do with them?
       // Put a message in the Status area?
-      println(s"About to call ${controllers.ClientController.apiRequest}")
       controllers.ClientController.apiRequest(
           DataAccess.userName, 
           DataAccess.spaceId, 

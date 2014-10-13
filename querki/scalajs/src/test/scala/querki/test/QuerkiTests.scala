@@ -1,5 +1,7 @@
 package querki.test
 
+import scala.concurrent.Future
+
 import upickle._
 import utest._
 
@@ -51,6 +53,11 @@ trait QuerkiTests extends TestSuite with EcologyMember {
   }
   def entryPoint1(name:String)(userName:String, spaceId:String, p1:String) = {
     lit(
+      url = s"/test/$userName/$spaceId/$name/$p1"
+    )
+  }
+  def ajaxEntryPoint1(name:String, handler:(String => Future[String]))(userName:String, spaceId:String, p1:String) = {
+    lit(
       url = s"/test/$userName/$spaceId/$name/$p1",
       
       // This is returning a JQueryDeferred, essentially.
@@ -63,7 +70,7 @@ trait QuerkiTests extends TestSuite with EcologyMember {
             // deterministic.
             // TODO: enhance the framework to fire the callbacks asynchronously. We'll have to make sure the
             // Javascript framework doesn't exit prematurely, though, and the test will have to wait for results.
-            cb(s"I am the message from calling $name", "", lit().asInstanceOf[JQueryDeferred])
+            handler(p1).map { result => cb(result, "", lit().asInstanceOf[JQueryDeferred]) }
           },
           fail = { (cb:js.Function3[JQueryDeferred, String, String, Any]) =>
             // We don't do anything here -- we're not failing for now.
@@ -73,6 +80,9 @@ trait QuerkiTests extends TestSuite with EcologyMember {
       }
     )
   }
+  import autowire.Core.Request
+  // Tests must implement this if they will be doing API requests:
+  def apiHandler(request:Request[String]):Future[String] = ???
   
   def setupStandardEntryPoints() = {
     def controllers = commStub.controllers
@@ -93,11 +103,14 @@ trait QuerkiTests extends TestSuite with EcologyMember {
     
     controllers.TOSController.showTOS = { rawEntryPoint0("showTOS") _ }
     
-    controllers.ClientController.apiRequest = { entryPoint1("apiRequest") _ }
+    controllers.ClientController.apiRequest = { ajaxEntryPoint1("apiRequest", { pickledRequest =>
+      // Autowire functions
+      def write[Result: Writer](r: Result) = upickle.write(r)
+      def read[Result: Reader](p: String) = upickle.read[Result](p)
+      val request = read[Request[String]](pickledRequest)
+      apiHandler(request)
+    }) _ }
   }
-}
-
-trait ThingPageTests extends QuerkiTests {
   
   lazy val DataSetting = interface[querki.data.DataSetting]
   lazy val PageManager = interface[querki.display.PageManager]
@@ -127,21 +140,30 @@ trait ThingPageTests extends QuerkiTests {
    */
   def requestInfo = RequestInfo(Some(userInfo), Some(spaceInfo), Some(thing1), Seq(model1), false, false, ThingPageDetails(None))
   
-  def setup[Output <: dom.Element](pageContent:scalatags.JsDom.TypedTag[Output]) = {
+  def pageBody = $("body").get(0).asInstanceOf[dom.Element]
+  
+  def setup(bodyContents:Option[dom.Element] = None) = {
     // First, boot the system itself. This is more or less what happens in QuerkiClient:
     setupEcology()
     
     // Stuff the guts of the page into the body:
-    val body = $("body").get(0).asInstanceOf[dom.Element]
-    val contents = pageContent.render
-    $(contents).appendTo(body)
+    bodyContents.map(contents => $(contents).appendTo(pageBody))
     
     // Set things up. This stuff normally happens in client.scala.html:
-    PageManager.setRoot(body)
+    PageManager.setRoot(pageBody)
     PageManager.setImagePath("/")
     
     val pickledRequest = write(requestInfo)
     DataSetting.unpickleRequest(pickledRequest)
+  }
+
+}
+
+trait ThingPageTests extends QuerkiTests {
+  
+  def setupPage[Output <: dom.Element](pageContent:scalatags.JsDom.TypedTag[Output]) = {
+    setup(Some(pageContent.render))
+    
     PageManager.renderPage(querki.pages.PageIDs.ThingPage, "")
   }
 }
