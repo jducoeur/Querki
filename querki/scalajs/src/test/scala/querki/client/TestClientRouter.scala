@@ -14,32 +14,24 @@ trait TestClientRouter {
   
   def commStub:querki.test.ApiCommStub
   
-  import autowire._
   trait AutowireHandler extends autowire.Server[String, upickle.Reader, upickle.Writer] {
     def read[Result: upickle.Reader](p: String) = upickle.read[Result](p)
     def write[Result: upickle.Writer](r: Result) = upickle.write(r)
     
     def handle(request:Core.Request[String]):Future[String]
   }
-  case class HandlerRecord[T](handler:AutowireHandler)(implicit tag:scala.reflect.ClassTag[T]) {
-    def handle(request:Core.Request[String]):Future[String] = {
-      handler.handle(request)
-    }
-  }
-  var handlers = Map.empty[Seq[String], HandlerRecord[_]]
+
+  var handlers = Map.empty[Seq[String], AutowireHandler]
+  
+  /**
+   * Tests should call this to register the handlers that they expect to require.
+   */
   def registerApiHandler[T](methods:String*)(handler:AutowireHandler)(implicit tag:scala.reflect.ClassTag[T]) = {
     val packageAndTrait = tag.runtimeClass.getName().split("\\.")
     val splitLocal = packageAndTrait.flatMap(_.split("\\$")).toSeq
 
-    methods.foreach(method => handlers += ((splitLocal :+ method) -> HandlerRecord[T](handler)))
-  }
-  def genericApiHandler(request:Core.Request[String]):Future[String] = {
-    handlers.get(request.path) match {
-      case Some(handlerRecord) => handlerRecord.handle(request)
-      case None => throw new Exception(s"Couldn't find handler for trait ${request.path}")
-    }
-  }
-  
+    methods.foreach(method => handlers += ((splitLocal :+ method) -> handler))
+  }  
 
   def rawEntryPoint0(name:String)() = {
     lit(
@@ -102,7 +94,10 @@ trait TestClientRouter {
     
     controllers.ClientController.apiRequest = { ajaxEntryPoint1("apiRequest", { pickledRequest =>
       val request = read[Core.Request[String]](pickledRequest)
-      genericApiHandler(request)
+      handlers.get(request.path) match {
+        case Some(handler) => handler.handle(request)
+        case None => throw new Exception(s"Couldn't find handler for trait ${request.path}")
+      }
     }) _ }
   }
 
