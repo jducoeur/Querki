@@ -36,6 +36,7 @@ class WrapperDiv extends Gadget[dom.HTMLDivElement] {
       case Some(elem) => {
         $(elem).empty
         $(elem).append(newContent)
+        $(elem).change()
       }
       case None => {}
     }

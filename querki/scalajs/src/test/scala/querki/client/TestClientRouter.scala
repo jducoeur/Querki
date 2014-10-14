@@ -62,7 +62,11 @@ trait TestClientRouter {
             // deterministic.
             // TODO: enhance the framework to fire the callbacks asynchronously. We'll have to make sure the
             // Javascript framework doesn't exit prematurely, though, and the test will have to wait for results.
-            handler(p1).map { result => cb(result, "", lit().asInstanceOf[JQueryDeferred]) }
+            val fut = handler(p1)
+            fut.onFailure {
+              case ex:Exception => println(s"Got async error $ex"); throw ex
+            }
+            fut.map { result => cb(result, "", lit().asInstanceOf[JQueryDeferred]) }
           },
           fail = { (cb:js.Function3[JQueryDeferred, String, String, Any]) =>
             // We don't do anything here -- we're not failing for now.
@@ -72,6 +76,9 @@ trait TestClientRouter {
       }
     )
   }
+}
+
+trait StandardTestEntryPoints extends TestClientRouter {
   
   def setupStandardEntryPoints() = {
     def controllers = commStub.controllers

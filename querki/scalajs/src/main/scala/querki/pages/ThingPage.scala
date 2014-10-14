@@ -6,7 +6,7 @@ import scala.util.{Failure, Success}
 import upickle._
 import autowire._
 
-import org.scalajs.dom
+import org.scalajs.dom 
 import org.scalajs.jquery._
 
 import scalatags.JsDom.all._
@@ -33,17 +33,18 @@ class ThingPage(e:Ecology) extends Page(e) with EcologyMember {
   def pageContent = {
     val renderedContent = new WrapperDiv
     
-    async {
-      val rendered = await(Client[ThingFunctions].renderThing(DataAccess.thingId).call())
-	  renderedContent.replaceContents(new QText(rendered).render)
+    // NOTE: doing this with async/await seems to swallow exceptions in Autowire:
+    for {
+      rendered <- Client[ThingFunctions].renderThing(DataAccess.thingId).call()
     }
+      renderedContent.replaceContents(new QText(rendered).render); 
     
     div(
       details.customHeader match {
         case Some(header) => new QText(header)
         case None => new StandardThingHeader(thing, this)
       },
-      renderedContent(p("Loading..."))
+      renderedContent(cls:="_pageGuts", p("Loading..."))
     )
   }
 }

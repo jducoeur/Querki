@@ -4,6 +4,7 @@ import scala.concurrent.Future
 
 import upickle._
 import utest._
+import autowire._
 
 import scala.scalajs.js
 import org.scalajs.dom
@@ -17,13 +18,14 @@ import querki.data._
 import querki.ecology._
 import querki.pages.ThingPageDetails
 
-trait QuerkiTests extends TestSuite with EcologyMember with querki.client.TestClientRouter {
+trait QuerkiTests extends TestSuite with EcologyMember with querki.client.StandardTestEntryPoints {
   var ecology:EcologyImpl = null
 
-  def setupEcology() = {
+  def setupEcology(addEntryPointsCb:Option[js.Dynamic => Unit] = None) = {
     ecology = new EcologyImpl
     createEcots(ecology)
     setupStandardEntryPoints()
+    addEntryPointsCb.map(cb => cb(commStub.controllers))
     ecology.init(ClientState()) { state => state }
   }
   
@@ -71,9 +73,9 @@ trait QuerkiTests extends TestSuite with EcologyMember with querki.client.TestCl
   
   def pageBody = $("body").get(0).asInstanceOf[dom.Element]
   
-  def setup(bodyContents:Option[dom.Element] = None) = {
+  def setup(bodyContents:Option[dom.Element] = None, addEntryPointsCb:Option[js.Dynamic => Unit] = None) = {
     // First, boot the system itself. This is more or less what happens in QuerkiClient:
-    setupEcology()
+    setupEcology(addEntryPointsCb)
     
     // Stuff the guts of the page into the body:
     bodyContents.map(contents => $(contents).appendTo(pageBody))
@@ -90,8 +92,23 @@ trait QuerkiTests extends TestSuite with EcologyMember with querki.client.TestCl
 
 trait ThingPageTests extends QuerkiTests {
   
-  def setupPage[Output <: dom.Element](pageContent:scalatags.JsDom.TypedTag[Output]) = {
-    setup(Some(pageContent.render))
+  import models.Wikitext
+  import querki.api._
+  import utest.ExecutionContext.RunNow
+  
+  def setupPage[Output <: dom.Element](
+    pageContent:scalatags.JsDom.TypedTag[Output],
+    addEntryPointsCb:Option[js.Dynamic => Unit] = None) = 
+  {
+    setup(addEntryPointsCb = addEntryPointsCb)
+    
+    val renderedGuts = pageContent.toString
+    
+    registerApiHandler[ThingFunctions]("renderThing")(new ThingFunctionsEmpty with AutowireHandler {
+      override def renderThing(thingId:String):Wikitext = { println(s"Calling renderThing to get $renderedGuts"); Wikitext(renderedGuts) }
+    
+      def handle(request:Core.Request[String]):Future[String] = route[ThingFunctions](this)(request)
+    })
     
     PageManager.renderPage(querki.pages.PageIDs.ThingPage, "")
   }

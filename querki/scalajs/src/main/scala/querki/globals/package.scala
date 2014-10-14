@@ -31,6 +31,8 @@ package object globals {
   
   /**
    * The standard implicit ExecutionContext for Futures. Provide one explicitly if you want to do something different.
+   * 
+   * This should generally be left as runNow; otherwise, it can foul up utest.
    */
-  implicit val queue = scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+  implicit val queue = scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 }
