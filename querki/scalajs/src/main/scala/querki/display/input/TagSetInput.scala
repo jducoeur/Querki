@@ -76,7 +76,7 @@ class TagSetInput(val rawElement:dom.Element)(implicit e:Ecology) extends InputG
     // pretty easy for us to generate a *change* event here, not necessarily a full rewrite! We are currently
     // grabbing and sending the full values list, but we could instead combine changeType and data into a
     // proper change event.
-    $(element).on("manifestchange", { (evt:JQueryEventObject, changeType:String, data:js.Any) =>
+    $(element).on("manifestchange", { (/*evt:JQueryEventObject, changeType:String, data:js.Any*/) =>
       saveChange(values)
     })
   }

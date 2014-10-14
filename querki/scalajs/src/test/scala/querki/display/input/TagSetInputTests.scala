@@ -29,7 +29,6 @@ object TagSetInputTests extends ThingPageTests with ScalatagUtils {
       
       // Monkey-patch in a stub of the main Manifest call, so the TagSetInput gadget doesn't crash:
       $.fn.asInstanceOf[js.Dynamic].manifest = { (p:Any) =>
-        println("In Manifest Stub")
         p match {
           case "values" => Seq("My First Tag", "My Second Tag").toJSArray
           case _ => $("body")
@@ -42,23 +41,19 @@ object TagSetInputTests extends ThingPageTests with ScalatagUtils {
             tpe:="text",
             data("isnames"):=false,
             data("current"):="""[{"display":"First Thing", "id":".firstthing"}, {"display":"Second Thing", "id":"secondthing"}]""",
-            data("prop"):="linksetpropoid"
+            data("prop"):="linksetpropoid",
+            name:="v-linksetpropoid-MyThingId"
           )
         ),
         Some({controllers => controllers.ClientController.marcoPolo = { entryPoint1("marcoPolo") _ }})
       )
       
-      val changePromise = Promise[String]
-      println(s"_pageGuts.length == ${$("._pageGuts").length}")
-      $("._pageGuts").change { (evt:JQueryEventObject) => println(s"Got change"); changePromise.success("Changed") }
-      async {
-        println("About to await")
-        val result = await(changePromise.future)
-        println("Got the result!")
-        val manifestBase = $("._tagSetInput")
-        println(s"manifestBase.length == ${manifestBase.length}")
-        assert(manifestBase.length == 1)        
-      }
+      // Since things run synchronously, the page content should have filled by now:
+      val manifestBase = $("._tagSetInput")
+      assert(manifestBase.length == 1)
+      
+      // Now -- can we trigger a change, and get the save message out?
+      manifestBase.trigger("manifestchange", Seq("My First Tag", "My Second Tag").toJSArray)
     }    
     
   }
