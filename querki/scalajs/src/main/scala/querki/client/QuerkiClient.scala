@@ -37,18 +37,28 @@ object QuerkiClient extends JSApp with EcologyMember {
     createEcots(ecology)
     ecology.init(ClientState()) { state => state }
   }
-
+  
   /**
-   * Create all of the Ecots. Every time a new one is created, it should be placed here.
+   * Creates the Ecots that are used straightforwardly by most tests, as well as the running code.
    */
-  def createEcots(ecology:Ecology) = {
+  def createCommonEcots(ecology:Ecology) = {
     new querki.client.ClientImpl(ecology)
-    new querki.comm.ApiCommEcot(ecology)
     new querki.data.ClientDataEcot(ecology)
     new querki.display.PageManagerEcot(ecology)
     new querki.display.input.InputGadgetsEcot(ecology)
     new querki.identity.UserManagerEcot(ecology)
     new querki.pages.PagesEcot(ecology)
+    new querki.display.StatusLineEcot(ecology)    
+  }
+
+  /**
+   * Create all of the Ecots. Every time a new one is created, it should be placed here.
+   */
+  def createEcots(ecology:Ecology) = {
+    createCommonEcots(ecology)
+    
+    // List here any Ecots that usually need to be stubbed out for testing:
+    new querki.comm.ApiCommEcot(ecology)
   }
   
   // Entry points, exposed for the Javascript layer:

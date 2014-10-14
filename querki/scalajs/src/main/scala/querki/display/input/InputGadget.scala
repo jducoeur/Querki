@@ -27,6 +27,7 @@ abstract class InputGadget(val ecology:Ecology) extends Gadget[dom.Element] with
   
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
+  lazy val StatusLine = interface[querki.display.StatusLine]
   
   /**
    * Hook whatever events are appropriate for this Gadget.
@@ -42,14 +43,21 @@ abstract class InputGadget(val ecology:Ecology) extends Gadget[dom.Element] with
    *    in whatever serialized form the server-side PType expects.
    */
   def saveChange(vs:List[String]) = {
+    StatusLine.showUntilChange("Saving...")
     val path = $(element).attr("name")
     println(s"Sending new values for $path: $vs")
     async {
       val response = await(Client[EditFunctions].alterProperty(DataAccess.thingId, path, ChangePropertyValue(vs)).call())
 	  println(s"Result was $response")
 	  response match {
-        case PropertyChanged => $(element).trigger("savecomplete")
-        case PropertyChangeError(msg) => $(element).trigger("saveerror")
+        case PropertyChanged => {
+          StatusLine.showBriefly("Saved")
+          $(element).trigger("savecomplete")
+        }
+        case PropertyChangeError(msg) => {
+          StatusLine.showUntilChange(s"Error: $msg")
+          $(element).trigger("saveerror")
+        }
       }
     }    
   }

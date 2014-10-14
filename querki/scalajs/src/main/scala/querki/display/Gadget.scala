@@ -48,6 +48,7 @@ trait Gadget[Output <: dom.Element] extends scalatags.jsdom.Frag with ScalatagUt
   def iconButton(iconName:String, addlCls:Seq[String] = Seq.empty) = querkiButton(icon(iconName), addlCls)
   
   var _elem:Option[Output] = None
+  def elem = _elem.get
   
   /**
    * Concrete Gadgets can override this to perform actions after we've created the actual Element.

@@ -12,6 +12,7 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val Pages = interface[querki.pages.Pages]
+  lazy val StatusLineInternal = interface[StatusLineInternal]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
   var _displayRoot:Option[dom.Element] = None
@@ -40,6 +41,7 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   def renderPage(pageID:PageID, pickled:String) = {
     val page =
       div(
+        StatusLineInternal.statusGadget,
         new MenuBar, 
         Pages.constructPage(pageID, pickled), 
         new StandardFooter)

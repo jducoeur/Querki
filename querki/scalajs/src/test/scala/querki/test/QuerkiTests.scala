@@ -13,6 +13,7 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
+import querki.client.QuerkiClient
 import querki.comm._
 import querki.data._
 import querki.ecology._
@@ -33,14 +34,9 @@ trait QuerkiTests extends TestSuite with EcologyMember with querki.client.Standa
   def commStub = _commStub.get
   
   def createEcots(ecology:Ecology) = {
-    _commStub = Some(new ApiCommStub(ecology))
+    QuerkiClient.createCommonEcots(ecology)
     
-    new querki.client.ClientImpl(ecology)
-    new querki.data.ClientDataEcot(ecology)
-    new querki.display.PageManagerEcot(ecology)
-    new querki.display.input.InputGadgetsEcot(ecology)
-    new querki.identity.UserManagerEcot(ecology)
-    new querki.pages.PagesEcot(ecology)
+    _commStub = Some(new ApiCommStub(ecology))
   }
   
   lazy val DataSetting = interface[querki.data.DataSetting]

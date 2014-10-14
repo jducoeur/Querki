@@ -82,6 +82,7 @@ object TagSetInputTests extends ThingPageTests with ScalatagUtils {
       // Wait to be told that we're gotten to savecomplete:
       promise.future.map { result =>
         assert(result == "Got it")
+        assert($("#statusText").text == "Saved")
       }
     }    
     

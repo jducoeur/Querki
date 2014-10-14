@@ -27,4 +27,16 @@ package object display {
      */
     def renderPage(pageID:querki.pages.PageIDs.PageID, pickled:String)
   }
+  
+  trait StatusLine extends EcologyInterface {
+    /**
+     * Display the given message for a few seconds.
+     */
+    def showBriefly(msg:String):Unit
+    
+    /**
+     * Display the given message until there is another show.
+     */
+    def showUntilChange(msg:String):Unit
+  }
 }
