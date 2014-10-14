@@ -26,6 +26,7 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets {
    */
   val registry = Map[String, InputConstr](
     ("_textEdit" -> { new TextInputGadget(_) }),
+    ("_largeTextEdit" -> { new LargeTextInputGadget(_) }),
     ("_tagSetInput" -> { new TagSetInput(_) })
   )
   

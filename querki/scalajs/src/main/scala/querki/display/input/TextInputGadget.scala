@@ -21,3 +21,19 @@ class TextInputGadget(val rawElement:dom.Element)(implicit e:Ecology) extends In
     input(cls:="_textEdit", tpe:="text")
     
 }
+
+class LargeTextInputGadget(val rawElement:dom.Element)(implicit e:Ecology) extends InputGadget(e) {
+  
+  type elemType = dom.HTMLTextAreaElement
+  
+  // TBD: do we need an unhook, to avoid leaks?
+  def hook() = {
+    $(element).change({ event:JQueryEventObject =>
+      saveChange(List(element.value))
+    })
+  }
+  
+  def doRender() =
+    textarea(cls:="_largeTextEdit")
+    
+}

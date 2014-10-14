@@ -101,7 +101,7 @@ trait ThingPageTests extends QuerkiTests {
     val renderedGuts = pageContent.toString
     
     registerApiHandler[ThingFunctions]("renderThing")(new ThingFunctionsEmpty with AutowireHandler {
-      override def renderThing(thingId:String):Wikitext = { println(s"Calling renderThing to get $renderedGuts"); Wikitext(renderedGuts) }
+      override def renderThing(thingId:String):Wikitext = Wikitext(renderedGuts)
     
       def handle(request:Core.Request[String]):Future[String] = route[ThingFunctions](this)(request)
     })

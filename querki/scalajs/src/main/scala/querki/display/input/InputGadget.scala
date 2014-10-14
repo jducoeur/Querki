@@ -45,10 +45,8 @@ abstract class InputGadget(val ecology:Ecology) extends Gadget[dom.Element] with
   def saveChange(vs:List[String]) = {
     StatusLine.showUntilChange("Saving...")
     val path = $(element).attr("name")
-    println(s"Sending new values for $path: $vs")
     async {
       val response = await(Client[EditFunctions].alterProperty(DataAccess.thingId, path, ChangePropertyValue(vs)).call())
-	  println(s"Result was $response")
 	  response match {
         case PropertyChanged => {
           StatusLine.showBriefly("Saved")
