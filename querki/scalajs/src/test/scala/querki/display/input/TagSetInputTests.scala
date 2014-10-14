@@ -14,6 +14,7 @@ import org.scalajs.jquery._
 
 import querki.globals._
 
+import querki.api._
 import querki.comm._
 import querki.test._
 import querki.util.ScalatagUtils
@@ -35,6 +36,8 @@ object TagSetInputTests extends ThingPageTests with ScalatagUtils {
         }
       }
       
+      val propPath = "v-linksetpropoid-MyThingId"
+      
       setupPage(
         div(
           input(cls:="_tagSetInput propEditor",
@@ -42,18 +45,33 @@ object TagSetInputTests extends ThingPageTests with ScalatagUtils {
             data("isnames"):=false,
             data("current"):="""[{"display":"First Thing", "id":".firstthing"}, {"display":"Second Thing", "id":"secondthing"}]""",
             data("prop"):="linksetpropoid",
-            name:="v-linksetpropoid-MyThingId"
+            name:=propPath
           )
         ),
         Some({controllers => controllers.ClientController.marcoPolo = { entryPoint1("marcoPolo") _ }})
       )
+      registerApiHandler[EditFunctions]("alterProperty")(new EditFunctionsEmpty with AutowireHandler {
+        import EditFunctions._
+        override def alterProperty(thingId:String, path:String, change:PropertyChange):PropertyChangeResponse = {
+          assertMatch(change) { case ChangePropertyValue(List("My First Tag", "My Second Tag")) => }
+          assert(path == propPath)
+          PropertyChanged
+        }
+    
+        def handle(request:Core.Request[String]):Future[String] = route[EditFunctions](this)(request)
+      })
       
       // Since things run synchronously, the page content should have filled by now:
       val manifestBase = $("._tagSetInput")
       assert(manifestBase.length == 1)
       
       // Now -- can we trigger a change, and get the save message out?
+      val promise = Promise[String]
+      manifestBase.on("savecomplete", { () => promise.success("Got it") })
       manifestBase.trigger("manifestchange", Seq("My First Tag", "My Second Tag").toJSArray)
+      promise.future.map { result =>
+        assert(result == "Got it")
+      }
     }    
     
   }

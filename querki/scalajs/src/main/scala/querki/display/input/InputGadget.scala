@@ -47,6 +47,10 @@ abstract class InputGadget(val ecology:Ecology) extends Gadget[dom.Element] with
     async {
       val response = await(Client[EditFunctions].alterProperty(DataAccess.thingId, path, ChangePropertyValue(vs)).call())
 	  println(s"Result was $response")
+	  response match {
+        case PropertyChanged => $(element).trigger("savecomplete")
+        case PropertyChangeError(msg) => $(element).trigger("saveerror")
+      }
     }    
   }
 }
