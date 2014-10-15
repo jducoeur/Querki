@@ -49,7 +49,7 @@ object ApplicationBuild extends Build with UniversalKeys {
       EclipseKeys.skipParents in ThisBuild := false
     ) ++ (
       // ask scalajs project to put its outputs in scalajsOutputDir
-      Seq(packageExternalDepsJS, packageInternalDepsJS, packageExportedProductsJS, packageLauncher, fastOptJS, fullOptJS) map { packageJSKey =>
+      Seq(packageExternalDepsJS, packageInternalDepsJS, packageExportedProductsJS, packageJSDependencies, packageLauncher, fastOptJS, fullOptJS) map { packageJSKey =>
         crossTarget in (scalajs, Compile, packageJSKey) := scalajsOutputDir.value
       }
     ) ++ sharedDirectorySettings
@@ -64,12 +64,11 @@ object ApplicationBuild extends Build with UniversalKeys {
 	  relativeSourceMaps := true,
 	  // These are to give Rhino a pseudo-DOM for testing:
 	  jsDependencies += scala.scalajs.sbtplugin.RuntimeDOM,
+	  
 	  // Javascript libraries we require:
-//	  unmanagedResourceDirectories in Compile += file("scalajvm") / "public" / "javascripts",
-//	  unmanagedResourceDirectories in Test += file("scalajvm") / "public" / "javascripts",
-//	  unmanagedResourceDirectories in Compile += file("scalajs") / "src" / "main" / "resources",
-//	  unmanagedResourceDirectories in Test += file("scalajs") / "src" / "main" / "resources",
-//	  jsDependencies += ProvidedJS / "jquery.manifest.js",
+	  skip in packageJSDependencies := false,
+	  jsDependencies += ProvidedJS / "jquery.manifest.js",
+	  
       libraryDependencies ++= Dependencies.scalajs
     ) ++ sharedDirectorySettings ++ utest.jsrunner.Plugin.utestJsSettings
 

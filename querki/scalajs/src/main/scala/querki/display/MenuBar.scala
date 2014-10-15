@@ -193,7 +193,10 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
                 ul(cls:="nav",
                   for (section <- sections)
                     yield displayNavigable(section)
-                )
+                ),
+                
+                form(cls:="navbar-search pull-right",
+                  new SearchGadget())
               )
             )
           )
