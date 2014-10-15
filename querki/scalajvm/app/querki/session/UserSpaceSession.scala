@@ -12,7 +12,7 @@ import models.Thing.PropMap
 import querki.globals._
 import Implicits.execContext
 
-import querki.api.{EditFunctions, ThingFunctions}
+import querki.api._
 import querki.identity.{Identity, User}
 import querki.session.messages._
 import querki.spaces.messages.{ChangeProps, CurrentState, SessionRequest, SpacePluginMsg, ThingError, ThingFound}
@@ -68,10 +68,11 @@ trait SessionApiImpl extends EcologyMember {
 private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
   extends Actor with Stash with EcologyMember with TimeoutChild
   with autowire.Server[String, upickle.Reader, upickle.Writer]
-  with ThingFunctionsImpl with EditFunctionsImpl with MarcoPoloImpl
+  with ThingFunctionsImpl with EditFunctionsImpl with MarcoPoloImpl with SearchFunctionsImpl
 {
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
+  lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Person = interface[querki.identity.Person]
   lazy val Tags = interface[querki.tags.Tags]
   lazy val UserValues = interface[querki.uservalues.UserValues]
@@ -335,6 +336,13 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
                 // route() is asynchronous, so we need to store away the sender!
                 val senderSaved = sender
                 route[EditFunctions](this)(req).foreach { result =>
+                  senderSaved ! ClientResponse(result)                  
+                }
+              }
+              case "SearchFunctions" => {
+                // route() is asynchronous, so we need to store away the sender!
+                val senderSaved = sender
+                route[SearchFunctions](this)(req).foreach { result =>
                   senderSaved ! ClientResponse(result)                  
                 }
               }

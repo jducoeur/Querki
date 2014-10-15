@@ -10,7 +10,7 @@ import querki.pages.ThingPageDetails
 
 trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions {
   
-  lazy val ClientApi = interface[querki.api.ClientApi]
+  def ClientApi:querki.api.ClientApi
   lazy val HtmlUI = interface[querki.html.HtmlUI]
   
   def renderThing(thingId:String):Wikitext = withThing(thingId) { thing =>
