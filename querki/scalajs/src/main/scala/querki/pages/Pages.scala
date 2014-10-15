@@ -15,6 +15,7 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   def constructPage(id:PageIDs.PageID, pickled:String):Page = {
     id match {
       case PageIDs.ThingPage => new ThingPage(ecology)
+      case PageIDs.SearchResultsPage => new SearchResultsPage(ecology)
     }
   }
   
