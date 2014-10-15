@@ -67,7 +67,13 @@ object ApplicationBuild extends Build with UniversalKeys {
 	  
 	  // Javascript libraries we require:
 	  skip in packageJSDependencies := false,
+	  jsDependencies += ProvidedJS / "jquery-ui-1.10.0.custom.min.js",
 	  jsDependencies += ProvidedJS / "jquery.manifest.js",
+	  jsDependencies += ProvidedJS / "jquery.ui.touch-punch.min.js",
+	  jsDependencies += ProvidedJS / "bootstrap.min.js",
+	  jsDependencies += ProvidedJS / "jquery.autosize-min.js",
+	  jsDependencies += ProvidedJS / "jquery.raty.min.js",
+	  jsDependencies += ProvidedJS / "jquery.histogram.js",
 	  
       libraryDependencies ++= Dependencies.scalajs
     ) ++ sharedDirectorySettings ++ utest.jsrunner.Plugin.utestJsSettings
