@@ -8,6 +8,9 @@ import ScalaJSKeys._
 import com.typesafe.sbt.packager.universal.UniversalKeys
 import com.typesafe.sbteclipse.core.EclipsePlugin.EclipseKeys
 
+import com.typesafe.sbt.web.SbtWeb
+import com.typesafe.sbt.web.Import.pipelineStages
+
 object ApplicationBuild extends Build with UniversalKeys {
 
   val scalajsOutputDir = Def.settingKey[File]("directory for javascript files output by scalajs")
@@ -19,7 +22,7 @@ object ApplicationBuild extends Build with UniversalKeys {
   lazy val scalajvm = Project(
     id = "scalajvm",
     base = file("scalajvm")
-  ) enablePlugins (play.PlayScala) settings (scalajvmSettings: _*) aggregate (scalajs)
+  ) enablePlugins (play.PlayScala/*, SbtWeb*/) settings (scalajvmSettings: _*) aggregate (scalajs)
 
   lazy val scalajs = Project(
     id   = "scalajs",
@@ -46,6 +49,9 @@ object ApplicationBuild extends Build with UniversalKeys {
       stage <<= stage dependsOn (fullOptJS in (scalajs, Compile)),
       libraryDependencies ++= Dependencies.scalajvm,
       commands += preStartCommand,
+	  
+//	  pipelineStages := Seq(digest, gzip),
+	  
       EclipseKeys.skipParents in ThisBuild := false
     ) ++ (
       // ask scalajs project to put its outputs in scalajsOutputDir
