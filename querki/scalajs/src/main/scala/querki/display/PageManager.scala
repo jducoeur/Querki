@@ -32,8 +32,11 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     }
   }
   
-  def setTitle(title:String) = {
+  val menuHolder = new WrapperDiv
+  
+  def update(title:String) = {
     _window.foreach { w => w.document.title = title }
+    menuHolder.replaceContents((new MenuBar).render)
   }
   
   /**
@@ -100,7 +103,7 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     val fullPage =
       div(
         StatusLineInternal.statusGadget,
-        new MenuBar, 
+        menuHolder(new MenuBar), 
         page, 
         new StandardFooter)
     

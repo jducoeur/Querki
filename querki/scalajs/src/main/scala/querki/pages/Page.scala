@@ -57,7 +57,7 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
 
     pageContent.foreach { content =>
       renderedContent.replaceContents(content.content.render)
-      PageManager.setTitle(content.title)
+      PageManager.update(content.title)
     }
     
     outerPage

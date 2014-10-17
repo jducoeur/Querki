@@ -22,9 +22,9 @@ package object display {
     def imagePath:String
     
     /**
-     * Declare the title of the current Page.
+     * Update the current Page's display. This is called after the Page fetches its contents.
      */
-    def setTitle(title:String):Unit
+    def update(title:String):Unit
   }
   
   trait StatusLine extends EcologyInterface {
