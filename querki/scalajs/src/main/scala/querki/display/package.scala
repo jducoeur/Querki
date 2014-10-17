@@ -20,6 +20,11 @@ package object display {
      * The URL path to get to the system images.
      */
     def imagePath:String
+    
+    /**
+     * Declare the title of the current Page.
+     */
+    def setTitle(title:String):Unit
   }
   
   trait StatusLine extends EcologyInterface {

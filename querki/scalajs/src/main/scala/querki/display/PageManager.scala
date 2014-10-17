@@ -32,6 +32,10 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     }
   }
   
+  def setTitle(title:String) = {
+    _window.foreach { w => w.document.title = title }
+  }
+  
   /**
    * Declare the top-level container that we are going to render the page into. This
    * is typically going to be the body itself, but we're deliberately not assuming that.

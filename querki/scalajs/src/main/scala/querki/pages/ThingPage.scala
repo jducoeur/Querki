@@ -25,14 +25,7 @@ class ThingPage(name:String, params:ParamMap)(implicit e:Ecology) extends Page(e
   lazy val Client = interface[querki.client.Client]
   lazy val DataSetting = interface[querki.data.DataSetting]
   
-  type DetailsType = ThingPageDetails
-  
-  // TODO: need to set the title *after* we load the content!
-  def title = "TO DO" //thing.displayName
-  
   def pageContent = {
-    val renderedContent = new WrapperDiv
-    
     // NOTE: doing this with async/await seems to swallow exceptions in Autowire:
     for {
       pageDetails:ThingPageDetails <- Client[ThingFunctions].getThingPage(name).call()
@@ -50,9 +43,7 @@ class ThingPage(name:String, params:ParamMap)(implicit e:Ecology) extends Page(e
           new QText(rendered)
         )
     }
-      renderedContent.replaceContents(guts.render); 
-    
-    renderedContent(cls:="_pageGuts", p("Loading..."))
+      yield PageContents(pageDetails.thingInfo.displayName, guts)
   }
 }
 

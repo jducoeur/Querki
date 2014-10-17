@@ -1,7 +1,10 @@
 package querki.pages
 
+import scala.concurrent.Future
+
 import org.scalajs.dom
 import scalatags.JsDom.all._
+import scalatags.JsDom.TypedTag
 
 import querki.globals._
 
@@ -15,9 +18,8 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   
-  type DetailsType <: PageDetails
-  
   lazy val DataAccess = interface[querki.data.DataAccess]
+  lazy val PageManager = interface[querki.display.PageManager]
   
   /**
    * Shortcut for fetching the URL of a Thing.
@@ -26,26 +28,19 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
     controllers.Application.thing.spaceUrl(thing.urlName)
   }
   
-  /**
-   * The title of this page. Concrete subclasses must fill this in.
-   */
-  def title:String
+  case class PageContents(title:String, content:TypedTag[dom.HTMLDivElement])
   
   /**
    * The contents of this page. Concrete subclasses must fill this in.
    */
-  def pageContent:Modifier
-  
-  val contentDiv = new WrapperDiv
-  
-  def replaceContents(newContent:dom.Element) = {
-    contentDiv.replaceContents(newContent)
-  }
+  def pageContent:Future[PageContents]
   
   def doRender() = {
-    div(cls:="guts container-fluid",
+    val renderedContent = new WrapperDiv
+    
+    val outerPage = div(cls:="guts container-fluid",
       div(cls:="row-fluid",
-        contentDiv(cls:="querki-content span12",
+        div(cls:="querki-content span12",
           // The link to the Space:
           DataAccess.space match {
             case Some(space) =>
@@ -54,9 +49,17 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
               )
             case None => div(cls:="_smallSubtitle _spaceLink _noPrint", raw("&nbsp;"))
           },
-          pageContent
+          // TODO: replace this with something prettier:
+          renderedContent(p("Loading..."))
         )
       )
     )
+
+    pageContent.foreach { content =>
+      renderedContent.replaceContents(content.content.render)
+      PageManager.setTitle(content.title)
+    }
+    
+    outerPage
   }
 }
