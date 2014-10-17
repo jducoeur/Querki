@@ -15,7 +15,7 @@ trait SearchFunctionsImpl extends SessionApiImpl with SearchFunctions {
     rawResultsOpt.map { rawResults =>
       val transformed = rawResults.results.map { result =>
         SearchResult(
-          ClientApi.thingInfo(Some(result.thing), rc).get,
+          ClientApi.thingInfo(result.thing, rc),
           result.prop.displayName,
           result.score,
           result.text,

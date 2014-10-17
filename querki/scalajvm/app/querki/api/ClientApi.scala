@@ -17,8 +17,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi {
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val DataModelAccess = interface[querki.datamodel.DataModelAccess]
   
-  def thingInfo(topt:Option[Thing], rc:RequestContext):Option[ThingInfo] = {
-    topt.map { t => 
+  def thingInfo(t:Thing, rc:RequestContext):ThingInfo = {
       implicit val state = rc.state.get
       val user = rc.requesterOrAnon
       val editable = AccessControl.canEdit(state, user, t.id)
@@ -34,10 +33,6 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi {
         editable && DataModelAccess.isDeletable(t),
         isModel && AccessControl.canCreate(state, user, t),
         t.isInstanceOf[IsTag])
-    }
-  }
-  def thingInfo(thing:Thing, rc:RequestContext):ThingInfo = {
-    thingInfo(Some(thing), rc).get
   }
   
   def spaceInfo(topt:Option[SpaceState], rc:RequestContext):Option[SpaceInfo] = {
@@ -60,31 +55,11 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi {
     }
   }
   
-  def requestInfo(rc:RequestContext, details:PageDetails):RequestInfo = {
-    def relatedThings:Seq[ThingInfo] = {
-      val modelOpt = for {
-        thing <- rc.thing
-        model <- thing.getModelOpt(rc.state.get)
-      }
-        yield model
-        
-      modelOpt match {
-        case Some(model) => Seq(thingInfo(model, rc))
-        case None => Seq.empty
-      }
-    }
-    
+  def requestInfo(rc:RequestContext):RequestInfo = {
     RequestInfo(
       userInfo(rc.requester), 
       spaceInfo(rc.state, rc), 
-      thingInfo(rc.thing, rc),
-      relatedThings,
       rc.isOwner,
-      rc.requesterOrAnon.isAdmin,
-      details)
-  }
-  
-  def pickleRequest(rc:RequestContext, details:PageDetails):String = {
-    write(requestInfo(rc, details))
+      rc.requesterOrAnon.isAdmin)
   }
 }

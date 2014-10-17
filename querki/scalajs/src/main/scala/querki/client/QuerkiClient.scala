@@ -17,7 +17,9 @@ object QuerkiClient extends JSApp with EcologyMember {
   
   /**
    * The top-level initializer for the application. This will be called first, when the page loads,
-   * and should do all necessary setup. After that is done, build and display the current page.
+   * and should do all necessary setup.
+   * 
+   * Note that the actual page rendering happens when the outer page calls setRoot().
    */
   def main(): Unit = {
     setupEcology()
@@ -62,6 +64,7 @@ object QuerkiClient extends JSApp with EcologyMember {
   }
   
   // Entry points, exposed for the Javascript layer:
+  // TODO: not all of this is probably needed any more:
   @JSExport def dataSetting = interface[querki.data.DataSetting]
   @JSExport def pageManager = interface[querki.display.PageManager]
   @JSExport def userManager = interface[querki.identity.UserAccess]

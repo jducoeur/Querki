@@ -48,9 +48,11 @@ package object data {
   }
   
   /**
-   * This trait is used only by the API code, and is used to store the data we fetch from the server.
+   * This trait is used to store the data we fetch from the server.
    */
   trait DataSetting extends EcologyInterface {
     def unpickleRequest(pickled:String)
+    def setThing(thing:Option[ThingInfo])
+    def setModel(model:Option[ThingInfo])
   }
 }

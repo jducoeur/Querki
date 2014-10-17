@@ -46,12 +46,12 @@ class ClientController extends ApplicationBase {
 	def read[Result: upickle.Reader](p: String) = upickle.read[Result](p)
 	def write[Result: upickle.Writer](r: Result) = upickle.write(r)
   }
-    
-  def thing(ownerId:String, spaceId:String, thingId:String) = withRouting(ownerId, spaceId) { implicit rc =>
+  
+  def space(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { implicit rc =>
     val client = new LocalClient(rc)
     
-    client[ThingFunctions].getThingInfo(thingId).call().map { requestInfo =>
-      Ok(views.html.client(rc, ThingPage, write(requestInfo)))    
+    client[ThingFunctions].getRequestInfo().call().map { requestInfo =>
+      Ok(views.html.client(rc, write(requestInfo)))
     }
   }
   

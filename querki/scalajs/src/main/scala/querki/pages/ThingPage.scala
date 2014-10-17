@@ -16,36 +16,43 @@ import models.{Kind, Wikitext}
 import querki.globals._
 
 import querki.api.ThingFunctions
+import querki.comm._
 import querki.data.ThingInfo
 import querki.display.{Gadget, QText, WrapperDiv}
-import querki.comm._
 
-class ThingPage(e:Ecology) extends Page(e) with EcologyMember {
+class ThingPage(name:String, params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
 
   lazy val Client = interface[querki.client.Client]
+  lazy val DataSetting = interface[querki.data.DataSetting]
   
   type DetailsType = ThingPageDetails
   
-  val thing = DataAccess.mainThing.get
-  
-  def title = thing.displayName
+  // TODO: need to set the title *after* we load the content!
+  def title = "TO DO" //thing.displayName
   
   def pageContent = {
     val renderedContent = new WrapperDiv
     
     // NOTE: doing this with async/await seems to swallow exceptions in Autowire:
     for {
-      rendered <- Client[ThingFunctions].renderThing(DataAccess.thingId).call()
+      pageDetails:ThingPageDetails <- Client[ThingFunctions].getThingPage(name).call()
+      rendered = pageDetails.rendered
+      dummy = {
+        DataSetting.setThing(Some(pageDetails.thingInfo))
+        DataSetting.setModel(pageDetails.modelInfo)
+      }
+      guts = 
+        div(
+          pageDetails.customHeader match {
+            case Some(header) => new QText(header)
+            case None => new StandardThingHeader(pageDetails.thingInfo, this)
+          },
+          new QText(rendered)
+        )
     }
-      renderedContent.replaceContents(new QText(rendered).render); 
+      renderedContent.replaceContents(guts.render); 
     
-    div(
-      details.customHeader match {
-        case Some(header) => new QText(header)
-        case None => new StandardThingHeader(thing, this)
-      },
-      renderedContent(cls:="_pageGuts", p("Loading..."))
-    )
+    renderedContent(cls:="_pageGuts", p("Loading..."))
   }
 }
 

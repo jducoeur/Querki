@@ -19,7 +19,9 @@ POST    /TOS                        @controllers.TOSController.handleTOS
 GET     /u/:userName                @controllers.LoginController.userByName(userName)
 POST    /u/:userName/_changePassword @controllers.LoginController.changePassword(userName)
 
-GET     /u/:userName/:spaceId/      @controllers.Application.space(userName, spaceId)
+# The old way to address a Space, now replaced by the new client:
+# GET     /u/:userName/:spaceId/      @controllers.Application.space(userName, spaceId)
+GET     /u/:userName/:spaceId/      @controllers.ClientController.space(userName, spaceId) 
 
 GET     /u/:userName/:spaceId/createThing @controllers.Application.createThing(userName, spaceId, model:Option[String])
 GET     /u/:userName/:spaceId/createProperty @controllers.Application.createProperty(userName, spaceId)
@@ -63,7 +65,7 @@ POST    /u/:userName/:spaceId/_photoUpload   @controllers.PhotoController.upload
 
 # API CALLS
 # TODO: this should eventually replace the normal thing path, below:
-GET     /u/:userName/:spaceId/client @controllers.ClientController.thing(userName, spaceId, thingId)
+# GET     /u/:userName/:spaceId/client @controllers.ClientController.thing(userName, spaceId, thingId)
 POST    /u/:userName/:spaceId/_apiRequest @controllers.ClientController.apiRequest(userName, spaceId, pickledRequest)
 GET     /u/:userName/:spaceId/_marcoPolo @controllers.ClientController.marcoPolo(userName, spaceId, propId)
 

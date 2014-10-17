@@ -13,19 +13,12 @@ class ClientDataEcot(e:Ecology) extends ClientEcot(e) with DataAccess with DataS
   var _request:Option[RequestInfo] = None
   def request = _request.get
   def space = _request.flatMap(_.space)
-  def mainThing = _request.flatMap(_.thing)
-  def knownThings:Map[String, ThingInfo] = {
-    (Map.empty[String, ThingInfo] /: request.relatedThings) { (m, thing) =>
-      m + (thing.oid -> thing)
-    }
-  }
-  def mainModel = {
-    for {
-      thing <- mainThing
-      model <- knownThings.get(thing.modelOid)
-    }
-      yield model
-  }
+  
+  var mainThing:Option[ThingInfo] = None
+  var mainModel:Option[ThingInfo] = None
+  
+  def setThing(thing:Option[ThingInfo]) = mainThing = thing
+  def setModel(model:Option[ThingInfo]) = mainModel = model
   
   @JSExport
   def unpickleRequest(pickled:String) = {

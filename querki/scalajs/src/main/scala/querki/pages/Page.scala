@@ -19,9 +19,6 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
   
   lazy val DataAccess = interface[querki.data.DataAccess]
   
-  // HACK: this downcast is ugly and a bit dangerous. Can we do this in a more typesafe way?
-  lazy val details = DataAccess.request.pageDetails.asInstanceOf[DetailsType]
-  
   /**
    * Shortcut for fetching the URL of a Thing.
    */

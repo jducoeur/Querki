@@ -12,10 +12,10 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
    * This is a bit inelegant and coupled, but there is no great answer, and it doesn't
    * actually violate DRY.
    */
-  def constructPage(id:PageIDs.PageID, pickled:String):Page = {
-    id match {
-      case PageIDs.ThingPage => new ThingPage(ecology)
-      case PageIDs.SearchResultsPage => new SearchResultsPage(ecology)
+  def constructPage(name:String, params:ParamMap):Page = {
+    name match {
+      case "_search" => new SearchResultsPage(ecology)
+      case _ => new ThingPage(name, params)
     }
   }
   

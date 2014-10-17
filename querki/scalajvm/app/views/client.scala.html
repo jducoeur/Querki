@@ -1,4 +1,4 @@
-@(rc:PlayRequestContext, pageID:querki.pages.PageIDs.PageID, pickled:String)
+@(rc:PlayRequestContext, pickled:String)
 
 @import routes.javascript._
 
@@ -72,18 +72,17 @@
     
     <script>
       var pickledJSON = @Html(pickled)
-      
+    
       $(function() {
         var client = querki.client.QuerkiClient();
-      
-        var root = $("#_root").get(0);
-        client.pageManager.setRoot(root);
-        
+  
         client.pageManager.setImagePath('@routes.Assets.at("images")');
         
         client.dataSetting.unpickleRequest(JSON.stringify(pickledJSON));
-        
-        client.pageManager.renderPage(@pageID, "");
+
+        // This should come last -- it causes the page to actually render:      
+        var root = $("#_root").get(0);
+        client.pageManager.setRoot(window, root);
       });
     </script>
   </head>

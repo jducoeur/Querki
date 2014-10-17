@@ -5,9 +5,13 @@ import querki.globals._
 package object pages {
   trait Pages extends EcologyInterface {
     /**
-     * Given the information sent from the Client -- the ID of a Page class, and the
-     * pickled information about that page -- build the page.
+     * Given the name and parameters to a Page, build a new instance.
      */
-    def constructPage(id:PageIDs.PageID, pickled:String):Page
+    def constructPage(name:String, params:ParamMap):Page
   }
+  
+  /**
+   * Page parameters.
+   */
+  type ParamMap = Map[String,String]
 }

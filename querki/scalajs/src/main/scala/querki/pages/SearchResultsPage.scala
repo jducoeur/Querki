@@ -8,7 +8,9 @@ class SearchResultsPage(e:Ecology) extends Page(e) with EcologyMember {
   
   type DetailsType = SearchPageDetails
   
-  def title = details.results.map(request => s"Search Results for $request").getOrElse("No results found")
+  def title = "TO DO"
+  
+//  def title = details.results.map(request => s"Search Results for $request").getOrElse("No results found")
 
   def pageContent = 
     div(

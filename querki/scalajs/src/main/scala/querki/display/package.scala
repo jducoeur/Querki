@@ -9,7 +9,7 @@ package object display {
     /**
      * Actually render the page, inside the given root.
      */
-    def setRoot(root:dom.Element):Unit
+    def setRoot(windowIn:dom.Window, root:dom.Element):Unit
     
     /**
      * Set the folder where images are kept.
@@ -20,12 +20,6 @@ package object display {
      * The URL path to get to the system images.
      */
     def imagePath:String
-    
-    /**
-     * Actually show the page, passing in the pickled information. (Which may be empty string
-     * if not relevant.)
-     */
-    def renderPage(pageID:querki.pages.PageIDs.PageID, pickled:String)
   }
   
   trait StatusLine extends EcologyInterface {

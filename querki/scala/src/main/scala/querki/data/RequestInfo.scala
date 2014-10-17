@@ -9,8 +9,6 @@ import querki.pages.PageDetails
 case class RequestInfo(
   user:Option[UserInfo], 
   space:Option[SpaceInfo],
-  thing:Option[ThingInfo],
-  relatedThings:Seq[ThingInfo],
   isOwner:Boolean,
-  isAdmin:Boolean,
-  pageDetails:PageDetails)
+  isAdmin:Boolean
+  )

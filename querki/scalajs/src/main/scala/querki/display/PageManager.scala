@@ -6,7 +6,7 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
-import querki.pages.PageIDs.PageID
+import querki.pages.Page
 
 class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   def implements = Set(classOf[PageManager])
@@ -18,6 +18,9 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   
   var _displayRoot:Option[dom.Element] = None
   def displayRoot = _displayRoot.get
+  
+  var _window:Option[dom.Window] = None
+  def window = _window.get
   
   override def init() = {
     // Adds the :notUnder() pseudo-selector to jQuery, which selects only elements that are not contained
@@ -34,8 +37,12 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
    * is typically going to be the body itself, but we're deliberately not assuming that.
    */
   @JSExport
-  def setRoot(root:dom.Element) = {
+  def setRoot(windowIn:dom.Window, root:dom.Element) = {
     _displayRoot = Some(root)
+    _window = Some(windowIn)
+    
+    // The system should all be booted, so let's go render:
+    invokeFromHash()
   }
   
   var _imagePath:Option[String] = None
@@ -46,18 +53,54 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   }
   
   /**
+   * Based on the hash part of the current location, load the appropriate page.
+   */
+  def invokeFromHash() = {
+    // Slice off the hash itself:
+    val hash = window.location.hash.substring(1)
+    val hashParts = hash.split("\\?")
+    if (hashParts.length == 0)
+      throw new Exception("Somehow wound up with a completely empty hash?")
+    
+    val pageName = hashParts(0)
+    val pageParams =
+      if (hashParts.length == 1)
+        None
+      else
+        Some(hashParts(1).split("&"))
+    val paramMap = pageParams match {
+      case Some(params) => {
+        val pairs = params.map { param =>
+          val pairArray = param.split("=")
+          val key = pairArray(0)
+          val v =
+            if (pairArray.length == 1)
+              "true"
+            else
+              pairArray(1)
+          (key, v)
+        }
+        Map(pairs:_*)
+      }
+      case None => Map.empty[String, String]
+    }
+    
+    val page = Pages.constructPage(pageName, paramMap)
+    renderPage(page)
+  }
+  
+  /**
    * Actually display the full page.
    */
-  @JSExport
-  def renderPage(pageID:PageID, pickled:String) = {
-    val page =
+  def renderPage(page:Page) = {
+    val fullPage =
       div(
         StatusLineInternal.statusGadget,
         new MenuBar, 
-        Pages.constructPage(pageID, pickled), 
+        page, 
         new StandardFooter)
     
     $(displayRoot).empty()
-    $(displayRoot).append(page.render)
+    $(displayRoot).append(fullPage.render)
   }
 }

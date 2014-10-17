@@ -250,7 +250,7 @@ disallow: /
     
     rawForm.fold(
       // TODO: What can cause this?
-      errors => doError(routes.Application.space(ownerId, spaceId), "Something went wrong"),
+      errors => doError(routes.Application.thing(ownerId, spaceId, spaceId), "Something went wrong"),
       info => {
         val context = QLRequestContext(rc)
     
@@ -567,14 +567,14 @@ disallow: /
         if (rc.APICall) {
           Ok("Deleted")
         } else {
-          Redirect(routes.Application.space(ownerId, spaceId)).flashing("info" -> (displayName + " deleted."))
+          Redirect(routes.Application.thing(ownerId, spaceId, spaceId)).flashing("info" -> (displayName + " deleted."))
         }
       }
       case ThingError(error, stateOpt) => {
         if (rc.APICall) {
           InternalServerError(error.display(Some(rc)))
         } else {
-          doError(routes.Application.space(ownerId, spaceId), error)
+          doError(routes.Application.thing(ownerId, spaceId, spaceId), error)
         }
       }
     }
@@ -583,11 +583,11 @@ disallow: /
   def search(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId) { implicit rc =>
     implicit val request = rc.request
     searchForm.bindFromRequest.fold(
-      errors => { doError(routes.Application.space(ownerId, spaceId), "That wasn't a legal search") },
+      errors => { doError(routes.Application.thing(ownerId, spaceId, spaceId), "That wasn't a legal search") },
       searchInput => {
         import querki.search._
         val resultsOpt = Search.search(rc, searchInput)
-        resultsOpt.map(results => Ok(views.html.searchResults(rc, results))).map(fRes(_)).getOrElse(doError(routes.Application.space(ownerId, spaceId), "That wasn't a legal search"))
+        resultsOpt.map(results => Ok(views.html.searchResults(rc, results))).map(fRes(_)).getOrElse(doError(routes.Application.thing(ownerId, spaceId, spaceId), "That wasn't a legal search"))
       }
     )
   }

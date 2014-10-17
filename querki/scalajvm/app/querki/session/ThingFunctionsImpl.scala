@@ -13,17 +13,25 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions {
   def ClientApi:querki.api.ClientApi
   lazy val HtmlUI = interface[querki.html.HtmlUI]
   
-  def renderThing(thingId:String):Wikitext = withThing(thingId) { thing =>
-    thing.render(rc)
-  }
+  def getRequestInfo():RequestInfo = ClientApi.requestInfo(rc)
 
-  def getThingInfo(thingId:String):RequestInfo = withThing(thingId) { thing =>
+  def getThingPage(thingId:String):ThingPageDetails = withThing(thingId) { thing =>
     implicit val state = rc.state.get
-    val pageHeaderOpt = for {
+    
+    val thingInfo = ClientApi.thingInfo(thing, rc)
+    // Note that both the root Thing and (more importantly) TagThings won't have a Model:
+    val modelInfo = for {
+      model <- thing.getModelOpt
+    } 
+      yield ClientApi.thingInfo(model, rc)
+    
+    val customHeaderOpt = for {
       pv <- thing.getPropOpt(HtmlUI.PageHeaderProperty)
     }
       yield pv.v.wikify(thing.thisAsContext(rc))
-        
-    ClientApi.requestInfo(rc, ThingPageDetails(pageHeaderOpt))
+
+    val rendered = thing.render(rc)
+    
+    ThingPageDetails(thingInfo, modelInfo, customHeaderOpt, rendered)
   }
 }
