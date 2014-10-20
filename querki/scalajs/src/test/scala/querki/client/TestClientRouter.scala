@@ -85,6 +85,7 @@ trait StandardTestEntryPoints extends TestClientRouter {
     
     // Entry points referenced in the MenuBar, so need to be present in essentially every Page:
     controllers.Application.createProperty = { entryPoint0("createProperty") _ }
+    controllers.Application.doCreateThing2 = { entryPoint1("doCreateThing2") _ }
     controllers.Application.editThing = { entryPoint1("editThing") _ }
     controllers.Application.sharing = { entryPoint0("sharing") _ }
     controllers.Application.showAdvancedCommands = { entryPoint1("showAdvancedCommands") _ }

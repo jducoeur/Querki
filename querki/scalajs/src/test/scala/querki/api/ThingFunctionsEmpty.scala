@@ -1,9 +1,10 @@
 package querki.api
 
 import models.Wikitext
-import querki.data._
+import querki.data.RequestInfo
+import querki.pages.ThingPageDetails
 
 class ThingFunctionsEmpty extends ThingFunctions {
-  def renderThing(thingId:String):Wikitext = ???
-  def getThingInfo(thingId:String):RequestInfo = ???
+  def getRequestInfo():RequestInfo = ???
+  def getThingPage(thingId:String):ThingPageDetails = ???
 }

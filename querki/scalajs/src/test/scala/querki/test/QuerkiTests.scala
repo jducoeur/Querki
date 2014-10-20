@@ -65,9 +65,9 @@ trait QuerkiTests extends TestSuite with EcologyMember with querki.client.Standa
   /**
    * The RequestInfo for a very generic ThingPage.
    */
-  def requestInfo = RequestInfo(Some(userInfo), Some(spaceInfo), Some(thing1), Seq(model1), false, false, ThingPageDetails(None))
+  def requestInfo = RequestInfo(Some(userInfo), Some(spaceInfo), false, false)
   
-  def pageBody = $("body").get(0).asInstanceOf[dom.Element]
+  def pageBody = $("body").get(0).asInstanceOf[dom.HTMLBodyElement]
   
   def setup(bodyContents:Option[dom.Element] = None, addEntryPointsCb:Option[js.Dynamic => Unit] = None) = {
     // First, boot the system itself. This is more or less what happens in QuerkiClient:
@@ -77,7 +77,6 @@ trait QuerkiTests extends TestSuite with EcologyMember with querki.client.Standa
     bodyContents.map(contents => $(contents).appendTo(pageBody))
     
     // Set things up. This stuff normally happens in client.scala.html:
-    PageManager.setRoot(pageBody)
     PageManager.setImagePath("/")
     
     val pickledRequest = write(requestInfo)
@@ -92,6 +91,8 @@ trait ThingPageTests extends QuerkiTests {
   import querki.api._
   import utest.ExecutionContext.RunNow
   
+  def pageName = thing1.linkName.get
+  
   def setupPage[Output <: dom.Element](
     pageContent:scalatags.JsDom.TypedTag[Output],
     addEntryPointsCb:Option[js.Dynamic => Unit] = None) = 
@@ -100,12 +101,22 @@ trait ThingPageTests extends QuerkiTests {
     
     val renderedGuts = pageContent.toString
     
-    registerApiHandler[ThingFunctions]("renderThing")(new ThingFunctionsEmpty with AutowireHandler {
-      override def renderThing(thingId:String):Wikitext = Wikitext(renderedGuts)
+    registerApiHandler[ThingFunctions]("getThingPage")(new ThingFunctionsEmpty with AutowireHandler {
+      override def getThingPage(thingId:String):ThingPageDetails = {
+        ThingPageDetails(
+          thing1,
+          Some(model1),
+          None,
+          Wikitext(renderedGuts)
+        )
+      }
     
       def handle(request:Core.Request[String]):Future[String] = route[ThingFunctions](this)(request)
     })
     
-    PageManager.renderPage(querki.pages.PageIDs.ThingPage, "")
+    val window = pageBody.ownerDocument.defaultView
+    window.location.hash = "#" + pageName
+    // This will cause the page to render, based on the current hash:
+    PageManager.setRoot(window, pageBody)    
   }
 }

@@ -75,7 +75,9 @@ object ApplicationBuild extends Build with UniversalKeys {
 	  skip in packageJSDependencies := false,
 	  jsDependencies += ProvidedJS / "jquery-ui-1.10.0.custom.min.js",
 	  jsDependencies += ProvidedJS / "jquery.manifest.js",
-	  jsDependencies += ProvidedJS / "jquery.ui.touch-punch.min.js",
+	  // Touch Punch needs to come *after* jQuery UI, or PhantomJS croaks. But I don't
+	  // yet know how to declare this dependency; currently, the order seems to be random:
+//	  jsDependencies += ProvidedJS / "jquery.ui.touch-punch.js",
 	  jsDependencies += ProvidedJS / "bootstrap.min.js",
 	  jsDependencies += ProvidedJS / "jquery.autosize-min.js",
 	  jsDependencies += ProvidedJS / "jquery.raty.min.js",
