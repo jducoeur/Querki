@@ -45,7 +45,8 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
           DataAccess.space match {
             case Some(space) =>
               div(cls:="_smallSubtitle _spaceLink _noPrint",
-                a(href:=controllers.Application.thing.spaceUrl(DataAccess.spaceId), space.displayName)
+                // TODO: the hashing shouldn't be hard-coded here:
+                a(href:=s"#${DataAccess.spaceId}"/*controllers.Application.thing.spaceUrl(DataAccess.spaceId)*/, space.displayName)
               )
             case None => div(cls:="_smallSubtitle _spaceLink _noPrint", raw("&nbsp;"))
           },

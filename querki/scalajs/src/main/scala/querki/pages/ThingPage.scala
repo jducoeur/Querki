@@ -101,7 +101,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
                   title:=s"Create another ${model.displayName}",
                   href:=controllers.Application.doCreateThing2.spaceUrl(model.urlName))
               }
-              case None => {}
+              case _ => {}
             }
           )
         }
