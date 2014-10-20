@@ -13,6 +13,7 @@ import querki.comm._
 
 trait ManifestFacade extends JQuery {
   def manifest(cmd:String):Any = ???
+  def manifest(cmd:String, params:js.Object):Any = ???
   def manifest(config:js.Object):this.type = ???
 }
 object ManifestFacade {

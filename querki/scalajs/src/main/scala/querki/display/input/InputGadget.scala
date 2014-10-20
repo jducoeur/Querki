@@ -1,6 +1,5 @@
 package querki.display.input
 
-import scala.async.Async._
 import upickle._
 import autowire._
 
@@ -45,8 +44,7 @@ abstract class InputGadget(val ecology:Ecology) extends Gadget[dom.Element] with
   def saveChange(vs:List[String]) = {
     StatusLine.showUntilChange("Saving...")
     val path = $(element).attr("name")
-    async {
-      val response = await(Client[EditFunctions].alterProperty(DataAccess.thingId, path, ChangePropertyValue(vs)).call())
+    Client[EditFunctions].alterProperty(DataAccess.thingId, path, ChangePropertyValue(vs)).call().foreach { response =>
 	  response match {
         case PropertyChanged => {
           StatusLine.showBriefly("Saved")
@@ -57,6 +55,6 @@ abstract class InputGadget(val ecology:Ecology) extends Gadget[dom.Element] with
           $(element).trigger("saveerror")
         }
       }
-    }    
+    }
   }
 }

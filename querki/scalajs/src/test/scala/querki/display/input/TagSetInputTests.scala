@@ -12,6 +12,8 @@ import querki.globals._
 import querki.api._
 import querki.test._
 
+import ManifestFacade._
+
 object TagSetInputTests extends InputTestBase {
         
   val propPath = "v-linksetpropoid-MyThingId"
@@ -22,22 +24,13 @@ object TagSetInputTests extends InputTestBase {
     // an obvious way to load the Manifest Javascript code into the test harness. But we can at
     // least check the gadget itself a bit:
     "The TagSetInput Gadget should hook in, and respond to manifestchanges" - {
-      
-      // Monkey-patch in a stub of the main Manifest call, so the TagSetInput gadget doesn't crash:
-      $.fn.asInstanceOf[js.Dynamic].manifest = { (p:Any) =>
-        p match {
-          case "values" => Seq("My First Tag", "My Second Tag").toJSArray
-          case _ => $("body")
-        }
-      }
-      
       setupPage(
         // Guts of the Thing Page:
         div(
           input(cls:="_tagSetInput propEditor",
             tpe:="text",
-            data("isnames"):=false,
-            data("current"):="""[{"display":"First Thing", "id":".firstthing"}, {"display":"Second Thing", "id":"secondthing"}]""",
+            data("isnames"):=true,
+            data("current"):="""[{"display":"My First Tag", "id":"My First Tag"}]""",
             data("prop"):="linksetpropoid",
             name:=propPath
           )
@@ -55,10 +48,11 @@ object TagSetInputTests extends InputTestBase {
       val manifestBase = $("._tagSetInput")
       val fut = prepToChange(manifestBase)
       
-      // Tell the TagSetInput Gadget that the Manifest has changed:
-      // TODO: once we figure out how to load Manifest's Javascript in tests, try to do this more
-      // realistically:
-      manifestBase.trigger("manifestchange", Seq("My First Tag", "My Second Tag").toJSArray)
+      // Change the contents of the Manifest, which should cause the save message to go out:
+      manifestBase.manifest("add", lit(
+        "display" -> "My Second Tag",
+        "id" -> "My Second Tag"
+      ))
       
       // Wait to be told that we're gotten to savecomplete:
       fut
