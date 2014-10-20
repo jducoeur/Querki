@@ -383,3 +383,12 @@ body {
     top: 55px;
   }
 }
+
+/*******************************
+ * Search styles
+ */
+
+.searchResultHighlight {
+  font-weight: bold;
+  background-color: #FAD2DF;
+}

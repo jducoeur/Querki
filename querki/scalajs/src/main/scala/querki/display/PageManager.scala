@@ -7,7 +7,7 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
-import querki.pages.Page
+import querki.pages.{Page, ParamMap}
 
 class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   def implements = Set(classOf[PageManager])
@@ -99,8 +99,21 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
       case None => Map.empty[String, String]
     }
     
+    renderPage(pageName, paramMap)
+  }
+  
+  def showPage(pageName:String, paramMap:ParamMap) = {
+    val paramStr =
+      if (paramMap.isEmpty)
+        ""
+      else
+        "?" + paramMap.map(pair => s"${pair._1}=${pair._2}").mkString("&")
+    window.location.hash = s"#$pageName$paramStr"
+  }
+  
+  def renderPage(pageName:String, paramMap:ParamMap):Unit = {
     val page = Pages.constructPage(pageName, paramMap)
-    renderPage(page)
+    renderPage(page)    
   }
   
   /**

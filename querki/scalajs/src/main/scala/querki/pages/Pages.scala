@@ -14,7 +14,7 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
    */
   def constructPage(name:String, params:ParamMap):Page = {
     name match {
-      case "_search" => new SearchResultsPage(ecology)
+      case "_search" => new SearchResultsPage(params)
       case _ => new ThingPage(name, params)
     }
   }

@@ -7,6 +7,7 @@ import scalatags.JsDom.all._
 import querki.globals._
 
 import querki.comm._
+import querki.pages.SearchGadget
 
 class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
   

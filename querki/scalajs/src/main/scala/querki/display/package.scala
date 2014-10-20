@@ -3,6 +3,7 @@ package querki
 import org.scalajs.dom
 
 import querki.globals._
+import querki.pages.ParamMap
 
 package object display {
   trait PageManager extends EcologyInterface {
@@ -25,6 +26,11 @@ package object display {
      * Update the current Page's display. This is called after the Page fetches its contents.
      */
     def update(title:String):Unit
+    
+    /**
+     * Switch to the specified page. This is fairly low-level; use higher-level APIs when possible.
+     */
+    def showPage(pageName:String, paramMap:ParamMap)
   }
   
   trait StatusLine extends EcologyInterface {
