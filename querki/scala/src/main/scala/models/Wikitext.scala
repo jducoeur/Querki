@@ -104,6 +104,21 @@ case class QWikitext(wiki:String) extends Wikitext {
    * for QText. Note that this does no XML escaping!
    */
   def plaintext = internal
+  
+  def plusInternal(otherWiki:String, insertNewline:Boolean):Wikitext = 
+    QWikitext(wiki + (if (insertNewline) "\n" else "") + otherWiki)
+  
+  /**
+   * In order to avoid massively-nested data structures getting transmitted to the Client,
+   * when we are simply combining QWikitexts (the common case), just smash them together.
+   */
+  override def +(other:Wikitext, insertNewline:Boolean = false):Wikitext = 
+    other match {
+	  case QWikitext(otherWiki) => plusInternal(otherWiki, insertNewline)
+	  case CompositeWikitext(QWikitext(otherWiki), right, otherInsert) =>
+	    CompositeWikitext(plusInternal(otherWiki, insertNewline), right, otherInsert)
+	  case _ => super.+(other, insertNewline)
+	}
 }
 
 /**
@@ -165,6 +180,20 @@ case class CompositeWikitext(left:Wikitext, right:Wikitext, insertNewline:Boolea
   def internal = throw new Exception("Nothing should be calling CompositeWikitext.internal!")
   
   val keepRaw = false
+    
+  /**
+   * In order to avoid massively-nested data structures getting transmitted to the Client,
+   * when we are simply combining QWikitexts (the common case), just smash them together.
+   */
+  override def +(other:Wikitext, insertNewline:Boolean = false):Wikitext = 
+    other match {
+	  case QWikitext(otherWiki) => right match {
+	    // If our RHS and the other are QWikitexts, smash them:
+	    case QWikitext(rightWiki) => CompositeWikitext(left, right + other, insertNewline)
+		case _ => super.+(other, insertNewline)
+	  }
+	  case _ => super.+(other, insertNewline)
+	}
 }
 
 object Wikitext {
