@@ -110,7 +110,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
       modelOpt match {
         case Some(model) => {
           p(cls:="_smallSubtitle _noPrint",
-            "(OID: ", a(href:=controllers.Application.thing.spaceUrl(thing.oid), thing.oid),
+            "(OID: ", a(href:=page.thingUrl(thing.oid), thing.oid),
             thing.linkName.map { linkName =>
               MSeq(", Link Name: ", a(href:=page.thingUrl(thing), linkName))
             },

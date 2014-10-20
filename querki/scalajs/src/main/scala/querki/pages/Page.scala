@@ -24,9 +24,11 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
   /**
    * Shortcut for fetching the URL of a Thing.
    */
-  def thingUrl(thing:ThingInfo)(implicit ecology:Ecology) = {
-    controllers.Application.thing.spaceUrl(thing.urlName)
+  def thingUrl(thing:ThingInfo)(implicit ecology:Ecology):String = {
+    thingUrl(thing.urlName)
   }
+  
+  def thingUrl(name:String) = s"#$name"
   
   case class PageContents(title:String, content:TypedTag[dom.HTMLDivElement])
   
@@ -45,8 +47,7 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
           DataAccess.space match {
             case Some(space) =>
               div(cls:="_smallSubtitle _spaceLink _noPrint",
-                // TODO: the hashing shouldn't be hard-coded here:
-                a(href:=s"#${DataAccess.spaceId}"/*controllers.Application.thing.spaceUrl(DataAccess.spaceId)*/, space.displayName)
+                a(href:=thingUrl(DataAccess.spaceId), space.displayName)
               )
             case None => div(cls:="_smallSubtitle _spaceLink _noPrint", raw("&nbsp;"))
           },
