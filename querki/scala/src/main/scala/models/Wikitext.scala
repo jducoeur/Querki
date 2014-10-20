@@ -2,7 +2,7 @@ package models
 
 import language.implicitConversions
 
-import querki.qtext.{Decorator, Transformer}
+import querki.qtext.{MainDecorator, Transformer}
 import querki.html.Html
 import querki.util.DebugRenderable
 
@@ -173,7 +173,10 @@ object Wikitext {
   val nl = Wikitext("\n")
 }
 
-class QuerkiTransformer extends Transformer with Decorator {
+// NOTE: MainDecorator is defined separately on Client and Server, so they can have slightly
+// tweaked behavior.
+
+class QuerkiTransformer extends Transformer with MainDecorator {
     override def deco() = this
     // We now allow XML in QText, but note that the parser only allows a few, whitelisted constructs:
     override def allowVerbatimXml():Boolean = true
@@ -183,14 +186,14 @@ class QuerkiTransformer extends Transformer with Decorator {
     override def decorateParagraphClose():String = """</div>"""
 }
 
-class RawTransformer extends Transformer with Decorator {
+class RawTransformer extends Transformer with MainDecorator {
     override def deco() = this
     override def allowVerbatimXml():Boolean = true
     override def decorateParagraphOpen():String = ""
     override def decorateParagraphClose():String = ""    
 }
 
-class SpanTransformer extends Transformer with Decorator {
+class SpanTransformer extends Transformer with MainDecorator {
     override def deco() = this
     override def allowVerbatimXml():Boolean = true
     override def decorateParagraphOpen():String = "<span>"

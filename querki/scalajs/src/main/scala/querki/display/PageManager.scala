@@ -2,6 +2,7 @@ package querki.display
 
 import scala.scalajs.js
 import org.scalajs.dom
+import org.scalajs.jquery._
 import scalatags.JsDom.all._
 
 import querki.globals._
@@ -50,6 +51,12 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     
     // The system should all be booted, so let's go render:
     invokeFromHash()
+
+    // Whenever the hash changes, update the window. This is the main mechanism for navigation
+    // within the client!
+    $(windowIn).on("hashchange", { (evt:JQueryEventObject) =>
+      invokeFromHash()
+    })
   }
   
   var _imagePath:Option[String] = None
