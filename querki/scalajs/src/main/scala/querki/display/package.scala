@@ -1,5 +1,7 @@
 package querki
 
+import scala.concurrent.Future
+
 import org.scalajs.dom
 
 import querki.globals._
@@ -38,11 +40,12 @@ package object display {
     def showPage(pageName:String, paramMap:ParamMap)
     
     /**
-     * Call to pay attention to changes.
+     * If you need to be signaled when the page next changes, use this.
+     * 
+     * IMPORTANT: this is an edge-trigger! Use with care! After the page changes, this will reset
+     * to a new Future.
      */
-    def observePageChanges(listener:PageListener):Unit
-    
-    def unobservePageChanges(listener:PageListener):Unit
+    def nextChangeFuture:Future[Page]
   }
   
   trait StatusLine extends EcologyInterface {

@@ -30,10 +30,15 @@ object JQueryEventCreator {
 import JQueryEventCreator._
 
 object SearchResultsTests extends ThingPageTests {
-  
+
+  /**
+   * This will execute the given trigger code (which should cause a Page change), 
+   * and returns a Future that will be fulfilled once the resulting Page is fully
+   * loaded. 
+   */
   def afterPageChange(trigger: => Unit):Future[dom.HTMLDivElement] = {
     val promise = Promise[dom.HTMLDivElement]
-    PageManager.observePageChanges { (root, page) =>
+    PageManager.nextChangeFuture.map { page =>
       page.renderedContentFuture.map { content =>
         promise.success(content)
       }
@@ -57,13 +62,25 @@ object SearchResultsTests extends ThingPageTests {
           .75,
           "Sandbox",
           List(0))
+      val result2 = SearchResult(
+          ThingInfo(".sandbox2", Some("Sandbox-2"), "Sandbox 2", ".simpleThing", models.Kind.Thing, false, true, true, false, false),
+          "Display Name",
+          .70,
+          "Sandbox 2",
+          List(0))
+      val result3 = SearchResult(
+          ThingInfo(".anotherThing", Some("Another-Thing"), "Another Thing", ".simpleThing", models.Kind.Thing, false, true, true, false, false),
+          "Default View",
+          .60,
+          "A random sandbox, containing sand.",
+          List(9, 29))
           
       val query2 = "floobity"
       
       registerApiHandler[SearchFunctions]("search")(new SearchFunctions with AutowireHandler {
         def search(q:String):Option[SearchResults] = {
           if (q == query1) {
-            Some(SearchResults(q, Seq(result1)))
+            Some(SearchResults(q, Seq(result3, result1, result2)))
           } else if (q == query2) {
             None
           } else {
@@ -88,7 +105,13 @@ object SearchResultsTests extends ThingPageTests {
         }
       
       contentFut.map { content =>
-        assert(resultHeader.text == s"""Found 1 matches for "$query1"""")
+        assert(resultHeader.text == s"""Found 3 matches for "$query1"""")
+        val results = $("._searchResult")
+        assert(results.length == 3)
+        // result3 should be at index 2, and should contain 2 highlighted sections:
+        val complexResult = results.get(2)
+        val highlights = $(complexResult).find(".searchResultHighlight")
+        assert(highlights.length == 2)
       }
     }
   }

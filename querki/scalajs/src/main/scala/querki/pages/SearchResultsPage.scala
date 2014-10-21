@@ -74,7 +74,7 @@ class SearchResultsPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   def showResult(result:SearchResult):Modifier = {
     MSeq(
       dt(b(a(href:=thingUrl(result.thing), s"${result.thing.displayName} (${result.propName})"))),
-      dd(pre(code(boldfaceResult(result))))
+      dd(cls:="_searchResult", pre(code(boldfaceResult(result))))
     )
   }
 

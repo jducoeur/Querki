@@ -1,5 +1,7 @@
 package querki.display
 
+import scala.concurrent.{Future, Promise}
+
 import scala.scalajs.js
 import org.scalajs.dom
 import org.scalajs.jquery._
@@ -33,13 +35,11 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     }
   }
   
-  var listeners = Set.empty[PageListener]
-  
-  def observePageChanges(listener:PageListener) = {
-    listeners = listeners + listener
-  }
-  def unobservePageChanges(listener:PageListener) = {
-    listeners = listeners - listener
+  private var _nextChangePromise:Option[Promise[Page]] = None
+  def nextChangeFuture:Future[Page] = {
+    if (_nextChangePromise.isEmpty)
+      _nextChangePromise = Some(Promise[Page])
+    _nextChangePromise.get.future
   }
   
   val menuHolder = new WrapperDiv
@@ -145,6 +145,6 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     $(displayRoot).empty()
     $(displayRoot).append(fullPage.render)
     
-    listeners.foreach { _(displayRoot, page) }
+    _nextChangePromise.foreach { _.success(page) }
   }
 }
