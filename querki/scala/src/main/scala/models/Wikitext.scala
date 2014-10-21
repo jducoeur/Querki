@@ -67,15 +67,18 @@ sealed trait Wikitext extends DebugRenderable {
    */
   def plaintext:String
   
-  /**
-   * Used to build composite wikitexts from smaller ones.
-   */
-  def contents:Seq[Wikitext] = Seq(this)
+  def contents:Seq[Wikitext]
+  
+  def toComposite():CompositeWikitext
   
   /**
    * Wikitext can be concatenated just like strings.
+   *
+   * Note that this always results in a CompositeWikitext, for ease of management, but will
+   * often smash the contents together if they are matching types.
    */
-  def +(other:Wikitext, insertNewline:Boolean = false):Wikitext = new CompositeWikitext(this, other, insertNewline)
+  def +(other:Wikitext, insertNewline:Boolean = false):Wikitext = 
+    toComposite().append(other.toComposite(), insertNewline)
   
   def debugRender = plaintext
 }
@@ -107,18 +110,9 @@ case class QWikitext(wiki:String) extends Wikitext {
   
   def plusInternal(otherWiki:String, insertNewline:Boolean):Wikitext = 
     QWikitext(wiki + (if (insertNewline) "\n" else "") + otherWiki)
-  
-  /**
-   * In order to avoid massively-nested data structures getting transmitted to the Client,
-   * when we are simply combining QWikitexts (the common case), just smash them together.
-   */
-  override def +(other:Wikitext, insertNewline:Boolean = false):Wikitext = 
-    other match {
-	  case QWikitext(otherWiki) => plusInternal(otherWiki, insertNewline)
-	  case CompositeWikitext(QWikitext(otherWiki), right, otherInsert) =>
-	    CompositeWikitext(plusInternal(otherWiki, insertNewline), right, otherInsert)
-	  case _ => super.+(other, insertNewline)
-	}
+	
+  def contents = Vector(this)
+  def toComposite() = CompositeWikitext(Vector(this))
 }
 
 /**
@@ -136,20 +130,55 @@ case class HtmlWikitextImpl(str:String) extends Wikitext {
   def internal = str
   def plaintext = str
   val keepRaw = true
+  def contents = Vector(this)
+  def toComposite() = CompositeWikitext(Vector(this))
 }
 object HtmlWikitext {
   def apply(html:String) = HtmlWikitextImpl(html)
   def apply(html:Html) = HtmlWikitextImpl(html.toString)
 }
 
-case class CompositeWikitext(left:Wikitext, right:Wikitext, insertNewline:Boolean) extends Wikitext {
+/**
+ * A sequence of Wikitexts that have been appended together.
+ *
+ * IMPORTANT: there should never be an empty CompositeWikitext!
+ *
+ * Do not construct this by hand: use the + operator to concatenate Wikitexts.
+ */
+case class CompositeWikitext(contents:Vector[Wikitext]) extends Wikitext {
   
+  // Check the precondition:
+  if (contents.isEmpty)
+    throw new Exception("Trying to create an empty CompositeWikitext!")
+
   /**
-   * The flattened contents of all the Wikitexts that built this up. This winds up as a flat sequence of
-   * QWikitexts and HtmlWikitexts.
+   * When appending two CompositeWikitexts together, try to smash the elements that they join at,
+   * in order to minimize the number of Wikitext objects we need to transmit to the Client. If
+   * the sequences join at a pair of QWikitexts, or a pair of HtmlWikitextImpls, we combine them
+   * into a single one.
+   *
+   * There is probably a more elegant way to do this, but with only two possibilities I'm not
+   * worrying about it much.
    */
-  override def contents:Seq[Wikitext] = {
-    (left.contents :+ (if (insertNewline) Wikitext.nl else Wikitext.empty)) ++ right.contents
+  private def combine(left:Wikitext, right:Wikitext, insertNewline:Boolean):Vector[Wikitext] = {
+    val maybeNewline = if (insertNewline) "\n" else ""
+    left match {
+	  case QWikitext(leftWiki) => right match {
+	    case QWikitext(rightWiki) => Vector(QWikitext(leftWiki + maybeNewline + rightWiki))
+		case HtmlWikitextImpl(str) => Vector(QWikitext(leftWiki + maybeNewline), right)
+		case _ => throw new Exception("Somehow wound up with nested CompositeWikitexts!")
+	  }
+	  case HtmlWikitextImpl(leftStr) => right match {
+	    case QWikitext(rightWiki) => Vector(HtmlWikitext(leftStr + maybeNewline), right)
+		case HtmlWikitextImpl(rightStr) => Vector(HtmlWikitext(leftStr + maybeNewline + rightStr))
+		case _ => throw new Exception("Somehow wound up with nested CompositeWikitexts!")
+	  }
+	  case _ => throw new Exception("Somehow wound up with nested CompositeWikitexts!")
+	}
+  }
+
+  def append(other:CompositeWikitext, insertNewline:Boolean):Wikitext = {
+    CompositeWikitext(contents.dropRight(1) ++ combine(contents.last, other.contents.head, insertNewline) ++ other.contents.tail)
   }
   
   case class ProcessState(str:String, map:Map[Int, Wikitext])
@@ -180,20 +209,8 @@ case class CompositeWikitext(left:Wikitext, right:Wikitext, insertNewline:Boolea
   def internal = throw new Exception("Nothing should be calling CompositeWikitext.internal!")
   
   val keepRaw = false
-    
-  /**
-   * In order to avoid massively-nested data structures getting transmitted to the Client,
-   * when we are simply combining QWikitexts (the common case), just smash them together.
-   */
-  override def +(other:Wikitext, insertNewline:Boolean = false):Wikitext = 
-    other match {
-	  case QWikitext(otherWiki) => right match {
-	    // If our RHS and the other are QWikitexts, smash them:
-	    case QWikitext(rightWiki) => CompositeWikitext(left, right + other, insertNewline)
-		case _ => super.+(other, insertNewline)
-	  }
-	  case _ => super.+(other, insertNewline)
-	}
+
+  def toComposite() = this
 }
 
 object Wikitext {
