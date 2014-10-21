@@ -95,23 +95,36 @@ object SearchResultsTests extends ThingPageTests {
       // This is a def, since it will change as we switch pages:
       def searchInput = $(".search-query")
       def resultHeader = $("._searchResultHeader")
+      def results = $("._searchResult")
       
       val contentFut = afterPageChange
-        {
-          searchInput.value(query1)
-          val triggerEvent = $.Event("keydown")
-          triggerEvent.which = 13
-          searchInput.trigger(triggerEvent)
-        }
+      {
+        searchInput.value(query1)
+        val triggerEvent = $.Event("keydown")
+        triggerEvent.which = 13
+        searchInput.trigger(triggerEvent)
+      }
       
-      contentFut.map { content =>
+      val contentTests = contentFut.map { content =>
         assert(resultHeader.text == s"""Found 3 matches for "$query1"""")
-        val results = $("._searchResult")
         assert(results.length == 3)
         // result3 should be at index 2, and should contain 2 highlighted sections:
         val complexResult = results.get(2)
         val highlights = $(complexResult).find(".searchResultHighlight")
         assert(highlights.length == 2)
+      }
+      
+      val emptyFut = afterPageChange
+      {
+        searchInput.value(query2)
+        val triggerEvent = $.Event("keydown")
+        triggerEvent.which = 13
+        searchInput.trigger(triggerEvent)        
+      }
+      
+      emptyFut.map { content =>
+        assert(resultHeader.text == s"""Nothing found for "$query2"""")
+        assert(results.length == 0)
       }
     }
   }
