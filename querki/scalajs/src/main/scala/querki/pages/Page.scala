@@ -1,6 +1,6 @@
 package querki.pages
 
-import scala.concurrent.Future
+import scala.concurrent.{Future, Promise}
 
 import org.scalajs.dom
 import scalatags.JsDom.all._
@@ -11,6 +11,8 @@ import querki.globals._
 import querki.comm._
 import querki.data.ThingInfo
 import querki.display.{Gadget, WrapperDiv}
+  
+case class PageContents(title:String, content:TypedTag[dom.HTMLDivElement])
 
 abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
   
@@ -30,12 +32,18 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
   
   def thingUrl(name:String) = s"#$name"
   
-  case class PageContents(title:String, content:TypedTag[dom.HTMLDivElement])
-  
   /**
    * The contents of this page. Concrete subclasses must fill this in.
    */
   def pageContent:Future[PageContents]
+  
+  private val renderedContentPromise = Promise[dom.HTMLDivElement]
+  /**
+   * External tools can observe this; it will be fulfilled once this Page is
+   * fully loaded and rendered. This may or may not be asynchronous, depending
+   * on the page content.
+   */
+  val renderedContentFuture = renderedContentPromise.future
   
   def doRender() = {
     val renderedContent = new WrapperDiv
@@ -58,8 +66,10 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
     )
 
     pageContent.foreach { content =>
-      renderedContent.replaceContents(content.content.render)
+      val fullyRendered = content.content.render
+      renderedContent.replaceContents(fullyRendered)
       PageManager.update(content.title)
+      renderedContentPromise.success(fullyRendered)
     }
     
     outerPage

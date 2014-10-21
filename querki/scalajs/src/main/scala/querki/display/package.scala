@@ -3,9 +3,14 @@ package querki
 import org.scalajs.dom
 
 import querki.globals._
-import querki.pages.ParamMap
+import querki.pages.{Page, ParamMap}
 
 package object display {
+  /**
+   * Signature for listeners that can watch for page changes.
+   */
+  type PageListener = ((dom.Element, Page) => Unit)
+  
   trait PageManager extends EcologyInterface {
     /**
      * Actually render the page, inside the given root.
@@ -31,6 +36,13 @@ package object display {
      * Switch to the specified page. This is fairly low-level; use higher-level APIs when possible.
      */
     def showPage(pageName:String, paramMap:ParamMap)
+    
+    /**
+     * Call to pay attention to changes.
+     */
+    def observePageChanges(listener:PageListener):Unit
+    
+    def unobservePageChanges(listener:PageListener):Unit
   }
   
   trait StatusLine extends EcologyInterface {

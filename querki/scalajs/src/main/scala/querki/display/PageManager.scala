@@ -33,6 +33,15 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     }
   }
   
+  var listeners = Set.empty[PageListener]
+  
+  def observePageChanges(listener:PageListener) = {
+    listeners = listeners + listener
+  }
+  def unobservePageChanges(listener:PageListener) = {
+    listeners = listeners - listener
+  }
+  
   val menuHolder = new WrapperDiv
   
   def update(title:String) = {
@@ -66,40 +75,46 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     _imagePath = Some(path)
   }
   
+  var _currentHash = ""
+  
   /**
    * Based on the hash part of the current location, load the appropriate page.
    */
   def invokeFromHash() = {
-    // Slice off the hash itself:
-    val hash = window.location.hash.substring(1)
-    val hashParts = hash.split("\\?")
-    if (hashParts.length == 0)
-      throw new Exception("Somehow wound up with a completely empty hash?")
-    
-    val pageName = hashParts(0)
-    val pageParams =
-      if (hashParts.length == 1)
-        None
-      else
-        Some(hashParts(1).split("&"))
-    val paramMap = pageParams match {
-      case Some(params) => {
-        val pairs = params.map { param =>
-          val pairArray = param.split("=")
-          val key = pairArray(0)
-          val v =
-            if (pairArray.length == 1)
-              "true"
-            else
-              pairArray(1)
-          (key, v)
-        }
-        Map(pairs:_*)
-      }
-      case None => Map.empty[String, String]
+    val fullHash = window.location.hash
+    if (fullHash != _currentHash) {
+      _currentHash = fullHash
+	    // Slice off the hash itself:
+	    val hash = fullHash.substring(1)
+	    val hashParts = hash.split("\\?")
+	    if (hashParts.length == 0)
+	      throw new Exception("Somehow wound up with a completely empty hash?")
+	    
+	    val pageName = hashParts(0)
+	    val pageParams =
+	      if (hashParts.length == 1)
+	        None
+	      else
+	        Some(hashParts(1).split("&"))
+	    val paramMap = pageParams match {
+	      case Some(params) => {
+	        val pairs = params.map { param =>
+	          val pairArray = param.split("=")
+	          val key = pairArray(0)
+	          val v =
+	            if (pairArray.length == 1)
+	              "true"
+	            else
+	              pairArray(1)
+	          (key, v)
+	        }
+	        Map(pairs:_*)
+	      }
+	      case None => Map.empty[String, String]
+	    }
+	    
+	    renderPage(pageName, paramMap)
     }
-    
-    renderPage(pageName, paramMap)
   }
   
   def showPage(pageName:String, paramMap:ParamMap) = {
@@ -129,5 +144,7 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     
     $(displayRoot).empty()
     $(displayRoot).append(fullPage.render)
+    
+    listeners.foreach { _(displayRoot, page) }
   }
 }

@@ -86,7 +86,7 @@ class SearchResultsPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
           resultsOpt match {
             case Some(results) if (results.results.size > 0) => {
               MSeq(
-                h4(s"""Found ${results.results.size} matches for "$query""""),
+                h4(cls:="_searchResultHeader", s"""Found ${results.results.size} matches for "$query""""),
                 dl(
                   for { 
                     result <- results.results.sortBy(_.score).reverse 
@@ -95,7 +95,7 @@ class SearchResultsPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
                 )
               )
             }
-            case _ => h4(s"""Nothing found for "$query"""")
+            case _ => h4(cls:="_searchResultHeader", s"""Nothing found for "$query"""")
           }
         )
     }
