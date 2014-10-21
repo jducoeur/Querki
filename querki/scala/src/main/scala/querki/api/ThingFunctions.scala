@@ -17,4 +17,9 @@ trait ThingFunctions {
    * as a Tag instead.
    */
   def getThingPage(thingId:String):ThingPageDetails
+  
+  /**
+   * Evaluate the given QL in the context of the specified Thing, and return the resulting Wikitext.
+   */
+  def evaluateQL(thingId:String, ql:String):Wikitext
 }

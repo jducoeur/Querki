@@ -18,7 +18,7 @@ import querki.globals._
 import querki.api.ThingFunctions
 import querki.comm._
 import querki.data.ThingInfo
-import querki.display.{Gadget, QText, WrapperDiv}
+import querki.display.{Gadget, QLButtonGadget, QText, WrapperDiv}
 
 class ThingPage(name:String, params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
 
@@ -36,6 +36,7 @@ class ThingPage(name:String, params:ParamMap)(implicit e:Ecology) extends Page(e
       }
       guts = 
         div(
+          div(id:="_topEdit", display.none),
           pageDetails.customHeader match {
             case Some(header) => new QText(header)
             case None => new StandardThingHeader(pageDetails.thingInfo, this)
@@ -55,6 +56,16 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
   val thingName = thing.displayName
   
   val modelOpt = DataAccess.mainModel
+  
+  lazy val topEditButton =
+    new QLButtonGadget(
+    	iconButton("edit", Seq("_qlInvoke"))(
+                  title:=s"Edit $thingName",
+                  data("thingid"):=thing.urlName,
+                  data("target"):="_topEdit",
+                  data("ql"):="_edit",
+                  href:=page.thingUrl(thing))
+    )
   
   lazy val oldEditButton = 
     iconButton("edit")(
@@ -87,12 +98,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
               if (thing.isTag || thing.kind == Kind.Property) {
                 oldEditButton
               } else {
-                iconButton("edit", Seq("_qlInvoke"))(
-                  title:=s"Edit $thingName",
-                  data("thingid"):=thing.urlName,
-                  data("target"):="_topEdit",
-                  data("ql"):="_edit",
-                  href:="#")
+                topEditButton
               }
             },
             modelOpt match {

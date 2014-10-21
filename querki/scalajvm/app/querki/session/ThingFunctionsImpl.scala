@@ -5,6 +5,7 @@ import models.{DisplayText, Thing, ThingId, Wikitext}
 import querki.globals._
 
 import querki.api.ThingFunctions
+import querki.core.QLText
 import querki.data.RequestInfo
 import querki.pages.ThingPageDetails
 
@@ -12,6 +13,7 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions {
   
   def ClientApi:querki.api.ClientApi
   lazy val HtmlUI = interface[querki.html.HtmlUI]
+  lazy val QL = interface[querki.ql.QL]
   
   def getRequestInfo():RequestInfo = ClientApi.requestInfo(rc)
 
@@ -33,5 +35,11 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions {
     val rendered = thing.render(rc)
     
     ThingPageDetails(thingInfo, modelInfo, customHeaderOpt, rendered)
+  }
+  
+  def evaluateQL(thingId:String, ql:String):Wikitext = withThing(thingId) { thing =>
+    implicit val r = rc
+    val context = thing.thisAsContext
+    QL.processMethod(QLText(ql), context, None, Some(thing)).wikify(context)
   }
 }

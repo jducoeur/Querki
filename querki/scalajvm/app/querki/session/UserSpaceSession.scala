@@ -93,6 +93,22 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
     implicit val e = ecology
     _rawState match {
       case Some(rs) => {
+        val isOwner = user.hasIdentity(rs.owner)
+        val safeState =
+          if (isOwner)
+            // The Owner of the Space is allowed to read everything, so don't waste time on it:
+            rs
+          else {
+            // TODO: MAKE THIS MUCH FASTER! This is probably O(n**2), maybe worse. We need to do heavy
+            // caching, and do much more sensitive updating as things change.
+            (rs /: rs.things) { (curState, thingPair) =>
+              val (thingId, thing) = thingPair
+              if (AccessControl.canRead(curState, user, thingId))
+                curState
+              else
+                curState.copy(things = (curState.things - thingId))
+            }
+          }
         (rs /: userValues) { (curState, uv) =>
           if (uv.thingId == curState.id) {
             // We're enhancing the Space itself:
