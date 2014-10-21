@@ -39,8 +39,13 @@ trait QuerkiTests extends TestSuite with EcologyMember with querki.client.Standa
     _commStub = Some(new ApiCommStub(ecology))
   }
   
-  lazy val DataSetting = interface[querki.data.DataSetting]
-  lazy val PageManager = interface[querki.display.PageManager]
+  /**
+   * Note that these must be defs, not lazy vals, so that they don't persist across different tests!
+   * 
+   * This is a general rule: if you reference interfaces at the class level, don't use lazy val!
+   */
+  def DataSetting = interface[querki.data.DataSetting]
+  def PageManager = interface[querki.display.PageManager]
   
   /**
    * The default UserInfo. Tests may override this if necessary.
@@ -117,6 +122,6 @@ trait ThingPageTests extends QuerkiTests {
     val window = pageBody.ownerDocument.defaultView
     window.location.hash = "#" + pageName
     // This will cause the page to render, based on the current hash:
-    PageManager.setRoot(window, pageBody)    
+    PageManager.setRoot(window, pageBody)
   }
 }
