@@ -31,22 +31,6 @@ import JQueryEventCreator._
 
 object SearchResultsTests extends ThingPageTests {
 
-  /**
-   * This will execute the given trigger code (which should cause a Page change), 
-   * and returns a Future that will be fulfilled once the resulting Page is fully
-   * loaded. 
-   */
-  def afterPageChange(trigger: => Unit):Future[dom.HTMLDivElement] = {
-    val promise = Promise[dom.HTMLDivElement]
-    PageManager.nextChangeFuture.map { page =>
-      page.renderedContentFuture.map { content =>
-        promise.success(content)
-      }
-    }
-    trigger
-    promise.future
-  }
-
   def tests = TestSuite {
     "The SearchGadget invokes the page and fetches the results" - {
       
@@ -97,13 +81,14 @@ object SearchResultsTests extends ThingPageTests {
       def resultHeader = $("._searchResultHeader")
       def results = $("._searchResult")
       
-      val contentFut = afterPageChange
-      {
-        searchInput.value(query1)
+      def enterSearchTerm(term:String) = {
+        searchInput.value(term)
         val triggerEvent = $.Event("keydown")
         triggerEvent.which = 13
-        searchInput.trigger(triggerEvent)
+        searchInput.trigger(triggerEvent)        
       }
+      
+      val contentFut = afterPageChange { enterSearchTerm(query1) }
       
       val contentTests = contentFut.map { content =>
         assert(resultHeader.text == s"""Found 3 matches for "$query1"""")
@@ -114,13 +99,7 @@ object SearchResultsTests extends ThingPageTests {
         assert(highlights.length == 2)
       }
       
-      val emptyFut = afterPageChange
-      {
-        searchInput.value(query2)
-        val triggerEvent = $.Event("keydown")
-        triggerEvent.which = 13
-        searchInput.trigger(triggerEvent)        
-      }
+      val emptyFut = afterPageChange { enterSearchTerm(query2) }
       
       emptyFut.map { content =>
         assert(resultHeader.text == s"""Nothing found for "$query2"""")

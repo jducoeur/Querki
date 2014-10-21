@@ -1,6 +1,6 @@
 package querki.test
 
-import scala.concurrent.Future
+import scala.concurrent.{Future, Promise}
 
 import upickle._
 import utest._
@@ -86,6 +86,22 @@ trait QuerkiTests extends TestSuite with EcologyMember with querki.client.Standa
     
     val pickledRequest = write(requestInfo)
     DataSetting.unpickleRequest(pickledRequest)
+  }
+
+  /**
+   * This will execute the given trigger code (which should cause a Page change), 
+   * and returns a Future that will be fulfilled once the resulting Page is fully
+   * loaded. 
+   */
+  def afterPageChange(trigger: => Unit):Future[dom.HTMLDivElement] = {
+    val promise = Promise[dom.HTMLDivElement]
+    PageManager.nextChangeFuture.map { page =>
+      page.renderedContentFuture.map { content =>
+        promise.success(content)
+      }
+    }
+    trigger
+    promise.future
   }
 
 }
