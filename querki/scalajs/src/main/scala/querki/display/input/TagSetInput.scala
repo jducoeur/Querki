@@ -120,10 +120,29 @@ import MarcoPoloFacade._
 class MarcoPoloInput(val propId:String, val required:Boolean, val kind:TagSetKind.TagSetKind)(implicit e:Ecology) 
   extends InputGadget[dom.HTMLInputElement](e) with MarcoPoloUser
 {
+  /**
+   * Usually, we save the value of this field. But this is broken out so that we can do something else
+   * if this is being subclassed for a special purpose.
+   */
+  def onChange(q:String) = {
+    saveChange(List(q))
+  }
+  
   def hook() = {
+    // For no particularly obvious reason, MarcoPolo appears to stomp the field's value, so we need to
+    // reset it after hooking:
+    val init = $(elem).value().asInstanceOf[String]  
     $(elem).marcoPolo(marcoPoloDef)
+    $(elem).value(init)
     
-    // TODO: need to hook the onSelect event here! See code in querki-common.
+    $(elem).on("marcopoloselect", { (evt:JQueryEventObject, data:ManifestItem, item:js.UndefOr[JQuery], initial:Boolean) =>
+      val q = data.display
+      $(elem).value(q)
+    })
+    
+    $(elem).change( { (evt:JQueryEventObject) =>
+      onChange($(elem).value().asInstanceOf[String])      
+    })
   }
   
   def doRender() =
