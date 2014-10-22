@@ -14,7 +14,7 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets {
    * The factory function for an InputGadget. It is consistent and trivial, but we don't have
    * reflection here, so can't just automate it.
    */
-  type InputConstr = (dom.Element => InputGadget)
+  type InputConstr = (dom.Element => InputGadget[_])
   
   /**
    * The actual registry of all of the InputGadgets. This is a map from the name of the marker
@@ -25,9 +25,9 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets {
    * reflection (and thus, dynamic construction) on the client side.
    */
   val registry = Map[String, InputConstr](
-    ("_textEdit" -> { new TextInputGadget(_) }),
-    ("_largeTextEdit" -> { new LargeTextInputGadget(_) }),
-    ("_tagSetInput" -> { new TagSetInput(_) })
+    ("_textEdit" -> { TextInputGadget(_) }),
+    ("_largeTextEdit" -> { LargeTextInputGadget(_) }),
+    ("_tagSetInput" -> { TagSetInput(_) })
   )
   
   val jsUnit = 1:js.Any

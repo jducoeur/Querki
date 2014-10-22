@@ -49,6 +49,16 @@ trait Gadget[Output <: dom.Element] extends scalatags.jsdom.Frag with ScalatagUt
   
   var _elem:Option[Output] = None
   def elem = _elem.get
+  /**
+   * Slam the element for this Gadget. You should only call this iff the element was actually called from
+   * an external mechanism (eg, via QText), and you're building this Gadget around that element.
+   * 
+   * This is intentionally designed for chaining, for ease of use -- it returns this Gadget.
+   */
+  def setElem(e:dom.Element):this.type = {
+    _elem = Some(e.asInstanceOf[Output])
+    this
+  }
   
   /**
    * Concrete Gadgets can override this to perform actions after we've created the actual Element.

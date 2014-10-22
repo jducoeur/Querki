@@ -25,21 +25,19 @@ trait ManifestItem extends js.Object {
   def display:String = ???
   def id:String = ???
 }
-  
-class TagSetInput(val rawElement:dom.Element)(implicit e:Ecology) extends InputGadget(e) {
-  
-  type elemType = dom.HTMLInputElement
 
+object TagSetKind {
+  type TagSetKind = String
+  
+  val Tag = "tag"
+  val Link = "thing"
+}
+  
+class TagSetInput(propId:String, required:Boolean, kind:TagSetKind.TagSetKind, initialValuesJs:js.Dynamic)(implicit e:Ecology) 
+  extends InputGadget[dom.HTMLInputElement](e) 
+{
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   
-  // Required data attributes of any Tag Set Input:
-  lazy val isNames = $(element).data("isnames").asInstanceOf[Boolean]
-  lazy val initialValuesJs = $(element).data("current")
-  lazy val propId = $(element).data("prop").asInstanceOf[String]
-  
-  lazy val required = if (isNames) false else true
-  lazy val typeName = if (isNames) "tag" else "thing"
-    
   def stringOrItem(data:js.Any)(f:ManifestItem => String) = {
     if (data.isInstanceOf[js.prim.String]) 
       data 
@@ -48,21 +46,21 @@ class TagSetInput(val rawElement:dom.Element)(implicit e:Ecology) extends InputG
   }
   
   def values = { 
-    $(element).manifest("values").asInstanceOf[js.Array[String]].toList
+    $(elem).manifest("values").asInstanceOf[js.Array[String]].toList
   }
   
   // TBD: do we need an unhook, to avoid leaks?
   def hook() = {
     // The constructor for the Manifest object itself. This prompts you when you start typing,
     // using MarcoPolo, and organizes results into a nice list.
-    $(element).manifest(lit(
+    $(elem).manifest(lit(
       marcoPolo = lit(
         url = controllers.ClientController.marcoPolo.spaceUrl(propId),
         minChars = 1,
         required = required,
         formatData = { data:js.Object => data },
         formatItem = { (data:ManifestItem) => data.display },
-        formatNoResults = { (q:String) => s"No existing $typeName with <b>$q</b> found." }
+        formatNoResults = { (q:String) => s"No existing $kind with <b>$q</b> found." }
       ),
       // Yes, these two are horrible, but represent an unfortunate quirk of Manifest: these sometimes get called with
       // items, sometimes with Strings:
@@ -77,11 +75,27 @@ class TagSetInput(val rawElement:dom.Element)(implicit e:Ecology) extends InputG
     // pretty easy for us to generate a *change* event here, not necessarily a full rewrite! We are currently
     // grabbing and sending the full values list, but we could instead combine changeType and data into a
     // proper change event.
-    $(element).on("manifestchange", { (/*evt:JQueryEventObject, changeType:String, data:js.Any*/) =>
+    $(elem).on("manifestchange", { (/*evt:JQueryEventObject, changeType:String, data:js.Any*/) =>
       saveChange(values)
     })
   }
   
   def doRender() =
     input(cls:="_textEdit", tpe:="text")
+}
+
+object TagSetInput {
+  /**
+   * Create a TagSetInput from an existing DOM Element. The Element is required to have several data
+   * attributes set, giving the critical details.
+   */
+  def apply(rawElement:dom.Element)(implicit e:Ecology) = {
+    // Required data attributes of any Tag Set Input:
+    val isNames = $(rawElement).data("isnames").asInstanceOf[Boolean]
+    val initialValuesJs = $(rawElement).data("current")
+    val propId = $(rawElement).data("prop").asInstanceOf[String]
+    val kind = if (isNames) TagSetKind.Tag else TagSetKind.Link
+    
+    new TagSetInput(propId, !isNames, kind, initialValuesJs).setElem(rawElement)
+  }
 }

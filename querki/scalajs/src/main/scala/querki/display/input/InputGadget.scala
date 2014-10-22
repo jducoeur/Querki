@@ -16,13 +16,7 @@ import querki.display._
  * Base class for input controls. When you create a new concrete class, make sure to add it to
  * InputGadgets.registry.
  */
-abstract class InputGadget(val ecology:Ecology) extends Gadget[dom.Element] with EcologyMember {
-  
-  type elemType <: dom.Element
-  
-  def rawElement:dom.Element
-  
-  lazy val element = rawElement.asInstanceOf[elemType]
+abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget[T] with EcologyMember {
   
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
@@ -41,7 +35,7 @@ abstract class InputGadget(val ecology:Ecology) extends Gadget[dom.Element] with
    * about them *after* they are built, and then hooks them. OTOH, if they are specified in
    * Scalatags and then rendered, this will be called, so we can hook them.
    */
-  override def onCreate(elem:dom.Element) = hook() 
+  override def onCreate(elem:T) = hook() 
   
   /**
    * Records a change that the user has made. This should be called by the specific Gadget when
@@ -53,16 +47,16 @@ abstract class InputGadget(val ecology:Ecology) extends Gadget[dom.Element] with
    */
   def saveChange(vs:List[String]) = {
     StatusLine.showUntilChange("Saving...")
-    val path = $(element).attr("name")
+    val path = $(elem).attr("name")
     Client[EditFunctions].alterProperty(DataAccess.thingId, path, ChangePropertyValue(vs)).call().foreach { response =>
 	  response match {
         case PropertyChanged => {
           StatusLine.showBriefly("Saved")
-          $(element).trigger("savecomplete")
+          $(elem).trigger("savecomplete")
         }
         case PropertyChangeError(msg) => {
           StatusLine.showUntilChange(s"Error: $msg")
-          $(element).trigger("saveerror")
+          $(elem).trigger("saveerror")
         }
       }
     }

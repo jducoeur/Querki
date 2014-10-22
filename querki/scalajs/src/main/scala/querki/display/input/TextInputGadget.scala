@@ -6,20 +6,23 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
-class TextInputGadget(val rawElement:dom.Element)(implicit e:Ecology) extends InputGadget(e) {
-  
-  type elemType = dom.HTMLInputElement
+class TextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLInputElement](e) {
   
   // TBD: do we need an unhook, to avoid leaks?
   def hook() = {
-    $(element).change({ event:JQueryEventObject =>
-      saveChange(List(element.value))
+    $(elem).change({ event:JQueryEventObject =>
+      saveChange(List(elem.value))
     })
   }
   
   def doRender() =
     input(cls:="_textEdit", tpe:="text")
     
+}
+object TextInputGadget {
+  def apply(rawElement:dom.Element)(implicit e:Ecology) = {
+    (new TextInputGadget).setElem(rawElement)
+  }
 }
 
 trait AutosizeFacade extends JQuery {
@@ -30,9 +33,7 @@ object AutosizeFacade {
 }
 import AutosizeFacade._
 
-class LargeTextInputGadget(val rawElement:dom.Element)(implicit e:Ecology) extends InputGadget(e) {
-  
-  type elemType = dom.HTMLTextAreaElement
+class LargeTextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLTextAreaElement](e) {
   
   // TBD: do we need an unhook, to avoid leaks?
   def hook() = {
@@ -40,14 +41,19 @@ class LargeTextInputGadget(val rawElement:dom.Element)(implicit e:Ecology) exten
     // We specifically need to *not* apply autosize to the template elements, or else it won't
     // successfully apply to them when we actually instantiate them.
     // Note that we define the :notUnder selector in PageManager:
-    $(element).filter(":notUnder(.inputTemplate)").autosize()
+    $(elem).filter(":notUnder(.inputTemplate)").autosize()
     
-    $(element).change({ event:JQueryEventObject =>
-      saveChange(List(element.value))
+    $(elem).change({ event:JQueryEventObject =>
+      saveChange(List(elem.value))
     })
   }
   
   def doRender() =
     textarea(cls:="_largeTextEdit")
     
+}
+object LargeTextInputGadget {
+  def apply(rawElement:dom.Element)(implicit e:Ecology) = {
+    (new LargeTextInputGadget).setElem(rawElement)
+  }
 }
