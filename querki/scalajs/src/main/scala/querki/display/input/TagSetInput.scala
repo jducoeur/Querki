@@ -46,26 +46,6 @@ class TagSetInput(val rawElement:dom.Element)(implicit e:Ecology) extends InputG
     else 
       f(data.asInstanceOf[ManifestItem])
   }
-    
-  // The constructor for the Manifest object itself. This prompts you when you start typing,
-  // using MarcoPolo, and organizes results into a nice list.
-  $(element).manifest(lit(
-    marcoPolo = lit(
-      url = controllers.ClientController.marcoPolo.spaceUrl(propId),
-      minChars = 1,
-      required = required,
-      formatData = { data:js.Object => data },
-      formatItem = { (data:ManifestItem) => data.display },
-      formatNoResults = { (q:String) => s"No existing $typeName with <b>$q</b> found." }
-    ),
-    // Yes, these two are horrible, but represent an unfortunate quirk of Manifest: these sometimes get called with
-    // items, sometimes with Strings:
-    formatDisplay = { (data:js.Any) => stringOrItem(data)(_.display) },
-    formatValue = { (data:js.Any) => stringOrItem(data)(_.id) },
-    separator = Seq[Int](13).toJSArray,
-    values = initialValuesJs,
-    required = required
-  ))
   
   def values = { 
     $(element).manifest("values").asInstanceOf[js.Array[String]].toList
@@ -73,6 +53,26 @@ class TagSetInput(val rawElement:dom.Element)(implicit e:Ecology) extends InputG
   
   // TBD: do we need an unhook, to avoid leaks?
   def hook() = {
+    // The constructor for the Manifest object itself. This prompts you when you start typing,
+    // using MarcoPolo, and organizes results into a nice list.
+    $(element).manifest(lit(
+      marcoPolo = lit(
+        url = controllers.ClientController.marcoPolo.spaceUrl(propId),
+        minChars = 1,
+        required = required,
+        formatData = { data:js.Object => data },
+        formatItem = { (data:ManifestItem) => data.display },
+        formatNoResults = { (q:String) => s"No existing $typeName with <b>$q</b> found." }
+      ),
+      // Yes, these two are horrible, but represent an unfortunate quirk of Manifest: these sometimes get called with
+      // items, sometimes with Strings:
+      formatDisplay = { (data:js.Any) => stringOrItem(data)(_.display) },
+      formatValue = { (data:js.Any) => stringOrItem(data)(_.id) },
+      separator = Seq[Int](13).toJSArray,
+      values = initialValuesJs,
+      required = required
+    ))
+  
     // TODO: Note that Manifest actually tells us what's been added or removed, so in principle it's actually
     // pretty easy for us to generate a *change* event here, not necessarily a full rewrite! We are currently
     // grabbing and sending the full values list, but we could instead combine changeType and data into a
@@ -84,5 +84,4 @@ class TagSetInput(val rawElement:dom.Element)(implicit e:Ecology) extends InputG
   
   def doRender() =
     input(cls:="_textEdit", tpe:="text")
-
 }

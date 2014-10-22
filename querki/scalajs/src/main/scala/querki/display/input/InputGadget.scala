@@ -34,6 +34,16 @@ abstract class InputGadget(val ecology:Ecology) extends Gadget[dom.Element] with
   def hook():Unit
   
   /**
+   * If this InputGadget gets created in the conventional way, hook it after it's created.
+   * 
+   * Note that InputGadgets tend to come from two different sources. Sometimes they are built
+   * by QText -- that is, they are defined in Wikitext -- in which case InputGadgets learns
+   * about them *after* they are built, and then hooks them. OTOH, if they are specified in
+   * Scalatags and then rendered, this will be called, so we can hook them.
+   */
+  override def onCreate(elem:dom.Element) = hook() 
+  
+  /**
    * Records a change that the user has made. This should be called by the specific Gadget when
    * appropriate.
    * 
