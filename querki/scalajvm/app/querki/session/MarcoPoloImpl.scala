@@ -15,23 +15,29 @@ trait MarcoPoloImpl extends SessionApiImpl {
   def handleMarcoPoloRequest(propId:ThingId, q:String):MarcoPoloResponse = {
     implicit val s = state
     val lowerQ = q.toLowerCase()
-    val prop = state.prop(propId).getOrElse(throw new Exception(s"handleMarcoPoloRequest got unknown propId $propId"))
-    val things = getLinksFromSpace(state, prop, lowerQ)
-    val allItems = 
-      if (prop.pType == Core.LinkType) {
-        things
-      } else {
-        // It's a Tag Type, so add Tags
-        val tags = 
-          Tags.fetchTags(state, prop).
-            filter(_.toLowerCase().contains(lowerQ)).
-            toList
-        // Since it's a Tag Property, we don't want the OIDs
-        val thingNames = things.map(_.display)
-        // Strip out duplicates:
-        val allNames = tags ++ thingNames.diff(tags)
-        allNames.map(name => MarcoPoloItem(name, name))
+    val propOpt = state.prop(propId)
+    val things = getLinksFromSpace(state, propOpt, lowerQ)
+    val allItems:Seq[MarcoPoloItem] = propOpt match {
+      case Some(prop) => {
+        if (prop.pType == Core.LinkType) {
+          things
+        } else {
+          // It's a Tag Type, so add Tags
+          val tags = 
+            Tags.fetchTags(state, prop).
+              filter(_.toLowerCase().contains(lowerQ)).
+              toList
+          // Since it's a Tag Property, we don't want the OIDs
+          val thingNames = things.map(_.display)
+          // Strip out duplicates:
+          val allNames = tags ++ thingNames.diff(tags)
+          allNames.map(name => MarcoPoloItem(name, name))
+        }
       }
+      // Note that it only makes sense to omit the propId if you are collecting Links;
+      // Tags depend on the prop.
+      case _ => things
+    }
     val itemsSorted = allItems.sortBy(_.display)
     
     MarcoPoloResponse(itemsSorted)
@@ -42,7 +48,7 @@ trait MarcoPoloImpl extends SessionApiImpl {
    * 
    * This takes the SpaceState as a parameter, so that it can recurse up the App tree.
    */
-  private def getLinksFromSpace(spaceIn:SpaceState, prop:AnyProp, lowerQ:String):Seq[MarcoPoloItem] = {
+  private def getLinksFromSpace(spaceIn:SpaceState, propOpt:Option[AnyProp], lowerQ:String):Seq[MarcoPoloItem] = {
     implicit val space = spaceIn
     
     val things = {
@@ -50,10 +56,11 @@ trait MarcoPoloImpl extends SessionApiImpl {
     
       // Filter the options if there is a valid Link Model:
       val thingsFiltered = {
-        val filteredOpt = for (
+        val filteredOpt = for {
+          prop <- propOpt
           linkModelProp <- prop.getPropOpt(Links.LinkModelProp);
           targetModel <- linkModelProp.firstOpt
-            )
+        }
           yield allThings.filter(_.isAncestor(targetModel))
           
         filteredOpt.getOrElse(allThings)
@@ -63,7 +70,7 @@ trait MarcoPoloImpl extends SessionApiImpl {
     }
     
     space.app match {
-      case Some(app) => things ++ getLinksFromSpace(app, prop, lowerQ)
+      case Some(app) => things ++ getLinksFromSpace(app, propOpt, lowerQ)
       case None => things
     }
   }

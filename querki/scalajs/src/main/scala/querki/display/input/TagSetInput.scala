@@ -32,12 +32,27 @@ object TagSetKind {
   val Tag = "tag"
   val Link = "thing"
 }
-  
-class TagSetInput(propId:String, required:Boolean, kind:TagSetKind.TagSetKind, initialValuesJs:js.Dynamic)(implicit e:Ecology) 
-  extends InputGadget[dom.HTMLInputElement](e) 
-{
+
+trait MarcoPoloUser extends EcologyMember {
   lazy val controllers = interface[querki.comm.ApiComm].controllers
+    
+  def propId:String 
+  def required:Boolean
+  def kind:TagSetKind.TagSetKind
   
+  def marcoPoloDef = lit(
+    url = controllers.ClientController.marcoPolo.spaceUrl(propId),
+    minChars = 1,
+    required = required,
+    formatData = { data:js.Object => data },
+    formatItem = { (data:ManifestItem) => data.display },
+    formatNoResults = { (q:String) => s"No existing $kind with <b>$q</b> found." }
+  )
+}
+  
+class TagSetInput(val propId:String, val required:Boolean, val kind:TagSetKind.TagSetKind, initialValuesJs:js.Dynamic)(implicit e:Ecology) 
+  extends InputGadget[dom.HTMLInputElement](e) with MarcoPoloUser
+{
   def stringOrItem(data:js.Any)(f:ManifestItem => String) = {
     if (data.isInstanceOf[js.prim.String]) 
       data 
@@ -54,14 +69,7 @@ class TagSetInput(propId:String, required:Boolean, kind:TagSetKind.TagSetKind, i
     // The constructor for the Manifest object itself. This prompts you when you start typing,
     // using MarcoPolo, and organizes results into a nice list.
     $(elem).manifest(lit(
-      marcoPolo = lit(
-        url = controllers.ClientController.marcoPolo.spaceUrl(propId),
-        minChars = 1,
-        required = required,
-        formatData = { data:js.Object => data },
-        formatItem = { (data:ManifestItem) => data.display },
-        formatNoResults = { (q:String) => s"No existing $kind with <b>$q</b> found." }
-      ),
+      marcoPolo = marcoPoloDef,
       // Yes, these two are horrible, but represent an unfortunate quirk of Manifest: these sometimes get called with
       // items, sometimes with Strings:
       formatDisplay = { (data:js.Any) => stringOrItem(data)(_.display) },
@@ -97,5 +105,42 @@ object TagSetInput {
     val kind = if (isNames) TagSetKind.Tag else TagSetKind.Link
     
     new TagSetInput(propId, !isNames, kind, initialValuesJs).setElem(rawElement)
+  }
+}
+
+
+trait MarcoPoloFacade extends JQuery {
+  def marcoPolo(config:js.Object):this.type = ???
+}
+object MarcoPoloFacade {
+  implicit def jqMarcoPolo(jq:JQuery):MarcoPoloFacade = jq.asInstanceOf[MarcoPoloFacade]
+}
+import MarcoPoloFacade._
+
+class MarcoPoloInput(val propId:String, val required:Boolean, val kind:TagSetKind.TagSetKind)(implicit e:Ecology) 
+  extends InputGadget[dom.HTMLInputElement](e) with MarcoPoloUser
+{
+  def hook() = {
+    $(elem).marcoPolo(marcoPoloDef)
+    
+    // TODO: need to hook the onSelect event here! See code in querki-common.
+  }
+  
+  def doRender() =
+    input(cls:="_tagInput", tpe:="text")
+}
+
+object MarcoPoloInput {
+  /**
+   * Create a TagSetInput from an existing DOM Element. The Element is required to have several data
+   * attributes set, giving the critical details.
+   */
+  def apply(rawElement:dom.Element)(implicit e:Ecology) = {
+    // Required data attributes of any Tag Set Input:
+    val isNames = $(rawElement).data("isnames").asInstanceOf[Boolean]
+    val propId = $(rawElement).data("prop").asInstanceOf[String]
+    val kind = if (isNames) TagSetKind.Tag else TagSetKind.Link
+    
+    new MarcoPoloInput(propId, !isNames, kind).setElem(rawElement)
   }
 }
