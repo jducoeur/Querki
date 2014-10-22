@@ -19,6 +19,11 @@ trait ThingFunctions {
   def getThingPage(thingId:String):ThingPageDetails
   
   /**
+   * Fetch just the ThingInfo for the specified Thing.
+   */
+  def getThingInfo(thingId:String):ThingInfo
+  
+  /**
    * Evaluate the given QL in the context of the specified Thing, and return the resulting Wikitext.
    */
   def evaluateQL(thingId:String, ql:String):Wikitext

@@ -392,3 +392,30 @@ body {
   font-weight: bold;
   background-color: #FAD2DF;
 }
+
+/*******************************
+ * Explorer styles
+ */
+
+#_exploreQueryRow {
+  height: 100px;
+}
+  
+#_exploreThingName {
+  width: 70%;
+}
+  
+._exploreSurround {
+  position: relative;
+  top: 40px;
+  color: #999999;
+}
+  
+#_exploreQlInputDiv {
+  height: 100%;
+}
+  
+#_exploreQlInput {
+  height: 100%;
+}
+

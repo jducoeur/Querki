@@ -43,7 +43,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   /**
    * Represents a single link to be shown in a menu.
    */
-  case class NavLink(display:String, call:PlayCall, id:Option[String] = None, enabled:Boolean = true) extends Navigable
+  case class NavLink(display:String, call:PlayCall = EmptyCall, id:Option[String] = None, enabled:Boolean = true, onClick:Option[() => Unit] = None) extends Navigable
 
   case object NavDivider extends Navigable
   
@@ -88,7 +88,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
         NavLink("Edit " + thing.displayName, controllers.Application.editThing(userName, spaceId, thingId), enabled = thing.isEditable),
         NavLink("View Source", controllers.Application.viewThing(userName, spaceId, thingId)),
         NavLink("Advanced...", controllers.Application.showAdvancedCommands(userName, spaceId, thingId)),
-        NavLink("Explore...", controllers.ExploreController.showExplorer(userName, spaceId, thingId), enabled = thing.isEditable),
+        NavLink("Explore...", enabled = thing.isEditable, onClick = Some({() => PageManager.showPage("_explore", Map(("thingId" -> thingId)))})),
         NavLink("Delete " + thing.displayName, EmptyCall, Some("deleteThing"), enabled = thing.isDeleteable))      
     }
   }
@@ -116,13 +116,21 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   
   //////////////////////////////////////
   
-  def displayNavLink(display:String, call:PlayCall, idStr:String, enabled:Boolean) = {
+  def displayNavLink(display:String, call:PlayCall, idStr:String, enabled:Boolean, onClick:Option[() => Unit]) = {
     if (enabled) {
-      li(
-        a(href:=call.url,
-          id:=idStr,
-          display)
-      )
+      val link = onClick match {
+        case Some(cb) => {
+          a(id:=idStr,
+            onclick:=cb,
+            display)
+        }
+        case _ => {
+          a(href:=call.url,
+            id:=idStr,
+            display)
+        }
+      }
+      li(link)
     } else {
       li(cls:="disabled",
         a(display)
@@ -156,12 +164,12 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
 
   def displayNavigable(section:Navigable) = {
     section match {
-      case NavLink(display, call, id, enabled) => {
+      case NavLink(display, call, id, enabled, onClick) => {
         val idStr = id match {
           case Some(i) => " id=" + i
           case None => ""
         }
-        displayNavLink(display, call, idStr, enabled)
+        displayNavLink(display, call, idStr, enabled, onClick)
       }
       case NavSection(title, links) => displayNavSection(title, links)
       case NavDivider => displayNavDivider

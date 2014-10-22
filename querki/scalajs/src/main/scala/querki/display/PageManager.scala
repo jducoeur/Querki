@@ -9,13 +9,14 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
-import querki.pages.{Page, ParamMap}
+import querki.pages.{MissingPageParameterException, Page, ParamMap}
 
 class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   def implements = Set(classOf[PageManager])
   
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val Pages = interface[querki.pages.Pages]
+  lazy val StatusLine = interface[StatusLine]
   lazy val StatusLineInternal = interface[StatusLineInternal]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
@@ -127,8 +128,13 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   }
   
   def renderPage(pageName:String, paramMap:ParamMap):Unit = {
-    val page = Pages.constructPage(pageName, paramMap)
-    renderPage(page)    
+    try {
+      val page = Pages.constructPage(pageName, paramMap)
+      renderPage(page)
+    } catch {
+      case MissingPageParameterException(paramName) => 
+        StatusLine.showUntilChange(s"Missing page parameter $paramName")
+    }
   }
   
   /**

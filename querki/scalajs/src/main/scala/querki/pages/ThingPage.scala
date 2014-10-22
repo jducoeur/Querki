@@ -1,6 +1,5 @@
 package querki.pages
 
-import scala.async.Async._
 import scala.util.{Failure, Success}
 
 import upickle._

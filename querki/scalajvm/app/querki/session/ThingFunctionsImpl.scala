@@ -6,7 +6,7 @@ import querki.globals._
 
 import querki.api.ThingFunctions
 import querki.core.QLText
-import querki.data.RequestInfo
+import querki.data.{RequestInfo, ThingInfo}
 import querki.pages.ThingPageDetails
 
 trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions {
@@ -16,6 +16,10 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions {
   lazy val QL = interface[querki.ql.QL]
   
   def getRequestInfo():RequestInfo = ClientApi.requestInfo(rc)
+  
+  def getThingInfo(thingId:String) = withThing(thingId) { thing =>
+    ClientApi.thingInfo(thing, rc)
+  }
 
   def getThingPage(thingId:String):ThingPageDetails = withThing(thingId) { thing =>
     implicit val state = rc.state.get

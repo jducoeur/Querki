@@ -1,5 +1,7 @@
 package querki
 
+import scala.concurrent.Future
+
 import querki.globals._
 
 package object data {
@@ -27,6 +29,12 @@ package object data {
      * The Model of the mainThing.
      */
     def mainModel:Option[ThingInfo]
+    
+    /**
+     * Fetch the specified Thing. If all you need is ThingInfo, go through DataAccess to get it; that way,
+     * down the road, we can move towards caching the information client-side.
+     */
+    def getThing(thingId:String):Future[ThingInfo]
     
     /**
      * Convenience function to get the "userName" part of a typical path. Should only be used if
