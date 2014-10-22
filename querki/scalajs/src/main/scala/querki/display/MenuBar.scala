@@ -1,5 +1,6 @@
 package querki.display
 
+import scala.scalajs.js
 import org.scalajs.dom
 
 import scalatags.JsDom.all._
@@ -31,6 +32,11 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
     }
   }
   
+  implicit def dyn2URL(rawCall:js.Dynamic):URL = {
+    val call:PlayCall = rawCall
+    call.url
+  }
+  
   /////////////////////////////////////
   //
   // Menu-defining local types
@@ -43,7 +49,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   /**
    * Represents a single link to be shown in a menu.
    */
-  case class NavLink(display:String, call:PlayCall = EmptyCall, id:Option[String] = None, enabled:Boolean = true, onClick:Option[() => Unit] = None) extends Navigable
+  case class NavLink(display:String, url:URL = "#", id:Option[String] = None, enabled:Boolean = true, onClick:Option[() => Unit] = None) extends Navigable
 
   case object NavDivider extends Navigable
   
@@ -70,8 +76,8 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
     spaceOpt.map { space =>
       Seq(
         // TODO: these first two currently hook into Javascript. They should instead be direct callbacks to Scala:
-        NavLink("Design a Model", EmptyCall, Some("designModel")),
-        NavLink("Create any Thing", EmptyCall, Some("createThing")),
+        NavLink("Design a Model", PageManager.pageUrl("_design"), Some("designModel")),
+        NavLink("Create any Thing", PageManager.pageUrl("_create"), Some("createThing")),
         NavLink("Add a Property", controllers.Application.createProperty(userName, spaceId)),
         NavLink("Show all Things", thing("All-Things")),
         NavLink("Show all Properties", thing("All-Properties")),
@@ -88,8 +94,10 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
         NavLink("Edit " + thing.displayName, controllers.Application.editThing(userName, spaceId, thingId), enabled = thing.isEditable),
         NavLink("View Source", controllers.Application.viewThing(userName, spaceId, thingId)),
         NavLink("Advanced...", controllers.Application.showAdvancedCommands(userName, spaceId, thingId)),
-        NavLink("Explore...", enabled = thing.isEditable, onClick = Some({() => PageManager.showPage("_explore", Map(("thingId" -> thingId)))})),
-        NavLink("Delete " + thing.displayName, EmptyCall, Some("deleteThing"), enabled = thing.isDeleteable))      
+        NavLink("Explore...", PageManager.pageUrl("_explore", Map(("thingId" -> thingId))), enabled = thing.isEditable),
+        // TODO: this should pop a dialog:
+        NavLink("Delete " + thing.displayName, enabled = thing.isDeleteable, onClick = Some({ () => }))
+      )
     }
   }
   
@@ -116,7 +124,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   
   //////////////////////////////////////
   
-  def displayNavLink(display:String, call:PlayCall, idStr:String, enabled:Boolean, onClick:Option[() => Unit]) = {
+  def displayNavLink(display:String, url:URL, idStr:String, enabled:Boolean, onClick:Option[() => Unit]) = {
     if (enabled) {
       val link = onClick match {
         case Some(cb) => {
@@ -125,7 +133,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
             display)
         }
         case _ => {
-          a(href:=call.url,
+          a(href:=url,
             id:=idStr,
             display)
         }
@@ -164,12 +172,12 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
 
   def displayNavigable(section:Navigable) = {
     section match {
-      case NavLink(display, call, id, enabled, onClick) => {
+      case NavLink(display, url, id, enabled, onClick) => {
         val idStr = id match {
           case Some(i) => " id=" + i
           case None => ""
         }
-        displayNavLink(display, call, idStr, enabled, onClick)
+        displayNavLink(display, url, idStr, enabled, onClick)
       }
       case NavSection(title, links) => displayNavSection(title, links)
       case NavDivider => displayNavDivider

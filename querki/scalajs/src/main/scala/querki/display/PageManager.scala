@@ -9,6 +9,7 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
+import querki.comm.URL
 import querki.pages.{MissingPageParameterException, Page, ParamMap}
 
 class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
@@ -118,13 +119,17 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     }
   }
   
-  def showPage(pageName:String, paramMap:ParamMap) = {
+  def pageUrl(pageName:String, paramMap:ParamMap = Map.empty):URL = {
     val paramStr =
       if (paramMap.isEmpty)
         ""
       else
         "?" + paramMap.map(pair => s"${pair._1}=${pair._2}").mkString("&")
-    window.location.hash = s"#$pageName$paramStr"
+    s"#$pageName$paramStr"    
+  }
+  
+  def showPage(pageName:String, paramMap:ParamMap) = {
+    window.location.hash = pageUrl(pageName, paramMap)
   }
   
   def renderPage(pageName:String, paramMap:ParamMap):Unit = {

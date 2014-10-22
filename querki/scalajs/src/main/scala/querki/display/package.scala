@@ -5,6 +5,8 @@ import scala.concurrent.Future
 import org.scalajs.dom
 
 import querki.globals._
+
+import querki.comm.URL
 import querki.pages.{Page, ParamMap}
 
 package object display {
@@ -33,6 +35,11 @@ package object display {
      * Update the current Page's display. This is called after the Page fetches its contents.
      */
     def update(title:String):Unit
+    
+    /**
+     * Returns the URL for the specified Page.
+     */
+    def pageUrl(pageName:String, paramMap:ParamMap = Map.empty):URL
     
     /**
      * Switch to the specified page. This is fairly low-level; use higher-level APIs when possible.
