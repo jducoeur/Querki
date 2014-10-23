@@ -12,7 +12,7 @@ class QText(text:Wikitext)(implicit val ecology:Ecology) extends Gadget[dom.Elem
   lazy val InputGadgets = interface[input.InputGadgets]
 
   override def onCreate(root:dom.Element) = {
-    InputGadgets.hookGadgets(root)
+    InputGadgets.hookRawGadgets(root)
   }
   
   def doRender() = {

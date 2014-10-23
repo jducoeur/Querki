@@ -12,10 +12,10 @@ trait MarcoPoloImpl extends SessionApiImpl {
   lazy val Links = interface[querki.links.Links]
   def Tags:querki.tags.Tags
   
-  def handleMarcoPoloRequest(propId:ThingId, q:String):MarcoPoloResponse = {
+  def handleMarcoPoloRequest(propIdOpt:Option[ThingId], q:String):MarcoPoloResponse = {
     implicit val s = state
     val lowerQ = q.toLowerCase()
-    val propOpt = state.prop(propId)
+    val propOpt = propIdOpt.flatMap(state.prop(_))
     val things = getLinksFromSpace(state, propOpt, lowerQ)
     val allItems:Seq[MarcoPoloItem] = propOpt match {
       case Some(prop) => {

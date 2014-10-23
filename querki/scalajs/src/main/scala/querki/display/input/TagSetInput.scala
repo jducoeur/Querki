@@ -36,6 +36,13 @@ object TagSetKind {
 trait MarcoPoloUser extends EcologyMember {
   lazy val controllers = interface[querki.comm.ApiComm].controllers
     
+  def stringOrItem(data:js.Any)(f:ManifestItem => String) = {
+    if (data.isInstanceOf[js.prim.String]) 
+      data 
+    else 
+      f(data.asInstanceOf[ManifestItem])
+  }
+  
   def propId:String 
   def required:Boolean
   def kind:TagSetKind.TagSetKind
@@ -53,13 +60,6 @@ trait MarcoPoloUser extends EcologyMember {
 class TagSetInput(val propId:String, val required:Boolean, val kind:TagSetKind.TagSetKind, initialValuesJs:js.Dynamic)(implicit e:Ecology) 
   extends InputGadget[dom.HTMLInputElement](e) with MarcoPoloUser
 {
-  def stringOrItem(data:js.Any)(f:ManifestItem => String) = {
-    if (data.isInstanceOf[js.prim.String]) 
-      data 
-    else 
-      f(data.asInstanceOf[ManifestItem])
-  }
-  
   def values = { 
     $(elem).manifest("values").asInstanceOf[js.Array[String]].toList
   }
@@ -117,9 +117,22 @@ object MarcoPoloFacade {
 }
 import MarcoPoloFacade._
 
-class MarcoPoloInput(val propId:String, val required:Boolean, val kind:TagSetKind.TagSetKind)(implicit e:Ecology) 
+class MarcoPoloInput(val propId:String, val required:Boolean, val kind:TagSetKind.TagSetKind, mods:Modifier*)(implicit e:Ecology) 
   extends InputGadget[dom.HTMLInputElement](e) with MarcoPoloUser
 {
+  // We need to do stuff at Select time, and the external "marcopoloselect" event doesn't seem to work well enough:
+  def marcoPoloDefWithSelect:js.Object = {
+    val mpd = marcoPoloDef
+    mpd.onSelect = 
+      { (dataRaw:js.Any) => stringOrItem(dataRaw) { data =>
+        val q = data.display
+        onSelect(data)
+        $(elem).value(q)
+        q
+      }}
+    mpd
+  }
+
   /**
    * Usually, we save the value of this field. But this is broken out so that we can do something else
    * if this is being subclassed for a special purpose.
@@ -128,25 +141,21 @@ class MarcoPoloInput(val propId:String, val required:Boolean, val kind:TagSetKin
     saveChange(List(q))
   }
   
+  /**
+   * For subclasses to hook.
+   */
+  def onSelect(item:ManifestItem) = {}
+  
   def hook() = {
-    // For no particularly obvious reason, MarcoPolo appears to stomp the field's value, so we need to
-    // reset it after hooking:
-    val init = $(elem).value().asInstanceOf[String]  
-    $(elem).marcoPolo(marcoPoloDef)
-    $(elem).value(init)
-    
-    $(elem).on("marcopoloselect", { (evt:JQueryEventObject, data:ManifestItem, item:js.UndefOr[JQuery], initial:Boolean) =>
-      val q = data.display
-      $(elem).value(q)
-    })
+    $(elem).marcoPolo(marcoPoloDefWithSelect)
     
     $(elem).change( { (evt:JQueryEventObject) =>
-      onChange($(elem).value().asInstanceOf[String])      
+      onChange($(elem).value().asInstanceOf[String])
     })
   }
   
   def doRender() =
-    input(cls:="_tagInput", tpe:="text")
+    input(cls:="_tagInput", tpe:="text", mods)
 }
 
 object MarcoPoloInput {

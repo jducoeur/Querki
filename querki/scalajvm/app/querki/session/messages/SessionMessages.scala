@@ -21,6 +21,6 @@ case class ClientRequest(req:autowire.Core.Request[String], rc:RequestContext) e
 case class ClientResponse(pickled:String)
 case class ClientError(errorMsg:String)
 
-case class MarcoPoloRequest(propId:ThingId, q:String) extends SessionMessage
+case class MarcoPoloRequest(propId:Option[ThingId], q:String) extends SessionMessage
 case class MarcoPoloItem(display:String, id:String)
 case class MarcoPoloResponse(items:Seq[MarcoPoloItem])

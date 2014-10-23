@@ -20,6 +20,7 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
   
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
+  lazy val InputGadgets = interface[InputGadgets]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
   /**
@@ -27,15 +28,9 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
    */
   def hook():Unit
   
-  /**
-   * If this InputGadget gets created in the conventional way, hook it after it's created.
-   * 
-   * Note that InputGadgets tend to come from two different sources. Sometimes they are built
-   * by QText -- that is, they are defined in Wikitext -- in which case InputGadgets learns
-   * about them *after* they are built, and then hooks them. OTOH, if they are specified in
-   * Scalatags and then rendered, this will be called, so we can hook them.
-   */
-  override def onCreate(elem:T) = hook() 
+  // Register ourselves, so that we get hooked. Note that hooking needs to happen *after* onCreate,
+  // since some libraries operate on the context we are found in:
+  InputGadgets.gadgetCreated(this)
   
   /**
    * Records a change that the user has made. This should be called by the specific Gadget when

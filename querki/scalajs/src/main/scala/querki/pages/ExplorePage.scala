@@ -3,12 +3,28 @@ package querki.pages
 import scala.concurrent.Future
 
 import scalatags.JsDom.all.{input => inp, _}
+import org.scalajs.dom
 
 import querki.globals._
 
+import querki.display.input.{ManifestItem, MarcoPoloInput, TagSetKind}
+
 class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
   
-  val thingId = params.requiredParam("thingId")
+  var thingId = params.requiredParam("thingId")
+
+  class ThingSelect(mods:Modifier*) extends MarcoPoloInput("", false, TagSetKind.Link, mods) {
+    override def onChange(q:String) = {}
+    
+    override def onSelect(item:ManifestItem) = {
+      thingId = item.id
+      evaluate()
+    }
+  }
+  
+  def evaluate() = {
+    
+  }
 
   def pageContent = for {
     thingInfo <- DataAccess.getThing(thingId)
@@ -18,7 +34,7 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
         
         div(id:="_exploreQueryRow", cls:="row-fluid",
           div(cls:="span3 _exploreSurround",
-            p(inp(id:="_exploreThingName", tpe:="text", placeholder:=thingInfo.displayName),
+            p(new ThingSelect(id:="_exploreThingName", placeholder:=thingInfo.displayName),
               "-> [[")
           ),
           div(id:="_exploreQlInputDiv", cls:="span8",

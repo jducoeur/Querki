@@ -31,15 +31,26 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets {
     ("_tagInput" -> { MarcoPoloInput(_) })
   )
   
+  var unhookedGadgets = Set.empty[InputGadget[_]]
+  
+  def gadgetCreated(gadget:InputGadget[_]) =
+    unhookedGadgets += gadget
+  
   val jsUnit = 1:js.Any
   
-  def hookGadgets(root:dom.Element) = {
+  def hookPendingGadgets() = {
+    unhookedGadgets.foreach(_.hook())
+    unhookedGadgets = Set.empty
+  }
+  
+  def hookRawGadgets(root:dom.Element) = {
     registry.foreach { pair =>
       val (className, constr) = pair
       // TODO: this is the old signature of .each(). Replace this with a more modern version:
       $(root).find(s".$className").each ({ (index:js.Any, elem:dom.Element) =>
         val gadget = constr(elem)
         gadget.hook()
+        unhookedGadgets -= gadget
         jsUnit
       })
     }
