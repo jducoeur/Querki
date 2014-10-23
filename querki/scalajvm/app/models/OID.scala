@@ -43,7 +43,14 @@ class OID(val raw:Long) {
 
 object OID {
   def apply(raw:Long) = new OID(raw)
-  def apply(name:String) = new OID(java.lang.Long.parseLong(name, 36))
+  def apply(name:String) = {
+    // Cope with either ThingID style or raw OID:
+    val n = name(0) match {
+      case '.' => name.substring(1)
+      case _ => name
+    }
+    new OID(java.lang.Long.parseLong(n, 36))
+  }
   def apply(shard:Int, index:Int) = new OID((shard.toLong << 32) + index)
   
   // TODO: this really ought to be done as a stored procedure, but let's wait until

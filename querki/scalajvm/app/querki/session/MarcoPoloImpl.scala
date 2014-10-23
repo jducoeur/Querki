@@ -66,7 +66,7 @@ trait MarcoPoloImpl extends SessionApiImpl {
         filteredOpt.getOrElse(allThings)
       }
     
-      thingsFiltered.map(t => MarcoPoloItem(t.displayName, t.id.toString)).filter(_.display.toLowerCase().contains(lowerQ))
+      thingsFiltered.map(t => MarcoPoloItem(t.displayName, t.id.toThingId)).filter(_.display.toLowerCase().contains(lowerQ))
     }
     
     space.app match {
