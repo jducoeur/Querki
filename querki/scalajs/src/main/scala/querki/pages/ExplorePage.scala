@@ -81,9 +81,7 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
         p(b("Enter a QL expression below, and press Tab to see what it generates:")),
         
         div(id:="_exploreQueryRow", cls:="row-fluid",
-          div(cls:="span3 _exploreSurround",
-            p(new ThingSelect(id:="_exploreThingName", placeholder:=thingInfo.displayName), "-> [[")
-          ),
+          div(cls:="span3 _exploreSurround", p(new ThingSelect(id:="_exploreThingName", placeholder:=thingInfo.displayName), "-> [[")),
           div(id:="_exploreQlInputDiv", cls:="span8", qlInput),
           div(cls:="span1 _exploreSurround", "]]")
         ),
