@@ -8,6 +8,7 @@ import scalatags.JsDom.all._
 import querki.globals._
 
 import querki.comm._
+import querki.notifications.NotifierGadget
 import querki.pages.SearchGadget
 
 class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
@@ -15,6 +16,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val PageManager = interface[PageManager]
+  lazy val UserAccess = interface[querki.identity.UserAccess]
   
   def spaceOpt = DataAccess.space
   def space = spaceOpt.get
@@ -213,7 +215,13 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
                 ),
                 
                 form(cls:="navbar-search pull-right",
-                  new SearchGadget())
+                  new SearchGadget()),
+                  
+                if (UserAccess.user.isDefined) {
+                  ul(cls:="nav pull-right",
+                    li(new NotifierGadget)
+                  )
+                }
               )
             )
           )

@@ -11,6 +11,7 @@ class UserManagerEcot(e:Ecology) extends ClientEcot(e) with UserAccess {
   def implements = Set(classOf[UserAccess])
   
   var _user:Option[UserInfo] = None
+  def user:Option[UserInfo] = _user
   
   def setUser(user:Option[UserInfo]) = _user = user
   

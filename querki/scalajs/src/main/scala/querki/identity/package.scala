@@ -8,6 +8,8 @@ package object identity {
   trait UserAccess extends EcologyInterface {
     def setUser(user:Option[UserInfo])
     
+    def user:Option[UserInfo]
+    
     def name:String
   }
 }

@@ -8,6 +8,7 @@ class NotificationController extends ApplicationBase {
   
   lazy val UserSession = interface[querki.session.Session]
 
+  // TODO: this is old UI, and should go away
   def showNotifications = withUser(true) { rc =>
     // IMPORTANT: this is a comprehension of Futures!
     for {
@@ -16,5 +17,14 @@ class NotificationController extends ApplicationBase {
       identities <- IdentityAccess.getIdentities(identityIds)
     }
       yield Ok(views.html.showNotifications(rc, recentNotes, identities))
+  }
+  
+  ///////////////////////////
+  //
+  // New API
+  //
+  
+  def numNotifications = withUser(true) { rc =>
+    Ok(rc.numNotifications.toString)
   }
 }

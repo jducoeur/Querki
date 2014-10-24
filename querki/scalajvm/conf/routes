@@ -68,7 +68,7 @@ POST    /u/:userName/:spaceId/_photoUpload   @controllers.PhotoController.upload
 # GET     /u/:userName/:spaceId/client @controllers.ClientController.thing(userName, spaceId, thingId)
 POST    /u/:userName/:spaceId/_apiRequest @controllers.ClientController.apiRequest(userName, spaceId, pickledRequest)
 GET     /u/:userName/:spaceId/_marcoPolo @controllers.ClientController.marcoPolo(userName, spaceId, propId)
-
+GET     /u/_numNotifications        @controllers.NotificationController.numNotifications
 
 POST    /dologin                    @controllers.LoginController.dologin
 GET     /logout                     @controllers.LoginController.logout
