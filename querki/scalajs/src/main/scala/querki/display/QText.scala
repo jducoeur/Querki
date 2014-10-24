@@ -42,7 +42,7 @@ class QText(text:Wikitext)(implicit val ecology:Ecology) extends Gadget[dom.Elem
       1:js.Any
     }
     
-    InputGadgets.hookRawGadgets(root)
+    InputGadgets.createInputGadgets(root)
   }
   
   def doRender() = {

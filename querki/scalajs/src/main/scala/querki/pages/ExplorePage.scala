@@ -68,6 +68,7 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
     Client[ThingFunctions].evaluateQL(thingId, qlInput.value).call().foreach { result =>
       val qtext = new QText(result)
       results.replaceContents(qtext.render)
+      InputGadgets.hookPendingGadgets()
     }
   }
   

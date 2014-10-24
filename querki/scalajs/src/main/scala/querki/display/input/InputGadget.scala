@@ -20,7 +20,7 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
   
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
-  lazy val InputGadgets = interface[InputGadgets]
+  lazy val InputGadgetsInternal = interface[InputGadgetsInternal]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
   /**
@@ -30,7 +30,7 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
   
   // Register ourselves, so that we get hooked. Note that hooking needs to happen *after* onCreate,
   // since some libraries operate on the context we are found in:
-  InputGadgets.gadgetCreated(this)
+  InputGadgetsInternal.gadgetCreated(this)
   
   /**
    * Save the current state of this InputGadget. Use this iff you are using beginChanges().
@@ -43,7 +43,7 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
    * 
    * If you call this, you should also define the save() method.
    */
-  def beginChanges() = InputGadgets.startingEdits(this)
+  def beginChanges() = InputGadgetsInternal.startingEdits(this)
   
   /**
    * Records a change that the user has made. This should be called by the specific Gadget when
@@ -57,7 +57,7 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
     StatusLine.showUntilChange("Saving...")
     val path = $(elem).attr("name")
     Client[EditFunctions].alterProperty(DataAccess.thingId, path, ChangePropertyValue(vs)).call().foreach { response =>
-      InputGadgets.saveComplete(this)
+      InputGadgetsInternal.saveComplete(this)
 	  response match {
         case PropertyChanged => {
           StatusLine.showBriefly("Saved")

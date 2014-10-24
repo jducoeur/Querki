@@ -6,9 +6,30 @@ import org.scalajs.dom
 
 import querki.globals._
 
-class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets {
+/**
+ * Private interface, allowing InputGadgets to work with their master controller.
+ */
+private [input] trait InputGadgetsInternal extends EcologyInterface {
+    /**
+     * Each InputGadget should register itself here, to ensure that it gets hooked.
+     */
+    def gadgetCreated(gadget:InputGadget[_]):Unit
+    
+    /**
+     * Record that this Gadget has begun to be edited, and is not yet saved. Use this for complex Gadgets
+     * that don't simply save immediately on every change, so that we can force-save when needed.
+     */
+    def startingEdits(gadget:InputGadget[_]):Unit
+    
+    /**
+     * The pair to startingEdits(), which should be called when save is complete.
+     */
+    def saveComplete(gadget:InputGadget[_]):Unit
+}
+
+class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with InputGadgetsInternal {
   
-  def implements = Set(classOf[InputGadgets])
+  def implements = Set(classOf[InputGadgets], classOf[InputGadgetsInternal])
   
   /**
    * The factory function for an InputGadget. It is consistent and trivial, but we don't have
@@ -43,14 +64,12 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets {
     unhookedGadgets = Set.empty
   }
   
-  def hookRawGadgets(root:dom.Element) = {
+  def createInputGadgets(root:dom.Element) = {
     registry.foreach { pair =>
       val (className, constr) = pair
       // TODO: this is the old signature of .each(). Replace this with a more modern version:
       $(root).find(s".$className").each ({ (index:js.Any, elem:dom.Element) =>
         val gadget = constr(elem)
-        gadget.hook()
-        unhookedGadgets -= gadget
         jsUnit
       })
     }
