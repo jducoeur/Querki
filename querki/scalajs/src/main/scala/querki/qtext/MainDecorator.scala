@@ -5,13 +5,18 @@ package querki.qtext
  */
 trait MainDecorator extends Decorator {
   override def decorateLink(text:String, urlIn:String, title:Option[String]):String = {
-    val url = if ((urlIn.startsWith("http:") || (urlIn.startsWith("https:") || (urlIn.startsWith("/"))))) {
-      // Absolute URL, so leave it alone:
+    super.decorateLink(text, MainDecorator.adjustUrl(urlIn), title)
+  }
+}
+
+object MainDecorator {
+  def adjustUrl(urlIn:String):String = {
+    if ((urlIn.startsWith("http:") || (urlIn.startsWith("https:") || (urlIn.startsWith("/")) || (urlIn.startsWith("#"))))) {
+      // Absolute URL or already hashed, so leave it alone:
       urlIn
     } else {
       // Relative URL, so hashify it:
       "#" + urlIn
-    }
-    super.decorateLink(text, url, title)
+    }    
   }
 }

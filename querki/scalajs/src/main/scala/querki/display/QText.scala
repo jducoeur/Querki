@@ -1,5 +1,6 @@
 package querki.display
 
+import scala.scalajs.js
 import org.scalajs.dom
 import scalatags.JsDom.all._
 
@@ -7,11 +8,30 @@ import models.Wikitext
 
 import querki.globals._
 
+import querki.qtext.MainDecorator
+
 class QText(text:Wikitext)(implicit val ecology:Ecology) extends Gadget[dom.Element] with EcologyMember {
   
   lazy val InputGadgets = interface[input.InputGadgets]
 
   override def onCreate(root:dom.Element) = {
+    // Adjust the URLs of any links we find.
+    // TODO: this is a serious hack, reflecting the fact that a painful amount of server code
+    // generates <a> tags with raw URLs that don't match current reality. Eventually, we should
+    // fix that somehow -- likely by making the URL scheme consistent everywhere, once we are
+    // more comfortable with the Client.
+    $(elem).find("a").each { (index:js.Any, child:dom.Element) =>
+      try {
+      val originalHref = $(child).attr("href")
+      val fixedHref = MainDecorator.adjustUrl(originalHref)
+      $(child).attr("href", fixedHref)
+      } catch {
+        // Sadly, the JSDom library throws an exception if the tag doesn't have an href
+        case e:Exception => { println(s"Got an exception trying to tweak the href of anchor tag $child") }
+      }
+      1:js.Any
+    }
+    
     InputGadgets.hookRawGadgets(root)
   }
   
