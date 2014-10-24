@@ -141,6 +141,7 @@ object Dependencies {
 	  "com.lihaoyi" %%%! "upickle" % "0.2.5",
 	  "com.scalatags" %%%! "scalatags" % "0.4.0",
 	  "com.lihaoyi" %%%! "autowire" % "0.2.3",
+	  "com.scalarx" %%%! "scalarx" % "0.2.6",
 	  "org.scala-lang.modules" %% "scala-async" % "0.9.2"
   ) ++ shared
 }
