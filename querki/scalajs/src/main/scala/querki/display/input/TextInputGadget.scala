@@ -1,5 +1,7 @@
 package querki.display.input
 
+import scala.scalajs.js
+import js._
 import org.scalajs.dom
 import org.scalajs.jquery._
 import scalatags.JsDom.all._
@@ -8,9 +10,7 @@ import querki.globals._
 
 class TextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLInputElement](e) {
   
-  override def save() = {
-    saveChange(List(elem.value))
-  }  
+  def values = List(elem.value)
   
   // TBD: do we need an unhook, to avoid leaks?
   def hook() = {
@@ -37,11 +37,18 @@ object AutosizeFacade {
 }
 import AutosizeFacade._
 
+trait JQueryEventEnhanced extends js.Object {
+  // This should be a standard part of JQueryEventObject, IMO:
+  def ctrlKey:UndefOr[Int] = ???
+}
+object JQueryEventEnhanced {
+  implicit def jqe2Enhanced(evt:JQueryEventObject):JQueryEventEnhanced = evt.asInstanceOf[JQueryEventEnhanced]
+}
+import JQueryEventEnhanced._
+
 class LargeTextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLTextAreaElement](e) {
   
-  override def save() = {
-    saveChange(List(elem.value))
-  }
+  def values = List(elem.value)
   
   // TBD: do we need an unhook, to avoid leaks?
   def hook() = {
@@ -52,6 +59,20 @@ class LargeTextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLTextA
     $(elem).filter(":notUnder(.inputTemplate)").autosize()
     
     $(elem).change({ (evt:JQueryEventObject) => save() })
+    
+    // Intercept ctrl-s, and save the value of this text. This is a bit horrible, but
+    // necessary in order to work cross-browser.
+    // TBD: should we do this at the Page level, so that it does the right thing anywhere
+    // on the page? If nothing else, it would block the annoying popup.
+    $(elem).keydown({ (evt:JQueryEventObject) =>
+      val metaKey = evt.metaKey.asInstanceOf[UndefOr[Int]]
+      if ((metaKey.isDefined || evt.ctrlKey.isDefined)
+          && (evt.which.toChar.toString.toLowerCase == "s")) 
+      {
+        evt.preventDefault()
+        save()
+      }
+    })
     
     $(elem).keypress({ (evt:JQueryEventObject) => beginChanges() })
   }

@@ -84,7 +84,7 @@ class TagSetInput(val propId:String, val required:Boolean, val kind:TagSetKind.T
     // grabbing and sending the full values list, but we could instead combine changeType and data into a
     // proper change event.
     $(elem).on("manifestchange", { (/*evt:JQueryEventObject, changeType:String, data:js.Any*/) =>
-      saveChange(values)
+      save()
     })
   }
   
@@ -132,13 +132,15 @@ class MarcoPoloInput(val propId:String, val required:Boolean, val kind:TagSetKin
       }}
     mpd
   }
+  
+  def values = List($(elem).value().asInstanceOf[String])
 
   /**
    * Usually, we save the value of this field. But this is broken out so that we can do something else
    * if this is being subclassed for a special purpose.
    */
-  def onChange(q:String) = {
-    saveChange(List(q))
+  def onChange() = {
+    save()
   }
   
   /**
@@ -150,7 +152,7 @@ class MarcoPoloInput(val propId:String, val required:Boolean, val kind:TagSetKin
     $(elem).marcoPolo(marcoPoloDefWithSelect)
     
     $(elem).change( { (evt:JQueryEventObject) =>
-      onChange($(elem).value().asInstanceOf[String])
+      onChange()
     })
   }
   

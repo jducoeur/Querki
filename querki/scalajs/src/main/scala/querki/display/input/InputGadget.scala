@@ -26,16 +26,33 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
   /**
    * Hook whatever events are appropriate for this Gadget.
    */
-  def hook():Unit
+  protected def hook():Unit
+
+  /**
+   * Called by InputGadgets when it is time to prepare this Gadget for the world.
+   */
+  def prep() = {
+    hook()
+  }
   
   // Register ourselves, so that we get hooked. Note that hooking needs to happen *after* onCreate,
   // since some libraries operate on the context we are found in:
   InputGadgetsInternal.gadgetCreated(this)
   
   /**
-   * Save the current state of this InputGadget. Use this iff you are using beginChanges().
+   * Concrete gadgets should define this. It is the current value of this Gadget, based on what's
+   * on the screen.
    */
-  def save():Unit = {}
+  def values:List[String]
+  
+  /**
+   * Save the current state of this InputGadget. This can potentially be overridden, but shouldn't
+   * usually require that. The Gadget should call this whenever it is appropriate to save the current
+   * value.
+   */
+  def save():Unit = {
+    saveChange(values)
+  }
 
   /**
    * InputGadgets should call this iff they have a complex edit cycle -- that is, if you begin to

@@ -60,7 +60,7 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
   val jsUnit = 1:js.Any
   
   def hookPendingGadgets() = {
-    unhookedGadgets.foreach(_.hook())
+    unhookedGadgets.foreach(_.prep())
     unhookedGadgets = Set.empty
   }
   

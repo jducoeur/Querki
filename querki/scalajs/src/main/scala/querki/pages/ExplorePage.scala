@@ -24,7 +24,7 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
   }
 
   class ThingSelect(mods:Modifier*) extends MarcoPoloInput("", false, TagSetKind.Link, mods) {
-    override def onChange(q:String) = {}
+    override def onChange() = {}
     
     override def onSelect(item:ManifestItem) = {
       chosenThingId = Some(item.id)
@@ -37,6 +37,8 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
     val default = "_foreachProperty"
     
     def doRender() = textarea(id:="_exploreQlInput", placeholder:=default, width:="100%")
+    
+    def values = List(value)
     
     def value = {
       val raw = $(elem).value().asInstanceOf[String]
