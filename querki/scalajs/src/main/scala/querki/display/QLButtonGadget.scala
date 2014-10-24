@@ -30,6 +30,7 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
         targetJQ.append(qtext.render)
         targetJQ.show()
       }
+      evt.preventDefault()
     }
   }
 }
