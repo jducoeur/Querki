@@ -53,6 +53,16 @@ package object display {
      * to a new Future.
      */
     def nextChangeFuture:Future[Page]
+    
+    /**
+     * The current local part of the URL -- essentially the relative URL.
+     */
+    def currentHash:String
+    
+    /**
+     * Reload the current page, based on its hash.
+     */
+    def reload():Unit
   }
   
   trait StatusLine extends EcologyInterface {

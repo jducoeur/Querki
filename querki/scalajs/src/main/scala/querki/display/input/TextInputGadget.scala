@@ -8,11 +8,15 @@ import querki.globals._
 
 class TextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLInputElement](e) {
   
+  override def save() = {
+    saveChange(List(elem.value))
+  }  
+  
   // TBD: do we need an unhook, to avoid leaks?
   def hook() = {
-    $(elem).change({ event:JQueryEventObject =>
-      saveChange(List(elem.value))
-    })
+    $(elem).change({ event:JQueryEventObject => save() })
+    
+    $(elem).keypress({ (evt:JQueryEventObject) => beginChanges() })
   }
   
   def doRender() =
@@ -35,6 +39,10 @@ import AutosizeFacade._
 
 class LargeTextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLTextAreaElement](e) {
   
+  override def save() = {
+    saveChange(List(elem.value))
+  }
+  
   // TBD: do we need an unhook, to avoid leaks?
   def hook() = {
     // Mark LargeTextInputs as autosized.
@@ -43,9 +51,9 @@ class LargeTextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLTextA
     // Note that we define the :notUnder selector in PageManager:
     $(elem).filter(":notUnder(.inputTemplate)").autosize()
     
-    $(elem).change({ event:JQueryEventObject =>
-      saveChange(List(elem.value))
-    })
+    $(elem).change({ (evt:JQueryEventObject) => save() })
+    
+    $(elem).keypress({ (evt:JQueryEventObject) => beginChanges() })
   }
   
   def doRender() =

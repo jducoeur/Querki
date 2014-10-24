@@ -35,4 +35,10 @@ package object globals {
    * This should generally be left as runNow; otherwise, it can foul up utest.
    */
   implicit val queue = scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+  
+  // I'm now using Future and Promise enough that we may as well make them generally available
+  type Future[T] = scala.concurrent.Future[T]
+  val Future = scala.concurrent.Future
+  type Promise[T] = scala.concurrent.Promise[T]
+  val Promise = scala.concurrent.Promise
 }

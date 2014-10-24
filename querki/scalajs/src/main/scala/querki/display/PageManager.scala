@@ -16,6 +16,7 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   def implements = Set(classOf[PageManager])
   
   lazy val DataAccess = interface[querki.data.DataAccess]
+  lazy val InputGadgets = interface[querki.display.input.InputGadgets]
   lazy val Pages = interface[querki.pages.Pages]
   lazy val StatusLine = interface[StatusLine]
   lazy val StatusLineInternal = interface[StatusLineInternal]
@@ -78,13 +79,19 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   }
   
   var _currentHash = ""
+    
+  def currentHash = _currentHash
+  def reload() = invokeFromHash()
   
   /**
    * Based on the hash part of the current location, load the appropriate page.
    */
   def invokeFromHash() = {
     val fullHash = window.location.hash
-    if (fullHash != _currentHash) {
+    // Actually, we do want to be able to reload the current page:
+//    if (fullHash != _currentHash) {
+    // Before we "navigate", give any outstanding InputGadgets a chance to save their values:
+    InputGadgets.afterAllSaved.foreach { dummy =>
       _currentHash = fullHash
 	    // Slice off the hash itself:
 	    val hash = fullHash.substring(1)

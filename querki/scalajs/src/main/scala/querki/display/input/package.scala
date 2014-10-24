@@ -22,5 +22,22 @@ package object input {
      * Each InputGadget should register itself here, to ensure that it gets hooked.
      */
     def gadgetCreated(gadget:InputGadget[_]):Unit
+    
+    /**
+     * Record that this Gadget has begun to be edited, and is not yet saved. Use this for complex Gadgets
+     * that don't simply save immediately on every change, so that we can force-save when needed.
+     */
+    def startingEdits(gadget:InputGadget[_]):Unit
+    
+    /**
+     * The pair to startingEdits(), which should be called when save is complete.
+     */
+    def saveComplete(gadget:InputGadget[_]):Unit
+    
+    /**
+     * Tells any InputGadgets that are currently being edited to save their current values, and returns
+     * a Future that will be fulfilled once that is true. (Which may be immediately.)
+     */
+    def afterAllSaved:Future[Unit]
   }
 }

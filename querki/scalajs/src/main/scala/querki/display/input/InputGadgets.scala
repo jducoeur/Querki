@@ -55,4 +55,34 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets {
       })
     }
   }
+  
+  /**
+   * Gadgets that are currently being edited, which haven't yet been saved.
+   */
+  var gadgetsBeingEdited = Set.empty[InputGadget[_]]
+  
+  var savePromise:Option[Promise[Unit]] = None
+  
+  def startingEdits(gadget:InputGadget[_]) = {
+    gadgetsBeingEdited += gadget
+  }
+  def saveComplete(gadget:InputGadget[_]) = {
+    gadgetsBeingEdited -= gadget
+    if (gadgetsBeingEdited.isEmpty && savePromise.isDefined) {
+      val promise = savePromise.get
+      savePromise = None
+      promise.success()
+    }
+  }
+  
+  def afterAllSaved:Future[Unit] = {
+    if (gadgetsBeingEdited.isEmpty)
+      Future.successful()
+    else {
+      val promise = Promise[Unit]
+      savePromise = Some(promise)
+      gadgetsBeingEdited.foreach(_.save())
+      promise.future
+    }
+  }
 }

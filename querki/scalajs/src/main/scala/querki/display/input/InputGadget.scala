@@ -33,6 +33,19 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
   InputGadgets.gadgetCreated(this)
   
   /**
+   * Save the current state of this InputGadget. Use this iff you are using beginChanges().
+   */
+  def save():Unit = {}
+
+  /**
+   * InputGadgets should call this iff they have a complex edit cycle -- that is, if you begin to
+   * edit and later save those changes. Use this to make sure that changes get saved before we navigate.
+   * 
+   * If you call this, you should also define the save() method.
+   */
+  def beginChanges() = InputGadgets.startingEdits(this)
+  
+  /**
    * Records a change that the user has made. This should be called by the specific Gadget when
    * appropriate.
    * 
@@ -44,6 +57,7 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
     StatusLine.showUntilChange("Saving...")
     val path = $(elem).attr("name")
     Client[EditFunctions].alterProperty(DataAccess.thingId, path, ChangePropertyValue(vs)).call().foreach { response =>
+      InputGadgets.saveComplete(this)
 	  response match {
         case PropertyChanged => {
           StatusLine.showBriefly("Saved")
