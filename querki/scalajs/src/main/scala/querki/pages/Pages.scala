@@ -1,10 +1,30 @@
 package querki.pages
 
 import querki.globals._
+import querki.search.SearchResultsPage
 
 class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   
   def implements = Set(classOf[Pages])
+  
+  override def postInit() = {
+    // PageFactory for the ExplorePage, since there isn't another good package to stick it
+    // into:
+    registerFactory(new PageFactory {
+      def constructPageOpt(pageName:String, params:ParamMap):Option[Page] = {
+        if (pageName == "_explore")
+          Some(new ExplorePage(params))
+        else
+          None
+      }
+    })
+  }
+  
+  private var factories = Seq.empty[PageFactory]
+  
+  def registerFactory(factory:PageFactory):Unit = {
+    factories :+= factory
+  }
   
   /**
    * The big hardcoded factory for Pages.
@@ -17,12 +37,15 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
    * moving each Page to the relevant package, but that seems more and more correct anyway.
    */
   def constructPage(name:String, params:ParamMap):Page = {
-    name match {
-      case "_search" => new SearchResultsPage(params)
-      case "_explore" => new ExplorePage(params)
-      case "_notifications" => new querki.notifications.NotificationsPage(params)
-      case _ => new ThingPage(name, params)
+    val pageOpt = (Option.empty[Page] /: factories) { (opt, factory) =>
+      opt match {
+        case Some(page) => opt
+        case None => factory.constructPageOpt(name, params)
+      }
     }
+    
+    // Fall back to ThingPage if nothing else claims ownership:
+    pageOpt.getOrElse(new ThingPage(name, params))
   }
   
 }

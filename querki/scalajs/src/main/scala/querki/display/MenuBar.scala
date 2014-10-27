@@ -9,7 +9,7 @@ import querki.globals._
 
 import querki.comm._
 import querki.notifications.NotifierGadget
-import querki.pages.SearchGadget
+import querki.search.SearchGadget
 
 class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
   

@@ -3,7 +3,24 @@ package querki
 import querki.globals._
 
 package object pages {
+  
+  /**
+   * The factory for a particular kind of page.
+   */
+  trait PageFactory {
+    /**
+     * If this name fits this PageFactory, construct the Page; otherwise, decline and it'll go to the next.
+     */
+    def constructPageOpt(pageName:String, params:ParamMap):Option[Page]
+  }
+  
   trait Pages extends EcologyInterface {
+    
+    /**
+     * Register a PageFactory for use. Usually called during postInit().
+     */
+    def registerFactory(factory:PageFactory):Unit
+    
     /**
      * Given the name and parameters to a Page, build a new instance.
      */
