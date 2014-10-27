@@ -18,13 +18,15 @@ import querki.util.ScalatagUtils
  * Wrapper around Scalatags, to provide support for tracking and updating the rendered elements
  * as the underlying data changes.
  */
-trait Gadget[Output <: dom.Element] extends scalatags.jsdom.Frag with ScalatagUtils {
+trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with ScalatagUtils {
   /**
    * Concrete subclasses should fill this in with the actual guts of the Gadget.
    */
   def doRender():scalatags.JsDom.TypedTag[Output]
   
   lazy val underlyingTag = doRender()
+  
+  def createFrag = underlyingTag.render
   
   /**
    * Render some wikitext from the server.
@@ -47,9 +49,6 @@ trait Gadget[Output <: dom.Element] extends scalatags.jsdom.Frag with ScalatagUt
    */
   def iconButton(iconName:String, addlCls:Seq[String] = Seq.empty) = querkiButton(icon(iconName), addlCls)
   
-  var _elem:Option[Output] = None
-  def elemOpt = _elem
-  def elem = _elem.get
   /**
    * Slam the element for this Gadget. You should only call this iff the element was actually called from
    * an external mechanism (eg, via QText), and you're building this Gadget around that element.
@@ -59,17 +58,5 @@ trait Gadget[Output <: dom.Element] extends scalatags.jsdom.Frag with ScalatagUt
   def setElem(e:dom.Element):this.type = {
     _elem = Some(e.asInstanceOf[Output])
     this
-  }
-  
-  /**
-   * Concrete Gadgets can override this to perform actions after we've created the actual Element.
-   */
-  def onCreate(elem:Output) = {}
-  
-  def render:Output = {
-    val result = underlyingTag.render
-    _elem = Some(result)
-    onCreate(result)
-    result
   }
 }
