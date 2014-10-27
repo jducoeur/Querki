@@ -5,21 +5,29 @@ import rx._
 import querki.globals._
 
 import querki.comm._
+import querki.pages.Page
+import querki.util.{Contributor, Publisher}
 
 class NotificationsEcot(e:Ecology) extends ClientEcot(e) with Notifications {
   
   def implements = Set(classOf[Notifications])
-  
+
+  lazy val PageManager = interface[querki.display.PageManager]
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   
   val numNotifications = Var(1)
   
   /**
-   * TODO: we really should update this each time we load a Page:
+   * After we load each Page, check with the server about how many Notifications there currently are.
    */
   override def postInit() = {
-    controllers.NotificationController.numNotifications().callAjax().foreach { nStr =>
-      numNotifications() = nStr.toInt
+    PageManager.afterPageLoads += new Contributor[Page,Unit] {
+      def notify(evt:Page, sender:Publisher[Page, Unit]) = {
+	    controllers.NotificationController.numNotifications().callAjax().foreach { nStr =>
+	      // Update any reactive listeners:
+	      numNotifications() = nStr.toInt
+	    }        
+      }
     }
   }
 }

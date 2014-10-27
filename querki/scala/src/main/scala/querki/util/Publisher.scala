@@ -24,6 +24,13 @@ trait Publisher[Evt,Result] {
 }
 
 /**
+ * The simplest kind of Publisher -- simply pushes out Events.
+ */
+trait Notifier[Evt] extends Publisher[Evt,Unit] {
+  def apply(evt:Evt) = contributors.foreach(_.notify(evt, this))
+}
+
+/**
  * A Publisher that collects the results of all of the Contributors into a Seq.
  */
 trait Aggregator[Evt,Result] extends Publisher[Evt,Result] {

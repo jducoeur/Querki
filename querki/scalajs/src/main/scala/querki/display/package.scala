@@ -8,12 +8,9 @@ import querki.globals._
 
 import querki.comm.URL
 import querki.pages.{Page, ParamMap}
+import querki.util.Notifier
 
 package object display {
-  /**
-   * Signature for listeners that can watch for page changes.
-   */
-  type PageListener = ((dom.Element, Page) => Unit)
   
   trait PageManager extends EcologyInterface {
     /**
@@ -63,6 +60,11 @@ package object display {
      * Reload the current page, based on its hash.
      */
     def reload():Unit
+    
+    /**
+     * Listen to this publication point if you want to be notified *after* each Page load.
+     */
+    def afterPageLoads:Notifier[Page]
   }
   
   trait StatusLine extends EcologyInterface {

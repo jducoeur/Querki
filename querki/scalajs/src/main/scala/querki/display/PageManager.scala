@@ -11,6 +11,7 @@ import querki.globals._
 
 import querki.comm.URL
 import querki.pages.{MissingPageParameterException, Page, ParamMap}
+import querki.util.Notifier
 
 class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   def implements = Set(classOf[PageManager])
@@ -44,6 +45,8 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
       _nextChangePromise = Some(Promise[Page])
     _nextChangePromise.get.future
   }
+  
+  val afterPageLoads = new Notifier[Page] {}
   
   val menuHolder = new WrapperDiv
   
@@ -164,5 +167,6 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     $(displayRoot).append(fullPage.render)
     
     _nextChangePromise.foreach { _.success(page) }
+    afterPageLoads(page)
   }
 }
