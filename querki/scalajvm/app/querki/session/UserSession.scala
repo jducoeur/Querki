@@ -6,16 +6,43 @@ import akka.event.LoggingReceive
 // TEMP: while hacking the timestamps:
 import com.github.nscala_time.time.Imports._
 
+import upickle._
+import autowire._
+
+import querki.globals._
+import Implicits.execContext
+
 import querki.ecology._
 import querki.identity.{CollaboratorCache, IdentityId, PublicIdentity, UserId}
-import querki.notifications.{CurrentNotifications, EmptyNotificationId, LoadInfo, Notification, UpdateLastChecked, UserInfo}
+import querki.notifications.{CurrentNotifications, EmptyNotificationId, LoadInfo, Notification, NotificationFunctions, UpdateLastChecked, UserInfo}
 import querki.notifications.NotificationPersister.Load
 import querki.spaces.SpacePersistenceFactory
 import querki.time.DateTime
-import querki.util._
+import querki.util.{Requester, TimeoutChild}
+import querki.values.RequestContext
+
+import messages.{ClientRequest, ClientResponse}
+
+/**
+ * The various UserSession-focused implementations should inherit from this. They then get mixed into
+ * UserSpaceSession, and use this trait to access the critical contextual info. 
+ */
+trait UserSessionApiImpl extends EcologyMember {
+  /**
+   * The User who is making this request.
+   */
+  def userId:UserId
+  
+  def rc:RequestContext
+  
+  def currentNotes:Seq[Notification]
+  def lastNoteChecked:Int
+}
 
 private [session] class UserSession(val ecology:Ecology, val userId:UserId) extends Actor with Stash with Requester 
   with TimeoutChild with EcologyMember 
+  with autowire.Server[String, upickle.Reader, upickle.Writer]
+  with NotificationFunctionsImpl
 {
   import UserSessionMessages._
   
@@ -47,6 +74,21 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
       currentNotes.map(_.id).max    
   }
   def nextNoteId:Int = currentMaxNote + 1
+  
+  var _currentRc:Option[RequestContext] = None
+  def rc = _currentRc.get
+  def withRc[R](rc:RequestContext)(f: => R):R = {
+    _currentRc = Some(rc)
+    try {
+      f
+    } finally {
+      _currentRc = None
+    }
+  }
+  
+  // Autowire functions
+  def write[Result: Writer](r: Result) = upickle.write(r)
+  def read[Result: Reader](p: String) = upickle.read[Result](p)
   
   override def preStart() = {
     notePersister ! LoadInfo
@@ -100,6 +142,20 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
     }
     
     case msg:GetCollaborators => collaborators.forward(msg)
+    
+    case UserSessionClientRequest(_, ClientRequest(req, rc)) => {
+      withRc(rc) {
+	      req.path(2) match {
+	        case "NotificationFunctions" => {
+	          // route() is asynchronous, so we need to store away the sender!
+	          val senderSaved = sender
+	          route[NotificationFunctions](this)(req).foreach { result =>
+	            senderSaved ! ClientResponse(result)
+	          }          
+	        }
+	      }
+      }
+    }
   }
 }
 
@@ -137,6 +193,13 @@ object UserSessionMessages {
     def copyTo(userId:UserId) = copy(userId = userId)    
   }
   case class Collaborators(acs:Iterable[PublicIdentity])
+
+  /**
+   * An RPC request from the Client.
+   */
+  case class UserSessionClientRequest(userId:UserId, req:ClientRequest) extends UserSessionMsg {
+    def copyTo(userId:UserId) = copy(userId = userId)
+  }
 }
 
 object UserSession {

@@ -7,7 +7,7 @@ import models.AsOID
 import querki.globals._
 
 import querki.data.{IdentityInfo, RequestInfo, SpaceInfo, ThingInfo, UserInfo}
-import querki.identity.User
+import querki.identity.{PublicIdentity, User}
 import querki.pages.PageDetails
 import querki.tags.IsTag
 import querki.values.RequestContext
@@ -45,11 +45,15 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi {
     }
   }
   
+  def identityInfo(identity:PublicIdentity):IdentityInfo = {
+    IdentityInfo(AsOID(identity.id), identity.name, identity.handle)
+  }
+  
   def userInfo(uopt:Option[User]):Option[UserInfo] = {
     uopt.map { user =>
       // TODO: this will need adjusting when we have multiple Identities. The mainIdentity should come first:
       val identityInfos = user.identities.map { identity =>
-        IdentityInfo(AsOID(identity.id), identity.name, identity.handle)
+        identityInfo(identity)
       }
       UserInfo(AsOID(user.id), identityInfos)
     }

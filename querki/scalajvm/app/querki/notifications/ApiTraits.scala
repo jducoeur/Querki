@@ -68,11 +68,6 @@ object SummarizeAt {
 case class SummarizedNotifications(headline:Wikitext, content:Wikitext, notes:Seq[Notification])
 
 /**
- * How to display a single Notification.
- */
-case class RenderedNotification(headline:Wikitext, content:Wikitext)
-
-/**
  * The Notifications that are currently unread for this User.
  */
 case class CurrentNotifications(notes:Seq[Notification])

@@ -8,15 +8,16 @@ import models.Thing.PropMap
 
 import querki.ecology._
 import querki.identity.{IdentityId, PublicIdentity, User, UserId}
+import querki.notifications.Common
 import querki.values.RequestContext
 
 package object notifications {
   /**
    * The ID used for each Notification. Note that this is scoped by the receiver.
    */
-  type NotificationId = Int
+  type NotificationId = Common.NotificationId
   
-  val EmptyNotificationId = -1
+  val EmptyNotificationId = Common.EmptyNotificationId
   
   /**
    * How we represent the guts of a Notification. This may continue to be exactly a PropMap, but

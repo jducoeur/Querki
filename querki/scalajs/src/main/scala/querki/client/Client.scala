@@ -17,10 +17,24 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
     try {
       // TODO: handle HTTP errors from this apiRequest call. What should we do with them?
       // Put a message in the Status area?
-      controllers.ClientController.apiRequest(
-          DataAccess.userName, 
-          DataAccess.spaceId, 
-          upickle.write(req)).callAjax()
+      req.path(2) match {
+        // TBD: this is kind of horrible -- somebody needs to know whether
+        // this particular interface is "space-based" or "user-based". We do that here
+        // because it affects the signature that we send. But it is fugly. Can we come
+        // up with a higher-level abstraction of the function trait, which we use to
+        // make this decision?
+        case "NotificationFunctions" => {
+	      controllers.ClientController.userApiRequest(
+	          upickle.write(req)).callAjax()          
+        }
+        
+        case _ => {
+	      controllers.ClientController.apiRequest(
+	          DataAccess.userName, 
+	          DataAccess.spaceId, 
+	          upickle.write(req)).callAjax()
+        }
+      }
     } catch {
       // Note that we need to catch and report exceptions here; otherwise, they tend to get
       // lost inside Autowire:

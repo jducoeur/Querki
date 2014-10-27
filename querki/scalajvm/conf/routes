@@ -65,6 +65,7 @@ POST    /u/:userName/:spaceId/_photoUpload   @controllers.PhotoController.upload
 POST    /u/:userName/:spaceId/_apiRequest @controllers.ClientController.apiRequest(userName, spaceId, pickledRequest)
 GET     /u/:userName/:spaceId/_marcoPolo @controllers.ClientController.marcoPolo(userName, spaceId, propId)
 GET     /_numNotifications        @controllers.NotificationController.numNotifications
+POST    /_userApiRequest          @controllers.ClientController.userApiRequest(pickledRequest)
 
 POST    /dologin                    @controllers.LoginController.dologin
 GET     /logout                     @controllers.LoginController.logout

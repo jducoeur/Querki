@@ -1,6 +1,8 @@
 package controllers
 
+import scala.concurrent.duration._
 import scala.concurrent.Future
+import akka.util.Timeout
 
 import upickle._
 import autowire._
@@ -12,6 +14,7 @@ import Implicits.execContext
 
 import querki.api.ThingFunctions
 import querki.pages.PageIDs._
+import querki.session.UserSessionMessages.{UserSessionClientRequest, UserSessionMsg}
 import querki.session.messages._
 import querki.spaces.messages.{SessionRequest, SpaceMgrMsg, ThingError}
 import querki.spaces.messages.SpaceError._
@@ -30,6 +33,10 @@ class ClientController extends ApplicationBase {
    */
   def askUserSpaceSession[B](rc:PlayRequestContext, msg:SessionMessage)(cb: PartialFunction[Any, Future[B]]):Future[B] = {
     SpaceOps.askSpaceManager2(SessionRequest(rc.requesterOrAnon, rc.ownerId, ThingId(rc.spaceIdOpt.get), msg))(cb)
+  }
+  
+  def askUserSession[B](rc:PlayRequestContext, msg:UserSessionMsg)(cb: PartialFunction[Any, Future[B]]):Future[B] = {
+    akka.pattern.ask(UserSessionMgr.sessionManager, msg)(Timeout(5 seconds)).flatMap(cb)
   }
 
   /**
@@ -55,14 +62,17 @@ class ClientController extends ApplicationBase {
     }
   }
   
-  // TODO: this shouldn't require withSpace! We should authenticate the user at this level, and then just
-  // route directly to the UserSpaceSession. However, note that this is going to require some nasty surgery to
-  // askSpaceMgr, which currently assumes that you have *already* resolved ownerId! Feh. But we have to fix it,
-  // because withSpace deeply violates the long-run architecture -- we want to eventually *never* send the SpaceState
-  // back to the Play layer.
   def apiRequest(ownerId:String, spaceId:String, pickledRequest:String) = withRouting(ownerId, spaceId) { implicit rc =>
     val request = read[autowire.Core.Request[String]](pickledRequest)
     askUserSpaceSession(rc, ClientRequest(request, rc)) {
+      case ClientResponse(pickled) => Ok(pickled)
+      case ClientError(msg) => BadRequest(msg)
+    }
+  }
+  
+  def userApiRequest(pickledRequest:String) = withUser(true) { implicit rc =>
+    val request = read[autowire.Core.Request[String]](pickledRequest)
+    askUserSession(rc, UserSessionClientRequest(rc.requesterOrAnon.id, ClientRequest(request, rc))) {
       case ClientResponse(pickled) => Ok(pickled)
       case ClientError(msg) => BadRequest(msg)
     }
