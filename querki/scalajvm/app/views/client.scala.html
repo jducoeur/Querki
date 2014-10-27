@@ -35,8 +35,6 @@
     } else {
       <script src="@routes.Assets.at("javascripts/querki-client-fastopt.js")" type="text/javascript"></script>
     }
-
-    <script src="@routes.Assets.at("javascripts/querki-client-launcher.js")" type="text/javascript"></script>
     
     <script>
       @Html({
@@ -64,11 +62,14 @@
 		     getRoutes(routes.javascript.ExploreController) ++
 		     getRoutes(routes.javascript.AdminController) ++
 		     getRoutes(routes.javascript.ClientController) ++
-		     getRoutes(routes.javascript.TOSController)
+		     getRoutes(routes.javascript.TOSController) ++
+		     getRoutes(routes.javascript.NotificationController)
 		    ):_*
 		  ).toString
 		})
     </script>
+    
+    <script src="@routes.Assets.at("javascripts/querki-client-launcher.js")" type="text/javascript"></script>
     
     <script>
       var pickledJSON = @Html(pickled)

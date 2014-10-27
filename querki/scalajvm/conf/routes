@@ -15,10 +15,6 @@ GET     /help/:thingId              @controllers.Application.thing(userName = "s
 GET     /TOS                        @controllers.TOSController.showTOS
 POST    /TOS                        @controllers.TOSController.handleTOS
 
-# User Profile functions
-GET     /u/:userName                @controllers.LoginController.userByName(userName)
-POST    /u/:userName/_changePassword @controllers.LoginController.changePassword(userName)
-
 # The old way to address a Space, now replaced by the new client:
 # GET     /u/:userName/:spaceId/      @controllers.Application.space(userName, spaceId)
 GET     /u/:userName/:spaceId/      @controllers.ClientController.space(userName, spaceId) 
@@ -68,7 +64,7 @@ POST    /u/:userName/:spaceId/_photoUpload   @controllers.PhotoController.upload
 # GET     /u/:userName/:spaceId/client @controllers.ClientController.thing(userName, spaceId, thingId)
 POST    /u/:userName/:spaceId/_apiRequest @controllers.ClientController.apiRequest(userName, spaceId, pickledRequest)
 GET     /u/:userName/:spaceId/_marcoPolo @controllers.ClientController.marcoPolo(userName, spaceId, propId)
-GET     /u/_numNotifications        @controllers.NotificationController.numNotifications
+GET     /_numNotifications        @controllers.NotificationController.numNotifications
 
 POST    /dologin                    @controllers.LoginController.dologin
 GET     /logout                     @controllers.LoginController.logout
@@ -78,6 +74,10 @@ POST    /sendPasswordReset          @controllers.LoginController.doSendPasswordR
 GET     /resetPassword              @controllers.LoginController.resetPassword(email, expires:Long, hash)
 POST    /resetPassword              @controllers.LoginController.doResetPassword(email, expiresMillis:Long, hash)
 POST    /changeDisplayName          @controllers.LoginController.changeDisplayName(identityIdStr)
+
+# User Profile functions
+GET     /u/:userName                @controllers.LoginController.userByName(userName)
+POST    /u/:userName/_changePassword @controllers.LoginController.changePassword(userName)
 
 # Admin functionality
 GET     /admin/manageUsers          @controllers.AdminController.manageUsers
