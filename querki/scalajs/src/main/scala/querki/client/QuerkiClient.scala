@@ -53,6 +53,7 @@ object QuerkiClient extends JSApp with EcologyMember {
     new querki.display.StatusLineEcot(ecology)    
     new querki.notifications.NotificationsEcot(ecology)
     new querki.search.SearchEcot(ecology)
+    new querki.qtext.QTextUtilsEcot(ecology)
   }
 
   /**

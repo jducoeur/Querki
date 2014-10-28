@@ -15,6 +15,7 @@ class QText(text:Wikitext, mods:Modifier*)(implicit val ecology:Ecology) extends
   
   lazy val InputGadgets = interface[input.InputGadgets]
   lazy val PageManager = interface[querki.display.PageManager]
+  lazy val QTextUtils = interface[querki.qtext.QTextUtils]
 
   override def onCreate(root:dom.Element) = {
     val currentHash = PageManager.currentHash
@@ -26,7 +27,7 @@ class QText(text:Wikitext, mods:Modifier*)(implicit val ecology:Ecology) extends
 	    // fix that somehow -- likely by making the URL scheme consistent everywhere, once we are
 	    // more comfortable with the Client.
         val originalHref = $(child).attr("href")
-        val fixedHref = MainDecorator.adjustUrl(originalHref)
+        val fixedHref = QTextUtils.adjustUrl(originalHref)
         $(child).attr("href", fixedHref)
         // HACK, but possibly a necessary one. If this link points to exactly the current hash, it
         // won't do anything. So we need to hook it, to instead become a reload:
