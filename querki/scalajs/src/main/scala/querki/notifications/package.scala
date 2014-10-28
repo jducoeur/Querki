@@ -4,8 +4,17 @@ import rx._
 
 import querki.globals._
 
+import querki.comm.URL
+
 package object notifications {
+  
   trait Notifications extends EcologyInterface {
+    
+    /**
+     * Fetch the URL of the Notifications Page.
+     */
+    def notificationPageUrl:URL
+  
     /**
      * Fetch the current number of Notifications. Note that this is a reactive value, and may
      * change.

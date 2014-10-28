@@ -18,6 +18,10 @@ class NotificationsEcot(e:Ecology) extends ClientEcot(e) with Notifications {
   
   val numNotifications = Var(1)
   
+  val pageName = "_notifications"
+  
+  def notificationPageUrl:URL = PageManager.pageUrl(pageName)
+  
   /**
    * After we load each Page, check with the server about how many Notifications there currently are.
    */
@@ -31,6 +35,6 @@ class NotificationsEcot(e:Ecology) extends ClientEcot(e) with Notifications {
       }
     }
     
-    Pages.registerStandardFactory("_notifications", { (params) => new NotificationsPage(params) })
+    Pages.registerStandardFactory(pageName, { (params) => new NotificationsPage(params) })
   }
 }

@@ -45,5 +45,5 @@ class NotifierGadget(implicit val ecology:Ecology) extends Gadget[dom.HTMLAnchor
   override def onCreate(anchor:dom.HTMLAnchorElement) = obs
   
   def doRender() = 
-    a(href:="#" /* TODO: on click, show the Notifications page */)
+    a(href:=Notifications.notificationPageUrl)
 }
