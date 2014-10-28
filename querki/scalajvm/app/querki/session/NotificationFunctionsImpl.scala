@@ -28,7 +28,8 @@ trait NotificationFunctionsImpl extends NotificationFunctions with UserSessionAp
 	          sender,
 	          note.spaceId.map(_.toThingId.toString).getOrElse(""),
 	          note.thingId.map(_.toThingId.toString).getOrElse(""),
-	          0, // TODO: deal with timestamps
+	          // TODO: This should really be an implicit conversion:
+	          note.sentTime.getMillis,
 	          rendered,
 	          note.isRead,
 	          note.isDeleted

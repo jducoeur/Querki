@@ -4,6 +4,8 @@ import scalatags.JsDom.all.{input => inp, _}
 
 import autowire._
 
+import moment._
+
 import querki.globals._
 
 import querki.display.QText
@@ -24,7 +26,7 @@ class NotificationsPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
           for (note <- notifications)
             yield MSeq(
               hr,
-              p("From ", span(cls:="noteSender", note.sender.name), " ", span(cls:="noteTime", "PLACE TIME HERE")),
+              p("From ", span(cls:="noteSender", note.sender.name), " ", span(cls:="noteTime", moment(note.sentTime).calendar())),
               new QText(note.rendered.headline, cls:="noteHeadline"),
               new QText(note.rendered.content, cls:="noteContent")
             )

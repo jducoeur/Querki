@@ -80,6 +80,7 @@ object ApplicationBuild extends Build with UniversalKeys {
 	  jsDependencies += ProvidedJS / "jquery.autosize-min.js" dependsOn "jquery.js",
 	  jsDependencies += ProvidedJS / "jquery.raty.js" dependsOn "jquery.js",
 	  jsDependencies += ProvidedJS / "jquery.histogram.js" dependsOn "jquery.js",
+	  jsDependencies += ProvidedJS / "moment.min.js",
 	  
       libraryDependencies ++= Dependencies.scalajs
     ) ++ sharedDirectorySettings ++ utest.jsrunner.Plugin.utestJsSettings
