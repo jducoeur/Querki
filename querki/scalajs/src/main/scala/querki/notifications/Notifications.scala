@@ -5,7 +5,7 @@ import rx._
 import querki.globals._
 
 import querki.comm._
-import querki.pages.Page
+import querki.pages.{Page, PageFactory, ParamMap}
 import querki.util.{Contributor, Publisher}
 
 class NotificationsEcot(e:Ecology) extends ClientEcot(e) with Notifications {
@@ -13,6 +13,7 @@ class NotificationsEcot(e:Ecology) extends ClientEcot(e) with Notifications {
   def implements = Set(classOf[Notifications])
 
   lazy val PageManager = interface[querki.display.PageManager]
+  lazy val Pages = interface[querki.pages.Pages]
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   
   val numNotifications = Var(1)
@@ -29,5 +30,7 @@ class NotificationsEcot(e:Ecology) extends ClientEcot(e) with Notifications {
 	    }        
       }
     }
+    
+    Pages.registerStandardFactory("_notifications", { (params) => new NotificationsPage(params) })
   }
 }

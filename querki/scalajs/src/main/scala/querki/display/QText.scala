@@ -11,7 +11,7 @@ import querki.globals._
 
 import querki.qtext.MainDecorator
 
-class QText(text:Wikitext)(implicit val ecology:Ecology) extends Gadget[dom.Element] with EcologyMember {
+class QText(text:Wikitext, mods:Modifier*)(implicit val ecology:Ecology) extends Gadget[dom.Element] with EcologyMember {
   
   lazy val InputGadgets = interface[input.InputGadgets]
   lazy val PageManager = interface[querki.display.PageManager]
@@ -49,7 +49,7 @@ class QText(text:Wikitext)(implicit val ecology:Ecology) extends Gadget[dom.Elem
     // TODO: putting this in a div() is WrongityWrongWrong, since it sometimes might be span-ish.
     // How do we make this appropriately general? Conceptually, a Large Text is a div, and a Text is
     // a span; do we need to distinguish that way somehow?
-    div(wikitext(text))
+    div(wikitext(text), mods)
   }
   
 }

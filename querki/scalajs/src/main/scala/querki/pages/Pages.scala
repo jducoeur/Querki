@@ -10,20 +10,24 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   override def postInit() = {
     // PageFactory for the ExplorePage, since there isn't another good package to stick it
     // into:
-    registerFactory(new PageFactory {
-      def constructPageOpt(pageName:String, params:ParamMap):Option[Page] = {
-        if (pageName == "_explore")
-          Some(new ExplorePage(params))
-        else
-          None
-      }
-    })
+    registerStandardFactory("_explore", { (params) => new ExplorePage(params) })
   }
   
   private var factories = Seq.empty[PageFactory]
   
   def registerFactory(factory:PageFactory):Unit = {
     factories :+= factory
+  }
+  
+  def registerStandardFactory(registeredName:String, const:ParamMap => Page) = {
+    registerFactory(new PageFactory {
+      def constructPageOpt(pageName:String, params:ParamMap):Option[Page] = {
+        if (pageName == registeredName)
+          Some(const(params))
+        else
+          None
+      }
+    })    
   }
   
   /**

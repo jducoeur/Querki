@@ -22,6 +22,13 @@ package object pages {
     def registerFactory(factory:PageFactory):Unit
     
     /**
+     * Convenience wrapper around registerFactory, for the most common case: simply
+     * pass in the name of the page and a constructor lambda, and it builds the factory
+     * for you.
+     */
+    def registerStandardFactory(pageName:String, const:ParamMap => Page):Unit
+    
+    /**
      * Given the name and parameters to a Page, build a new instance.
      */
     def constructPage(name:String, params:ParamMap):Page
