@@ -1,5 +1,6 @@
 package querki.notifications
 
+import autowire._
 import rx._
 
 import querki.globals._
@@ -12,9 +13,9 @@ class NotificationsEcot(e:Ecology) extends ClientEcot(e) with Notifications {
   
   def implements = Set(classOf[Notifications])
 
+  lazy val Client = interface[querki.client.Client]
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val Pages = interface[querki.pages.Pages]
-  lazy val controllers = interface[querki.comm.ApiComm].controllers
   
   val numNotifications = Var(1)
   
@@ -24,13 +25,16 @@ class NotificationsEcot(e:Ecology) extends ClientEcot(e) with Notifications {
   
   /**
    * After we load each Page, check with the server about how many Notifications there currently are.
+   * 
+   * TODO: once we have a true bidirectional connection (WebSockets or such), this should be hooked
+   * into that.
    */
   override def postInit() = {
     PageManager.afterPageLoads += new Contributor[Page,Unit] {
       def notify(evt:Page, sender:Publisher[Page, Unit]) = {
-	    controllers.NotificationController.numNotifications().callAjax().foreach { nStr =>
+        Client[NotificationFunctions].numNewNotifications().call().map { num =>
 	      // Update any reactive listeners:
-	      numNotifications() = nStr.toInt
+	      numNotifications() = num
 	    }        
       }
     }

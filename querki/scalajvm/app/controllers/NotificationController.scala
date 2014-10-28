@@ -18,17 +18,4 @@ class NotificationController extends ApplicationBase {
     }
       yield Ok(views.html.showNotifications(rc, recentNotes, identities))
   }
-  
-  ///////////////////////////
-  //
-  // New API
-  //
-
-  /**
-   * TBD: this might belong as an Autowire entry point in UserSession? (Not UserSpaceSession,
-   * though.)
-   */
-  def numNotifications = withUser(true) { rc =>
-    Ok(rc.numNotifications.toString)
-  }
 }

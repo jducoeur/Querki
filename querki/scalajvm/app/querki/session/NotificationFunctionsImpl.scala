@@ -40,4 +40,8 @@ trait NotificationFunctionsImpl extends NotificationFunctions with UserSessionAp
       }
     }
   }
+  
+  def numNewNotifications():Int = {
+    numNewNotes
+  }
 }

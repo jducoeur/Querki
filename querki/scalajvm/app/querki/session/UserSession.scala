@@ -37,6 +37,7 @@ trait UserSessionApiImpl extends EcologyMember {
   
   def currentNotes:Seq[Notification]
   def lastNoteChecked:Int
+  def numNewNotes:Int
 }
 
 private [session] class UserSession(val ecology:Ecology, val userId:UserId) extends Actor with Stash with Requester 

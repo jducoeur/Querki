@@ -10,4 +10,9 @@ trait NotificationFunctions {
    * What's the best way to deal with this?
    */
   def getRecentNotifications():Future[Seq[NotificationInfo]]
+  
+  /**
+   * Fetch the number of unread Notifications for this user.
+   */
+  def numNewNotifications():Int
 }
