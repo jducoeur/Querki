@@ -7,7 +7,7 @@ import rx.ops._
 
 import querki.globals._
 
-import querki.display.{Gadget, RxTextFrag}
+import querki.display.{Gadget, ManagedFrag, RxTextFrag}
 
 class NotifierGadget(implicit val ecology:Ecology) extends Gadget[dom.HTMLAnchorElement] with EcologyMember {
   
@@ -17,24 +17,33 @@ class NotifierGadget(implicit val ecology:Ecology) extends Gadget[dom.HTMLAnchor
   lazy val nStr = n.map(_.toString)
   
   lazy val emptyIcon = i(cls:="icon-bell")
+  lazy val emptyRendered = emptyIcon.render
   
   lazy val fullIcon = 
-    MSeq(
+    span(
       i(cls:="icon-bell icon-white"),
       span(cls:="badge badge-info", sub(style:="font-size:x-small", new RxTextFrag(nStr)))
     )
-  
-  lazy val top = 
-    a(href:="#" /* TODO: on click, show the Notifications page */,
-      // TODO: this should be reactive:
-      if (n() == 0) {
-        emptyIcon
-      } else {
-        fullIcon
-      }
-    )
+  lazy val fullRendered = fullIcon.render
     
-  def doRender() = {
-    top
+  // TODO: can we abstract out this general notion of contents that are reactively chosen? This is a lot
+  // of boilerplate. The tricky bit is that we probably don't want to call render over and over again, just
+  // *choose* reactively among components, rendering them once.
+  lazy val obs = Obs(n) {
+    elemOpt.foreach { e =>
+      $(e).empty()
+      val content = 
+        if (n() == 0) {
+          emptyRendered
+        } else {
+          fullRendered
+        }
+      $(e).append(content)
+    }
   }
+    
+  override def onCreate(anchor:dom.HTMLAnchorElement) = obs
+  
+  def doRender() = 
+    a(href:="#" /* TODO: on click, show the Notifications page */)
 }
