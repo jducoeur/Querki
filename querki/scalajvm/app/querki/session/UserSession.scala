@@ -34,12 +34,6 @@ trait UserSessionApiImpl extends EcologyMember {
   def userId:UserId
   
   def rc:RequestContext
-  
-  // TODO: all of this Notification code should get refactored out into NotificationFunctionsImpl:
-  def currentNotes:Seq[Notification]
-  var lastNoteChecked:Int
-  def numNewNotes:Int
-  def notifyNotePersister():Unit
 }
 
 private [session] class UserSession(val ecology:Ecology, val userId:UserId) extends Actor with Stash with Requester 
@@ -54,29 +48,7 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
   
   def timeoutConfig:String = "querki.userSession.timeout"
   
-  lazy val notePersister = PersistenceFactory.getNotificationPersister(userId)
-  
   lazy val collaborators = context.actorOf(CollaboratorCache.actorProps(ecology, userId))
-
-  // This is kept in most-recent-first order:
-  var currentNotes:Seq[Notification] = Seq.empty
-    
-  var lastNoteChecked:Int = 0
-  
-  // How many of the Notifications are new since this User last looked at the Notifications Window?
-  def numNewNotes:Int = {
-    // TODO: once we have machinery to mark notes as Read, we should filter on that here:
-    val newNotes = currentNotes.filter(note => (note.id > lastNoteChecked)/* && !note.isRead*/)
-    newNotes.size
-  }
-  
-  def currentMaxNote = {
-    if (currentNotes.isEmpty)
-      0
-    else
-      currentNotes.map(_.id).max    
-  }
-  def nextNoteId:Int = currentMaxNote + 1
   
   var _currentRc:Option[RequestContext] = None
   def rc = _currentRc.get
@@ -94,6 +66,7 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
   def read[Result: Reader](p: String) = upickle.read[Result](p)
   
   override def preStart() = {
+    // TODO: this shouldn't be going through the NotificationPersister:
     notePersister ! LoadInfo
   }
 
@@ -108,46 +81,23 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
 	  // current version:
 	  UserEvolutions.checkUserEvolution(userId, version)
 	  
-	  notePersister.request(Load) {
-	    case notes:CurrentNotifications => {
-	      currentNotes = notes.notes.sortBy(_.id).reverse
-	      
-	      // Okay, we're ready to roll:
-	      unstashAll()
-	      context.become(mainReceive)
-	    }
-	  }
+	  // This will send InitComplete when it is done:
+	  initNotes()
+    }
+    
+    case InitComplete => {
+      context.become(mainReceive)
+      unstashAll()
     }
 
     // Hold everything else off until we've created them all:
     case msg:UserSessionMsg => stash()
   }
   
-  // TODO: this is basically a hacked workaround, and should go away once the Notification stuff all\
-  // moved into NotificationFunctionsImpl:
-  def notifyNotePersister() = {
-	notePersister ! UpdateLastChecked(lastNoteChecked)    
-  }
-  
-  def mainReceive:Receive = LoggingReceive {
+  def mainReceive:Receive = notificationMessageReceive orElse LoggingReceive {
     case FetchSessionInfo(_) => {
       // TODO: make this real
       sender ! UserSessionInfo(numNewNotes)
-    }
-    
-    case NewNotification(_, noteRaw) => {
-      // We decide what the actual Notification Id is:
-      val note = noteRaw.copy(id = nextNoteId)
-      
-      notePersister ! NewNotification(userId, note)
-      
-      currentNotes = note +: currentNotes
-    }
-    
-    case GetRecent(_) => {
-      sender ! RecentNotifications(currentNotes)
-      lastNoteChecked = currentMaxNote
-      notePersister ! UpdateLastChecked(lastNoteChecked)
     }
     
     case msg:GetCollaborators => collaborators.forward(msg)
@@ -175,6 +125,8 @@ object UserSessionMessages {
     // TODO: this kinda sucks. How can we restructure these to make it suck less?
     def copyTo(userId:UserId):UserSessionMsg
   }
+  
+  case object InitComplete
   
   case class FetchSessionInfo(userId:UserId) extends UserSessionMsg {
     def copyTo(userId:UserId) = copy(userId = userId)
