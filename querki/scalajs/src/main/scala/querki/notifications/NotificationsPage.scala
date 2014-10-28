@@ -14,9 +14,16 @@ import querki.pages.{Page, PageContents, ParamMap}
 class NotificationsPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
 
   lazy val Client = interface[querki.client.Client]
+  lazy val Notifications = interface[Notifications]
   
   def pageContent = {
     Client[NotificationFunctions].getRecentNotifications().call().map { notifications =>
+      val maxNote = notifications.map(_.id).max
+      Client[NotificationFunctions].readThrough(maxNote).call().foreach { dummy =>
+        // Once we tell the server to update, refresh things.
+        // TODO: eventually, this should become reactively automatic.
+        Notifications.checkNotifications()
+      }
       val guts = 
         div(
           h1("Recent Messages"),

@@ -23,6 +23,13 @@ class NotificationsEcot(e:Ecology) extends ClientEcot(e) with Notifications {
   
   def notificationPageUrl:URL = PageManager.pageUrl(pageName)
   
+  def checkNotifications() = {
+    Client[NotificationFunctions].numNewNotifications().call().map { num =>
+      // Update any reactive listeners:
+      numNotifications() = num
+    }            
+  }
+  
   /**
    * After we load each Page, check with the server about how many Notifications there currently are.
    * 
@@ -32,10 +39,7 @@ class NotificationsEcot(e:Ecology) extends ClientEcot(e) with Notifications {
   override def postInit() = {
     PageManager.afterPageLoads += new Contributor[Page,Unit] {
       def notify(evt:Page, sender:Publisher[Page, Unit]) = {
-        Client[NotificationFunctions].numNewNotifications().call().map { num =>
-	      // Update any reactive listeners:
-	      numNotifications() = num
-	    }        
+        checkNotifications()
       }
     }
     

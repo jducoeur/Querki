@@ -35,9 +35,11 @@ trait UserSessionApiImpl extends EcologyMember {
   
   def rc:RequestContext
   
+  // TODO: all of this Notification code should get refactored out into NotificationFunctionsImpl:
   def currentNotes:Seq[Notification]
-  def lastNoteChecked:Int
+  var lastNoteChecked:Int
   def numNewNotes:Int
+  def notifyNotePersister():Unit
 }
 
 private [session] class UserSession(val ecology:Ecology, val userId:UserId) extends Actor with Stash with Requester 
@@ -119,6 +121,12 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
 
     // Hold everything else off until we've created them all:
     case msg:UserSessionMsg => stash()
+  }
+  
+  // TODO: this is basically a hacked workaround, and should go away once the Notification stuff all\
+  // moved into NotificationFunctionsImpl:
+  def notifyNotePersister() = {
+	notePersister ! UpdateLastChecked(lastNoteChecked)    
   }
   
   def mainReceive:Receive = LoggingReceive {

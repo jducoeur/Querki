@@ -20,5 +20,10 @@ package object notifications {
      * change.
      */
     def numNotifications:Rx[Int]
+    
+    /**
+     * Check the number of notifications on the server, and update the NotifierGadget if need be.
+     */
+    def checkNotifications():Unit
   }
 }

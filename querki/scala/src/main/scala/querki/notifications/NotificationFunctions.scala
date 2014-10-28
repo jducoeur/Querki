@@ -15,4 +15,9 @@ trait NotificationFunctions {
    * Fetch the number of unread Notifications for this user.
    */
   def numNewNotifications():Int
+  
+  /**
+   * Declares the the user has read through the specified Notification.
+   */
+  def readThrough(id:Common.NotificationId):Unit
 }

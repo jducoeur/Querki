@@ -44,4 +44,11 @@ trait NotificationFunctionsImpl extends NotificationFunctions with UserSessionAp
   def numNewNotifications():Int = {
     numNewNotes
   }
+  
+  def readThrough(id:NotificationId):Unit = {
+    if (id > lastNoteChecked) {
+      lastNoteChecked = id
+      notifyNotePersister()
+    }
+  }
 }
