@@ -146,6 +146,9 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
       commentId <- payload.getProp(CommentId, IntType)
     }
       // TODO: ideally, this path shouldn't be hardcoded like this. But we don't really expect it to change:
+      // TODO: more importantly, this should be producing true ThingIds, not OIDs; this currently causes bad
+      // URLs. Fixing that is probably going to require getting the pipeline to work async, though, so we can
+      // fetch the names.
       yield s""" <a href="/u/${ownerId.toThingId}/${spaceId.toThingId}/${thingId.toThingId}#comment$commentId" title="Click to go to this comment">""" +
              """<i class="icon-share-alt"></i></a>"""
   }

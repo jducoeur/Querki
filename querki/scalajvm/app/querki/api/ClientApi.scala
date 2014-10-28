@@ -6,6 +6,7 @@ import models.AsOID
 
 import querki.globals._
 
+import querki.core.NameUtils
 import querki.data.{IdentityInfo, RequestInfo, SpaceInfo, ThingInfo, UserInfo}
 import querki.identity.{PublicIdentity, User}
 import querki.pages.PageDetails
@@ -39,8 +40,11 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi {
     topt.map { t => 
       SpaceInfo(
         AsOID(t.id), 
-        t.linkName, 
+        // TODO: NameUtils.toUrl() is inconsistent with SafeUrl: they handle spaces differently.
+        // We need to fix this inconsistency!
+        t.linkName.map(NameUtils.toUrl(_)), 
         t.unsafeDisplayName,
+        t.owner.toThingId.toString,
         t.ownerHandle)
     }
   }

@@ -8,6 +8,8 @@ class QTextUtilsEcot(e:Ecology) extends ClientEcot(e) with QTextUtils {
   
   def implements = Set(classOf[QTextUtils])
   
+  lazy val DataAccess = interface[querki.data.DataAccess]
+  
   /**
    * RegExp for old-fashioned paths into Querki Spaces.
    */
@@ -18,12 +20,20 @@ class QTextUtilsEcot(e:Ecology) extends ClientEcot(e) with QTextUtils {
       // This is a server-generated URL that is pointing into user space. We may need to tweak it,
       // but first we need to deconstruct it.
       val matches = spacePathRegExp.exec(urlIn)
-      val userId = matches(1)
-      val spaceId = matches(2)
+      val userIdIn = matches(1)
+      val spaceIdIn = matches(2)
       val rest = matches(3)
-      // TODO: detect if the userId is the OID of the current page, and change to ThingId if so.
+      // Detect if the userId is the OID of the current Client, and change to ThingId if so.
       // Ditto for the spaceId. Try to change /u/.0d9djkd/.98dk398d/stuff to /u/Joe/Workroom/stuff,
       // if we are currently looking at Joe/Workroom, to avoid unnecessary navigation.
+      val (userId, spaceId) = DataAccess.space match {
+        case Some(space) => {
+          val u = if (userIdIn.isDefined && userIdIn.get == space.ownerId) space.ownerHandle else userIdIn
+          val s = if (spaceIdIn.isDefined && spaceIdIn.get == space.oid && space.linkName.isDefined) space.linkName.get else spaceIdIn
+          (u, s)
+        }
+        case None => { (userIdIn, spaceIdIn) }
+      }
       s"/u/$userId/$spaceId/#$rest"
     } else
       MainDecorator.adjustUrl(urlIn)

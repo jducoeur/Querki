@@ -36,6 +36,7 @@ case class SpaceInfo(
   oid:String, 
   linkName:Option[String], 
   displayName:String,
+  ownerId:String,
   ownerHandle:String) extends Urlable
 {
 }
