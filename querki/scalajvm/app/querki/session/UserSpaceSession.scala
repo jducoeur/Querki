@@ -13,6 +13,7 @@ import querki.globals._
 import Implicits.execContext
 
 import querki.api._
+import querki.conversations.{ConversationFunctions, ConversationFunctionsImpl}
 import querki.identity.{Identity, User}
 import querki.session.messages._
 import querki.spaces.messages.{ChangeProps, CurrentState, SessionRequest, SpacePluginMsg, ThingError, ThingFound}
@@ -20,7 +21,7 @@ import querki.spaces.messages.SpaceError._
 import querki.time.DateTime
 import querki.uservalues.SummarizeChange
 import querki.uservalues.PersistMessages._
-import querki.util.{PublicException, QLog, TimeoutChild, UnexpectedPublicException}
+import querki.util.{PublicException, QLog, Requester, TimeoutChild, UnexpectedPublicException}
 import querki.values.{QValue, RequestContext, SpaceState}
 
 /**
@@ -42,6 +43,11 @@ trait SessionApiImpl extends EcologyMember {
    * The RequestContext for this request.
    */
   def rc:RequestContext
+  
+  /**
+   * The routing Actor to use to send messages around this Space's Troupe.
+   */
+  def spaceRouter:ActorRef
   
   /**
    * Obtains the specified Thing from the current State, and tweaks the RequestContext accordingly.
@@ -66,9 +72,9 @@ trait SessionApiImpl extends EcologyMember {
  * to be refactored somewhat.
  */
 private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
-  extends Actor with Stash with EcologyMember with TimeoutChild
+  extends Actor with Stash with Requester with EcologyMember with TimeoutChild
   with autowire.Server[String, upickle.Reader, upickle.Writer]
-  with ThingFunctionsImpl with EditFunctionsImpl with MarcoPoloImpl with SearchFunctionsImpl
+  with ThingFunctionsImpl with EditFunctionsImpl with MarcoPoloImpl with SearchFunctionsImpl with ConversationFunctionsImpl
 {
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
@@ -359,6 +365,13 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
                 // route() is asynchronous, so we need to store away the sender!
                 val senderSaved = sender
                 route[SearchFunctions](this)(req).foreach { result =>
+                  senderSaved ! ClientResponse(result)                  
+                }
+              }
+              case "ConversationFunctions" => {
+                // route() is asynchronous, so we need to store away the sender!
+                val senderSaved = sender
+                route[ConversationFunctions](this)(req).foreach { result =>
                   senderSaved ! ClientResponse(result)                  
                 }
               }

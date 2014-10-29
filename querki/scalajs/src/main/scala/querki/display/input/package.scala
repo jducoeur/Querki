@@ -19,7 +19,8 @@ package object input {
      * Hook all Gadgets that have been created but not yet hooked.
      * 
      * IMPORTANT: you *MUST* call this any time you add Page content that may potentially contain
-     * InputGadgets!
+     * InputGadgets! But this must be called *AFTER* that content is fully added to the DOM tree,
+     * and shown!
      */
     def hookPendingGadgets():Unit
     

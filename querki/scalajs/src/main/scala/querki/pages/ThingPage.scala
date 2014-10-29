@@ -16,6 +16,7 @@ import querki.globals._
 
 import querki.api.ThingFunctions
 import querki.comm._
+import querki.conversations.ConversationPane
 import querki.data.ThingInfo
 import querki.display.{Gadget, QLButtonGadget, QText, WrapperDiv}
 
@@ -40,7 +41,8 @@ class ThingPage(name:String, params:ParamMap)(implicit e:Ecology) extends Page(e
             case Some(header) => new QText(header)
             case None => new StandardThingHeader(pageDetails.thingInfo, this)
           },
-          new QText(rendered)
+          new QText(rendered),
+          new ConversationPane(pageDetails.thingInfo)
         )
     }
       yield PageContents(pageDetails.thingInfo.displayName, guts)

@@ -22,6 +22,8 @@ package object globals {
   
   type SpaceState = querki.values.SpaceState
   
+  type OID = models.OID
+  
   type Ecology = querki.ecology.Ecology
   type EcologyInterface = querki.ecology.EcologyInterface
   type EcologyMember = querki.ecology.EcologyMember
