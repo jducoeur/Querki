@@ -17,15 +17,13 @@ class ConversationPane(val thingInfo:ThingInfo)(implicit val ecology:Ecology) ex
   lazy val InputGadgets = interface[querki.display.input.InputGadgets]
   
   override def onCreate(e:dom.HTMLDivElement) = {
-    println("Created the ConversationPane")
     val fut = Client[ConversationFunctions].getConversationsFor(thingInfo.oid).call()
     // TODO: how can we encapsulate this error-catching universally for Client? This needs research:
     fut.onFailure {
       case t:Throwable => println(s"Got an error: $t")
     }
     fut.foreach { convInfo =>
-      println(s"Got the confInfo: $convInfo")
-      val guts = div(hr, p("Conversations will go here"))
+      val guts = div(hr, p(s"Conversations will go here: there are ${convInfo.convs.length} of them"))
       convWrapper.replaceContents(guts.render)
       InputGadgets.hookPendingGadgets()
     }
