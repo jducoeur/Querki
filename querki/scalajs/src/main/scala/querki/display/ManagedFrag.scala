@@ -29,12 +29,25 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
   /**
    * We intercept render (which is part of Scalatags), to record the Node when it gets created, and
    * to provide access to the creation event.
+   * 
+   * IMPORTANT: this imperatively renders the Gadget; if you call it repeatedly, it will render
+   * again! Use rendered by preference most of the time. 
    */
   def render = {
     val result = createFrag
     _elem = Some(result)
     onCreate(result)
     result
+  }
+  
+  /**
+   * Lazy version of render(). This returns the rendered content of the Gadget, rendering if need
+   * be. This allows you to easily fetch the elem repeatedly, without worrying about re-rendering.
+   */
+  def rendered = {
+    if (elemOpt.isEmpty)
+      render
+    elem
   }
   
   /**

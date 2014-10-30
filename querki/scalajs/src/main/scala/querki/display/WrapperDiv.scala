@@ -20,14 +20,24 @@ class WrapperDiv extends Gadget[dom.HTMLDivElement] {
   // using instead, but I don't have my head around that yet.
   var modifiers:Seq[Modifier] = Seq.empty
   
+  var initial:Seq[Modifier] = Seq.empty
+  
   def apply(xs:Modifier*):WrapperDiv = {
     modifiers = xs
+    this
+  }
+
+  /**
+   * Use this to specify temporary initial content, that will be later replaced.
+   */
+  def initialContent(xs:Modifier*):WrapperDiv = {
+    initial = xs
     this
   }
   
   def doRender = contentsOpt match {
     case Some(contents) => div(modifiers :+ bindNode(contents)) 
-    case None => div(modifiers)
+    case None => div(modifiers ++ initial)
   } 
 
   def replaceContents(newContent:dom.Element) = {
@@ -37,8 +47,9 @@ class WrapperDiv extends Gadget[dom.HTMLDivElement] {
         $(elem).empty
         $(elem).append(newContent)
         $(elem).change()
+        this
       }
-      case None => {}
+      case None => { this }
     }
   }
 }
