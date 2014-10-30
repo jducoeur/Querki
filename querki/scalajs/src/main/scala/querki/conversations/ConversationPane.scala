@@ -1,6 +1,7 @@
 package querki.conversations
 
 import scala.scalajs.js
+import js.JSConverters._
 import org.scalajs.dom
 import org.scalajs.jquery._
 import scalatags.JsDom.all.{input => inp, _}
@@ -11,13 +12,17 @@ import moment._
 import querki.globals._
 
 import querki.data.ThingInfo
-import querki.display.{Gadget, QText, WrapperDiv}
+import querki.display.{Gadget, QText, SimpleGadget, WrapperDiv}
 import querki.display.input.AutosizeFacade._
+
+import messages._
 
 class ConversationPane(val thingInfo:ThingInfo)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember  {
   
   lazy val Client = interface[querki.client.Client]
   lazy val InputGadgets = interface[querki.display.input.InputGadgets]
+  
+  implicit val t = thingInfo
   
   override def onCreate(e:dom.HTMLDivElement) = {
     val fut = Client[ConversationFunctions].getConversationsFor(thingInfo.oid).call()
@@ -43,8 +48,9 @@ class ConversationPane(val thingInfo:ThingInfo)(implicit val ecology:Ecology) ex
   def doRender() = div(convWrapper)
 }
 
-private [conversations] class CommentGadget(comment:CommentInfo)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
-  
+private [conversations] class CommentGadget(val comment:CommentInfo)(implicit val ecology:Ecology, thingInfo:ThingInfo)
+  extends Gadget[dom.HTMLDivElement] with EcologyMember 
+{  
   val cid = comment.id
   val created = moment(comment.createTime).calendar()
   
@@ -59,29 +65,46 @@ private [conversations] class CommentGadget(comment:CommentInfo)(implicit val ec
       },
       div(cls:="_commentHeader",
         span(cls:="_commentAuthor", comment.author.name),
+        " ",
         span(cls:="_commentTime", created)
       ),
       new QText(comment.content, cls:="_commentText")
     )
 }
 
-class ReplyGadget(ph:String)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+class ReplyGadget(replyTo:Option[CommentId], ph:String, onPosted:ConvNode => Unit)(implicit val ecology:Ecology, thingInfo:ThingInfo) 
+  extends Gadget[dom.HTMLDivElement] with EcologyMember 
+{
+  lazy val Client = interface[querki.client.Client]
+  
   override def onCreate(e:dom.HTMLDivElement) = {
-    $(elem).find("._commentInput").autosize()
+    $(commentInput.elem).autosize()
   }
   
-  def focus() = $(elem).find("._commentInput").focus()
-    
+  def focus() = $(commentInput.elem).focus()
+  
+  def postComment():Unit = {
+    Client[ConversationFunctions].addComment(thingInfo.oid, $(commentInput.elem).value().asInstanceOf[String], replyTo).call().foreach { node =>
+      $(commentInput.elem).value("")
+      onPosted(node)
+    }
+  }
+
+  lazy val commentInput = SimpleGadget(textarea(cls:="_commentInput", placeholder:=ph))
+  
   def doRender() =
     div(cls:="_addComment row-fluid",
       div(cls:="span11",
-        textarea(cls:="_commentInput", placeholder:=ph),
-        inp(cls:="_postCommentButton btn btn-info btn-mini", tpe:="button", value:="Post Comment")
+        commentInput,
+        inp(cls:="_postCommentButton btn btn-info btn-mini", 
+          tpe:="button", 
+          value:="Post Comment",
+          onclick:={ () => postComment() })
       )
     )
 }
-  
-private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boolean)(implicit val ecology:Ecology) 
+
+private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boolean)(implicit val ecology:Ecology, thingInfo:ThingInfo) 
   extends Gadget[dom.HTMLDivElement] with EcologyMember 
 {
   /**
@@ -93,13 +116,14 @@ private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boole
   def flattenNodes(node:ConvNode):Seq[CommentGadget] = {
     new CommentGadget(node.comment) +: node.responses.flatMap(flattenNodes(_))
   }
+  lazy val flattenedNodes = flattenNodes(conv)
+  
+  lazy val commentContainer = SimpleGadget(div(cls:="_commentContainer offset1 span9", flattenedNodes))
   
   def doRender() =
     div(
       cls:="_convThread row-fluid",
-      div(cls:="_commentContainer offset1 span9",
-        flattenNodes(conv)
-      ),
+      commentContainer,
       if (canComment) {
         replyContainer
       }
@@ -107,17 +131,23 @@ private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boole
       
   lazy val replyContainer = (new WrapperDiv)(cls:="_replyContainer offset1 span9").initialContent(replyPlaceholder)
   
-  lazy val replyPlaceholder = 
+  lazy val replyPlaceholder = SimpleGadget(
     inp(cls:="_replyPlaceholder", 
       tpe:="text", 
       placeholder:="Click here to reply...",
       onclick:={ () => showRealReplyInput() },
-      onkeydown:={ () => showRealReplyInput() })
+      onkeydown:={ () => showRealReplyInput() }))
   
   def showRealReplyInput():Unit = {
     replyContainer.replaceContents(realReply.rendered)
     realReply.focus()
   }
   
-  lazy val realReply = new ReplyGadget("Reply here...")
+  lazy val realReply = new ReplyGadget(Some(flattenedNodes.last.comment.id), "Reply here...", onNewComment)
+  
+  def onNewComment(newNode:ConvNode) = {
+    val gadgets = flattenNodes(newNode).map(_.rendered)
+    $(commentContainer.elem).append(gadgets.toJSArray)
+    replyContainer.replaceContents(replyPlaceholder.rendered)
+  }
 }

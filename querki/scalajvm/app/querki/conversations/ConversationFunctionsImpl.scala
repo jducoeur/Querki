@@ -4,12 +4,12 @@ import scala.concurrent.{Future, Promise}
 
 import akka.actor._
 
-import models.Wikitext
+import models.{UnknownOID, Wikitext}
 
 import querki.globals._
 
 import querki.identity.PublicIdentity
-import querki.identity.IdentityCacheMessages.{GetIdentities, IdentitiesFound}
+import querki.identity.IdentityCacheMessages._
 import querki.session.SessionApiImpl
 import querki.spaces.messages.{ConversationRequest, ThingError}
 import querki.util.Requester
@@ -26,6 +26,7 @@ trait ConversationFunctionsImpl extends ConversationFunctions with SessionApiImp
 
   def ClientApi:querki.api.ClientApi
   lazy val Conversations = interface[querki.conversations.Conversations]
+  def Core:querki.core.Core
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   
   def getIds(node:ConversationNode):Set[OID] = {
@@ -87,6 +88,41 @@ trait ConversationFunctionsImpl extends ConversationFunctions with SessionApiImp
 	  // The requester can't read the comments, so don't bother collecting them:
 	  promise.success(ConversationInfo(canComment, canReadComments, Seq.empty))
 	}
+    promise.future
+  }
+  
+  def addComment(thingId:String, text:String, responseTo:Option[CommentId]):Future[ConvNode] = withThing(thingId) { thing =>
+    val promise = Promise[ConvNode]
+    
+    // TODO: we need a better concept of "my current identity in this Space"!
+    val authorId = rc.localIdentity.map(_.id).getOrElse(UnknownOID)
+    
+    val comment = Comment(
+        state.id,
+        UnknownCommentId,
+        thing.id,
+        authorId,
+        None,
+        Core.toProps(
+          Conversations.CommentText(text))(),
+        responseTo,
+        true     // TODO: primaryResponse
+    )
+    
+    val theRc = rc
+    spaceRouter.request(ConversationRequest(user, rc.ownerId, state.id, NewComment(comment))) {
+      case reply @ AddedNode(parentId, node) => {
+        IdentityAccess.identityCache.request(GetIdentityRequest(authorId)) {
+	      case IdentityFound(identity) => {
+	    	promise.success(toApi(node)(Map(authorId -> identity), theRc))
+	      }
+	      case _ => promise.failure(new Exception("Unable to find Conversation identities!"))
+        }
+
+      }
+      case ThingError(ex, stateOpt) => promise.failure(ex)
+    }
+
     promise.future
   }
 }

@@ -1,5 +1,7 @@
 package querki.conversations
 
+import messages._
+
 import scala.concurrent.Future
 
 trait ConversationFunctions {
@@ -8,4 +10,9 @@ trait ConversationFunctions {
    * don't have the right to read these Conversations.
    */
   def getConversationsFor(thingId:String):Future[ConversationInfo]
+  
+  /**
+   * Add a Comment, to an existing Conversation or starting a new one.
+   */
+  def addComment(thingId:String, text:String, responseTo:Option[CommentId]):Future[ConvNode]
 }

@@ -60,3 +60,11 @@ trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with ScalatagUti
     this
   }
 }
+
+/**
+ * This variant of Gadget is particularly useful when you're not trying to do anything complex, just
+ * have a handle to the resulting elem.
+ */
+case class SimpleGadget(guts:scalatags.JsDom.TypedTag[dom.Element]) extends Gadget[dom.Element] {
+  def doRender() = guts
+}
