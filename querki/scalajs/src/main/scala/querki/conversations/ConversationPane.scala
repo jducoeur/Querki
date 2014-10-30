@@ -12,7 +12,7 @@ import moment._
 import querki.globals._
 
 import querki.data.ThingInfo
-import querki.display.{Gadget, QText, SimpleGadget, WrapperDiv}
+import querki.display.{Gadget, QText, WrapperDiv}
 import querki.display.input.AutosizeFacade._
 
 import messages._
@@ -90,7 +90,7 @@ class ReplyGadget(replyTo:Option[CommentId], ph:String, onPosted:ConvNode => Uni
     }
   }
 
-  lazy val commentInput = SimpleGadget(textarea(cls:="_commentInput", placeholder:=ph))
+  lazy val commentInput = Gadget(textarea(cls:="_commentInput", placeholder:=ph))
   
   def doRender() =
     div(cls:="_addComment row-fluid",
@@ -118,7 +118,7 @@ private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boole
   }
   lazy val flattenedNodes = flattenNodes(conv)
   
-  lazy val commentContainer = SimpleGadget(div(cls:="_commentContainer offset1 span9", flattenedNodes))
+  lazy val commentContainer = Gadget(div(cls:="_commentContainer offset1 span9", flattenedNodes))
   
   def doRender() =
     div(
@@ -131,7 +131,7 @@ private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boole
       
   lazy val replyContainer = (new WrapperDiv)(cls:="_replyContainer offset1 span9").initialContent(replyPlaceholder)
   
-  lazy val replyPlaceholder = SimpleGadget(
+  lazy val replyPlaceholder = Gadget(
     inp(cls:="_replyPlaceholder", 
       tpe:="text", 
       placeholder:="Click here to reply...",

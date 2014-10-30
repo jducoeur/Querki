@@ -17,6 +17,9 @@ import querki.util.ScalatagUtils
 /**
  * Wrapper around Scalatags, to provide support for tracking and updating the rendered elements
  * as the underlying data changes.
+ * 
+ * If you need complex behaviour, subclass this and extend it. If you just need to be able to
+ * access the DOM created by the rendered Scalatags, just use the Gadget(scalatags) entry point.
  */
 trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with ScalatagUtils {
   /**
@@ -63,8 +66,16 @@ trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with ScalatagUti
 
 /**
  * This variant of Gadget is particularly useful when you're not trying to do anything complex, just
- * have a handle to the resulting elem.
+ * have a handle to the resulting elem. Usually accessed as Gadget(...).
  */
-case class SimpleGadget(guts:scalatags.JsDom.TypedTag[dom.Element]) extends Gadget[dom.Element] {
+class SimpleGadget(guts:scalatags.JsDom.TypedTag[dom.Element]) extends Gadget[dom.Element] {
   def doRender() = guts
+}
+
+object Gadget {
+  /**
+   * Create a SimpleGadget from the given Scalatags. This is typically enough when all you need is
+   * to get at the resulting DOM element.
+   */
+  def apply(guts:scalatags.JsDom.TypedTag[dom.Element]) = new SimpleGadget(guts)
 }
