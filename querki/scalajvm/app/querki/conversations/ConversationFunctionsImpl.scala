@@ -41,7 +41,10 @@ trait ConversationFunctionsImpl extends ConversationFunctions with SessionApiImp
     CommentInfo(
       c.id,
       ClientApi.identityInfo(identities(c.authorId)),
-      Wikitext(Conversations.CommentText.firstOpt(c.props).map(_.text).getOrElse("")),
+      if (c.isDeleted)
+        Wikitext("*Comment deleted*")
+      else
+        Wikitext(Conversations.CommentText.firstOpt(c.props).map(_.text).getOrElse("")),
       c.primaryResponse,
       c.createTime.getMillis,
       theRc.isOwner || theRc.requesterOrAnon.hasIdentity(c.authorId),
