@@ -68,10 +68,10 @@ class DeleteButton(doDelete:() => Unit) extends Gadget[dom.HTMLSpanElement] {
   def doRender() = span(cls:="_deleteCommentButton", "x")
   
   override def onCreate(e:dom.HTMLSpanElement) = {
-    $(elem).on("click", null, null, confirmDelete _)
+    $(elem).on("click", null, null, confirmDelete)
   }
 
-  def confirmDelete(evt:JQueryEventObject):js.Any = {
+  lazy val confirmDelete:Function1[JQueryEventObject, js.Any] = { (evt:JQueryEventObject) =>
     val deleteButton = $(elem)
     deleteButton.popover(PopoverOptions(
       content = "Click again to delete", 
@@ -80,16 +80,15 @@ class DeleteButton(doDelete:() => Unit) extends Gadget[dom.HTMLSpanElement] {
     ))
     deleteButton.popover(PopoverCommand.show)
     deleteButton.off("click", null)
-    deleteButton.on("click", null, null, reallyDeleteWrap)
+    deleteButton.on("click", null, null, reallyDelete)
     dom.window.setTimeout({ () =>
       deleteButton.popover(PopoverCommand.hide)
       deleteButton.off("click", null)
-      deleteButton.on("click", null, null, confirmDelete _)
+      deleteButton.on("click", null, null, confirmDelete)
     }, 2000)
   }
   
-  lazy val reallyDeleteWrap:Function1[JQueryEventObject, js.Any] = { (evt:JQueryEventObject) => reallyDelete() }
-  def reallyDelete() = {
+  lazy val reallyDelete:Function1[JQueryEventObject, js.Any] = { (evt:JQueryEventObject) =>
     doDelete()
   }
 }
