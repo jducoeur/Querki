@@ -31,21 +31,53 @@ class ConversationPane(val thingInfo:ThingInfo)(implicit val ecology:Ecology) ex
       case t:Throwable => println(s"Got an error: $t")
     }
     fut.foreach { convInfo =>
+      val convs =
+        div(
+          for (conv <- convInfo.convs)
+            yield new ConversationGadget(conv, convInfo.canComment)
+        )
+      convWrapper.replaceContents(convs.render)
+      
       val guts = 
         div(
           hr,
           h4(cls:="_commentsHeader", "Comments"),
-          for (conv <- convInfo.convs)
-            yield new ConversationGadget(conv, convInfo.canComment)
+          convWrapper,
+          new ReplyGadget(None, "Start a new conversation...", { node => onNewConversation(node, convInfo.canComment) })
         )
-      convWrapper.replaceContents(guts.render)
+        
+      allWrapper.replaceContents(guts.render)
       InputGadgets.hookPendingGadgets()
     }
   }
   
-  lazy val convWrapper = new WrapperDiv
+  def onNewConversation(newNode:ConvNode, canComment:Boolean) = {
+    val convGadget = new ConversationGadget(newNode, canComment)
+    $(convWrapper.elem).append(convGadget.render)
+  }
   
-  def doRender() = div(convWrapper)
+  lazy val convWrapper = new WrapperDiv
+  lazy val allWrapper = new WrapperDiv
+  
+  def doRender() = div(allWrapper)
+}
+
+import bootstrap._
+
+class DeleteButton() extends Gadget[dom.HTMLSpanElement] {
+  def doRender() = span(cls:="_deleteCommentButton", "x", onclick:=deleteWrapper)
+
+  def deleteWrapper:js.Function1[JQueryEventObject, js.Any] = { (evt:JQueryEventObject) => deleteComment() }
+  def deleteComment() = {
+    val deleteButton = $(elem)
+    deleteButton.popover(PopoverOptions(
+      content = "Click again to delete", 
+      placement = "left", 
+      trigger = "manual"      
+    ))
+    deleteButton.popover(PopoverCommand.show)
+    deleteButton.off("click", null, deleteWrapper)
+  }
 }
 
 private [conversations] class CommentGadget(val comment:CommentInfo)(implicit val ecology:Ecology, thingInfo:ThingInfo)
@@ -60,8 +92,7 @@ private [conversations] class CommentGadget(val comment:CommentInfo)(implicit va
       id:=s"_comment$cid",
       a(cls:="_commentLink", name:=s"comment$cid"),
       if (comment.canDelete) {
-        // TODO: deal with deleting
-        span(cls:="_deleteCommentButton", "x")
+        new DeleteButton()
       },
       div(cls:="_commentHeader",
         span(cls:="_commentAuthor", comment.author.name),
