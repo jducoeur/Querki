@@ -64,11 +64,14 @@ class ConversationPane(val thingInfo:ThingInfo)(implicit val ecology:Ecology) ex
 
 import bootstrap._
 
-class DeleteButton() extends Gadget[dom.HTMLSpanElement] {
-  def doRender() = span(cls:="_deleteCommentButton", "x", onclick:=deleteWrapper)
+class DeleteButton(doDelete:() => Unit) extends Gadget[dom.HTMLSpanElement] {
+  def doRender() = span(cls:="_deleteCommentButton", "x")
+  
+  override def onCreate(e:dom.HTMLSpanElement) = {
+    $(elem).on("click", null, null, confirmDelete _)
+  }
 
-  def deleteWrapper:js.Function1[JQueryEventObject, js.Any] = { (evt:JQueryEventObject) => deleteComment() }
-  def deleteComment() = {
+  def confirmDelete(evt:JQueryEventObject):js.Any = {
     val deleteButton = $(elem)
     deleteButton.popover(PopoverOptions(
       content = "Click again to delete", 
@@ -76,13 +79,26 @@ class DeleteButton() extends Gadget[dom.HTMLSpanElement] {
       trigger = "manual"      
     ))
     deleteButton.popover(PopoverCommand.show)
-    deleteButton.off("click", null, deleteWrapper)
+    deleteButton.off("click", null)
+    deleteButton.on("click", null, null, reallyDeleteWrap)
+    dom.window.setTimeout({ () =>
+      deleteButton.popover(PopoverCommand.hide)
+      deleteButton.off("click", null)
+      deleteButton.on("click", null, null, confirmDelete _)
+    }, 2000)
+  }
+  
+  lazy val reallyDeleteWrap:Function1[JQueryEventObject, js.Any] = { (evt:JQueryEventObject) => reallyDelete() }
+  def reallyDelete() = {
+    doDelete()
   }
 }
 
 private [conversations] class CommentGadget(val comment:CommentInfo)(implicit val ecology:Ecology, thingInfo:ThingInfo)
   extends Gadget[dom.HTMLDivElement] with EcologyMember 
 {  
+  lazy val Client = interface[querki.client.Client]
+  
   val cid = comment.id
   val created = moment(comment.createTime).calendar()
   
@@ -92,7 +108,7 @@ private [conversations] class CommentGadget(val comment:CommentInfo)(implicit va
       id:=s"_comment$cid",
       a(cls:="_commentLink", name:=s"comment$cid"),
       if (comment.canDelete) {
-        new DeleteButton()
+        new DeleteButton(doDelete)
       },
       div(cls:="_commentHeader",
         span(cls:="_commentAuthor", comment.author.name),
@@ -101,6 +117,12 @@ private [conversations] class CommentGadget(val comment:CommentInfo)(implicit va
       ),
       new QText(comment.content, cls:="_commentText")
     )
+    
+  def doDelete() = {
+    Client[ConversationFunctions].deleteComment(thingInfo.oid, cid).call().foreach { dummy =>
+      $(elem).hide(400, { () => $(elem).remove() })
+    }
+  }
 }
 
 class ReplyGadget(replyTo:Option[CommentId], ph:String, onPosted:ConvNode => Unit)(implicit val ecology:Ecology, thingInfo:ThingInfo) 

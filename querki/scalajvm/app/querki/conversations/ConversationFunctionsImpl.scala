@@ -125,4 +125,13 @@ trait ConversationFunctionsImpl extends ConversationFunctions with SessionApiImp
 
     promise.future
   }
+  
+  def deleteComment(thingId:String, commentId:CommentId):Future[Unit] = withThing(thingId) { thing =>
+    val promise = Promise[Unit]
+    spaceRouter.request(ConversationRequest(user, rc.ownerId, state.id, DeleteComment(thing.id, commentId))) {
+      case CommentDeleted => promise.success(())
+      case CommentNotDeleted => promise.failure(new Exception("Unable to delete comment"))      
+    }
+    promise.future
+  }
 }
