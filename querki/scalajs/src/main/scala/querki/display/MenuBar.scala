@@ -80,7 +80,6 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
         // TODO: these first two currently hook into Javascript. They should instead be direct callbacks to Scala:
         NavLink("Design a Model", PageManager.pageUrl("_design"), Some("designModel")),
         NavLink("Create any Thing", PageManager.pageUrl("_create"), Some("createThing")),
-        NavLink("Add a Property", controllers.Application.createProperty(ownerId, spaceId)),
         NavLink("Show all Things", thing("All-Things")),
         NavLink("Show all Properties", thing("All-Properties")),
         NavLink("Sharing and Security", controllers.Application.sharing(ownerId, spaceId), enabled = DataAccess.request.isOwner)        
