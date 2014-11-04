@@ -45,6 +45,15 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
     }
   }
 
-  def read[Result: upickle.Reader](p: String) = { /* println(s"Unpickling $p"); */ upickle.read[Result](p) }
+  def read[Result: upickle.Reader](p: String) = {
+    try {
+      upickle.read[Result](p)
+    } catch {
+      case ex:Exception => {
+        println(s"Exception while trying to unpickle response $p: $ex")
+        throw ex
+      }
+    }
+  }
   def write[Result: upickle.Writer](r: Result) = upickle.write(r)
 }

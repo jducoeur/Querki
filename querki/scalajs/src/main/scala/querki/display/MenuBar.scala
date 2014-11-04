@@ -20,7 +20,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   
   def spaceOpt = DataAccess.space
   def space = spaceOpt.get
-  def userName = space.ownerHandle
+  def ownerId = space.ownerHandle
   def spaceId = space.urlName
   def thingOpt = DataAccess.mainThing
   
@@ -55,7 +55,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
 
   case object NavDivider extends Navigable
   
-  def thing(thingName:String) = controllers.Application.thing(userName, spaceId, thingName)
+  def thing(thingName:String) = controllers.Application.thing(ownerId, spaceId, thingName)
   
   /**
    * Definition of the Menu Bar's data
@@ -80,10 +80,10 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
         // TODO: these first two currently hook into Javascript. They should instead be direct callbacks to Scala:
         NavLink("Design a Model", PageManager.pageUrl("_design"), Some("designModel")),
         NavLink("Create any Thing", PageManager.pageUrl("_create"), Some("createThing")),
-        NavLink("Add a Property", controllers.Application.createProperty(userName, spaceId)),
+        NavLink("Add a Property", controllers.Application.createProperty(ownerId, spaceId)),
         NavLink("Show all Things", thing("All-Things")),
         NavLink("Show all Properties", thing("All-Properties")),
-        NavLink("Sharing and Security", controllers.Application.sharing(userName, spaceId), enabled = DataAccess.request.isOwner)        
+        NavLink("Sharing and Security", controllers.Application.sharing(ownerId, spaceId), enabled = DataAccess.request.isOwner)        
       )
     }
   }
@@ -93,9 +93,9 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
       val thingId = thing.urlName
       Seq(
         NavDivider,
-        NavLink("Edit " + thing.displayName, controllers.Application.editThing(userName, spaceId, thingId), enabled = thing.isEditable),
-        NavLink("View Source", controllers.Application.viewThing(userName, spaceId, thingId)),
-        NavLink("Advanced...", controllers.Application.showAdvancedCommands(userName, spaceId, thingId)),
+        NavLink("Edit " + thing.displayName, controllers.Application.editThing(ownerId, spaceId, thingId), enabled = thing.isEditable),
+        NavLink("View Source", controllers.Application.viewThing(ownerId, spaceId, thingId)),
+        NavLink("Advanced...", controllers.Application.showAdvancedCommands(ownerId, spaceId, thingId)),
         NavLink("Explore...", PageManager.pageUrl("_explore", Map(("thingId" -> thingId))), enabled = thing.isEditable),
         // TODO: this should pop a dialog:
         NavLink("Delete " + thing.displayName, enabled = thing.isDeleteable, onClick = Some({ () => }))
@@ -111,6 +111,23 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
       }
     }
     allLinks.map(NavSection("Actions", _))
+  }
+  
+  def loginSection = {
+    UserAccess.user match {
+      case Some(user) => {
+        NavSection("Logged in as " + truncateName(user.mainIdentity.name), Seq(
+          // TODO: make this a client page:
+          NavLink("Your Profile", controllers.LoginController.userByName(user.mainIdentity.handle)),
+          NavLink("Log out", controllers.LoginController.logout())
+        ))  
+      }
+      case None => {
+        NavSection("Not logged in", Seq(
+          NavLink("Log in", controllers.Application.index)
+        ))
+      }
+    }
   }
   
   def adminSection = {
@@ -213,6 +230,8 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
                   for (section <- sections)
                     yield displayNavigable(section)
                 ),
+                
+                ul(cls:="nav pull-right", displayNavigable(loginSection)),
                 
                 form(cls:="navbar-search pull-right",
                   new SearchGadget()),
