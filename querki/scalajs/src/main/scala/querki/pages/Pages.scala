@@ -15,6 +15,7 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   
   override def postInit() = {
     exploreFactory
+    viewFactory
   }
   
   private var factories = Seq.empty[PageFactory]
