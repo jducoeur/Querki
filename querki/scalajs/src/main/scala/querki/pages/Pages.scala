@@ -7,19 +7,24 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   
   def implements = Set(classOf[Pages])
   
+  lazy val PageManager = interface[querki.display.PageManager]
+
+  // Factories for some pages with no obvious homes:
+  lazy val exploreFactory = registerStandardFactory("_explore", { (params) => new ExplorePage(params) })
+  lazy val viewFactory = registerStandardFactory("_view", { (params) => new ViewPage(params) })  
+  
   override def postInit() = {
-    // PageFactory for the ExplorePage, since there isn't another good package to stick it
-    // into:
-    registerStandardFactory("_explore", { (params) => new ExplorePage(params) })
+    exploreFactory
   }
   
   private var factories = Seq.empty[PageFactory]
   
-  def registerFactory(factory:PageFactory):Unit = {
+  def registerFactory(factory:PageFactory):PageFactory = {
     factories :+= factory
+    factory
   }
   
-  def registerStandardFactory(registeredName:String, const:ParamMap => Page) = {
+  def registerStandardFactory(registeredName:String, const:ParamMap => Page):PageFactory = {
     registerFactory(new PageFactory {
       def constructPageOpt(pageName:String, params:ParamMap):Option[Page] = {
         if (pageName == registeredName)
@@ -27,6 +32,8 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
         else
           None
       }
+      
+      def pageUrl(params:(String, String)*) = PageManager.pageUrl(registeredName, Map(params:_*))
     })    
   }
   

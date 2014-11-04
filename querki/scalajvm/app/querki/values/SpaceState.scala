@@ -240,6 +240,13 @@ case class SpaceState(
         
      stripInstances
   }
+  
+  def getApp(appId:OID):Option[SpaceState] = {
+    if (appId == id)
+      Some(this)
+    else
+      app.flatMap(_.getApp(appId))
+  }
 }
 
 object SpaceState {

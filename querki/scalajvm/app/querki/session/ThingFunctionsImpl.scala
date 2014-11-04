@@ -6,7 +6,7 @@ import querki.globals._
 
 import querki.api.ThingFunctions
 import querki.core.QLText
-import querki.data.{RequestInfo, ThingInfo}
+import querki.data.{PropValInfo, RequestInfo, ThingInfo}
 import querki.pages.ThingPageDetails
 
 trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions {
@@ -45,5 +45,9 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions {
     implicit val r = rc
     val context = thing.thisAsContext
     QL.processMethod(QLText(ql), context, None, Some(thing)).wikify(context)
+  }
+  
+  def getProperties(thingId:String):Seq[PropValInfo] = withThing(thingId) { thing =>
+    ClientApi.propValInfo(thing, rc)
   }
 }

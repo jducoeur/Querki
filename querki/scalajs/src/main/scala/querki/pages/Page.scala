@@ -34,6 +34,12 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
   def thingUrl(name:String) = s"#$name"
   
   /**
+   * A standard link to a Thing, if you're not trying to do anything odd with it.
+   */
+  def thingLink(thing:ThingInfo):TypedTag[dom.HTMLAnchorElement] =
+    a(href:=thingUrl(thing), thing.displayName)
+  
+  /**
    * The contents of this page. Concrete subclasses must fill this in.
    */
   def pageContent:Future[PageContents]

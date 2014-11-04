@@ -2,6 +2,8 @@ package querki
 
 import querki.globals._
 
+import querki.comm.URL
+
 package object pages {
   
   /**
@@ -12,6 +14,11 @@ package object pages {
      * If this name fits this PageFactory, construct the Page; otherwise, decline and it'll go to the next.
      */
     def constructPageOpt(pageName:String, params:ParamMap):Option[Page]
+    
+    /**
+     * Returns the URL for this Page with these Params.
+     */
+    def pageUrl(params:(String, String)*):URL
   }
   
   trait Pages extends EcologyInterface {
@@ -19,19 +26,22 @@ package object pages {
     /**
      * Register a PageFactory for use. Usually called during postInit().
      */
-    def registerFactory(factory:PageFactory):Unit
+    def registerFactory(factory:PageFactory):PageFactory
     
     /**
      * Convenience wrapper around registerFactory, for the most common case: simply
      * pass in the name of the page and a constructor lambda, and it builds the factory
      * for you.
      */
-    def registerStandardFactory(pageName:String, const:ParamMap => Page):Unit
+    def registerStandardFactory(pageName:String, const:ParamMap => Page):PageFactory
     
     /**
      * Given the name and parameters to a Page, build a new instance.
      */
     def constructPage(name:String, params:ParamMap):Page
+    
+    def exploreFactory:PageFactory
+    def viewFactory:PageFactory
   }
   
   /**

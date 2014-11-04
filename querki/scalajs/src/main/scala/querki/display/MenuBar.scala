@@ -16,6 +16,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val PageManager = interface[PageManager]
+  lazy val Pages = interface[querki.pages.Pages]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
   def spaceOpt = DataAccess.space
@@ -93,9 +94,9 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
       Seq(
         NavDivider,
         NavLink("Edit " + thing.displayName, controllers.Application.editThing(ownerId, spaceId, thingId), enabled = thing.isEditable),
-        NavLink("View Source", controllers.Application.viewThing(ownerId, spaceId, thingId)),
+        NavLink("View Source", Pages.viewFactory.pageUrl("thingId" -> thingId)),
         NavLink("Advanced...", controllers.Application.showAdvancedCommands(ownerId, spaceId, thingId)),
-        NavLink("Explore...", PageManager.pageUrl("_explore", Map(("thingId" -> thingId))), enabled = thing.isEditable),
+        NavLink("Explore...", Pages.exploreFactory.pageUrl("thingId" -> thingId), enabled = thing.isEditable),
         // TODO: this should pop a dialog:
         NavLink("Delete " + thing.displayName, enabled = thing.isDeleteable, onClick = Some({ () => }))
       )

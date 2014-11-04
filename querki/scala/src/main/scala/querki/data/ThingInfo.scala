@@ -1,6 +1,6 @@
 package querki.data
 
-import models.Kind
+import models.{Kind, Wikitext}
 
 import querki.core.NameUtils
 
@@ -28,7 +28,8 @@ case class ThingInfo(
   isEditable:Boolean,
   isDeleteable:Boolean,
   isInstantiatable:Boolean,
-  isTag:Boolean) extends Urlable
+  isTag:Boolean,
+  importedFrom:Option[SpaceInfo]) extends Urlable
 {
 }
 
@@ -40,3 +41,10 @@ case class SpaceInfo(
   ownerHandle:String) extends Urlable
 {
 }
+
+case class PropValInfo(
+  name:String,
+  prompt:Option[Wikitext],
+  renderedV:Wikitext,
+  tooltip:Option[Wikitext]
+)

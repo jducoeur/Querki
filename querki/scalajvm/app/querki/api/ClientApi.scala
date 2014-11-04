@@ -2,27 +2,34 @@ package querki.api
 
 import upickle._
 
-import models.AsOID
+import models.{AsOID, HtmlWikitext}
 
 import querki.globals._
 
 import querki.core.NameUtils
-import querki.data.{IdentityInfo, RequestInfo, SpaceInfo, ThingInfo, UserInfo}
+import querki.data.{IdentityInfo, PropValInfo, RequestInfo, SpaceInfo, ThingInfo, UserInfo}
 import querki.identity.{PublicIdentity, User}
 import querki.pages.PageDetails
 import querki.tags.IsTag
-import querki.values.RequestContext
+import querki.values.{QLRequestContext, RequestContext}
 
 class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi {
   
   lazy val AccessControl = interface[querki.security.AccessControl]
+  lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val DataModelAccess = interface[querki.datamodel.DataModelAccess]
+  lazy val Editor = interface[querki.editing.Editor]
   
   def thingInfo(t:Thing, rc:RequestContext):ThingInfo = {
       implicit val state = rc.state.get
       val user = rc.requesterOrAnon
       val editable = AccessControl.canEdit(state, user, t.id)
       val isModel = t.isModel
+      val importedFrom =
+        if (t.spaceId == state.id)
+          None
+        else
+          spaceInfo(state.getApp(t.spaceId), rc)
       ThingInfo(
         AsOID(t.id), 
         t.linkName, 
@@ -33,7 +40,8 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi {
         editable,
         editable && DataModelAccess.isDeletable(t),
         isModel && AccessControl.canCreate(state, user, t),
-        t.isInstanceOf[IsTag])
+        t.isInstanceOf[IsTag],
+        importedFrom)
   }
   
   def spaceInfo(topt:Option[SpaceState], rc:RequestContext):Option[SpaceInfo] = {
@@ -69,5 +77,29 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi {
       spaceInfo(rc.state, rc), 
       rc.isOwner,
       rc.requesterOrAnon.isAdmin)
+  }
+  
+  def propValInfo(t:Thing, rc:RequestContext):Seq[PropValInfo] = {
+    implicit val state = rc.state.get
+    def oneProp(prop:AnyProp, v:QValue):PropValInfo = {
+      val prompt = prop.getPropOpt(Editor.PromptProp).map(_.renderPlain)
+      val renderedV =
+        if (v.pType.isInstanceOf[querki.core.IsTextType]) {
+          HtmlWikitext(s"<pre><code>${v.cv.map(v.pType.toUser(_)).mkString("\n")}</code></pre>")
+        } else {
+          v.wikify(QLRequestContext(rc))
+      }
+      val tooltip = prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc)))
+          
+      PropValInfo(prop.displayName, prompt, renderedV, tooltip)
+    }
+    
+    val infoOpts = for {
+      prop <- t.localProps
+      if (!prop.ifSet(Core.InternalProp))
+    }
+      yield t.getPropOpt(prop).map(pv => oneProp(prop, pv.v))
+    
+    infoOpts.flatten.toSeq
   }
 }

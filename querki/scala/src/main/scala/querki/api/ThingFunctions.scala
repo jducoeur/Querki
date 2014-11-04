@@ -27,4 +27,9 @@ trait ThingFunctions {
    * Evaluate the given QL in the context of the specified Thing, and return the resulting Wikitext.
    */
   def evaluateQL(thingId:String, ql:String):Wikitext
+  
+  /**
+   * Fetch the raw values of the Properties on this Thing.
+   */
+  def getProperties(thingId:String):Seq[PropValInfo]
 }
