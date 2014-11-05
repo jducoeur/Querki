@@ -73,9 +73,9 @@ object ApplicationBuild extends Build with UniversalKeys {
 	  
 	  // Javascript libraries we require:
 	  skip in packageJSDependencies := false,
-	  jsDependencies += ProvidedJS / "jquery-ui-1.10.0.custom.min.js" dependsOn "jquery.js",
+	  jsDependencies += ProvidedJS / "jquery-ui-1.10.0.custom.js" dependsOn "jquery.js",
 	  jsDependencies += ProvidedJS / "jquery.manifest.js" dependsOn "jquery.js",
-	  jsDependencies += ProvidedJS / "jquery.ui.touch-punch.js" dependsOn "jquery-ui-1.10.0.custom.min.js",
+	  jsDependencies += ProvidedJS / "jquery.ui.touch-punch.js" dependsOn "jquery-ui-1.10.0.custom.js",
 	  jsDependencies += ProvidedJS / "bootstrap.min.js" dependsOn "jquery.js",
 	  jsDependencies += ProvidedJS / "jquery.autosize-min.js" dependsOn "jquery.js",
 	  jsDependencies += ProvidedJS / "jquery.raty.js" dependsOn "jquery.js",

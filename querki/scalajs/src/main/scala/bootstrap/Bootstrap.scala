@@ -1,7 +1,7 @@
 package bootstrap
 
 import scala.scalajs.js
-import js.{Dynamic, UndefOr}
+import js.{Dynamic, UndefOr, undefined => undef}
 import js.JSConverters._
 
 trait BootstrapFacade extends js.Object {
@@ -33,8 +33,6 @@ trait PopoverOptions extends js.Object {
 }
 
 object PopoverOptions {
-  val undef:UndefOr[Nothing] = None.orUndefined
-  
   def apply(
       content:UndefOr[String] = undef, 
       placement:UndefOr[String] = undef, 

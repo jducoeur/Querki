@@ -46,14 +46,15 @@ object QuerkiClient extends JSApp with EcologyMember {
   def createCommonEcots(ecology:Ecology) = {
     new querki.client.ClientImpl(ecology)
     new querki.data.ClientDataEcot(ecology)
+    new querki.datamodel.DataModelEcot(ecology)
     new querki.display.PageManagerEcot(ecology)
+    new querki.display.StatusLineEcot(ecology)    
     new querki.display.input.InputGadgetsEcot(ecology)
     new querki.identity.UserManagerEcot(ecology)
-    new querki.pages.PagesEcot(ecology)
-    new querki.display.StatusLineEcot(ecology)    
     new querki.notifications.NotificationsEcot(ecology)
-    new querki.search.SearchEcot(ecology)
+    new querki.pages.PagesEcot(ecology)
     new querki.qtext.QTextUtilsEcot(ecology)
+    new querki.search.SearchEcot(ecology)
   }
 
   /**

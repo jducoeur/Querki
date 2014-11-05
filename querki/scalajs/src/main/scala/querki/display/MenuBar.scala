@@ -15,6 +15,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
+  lazy val DataModel = interface[querki.datamodel.DataModel]
   lazy val PageManager = interface[PageManager]
   lazy val Pages = interface[querki.pages.Pages]
   lazy val UserAccess = interface[querki.identity.UserAccess]
@@ -98,7 +99,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
         NavLink("Advanced...", controllers.Application.showAdvancedCommands(ownerId, spaceId, thingId)),
         NavLink("Explore...", Pages.exploreFactory.pageUrl("thingId" -> thingId), enabled = thing.isEditable),
         // TODO: this should pop a dialog:
-        NavLink("Delete " + thing.displayName, enabled = thing.isDeleteable, onClick = Some({ () => }))
+        NavLink("Delete " + thing.displayName, enabled = thing.isDeleteable, onClick = Some({ () => DataModel.deleteAfterConfirm(thing) }))
       )
     }
   }
@@ -148,6 +149,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
       val link = onClick match {
         case Some(cb) => {
           a(id:=idStr,
+            href:=PageManager.currentHash,
             onclick:=cb,
             display)
         }
