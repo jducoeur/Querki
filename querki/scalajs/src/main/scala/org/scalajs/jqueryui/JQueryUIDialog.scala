@@ -31,7 +31,7 @@ object DialogOptions {
    * by hand. When we write the macro to generate this stuff, it should work better.
    */
   def apply(
-    buttons:UndefOr[js.Object] = undef,
+    buttons:UndefOr[js.Dictionary[js.Function0[Any]]] = undef,
     height:UndefOr[Int] = undef,
     title:UndefOr[String] = undef,
     width:UndefOr[Int] = undef
@@ -69,8 +69,11 @@ trait DialogOptions extends js.Object {
    * Note: for now, we are only supporting the Object version of this parameter. In jQuery UI,
    * there is also an array-based version, which is more powerful but more complex to use. It
    * is not yet obvious how best to express this union type in Scala.js.
+   * 
+   * Note also that we are being very specific about the type, rather than just saying js.Object.
+   * It is important that this be made up of js.Function0's, or jQuery will break obscurely deep down.
    */
-  var buttons:UndefOr[js.Object] = _
+  var buttons:UndefOr[js.Dictionary[js.Function0[Any]]] = _
   
   /**
    * Specifies whether the dialog should close when it has focus and the user presses the escape (ESC) key.

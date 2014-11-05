@@ -31,23 +31,17 @@ class Dialog(
   def show() = {
     render
     // We want to pass the dialog into callbacks; this gets around some recursive-definition
-    // difficulties that you can otherwise have
+    // difficulties that you can otherwise have. Also, it is crucial to ascribe the callbacks
+    // as js.Function; without that, things choke deep inside jQuery UI.
+    // TODO: this ascription ought to be part of the DialogOptions macro.
     val buttons = buttonsIn.map { pair =>
       val (buttonName, cb) = pair
       (buttonName -> ({ () => cb(this) } : js.Function0[Any]))
     }
     val buttonMap = Map(buttons:_*).toJSDictionary
-    
-    val strs = buttonMap.keys.map { key => s"  $key = ${buttonMap(key)}" }
-    println(s"The buttons are:\n${strs.mkString("\n")}")
-    
-    // Is this needed?
-    $(elem).appendTo($("body"))
-    
     val asDialog = $(elem).dialog(DialogOptions(
       title = dialogTitle,
       height = height, width = width,
-//      buttons = lit(Delete = {() => println("You clicked the Delete button!") })
       buttons = buttonMap
     ))
   }
