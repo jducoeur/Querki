@@ -73,7 +73,7 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
   def saveChange(vs:List[String]) = {
     StatusLine.showUntilChange("Saving...")
     val path = $(elem).attr("name")
-    Client[EditFunctions].alterProperty(DataAccess.thingId, path, ChangePropertyValue(vs)).call().foreach { response =>
+    Client[EditFunctions].alterProperty(DataAccess.thingId, ChangePropertyValue(path, vs)).call().foreach { response =>
       InputGadgetsInternal.saveComplete(this)
 	  response match {
         case PropertyChanged => {

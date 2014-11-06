@@ -80,6 +80,7 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
   lazy val Basic = interface[querki.basic.Basic]
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Person = interface[querki.identity.Person]
+  lazy val QL = interface[querki.ql.QL]
   lazy val Tags = interface[querki.tags.Tags]
   lazy val UserValues = interface[querki.uservalues.UserValues]
   

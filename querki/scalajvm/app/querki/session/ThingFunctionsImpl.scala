@@ -19,7 +19,7 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions { self:Actor
   
   def ClientApi:querki.api.ClientApi
   lazy val HtmlUI = interface[querki.html.HtmlUI]
-  lazy val QL = interface[querki.ql.QL]
+  def QL:querki.ql.QL
   
   def getRequestInfo():RequestInfo = ClientApi.requestInfo(rc)
   

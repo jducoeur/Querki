@@ -39,7 +39,7 @@ import AutosizeFacade._
 
 trait JQueryEventEnhanced extends js.Object {
   // This should be a standard part of JQueryEventObject, IMO:
-  def ctrlKey:UndefOr[Int] = ???
+  def ctrlKey:UndefOr[Boolean] = ???
 }
 object JQueryEventEnhanced {
   implicit def jqe2Enhanced(evt:JQueryEventObject):JQueryEventEnhanced = evt.asInstanceOf[JQueryEventEnhanced]
@@ -65,8 +65,8 @@ class LargeTextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLTextA
     // TBD: should we do this at the Page level, so that it does the right thing anywhere
     // on the page? If nothing else, it would block the annoying popup.
     $(elem).keydown({ (evt:JQueryEventObject) =>
-      val metaKey = evt.metaKey.asInstanceOf[UndefOr[Int]]
-      if ((metaKey.isDefined || evt.ctrlKey.isDefined)
+      val metaKey = evt.metaKey.asInstanceOf[Boolean]
+      if ((metaKey || (evt.ctrlKey.isDefined && evt.ctrlKey.get))
           && (evt.which.toChar.toString.toLowerCase == "s")) 
       {
         evt.preventDefault()

@@ -13,11 +13,13 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
 
   // Factories for some pages with no obvious homes:
   lazy val exploreFactory = registerStandardFactory("_explore", { (params) => new ExplorePage(params) })
-  lazy val viewFactory = registerStandardFactory("_view", { (params) => new ViewPage(params) })  
+  lazy val viewFactory = registerStandardFactory("_view", { (params) => new ViewPage(params) })
+  lazy val createAndEditFactory = registerStandardFactory("_createAndEdit", { (params) => new CreateAndEditPage(params) })
   
   override def postInit() = {
     exploreFactory
     viewFactory
+    createAndEditFactory
   }
   
   private var factories = Seq.empty[PageFactory]

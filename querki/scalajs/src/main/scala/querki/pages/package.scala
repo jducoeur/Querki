@@ -43,6 +43,7 @@ package object pages {
     
     def exploreFactory:PageFactory
     def viewFactory:PageFactory
+    def createAndEditFactory:PageFactory
     
     /**
      * Navigate to the given Space.

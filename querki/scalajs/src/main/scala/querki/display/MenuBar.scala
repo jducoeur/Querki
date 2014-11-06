@@ -99,7 +99,11 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
         NavLink("Advanced...", controllers.Application.showAdvancedCommands(ownerId, spaceId, thingId)),
         NavLink("Explore...", Pages.exploreFactory.pageUrl("thingId" -> thingId), enabled = thing.isEditable),
         NavLink("Delete " + thing.displayName, enabled = thing.isDeleteable, onClick = Some({ () => DataModel.deleteAfterConfirm(thing) }))
-      )
+      ) ++
+      (if (thing.isModel)
+        Seq(NavLink("Create a " + thing.displayName, Pages.createAndEditFactory.pageUrl("model" -> thingId)))
+       else
+        Seq.empty)
     }
   }
   
