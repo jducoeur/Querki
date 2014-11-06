@@ -1,5 +1,9 @@
 package querki.session
 
+import scala.concurrent.{Future, Promise}
+
+import akka.actor._
+
 import models.{DisplayText, Thing, ThingId, Wikitext}
 
 import querki.globals._
@@ -8,8 +12,10 @@ import querki.api.ThingFunctions
 import querki.core.QLText
 import querki.data.{PropValInfo, RequestInfo, ThingInfo}
 import querki.pages.ThingPageDetails
+import querki.spaces.messages.{DeleteThing, ThingFound, ThingError}
+import querki.util.Requester
 
-trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions {
+trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions { self:Actor with Requester =>
   
   def ClientApi:querki.api.ClientApi
   lazy val HtmlUI = interface[querki.html.HtmlUI]
@@ -49,5 +55,23 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions {
   
   def getProperties(thingId:String):Seq[PropValInfo] = withThing(thingId) { thing =>
     ClientApi.propValInfo(thing, rc)
+  }
+  
+  /**
+   * TODO: rewrite this using the new Requester Monad, after I write that. Use it to help
+   * drive the question of how we propagate an exception inside the ThingError.
+   */
+  def deleteThing(thingId:String):Future[Unit] = withThing(thingId) { thing =>
+    val promise = Promise[Unit]
+    
+    spaceRouter.request(DeleteThing(user, state.owner, state.toThingId, thing.toThingId)) {
+      // TODO: there is no longer an obvious reason to return newState here, and probably good
+      // reasons not to:
+      case ThingFound(thingId, newState) => promise.success(())
+      // TODO: we don't need stateOpt here any more:
+      case ThingError(error, stateOpt) => promise.failure(error)
+    }
+    
+    promise.future
   }
 }

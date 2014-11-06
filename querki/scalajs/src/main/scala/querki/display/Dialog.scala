@@ -24,16 +24,14 @@ class Dialog(
   height:Int, width:Int,
   guts:scalatags.JsDom.TypedTag[_],
   buttonsIn:(String, Dialog => Unit)*
-  )(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember 
+  ) extends Gadget[dom.HTMLDivElement] 
 {
   def doRender() = div(title:=dialogTitle, guts)
   
   def show() = {
     render
     // We want to pass the dialog into callbacks; this gets around some recursive-definition
-    // difficulties that you can otherwise have. Also, it is crucial to ascribe the callbacks
-    // as js.Function; without that, things choke deep inside jQuery UI.
-    // TODO: this ascription ought to be part of the DialogOptions macro.
+    // difficulties that you can otherwise have.
     val buttons = buttonsIn.map { pair =>
       val (buttonName, cb) = pair
       (buttonName -> ({ () => cb(this) } : js.Function0[Any]))

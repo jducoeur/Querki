@@ -3,6 +3,7 @@ package querki
 import querki.globals._
 
 import querki.comm.URL
+import querki.data.SpaceInfo
 
 package object pages {
   
@@ -42,6 +43,20 @@ package object pages {
     
     def exploreFactory:PageFactory
     def viewFactory:PageFactory
+    
+    /**
+     * Navigate to the given Space.
+     */
+    def showSpacePage(space:SpaceInfo):Unit
+    
+    /**
+     * Display a message on the next Page.
+     */
+    def flashMessage(error:Boolean, msg:String):Unit
+    /**
+     * Fetch the message to show, if any. Note that this will reset to None after it gets called.
+     */
+    def getFlash:Option[(Boolean, String)]
   }
   
   /**

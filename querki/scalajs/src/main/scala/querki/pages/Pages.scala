@@ -1,6 +1,8 @@
 package querki.pages
 
 import querki.globals._
+
+import querki.data.SpaceInfo
 import querki.search.SearchResultsPage
 
 class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
@@ -36,6 +38,17 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
       
       def pageUrl(params:(String, String)*) = PageManager.pageUrl(registeredName, Map(params:_*))
     })    
+  }
+  
+  // TODO: this doesn't yet work correctly to navigate cross-Spaces:
+  def showSpacePage(space:SpaceInfo) = PageManager.showPage(s"${space.urlName}", Map.empty)
+  
+  var flash:Option[(Boolean, String)] = None
+  def flashMessage(error:Boolean, msg:String) = flash = Some((error, msg))
+  def getFlash:Option[(Boolean, String)] = {
+    val ret = flash
+    flash = None
+    ret
   }
   
   /**

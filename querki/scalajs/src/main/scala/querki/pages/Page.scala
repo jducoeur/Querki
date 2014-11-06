@@ -23,21 +23,7 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val InputGadgets = interface[querki.display.input.InputGadgets]
   lazy val PageManager = interface[querki.display.PageManager]
-  
-  /**
-   * Shortcut for fetching the URL of a Thing.
-   */
-  def thingUrl(thing:ThingInfo)(implicit ecology:Ecology):String = {
-    thingUrl(thing.urlName)
-  }
-  
-  def thingUrl(name:String) = s"#$name"
-  
-  /**
-   * A standard link to a Thing, if you're not trying to do anything odd with it.
-   */
-  def thingLink(thing:ThingInfo):TypedTag[dom.HTMLAnchorElement] =
-    a(href:=thingUrl(thing), thing.displayName)
+  lazy val Pages = interface[Pages]
   
   /**
    * The contents of this page. Concrete subclasses must fill this in.
@@ -58,6 +44,19 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
     val outerPage = div(cls:="guts container-fluid",
       div(cls:="row-fluid",
         div(cls:="querki-content span12",
+          // If there is a message to flash, show it:
+          Pages.getFlash.map { pair =>
+            val (isError, msg) = pair
+            div(
+              classes(Seq("alert", if (isError) "alert-error" else "alert-info")),
+              button(tpe:="button", cls:="close", data("dismiss"):="alert", "x"),
+              if (isError) {
+                strong("Error: ")
+              },
+              msg
+            )
+          },
+          
           // The link to the Space:
           DataAccess.space match {
             case Some(space) =>
@@ -66,6 +65,7 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
               )
             case None => div(cls:="_smallSubtitle _spaceLink _noPrint", raw("&nbsp;"))
           },
+          
           // TODO: replace this with something prettier:
           renderedContent(p("Loading..."))
         )

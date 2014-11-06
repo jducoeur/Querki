@@ -98,7 +98,6 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
         NavLink("View Source", Pages.viewFactory.pageUrl("thingId" -> thingId)),
         NavLink("Advanced...", controllers.Application.showAdvancedCommands(ownerId, spaceId, thingId)),
         NavLink("Explore...", Pages.exploreFactory.pageUrl("thingId" -> thingId), enabled = thing.isEditable),
-        // TODO: this should pop a dialog:
         NavLink("Delete " + thing.displayName, enabled = thing.isDeleteable, onClick = Some({ () => DataModel.deleteAfterConfirm(thing) }))
       )
     }

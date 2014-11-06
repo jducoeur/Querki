@@ -5,6 +5,7 @@ import scala.scalajs.js
 import org.scalajs.dom
 
 import scalatags.JsDom.all._
+import scalatags.JsDom.TypedTag
 
 import models.Wikitext
 
@@ -25,11 +26,13 @@ trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with ScalatagUti
   /**
    * Concrete subclasses should fill this in with the actual guts of the Gadget.
    */
-  def doRender():scalatags.JsDom.TypedTag[Output]
+  def doRender():TypedTag[Output]
   
   lazy val underlyingTag = doRender()
   
   def createFrag = underlyingTag.render
+  
+  // TODO: split all of these out into some sort of QuerkiUIUtils:
   
   /**
    * Render some wikitext from the server.
@@ -51,6 +54,21 @@ trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with ScalatagUti
    * Show a standard Querki icon button.
    */
   def iconButton(iconName:String, addlCls:Seq[String] = Seq.empty) = querkiButton(icon(iconName), addlCls)
+  
+  /**
+   * Shortcut for fetching the URL of a Thing.
+   */
+  def thingUrl(thing:ThingInfo):String = {
+    thingUrl(thing.urlName)
+  }
+  
+  def thingUrl(name:String) = s"#$name"
+  
+  /**
+   * A standard link to a Thing, if you're not trying to do anything odd with it.
+   */
+  def thingLink(thing:ThingInfo):TypedTag[dom.HTMLAnchorElement] =
+    a(href:=thingUrl(thing), thing.displayName)
   
   /**
    * Slam the element for this Gadget. You should only call this iff the element was actually called from
