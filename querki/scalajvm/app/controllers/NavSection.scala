@@ -102,7 +102,7 @@ class NavSectionEcot(e:Ecology) extends QuerkiEcot(e) with NavSectionMgr {
         if (thingIsSpace)
           None
         else
-          Some(NavLink("Create a " + thing.displayName, PublicUrls.createAndEditUrl(rc, thing)))
+          Some(NavLink("Create a " + thing.displayName, PublicUrls.createAndEditUrl(rc, thing.toThingId)))
       }
       Seq(
         NavDivider,

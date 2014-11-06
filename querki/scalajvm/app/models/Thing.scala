@@ -318,7 +318,7 @@ abstract class Thing(
    * True iff the other is an ancestor of this Thing via the Model chain.
    */
   def isAncestor(other:OID)(implicit state:SpaceState):Boolean = {
-    (other == model) || getModel.isAncestor(other)
+    (other == model) || getModelOpt.map(_.isAncestor(other)).getOrElse(false)
   }
   
   def renderProps(implicit request:RequestContext):Wikitext = {

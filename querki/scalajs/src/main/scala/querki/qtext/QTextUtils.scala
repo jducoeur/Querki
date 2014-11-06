@@ -13,7 +13,7 @@ class QTextUtilsEcot(e:Ecology) extends ClientEcot(e) with QTextUtils {
   /**
    * RegExp for old-fashioned paths into Querki Spaces.
    */
-  val spacePathRegExp = js.RegExp("/u/([\\.\\w\\-]+)/([\\.\\w\\-]+)/([\\.\\w\\-]+)")
+  val spacePathRegExp = js.RegExp("/u/([\\.\\w\\-]+)/([\\.\\w\\-]+)/([^#].+)")
   
   def adjustUrl(urlIn:String):String = {
     if (spacePathRegExp.test(urlIn)) {

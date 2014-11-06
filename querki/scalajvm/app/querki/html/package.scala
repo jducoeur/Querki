@@ -9,7 +9,7 @@ import play.api.data.Form
 
 import querki.ecology._
 
-import models.{DisplayPropVal, FieldIds, FormFieldInfo, OID, Property, Thing, Wikitext}
+import models.{DisplayPropVal, FieldIds, FormFieldInfo, OID, Property, Thing, ThingId, Wikitext}
 
 import querki.core.QLText
 import querki.ui.UIRenderer
@@ -61,6 +61,6 @@ package object html {
     /**
      * Returns the URL to create a new Instance of the specified Model and begin editing it.
      */
-    def createAndEditUrl(rc:RequestContext, modelId:OID):String
+    def createAndEditUrl(rc:RequestContext, modelId:ThingId):String
   }
 }

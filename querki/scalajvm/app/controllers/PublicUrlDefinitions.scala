@@ -1,6 +1,6 @@
 package controllers
 
-import models.OID
+import models.ThingId
 
 import querki.ecology._
 import querki.html.PublicUrls
@@ -15,7 +15,7 @@ import querki.values.RequestContext
  * doesn't have to depend on controllers.
  */
 class PublicUrlDefinitions(e:Ecology) extends QuerkiEcot(e) with PublicUrls {
-  def createAndEditUrl(rc:RequestContext, modelId:OID):String = {
+  def createAndEditUrl(rc:RequestContext, modelId:ThingId):String = {
     rc match {
       case prc:PlayRequestContext => {
         implicit val req = prc.request

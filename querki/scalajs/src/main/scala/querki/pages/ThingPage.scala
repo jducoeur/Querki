@@ -53,6 +53,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
 
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
+  lazy val Pages = interface[querki.pages.Pages]
   
   val thingName = thing.displayName
   
@@ -86,7 +87,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
             if (thing.isInstantiatable) {
               iconButton("plus-sign")(
                 title:=s"Create a $thingName",
-                href:=controllers.Application.doCreateThing2.spaceUrl(thing.urlName))
+                href:=Pages.createAndEditFactory.pageUrl(("model" -> thing.urlName)))
             },
             querkiButton(MSeq(icon("edit"), icon("edit"), icon("edit"), "..."))(
               title:=s"Edit all instances of $thingName",

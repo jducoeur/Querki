@@ -411,7 +411,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       
       for {
         thing <- inv.contextFirstThing
-        url = PublicUrls.createAndEditUrl(inv.context.request, thing) + linkParam
+        url = PublicUrls.createAndEditUrl(inv.context.request, thing.toThingId) + linkParam
       }
         yield url
   }
