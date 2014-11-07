@@ -402,7 +402,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
             linkProp <- inv.definingContextAsPropertyOf(LinkType)
             fieldId = new FieldIds(None, linkProp)
           }
-            yield s"&${fieldId.inputControlId}=${lexicalThing.id.toString}"
+            yield s"&${fieldId.inputControlId}=${lexicalThing.id.toThingId.toString}"
             
           invStr.get.headOption.getOrElse("")
         }
