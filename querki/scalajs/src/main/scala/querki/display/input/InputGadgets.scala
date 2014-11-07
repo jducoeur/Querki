@@ -49,7 +49,9 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
     ("_textEdit" -> { TextInputGadget(_) }),
     ("_largeTextEdit" -> { LargeTextInputGadget(_) }),
     ("_tagSetInput" -> { TagSetInput(_) }),
-    ("_tagInput" -> { MarcoPoloInput(_) })
+    ("_tagInput" -> { MarcoPoloInput(_) }),
+    // TODO: this ought to start with an underscore:
+    ("sortableList" -> { SortableListGadget(_) })
   )
   
   var unhookedGadgets = Set.empty[InputGadget[_]]
