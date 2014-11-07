@@ -111,7 +111,7 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecolog
    * spliced at that index.
    */
   final def replace(v:implType, elem:ElemValue, index:Int):implType = {
-    // Hmph. This asInstanceOf[] seems like it should be entirely unnecessary. Why isn't it working right?
+    // Need to cast back from Seq to implType, sadly:
     v.toSeq.patch(index, Seq(elem), 1).asInstanceOf[implType]
   }
   

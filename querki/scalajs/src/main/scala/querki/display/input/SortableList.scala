@@ -9,13 +9,23 @@ import org.scalajs.jqueryui._
 
 import querki.globals._
 
+import querki.api.EditFunctions
+import EditFunctions._
+
+/**
+ * TODO: all of this is way too incestuous with the fine details of how things get built
+ * server-side. Now that so many smarts are here, can we have the server just describe it all
+ * more conceptually, and move the details to here?
+ */
 class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListElement](e)  {
 
   def values = ???
   
+  def propWrapper = $(elem).parent()
+  
   // The template is the model for new elements, and includes some metadata. It sits next
   // to the sortable list itself:
-  def template = $(elem).parent().find(".inputTemplate").first()
+  def template = propWrapper.find(".inputTemplate").first()
   
   def numberItems() = {
     val baseItemName = template.data("basename")
@@ -43,11 +53,22 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
       stop = { (evt:JQueryEventObject, ui:SortChangeUI) =>
         val item = ui.item.get
         val sortList = item.parent
-        val oldIndex = item.data("index")
+        val oldIndex = item.data("index").asInstanceOf[Int]
         val newIndex = sortList.children("li").index(item)
+        save(oldIndex, newIndex)
         numberItems()
       }:js.Function2[JQueryEventObject, SortChangeUI, Any]
     ))
+  }
+  
+  def save(from:Int, to:Int):Unit = {
+    // Tell the server which element changed
+    // TODO: IMPORTANT: at the moment, this is horribly susceptible to race conditions. We should
+    // be suspicious about all of this until we implement history, maintain version stamps, and have
+    // a clear mechanism for merging collisions. This should be sending a change *relative* to
+    // a specific version of the Thing.
+    val path = propWrapper.attr("name")
+    saveChange(MoveListItem(path, from, to))
   }
   
   // TBD: deliberately NYI, because I'm not sure what this would mean. A SortableList necessarily has to

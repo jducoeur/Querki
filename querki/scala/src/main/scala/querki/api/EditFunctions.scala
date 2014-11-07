@@ -26,6 +26,8 @@ object EditFunctions {
    */
   case class ChangePropertyValue(path:String, currentValues:List[String]) extends PropertyChange
   
+  case class MoveListItem(path:String, from:Int, to:Int) extends PropertyChange
+  
   sealed trait PropertyChangeResponse
   case object PropertyChanged extends PropertyChangeResponse
   case class PropertyChangeError(msg:String) extends PropertyChangeResponse

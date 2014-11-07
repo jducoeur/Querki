@@ -51,7 +51,8 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
    * value.
    */
   def save():Unit = {
-    saveChange(values)
+    val path = $(elem).attr("name")
+    saveChange(ChangePropertyValue(path, values))
   }
 
   /**
@@ -66,14 +67,11 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
    * Records a change that the user has made. This should be called by the specific Gadget when
    * appropriate.
    * 
-   * @param vs The new values of this field. Note that this is plural, since some Gadgets are inherently
-   *    List/Set based. Conventional single-valued fields should just pass in Some(v). Values should be
-   *    in whatever serialized form the server-side PType expects.
+   * @param msg The change event to send to the server.
    */
-  def saveChange(vs:List[String]) = {
+  def saveChange(msg:PropertyChange) = {
     StatusLine.showUntilChange("Saving...")
-    val path = $(elem).attr("name")
-    Client[EditFunctions].alterProperty(DataAccess.thingId, ChangePropertyValue(path, vs)).call().foreach { response =>
+    Client[EditFunctions].alterProperty(DataAccess.thingId, msg).call().foreach { response =>
       InputGadgetsInternal.saveComplete(this)
 	  response match {
         case PropertyChanged => {

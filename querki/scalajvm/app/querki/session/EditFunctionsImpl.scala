@@ -57,6 +57,26 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { self:Actor w
     }    
   }
   
+  // TODO: this doesn't work with Lists that are nested in Models yet! Merge this with the above, but carefully. There
+  // are common concepts of finding the Property, then creating the new value, then putting it into the right place.
+  // But this may actually generalize to a broad concept of "change", as opposed to "replace".
+  def alterListOrder(thing:Thing, path:String, from:Int, to:Int):Option[PropMap] = {
+    implicit val s = state
+    for {
+      fieldIds <- DisplayPropVal.propPathFromName(path, Some(thing))
+      prop = fieldIds.p
+      pv <- thing.getPropOpt(prop)
+      v = pv.v
+      list = v.cv.toSeq
+      if (list.isDefinedAt(from))
+      elem = list(from)
+      removed = list.patch(from, List(), 1)
+      newList = removed.patch(to, List(elem), 0)
+      newV = v.cType.makePropValue(newList, v.pType)
+    }
+      yield Core.toProps((prop, newV))()
+  }
+  
   def alterProperty(thingId:String, change:PropertyChange):PropertyChangeResponse = withThing(thingId) { thing =>
     change match {
       case ChangePropertyValue(path, vs) => {
@@ -70,6 +90,19 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { self:Actor w
           case None => PropertyChangeError("Invalid path -- did the model change out from under you?")
         }
       }
+      
+      case MoveListItem(path, from, to) => {
+        alterListOrder(thing, path, from, to) match {
+          case Some(props) => {
+            changeProps(thing.toThingId, props)
+    	    
+    	    // Finally, ack the change back to the client:
+    	    PropertyChanged
+          }
+          case None => PropertyChangeError("Invalid path -- did the model change out from under you?")          
+        }
+      }
+      
       case DeleteProperty => PropertyChanged  // NYI
     }   
   }
