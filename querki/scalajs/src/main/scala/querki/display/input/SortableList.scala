@@ -25,7 +25,9 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
   
   // The template is the model for new elements, and includes some metadata. It sits next
   // to the sortable list itself:
-  def template = propWrapper.find(".inputTemplate").first()
+  lazy val template = propWrapper.find(".inputTemplate").first()
+  
+  def index(liElem:dom.Element) = $(liElem).data("index").asInstanceOf[Int]
   
   def numberItems() = {
     val baseItemName = template.data("basename")
@@ -45,7 +47,56 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     }:js.Function2[js.Any, dom.Element, js.Any])    
   }
   
-  def hook() = {    
+  def setupButton(buttonElem:dom.Element, icon:String, tit:String, onClick:(JQueryEventObject) => Unit) = {
+    val btn = $(buttonElem)
+    btn.addClass("btn")
+    btn.attr("title", tit)
+    btn.empty()
+    btn.append(i(cls:=icon).render)
+    btn.click({ evt:JQueryEventObject => onClick(evt); false })
+  }
+  
+  def setupDeleteButton(buttonElem:dom.Element) = {
+    setupButton(buttonElem, "icon-remove-sign", "Delete Item", handleDeleteListItem) 
+  }
+  
+  def handleDeleteListItem(evt:JQueryEventObject) = {
+    val targetLi = $(evt.currentTarget).parent()
+    // TODO: $.get should return UndefOr[dom.Element], shouldn't it?
+    val i = index(targetLi.get(0).asInstanceOf[dom.Element])
+    targetLi.remove()
+    numberItems()
+    saveChange({ path => DeleteListItem(path, i) })
+  }
+    
+  def handleAddListItem(evt:JQueryEventObject) = {
+    val newItem = template.clone(true)
+    newItem.removeClass("inputTemplate")
+    val delButton = button(cls:="delete-item-button btn-mini").render
+    setupDeleteButton(delButton)
+    // TODO: what about replaceIndexes()? Don't we need to do that every time we renumber?
+    // TODO: the fact that we are creating this here, but the originals in the server, shows how
+    // broken the factoring is. *ALL* of this sort of stuff belongs here.
+    val newLiElem = li(span(cls:="icon-move"), newItem.get(0).asInstanceOf[dom.Element], delButton).render
+    $(elem).append(newLiElem)
+    // Do our best to set focus to the first relevant field of the new element:
+    $(newLiElem).find(".propEditor,input,textarea").first.focus()
+    saveChange({ path => AddListItem(path) })
+  }
+  
+  def hook() = {
+    // Hook the Add/Delete Item buttons:
+    $(elem).parent().find(".add-item-button").each({ (index:js.Any, buttonElem:dom.Element) => 
+      setupButton(buttonElem, "icon-plus-sign", "Add Item", handleAddListItem) 
+    })
+    $(elem).parent().find(".delete-item-button").each({ (index:js.Any, buttonElem:dom.Element) => 
+      setupDeleteButton(buttonElem)
+    })
+    
+    // Take the template out of the DOM, so that it doesn't get in the way. We mostly use it to clone
+    // new elements:
+    template.detach()
+    
     numberItems()
     
     $(elem).sortable(SortableOptions(
@@ -55,20 +106,20 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
         val sortList = item.parent
         val oldIndex = item.data("index").asInstanceOf[Int]
         val newIndex = sortList.children("li").index(item)
-        save(oldIndex, newIndex)
+        saveChange({ path => MoveListItem(path, oldIndex, newIndex) })
         numberItems()
       }:js.Function2[JQueryEventObject, SortChangeUI, Any]
     ))
   }
   
-  def save(from:Int, to:Int):Unit = {
+  def saveChange(mkMsg:String => PropertyChange):Unit = {
     // Tell the server which element changed
     // TODO: IMPORTANT: at the moment, this is horribly susceptible to race conditions. We should
     // be suspicious about all of this until we implement history, maintain version stamps, and have
     // a clear mechanism for merging collisions. This should be sending a change *relative* to
     // a specific version of the Thing.
     val path = propWrapper.attr("name")
-    saveChange(MoveListItem(path, from, to))
+    saveChange(mkMsg(path))    
   }
   
   // TBD: deliberately NYI, because I'm not sure what this would mean. A SortableList necessarily has to

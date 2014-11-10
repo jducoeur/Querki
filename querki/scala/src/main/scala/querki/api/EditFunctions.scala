@@ -2,6 +2,7 @@ package querki.api
 
 import scala.concurrent.Future
 
+import models.Wikitext
 import querki.data.ThingInfo
 
 trait EditFunctions {
@@ -27,6 +28,10 @@ object EditFunctions {
   case class ChangePropertyValue(path:String, currentValues:List[String]) extends PropertyChange
   
   case class MoveListItem(path:String, from:Int, to:Int) extends PropertyChange
+  
+  case class AddListItem(path:String) extends PropertyChange
+  
+  case class DeleteListItem(path:String, index:Int) extends PropertyChange
   
   sealed trait PropertyChangeResponse
   case object PropertyChanged extends PropertyChangeResponse

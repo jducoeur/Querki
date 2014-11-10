@@ -103,6 +103,52 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { self:Actor w
         }
       }
       
+      // TODO: what *should* this send back? I'd like to get rid of the whole template thing, and instead have this
+      // send back the new element. But first, I'd like to do away with having so much rendering on the server, and
+      // instead only have the logical structure sent from here.
+      case AddListItem(path) => {
+        // TODO: more grist for the refactoring mill:
+        implicit val s = state
+        val result = for {
+	      fieldIds <- DisplayPropVal.propPathFromName(path, Some(thing))
+	      prop = fieldIds.p
+	      // TODO: this should really be an exception if it's not:
+	      if (prop.cType == Core.QList)
+	      pt = prop.pType
+	      pv <- thing.getPropOpt(prop)
+	      v = pv.v
+	      list = v.cv.toSeq
+	      newI = list.size
+          newElem = pt.default
+          newList = list :+ newElem
+          newV = v.cType.makePropValue(newList, pt)
+          props = Core.toProps((prop, newV))()
+          dummy = changeProps(thing.toThingId, props)
+        }
+          yield PropertyChanged
+          
+        result.getOrElse(PropertyChangeError("Unable to add list item!"))
+      }
+      
+      case DeleteListItem(path, index) => {
+        implicit val s = state
+	    val result = for {
+	      fieldIds <- DisplayPropVal.propPathFromName(path, Some(thing))
+	      prop = fieldIds.p
+	      pv <- thing.getPropOpt(prop)
+	      v = pv.v
+	      list = v.cv.toSeq
+	      if (list.isDefinedAt(index))
+	      newList = list.patch(index, List(), 1)
+	      newV = v.cType.makePropValue(newList, v.pType)
+          props = Core.toProps((prop, newV))()
+          dummy = changeProps(thing.toThingId, props)
+	    }
+	      yield PropertyChanged
+          
+        result.getOrElse(PropertyChangeError("Unable to delete list item!"))        
+      }
+      
       case DeleteProperty => PropertyChanged  // NYI
     }   
   }
