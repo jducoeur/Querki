@@ -84,7 +84,7 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecolog
   /**
    * Second version of accepting user input.
    */
-  def fromUser(prop:AnyProp, vs:List[String], elemT:pType, state:SpaceState):FormFieldInfo
+  def fromUser(info:FieldIds, vs:List[String], state:SpaceState):FormFieldInfo
   
   /**
    * Returns the head of the collection.

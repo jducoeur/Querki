@@ -46,12 +46,14 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
    * reflection (and thus, dynamic construction) on the client side.
    */
   val registry = Map[String, InputConstr](
-    ("_textEdit" -> { TextInputGadget(_) }),
-    ("_largeTextEdit" -> { LargeTextInputGadget(_) }),
-    ("_tagSetInput" -> { TagSetInput(_) }),
-    ("_tagInput" -> { MarcoPoloInput(_) }),
+    ("._textEdit" -> { TextInputGadget(_) }),
+    ("._largeTextEdit" -> { LargeTextInputGadget(_) }),
+    ("._tagSetInput" -> { TagSetInput(_) }),
+    ("._tagInput" -> { MarcoPoloInput(_) }),
     // TODO: this ought to start with an underscore:
-    ("sortableList" -> { SortableListGadget(_) })
+    (".sortableList" -> { SortableListGadget(_) }),
+    // Note that we currently assume all selects are inputs:
+    ("select" -> { SelectGadget(_) })
   )
   
   var unhookedGadgets = Set.empty[InputGadget[_]]
@@ -70,7 +72,7 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
     registry.foreach { pair =>
       val (className, constr) = pair
       // TODO: this is the old signature of .each(). Replace this with a more modern version:
-      $(root).find(s".$className").each ({ (index:js.Any, elem:dom.Element) =>
+      $(root).find(s"$className").each ({ (index:js.Any, elem:dom.Element) =>
         val gadget = constr(elem)
         jsUnit
       })

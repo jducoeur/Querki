@@ -2,7 +2,17 @@ package models
 
 import querki.values.{QValue, SpaceState}
 
-class FieldIds(bundleOpt:Option[PropertyBundle], val p:Property[_,_], val container:Option[FieldIds] = None, val index:Option[Int] = None) {
+/**
+ * IMPORTANT: there are now two indexes here. "index" is the index of this value within the *containing* Property, if any -- that
+ * is, if this is in a List of Model Type, it is the index into that *parent* List. "listIndex" is the index of this value within
+ * *this* Property, when we are talking about an ElemValue.
+ * 
+ * TODO: this is arguably broken as sin, and mostly reflects the history that we were sending entire Lists around, rather than elements.
+ * It should probably get heavily re-written.
+ */
+class FieldIds(val bundleOpt:Option[PropertyBundle], val p:Property[_,_], val container:Option[FieldIds] = None, 
+    val index:Option[Int] = None, val listIndex:Option[Int] = None) 
+{
   lazy val propId = p.id.toString
   lazy val propIdWithIndex = propId  + index.map("[" + _.toString + "]").getOrElse("")
   
@@ -54,6 +64,12 @@ class FieldIds(bundleOpt:Option[PropertyBundle], val p:Property[_,_], val contai
   lazy val emptyControlId = "empty" + suffix
   
   override def toString = idStack(container, "", true)
+  
+  // HACK: to avoid breaking other code, keep listIndex relatively isolated for now:
+  def withListIndex = idStack(container, "", true) + (listIndex match {
+    case Some(i) => s"-item[$i]"
+    case None => ""
+  })
 }
 object FieldIds {
   def apply(t:Option[Thing], p:Property[_,_]) = new FieldIds(t,p)
@@ -72,17 +88,22 @@ case class DisplayPropVal(on:Option[PropertyBundle], prop: Property[_,_], v: Opt
 
 object DisplayPropVal {
   private def propPathFromSuffix(suffixIn:String, bundle:Option[PropertyBundle])(implicit state:SpaceState):Option[FieldIds] = {
+    def getSuffix(suffixStr:String):(String, Option[Int]) = {
+      val suffixLen = suffixStr.length
+      (suffixIn.substring(0, suffixIn.indexOf(suffixStr)), Some(java.lang.Integer.parseInt(suffixIn.substring(suffixIn.indexOf(suffixStr) + suffixLen).dropRight(1))))
+    }
+    
     // HACK: to work around the funny values produced by Manifest, when it is dynamically serializing.
     // Fix this on the client side!
-    val suffix = 
+    val (suffix, listIndex) = 
       if (suffixIn.contains("_values["))
-        suffixIn.substring(0, suffixIn.indexOf("_values["))
+        getSuffix("_values[")
       else if (suffixIn.contains("-item["))
         // It is deeply sad that we need to know this.
         // TODO: merge QList's notion of indexes with the one in here, to make things consistent!
-        suffixIn.substring(0, suffixIn.indexOf("-item["))
+        getSuffix("-item[") 
       else
-        suffixIn
+        (suffixIn, None)
         
     val path = suffix.split("-").map(IndexedOID.parse(_))
     if (path.exists(_.isEmpty))
@@ -98,7 +119,7 @@ object DisplayPropVal {
           path.flatten.dropRight(1)
       (Option.empty[FieldIds] /: propIds) { (current, propId) =>
         val prop = state.prop(propId.id).get
-        Some(new FieldIds(bundle, prop, current, propId.i))
+        Some(new FieldIds(bundle, prop, current, propId.i, listIndex))
       }
     }
   }

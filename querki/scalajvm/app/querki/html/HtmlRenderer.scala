@@ -93,7 +93,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       specialized <- handleSpecializedForm(prop, pType, v)
     }
       yield specialized
-    spec.getOrElse(prop.cType.fromUser(prop, vs, pType, context.state))
+    spec.getOrElse(prop.cType.fromUser(fieldIds, vs, context.state))
   }
   
   // TODO: I don't love having this renderer level dependent on QL. Think about whether this is the right place
