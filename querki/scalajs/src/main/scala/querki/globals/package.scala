@@ -1,5 +1,9 @@
 package querki
 
+import scala.scalajs.js
+import org.scalajs.dom
+import org.scalajs.jquery
+
 /**
  * This package provides the "global imports" that are commonly used across the client. It
  * is specifically intended that most files will say:
@@ -12,14 +16,14 @@ package querki
  */
 package object globals {
   
-  type JSExport = scala.scalajs.js.annotation.JSExport
+  type JSExport = js.annotation.JSExport
   
-  val lit = scala.scalajs.js.Dynamic.literal
+  val lit = js.Dynamic.literal
   
   /**
    * The main entry point into jQuery. I alias it to $, to match jQuery idiom.
    */
-  val $ = org.scalajs.jquery.jQuery
+  val $ = jquery.jQuery
   
   type ClientEcot = querki.ecology.ClientEcot
   type Ecology = querki.ecology.Ecology
@@ -41,4 +45,17 @@ package object globals {
   val Future = scala.concurrent.Future
   type Promise[T] = scala.concurrent.Promise[T]
   val Promise = scala.concurrent.Promise
+  
+  // These are improved signatures that can't simply be implicit, because they conflict with existing ones in the
+  // jQuery facade.
+  class JQFixes extends js.Object {
+    def each(f:js.Function2[Int, dom.Element, Any]):jquery.JQuery = ???
+    def map(f:js.Function2[Int, dom.Element, Any]):jquery.JQuery = ???
+    def get():js.Array[_] = ???
+  }
+  implicit class JQFAdaptor(jq:jquery.JQuery) {
+    // Note that jqf turns the jq *into* a jqf, rather than extending it, so that we can get around inference
+    // problems:
+    def jqf = jq.asInstanceOf[JQFixes]
+  }
 }

@@ -1,7 +1,11 @@
 package querki.display
 
+import scala.scalajs.js
 import scalatags.JsDom.all._
 import org.scalajs.dom
+import org.scalajs.jquery._
+
+import querki.globals._
 
 /**
  * A controlled wrapper around a Scalatags Frag, which gives you access to the lifecycle and
@@ -15,7 +19,20 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
   var _elem:Option[Output] = None
   def elemOpt = _elem
   def elem = _elem.get
-
+  
+  /**
+   * Slam the element for this Gadget. You should only call this iff the element was actually called from
+   * an external mechanism (eg, via QText), and you're building this Gadget around that element.
+   * 
+   * This is intentionally designed for chaining, for ease of use -- it returns this Gadget.
+   */
+  def setElem(e:dom.Node):this.type = {
+    _elem = Some(e.asInstanceOf[Output])
+    $(elem).data("gadget", this.asInstanceOf[js.Any])
+    $(elem).addClass("_withGadget")
+    this
+  }
+  
   /**
    * Concrete classes must define this. It causes the actual DOM node to come into existence.
    */
@@ -35,9 +52,26 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
    */
   def render = {
     val result = createFrag
-    _elem = Some(result)
+    setElem(result)
     onCreate(result)
     result
+  }
+  
+  type AnyNode <: dom.Node
+  type AnyFrag = ManagedFrag[AnyNode]
+  
+  def findGadgetsFor(root:JQuery, pred:AnyFrag => Boolean):Seq[AnyFrag] = {
+    val gadgetOptsArray = root.find("._withGadget").jqf.map({ (index:Int, e:dom.Element) =>
+      val frag = $(e).data("gadget").asInstanceOf[AnyFrag]
+      if (pred(frag))
+        Some(frag)
+      else
+        None
+    }).jqf.get()
+    
+    val gadgetOptsSeq:Seq[Option[AnyFrag]] = gadgetOptsArray.asInstanceOf[js.Array[Option[AnyFrag]]]
+        
+    gadgetOptsSeq.flatten
   }
   
   /**

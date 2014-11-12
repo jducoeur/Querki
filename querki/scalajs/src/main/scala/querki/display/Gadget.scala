@@ -69,17 +69,6 @@ trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with ScalatagUti
    */
   def thingLink(thing:ThingInfo):TypedTag[dom.HTMLAnchorElement] =
     a(href:=thingUrl(thing), thing.displayName)
-  
-  /**
-   * Slam the element for this Gadget. You should only call this iff the element was actually called from
-   * an external mechanism (eg, via QText), and you're building this Gadget around that element.
-   * 
-   * This is intentionally designed for chaining, for ease of use -- it returns this Gadget.
-   */
-  def setElem(e:dom.Element):this.type = {
-    _elem = Some(e.asInstanceOf[Output])
-    this
-  }
 }
 
 /**

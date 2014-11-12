@@ -18,6 +18,8 @@ import EditFunctions._
  * more conceptually, and move the details to here?
  */
 class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListElement](e)  {
+  
+  lazy val InputGadgets = interface[InputGadgets]
 
   def values = ???
   
@@ -79,9 +81,15 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     // broken the factoring is. *ALL* of this sort of stuff belongs here.
     val newLiElem = li(span(cls:="icon-move"), newItem.get(0).asInstanceOf[dom.Element], delButton).render
     $(elem).append(newLiElem)
+    numberItems()
     // Do our best to set focus to the first relevant field of the new element:
     $(newLiElem).find(".propEditor,input,textarea").first.focus()
+    InputGadgets.createInputGadgets(newLiElem)
     saveChange({ path => AddListItem(path) })
+    val newGadgets = findGadgetsFor($(newLiElem), { frag => frag.isInstanceOf[InputGadget[_]] })
+    newGadgets.foreach { gadget =>
+      gadget.asInstanceOf[InputGadget[_]].save()
+    }
   }
   
   def hook() = {
