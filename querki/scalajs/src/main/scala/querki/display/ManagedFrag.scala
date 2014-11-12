@@ -63,7 +63,6 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
   def findGadgetsFor(root:JQuery, pred:AnyFrag => Boolean):Seq[AnyFrag] = {
     val gadgetOptsArray = root.find("._withGadget").map({ (e:dom.Element) =>
       val frag = $(e).data("gadget").asInstanceOf[AnyFrag]
-      println(s"Found element $e with frag $frag")
       if (pred(frag))
         Some(frag)
       else

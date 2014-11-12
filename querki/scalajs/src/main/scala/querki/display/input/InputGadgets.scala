@@ -61,8 +61,6 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
   def gadgetCreated(gadget:InputGadget[_]) =
     unhookedGadgets += gadget
   
-  val jsUnit = 1:js.Any
-  
   def hookPendingGadgets() = {
     unhookedGadgets.foreach(_.prep())
     unhookedGadgets = Set.empty
@@ -71,11 +69,9 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
   def createInputGadgets(root:dom.Element) = {
     registry.foreach { pair =>
       val (className, constr) = pair
-      // TODO: this is the old signature of .each(). Replace this with a more modern version:
-      $(root).find(s"$className").each ({ (index:js.Any, elem:dom.Element) =>
+      $(root).find(s"$className").each({ (elem:dom.Element) =>
         val gadget = constr(elem)
-        jsUnit
-      })
+      }:js.ThisFunction0[dom.Element, Any])
     }
   }
   

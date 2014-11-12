@@ -32,7 +32,11 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
    * Called by InputGadgets when it is time to prepare this Gadget for the world.
    */
   def prep() = {
-    hook()
+    // Don't hook templates! That causes nothing but havoc.
+    // TODO: inputTemplate should simply go away ASAP -- it's an old approach to adding new list items.
+    if (!$(elem).hasClass("inputTemplate")) {
+      hook()
+    }
   }
   
   // Register ourselves, so that we get hooked. Note that hooking needs to happen *after* onCreate,

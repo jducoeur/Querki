@@ -36,7 +36,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     
     // Have each li know its current index, to make changes easier:
     var i = 0
-    $(elem).children("li").each({ (index:js.Any, liElem:dom.Element) =>
+    $(elem).children("li").each({ (liElem:dom.Element) =>
       // Assign the new index to this element:
       $(liElem).data("index", i)
       // And rewrite its path, for when its own value gets saved:
@@ -45,8 +45,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
       val inputField = $(liElem).find(".list-input-element")
       inputField.attr("name", s"$baseItemName[$i]")
       i += 1
-      js.undefined
-    }:js.Function2[js.Any, dom.Element, js.Any])    
+    }:js.ThisFunction0[dom.Element, Any])    
   }
   
   def setupButton(buttonElem:dom.Element, icon:String, tit:String, onClick:(JQueryEventObject) => Unit) = {
@@ -85,6 +84,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     // Do our best to set focus to the first relevant field of the new element:
     $(newLiElem).find(".propEditor,input,textarea").first.focus()
     InputGadgets.createInputGadgets(newLiElem)
+    InputGadgets.hookPendingGadgets()
     saveChange({ path => AddListItem(path) }).foreach { response =>
       // Important: we only try to save the new value *after* the server acks the creation of the new
       // element. Otherwise, there's a horribly easy race condition.
@@ -99,12 +99,12 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
   
   def hook() = {
     // Hook the Add/Delete Item buttons:
-    $(elem).parent().find(".add-item-button").each({ (index:js.Any, buttonElem:dom.Element) => 
+    $(elem).parent().find(".add-item-button").each({ (buttonElem:dom.Element) => 
       setupButton(buttonElem, "icon-plus-sign", "Add Item", handleAddListItem) 
-    })
-    $(elem).parent().find(".delete-item-button").each({ (index:js.Any, buttonElem:dom.Element) => 
+    }:js.ThisFunction0[dom.Element, Any])
+    $(elem).parent().find(".delete-item-button").each({ (buttonElem:dom.Element) => 
       setupDeleteButton(buttonElem)
-    })
+    }:js.ThisFunction0[dom.Element, Any])
     
     // Take the template out of the DOM, so that it doesn't get in the way. We mostly use it to clone
     // new elements:
