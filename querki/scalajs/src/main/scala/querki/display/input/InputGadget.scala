@@ -50,7 +50,7 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
    * usually require that. The Gadget should call this whenever it is appropriate to save the current
    * value.
    */
-  def save():Unit = {
+  def save():Future[PropertyChangeResponse] = {
     val path = $(elem).attr("name")
     saveChange(ChangePropertyValue(path, values))
   }
@@ -69,8 +69,9 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
    * 
    * @param msg The change event to send to the server.
    */
-  def saveChange(msg:PropertyChange) = {
+  def saveChange(msg:PropertyChange):Future[PropertyChangeResponse] = {
     StatusLine.showUntilChange("Saving...")
+    val promise = Promise[PropertyChangeResponse]
     Client[EditFunctions].alterProperty(DataAccess.thingId, msg).call().foreach { response =>
       InputGadgetsInternal.saveComplete(this)
 	  response match {
@@ -83,6 +84,8 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
           $(elem).trigger("saveerror")
         }
       }
+      promise.success(response)
     }
+    promise.future
   }
 }

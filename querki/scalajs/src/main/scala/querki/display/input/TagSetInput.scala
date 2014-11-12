@@ -139,7 +139,7 @@ class MarcoPoloInput(val propId:String, val required:Boolean, val kind:TagSetKin
    * Usually, we save the value of this field. But this is broken out so that we can do something else
    * if this is being subclassed for a special purpose.
    */
-  def onChange() = {
+  def onChange():Unit = {
     save()
   }
   

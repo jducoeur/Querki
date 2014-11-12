@@ -85,10 +85,15 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     // Do our best to set focus to the first relevant field of the new element:
     $(newLiElem).find(".propEditor,input,textarea").first.focus()
     InputGadgets.createInputGadgets(newLiElem)
-    saveChange({ path => AddListItem(path) })
-    val newGadgets = findGadgetsFor($(newLiElem), { frag => frag.isInstanceOf[InputGadget[_]] })
-    newGadgets.foreach { gadget =>
-      gadget.asInstanceOf[InputGadget[_]].save()
+    saveChange({ path => AddListItem(path) }).foreach { response =>
+      // Important: we only try to save the new value *after* the server acks the creation of the new
+      // element. Otherwise, there's a horribly easy race condition.
+      if (response == PropertyChanged) {
+	    val newGadgets = findGadgetsFor($(newLiElem), { frag => frag.isInstanceOf[InputGadget[_]] })
+	    newGadgets.foreach { gadget =>
+	      gadget.asInstanceOf[InputGadget[_]].save()
+	    }          
+      }
     }
   }
   
@@ -120,7 +125,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     ))
   }
   
-  def saveChange(mkMsg:String => PropertyChange):Unit = {
+  def saveChange(mkMsg:String => PropertyChange):Future[PropertyChangeResponse] = {
     // Tell the server which element changed
     // TODO: IMPORTANT: at the moment, this is horribly susceptible to race conditions. We should
     // be suspicious about all of this until we implement history, maintain version stamps, and have

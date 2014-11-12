@@ -61,13 +61,14 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
   type AnyFrag = ManagedFrag[AnyNode]
   
   def findGadgetsFor(root:JQuery, pred:AnyFrag => Boolean):Seq[AnyFrag] = {
-    val gadgetOptsArray = root.find("._withGadget").jqf.map({ (index:Int, e:dom.Element) =>
+    val gadgetOptsArray = root.find("._withGadget").map({ (e:dom.Element) =>
       val frag = $(e).data("gadget").asInstanceOf[AnyFrag]
+      println(s"Found element $e with frag $frag")
       if (pred(frag))
         Some(frag)
       else
         None
-    }).jqf.get()
+    }:js.ThisFunction0[dom.Element, Any]).jqf.get()
     
     val gadgetOptsSeq:Seq[Option[AnyFrag]] = gadgetOptsArray.asInstanceOf[js.Array[Option[AnyFrag]]]
         
