@@ -112,9 +112,9 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     
     numberItems()
     
-    $(elem).sortable(SortableOptions(
+    $(elem).sortable(SortableOptions.
       // Stop gets called after a drag-and-drop event:
-      stop = { (evt:JQueryEventObject, ui:SortChangeUI) =>
+      stop({ (evt:JQueryEventObject, ui:SortChangeUI) =>
         val item = ui.item.get
         val sortList = item.parent
         val oldIndex = item.data("index").asInstanceOf[Int]

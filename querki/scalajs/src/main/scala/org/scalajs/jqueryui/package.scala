@@ -1,6 +1,7 @@
 package org.scalajs
 
 import org.scalajs.jquery._
+import org.scalajs.ext._
 
 package object jqueryui {
   /**
@@ -11,4 +12,5 @@ package object jqueryui {
   
   implicit def jq2UI(jq:JQuery):JQueryUIDialogFacade = jq.asInstanceOf[JQueryUIDialogFacade]
   implicit def jq2Sortable(jq:JQuery):JQueryUISortableFacade = jq.asInstanceOf[JQueryUISortableFacade]
+  implicit def builder2SortableOptions(builder:JSOptionBuilder[SortableOptions]) = builder.result
 }
