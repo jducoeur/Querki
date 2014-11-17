@@ -27,21 +27,21 @@ object SortableOptions extends JSOptionBuilder[SortableOptions] {
   /**
    * If defined, the items can be dragged only horizontally or vertically. Possible values: "x", "y".
    */
-  val axis = jsOption[String]("axis")
+  val axis = jsOpt[String]("axis")
   
   /**
    * Prevents sorting if you start on elements matching the selector.
    * 
    * Default: "input,textarea,button,select,option"
    */
-  val cancel = jsOption[Selector]("cancel")
+  val cancel = jsOpt[Selector]("cancel")
   
   /**
    * A selector of other sortable elements that the items from this list should be connected to.
    * This is a one-way relationship, if you want the items to be connected in both directions, 
    * the connectWith option must be set on both sortable elements.
    */
-  val connectWith = jsOption[Selector]("connectWith")
+  val connectWith = jsOpt[Selector]("connectWith")
   
   /**
    * Defines a bounding box that the sortable items are constrained to while dragging.
@@ -53,68 +53,68 @@ object SortableOptions extends JSOptionBuilder[SortableOptions] {
    * 
    * TODO: this is actually a union, and can take Element instead.
    */
-  val containment = jsOption[Selector]("containment")
+  val containment = jsOpt[Selector]("containment")
   
   /**
    * Defines the cursor that is being shown while sorting.
    * 
    * Default: "auto"
    */
-  val cursor = jsOption[String]("cursor")
+  val cursor = jsOpt[String]("cursor")
   
   /**
    * Moves the sorting element or helper so the cursor always appears to drag from the same position. 
    * Coordinates can be given as a hash using a combination of one or two keys: { top, left, right, bottom }.
    */
-  val cursorAt = jsOption[js.Object]("cursorAt")
+  val cursorAt = jsOpt[js.Object]("cursorAt")
 
   /**
    * Time in milliseconds to define when the sorting should start. Adding a delay helps preventing 
    * unwanted drags when clicking on an element.
    */
-  val delay = jsOption[Int]("delay")
+  val delay = jsOpt[Int]("delay")
   
   /**
    * Disables the sortable if set to true.
    */
-  val disabled = jsOption[Boolean]("disabled")
+  val disabled = jsOpt[Boolean]("disabled")
   
   /**
    * Tolerance, in pixels, for when sorting should start. If specified, sorting will not start until 
    * after mouse is dragged beyond distance. Can be used to allow for clicks on elements within a handle.
    */
-  val distance = jsOption[Int]("distance")
+  val distance = jsOpt[Int]("distance")
   
   /**
    * If false, items from this sortable can't be dropped on an empty connect sortable (see the connectWith option).
    * 
    * Default: true
    */
-  val dropOnEmpty = jsOption[Boolean]("dropOnEmpty")
+  val dropOnEmpty = jsOpt[Boolean]("dropOnEmpty")
   
   /**
    * If true, forces the helper to have a size.
    * 
    * Default: false
    */
-  val forceHelperSize = jsOption[Boolean]("forceHelperSize")
+  val forceHelperSize = jsOpt[Boolean]("forceHelperSize")
   
   /**
    * If true, forces the placeholder to have a size.
    */
-  val forcePlaceholderSize = jsOption[Boolean]("forcePlaceholderSize")
+  val forcePlaceholderSize = jsOpt[Boolean]("forcePlaceholderSize")
   
   /**
    * Snaps the sorting element or helper to a grid, every x and y pixels. Array values: [ x, y ].
    */
-  val grid = jsOption[js.Array[Int]]("grid")
+  val grid = jsOpt[js.Array[Int]]("grid")
   
   /**
    * Restricts sort start click to the specified element.
    * 
    * TODO: should be union with Element.
    */
-  val handle = jsOption[Selector]("handle")
+  val handle = jsOpt[Selector]("handle")
   
   // TODO: this one is messy and weird. Think about how to expose it.
 //  var helper:UndefOr[String] = _
@@ -124,17 +124,17 @@ object SortableOptions extends JSOptionBuilder[SortableOptions] {
    * 
    * Default: "> *"
    */
-  val items = jsOption[Selector]("items")
+  val items = jsOpt[Selector]("items")
   
   /**
    * Defines the opacity of the helper while sorting. From 0.01 to 1.
    */
-  val opacity = jsOption[Float]("opacity")
+  val opacity = jsOpt[Float]("opacity")
   
   /**
    * A class name that gets applied to the otherwise white space.
    */
-  val placeholder = jsOption[String]("placeholder")
+  val placeholder = jsOpt[String]("placeholder")
   
   /**
    * Whether the sortable items should revert to their new positions using a smooth animation.
@@ -145,33 +145,33 @@ object SortableOptions extends JSOptionBuilder[SortableOptions] {
    *   
    * TODO: we don't yet support setting this to true.
    */
-  val revert = jsOption[Int]("revert")
+  val revert = jsOpt[Int]("revert")
   
   /**
    * If set to true, the page scrolls when coming to an edge.
    * 
    * Default: true
    */
-  val scroll = jsOption[Boolean]("scroll")
+  val scroll = jsOpt[Boolean]("scroll")
   
   /**
    * Defines how near the mouse must be to an edge to start scrolling.
    * 
    * Default: 20
    */
-  val scrollSensitivity = jsOption[Int]("scrollSensitivity")
+  val scrollSensitivity = jsOpt[Int]("scrollSensitivity")
   
   /**
    * The speed at which the window should scroll once the mouse pointer gets within the scrollSensitivity distance.
    * 
    * Default: 20
    */
-  val scrollSpeed = jsOption[Int]("scrollSpeed")
+  val scrollSpeed = jsOpt[Int]("scrollSpeed")
   
   /**
    * This event is triggered during sorting.
    */
-  val stop = jsOption[js.Function2[JQueryEventObject, SortChangeUI, Any]]("stop")
+  val stop = jsOpt[js.Function2[JQueryEventObject, SortChangeUI, Any]]("stop")
   
   /**
    * Specifies which mode to use for testing whether the item being moved is hovering over another item. Possible values:
@@ -180,14 +180,14 @@ object SortableOptions extends JSOptionBuilder[SortableOptions] {
    *   
    * Default: "intersect"
    */
-  val tolerance = jsOption[String]("tolerance")
+  val tolerance = jsOpt[String]("tolerance")
   
   /**
    * Z-index for element/helper while being sorted.
    * 
    * Default: 1000
    */
-  val zIndex = jsOption[Int]("zIndex")  
+  val zIndex = jsOpt[Int]("zIndex")  
 }
 
 trait SortPosition extends js.Object {

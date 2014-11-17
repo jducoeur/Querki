@@ -4,6 +4,7 @@ import scala.scalajs.js
 import js.{Dynamic, UndefOr, undefined => undef}
 import js.JSConverters._
 import org.scalajs.jquery._
+import org.scalajs.ext._
 
 /**
  * Represents the jQuery UI Dialog Widget. Requires that the corresponding JavaScript code be loaded.
@@ -25,33 +26,15 @@ trait JQueryUIDialogFacade extends js.Object {
   def dialog(cmd:String):Any = ???
 }
 
-object DialogOptions {
-  /**
-   * TODO: this is a highly stripped-down version of the constructor, since I don't want to deal
-   * by hand. When we write the macro to generate this stuff, it should work better.
-   */
-  def apply(
-    buttons:UndefOr[js.Dictionary[js.Function0[Any]]] = undef,
-    height:UndefOr[Int] = undef,
-    title:UndefOr[String] = undef,
-    width:UndefOr[Int] = undef
-  ) = {
-    Dynamic.literal(
-      buttons = buttons,
-      height = height,
-      title = title,
-      width = width
-    ).asInstanceOf[DialogOptions]
-  }
-}
+trait DialogOptions extends js.Object 
 
-trait DialogOptions extends js.Object {
+object DialogOptions extends JSOptionBuilder[DialogOptions] {
   /**
    * Which element the dialog should be appended to.
    * 
    * Default: "body"
    */
-  var appendTo:UndefOr[String] = _
+  val appendTo = jsOpt[String]("appendTo")
   
   /**
    * If set to true, the dialog will automatically open upon initialization.
@@ -59,7 +42,7 @@ trait DialogOptions extends js.Object {
    * 
    * Default: true
    */
-  var autoOpen:UndefOr[Boolean] = _
+  val autoOpen = jsOpt[Boolean]("autoOpen")
   
   /**
    * Specifies which buttons should be displayed on the dialog. 
@@ -73,40 +56,40 @@ trait DialogOptions extends js.Object {
    * Note also that we are being very specific about the type, rather than just saying js.Object.
    * It is important that this be made up of js.Function0's, or jQuery will break obscurely deep down.
    */
-  var buttons:UndefOr[js.Dictionary[js.Function0[Any]]] = _
+  val buttons = jsOpt[js.Dictionary[js.Function0[Any]]]("buttons")
   
   /**
    * Specifies whether the dialog should close when it has focus and the user presses the escape (ESC) key.
    * 
    * Default: true
    */
-  var closeOnEscape:UndefOr[Boolean] = _
+  val closeOnEscape = jsOpt[Boolean]("closeOnEscape")
   
   /**
    * Specifies the text for the close button. Note that the close text is visibly hidden when using a standard theme.
    * 
    * Default: "close"
    */
-  var closeText:UndefOr[String] = _
+  val closeText = jsOpt[String]("closeText")
   
   /**
    * The specified class name(s) will be added to the dialog, for additional theming.
    */
-  var dialogClass:UndefOr[String] = _
+  val dialogClass = jsOpt[String]("dialogClass")
   
   /**
    * If set to true, the dialog will be draggable by the title bar. Requires the jQuery UI Draggable widget to be included.
    * 
    * Default: true
    */
-  var draggable:UndefOr[Boolean] = _
+  val draggable = jsOpt[Boolean]("draggable")
   
   /**
    * The height of the dialog.
    * 
    * Note: technically, this is Number | String, but the only valid String value is the default of "auto".
    */
-  var height:UndefOr[Int] = _
+  val height = jsOpt[Int]("height")
   
   // This one is hard, since it takes many possible types. Think about how to support it.
   //var hide:UndefOr[???]
@@ -114,24 +97,24 @@ trait DialogOptions extends js.Object {
   /**
    * The maximum height to which the dialog can be resized, in pixels.
    */
-  var maxHeight:UndefOr[Int] = _
+  val maxHeight = jsOpt[Int]("maxHeight")
   
   /**
    * The maximum width to which the dialog can be resized, in pixels.
    */
-  var maxWidth:UndefOr[Int] = _
+  val maxWidth = jsOpt[Int]("maxWidth")
   
   /**
    * The minimum height to which the dialog can be resized, in pixels.
    * 
    * Default: 150
    */
-  var minHeight:UndefOr[Int] = _
+  val minHeight = jsOpt[Int]("minHeight")
   
   /**
    * The minimum width to which the dialog can be resized, in pixels.
    */
-  var minWidth:UndefOr[Int] = _
+  val minWidth = jsOpt[Int]("minWidth")
   
   /**
    * If set to true, the dialog will have modal behavior; other items on the page 
@@ -140,7 +123,7 @@ trait DialogOptions extends js.Object {
    * 
    * Default: false
    */
-  var modal:UndefOr[Boolean] = _
+  val modal = jsOpt[Boolean]("modal")
   
   /**
    * Specifies where the dialog should be displayed when opened. The dialog will handle collisions
@@ -151,14 +134,14 @@ trait DialogOptions extends js.Object {
    * 
    * Default: { my: "center", at: "center", of: window }
    */
-  var position:UndefOr[js.Object] = _
+  val position = jsOpt[js.Object]("position")
   
   /**
    * If set to true, the dialog will be resizable. Requires the jQuery UI Resizable widget to be included.
    * 
    * Default: true
    */
-  var resizable:UndefOr[Boolean] = _
+  val resizable = jsOpt[Boolean]("resizable")
   
   // Like hide, this one is hard to define properly.
   //var show:UndefOr[???]
@@ -166,12 +149,12 @@ trait DialogOptions extends js.Object {
   /**
    * Specifies the title of the dialog. If the value is null, the title attribute on the dialog source element will be used.
    */
-  var title:UndefOr[String] = _
+  val title = jsOpt[String]("title")
   
   /**
    * The width of the dialog, in pixels.
    * 
    * Default: 300
    */
-  var width:UndefOr[Int] = _
+  val width = jsOpt[Int]("width")
 }

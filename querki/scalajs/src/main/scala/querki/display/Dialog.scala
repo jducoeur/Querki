@@ -37,11 +37,11 @@ class Dialog(
       (buttonName -> ({ () => cb(this) } : js.Function0[Any]))
     }
     val buttonMap = Map(buttons:_*).toJSDictionary
-    val asDialog = $(elem).dialog(DialogOptions(
-      title = dialogTitle,
-      height = height, width = width,
-      buttons = buttonMap
-    ))
+    val asDialog = $(elem).dialog(DialogOptions.
+      title(dialogTitle).
+      height(height).width(width).
+      buttons(buttonMap)
+    )
   }
   
   /**
