@@ -34,7 +34,7 @@ object DialogOptions extends JSOptionBuilder[DialogOptions] {
    * 
    * Default: "body"
    */
-  val appendTo = jsOpt[String]("appendTo")
+  def appendTo(v:String) = jsOpt("appendTo", v)
   
   /**
    * If set to true, the dialog will automatically open upon initialization.
@@ -42,79 +42,118 @@ object DialogOptions extends JSOptionBuilder[DialogOptions] {
    * 
    * Default: true
    */
-  val autoOpen = jsOpt[Boolean]("autoOpen")
+  def autoOpen(v:Boolean) = jsOpt("autoOpen", v)
   
   /**
    * Specifies which buttons should be displayed on the dialog. 
    * The context of the callback is the dialog element; if you need access to the button, 
    * it is available as the target of the event object.
    * 
-   * Note: for now, we are only supporting the Object version of this parameter. In jQuery UI,
-   * there is also an array-based version, which is more powerful but more complex to use. It
-   * is not yet obvious how best to express this union type in Scala.js.
-   * 
-   * Note also that we are being very specific about the type, rather than just saying js.Object.
+   * Note that we are being very specific about the type, rather than just saying js.Object.
    * It is important that this be made up of js.Function0's, or jQuery will break obscurely deep down.
+   * 
+   * @param v The keys are the button labels and the values are the callbacks for when the associated button is clicked.
    */
-  val buttons = jsOpt[js.Dictionary[js.Function0[Any]]]("buttons")
+  def buttons(v:js.Dictionary[js.Function0[Any]]) = jsOpt("buttons", v)
+  /**
+   * Specifies which buttons should be displayed on the dialog. 
+   * The context of the callback is the dialog element; if you need access to the button, 
+   * it is available as the target of the event object.
+   * 
+   * Note that we are being very specific about the type, rather than just saying js.Object.
+   * It is important that this be made up of js.Function0's, or jQuery will break obscurely deep down.
+   * 
+   * @param v Each element of the array must be an object defining the attributes, properties, and event handlers to set on the button.
+   */
+  def buttons(v:js.Array[js.Object]) = jsOpt("buttons", v)
   
   /**
    * Specifies whether the dialog should close when it has focus and the user presses the escape (ESC) key.
    * 
    * Default: true
    */
-  val closeOnEscape = jsOpt[Boolean]("closeOnEscape")
+  def closeOnEscape(v:Boolean) = jsOpt("closeOnEscape", v)
   
   /**
    * Specifies the text for the close button. Note that the close text is visibly hidden when using a standard theme.
    * 
    * Default: "close"
    */
-  val closeText = jsOpt[String]("closeText")
+  def closeText(v:String) = jsOpt("closeText", v)
   
   /**
    * The specified class name(s) will be added to the dialog, for additional theming.
    */
-  val dialogClass = jsOpt[String]("dialogClass")
+  def dialogClass(v:String) = jsOpt("dialogClass", v)
   
   /**
    * If set to true, the dialog will be draggable by the title bar. Requires the jQuery UI Draggable widget to be included.
    * 
    * Default: true
    */
-  val draggable = jsOpt[Boolean]("draggable")
+  def draggable(v:Boolean) = jsOpt("draggable", v)
   
   /**
    * The height of the dialog.
    * 
    * Note: technically, this is Number | String, but the only valid String value is the default of "auto".
    */
-  val height = jsOpt[Int]("height")
-  
-  // This one is hard, since it takes many possible types. Think about how to support it.
-  //var hide:UndefOr[???]
+  def height(v:Int) = jsOpt("height", v)
+
+  /**
+   * If and how to animate the hiding of the dialog.
+   * 
+   * When set to false, no animation will be used and the dialog will be
+   * hidden immediately. When set to true, the dialog will fade out with the default duration and the default easing.
+   */
+  def hide(v:Boolean) = jsOpt("hide", v)
+  /**
+   * If and how to animate the hiding of the dialog.
+   * 
+   * The dialog will fade out with the specified duration and the default easing.
+   */
+  def hide(v:Int) = jsOpt("hide", v)
+  /**
+   * If and how to animate the hiding of the dialog.
+   * 
+   * The dialog will be hidden using the specified effect. The value can either be the name 
+   * of a built-in jQuery animation method, such as "slideUp", or the name of a jQuery UI effect, 
+   * such as "fold". In either case the effect will be used with the default duration and the default easing.
+   */
+  def hide(v:String) = jsOpt("hide", v)
+  /**
+   * If and how to animate the hiding of the dialog.
+   * 
+   * If the value is an object, then effect, delay, duration, and easing properties may 
+   * be provided. If the effect property contains the name of a jQuery method, then that method 
+   * will be used; otherwise it is assumed to be the name of a jQuery UI effect. When using a jQuery 
+   * UI effect that supports additional settings, you may include those settings in the object and they 
+   * will be passed to the effect. If duration or easing is omitted, then the default values will be used. 
+   * If effect is omitted, then "fadeOut" will be used. If delay is omitted, then no delay is used.
+   */
+  def hide(v:js.Object) = jsOpt("hide", v)
   
   /**
    * The maximum height to which the dialog can be resized, in pixels.
    */
-  val maxHeight = jsOpt[Int]("maxHeight")
+  def maxHeight(v:Int) = jsOpt("maxHeight", v)
   
   /**
    * The maximum width to which the dialog can be resized, in pixels.
    */
-  val maxWidth = jsOpt[Int]("maxWidth")
+  def maxWidth(v:Int) = jsOpt("maxWidth", v)
   
   /**
    * The minimum height to which the dialog can be resized, in pixels.
    * 
    * Default: 150
    */
-  val minHeight = jsOpt[Int]("minHeight")
+  def minHeight(v:Int) = jsOpt("minHeight", v)
   
   /**
    * The minimum width to which the dialog can be resized, in pixels.
    */
-  val minWidth = jsOpt[Int]("minWidth")
+  def minWidth(v:Int) = jsOpt("minWidth", v)
   
   /**
    * If set to true, the dialog will have modal behavior; other items on the page 
@@ -123,7 +162,7 @@ object DialogOptions extends JSOptionBuilder[DialogOptions] {
    * 
    * Default: false
    */
-  val modal = jsOpt[Boolean]("modal")
+  def modal(v:Boolean) = jsOpt("modal", v)
   
   /**
    * Specifies where the dialog should be displayed when opened. The dialog will handle collisions
@@ -134,27 +173,57 @@ object DialogOptions extends JSOptionBuilder[DialogOptions] {
    * 
    * Default: { my: "center", at: "center", of: window }
    */
-  val position = jsOpt[js.Object]("position")
+  def position(v:js.Object) = jsOpt("position", v)
   
   /**
    * If set to true, the dialog will be resizable. Requires the jQuery UI Resizable widget to be included.
    * 
    * Default: true
    */
-  val resizable = jsOpt[Boolean]("resizable")
-  
-  // Like hide, this one is hard to define properly.
-  //var show:UndefOr[???]
+  def resizable(v:Boolean) = jsOpt("resizable", v)
+
+  /**
+   * If and how to animate the showing of the dialog.
+   * 
+   * @param v When set to false, no animation will be used and the dialog will be
+   *   shown immediately. When set to true, the dialog will fade in with the default duration and the default easing.
+   */
+  def show(v:Boolean) = jsOpt("show", v)
+  /**
+   * If and how to animate the showing of the dialog.
+   * 
+   * @param v The dialog will fade in with the specified duration and the default easing.
+   */
+  def show(v:Int) = jsOpt("show", v)
+  /**
+   * If and how to animate the showing of the dialog.
+   * 
+   * The dialog will be shown using the specified effect. The value can either be the name 
+   * of a built-in jQuery animation method, such as "slideDown", or the name of a jQuery UI effect, 
+   * such as "fold". In either case the effect will be used with the default duration and the default easing.
+   */
+  def show(v:String) = jsOpt("show", v)
+  /**
+   * If and how to animate the showing of the dialog.
+   * 
+   * If the value is an object, then effect, delay, duration, and easing properties may 
+   * be provided. If the effect property contains the name of a jQuery method, then that method 
+   * will be used; otherwise it is assumed to be the name of a jQuery UI effect. When using a jQuery 
+   * UI effect that supports additional settings, you may include those settings in the object and they 
+   * will be passed to the effect. If duration or easing is omitted, then the default values will be used. 
+   * If effect is omitted, then "fadeIn" will be used. If delay is omitted, then no delay is used.
+   */
+  def show(v:js.Object) = jsOpt("show", v)
   
   /**
    * Specifies the title of the dialog. If the value is null, the title attribute on the dialog source element will be used.
    */
-  val title = jsOpt[String]("title")
+  def title(v:String) = jsOpt("title", v)
   
   /**
    * The width of the dialog, in pixels.
    * 
    * Default: 300
    */
-  val width = jsOpt[Int]("width")
+  def width(v:Int) = jsOpt("width", v)
 }
