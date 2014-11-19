@@ -107,7 +107,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
               case Some(model) if (model.isInstantiatable) => {
                 querkiButton(MSeq(icon("plus-sign"), "..."))(
                   title:=s"Create another ${model.displayName}",
-                  href:=controllers.Application.doCreateThing2.spaceUrl(model.urlName))
+                  href:=Pages.createAndEditFactory.pageUrl(("model" -> model.urlName)))
               }
               case _ => {}
             }
