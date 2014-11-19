@@ -18,10 +18,11 @@ class EditInstancesPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   def pageContent = {
     for {
       modelInfo <- DataAccess.getThing(modelId)
+      numInstances <- Client[ThingFunctions].getNumInstances(modelId).call()
       editorWikitext <- Client[ThingFunctions].evaluateQL(modelId, "_edit").call()
       guts = 
         div(
-          h3("Editing instances of ", thingLink(modelInfo)),
+          h3("Editing instances of ", thingLink(modelInfo), s" ($numInstances)"),
           new QText(editorWikitext),
           querkiButton(MSeq(href:=thingUrl(modelInfo), "Done"))
         )

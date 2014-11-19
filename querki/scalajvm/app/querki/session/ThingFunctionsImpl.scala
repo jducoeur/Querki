@@ -74,4 +74,9 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions { self:Actor
     
     promise.future
   }
+  
+  def getNumInstances(modelId:String):Int = withThing(modelId) { model =>
+    // TODO: once we are caching the hierarchy tree, this can become more efficient:
+    state.descendants(model.id, false, true).size
+  }
 }

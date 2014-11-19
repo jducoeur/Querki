@@ -238,8 +238,21 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       def editThing(thing:Thing, context:QLContext)(implicit state:SpaceState):QValue = {
         if (thing.ifSet(Core.IsModelProp)) {
           val allInstances = state.descendants(thing.id, false, true).toSeq.sortBy(_.displayName)
-          val page = intParam("page", 1) - 1
-          val pageSize = intParam("pageSize", 10)
+          // HACK: quick-and-dirty enhancement to allow but not require parameters for _edit. This is used
+          // by the Client, but not yet documented. These should become optional named parameters:
+          val (page:Int, pageSize:Int) = {
+            if (inv.numParams == 2) {
+              val invV = for {
+                p <- inv.processParamFirstAs(0, IntType)
+                ps <- inv.processParamFirstAs(1, IntType)
+              }
+                yield (p - 1, ps)
+                
+              invV.get.head
+            } else {
+              (intParam("page", 1) - 1, intParam("pageSize", 10))
+            }
+          }
           val startAt = pageSize * page
           val instances = allInstances.drop(startAt).take(pageSize)
           val wikitexts = 

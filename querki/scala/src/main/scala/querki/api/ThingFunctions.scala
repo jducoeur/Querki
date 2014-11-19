@@ -39,4 +39,9 @@ trait ThingFunctions {
    * Delete the specified Thing.
    */
   def deleteThing(thingId:String):Future[Unit]
+  
+  /**
+   * Returns the number of Instances there are for this Model.
+   */
+  def getNumInstances(modelId:String):Int
 }
