@@ -48,6 +48,15 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
    * on the screen.
    */
   def values:List[String]
+
+  /**
+   * The Thing that this input control is for. Note that this generally gets set on the server.
+   * 
+   * IMPORTANT: this is frequently different from DataAccess.thingId! DataAccess is telling you
+   * which Thing the page is generally about, but the page can contain arbitrary edit controls
+   * from other Things, via the _edit function.
+   */
+  lazy val thingId = $(elem).data("thing").asInstanceOf[String]
   
   /**
    * Save the current state of this InputGadget. This can potentially be overridden, but shouldn't
@@ -76,7 +85,7 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
   def saveChange(msg:PropertyChange):Future[PropertyChangeResponse] = {
     StatusLine.showUntilChange("Saving...")
     val promise = Promise[PropertyChangeResponse]
-    Client[EditFunctions].alterProperty(DataAccess.thingId, msg).call().foreach { response =>
+    Client[EditFunctions].alterProperty(thingId, msg).call().foreach { response =>
       InputGadgetsInternal.saveComplete(this)
 	  response match {
         case PropertyChanged => {

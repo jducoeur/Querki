@@ -53,6 +53,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
 
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
+  lazy val Editing = interface[querki.editing.Editing]
   lazy val Pages = interface[querki.pages.Pages]
   
   val thingName = thing.displayName
@@ -91,7 +92,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
             },
             querkiButton(MSeq(icon("edit"), icon("edit"), icon("edit"), "..."))(
               title:=s"Edit all instances of $thingName",
-              href:=controllers.Application.editInstances.spaceUrl(thing.urlName))
+              href:=Editing.editInstancesFactory.pageUrl(("modelId" -> thing.urlName)))
           )
         } else {
           // Not a Model
