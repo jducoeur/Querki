@@ -6,7 +6,7 @@ import autowire._
 import querki.globals._
 
 import querki.api.ThingFunctions
-import querki.display.QText
+import querki.display.{PagePaginator, QText}
 import querki.pages._
 
 class EditInstancesPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
@@ -23,6 +23,10 @@ class EditInstancesPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       guts = 
         div(
           h3("Editing instances of ", thingLink(modelInfo), s" ($numInstances)"),
+          new PagePaginator(
+            numInstances,
+            { newMap => PageManager.pageUrl("_editInstances", newMap) },
+            params),
           new QText(editorWikitext),
           querkiButton(MSeq(href:=thingUrl(modelInfo), "Done"))
         )
