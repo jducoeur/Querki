@@ -65,6 +65,11 @@ package object display {
      * Listen to this publication point if you want to be notified *after* each Page load.
      */
     def afterPageLoads:Notifier[Page]
+    
+    /**
+     * Scrolls to the bottom of the page.
+     */
+    def instantScrollToBottom():Unit
   }
   
   trait StatusLine extends EcologyInterface {

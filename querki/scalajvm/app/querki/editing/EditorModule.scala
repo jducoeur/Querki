@@ -256,8 +256,13 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
           val startAt = pageSize * page
           val instances = allInstances.drop(startAt).take(pageSize)
           val wikitexts = 
-            instances.map { instance => instanceEditorForThing(instance, instance.thisAsContext(context.request), Some(inv)) } :+
-            createInstanceButton(thing, mainContext)
+            instances.map { instance => instanceEditorForThing(instance, instance.thisAsContext(context.request), Some(inv)) } ++
+            {
+              if (addPaginator)
+                Seq(createInstanceButton(thing, mainContext))
+              else
+                Seq.empty
+            }
           // HACK: if we've received the page info as parameters to _edit(), we are presuming this comes from the Client,
           // which has its own paginator. So suppress the paginator if so.
           // TODO: once the Client is firmly entrenched, drop the server-generated paginator entirely.

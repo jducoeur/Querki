@@ -54,7 +54,8 @@ package object globals {
     def each(func:js.ThisFunction0[Element, Any]):JQuery = ???
     def each(func:js.ThisFunction1[Element, Int, Any]):JQuery = ???
     def map(func:js.ThisFunction0[Element, Any]):JQuery = ???
-    def map(func:js.ThisFunction1[Element, Int, Any]):JQuery = ???    
+    def map(func:js.ThisFunction1[Element, Int, Any]):JQuery = ???
+    def click(func:js.ThisFunction1[Element, JQueryEventObject, Any]):JQuery = ???
   }
   implicit def jq2Ext(jq:JQuery):JQExt = jq.asInstanceOf[JQExt]
   
@@ -62,6 +63,8 @@ package object globals {
   // jQuery facade.
   class JQFixes extends js.Object {
     def get():js.Array[_] = ???
+    // Height is always in px, right? And can never be non-integer, correct?
+    def height():Int = ???
   }
   implicit class JQFAdaptor(jq:JQuery) {
     // Note that jqf turns the jq *into* a jqf, rather than extending it, so that we can get around inference

@@ -169,4 +169,9 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     _nextChangePromise.foreach { _.success(page) }
     afterPageLoads(page)
   }
+  
+  def instantScrollToBottom() = {
+    val document = window.document
+    $("html, body").scrollTop($(document).jqf.height()-$(window).jqf.height());
+  }
 }
