@@ -13,6 +13,7 @@ import querki.globals._
 
 import querki.data.ThingInfo
 import querki.display.{Gadget, QText, WrapperDiv}
+import querki.display.input.InputGadget
 import querki.display.input.AutosizeFacade._
 
 import messages._
@@ -64,20 +65,22 @@ class ConversationPane(val thingInfo:ThingInfo)(implicit val ecology:Ecology) ex
 
 import bootstrap._
 
-class DeleteButton(doDelete:() => Unit) extends Gadget[dom.HTMLSpanElement] {
+class DeleteButton(doDelete:() => Unit)(implicit e:Ecology) extends InputGadget[dom.HTMLSpanElement](e) {
+  def values = ???
+  
   def doRender() = span(cls:="_deleteCommentButton", "x")
   
-  override def onCreate(e:dom.HTMLSpanElement) = {
+  def hook() = {
     $(elem).on("click", null, null, confirmDelete)
   }
 
   lazy val confirmDelete:Function1[JQueryEventObject, js.Any] = { (evt:JQueryEventObject) =>
     val deleteButton = $(elem)
-    deleteButton.popover(PopoverOptions(
-      content = "Click again to delete", 
-      placement = "left", 
-      trigger = "manual"      
-    ))
+    deleteButton.popover(PopoverOptions.
+      content("Click again to delete"). 
+      placement(Position.left). 
+      trigger(Trigger.manual)
+    )
     deleteButton.popover(PopoverCommand.show)
     deleteButton.off("click", null)
     deleteButton.on("click", null, null, reallyDelete)
@@ -159,6 +162,8 @@ class ReplyGadget(replyTo:Option[CommentId], ph:String, onPosted:ConvNode => Uni
 private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boolean)(implicit val ecology:Ecology, thingInfo:ThingInfo) 
   extends Gadget[dom.HTMLDivElement] with EcologyMember 
 {
+  lazy val InputGadgets = interface[querki.display.input.InputGadgets]
+  
   /**
    * TODO: this is all wrong! It just does a straight flattening, but what we really want is much more
    * subtle, flattening only the primary nodes. We may, in fact, need to restructure the classes a bit to
@@ -201,5 +206,6 @@ private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boole
     val gadgets = flattenNodes(newNode).map(_.rendered)
     $(commentContainer.elem).append(gadgets.toJSArray)
     replyContainer.replaceContents(replyPlaceholder.rendered)
+    InputGadgets.hookPendingGadgets()
   }
 }
