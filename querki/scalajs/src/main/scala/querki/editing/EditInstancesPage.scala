@@ -19,14 +19,16 @@ class EditInstancesPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     for {
       modelInfo <- DataAccess.getThing(modelId)
       numInstances <- Client[ThingFunctions].getNumInstances(modelId).call()
-      editorWikitext <- Client[ThingFunctions].evaluateQL(modelId, "_edit").call()
+      paginator = 
+        new PagePaginator(
+          numInstances,
+          { newMap => PageManager.pageUrl("_editInstances", newMap) },
+          params)
+      editorWikitext <- Client[ThingFunctions].evaluateQL(modelId, s"_edit(${paginator.currentPage}, ${paginator.pageSize})").call()
       guts = 
         div(
           h3("Editing instances of ", thingLink(modelInfo), s" ($numInstances)"),
-          new PagePaginator(
-            numInstances,
-            { newMap => PageManager.pageUrl("_editInstances", newMap) },
-            params),
+          paginator,
           new QText(editorWikitext),
           querkiButton(MSeq(href:=thingUrl(modelInfo), "Done"))
         )
