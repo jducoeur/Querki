@@ -44,6 +44,9 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
    * The coupling here is a bit unfortunate, but
    * seems to be the least boilerplatey way I can think of to do things, given that we don't have
    * reflection (and thus, dynamic construction) on the client side.
+   * 
+   * TODO: these entries should probably become registered factories instead, so they don't all
+   * wind up in this central list.
    */
   val registry = Map[String, InputConstr](
     ("._textEdit" -> { TextInputGadget(_) }),
@@ -53,7 +56,9 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
     // TODO: this ought to start with an underscore:
     (".sortableList" -> { SortableListGadget(_) }),
     // Note that we currently assume all selects are inputs:
-    ("select" -> { SelectGadget(_) })
+    ("select" -> { SelectGadget(_) }),
+    ("._deleteInstanceButton" -> { DeleteInstanceButton(_) }),
+    ("._rating" -> { RatingGadget(_) })
   )
   
   var unhookedGadgets = Set.empty[InputGadget[_]]

@@ -15,4 +15,8 @@ trait JSOptionBuilder[T <: js.Object] {
   }
   
   def result = dict.asInstanceOf[T]
+  
+  override def toString = {
+    s"""{\n${dict.keys.map{ key => s"  $key = ${dict(key).toString}"}.mkString("\n")}\n}"""
+  }
 }

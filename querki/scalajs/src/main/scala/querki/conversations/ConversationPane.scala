@@ -13,7 +13,7 @@ import querki.globals._
 
 import querki.data.ThingInfo
 import querki.display.{Gadget, QText, WrapperDiv}
-import querki.display.input.InputGadget
+import querki.display.input.DeleteButton
 import querki.display.input.AutosizeFacade._
 
 import messages._
@@ -61,39 +61,6 @@ class ConversationPane(val thingInfo:ThingInfo)(implicit val ecology:Ecology) ex
   lazy val allWrapper = new WrapperDiv
   
   def doRender() = div(allWrapper)
-}
-
-import bootstrap._
-
-class DeleteButton(doDelete:() => Unit)(implicit e:Ecology) extends InputGadget[dom.HTMLSpanElement](e) {
-  def values = ???
-  
-  def doRender() = span(cls:="_deleteCommentButton", "x")
-  
-  def hook() = {
-    $(elem).on("click", null, null, confirmDelete)
-  }
-
-  lazy val confirmDelete:Function1[JQueryEventObject, js.Any] = { (evt:JQueryEventObject) =>
-    val deleteButton = $(elem)
-    deleteButton.popover(PopoverOptions.
-      content("Click again to delete"). 
-      placement(Position.left). 
-      trigger(Trigger.manual)
-    )
-    deleteButton.popover(PopoverCommand.show)
-    deleteButton.off("click", null)
-    deleteButton.on("click", null, null, reallyDelete)
-    dom.window.setTimeout({ () =>
-      deleteButton.popover(PopoverCommand.hide)
-      deleteButton.off("click", null)
-      deleteButton.on("click", null, null, confirmDelete)
-    }, 2000)
-  }
-  
-  lazy val reallyDelete:Function1[JQueryEventObject, js.Any] = { (evt:JQueryEventObject) =>
-    doDelete()
-  }
 }
 
 private [conversations] class CommentGadget(val comment:CommentInfo)(implicit val ecology:Ecology, thingInfo:ThingInfo)
