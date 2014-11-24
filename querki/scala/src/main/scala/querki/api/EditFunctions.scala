@@ -10,7 +10,7 @@ trait EditFunctions {
   /**
    * The central "edit" action: change the presence or content of one Property on a Bundle.
    */
-  def alterProperty(thingId:String, change:PropertyChange):PropertyChangeResponse
+  def alterProperty(thingId:String, change:PropertyChange):Future[PropertyChangeResponse]
   
   /**
    * Create a new Thing with the given Model and properties.

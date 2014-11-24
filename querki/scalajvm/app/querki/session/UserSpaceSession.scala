@@ -55,9 +55,12 @@ trait SessionApiImpl extends EcologyMember {
   def withThing[R](thingId:String)(f:Thing => R):R
   
   /**
-   * Actually change the specified Properties on the specified Thing. The set of Properties may be partial.
+   * Create a new request, suitable for looping back to this session, based on the current message.
+   * 
+   * IMPORTANT: this is only valid synchronously, during initial processing of the current message. Is this
+   * good enough?
    */
-  def changeProps(thingId:ThingId, props:PropMap):Unit
+  def createRequest(payload:SessionMessage):SessionRequest
 }
 
 /**
@@ -269,6 +272,11 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
     } finally {
       _currentRequest = None
     }
+  }
+  
+  def createRequest(payload:SessionMessage):SessionRequest = {
+    val SessionRequest(req, own, space, _) = currentRequest
+    SessionRequest(req, own, space, payload)
   }
   
   def changeProps(thingId:ThingId, props:PropMap) = {

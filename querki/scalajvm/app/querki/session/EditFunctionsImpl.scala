@@ -13,11 +13,12 @@ import querki.api.EditFunctions
 import EditFunctions._
 import querki.core.QLText
 import querki.data.ThingInfo
+import querki.session.messages.ChangeProps2
 import querki.spaces.messages.{CreateThing, ThingFound, ThingError}
 import querki.util.Requester
 import querki.values.{QLRequestContext, RequestContext}
 
-trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { self:Actor with Requester =>
+trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor with Requester =>
   
   def ClientApi:querki.api.ClientApi
   lazy val Core = interface[querki.core.Core]
@@ -77,11 +78,75 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { self:Actor w
       yield Core.toProps((prop, newV))()
   }
   
-  def alterProperty(thingId:String, change:PropertyChange):PropertyChangeResponse = withThing(thingId) { thing =>
+  def doChangeProps(thing:Thing, props:PropMap):Future[PropertyChangeResponse] = {
+    val promise = Promise[PropertyChangeResponse]
+
+    self.request(createRequest(ChangeProps2(thing.toThingId, props))) {
+      case ThingFound(_, _) => promise.success(PropertyChanged)
+      
+      // TODO: instead of PropertyChangeError, we really should have a generalized exception mechanism
+      // at the autowire level, and do a promise.failure() here:
+      case ThingError(ex, _) => promise.success(PropertyChangeError(ex.display(Some(rc))))
+    }
+    
+    promise.future
+  }
+  
+  def alterProperty(thingId:String, change:PropertyChange):Future[PropertyChangeResponse] = withThing(thingId) { thing =>
+    if (doLogEdits) QLog.spew(s"Got alterProperty on $thingId: $change")
+    
+    val propsOpt:Option[PropMap] = change match {
+      case ChangePropertyValue(path, vs) => changeToProps(Some(thing), path, vs)
+      
+      case MoveListItem(path, from, to) => alterListOrder(thing, path, from, to)
+      
+      case AddListItem(path) => {
+        implicit val s = state
+        for {
+	      fieldIds <- DisplayPropVal.propPathFromName(path, Some(thing))
+	      prop = fieldIds.p
+	      if (prop.cType == Core.QList)
+	      pt = prop.pType
+	      pv <- thing.getPropOpt(prop)
+	      v = pv.v
+	      list = v.cv.toSeq
+	      newI = list.size
+          newElem = pt.default
+          newList = list :+ newElem
+          newV = v.cType.makePropValue(newList, pt)
+        }
+          yield Core.toProps((prop, newV))()        
+      }
+      
+      case DeleteListItem(path, index) => {
+        implicit val s = state
+	    for {
+	      fieldIds <- DisplayPropVal.propPathFromName(path, Some(thing))
+	      prop = fieldIds.p
+	      pv <- thing.getPropOpt(prop)
+	      v = pv.v
+	      list = v.cv.toSeq
+	      if (list.isDefinedAt(index))
+	      newList = list.patch(index, List(), 1)
+	      newV = v.cType.makePropValue(newList, v.pType)
+	    }
+	      yield Core.toProps((prop, newV))()        
+      }
+      
+      case DeleteProperty => None  // NYI
+    }
+    
+    propsOpt match {
+      case Some(props) => doChangeProps(thing, props)
+      case None => Future.successful(PropertyChangeError("Unable to change property!"))
+    }
+    
+/*
     change match {
       case ChangePropertyValue(path, vs) => {
         changeToProps(Some(thing), path, vs) match {
           case Some(props) => {
+            if (doLogEdits) QLog.spew(s"  The actual props to change are $props")
      	    changeProps(thing.toThingId, props)
     	    
     	    // Finally, ack the change back to the client:
@@ -151,6 +216,7 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { self:Actor w
       
       case DeleteProperty => PropertyChanged  // NYI
     }   
+*/
   }
   
   def create(modelId:String, initialProps:Seq[PropertyChange]):Future[ThingInfo] = withThing(modelId) { model =>
