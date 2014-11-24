@@ -37,7 +37,7 @@ object PopoverCommand {
 
 trait PopoverOptions extends js.Object 
 
-object PopoverOptions extends JSOptionBuilder[PopoverOptions] {
+class PopoverOptionBuilder(val dict:OptMap) extends JSOptionBuilder[PopoverOptions, PopoverOptionBuilder](new PopoverOptionBuilder(_)) {
   def animation(v:Boolean) = jsOpt("animation", v)
   def html(v:Boolean) = jsOpt("html", v)
   def placement(v:Position.Position) = jsOpt("placement", v.toString)
@@ -51,9 +51,11 @@ object PopoverOptions extends JSOptionBuilder[PopoverOptions] {
   def delay(v:PopoverDelay) = jsOpt("delay", v)
   def container(v:String) = jsOpt("container", v)
 }
+object PopoverOptions extends PopoverOptionBuilder(noOpts)
 
 trait PopoverDelay extends js.Object
-object PopoverDelay extends JSOptionBuilder[PopoverDelay] {
+class PopoverDelayBuilder(val dict:OptMap) extends JSOptionBuilder[PopoverDelay, PopoverDelayBuilder](new PopoverDelayBuilder(_)) {
   def show(v:Int) = jsOpt("show", v)
   def hide(v:Int) = jsOpt("show", v)
 }
+object PopoverDelay extends PopoverDelayBuilder(noOpts)

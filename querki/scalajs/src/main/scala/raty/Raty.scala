@@ -21,7 +21,7 @@ trait RatyOptions extends js.Object
  * 
  * TODO: this is a partial Facade so far. Flesh it out, put it in an appropriate packed, and release it.
  */
-object RatyOptions extends JSOptionBuilder[RatyOptions] {
+class RatyOptionBuilder(val dict:OptMap) extends JSOptionBuilder[RatyOptions, RatyOptionBuilder](new RatyOptionBuilder(_)) {
 
   /**
    * Callback to handle the score and the click event on click action.
@@ -69,3 +69,4 @@ object RatyOptions extends JSOptionBuilder[RatyOptions] {
    */
   def targetKeep(v:Boolean) = jsOpt("targetKeep", v)
 }
+object RatyOptions extends RatyOptionBuilder(noOpts)

@@ -29,7 +29,7 @@ class RatingGadget(implicit e:Ecology) extends InputGadget[dom.HTMLDivElement](e
       
     println(s"Options start as $options")
     
-    def addData[T](name:String, transform:(T) => RatyOptions.type) = {
+    def addData[T](name:String, transform:(T) => RatyOptionBuilder) = {
       options = rating.data(name).asInstanceOf[UndefOr[T]].map{v => println(s"Found $name = $v"); transform(v)}.getOrElse(options)
     }
 

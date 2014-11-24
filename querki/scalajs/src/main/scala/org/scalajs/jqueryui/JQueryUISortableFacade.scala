@@ -20,8 +20,8 @@ trait JQueryUISortableFacade extends js.Object {
  * TODO: this is currently a partial API, missing most of the Events.
  */
 trait SortableOptions extends js.Object
-
-object SortableOptions extends JSOptionBuilder[SortableOptions] {
+object SortableOptions extends SortableOptionBuilder(noOpts)
+class SortableOptionBuilder(val dict:OptMap) extends JSOptionBuilder[SortableOptions, SortableOptionBuilder](new SortableOptionBuilder(_)) {
   
   /**
    * Defines where the helper that moves with the mouse is being appended to during the drag (for example, to resolve overlap/zIndex issues).

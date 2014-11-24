@@ -9,5 +9,5 @@ package object raty {
   type Selector = String
   
   implicit def jq2Boostrap(jq:JQuery):RatyFacade = jq.asInstanceOf[RatyFacade]
-  implicit def builder2RatyOptions(builder:JSOptionBuilder[RatyOptions]) = builder.result
+  implicit def builder2RatyOptions(builder:RatyOptionBuilder) = builder.result
 }

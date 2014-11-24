@@ -27,8 +27,8 @@ trait JQueryUIDialogFacade extends js.Object {
 }
 
 trait DialogOptions extends js.Object 
-
-object DialogOptions extends JSOptionBuilder[DialogOptions] {
+object DialogOptions extends DialogOptionBuilder(noOpts)
+class DialogOptionBuilder(val dict:OptMap) extends JSOptionBuilder[DialogOptions, DialogOptionBuilder](new DialogOptionBuilder(_)) {
   /**
    * Which element the dialog should be appended to.
    * 
