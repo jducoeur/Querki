@@ -28,6 +28,11 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
 	          upickle.write(req)).callAjax()          
         }
         
+        case "CommonFunctions" => {
+	      controllers.ClientController.commonApiRequest(
+	          upickle.write(req)).callAjax()          
+        }
+        
         case _ => {
 	      controllers.ClientController.apiRequest(
 	          DataAccess.userName, 

@@ -7,7 +7,7 @@ import autowire._
 
 import querki.globals._
 
-import querki.api.ThingFunctions
+import querki.api.{CommonFunctions, StandardInfo, ThingFunctions}
 
 class ClientDataEcot(e:Ecology) extends ClientEcot(e) with DataAccess with DataSetting {
   
@@ -25,6 +25,15 @@ class ClientDataEcot(e:Ecology) extends ClientEcot(e) with DataAccess with DataS
   
   def setThing(thing:Option[ThingInfo]) = mainThing = thing
   def setModel(model:Option[ThingInfo]) = mainModel = model
+  
+  val standardInfoPromise = Promise[StandardInfo]
+  def standardInfo:Future[StandardInfo] = standardInfoPromise.future
+  
+  override def postInit() = {
+    Client[CommonFunctions].getStandardInfo().call().foreach { info =>
+      standardInfoPromise.success(info)
+    }
+  }
   
   /**
    * TODO: ClientDataEcot should be maintaining its own cache of ThingInfos, to speed

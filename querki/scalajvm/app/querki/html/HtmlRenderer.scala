@@ -41,7 +41,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
    * PUBLIC API
    *********************************/
   
-  def renderPropertyInput(context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization] = Set(Unspecialized)):Html = {
+  def renderPropertyInputStr(context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization] = Set(Unspecialized)):String = {
     val state = context.state
     val cType = prop.cType
     val pType = prop.pType
@@ -50,7 +50,11 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     // TODO: this is *very* suspicious, but we need to find a solution. RenderTagSet is trying to pass JSON structures in the
     // value field, but for that to be JSON-legal, the attributes need to be single-quoted, and the strings in them double-quoted.
     // That isn't the way things come out here, so we're kludging, but I worry about potential security holes...
-    val xmlFixedQuotes = Xhtml.toXhtml(xml3).replace("\'", "&#39;").replace("\"", "\'").replace("&quot;", "\"")
+    Xhtml.toXhtml(xml3).replace("\'", "&#39;").replace("\"", "\'").replace("&quot;", "\"")    
+  }
+  
+  def renderPropertyInput(context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization] = Set(Unspecialized)):Html = {
+	val xmlFixedQuotes =  renderPropertyInputStr(context, prop, currentValue, specialization)
     Html(xmlFixedQuotes)
   }
   

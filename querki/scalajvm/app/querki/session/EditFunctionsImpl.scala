@@ -21,8 +21,11 @@ import querki.values.{QLRequestContext, RequestContext}
 trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor with Requester =>
   
   def ClientApi:querki.api.ClientApi
+  lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val Core = interface[querki.core.Core]
+  lazy val Editor = interface[querki.editing.Editor]
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
+  lazy val PropListManager = interface[querki.core.PropListManager]
   def QL:querki.ql.QL
   lazy val Types = interface[querki.types.Types]
   
@@ -140,83 +143,6 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
       case Some(props) => doChangeProps(thing, props)
       case None => Future.successful(PropertyChangeError("Unable to change property!"))
     }
-    
-/*
-    change match {
-      case ChangePropertyValue(path, vs) => {
-        changeToProps(Some(thing), path, vs) match {
-          case Some(props) => {
-            if (doLogEdits) QLog.spew(s"  The actual props to change are $props")
-     	    changeProps(thing.toThingId, props)
-    	    
-    	    // Finally, ack the change back to the client:
-    	    PropertyChanged          
-          }
-          case None => PropertyChangeError("Invalid path -- did the model change out from under you?")
-        }
-      }
-      
-      case MoveListItem(path, from, to) => {
-        alterListOrder(thing, path, from, to) match {
-          case Some(props) => {
-            changeProps(thing.toThingId, props)
-    	    
-    	    // Finally, ack the change back to the client:
-    	    PropertyChanged
-          }
-          case None => PropertyChangeError("Invalid path -- did the model change out from under you?")          
-        }
-      }
-      
-      // TODO: what *should* this send back? I'd like to get rid of the whole template thing, and instead have this
-      // send back the new element. But first, I'd like to do away with having so much rendering on the server, and
-      // instead only have the logical structure sent from here.
-      case AddListItem(path) => {
-        // TODO: more grist for the refactoring mill:
-        implicit val s = state
-        val result = for {
-	      fieldIds <- DisplayPropVal.propPathFromName(path, Some(thing))
-	      prop = fieldIds.p
-	      // TODO: this should really be an exception if it's not:
-	      if (prop.cType == Core.QList)
-	      pt = prop.pType
-	      pv <- thing.getPropOpt(prop)
-	      v = pv.v
-	      list = v.cv.toSeq
-	      newI = list.size
-          newElem = pt.default
-          newList = list :+ newElem
-          newV = v.cType.makePropValue(newList, pt)
-          props = Core.toProps((prop, newV))()
-          dummy = changeProps(thing.toThingId, props)
-        }
-          yield PropertyChanged
-          
-        result.getOrElse(PropertyChangeError("Unable to add list item!"))
-      }
-      
-      case DeleteListItem(path, index) => {
-        implicit val s = state
-	    val result = for {
-	      fieldIds <- DisplayPropVal.propPathFromName(path, Some(thing))
-	      prop = fieldIds.p
-	      pv <- thing.getPropOpt(prop)
-	      v = pv.v
-	      list = v.cv.toSeq
-	      if (list.isDefinedAt(index))
-	      newList = list.patch(index, List(), 1)
-	      newV = v.cType.makePropValue(newList, v.pType)
-          props = Core.toProps((prop, newV))()
-          dummy = changeProps(thing.toThingId, props)
-	    }
-	      yield PropertyChanged
-          
-        result.getOrElse(PropertyChangeError("Unable to delete list item!"))        
-      }
-      
-      case DeleteProperty => PropertyChanged  // NYI
-    }   
-*/
   }
   
   def create(modelId:String, initialProps:Seq[PropertyChange]):Future[ThingInfo] = withThing(modelId) { model =>
@@ -246,5 +172,26 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
     }
     
     promise.future
+  }
+  
+  def getThingEditors(thingId:String):Seq[PropEditInfo] = withThing(thingId) { thing =>
+    implicit val s = state
+    val model = thing.getModel
+    val props = PropListManager.from(thing)
+    val propList = PropListManager.prepPropList(props, Some(thing), model, state)
+    val context = thing.thisAsContext(rc)
+    propList.map { entry =>
+      val (prop, propVal) = entry
+      val rendered = HtmlRenderer.renderPropertyInputStr(context, prop, propVal)
+      PropEditInfo(
+        prop.id.toThingId,
+        prop.displayName,
+        propVal.inputControlId,
+        prop.getPropOpt(Editor.PromptProp).map(_.renderPlain),
+        prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc))),
+        propVal.inheritedFrom.map(_.displayName),
+        rendered
+      )
+    }
   }
 }

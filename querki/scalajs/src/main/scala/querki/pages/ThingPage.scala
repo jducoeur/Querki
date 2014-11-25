@@ -83,7 +83,9 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
         if (thing.isModel) {
           MSeq(
             if (thing.isEditable) {
-              oldEditButton
+              iconButton("edit")(
+                title:=s"Design $thingName",
+                href:=Editing.modelDesignerFactory.pageUrl(("modelId" -> thing.urlName)))
             },
             if (thing.isInstantiatable) {
               iconButton("plus-sign")(

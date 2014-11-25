@@ -4,6 +4,8 @@ import scala.concurrent.Future
 
 import querki.globals._
 
+import querki.api.StandardInfo
+
 package object data {
   /**
    * Provides access to some common data that is used across much of the system.
@@ -53,6 +55,12 @@ package object data {
      * you know that the thing exists!
      */
     def thingId = mainThing.get.urlName
+    
+    /**
+     * Returns the system-wide StandardInfo. Note that this is fetched asynchronously after startup;
+     * this Future will resolve once that is ready.
+     */
+    def standardInfo:Future[StandardInfo]
   }
   
   /**

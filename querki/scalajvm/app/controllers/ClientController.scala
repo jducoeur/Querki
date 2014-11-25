@@ -77,6 +77,14 @@ class ClientController extends ApplicationBase {
       case ClientError(msg) => BadRequest(msg)
     }
   }
+  
+  def commonApiRequest(pickledRequest:String) = withUser(false) { implicit rc =>
+    val request = read[autowire.Core.Request[String]](pickledRequest)
+    ClientApi.handleCommonFunction(request).map { 
+      case ClientResponse(pickled) => Ok(pickled)
+      case ClientError(msg) => BadRequest(msg)
+    }
+  }
 
   /**
    * Serves out requests from MarcoPolo on the client side.

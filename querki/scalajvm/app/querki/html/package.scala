@@ -43,6 +43,9 @@ package object html {
     def renderPropertyInput(context:QLContext, prop:Property[_,_], 
         currentValue:DisplayPropVal, 
         specialization:Set[RenderSpecialization.RenderSpecialization] = Set(RenderSpecialization.Unspecialized)):Html
+    def renderPropertyInputStr(context:QLContext, prop:Property[_,_], 
+        currentValue:DisplayPropVal, 
+        specialization:Set[RenderSpecialization.RenderSpecialization] = Set(RenderSpecialization.Unspecialized)):String
   }
   
   trait HtmlUI extends EcologyInterface {

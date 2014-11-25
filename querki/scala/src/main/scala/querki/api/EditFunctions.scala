@@ -3,7 +3,7 @@ package querki.api
 import scala.concurrent.Future
 
 import models.Wikitext
-import querki.data.ThingInfo
+import querki.data.{PropValInfo, ThingInfo}
 
 trait EditFunctions {
   import EditFunctions._
@@ -16,6 +16,11 @@ trait EditFunctions {
    * Create a new Thing with the given Model and properties.
    */
   def create(modelId:String, initialProps:Seq[PropertyChange]):Future[ThingInfo]
+  
+  /**
+   * Fetch the Editors and ancillary information about this Thing.
+   */
+  def getThingEditors(thingId:String):Seq[PropEditInfo]
 }
 
 object EditFunctions {
@@ -36,4 +41,15 @@ object EditFunctions {
   sealed trait PropertyChangeResponse
   case object PropertyChanged extends PropertyChangeResponse
   case class PropertyChangeError(msg:String) extends PropertyChangeResponse
+  
+  case class PropEditInfo(
+    propId:String,
+	displayName:String,
+	path:String,
+	prompt:Option[Wikitext],
+    tooltip:Option[Wikitext],
+	inheritedFrom:Option[String],
+	// This is the raw HTML for the Editor
+	editor:String
+  )
 }

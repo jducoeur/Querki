@@ -10,5 +10,10 @@ package object editing {
      * The page that lets you edit all of the instances of a given Model.
      */
     def editInstancesFactory:PageFactory
+    
+    /**
+     * The page that lets you edit a given Model.
+     */
+    def modelDesignerFactory:PageFactory
   }
 }

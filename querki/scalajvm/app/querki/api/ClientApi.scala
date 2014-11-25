@@ -1,19 +1,26 @@
 package querki.api
 
+import scala.concurrent.Future
+
 import upickle._
+import autowire._
 
 import models.{AsOID, HtmlWikitext}
 
 import querki.globals._
+import querki.globals.Implicits._
 
 import querki.core.NameUtils
 import querki.data.{IdentityInfo, PropValInfo, RequestInfo, SpaceInfo, ThingInfo, UserInfo}
 import querki.identity.{PublicIdentity, User}
 import querki.pages.PageDetails
+import querki.session.messages.{ClientAnswer, ClientResponse}
 import querki.tags.IsTag
 import querki.values.{QLRequestContext, RequestContext}
 
-class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi {
+class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi with CommonFunctionsImpl
+  with autowire.Server[String, upickle.Reader, upickle.Writer]
+{
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Conventions = interface[querki.conventions.Conventions]
@@ -101,5 +108,13 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi {
       yield t.getPropOpt(prop).map(pv => oneProp(prop, pv.v))
     
     infoOpts.flatten.toSeq
+  }
+  
+  // Autowire functions
+  def write[Result: Writer](r: Result) = upickle.write(r)
+  def read[Result: Reader](p: String) = upickle.read[Result](p)
+  
+  def handleCommonFunction(req:autowire.Core.Request[String]):Future[ClientAnswer] = {
+    route[CommonFunctions](this)(req).map(ClientResponse(_))
   }
 }
