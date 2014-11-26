@@ -188,7 +188,7 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
         prop.id.toThingId,
         prop.displayName,
         propVal.inputControlId,
-        prop.getPropOpt(Editor.PromptProp).map(_.renderPlain),
+        prop.getPropOpt(Editor.PromptProp).filter(!_.isEmpty).map(_.renderPlain),
         prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc))),
         propVal.inheritedFrom.map(_.displayName),
         rendered

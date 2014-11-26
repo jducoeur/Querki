@@ -21,8 +21,9 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   lazy val Client = interface[querki.client.Client]
   
   def makeEditor(info:PropEditInfo):Modifier = {
+    val prompt = info.prompt.map(_.raw.toString).getOrElse(info.displayName)
     div(
-      s"${info.displayName} (${info.propId}): ",
+      raw(s"$prompt (${info.propId}): "),
       new RawSpan(info.editor)
     )
   }
@@ -41,13 +42,17 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       }
       guts = 
         div(
+          p("Drag and drop Properties by their name to rearrange them."),
           h3("Instance Properties"),
+          p("These are the Properties that can be different for each Instance"),
           sortedInstanceProps.map(makeEditor(_)),
+          querkiButton("Add a Property"),
           h3("Model Properties"),
+          p("These are the Properties that are the same for all Instances of this Model"),
           modelProps.map(makeEditor(_))
         )
     }
-      yield PageContents("TODO: title", guts)
+      yield PageContents(s"Designing Model ${model.displayName}", guts)
   }
   
 }
