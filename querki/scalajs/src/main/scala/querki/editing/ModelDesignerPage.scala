@@ -11,7 +11,7 @@ import querki.globals._
 import querki.api.EditFunctions
 import EditFunctions._
 import querki.data.ThingInfo
-import querki.display.QText
+import querki.display.RawSpan
 import querki.pages._
 
 class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
@@ -22,8 +22,8 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
   def makeEditor(info:PropEditInfo):Modifier = {
     div(
-      s"${info.displayName}: ",
-      raw(info.editor)
+      s"${info.displayName} (${info.propId}): ",
+      new RawSpan(info.editor)
     )
   }
 
@@ -34,7 +34,8 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       editors <- Client[EditFunctions].getThingEditors(modelId).call()
       guts = 
         div(
-          editors.map(makeEditor(_))
+          editors.propInfos.map(makeEditor(_)),
+          h4(s"Instance Props: ${editors.instancePropIds.mkString(", ")}")
         )
     }
       yield PageContents("TODO: title", guts)

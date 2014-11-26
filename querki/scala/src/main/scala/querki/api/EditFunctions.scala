@@ -20,7 +20,7 @@ trait EditFunctions {
   /**
    * Fetch the Editors and ancillary information about this Thing.
    */
-  def getThingEditors(thingId:String):Seq[PropEditInfo]
+  def getThingEditors(thingId:String):FullEditInfo
 }
 
 object EditFunctions {
@@ -41,6 +41,8 @@ object EditFunctions {
   sealed trait PropertyChangeResponse
   case object PropertyChanged extends PropertyChangeResponse
   case class PropertyChangeError(msg:String) extends PropertyChangeResponse
+  
+  case class FullEditInfo(instancePropIds:Seq[String], propInfos:Seq[PropEditInfo])
   
   case class PropEditInfo(
     propId:String,

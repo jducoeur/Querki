@@ -11,15 +11,15 @@ import querki.globals._
 
 import querki.qtext.MainDecorator
 
-class QText(text:Wikitext, mods:Modifier*)(implicit val ecology:Ecology) extends Gadget[dom.Element] with EcologyMember {
+trait ServerHtmlHolder extends EcologyMember {
   
   lazy val InputGadgets = interface[input.InputGadgets]
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val QTextUtils = interface[querki.qtext.QTextUtils]
-
-  override def onCreate(root:dom.Element) = {
+  
+  def prepContents(root:dom.Element) = {
     val currentHash = PageManager.currentHash
-    $(elem).find("a").each { (index:js.Any, child:dom.Element) =>
+    $(root).find("a").each { (index:js.Any, child:dom.Element) =>
       try {
 	    // Adjust the URLs of any links we find.
 	    // TODO: this is a serious hack, reflecting the fact that a painful amount of server code
@@ -43,8 +43,14 @@ class QText(text:Wikitext, mods:Modifier*)(implicit val ecology:Ecology) extends
       1:js.Any
     }
     
-    InputGadgets.createInputGadgets(root)
+    InputGadgets.createInputGadgets(root)    
   }
+}
+
+class QText(text:Wikitext, mods:Modifier*)(implicit val ecology:Ecology) extends Gadget[dom.Element] 
+  with EcologyMember with ServerHtmlHolder 
+{
+  override def onCreate(root:dom.Element) = prepContents(root)
   
   def doRender() = {
     // TODO: putting this in a div() is WrongityWrongWrong, since it sometimes might be span-ish.
@@ -52,5 +58,26 @@ class QText(text:Wikitext, mods:Modifier*)(implicit val ecology:Ecology) extends
     // a span; do we need to distinguish that way somehow?
     div(wikitext(text), mods)
   }
+}
+
+/**
+ * Minimalist container for inline-structured contents from the server.
+ */
+class RawSpan(contents:String)(implicit val ecology:Ecology) extends Gadget[dom.Element] 
+  with EcologyMember with ServerHtmlHolder 
+{
+  override def onCreate(root:dom.Element) = prepContents(root)
   
+  def doRender() = span(raw(contents))
+}
+
+/**
+ * Minimalist container for block-structured contents from the server.
+ */
+class RawDiv(contents:String)(implicit val ecology:Ecology) extends Gadget[dom.Element] 
+  with EcologyMember with ServerHtmlHolder 
+{
+  override def onCreate(root:dom.Element) = prepContents(root)
+  
+  def doRender() = div(raw(contents))
 }

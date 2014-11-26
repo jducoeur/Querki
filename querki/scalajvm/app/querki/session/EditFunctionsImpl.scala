@@ -174,13 +174,14 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
     promise.future
   }
   
-  def getThingEditors(thingId:String):Seq[PropEditInfo] = withThing(thingId) { thing =>
+  def getThingEditors(thingId:String):FullEditInfo = withThing(thingId) { thing =>
     implicit val s = state
     val model = thing.getModel
     val props = PropListManager.from(thing)
     val propList = PropListManager.prepPropList(props, Some(thing), model, state)
     val context = thing.thisAsContext(rc)
-    propList.map { entry =>
+    
+    val propInfos = propList.filter(_._1.id != querki.editing.MOIDs.InstanceEditPropsOID).map { entry =>
       val (prop, propVal) = entry
       val rendered = HtmlRenderer.renderPropertyInputStr(context, prop, propVal)
       PropEditInfo(
@@ -193,5 +194,14 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
         rendered
       )
     }
+    
+    val instanceProps = for {
+      instancePropsPair <- propList.find(_._1.id == querki.editing.MOIDs.InstanceEditPropsOID)
+      instancePropsQV <- instancePropsPair._2.v
+      instanceProps = instancePropsQV.rawList(Core.LinkType)
+    }
+      yield instanceProps.map(_.toThingId.toString)
+    
+    FullEditInfo(instanceProps.getOrElse(Seq.empty), propInfos)
   }
 }
