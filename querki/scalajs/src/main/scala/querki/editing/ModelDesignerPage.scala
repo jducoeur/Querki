@@ -22,7 +22,11 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
   def makeEditor(info:PropEditInfo):Modifier = {
     val prompt = info.prompt.map(_.raw.toString).getOrElse(info.displayName)
-    div(
+    // TODO: there is a nasty bug here. The tooltip should be normally wiki-processed,
+    // but there is no way to use raw() on an attribute value. So we instead are displaying
+    // the raw, unprocessed form, knowing that Scalatags will escape it.
+    val tooltip = info.tooltip.map(_.plaintext).getOrElse(info.displayName)
+    div(cls:="_withTooltip", title:=tooltip,
       raw(s"$prompt (${info.propId}): "),
       new RawSpan(info.editor)
     )
