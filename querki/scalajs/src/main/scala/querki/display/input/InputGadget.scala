@@ -49,7 +49,7 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
    * Concrete gadgets should define this. It is the current value of this Gadget, based on what's
    * on the screen.
    */
-  def values:List[String]
+  def values:Seq[String]
 
   /**
    * The Thing that this input control is for. Note that this generally gets set on the server.

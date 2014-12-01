@@ -31,13 +31,13 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
   
   lazy val doLogEdits = Config.getBoolean("querki.test.logEdits", false)
   
-  def changeToProps(thing:Option[Thing], path:String, vs:List[String]):Option[PropMap] = {
+  def changeToProps(thing:Option[Thing], path:String, vs:Seq[String]):Option[PropMap] = {
     implicit val s = state
     DisplayPropVal.propPathFromName(path, thing).map { fieldIds =>
       // Compute the *actual* fields to change. Note that this isn't trivial, since the actual change might be in 
 	  // a Bundle:
 	  val context = QLRequestContext(rc)
-	  val actualFormFieldInfo = HtmlRenderer.propValFromUser(fieldIds, vs, context)
+	  val actualFormFieldInfo = HtmlRenderer.propValFromUser(fieldIds, vs.toList, context)
 	  val result = fieldIds.container match {
 	    // If this value is contained inside (potentially nested) Bundles, dive down into them
 	    // and adjust the results:
@@ -201,7 +201,9 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
       instanceProps = instancePropsQV.rawList(Core.LinkType)
     }
       yield instanceProps.map(_.toThingId.toString)
+      
+    val instancePropsPath = new FieldIds(Some(thing), Editor.InstanceProps).inputControlId
     
-    FullEditInfo(instanceProps.getOrElse(Seq.empty), propInfos)
+    FullEditInfo(instanceProps.getOrElse(Seq.empty), instancePropsPath, propInfos)
   }
 }

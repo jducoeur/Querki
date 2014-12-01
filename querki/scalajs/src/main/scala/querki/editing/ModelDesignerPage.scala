@@ -22,6 +22,8 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
   lazy val Client = interface[querki.client.Client]
   
+  var instancePropIds = Seq.empty[String]
+  
   def makeEditor(instance:Boolean, info:PropEditInfo):Modifier = {
     val prompt = info.prompt.map(_.raw.toString).getOrElse(info.displayName)
     // TODO: there is a nasty bug here. The tooltip should be normally wiki-processed,
@@ -29,13 +31,23 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     // the raw, unprocessed form, knowing that Scalatags will escape it.
     val tooltip = info.tooltip.map(_.plaintext).getOrElse(info.displayName)
     li(cls:="_withTooltip", title:=tooltip,
+      data("propid"):=info.propId,
       raw(s"$prompt (${info.propId}): "),
       new RawSpan(info.editor)
     )
   }
   
   class PropertySection(nam:String, instances:Boolean, props:Seq[PropEditInfo]) extends InputGadget[dom.HTMLUListElement](ecology) {
-    def values = ???
+    def values = {
+      $(elem).children("li").map({ propElem:dom.Element =>
+        $(propElem).data("propid")
+      }:js.ThisFunction0[dom.Element, Any]).jqf.get().asInstanceOf[js.Array[String]]
+    }
+  
+    def onMoved(item:JQuery) = {
+      save()
+//      println(s"Instance props are now ${values.mkString(", ")}, and path is ${$(elem).attr("name")}")
+    }
     
     def hook() = {
       $(elem).find("._propertySection").each({ prop:dom.Element =>
@@ -48,6 +60,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
           val item = ui.item.get
           val nowIn = item.parent
           println(s"Moved from $instances to ${nowIn.data("instances")}")
+          instancePropSection.onMoved(item)
 //        val oldIndex = item.data("index").asInstanceOf[Int]
 //        val newIndex = sortList.children("li").index(item)
 //        saveChange({ path => MoveListItem(path, oldIndex, newIndex) })
@@ -57,10 +70,20 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     }
     
     def doRender() = 
-      ul(cls:="_propertySection", name:=nam, data("instances"):=instances,
+      ul(cls:="_propertySection", name:=nam, 
+        data("instances"):=instances,
+        // Needed for save() to work:
+        data("thing"):=modelId,
         props.map(makeEditor(instances, _))
       )
   }
+  
+  var _instancePropSection:Option[PropertySection] = None
+  def makeInstancePropSection(sortedInstanceProps:Seq[PropEditInfo], path:String) = {
+    _instancePropSection = Some(new PropertySection(path, true, sortedInstanceProps))
+    _instancePropSection
+  }
+  def instancePropSection = _instancePropSection.get
 
   def pageContent = {
     for {
@@ -68,7 +91,8 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       model <- DataAccess.getThing(modelId)
       fullEditInfo <- Client[EditFunctions].getThingEditors(modelId).call()
       (instanceProps, modelProps) = fullEditInfo.propInfos.partition(propInfo => fullEditInfo.instancePropIds.contains(propInfo.propId))
-      sortedInstanceProps = (Seq.empty[PropEditInfo] /: fullEditInfo.instancePropIds) { (current, propId) =>
+      instancePropIds = fullEditInfo.instancePropIds
+      sortedInstanceProps = (Seq.empty[PropEditInfo] /: instancePropIds) { (current, propId) =>
         instanceProps.find(_.propId == propId) match {
           case Some(prop) => current :+ prop
           case None => { println(s"Couldn't find property $propId, although it is in instancePropIds!"); current }
@@ -79,7 +103,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
           p("Drag and drop Properties by their name to rearrange them."),
           h3("Instance Properties"),
           p("These are the Properties that can be different for each Instance"),
-          new PropertySection("instanceProps", true, sortedInstanceProps),
+          makeInstancePropSection(sortedInstanceProps, fullEditInfo.instancePropPath),
           querkiButton("Add a Property"),
           h3("Model Properties"),
           p("These are the Properties that are the same for all Instances of this Model"),

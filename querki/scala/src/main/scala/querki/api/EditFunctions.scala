@@ -30,7 +30,7 @@ object EditFunctions {
    * Describes a changed value on a Property. Note that the values are a List, to be able to support
    * Optional, List and Set.
    */
-  case class ChangePropertyValue(path:String, currentValues:List[String]) extends PropertyChange
+  case class ChangePropertyValue(path:String, currentValues:Seq[String]) extends PropertyChange
   
   case class MoveListItem(path:String, from:Int, to:Int) extends PropertyChange
   
@@ -42,7 +42,7 @@ object EditFunctions {
   case object PropertyChanged extends PropertyChangeResponse
   case class PropertyChangeError(msg:String) extends PropertyChangeResponse
   
-  case class FullEditInfo(instancePropIds:Seq[String], propInfos:Seq[PropEditInfo])
+  case class FullEditInfo(instancePropIds:Seq[String], instancePropPath:String, propInfos:Seq[PropEditInfo])
   
   case class PropEditInfo(
     propId:String,
