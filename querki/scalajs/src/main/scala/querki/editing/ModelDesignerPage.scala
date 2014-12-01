@@ -22,65 +22,59 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
   lazy val Client = interface[querki.client.Client]
   
-  var instancePropIds = Seq.empty[String]
-  
-  def makeEditor(instance:Boolean, info:PropEditInfo):Modifier = {
+  def makeEditor(info:PropEditInfo):Modifier = {
     val prompt = info.prompt.map(_.raw.toString).getOrElse(info.displayName)
     // TODO: there is a nasty bug here. The tooltip should be normally wiki-processed,
     // but there is no way to use raw() on an attribute value. So we instead are displaying
     // the raw, unprocessed form, knowing that Scalatags will escape it.
     val tooltip = info.tooltip.map(_.plaintext).getOrElse(info.displayName)
-    li(cls:="_withTooltip", title:=tooltip,
+    li(
       data("propid"):=info.propId,
-      raw(s"$prompt (${info.propId}): "),
+      span(cls:="_withTooltip", title:=tooltip, raw(s"$prompt (${info.propId}): ")),
       new RawSpan(info.editor)
     )
   }
   
-  class PropertySection(nam:String, instances:Boolean, props:Seq[PropEditInfo]) extends InputGadget[dom.HTMLUListElement](ecology) {
+  class PropertySection(nam:String, props:Seq[PropEditInfo]) extends InputGadget[dom.HTMLUListElement](ecology) {
+    // Note that this is only ever invoked on the Instance Property Section:
     def values = {
       $(elem).children("li").map({ propElem:dom.Element =>
         $(propElem).data("propid")
       }:js.ThisFunction0[dom.Element, Any]).jqf.get().asInstanceOf[js.Array[String]]
     }
   
+    // Note that this is only ever invoked on the Instance Property Section:
     def onMoved(item:JQuery) = {
       save()
-//      println(s"Instance props are now ${values.mkString(", ")}, and path is ${$(elem).attr("name")}")
     }
     
     def hook() = {
-      $(elem).find("._propertySection").each({ prop:dom.Element =>
-      }:js.ThisFunction0[dom.Element, Any])
-
       $(elem).sortable(SortableOptions.
+        // That is, the two PropertySections are linked, and you can drag between them:
         connectWith("._propertySection").
         // Stop gets called after a drag-and-drop event:
         stop({ (evt:JQueryEventObject, ui:SortChangeUI) =>
           val item = ui.item.get
-          val nowIn = item.parent
-          println(s"Moved from $instances to ${nowIn.data("instances")}")
+          // IMPORTANT: note that we save the Instance Props whenever there is a drop, but this
+          // stop event may be coming from Model Props if the user has dragged across the boundary.
           instancePropSection.onMoved(item)
-//        val oldIndex = item.data("index").asInstanceOf[Int]
-//        val newIndex = sortList.children("li").index(item)
-//        saveChange({ path => MoveListItem(path, oldIndex, newIndex) })
-//        numberItems()
         }:js.Function2[JQueryEventObject, SortChangeUI, Any]
       ))
     }
     
     def doRender() = 
-      ul(cls:="_propertySection", name:=nam, 
-        data("instances"):=instances,
+      ul(cls:="_propertySection",
+        // Note that the name for the Instance Property section is the path of the Instance Props Property:
+        name:=nam, 
         // Needed for save() to work:
         data("thing"):=modelId,
-        props.map(makeEditor(instances, _))
+        props.map(makeEditor(_))
       )
   }
   
   var _instancePropSection:Option[PropertySection] = None
   def makeInstancePropSection(sortedInstanceProps:Seq[PropEditInfo], path:String) = {
-    _instancePropSection = Some(new PropertySection(path, true, sortedInstanceProps))
+    _instancePropSection = Some(new PropertySection(path, sortedInstanceProps))
     _instancePropSection
   }
   def instancePropSection = _instancePropSection.get
@@ -91,8 +85,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       model <- DataAccess.getThing(modelId)
       fullEditInfo <- Client[EditFunctions].getThingEditors(modelId).call()
       (instanceProps, modelProps) = fullEditInfo.propInfos.partition(propInfo => fullEditInfo.instancePropIds.contains(propInfo.propId))
-      instancePropIds = fullEditInfo.instancePropIds
-      sortedInstanceProps = (Seq.empty[PropEditInfo] /: instancePropIds) { (current, propId) =>
+      sortedInstanceProps = (Seq.empty[PropEditInfo] /: fullEditInfo.instancePropIds) { (current, propId) =>
         instanceProps.find(_.propId == propId) match {
           case Some(prop) => current :+ prop
           case None => { println(s"Couldn't find property $propId, although it is in instancePropIds!"); current }
@@ -107,7 +100,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
           querkiButton("Add a Property"),
           h3("Model Properties"),
           p("These are the Properties that are the same for all Instances of this Model"),
-          new PropertySection("modelProps", false, modelProps)
+          new PropertySection("modelProps", modelProps)
         )
     }
       yield PageContents(s"Designing Model ${model.displayName}", guts)
