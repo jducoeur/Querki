@@ -63,21 +63,21 @@ class QText(text:Wikitext, mods:Modifier*)(implicit val ecology:Ecology) extends
 /**
  * Minimalist container for inline-structured contents from the server.
  */
-class RawSpan(contents:String)(implicit val ecology:Ecology) extends Gadget[dom.Element] 
+class RawSpan(contents:String, mods:Modifier*)(implicit val ecology:Ecology) extends Gadget[dom.Element] 
   with EcologyMember with ServerHtmlHolder 
 {
   override def onCreate(root:dom.Element) = prepContents(root)
   
-  def doRender() = span(raw(contents))
+  def doRender() = span(raw(contents), mods)
 }
 
 /**
  * Minimalist container for block-structured contents from the server.
  */
-class RawDiv(contents:String)(implicit val ecology:Ecology) extends Gadget[dom.Element] 
+class RawDiv(contents:String, mods:Modifier*)(implicit val ecology:Ecology) extends Gadget[dom.Element] 
   with EcologyMember with ServerHtmlHolder 
 {
   override def onCreate(root:dom.Element) = prepContents(root)
   
-  def doRender() = div(raw(contents))
+  def doRender() = div(raw(contents), mods)
 }

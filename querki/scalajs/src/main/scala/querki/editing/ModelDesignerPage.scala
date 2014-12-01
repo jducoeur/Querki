@@ -12,7 +12,7 @@ import querki.globals._
 import querki.api.EditFunctions
 import EditFunctions._
 import querki.data.ThingInfo
-import querki.display.RawSpan
+import querki.display.RawDiv
 import querki.display.input.InputGadget
 import querki.pages._
 
@@ -28,10 +28,10 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     // but there is no way to use raw() on an attribute value. So we instead are displaying
     // the raw, unprocessed form, knowing that Scalatags will escape it.
     val tooltip = info.tooltip.map(_.plaintext).getOrElse(info.displayName)
-    li(cls:="_propListItem",
+    li(cls:="_propListItem control-group",
       data("propid"):=info.propId,
-      span(cls:="_withTooltip _propPrompt", title:=tooltip, raw(s"$prompt (${info.propId}): ")),
-      new RawSpan(info.editor)
+      label(cls:="_withTooltip _propPrompt control-label", title:=tooltip, raw(s"$prompt (${info.propId}): ")),
+      new RawDiv(info.editor, cls:="controls")
     )
   }
   
@@ -63,7 +63,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     }
     
     def doRender() = 
-      ul(cls:="_propertySection",
+      ul(cls:="_propertySection form-horizontal",
         // Note that the name for the Instance Property section is the path of the Instance Props Property:
         name:=nam, 
         // Needed for save() to work:
