@@ -28,9 +28,9 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     // but there is no way to use raw() on an attribute value. So we instead are displaying
     // the raw, unprocessed form, knowing that Scalatags will escape it.
     val tooltip = info.tooltip.map(_.plaintext).getOrElse(info.displayName)
-    li(
+    li(cls:="_propListItem",
       data("propid"):=info.propId,
-      span(cls:="_withTooltip", title:=tooltip, raw(s"$prompt (${info.propId}): ")),
+      span(cls:="_withTooltip _propPrompt", title:=tooltip, raw(s"$prompt (${info.propId}): ")),
       new RawSpan(info.editor)
     )
   }
@@ -92,14 +92,14 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
         }
       }
       guts = 
-        div(
-          p("Drag and drop Properties by their name to rearrange them."),
-          h3("Instance Properties"),
-          p("These are the Properties that can be different for each Instance"),
+        div(cls:="_advancedEditor",
+          p(cls:="_smallSubtitle", "Drag and drop Properties by their name to rearrange them."),
+          h3(cls:="_defaultTitle", "Instance Properties"),
+          p(cls:="_smallSubtitle", "These are the Properties that can be different for each Instance"),
           makeInstancePropSection(sortedInstanceProps, fullEditInfo.instancePropPath),
           querkiButton("Add a Property"),
-          h3("Model Properties"),
-          p("These are the Properties that are the same for all Instances of this Model"),
+          h3(cls:="_defaultTitle", "Model Properties"),
+          p(cls:="_smallSubtitle", "These are the Properties that are the same for all Instances of this Model"),
           new PropertySection("modelProps", modelProps)
         )
     }

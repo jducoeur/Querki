@@ -241,6 +241,22 @@ body {
 }
 
 /*
+ * Styles for the Advanced Editor / Model Designer page.
+ */
+ 
+._advancedEditor ._propertySection {
+  margin: 0;
+}
+
+._advancedEditor ._propPrompt {
+  font-weight: bold;
+}
+
+._advancedEditor ._propListItem {
+  list-style-type: none;
+}
+
+/*
  * Styles used in major Querki screens.
  */
  
