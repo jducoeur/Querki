@@ -30,7 +30,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     val tooltip = info.tooltip.map(_.plaintext).getOrElse(info.displayName)
     li(cls:="_propListItem control-group",
       data("propid"):=info.propId,
-      new TooltipGadget(label(cls:="_propPrompt control-label", title:=tooltip, raw(s"$prompt (${info.propId}): "))),
+      new TooltipGadget(label(cls:="_propPrompt control-label", title:=tooltip, raw(s"$prompt "))),
       new RawDiv(info.editor, cls:="controls")
     )
   }
@@ -93,13 +93,15 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       }
       guts = 
         div(cls:="_advancedEditor",
-          p(cls:="_smallSubtitle", "Drag and drop Properties by their name to rearrange them."),
           h3(cls:="_defaultTitle", "Instance Properties"),
-          p(cls:="_smallSubtitle", "These are the Properties that can be different for each Instance"),
+          p(cls:="_smallSubtitle", 
+              """These are the Properties that can be different for each Instance. Drag a Property into here if you
+                |want to edit it for each Instance, or out if you don't. The order of the Properties here will be
+                |the order they show up in the Instance Editor.""".stripMargin),
           makeInstancePropSection(sortedInstanceProps, fullEditInfo.instancePropPath),
           querkiButton("Add a Property"),
           h3(cls:="_defaultTitle", "Model Properties"),
-          p(cls:="_smallSubtitle", "These are the Properties that are the same for all Instances of this Model"),
+          p(cls:="_smallSubtitle", "These Properties are the same for all Instances of this Model"),
           new PropertySection("modelProps", modelProps)
         )
     }
