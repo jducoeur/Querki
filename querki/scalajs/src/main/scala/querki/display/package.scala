@@ -12,6 +12,35 @@ import querki.util.Notifier
 
 package object display {
   
+  /**
+   * The factory function for a Gadget. It is consistent and trivial, but we don't have
+   * reflection here, so can't just automate it.
+   */
+  type GadgetConstr = (dom.Element => Gadget[_])
+  
+  trait Gadgets extends EcologyInterface {
+    /**
+     * Register an InputGadget. Whenever the specified hookClass is encountered, the given Gadget
+     * will be wrapped around that Element.
+     */
+    def registerGadget(hookClass:String, constr:GadgetConstr):Unit
+    
+    /**
+     * Register an InputGadget that doesn't require fancy construction. This is usually the right
+     * answer when the InputGadget doesn't take constructor parameters.
+     */
+    def registerSimpleGadget(hookClass:String, constr: => Gadget[_]):Unit
+    
+    /**
+     * Given a root element (usually one that has been newly created from server-sent, non-Scalatags code),
+     * look for any Gadgets that should be created in it, based on their class.
+     * 
+     * IMPORTANT: these Gadgets are (intentionally) not immediately hooked! Their hook() method will
+     * be called when they actually get added to the DOM and shown, since some controls depend on that.
+     */
+    def createGadgets(root:dom.Element):Unit    
+  }
+  
   trait PageManager extends EcologyInterface {
     /**
      * Actually render the page, inside the given root.

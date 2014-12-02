@@ -13,7 +13,7 @@ import querki.qtext.MainDecorator
 
 trait ServerHtmlHolder extends EcologyMember {
   
-  lazy val InputGadgets = interface[input.InputGadgets]
+  lazy val Gadgets = interface[Gadgets]
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val QTextUtils = interface[querki.qtext.QTextUtils]
   
@@ -43,7 +43,7 @@ trait ServerHtmlHolder extends EcologyMember {
       1:js.Any
     }
     
-    InputGadgets.createInputGadgets(root)    
+    Gadgets.createGadgets(root)    
   }
 }
 

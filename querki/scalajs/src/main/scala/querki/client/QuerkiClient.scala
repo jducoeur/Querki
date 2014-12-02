@@ -47,6 +47,7 @@ object QuerkiClient extends JSApp with EcologyMember {
     new querki.client.ClientImpl(ecology)
     new querki.data.ClientDataEcot(ecology)
     new querki.datamodel.DataModelEcot(ecology)
+    new querki.display.GadgetsEcot(ecology)
     new querki.display.PageManagerEcot(ecology)
     new querki.display.StatusLineEcot(ecology)    
     new querki.display.input.InputGadgetsEcot(ecology)

@@ -31,58 +31,20 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
   
   def implements = Set(classOf[InputGadgets], classOf[InputGadgetsInternal])
   
-  /**
-   * The factory function for an InputGadget. It is consistent and trivial, but we don't have
-   * reflection here, so can't just automate it.
-   */
-  type InputConstr = (dom.Element => InputGadget[_])
-  
-  /**
-   * Register an InputGadget. Whenever the specified hookClass is encountered, the given Gadget
-   * will be wrapped around that Element.
-   */
-  def registerGadget(hookClass:String, constr:InputConstr) = {
-    registry += (hookClass -> constr)
-  }
-  
-  /**
-   * Register an InputGadget that doesn't require fancy construction. This is usually the right
-   * answer when the InputGadget doesn't take constructor parameters.
-   */
-  def registerSimpleGadget(hookClass:String, constr: => InputGadget[_]) = {
-    val fullConstr = { e:dom.Element =>
-      val gadget = constr
-      gadget.setElem(e)
-      gadget
-    }
-    registerGadget(hookClass, fullConstr)
-  }
+  lazy val Gadgets = interface[querki.display.Gadgets]
   
   override def postInit() = {
-    registerSimpleGadget("._textEdit", { new TextInputGadget })
-    registerSimpleGadget("._largeTextEdit", { new LargeTextInputGadget })
-    registerGadget("._tagSetInput", { TagSetInput(_) })
-    registerGadget("._tagInput", { MarcoPoloInput(_) })
+    Gadgets.registerSimpleGadget("._textEdit", { new TextInputGadget })
+    Gadgets.registerSimpleGadget("._largeTextEdit", { new LargeTextInputGadget })
+    Gadgets.registerGadget("._tagSetInput", { TagSetInput(_) })
+    Gadgets.registerGadget("._tagInput", { MarcoPoloInput(_) })
     // TODO: this ought to start with an underscore:
-    registerSimpleGadget(".sortableList", { new SortableListGadget })
+    Gadgets.registerSimpleGadget(".sortableList", { new SortableListGadget })
     // Note that we currently assume all selects are inputs:
-    registerSimpleGadget("select", { new SelectGadget })
-    registerGadget("._deleteInstanceButton", { DeleteInstanceButton(_) })
-    registerSimpleGadget("._rating", { new RatingGadget })
+    Gadgets.registerSimpleGadget("select", { new SelectGadget })
+    Gadgets.registerGadget("._deleteInstanceButton", { DeleteInstanceButton(_) })
+    Gadgets.registerSimpleGadget("._rating", { new RatingGadget })
   }
-  
-  /**
-   * The actual registry of all of the InputGadgets. This is a map from the name of the marker
-   * class for this InputGadget to a factory function for it. 
-   * 
-   * The coupling here is a bit unfortunate, but
-   * seems to be the least boilerplatey way I can think of to do things, given that we don't have
-   * reflection (and thus, dynamic construction) on the client side.
-   * 
-   * TODO: these entries should probably become registered factories instead, so they don't all
-   * wind up in this central list.
-   */
-  var registry = Map.empty[String, InputConstr]
   
   var unhookedGadgets = Set.empty[InputGadget[_]]
   
@@ -92,15 +54,6 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
   def hookPendingGadgets() = {
     unhookedGadgets.foreach(_.prep())
     unhookedGadgets = Set.empty
-  }
-  
-  def createInputGadgets(root:dom.Element) = {
-    registry.foreach { pair =>
-      val (className, constr) = pair
-      $(root).find(s"$className").each({ (elem:dom.Element) =>
-        val gadget = constr(elem)
-      }:js.ThisFunction0[dom.Element, Any])
-    }
   }
   
   /**
