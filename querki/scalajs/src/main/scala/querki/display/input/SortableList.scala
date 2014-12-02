@@ -139,9 +139,3 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
   // be a list *of* something.
   def doRender() = ???
 }
-
-object SortableListGadget {
-  def apply(rawElement:dom.Element)(implicit e:Ecology) = {
-    (new SortableListGadget).setElem(rawElement)
-  }
-}

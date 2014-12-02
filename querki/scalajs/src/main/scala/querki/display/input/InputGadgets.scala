@@ -38,6 +38,40 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
   type InputConstr = (dom.Element => InputGadget[_])
   
   /**
+   * Register an InputGadget. Whenever the specified hookClass is encountered, the given Gadget
+   * will be wrapped around that Element.
+   */
+  def registerGadget(hookClass:String, constr:InputConstr) = {
+    registry += (hookClass -> constr)
+  }
+  
+  /**
+   * Register an InputGadget that doesn't require fancy construction. This is usually the right
+   * answer when the InputGadget doesn't take constructor parameters.
+   */
+  def registerSimpleGadget(hookClass:String, constr: => InputGadget[_]) = {
+    val fullConstr = { e:dom.Element =>
+      val gadget = constr
+      gadget.setElem(e)
+      gadget
+    }
+    registerGadget(hookClass, fullConstr)
+  }
+  
+  override def postInit() = {
+    registerSimpleGadget("._textEdit", { new TextInputGadget })
+    registerSimpleGadget("._largeTextEdit", { new LargeTextInputGadget })
+    registerGadget("._tagSetInput", { TagSetInput(_) })
+    registerGadget("._tagInput", { MarcoPoloInput(_) })
+    // TODO: this ought to start with an underscore:
+    registerSimpleGadget(".sortableList", { new SortableListGadget })
+    // Note that we currently assume all selects are inputs:
+    registerSimpleGadget("select", { new SelectGadget })
+    registerGadget("._deleteInstanceButton", { DeleteInstanceButton(_) })
+    registerSimpleGadget("._rating", { new RatingGadget })
+  }
+  
+  /**
    * The actual registry of all of the InputGadgets. This is a map from the name of the marker
    * class for this InputGadget to a factory function for it. 
    * 
@@ -48,18 +82,7 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
    * TODO: these entries should probably become registered factories instead, so they don't all
    * wind up in this central list.
    */
-  val registry = Map[String, InputConstr](
-    ("._textEdit" -> { TextInputGadget(_) }),
-    ("._largeTextEdit" -> { LargeTextInputGadget(_) }),
-    ("._tagSetInput" -> { TagSetInput(_) }),
-    ("._tagInput" -> { MarcoPoloInput(_) }),
-    // TODO: this ought to start with an underscore:
-    (".sortableList" -> { SortableListGadget(_) }),
-    // Note that we currently assume all selects are inputs:
-    ("select" -> { SelectGadget(_) }),
-    ("._deleteInstanceButton" -> { DeleteInstanceButton(_) }),
-    ("._rating" -> { RatingGadget(_) })
-  )
+  var registry = Map.empty[String, InputConstr]
   
   var unhookedGadgets = Set.empty[InputGadget[_]]
   

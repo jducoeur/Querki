@@ -43,9 +43,3 @@ class RatingGadget(implicit e:Ecology) extends InputGadget[dom.HTMLDivElement](e
   
   def doRender() = ???
 }
-
-object RatingGadget {
-  def apply(rawElement:dom.Element)(implicit e:Ecology) = {
-    (new RatingGadget).setElem(rawElement)
-  }  
-}

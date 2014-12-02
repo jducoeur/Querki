@@ -23,11 +23,6 @@ class TextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLInputEleme
     input(cls:="_textEdit", tpe:="text")
     
 }
-object TextInputGadget {
-  def apply(rawElement:dom.Element)(implicit e:Ecology) = {
-    (new TextInputGadget).setElem(rawElement)
-  }
-}
 
 trait AutosizeFacade extends JQuery {
   def autosize():JQuery = ???
@@ -80,9 +75,4 @@ class LargeTextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLTextA
   def doRender() =
     textarea(cls:="_largeTextEdit")
     
-}
-object LargeTextInputGadget {
-  def apply(rawElement:dom.Element)(implicit e:Ecology) = {
-    (new LargeTextInputGadget).setElem(rawElement)
-  }
 }

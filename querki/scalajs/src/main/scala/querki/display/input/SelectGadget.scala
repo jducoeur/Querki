@@ -17,9 +17,3 @@ class SelectGadget(implicit e:Ecology) extends InputGadget[dom.HTMLSelectElement
   
   def doRender() = ???
 }
-
-object SelectGadget {
-  def apply(rawElement:dom.Element)(implicit e:Ecology) = {
-    (new SelectGadget).setElem(rawElement)
-  }  
-}
