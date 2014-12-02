@@ -2,12 +2,18 @@ package querki.display
 
 import scala.scalajs.js
 import org.scalajs.dom
+import scalatags.JsDom.all._
 
 import querki.globals._
 
 class GadgetsEcot(e:Ecology) extends ClientEcot(e) with Gadgets {
   
   def implements = Set(classOf[Gadgets])
+  
+  override def postInit() = {
+    registerSimpleGadget("._withTooltip", { new WithTooltip(span()) })
+    registerSimpleGadget("._qlInvoke", { new QLButtonGadget(span()) })
+  }
   
   /**
    * The actual registry of all of the Gadgets. This is a map from the name of the marker
