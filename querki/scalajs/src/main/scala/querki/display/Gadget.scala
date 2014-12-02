@@ -13,6 +13,7 @@ import querki.globals._
 
 import querki.comm._
 import querki.data.ThingInfo
+import querki.display.input.InputGadget
 import querki.util.ScalatagUtils
 
 /**
@@ -85,4 +86,13 @@ object Gadget {
    * to get at the resulting DOM element.
    */
   def apply(guts:scalatags.JsDom.TypedTag[dom.Element]) = new SimpleGadget(guts)
+}
+
+// TODO: this really shouldn't be an InputGadget conceptually, but we need that for the hooking:
+class HookGadget(onHook:dom.Element => Unit)(implicit e:Ecology) extends InputGadget[dom.Element](e) {
+  def hook() = { onHook(elem) }
+  
+  // These should never be directly rendered:
+  def doRender() = ???
+  def values = ???
 }

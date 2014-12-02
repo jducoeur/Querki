@@ -17,7 +17,7 @@ class NotificationsEcot(e:Ecology) extends ClientEcot(e) with Notifications {
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val Pages = interface[querki.pages.Pages]
   
-  val numNotifications = Var(1)
+  val numNotifications = Var(0)
   
   val pageName = "_notifications"
   

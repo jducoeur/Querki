@@ -15,7 +15,7 @@ import querki.globals._
  * that really should not require a full InputGadget; I think the InputGadgets registry needs to be
  * refactored first.
  */
-class WithTooltip[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output], tooltip:String = "")(implicit val ecology:Ecology) extends Gadget[Output] with EcologyMember  {
+class WithTooltip[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output], tooltip:String = "") extends Gadget[Output] {
   override def onCreate(elem:Output) = $(elem).tooltip(TooltipOptions.delay(250).title(tooltip))
   def doRender() = tag
 }

@@ -38,6 +38,12 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
    */
   val renderedContentFuture = renderedContentPromise.future
   
+  /**
+   * This is called before the Page begins to render. Pages should override it to do
+   * things like register page-specific Gadget hooks. 
+   */
+  def beforeRender() = {}
+  
   def doRender() = {
     val renderedContent = new WrapperDiv
     

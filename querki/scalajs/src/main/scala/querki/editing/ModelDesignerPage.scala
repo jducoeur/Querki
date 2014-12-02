@@ -21,6 +21,14 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   lazy val modelId = params("modelId")
   
   lazy val Client = interface[querki.client.Client]
+  lazy val Gadgets = interface[querki.display.Gadgets]
+  
+  override def beforeRender() = {
+    // Page-specific gadget hooks:
+    // TODO: these need to be updated for the new Bootstrap. Can we come up with a better abstraction here?
+    Gadgets.registerHook("._largeTextEdit") { elem => $(elem).addClass("span10") }
+    Gadgets.registerHook("input[type='text']") { elem => $(elem).filter(".propEditor").addClass("span10") }    
+  }
   
   def makeEditor(info:PropEditInfo):Modifier = {
     val prompt = info.prompt.map(_.raw.toString).getOrElse(info.displayName)

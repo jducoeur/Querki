@@ -32,6 +32,14 @@ package object display {
     def registerSimpleGadget(hookClass:String, constr: => Gadget[_]):Unit
     
     /**
+     * The very simplest form, when you simply want to hook a function that will be run on all elements
+     * that match the given selector. This will become a Gadget under the hood, but should usually be
+     * used when you don't care about that, and don't plan to create this Gadget in a strongly-typed
+     * way on the Client.
+     */
+    def registerHook(selector:String)(hook:dom.Element => Unit):Unit
+    
+    /**
      * Given a root element (usually one that has been newly created from server-sent, non-Scalatags code),
      * look for any Gadgets that should be created in it, based on their class.
      * 
@@ -89,6 +97,11 @@ package object display {
      * Reload the current page, based on its hash.
      */
     def reload():Unit
+    
+    /**
+     * Listen to this publication point if you want to be notified *before* each Page load.
+     */
+    def beforePageLoads:Notifier[Page]
     
     /**
      * Listen to this publication point if you want to be notified *after* each Page load.

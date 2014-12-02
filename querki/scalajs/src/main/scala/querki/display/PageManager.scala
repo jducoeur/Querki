@@ -47,6 +47,7 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   }
   
   val afterPageLoads = new Notifier[Page] {}
+  val beforePageLoads = new Notifier[Page] {}
   
   val menuHolder = new WrapperDiv
   
@@ -156,6 +157,8 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
    * Actually display the full page.
    */
   def renderPage(page:Page) = {
+    beforePageLoads(page)
+    
     val fullPage =
       div(
         StatusLineInternal.statusGadget,
@@ -163,6 +166,8 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
         page, 
         new StandardFooter)
     
+    page.beforeRender()
+        
     $(displayRoot).empty()
     $(displayRoot).append(fullPage.render)
     
