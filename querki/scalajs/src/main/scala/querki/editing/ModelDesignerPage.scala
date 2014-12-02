@@ -12,7 +12,7 @@ import querki.globals._
 import querki.api.EditFunctions
 import EditFunctions._
 import querki.data.ThingInfo
-import querki.display.RawDiv
+import querki.display.{RawDiv, TooltipGadget}
 import querki.display.input.InputGadget
 import querki.pages._
 
@@ -30,7 +30,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     val tooltip = info.tooltip.map(_.plaintext).getOrElse(info.displayName)
     li(cls:="_propListItem control-group",
       data("propid"):=info.propId,
-      label(cls:="_withTooltip _propPrompt control-label", title:=tooltip, raw(s"$prompt (${info.propId}): ")),
+      new TooltipGadget(label(cls:="_propPrompt control-label", title:=tooltip, raw(s"$prompt (${info.propId}): "))),
       new RawDiv(info.editor, cls:="controls")
     )
   }

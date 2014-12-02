@@ -8,6 +8,8 @@ import org.scalajs.ext._
 trait BootstrapFacade extends js.Object {
   def popover(options:PopoverOptions):Any = ???
   def popover(cmd:PopoverCommand.PopoverCommand):Any = ???
+  
+  def tooltip(options:TooltipOptions):Any = ???
 }
 
 object Position extends Enumeration {

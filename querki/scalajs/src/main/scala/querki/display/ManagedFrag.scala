@@ -28,6 +28,8 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
    */
   def setElem(e:dom.Node):this.type = {
     _elem = Some(e.asInstanceOf[Output])
+    // TODO: this should be a Seq of Gadgets, not a single one, so we can attach multiple
+    // Gadgets to a single Element!
     $(elem).data("gadget", this.asInstanceOf[js.Any])
     $(elem).addClass("_withGadget")
     this
