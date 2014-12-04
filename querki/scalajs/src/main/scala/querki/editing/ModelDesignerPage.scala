@@ -118,22 +118,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
 }
 
-import querki.display.{Gadget, MetaGadget, WrapperDiv}
-
-class AfterLoading[T, Output <: dom.Element](fut:Future[T])(guts:T => scalatags.JsDom.TypedTag[Output]) extends MetaGadget[dom.HTMLDivElement] {
-  // TODO: once we upgrade to Bootstrap 3, we should switch to FontAwesome and use the spinners in that:
-  lazy val wrapper = (new WrapperDiv).initialContent("Loading...")
-  
-  def doRender() = wrapper
-  
-  fut.map { result =>
-    val finalTag = guts(result)
-    wrapper.replaceContents(finalTag.render)
-  }
-}
-object AfterLoading {
-  def apply[T, Output <: dom.Element](fut:Future[T])(guts:T => scalatags.JsDom.TypedTag[Output]) = new AfterLoading(fut)(guts)
-}
+import querki.display.{Gadget, AfterLoading, WrapperDiv}
 
 /**
  * A simple Gadget that encapsulates the notion of a Button that does something when clicked. Almost
