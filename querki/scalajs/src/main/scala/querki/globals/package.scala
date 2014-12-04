@@ -1,7 +1,8 @@
 package querki
 
 import scala.scalajs.js
-import org.scalajs.dom.Element
+import org.scalajs.dom
+import dom.Element
 import org.scalajs.jquery._
 
 /**
@@ -32,6 +33,11 @@ package object globals {
   implicit def wrapper2Interface[T <: EcologyInterface](wrapper:querki.ecology.InterfaceWrapperBase[querki.ecology.ClientState, querki.ecology.EcotImpl, T]):T = {
     wrapper.get
   }
+  
+  /**
+   * This allows you to use a TypedTag in any context where a Gadget is expected.
+   */
+  implicit def tag2Gadget[Output <: dom.Element](guts:scalatags.JsDom.TypedTag[Output]) = new querki.display.TypedGadget[Output](guts, { elem:Output => })
   
   /**
    * The standard implicit ExecutionContext for Futures. Provide one explicitly if you want to do something different.

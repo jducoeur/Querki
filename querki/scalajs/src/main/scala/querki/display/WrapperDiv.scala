@@ -9,7 +9,7 @@ import querki.globals._
  * A higher-level view of WrapperDiv, to encapsulate the common pattern "show a spinner until the given Future
  * pans out, then process the results and replace the display".
  */
-class AfterLoading[T, Output <: dom.Element](fut:Future[T])(guts:T => scalatags.JsDom.TypedTag[Output]) extends MetaGadget[dom.HTMLDivElement] {
+class AfterLoading[T, Output <: dom.Element](fut:Future[T])(guts:T => Gadget[Output]) extends MetaGadget[dom.HTMLDivElement] {
   // TODO: once we upgrade to Bootstrap 3, we should switch to FontAwesome and use the spinners in that:
   lazy val wrapper = (new WrapperDiv).initialContent("Loading...")
   
@@ -21,7 +21,7 @@ class AfterLoading[T, Output <: dom.Element](fut:Future[T])(guts:T => scalatags.
   }
 }
 object AfterLoading {
-  def apply[T, Output <: dom.Element](fut:Future[T])(guts:T => scalatags.JsDom.TypedTag[Output]) = new AfterLoading(fut)(guts)
+  def apply[T, Output <: dom.Element](fut:Future[T])(guts:T => Gadget[Output]) = new AfterLoading(fut)(guts)
 }
 
 /**

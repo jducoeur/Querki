@@ -118,6 +118,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
 }
 
+import querki.data.SpaceProps
 import querki.display.{Gadget, AfterLoading, WrapperDiv}
 
 /**
@@ -172,13 +173,28 @@ class AddPropertyGadget(implicit val ecology:Ecology) extends Gadget[dom.HTMLDiv
   val allPropsFut = DataAccess.getAllProps()
   
   class AddExistingPropertyGadget extends Gadget[dom.HTMLDivElement] {
+    
+    def processProps(spaceProps:SpaceProps):Modifier = {
+      
+    }
+    
     def doRender() =
       div(cls:="well container",
         p(i(cls:="fa fa-spinner fa-spin"), """Choose a property from this list of existing properties, or press "Create a New Property" to do something different."""),
         div(cls:="span4",
           p(cls:="offset1",
             AfterLoading(allPropsFut) { spaceProps =>
-              p(s"Props for ${spaceProps.spaceName} will go here")
+              Gadget(
+                select(
+                  option("a"), option("b"), option("c")
+                ),
+                { e =>
+                  $(e).change({ evt:JQueryEventObject =>
+                    val selected = $(e).find("option:selected")
+                    println(s"You chose ${selected.value()}")
+                  })
+                }
+              )
             }
           )
         )
