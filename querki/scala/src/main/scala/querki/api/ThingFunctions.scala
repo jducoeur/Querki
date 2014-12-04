@@ -36,6 +36,11 @@ trait ThingFunctions {
   def getProperties(thingId:String):Seq[PropValInfo]
   
   /**
+   * Fetches the rendered value of the specified Property of this Thing.
+   */
+  def getPropertyDisplay(thingId:String, propId:String):Option[Wikitext]
+  
+  /**
    * Fetch all of the Properties available to this Space.
    */
   def getAllProperties():SpaceProps

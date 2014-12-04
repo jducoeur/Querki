@@ -60,6 +60,18 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions { self:Actor
     ClientApi.propValInfo(thing, rc)
   }
   
+  def getPropertyDisplay(thingId:String, propIdStr:String):Option[Wikitext] = withThing(thingId) { thing =>
+    implicit val s = state
+    implicit val r = rc
+    val propId = ThingId(propIdStr)
+    for {
+      prop <- state.prop(propId)
+      pv <- thing.getPropOpt(prop)
+      if (!pv.isEmpty)
+    }
+      yield pv.render(thing.thisAsContext.forProperty(pv.prop), Some(thing))
+  }
+  
   def getAllProperties():SpaceProps = {
     // We dive recursively up the app tree to construct the SpaceProps:
     def getPropsForSpace(space:SpaceState):SpaceProps = {

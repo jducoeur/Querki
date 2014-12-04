@@ -118,8 +118,9 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
 }
 
+import querki.api.ThingFunctions
 import querki.data.{PropInfo, SpaceProps, ThingInfo}
-import querki.display.{Gadget, AfterLoading, WrapperDiv}
+import querki.display.{AfterLoading, Gadget, QText, WrapperDiv}
 
 object ButtonKind extends Enumeration {
   type ButtonKind = Value
@@ -176,6 +177,7 @@ class AddPropertyGadget(thing:ThingInfo)(implicit val ecology:Ecology) extends G
   
   val optLabel = "label".attr
   
+  lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
   
   lazy val mainDiv = (new WrapperDiv).initialContent(initButton)
@@ -189,6 +191,7 @@ class AddPropertyGadget(thing:ThingInfo)(implicit val ecology:Ecology) extends G
   // Note that we pro-actively begin loading this immediately. It's one of the more common operations for the
   // Model Designer, and we want quick response.
   val allPropsFut = DataAccess.getAllProps()
+  val stdInfoFut = DataAccess.standardInfo
   
   class AddExistingPropertyGadget extends Gadget[dom.HTMLDivElement] {
     
@@ -222,20 +225,38 @@ class AddPropertyGadget(thing:ThingInfo)(implicit val ecology:Ecology) extends G
           p(cls:="offset1",
             AfterLoading(allPropsFut) { spaceProps =>
               Gadget(
+                // The actual select of which Property you want
                 select(
                   processProps(spaceProps)
                 ),
+                // When the user selects a Property...
                 { e =>
                   $(e).change({ evt:JQueryEventObject =>
                     val selected = $(e).find("option:selected")
-                    println(s"You chose ${selected.value()}")
+                    val propId = selected.value().asInstanceOf[String]
+                    // ... fetch the Summary and Details for that Property...
+                    val contentsFut = for {
+                      stdInfo <- stdInfoFut
+                      summaryOpt <- Client[ThingFunctions].getPropertyDisplay(propId, stdInfo.summaryPropId).call()
+                      detailsOpt <- Client[ThingFunctions].getPropertyDisplay(propId, stdInfo.detailsPropId).call()
+                    }
+                      yield
+                        // ... build the display of the Property info...
+                        div(
+                          b(selected.text()),
+                          summaryOpt.map(summary => i(new QText(summary))),
+                          detailsOpt.map(details => new QText(details))
+                        )
+                      
+                    // ... and stuff it into the div that's waiting for it.
+                    contentsFut.map(contents => propDesc.replaceContents(contents.render))
                   })
                 }
               )
             }
           ),
           p(cls:="offset1",
-            new ButtonGadget(Info, "Add")({}),
+            new ButtonGadget(Info, disabled:=true, "Add")({}),
             new ButtonGadget(Normal, "Cancel")({})
           ),
           hr,

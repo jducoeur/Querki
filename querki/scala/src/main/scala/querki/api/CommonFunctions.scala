@@ -10,4 +10,7 @@ trait CommonFunctions {
 /**
  * The "standard" info about the Server. This is a grab-bag of information that the Client fetches.
  */
-case class StandardInfo()
+case class StandardInfo(
+  detailsPropId:String,
+  summaryPropId:String
+)
