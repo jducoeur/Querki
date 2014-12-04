@@ -23,7 +23,7 @@ import querki.util.ScalatagUtils
  * If you need complex behaviour, subclass this and extend it. If you just need to be able to
  * access the DOM created by the rendered Scalatags, just use the Gadget(scalatags) entry point.
  */
-trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with ScalatagUtils {
+trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with QuerkiUIUtils {
   /**
    * Concrete subclasses should fill this in with the actual guts of the Gadget.
    */
@@ -32,9 +32,47 @@ trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with ScalatagUti
   lazy val underlyingTag = doRender()
   
   def createFrag = underlyingTag.render
+}
+
+/**
+ * Similar to Gadget, but this is specifically for Gadgets that wrap around other Gadgets. Only use
+ * this if you need the alternate doRender() signature -- that is, when doRender's top level is itself
+ * another Gadget.
+ */
+trait MetaGadget[Output <: dom.Element] extends ManagedFrag[Output] with ScalatagUtils with QuerkiUIUtils {
+  def doRender():Gadget[Output]
   
-  // TODO: split all of these out into some sort of QuerkiUIUtils:
+  lazy val underlyingTag = doRender()
   
+  def createFrag = underlyingTag.render
+}
+
+/**
+ * This variant of Gadget is particularly useful when you're not trying to do anything complex, just
+ * have a handle to the resulting elem. Usually accessed as Gadget(...).
+ */
+class SimpleGadget(guts:scalatags.JsDom.TypedTag[dom.Element]) extends Gadget[dom.Element] {
+  def doRender() = guts
+}
+
+object Gadget {
+  /**
+   * Create a SimpleGadget from the given Scalatags. This is typically enough when all you need is
+   * to get at the resulting DOM element.
+   */
+  def apply(guts:scalatags.JsDom.TypedTag[dom.Element]) = new SimpleGadget(guts)
+}
+
+// TODO: this really shouldn't be an InputGadget conceptually, but we need that for the hooking:
+class HookGadget(onHook:dom.Element => Unit)(implicit e:Ecology) extends InputGadget[dom.Element](e) {
+  def hook() = { onHook(elem) }
+  
+  // These should never be directly rendered:
+  def doRender() = ???
+  def values = ???
+}
+
+trait QuerkiUIUtils extends ScalatagUtils {
   /**
    * Render some wikitext from the server.
    * 
@@ -70,29 +108,4 @@ trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with ScalatagUti
    */
   def thingLink(thing:ThingInfo):TypedTag[dom.HTMLAnchorElement] =
     a(href:=thingUrl(thing), thing.displayName)
-}
-
-/**
- * This variant of Gadget is particularly useful when you're not trying to do anything complex, just
- * have a handle to the resulting elem. Usually accessed as Gadget(...).
- */
-class SimpleGadget(guts:scalatags.JsDom.TypedTag[dom.Element]) extends Gadget[dom.Element] {
-  def doRender() = guts
-}
-
-object Gadget {
-  /**
-   * Create a SimpleGadget from the given Scalatags. This is typically enough when all you need is
-   * to get at the resulting DOM element.
-   */
-  def apply(guts:scalatags.JsDom.TypedTag[dom.Element]) = new SimpleGadget(guts)
-}
-
-// TODO: this really shouldn't be an InputGadget conceptually, but we need that for the hooking:
-class HookGadget(onHook:dom.Element => Unit)(implicit e:Ecology) extends InputGadget[dom.Element](e) {
-  def hook() = { onHook(elem) }
-  
-  // These should never be directly rendered:
-  def doRender() = ???
-  def values = ???
 }

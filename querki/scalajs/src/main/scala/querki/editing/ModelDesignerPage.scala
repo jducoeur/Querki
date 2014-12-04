@@ -118,13 +118,21 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
 }
 
-import querki.display.{Gadget, WrapperDiv}
+import querki.display.{Gadget, MetaGadget, WrapperDiv}
 
-class AfterLoading[T, Output <: dom.Element](fut:Future[T])(guts:scalatags.JsDom.TypedTag[Output]) extends Gadget[dom.HTMLDivElement] {
+class AfterLoading[T, Output <: dom.Element](fut:Future[T])(guts:T => scalatags.JsDom.TypedTag[Output]) extends MetaGadget[dom.HTMLDivElement] {
   // TODO: once we upgrade to Bootstrap 3, we should switch to FontAwesome and use the spinners in that:
   lazy val wrapper = (new WrapperDiv).initialContent("Loading...")
   
-  def doRender() = div(wrapper)
+  def doRender() = wrapper
+  
+  fut.map { result =>
+    val finalTag = guts(result)
+    wrapper.replaceContents(finalTag.render)
+  }
+}
+object AfterLoading {
+  def apply[T, Output <: dom.Element](fut:Future[T])(guts:T => scalatags.JsDom.TypedTag[Output]) = new AfterLoading(fut)(guts)
 }
 
 /**
@@ -184,7 +192,9 @@ class AddPropertyGadget(implicit val ecology:Ecology) extends Gadget[dom.HTMLDiv
         p(i(cls:="fa fa-spinner fa-spin"), """Choose a property from this list of existing properties, or press "Create a New Property" to do something different."""),
         div(cls:="span4",
           p(cls:="offset1",
-            i(cls:="fa fa-spinner fa-spin")
+            AfterLoading(allPropsFut) { spaceProps =>
+              p(s"Props for ${spaceProps.spaceName} will go here")
+            }
           )
         )
       )
