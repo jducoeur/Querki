@@ -121,12 +121,26 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
 import querki.data.{PropInfo, SpaceProps, ThingInfo}
 import querki.display.{Gadget, AfterLoading, WrapperDiv}
 
+object ButtonKind extends Enumeration {
+  type ButtonKind = Value
+  
+  val Normal, Info, Primary = Value
+}
+import ButtonKind._
+
 /**
  * A simple Gadget that encapsulates the notion of a Button that does something when clicked. Almost
  * trivial, but this saves some boilerplate.
  */
-class ButtonGadget(mods:Modifier*)(onClick: => Unit) extends Gadget[dom.HTMLAnchorElement] {
-  def doRender() = a(cls:="btn btn-info", mods)
+class ButtonGadget(kind:ButtonKind, mods:Modifier*)(onClick: => Unit) extends Gadget[dom.HTMLAnchorElement] {
+  def doRender() = {
+    val kindStr = kind match {
+      case Normal => ""
+      case Info => "btn-info"
+      case Primary => "btn-primary"
+    }
+    a(cls:=s"btn $kindStr", mods)
+  }
   
   override def onCreate(e:dom.HTMLAnchorElement) = {
     $(elem).click({ evt:JQueryEventObject =>
@@ -166,9 +180,11 @@ class AddPropertyGadget(thing:ThingInfo)(implicit val ecology:Ecology) extends G
   
   lazy val mainDiv = (new WrapperDiv).initialContent(initButton)
   
-  lazy val initButton:ButtonGadget = new ButtonGadget(icon("plus"), " Add a Property")({
+  lazy val initButton:ButtonGadget = new ButtonGadget(ButtonKind.Info, icon("plus"), " Add a Property")({
     mainDiv.replaceContents(addExisting.render)
   })
+  
+  lazy val propDesc = (new WrapperDiv).initialContent(raw("&nbsp;"))
   
   // Note that we pro-actively begin loading this immediately. It's one of the more common operations for the
   // Model Designer, and we want quick response.
@@ -200,7 +216,7 @@ class AddPropertyGadget(thing:ThingInfo)(implicit val ecology:Ecology) extends G
     }
     
     def doRender() =
-      div(cls:="well container",
+      div(cls:="well container span12",
         p(i(cls:="fa fa-spinner fa-spin"), """Choose a property from this list of existing properties, or press "Create a New Property" to do something different."""),
         div(cls:="span4",
           p(cls:="offset1",
@@ -217,8 +233,15 @@ class AddPropertyGadget(thing:ThingInfo)(implicit val ecology:Ecology) extends G
                 }
               )
             }
-          )
-        )
+          ),
+          p(cls:="offset1",
+            new ButtonGadget(Info, "Add")({}),
+            new ButtonGadget(Normal, "Cancel")({})
+          ),
+          hr,
+          p(new ButtonGadget(Info, "Create a new Property instead")({}))
+        ),
+        div(cls:="span7", propDesc)
       )
   }
   
