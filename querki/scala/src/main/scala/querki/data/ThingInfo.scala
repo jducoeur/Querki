@@ -48,3 +48,17 @@ case class PropValInfo(
   renderedV:Wikitext,
   tooltip:Option[Wikitext]
 )
+
+case class PropInfo(
+  name:String,
+  oid:String,
+  appliesTo:Option[Kind.Kind]
+)
+
+case class SpaceProps(
+  spaceName:String,
+  spaceOid:String,
+  standardProps:Seq[PropInfo],
+  advancedProps:Seq[PropInfo],
+  apps:Seq[SpaceProps]
+)

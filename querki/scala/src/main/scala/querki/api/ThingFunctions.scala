@@ -2,7 +2,7 @@ package querki.api
 
 import scala.concurrent.Future
 
-import models.{DisplayText, Wikitext}
+import models.{DisplayText, Kind, Wikitext}
 import querki.data._
 import querki.pages.ThingPageDetails
 
@@ -34,6 +34,11 @@ trait ThingFunctions {
    * Fetch the raw values of the Properties on this Thing.
    */
   def getProperties(thingId:String):Seq[PropValInfo]
+  
+  /**
+   * Fetch all of the Properties available to this Space.
+   */
+  def getAllProperties():SpaceProps
   
   /**
    * Delete the specified Thing.

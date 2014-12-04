@@ -4,22 +4,25 @@ import scala.concurrent.{Future, Promise}
 
 import akka.actor._
 
-import models.{DisplayText, Thing, ThingId, Wikitext}
+import models.{DisplayText, Kind, Thing, ThingId, Wikitext}
 
 import querki.globals._
 
 import querki.api.ThingFunctions
 import querki.core.QLText
-import querki.data.{PropValInfo, RequestInfo, ThingInfo}
+import querki.data.{PropInfo, PropValInfo, RequestInfo, SpaceProps, ThingInfo}
 import querki.pages.ThingPageDetails
 import querki.spaces.messages.{DeleteThing, ThingFound, ThingError}
 import querki.util.Requester
 
 trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions { self:Actor with Requester =>
   
+  def Basic:querki.basic.Basic
   def ClientApi:querki.api.ClientApi
+  def Core:querki.core.Core
   lazy val HtmlUI = interface[querki.html.HtmlUI]
   def QL:querki.ql.QL
+  def SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   
   def getRequestInfo():RequestInfo = ClientApi.requestInfo(rc)
   
@@ -55,6 +58,35 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions { self:Actor
   
   def getProperties(thingId:String):Seq[PropValInfo] = withThing(thingId) { thing =>
     ClientApi.propValInfo(thing, rc)
+  }
+  
+  def getAllProperties():SpaceProps = {
+    // We dive recursively up the app tree to construct the SpaceProps:
+    def getPropsForSpace(space:SpaceState):SpaceProps = {
+      implicit val s = space
+      
+      // We want a given Prop iff it is the right Kind, and is neither Internal nor SystemOnly:
+      def filterProps(props:Seq[AnyProp]):Seq[PropInfo] = {
+        val filtered = for {
+          prop <- props
+          if (!prop.ifSet(Core.InternalProp))
+          if (!prop.ifSet(Basic.SystemOnlyProp))
+        }
+          yield prop
+          
+        filtered.map(prop => PropInfo(prop.displayName, prop.id.toThingId, prop.getPropOpt(Core.AppliesToKindProp).flatMap(_.firstOpt)))
+      }
+      
+      SpaceProps(
+        space.displayName,
+        space.id.toThingId,
+        filterProps(SkillLevel.standardProps),
+        filterProps(SkillLevel.advancedProps),
+        space.app.map(app => Seq(getPropsForSpace(app))).getOrElse(Seq.empty)
+      )
+    }
+    
+    getPropsForSpace(state)
   }
   
   /**

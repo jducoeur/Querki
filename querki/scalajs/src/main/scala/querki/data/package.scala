@@ -39,6 +39,11 @@ package object data {
     def getThing(thingId:String):Future[ThingInfo]
     
     /**
+     * Fetch all of the Properties in this Space. Mainly intended for editing.
+     */
+    def getAllProps():Future[SpaceProps]
+    
+    /**
      * Convenience function to get the "userName" part of a typical path. Should only be used if
      * you know that the space exists!
      */

@@ -107,7 +107,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
                 |want to edit it for each Instance, or out if you don't. The order of the Properties here will be
                 |the order they show up in the Instance Editor.""".stripMargin),
           makeInstancePropSection(sortedInstanceProps, fullEditInfo.instancePropPath),
-          querkiButton("Add a Property"),
+          new AddPropertyGadget,
           h3(cls:="_defaultTitle", "Model Properties"),
           p(cls:="_smallSubtitle", "These Properties are the same for all Instances of this Model"),
           new PropertySection("modelProps", modelProps)
@@ -116,4 +116,83 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       yield PageContents(s"Designing Model ${model.displayName}", guts)
   }
   
+}
+
+import querki.display.{Gadget, WrapperDiv}
+
+class AfterLoading[T, Output <: dom.Element](fut:Future[T])(guts:scalatags.JsDom.TypedTag[Output]) extends Gadget[dom.HTMLDivElement] {
+  // TODO: once we upgrade to Bootstrap 3, we should switch to FontAwesome and use the spinners in that:
+  lazy val wrapper = (new WrapperDiv).initialContent("Loading...")
+  
+  def doRender() = div(wrapper)
+}
+
+/**
+ * A simple Gadget that encapsulates the notion of a Button that does something when clicked. Almost
+ * trivial, but this saves some boilerplate.
+ */
+class ButtonGadget(mods:Modifier*)(onClick: => Unit) extends Gadget[dom.HTMLAnchorElement] {
+  def doRender() = a(cls:="btn btn-info", mods)
+  
+  override def onCreate(e:dom.HTMLAnchorElement) = {
+    $(elem).click({ evt:JQueryEventObject =>
+      onClick
+    })
+  }
+}
+
+/*
+          <div id="_addExistingPropertyBox">
+            <p>Choose a property from this list of existing properties, or press "Create a New Property" to do something different.</p>
+            <div class="span4">
+              <p class="offset1">
+                <select id="_propChooser" data-placeholder="Choose a Property...">
+                  <option value="">Choose a Property...</option>
+                  @propsInSpace(space)
+                </select>
+              </p>
+              <p class="offset1">
+                <input type="button" value="Add" id="_addExistingPropertyButton" class="btn btn-info">
+                <input type="button" value="Cancel" id="_cancelAddPropertyButton" class="btn">
+              </p>
+              <hr/>
+              <p><input type="button" value="Create a New Property instead" id="_createPropertyButton" class="btn btn-info"></p>
+            </div>
+            <div class="span7">
+              <p id="_propInfo">&nbsp;</p>
+            </div>
+          </div>
+ */
+
+class AddPropertyGadget(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+  
+  lazy val DataAccess = interface[querki.data.DataAccess]
+  
+  lazy val mainDiv = (new WrapperDiv).initialContent(initButton)
+  
+  lazy val initButton:ButtonGadget = new ButtonGadget(icon("plus"), " Add a Property")({
+    mainDiv.replaceContents(addExisting.render)
+  })
+  
+  // Note that we pro-actively begin loading this immediately. It's one of the more common operations for the
+  // Model Designer, and we want quick response.
+  val allPropsFut = DataAccess.getAllProps()
+  
+  class AddExistingPropertyGadget extends Gadget[dom.HTMLDivElement] {
+    def doRender() =
+      div(cls:="well container",
+        p(i(cls:="fa fa-spinner fa-spin"), """Choose a property from this list of existing properties, or press "Create a New Property" to do something different."""),
+        div(cls:="span4",
+          p(cls:="offset1",
+            i(cls:="fa fa-spinner fa-spin")
+          )
+        )
+      )
+  }
+  
+  lazy val addExisting = new AddExistingPropertyGadget
+  
+  def doRender() = {
+    div(mainDiv)
+  }
 }

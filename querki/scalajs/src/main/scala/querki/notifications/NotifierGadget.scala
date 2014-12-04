@@ -7,7 +7,7 @@ import rx.ops._
 
 import querki.globals._
 
-import querki.display.{Gadget, ManagedFrag, RxTextFrag}
+import querki.display.{Gadget, RxTextFrag}
 
 class NotifierGadget(implicit val ecology:Ecology) extends Gadget[dom.HTMLAnchorElement] with EcologyMember {
   
