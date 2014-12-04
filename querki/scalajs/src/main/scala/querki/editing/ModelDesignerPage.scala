@@ -107,7 +107,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
                 |want to edit it for each Instance, or out if you don't. The order of the Properties here will be
                 |the order they show up in the Instance Editor.""".stripMargin),
           makeInstancePropSection(sortedInstanceProps, fullEditInfo.instancePropPath),
-          new AddPropertyGadget,
+          new AddPropertyGadget(model),
           h3(cls:="_defaultTitle", "Model Properties"),
           p(cls:="_smallSubtitle", "These Properties are the same for all Instances of this Model"),
           new PropertySection("modelProps", modelProps)
@@ -118,7 +118,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
 }
 
-import querki.data.SpaceProps
+import querki.data.{PropInfo, SpaceProps, ThingInfo}
 import querki.display.{Gadget, AfterLoading, WrapperDiv}
 
 /**
@@ -158,7 +158,9 @@ class ButtonGadget(mods:Modifier*)(onClick: => Unit) extends Gadget[dom.HTMLAnch
           </div>
  */
 
-class AddPropertyGadget(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+class AddPropertyGadget(thing:ThingInfo)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+  
+  val optLabel = "label".attr
   
   lazy val DataAccess = interface[querki.data.DataAccess]
   
@@ -174,8 +176,27 @@ class AddPropertyGadget(implicit val ecology:Ecology) extends Gadget[dom.HTMLDiv
   
   class AddExistingPropertyGadget extends Gadget[dom.HTMLDivElement] {
     
-    def processProps(spaceProps:SpaceProps):Modifier = {
+    // The SpaceProps are actually a tree: each level contains this Space's Properties, and the
+    // SpaceProps for its Apps. So we do a recursive dive to build our options:
+    def processProps(spaceProps:SpaceProps):Seq[Modifier] = {
       
+      def processPropSection(prefix:String, allProps:Seq[PropInfo]):Option[Modifier] = {
+        // Filter out Properties that don't apply to this Thing:
+        val props = allProps.filter(_.appliesTo.map(_ == thing.kind).getOrElse(true)).sortBy(_.name)
+        
+        if (props.isEmpty)
+          None
+        else
+          Some(optgroup(optLabel:=s"$prefix Properties in ${spaceProps.spaceName}",
+            props.map { prop => option(value:=prop.oid, prop.name) }
+          ))
+      }
+    
+      MSeq(
+        processPropSection("", spaceProps.standardProps),
+        processPropSection("Advanced ", spaceProps.advancedProps),
+        spaceProps.apps.flatMap(processProps(_))
+      )
     }
     
     def doRender() =
@@ -186,7 +207,7 @@ class AddPropertyGadget(implicit val ecology:Ecology) extends Gadget[dom.HTMLDiv
             AfterLoading(allPropsFut) { spaceProps =>
               Gadget(
                 select(
-                  option("a"), option("b"), option("c")
+                  processProps(spaceProps)
                 ),
                 { e =>
                   $(e).change({ evt:JQueryEventObject =>
