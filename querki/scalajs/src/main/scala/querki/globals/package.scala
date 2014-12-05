@@ -65,6 +65,14 @@ package object globals {
   }
   implicit def jq2Ext(jq:JQuery):JQExt = jq.asInstanceOf[JQExt]
   
+  /**
+   * These are genuine extensions to jQuery -- useful higher-level functions, which mostly tighten up the types.
+   */
+  implicit class jqExt2(jq:JQuery) {
+    // The value of this Element; use this when it can only make sense as a String in context:
+    def valueString = jq.value().asInstanceOf[String]
+  }
+  
   // These are improved signatures that can't simply be implicit, because they conflict with existing ones in the
   // jQuery facade.
   class JQFixes extends js.Object {
@@ -76,5 +84,19 @@ package object globals {
     // Note that jqf turns the jq *into* a jqf, rather than extending it, so that we can get around inference
     // problems:
     def jqf = jq.asInstanceOf[JQFixes]
+  }
+  
+  /**
+   * A quick-and-dirty temp wrapper to inject heavy spewage around some code while debugging.
+   */
+  def spewing[T](msg:String)(f: => T):T = {
+    println(s"Trying $msg")
+    try {
+      val result = f
+      println(s"  $msg succeeded")
+      result
+    } catch {
+      case ex:Exception => { println(s"  $msg failed: $ex"); ex.printStackTrace(); throw ex }
+    }
   }
 }

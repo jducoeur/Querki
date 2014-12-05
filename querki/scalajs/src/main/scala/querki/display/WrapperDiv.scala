@@ -8,6 +8,8 @@ import querki.globals._
 /**
  * A higher-level view of WrapperDiv, to encapsulate the common pattern "show a spinner until the given Future
  * pans out, then process the results and replace the display".
+ * 
+ * DEPRECATED: this should be replaced with RxDiv more or less everywhere.
  */
 class AfterLoading[T, Output <: dom.Element](fut:Future[T])(guts:T => Gadget[Output]) extends MetaGadget[dom.HTMLDivElement] {
   // TODO: once we upgrade to Bootstrap 3, we should switch to FontAwesome and use the spinners in that:
@@ -29,6 +31,8 @@ object AfterLoading {
  * content of the div easily.
  * 
  * Note that AfterLoading encapsulates the combination of WrapperDiv with a Future.
+ * 
+ * DEPRECATED: this should be replaced with RxDiv more or less everywhere.
  */
 class WrapperDiv extends Gadget[dom.HTMLDivElement] {
   

@@ -6,9 +6,7 @@ import org.scalajs.jquery._
 import org.scalajs.jqueryui._
 import scalatags.JsDom.all._
 import autowire._
-
 import querki.globals._
-
 import querki.api.EditFunctions
 import EditFunctions._
 import querki.data.ThingInfo
@@ -123,9 +121,11 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
 }
 
 import rx._
+import rx.ops._
 import querki.api.ThingFunctions
 import querki.data.{PropInfo, SpaceProps, ThingInfo}
-import querki.display.{AfterLoading, Gadget, QText, RxAttr, WrapperDiv}
+import querki.display.{AfterLoading, Gadget, QText, WrapperDiv}
+import querki.display.rx.{RxAttr, RxDiv, RxSelect}
 
 object ButtonKind extends Enumeration {
   type ButtonKind = Value
@@ -168,16 +168,45 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     mainDiv.replaceContents(addExisting.render)
   })
   
-  lazy val propDesc = (new WrapperDiv).initialContent(raw("&nbsp;"))
-  
   // Note that we pro-actively begin loading this immediately. It's one of the more common operations for the
   // Model Designer, and we want quick response.
   val allPropsFut = DataAccess.getAllProps()
   val stdInfoFut = DataAccess.standardInfo
   
-  class AddExistingPropertyGadget extends Gadget[dom.HTMLDivElement] {
+  class AddExistingPropertyGadget(mainSpaceProps:SpaceProps) extends Gadget[dom.HTMLDivElement] {
     
-    val selectedProperty = Var[Option[String]](None)
+    lazy val propSelector = 
+      new RxSelect(
+        option("Choose a Property...", value:=""),
+        processProps(mainSpaceProps)        
+      )
+    
+    lazy val selectedProperty = propSelector.selectedValOpt
+    
+    lazy val emptyDescription = span(raw("&nbsp;"))
+    lazy val selectedPropertyDescriptionFut:Rx[Future[Gadget[dom.Element]]] = Rx {
+      selectedProperty() match {
+        case Some(propId) => {
+          for {
+            stdInfo <- stdInfoFut
+            summaryOpt <- Client[ThingFunctions].getPropertyDisplay(propId, stdInfo.summaryPropId).call()
+            detailsOpt <- Client[ThingFunctions].getPropertyDisplay(propId, stdInfo.detailsPropId).call()
+          }
+            yield
+              // ... build the display of the Property info...
+              div(
+                b(propSelector.selectedText()),
+                summaryOpt.map(summary => i(new QText(summary))),
+                detailsOpt.map(details => new QText(details))
+              )
+        }
+        
+        case None => Future.successful(emptyDescription)
+      }
+    }
+    lazy val selectedPropertyDescription = selectedPropertyDescriptionFut.async(emptyDescription)
+    
+    lazy val propertyDescriptionDiv = RxDiv(Rx {Seq(selectedPropertyDescription())} )
 
     // The add button is only enabled when the selection is non-empty; when pressed, it tells the parent
     // page to add the Property:
@@ -208,46 +237,12 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
       )
     }
     
-    def doRender() =
-      div(cls:="well container span12",
+    def doRender() = {
+      val result = div(cls:="well container span12",
         p(i(cls:="fa fa-spinner fa-spin"), """Choose a property from this list of existing properties, or press "Create a New Property" to do something different."""),
         div(cls:="span4",
           p(cls:="offset1",
-            AfterLoading(allPropsFut) { spaceProps =>
-              Gadget(
-                // The actual select of which Property you want
-                select(
-                  processProps(spaceProps)
-                ),
-                // When the user selects a Property...
-                { e =>
-                  $(e).change({ evt:JQueryEventObject =>
-                    val selected = $(e).find("option:selected")
-                    val propId = selected.value().asInstanceOf[String]
-                    // ... set the Selection (which is a reactive, and things are listening for it)...
-                    selectedProperty() = Some(propId)
-                    // ... fetch the Summary and Details for that Property...
-                    val contentsFut = for {
-                      stdInfo <- stdInfoFut
-                      summaryOpt <- Client[ThingFunctions].getPropertyDisplay(propId, stdInfo.summaryPropId).call()
-                      detailsOpt <- Client[ThingFunctions].getPropertyDisplay(propId, stdInfo.detailsPropId).call()
-                    }
-                      yield
-                        // ... build the display of the Property info...
-                        div(
-                          b(selected.text()),
-                          summaryOpt.map(summary => i(new QText(summary))),
-                          detailsOpt.map(details => new QText(details))
-                        )
-                      
-                    // ... and stuff it into the div that's waiting for it.
-                    contentsFut.map { contents => 
-                      propDesc.replaceContents(contents.render)
-                    }
-                  })
-                }
-              )
-            }
+            propSelector
           ),
           p(cls:="offset1",
             addButton,
@@ -256,11 +251,15 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
           hr,
           p(new ButtonGadget(Info, "Create a new Property instead")({}))
         ),
-        div(cls:="span7", propDesc)
+        div(cls:="span7", propertyDescriptionDiv)
       )
+      result
+    }
   }
   
-  lazy val addExisting = new AddExistingPropertyGadget
+  lazy val addExisting = AfterLoading(allPropsFut) { spaceProps => 
+    new AddExistingPropertyGadget(spaceProps)
+  }
   
   def doRender() = {
     div(mainDiv)

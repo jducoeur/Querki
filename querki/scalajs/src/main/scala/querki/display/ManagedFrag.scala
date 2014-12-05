@@ -56,7 +56,9 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
     val result = createFrag
     setElem(result)
     onCreate(result)
-    result
+    // Note that we intentionally don't return result at this point, in case onCreate()
+    // mutates elem:
+    elem
   }
   
   type AnyNode <: dom.Node
