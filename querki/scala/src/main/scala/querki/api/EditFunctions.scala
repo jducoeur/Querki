@@ -20,7 +20,12 @@ trait EditFunctions {
   /**
    * Fetch the Editors and ancillary information about this Thing.
    */
-  def getThingEditors(thingId:String):FullEditInfo
+  def getPropertyEditors(thingId:String):FullEditInfo
+  
+  /**
+   * Add this Property to this Thing, and return the Editor for it.
+   */
+  def addPropertyAndGetEditor(thingId:String, propId:String):Future[PropEditInfo]
 }
 
 object EditFunctions {

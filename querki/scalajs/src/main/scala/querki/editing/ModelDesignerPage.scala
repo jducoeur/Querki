@@ -43,6 +43,10 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     )
   }
   
+  def addProperty(propId:String) = {
+    println(s"Time to add property $propId")
+  }
+  
   class PropertySection(nam:String, props:Seq[PropEditInfo]) extends InputGadget[dom.HTMLUListElement](ecology) {
     // Note that this is only ever invoked on the Instance Property Section:
     def values = {
@@ -91,7 +95,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     for {
       standardInfo <- DataAccess.standardInfo
       model <- DataAccess.getThing(modelId)
-      fullEditInfo <- Client[EditFunctions].getThingEditors(modelId).call()
+      fullEditInfo <- Client[EditFunctions].getPropertyEditors(modelId).call()
       (instanceProps, modelProps) = fullEditInfo.propInfos.partition(propInfo => fullEditInfo.instancePropIds.contains(propInfo.propId))
       sortedInstanceProps = (Seq.empty[PropEditInfo] /: fullEditInfo.instancePropIds) { (current, propId) =>
         instanceProps.find(_.propId == propId) match {
@@ -107,7 +111,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
                 |want to edit it for each Instance, or out if you don't. The order of the Properties here will be
                 |the order they show up in the Instance Editor.""".stripMargin),
           makeInstancePropSection(sortedInstanceProps, fullEditInfo.instancePropPath),
-          new AddPropertyGadget(model),
+          new AddPropertyGadget(this, model),
           h3(cls:="_defaultTitle", "Model Properties"),
           p(cls:="_smallSubtitle", "These Properties are the same for all Instances of this Model"),
           new PropertySection("modelProps", modelProps)
@@ -118,9 +122,10 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
 }
 
+import rx._
 import querki.api.ThingFunctions
 import querki.data.{PropInfo, SpaceProps, ThingInfo}
-import querki.display.{AfterLoading, Gadget, QText, WrapperDiv}
+import querki.display.{AfterLoading, Gadget, QText, RxAttr, WrapperDiv}
 
 object ButtonKind extends Enumeration {
   type ButtonKind = Value
@@ -150,7 +155,7 @@ class ButtonGadget(kind:ButtonKind, mods:Modifier*)(onClick: => Unit) extends Ga
   }
 }
 
-class AddPropertyGadget(thing:ThingInfo)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
   
   val optLabel = "label".attr
   
@@ -172,7 +177,13 @@ class AddPropertyGadget(thing:ThingInfo)(implicit val ecology:Ecology) extends G
   
   class AddExistingPropertyGadget extends Gadget[dom.HTMLDivElement] {
     
-    lazy val addButton = new ButtonGadget(Info, disabled:=true, "Add")({})
+    val selectedProperty = Var[Option[String]](None)
+
+    // The add button is only enabled when the selection is non-empty; when pressed, it tells the parent
+    // page to add the Property:
+    lazy val addButton = new ButtonGadget(Info, RxAttr("disabled", Rx{ selectedProperty().isEmpty }), "Add")({
+      page.addProperty(selectedProperty().get)
+    })
     
     // The SpaceProps are actually a tree: each level contains this Space's Properties, and the
     // SpaceProps for its Apps. So we do a recursive dive to build our options:
@@ -213,6 +224,8 @@ class AddPropertyGadget(thing:ThingInfo)(implicit val ecology:Ecology) extends G
                   $(e).change({ evt:JQueryEventObject =>
                     val selected = $(e).find("option:selected")
                     val propId = selected.value().asInstanceOf[String]
+                    // ... set the Selection (which is a reactive, and things are listening for it)...
+                    selectedProperty() = Some(propId)
                     // ... fetch the Summary and Details for that Property...
                     val contentsFut = for {
                       stdInfo <- stdInfoFut
@@ -230,7 +243,6 @@ class AddPropertyGadget(thing:ThingInfo)(implicit val ecology:Ecology) extends G
                     // ... and stuff it into the div that's waiting for it.
                     contentsFut.map { contents => 
                       propDesc.replaceContents(contents.render)
-                      $(addButton.elem).attr("disabled", false)
                     }
                   })
                 }

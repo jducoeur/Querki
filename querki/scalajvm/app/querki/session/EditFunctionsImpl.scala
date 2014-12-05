@@ -174,25 +174,30 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
     promise.future
   }
   
-  def getThingEditors(thingId:String):FullEditInfo = withThing(thingId) { thing =>
+  private def getOnePropEditor(thing:Thing, prop:AnyProp, propVal:DisplayPropVal):PropEditInfo = {
+    implicit val s = state
+    val context = thing.thisAsContext(rc)
+    val rendered = HtmlRenderer.renderPropertyInputStr(context, prop, propVal)
+    PropEditInfo(
+      prop.id.toThingId,
+      prop.displayName,
+      propVal.inputControlId,
+      prop.getPropOpt(Editor.PromptProp).filter(!_.isEmpty).map(_.renderPlain),
+      prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc))),
+      propVal.inheritedFrom.map(_.displayName),
+      rendered
+      )
+  }
+  
+  def getPropertyEditors(thingId:String):FullEditInfo = withThing(thingId) { thing =>
     implicit val s = state
     val model = thing.getModel
     val props = PropListManager.from(thing)
     val propList = PropListManager.prepPropList(props, Some(thing), model, state)
-    val context = thing.thisAsContext(rc)
     
     val propInfos = propList.filter(_._1.id != querki.editing.MOIDs.InstanceEditPropsOID).map { entry =>
       val (prop, propVal) = entry
-      val rendered = HtmlRenderer.renderPropertyInputStr(context, prop, propVal)
-      PropEditInfo(
-        prop.id.toThingId,
-        prop.displayName,
-        propVal.inputControlId,
-        prop.getPropOpt(Editor.PromptProp).filter(!_.isEmpty).map(_.renderPlain),
-        prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc))),
-        propVal.inheritedFrom.map(_.displayName),
-        rendered
-      )
+      getOnePropEditor(thing, prop, propVal)
     }
     
     val instanceProps = for {
@@ -205,5 +210,35 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
     val instancePropsPath = new FieldIds(Some(thing), Editor.InstanceProps).inputControlId
     
     FullEditInfo(instanceProps.getOrElse(Seq.empty), instancePropsPath, propInfos)
+  }
+  
+  def addPropertyAndGetEditor(thingId:String, propIdStr:String):Future[PropEditInfo] = withThing(thingId) { thing =>
+    val promise = Promise[PropEditInfo]
+    
+    implicit val s = state
+    val propId = ThingId(propIdStr)
+    val propsOpt = for {
+      prop <- state.prop(propId)
+      newV = prop.default
+    }
+      yield Core.toProps((prop, newV))()  
+
+    self.request(createRequest(ChangeProps2(thing.toThingId, propsOpt.get))) {
+      case ThingFound(id, newState) => {
+        val result = for {
+          newThing <- newState.anything(id)
+          prop <- newState.prop(propId)
+          pv <- newThing.getPropOpt(prop)
+          propVal = DisplayPropVal(Some(newThing), prop, Some(pv.v))
+        }
+          yield getOnePropEditor(newThing, prop, propVal)
+          
+        promise.success(result.get)
+      }
+      
+      case ThingError(ex, _) => promise.failure(ex)
+    }
+    
+    promise.future    
   }
 }
