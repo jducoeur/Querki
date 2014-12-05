@@ -150,29 +150,6 @@ class ButtonGadget(kind:ButtonKind, mods:Modifier*)(onClick: => Unit) extends Ga
   }
 }
 
-/*
-          <div id="_addExistingPropertyBox">
-            <p>Choose a property from this list of existing properties, or press "Create a New Property" to do something different.</p>
-            <div class="span4">
-              <p class="offset1">
-                <select id="_propChooser" data-placeholder="Choose a Property...">
-                  <option value="">Choose a Property...</option>
-                  @propsInSpace(space)
-                </select>
-              </p>
-              <p class="offset1">
-                <input type="button" value="Add" id="_addExistingPropertyButton" class="btn btn-info">
-                <input type="button" value="Cancel" id="_cancelAddPropertyButton" class="btn">
-              </p>
-              <hr/>
-              <p><input type="button" value="Create a New Property instead" id="_createPropertyButton" class="btn btn-info"></p>
-            </div>
-            <div class="span7">
-              <p id="_propInfo">&nbsp;</p>
-            </div>
-          </div>
- */
-
 class AddPropertyGadget(thing:ThingInfo)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
   
   val optLabel = "label".attr
@@ -194,6 +171,8 @@ class AddPropertyGadget(thing:ThingInfo)(implicit val ecology:Ecology) extends G
   val stdInfoFut = DataAccess.standardInfo
   
   class AddExistingPropertyGadget extends Gadget[dom.HTMLDivElement] {
+    
+    lazy val addButton = new ButtonGadget(Info, disabled:=true, "Add")({})
     
     // The SpaceProps are actually a tree: each level contains this Space's Properties, and the
     // SpaceProps for its Apps. So we do a recursive dive to build our options:
@@ -249,14 +228,17 @@ class AddPropertyGadget(thing:ThingInfo)(implicit val ecology:Ecology) extends G
                         )
                       
                     // ... and stuff it into the div that's waiting for it.
-                    contentsFut.map(contents => propDesc.replaceContents(contents.render))
+                    contentsFut.map { contents => 
+                      propDesc.replaceContents(contents.render)
+                      $(addButton.elem).attr("disabled", false)
+                    }
                   })
                 }
               )
             }
           ),
           p(cls:="offset1",
-            new ButtonGadget(Info, disabled:=true, "Add")({}),
+            addButton,
             new ButtonGadget(Normal, "Cancel")({})
           ),
           hr,
