@@ -65,11 +65,14 @@ class WrapperDiv extends Gadget[dom.HTMLDivElement] {
     case None => div(modifiers ++ initial)
   } 
 
-  def replaceContents(newContent:dom.Element) = {
+  def replaceContents(newContent:dom.Element, retainExisting:Boolean = false) = {
     contentsOpt = Some(newContent)
     _elem match {
       case Some(elem) => {
-        $(elem).empty
+        if (retainExisting)
+          $(elem).children().detach
+        else
+          $(elem).empty
         $(elem).append(newContent)
         $(elem).change()
         this

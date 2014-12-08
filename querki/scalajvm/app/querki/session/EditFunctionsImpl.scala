@@ -174,16 +174,16 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
     promise.future
   }
   
-  private def getOnePropEditor(thing:Thing, prop:AnyProp, propVal:DisplayPropVal):PropEditInfo = {
+  private def getOnePropEditor(theRc:RequestContext, thing:Thing, prop:AnyProp, propVal:DisplayPropVal):PropEditInfo = {
     implicit val s = state
-    val context = thing.thisAsContext(rc)
+    val context = thing.thisAsContext(theRc)
     val rendered = HtmlRenderer.renderPropertyInputStr(context, prop, propVal)
     PropEditInfo(
       prop.id.toThingId,
       prop.displayName,
       propVal.inputControlId,
       prop.getPropOpt(Editor.PromptProp).filter(!_.isEmpty).map(_.renderPlain),
-      prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc))),
+      prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(theRc))),
       propVal.inheritedFrom.map(_.displayName),
       rendered
       )
@@ -197,7 +197,7 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
     
     val propInfos = propList.filter(_._1.id != querki.editing.MOIDs.InstanceEditPropsOID).map { entry =>
       val (prop, propVal) = entry
-      getOnePropEditor(thing, prop, propVal)
+      getOnePropEditor(rc, thing, prop, propVal)
     }
     
     val instanceProps = for {
@@ -223,6 +223,7 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
     }
       yield Core.toProps((prop, newV))()  
 
+    val theRc = rc
     self.request(createRequest(ChangeProps2(thing.toThingId, propsOpt.get))) {
       case ThingFound(id, newState) => {
         val result = for {
@@ -231,7 +232,7 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
           pv <- newThing.getPropOpt(prop)
           propVal = DisplayPropVal(Some(newThing), prop, Some(pv.v))
         }
-          yield getOnePropEditor(newThing, prop, propVal)
+          yield getOnePropEditor(theRc, newThing, prop, propVal)
           
         promise.success(result.get)
       }

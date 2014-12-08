@@ -20,6 +20,12 @@ trait ScalatagUtils {
   def MSeq(xs:Modifier*) = Vector[Modifier](xs)
   
   /**
+   * Utility function; this is often useful for wrapping complex expressions that produce Frags, which
+   * often otherwise don't trigger the implicits properly. Often needed around if statements, in particular.
+   */
+  def FSeq(xs:Frag*) = Vector[Frag](xs)  
+  
+  /**
    * Convenience function for composing classes in Gadgets and functions.
    */
   def classes(cs:Seq[String]) = cls:=cs.mkString(" ")

@@ -6,7 +6,11 @@ import org.scalajs.jquery._
 import org.scalajs.jqueryui._
 import scalatags.JsDom.all._
 import autowire._
+import rx._
+import rx.ops._
+
 import querki.globals._
+
 import querki.api.EditFunctions
 import EditFunctions._
 import querki.data.ThingInfo
@@ -28,7 +32,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     Gadgets.registerHook("input[type='text']") { elem => $(elem).filter(".propEditor").addClass("span10") }    
   }
   
-  def makeEditor(info:PropEditInfo):Modifier = {
+  def makeEditor(info:PropEditInfo):scalatags.JsDom.TypedTag[dom.HTMLLIElement] = {
     val prompt = info.prompt.map(_.raw.toString).getOrElse(info.displayName)
     // TODO: there is a nasty bug here. The tooltip should be normally wiki-processed,
     // but there is no way to use raw() on an attribute value. So we instead are displaying
@@ -42,10 +46,20 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   }
   
   def addProperty(propId:String) = {
-    println(s"Time to add property $propId")
+    Client[EditFunctions].addPropertyAndGetEditor(modelId, propId).call().foreach { editInfo =>
+      // TODO: introduce the concept of Properties that are mainly for Models; if that is
+      // set, put it in the Model section instead:
+      instancePropSection().appendEditor(editInfo)
+    }
   }
   
   class PropertySection(nam:String, props:Seq[PropEditInfo]) extends InputGadget[dom.HTMLUListElement](ecology) {
+    
+    /**
+     * The Properties currently in this section. Note that this is a var so that more props can be added.
+     */
+    val propIds = Var(props.map(_.propId).toSet)
+    
     // Note that this is only ever invoked on the Instance Property Section:
     def values = {
       $(elem).children("li").map({ propElem:dom.Element =>
@@ -54,7 +68,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     }
   
     // Note that this is only ever invoked on the Instance Property Section:
-    def onMoved(item:JQuery) = {
+    def onMoved() = {
       save()
     }
     
@@ -67,9 +81,16 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
           val item = ui.item.get
           // IMPORTANT: note that we save the Instance Props whenever there is a drop, but this
           // stop event may be coming from Model Props if the user has dragged across the boundary.
-          instancePropSection.onMoved(item)
+          instancePropSection().onMoved()
         }:js.Function2[JQueryEventObject, SortChangeUI, Any]
       ))
+    }
+    
+    def appendEditor(editInfo:PropEditInfo) = {
+      val editor = makeEditor(editInfo)
+      $(elem).append(editor.render)
+      propIds() += editInfo.propId
+      onMoved()
     }
     
     def doRender() = 
@@ -82,12 +103,16 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       )
   }
   
-  var _instancePropSection:Option[PropertySection] = None
-  def makeInstancePropSection(sortedInstanceProps:Seq[PropEditInfo], path:String) = {
-    _instancePropSection = Some(new PropertySection(path, sortedInstanceProps))
-    _instancePropSection
+  class PropSectionHolder {
+    var _propSection:Option[PropertySection] = None
+    def make(sortedProps:Seq[PropEditInfo], path:String) = {
+      _propSection = Some(new PropertySection(path, sortedProps))
+      _propSection
+    }
+    def apply() = _propSection.get    
   }
-  def instancePropSection = _instancePropSection.get
+  val instancePropSection = new PropSectionHolder
+  val modelPropSection = new PropSectionHolder
 
   def pageContent = {
     for {
@@ -108,11 +133,11 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
               """These are the Properties that can be different for each Instance. Drag a Property into here if you
                 |want to edit it for each Instance, or out if you don't. The order of the Properties here will be
                 |the order they show up in the Instance Editor.""".stripMargin),
-          makeInstancePropSection(sortedInstanceProps, fullEditInfo.instancePropPath),
+          instancePropSection.make(sortedInstanceProps, fullEditInfo.instancePropPath),
           new AddPropertyGadget(this, model),
           h3(cls:="_defaultTitle", "Model Properties"),
           p(cls:="_smallSubtitle", "These Properties are the same for all Instances of this Model"),
-          new PropertySection("modelProps", modelProps)
+          modelPropSection.make(modelProps, "modelProps")
         )
     }
       yield PageContents(s"Designing Model ${model.displayName}", guts)
@@ -120,8 +145,6 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
 }
 
-import rx._
-import rx.ops._
 import querki.api.ThingFunctions
 import querki.data.{PropInfo, SpaceProps, ThingInfo}
 import querki.display.{AfterLoading, Gadget, QText, WrapperDiv}
@@ -165,7 +188,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   lazy val mainDiv = (new WrapperDiv).initialContent(initButton)
   
   lazy val initButton:ButtonGadget = new ButtonGadget(ButtonKind.Info, icon("plus"), " Add a Property")({
-    mainDiv.replaceContents(addExisting.render)
+    mainDiv.replaceContents(addExisting.rendered, true)
   })
   
   // Note that we pro-actively begin loading this immediately. It's one of the more common operations for the
@@ -174,12 +197,50 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   val stdInfoFut = DataAccess.standardInfo
   
   class AddExistingPropertyGadget(mainSpaceProps:SpaceProps) extends Gadget[dom.HTMLDivElement] {
+
+    // The add button is only enabled when the selection is non-empty; when pressed, it tells the parent
+    // page to add the Property:
+    lazy val addButton = new ButtonGadget(Info, RxAttr("disabled", Rx{ selectedProperty().isEmpty }), "Add")({
+      page.addProperty(selectedProperty().get)
+      mainDiv.replaceContents(initButton.rendered, true)
+    })
     
-    lazy val propSelector = 
-      new RxSelect(
-        option("Choose a Property...", value:=""),
-        processProps(mainSpaceProps)        
-      )
+    lazy val propSelector = RxSelect(propOptions)
+    
+    lazy val existingPropIds = Rx { page.instancePropSection().propIds() ++ page.modelPropSection().propIds() }
+    
+    // The currently-valid options to show in the propSelector. Note that this reactively depends on the
+    // properties that already exist.
+    lazy val propOptions = Rx {
+      // The SpaceProps are actually a tree: each level contains this Space's Properties, and the
+	  // SpaceProps for its Apps. So we do a recursive dive to build our options:
+	  def processProps(spaceProps:SpaceProps):Seq[Frag] = {
+	   
+	    def processPropSection(prefix:String, allProps:Seq[PropInfo]):Option[Frag] = {
+	      // Filter out Properties that don't apply to this Thing, or are already in use:
+	      val props = 
+	        allProps.
+	          filter(_.appliesTo.map(_ == thing.kind).getOrElse(true)).
+	          filter(prop => !existingPropIds().contains(prop.oid)).
+	          sortBy(_.name)
+	        
+	      if (props.isEmpty)
+	        None
+	      else
+	        Some(optgroup(optLabel:=s"$prefix Properties in ${spaceProps.spaceName}",
+	          props.map { prop => option(value:=prop.oid, prop.name) }
+	        ))
+	    }
+	    
+	    FSeq(
+	      processPropSection("", spaceProps.standardProps),
+	      processPropSection("Advanced ", spaceProps.advancedProps),
+	      spaceProps.apps.flatMap(processProps(_))
+	    )
+	  }
+	    
+	  option("Choose a Property...", value:="") +: processProps(mainSpaceProps)
+    }
     
     lazy val selectedProperty = propSelector.selectedValOpt
     
@@ -208,34 +269,6 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     
     lazy val propertyDescriptionDiv = RxDiv(Rx {Seq(selectedPropertyDescription())} )
 
-    // The add button is only enabled when the selection is non-empty; when pressed, it tells the parent
-    // page to add the Property:
-    lazy val addButton = new ButtonGadget(Info, RxAttr("disabled", Rx{ selectedProperty().isEmpty }), "Add")({
-      page.addProperty(selectedProperty().get)
-    })
-    
-    // The SpaceProps are actually a tree: each level contains this Space's Properties, and the
-    // SpaceProps for its Apps. So we do a recursive dive to build our options:
-    def processProps(spaceProps:SpaceProps):Seq[Modifier] = {
-      
-      def processPropSection(prefix:String, allProps:Seq[PropInfo]):Option[Modifier] = {
-        // Filter out Properties that don't apply to this Thing:
-        val props = allProps.filter(_.appliesTo.map(_ == thing.kind).getOrElse(true)).sortBy(_.name)
-        
-        if (props.isEmpty)
-          None
-        else
-          Some(optgroup(optLabel:=s"$prefix Properties in ${spaceProps.spaceName}",
-            props.map { prop => option(value:=prop.oid, prop.name) }
-          ))
-      }
-    
-      MSeq(
-        processPropSection("", spaceProps.standardProps),
-        processPropSection("Advanced ", spaceProps.advancedProps),
-        spaceProps.apps.flatMap(processProps(_))
-      )
-    }
     
     def doRender() = {
       val result = div(cls:="well container span12",
