@@ -303,7 +303,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
           ),
           p(cls:="offset1",
             addButton,
-            new ButtonGadget(Normal, "Cancel")({})
+            new ButtonGadget(Normal, "Cancel")({ mainDiv.replaceContents(initButton.rendered, true) })
           ),
           hr,
           p(new ButtonGadget(Info, "Create a new Property instead")({}))
