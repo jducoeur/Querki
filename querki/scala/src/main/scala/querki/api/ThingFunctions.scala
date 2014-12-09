@@ -46,6 +46,11 @@ trait ThingFunctions {
   def getAllProperties():SpaceProps
   
   /**
+   * Fetch all of the Types, Collections and Models available for creating Properties in this Space.
+   */
+  def getAllTypes():AllTypeInfo
+  
+  /**
    * Delete the specified Thing.
    */
   def deleteThing(thingId:String):Future[Unit]

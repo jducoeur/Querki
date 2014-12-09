@@ -4,13 +4,13 @@ import scala.concurrent.{Future, Promise}
 
 import akka.actor._
 
-import models.{DisplayText, Kind, Thing, ThingId, Wikitext}
+import models.{Collection, DisplayText, Kind, PType, Thing, ThingId, Wikitext}
 
 import querki.globals._
 
 import querki.api.ThingFunctions
 import querki.core.QLText
-import querki.data.{PropInfo, PropValInfo, RequestInfo, SpaceProps, ThingInfo}
+import querki.data._
 import querki.pages.ThingPageDetails
 import querki.spaces.messages.{DeleteThing, ThingFound, ThingError}
 import querki.util.Requester
@@ -20,6 +20,7 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions { self:Actor
   def Basic:querki.basic.Basic
   def ClientApi:querki.api.ClientApi
   def Core:querki.core.Core
+  def Editor:querki.editing.Editor
   lazy val HtmlUI = interface[querki.html.HtmlUI]
   def QL:querki.ql.QL
   def SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
@@ -99,6 +100,30 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions { self:Actor
     }
     
     getPropsForSpace(state)
+  }
+  
+  def getAllTypes():AllTypeInfo = {
+    def getTypesForSpace(space:SpaceState):Iterable[PType[_]] = {
+      implicit val s = space
+      
+      val spaceTypes = space.allTypes.values.
+        filterNot(_.ifSet(Core.InternalProp)).
+        filterNot(_.ifSet(Basic.DeprecatedProp)).
+        filterNot(typ => typ.isInstanceOf[querki.types.ModelTypeBase] && !typ.ifSet(Basic.ExplicitProp))
+
+      spaceTypes ++ space.app.map(app => getTypesForSpace(app)).getOrElse(Seq.empty)
+    }
+    
+    def toCollectionInfo(coll:Collection) = CollectionInfo(coll.displayName, coll.id.toThingId)
+    def toTypeInfo(typ:PType[_]) = TypeInfo(typ.displayName, typ.id.toThingId)
+    
+    // TODO: separate the Types by SkillLevel:
+    AllTypeInfo(
+      Seq(Core.ExactlyOne, Core.Optional, Core.QList, Core.QSet).map(toCollectionInfo(_)),
+      Seq.empty,
+      getTypesForSpace(state).map(toTypeInfo(_)).toSeq,
+      state.allModels.filter(_.hasProp(Editor.InstanceProps)(state)).map(ClientApi.thingInfo(_, rc)).toSeq
+    )
   }
   
   /**

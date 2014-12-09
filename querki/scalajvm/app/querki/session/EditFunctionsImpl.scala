@@ -24,7 +24,7 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
   lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val Core = interface[querki.core.Core]
   lazy val DataModel = interface[querki.datamodel.DataModelAccess]
-  lazy val Editor = interface[querki.editing.Editor]
+  def Editor:querki.editing.Editor
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
   lazy val PropListManager = interface[querki.core.PropListManager]
   def QL:querki.ql.QL

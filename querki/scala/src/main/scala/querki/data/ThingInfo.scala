@@ -62,3 +62,20 @@ case class SpaceProps(
   advancedProps:Seq[PropInfo],
   apps:Seq[SpaceProps]
 )
+
+case class CollectionInfo(
+  name:String,
+  oid:String
+)
+
+case class TypeInfo(
+  name:String,
+  oid:String
+)
+
+case class AllTypeInfo(
+  collections:Seq[CollectionInfo],
+  standardTypes:Seq[TypeInfo],
+  advancedTypes:Seq[TypeInfo],
+  models:Seq[ThingInfo]
+)
