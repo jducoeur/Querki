@@ -34,7 +34,7 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
   lazy val Gadgets = interface[querki.display.Gadgets]
   
   override def postInit() = {
-    Gadgets.registerSimpleGadget("._textEdit", { new TextInputGadget })
+    Gadgets.registerSimpleGadget("._textEdit", { new TextInputGadget(Seq.empty) })
     Gadgets.registerSimpleGadget("._largeTextEdit", { new LargeTextInputGadget })
     Gadgets.registerGadget("._tagSetInput", { TagSetInput(_) })
     Gadgets.registerGadget("._tagInput", { MarcoPoloInput(_) })

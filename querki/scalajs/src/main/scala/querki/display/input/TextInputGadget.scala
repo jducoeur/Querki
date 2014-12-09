@@ -8,7 +8,7 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
-class TextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLInputElement](e) {
+class TextInputGadget(classes:Seq[String], mods:Modifier*)(implicit e:Ecology) extends InputGadget[dom.HTMLInputElement](e) {
   
   def values = List(elem.value)
   
@@ -20,7 +20,7 @@ class TextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLInputEleme
   }
   
   def doRender() =
-    input(cls:="_textEdit", tpe:="text")
+    input(classes(classes :+ "_textEdit"), tpe:="text", mods)
     
 }
 

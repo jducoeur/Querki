@@ -103,25 +103,20 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions { self:Actor
   }
   
   def getAllTypes():AllTypeInfo = {
-    def getTypesForSpace(space:SpaceState):Iterable[PType[_]] = {
-      implicit val s = space
+    implicit val s = state
       
-      val spaceTypes = space.allTypes.values.
+    val spaceTypes = state.allTypes.values.
         filterNot(_.ifSet(Core.InternalProp)).
         filterNot(_.ifSet(Basic.DeprecatedProp)).
         filterNot(typ => typ.isInstanceOf[querki.types.ModelTypeBase] && !typ.ifSet(Basic.ExplicitProp))
-
-      spaceTypes ++ space.app.map(app => getTypesForSpace(app)).getOrElse(Seq.empty)
-    }
     
     def toCollectionInfo(coll:Collection) = CollectionInfo(coll.displayName, coll.id.toThingId)
-    def toTypeInfo(typ:PType[_]) = TypeInfo(typ.displayName, typ.id.toThingId)
     
     // TODO: separate the Types by SkillLevel:
     AllTypeInfo(
       Seq(Core.ExactlyOne, Core.Optional, Core.QList, Core.QSet).map(toCollectionInfo(_)),
       Seq.empty,
-      getTypesForSpace(state).map(toTypeInfo(_)).toSeq,
+      spaceTypes.map(typ => TypeInfo(typ.displayName, typ.id.toThingId)).toSeq,
       state.allModels.filter(_.hasProp(Editor.InstanceProps)(state)).map(ClientApi.thingInfo(_, rc)).toSeq
     )
   }

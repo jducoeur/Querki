@@ -55,6 +55,13 @@ class ClientDataEcot(e:Ecology) extends ClientEcot(e) with DataAccess with DataS
     Client[ThingFunctions].getAllProperties().call()
   }
   
+  /**
+   * TODO: we should be caching this list, probably on a per-Space basis.
+   */
+  def getAllTypes():Future[AllTypeInfo] = {
+    Client[ThingFunctions].getAllTypes().call()
+  }
+  
   @JSExport
   def unpickleRequest(pickled:String) = {
     _request = Some(read[RequestInfo](pickled))

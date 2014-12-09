@@ -160,7 +160,7 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
     }
     
     val theRc = rc
-    spaceRouter.request(CreateThing(user, state.owner, state.toThingId, Kind.Thing, model.id, props)) {
+    spaceRouter.request(CreateThing(user, state.owner, state.toThingId, model.kind, model.id, props)) {
       case ThingFound(thingId, newState) => {
         newState.anything(thingId) match {
           case Some(thing) => {

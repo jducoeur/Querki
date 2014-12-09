@@ -44,6 +44,11 @@ package object data {
     def getAllProps():Future[SpaceProps]
     
     /**
+     * Fetch the Types, Collections and Models of this Space. Mainly intended for creating Properties.
+     */
+    def getAllTypes():Future[AllTypeInfo]
+    
+    /**
      * Convenience function to get the "userName" part of a typical path. Should only be used if
      * you know that the space exists!
      */
