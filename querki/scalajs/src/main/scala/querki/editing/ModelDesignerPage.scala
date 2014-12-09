@@ -14,8 +14,8 @@ import querki.globals._
 import querki.api.EditFunctions
 import EditFunctions._
 import querki.data.ThingInfo
-import querki.display.{RawDiv, WithTooltip}
-import querki.display.input.InputGadget
+import querki.display.{Gadget, RawDiv, WithTooltip}
+import querki.display.input.{DeleteInstanceButton, InputGadget}
 import querki.pages._
 
 class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
@@ -24,6 +24,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
   lazy val Client = interface[querki.client.Client]
   lazy val Gadgets = interface[querki.display.Gadgets]
+  lazy val StatusLine = interface[querki.display.StatusLine]
   
   override def beforeRender() = {
     // Page-specific gadget hooks:
@@ -32,17 +33,24 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     Gadgets.registerHook("input[type='text']") { elem => $(elem).filter(".propEditor").addClass("span10") }    
   }
   
-  def makeEditor(info:PropEditInfo):scalatags.JsDom.TypedTag[dom.HTMLLIElement] = {
+  class PropEditor(val info:PropEditInfo, val section:PropertySection) extends Gadget[dom.HTMLLIElement] {
     val prompt = info.prompt.map(_.raw.toString).getOrElse(info.displayName)
     // TODO: there is a nasty bug here. The tooltip should be normally wiki-processed,
     // but there is no way to use raw() on an attribute value. So we instead are displaying
     // the raw, unprocessed form, knowing that Scalatags will escape it.
     val tooltip = info.tooltip.map(_.plaintext).getOrElse(info.displayName)
-    li(cls:="_propListItem control-group",
-      data("propid"):=info.propId,
-      new WithTooltip(label(cls:="_propPrompt control-label", raw(s"$prompt ")), tooltip),
-      new RawDiv(info.editor, cls:="controls")
-    )
+    
+    def doRender() = 
+      // HACK: we're calling this _instanceEditor in order to make the DeleteButton's style work. Let's
+      // refactor this somehow:
+      li(cls:="_propListItem control-group _instanceEditor",
+        data("propid"):=info.propId,
+        new WithTooltip(label(cls:="_propPrompt control-label", 
+          new DeleteInstanceButton({() => removeProperty(this)}), 
+          raw(s"$prompt ")),
+          tooltip),
+        new RawDiv(info.editor, cls:="controls")
+      )
   }
   
   def addProperty(propId:String) = {
@@ -50,6 +58,15 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       // TODO: introduce the concept of Properties that are mainly for Models; if that is
       // set, put it in the Model section instead:
       instancePropSection().appendEditor(editInfo)
+    }
+  }
+  
+  def removeProperty(editor:PropEditor) = {
+    Client[EditFunctions].removeProperty(modelId, editor.info.propId).call().foreach { result =>
+      result match {
+        case PropertyChanged => editor.section.removeEditor(editor)
+        case PropertyChangeError(msg) => StatusLine.showBriefly(msg)        
+      }
     }
   }
   
@@ -87,10 +104,17 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     }
     
     def appendEditor(editInfo:PropEditInfo) = {
-      val editor = makeEditor(editInfo)
-      $(elem).append(editor.render)
+      val editor = new PropEditor(editInfo, this)
+      $(elem).append(editor.rendered)
       propIds() += editInfo.propId
       onMoved()
+    }
+    
+    def removeEditor(editor:PropEditor) = {
+      val child = $(editor.elem)
+      child.hide(400, { () => child.remove() })
+      propIds() -= editor.info.propId
+      instancePropSection().onMoved()
     }
     
     def doRender() = 
@@ -99,7 +123,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
         name:=nam, 
         // Needed for save() to work:
         data("thing"):=modelId,
-        props.map(makeEditor(_))
+        props.map(new PropEditor(_, this))
       )
   }
   
@@ -147,7 +171,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
 
 import querki.api.ThingFunctions
 import querki.data.{PropInfo, SpaceProps, ThingInfo}
-import querki.display.{AfterLoading, Gadget, QText, WrapperDiv}
+import querki.display.{AfterLoading, QText, WrapperDiv}
 import querki.display.rx.{RxAttr, RxDiv, RxSelect}
 
 object ButtonKind extends Enumeration {

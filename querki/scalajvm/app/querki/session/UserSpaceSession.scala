@@ -169,7 +169,9 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
     def isMatch(oldUv:OneUserValue) = (oldUv.thingId == uv.thingId) && (oldUv.propId == uv.propId)
     
     var previous = userValues.find(isMatch(_)).map(_.v)
-    userValues = userValues.filterNot(isMatch(_)) :+ uv
+    userValues = userValues.filterNot(isMatch(_))
+    if (!uv.v.isDeleted)
+      userValues = userValues :+ uv
     clearEnhancedState()
     previous
   }
@@ -304,15 +306,16 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
               // Persist the change...
               val uv = OneUserValue(identity, thing.id, propId, v, DateTime.now)
               val previous = addUserValue(uv)
- 	            persister ! SaveUserValue(uv, state, previous.isDefined)
-   	            
+ 	          persister ! SaveUserValue(uv, state, previous.isDefined)
+   	          
               // ... then tell the Space to summarize it, if there is a Summary Property...
    	          val msg = for {
    	            prop <- state.prop(propId) orElse QLog.warn(s"UserSpaceSession.ChangeProps2 got unknown Property $propId")
    	            summaryLinkPV <- prop.getPropOpt(UserValues.SummaryLink)
    	            summaryPropId <- summaryLinkPV.firstOpt
+   	            newV = if (v.isDeleted) None else Some(v)
    	          }
-                yield SpacePluginMsg(req, own, space, SummarizeChange(thing.id, prop, summaryPropId, previous, Some(v)))
+                yield SpacePluginMsg(req, own, space, SummarizeChange(thing.id, prop, summaryPropId, previous, newV))
               msg.map(spaceRouter ! _)
                 
               // ... then tell the user we're set.

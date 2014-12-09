@@ -209,6 +209,7 @@ body {
   text-align: center;
   border: 1px solid;
   cursor: pointer;
+  z-index:100;
 }
 
 ._instanceEditor ._deleteInstanceButton {

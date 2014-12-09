@@ -23,6 +23,7 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
   def ClientApi:querki.api.ClientApi
   lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val Core = interface[querki.core.Core]
+  lazy val DataModel = interface[querki.datamodel.DataModelAccess]
   lazy val Editor = interface[querki.editing.Editor]
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
   lazy val PropListManager = interface[querki.core.PropListManager]
@@ -241,5 +242,20 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
     }
     
     promise.future    
+  }
+  
+  def removeProperty(thingId:String, propIdStr:String):Future[PropertyChangeResponse] = withThing(thingId) { thing =>
+    implicit val s = state
+    val propId = ThingId(propIdStr)
+    val propsOpt = for {
+      prop <- state.prop(propId)
+      newV = DataModel.DeletedValue
+    }
+      yield Core.toProps((prop, newV))()  
+
+    propsOpt match {
+      case Some(props) => doChangeProps(thing, props)
+      case _ => Future.successful(PropertyChangeError(s"Couldn't find Property $propId!"))
+    }
   }
 }

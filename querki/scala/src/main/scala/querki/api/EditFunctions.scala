@@ -26,6 +26,11 @@ trait EditFunctions {
    * Add this Property to this Thing, and return the Editor for it.
    */
   def addPropertyAndGetEditor(thingId:String, propId:String):Future[PropEditInfo]
+  
+  /**
+   * Remove the specified Property from the specified Thing.
+   */
+  def removeProperty(thingId:String, propId:String):Future[PropertyChangeResponse]
 }
 
 object EditFunctions {

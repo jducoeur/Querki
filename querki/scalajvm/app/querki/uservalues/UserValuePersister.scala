@@ -172,9 +172,18 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
         val prop = state.prop(uv.propId).getOrElse(throw new Exception("SaveUserValue is trying to serialize unknown Property " + uv.propId))
 //        val uvType = UserValues.getUserType(prop.pType).getOrElse(throw new Exception("SaveUserValue is trying to serialize non-UV Property " + uv.propId))
         
+        if (uv.v.isDeleted) {
+          SpaceSQL("""
+            DELETE FROM {uvname}
+             WHERE thingId = {thingId} AND propertyId = {propertyId} AND identityId = {identityId}
+            """).on(
+                "thingId" -> uv.thingId.raw,
+                "propertyId" -> uv.propId.raw,
+                "identityId" -> uv.identity.id.raw).executeUpdate          
+        }
         // Have I ever mentioned how much I despise SQL's lack of a standard UPSERT operator?
         // TODO: replace these clauses with a single MySQL INSERT ... ON DUPLICATE KEY ...
-        if (update) {
+        else if (update) {
           SpaceSQL("""
             UPDATE {uvname}
                SET propValue = {propValue}, modTime = {modTime}

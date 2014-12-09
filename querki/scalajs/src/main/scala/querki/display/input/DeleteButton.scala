@@ -39,6 +39,10 @@ class DeleteButton(doDelete:() => Unit)(implicit e:Ecology) extends InputGadget[
   }
 }
 
+class DeleteInstanceButton(doDelete:() => Unit)(implicit e:Ecology) extends DeleteButton(doDelete)(e) {
+  override def doRender() = span(cls:="_deleteInstanceButton", i(title:="Click to delete this", cls:="icon-trash _withTooltip"))  
+}
+
 /**
  * Note that this is *not* a constructor for Delete buttons in general. That would be
  * nonsensical: what the delete button does depends on context. This one is specific to
@@ -49,7 +53,7 @@ object DeleteInstanceButton {
   import querki.api.ThingFunctions
   
   def apply(rawElement:dom.Element)(implicit e:Ecology) = {
-    (new DeleteButton(deleteFunc(rawElement, e))).setElem(rawElement)
+    (new DeleteInstanceButton(deleteFunc(rawElement, e))).setElem(rawElement)
   }
   
   def deleteFunc(button:dom.Element, e:Ecology) = { () =>
