@@ -13,7 +13,7 @@ import querki.api.ThingFunctions
 import querki.data._
 import querki.display.{AfterLoading, ButtonGadget, ButtonKind, Gadget, QText, WrapperDiv}
 import querki.display.input.TextInputGadget
-import querki.display.rx.{RxAttr, RxDiv, RxSelect}
+import querki.display.rx.{ButtonInfo, RxAttr, RxButtonGroup, RxDiv, RxSelect}
 
 class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
   
@@ -181,15 +181,9 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     
     lazy val nameInput = new TextInputGadget(Seq("span6"), placeholder:="Name (required)...")
     lazy val typeSelector = new RxSelect(advTypeOptions, cls:="span6")
-    // TODO: this button group notion should become an Rx Gadget:
     // TODO: I should set the first one to "active":
-    // TODO: should the Collections simply come from the global info? They aren't changeable yet.
-    lazy val collSelector = 
-      div(cls:="btn-group span6", data("toggle"):="buttons-radio",
-        typeInfo.collections.map { coll =>
-          button(tpe:="button", cls:="btn btn-primary", value:=coll.oid, coll.name)
-        }
-      )
+    // TODO: should the Collections simply come from the global info instead of typeInfo? They aren't changeable yet.
+    lazy val collSelector = new RxButtonGroup(Var(typeInfo.collections.map { coll => ButtonInfo(coll.oid, coll.name) }))
     
     def doRender() =
       div(cls:="well container span12",
@@ -201,7 +195,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
               typeSelector
             ),
             div(cls:="row-fluid",
-                collSelector
+              div(cls:="span6", collSelector)
             )
           )
         ),
