@@ -3,7 +3,7 @@ package querki.api
 import scala.concurrent.Future
 
 import models.Wikitext
-import querki.data.{PropValInfo, ThingInfo}
+import querki.data._
 
 trait EditFunctions {
   import EditFunctions._
@@ -31,6 +31,11 @@ trait EditFunctions {
    * Remove the specified Property from the specified Thing.
    */
   def removeProperty(thingId:String, propId:String):Future[PropertyChangeResponse]
+  
+  /**
+   * Fetch a Type based on this Model, creating it if necessary.
+   */
+  def getModelType(modelId:String):Future[TypeInfo]
 }
 
 object EditFunctions {

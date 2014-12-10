@@ -9,7 +9,7 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
-import querki.api.ThingFunctions
+import querki.api.{EditFunctions, ThingFunctions}
 import querki.data._
 import querki.display.{AfterLoading, ButtonGadget, ButtonKind, Gadget, QText, WrapperDiv}
 import querki.display.input.TextInputGadget
@@ -229,9 +229,19 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
       new ButtonGadget(ButtonKind.Info, 
           RxAttr("disabled", Rx{ nameInput.textOpt().isEmpty || collSelector.selectedValOpt().isEmpty || selectedBasis().isEmpty }), 
           "Create")({
-        println(s"About to create based on ${selectedBasis().get._2}")
-        mainDiv.replaceContents(initButton.rendered, true)
+        val (selector, oid) = selectedBasis().get
+        if (selector == modelSelector) {
+          // We're creating it based on a Model, so we need to get the Model Type. Note that this is async:
+          Client[EditFunctions].getModelType(oid).call().foreach { typeInfo => createProperty(typeInfo.oid) }
+        } else {
+          // We already have a Type
+          createProperty(oid)
+        }
       })
+      
+    def createProperty(typeId:String) = {
+      println(s"About to create based on $typeId")      
+    }
     
     def doRender() =
       div(cls:="well container span12",

@@ -4,7 +4,7 @@ import scala.concurrent.{Future, Promise}
 
 import akka.actor._
 
-import models.{DisplayPropVal, DisplayText, FieldIds, FormFieldInfo, IndexedOID, Kind, Thing, ThingId, Wikitext}
+import models.{DisplayPropVal, DisplayText, FieldIds, FormFieldInfo, IndexedOID, Kind, PType, Thing, ThingId, Wikitext}
 import models.Thing.{emptyProps, PropMap}
 
 import querki.globals._
@@ -12,7 +12,7 @@ import querki.globals._
 import querki.api.EditFunctions
 import EditFunctions._
 import querki.core.QLText
-import querki.data.ThingInfo
+import querki.data._
 import querki.session.messages.ChangeProps2
 import querki.spaces.messages.{CreateThing, ThingFound, ThingError}
 import querki.util.Requester
@@ -20,6 +20,7 @@ import querki.values.{QLRequestContext, RequestContext}
 
 trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor with Requester =>
   
+  def Basic:querki.basic.Basic
   def ClientApi:querki.api.ClientApi
   lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val Core = interface[querki.core.Core]
@@ -257,5 +258,43 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
       case Some(props) => doChangeProps(thing, props)
       case _ => Future.successful(PropertyChangeError(s"Couldn't find Property $propId!"))
     }
+  }
+  
+  def getModelType(modelId:String):Future[TypeInfo] = withThing(modelId) { model =>
+    implicit val s = state
+    val typOpt = state.types.values.find { typ =>
+      typ match {
+        case mt:querki.types.ModelTypeBase => mt.basedOn == model.id
+        case _ => false
+      }
+    }
+    
+    def toTypeInfo(t:PType[_]) = TypeInfo(t.displayName, t.id.toThingId)
+    
+    val promise = Promise[TypeInfo]
+    typOpt match {
+      case Some(typ) => promise.success(toTypeInfo(typ))
+      case None => {
+        val props = Map(
+            Types.ModelForTypeProp(model),
+            Basic.DisplayNameProp("__" + model.displayName + " Type"))
+            
+        // TODO: note that there is technically a slight race condition here -- between us fetching the SpaceState
+        // in withThing(), and us sending this message, somebody else could create the new Type. That's not
+        // devastating, but it *is* unintentional, and it's a good example of why we need to move towards a more
+        // transactional view of things, where our CreateThing message includes the version stamp of the state it
+        // is based on, and fails if the stamp is out of date.
+        val spaceMsg = CreateThing(rc.requesterOrAnon, rc.ownerId, state.toThingId, Kind.Type, Core.UrType, props)
+        
+        spaceRouter.request(spaceMsg) {
+          case ThingFound(typeId, newState) => {
+            val typ = newState.typ(typeId)
+            promise.success(toTypeInfo(typ))
+          }
+          case ThingError(error, stateOpt) => promise.failure(error)
+        }
+      }
+    }
+    promise.future
   }
 }
