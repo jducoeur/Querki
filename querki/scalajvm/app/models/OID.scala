@@ -127,7 +127,7 @@ case class IndexedOID(id:OID, i:Option[Int] = None) {
 }
 
 object IndexedOID {
-  val regex = """([0-9a-zA-Z]+)(\[(\d+)\])?""".r
+  val regex = """([\.0-9a-zA-Z]+)(\[(\d+)\])?""".r
   def parse(str:String):Option[IndexedOID] = {
     str match {
       case regex(id, _, i) => {

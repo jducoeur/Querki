@@ -13,5 +13,8 @@ trait CommonFunctions {
 case class StandardInfo(
   detailsPropId:String,
   summaryPropId:String,
-  urPropId:String
+  urPropId:String,
+  namePropId:String,
+  collPropId:String,
+  typePropId:String
 )

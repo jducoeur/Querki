@@ -8,7 +8,10 @@ trait CommonFunctionsImpl extends CommonFunctions { self:EcologyMember =>
     StandardInfo(
       querki.conventions.MOIDs.PropDetailsOID.toThingId,
       querki.conventions.MOIDs.PropSummaryOID.toThingId,
-      querki.core.MOIDs.UrPropOID.toThingId
+      querki.core.MOIDs.UrPropOID.toThingId,
+      querki.core.MOIDs.NameOID.toThingId,
+      querki.core.MOIDs.CollectionPropOID.toThingId,
+      querki.core.MOIDs.TypePropOID.toThingId
     )
   }
 }

@@ -10,6 +10,7 @@ import scalatags.JsDom.all._
 import querki.globals._
 
 import querki.api.{EditFunctions, ThingFunctions}
+import EditFunctions._
 import querki.data._
 import querki.display.{AfterLoading, ButtonGadget, ButtonKind, Gadget, QText, WrapperDiv}
 import querki.display.input.TextInputGadget
@@ -144,48 +145,6 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
       result
     }
   }
-
-/*
-              <div class="span6">
-                <div class="row-fluid">
-		            <input type="text" id="_newPropName" class="span6" placeholder="Name (required)...">
-		            <select id="_newPropType" class="span6">
-		                <option value="">Choose the Property's type (required)...</option>
-		                @for(aType <- space.allTypes.values.
-		                       filterNot(_.ifSet(Core.InternalProp)(space)).
-		                       filterNot(_.ifSet(Basic.DeprecatedProp)(space)).
-		                       filterNot(typ => typ.isInstanceOf[querki.types.ModelTypeBase] && !typ.ifSet(Basic.ExplicitProp)(space)).
-		                       toSeq.sortBy(_.displayName)) {
-		                  <option value="@aType.id.toString" @collForType(aType)>@aType.displayName</option>
-		                }
-		                <option value=@createTypeIndicator>Based on a Model</option>
-		            </select>
-		        </div>
-		        <div class="row-fluid">
-				    <div id="_newPropColl" class="btn-group span6" data-toggle="buttons-radio" style="margin-left: 0px;">
-					    <button id="_newPropOne" type="button" class="btn btn-primary active" value="@{ExactlyOne.id.toString}">Exactly One</button>
-					    <button id="_newPropOptional" type="button" class="btn btn-primary" value="@{Optional.id.toString}">Optional</button>
-					    <button id="_newPropList" type="button" class="btn btn-primary" value="@{QList.id.toString}">List</button>
-					    <button id="_newPropSet" type="button" class="btn btn-primary" value="@{QSet.id.toString}">Set</button>
-					</div>
-		            <select id="_newPropLinkModel" style="display:none;" class="span6">
-		                <option value="">Link to which Model? (optional)...</option>
-		                @for(aModel <- space.allModels.toSeq.sortBy(_.displayName)) {
-		                  <option value="@aModel.id.toString">@aModel.displayName</option>
-		                }
-		            </select>
-		            <select id="_newTypeModel" style="display:none;" class="span6">
-		                <option value="">Based on which Model?...</option>
-		                @for(aModel <- space.models.toSeq.sortBy(_.displayName).filter(_.hasProp(Editor.InstanceProps)(space))) {
-		                  <option value="@aModel.id.toThingId">@aModel.displayName</option>
-		                }
-		            </select>
-		        </div>
-	  		  </div>
-			  <div class="span6">
-			    <p id="_typeInfo" style="height:250px; overflow:auto">&nbsp;</p>
-			  </div>
- */
   
   class CreateNewPropertyGadget(typeInfo:AllTypeInfo) extends Gadget[dom.HTMLDivElement] {
     
@@ -229,18 +188,39 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
       new ButtonGadget(ButtonKind.Info, 
           RxAttr("disabled", Rx{ nameInput.textOpt().isEmpty || collSelector.selectedValOpt().isEmpty || selectedBasis().isEmpty }), 
           "Create")({
+        val name = nameInput.textOpt().get
+        val coll = collSelector.selectedValOpt().get
         val (selector, oid) = selectedBasis().get
         if (selector == modelSelector) {
           // We're creating it based on a Model, so we need to get the Model Type. Note that this is async:
-          Client[EditFunctions].getModelType(oid).call().foreach { typeInfo => createProperty(typeInfo.oid) }
+          Client[EditFunctions].getModelType(oid).call().foreach { typeInfo => createProperty(name, coll, typeInfo.oid) }
         } else {
           // We already have a Type
-          createProperty(oid)
+          createProperty(name, coll, oid)
         }
       })
       
-    def createProperty(typeId:String) = {
-      println(s"About to create based on $typeId")      
+    def createProperty(name:String, collId:String, typeId:String) = {
+      // Technically, we have to wait for the StandardInfo to be available:
+      stdInfoFut.foreach { stdInfo =>
+        def mkPV(oid:String, v:String) = {
+          // TODO: this is evil magic knowledge that just happens to match FieldIds on the server. We need
+          // a better shared mechanism here:
+          // TODO: for that matter, this format is antiquated and should be changed -- at the least, the v- prefix
+          // is unnecessary:
+          val path = s"v-$oid-"
+          ChangePropertyValue(path, Seq(v))
+        }
+        val initProps = Seq(
+          mkPV(stdInfo.namePropId, name),
+          mkPV(stdInfo.collPropId, collId),
+          mkPV(stdInfo.typePropId, typeId)
+        )
+        Client[EditFunctions].create(stdInfo.urPropId, initProps).call().foreach { propInfo =>
+          page.addProperty(propInfo.oid)
+          mainDiv.replaceContents(initButton.rendered, true)
+        }
+      }
     }
     
     def doRender() =
