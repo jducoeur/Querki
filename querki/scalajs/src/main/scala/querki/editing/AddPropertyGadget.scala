@@ -13,7 +13,7 @@ import querki.api.ThingFunctions
 import querki.data._
 import querki.display.{AfterLoading, ButtonGadget, ButtonKind, Gadget, QText, WrapperDiv}
 import querki.display.input.TextInputGadget
-import querki.display.rx.{ButtonInfo, RxAttr, RxButtonGroup, RxDiv, RxSelect}
+import querki.display.rx.{ButtonInfo, RxAttr, RxButtonGroup, RxDiv, RxSelect, RxText}
 
 class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
   
@@ -189,7 +189,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   
   class CreateNewPropertyGadget(typeInfo:AllTypeInfo) extends Gadget[dom.HTMLDivElement] {
     
-    lazy val nameInput = new TextInputGadget(Seq("span6"), placeholder:="Name (required)...")
+    lazy val nameInput = new RxText(cls:="span6", placeholder:="Name (required)...")
     
     // TODO: should the Collections simply come from the global info instead of typeInfo? They aren't changeable yet.
     lazy val collButtons =
@@ -223,6 +223,16 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     lazy val selectedBasisDescription = new DescriptionDiv(selectedBasis)
     lazy val selectedBasisDescriptionDiv = selectedBasisDescription.descriptionDiv
     
+    // The add button is only enabled when all fields are non-empty; when pressed, it tells the parent
+    // page to add the Property:
+    lazy val addButton = 
+      new ButtonGadget(ButtonKind.Info, 
+          RxAttr("disabled", Rx{ nameInput.textOpt().isEmpty || collSelector.selectedValOpt().isEmpty || selectedBasis().isEmpty }), 
+          "Create")({
+        println(s"About to create based on ${selectedBasis().get._2}")
+        mainDiv.replaceContents(initButton.rendered, true)
+      })
+    
     def doRender() =
       div(cls:="well container span12",
         p(i(cls:="fa fa-spinner fa-spin"), """Describe the new property to create, or press "Add an Existing Property" to use one that already exists."""),
@@ -240,8 +250,8 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
           ),
           div(cls:="span6", selectedBasisDescriptionDiv)
         ),
-        p(cls:="offset1"
-//          addButton,
+        p(cls:="offset1",
+          addButton
         ),
         hr,
         p(new ButtonGadget(ButtonKind.Info, "Add an Existing Property")({ mainDiv.replaceContents(addExisting.rendered, true) }), cancelButton)
