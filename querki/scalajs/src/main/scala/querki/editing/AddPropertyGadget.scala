@@ -38,6 +38,42 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   val stdInfoFut = DataAccess.standardInfo
   lazy val allTypesFut = DataAccess.getAllTypes()
   
+  /**
+   * This watches an RxSelect full of Things, and produces the div describing the currently-selected Thing.
+   * 
+   * @param selector The selected() reactive of the RxSelect. We pass in this instead of the RxSelect itself
+   *   so that you can orElse multiple RxSelects and feed the union into here.
+   */
+  class DescriptionDiv(selector:Rx[Option[(RxSelect, String)]]) {    
+    val emptyDescription = span(raw("&nbsp;"))
+    val selectedDescriptionObs = Obs(selector, skipInitial=true) {
+      selector() match {
+        case Some((sel, oid)) => {
+          val name = sel.selectedText()
+          val fut = for {
+            stdInfo <- stdInfoFut
+            summaryOpt <- Client[ThingFunctions].getPropertyDisplay(oid, stdInfo.summaryPropId).call()
+            detailsOpt <- Client[ThingFunctions].getPropertyDisplay(oid, stdInfo.detailsPropId).call()
+          }
+            yield
+              // ... build the display of the Property info...
+              div(
+                b(name),
+                summaryOpt.map(summary => i(new QText(summary))),
+                detailsOpt.map(details => new QText(details))
+              )
+            
+          fut.foreach { desc => selectionDescription() = desc }
+        }
+        
+        case None => selectionDescription() = emptyDescription
+      }
+    }
+    val selectionDescription = Var[Gadget[dom.Element]](emptyDescription)
+    
+    val descriptionDiv = RxDiv(Rx {Seq(selectionDescription())})
+  }
+  
   class AddExistingPropertyGadget(mainSpaceProps:SpaceProps) extends Gadget[dom.HTMLDivElement] {
 
     // The add button is only enabled when the selection is non-empty; when pressed, it tells the parent
@@ -85,32 +121,8 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     }
     
     lazy val selectedProperty = propSelector.selectedValOpt
-    
-    lazy val emptyDescription = span(raw("&nbsp;"))
-    lazy val selectedPropertyDescriptionFut:Rx[Future[Gadget[dom.Element]]] = Rx {
-      selectedProperty() match {
-        case Some(propId) => {
-          for {
-            stdInfo <- stdInfoFut
-            summaryOpt <- Client[ThingFunctions].getPropertyDisplay(propId, stdInfo.summaryPropId).call()
-            detailsOpt <- Client[ThingFunctions].getPropertyDisplay(propId, stdInfo.detailsPropId).call()
-          }
-            yield
-              // ... build the display of the Property info...
-              div(
-                b(propSelector.selectedText()),
-                summaryOpt.map(summary => i(new QText(summary))),
-                detailsOpt.map(details => new QText(details))
-              )
-        }
-        
-        case None => Future.successful(emptyDescription)
-      }
-    }
-    lazy val selectedPropertyDescription = selectedPropertyDescriptionFut.async(emptyDescription)
-    
-    lazy val propertyDescriptionDiv = RxDiv(Rx {Seq(selectedPropertyDescription())} )
-
+    lazy val selectedPropertyDescription = new DescriptionDiv(propSelector.selected)
+    lazy val propertyDescriptionDiv = selectedPropertyDescription.descriptionDiv
     
     def doRender() = {
       val result = div(cls:="well container span12",
@@ -170,20 +182,46 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
 		            </select>
 		        </div>
 	  		  </div>
+			  <div class="span6">
+			    <p id="_typeInfo" style="height:250px; overflow:auto">&nbsp;</p>
+			  </div>
  */
   
   class CreateNewPropertyGadget(typeInfo:AllTypeInfo) extends Gadget[dom.HTMLDivElement] {
     
+    lazy val nameInput = new TextInputGadget(Seq("span6"), placeholder:="Name (required)...")
+    
+    // TODO: should the Collections simply come from the global info instead of typeInfo? They aren't changeable yet.
+    lazy val collButtons =
+      typeInfo.collections.headOption.map { coll => ButtonInfo(coll.oid, coll.name, true) } ++
+      typeInfo.collections.tail.map { coll => ButtonInfo(coll.oid, coll.name) }
+    lazy val collSelector = new RxButtonGroup(Var(collButtons.toSeq))
+    
     val advTypeOptions = Var({
       val typeOpts = typeInfo.advancedTypes.sortBy(_.name).map(typ => option(value:=typ.oid, typ.name))
-      option(value:="", "Choose the Property's type (required)...") +: typeOpts
+      option(value:="", "Choose a Type...") +: typeOpts
     })
+    val typeSelector = new RxSelect(advTypeOptions, cls:="span5")
     
-    lazy val nameInput = new TextInputGadget(Seq("span6"), placeholder:="Name (required)...")
-    lazy val typeSelector = new RxSelect(advTypeOptions, cls:="span6")
-    // TODO: I should set the first one to "active":
-    // TODO: should the Collections simply come from the global info instead of typeInfo? They aren't changeable yet.
-    lazy val collSelector = new RxButtonGroup(Var(typeInfo.collections.map { coll => ButtonInfo(coll.oid, coll.name) }))
+    val modelOptions = Var({
+      val modelOpts = typeInfo.models.sortBy(_.displayName).map(model => option(value:=model.oid, model.displayName))
+      option(value:="", "Base it on a Model...") +: modelOpts
+    })
+    val modelSelector = new RxSelect(modelOptions, cls:="span5")
+
+    // You choose *either* a Type or a Model; when you set one, we unset the other:
+    val modelClearer = Obs(typeSelector.selectedValOpt) {
+      typeSelector.selectedValOpt().map(_ => modelSelector.setValue(""))
+    }
+    val typeClearer = Obs(modelSelector.selectedValOpt) {
+      modelSelector.selectedValOpt().map(_ => typeSelector.setValue(""))
+    }
+    
+    // The chosen basis is *either* a Model or a Type. selected() combines the currently-chosen value and its
+    // RxSelect:
+    lazy val selectedBasis = Rx { modelSelector.selected() orElse typeSelector.selected() }
+    lazy val selectedBasisDescription = new DescriptionDiv(selectedBasis)
+    lazy val selectedBasisDescriptionDiv = selectedBasisDescription.descriptionDiv
     
     def doRender() =
       div(cls:="well container span12",
@@ -191,13 +229,16 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
         div(cls:="row-fluid",
           div(cls:="span6",
             div(cls:="row-fluid",
-              nameInput,
-              typeSelector
+              nameInput
             ),
             div(cls:="row-fluid",
-              div(cls:="span6", collSelector)
+              collSelector
+            ),
+            div(cls:="row-fluid",
+              typeSelector, " or ", modelSelector
             )
-          )
+          ),
+          div(cls:="span6", selectedBasisDescriptionDiv)
         ),
         p(cls:="offset1"
 //          addButton,

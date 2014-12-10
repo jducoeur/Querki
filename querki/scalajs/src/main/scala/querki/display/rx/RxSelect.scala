@@ -16,25 +16,43 @@ import querki.display.Gadget
  * 
  * Note that the options list is a reactive, so you can update the options easily. If you don't need
  * to do that, you can simply put everything in the mods list instead, and pass an empty Var for options.
+ * 
+ * It is legal for the options to include one (usually at the top) with "" as its value. That is considered
+ * to be the "not set" state.
  */
 class RxSelect(options:Rx[Seq[Frag]], mods:Modifier*) extends Gadget[dom.HTMLSelectElement] {
   
   private def curSelected = {
     elemOpt.map(e => $(e).find("option:selected"))
   }
+  /**
+   * Note that this says which option is selected, even if it is the "not set" one.
+   */
   lazy val selectedOption = Var[Option[JQuery]](None)
-  lazy val selectedText = Rx { selectedOption().map(_.text()).getOrElse("") }
+  lazy val selectedTextOpt = Rx { selectedOption().map(_.text()) }
+  lazy val selectedText = selectedTextOpt.map(_.getOrElse(""))
   /**
    * This variant of selectedVal filters out the empty string.
    */
   lazy val selectedValOpt = Rx { selectedOption().map(_.valueString).filter(_.length > 0) }
   lazy val selectedVal = selectedValOpt.map(_.getOrElse(""))
   
+  /**
+   * Non-empty iff this RxSelect has a non-empty value. That way, you can build an Rx based on whether
+   * this is set or not.
+   */
+  lazy val selected = Rx { selectedValOpt().map(v => (this, v)) }
+  
   def doRender() = select(mods, options())
   
-  def updateSelected() = { selectedOption() = curSelected }
+  def setValue(v:String) = {
+    $(elem).value(v)
+    updateSelected()
+  }
   
-  val obs = Obs(options, skipInitial=true) {
+  private def updateSelected() = { selectedOption() = curSelected }
+  
+  private val obs = Obs(options, skipInitial=true) {
     $(elem).empty()
     options().map(_.render).map(opt => $(elem).append(opt))
     updateSelected()
