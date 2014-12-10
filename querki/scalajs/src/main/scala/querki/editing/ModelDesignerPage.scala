@@ -58,6 +58,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       // TODO: introduce the concept of Properties that are mainly for Models; if that is
       // set, put it in the Model section instead:
       instancePropSection().appendEditor(editInfo)
+      InputGadgets.hookPendingGadgets()
     }
   }
   
