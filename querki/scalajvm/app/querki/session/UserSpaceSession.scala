@@ -77,7 +77,7 @@ trait SessionApiImpl extends EcologyMember {
 private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
   extends Actor with Stash with Requester with EcologyMember with TimeoutChild
   with autowire.Server[String, upickle.Reader, upickle.Writer]
-  with ThingFunctionsImpl with EditFunctionsImpl with MarcoPoloImpl with SearchFunctionsImpl with ConversationFunctionsImpl
+  with ThingFunctionsImpl with EditFunctionsImpl with SearchFunctionsImpl with ConversationFunctionsImpl
 {
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
@@ -356,6 +356,8 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
       payload match {
         
         case ClientRequest(req, rc) => {
+          def params = AutowireParams(user, state, rc + state)
+          
           withRc(rc + state) {
             // TODO: this matching approach is horrible, but at least doesn't duplicate any
             // information. Make it more formal and automated:
@@ -419,8 +421,8 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
 	      changeProps(thingId, props)
 	    }
 	    
-	    case MarcoPoloRequest(propId, q) => {
-	      val response = handleMarcoPoloRequest(propId, q)
+	    case MarcoPoloRequest(propId, q, rc) => {
+	      val response = new MarcoPoloImpl(AutowireParams(user, state, rc + state))(ecology).handleMarcoPoloRequest(propId, q)
 	      sender ! response
 	    }
       }

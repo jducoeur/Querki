@@ -6,11 +6,11 @@ import querki.globals._
 
 import querki.session.messages.{MarcoPoloItem, MarcoPoloResponse}
 
-trait MarcoPoloImpl extends SessionApiImpl {
+class MarcoPoloImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) {
   
-  def Core:querki.core.Core
+  lazy val Core = interface[querki.core.Core]
   lazy val Links = interface[querki.links.Links]
-  def Tags:querki.tags.Tags
+  lazy val Tags = interface[querki.tags.Tags]
   
   def handleMarcoPoloRequest(propIdOpt:Option[ThingId], q:String):MarcoPoloResponse = {
     implicit val s = state

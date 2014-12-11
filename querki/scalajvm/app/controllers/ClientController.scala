@@ -100,7 +100,7 @@ class ClientController extends ApplicationBase {
         Some(ThingId(propIdStr))
       else
         None
-    askUserSpaceSession(rc, MarcoPoloRequest(propId, q)) {
+    askUserSpaceSession(rc, MarcoPoloRequest(propId, q, rc)) {
       case MarcoPoloResponse(items) => {
         Ok(write(items))
       }
