@@ -16,6 +16,7 @@ import EditFunctions._
 import querki.data.ThingInfo
 import querki.display.{Gadget, RawDiv, WithTooltip}
 import querki.display.input.{DeleteInstanceButton, InputGadget}
+import querki.display.rx.RxDiv
 import querki.pages._
 
 class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
@@ -33,12 +34,36 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     Gadgets.registerHook("input[type='text']") { elem => $(elem).filter(".propEditor").addClass("span10") }    
   }
   
-  class PropEditor(val info:PropEditInfo, val section:PropertySection) extends Gadget[dom.HTMLLIElement] {
+  class PropertyEditor(val valEditor:PropValueEditor) extends Gadget[dom.HTMLDivElement] {
+    def doRender() =
+      div(
+        hr,
+        p("TODO: collection and type"),
+        p("TODO: editors for Summary and Details"),
+        p("TODO: editors for standard fields for this Type")
+      )
+  }
+  
+  class PropValueEditor(val info:PropEditInfo, val section:PropertySection) extends Gadget[dom.HTMLLIElement] {
     val prompt = info.prompt.map(_.raw.toString).getOrElse(info.displayName)
     // TODO: there is a nasty bug here. The tooltip should be normally wiki-processed,
     // but there is no way to use raw() on an attribute value. So we instead are displaying
     // the raw, unprocessed form, knowing that Scalatags will escape it.
     val tooltip = info.tooltip.map(_.plaintext).getOrElse(info.displayName)
+    
+    val detailsShown = Var(false)
+    val detailsHolder = Var[Seq[Gadget[_]]](Seq.empty)
+    lazy val detailsEditor = new PropertyEditor(this)
+    val propDetailsArea = new RxDiv(detailsHolder, display:="none", width:="100%")
+    def toggleDetails() = {
+      detailsHolder() = Seq(detailsEditor)
+      if (detailsShown()) {
+        propDetailsArea.elemOpt.map($(_).slideUp())
+      } else {
+        propDetailsArea.elemOpt.map($(_).slideDown())
+      }
+      detailsShown() = !detailsShown()
+    }
     
     def doRender() = 
       // HACK: we're calling this _instanceEditor in order to make the DeleteButton's style work. Let's
@@ -46,10 +71,12 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       li(cls:="_propListItem control-group _instanceEditor",
         data("propid"):=info.propId,
         new WithTooltip(label(cls:="_propPrompt control-label", 
+          onclick:={ () => toggleDetails() },
           new DeleteInstanceButton({() => removeProperty(this)}), 
           raw(s"$prompt ")),
           tooltip),
-        new RawDiv(info.editor, cls:="controls")
+        new RawDiv(info.editor, cls:="controls"),
+        propDetailsArea
       )
   }
   
@@ -62,7 +89,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     }
   }
   
-  def removeProperty(editor:PropEditor) = {
+  def removeProperty(editor:PropValueEditor) = {
     Client[EditFunctions].removeProperty(modelId, editor.info.propId).call().foreach { result =>
       result match {
         case PropertyChanged => editor.section.removeEditor(editor)
@@ -105,13 +132,13 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     }
     
     def appendEditor(editInfo:PropEditInfo) = {
-      val editor = new PropEditor(editInfo, this)
+      val editor = new PropValueEditor(editInfo, this)
       $(elem).append(editor.rendered)
       propIds() += editInfo.propId
       onMoved()
     }
     
-    def removeEditor(editor:PropEditor) = {
+    def removeEditor(editor:PropValueEditor) = {
       val child = $(editor.elem)
       child.hide(400, { () => child.remove() })
       propIds() -= editor.info.propId
@@ -124,7 +151,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
         name:=nam, 
         // Needed for save() to work:
         data("thing"):=modelId,
-        props.map(new PropEditor(_, this))
+        props.map(new PropValueEditor(_, this))
       )
   }
   
