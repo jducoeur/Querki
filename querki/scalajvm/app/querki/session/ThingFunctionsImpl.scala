@@ -87,12 +87,13 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions { self:Actor
         }
           yield prop
           
-        filtered.map(prop => PropInfo(prop.displayName, prop.id.toThingId, prop.getPropOpt(Core.AppliesToKindProp).flatMap(_.firstOpt)))
+        filtered.map(prop => PropInfo(prop.id.toThingId, prop.linkName, prop.displayName, prop.getPropOpt(Core.AppliesToKindProp).flatMap(_.firstOpt)))
       }
       
       SpaceProps(
-        space.displayName,
         space.id.toThingId,
+        space.linkName,
+        space.displayName,
         filterProps(SkillLevel.standardProps),
         filterProps(SkillLevel.advancedProps),
         space.app.map(app => Seq(getPropsForSpace(app))).getOrElse(Seq.empty)
@@ -110,13 +111,13 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions { self:Actor
         filterNot(_.ifSet(Basic.DeprecatedProp)).
         filterNot(typ => typ.isInstanceOf[querki.types.ModelTypeBase] && !typ.ifSet(Basic.ExplicitProp))
     
-    def toCollectionInfo(coll:Collection) = CollectionInfo(coll.displayName, coll.id.toThingId)
+    def toCollectionInfo(coll:Collection) = CollectionInfo(coll.id.toThingId, coll.linkName, coll.displayName)
     
     // TODO: separate the Types by SkillLevel:
     AllTypeInfo(
       Seq(Core.ExactlyOne, Core.Optional, Core.QList, Core.QSet).map(toCollectionInfo(_)),
       Seq.empty,
-      spaceTypes.map(typ => TypeInfo(typ.displayName, typ.id.toThingId)).toSeq,
+      spaceTypes.map(typ => TypeInfo(typ.id.toThingId, typ.linkName, typ.displayName)).toSeq,
       state.allModels.filter(_.hasProp(Editor.InstanceProps)(state)).map(ClientApi.thingInfo(_, rc)).toSeq
     )
   }

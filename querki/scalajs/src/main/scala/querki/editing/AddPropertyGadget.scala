@@ -65,13 +65,13 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
 	        allProps.
 	          filter(_.appliesTo.map(_ == thing.kind).getOrElse(true)).
 	          filter(prop => !existingPropIds().contains(prop.oid)).
-	          sortBy(_.name)
+	          sortBy(_.linkName)
 	        
 	      if (props.isEmpty)
 	        None
 	      else
-	        Some(optgroup(optLabel:=s"$prefix Properties in ${spaceProps.spaceName}",
-	          props.map { prop => option(value:=prop.oid, prop.name) }
+	        Some(optgroup(optLabel:=s"$prefix Properties in ${spaceProps.displayName}",
+	          props.map { prop => option(value:=prop.oid, prop.linkName) }
 	        ))
 	    }
 	    
@@ -116,12 +116,12 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     
     // TODO: should the Collections simply come from the global info instead of typeInfo? They aren't changeable yet.
     lazy val collButtons =
-      typeInfo.collections.headOption.map { coll => ButtonInfo(coll.oid, coll.name, true) } ++
-      typeInfo.collections.tail.map { coll => ButtonInfo(coll.oid, coll.name) }
+      typeInfo.collections.headOption.map { coll => ButtonInfo(coll.oid, coll.displayName, true) } ++
+      typeInfo.collections.tail.map { coll => ButtonInfo(coll.oid, coll.displayName) }
     lazy val collSelector = new RxButtonGroup(Var(collButtons.toSeq))
     
     val advTypeOptions = Var({
-      val typeOpts = typeInfo.advancedTypes.sortBy(_.name).map(typ => option(value:=typ.oid, typ.name))
+      val typeOpts = typeInfo.advancedTypes.sortBy(_.displayName).map(typ => option(value:=typ.oid, typ.displayName))
       option(value:="", "Choose a Type...") +: typeOpts
     })
     val typeSelector = new RxSelect(advTypeOptions, cls:="span5")

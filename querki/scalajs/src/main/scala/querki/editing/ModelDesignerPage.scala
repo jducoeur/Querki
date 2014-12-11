@@ -51,6 +51,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     // the raw, unprocessed form, knowing that Scalatags will escape it.
     val tooltip = info.tooltip.map(_.plaintext).getOrElse(info.displayName)
     
+    // Functions to toggle the PropertyEditor in and out when you click the name of the property:
     val detailsShown = Var(false)
     val detailsHolder = Var[Seq[Gadget[_]]](Seq.empty)
     lazy val detailsEditor = new PropertyEditor(this)

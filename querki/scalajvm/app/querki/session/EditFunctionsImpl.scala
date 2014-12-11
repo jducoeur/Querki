@@ -269,7 +269,7 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
       }
     }
     
-    def toTypeInfo(t:PType[_]) = TypeInfo(t.displayName, t.id.toThingId)
+    def toTypeInfo(t:PType[_]) = TypeInfo(t.id.toThingId, t.linkName, t.displayName)
     
     val promise = Promise[TypeInfo]
     typOpt match {

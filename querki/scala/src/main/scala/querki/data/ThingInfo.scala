@@ -4,9 +4,10 @@ import models.{Kind, Wikitext}
 
 import querki.core.NameUtils
 
-trait Urlable {
+trait BasicThingInfo {
   def oid:String
   def linkName:Option[String]
+  def displayName:String
   
   def urlName = linkName match {
     case Some(name) => NameUtils.toUrl(name)
@@ -29,49 +30,49 @@ case class ThingInfo(
   isDeleteable:Boolean,
   isInstantiatable:Boolean,
   isTag:Boolean,
-  importedFrom:Option[SpaceInfo]) extends Urlable
-{
-}
+  importedFrom:Option[SpaceInfo]) extends BasicThingInfo
 
 case class SpaceInfo(
   oid:String, 
   linkName:Option[String], 
   displayName:String,
   ownerId:String,
-  ownerHandle:String) extends Urlable
-{
-}
+  ownerHandle:String) extends BasicThingInfo
 
 case class PropValInfo(
-  name:String,
+  displayName:String,
   prompt:Option[Wikitext],
   renderedV:Wikitext,
   tooltip:Option[Wikitext]
 )
 
 case class PropInfo(
-  name:String,
   oid:String,
+  linkName:Option[String],
+  displayName:String,
   appliesTo:Option[Kind.Kind]
-)
+) extends BasicThingInfo
 
 case class SpaceProps(
-  spaceName:String,
-  spaceOid:String,
+  oid:String,
+  linkName:Option[String],
+  displayName:String,
   standardProps:Seq[PropInfo],
   advancedProps:Seq[PropInfo],
   apps:Seq[SpaceProps]
-)
+) extends BasicThingInfo
 
 case class CollectionInfo(
-  name:String,
-  oid:String
-)
+  oid:String,
+  linkName:Option[String],
+  displayName:String
+) extends BasicThingInfo
 
 case class TypeInfo(
-  name:String,
-  oid:String
-)
+  oid:String,
+  linkName:Option[String],
+  displayName:String
+) extends BasicThingInfo
 
 case class AllTypeInfo(
   collections:Seq[CollectionInfo],

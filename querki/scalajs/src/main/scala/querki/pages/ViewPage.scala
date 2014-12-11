@@ -17,7 +17,7 @@ class ViewPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecology
     for {
       thing <- DataAccess.getThing(name)
       propsRaw <- Client[ThingFunctions].getProperties(name).call()
-      props = propsRaw.sortBy(_.name)
+      props = propsRaw.sortBy(_.displayName)
       pageTitle = s"Viewing Source of ${thing.importedFrom.map(_.displayName + "::").getOrElse("")}${thing.displayName}"
       guts = 
         div(
@@ -34,7 +34,7 @@ class ViewPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecology
               for { 
                 prop <- props
                 tt = prop.tooltip.map(_.raw.toString).map(title:=_)
-                label = prop.prompt.map(_.display.toString).getOrElse(prop.name)
+                label = prop.prompt.map(_.display.toString).getOrElse(prop.displayName)
               }
                 yield MSeq(
                   dt(cls:="control-label _withTooltip", if (tt.isDefined) { tt.get }, label),
