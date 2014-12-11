@@ -11,7 +11,7 @@ import querki.globals._
 import querki.globals.Implicits._
 
 import querki.core.NameUtils
-import querki.data.{IdentityInfo, PropValInfo, RequestInfo, SpaceInfo, ThingInfo, UserInfo}
+import querki.data._
 import querki.identity.{PublicIdentity, User}
 import querki.pages.PageDetails
 import querki.session.messages.{ClientAnswer, ClientResponse}
@@ -86,6 +86,15 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi with CommonF
       rc.requesterOrAnon.isAdmin)
   }
   
+  def propInfo(prop:AnyProp, rc:RequestContext):PropInfo = {
+    implicit val s = rc.state.get
+    PropInfo(
+      prop.id.toThingId, 
+      prop.linkName, 
+      prop.displayName, 
+      prop.getPropOpt(Core.AppliesToKindProp).flatMap(_.firstOpt))
+  }
+  
   def propValInfo(t:Thing, rc:RequestContext):Seq[PropValInfo] = {
     implicit val state = rc.state.get
     def oneProp(prop:AnyProp, v:QValue):PropValInfo = {
@@ -98,7 +107,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi with CommonF
       }
       val tooltip = prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc)))
           
-      PropValInfo(prop.displayName, prompt, renderedV, tooltip)
+      PropValInfo(propInfo(prop, rc), prompt, renderedV, tooltip)
     }
     
     val infoOpts = for {
@@ -106,7 +115,6 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi with CommonF
       if (!prop.ifSet(Core.InternalProp))
     }
       yield t.getPropOpt(prop).map(pv => oneProp(prop, pv.v))
-    
     infoOpts.flatten.toSeq
   }
   

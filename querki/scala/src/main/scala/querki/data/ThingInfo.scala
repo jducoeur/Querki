@@ -39,19 +39,19 @@ case class SpaceInfo(
   ownerId:String,
   ownerHandle:String) extends BasicThingInfo
 
-case class PropValInfo(
-  displayName:String,
-  prompt:Option[Wikitext],
-  renderedV:Wikitext,
-  tooltip:Option[Wikitext]
-)
-
 case class PropInfo(
   oid:String,
   linkName:Option[String],
   displayName:String,
   appliesTo:Option[Kind.Kind]
 ) extends BasicThingInfo
+
+case class PropValInfo(
+  propInfo:PropInfo,
+  prompt:Option[Wikitext],
+  renderedV:Wikitext,
+  tooltip:Option[Wikitext]
+)
 
 case class SpaceProps(
   oid:String,

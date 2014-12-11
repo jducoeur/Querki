@@ -181,8 +181,7 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
     val context = thing.thisAsContext(theRc)
     val rendered = HtmlRenderer.renderPropertyInputStr(context, prop, propVal)
     PropEditInfo(
-      prop.id.toThingId,
-      prop.displayName,
+      ClientApi.propInfo(prop, rc),
       propVal.inputControlId,
       prop.getPropOpt(Editor.PromptProp).filter(!_.isEmpty).map(_.renderPlain),
       prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(theRc))),

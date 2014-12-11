@@ -87,7 +87,13 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions { self:Actor
         }
           yield prop
           
-        filtered.map(prop => PropInfo(prop.id.toThingId, prop.linkName, prop.displayName, prop.getPropOpt(Core.AppliesToKindProp).flatMap(_.firstOpt)))
+        // Need to cast to List in order to force the Seq; if we leave it lazy,
+        // badness can happen, because of the side-effecting nature of the rc
+        // parameter.
+        // TODO: okay, this strongly suggests that the way we are doing rc is EVIL.
+        // Is there a more functionally-correct way to inject context into these
+        // handlers?
+        filtered.map(prop => ClientApi.propInfo(prop, rc)).toList
       }
       
       SpaceProps(
@@ -96,7 +102,9 @@ trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions { self:Actor
         space.displayName,
         filterProps(SkillLevel.standardProps),
         filterProps(SkillLevel.advancedProps),
-        space.app.map(app => Seq(getPropsForSpace(app))).getOrElse(Seq.empty)
+        // Need to cast to List in order to force the Seq; if we leave it lazy,
+        // badness can happen
+        space.app.map(app => Seq(getPropsForSpace(app))).getOrElse(Seq.empty).toList
       )
     }
     

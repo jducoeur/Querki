@@ -10,6 +10,11 @@ import querki.globals._
 
 import querki.display.Gadget
 
+trait RxThingSelector {
+  def selectedText:Rx[String]
+  def selectedVal:Rx[String]
+}
+
 /**
  * A wrapper around the select element, which provides reactive that let you keep an eye on the current
  * selection.
@@ -20,7 +25,7 @@ import querki.display.Gadget
  * It is legal for the options to include one (usually at the top) with "" as its value. That is considered
  * to be the "not set" state.
  */
-class RxSelect(options:Rx[Seq[Frag]], mods:Modifier*) extends Gadget[dom.HTMLSelectElement] {
+class RxSelect(options:Rx[Seq[Frag]], mods:Modifier*) extends Gadget[dom.HTMLSelectElement] with RxThingSelector {
   
   private def curSelected = {
     elemOpt.map(e => $(e).find("option:selected"))

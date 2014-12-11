@@ -33,6 +33,20 @@ package object globals {
     wrapper.get
   }  
   
+  /**
+   * A quick-and-dirty temp wrapper to inject heavy spewage around some code while debugging.
+   */
+  def spewing[T](msg:String)(f: => T):T = {
+    QLog.spew(s"Trying $msg")
+    try {
+      val result = f
+      QLog.spew(s"  $msg succeeded")
+      result
+    } catch {
+      case ex:Exception => { QLog.error(s"  $msg failed", ex); throw ex }
+    }
+  }
+  
   object Implicits {
     implicit lazy val execContext = scala.concurrent.ExecutionContext.Implicits.global
   }

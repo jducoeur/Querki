@@ -60,8 +60,7 @@ object EditFunctions {
   case class FullEditInfo(instancePropIds:Seq[String], instancePropPath:String, propInfos:Seq[PropEditInfo])
   
   case class PropEditInfo(
-    propId:String,
-	displayName:String,
+    propInfo:PropInfo,
 	path:String,
 	prompt:Option[Wikitext],
     tooltip:Option[Wikitext],

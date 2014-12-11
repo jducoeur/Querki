@@ -16,7 +16,7 @@ import EditFunctions._
 import querki.data.ThingInfo
 import querki.display.{Gadget, RawDiv, WithTooltip}
 import querki.display.input.{DeleteInstanceButton, InputGadget}
-import querki.display.rx.RxDiv
+import querki.display.rx.{RxDiv, RxThingSelector}
 import querki.pages._
 
 class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
@@ -34,27 +34,36 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     Gadgets.registerHook("input[type='text']") { elem => $(elem).filter(".propEditor").addClass("span10") }    
   }
   
-  class PropertyEditor(val valEditor:PropValueEditor) extends Gadget[dom.HTMLDivElement] {
+  class PropertyDetails(val valEditor:PropValueEditor) extends Gadget[dom.HTMLDivElement] {
+    def editInfo = valEditor.info
+    def propInfo = editInfo.propInfo
+    val thingSelector = 
+      new RxThingSelector {
+        val selectedText = Var(propInfo.displayName)
+        def selectedVal = Var(propInfo.oid)
+      } 
+    
     def doRender() =
       div(
-        hr,
-        p("TODO: collection and type"),
-        p("TODO: editors for Summary and Details"),
-        p("TODO: editors for standard fields for this Type")
+        hr
+//        p("TODO: collection and type"),
+//        p("TODO: editors for Summary and Details"),
+//        p("TODO: editors for standard fields for this Type")
       )
   }
   
   class PropValueEditor(val info:PropEditInfo, val section:PropertySection) extends Gadget[dom.HTMLLIElement] {
-    val prompt = info.prompt.map(_.raw.toString).getOrElse(info.displayName)
+    val propInfo = info.propInfo
+    val prompt = info.prompt.map(_.raw.toString).getOrElse(propInfo.displayName)
     // TODO: there is a nasty bug here. The tooltip should be normally wiki-processed,
     // but there is no way to use raw() on an attribute value. So we instead are displaying
     // the raw, unprocessed form, knowing that Scalatags will escape it.
-    val tooltip = info.tooltip.map(_.plaintext).getOrElse(info.displayName)
+    val tooltip = info.tooltip.map(_.plaintext).getOrElse(propInfo.displayName)
     
     // Functions to toggle the PropertyEditor in and out when you click the name of the property:
     val detailsShown = Var(false)
     val detailsHolder = Var[Seq[Gadget[_]]](Seq.empty)
-    lazy val detailsEditor = new PropertyEditor(this)
+    lazy val detailsEditor = new PropertyDetails(this)
     val propDetailsArea = new RxDiv(detailsHolder, display:="none", width:="100%")
     def toggleDetails() = {
       detailsHolder() = Seq(detailsEditor)
@@ -70,7 +79,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       // HACK: we're calling this _instanceEditor in order to make the DeleteButton's style work. Let's
       // refactor this somehow:
       li(cls:="_propListItem control-group _instanceEditor",
-        data("propid"):=info.propId,
+        data("propid"):=propInfo.oid,
         new WithTooltip(label(cls:="_propPrompt control-label", 
           onclick:={ () => toggleDetails() },
           new DeleteInstanceButton({() => removeProperty(this)}), 
@@ -91,7 +100,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   }
   
   def removeProperty(editor:PropValueEditor) = {
-    Client[EditFunctions].removeProperty(modelId, editor.info.propId).call().foreach { result =>
+    Client[EditFunctions].removeProperty(modelId, editor.propInfo.oid).call().foreach { result =>
       result match {
         case PropertyChanged => editor.section.removeEditor(editor)
         case PropertyChangeError(msg) => StatusLine.showBriefly(msg)        
@@ -104,7 +113,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     /**
      * The Properties currently in this section. Note that this is a var so that more props can be added.
      */
-    val propIds = Var(props.map(_.propId).toSet)
+    val propIds = Var(props.map(_.propInfo.oid).toSet)
     
     // Note that this is only ever invoked on the Instance Property Section:
     def values = {
@@ -135,14 +144,14 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     def appendEditor(editInfo:PropEditInfo) = {
       val editor = new PropValueEditor(editInfo, this)
       $(elem).append(editor.rendered)
-      propIds() += editInfo.propId
+      propIds() += editInfo.propInfo.oid
       onMoved()
     }
     
     def removeEditor(editor:PropValueEditor) = {
       val child = $(editor.elem)
       child.hide(400, { () => child.remove() })
-      propIds() -= editor.info.propId
+      propIds() -= editor.info.propInfo.oid
       instancePropSection().onMoved()
     }
     
@@ -172,9 +181,9 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       standardInfo <- DataAccess.standardInfo
       model <- DataAccess.getThing(modelId)
       fullEditInfo <- Client[EditFunctions].getPropertyEditors(modelId).call()
-      (instanceProps, modelProps) = fullEditInfo.propInfos.partition(propInfo => fullEditInfo.instancePropIds.contains(propInfo.propId))
+      (instanceProps, modelProps) = fullEditInfo.propInfos.partition(propEditInfo => fullEditInfo.instancePropIds.contains(propEditInfo.propInfo.oid))
       sortedInstanceProps = (Seq.empty[PropEditInfo] /: fullEditInfo.instancePropIds) { (current, propId) =>
-        instanceProps.find(_.propId == propId) match {
+        instanceProps.find(_.propInfo.oid == propId) match {
           case Some(prop) => current :+ prop
           case None => { println(s"Couldn't find property $propId, although it is in instancePropIds!"); current }
         }

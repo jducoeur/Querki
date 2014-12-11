@@ -9,15 +9,15 @@ import querki.globals._
 
 import querki.api.ThingFunctions
 import querki.display.{Gadget, QText}
-import querki.display.rx.{RxDiv, RxSelect}
+import querki.display.rx.{RxDiv, RxThingSelector}
 
 /**
- * This watches an RxSelect full of Things, and produces the div describing the currently-selected Thing.
+ * This watches an RxThingSelector full of Things, and produces the div describing the currently-selected Thing.
  * 
- * @param selector The selected() reactive of the RxSelect. We pass in this instead of the RxSelect itself
+ * @param selector Typically the selected() reactive of an RxSelect. We pass in this instead of the RxSelect itself
  *   so that you can orElse multiple RxSelects and feed the union into here.
  */
-class DescriptionDiv(selector:Rx[Option[(RxSelect, String)]])(implicit val ecology:Ecology) extends EcologyMember {
+class DescriptionDiv(selector:Rx[Option[(RxThingSelector, String)]])(implicit val ecology:Ecology) extends EcologyMember {
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
   

@@ -6,7 +6,7 @@ import models.{Thing}
 
 import querki.globals._
 
-import querki.data.{IdentityInfo, PropValInfo, RequestInfo, ThingInfo}
+import querki.data._
 import querki.identity.PublicIdentity
 import querki.pages.PageDetails
 import querki.session.messages.ClientAnswer
@@ -19,6 +19,8 @@ package object api {
     def thingInfo(t:Thing, rc:RequestContext):ThingInfo
     
     def identityInfo(identity:PublicIdentity):IdentityInfo
+    
+    def propInfo(prop:AnyProp, rc:RequestContext):PropInfo
     
     def propValInfo(t:Thing, rc:RequestContext):Seq[PropValInfo]
     
