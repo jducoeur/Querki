@@ -5,9 +5,9 @@ import querki.globals._
 import querki.api.SearchFunctions
 import SearchFunctions._
 
-trait SearchFunctionsImpl extends SessionApiImpl with SearchFunctions {
+class SearchFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with SearchFunctions {
 
-  def ClientApi:querki.api.ClientApi
+  lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Search = interface[querki.search.Search]
   
   def search(q:String):Option[SearchResults] = {
