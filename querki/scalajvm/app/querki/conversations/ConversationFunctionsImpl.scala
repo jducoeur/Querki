@@ -10,7 +10,7 @@ import querki.globals._
 
 import querki.identity.PublicIdentity
 import querki.identity.IdentityCacheMessages._
-import querki.session.SessionApiImpl
+import querki.session.{AutowireApiImpl, AutowireParams}
 import querki.spaces.messages.{ConversationRequest, ThingError}
 import querki.util.Requester
 import querki.values.RequestContext
@@ -22,11 +22,11 @@ import messages._
  * 
  * Note that this trait is specifically design to be mixed into the UserSession.
  */
-trait ConversationFunctionsImpl extends ConversationFunctions with SessionApiImpl { self:Actor with Requester =>
+class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with ConversationFunctions {
 
-  def ClientApi:querki.api.ClientApi
+  lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Conversations = interface[querki.conversations.Conversations]
-  def Core:querki.core.Core
+  lazy val Core = interface[querki.core.Core]
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   
   def getIds(node:ConversationNode):Set[OID] = {

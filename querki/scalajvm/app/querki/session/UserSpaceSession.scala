@@ -77,7 +77,7 @@ trait SessionApiImpl extends EcologyMember {
 private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
   extends Actor with Stash with Requester with EcologyMember with TimeoutChild
   with autowire.Server[String, upickle.Reader, upickle.Writer]
-  with EditFunctionsImpl with ConversationFunctionsImpl
+  with EditFunctionsImpl
 {
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
@@ -391,7 +391,8 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
               case "ConversationFunctions" => {
                 // route() is asynchronous, so we need to store away the sender!
                 val senderSaved = sender
-                route[ConversationFunctions](this)(req).foreach { result =>
+                val handler = new ConversationFunctionsImpl(params)
+                route[ConversationFunctions](handler)(req).foreach { result =>
                   senderSaved ! ClientResponse(result)                  
                 }
               }
