@@ -356,7 +356,7 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
       payload match {
         
         case ClientRequest(req, rc) => {
-          def params = AutowireParams(user, state, rc + state)
+//          def params = AutowireParams(user, state, rc + state)
           
           withRc(rc + state) {
             // TODO: this matching approach is horrible, but at least doesn't duplicate any
@@ -422,7 +422,7 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
 	    }
 	    
 	    case MarcoPoloRequest(propId, q, rc) => {
-	      val response = new MarcoPoloImpl(AutowireParams(user, state, rc + state))(ecology).handleMarcoPoloRequest(propId, q)
+	      val response = new MarcoPoloImpl(AutowireParams(user, state, rc + state, this))(ecology).handleMarcoPoloRequest(propId, q)
 	      sender ! response
 	    }
       }
