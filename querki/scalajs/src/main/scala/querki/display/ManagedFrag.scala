@@ -28,9 +28,16 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
    */
   def setElem(e:dom.Node):this.type = {
     _elem = Some(e.asInstanceOf[Output])
+    val gadgets =
+      if ($(elem).hasClass("_withGadget")) {
+        val existingGadgets = $(elem).data("gadgets").asInstanceOf[Seq[AnyFrag]]
+        existingGadgets :+ this
+      } else {
+        Seq(this)
+      }
     // TODO: this should be a Seq of Gadgets, not a single one, so we can attach multiple
     // Gadgets to a single Element!
-    $(elem).data("gadget", this.asInstanceOf[js.Any])
+    $(elem).data("gadgets", gadgets.asInstanceOf[js.Any])
     $(elem).addClass("_withGadget")
     this
   }
@@ -66,14 +73,11 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
   
   def findGadgetsFor(root:JQuery, pred:AnyFrag => Boolean):Seq[AnyFrag] = {
     val gadgetOptsArray = root.find("._withGadget").map({ (e:dom.Element) =>
-      val frag = $(e).data("gadget").asInstanceOf[AnyFrag]
-      if (pred(frag))
-        Some(frag)
-      else
-        None
+      val frags = $(e).data("gadgets").asInstanceOf[Seq[AnyFrag]]
+      frags.filter(pred(_))
     }:js.ThisFunction0[dom.Element, Any]).jqf.get()
     
-    val gadgetOptsSeq:Seq[Option[AnyFrag]] = gadgetOptsArray.asInstanceOf[js.Array[Option[AnyFrag]]]
+    val gadgetOptsSeq:Seq[Seq[AnyFrag]] = gadgetOptsArray.asInstanceOf[js.Array[Seq[AnyFrag]]]
         
     gadgetOptsSeq.flatten
   }
