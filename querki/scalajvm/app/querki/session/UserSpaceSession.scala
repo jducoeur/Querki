@@ -77,7 +77,7 @@ trait SessionApiImpl extends EcologyMember {
 private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
   extends Actor with Stash with Requester with EcologyMember with TimeoutChild
   with autowire.Server[String, upickle.Reader, upickle.Writer]
-  with ThingFunctionsImpl with EditFunctionsImpl with ConversationFunctionsImpl
+  with EditFunctionsImpl with ConversationFunctionsImpl
 {
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
@@ -348,6 +348,8 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
   def write[Result: Writer](r: Result) = upickle.write(r)
   def read[Result: Reader](p: String) = upickle.read[Result](p)
   
+  def mkParams(rc:RequestContext) = AutowireParams(user, state, rc + state, spaceRouter, this)
+  
   def normalReceive:Receive = LoggingReceive {
     case CurrentState(s) => setRawState(s)
     
@@ -356,7 +358,7 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
       payload match {
         
         case ClientRequest(req, rc) => {
-          def params = AutowireParams(user, state, rc + state, this)
+          def params = mkParams(rc)
           implicit val e = ecology
           
           withRc(rc + state) {
@@ -366,7 +368,8 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
               case "ThingFunctions" => {
                 // route() is asynchronous, so we need to store away the sender!
                 val senderSaved = sender
-                route[ThingFunctions](this)(req).foreach { result =>
+                val handler = new ThingFunctionsImpl(params)
+                route[ThingFunctions](handler)(req).foreach { result =>
                   senderSaved ! ClientResponse(result)                  
                 }
               }
@@ -424,7 +427,7 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
 	    }
 	    
 	    case MarcoPoloRequest(propId, q, rc) => {
-	      val response = new MarcoPoloImpl(AutowireParams(user, state, rc + state, this))(ecology).handleMarcoPoloRequest(propId, q)
+	      val response = new MarcoPoloImpl(mkParams(rc))(ecology).handleMarcoPoloRequest(propId, q)
 	      sender ! response
 	    }
       }

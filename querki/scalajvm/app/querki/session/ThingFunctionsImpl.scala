@@ -15,15 +15,15 @@ import querki.pages.ThingPageDetails
 import querki.spaces.messages.{DeleteThing, ThingFound, ThingError}
 import querki.util.Requester
 
-trait ThingFunctionsImpl extends SessionApiImpl with ThingFunctions { self:Actor with Requester =>
+class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with ThingFunctions {
   
-  def Basic:querki.basic.Basic
-  def ClientApi:querki.api.ClientApi
-  def Core:querki.core.Core
-  def Editor:querki.editing.Editor
+  lazy val Basic = interface[querki.basic.Basic]
+  lazy val ClientApi = interface[querki.api.ClientApi]
+  lazy val Core = interface[querki.core.Core]
+  lazy val Editor = interface[querki.editing.Editor]
   lazy val HtmlUI = interface[querki.html.HtmlUI]
-  def QL:querki.ql.QL
-  def SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
+  lazy val QL = interface[querki.ql.QL]
+  lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   
   def getRequestInfo():RequestInfo = ClientApi.requestInfo(rc)
   

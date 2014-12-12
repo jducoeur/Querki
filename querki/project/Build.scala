@@ -130,6 +130,7 @@ object Dependencies {
       "org.imgscalr" % "imgscalr-lib" % "4.2",
       "com.amazonaws" % "aws-java-sdk" % "1.8.4",
 	  "com.lihaoyi" %% "upickle" % "0.2.5",
+	  "com.scalarx" %% "scalarx" % "0.2.6",
 	  "com.lihaoyi" %% "autowire" % "0.2.3"
   ) ++ shared
 
