@@ -87,13 +87,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
         }
           yield prop
           
-        // Need to cast to List in order to force the Seq; if we leave it lazy,
-        // badness can happen, because of the side-effecting nature of the rc
-        // parameter.
-        // TODO: okay, this strongly suggests that the way we are doing rc is EVIL.
-        // Is there a more functionally-correct way to inject context into these
-        // handlers?
-        filtered.map(prop => ClientApi.propInfo(prop, rc)).toList
+        filtered.map(prop => ClientApi.propInfo(prop, rc))
       }
       
       SpaceProps(
@@ -102,9 +96,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
         space.displayName,
         filterProps(SkillLevel.standardProps),
         filterProps(SkillLevel.advancedProps),
-        // Need to cast to List in order to force the Seq; if we leave it lazy,
-        // badness can happen
-        space.app.map(app => Seq(getPropsForSpace(app))).getOrElse(Seq.empty).toList
+        space.app.map(app => Seq(getPropsForSpace(app))).getOrElse(Seq.empty)
       )
     }
     
