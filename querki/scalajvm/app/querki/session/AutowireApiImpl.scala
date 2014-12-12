@@ -9,8 +9,11 @@ import models.{Thing, ThingId}
 import querki.globals._
 
 import querki.identity.User
+import querki.spaces.messages.SessionRequest
 import querki.util.Requester
 import querki.values.{RequestContext, SpaceState}
+
+import messages.SessionMessage
 
 /**
  * Passthrough parameters. The subclass of AutowireApiImpl should accept these and pass them into
@@ -44,12 +47,23 @@ case class AutowireParams(
   actor:Actor with Stash with Requester
 )
 
+/**
+ * Base class for implementations of Autowire classes that hook into the UserSpaceSession.
+ * An instance of the relevant class will be created for *each* method invocation, so that
+ * we can stick the contextual information into the params and have it stick around until
+ * the call completes. (Which will often involve Futures.)
+ * 
+ * EXTREMELY IMPORTANT: the consequence of this is that you must *never* create any persistent
+ * pointers to instances of this class!!! If you do, they will become enormous memory leaks!
+ * Remember, functional programming is your friend...
+ */
 class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends EcologyMember {
   def user = info.user
   def state = info.state
   val curThingRx = Var[Option[Thing]](None)
   val rcRx = Rx { curThingRx().map(thing => info.rc + thing).getOrElse(info.rc) }
   def rc = rcRx()
+  def self = info.actor.self
   val spaceRouter = info.spaceRouter
   
   def withThing[R](thingId:String)(f:Thing => R):R = {
@@ -64,5 +78,12 @@ class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends EcologyM
   // worth polluting Requester with the notion of making this all delegatable.
   implicit class RequestableActorRef(a:ActorRef) {
     def request(msg:Any)(handler:Actor.Receive) = info.actor.doRequest(a, msg)(handler)
+  }
+  
+  /**
+   * Constructs a request suitable for looping back to the UserSpaceSession.
+   */
+  def createSelfRequest(payload:SessionMessage):SessionRequest = {
+    SessionRequest(user, state.owner, state.id.toThingId, payload)
   }
 }

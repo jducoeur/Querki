@@ -18,17 +18,17 @@ import querki.spaces.messages.{CreateThing, ThingFound, ThingError}
 import querki.util.Requester
 import querki.values.{QLRequestContext, RequestContext}
 
-trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor with Requester =>
+class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with EditFunctions {
   
-  def Basic:querki.basic.Basic
-  def ClientApi:querki.api.ClientApi
+  lazy val Basic = interface[querki.basic.Basic]
+  lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val Core = interface[querki.core.Core]
   lazy val DataModel = interface[querki.datamodel.DataModelAccess]
-  def Editor:querki.editing.Editor
+  lazy val Editor = interface[querki.editing.Editor]
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
   lazy val PropListManager = interface[querki.core.PropListManager]
-  def QL:querki.ql.QL
+  lazy val QL = interface[querki.ql.QL]
   lazy val Types = interface[querki.types.Types]
   
   lazy val doLogEdits = Config.getBoolean("querki.test.logEdits", false)
@@ -86,7 +86,7 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
   def doChangeProps(thing:Thing, props:PropMap):Future[PropertyChangeResponse] = {
     val promise = Promise[PropertyChangeResponse]
 
-    self.request(createRequest(ChangeProps2(thing.toThingId, props))) {
+    self.request(createSelfRequest(ChangeProps2(thing.toThingId, props))) {
       case ThingFound(_, _) => promise.success(PropertyChanged)
       
       // TODO: instead of PropertyChangeError, we really should have a generalized exception mechanism
@@ -160,12 +160,11 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
       }
     }
     
-    val theRc = rc
     spaceRouter.request(CreateThing(user, state.owner, state.toThingId, model.kind, model.id, props)) {
       case ThingFound(thingId, newState) => {
         newState.anything(thingId) match {
           case Some(thing) => {
-	        promise.success(ClientApi.thingInfo(thing, theRc))
+	        promise.success(ClientApi.thingInfo(thing, rc))
           }
           case None => promise.failure(new Exception("INTERNAL ERROR: Space claimed to create a new Thing, but seems to have failed?!?"))
         }
@@ -176,15 +175,15 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
     promise.future
   }
   
-  private def getOnePropEditor(theRc:RequestContext, thing:Thing, prop:AnyProp, propVal:DisplayPropVal):PropEditInfo = {
+  private def getOnePropEditor(thing:Thing, prop:AnyProp, propVal:DisplayPropVal):PropEditInfo = {
     implicit val s = state
-    val context = thing.thisAsContext(theRc)
+    val context = thing.thisAsContext(rc)
     val rendered = HtmlRenderer.renderPropertyInputStr(context, prop, propVal)
     PropEditInfo(
       ClientApi.propInfo(prop, rc),
       propVal.inputControlId,
       prop.getPropOpt(Editor.PromptProp).filter(!_.isEmpty).map(_.renderPlain),
-      prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(theRc))),
+      prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc))),
       propVal.inheritedFrom.map(_.displayName),
       rendered
       )
@@ -198,7 +197,7 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
     
     val propInfos = propList.filter(_._1.id != querki.editing.MOIDs.InstanceEditPropsOID).map { entry =>
       val (prop, propVal) = entry
-      getOnePropEditor(rc, thing, prop, propVal)
+      getOnePropEditor(thing, prop, propVal)
     }
     
     val instanceProps = for {
@@ -224,8 +223,7 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
     }
       yield Core.toProps((prop, newV))()  
 
-    val theRc = rc
-    self.request(createRequest(ChangeProps2(thing.toThingId, propsOpt.get))) {
+    self.request(createSelfRequest(ChangeProps2(thing.toThingId, propsOpt.get))) {
       case ThingFound(id, newState) => {
         val result = for {
           newThing <- newState.anything(id)
@@ -233,7 +231,7 @@ trait EditFunctionsImpl extends SessionApiImpl with EditFunctions { myself:Actor
           pv <- newThing.getPropOpt(prop)
           propVal = DisplayPropVal(Some(newThing), prop, Some(pv.v))
         }
-          yield getOnePropEditor(theRc, newThing, prop, propVal)
+          yield getOnePropEditor(newThing, prop, propVal)
           
         promise.success(result.get)
       }
