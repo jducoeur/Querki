@@ -25,54 +25,12 @@ import querki.util.{PublicException, QLog, Requester, TimeoutChild, UnexpectedPu
 import querki.values.{QValue, RequestContext, SpaceState}
 
 /**
- * The various UserSession-focused implementations should inherit from this. They then get mixed into
- * UserSpaceSession, and use this trait to access the critical contextual info. 
- */
-trait SessionApiImpl extends EcologyMember {
-  /**
-   * The User who is making this request.
-   */
-  def user:User
-  
-  /**
-   * The current state of the Space, as seen by this User.
-   */
-  def state:SpaceState
-  
-  /**
-   * The RequestContext for this request.
-   */
-  def rc:RequestContext
-  
-  /**
-   * The routing Actor to use to send messages around this Space's Troupe.
-   */
-  def spaceRouter:ActorRef
-  
-  /**
-   * Obtains the specified Thing from the current State, and tweaks the RequestContext accordingly.
-   */
-  def withThing[R](thingId:String)(f:Thing => R):R
-  
-  /**
-   * Create a new request, suitable for looping back to this session, based on the current message.
-   * 
-   * IMPORTANT: this is only valid synchronously, during initial processing of the current message. Is this
-   * good enough?
-   */
-  def createRequest(payload:SessionMessage):SessionRequest
-}
-
-/**
  * The Actor that controls an individual's relationship with a Space.
  * 
  * TODO: this is currently *very* incestuous with querki.uservalues. Should we refactor out the UserValue handlers,
  * along the lines of how we do in Space? That would currently leave this class very hollowed-out, but I expect it
  * to grow a lot in the future, and to become much more heterogeneous, so we may want to separate all of those
  * concerns.
- * 
- * TODO: this is getting bigger and bigger, due to containing the FunctionsImpl traits. That "containerness" probably needs
- * to be refactored somewhat.
  */
 private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
   extends Actor with Stash with Requester with EcologyMember with TimeoutChild
@@ -80,11 +38,7 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
 {
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
-  lazy val ClientApi = interface[querki.api.ClientApi]
-  lazy val Editor = interface[querki.editing.Editor]
   lazy val Person = interface[querki.identity.Person]
-  lazy val QL = interface[querki.ql.QL]
-  lazy val Tags = interface[querki.tags.Tags]
   lazy val UserValues = interface[querki.uservalues.UserValues]
   
   /**
@@ -254,34 +208,7 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
     case _ => stash()
   }
   
-  var _currentRc:Option[RequestContext] = None
-  def rc = _currentRc.get
-  def withRc[R](rc:RequestContext)(f: => R):R = {
-    _currentRc = Some(rc)
-    try {
-      f
-    } finally {
-      _currentRc = None
-    }
-  }
-  
-  var _currentRequest:Option[SessionRequest] = None
-  def currentRequest = _currentRequest.get
-  def withRequest(req:SessionRequest)(f: => Unit) = {
-    _currentRequest = Some(req)
-    try {
-      f
-    } finally {
-      _currentRequest = None
-    }
-  }
-  
-  def createRequest(payload:SessionMessage):SessionRequest = {
-    val SessionRequest(req, own, space, _) = currentRequest
-    SessionRequest(req, own, space, payload)
-  }
-  
-  def changeProps(thingId:ThingId, props:PropMap) = {
+  def changeProps(currentRequest:SessionRequest, thingId:ThingId, props:PropMap) = {
     val SessionRequest(req, own, space, payload) = currentRequest
     
     // For the time being, we cope only with a single UserValue property being set at a time.
@@ -334,15 +261,6 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
     }    
   }
   
-  def withThing[R](thingId:String)(f:Thing => R):R = {
-    val oid = ThingId(thingId)
-    // Either show this actual Thing, or a synthetic TagThing if it's not found:
-    val thing = state.anything(oid).getOrElse(Tags.getTag(thingId, state))
-    withRc(rc + thing) {
-      f(thing)
-    }
-  }
-  
   // Autowire functions
   def write[Result: Writer](r: Result) = upickle.write(r)
   def read[Result: Reader](p: String) = upickle.read[Result](p)
@@ -352,7 +270,7 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
   def normalReceive:Receive = LoggingReceive {
     case CurrentState(s) => setRawState(s)
     
-    case request @ SessionRequest(req, own, space, payload) => withRequest(request) { 
+    case request @ SessionRequest(req, own, space, payload) => { 
       checkDisplayName(req, own, space)
       payload match {
         
@@ -360,7 +278,6 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
           def params = mkParams(rc)
           implicit val e = ecology
           
-          withRc(rc + state) {
             // TODO: this matching approach is horrible, but at least doesn't duplicate any
             // information. Make it more formal and automated:
             req.path(2) match {
@@ -398,7 +315,6 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
               }
               case _ => { sender ! ClientError("Unknown API ID!") }
             }
-          }
         }
         
         case GetActiveSessions => QLog.error("UserSpaceSession received GetActiveSessions! WTF?")
@@ -424,7 +340,7 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
 	    }
 	    
 	    case ChangeProps2(thingId, props) => {
-	      changeProps(thingId, props)
+	      changeProps(request, thingId, props)
 	    }
 	    
 	    case MarcoPoloRequest(propId, q, rc) => {
