@@ -32,10 +32,12 @@ import querki.values.{QValue, RequestContext, SpaceState}
  * to grow a lot in the future, and to become much more heterogeneous, so we may want to separate all of those
  * concerns.
  */
-private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
+private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
   extends Actor with Stash with Requester with EcologyMember with TimeoutChild
   with autowire.Server[String, upickle.Reader, upickle.Writer]
 {
+  implicit val ecology = e
+  
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Person = interface[querki.identity.Person]
@@ -54,7 +56,6 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
   var _enhancedState:Option[SpaceState] = None
   def clearEnhancedState() = _enhancedState = None
   def makeEnhancedState():SpaceState = {
-    implicit val e = ecology
     _rawState match {
       case Some(rs) => {
         val isOwner = user.hasIdentity(rs.owner)
@@ -266,6 +267,19 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
   def read[Result: Reader](p: String) = upickle.read[Result](p)
   
   def mkParams(rc:RequestContext) = AutowireParams(user, state, rc + state, spaceRouter, this)
+
+  // TODO: is there any way to get this to work? It compiles, but crashes with a MatchError. Look into it more:
+//  case class AutowireHandler[T](constr:AutowireParams => T) {
+//    def routeRequest(req:autowire.Core.Request[String], params:AutowireParams)(f:String => Unit) = {
+//      route[T](constr(params))(req).foreach(f)
+//    }
+//  }
+//  var autowireHandlerRegistry:Map[String,AutowireHandler[_]] = Map.empty
+//  def registerAutowireHandler[T](name:String, constr:AutowireParams => T) = autowireHandlerRegistry += (name -> AutowireHandler[T](constr))
+//  registerAutowireHandler[ThingFunctions]("ThingFunctions", { new ThingFunctionsImpl(_) })
+//  registerAutowireHandler[EditFunctions]("EditFunctions", { new EditFunctionsImpl(_) })
+//  registerAutowireHandler[SearchFunctions]("SearchFunctions", { new SearchFunctionsImpl(_) })
+//  registerAutowireHandler[ConversationFunctions]("ConversationFunctions", { new ConversationFunctionsImpl(_) })
   
   def normalReceive:Receive = LoggingReceive {
     case CurrentState(s) => setRawState(s)
@@ -276,7 +290,14 @@ private [session] class UserSpaceSession(val ecology:Ecology, val spaceId:OID, v
         
         case ClientRequest(req, rc) => {
           def params = mkParams(rc)
-          implicit val e = ecology
+          
+          // TODO: the calling side of that registry above:
+//          val handler = autowireHandlerRegistry(req.path(2))
+//          // routeRequest() is async, so we need to save sender in the closure:
+//          val senderSaved = sender
+//          handler.routeRequest(req, params) { result =>
+//            senderSaved ! ClientResponse(result)
+//          }
           
             // TODO: this matching approach is horrible, but at least doesn't duplicate any
             // information. Make it more formal and automated:
