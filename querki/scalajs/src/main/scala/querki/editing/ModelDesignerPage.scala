@@ -37,19 +37,26 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   class PropertyDetails(val valEditor:PropValueEditor) extends Gadget[dom.HTMLDivElement] {
     def editInfo = valEditor.info
     def propInfo = editInfo.propInfo
+    
+    // Mimic the RxSelect that the rest of the code passes in to DescriptionDiv:
     val thingSelector = 
       new RxThingSelector {
         val selectedText = Var(propInfo.displayName)
         def selectedVal = Var(propInfo.oid)
       } 
+    val selectorWrapper = Var[Option[(RxThingSelector, String)]](None)
+    val propertyDescriptionDiv = (new DescriptionDiv(selectorWrapper)).descriptionDiv
     
-    def doRender() =
+    def doRender() = {
+      selectorWrapper() = Some((thingSelector, propInfo.oid))
       div(
-        hr
+        hr,
+        propertyDescriptionDiv
 //        p("TODO: collection and type"),
 //        p("TODO: editors for Summary and Details"),
 //        p("TODO: editors for standard fields for this Type")
       )
+    }
   }
   
   class PropValueEditor(val info:PropEditInfo, val section:PropertySection) extends Gadget[dom.HTMLLIElement] {
@@ -66,7 +73,10 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     lazy val detailsEditor = new PropertyDetails(this)
     val propDetailsArea = new RxDiv(detailsHolder, display:="none", width:="100%")
     def toggleDetails() = {
-      detailsHolder() = Seq(detailsEditor)
+      // TODO: why is this necessary? If I re-set detailsHolder() on each toggle, it is causing the
+      // actual description to get emptied out, but I haven't the slightest damned idea why...
+      if (detailsHolder().isEmpty)
+        detailsHolder() = Seq(detailsEditor)
       if (detailsShown()) {
         propDetailsArea.elemOpt.map($(_).slideUp())
       } else {
