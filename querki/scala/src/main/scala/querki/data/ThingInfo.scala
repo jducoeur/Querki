@@ -43,7 +43,11 @@ case class PropInfo(
   oid:String,
   linkName:Option[String],
   displayName:String,
-  appliesTo:Option[Kind.Kind]
+  appliesTo:Option[Kind.Kind],
+  collId:String,
+  // Note that the typeId points to the Type if it's conventional, or to the Model
+  // iff it's a Model Property:
+  typeId:String
 ) extends BasicThingInfo
 
 case class PropValInfo(

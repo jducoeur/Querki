@@ -13,7 +13,7 @@ import querki.globals._
 
 import querki.api.EditFunctions
 import EditFunctions._
-import querki.data.ThingInfo
+import querki.data.{PropInfo, SpaceProps, ThingInfo}
 import querki.display.{Gadget, RawDiv, WithTooltip}
 import querki.display.input.{DeleteInstanceButton, InputGadget}
 import querki.display.rx.{RxDiv, RxThingSelector}
@@ -27,12 +27,54 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   lazy val Gadgets = interface[querki.display.Gadgets]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
+  // We start loading this at page load, so that it's available when we inspect Properties.
+  val allTypesFut = DataAccess.getAllTypes()
+  // Note that we pro-actively begin loading this immediately. It's one of the more common operations for the
+  // Model Designer, and we want quick response.
+  val allPropsFut = DataAccess.getAllProps()
+  
+  /**
+   * This is a Future of a Map of all of the known Properties, by OID.
+   */
+  val propMapFut = allPropsFut.map { mainSpaceProps =>
+    def spacePropsRec(spaceProps:SpaceProps):Seq[PropInfo] = {
+      spaceProps.standardProps ++ spaceProps.advancedProps ++ spaceProps.apps.flatMap(spacePropsRec(_))
+    }
+    
+    val allProps = spacePropsRec(mainSpaceProps)
+    Map(allProps.map(propInfo => (propInfo.oid -> propInfo)):_*)
+  }
+  
+  /**
+   * This is a Future of a Map of all the known Types, by OID.
+   */
+  val typeMapFut = allTypesFut.map { allTypeInfo =>
+    val allTypes = allTypeInfo.standardTypes ++ allTypeInfo.advancedTypes
+    Map(allTypes.map(typeInfo => (typeInfo.oid -> typeInfo)):_*)
+  }
+  
+  /**
+   * This is a Future of a Map of all the known Collections, by OID.
+   */
+  val collMapFut = allTypesFut.map { allTypeInfo =>
+    Map(allTypeInfo.collections.map(collInfo => (collInfo.oid -> collInfo)):_*)
+  }
+  
+  /**
+   * This is a Future of a Map of all the usable Models, by OID.
+   */
+  val modelMapFut = allTypesFut.map { allTypeInfo =>
+    Map(allTypeInfo.models.map(modelInfo => (modelInfo.oid -> modelInfo)):_*)
+  }
+  
   override def beforeRender() = {
     // Page-specific gadget hooks:
     // TODO: these need to be updated for the new Bootstrap. Can we come up with a better abstraction here?
     Gadgets.registerHook("._largeTextEdit") { elem => $(elem).addClass("span10") }
     Gadgets.registerHook("input[type='text']") { elem => $(elem).filter(".propEditor").addClass("span10") }    
   }
+  
+  def page = this
   
   class PropertyDetails(val valEditor:PropValueEditor) extends Gadget[dom.HTMLDivElement] {
     def editInfo = valEditor.info
@@ -45,7 +87,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
         def selectedVal = Var(propInfo.oid)
       } 
     val selectorWrapper = Var[Option[(RxThingSelector, String)]](None)
-    val propertyDescriptionDiv = (new DescriptionDiv(selectorWrapper)).descriptionDiv
+    val propertyDescriptionDiv = (new DescriptionDiv(page, selectorWrapper)).descriptionDiv
     
     def doRender() = {
       selectorWrapper() = Some((thingSelector, propInfo.oid))

@@ -8,8 +8,10 @@ import autowire._
 import querki.globals._
 
 import querki.api.ThingFunctions
+import querki.data.BasicThingInfo
 import querki.display.{Gadget, QText}
 import querki.display.rx.{RxDiv, RxThingSelector}
+import querki.util.ScalatagUtils
 
 /**
  * This watches an RxThingSelector full of Things, and produces the div describing the currently-selected Thing.
@@ -17,9 +19,13 @@ import querki.display.rx.{RxDiv, RxThingSelector}
  * @param selector Typically the selected() reactive of an RxSelect. We pass in this instead of the RxSelect itself
  *   so that you can orElse multiple RxSelects and feed the union into here.
  */
-class DescriptionDiv(selector:Rx[Option[(RxThingSelector, String)]])(implicit val ecology:Ecology) extends EcologyMember {
+class DescriptionDiv(page:ModelDesignerPage, selector:Rx[Option[(RxThingSelector, String)]])(implicit val ecology:Ecology) 
+  extends EcologyMember with ScalatagUtils 
+{
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
+  
+  def thingLink = page.thingLink _
   
   val stdInfoFut = DataAccess.standardInfo
   val emptyDescription = span(raw("&nbsp;"))
@@ -29,6 +35,10 @@ class DescriptionDiv(selector:Rx[Option[(RxThingSelector, String)]])(implicit va
         val name = sel.selectedText()
         val fut = for {
           stdInfo <- stdInfoFut
+          propMap <- page.propMapFut
+          typeMap <- page.typeMapFut
+          collMap <- page.collMapFut
+          modelMap <- page.modelMapFut
           summaryOpt <- Client[ThingFunctions].getPropertyDisplay(oid, stdInfo.summaryPropId).call()
           detailsOpt <- Client[ThingFunctions].getPropertyDisplay(oid, stdInfo.detailsPropId).call()
         }
@@ -36,6 +46,12 @@ class DescriptionDiv(selector:Rx[Option[(RxThingSelector, String)]])(implicit va
             // ... build the display of the Property info...
             div(
               b(name),
+              propMap.get(oid).map { propInfo =>
+                val typeInfoOpt:Option[BasicThingInfo] = typeMap.get(propInfo.typeId) orElse modelMap.get(propInfo.typeId)
+                i(" (", thingLink(collMap(propInfo.collId)),
+                  typeInfoOpt.map { typeInfo => MSeq(" of ", thingLink(typeInfo)) },
+                  ")")
+              },
               summaryOpt.map(summary => i(new QText(summary))),
               detailsOpt.map(details => new QText(details))
             )

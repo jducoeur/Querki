@@ -16,6 +16,7 @@ import querki.identity.{PublicIdentity, User}
 import querki.pages.PageDetails
 import querki.session.messages.{ClientAnswer, ClientResponse}
 import querki.tags.IsTag
+import querki.types.ModelTypeBase
 import querki.values.{QLRequestContext, RequestContext}
 
 class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi with CommonFunctionsImpl
@@ -23,6 +24,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi with CommonF
 {
   
   lazy val AccessControl = interface[querki.security.AccessControl]
+  lazy val Basic = interface[querki.basic.Basic]
   lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val DataModelAccess = interface[querki.datamodel.DataModelAccess]
   lazy val Editor = interface[querki.editing.Editor]
@@ -88,11 +90,22 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi with CommonF
   
   def propInfo(prop:AnyProp, rc:RequestContext):PropInfo = {
     implicit val s = rc.state.get
+    val typeId = prop.pType match {
+      case mt:ModelTypeBase => {
+        if (prop.pType.ifSet(Basic.ExplicitProp))
+          prop.pType.id
+        else
+          mt.basedOn
+      }
+      case _ => prop.pType.id
+    }
     PropInfo(
       prop.id.toThingId, 
       prop.linkName, 
       prop.displayName, 
-      prop.getPropOpt(Core.AppliesToKindProp).flatMap(_.firstOpt))
+      prop.getPropOpt(Core.AppliesToKindProp).flatMap(_.firstOpt),
+      prop.cType.id.toThingId,
+      typeId.toThingId)
   }
   
   def propValInfo(t:Thing, rc:RequestContext):Seq[PropValInfo] = {

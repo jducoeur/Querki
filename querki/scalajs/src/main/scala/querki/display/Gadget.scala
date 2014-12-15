@@ -12,7 +12,7 @@ import models.Wikitext
 import querki.globals._
 
 import querki.comm._
-import querki.data.ThingInfo
+import querki.data.BasicThingInfo
 import querki.display.input.InputGadget
 import querki.util.ScalatagUtils
 
@@ -121,7 +121,7 @@ trait QuerkiUIUtils extends ScalatagUtils {
   /**
    * Shortcut for fetching the URL of a Thing.
    */
-  def thingUrl(thing:ThingInfo):String = {
+  def thingUrl(thing:BasicThingInfo):String = {
     thingUrl(thing.urlName)
   }
   
@@ -130,6 +130,6 @@ trait QuerkiUIUtils extends ScalatagUtils {
   /**
    * A standard link to a Thing, if you're not trying to do anything odd with it.
    */
-  def thingLink(thing:ThingInfo):TypedTag[dom.HTMLAnchorElement] =
+  def thingLink(thing:BasicThingInfo):TypedTag[dom.HTMLAnchorElement] =
     a(href:=thingUrl(thing), thing.displayName)
 }

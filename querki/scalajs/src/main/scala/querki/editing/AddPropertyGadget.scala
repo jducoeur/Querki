@@ -33,11 +33,9 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     mainDiv.replaceContents(initButton.rendered, true) 
   })
   
-  // Note that we pro-actively begin loading this immediately. It's one of the more common operations for the
-  // Model Designer, and we want quick response.
-  val allPropsFut = DataAccess.getAllProps()
   val stdInfoFut = DataAccess.standardInfo
-  lazy val allTypesFut = DataAccess.getAllTypes()
+  def allTypesFut = page.allTypesFut
+  def allPropsFut = page.allPropsFut
   
   class AddExistingPropertyGadget(mainSpaceProps:SpaceProps) extends Gadget[dom.HTMLDivElement] {
 
@@ -86,7 +84,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     }
     
     lazy val selectedProperty = propSelector.selectedValOpt
-    lazy val selectedPropertyDescription = new DescriptionDiv(propSelector.selected)
+    lazy val selectedPropertyDescription = new DescriptionDiv(page, propSelector.selected)
     lazy val propertyDescriptionDiv = selectedPropertyDescription.descriptionDiv
     
     def doRender() = {
@@ -143,7 +141,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     // The chosen basis is *either* a Model or a Type. selected() combines the currently-chosen value and its
     // RxSelect:
     lazy val selectedBasis = Rx { modelSelector.selected() orElse typeSelector.selected() }
-    lazy val selectedBasisDescription = new DescriptionDiv(selectedBasis)
+    lazy val selectedBasisDescription = new DescriptionDiv(page, selectedBasis)
     lazy val selectedBasisDescriptionDiv = selectedBasisDescription.descriptionDiv
     
     // The add button is only enabled when all fields are non-empty; when pressed, it tells the parent
