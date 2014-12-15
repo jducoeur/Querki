@@ -18,6 +18,12 @@ trait EditFunctions {
   def create(modelId:String, initialProps:Seq[PropertyChange]):Future[ThingInfo]
   
   /**
+   * Fetch the Editor for the specified Property on this Thing. The Property does not have to
+   * be defined on the Thing yet.
+   */
+  def getOnePropertyEditor(thingId:String, propId:String):PropEditInfo
+  
+  /**
    * Fetch the Editors and ancillary information about this Thing.
    */
   def getPropertyEditors(thingId:String):FullEditInfo

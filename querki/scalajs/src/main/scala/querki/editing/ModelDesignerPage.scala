@@ -134,13 +134,16 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       div(
         hr,
         contentDiv,
-        p(new ButtonGadget(ButtonKind.Primary, "Done")({ valEditor.propEditDone() }))
+        p(new ButtonGadget(ButtonKind.Primary, "Done")({ 
+          valEditor.propEditDone() 
+        }))
       )
     }
   }
   
   class PropValueEditor(val info:PropEditInfo, val section:PropertySection) extends Gadget[dom.HTMLLIElement] {
     val propInfo = info.propInfo
+    val propId = propInfo.oid
     val prompt = info.prompt.map(_.raw.toString).getOrElse(propInfo.displayName)
     // TODO: there is a nasty bug here. The tooltip should be normally wiki-processed,
     // but there is no way to use raw() on an attribute value. So we instead are displaying
@@ -173,6 +176,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     def propEditDone() = {
       detailsHolder() = Seq.empty
       toggleDetails()
+      section.refreshEditor(this)
     }
     
     def doRender() = 
@@ -255,6 +259,15 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       child.hide(400, { () => child.remove() })
       propIds() -= editor.info.propInfo.oid
       instancePropSection().onMoved()
+    }
+    
+    def refreshEditor(editor:PropValueEditor) = {
+      Client[EditFunctions].getOnePropertyEditor(thingId, editor.propId).call().foreach { replacementInfo =>
+        val newEditor = new PropValueEditor(replacementInfo, this)
+        // TBD: Do we also need to update the section's doRender? That would require pulling out that props.map below: 
+        $(editor.elem).replaceWith(newEditor.render)
+        InputGadgets.hookPendingGadgets()
+      }
     }
     
     def doRender() = 

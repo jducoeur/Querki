@@ -189,6 +189,20 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
       )
   }
   
+  def getOnePropertyEditor(thingId:String, propId:String):PropEditInfo = withThing(thingId) { thing =>
+    implicit val s = state
+    val result = for {
+      prop <- state.prop(ThingId(propId))
+      pv = thing.getPropOpt(prop)
+      v = pv.map(_.v)
+      dpv = DisplayPropVal(Some(thing), prop, v)
+    }
+      yield getOnePropEditor(thing, prop, dpv)
+    
+    // TODO: produce a more useful Exception if this fails:
+    result.get
+  }
+  
   def getPropertyEditors(thingId:String):FullEditInfo = withThing(thingId) { thing =>
     // Properties are very different from ordinary Things:
     thing match {
