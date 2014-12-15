@@ -30,7 +30,13 @@ case class RxDiv(rxGuts:Rx[Seq[Gadget[_]]], base:Modifier*) extends Gadget[dom.H
     val newContent = divRx()
     $(elem).replaceWith(newContent)
     setElem(newContent)
+    elemRx() = Some(newContent)
   }
+  
+  /**
+   * Listeners can pay attention to changes to this, if they want to fire after updates:
+   */
+  lazy val elemRx = Var[Option[dom.Element]](None)
   
   override def onCreate(e:dom.HTMLDivElement) = obs
 }

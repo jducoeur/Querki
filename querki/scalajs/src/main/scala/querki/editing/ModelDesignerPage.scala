@@ -111,11 +111,29 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   }
   
   class PropertyEditor(val valEditor:PropValueEditor) extends Gadget[dom.HTMLDivElement] {
+    lazy val propId = valEditor.propInfo.oid
+    lazy val empty = ul()
+    lazy val guts = Var[Gadget[dom.HTMLUListElement]](empty)
+    lazy val contentDiv = RxDiv(Rx {Seq(guts())})
+    lazy val contentFut = {
+      for {
+        editInfo <- Client[EditFunctions].getPropertyEditors(propId).call()
+      }
+        yield new PropertySection(s"Property $propId", editInfo.propInfos, propId, false)
+    }
+    lazy val editTrigger = contentFut.foreach { section => 
+      guts() = section
+      hookWhenDone
+    }
+    lazy val hookWhenDone = Obs(contentDiv.elemRx) {
+      InputGadgets.hookPendingGadgets()      
+    }
     
     def doRender() = {
+      editTrigger
       div(
         hr,
-        p("This will be the PropertyEditor"),
+        contentDiv,
         p(new ButtonGadget(ButtonKind.Primary, "Done")({ valEditor.propEditDone() }))
       )
     }
@@ -190,7 +208,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     }
   }
   
-  class PropertySection(nam:String, props:Seq[PropEditInfo]) extends InputGadget[dom.HTMLUListElement](ecology) {
+  class PropertySection(nam:String, props:Seq[PropEditInfo], thingId:String, sortable:Boolean = true) extends InputGadget[dom.HTMLUListElement](ecology) {
     
     /**
      * The Properties currently in this section. Note that this is a var so that more props can be added.
@@ -210,17 +228,19 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     }
     
     def hook() = {
-      $(elem).sortable(SortableOptions.
-        // That is, the two PropertySections are linked, and you can drag between them:
-        connectWith("._propertySection").
-        // Stop gets called after a drag-and-drop event:
-        stop({ (evt:JQueryEventObject, ui:SortChangeUI) =>
-          val item = ui.item.get
-          // IMPORTANT: note that we save the Instance Props whenever there is a drop, but this
-          // stop event may be coming from Model Props if the user has dragged across the boundary.
-          instancePropSection().onMoved()
-        }:js.Function2[JQueryEventObject, SortChangeUI, Any]
-      ))
+      if (sortable) {
+	      $(elem).sortable(SortableOptions.
+	        // That is, the two PropertySections are linked, and you can drag between them:
+	        connectWith("._propertySection").
+	        // Stop gets called after a drag-and-drop event:
+	        stop({ (evt:JQueryEventObject, ui:SortChangeUI) =>
+	          val item = ui.item.get
+	          // IMPORTANT: note that we save the Instance Props whenever there is a drop, but this
+	          // stop event may be coming from Model Props if the user has dragged across the boundary.
+	          instancePropSection().onMoved()
+	        }:js.Function2[JQueryEventObject, SortChangeUI, Any]
+	      ))
+      }
     }
     
     def appendEditor(editInfo:PropEditInfo) = {
@@ -242,7 +262,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
         // Note that the name for the Instance Property section is the path of the Instance Props Property:
         name:=nam, 
         // Needed for save() to work:
-        data("thing"):=modelId,
+        data("thing"):=thingId,
         props.map(new PropValueEditor(_, this))
       )
   }
@@ -250,7 +270,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   class PropSectionHolder {
     var _propSection:Option[PropertySection] = None
     def make(sortedProps:Seq[PropEditInfo], path:String) = {
-      _propSection = Some(new PropertySection(path, sortedProps))
+      _propSection = Some(new PropertySection(path, sortedProps, modelId))
       _propSection
     }
     def apply() = _propSection.get    

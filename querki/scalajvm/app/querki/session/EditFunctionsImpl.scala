@@ -190,6 +190,14 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   }
   
   def getPropertyEditors(thingId:String):FullEditInfo = withThing(thingId) { thing =>
+    // Properties are very different from ordinary Things:
+    thing match {
+      case prop:AnyProp => getPropPropertyEditors(prop)
+      case _ => getThingPropertyEditors(thing)
+    }
+  }
+  
+  private def getThingPropertyEditors(thing:Thing) = {
     implicit val s = state
     val model = thing.getModel
     val props = PropListManager.from(thing)
@@ -210,6 +218,33 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     val instancePropsPath = new FieldIds(Some(thing), Editor.InstanceProps).inputControlId
     
     FullEditInfo(instanceProps.getOrElse(Seq.empty), instancePropsPath, propInfos)
+  }
+  
+  // TBD: this is pretty incestuous with the PropertyEditor in the client -- the list of available
+  // props is defined here, in order. Not sure that's appropriate. Think about it...
+  // TODO: someday, we should figure out what it means for a Property to have a Model. For now,
+  // we're assuming that just doesn't happen.
+  private def getPropPropertyEditors(prop:AnyProp):FullEditInfo = {
+    def onePropPair(propId:OID):(AnyProp, DisplayPropVal) = {
+      val v = prop.props.get(propId)
+      // TODO: we probably should have a better default here, to signal that this is an error:
+      val subprop = state.prop(propId).getOrElse(Core.UrProp)
+      (subprop, DisplayPropVal(Some(prop), subprop, v))
+    }
+    
+    // We *always* show Editors for Summary and Details -- they are recommended:
+    val specialPropIds = Seq(Core.NameProp, Conventions.PropSummary, Conventions.PropDetails).map(_.id)
+    val invariantPropIds = Seq(Core.TypeProp, Core.CollectionProp).map(_.id)
+    val existingPropIds = ((prop.props.keys.toSet -- specialPropIds) -- invariantPropIds).toSeq
+    
+    // Specials are in their particular order; the rest get sorted by display:
+    val specialProps = specialPropIds.map(onePropPair(_))
+    val existingProps = existingPropIds.map(onePropPair(_)).sortBy(_._2.prop.displayName)
+    val allProps = specialProps ++ existingProps
+    
+    val allEditors = allProps.map(entry => getOnePropEditor(prop, entry._1, entry._2))
+    // The Instance Property fields are meaningless for a Property:
+    FullEditInfo(Seq.empty, "", allEditors)
   }
   
   def addPropertyAndGetEditor(thingId:String, propIdStr:String):Future[PropEditInfo] = withThing(thingId) { thing =>
