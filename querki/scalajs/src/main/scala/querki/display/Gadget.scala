@@ -29,7 +29,7 @@ trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with QuerkiUIUti
    */
   def doRender():TypedTag[Output]
   
-  lazy val underlyingTag = doRender()
+  def underlyingTag = doRender()
   
   def createFrag = underlyingTag.render
 }
@@ -42,7 +42,7 @@ trait Gadget[Output <: dom.Element] extends ManagedFrag[Output] with QuerkiUIUti
 trait MetaGadget[Output <: dom.Element] extends ManagedFrag[Output] with ScalatagUtils with QuerkiUIUtils {
   def doRender():Gadget[Output]
   
-  lazy val underlyingTag = doRender()
+  def underlyingTag = doRender()
   
   def createFrag = underlyingTag.render
 }

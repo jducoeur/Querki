@@ -14,7 +14,7 @@ import querki.globals._
 import querki.api.EditFunctions
 import EditFunctions._
 import querki.data.{PropInfo, SpaceProps, ThingInfo}
-import querki.display.{Gadget, RawDiv, WithTooltip}
+import querki.display.{ButtonGadget, ButtonKind, Gadget, RawDiv, WithTooltip}
 import querki.display.input.{DeleteInstanceButton, InputGadget}
 import querki.display.rx.{RxDiv, RxThingSelector}
 import querki.pages._
@@ -87,16 +87,36 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
         def selectedVal = Var(propInfo.oid)
       } 
     val selectorWrapper = Var[Option[(RxThingSelector, String)]](None)
-    val propertyDescriptionDiv = (new DescriptionDiv(page, selectorWrapper)).descriptionDiv
+    val descDiv = new DescriptionDiv(page, selectorWrapper)
+    val propertyDescriptionDiv = descDiv.descriptionDiv
+    selectorWrapper() = Some((thingSelector, propInfo.oid))
+//    
+//    Obs(propertyDescriptionDiv.divRx) { 
+//      println(s"propertyDescriptionDiv changed to ${$(propertyDescriptionDiv.divRx()).html()}")
+//      println(s"Meanwhile, if I re-render, I get ${$(propertyDescriptionDiv.render).html()}")
+//      println(s"And selectionSeq is ${descDiv.selectionSeq().map(_.render).map($(_).html())}")
+//      println(s"The guts of the propertyDescriptionDiv is ${propertyDescriptionDiv.rxGuts().map(_.render).map(_.asInstanceOf[dom.Element]).map($(_).html())}")
+//      println(s"The divTag is ${$(propertyDescriptionDiv.divTag().render).html()}")
+//    }
     
     def doRender() = {
-      selectorWrapper() = Some((thingSelector, propInfo.oid))
       div(
         hr,
-        propertyDescriptionDiv
-//        p("TODO: collection and type"),
+        propertyDescriptionDiv,
+        p(new ButtonGadget(ButtonKind.Primary, "Edit Property")({ valEditor.showPropEditor() }))
 //        p("TODO: editors for Summary and Details"),
 //        p("TODO: editors for standard fields for this Type")
+      )
+    }
+  }
+  
+  class PropertyEditor(val valEditor:PropValueEditor) extends Gadget[dom.HTMLDivElement] {
+    
+    def doRender() = {
+      div(
+        hr,
+        p("This will be the PropertyEditor"),
+        p(new ButtonGadget(ButtonKind.Primary, "Done")({ valEditor.propEditDone() }))
       )
     }
   }
@@ -111,20 +131,30 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     
     // Functions to toggle the PropertyEditor in and out when you click the name of the property:
     val detailsShown = Var(false)
-    val detailsHolder = Var[Seq[Gadget[_]]](Seq.empty)
-    lazy val detailsEditor = new PropertyDetails(this)
+    val detailsHolder = Var[Seq[Gadget[dom.HTMLDivElement]]](Seq.empty, name="detailsHolder")
+    lazy val detailsViewer = new PropertyDetails(this)
+    lazy val detailsViewerSeq = Seq(detailsViewer)
     val propDetailsArea = new RxDiv(detailsHolder, display:="none", width:="100%")
     def toggleDetails() = {
-      // TODO: why is this necessary? If I re-set detailsHolder() on each toggle, it is causing the
-      // actual description to get emptied out, but I haven't the slightest damned idea why...
-      if (detailsHolder().isEmpty)
-        detailsHolder() = Seq(detailsEditor)
+      detailsHolder() = detailsViewerSeq
       if (detailsShown()) {
         propDetailsArea.elemOpt.map($(_).slideUp())
       } else {
         propDetailsArea.elemOpt.map($(_).slideDown())
       }
       detailsShown() = !detailsShown()
+    }
+    
+    lazy val propEditor = new PropertyEditor(this)
+    lazy val propEditorSeq = Seq(propEditor)
+    def showPropEditor() = {
+      detailsHolder() = propEditorSeq
+      propDetailsArea.elemOpt.map($(_).show())
+    }
+    
+    def propEditDone() = {
+      detailsHolder() = Seq.empty
+      toggleDetails()
     }
     
     def doRender() = 

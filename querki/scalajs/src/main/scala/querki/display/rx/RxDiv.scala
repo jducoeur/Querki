@@ -23,7 +23,7 @@ case class RxDiv(rxGuts:Rx[Seq[Gadget[_]]], base:Modifier*) extends Gadget[dom.H
   
   def doRender() = divTag()
   
-  lazy val divTag = Rx { div(base, rxGuts()) }
+  lazy val divTag = Rx(name="divTag") { div(base, rxGuts()) }
   lazy val divRx = divTag.map(_.render)
   
   lazy val obs = Obs(divRx) {
