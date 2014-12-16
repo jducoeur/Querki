@@ -239,6 +239,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   // TODO: someday, we should figure out what it means for a Property to have a Model. For now,
   // we're assuming that just doesn't happen.
   private def getPropPropertyEditors(prop:AnyProp):FullEditInfo = {
+    implicit val s = state
     def onePropPair(propId:OID):(AnyProp, DisplayPropVal) = {
       val v = prop.props.get(propId)
       // TODO: we probably should have a better default here, to signal that this is an error:
@@ -246,15 +247,34 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
       (subprop, DisplayPropVal(Some(prop), subprop, v))
     }
     
+    // These are meta-Properties whose AppliesToTypesProp points to this Type of Property.
+    // Therefore, we want to show them in the Editor:
+    val allMetapropsForTypeIds = 
+      state.allProps.
+      map(_._2).
+      filter { tryProp =>
+        val result = for {
+          pv <- tryProp.getPropOpt(Types.AppliesToTypesProp)
+          if (pv.contains(prop.pType))
+        }
+          yield true
+        
+        result.getOrElse(false)
+      }.
+      map(_.id).
+      toSet
+    
     // We *always* show Editors for Summary and Details -- they are recommended:
     val specialPropIds = Seq(Core.NameProp, Conventions.PropSummary, Conventions.PropDetails).map(_.id)
     val invariantPropIds = Seq(Core.TypeProp, Core.CollectionProp).map(_.id)
     val existingPropIds = ((prop.props.keys.toSet -- specialPropIds) -- invariantPropIds).toSeq
+    val metaPropIds = (allMetapropsForTypeIds -- existingPropIds).toSeq
     
     // Specials are in their particular order; the rest get sorted by display:
     val specialProps = specialPropIds.map(onePropPair(_))
-    val existingProps = existingPropIds.map(onePropPair(_)).sortBy(_._2.prop.displayName)
-    val allProps = specialProps ++ existingProps
+    val existingProps = existingPropIds.map(onePropPair(_))
+    val metaProps = metaPropIds.map(onePropPair(_))
+    val allProps = specialProps ++ (existingProps ++ metaProps).sortBy(_._2.prop.displayName)
     
     val allEditors = allProps.map(entry => getOnePropEditor(prop, entry._1, entry._2))
     // The Instance Property fields are meaningless for a Property:

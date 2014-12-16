@@ -17,6 +17,7 @@ package object types {
     val WrappedValueTypeOID = moid(3)
     val DefaultValuePropOID = moid(4)
     val ModelForTypePropOID = moid(5)
+    val AppliesToTypesPropOID = moid(6)
   }
   
   implicit def vals2Bundle(vals:(OID, QValue)*):SimplePropertyBundle = SimplePropertyBundle(vals:_*)
@@ -55,6 +56,13 @@ package object types {
      * until we care.
      */
     def DefaultValueProp:Property[QValue,QValue]    
+
+    /**
+     * This meta-meta-Property should be placed on user-visible meta-Properties that are relevant for a
+     * particular Type. It is mainly intended for Editing, but lives here to be closer to the center of
+     * the onion. 
+     */
+    def AppliesToTypesProp:Property[OID,OID]
   
     def MinTextLengthProp:Property[Int, Int]
     def MinIntValueProp:Property[Int, Int]

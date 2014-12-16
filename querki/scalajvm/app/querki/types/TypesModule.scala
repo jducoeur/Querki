@@ -138,6 +138,7 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
     toProps(
       setName("Minimum Text Length"),
       AppliesToKindProp(Kind.Property),
+      AppliesToTypesProp(TextType, LargeTextType),
       Summary("The minimum length allowed in this Text, Large Text or PlainText Property"),
       Details("""If you add this meta-Property to your Text Property, it defines
           |the minimum length that will be accepted in user-entered text.
@@ -150,12 +151,14 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
     toProps(
       setName("Minimum Number Value"),
       AppliesToKindProp(Kind.Property),
+      AppliesToTypesProp(IntType),
       Summary("The minimum value allowed in this Whole Number Property")))
   
   lazy val MaxIntValueProp = new SystemProperty(MaxIntValueOID, IntType, ExactlyOne,
     toProps(
       setName("Maximum Number Value"),
       AppliesToKindProp(Kind.Property),
+      AppliesToTypesProp(IntType),
       Summary("The maximum value allowed in this Whole Number Property")))
   
   lazy val DefaultValueProp = new SystemProperty(DefaultValuePropOID, WrappedValueType, ExactlyOne,
@@ -168,6 +171,23 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
       // are, so far, unknown.)
       Core.NotInheritedProp(true),
       AppliesToKindProp(Kind.Property)))
+  
+  lazy val AppliesToTypesProp = new SystemProperty(AppliesToTypesPropOID, LinkType, QSet,
+      toProps(
+        setName("Applies to Types"),
+        AppliesToKindProp(Kind.Property),
+        SkillLevel(SkillLevelAdvanced),
+        Summary("Says which Types this meta-Property is relevant to"),
+        Details("""A "meta-Property" is a Property that you put on other Properties, to describe their behavior.
+            |For example, Maximum Number Value is a meta-Property that you put on a Whole Number Property,
+            |giving the largest value allowed in that Whole Number.
+            |
+            |Meta-Properties should usually specify Applies to Types, to describe which Types they are relevant
+            |on. When you create a Property of one of those Types, all Meta-Properties that point to it will
+            |be shown in the Property Editor.
+            |
+            |This is an extremely advanced meta-Property, mostly used internally, but it may be more useful
+            |for user code in the future.""".stripMargin)))
 
   override lazy val props = Seq(
     ModelForTypeProp,
@@ -177,6 +197,7 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
     MinIntValueProp,
     MaxIntValueProp,
     
-    DefaultValueProp    
+    DefaultValueProp,
+    AppliesToTypesProp
   )
 }

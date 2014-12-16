@@ -2,7 +2,7 @@ package querki.uservalues
 
 import scala.xml.NodeSeq
 
-import models.{DisplayPropVal, Kind, PropertyBundle, SimplePTypeBuilder, ThingState, Wikitext}
+import models.{DisplayPropVal, Kind, PropertyBundle, PType, SimplePTypeBuilder, ThingState, Wikitext}
 
 import querki.core.IntTypeBasis
 import querki.core.TypeUtils.DiscreteType
@@ -65,7 +65,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
   // Pay attention to escaping the quotes from this!
   def getLabels(prop:Property[_,_])(implicit state:SpaceState) = prop.getProp(LabelsProp).rawList.map(_.text)
   
-  lazy val RatingType = new IntTypeBase(RatingTypeOID,
+  lazy val RatingType:PType[Int] with SimplePTypeBuilder[Int] = new IntTypeBase(RatingTypeOID,
     toProps(
       setName("Rating Type"))) with DiscreteType[Int]
   {
@@ -246,6 +246,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
       toProps(
         setName("Chart Labels"),
         AppliesToKindProp(Kind.Property),
+        Types.AppliesToTypesProp(RatingType, ReviewType),
         SkillLevel(SkillLevelAdvanced),
         Summary("Gives the labels for each element of a Rating or Chart"),
         Details("""When used on a Rating, this gives the hover-text label for each of a stars, in order.
@@ -276,7 +277,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with Summari
             |of how many people have given each rating, or `\[[Rating Summary -> _average\]]`
             |to show the overall average of the ratings.""".stripMargin)))
   
-  lazy val RatingProperty = new SystemProperty(RatingPropOID, RatingType, ExactlyOne,
+  lazy val RatingProperty:Property[Int,Int] = new SystemProperty(RatingPropOID, RatingType, ExactlyOne,
       toProps(
         setName("Rating"),
         IsUserValueFlag(true),

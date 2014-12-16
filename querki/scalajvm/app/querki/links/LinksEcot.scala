@@ -14,6 +14,8 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
   import PublicMOIDs._
   import MOIDs._
   
+  val Types = initRequires[querki.types.Types]
+  
   def LinkValue(target:OID):QValue = ExactlyOne(LinkType(target))
       
   /***********************************************
@@ -117,6 +119,7 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
 	          |Note that this is only enforced loosely, and you can't absolutely count upon this restriction
 	          |always being true. But used properly, it will steer folks in the right direction.""".stripMargin),
 	      AppliesToKindProp(Kind.Property),
+	      Types.AppliesToTypesProp(LinkType),
 	      LinkToModelsOnlyProp(true)
 	      ))
 	

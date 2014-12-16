@@ -146,6 +146,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
       setName("Preferred Image Size"),
       Types.MaxIntValueProp(1000),
       Core.AppliesToKindProp(Kind.Property),
+      Types.AppliesToTypesProp(PhotoType),
       Summary("Add this to a Photo Property in order to say how big photos should come out"),
       Details("""Querki is designed for "web resolution" photographs -- that is, photos should fit on a webpage.
           |To that end, we limit photos to no bigger than 1000 pixels on a side. (1 "Megapixel") But that is still
