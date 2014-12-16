@@ -29,21 +29,29 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     mainDiv.replaceContents(addExisting.rendered, true)
   })
   
-  lazy val cancelButton = new ButtonGadget(ButtonKind.Normal, "Cancel")({ 
-    mainDiv.replaceContents(initButton.rendered, true) 
-  })
+  lazy val cancelButton = new ButtonGadget(ButtonKind.Normal, "Cancel")({ reset() })
   
   val stdInfoFut = DataAccess.standardInfo
   def allTypesFut = page.allTypesFut
   def allPropsFut = page.allPropsFut
   
+  def reset() = {
+    addExistingGadget().map(_.reset())
+    createNewGadget().map(_.reset())
+    mainDiv.replaceContents(initButton.rendered, true)
+  }
+  
   class AddExistingPropertyGadget(mainSpaceProps:SpaceProps) extends Gadget[dom.HTMLDivElement] {
+    
+    def reset() = {
+      propSelector.setValue("")
+    }
 
     // The add button is only enabled when the selection is non-empty; when pressed, it tells the parent
     // page to add the Property:
     lazy val addButton = new ButtonGadget(ButtonKind.Info, RxAttr("disabled", Rx{ selectedProperty().isEmpty }), "Add")({
       page.addProperty(selectedProperty().get)
-      mainDiv.replaceContents(initButton.rendered, true)
+      reset()
     })
     
     lazy val propSelector = RxSelect(propOptions)
@@ -109,6 +117,12 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   }
   
   class CreateNewPropertyGadget(typeInfo:AllTypeInfo) extends Gadget[dom.HTMLDivElement] {
+    
+    def reset() = {
+      nameInput.setValue("")
+      typeSelector.setValue("")
+      modelSelector.setValue("")
+    }
     
     lazy val nameInput = new RxText(cls:="span6", placeholder:="Name (required)...")
     
@@ -180,7 +194,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
         )
         Client[EditFunctions].create(stdInfo.urPropId, initProps).call().foreach { propInfo =>
           page.addProperty(propInfo.oid)
-          mainDiv.replaceContents(initButton.rendered, true)
+          reset()
         }
       }
     }
@@ -211,12 +225,21 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   }
   
   lazy val addExisting = AfterLoading(allPropsFut) { spaceProps => 
-    new AddExistingPropertyGadget(spaceProps)
+    val g = new AddExistingPropertyGadget(spaceProps)
+    addExistingGadget() = Some(g)
+    g
   }
+  // This is a bit boilerplatey, but we're trying not to evaluate addExisting unnecessarily
+  // TODO: should we enhance AfterLoading to be able to put the laziness into there
+  // explicitly?
+  val addExistingGadget = Var[Option[AddExistingPropertyGadget]](None)
   
   lazy val createNew = AfterLoading(allTypesFut) { allTypes =>
-    new CreateNewPropertyGadget(allTypes)
+    val g = new CreateNewPropertyGadget(allTypes)
+    createNewGadget() = Some(g)
+    g
   }
+  val createNewGadget = Var[Option[CreateNewPropertyGadget]](None)
   
   def doRender() = {
     div(mainDiv)
