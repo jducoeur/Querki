@@ -71,6 +71,7 @@ object EditFunctions {
 	prompt:Option[Wikitext],
     tooltip:Option[Wikitext],
 	inheritedFrom:Option[String],
+	canEditProperty:Boolean,
 	// This is the raw HTML for the Editor
 	editor:String
   )

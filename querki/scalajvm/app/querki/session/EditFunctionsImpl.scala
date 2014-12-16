@@ -20,6 +20,7 @@ import querki.values.{QLRequestContext, RequestContext}
 
 class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with EditFunctions {
   
+  lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Conventions = interface[querki.conventions.Conventions]
@@ -185,6 +186,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
       prop.getPropOpt(Editor.PromptProp).filter(!_.isEmpty).map(_.renderPlain),
       prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc))),
       propVal.inheritedFrom.map(_.displayName),
+      AccessControl.canEdit(state, user, prop),
       rendered
       )
   }

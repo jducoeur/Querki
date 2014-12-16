@@ -90,22 +90,14 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     val descDiv = new DescriptionDiv(page, selectorWrapper)
     val propertyDescriptionDiv = descDiv.descriptionDiv
     selectorWrapper() = Some((thingSelector, propInfo.oid))
-//    
-//    Obs(propertyDescriptionDiv.divRx) { 
-//      println(s"propertyDescriptionDiv changed to ${$(propertyDescriptionDiv.divRx()).html()}")
-//      println(s"Meanwhile, if I re-render, I get ${$(propertyDescriptionDiv.render).html()}")
-//      println(s"And selectionSeq is ${descDiv.selectionSeq().map(_.render).map($(_).html())}")
-//      println(s"The guts of the propertyDescriptionDiv is ${propertyDescriptionDiv.rxGuts().map(_.render).map(_.asInstanceOf[dom.Element]).map($(_).html())}")
-//      println(s"The divTag is ${$(propertyDescriptionDiv.divTag().render).html()}")
-//    }
     
     def doRender() = {
       div(
         hr,
         propertyDescriptionDiv,
-        p(new ButtonGadget(ButtonKind.Primary, "Edit Property")({ valEditor.showPropEditor() }))
-//        p("TODO: editors for Summary and Details"),
-//        p("TODO: editors for standard fields for this Type")
+        if (editInfo.canEditProperty) {
+          p(new ButtonGadget(ButtonKind.Primary, "Edit Property")({ valEditor.showPropEditor() }))        
+        }
       )
     }
   }

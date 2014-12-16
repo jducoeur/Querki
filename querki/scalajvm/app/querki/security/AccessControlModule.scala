@@ -154,7 +154,11 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   }
   
   def canCreate(state:SpaceState, who:User, modelId:OID):Boolean = {
-    hasPermission(CanCreateProp, state, who, modelId)
+    if (state.id == querki.ecology.SystemIds.systemOID)
+      // You can't create anything in the System Space:
+      false
+    else
+      hasPermission(CanCreateProp, state, who, modelId)
   }
   
   def canRead(state:SpaceState, who:User, thingId:OID):Boolean = {
@@ -168,7 +172,11 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
     // TODO: refactor this with the hasPermission() method above.
     // TODO: this really ought to be who.isSuperadmin, instead of SystemUserOID?
     val thingId = { if (thingIdIn == UnknownOID) state.id else thingIdIn}
-    if (who.hasIdentity(state.owner) || who.id == querki.identity.MOIDs.SystemUserOID)
+    val thing = state.anything(thingId)
+    if (thing.isDefined && (thing.get.spaceId == querki.ecology.SystemIds.systemOID))
+      // The System Space is not runtime-editable, regardless of who is asking:
+      false
+    else if (who.hasIdentity(state.owner) || who.id == querki.identity.MOIDs.SystemUserOID)
       true
     else {
       implicit val s = state
@@ -176,7 +184,6 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
         case _ => (isMember(who, state), who.id)        
       }
       
-      val thing = state.anything(thingId)
       
       // We check Who Can Edit on the Thing itself...
       val thingPermsOpt = thing.flatMap(_.localProp(CanEditProp))
