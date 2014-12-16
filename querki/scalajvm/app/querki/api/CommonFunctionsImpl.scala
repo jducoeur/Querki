@@ -11,7 +11,11 @@ trait CommonFunctionsImpl extends CommonFunctions { self:EcologyMember =>
       querki.core.MOIDs.UrPropOID.toThingId,
       querki.core.MOIDs.NameOID.toThingId,
       querki.core.MOIDs.CollectionPropOID.toThingId,
-      querki.core.MOIDs.TypePropOID.toThingId
+      querki.core.MOIDs.TypePropOID.toThingId,
+      querki.basic.MOIDs.SimpleThingOID.toThingId,
+      querki.core.MOIDs.IsModelOID.toThingId,
+      querki.basic.MOIDs.DisplayNameOID.toThingId,
+      querki.editing.MOIDs.InstanceEditPropsOID.toThingId
     )
   }
 }

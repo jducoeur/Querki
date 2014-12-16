@@ -79,8 +79,8 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   def spaceLinks:Option[Seq[Navigable]] = {
     spaceOpt.map { space =>
       Seq(
-        // TODO: these first two currently hook into Javascript. They should instead be direct callbacks to Scala:
-        NavLink("Design a Model", PageManager.pageUrl("_design"), Some("designModel")),
+        NavLink("Design a Model", onClick = Some({ () => DataModel.designAModel() })),
+        // TODO: this one currently hooks into Javascript. They should instead be direct callbacks to Scala:
         NavLink("Create any Thing", PageManager.pageUrl("_create"), Some("createThing")),
         NavLink("Show all Things", thing("All-Things")),
         NavLink("Show all Properties", thing("All-Properties")),

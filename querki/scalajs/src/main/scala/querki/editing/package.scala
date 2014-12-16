@@ -15,5 +15,16 @@ package object editing {
      * The page that lets you edit a given Model.
      */
     def modelDesignerFactory:PageFactory
+    
+    /**
+     * Navigates to the Advanced Editor / Model Designer page.
+     */
+    def showAdvancedEditorFor(thingId:String):Unit
+    
+    /**
+     * Constructs a server-compatible "path" to identify a Property.
+     */
+    def propPath(propId:String, thingIdOpt:Option[String]):String
+    def propPath(propId:String):String
   }
 }

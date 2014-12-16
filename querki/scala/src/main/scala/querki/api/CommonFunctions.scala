@@ -16,5 +16,9 @@ case class StandardInfo(
   urPropId:String,
   namePropId:String,
   collPropId:String,
-  typePropId:String
+  typePropId:String,
+  simpleThingId:String,
+  isModelPropId:String,
+  displayNamePropId:String,
+  instancePropsPropId:String
 )

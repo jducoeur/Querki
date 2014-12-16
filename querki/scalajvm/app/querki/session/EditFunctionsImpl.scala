@@ -34,6 +34,9 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   
   lazy val doLogEdits = Config.getBoolean("querki.test.logEdits", false)
   
+  // TODO: this should really return a Try, or something like that, returning a more explicit Exception.
+  // Getting None here means that the given value failed validation.
+  // TODO: do a much finer-grained validation here, and return more-precise errors.
   def changeToProps(thing:Option[Thing], path:String, vs:Seq[String]):Option[PropMap] = {
     implicit val s = state
     DisplayPropVal.propPathFromName(path, thing).flatMap { fieldIds =>

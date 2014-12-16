@@ -22,6 +22,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
+  lazy val Editing = interface[Editing]
   
   lazy val mainDiv = (new WrapperDiv).initialContent(initButton)
   
@@ -180,11 +181,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
       // Technically, we have to wait for the StandardInfo to be available:
       stdInfoFut.foreach { stdInfo =>
         def mkPV(oid:String, v:String) = {
-          // TODO: this is evil magic knowledge that just happens to match FieldIds on the server. We need
-          // a better shared mechanism here:
-          // TODO: for that matter, this format is antiquated and should be changed -- at the least, the v- prefix
-          // is unnecessary:
-          val path = s"v-$oid-"
+          val path = Editing.propPath(oid)
           ChangePropertyValue(path, Seq(v))
         }
         val initProps = Seq(
