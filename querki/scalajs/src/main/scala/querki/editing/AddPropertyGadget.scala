@@ -193,7 +193,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
           mkPV(stdInfo.typePropId, typeId)
         )
         Client[EditFunctions].create(stdInfo.urPropId, initProps).call().foreach { propInfo =>
-          page.addProperty(propInfo.oid)
+          page.addProperty(propInfo.oid, true)
           reset()
         }
       }

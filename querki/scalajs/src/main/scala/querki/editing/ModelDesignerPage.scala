@@ -133,7 +133,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     }
   }
   
-  class PropValueEditor(val info:PropEditInfo, val section:PropertySection) extends Gadget[dom.HTMLLIElement] {
+  class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEditorInitially:Boolean = false) extends Gadget[dom.HTMLLIElement] {
     val propInfo = info.propInfo
     val propId = propInfo.oid
     val prompt = info.prompt.map(_.raw.toString).getOrElse(propInfo.displayName)
@@ -163,6 +163,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     def showPropEditor() = {
       detailsHolder() = propEditorSeq
       propDetailsArea.elemOpt.map($(_).show())
+      detailsShown() = true
     }
     
     def propEditDone() = {
@@ -184,13 +185,18 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
         new RawDiv(info.editor, cls:="controls"),
         propDetailsArea
       )
+      
+    override def onCreate(e:dom.HTMLLIElement) = {
+      if (openEditorInitially) 
+        showPropEditor()
+    }
   }
   
-  def addProperty(propId:String) = {
+  def addProperty(propId:String, openEditor:Boolean = false) = {
     Client[EditFunctions].addPropertyAndGetEditor(modelId, propId).call().foreach { editInfo =>
       // TODO: introduce the concept of Properties that are mainly for Models; if that is
       // set, put it in the Model section instead:
-      instancePropSection().appendEditor(editInfo)
+      instancePropSection().appendEditor(editInfo, openEditor)
       InputGadgets.hookPendingGadgets()
     }
   }
@@ -239,8 +245,8 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       }
     }
     
-    def appendEditor(editInfo:PropEditInfo) = {
-      val editor = new PropValueEditor(editInfo, this)
+    def appendEditor(editInfo:PropEditInfo, openEditor:Boolean) = {
+      val editor = new PropValueEditor(editInfo, this, openEditor)
       $(elem).append(editor.rendered)
       propIds() += editInfo.propInfo.oid
       onMoved()
