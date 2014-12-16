@@ -289,7 +289,8 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
       payload match {
         
         case ClientRequest(req, rc) => {
-          def params = mkParams(rc)
+          try {
+            def params = mkParams(rc)
           
           // TODO: the calling side of that registry above:
 //          val handler = autowireHandlerRegistry(req.path(2))
@@ -336,6 +337,13 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
               }
               case _ => { sender ! ClientError("Unknown API ID!") }
             }
+          } catch {
+            case ex:Exception => {
+              QLog.error(s"Exception while trying to handle Client Request $req", ex)
+              // TODO: ideally, this should return the exception through a side-channel
+              sender ! ClientError("Exception while trying to handle message")
+            }
+          }
         }
         
         case GetActiveSessions => QLog.error("UserSpaceSession received GetActiveSessions! WTF?")

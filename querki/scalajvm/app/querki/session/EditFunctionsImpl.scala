@@ -36,7 +36,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   
   def changeToProps(thing:Option[Thing], path:String, vs:Seq[String]):Option[PropMap] = {
     implicit val s = state
-    DisplayPropVal.propPathFromName(path, thing).map { fieldIds =>
+    DisplayPropVal.propPathFromName(path, thing).flatMap { fieldIds =>
       // Compute the *actual* fields to change. Note that this isn't trivial, since the actual change might be in 
 	  // a Bundle:
 	  val context = QLRequestContext(rc)
@@ -60,8 +60,9 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
 	  }
 	    
 	  val FormFieldInfo(prop, value, _, _, _, _) = result
-	  Core.toProps((prop, value.get))()
-    }    
+	  // Note that value can be empty if it fails validation!!!
+	  value.map(v => Core.toProps((prop, v))())
+    }
   }
   
   // TODO: this doesn't work with Lists that are nested in Models yet! Merge this with the above, but carefully. There
