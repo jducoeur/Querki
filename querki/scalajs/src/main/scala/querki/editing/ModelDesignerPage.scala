@@ -312,7 +312,10 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
           new AddPropertyGadget(this, model),
           h3(cls:="_defaultTitle", "Model Properties"),
           p(cls:="_smallSubtitle", "These Properties are the same for all Instances of this Model"),
-          modelPropSection.make(modelProps, "modelProps")
+          modelPropSection.make(modelProps, "modelProps"),
+          a(cls:="btn btn-primary",
+            "Done",
+            href:=thingUrl(model))
         )
     }
       yield PageContents(s"Designing Model ${model.displayName}", guts)
