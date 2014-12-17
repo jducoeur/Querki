@@ -300,8 +300,15 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
           case None => { println(s"Couldn't find property $propId, although it is in instancePropIds!"); current }
         }
       }
-      guts = 
+      pageTitle = {
+	    if (model.isModel)
+	      s"Designing Model ${model.displayName}"
+	    else
+	      s"Editing ${model.displayName}"
+      }
+	  guts = 
         div(cls:="_advancedEditor",
+          h1(pageTitle),
           h3(cls:="_defaultTitle", "Instance Properties"),
           p(cls:="_smallSubtitle", 
               """These are the Properties that can be different for each Instance. Drag a Property into here if you
@@ -317,6 +324,6 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
             href:=thingUrl(model))
         )
     }
-      yield PageContents(s"Designing Model ${model.displayName}", guts)
+      yield PageContents(pageTitle, guts)
   }
 }
