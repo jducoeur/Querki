@@ -19,7 +19,7 @@ import querki.tags.IsTag
 import querki.types.ModelTypeBase
 import querki.values.{QLRequestContext, RequestContext}
 
-class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi with CommonFunctionsImpl
+class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
   with autowire.Server[String, upickle.Reader, upickle.Writer]
 {
   
@@ -135,7 +135,8 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi with CommonF
   def write[Result: Writer](r: Result) = upickle.write(r)
   def read[Result: Reader](p: String) = upickle.read[Result](p)
   
-  def handleCommonFunction(req:autowire.Core.Request[String]):Future[ClientAnswer] = {
-    route[CommonFunctions](this)(req).map(ClientResponse(_))
+  def handleCommonFunction(rc:RequestContext, req:autowire.Core.Request[String]):Future[ClientAnswer] = {
+    val handler = new CommonFunctionsImpl(ecology, rc)
+    route[CommonFunctions](handler)(req).map(ClientResponse(_))
   }
 }

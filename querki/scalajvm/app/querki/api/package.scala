@@ -24,6 +24,6 @@ package object api {
     
     def propValInfo(t:Thing, rc:RequestContext):Seq[PropValInfo]
     
-    def handleCommonFunction(req:autowire.Core.Request[String]):Future[ClientAnswer]
+    def handleCommonFunction(rc:RequestContext, req:autowire.Core.Request[String]):Future[ClientAnswer]
   }
 }

@@ -4,7 +4,7 @@ import scala.concurrent.Future
 
 import querki.globals._
 
-import querki.api.StandardInfo
+import querki.api.{StandardInfo, StandardThings}
 
 package object data {
   /**
@@ -71,6 +71,12 @@ package object data {
      * this Future will resolve once that is ready.
      */
     def standardInfo:Future[StandardInfo]
+    
+    /**
+     * Returns the system-wide StandardThings. Note that this is fetched asynchronously after startup;
+     * this Future will resolve once that is ready.
+     */
+    def standardThings:Future[StandardThings]
   }
   
   /**

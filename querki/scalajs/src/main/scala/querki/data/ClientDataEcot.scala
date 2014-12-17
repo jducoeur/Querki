@@ -7,7 +7,7 @@ import autowire._
 
 import querki.globals._
 
-import querki.api.{CommonFunctions, StandardInfo, ThingFunctions}
+import querki.api.{CommonFunctions, PassthroughHandler, StandardInfo, StandardThings, ThingFunctions}
 
 class ClientDataEcot(e:Ecology) extends ClientEcot(e) with DataAccess with DataSetting {
   
@@ -29,9 +29,17 @@ class ClientDataEcot(e:Ecology) extends ClientEcot(e) with DataAccess with DataS
   val standardInfoPromise = Promise[StandardInfo]
   def standardInfo:Future[StandardInfo] = standardInfoPromise.future
   
+  val standardThingPromise = Promise[StandardThings]
+  def standardThings:Future[StandardThings] = standardThingPromise.future
+  
   override def postInit() = {
     Client[CommonFunctions].getStandardInfo().call().foreach { info =>
       standardInfoPromise.success(info)
+    }
+    Client[CommonFunctions].getStandardThings().call().foreach { thingMap =>
+      val handler = new PassthroughHandler(thingMap)
+      val things = new StandardThings(handler)
+      standardThingPromise.success(things)
     }
   }
   

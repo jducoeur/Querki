@@ -2,8 +2,27 @@ package querki.api
 
 import querki.globals._
 
-trait CommonFunctionsImpl extends CommonFunctions { self:EcologyMember =>
+import querki.data.ThingInfo
+import querki.values.RequestContext
+
+class PassthroughHandler(val ecology:Ecology, rc:RequestContext) extends EcologyMember {
+  val ClientApi = interface[ClientApi]
+  val System = interface[querki.system.System]
   
+  implicit val state = System.State
+  
+  var contents = Map.empty[String, ThingInfo]
+  
+  def pass(name:String) = {
+    state.anythingByName(name) match {
+      case Some(t) => contents += (name -> ClientApi.thingInfo(t, rc + state))
+      case None => QLog.error(s"Attempting to send unknown Standard Thing $name")
+    }
+  }
+}
+
+class CommonFunctionsImpl(val ecology:Ecology, rc:RequestContext) extends CommonFunctions with EcologyMember
+{
   def getStandardInfo():StandardInfo = {
     StandardInfo(
       querki.conventions.MOIDs.PropDetailsOID.toThingId,
@@ -17,5 +36,12 @@ trait CommonFunctionsImpl extends CommonFunctions { self:EcologyMember =>
       querki.basic.MOIDs.DisplayNameOID.toThingId,
       querki.editing.MOIDs.InstanceEditPropsOID.toThingId
     )
+  }
+  
+  def getStandardThings():Map[String, ThingInfo] = {
+    val passthrough = new PassthroughHandler(ecology, rc)
+    val translator = new StandardThings(passthrough)
+    val toucher = translator.touchEverything()
+    passthrough.contents
   }
 }

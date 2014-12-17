@@ -80,7 +80,7 @@ class ClientController extends ApplicationBase {
   
   def commonApiRequest(pickledRequest:String) = withUser(false) { implicit rc =>
     val request = read[autowire.Core.Request[String]](pickledRequest)
-    ClientApi.handleCommonFunction(request).map { 
+    ClientApi.handleCommonFunction(rc, request).map { 
       case ClientResponse(pickled) => Ok(pickled)
       case ClientError(msg) => BadRequest(msg)
     }

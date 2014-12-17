@@ -44,11 +44,12 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel {
     for {
       typeInfo <- DataAccess.getAllTypes()
       stdInfo <- DataAccess.standardInfo
+      stdThings <- DataAccess.standardThings
     }
     {
       val modelOptions = Var({
         val modelOpts = typeInfo.models.sortBy(_.displayName).map(model => option(value:=model.oid, model.displayName))
-        option(value:=stdInfo.simpleThingId, "Simple Thing") +: modelOpts
+        option(value:=stdThings.basic.simpleThing.oid, "Simple Thing") +: modelOpts
       })
       val selector = new RxSelect(modelOptions)
     
