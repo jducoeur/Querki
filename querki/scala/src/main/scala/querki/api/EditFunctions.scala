@@ -42,6 +42,11 @@ trait EditFunctions {
    * Fetch a Type based on this Model, creating it if necessary.
    */
   def getModelType(modelId:TID):Future[TypeInfo]
+  
+  /**
+   * Changes the Model that this Thing is based on.
+   */
+  def changeModel(thingId:TID, newModel:TID):Future[ThingInfo]
 }
 
 object EditFunctions {

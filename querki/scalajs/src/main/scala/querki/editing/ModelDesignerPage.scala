@@ -24,6 +24,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   lazy val modelId = TID(params("modelId"))
   
   lazy val Client = interface[querki.client.Client]
+  lazy val DataModel = interface[querki.datamodel.DataModel]
   lazy val Gadgets = interface[querki.display.Gadgets]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
@@ -292,6 +293,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   def pageContent = {
     for {
       model <- DataAccess.getThing(modelId)
+      modelModel <- DataAccess.getThing(model.modelOid)
       fullEditInfo <- Client[EditFunctions].getPropertyEditors(modelId).call()
       (instanceProps, modelProps) = fullEditInfo.propInfos.partition(propEditInfo => fullEditInfo.instancePropIds.contains(propEditInfo.propInfo.oid))
       sortedInstanceProps = (Seq.empty[PropEditInfo] /: fullEditInfo.instancePropIds) { (current, propId) =>
@@ -309,6 +311,16 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
 	  guts = 
         div(cls:="_advancedEditor",
           h1(pageTitle),
+          p(cls:="_smallSubtitle", 
+            s"Model: ${modelModel.displayName} -- ",
+            a("Change Model", 
+              href:=PageManager.currentHash,
+              onclick:={ () => 
+                DataModel.changeModel(
+                  model,
+                  { newThingInfo => PageManager.reload() }) 
+            })
+          ),
           h3(cls:="_defaultTitle", "Instance Properties"),
           p(cls:="_smallSubtitle", 
               """These are the Properties that can be different for each Instance. Drag a Property into here if you

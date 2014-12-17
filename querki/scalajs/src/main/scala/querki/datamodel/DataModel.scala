@@ -88,4 +88,17 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
         }
       })
   }
+  
+  def changeModel(thing:ThingInfo, cb:ThingInfo => Unit) = {
+    modelSelectionForm(
+      s"Change Model for ${thing.displayName}",
+      s"Choose the Model that ${thing.displayName} should now be based on:",
+      "Change Model",
+      { selection =>
+        Client[EditFunctions].changeModel(thing, selection).call().foreach { newThingInfo =>
+          cb(newThingInfo)
+        }
+      }
+    )
+  }
 }

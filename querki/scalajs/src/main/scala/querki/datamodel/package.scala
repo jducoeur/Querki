@@ -15,5 +15,11 @@ package object datamodel {
      * Creates a new Model, and opens the Model Designer on it.
      */
     def designAModel():Unit
+    
+    /**
+     * Displays a dialog to let the user choose a new Model for the Thing, makes the
+     * change, and calls cb().
+     */
+    def changeModel(thing:ThingInfo, cb:ThingInfo => Unit):Unit
   }
 }

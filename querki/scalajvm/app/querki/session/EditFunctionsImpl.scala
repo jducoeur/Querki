@@ -14,7 +14,7 @@ import EditFunctions._
 import querki.core.QLText
 import querki.data._
 import querki.session.messages.ChangeProps2
-import querki.spaces.messages.{CreateThing, ThingFound, ThingError}
+import querki.spaces.messages.{CreateThing, ModifyThing, ThingFound, ThingError}
 import querki.util.Requester
 import querki.values.{QLRequestContext, RequestContext}
 
@@ -366,6 +366,30 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
           case ThingError(error, stateOpt) => promise.failure(error)
         }
       }
+    }
+    promise.future
+  }
+
+  def changeModel(thingId:TID, newModelId:TID):Future[ThingInfo] = withThing(thingId) { thing =>
+    val promise = Promise[ThingInfo]
+    state.anything(newModelId.toThingId) match {
+      case Some(newModel) => {
+        // TODO: in principle, this should route through the UserSpaceSession. It doesn't matter yet, but is
+        // likely to once we put Experiment Mode into place.
+        val spaceMsg = ModifyThing(user, state.owner, state.id.toThingId, thing.id.toThingId, newModel.id, thing.props)
+        spaceRouter.request(spaceMsg) {
+          case ThingFound(newThingId, newState) => {
+            newState.anything(newThingId) match {
+              case Some(newThing) => promise.success(ClientApi.thingInfo(newThing, rc))
+              case None => promise.failure(new Exception(s"Change Model somehow resulted in unknown Thing $newThingId!"))
+             }
+         }
+          case ThingError(error, stateOpt) => {
+        	promise.failure(error)
+          }          
+        }
+      }
+      case None => promise.failure(new Exception(s"Unknown model $newModelId!")) 
     }
     promise.future
   }
