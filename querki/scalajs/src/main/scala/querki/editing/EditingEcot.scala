@@ -6,6 +6,7 @@ class EditingEcot(e:Ecology) extends ClientEcot(e) with Editing {
 
   def implements = Set(classOf[Editing])
   
+  lazy val Gadgets = interface[querki.display.Gadgets]
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val Pages = interface[querki.pages.Pages]
   
@@ -15,6 +16,7 @@ class EditingEcot(e:Ecology) extends ClientEcot(e) with Editing {
   override def postInit() = {
     editInstancesFactory
     modelDesignerFactory
+    Gadgets.registerSimpleGadget("._advancedEditButton", { new AdvancedEditButton })
   }
   
   def showAdvancedEditorFor(thingId:TID) = {
