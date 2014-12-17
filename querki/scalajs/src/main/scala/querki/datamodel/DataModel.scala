@@ -13,7 +13,7 @@ import querki.data.ThingInfo
 import querki.display.Dialog
 import querki.display.rx.RxSelect
 
-class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel {
+class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.util.ScalatagUtils {
   
   def implements = Set(classOf[DataModel])
   
@@ -40,7 +40,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel {
     deleteDialog.show()
   }
   
-  private def modelSelectionForm(formTitle:String, prompt:String, selectButton:String, onSelect:String => Unit) {
+  private def modelSelectionForm(formTitle:String, prompt:String, selectButton:String, onSelect:TID => Unit) {
     for {
       typeInfo <- DataAccess.getAllTypes()
       stdInfo <- DataAccess.standardInfo
@@ -48,8 +48,8 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel {
     }
     {
       val modelOptions = Var({
-        val modelOpts = typeInfo.models.sortBy(_.displayName).map(model => option(value:=model.oid, model.displayName))
-        option(value:=stdThings.basic.simpleThing.oid, "Simple Thing") +: modelOpts
+        val modelOpts = typeInfo.models.sortBy(_.displayName).map(model => option(value:=model, model.displayName))
+        option(value:=stdThings.basic.simpleThing, "Simple Thing") +: modelOpts
       })
       val selector = new RxSelect(modelOptions)
     
@@ -60,7 +60,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel {
             selector
           ),
           (selectButton -> { dialog =>
-            onSelect(selector.selectedVal())
+            onSelect(selector.selectedTID())
             dialog.done()
           }),
           ("Cancel" -> { dialog => dialog.done() })
@@ -76,15 +76,15 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel {
       "Choose which Model to base the new one on (just use Simple Thing if not sure):",
       "Create Model",
       { selection =>
-        DataAccess.standardInfo.foreach { stdInfo =>
+        DataAccess.standardThings.foreach { stdThings =>
           val initProps = 
             Seq(
-              ChangePropertyValue(Editing.propPath(stdInfo.isModelPropId), Seq("true")),
+              ChangePropertyValue(Editing.propPath(stdThings.core.isModelProp), Seq("true")),
               // The Display Name is usually an Instance Property:
-              ChangePropertyValue(Editing.propPath(stdInfo.instancePropsPropId), Seq(stdInfo.displayNamePropId))
+              ChangePropertyValue(Editing.propPath(stdThings.editing.instancePropsProp), Seq(stdThings.basic.displayNameProp.oid.underlying))
             )
           Client[EditFunctions].create(selection, initProps).call().foreach { modelInfo =>
-            Editing.showAdvancedEditorFor(modelInfo.oid)
+            Editing.showAdvancedEditorFor(modelInfo)
           }
         }
       })

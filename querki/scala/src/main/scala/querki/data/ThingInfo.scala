@@ -4,13 +4,22 @@ import models.{Kind, Wikitext}
 
 import querki.core.NameUtils
 
+/**
+ * Wrapper type, which represents a stringified ThingId. This should be
+ * used in all APIs, and in the Client, so that we aren't passing anonymous Strings all
+ * over the place. Note that this is an AnyVal, so should not incur overhead.
+ */
+case class TID(val underlying:String) extends AnyVal {
+
+}
+
 trait BasicThingInfo {
-  def oid:String
+  def oid:TID
   def linkName:Option[String]
   def displayName:String
   
   def urlName = linkName match {
-    case Some(name) => NameUtils.toUrl(name)
+    case Some(name) => TID(NameUtils.toUrl(name))
     case None => oid
   }
 }
@@ -20,10 +29,10 @@ trait BasicThingInfo {
  * Note that it is intentionally much less elaborate than the Server-side Thing.
  */
 case class ThingInfo(
-  oid:String, 
+  oid:TID, 
   linkName:Option[String], 
   displayName:String,
-  modelOid:String,
+  modelOid:TID,
   kind:Kind.Kind,
   isModel:Boolean,
   isEditable:Boolean,
@@ -33,21 +42,21 @@ case class ThingInfo(
   importedFrom:Option[SpaceInfo]) extends BasicThingInfo
 
 case class SpaceInfo(
-  oid:String, 
+  oid:TID, 
   linkName:Option[String], 
   displayName:String,
   ownerId:String,
   ownerHandle:String) extends BasicThingInfo
 
 case class PropInfo(
-  oid:String,
+  oid:TID,
   linkName:Option[String],
   displayName:String,
   appliesTo:Option[Kind.Kind],
-  collId:String,
+  collId:TID,
   // Note that the typeId points to the Type if it's conventional, or to the Model
   // iff it's a Model Property:
-  typeId:String
+  typeId:TID
 ) extends BasicThingInfo
 
 case class PropValInfo(
@@ -58,7 +67,7 @@ case class PropValInfo(
 )
 
 case class SpaceProps(
-  oid:String,
+  oid:TID,
   linkName:Option[String],
   displayName:String,
   standardProps:Seq[PropInfo],
@@ -67,13 +76,13 @@ case class SpaceProps(
 ) extends BasicThingInfo
 
 case class CollectionInfo(
-  oid:String,
+  oid:TID,
   linkName:Option[String],
   displayName:String
 ) extends BasicThingInfo
 
 case class TypeInfo(
-  oid:String,
+  oid:TID,
   linkName:Option[String],
   displayName:String
 ) extends BasicThingInfo

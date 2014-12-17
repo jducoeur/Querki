@@ -29,6 +29,9 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
   lazy val DataModelAccess = interface[querki.datamodel.DataModelAccess]
   lazy val Editor = interface[querki.editing.Editor]
   
+  implicit def thing2TID(t:Thing) = TID(t.id.toThingId.toString)
+  implicit def OID2TID(oid:OID) = TID(oid.toThingId.toString)
+  
   def thingInfo(t:Thing, rc:RequestContext):ThingInfo = {
       implicit val state = rc.state.get
       val user = rc.requesterOrAnon
@@ -40,10 +43,10 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
         else
           spaceInfo(state.getApp(t.spaceId), rc)
       ThingInfo(
-        AsOID(t.id), 
+        t, 
         t.linkName, 
         t.unsafeDisplayName,
-        AsOID(t.model),
+        t.model,
         t.kind,
         isModel,
         editable,
@@ -56,7 +59,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
   def spaceInfo(topt:Option[SpaceState], rc:RequestContext):Option[SpaceInfo] = {
     topt.map { t => 
       SpaceInfo(
-        AsOID(t.id), 
+        t, 
         // TODO: NameUtils.toUrl() is inconsistent with SafeUrl: they handle spaces differently.
         // We need to fix this inconsistency!
         t.linkName.map(NameUtils.toUrl(_)), 
@@ -100,12 +103,12 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
       case _ => prop.pType.id
     }
     PropInfo(
-      prop.id.toThingId, 
+      prop, 
       prop.linkName, 
       prop.displayName, 
       prop.getPropOpt(Core.AppliesToKindProp).flatMap(_.firstOpt),
-      prop.cType.id.toThingId,
-      typeId.toThingId)
+      prop.cType,
+      typeId)
   }
   
   def propValInfo(t:Thing, rc:RequestContext):Seq[PropValInfo] = {

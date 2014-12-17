@@ -102,7 +102,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     promise.future
   }
   
-  def alterProperty(thingId:String, change:PropertyChange):Future[PropertyChangeResponse] = withThing(thingId) { thing =>
+  def alterProperty(thingId:TID, change:PropertyChange):Future[PropertyChangeResponse] = withThing(thingId) { thing =>
     if (doLogEdits) QLog.spew(s"Got alterProperty on $thingId: $change")
     
     val propsOpt:Option[PropMap] = change match {
@@ -152,7 +152,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     }
   }
   
-  def create(modelId:String, initialProps:Seq[PropertyChange]):Future[ThingInfo] = withThing(modelId) { model =>
+  def create(modelId:TID, initialProps:Seq[PropertyChange]):Future[ThingInfo] = withThing(modelId) { model =>
     val promise = Promise[ThingInfo]
     
     val props = (emptyProps /: initialProps) { (map, change) =>
@@ -195,10 +195,10 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
       )
   }
   
-  def getOnePropertyEditor(thingId:String, propId:String):PropEditInfo = withThing(thingId) { thing =>
+  def getOnePropertyEditor(thingId:TID, propId:TID):PropEditInfo = withThing(thingId) { thing =>
     implicit val s = state
     val result = for {
-      prop <- state.prop(ThingId(propId))
+      prop <- state.prop(propId.toThingId)
       pv = thing.getPropOpt(prop)
       v = pv.map(_.v)
       dpv = DisplayPropVal(Some(thing), prop, v)
@@ -209,7 +209,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     result.get
   }
   
-  def getPropertyEditors(thingId:String):FullEditInfo = withThing(thingId) { thing =>
+  def getPropertyEditors(thingId:TID):FullEditInfo = withThing(thingId) { thing =>
     // Properties are very different from ordinary Things:
     thing match {
       case prop:AnyProp => getPropPropertyEditors(prop)
@@ -228,12 +228,12 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
       getOnePropEditor(thing, prop, propVal)
     }
     
-    val instanceProps = for {
+    val instanceProps:Option[Seq[TID]] = for {
       instancePropsPair <- propList.find(_._1.id == querki.editing.MOIDs.InstanceEditPropsOID)
       instancePropsQV <- instancePropsPair._2.v
       instanceProps = instancePropsQV.rawList(Core.LinkType)
     }
-      yield instanceProps.map(_.toThingId.toString)
+      yield instanceProps.map(oid => TID(oid.toThingId))
       
     val instancePropsPath = new FieldIds(Some(thing), Editor.InstanceProps).inputControlId
     
@@ -287,11 +287,11 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     FullEditInfo(Seq.empty, "", allEditors)
   }
   
-  def addPropertyAndGetEditor(thingId:String, propIdStr:String):Future[PropEditInfo] = withThing(thingId) { thing =>
+  def addPropertyAndGetEditor(thingId:TID, propIdStr:TID):Future[PropEditInfo] = withThing(thingId) { thing =>
     val promise = Promise[PropEditInfo]
     
     implicit val s = state
-    val propId = ThingId(propIdStr)
+    val propId = propIdStr.toThingId
     val propsOpt = for {
       prop <- state.prop(propId)
       newV = prop.default
@@ -317,9 +317,9 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     promise.future    
   }
   
-  def removeProperty(thingId:String, propIdStr:String):Future[PropertyChangeResponse] = withThing(thingId) { thing =>
+  def removeProperty(thingId:TID, propIdStr:TID):Future[PropertyChangeResponse] = withThing(thingId) { thing =>
     implicit val s = state
-    val propId = ThingId(propIdStr)
+    val propId = propIdStr.toThingId
     val propsOpt = for {
       prop <- state.prop(propId)
       newV = DataModel.DeletedValue
@@ -332,7 +332,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     }
   }
   
-  def getModelType(modelId:String):Future[TypeInfo] = withThing(modelId) { model =>
+  def getModelType(modelId:TID):Future[TypeInfo] = withThing(modelId) { model =>
     implicit val s = state
     val typOpt = state.types.values.find { typ =>
       typ match {
@@ -341,7 +341,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
       }
     }
     
-    def toTypeInfo(t:PType[_]) = TypeInfo(t.id.toThingId, t.linkName, t.displayName)
+    def toTypeInfo(t:PType[_]) = TypeInfo(t, t.linkName, t.displayName)
     
     val promise = Promise[TypeInfo]
     typOpt match {

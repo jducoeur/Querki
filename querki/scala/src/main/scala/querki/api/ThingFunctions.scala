@@ -18,27 +18,27 @@ trait ThingFunctions {
    * Note that, if the named Thing does not exist, that is *not* an error: this will interpret that
    * as a Tag instead.
    */
-  def getThingPage(thingId:String):ThingPageDetails
+  def getThingPage(thingId:TID):ThingPageDetails
   
   /**
    * Fetch just the ThingInfo for the specified Thing.
    */
-  def getThingInfo(thingId:String):ThingInfo
+  def getThingInfo(thingId:TID):ThingInfo
   
   /**
    * Evaluate the given QL in the context of the specified Thing, and return the resulting Wikitext.
    */
-  def evaluateQL(thingId:String, ql:String):Wikitext
+  def evaluateQL(thingId:TID, ql:String):Wikitext
   
   /**
    * Fetch the raw values of the Properties on this Thing.
    */
-  def getProperties(thingId:String):Seq[PropValInfo]
+  def getProperties(thingId:TID):Seq[PropValInfo]
   
   /**
    * Fetches the rendered value of the specified Property of this Thing.
    */
-  def getPropertyDisplay(thingId:String, propId:String):Option[Wikitext]
+  def getPropertyDisplay(thingId:TID, propId:TID):Option[Wikitext]
   
   /**
    * Fetch all of the Properties available to this Space.
@@ -53,10 +53,10 @@ trait ThingFunctions {
   /**
    * Delete the specified Thing.
    */
-  def deleteThing(thingId:String):Future[Unit]
+  def deleteThing(thingId:TID):Future[Unit]
   
   /**
    * Returns the number of Instances there are for this Model.
    */
-  def getNumInstances(modelId:String):Int
+  def getNumInstances(modelId:TID):Int
 }

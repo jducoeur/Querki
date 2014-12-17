@@ -36,7 +36,7 @@ package object data {
      * Fetch the specified Thing. If all you need is ThingInfo, go through DataAccess to get it; that way,
      * down the road, we can move towards caching the information client-side.
      */
-    def getThing(thingId:String):Future[ThingInfo]
+    def getThing(thingId:TID):Future[ThingInfo]
     
     /**
      * Fetch all of the Properties in this Space. Mainly intended for editing.

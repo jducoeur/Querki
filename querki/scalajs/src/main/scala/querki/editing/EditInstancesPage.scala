@@ -28,7 +28,7 @@ class EditInstancesPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
   lazy val Client = interface[querki.client.Client]
   
-  val modelId = params.requiredParam("modelId")
+  val modelId = TID(params.requiredParam("modelId"))
 
   def pageContent = {
     for {

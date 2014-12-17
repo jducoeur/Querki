@@ -8,6 +8,7 @@ import models.{Thing, ThingId}
 
 import querki.globals._
 
+import querki.data.TID
 import querki.identity.User
 import querki.spaces.messages.SessionRequest
 import querki.util.Requester
@@ -66,10 +67,10 @@ class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends EcologyM
   def self = info.actor.self
   val spaceRouter = info.spaceRouter
   
-  def withThing[R](thingId:String)(f:Thing => R):R = {
-    val oid = ThingId(thingId)
+  def withThing[R](thingId:TID)(f:Thing => R):R = {
+    val oid = ThingId(thingId.underlying)
     // Either show this actual Thing, or a synthetic TagThing if it's not found:
-    val thing = state.anything(oid).getOrElse(interface[querki.tags.Tags].getTag(thingId, state))
+    val thing = state.anything(oid).getOrElse(interface[querki.tags.Tags].getTag(thingId.underlying, state))
     curThingRx() = Some(thing)
     f(thing)
   }
@@ -85,5 +86,11 @@ class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends EcologyM
    */
   def createSelfRequest(payload:SessionMessage):SessionRequest = {
     SessionRequest(user, state.owner, state.id.toThingId, payload)
+  }
+  
+  implicit def thing2TID(t:Thing):TID = TID(t.id.toThingId)
+  implicit def OID2TID(oid:OID):TID = TID(oid.toThingId)
+  implicit class TIDExt(tid:TID) {
+    def toThingId = ThingId(tid.underlying)
   }
 }

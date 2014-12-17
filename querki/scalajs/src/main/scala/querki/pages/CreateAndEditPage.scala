@@ -14,7 +14,7 @@ class CreateAndEditPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   lazy val Client = interface[querki.client.Client]
   lazy val DataSetting = interface[querki.data.DataSetting]
   
-  lazy val modelId = params("model")
+  lazy val modelId = TID(params("model"))
 
   def pageContent = for {
     modelInfo <- Client[ThingFunctions].getThingInfo(modelId).call()

@@ -19,7 +19,7 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
   
   override def onCreate(elem:Output) = {
     val jq = $(elem)
-    val thingId = jq.data("thingid").asInstanceOf[String]
+    val thingId = jq.tidString("thingid")
     val ql = jq.data("ql").asInstanceOf[String]
     val target = jq.data("target").asInstanceOf[String]
     

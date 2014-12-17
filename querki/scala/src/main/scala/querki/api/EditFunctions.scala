@@ -10,38 +10,38 @@ trait EditFunctions {
   /**
    * The central "edit" action: change the presence or content of one Property on a Bundle.
    */
-  def alterProperty(thingId:String, change:PropertyChange):Future[PropertyChangeResponse]
+  def alterProperty(thingId:TID, change:PropertyChange):Future[PropertyChangeResponse]
   
   /**
    * Create a new Thing with the given Model and properties.
    */
-  def create(modelId:String, initialProps:Seq[PropertyChange]):Future[ThingInfo]
+  def create(modelId:TID, initialProps:Seq[PropertyChange]):Future[ThingInfo]
   
   /**
    * Fetch the Editor for the specified Property on this Thing. The Property does not have to
    * be defined on the Thing yet.
    */
-  def getOnePropertyEditor(thingId:String, propId:String):PropEditInfo
+  def getOnePropertyEditor(thingId:TID, propId:TID):PropEditInfo
   
   /**
    * Fetch the Editors and ancillary information about this Thing.
    */
-  def getPropertyEditors(thingId:String):FullEditInfo
+  def getPropertyEditors(thingId:TID):FullEditInfo
   
   /**
    * Add this Property to this Thing, and return the Editor for it.
    */
-  def addPropertyAndGetEditor(thingId:String, propId:String):Future[PropEditInfo]
+  def addPropertyAndGetEditor(thingId:TID, propId:TID):Future[PropEditInfo]
   
   /**
    * Remove the specified Property from the specified Thing.
    */
-  def removeProperty(thingId:String, propId:String):Future[PropertyChangeResponse]
+  def removeProperty(thingId:TID, propId:TID):Future[PropertyChangeResponse]
   
   /**
    * Fetch a Type based on this Model, creating it if necessary.
    */
-  def getModelType(modelId:String):Future[TypeInfo]
+  def getModelType(modelId:TID):Future[TypeInfo]
 }
 
 object EditFunctions {
@@ -63,7 +63,7 @@ object EditFunctions {
   case object PropertyChanged extends PropertyChangeResponse
   case class PropertyChangeError(msg:String) extends PropertyChangeResponse
   
-  case class FullEditInfo(instancePropIds:Seq[String], instancePropPath:String, propInfos:Seq[PropEditInfo])
+  case class FullEditInfo(instancePropIds:Seq[TID], instancePropPath:String, propInfos:Seq[PropEditInfo])
   
   case class PropEditInfo(
     propInfo:PropInfo,

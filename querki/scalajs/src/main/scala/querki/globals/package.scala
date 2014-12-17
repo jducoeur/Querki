@@ -26,6 +26,9 @@ package object globals {
    */
   val $ = jQuery
   
+  /**
+   * Ecology Types that are common enough to belong here.
+   */
   type ClientEcot = querki.ecology.ClientEcot
   type Ecology = querki.ecology.Ecology
   type EcologyInterface = querki.ecology.EcologyInterface
@@ -33,6 +36,10 @@ package object globals {
   implicit def wrapper2Interface[T <: EcologyInterface](wrapper:querki.ecology.InterfaceWrapperBase[querki.ecology.ClientState, querki.ecology.EcotImpl, T]):T = {
     wrapper.get
   }
+  
+  type TID = querki.data.TID
+  val TID = querki.data.TID
+  implicit def thingInfo2TID(info:querki.data.BasicThingInfo):TID = info.oid
   
   /**
    * This allows you to use a TypedTag in any context where a Gadget is expected.

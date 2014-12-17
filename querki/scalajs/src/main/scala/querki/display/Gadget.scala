@@ -3,6 +3,7 @@ package querki.display
 import scala.scalajs.js
 
 import org.scalajs.dom
+import org.scalajs.jquery._
 
 import scalatags.JsDom.all._
 import scalatags.JsDom.TypedTag
@@ -118,18 +119,15 @@ trait QuerkiUIUtils extends ScalatagUtils {
    */
   def iconButton(iconName:String, addlCls:Seq[String] = Seq.empty) = querkiButton(icon(iconName), addlCls)
   
-  /**
-   * Shortcut for fetching the URL of a Thing.
-   */
-  def thingUrl(thing:BasicThingInfo):String = {
-    thingUrl(thing.urlName)
-  }
-  
-  def thingUrl(name:String) = s"#$name"
+  def thingUrl(name:TID) = s"#${name.underlying}"
   
   /**
    * A standard link to a Thing, if you're not trying to do anything odd with it.
    */
   def thingLink(thing:BasicThingInfo):TypedTag[dom.HTMLAnchorElement] =
     a(href:=thingUrl(thing), thing.displayName)
+    
+  implicit class jqGadgetExts(jq:JQuery) {
+    def tidString(name:String) = TID(jq.data(name).asInstanceOf[String])
+  }
 }

@@ -17,8 +17,8 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
   
   lazy val Client = interface[querki.client.Client]
   
-  val initialThingId = params.requiredParam("thingId")
-  var chosenThingId:Option[String] = None
+  val initialThingId = TID(params.requiredParam("thingId"))
+  var chosenThingId:Option[TID] = None
   def thingId = {
     chosenThingId.getOrElse(initialThingId)
   }
@@ -27,7 +27,7 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
     override def onChange() = {}
     
     override def onSelect(item:ManifestItem) = {
-      chosenThingId = Some(item.id)
+      chosenThingId = Some(TID(item.id))
       evaluate()
     }
   }

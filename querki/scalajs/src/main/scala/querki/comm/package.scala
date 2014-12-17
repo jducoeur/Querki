@@ -38,7 +38,7 @@ package object comm {
      */
     def spaceCall(params:js.Any*)(implicit ecology:Ecology):PlayCall = {
       val DataAccess = ecology.api[querki.data.DataAccess]
-      call.apply((Seq[js.Any](DataAccess.userName, DataAccess.spaceId) ++ params):_*)
+      call.apply((Seq[js.Any](DataAccess.userName, DataAccess.spaceId.underlying) ++ params):_*)
     }
     
     /**

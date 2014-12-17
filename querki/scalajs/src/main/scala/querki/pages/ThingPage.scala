@@ -20,7 +20,7 @@ import querki.conversations.ConversationPane
 import querki.data.ThingInfo
 import querki.display.{Gadget, QLButtonGadget, QText, WrapperDiv}
 
-class ThingPage(name:String, params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
+class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
 
   lazy val Client = interface[querki.client.Client]
   lazy val DataSetting = interface[querki.data.DataSetting]
@@ -64,16 +64,17 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
     new QLButtonGadget(
     	iconButton("edit", Seq("_qlInvoke"))(
                   title:=s"Edit $thingName",
-                  data("thingid"):=thing.urlName,
+                  data("thingid"):=thing,
                   data("target"):="_topEdit",
                   data("ql"):="_edit",
                   href:=page.thingUrl(thing))
     )
   
+  // TODO: this must go away!!!
   lazy val oldEditButton = 
     iconButton("edit")(
       title:=s"Edit $thingName",
-      href:=controllers.Application.editThing.spaceUrl(thing.urlName))
+      href:=controllers.Application.editThing.spaceUrl(thing.urlName.underlying))
   
   def doRender =
     div(cls:="page-header",
@@ -85,16 +86,16 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
             if (thing.isEditable) {
               iconButton("edit")(
                 title:=s"Design $thingName",
-                href:=Editing.modelDesignerFactory.pageUrl(("modelId" -> thing.urlName)))
+                href:=Editing.modelDesignerFactory.pageUrl(("modelId" -> thing.urlName.underlying)))
             },
             if (thing.isInstantiatable) {
               iconButton("plus-sign")(
                 title:=s"Create a $thingName",
-                href:=Pages.createAndEditFactory.pageUrl(("model" -> thing.urlName)))
+                href:=Pages.createAndEditFactory.pageUrl(("model" -> thing.urlName.underlying)))
             },
             querkiButton(MSeq(icon("edit"), icon("edit"), icon("edit"), "..."))(
               title:=s"Edit all instances of $thingName",
-              href:=Editing.editInstancesFactory.pageUrl(("modelId" -> thing.urlName)))
+              href:=Editing.editInstancesFactory.pageUrl(("modelId" -> thing.urlName.underlying)))
           )
         } else {
           // Not a Model
@@ -110,7 +111,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
               case Some(model) if (model.isInstantiatable) => {
                 querkiButton(MSeq(icon("plus-sign"), "..."))(
                   title:=s"Create another ${model.displayName}",
-                  href:=Pages.createAndEditFactory.pageUrl(("model" -> model.urlName)))
+                  href:=Pages.createAndEditFactory.pageUrl(("model" -> model.urlName.underlying)))
               }
               case _ => {}
             }
@@ -121,7 +122,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
       modelOpt match {
         case Some(model) => {
           p(cls:="_smallSubtitle _noPrint",
-            "(OID: ", a(href:=page.thingUrl(thing.oid), thing.oid),
+            "(OID: ", a(href:=page.thingUrl(thing.oid), thing.oid.underlying),
             thing.linkName.map { linkName =>
               MSeq(", Link Name: ", a(href:=page.thingUrl(thing), linkName))
             },

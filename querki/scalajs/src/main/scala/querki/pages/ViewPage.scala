@@ -11,7 +11,7 @@ class ViewPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecology
   
   lazy val Client = interface[querki.client.Client]
   
-  lazy val name = params("thingId")
+  lazy val name = TID(params("thingId"))
 
   def pageContent = {
     for {

@@ -36,7 +36,7 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
         case _ => {
 	      controllers.ClientController.apiRequest(
 	          DataAccess.userName, 
-	          DataAccess.spaceId, 
+	          DataAccess.spaceId.underlying, 
 	          upickle.write(req)).callAjax()
         }
       }

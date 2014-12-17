@@ -58,7 +58,7 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
    * which Thing the page is generally about, but the page can contain arbitrary edit controls
    * from other Things, via the _edit function.
    */
-  lazy val thingId = $(elem).data("thing").asInstanceOf[UndefOr[String]].getOrElse(DataAccess.thingId)
+  lazy val thingId = $(elem).data("thing").asInstanceOf[UndefOr[String]].map(TID(_)).getOrElse(DataAccess.thingId)
   
   /**
    * Save the current state of this InputGadget. This can potentially be overridden, but shouldn't

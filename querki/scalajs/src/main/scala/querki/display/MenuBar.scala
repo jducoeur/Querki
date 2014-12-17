@@ -11,7 +11,7 @@ import querki.comm._
 import querki.notifications.NotifierGadget
 import querki.search.SearchGadget
 
-class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember with QuerkiUIUtils {
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
@@ -57,7 +57,8 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
 
   case object NavDivider extends Navigable
   
-  def thing(thingName:String) = controllers.Application.thing(ownerId, spaceId, thingName)
+//  def thing(thingName:String) = controllers.Application.thing(ownerId, spaceId, thingName)
+  def thing(thingName:String) = thingUrl(TID(thingName))
   
   /**
    * Definition of the Menu Bar's data
@@ -72,7 +73,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   
   def thingLink = {
     thingOpt.map { t =>
-      NavLink(truncateName(t.displayName), thing(t.urlName))
+      NavLink(truncateName(t.displayName), thingUrl(t))
     }
   }
   
@@ -84,19 +85,19 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
         NavLink("Create any Thing", PageManager.pageUrl("_create"), Some("createThing")),
         NavLink("Show all Things", thing("All-Things")),
         NavLink("Show all Properties", thing("All-Properties")),
-        NavLink("Sharing and Security", controllers.Application.sharing(ownerId, spaceId), enabled = DataAccess.request.isOwner)        
+        NavLink("Sharing and Security", controllers.Application.sharing(ownerId, spaceId.underlying), enabled = DataAccess.request.isOwner)        
       )
     }
   }
   
   def thingLinks:Option[Seq[Navigable]] = {
     thingOpt.map { thing =>
-      val thingId = thing.urlName
+      val thingId = thing.urlName.underlying
       Seq(
         NavDivider,
-        NavLink("Edit " + thing.displayName, controllers.Application.editThing(ownerId, spaceId, thingId), enabled = thing.isEditable),
+        NavLink("Edit " + thing.displayName, controllers.Application.editThing(ownerId, spaceId.underlying, thingId), enabled = thing.isEditable),
         NavLink("View Source", Pages.viewFactory.pageUrl("thingId" -> thingId)),
-        NavLink("Advanced...", controllers.Application.showAdvancedCommands(ownerId, spaceId, thingId)),
+        NavLink("Advanced...", controllers.Application.showAdvancedCommands(ownerId, spaceId.underlying, thingId)),
         NavLink("Explore...", Pages.exploreFactory.pageUrl("thingId" -> thingId), enabled = thing.isEditable),
         NavLink("Delete " + thing.displayName, enabled = thing.isDeleteable, onClick = Some({ () => DataModel.deleteAfterConfirm(thing) }))
       ) ++

@@ -1,6 +1,9 @@
 package querki.util
 
+import org.scalajs.dom
 import scalatags.JsDom.all._
+
+import querki.globals._
 
 /**
  * Convenience utilities to use with Scalatags. You can either mix this into your class, or use the
@@ -30,6 +33,19 @@ trait ScalatagUtils {
    */
   def classes(cs:Seq[String]) = cls:=cs.mkString(" ")
   
+  /**
+   * Base class for teaching Scalatags how to use a BasicThingInfo as an Attribute Value. We need one
+   * of these for each subclass of BasicThingInfo. This automatically uses the TID of the Thing as
+   * the actual value.
+   */
+  class BasicThingAttr[T <: querki.data.BasicThingInfo] extends scalatags.JsDom.AttrValue[T] {
+    override def apply(t:dom.Element, a:Attr, v:T) = {
+      t.setAttribute(a.name, v.oid.underlying)
+    }
+  }
+  implicit val ThingAttr = new BasicThingAttr[querki.data.ThingInfo]
+  implicit val PropAttr = new BasicThingAttr[querki.data.PropInfo]
+  implicit val TypeAttr = new BasicThingAttr[querki.data.TypeInfo]
 }
 
 object ScalatagUtils extends ScalatagUtils

@@ -52,7 +52,7 @@ class ClientDataEcot(e:Ecology) extends ClientEcot(e) with DataAccess with DataS
    * That said, once we *do* have such a cache, we might as well actually store it in the
    * Browser DB: go whole-hog and maintain enough info locally to seriously cut traffic.
    */
-  def getThing(thingId:String):Future[ThingInfo] = {
+  def getThing(thingId:TID):Future[ThingInfo] = {
     Client[ThingFunctions].getThingInfo(thingId).call()
   }
   

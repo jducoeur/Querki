@@ -72,7 +72,7 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
     }
     
     // Fall back to ThingPage if nothing else claims ownership:
-    pageOpt.getOrElse(new ThingPage(name, params))
+    pageOpt.getOrElse(new ThingPage(TID(name), params))
   }
   
 }

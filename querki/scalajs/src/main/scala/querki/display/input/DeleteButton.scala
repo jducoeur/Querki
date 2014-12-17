@@ -48,7 +48,7 @@ class DeleteInstanceButton(doDelete:() => Unit)(implicit e:Ecology) extends Dele
  * nonsensical: what the delete button does depends on context. This one is specific to
  * the _deleteInstanceButton class.
  */
-object DeleteInstanceButton {
+object DeleteInstanceButton extends querki.display.QuerkiUIUtils {
   import autowire._
   import querki.api.ThingFunctions
   
@@ -58,7 +58,7 @@ object DeleteInstanceButton {
   
   def deleteFunc(button:dom.Element, e:Ecology) = { () =>
     val editor = $(button).parents("._instanceEditor")
-    val thingId = editor.data("thingid").asInstanceOf[String]
+    val thingId = editor.tidString("thingid")
     val Client = e.api[querki.client.Client]
     Client[ThingFunctions].deleteThing(thingId).call().foreach { dummy =>
       editor.hide(400, { () => editor.remove() })

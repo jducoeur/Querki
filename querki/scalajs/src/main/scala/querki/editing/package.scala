@@ -19,12 +19,12 @@ package object editing {
     /**
      * Navigates to the Advanced Editor / Model Designer page.
      */
-    def showAdvancedEditorFor(thingId:String):Unit
+    def showAdvancedEditorFor(thingId:TID):Unit
     
     /**
      * Constructs a server-compatible "path" to identify a Property.
      */
-    def propPath(propId:String, thingIdOpt:Option[String]):String
-    def propPath(propId:String):String
+    def propPath(propId:TID, thingIdOpt:Option[TID]):String
+    def propPath(propId:TID):String
   }
 }

@@ -19,7 +19,7 @@ import querki.util.ScalatagUtils
  * @param selector Typically the selected() reactive of an RxSelect. We pass in this instead of the RxSelect itself
  *   so that you can orElse multiple RxSelects and feed the union into here.
  */
-class DescriptionDiv(page:ModelDesignerPage, selector:Rx[Option[(RxThingSelector, String)]])(implicit val ecology:Ecology) 
+class DescriptionDiv(page:ModelDesignerPage, selector:Rx[Option[(RxThingSelector, TID)]])(implicit val ecology:Ecology) 
   extends EcologyMember with ScalatagUtils 
 {
   lazy val Client = interface[querki.client.Client]
@@ -27,20 +27,20 @@ class DescriptionDiv(page:ModelDesignerPage, selector:Rx[Option[(RxThingSelector
   
   def thingLink = page.thingLink _
   
-  val stdInfoFut = DataAccess.standardInfo
+  val stdThingFut = DataAccess.standardThings
   val emptyDescription = span(raw("&nbsp;"))
   val selectedDescriptionObs = Obs(selector, skipInitial=true) {
     selector() match {
       case Some((sel, oid)) => {
         val name = sel.selectedText()
         val fut = for {
-          stdInfo <- stdInfoFut
+          stdThings <- stdThingFut
           propMap <- page.propMapFut
           typeMap <- page.typeMapFut
           collMap <- page.collMapFut
           modelMap <- page.modelMapFut
-          summaryOpt <- Client[ThingFunctions].getPropertyDisplay(oid, stdInfo.summaryPropId).call()
-          detailsOpt <- Client[ThingFunctions].getPropertyDisplay(oid, stdInfo.detailsPropId).call()
+          summaryOpt <- Client[ThingFunctions].getPropertyDisplay(oid, stdThings.conventions.summaryProp).call()
+          detailsOpt <- Client[ThingFunctions].getPropertyDisplay(oid, stdThings.conventions.detailsProp).call()
         }
           yield
             // ... build the display of the Property info...

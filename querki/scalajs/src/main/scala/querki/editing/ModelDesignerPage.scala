@@ -21,7 +21,7 @@ import querki.pages._
 
 class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
   
-  lazy val modelId = params("modelId")
+  lazy val modelId = TID(params("modelId"))
   
   lazy val Client = interface[querki.client.Client]
   lazy val Gadgets = interface[querki.display.Gadgets]
@@ -84,9 +84,9 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     val thingSelector = 
       new RxThingSelector {
         val selectedText = Var(propInfo.displayName)
-        def selectedVal = Var(propInfo.oid)
+        def selectedTID = Var(propInfo.oid)
       } 
-    val selectorWrapper = Var[Option[(RxThingSelector, String)]](None)
+    val selectorWrapper = Var[Option[(RxThingSelector, TID)]](None)
     val descDiv = new DescriptionDiv(page, selectorWrapper)
     val propertyDescriptionDiv = descDiv.descriptionDiv
     selectorWrapper() = Some((thingSelector, propInfo.oid))
@@ -176,7 +176,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       // HACK: we're calling this _instanceEditor in order to make the DeleteButton's style work. Let's
       // refactor this somehow:
       li(cls:="_propListItem control-group _instanceEditor",
-        data("propid"):=propInfo.oid,
+        data("propid"):=propInfo,
         new WithTooltip(label(cls:="_propPrompt control-label", 
           onclick:={ () => toggleDetails() },
           new DeleteInstanceButton({() => removeProperty(this)}), 
@@ -192,7 +192,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     }
   }
   
-  def addProperty(propId:String, openEditor:Boolean = false) = {
+  def addProperty(propId:TID, openEditor:Boolean = false) = {
     Client[EditFunctions].addPropertyAndGetEditor(modelId, propId).call().foreach { editInfo =>
       // TODO: introduce the concept of Properties that are mainly for Models; if that is
       // set, put it in the Model section instead:
@@ -210,7 +210,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     }
   }
   
-  class PropertySection(nam:String, props:Seq[PropEditInfo], thingId:String, sortable:Boolean = true) extends InputGadget[dom.HTMLUListElement](ecology) {
+  class PropertySection(nam:String, props:Seq[PropEditInfo], thingId:TID, sortable:Boolean = true) extends InputGadget[dom.HTMLUListElement](ecology) {
     
     /**
      * The Properties currently in this section. Note that this is a var so that more props can be added.
@@ -273,7 +273,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
         // Note that the name for the Instance Property section is the path of the Instance Props Property:
         name:=nam, 
         // Needed for save() to work:
-        data("thing"):=thingId,
+        data("thing"):=thingId.underlying,
         props.map(new PropValueEditor(_, this))
       )
   }

@@ -11,7 +11,7 @@ import querki.globals._
 
 import querki.api.{EditFunctions, ThingFunctions}
 import EditFunctions._
-import querki.data._
+import querki.data.{TID => _TID, _}
 import querki.display.{AfterLoading, ButtonGadget, ButtonKind, Gadget, QText, WrapperDiv}
 import querki.display.input.TextInputGadget
 import querki.display.rx.{ButtonInfo, RxAttr, RxButtonGroup, RxDiv, RxSelect, RxText}
@@ -33,6 +33,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   lazy val cancelButton = new ButtonGadget(ButtonKind.Normal, "Cancel")({ reset() })
   
   val stdInfoFut = DataAccess.standardInfo
+  val stdThingFut = DataAccess.standardThings
   def allTypesFut = page.allTypesFut
   def allPropsFut = page.allPropsFut
   
@@ -78,7 +79,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
 	        None
 	      else
 	        Some(optgroup(optLabel:=s"$prefix Properties in ${spaceProps.displayName}",
-	          props.map { prop => option(value:=prop.oid, prop.linkName) }
+	          props.map { prop => option(value:=prop, prop.linkName) }
 	        ))
 	    }
 	    
@@ -92,8 +93,8 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
 	  option("Choose a Property...", value:="") +: processProps(mainSpaceProps)
     }
     
-    lazy val selectedProperty = propSelector.selectedValOpt
-    lazy val selectedPropertyDescription = new DescriptionDiv(page, propSelector.selected)
+    lazy val selectedProperty = propSelector.selectedTIDOpt
+    lazy val selectedPropertyDescription = new DescriptionDiv(page, propSelector.selectedWithTID)
     lazy val propertyDescriptionDiv = selectedPropertyDescription.descriptionDiv
     
     def doRender() = {
@@ -129,18 +130,18 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     
     // TODO: should the Collections simply come from the global info instead of typeInfo? They aren't changeable yet.
     lazy val collButtons =
-      typeInfo.collections.headOption.map { coll => ButtonInfo(coll.oid, coll.displayName, true) } ++
-      typeInfo.collections.tail.map { coll => ButtonInfo(coll.oid, coll.displayName) }
+      typeInfo.collections.headOption.map { coll => ButtonInfo(coll.oid.underlying, coll.displayName, true) } ++
+      typeInfo.collections.tail.map { coll => ButtonInfo(coll.oid.underlying, coll.displayName) }
     lazy val collSelector = new RxButtonGroup(Var(collButtons.toSeq))
     
     val advTypeOptions = Var({
-      val typeOpts = typeInfo.advancedTypes.sortBy(_.displayName).map(typ => option(value:=typ.oid, typ.displayName))
+      val typeOpts = typeInfo.advancedTypes.sortBy(_.displayName).map(typ => option(value:=typ, typ.displayName))
       option(value:="", "Choose a Type...") +: typeOpts
     })
     val typeSelector = new RxSelect(advTypeOptions, cls:="span5")
     
     val modelOptions = Var({
-      val modelOpts = typeInfo.models.sortBy(_.displayName).map(model => option(value:=model.oid, model.displayName))
+      val modelOpts = typeInfo.models.sortBy(_.displayName).map(model => option(value:=model, model.displayName))
       option(value:="", "Base it on a Model...") +: modelOpts
     })
     val modelSelector = new RxSelect(modelOptions, cls:="span5")
@@ -155,7 +156,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     
     // The chosen basis is *either* a Model or a Type. selected() combines the currently-chosen value and its
     // RxSelect:
-    lazy val selectedBasis = Rx { modelSelector.selected() orElse typeSelector.selected() }
+    lazy val selectedBasis = Rx { modelSelector.selectedWithTID() orElse typeSelector.selectedWithTID() }
     lazy val selectedBasisDescription = new DescriptionDiv(page, selectedBasis)
     lazy val selectedBasisDescriptionDiv = selectedBasisDescription.descriptionDiv
     
@@ -163,10 +164,10 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     // page to add the Property:
     lazy val addButton = 
       new ButtonGadget(ButtonKind.Info, 
-          RxAttr("disabled", Rx{ nameInput.textOpt().isEmpty || collSelector.selectedValOpt().isEmpty || selectedBasis().isEmpty }), 
+          RxAttr("disabled", Rx{ nameInput.textOpt().isEmpty || collSelector.selectedTIDOpt().isEmpty || selectedBasis().isEmpty }), 
           "Create")({
         val name = nameInput.textOpt().get
-        val coll = collSelector.selectedValOpt().get
+        val coll = collSelector.selectedTIDOpt().get
         val (selector, oid) = selectedBasis().get
         if (selector == modelSelector) {
           // We're creating it based on a Model, so we need to get the Model Type. Note that this is async:
@@ -177,19 +178,19 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
         }
       })
       
-    def createProperty(name:String, collId:String, typeId:String) = {
+    def createProperty(name:String, collId:TID, typeId:TID) = {
       // Technically, we have to wait for the StandardInfo to be available:
-      stdInfoFut.foreach { stdInfo =>
-        def mkPV(oid:String, v:String) = {
+      stdThingFut.foreach { stdThings =>
+        def mkPV(oid:BasicThingInfo, v:String) = {
           val path = Editing.propPath(oid)
           ChangePropertyValue(path, Seq(v))
         }
         val initProps = Seq(
-          mkPV(stdInfo.namePropId, name),
-          mkPV(stdInfo.collPropId, collId),
-          mkPV(stdInfo.typePropId, typeId)
+          mkPV(stdThings.core.nameProp, name),
+          mkPV(stdThings.core.collectionProp, collId.underlying),
+          mkPV(stdThings.core.typeProp, typeId.underlying)
         )
-        Client[EditFunctions].create(stdInfo.urPropId, initProps).call().foreach { propInfo =>
+        Client[EditFunctions].create(stdThings.core.urProp, initProps).call().foreach { propInfo =>
           page.addProperty(propInfo.oid, true)
           reset()
         }

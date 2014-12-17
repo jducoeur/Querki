@@ -17,6 +17,7 @@ case class ButtonInfo(value:String, display:String, initiallyActive:Boolean = fa
 class RxButtonGroup(buttons:Rx[Seq[ButtonInfo]], mods:Modifier*) extends Gadget[dom.HTMLDivElement] {
   
   lazy val selectedValOpt = Var[Option[String]](None)
+  lazy val selectedTIDOpt = selectedValOpt.map(_.map(TID(_)))
   
   private def renderButtons() = {
     buttons().map { buttonInfo =>

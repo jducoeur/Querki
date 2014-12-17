@@ -27,11 +27,11 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
   
   def getRequestInfo():RequestInfo = ClientApi.requestInfo(rc)
   
-  def getThingInfo(thingId:String) = withThing(thingId) { thing =>
+  def getThingInfo(thingId:TID) = withThing(thingId) { thing =>
     ClientApi.thingInfo(thing, rc)
   }
 
-  def getThingPage(thingId:String):ThingPageDetails = withThing(thingId) { thing =>
+  def getThingPage(thingId:TID):ThingPageDetails = withThing(thingId) { thing =>
     implicit val state = rc.state.get
     
     val thingInfo = ClientApi.thingInfo(thing, rc)
@@ -51,20 +51,20 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
     ThingPageDetails(thingInfo, modelInfo, customHeaderOpt, rendered)
   }
   
-  def evaluateQL(thingId:String, ql:String):Wikitext = withThing(thingId) { thing =>
+  def evaluateQL(thingId:TID, ql:String):Wikitext = withThing(thingId) { thing =>
     implicit val r = rc
     val context = thing.thisAsContext
     QL.processMethod(QLText(ql), context, None, Some(thing)).wikify(context)
   }
   
-  def getProperties(thingId:String):Seq[PropValInfo] = withThing(thingId) { thing =>
+  def getProperties(thingId:TID):Seq[PropValInfo] = withThing(thingId) { thing =>
     ClientApi.propValInfo(thing, rc)
   }
   
-  def getPropertyDisplay(thingId:String, propIdStr:String):Option[Wikitext] = withThing(thingId) { thing =>
+  def getPropertyDisplay(thingId:TID, propIdStr:TID):Option[Wikitext] = withThing(thingId) { thing =>
     implicit val s = state
     implicit val r = rc
-    val propId = ThingId(propIdStr)
+    val propId = propIdStr.toThingId
     for {
       prop <- state.prop(propId)
       pv <- thing.getPropOpt(prop)
@@ -91,7 +91,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
       }
       
       SpaceProps(
-        space.id.toThingId,
+        space,
         space.linkName,
         space.displayName,
         filterProps(SkillLevel.standardProps),
@@ -111,13 +111,13 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
         filterNot(_.ifSet(Basic.DeprecatedProp)).
         filterNot(typ => typ.isInstanceOf[querki.types.ModelTypeBase] && !typ.ifSet(Basic.ExplicitProp))
     
-    def toCollectionInfo(coll:Collection) = CollectionInfo(coll.id.toThingId, coll.linkName, coll.displayName)
+    def toCollectionInfo(coll:Collection) = CollectionInfo(coll, coll.linkName, coll.displayName)
     
     // TODO: separate the Types by SkillLevel:
     AllTypeInfo(
       Seq(Core.ExactlyOne, Core.Optional, Core.QList, Core.QSet).map(toCollectionInfo(_)),
       Seq.empty,
-      spaceTypes.map(typ => TypeInfo(typ.id.toThingId, typ.linkName, typ.displayName)).toSeq,
+      spaceTypes.map(typ => TypeInfo(typ, typ.linkName, typ.displayName)).toSeq,
       state.allModels.filter(_.hasProp(Editor.InstanceProps)(state)).map(ClientApi.thingInfo(_, rc)).toSeq
     )
   }
@@ -126,7 +126,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
    * TODO: rewrite this using the new Requester Monad, after I write that. Use it to help
    * drive the question of how we propagate an exception inside the ThingError.
    */
-  def deleteThing(thingId:String):Future[Unit] = withThing(thingId) { thing =>
+  def deleteThing(thingId:TID):Future[Unit] = withThing(thingId) { thing =>
     val promise = Promise[Unit]
     
     spaceRouter.request(DeleteThing(user, state.owner, state.toThingId, thing.toThingId)) {
@@ -140,7 +140,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
     promise.future
   }
   
-  def getNumInstances(modelId:String):Int = withThing(modelId) { model =>
+  def getNumInstances(modelId:TID):Int = withThing(modelId) { model =>
     // TODO: once we are caching the hierarchy tree, this can become more efficient:
     state.descendants(model.id, false, true).size
   }

@@ -12,7 +12,7 @@ import querki.display.Gadget
 
 trait RxThingSelector {
   def selectedText:Rx[String]
-  def selectedVal:Rx[String]
+  def selectedTID:Rx[TID]
 }
 
 /**
@@ -41,12 +41,14 @@ class RxSelect(options:Rx[Seq[Frag]], mods:Modifier*) extends Gadget[dom.HTMLSel
    */
   lazy val selectedValOpt = Rx { selectedOption().map(_.valueString).filter(_.length > 0) }
   lazy val selectedVal = selectedValOpt.map(_.getOrElse(""))
+  lazy val selectedTIDOpt = selectedValOpt.map(_.map(TID(_)))
+  lazy val selectedTID = selectedVal.map(TID(_))
   
   /**
    * Non-empty iff this RxSelect has a non-empty value. That way, you can build an Rx based on whether
    * this is set or not.
    */
-  lazy val selected = Rx { selectedValOpt().map(v => (this, v)) }
+  lazy val selectedWithTID = Rx { selectedTIDOpt().map(v => (this, v)) }
   
   def doRender() = select(mods, options())
   

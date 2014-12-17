@@ -8,6 +8,7 @@ import models.{UnknownOID, Wikitext}
 
 import querki.globals._
 
+import querki.data.TID
 import querki.identity.PublicIdentity
 import querki.identity.IdentityCacheMessages._
 import querki.session.{AutowireApiImpl, AutowireParams}
@@ -56,7 +57,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
     ConvNode(toApi(node.comment), node.responses.map(toApi(_)))
   }
   
-  def getConversationsFor(thingId:String):Future[ConversationInfo] = withThing(thingId) { thing =>
+  def getConversationsFor(thingId:TID):Future[ConversationInfo] = withThing(thingId) { thing =>
     // TODO: this pattern, which melds a Requester with Futures, seems useful. Can we abstract it a bit?
     val promise = Promise[ConversationInfo]
   
@@ -94,7 +95,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
     promise.future
   }
   
-  def addComment(thingId:String, text:String, responseTo:Option[CommentId]):Future[ConvNode] = withThing(thingId) { thing =>
+  def addComment(thingId:TID, text:String, responseTo:Option[CommentId]):Future[ConvNode] = withThing(thingId) { thing =>
     val promise = Promise[ConvNode]
     
     // TODO: we need a better concept of "my current identity in this Space"!
@@ -129,7 +130,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
     promise.future
   }
   
-  def deleteComment(thingId:String, commentId:CommentId):Future[Unit] = withThing(thingId) { thing =>
+  def deleteComment(thingId:TID, commentId:CommentId):Future[Unit] = withThing(thingId) { thing =>
     val promise = Promise[Unit]
     spaceRouter.request(ConversationRequest(user, rc.ownerId, state.id, DeleteComment(thing.id, commentId))) {
       case CommentDeleted => promise.success(())
