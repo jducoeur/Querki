@@ -22,22 +22,7 @@ class PassthroughHandler(val ecology:Ecology, rc:RequestContext) extends Ecology
 }
 
 class CommonFunctionsImpl(val ecology:Ecology, rc:RequestContext) extends CommonFunctions with EcologyMember
-{
-  def getStandardInfo():StandardInfo = {
-    StandardInfo(
-      querki.conventions.MOIDs.PropDetailsOID.toThingId,
-      querki.conventions.MOIDs.PropSummaryOID.toThingId,
-      querki.core.MOIDs.UrPropOID.toThingId,
-      querki.core.MOIDs.NameOID.toThingId,
-      querki.core.MOIDs.CollectionPropOID.toThingId,
-      querki.core.MOIDs.TypePropOID.toThingId,
-      querki.basic.MOIDs.SimpleThingOID.toThingId,
-      querki.core.MOIDs.IsModelOID.toThingId,
-      querki.basic.MOIDs.DisplayNameOID.toThingId,
-      querki.editing.MOIDs.InstanceEditPropsOID.toThingId
-    )
-  }
-  
+{ 
   def getStandardThings():Map[String, ThingInfo] = {
     val passthrough = new PassthroughHandler(ecology, rc)
     val translator = new StandardThings(passthrough)

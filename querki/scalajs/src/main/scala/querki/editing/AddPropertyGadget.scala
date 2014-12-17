@@ -32,7 +32,6 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   
   lazy val cancelButton = new ButtonGadget(ButtonKind.Normal, "Cancel")({ reset() })
   
-  val stdInfoFut = DataAccess.standardInfo
   val stdThingFut = DataAccess.standardThings
   def allTypesFut = page.allTypesFut
   def allPropsFut = page.allPropsFut

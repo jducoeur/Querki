@@ -43,7 +43,6 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
   private def modelSelectionForm(formTitle:String, prompt:String, selectButton:String, onSelect:TID => Unit) {
     for {
       typeInfo <- DataAccess.getAllTypes()
-      stdInfo <- DataAccess.standardInfo
       stdThings <- DataAccess.standardThings
     }
     {

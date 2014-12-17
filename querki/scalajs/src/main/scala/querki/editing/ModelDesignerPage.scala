@@ -291,7 +291,6 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
 
   def pageContent = {
     for {
-      standardInfo <- DataAccess.standardInfo
       model <- DataAccess.getThing(modelId)
       fullEditInfo <- Client[EditFunctions].getPropertyEditors(modelId).call()
       (instanceProps, modelProps) = fullEditInfo.propInfos.partition(propEditInfo => fullEditInfo.instancePropIds.contains(propEditInfo.propInfo.oid))

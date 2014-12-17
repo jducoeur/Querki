@@ -4,28 +4,14 @@ import querki.data.ThingInfo
 
 trait CommonFunctions {
   /**
-   * Fetches the "standard" info, which the Client needs to work with the Server.
+   * Pro-actively fetches the "standard" Things (from System Space) that the Client cares about.
+   * This list is pretty ad-hoc, but it's useful to get them in advance.
+   *
+   * Note that, on the Client, this is actually exposed as the StandardThings structure. But that
+   * gets serialized as a Map for going across the wire.
    */
-  def getStandardInfo():StandardInfo
-  
   def getStandardThings():Map[String, ThingInfo]
 }
-
-/**
- * The "standard" info about the Server. This is a grab-bag of information that the Client fetches.
- */
-case class StandardInfo(
-  detailsPropId:String,
-  summaryPropId:String,
-  urPropId:String,
-  namePropId:String,
-  collPropId:String,
-  typePropId:String,
-  simpleThingId:String,
-  isModelPropId:String,
-  displayNamePropId:String,
-  instancePropsPropId:String
-)
 
 /**
  * This is tricky magic. PassthroughHandler is defined completely differently on the Server
