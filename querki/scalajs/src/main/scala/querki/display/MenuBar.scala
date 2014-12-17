@@ -16,6 +16,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val DataModel = interface[querki.datamodel.DataModel]
+  lazy val Editing = interface[querki.editing.Editing]
   lazy val PageManager = interface[PageManager]
   lazy val Pages = interface[querki.pages.Pages]
   lazy val UserAccess = interface[querki.identity.UserAccess]
@@ -95,7 +96,12 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
       val thingId = thing.urlName.underlying
       Seq(
         NavDivider,
-        NavLink("Edit " + thing.displayName, controllers.Application.editThing(ownerId, spaceId.underlying, thingId), enabled = thing.isEditable),
+        {
+          if (thing.isModel)
+            NavLink("Design " + thing.displayName, Editing.modelDesignerFactory.pageUrl(("modelId" -> thingId)), enabled = thing.isEditable)
+           else
+            NavLink("Advanced Edit " + thing.displayName, Editing.modelDesignerFactory.pageUrl(("modelId" -> thingId)), enabled = thing.isEditable)
+        },
         NavLink("View Source", Pages.viewFactory.pageUrl("thingId" -> thingId)),
         NavLink("Advanced...", controllers.Application.showAdvancedCommands(ownerId, spaceId.underlying, thingId)),
         NavLink("Explore...", Pages.exploreFactory.pageUrl("thingId" -> thingId), enabled = thing.isEditable),

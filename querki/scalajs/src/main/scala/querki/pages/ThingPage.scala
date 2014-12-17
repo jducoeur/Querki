@@ -70,12 +70,6 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
                   href:=page.thingUrl(thing))
     )
   
-  // TODO: this must go away!!!
-  lazy val oldEditButton = 
-    iconButton("edit")(
-      title:=s"Edit $thingName",
-      href:=controllers.Application.editThing.spaceUrl(thing.urlName.underlying))
-  
   def doRender =
     div(cls:="page-header",
         
@@ -102,7 +96,9 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
           MSeq(
             if (thing.isEditable) {
               if (thing.isTag || thing.kind == Kind.Property) {
-                oldEditButton
+			    iconButton("edit")(
+			      title:=s"Edit $thingName",
+			      href:=Editing.modelDesignerFactory.pageUrl(("modelId" -> thing.urlName.underlying)))
               } else {
                 topEditButton
               }
