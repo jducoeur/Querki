@@ -150,6 +150,10 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     } catch {
       case MissingPageParameterException(paramName) => 
         StatusLine.showUntilChange(s"Missing page parameter $paramName")
+      case ex:Exception => {
+        println(s"Exception trying to render page $pageName")
+        ex.printStackTrace()
+      }
     }
   }
   

@@ -135,7 +135,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
       }
       case None => {
         NavSection("Not logged in", Seq(
-          NavLink("Log in", controllers.Application.index)
+          NavLink("Log in", controllers.Application.index())
         ))
       }
     }
