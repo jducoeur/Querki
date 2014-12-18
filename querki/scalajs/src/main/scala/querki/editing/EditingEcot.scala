@@ -12,15 +12,20 @@ class EditingEcot(e:Ecology) extends ClientEcot(e) with Editing {
   
   lazy val editInstancesFactory = Pages.registerStandardFactory("_editInstances", { (params) => new EditInstancesPage(params) })
   lazy val modelDesignerFactory = Pages.registerStandardFactory("_modelDesigner", { (params) => new ModelDesignerPage(params) })
+  lazy val advancedEditorFactory = Pages.registerStandardFactory("_advancedEditor", { (params) => new ModelDesignerPage(params) })
   
   override def postInit() = {
     editInstancesFactory
     modelDesignerFactory
+    advancedEditorFactory
     Gadgets.registerSimpleGadget("._advancedEditButton", { new AdvancedEditButton })
   }
   
-  def showAdvancedEditorFor(thingId:TID) = {
-    PageManager.showPage("_modelDesigner", Map("modelId" -> thingId.underlying))
+  def showAdvancedEditorFor(thingId:TID, asModel:Boolean = true) = {
+    if (asModel)
+      PageManager.showPage("_modelDesigner", Map("modelId" -> thingId.underlying))
+    else
+      PageManager.showPage("_advancedEditor", Map("thingId" -> thingId.underlying))
   }
   
   def propPath(propId:TID, thingIdOpt:Option[TID]):String = {

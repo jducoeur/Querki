@@ -17,9 +17,14 @@ package object editing {
     def modelDesignerFactory:PageFactory
     
     /**
+     * The Advanced Editor for non-Models.
+     */
+    def advancedEditorFactory:PageFactory
+    
+    /**
      * Navigates to the Advanced Editor / Model Designer page.
      */
-    def showAdvancedEditorFor(thingId:TID):Unit
+    def showAdvancedEditorFor(thingId:TID, asModel:Boolean = true):Unit
     
     /**
      * Constructs a server-compatible "path" to identify a Property.

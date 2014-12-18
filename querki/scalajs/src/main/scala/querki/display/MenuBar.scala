@@ -100,7 +100,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
           if (thing.isModel)
             NavLink("Design " + thing.displayName, Editing.modelDesignerFactory.pageUrl(("modelId" -> thingId)), enabled = thing.isEditable)
            else
-            NavLink("Advanced Edit " + thing.displayName, Editing.modelDesignerFactory.pageUrl(("modelId" -> thingId)), enabled = thing.isEditable)
+            NavLink("Advanced Edit " + thing.displayName, Editing.advancedEditorFactory.pageUrl(("thingId" -> thingId)), enabled = thing.isEditable)
         },
         NavLink("View Source", Pages.viewFactory.pageUrl("thingId" -> thingId)),
         NavLink("Advanced...", controllers.Application.showAdvancedCommands(ownerId, spaceId.underlying, thingId)),

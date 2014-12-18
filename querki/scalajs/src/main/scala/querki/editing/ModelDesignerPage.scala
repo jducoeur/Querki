@@ -21,7 +21,7 @@ import querki.pages._
 
 class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
   
-  lazy val modelId = TID(params("modelId"))
+  lazy val modelId = TID(params.get("modelId").getOrElse(params("thingId")))
   
   lazy val Client = interface[querki.client.Client]
   lazy val DataModel = interface[querki.datamodel.DataModel]
