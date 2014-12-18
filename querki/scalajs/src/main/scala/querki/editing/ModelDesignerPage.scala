@@ -13,7 +13,7 @@ import querki.globals._
 
 import querki.api.EditFunctions
 import EditFunctions._
-import querki.data.{PropInfo, SpaceProps, ThingInfo}
+import querki.data.{BasicThingInfo, PropInfo, SpaceProps, ThingInfo}
 import querki.display.{ButtonGadget, ButtonKind, Gadget, RawDiv, WithTooltip}
 import querki.display.input.{DeleteInstanceButton, InputGadget}
 import querki.display.rx.{RxDiv, RxThingSelector}
@@ -104,7 +104,8 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   }
   
   class PropertyEditor(val valEditor:PropValueEditor) extends Gadget[dom.HTMLDivElement] {
-    lazy val propId = valEditor.propInfo.oid
+    lazy val prop = valEditor.propInfo
+    lazy val propId = prop.oid
     lazy val empty = ul()
     lazy val guts = Var[Gadget[dom.HTMLUListElement]](empty)
     lazy val contentDiv = RxDiv(Rx {Seq(guts())})
@@ -112,7 +113,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       for {
         editInfo <- Client[EditFunctions].getPropertyEditors(propId).call()
       }
-        yield new PropertySection(s"Property $propId", editInfo.propInfos, propId, false)
+        yield new PropertySection(s"Property $propId", editInfo.propInfos, prop, false)
     }
     lazy val editTrigger = contentFut.foreach { section => 
       guts() = section
@@ -211,7 +212,8 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     }
   }
   
-  class PropertySection(nam:String, props:Seq[PropEditInfo], thingId:TID, sortable:Boolean = true) extends InputGadget[dom.HTMLUListElement](ecology) {
+  class PropertySection(nam:String, props:Seq[PropEditInfo], thing:BasicThingInfo, sortable:Boolean = true) extends InputGadget[dom.HTMLUListElement](ecology) {
+    val tid = thing.urlName
     
     /**
      * The Properties currently in this section. Note that this is a var so that more props can be added.
@@ -261,7 +263,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     }
     
     def refreshEditor(editor:PropValueEditor) = {
-      Client[EditFunctions].getOnePropertyEditor(thingId, editor.propId).call().foreach { replacementInfo =>
+      Client[EditFunctions].getOnePropertyEditor(tid, editor.propId).call().foreach { replacementInfo =>
         val newEditor = new PropValueEditor(replacementInfo, this)
         // TBD: Do we also need to update the section's doRender? That would require pulling out that props.map below: 
         $(editor.elem).replaceWith(newEditor.render)
@@ -274,15 +276,20 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
         // Note that the name for the Instance Property section is the path of the Instance Props Property:
         name:=nam, 
         // Needed for save() to work:
-        data("thing"):=thingId.underlying,
+        data("thing"):=tid.underlying,
         props.map(new PropValueEditor(_, this))
       )
   }
   
   class PropSectionHolder {
     var _propSection:Option[PropertySection] = None
-    def make(sortedProps:Seq[PropEditInfo], path:String) = {
-      _propSection = Some(new PropertySection(path, sortedProps, modelId))
+    def make(thing:BasicThingInfo, sortedProps:Seq[PropEditInfo], path:String) = {
+      _propSection = 
+        Some(new PropertySection(path, sortedProps, thing, 
+          thing match {
+            case t:ThingInfo => t.isModel
+            case _ => false
+          }))
       _propSection
     }
     def apply() = _propSection.get    
@@ -295,7 +302,8 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       model <- DataAccess.getThing(modelId)
       modelModel <- DataAccess.getThing(model.modelOid)
       fullEditInfo <- Client[EditFunctions].getPropertyEditors(modelId).call()
-      (instanceProps, modelProps) = fullEditInfo.propInfos.partition(propEditInfo => fullEditInfo.instancePropIds.contains(propEditInfo.propInfo.oid))
+      allProps = fullEditInfo.propInfos
+      (instanceProps, modelProps) = allProps.partition(propEditInfo => fullEditInfo.instancePropIds.contains(propEditInfo.propInfo.oid))
       sortedInstanceProps = (Seq.empty[PropEditInfo] /: fullEditInfo.instancePropIds) { (current, propId) =>
         instanceProps.find(_.propInfo.oid == propId) match {
           case Some(prop) => current :+ prop
@@ -321,16 +329,25 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
                   { newThingInfo => PageManager.reload() }) 
             })
           ),
-          h3(cls:="_defaultTitle", "Instance Properties"),
-          p(cls:="_smallSubtitle", 
-              """These are the Properties that can be different for each Instance. Drag a Property into here if you
-                |want to edit it for each Instance, or out if you don't. The order of the Properties here will be
-                |the order they show up in the Instance Editor.""".stripMargin),
-          instancePropSection.make(sortedInstanceProps, fullEditInfo.instancePropPath),
-          new AddPropertyGadget(this, model),
-          h3(cls:="_defaultTitle", "Model Properties"),
-          p(cls:="_smallSubtitle", "These Properties are the same for all Instances of this Model"),
-          modelPropSection.make(modelProps, "modelProps"),
+          if (model.isModel) {
+            MSeq(
+              h3(cls:="_defaultTitle", "Instance Properties"),
+              p(cls:="_smallSubtitle", 
+                """These are the Properties that can be different for each Instance. Drag a Property into here if you
+                  |want to edit it for each Instance, or out if you don't. The order of the Properties here will be
+                  |the order they show up in the Instance Editor.""".stripMargin),
+              instancePropSection.make(model, sortedInstanceProps, fullEditInfo.instancePropPath),
+              new AddPropertyGadget(this, model),
+              h3(cls:="_defaultTitle", "Model Properties"),
+              p(cls:="_smallSubtitle", "These Properties are the same for all Instances of this Model"),
+              modelPropSection.make(model, modelProps, "modelProps")
+            )
+          } else {
+            MSeq(
+              instancePropSection.make(model, allProps, "allProps"),
+              new AddPropertyGadget(this, model)
+            )
+          },
           a(cls:="btn btn-primary",
             "Done",
             href:=thingUrl(model))
