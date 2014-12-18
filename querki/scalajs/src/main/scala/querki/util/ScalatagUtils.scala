@@ -43,6 +43,7 @@ trait ScalatagUtils {
       t.setAttribute(a.name, v.oid.underlying)
     }
   }
+  implicit val BasicThingAttr = new BasicThingAttr[querki.data.BasicThingInfo]
   implicit val ThingAttr = new BasicThingAttr[querki.data.ThingInfo]
   implicit val PropAttr = new BasicThingAttr[querki.data.PropInfo]
   implicit val TypeAttr = new BasicThingAttr[querki.data.TypeInfo]

@@ -68,7 +68,7 @@ object EditFunctions {
   case object PropertyChanged extends PropertyChangeResponse
   case class PropertyChangeError(msg:String) extends PropertyChangeResponse
   
-  case class FullEditInfo(instancePropIds:Seq[TID], instancePropPath:String, propInfos:Seq[PropEditInfo])
+  case class FullEditInfo(instancePropIds:Seq[TID], instancePropPath:String, derivingName:Boolean, propInfos:Seq[PropEditInfo])
   
   case class PropEditInfo(
     propInfo:PropInfo,

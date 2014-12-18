@@ -82,7 +82,9 @@ package object types {
   trait DeriveName extends EcologyInterface {
     def DeriveNameProp:Property[OID,OID]
     
+    def DeriveAlways:Thing
     def DeriveInitially:Thing
+    def DeriveNever:Thing
     
     def filterNameIfDerived(state:SpaceState, model:Thing, props:PropList, propPair:(Property[_,_], DisplayPropVal)):Boolean
     def nameIsDerived(thing:Thing, state:SpaceState):Boolean

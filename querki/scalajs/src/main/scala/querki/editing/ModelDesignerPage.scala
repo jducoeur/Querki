@@ -11,7 +11,7 @@ import rx.ops._
 
 import querki.globals._
 
-import querki.api.EditFunctions
+import querki.api.{EditFunctions, StandardThings}
 import EditFunctions._
 import querki.data.{BasicThingInfo, PropInfo, SpaceProps, ThingInfo}
 import querki.display.{ButtonGadget, ButtonKind, Gadget, RawDiv, WithTooltip}
@@ -25,6 +25,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
   lazy val Client = interface[querki.client.Client]
   lazy val DataModel = interface[querki.datamodel.DataModel]
+  lazy val Editing = interface[Editing]
   lazy val Gadgets = interface[querki.display.Gadgets]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
@@ -113,7 +114,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       for {
         editInfo <- Client[EditFunctions].getPropertyEditors(propId).call()
       }
-        yield new PropertySection(s"Property $propId", editInfo.propInfos, prop, false)
+        yield new PropertySection(s"Property $propId", editInfo.propInfos, prop, editInfo, valEditor.stdThings, false)
     }
     lazy val editTrigger = contentFut.foreach { section => 
       guts() = section
@@ -135,6 +136,42 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     }
   }
   
+  class DeriveNameCheck(valEditor:PropValueEditor) extends InputGadget[dom.HTMLDivElement](ecology) {
+    def section = valEditor.section
+    def stdThings = valEditor.stdThings
+    
+    def values = {
+      if ($(deriveNameCheckbox.elem).prop("checked").asInstanceOf[Boolean])
+        List(stdThings.types.deriveAlways.oid.underlying)
+      else
+        List(stdThings.types.deriveNever.oid.underlying)
+    }
+    
+    lazy val deriveNameCheckbox = 
+      Gadget(
+        input(tpe:="checkbox", height:="inherit", width:="auto",
+          if (section.editInfo.derivingName)
+            checked:="checked",
+          onchange:={ () => 
+            save().foreach { response =>
+              // Changing this checkbox potentially changes which Properties get loaded:
+              PageManager.reload()
+            } 
+          }
+        ))
+    def doRender() = 
+      div(cls:="controls",
+        // Needed for save() to work:
+        data("thing"):=section.thing,
+        name:=Editing.propPath(stdThings.types.deriveNameProp, Some(section.thing)),
+        // TODO: all this style stuff belongs in CSS:
+        p(cls:="_smallSubtitle", marginBottom:=0,
+          deriveNameCheckbox, " Derive the Link Name from the Display Name")
+      )
+      
+    def hook() = {}
+  }
+  
   class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEditorInitially:Boolean = false) extends Gadget[dom.HTMLLIElement] {
     val propInfo = info.propInfo
     val propId = propInfo.oid
@@ -143,6 +180,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     // but there is no way to use raw() on an attribute value. So we instead are displaying
     // the raw, unprocessed form, knowing that Scalatags will escape it.
     val tooltip = info.tooltip.map(_.plaintext).getOrElse(propInfo.displayName)
+    def stdThings = section.stdThings
     
     // Functions to toggle the PropertyEditor in and out when you click the name of the property:
     val detailsShown = Var(false)
@@ -185,6 +223,8 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
           raw(s"$prompt ")),
           tooltip),
         new RawDiv(info.editor, cls:="controls"),
+        if (propId == stdThings.basic.displayNameProp.oid)
+          new DeriveNameCheck(this),
         propDetailsArea
       )
       
@@ -212,7 +252,9 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     }
   }
   
-  class PropertySection(nam:String, props:Seq[PropEditInfo], thing:BasicThingInfo, sortable:Boolean = true) extends InputGadget[dom.HTMLUListElement](ecology) {
+  class PropertySection(nam:String, props:Seq[PropEditInfo], val thing:BasicThingInfo, val editInfo:FullEditInfo, val stdThings:StandardThings, sortable:Boolean = true) 
+    extends InputGadget[dom.HTMLUListElement](ecology) 
+  {
     val tid = thing.urlName
     
     /**
@@ -283,9 +325,9 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
   class PropSectionHolder {
     var _propSection:Option[PropertySection] = None
-    def make(thing:BasicThingInfo, sortedProps:Seq[PropEditInfo], path:String) = {
+    def make(thing:BasicThingInfo, sortedProps:Seq[PropEditInfo], editInfo:FullEditInfo, stdThings:StandardThings, path:String) = {
       _propSection = 
-        Some(new PropertySection(path, sortedProps, thing, 
+        Some(new PropertySection(path, sortedProps, thing, editInfo, stdThings,
           thing match {
             case t:ThingInfo => t.isModel
             case _ => false
@@ -302,6 +344,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       model <- DataAccess.getThing(modelId)
       modelModel <- DataAccess.getThing(model.modelOid)
       fullEditInfo <- Client[EditFunctions].getPropertyEditors(modelId).call()
+      stdThings <- DataAccess.standardThings
       allProps = fullEditInfo.propInfos
       (instanceProps, modelProps) = allProps.partition(propEditInfo => fullEditInfo.instancePropIds.contains(propEditInfo.propInfo.oid))
       sortedInstanceProps = (Seq.empty[PropEditInfo] /: fullEditInfo.instancePropIds) { (current, propId) =>
@@ -336,15 +379,15 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
                 """These are the Properties that can be different for each Instance. Drag a Property into here if you
                   |want to edit it for each Instance, or out if you don't. The order of the Properties here will be
                   |the order they show up in the Instance Editor.""".stripMargin),
-              instancePropSection.make(model, sortedInstanceProps, fullEditInfo.instancePropPath),
+              instancePropSection.make(model, sortedInstanceProps, fullEditInfo, stdThings, fullEditInfo.instancePropPath),
               new AddPropertyGadget(this, model),
               h3(cls:="_defaultTitle", "Model Properties"),
               p(cls:="_smallSubtitle", "These Properties are the same for all Instances of this Model"),
-              modelPropSection.make(model, modelProps, "modelProps")
+              modelPropSection.make(model, modelProps, fullEditInfo, stdThings, "modelProps")
             )
           } else {
             MSeq(
-              instancePropSection.make(model, allProps, "allProps"),
+              instancePropSection.make(model, allProps, fullEditInfo, stdThings, "allProps"),
               new AddPropertyGadget(this, model)
             )
           },

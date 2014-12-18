@@ -261,7 +261,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
       IsModelProp(true),
       DisplayTextProp(Core.QNone),
       (querki.basic.MOIDs.DisplayNameOID -> Core.QNone),
-      DeriveName.DeriveNameProp(DeriveName.DeriveInitially)))
+      DeriveName.DeriveNameProp(DeriveName.DeriveAlways)))
 
   lazy val Page = ThingState(PageOID, systemOID, SimpleThingOID,
     toProps(

@@ -26,6 +26,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val Core = interface[querki.core.Core]
   lazy val DataModel = interface[querki.datamodel.DataModelAccess]
+  lazy val DeriveName = interface[querki.types.DeriveName]
   lazy val Editor = interface[querki.editing.Editor]
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
   lazy val PropListManager = interface[querki.core.PropListManager]
@@ -223,12 +224,23 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     val props = PropListManager.from(thing)
     val propList = PropListManager.prepPropList(props, Some(thing), model, state)
     
+    val deriveNameOpt =
+      for {
+        pv <- thing.getPropOpt(DeriveName.DeriveNameProp)
+        deriveLink <- pv.firstOpt
+      }
+        yield deriveLink == DeriveName.DeriveAlways.id
+    val deriveName = deriveNameOpt.getOrElse(false)
+    
     // These Properties do not get Editors sent, because they are handled specially in the Editor:
-    val filteredProps = Set(
-      querki.editing.MOIDs.InstanceEditPropsOID,
-      querki.core.MOIDs.IsModelOID,
-      querki.types.DeriveNameMOIDs.DeriveNameOID
-    )
+    val filteredProps = 
+      Set(
+        querki.editing.MOIDs.InstanceEditPropsOID,
+        querki.core.MOIDs.IsModelOID,
+        querki.types.DeriveNameMOIDs.DeriveNameOID
+      ) ++
+      // If we are deriving the name, don't show the Name's Editor:
+      (if (deriveName) Set(querki.core.MOIDs.NameOID) else Set())
     
     val propInfos = propList.filter(propPair => !filteredProps.contains(propPair._1.id)).map { entry =>
       val (prop, propVal) = entry
@@ -244,7 +256,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
       
     val instancePropsPath = new FieldIds(Some(thing), Editor.InstanceProps).inputControlId
     
-    FullEditInfo(instanceProps.getOrElse(Seq.empty), instancePropsPath, propInfos)
+    FullEditInfo(instanceProps.getOrElse(Seq.empty), instancePropsPath, deriveName, propInfos)
   }
   
   // TBD: this is pretty incestuous with the PropertyEditor in the client -- the list of available
@@ -291,7 +303,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     
     val allEditors = allProps.map(entry => getOnePropEditor(prop, entry._1, entry._2))
     // The Instance Property fields are meaningless for a Property:
-    FullEditInfo(Seq.empty, "", allEditors)
+    FullEditInfo(Seq.empty, "", false, allEditors)
   }
   
   def addPropertyAndGetEditor(thingId:TID, propIdStr:TID):Future[PropEditInfo] = withThing(thingId) { thing =>

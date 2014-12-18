@@ -131,7 +131,7 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with Nam
         val localVal:Option[OID] = props.get(DeriveNameProp).flatMap(_.v).flatMap(_.firstTyped(LinkType))
         localVal.getOrElse(model.firstOr(DeriveNameProp, DeriveInitially.id))
       }
-      derivedVal == deriveNever.id
+      derivedVal == DeriveNever.id
     } else
       true
   }
@@ -142,7 +142,7 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with Nam
       propAndVal <- thing.getPropOpt(DeriveNameProp);
       flag <- propAndVal.firstOpt
         )
-      yield flag != deriveNever.id
+      yield flag != DeriveNever.id
       
     resultOpt.getOrElse(true)
   }
@@ -155,7 +155,7 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with Nam
     toProps(
       setName("_deriveNameModel")))
   
-  lazy val deriveAlways = new ThingState(DeriveAlwaysOID, systemOID, deriveModel,
+  lazy val DeriveAlways = new ThingState(DeriveAlwaysOID, systemOID, deriveModel,
     toProps(
       setName("Always Derive Name")))
   
@@ -163,15 +163,15 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with Nam
     toProps(
       setName("Derive Name Initially")))
   
-  lazy val deriveNever = new ThingState(DeriveNeverOID, systemOID, deriveModel,
+  lazy val DeriveNever = new ThingState(DeriveNeverOID, systemOID, deriveModel,
     toProps(
       setName("Never Derive Name")))
   
   override lazy val things = Seq(
     deriveModel,
-    deriveAlways,
+    DeriveAlways,
     DeriveInitially,
-    deriveNever
+    DeriveNever
   )
   
   /***********************************************
@@ -204,13 +204,13 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with Nam
           |
           |* *Derive Name Initially* means that the Name will be set based on the Display Name the *first* time you save it, but
           |will stay that Name thereafter. This means that, if you change the Display Name, it might wind up quite different from
-          |the Name. But since the Name doesn't change, it means that references to this Thing are less likely to break. This is
-          |the default, and in most cases you can just leave it this way.
+          |the Name. But since the Name doesn't change, it means that references to this Thing are less likely to break. This was
+          |the default, but is now deprecated: it proves too confusing in practice.
           |* *Always Derive Name* means that the Name will change whenever the Display Name does. This makes it easier to remember
           |what the Name is, but means that if you have references to this Thing -- if you have put its URL somewhere, or refer
-          |to it in a QL Expression, that might wind up as a broken link if you ever change the Display Name.
+          |to it in a QL Expression, that might wind up as a broken link if you ever change the Display Name. This is now the default.
           |* *Never Derive Name* means that you will set the Name (or not) yourself: Querki shouldn't do anything automatically.
-          |This gives you maximum control, but is the most work.""".stripMargin)))
+          |This gives you maximum control, but is more work.""".stripMargin)))
   
   override lazy val props = Seq(
     DeriveNameProp
