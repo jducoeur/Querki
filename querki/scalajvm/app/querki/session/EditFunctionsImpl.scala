@@ -223,7 +223,14 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     val props = PropListManager.from(thing)
     val propList = PropListManager.prepPropList(props, Some(thing), model, state)
     
-    val propInfos = propList.filter(_._1.id != querki.editing.MOIDs.InstanceEditPropsOID).map { entry =>
+    // These Properties do not get Editors sent, because they are handled specially in the Editor:
+    val filteredProps = Set(
+      querki.editing.MOIDs.InstanceEditPropsOID,
+      querki.core.MOIDs.IsModelOID,
+      querki.types.DeriveNameMOIDs.DeriveNameOID
+    )
+    
+    val propInfos = propList.filter(propPair => !filteredProps.contains(propPair._1.id)).map { entry =>
       val (prop, propVal) = entry
       getOnePropEditor(thing, prop, propVal)
     }
