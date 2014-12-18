@@ -12,9 +12,9 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   lazy val PageManager = interface[querki.display.PageManager]
 
   // Factories for some pages with no obvious homes:
-  lazy val exploreFactory = registerStandardFactory("_explore", { (params) => new ExplorePage(params) })
-  lazy val viewFactory = registerStandardFactory("_view", { (params) => new ViewPage(params) })
-  lazy val createAndEditFactory = registerStandardFactory("_createAndEdit", { (params) => new CreateAndEditPage(params) })
+  lazy val exploreFactory = registerThingPageFactory("_explore", { (params) => new ExplorePage(params) }, "thingId")
+  lazy val viewFactory = registerThingPageFactory("_view", { (params) => new ViewPage(params) }, "thingId")
+  lazy val createAndEditFactory = registerThingPageFactory("_createAndEdit", { (params) => new CreateAndEditPage(params) }, "model")
   
   override def postInit() = {
     exploreFactory

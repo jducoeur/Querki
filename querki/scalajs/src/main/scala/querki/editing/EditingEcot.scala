@@ -10,7 +10,7 @@ class EditingEcot(e:Ecology) extends ClientEcot(e) with Editing {
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val Pages = interface[querki.pages.Pages]
   
-  lazy val editInstancesFactory = Pages.registerStandardFactory("_editInstances", { (params) => new EditInstancesPage(params) })
+  lazy val editInstancesFactory = Pages.registerThingPageFactory("_editInstances", { (params) => new EditInstancesPage(params) }, "modelId")
   lazy val modelDesignerFactory = Pages.registerThingPageFactory("_modelDesigner", { (params) => new ModelDesignerPage(params) }, "modelId")
   lazy val advancedEditorFactory = Pages.registerThingPageFactory("_advancedEditor", { (params) => new ModelDesignerPage(params) }, "thingId")
   

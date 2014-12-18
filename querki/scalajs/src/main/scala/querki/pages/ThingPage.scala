@@ -85,11 +85,11 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
             if (thing.isInstantiatable) {
               iconButton("plus-sign")(
                 title:=s"Create a $thingName",
-                href:=Pages.createAndEditFactory.pageUrl(("model" -> thing.urlName.underlying)))
+                href:=Pages.createAndEditFactory.pageUrl(thing))
             },
             querkiButton(MSeq(icon("edit"), icon("edit"), icon("edit"), "..."))(
               title:=s"Edit all instances of $thingName",
-              href:=Editing.editInstancesFactory.pageUrl(("modelId" -> thing.urlName.underlying)))
+              href:=Editing.editInstancesFactory.pageUrl(thing))
           )
         } else {
           // Not a Model
@@ -107,7 +107,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
               case Some(model) if (model.isInstantiatable) => {
                 querkiButton(MSeq(icon("plus-sign"), "..."))(
                   title:=s"Create another ${model.displayName}",
-                  href:=Pages.createAndEditFactory.pageUrl(("model" -> model.urlName.underlying)))
+                  href:=Pages.createAndEditFactory.pageUrl(model))
               }
               case _ => {}
             }

@@ -65,9 +65,9 @@ package object pages {
      */
     def constructPage(name:String, params:ParamMap):Page
     
-    def exploreFactory:PageFactory
-    def viewFactory:PageFactory
-    def createAndEditFactory:PageFactory
+    def exploreFactory:ThingPageFactory
+    def viewFactory:ThingPageFactory
+    def createAndEditFactory:ThingPageFactory
     
     /**
      * Navigate to the given Space.
