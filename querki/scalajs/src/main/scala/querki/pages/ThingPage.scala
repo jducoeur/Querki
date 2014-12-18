@@ -80,7 +80,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
             if (thing.isEditable) {
               iconButton("edit")(
                 title:=s"Design $thingName",
-                href:=Editing.modelDesignerFactory.pageUrl(("modelId" -> thing.urlName.underlying)))
+                href:=Editing.modelDesignerFactory.pageUrl(thing))
             },
             if (thing.isInstantiatable) {
               iconButton("plus-sign")(
@@ -98,7 +98,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
               if (thing.isTag || thing.kind == Kind.Property) {
 			    iconButton("edit")(
 			      title:=s"Edit $thingName",
-			      href:=Editing.modelDesignerFactory.pageUrl(("modelId" -> thing.urlName.underlying)))
+			      href:=Editing.modelDesignerFactory.pageUrl(thing))
               } else {
                 topEditButton
               }

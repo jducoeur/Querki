@@ -11,8 +11,8 @@ class EditingEcot(e:Ecology) extends ClientEcot(e) with Editing {
   lazy val Pages = interface[querki.pages.Pages]
   
   lazy val editInstancesFactory = Pages.registerStandardFactory("_editInstances", { (params) => new EditInstancesPage(params) })
-  lazy val modelDesignerFactory = Pages.registerStandardFactory("_modelDesigner", { (params) => new ModelDesignerPage(params) })
-  lazy val advancedEditorFactory = Pages.registerStandardFactory("_advancedEditor", { (params) => new ModelDesignerPage(params) })
+  lazy val modelDesignerFactory = Pages.registerThingPageFactory("_modelDesigner", { (params) => new ModelDesignerPage(params) }, "modelId")
+  lazy val advancedEditorFactory = Pages.registerThingPageFactory("_advancedEditor", { (params) => new ModelDesignerPage(params) }, "thingId")
   
   override def postInit() = {
     editInstancesFactory

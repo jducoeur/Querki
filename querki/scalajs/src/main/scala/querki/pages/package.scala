@@ -3,7 +3,7 @@ package querki
 import querki.globals._
 
 import querki.comm.URL
-import querki.data.SpaceInfo
+import querki.data.{BasicThingInfo, SpaceInfo}
 
 package object pages {
   
@@ -22,19 +22,33 @@ package object pages {
     def pageUrl(params:(String, String)*):URL
   }
   
-  trait Pages extends EcologyInterface {
-    
+  /**
+   * Standard signatures for pages that take a Thing as their one parameter.
+   */
+  trait ThingPageFactory extends PageFactory {
     /**
-     * Register a PageFactory for use. Usually called during postInit().
+     * Pass in a Thing to get the URL for this page. Prefer to use this instead of the lower-level version
+     * of pageUrl() when possible -- it's much more safe, and introduces less coupling.
      */
-    def registerFactory(factory:PageFactory):PageFactory
-    
+    def pageUrl(thing:BasicThingInfo):URL
+  }
+  
+  trait Pages extends EcologyInterface {
     /**
      * Convenience wrapper around registerFactory, for the most common case: simply
      * pass in the name of the page and a constructor lambda, and it builds the factory
      * for you.
      */
     def registerStandardFactory(pageName:String, const:ParamMap => Page):PageFactory
+    
+    /**
+     * Convenience wrapper for creating ThingPageFactories. These are common enough (pages with one parameter, a
+     * TID) that we give them their own entry point.
+     * 
+     * TODO: the fact that we are passing paramName in here is a bad smell. This really ought to just be
+     * standardized as thingId.
+     */
+    def registerThingPageFactory(registeredName:String, const:ParamMap => Page, paramName:String):ThingPageFactory
     
     /**
      * Given the name and parameters to a Page, build a new instance.

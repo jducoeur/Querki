@@ -2,7 +2,7 @@ package querki
 
 import querki.globals._
 
-import querki.pages.PageFactory
+import querki.pages.{PageFactory, ThingPageFactory}
 
 package object editing {
   trait Editing extends EcologyInterface {
@@ -14,12 +14,12 @@ package object editing {
     /**
      * The page that lets you edit a given Model.
      */
-    def modelDesignerFactory:PageFactory
+    def modelDesignerFactory:ThingPageFactory
     
     /**
      * The Advanced Editor for non-Models.
      */
-    def advancedEditorFactory:PageFactory
+    def advancedEditorFactory:ThingPageFactory
     
     /**
      * Navigates to the Advanced Editor / Model Designer page.

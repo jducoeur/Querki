@@ -24,23 +24,18 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   
   private var factories = Seq.empty[PageFactory]
   
-  def registerFactory(factory:PageFactory):PageFactory = {
+  def registerFactory[T <: PageFactory](factory:T):T = {
     factories :+= factory
     factory
   }
   
   def registerStandardFactory(registeredName:String, const:ParamMap => Page):PageFactory = {
-    registerFactory(new PageFactory {
-      def constructPageOpt(pageName:String, params:ParamMap):Option[Page] = {
-        if (pageName == registeredName)
-          Some(const(params))
-        else
-          None
-      }
-      
-      def pageUrl(params:(String, String)*) = PageManager.pageUrl(registeredName, Map(params:_*))
-    })    
+    registerFactory(new PageFactoryBase(registeredName, const))    
   }
+  
+  def registerThingPageFactory(registeredName:String, const:ParamMap => Page, paramName:String):ThingPageFactory = {
+    registerFactory(new ThingPageFactoryBase(registeredName, const, paramName))    
+  }  
   
   // TODO: this doesn't yet work correctly to navigate cross-Spaces:
   def showSpacePage(space:SpaceInfo) = PageManager.showPage(s"${space.urlName}", Map.empty)
