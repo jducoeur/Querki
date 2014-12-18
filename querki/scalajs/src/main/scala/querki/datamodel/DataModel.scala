@@ -83,7 +83,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
               ChangePropertyValue(Editing.propPath(stdThings.editing.instancePropsProp), Seq(stdThings.basic.displayNameProp.oid.underlying))
             )
           Client[EditFunctions].create(selection, initProps).call().foreach { modelInfo =>
-            Editing.showAdvancedEditorFor(modelInfo)
+            Editing.modelDesignerFactory.showPage(modelInfo)
           }
         }
       })

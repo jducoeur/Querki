@@ -24,4 +24,8 @@ class ThingPageFactoryBase(registeredName:String, const:ParamMap => Page, paramN
   extends PageFactoryBase(registeredName, const) with ThingPageFactory 
 {
   def pageUrl(thing:BasicThingInfo) = pageUrl((paramName -> thing.urlName.underlying))
+  
+  def showPage(thing:BasicThingInfo) = showPage(thing.urlName)
+  
+  def showPage(tid:TID):Unit = PageManager.showPage(registeredName, Map(paramName -> tid.underlying))
 }

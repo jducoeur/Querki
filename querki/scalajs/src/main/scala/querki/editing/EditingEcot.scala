@@ -21,13 +21,6 @@ class EditingEcot(e:Ecology) extends ClientEcot(e) with Editing {
     Gadgets.registerSimpleGadget("._advancedEditButton", { new AdvancedEditButton })
   }
   
-  def showAdvancedEditorFor(thingId:TID, asModel:Boolean = true) = {
-    if (asModel)
-      PageManager.showPage("_modelDesigner", Map("modelId" -> thingId.underlying))
-    else
-      PageManager.showPage("_advancedEditor", Map("thingId" -> thingId.underlying))
-  }
-  
   def propPath(propId:TID, thingIdOpt:Option[TID]):String = {
     val thingId = thingIdOpt.getOrElse(TID(""))
     // TODO: this is evil magic knowledge that just happens to match FieldIds on the server. We need

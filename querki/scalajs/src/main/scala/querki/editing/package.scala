@@ -22,11 +22,6 @@ package object editing {
     def advancedEditorFactory:ThingPageFactory
     
     /**
-     * Navigates to the Advanced Editor / Model Designer page.
-     */
-    def showAdvancedEditorFor(thingId:TID, asModel:Boolean = true):Unit
-    
-    /**
      * Constructs a server-compatible "path" to identify a Property.
      */
     def propPath(propId:TID, thingIdOpt:Option[TID]):String

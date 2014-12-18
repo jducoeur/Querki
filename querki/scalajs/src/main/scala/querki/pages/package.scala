@@ -31,6 +31,16 @@ package object pages {
      * of pageUrl() when possible -- it's much more safe, and introduces less coupling.
      */
     def pageUrl(thing:BasicThingInfo):URL
+    
+    /**
+     * Actually navigate to this page for this Thing.
+     */
+    def showPage(thing:BasicThingInfo):Unit
+    
+    /**
+     * Actually navigate to this page for this Thing.
+     */
+    def showPage(tid:TID):Unit
   }
   
   trait Pages extends EcologyInterface {

@@ -21,7 +21,7 @@ class AdvancedEditButton(implicit e:Ecology) extends InputGadget[dom.HTMLSpanEle
   def doRender() = span(cls:="_advancedCommentButton", "x")
   
   def hook() = {
-    $(elem).on("click", null, null, { evt:JQueryEventObject => Editing.showAdvancedEditorFor(tid, false); 1:js.Any })
+    $(elem).on("click", null, null, { evt:JQueryEventObject => Editing.advancedEditorFactory.showPage(tid); 1:js.Any })
   }
 
 }
