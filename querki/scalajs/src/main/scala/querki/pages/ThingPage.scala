@@ -120,7 +120,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
           p(cls:="_smallSubtitle _noPrint",
             "(OID: ", a(href:=page.thingUrl(thing.oid), thing.oid.underlying),
             thing.linkName.map { linkName =>
-              MSeq(", Link Name: ", a(href:=page.thingUrl(thing), linkName))
+              MSeq(", Link Name: ", a(href:=page.thingUrl(thing.urlName), linkName))
             },
             ", Model: ", a(href:=page.thingUrl(model), model.displayName),
             ")")

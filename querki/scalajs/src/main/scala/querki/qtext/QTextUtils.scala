@@ -28,11 +28,11 @@ class QTextUtilsEcot(e:Ecology) extends ClientEcot(e) with QTextUtils {
       // if we are currently looking at Joe/Workroom, to avoid unnecessary navigation.
       val (userId, spaceId) = DataAccess.space match {
         case Some(space) => {
-          val u = if (userIdIn.isDefined && userIdIn.get == space.ownerId) space.ownerHandle else userIdIn
-          val s = if (spaceIdIn.isDefined && spaceIdIn.get == space.oid && space.linkName.isDefined) space.linkName.get else spaceIdIn
+          val u = if (userIdIn.isDefined && userIdIn.get == space.ownerId) space.ownerHandle else userIdIn.get
+          val s = if (spaceIdIn.isDefined && spaceIdIn.get == space.oid.underlying && space.linkName.isDefined) space.linkName.get else spaceIdIn.get
           (u, s)
         }
-        case None => { (userIdIn, spaceIdIn) }
+        case None => { (userIdIn.getOrElse(""), spaceIdIn.getOrElse("")) }
       }
       s"/u/$userId/$spaceId/#$rest"
     } else
