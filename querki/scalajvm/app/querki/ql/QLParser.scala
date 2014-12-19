@@ -17,6 +17,19 @@ class PartiallyAppliedFunction(partialContext:QLContext, action:(Invocation) => 
   }
 }
 
+/**
+ * This is created by and obtained from the QLEcot:
+ */
+private [ql] class QLProfilers(implicit val ecology:Ecology) extends EcologyMember {
+  lazy val Profiler = interface[querki.tools.Profiler]  
+  
+  lazy val parseMethod = Profiler.createHandle("QLParser.parseMethod")
+  lazy val processMethod = Profiler.createHandle("QLParser.processMethod")
+  lazy val processCall = Profiler.createHandle("QLParser.processCall")
+  lazy val processTextStage = Profiler.createHandle("QLParser.processTextStage")
+  lazy val processNumber = Profiler.createHandle("QLParser.processNumber")
+}
+
 class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, val lexicalThing:Option[PropertyBundle] = None) extends RegexParsers with EcologyMember {
   
   // Add the parser to the context, so that methods can call back into it. Note that we are treating this as essentially
@@ -30,6 +43,9 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Core = interface[querki.core.Core]
   lazy val QL = interface[querki.ql.QL]
+  lazy val QLInternals = interface[QLInternals]
+  
+  lazy val qlProfilers = QLInternals.qlProfilers
   
   lazy val ExactlyOne = Core.ExactlyOne
   lazy val PlainTextType = Basic.PlainTextType
@@ -248,9 +264,9 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
         contextIn
     logContext("processStage " + stage, context) {
 	    stage match {
-	      case name:QLCall => processCall(name, context, isParam)
-	      case subText:QLTextStage => processTextStage(subText, context)
-	      case num:QLNumber => processNumber(num, context)
+	      case name:QLCall => qlProfilers.processCall.profile { processCall(name, context, isParam) }
+	      case subText:QLTextStage => qlProfilers.processTextStage.profile { processTextStage(subText, context) }
+	      case num:QLNumber => qlProfilers.processNumber.profile { processNumber(num, context) }
 //        case QLPlainTextStage(text) => context.next(TextValue(text))
 	    }
     }
@@ -360,9 +376,9 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   }
   
   private[ql] def processMethod:QLContext = {
-    val parseResult = parseAll(qlPhrase, input.text)
+    val parseResult = qlProfilers.parseMethod.profile { parseAll(qlPhrase, input.text) }
     parseResult match {
-      case Success(result, _) => processPhrase(result.ops, initialContext, false)
+      case Success(result, _) => qlProfilers.processMethod.profile { processPhrase(result.ops, initialContext, false) }
       case Failure(msg, next) => { initialContext.next(QL.WikitextValue(renderError(msg, next))) }
       case Error(msg, next) => { initialContext.next(QL.WikitextValue(renderError(msg, next))) }
     }

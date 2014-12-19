@@ -6,6 +6,7 @@ import querki.globals._
 
 import querki.ecology._
 import querki.time._
+import querki.util.Config
 
 class ProfilerEcot(e:Ecology) extends QuerkiEcot(e) with Profiler {
   
@@ -15,7 +16,7 @@ class ProfilerEcot(e:Ecology) extends QuerkiEcot(e) with Profiler {
       QLog.info("Profile results:")
       val allProfiles = profiles.values.toSeq.sortBy(_.profile.name)
       allProfiles.foreach { profile =>
-        QLog.info(s"${profile.profile.msg} (${profile.profile.name}): ${profile.runs} runs, averaging ${(profile.time.getMillis / profile.runs)} ms")
+        QLog.info(s"${profile.profile.name}: ${profile.runs} runs, averaging ${(profile.time.getMillis / profile.runs)} ms")
       }
     }
   }
@@ -27,10 +28,11 @@ class ProfilerEcot(e:Ecology) extends QuerkiEcot(e) with Profiler {
   // avoid having Actor messages from profiling overwhelm what we're trying to measure.
   private val profiles = TrieMap.empty[ProfileHandleImpl, ProfileRecord]
 
-  def createHandle(name:String, msg:String):ProfileHandle = {
-    // TODO: check config; if we're not profiling this name, return a null ProfileHandle that does
-    // as little as possible.
-    ProfileHandleImpl(this, name, msg)
+  def createHandle(name:String):ProfileHandle = {
+    if (Config.getBoolean(s"querki.profile.$name", false))
+      ProfileHandleImpl(this, name)
+    else
+      NullProfileHandle
   }
   
   private [tools] def recordRun(instance:ProfileInstanceImpl):Unit = {
@@ -45,7 +47,16 @@ class ProfilerEcot(e:Ecology) extends QuerkiEcot(e) with Profiler {
   }
 }
 
-private [tools] case class ProfileHandleImpl(ecot:ProfilerEcot, name:String, msg:String) extends ProfileHandle {
+private [tools] case object NullProfileHandle extends ProfileHandle {
+  def start() = NullProfileInstance
+  def profile[T](f: => T):T = f
+}
+
+private [tools] case object NullProfileInstance extends ProfileInstance {
+  def stop() = {}
+}
+
+private [tools] case class ProfileHandleImpl(ecot:ProfilerEcot, name:String) extends ProfileHandle {
   def start():ProfileInstance = {
     new ProfileInstanceImpl(this, DateTime.now)
   }

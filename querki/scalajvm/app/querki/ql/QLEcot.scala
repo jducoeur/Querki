@@ -8,6 +8,7 @@ import querki.ecology._
 import models.{PropertyBundle, PType, PTypeBuilder, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
 
 import querki.core.QLText
+import querki.tools.ProfileHandle
 import querki.util.QLog
 import querki.values.{CutProcessing, ElemValue, IsErrorType, QLContext, SpaceState}
 
@@ -16,14 +17,24 @@ object MOIDs extends EcotIds(24) {
   val CodeMethodOID = sysId(77)
 }
 
-class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL 
+private [ql] trait QLInternals extends EcologyInterface {
+  def qlProfilers:QLProfilers
+}
+
+class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
   with querki.core.CollectionBase
   with querki.core.MethodDefs with querki.core.TextTypeBasis with querki.core.NameUtils with querki.core.NameTypeBasis 
 {
   import MOIDs._
   
   lazy val HtmlUI = interface[querki.html.HtmlUI]
-  lazy val Profiler = interface[querki.tools.Profiler]
+  
+  lazy val parserCreateProfiler = Profiler.createHandle("QLEcot.parserCreate")
+  lazy val parserProcessProfiler = Profiler.createHandle("QLEcot.parserProcess")
+  lazy val parserProcessMethodProfiler = Profiler.createHandle("QLEcot.parserProcessMethod")
+  
+  // This is provided as a service for the QLParsers:
+  lazy val qlProfilers = new QLProfilers
   
   /***********************************************
    * PUBLIC API
@@ -77,10 +88,6 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
       newCT.makePropValue(raw, pt)
     }
   }
-  
-  lazy val parserCreateProfiler = Profiler.createHandle("QLEcot.parserCreate", "Creating new QLParser objects")
-  lazy val parserProcessProfiler = Profiler.createHandle("QLEcot.parserProcess", "Standard QLParser.process")
-  lazy val parserProcessMethodProfiler = Profiler.createHandle("QLEcot.parserProcessMethod", "QLParser.processMethod")
   
   def process(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = {
     val parser = parserCreateProfiler.profile { new QLParser(input, ci, invOpt, lexicalThing) }

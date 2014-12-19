@@ -8,10 +8,11 @@ package object tools {
      * Get the handle for a profiler that will be used many times in the code.
      * 
      * @param name The name of this particular profiler, which should be unique -- use something based on the
-     *   class name. This is used to turn profilers on an off in config.
-     * @param msg The message that will be printed for this profiler when the system shuts down.
+     *   class name. This is used to turn profilers on an off in config. If this name is *not* defined as true
+     *   in config, under the "profile" node, the returned handle will be empty: you can use it as normal, but
+     *   it will do nothing, as efficiently as possible.
      */
-    def createHandle(name:String, msg:String):ProfileHandle
+    def createHandle(name:String):ProfileHandle
   }
   
   /**
