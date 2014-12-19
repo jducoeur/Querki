@@ -83,6 +83,7 @@ object SystemCreator {
     new querki.photos.PhotoEcot(ecology)                           // 52
     new controllers.PublicUrlDefinitions(ecology)                  // 53
     new querki.api.ClientApiEcot(ecology)                          // 54
+    new querki.tools.ProfilerEcot(ecology)                         // 55
   }
   
   def createAllEcots(ecology:Ecology):Ecology = {

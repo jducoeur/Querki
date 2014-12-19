@@ -23,6 +23,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
   import MOIDs._
   
   lazy val HtmlUI = interface[querki.html.HtmlUI]
+  lazy val Profiler = interface[querki.tools.Profiler]
   
   /***********************************************
    * PUBLIC API
@@ -77,14 +78,18 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL
     }
   }
   
+  lazy val parserCreateProfiler = Profiler.createHandle("QLEcot.parserCreate", "Creating new QLParser objects")
+  lazy val parserProcessProfiler = Profiler.createHandle("QLEcot.parserProcess", "Standard QLParser.process")
+  lazy val parserProcessMethodProfiler = Profiler.createHandle("QLEcot.parserProcessMethod", "QLParser.processMethod")
+  
   def process(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = {
-    val parser = new QLParser(input, ci, invOpt, lexicalThing)
-    parser.process
+    val parser = parserCreateProfiler.profile { new QLParser(input, ci, invOpt, lexicalThing) }
+    parserProcessProfiler.profile { parser.process }
   }
   
   def processMethod(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, lexicalThing:Option[PropertyBundle] = None):QValue = {
-    val parser = new QLParser(input, ci, invOpt, lexicalThing)
-    parser.processMethod.value
+    val parser = parserCreateProfiler.profile { new QLParser(input, ci, invOpt, lexicalThing) }
+    parserProcessMethodProfiler.profile { parser.processMethod.value }
   }
   
   lazy val ExactlyOneCut = new ExactlyOneBase(UnknownOID) {
