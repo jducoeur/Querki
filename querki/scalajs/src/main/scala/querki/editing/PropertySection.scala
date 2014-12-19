@@ -87,6 +87,7 @@ class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEdit
         data("thing"):=tid.underlying,
         if (props.isEmpty)
           // Show *something*, so there is a drop target:
+          // TODO: when stuff is dragged in and out, we should remove/add this dummy target when needed:
           li(cls:="_propListItem control-group _instanceEditor",
             raw("&nbsp;"))
         else
