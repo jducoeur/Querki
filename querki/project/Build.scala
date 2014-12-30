@@ -50,6 +50,9 @@ object ApplicationBuild extends Build with UniversalKeys {
       libraryDependencies ++= Dependencies.scalajvm,
       commands += preStartCommand,
 	  
+	  // To prevent duplicate-artifact errors in Stage:
+	  publishArtifact in (Compile, packageSrc) := false,
+	  
 //	  pipelineStages := Seq(digest, gzip),
 	  
       EclipseKeys.skipParents in ThisBuild := false
