@@ -14,19 +14,19 @@ class ProfilerEcot(e:Ecology) extends QuerkiEcot(e) with Profiler {
     if (!profiles.isEmpty) {
       // We've done some profiling, so print out the results.
       QLog.info("Profile results:")
-      val allProfiles = profiles.values.toSeq.sortBy(_.profile.name)
+      val allProfiles = profiles.values.toSeq.sortBy(_.name)
       allProfiles.foreach { profile =>
-        QLog.info(s"${profile.profile.name}: ${profile.runs} runs, averaging ${(profile.time.getMillis / profile.runs)} ms")
+        QLog.info(s"${profile.name}: ${profile.runs} runs, averaging ${(profile.time.getMillis / profile.runs)} ms, total ${profile.time.getMillis}")
       }
     }
   }
 
-  private case class ProfileRecord(profile:ProfileHandleImpl, runs:Int, time:Duration)
+  private case class ProfileRecord(name:String, runs:Int, time:Duration)
   
   // IMPORTANT: this is a synchronous data structure, from Scala's core libraries! This is to allow
   // multi-threaded updates. This is a bit of a cheat in our usually Actor-centric architecture, to
   // avoid having Actor messages from profiling overwhelm what we're trying to measure.
-  private val profiles = TrieMap.empty[ProfileHandleImpl, ProfileRecord]
+  private val profiles = TrieMap.empty[String, ProfileRecord]
 
   def createHandle(name:String):ProfileHandle = {
     if (Config.getBoolean(s"querki.profile.$name", false))
@@ -36,19 +36,20 @@ class ProfilerEcot(e:Ecology) extends QuerkiEcot(e) with Profiler {
   }
   
   private [tools] def recordRun(instance:ProfileInstanceImpl):Unit = {
-    val profile = instance.handle
+    val name = instance.name
     val time = new Duration(instance.startTime, DateTime.now)
-    profiles.get(profile) match {
+    profiles.get(name) match {
       case Some(record) => {
-        profiles += (profile -> record.copy(runs = record.runs + 1, time = record.time + time))
+        profiles += (name -> record.copy(runs = record.runs + 1, time = record.time + time))
       }
-      case None => profiles += (profile -> ProfileRecord(profile, 1, time))
+      case None => profiles += (name -> ProfileRecord(name, 1, time))
     }
   }
 }
 
 private [tools] case object NullProfileHandle extends ProfileHandle {
-  def start() = NullProfileInstance
+  def start(namePlus:String = "") = NullProfileInstance
+  def profileAs[T](namePlus:String)(f: => T):T = f
   def profile[T](f: => T):T = f
 }
 
@@ -57,20 +58,24 @@ private [tools] case object NullProfileInstance extends ProfileInstance {
 }
 
 private [tools] case class ProfileHandleImpl(ecot:ProfilerEcot, name:String) extends ProfileHandle {
-  def start():ProfileInstance = {
-    new ProfileInstanceImpl(this, DateTime.now)
+  def start(namePlus:String = ""):ProfileInstance = {
+    new ProfileInstanceImpl(this, DateTime.now, namePlus)
   }
   
-  def profile[T](f: => T):T = {
-    val instance = start()
+  def profileAs[T](namePlus:String)(f: => T):T = {
+    val instance = start(namePlus)
     try {
       f
     } finally {
       instance.stop()
     }
   }
+  
+  def profile[T](f: => T):T = profileAs("")(f)
 }
 
-private [tools] case class ProfileInstanceImpl(handle:ProfileHandleImpl, startTime:DateTime) extends ProfileInstance {
+private [tools] case class ProfileInstanceImpl(handle:ProfileHandleImpl, startTime:DateTime, namePlus:String) extends ProfileInstance {
   def stop() = handle.ecot.recordRun(this)
+  
+  def name = handle.name + namePlus
 }

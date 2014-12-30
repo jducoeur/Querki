@@ -28,6 +28,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
   import MOIDs._
   
   lazy val HtmlUI = interface[querki.html.HtmlUI]
+  lazy val Profiler = interface[querki.tools.Profiler]
   
   lazy val parserCreateProfiler = Profiler.createHandle("QLEcot.parserCreate")
   lazy val parserProcessProfiler = Profiler.createHandle("QLEcot.parserProcess")

@@ -28,6 +28,8 @@ private [ql] class QLProfilers(implicit val ecology:Ecology) extends EcologyMemb
   lazy val processCall = Profiler.createHandle("QLParser.processCall")
   lazy val processTextStage = Profiler.createHandle("QLParser.processTextStage")
   lazy val processNumber = Profiler.createHandle("QLParser.processNumber")
+  lazy val processCallDetail = Profiler.createHandle("QLParser.call")
+  lazy val wikify = Profiler.createHandle("QLParser.wikify")
 }
 
 class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, val lexicalThing:Option[PropertyBundle] = None) extends RegexParsers with EcologyMember {
@@ -152,12 +154,16 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
           methodOpt match {
             case Some(method) => {
               val definingContext = context.next(Core.ExactlyOne(Core.LinkType(t.id)))
-              val partialFunction = method.partiallyApply(definingContext)
-              (partialFunction.qlApply(InvocationImpl(t, context, Some(definingContext), params)), method)
+              qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
+                val partialFunction = method.partiallyApply(definingContext)
+                (partialFunction.qlApply(InvocationImpl(t, context, Some(definingContext), params)), method)
+              }
             }
             case None => {
-              val inv = InvocationImpl(t, context, None, params)
-              (t.qlApply(inv), t)
+              qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
+                val inv = InvocationImpl(t, context, None, params)
+                (t.qlApply(inv), t)
+              }
             }
           }
         } catch {
@@ -295,7 +301,9 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   }
 
   def contextsToWikitext(contexts:Seq[QLContext], insertNewlines:Boolean = false):Wikitext = {
-    (Wikitext("") /: contexts) { (soFar, context) => soFar.+(context.value.wikify(context.parent), insertNewlines) }
+    qlProfilers.wikify.profile {
+      (Wikitext("") /: contexts) { (soFar, context) => soFar.+(context.value.wikify(context.parent), insertNewlines) }
+    }
   }
   
   /**
@@ -315,7 +323,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
         // There is content, so pass that down as the display:
         case _ => Some(processParseTree(contents, context))
       }
-      context.value.wikify(context, guts)
+      qlProfilers.wikify.profile { context.value.wikify(context, guts) }
     }
   }
   

@@ -32,13 +32,15 @@ package object tools {
      * and let go of it. Use this if the code is asynchronous; use profile() (which is easier) for synchronous
      * calls.
      */
-    def start():ProfileInstance
+    def start(namePlus:String = ""):ProfileInstance
     
     /**
      * Do a synchronous timing of the given code. This basically encapsulates the start/stop pair, and is
      * the easy way to do things if the code is synchronous. Just put the code to time in a block, and go.
      */
     def profile[T](f: => T):T
+    
+    def profileAs[T](namePlus:String)(f: => T):T
   }
   
   /**
