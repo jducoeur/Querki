@@ -90,10 +90,12 @@ case class PlayAjaxException(jqXHR:JQueryDeferred, textStatus:String, errorThrow
  * It deliberately apes dom.extensions.Ajax.
  */
 class PlayAjax(call:PlayCall) {
-  def callAjax():Future[String] = {
+  def callAjax(data:(String,String)*):Future[String] = {
     val promise = Promise[String]
     
-    val deferred = call.ajax().asInstanceOf[JQueryDeferred]
+    val dataStr = data.map(pair => s"${pair._1}=${pair._2}").mkString("&")
+    val settings = lit(data = dataStr).asInstanceOf[JQueryAjaxSettings]
+    val deferred = call.ajax(settings).asInstanceOf[JQueryDeferred]
     deferred.done { (data:String, textStatus:String, jqXHR:JQueryDeferred) => 
       promise.success(data)
     }

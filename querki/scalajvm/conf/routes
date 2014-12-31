@@ -62,10 +62,10 @@ POST    /u/:userName/:spaceId/_photoUpload   @controllers.PhotoController.upload
 # API CALLS
 # TODO: this should eventually replace the normal thing path, below:
 # GET     /u/:userName/:spaceId/client @controllers.ClientController.thing(userName, spaceId, thingId)
-POST    /u/:userName/:spaceId/_apiRequest @controllers.ClientController.apiRequest(userName, spaceId, pickledRequest)
+POST    /u/:userName/:spaceId/_apiRequest @controllers.ClientController.apiRequest(userName, spaceId)
 GET     /u/:userName/:spaceId/_marcoPolo @controllers.ClientController.marcoPolo(userName, spaceId, propId)
-POST    /_userApiRequest            @controllers.ClientController.userApiRequest(pickledRequest)
-POST    /_commonApiRequest          @controllers.ClientController.commonApiRequest(pickledRequest)
+POST    /_userApiRequest            @controllers.ClientController.userApiRequest
+POST    /_commonApiRequest          @controllers.ClientController.commonApiRequest
 
 POST    /dologin                    @controllers.LoginController.dologin
 GET     /logout                     @controllers.LoginController.logout

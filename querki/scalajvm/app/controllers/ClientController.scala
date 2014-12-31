@@ -4,6 +4,9 @@ import scala.concurrent.duration._
 import scala.concurrent.Future
 import akka.util.Timeout
 
+import play.api.data._
+import play.api.data.Forms._
+
 import upickle._
 import autowire._
 
@@ -23,6 +26,13 @@ class ClientController extends ApplicationBase {
   
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Tags = interface[querki.tags.Tags]
+  
+  val requestForm = Form(
+    mapping(
+      "pickledRequest" -> nonEmptyText
+    )((pickledRequest) => pickledRequest)
+     ((pickledRequest:String) => Some(pickledRequest))
+  )  
   
   /**
    * Send the given request to the UserSpaceSession, and do the given callback when it responds.
@@ -62,24 +72,32 @@ class ClientController extends ApplicationBase {
     }
   }
   
-  def apiRequest(ownerId:String, spaceId:String, pickledRequest:String) = withRouting(ownerId, spaceId) { implicit rc =>
-    val request = read[autowire.Core.Request[String]](pickledRequest)
+  def unpickleRequest(rc:PlayRequestContext):autowire.Core.Request[String] = {
+    implicit val request = rc.request
+    requestForm.bindFromRequest.fold(
+      errors => throw new Exception("API got badly-defined request!"),
+      pickledRequest => read[autowire.Core.Request[String]](pickledRequest)
+    )
+  }
+  
+  def apiRequest(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { implicit rc =>
+    val request = unpickleRequest(rc)
     askUserSpaceSession(rc, ClientRequest(request, rc)) {
       case ClientResponse(pickled) => Ok(pickled)
       case ClientError(msg) => BadRequest(msg)
     }
   }
   
-  def userApiRequest(pickledRequest:String) = withUser(true) { implicit rc =>
-    val request = read[autowire.Core.Request[String]](pickledRequest)
+  def userApiRequest = withUser(true) { implicit rc =>
+    val request = unpickleRequest(rc)
     askUserSession(rc, UserSessionClientRequest(rc.requesterOrAnon.id, ClientRequest(request, rc))) {
       case ClientResponse(pickled) => Ok(pickled)
       case ClientError(msg) => BadRequest(msg)
     }
   }
   
-  def commonApiRequest(pickledRequest:String) = withUser(false) { implicit rc =>
-    val request = read[autowire.Core.Request[String]](pickledRequest)
+  def commonApiRequest = withUser(false) { implicit rc =>
+    val request = unpickleRequest(rc)
     ClientApi.handleCommonFunction(rc, request).map { 
       case ClientResponse(pickled) => Ok(pickled)
       case ClientError(msg) => BadRequest(msg)

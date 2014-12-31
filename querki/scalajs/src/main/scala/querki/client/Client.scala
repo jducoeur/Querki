@@ -24,20 +24,17 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
         // up with a higher-level abstraction of the function trait, which we use to
         // make this decision?
         case "NotificationFunctions" => {
-	      controllers.ClientController.userApiRequest(
-	          upickle.write(req)).callAjax()          
+	      controllers.ClientController.userApiRequest().callAjax("pickledRequest" -> upickle.write(req))          
         }
         
         case "CommonFunctions" => {
-	      controllers.ClientController.commonApiRequest(
-	          upickle.write(req)).callAjax()          
+	      controllers.ClientController.commonApiRequest().callAjax("pickledRequest" -> upickle.write(req))          
         }
         
         case _ => {
 	      controllers.ClientController.apiRequest(
 	          DataAccess.userName, 
-	          DataAccess.spaceId.underlying, 
-	          upickle.write(req)).callAjax()
+	          DataAccess.spaceId.underlying).callAjax("pickledRequest" -> upickle.write(req))
         }
       }
     } catch {
