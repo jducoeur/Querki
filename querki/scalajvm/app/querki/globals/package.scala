@@ -40,7 +40,7 @@ package object globals {
     QLog.spew(s"Trying $msg")
     try {
       val result = f
-      QLog.spew(s"  $msg succeeded")
+      QLog.spew(s"  $msg succeeded, returning $result")
       result
     } catch {
       case ex:Exception => { QLog.error(s"  $msg failed", ex); throw ex }

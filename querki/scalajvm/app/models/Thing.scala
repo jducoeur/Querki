@@ -48,6 +48,8 @@ abstract class Thing(
   def NotInheritedProp = Core.NotInheritedProp
   def NameProp = Core.NameProp
   
+  override def toString = s"$displayName ($id)"
+  
   /**
    * The Name of this Thing, if there is one set.
    * 

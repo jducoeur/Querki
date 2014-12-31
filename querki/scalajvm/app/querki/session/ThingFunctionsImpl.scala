@@ -24,6 +24,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
   lazy val HtmlUI = interface[querki.html.HtmlUI]
   lazy val QL = interface[querki.ql.QL]
   lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
+  lazy val Stylesheets = interface[querki.css.Stylesheets]
   
   def getRequestInfo():RequestInfo = ClientApi.requestInfo(rc)
   
@@ -48,7 +49,9 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
 
     val rendered = thing.render(rc)
     
-    ThingPageDetails(thingInfo, modelInfo, customHeaderOpt, rendered)
+    val styleinfo = Stylesheets.stylesheetsFor(thing)
+    
+    ThingPageDetails(thingInfo, modelInfo, customHeaderOpt, rendered, styleinfo.sheets, styleinfo.headers)
   }
   
   def evaluateQL(thingId:TID, ql:String):Wikitext = withThing(thingId) { thing =>

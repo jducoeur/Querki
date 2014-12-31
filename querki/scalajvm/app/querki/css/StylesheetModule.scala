@@ -2,9 +2,11 @@ package querki.css
 
 // TODO: these are all abstraction breaks!
 import controllers.{HtmlEvent, PageEventManager, QuerkiTemplate}
+
+import querki.globals._
 import models._
 import querki.ecology._
-import querki.util._
+import querki.util.{Contributor, Publisher}
 import querki.values._
 
 import querki.ql.CodeType
@@ -24,7 +26,7 @@ object MOIDs extends EcotIds(1) {
   val GoogleFontOID = sysId(32)
 }
 
-class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
+class StylesheetModule(e:Ecology) extends QuerkiEcot(e) with Stylesheets {
   import MOIDs._
   
   val Basic = initRequires[querki.basic.Basic]
@@ -33,6 +35,32 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) {
   
   lazy val PlainTextType = Basic.PlainTextType
 
+  /******************************************
+   * PUBLIC API
+   ******************************************/
+  
+  // TODO: this needs to handle Stylesheets in Apps in an appropriate way. Think about it.
+  private def stylesheetsForRec(thing:Thing)(implicit state:SpaceState):StyleInfo = {
+    val modelSheets = thing.getModelOpt.map(stylesheetsForRec(_)).getOrElse(StyleInfo(Seq.empty, Seq.empty))
+    val localSheetOpt = for {
+      pv <- thing.localProp(StylesheetProp)
+      stylesheetOID <- pv.firstOpt
+      stylesheet <- state.anything(stylesheetOID)
+      css = stylesheet.firstOpt(CSSProp)
+      // TODO: this will need adjusting when we switch to a List-oriented version of this Property:
+      fontPropOpt = stylesheet.getPropOpt(GoogleFontProp)
+      fontOpt = fontPropOpt.flatMap(_.firstOpt).map(_.raw.toString)
+      fontTagOpt = fontOpt.map(font => <link rel="stylesheet" type="text/css" href={"http://fonts.googleapis.com/css?family=" + font} />)
+    }
+      yield StyleInfo(css.toSeq, fontTagOpt.map(_.toString).toSeq)
+      
+    localSheetOpt.map(modelSheets + _).getOrElse(modelSheets)
+  }
+  
+  def stylesheetsFor(thing:Thing)(implicit state:SpaceState):StyleInfo = {
+    stylesheetsForRec(state) + stylesheetsForRec(thing)
+  }
+  
   /******************************************
    * TYPES
    ******************************************/

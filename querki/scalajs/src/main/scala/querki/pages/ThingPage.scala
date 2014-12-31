@@ -9,6 +9,7 @@ import org.scalajs.dom
 import org.scalajs.jquery._
 
 import scalatags.JsDom.all._
+import scalatags.JsDom.tags2
 
 import models.{Kind, Wikitext}
 
@@ -36,6 +37,9 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
       }
       guts = 
         div(
+          pageDetails.headers.map(raw(_)),
+          if (!pageDetails.stylesheets.isEmpty)
+            tags2.style(pageDetails.stylesheets.mkString("\n")),
           div(id:="_topEdit", display.none),
           pageDetails.customHeader match {
             case Some(header) => new QText(header)
