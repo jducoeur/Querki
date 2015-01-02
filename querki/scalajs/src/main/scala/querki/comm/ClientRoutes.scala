@@ -93,7 +93,11 @@ class PlayAjax(call:PlayCall) {
   def callAjax(data:(String,String)*):Future[String] = {
     val promise = Promise[String]
     
-    val dataStr = data.map(pair => s"${pair._1}=${pair._2}").mkString("&")
+    val dataStr = data.map { pair =>
+      // TODO: in ScalaJS 0.6, encodeURIComponent has been moved to js.URIUtils:
+      val encoded = js.encodeURIComponent(pair._2)
+      s"${pair._1}=$encoded"
+    }.mkString("&")
     val settings = lit(data = dataStr).asInstanceOf[JQueryAjaxSettings]
     val deferred = call.ajax(settings).asInstanceOf[JQueryDeferred]
     deferred.done { (data:String, textStatus:String, jqXHR:JQueryDeferred) => 
