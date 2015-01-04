@@ -119,7 +119,7 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
 	          |Note that this is only enforced loosely, and you can't absolutely count upon this restriction
 	          |always being true. But used properly, it will steer folks in the right direction.""".stripMargin),
 	      AppliesToKindProp(Kind.Property),
-	      Types.AppliesToTypesProp(LinkType),
+	      Types.AppliesToTypesProp(LinkType, querki.tags.MOIDs.NewTagSetOID),
 	      LinkToModelsOnlyProp(true)
 	      ))
 	

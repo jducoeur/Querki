@@ -92,7 +92,11 @@ case class PlayAjaxException(jqXHR:JQueryDeferred, textStatus:String, errorThrow
 class PlayAjax(call:PlayCall) {
   def callAjax(data:(String,String)*):Future[String] = {
     val promise = Promise[String]
-    
+  
+    // Uncomment this line to print all API calls. Note that this is *not* the literal dataStr,
+    // mainly because that is fairly hard to read!
+    println(s"Sending AJAX call ${data.map(pair => s"${pair._1}=${pair._2}").mkString("&")}")
+
     val dataStr = data.map { pair =>
       // TODO: in ScalaJS 0.6, encodeURIComponent has been moved to js.URIUtils:
       val encoded = js.encodeURIComponent(pair._2)
