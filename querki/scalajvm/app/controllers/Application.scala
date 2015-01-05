@@ -319,7 +319,17 @@ disallow: /
             try {
               // Backwards compatibility: things originally insisted on OID, because I was dumb.
               // TODO: this is inherently deprecated; remove it when possible.
-              state.anything(OID(info.model)).get
+              state.anything(OID(info.model)) match {
+                case Some(m) => m
+                case None => {
+                  state.anything(ThingId(info.model)) match {
+                    case Some(tm) => tm
+                    // In principle, an Exception here is evil, since it will show the user a RSOD. But this code
+                    // is deprecated anyway, so not going to worry about it now...
+                    case None => throw new Exception(s"Trying to edit thing, but don't know Model ${info.model}")
+                  }
+                }
+              }
             } catch {
               case e:NumberFormatException => {
                 // Newer format: model should always be a ThingId:
