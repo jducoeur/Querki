@@ -83,6 +83,8 @@ package object globals {
   // These are improved signatures that can't simply be implicit, because they conflict with existing ones in the
   // jQuery facade.
   class JQFixes extends js.Object {
+    // scala-js-jquery crashes if the attribute is not defined:
+    def attr(attributeName:String):js.UndefOr[String] = ???
     def get():js.Array[_] = ???
     // Height is always in px, right? And can never be non-integer, correct?
     def height():Int = ???

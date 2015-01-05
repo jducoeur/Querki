@@ -16,20 +16,27 @@ package object display {
    * The factory function for a Gadget. It is consistent and trivial, but we don't have
    * reflection here, so can't just automate it.
    */
-  type GadgetConstr = (dom.Element => Gadget[_])
+  type GadgetConstr[Output <: dom.Element] = (dom.Element => Gadget[Output])
+  type GadgetsConstr[Output <: dom.Element] = (dom.Element => Seq[Gadget[Output]])
   
   trait Gadgets extends EcologyInterface {
     /**
      * Register an InputGadget. Whenever the specified hookClass is encountered, the given Gadget
      * will be wrapped around that Element.
      */
-    def registerGadget(hookClass:String, constr:GadgetConstr):Unit
+    def registerGadget[Output <: dom.Element](hookClass:String, constr:GadgetConstr[Output]):Unit
+    def registerGadgets[Output <: dom.Element](hookClass:String, constr:GadgetsConstr[Output]):Unit
+
+    /**
+     * Registers a constructor that can potentially produce multiple Gadgets, or none.
+     */
+    def registerSimpleGadgets[Output <: dom.Element](hookClass:String, constr: => Seq[Gadget[Output]]):Unit
     
     /**
      * Register an InputGadget that doesn't require fancy construction. This is usually the right
      * answer when the InputGadget doesn't take constructor parameters.
      */
-    def registerSimpleGadget(hookClass:String, constr: => Gadget[_]):Unit
+    def registerSimpleGadget[Output <: dom.Element](hookClass:String, constr: => Gadget[Output]):Unit
     
     /**
      * The very simplest form, when you simply want to hook a function that will be run on all elements

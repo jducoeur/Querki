@@ -41,26 +41,33 @@ class GadgetsEcot(e:Ecology) extends ClientEcot(e) with Gadgets {
    * The actual registry of all of the Gadgets. This is a map from a Selector to the constructors
    * of the Gadgets looking for that Selector.
    */
-  var registry = Map.empty[String, Seq[GadgetConstr]]
+  var registry = Map.empty[String, Seq[GadgetsConstr[_]]]
   
-  def registerGadget(hookClass:String, constr:GadgetConstr) = {
+  def registerGadgets[Output <: dom.Element](hookClass:String, constr:GadgetsConstr[Output]) = {
     registry += (registry.get(hookClass) match {
       case Some(entry) => (hookClass -> (entry :+ constr))
       case None => (hookClass -> Seq(constr))
     })
   }
   
-  def registerSimpleGadget(hookClass:String, constr: => Gadget[_]) = {
-    val fullConstr = { e:dom.Element =>
-      val gadget = constr
-      gadget.setElem(e)
-      gadget
-    }
-    registerGadget(hookClass, fullConstr)
+  def registerGadget[Output <: dom.Element](hookClass:String, constr:GadgetConstr[Output]):Unit = {
+    registerGadgets(hookClass, { elem:dom.Element => Seq(constr(elem)) })
   }
   
+  def registerSimpleGadgets[Output <: dom.Element](hookClass:String, constr: => Seq[Gadget[Output]]):Unit = {
+    val fullConstr = { e:dom.Element =>
+      val gadgets = constr
+      gadgets.foreach(_.setElem(e))
+      gadgets
+    }
+    registerGadgets(hookClass, fullConstr)
+  }
+  
+  def registerSimpleGadget[Output <: dom.Element](hookClass:String, constr: => Gadget[Output]):Unit =
+    registerSimpleGadgets(hookClass, { Seq(constr) })
+  
   def registerHook(selector:String)(hook:dom.Element => Unit) = {
-    registerSimpleGadget(selector, { new HookGadget(hook) })
+    registerSimpleGadgets(selector, { Seq(new HookGadget(hook)) })
   }
   
   def createGadgets(root:dom.Element) = {

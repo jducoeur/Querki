@@ -6,6 +6,8 @@ import org.scalajs.dom
 
 import querki.globals._
 
+import querki.display.Gadget
+
 /**
  * Private interface, allowing InputGadgets to work with their master controller.
  */
@@ -44,6 +46,25 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
     Gadgets.registerSimpleGadget("select", { new SelectGadget })
     Gadgets.registerGadget("._deleteInstanceButton", { DeleteInstanceButton(_) })
     Gadgets.registerSimpleGadget("._rating", { new RatingGadget })
+    Gadgets.registerGadgets(".propEditor", hookOtherPropEditor)
+  }
+  
+  /**
+   * This is the catch-all for hooking editors that don't have a simple class name attached.
+   * 
+   * TODO: this probably should be a general registry itself, based on the collection and type of the
+   * editor.
+   */
+  def hookOtherPropEditor[Output <: dom.Element](elem:Output):Seq[Gadget[Output]] = {
+    val e = $(elem)
+    val tagName = e.prop("tagName").asInstanceOf[String].toLowerCase
+    val tagType = e.jqf.attr("type")
+    val results = if ((tagName == "input") && (tagType.isDefined) && (tagType.get == "checkbox")) {
+      Seq((new CheckboxGadget).asInstanceOf[Gadget[Output]])
+    } else
+      Seq.empty
+    results.map(_.setElem(elem))
+    results
   }
   
   var unhookedGadgets = Set.empty[InputGadget[_]]
