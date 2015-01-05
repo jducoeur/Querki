@@ -59,6 +59,12 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
    * from other Things, via the _edit function.
    */
   lazy val thingId = $(elem).data("thing").asInstanceOf[UndefOr[String]].map(TID(_)).getOrElse(DataAccess.thingId)
+
+  /**
+   * The path to the field. This is called when we are saving. *Usually*, this is the name of the element,
+   * but there are a few unfortunate inconsistencies.
+   */
+  def path = $(elem).attr("name")
   
   /**
    * Save the current state of this InputGadget. This can potentially be overridden, but shouldn't
@@ -66,7 +72,6 @@ abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget
    * value.
    */
   def save():Future[PropertyChangeResponse] = {
-    val path = $(elem).attr("name")
     saveChange(ChangePropertyValue(path, values))
   }
 

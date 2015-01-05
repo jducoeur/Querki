@@ -46,6 +46,7 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
     Gadgets.registerSimpleGadget("select", { new SelectGadget })
     Gadgets.registerGadget("._deleteInstanceButton", { DeleteInstanceButton(_) })
     Gadgets.registerSimpleGadget("._rating", { new RatingGadget })
+    Gadgets.registerSimpleGadget("._optYesNo", { new OptYesNoGadget })
     Gadgets.registerGadgets(".propEditor", hookOtherPropEditor)
   }
   

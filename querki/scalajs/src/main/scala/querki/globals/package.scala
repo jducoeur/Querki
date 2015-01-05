@@ -68,6 +68,7 @@ package object globals {
     def each(func:js.ThisFunction1[Element, Int, Any]):JQuery = ???
     def map(func:js.ThisFunction0[Element, Any]):JQuery = ???
     def map(func:js.ThisFunction1[Element, Int, Any]):JQuery = ???
+    def click(func:js.ThisFunction0[Element, Any]):JQuery = ???
     def click(func:js.ThisFunction1[Element, JQueryEventObject, Any]):JQuery = ???
   }
   implicit def jq2Ext(jq:JQuery):JQExt = jq.asInstanceOf[JQExt]
