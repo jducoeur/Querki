@@ -56,6 +56,10 @@ case class SpaceState(
     cache:Map[StateCacheKey, Any] = Map.empty) 
   extends Thing(s, s, m, Kind.Space, pf, mt)(e) with EcologyMemberBase[SpaceState, EcotImpl]
 {
+  lazy val Profiler = interface[querki.tools.Profiler]
+  lazy val byNameProfile = Profiler.createHandle("anythingByName")
+  lazy val byDisplayNameProfile = Profiler.createHandle("anythingByDisplayName")
+  
   override def toString = s"SpaceState '${toThingId}' (${id.toThingId})"
   
   // *******************************************
@@ -122,17 +126,20 @@ case class SpaceState(
   }
   
   def anythingByDisplayName(rawName:String):Option[Thing] = {
+    byDisplayNameProfile.profile {
     val name = rawName.toLowerCase()
     thingWithDisplayName(name, things).orElse(
       thingWithDisplayName(name, spaceProps).orElse(
         thingWithDisplayName(name, types).orElse(
           thingWithDisplayName(name, colls).orElse(
             app.flatMap(_.anythingByDisplayName(rawName))))))
+    }
   }
   
   // TBD: changed this to look up the app stack. That's clearly right sometimes, like in QL.
   // Is it always right?
   def anythingByName(rawName:String):Option[Thing] = {
+    byNameProfile.profile {
     val name = NameUtils.toInternal(rawName)
     thingWithName(name, things).orElse(
       thingWithName(name, spaceProps).orElse(
@@ -140,6 +147,7 @@ case class SpaceState(
           thingWithName(name, colls).orElse(
             spaceByName(name).orElse(
               app.flatMap(_.anythingByName(rawName))))))).orElse(anythingByDisplayName(rawName))
+    }
   }
   
   def anything(thingId:ThingId):Option[Thing] = {
