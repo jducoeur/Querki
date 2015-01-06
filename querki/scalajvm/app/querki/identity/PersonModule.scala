@@ -261,7 +261,8 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
           encoded = encodeURL(signed.toString);
           // TODO: this surely belongs in a utility somewhere -- it constructs the full path to a Thing, plus some paths.
 	      // Technically speaking, we are converting a Link to an ExternalLink, then adding params.
-	      url = urlBase + "u/" + rc.ownerHandle + "/" + state.toThingId +
+          // Note that we need to avoid the empty URL for this Space, which is the new Client:
+	      url = urlBase + "u/" + rc.ownerHandle + "/" + state.toThingId + "/" + state.toThingId +
 	        "/?" + inviteParam + "=" + encoded
         }
         yield HtmlUI.HtmlValue(s"""<b><a href="$url">Click here</a></b> to accept the invitation.""")

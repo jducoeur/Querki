@@ -201,7 +201,7 @@ trait BaseParsers extends RegexParsers {
      *  We are currently *whitelisting* tags. If it doesn't appear here, it's illegal.
      */
 //    def xmlName:Parser[String] = xmlNameStartChar ~ (xmlNameChar*) ^^ {case c ~ cs => c + cs.mkString}
-    def xmlName:Parser[String] = "input" | "div" | "span" | "i" | "strike" | "br" |
+    def xmlName:Parser[String] = "input" | "div" | "span" | "i" | "strike" | "br" | "p" |
       "dl" | "dd" | "dt" |
       "ul" | "ol" | "li" |
       "table" | "tr" | "th" | "td"
