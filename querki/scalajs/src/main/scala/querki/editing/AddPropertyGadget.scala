@@ -57,7 +57,13 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     
     lazy val propSelector = RxSelect(propOptions)
     
-    lazy val existingPropIds = Rx { page.instancePropSection().propIds() ++ page.modelPropSection().propIds() }
+    lazy val existingPropIds = Rx { 
+      page.instancePropSection().propIds() ++
+      (if (page.modelPropSection.exists)
+         page.modelPropSection().propIds()
+       else
+         Set.empty)
+    }
     
     // The currently-valid options to show in the propSelector. Note that this reactively depends on the
     // properties that already exist.

@@ -37,7 +37,8 @@ class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEdit
   
     // Note that this is only ever invoked on the Instance Property Section:
     def onMoved() = {
-      save()
+      if (sortable)
+        save()
     }
     
     def hook() = {

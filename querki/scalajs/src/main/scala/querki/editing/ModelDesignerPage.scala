@@ -108,6 +108,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       _propSection
     }
     def apply() = _propSection.get    
+    def exists = _propSection.isDefined
   }
   val instancePropSection = new PropSectionHolder
   val modelPropSection = new PropSectionHolder
