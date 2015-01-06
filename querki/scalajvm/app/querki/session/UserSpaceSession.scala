@@ -68,7 +68,12 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
             // caching, and do much more sensitive updating as things change.
             (rs /: rs.things) { (curState, thingPair) =>
               val (thingId, thing) = thingPair
-              if (AccessControl.canRead(curState, user, thingId))
+              // Note that we need to pass rs into canRead(), not curState. That is because curState can
+              // be in an inconsistent state while we're in the middle of all this. For example, we may
+              // have already exised a Model from curState (because we don't have permission) when we get
+              // to an Instance of that Model. Things can then get horribly confused when we try to look
+              // at the Instance, try to examine its Model, and *boom*.
+              if (AccessControl.canRead(rs, user, thingId))
                 curState
               else
                 curState.copy(things = (curState.things - thingId))
