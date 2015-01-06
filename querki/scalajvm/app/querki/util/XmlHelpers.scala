@@ -51,6 +51,13 @@ object XmlHelpers {
   }
 
   def toNodes(displayText:DisplayText):NodeSeq = {
-    parseXhtmlFragment(displayText.str)
+    try {
+      parseXhtmlFragment(displayText.str)
+    } catch {
+      case ex:Exception => {
+        QLog.error(s"Exception while trying to parse XML ${displayText.str}", ex)
+        NodeSeq.Empty
+      }
+    }
   }
 }
