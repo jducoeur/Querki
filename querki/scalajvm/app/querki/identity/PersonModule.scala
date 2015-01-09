@@ -28,6 +28,39 @@ import querki.util._
 import controllers.{PageEventManager, PlayRequestContext}
 
 import play.api.Logger
+  
+import MOIDs._
+  
+/**
+ * This is an internal cache of the People in a Space (that is to say, all Person records), indexed
+ * by PersonId and IdentityId. It is stored in the Space's cache, and is private to the Identity system.
+ */
+private [identity] case class CachedPeople(val ecology:Ecology, state:SpaceState) extends EcologyMember {
+  
+  implicit val s = state
+  
+  lazy val Person = interface[Person]
+  
+  private def getPersonIdentityRaw(person:Thing):Option[OID] = {
+    for (
+      identityVal <- person.getPropOpt(Person.IdentityLink);
+      identityId <- identityVal.firstOpt
+        )
+      yield identityId  
+  }     
+  
+  val (peopleById, peopleByIdentityId) = 
+    ((Map.empty[OID, Thing], Map.empty[IdentityId, Thing]) /: state.descendants(PersonOID, false, true)) { (maps, person) =>
+      val (personIdMap, identityIdMap) = maps
+      val newPersonIdMap = personIdMap + (person.id -> person)
+      val newIdentityIdMap = getPersonIdentityRaw(person).map(identityId => identityIdMap + (identityId -> person)).getOrElse(identityIdMap)
+      (newPersonIdMap, newIdentityIdMap)
+    }
+    
+  def allPeople = peopleById.values
+  def hasPerson(id:IdentityId) = peopleByIdentityId.contains(id)
+  def localPerson(id:IdentityId) = peopleByIdentityId.get(id)
+}
 
 /**
  * TODO: this should probably be split into two modules, with all of the HTTP-specific stuff
@@ -44,6 +77,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   lazy val Links = interface[querki.links.Links]
   lazy val HtmlUI = interface[querki.html.HtmlUI]
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
+  lazy val Profiler = interface[querki.tools.Profiler]
   lazy val Roles = interface[querki.security.Roles]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
@@ -52,7 +86,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
   lazy val ExternalLinkType = Links.URLType
   
-  import MOIDs._
+  lazy val prof = Profiler.createHandle("Person")
   
   override def init = {
     PageEventManager.requestReceived += InviteLoginChecker
@@ -67,6 +101,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   object StateCacheKeys {
     val people = "People"
   }
+  val peopleKey = StateCacheKey(MOIDs.ecotId, StateCacheKeys.people)
   
   /**
    * This gets called whenever a SpaceState is updated. We take that opportunity to build up a cached
@@ -74,19 +109,25 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
    */
   def notify(evt:CacheUpdate, sender:Publisher[CacheUpdate, CacheUpdate]):CacheUpdate = {
     implicit val state = evt.current
-    val calculated:Map[OID, Thing] = state.descendants(PersonOID, false, true).map(person => (person.id -> person)).toMap
+    val cache:CachedPeople = CachedPeople(ecology, state)
         
-    evt.updateCacheWith(MOIDs.ecotId, StateCacheKeys.people, calculated)
+    evt.updateCacheWith(MOIDs.ecotId, StateCacheKeys.people, cache)
+  }
+  
+  def withCache[T](f:CachedPeople => T)(implicit state:SpaceState):T = {
+    state.cache.get(peopleKey) match {
+      case Some(cache @ CachedPeople(_, _)) => { 
+        f(cache)
+      }
+      case other => throw new Exception(s"Didn't find CachedPeople for space ${state.id} -- got $other instead!")
+    }
   }
   
   /**
    * All the people who have been invited into this Space.
    */
   def people(implicit state:SpaceState):Iterable[Thing] = {
-    state.cache.get(StateCacheKey(MOIDs.ecotId, StateCacheKeys.people)) match {
-      case Some(rawEntry) => { rawEntry.asInstanceOf[Map[OID, Thing]].values }
-      case None => { QLog.error("PersonModule couldn't find its state cache in Space " + state.id); Iterable.empty }
-    }
+    withCache(_.allPeople)
   }
   /**
    * All the people who have been invited into this Space who have not yet accepted.
@@ -446,67 +487,50 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     )
       yield SpaceOps.askSpaceManager[ThingResponse, B](changeRequest)(cb)
   }
-       
+  
   def getPersonIdentity(person:Thing)(implicit state:SpaceState):Option[OID] = {
-    for (
-      identityVal <- person.getPropOpt(IdentityLink);
-      identityId <- identityVal.firstOpt
-        )
-      yield identityId    
+    withCache(_.localPerson(person.id).map(_.id))
   }
   
   def hasPerson(user:User, personId:OID)(implicit state:SpaceState):Boolean = {
-    state.anything(personId).map(hasPerson(user, _)).getOrElse(false)
-  }
-  
-  def hasPerson(user:User, person:Thing)(implicit state:SpaceState):Boolean = {
-    val idOpt = getPersonIdentity(person)
-    idOpt.map(user.hasIdentity(_)).getOrElse(false)
+    withCache { cache =>
+      user.identities.exists(identity => isPerson(identity.id, personId))
+    }
   }
   
   def isPerson(identityId:OID, personId:OID)(implicit state:SpaceState):Boolean = {
-    val resultOpt = for {
-      person <- state.anything(personId)
-      personIdentity <- getPersonIdentity(person)
-    }
-      yield personIdentity == identityId
-      
-    resultOpt.getOrElse(false)
+    withCache(_.localPerson(identityId).map(_.id == personId).getOrElse(false))
   }
   
   def isPerson(identity:IdentityId, person:Thing)(implicit state:SpaceState):Boolean = {
-    val idOpt = getPersonIdentity(person)
-    idOpt.map(_ == identity).getOrElse(false)
+    isPerson(identity, person.id)
   }
   
   def isPerson(identity:Identity, person:Thing)(implicit state:SpaceState):Boolean = {
     isPerson(identity.id, person)
   }
   
+  def hasMember(identity:IdentityId)(implicit state:SpaceState):Boolean = {
+    withCache(_.localPerson(identity).map(_.hasProp(IdentityLink)).getOrElse(false))
+  }
+  
   def localIdentities(user:User)(implicit state:SpaceState):Iterable[Identity] = {
-    for {
-      person <- people
-      identity <- user.identities
-      if (isPerson(identity, person))
+    withCache { cache =>
+      user.identities.filter(identityId => cache.hasPerson(identityId.id))
     }
-      yield identity
   }
 
   def localPerson(identity:Identity)(implicit state:SpaceState):Option[Thing] = {
-    people.
-      filter(person => isPerson(identity, person)).
-      headOption
+    localPerson(identity.id)
   }
 
   def localPerson(identity:IdentityId)(implicit state:SpaceState):Option[Thing] = {
-    people.
-      filter(person => isPerson(identity, person)).
-      headOption
+    withCache(_.localPerson(identity))
   }
   
   def localPerson(user:User)(implicit state:SpaceState):Option[Thing] = {
-    people.
-      filter(person => hasPerson(user, person)).
-      headOption
+    withCache { cache =>
+      user.identities.map(localPerson(_)).flatten.headOption
+    }
   }
 }

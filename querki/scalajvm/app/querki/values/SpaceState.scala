@@ -57,8 +57,12 @@ case class SpaceState(
   extends Thing(s, s, m, Kind.Space, pf, mt)(e) with EcologyMemberBase[SpaceState, EcotImpl]
 {
   lazy val Profiler = interface[querki.tools.Profiler]
-  lazy val byNameProfile = Profiler.createHandle("anythingByName")
-  lazy val byDisplayNameProfile = Profiler.createHandle("anythingByDisplayName")
+  
+  /**
+   * Profiler Handle for use with the various Space Models. Other models are explicitly permitted to
+   * use this Handle on an ad-hoc basis.
+   */
+  lazy val profilerHandle = Profiler.createHandle("SpaceState")
   
   override def toString = s"SpaceState '${toThingId}' (${id.toThingId})"
   
@@ -126,14 +130,12 @@ case class SpaceState(
   }
   
   def anythingByDisplayName(rawName:String):Option[Thing] = {
-    byDisplayNameProfile.profile {
     val name = rawName.toLowerCase()
     thingWithDisplayName(name, things).orElse(
       thingWithDisplayName(name, spaceProps).orElse(
         thingWithDisplayName(name, types).orElse(
           thingWithDisplayName(name, colls).orElse(
             app.flatMap(_.anythingByDisplayName(rawName))))))
-    }
   }
   
   /**
@@ -160,10 +162,8 @@ case class SpaceState(
   }
   
   def anythingByName(rawName:String):Option[Thing] = {
-    byNameProfile.profile {
-      val name = NameUtils.canonicalize(rawName)
-      byCanonicalName.get(name).orElse(app.flatMap(_.anythingByName(rawName))).orElse(anythingByDisplayName(rawName))
-    }
+    val name = NameUtils.canonicalize(rawName)
+    byCanonicalName.get(name).orElse(app.flatMap(_.anythingByName(rawName))).orElse(anythingByDisplayName(rawName))
   }
   
   def anything(thingId:ThingId):Option[Thing] = {

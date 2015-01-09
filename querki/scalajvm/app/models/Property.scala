@@ -36,10 +36,7 @@ case class Property[VT, RT](
     explicitDefault.getOrElse(cType.default(pType))
   }
   def defaultPair(implicit state:SpaceState):PropAndVal[VT] = PropAndVal(this, default)
-  // EVIL but arguably necessary. This is where we are trying to confine the cast from something
-  // we get out of the PropMap (which is a bit undertyped) to match the associated Property.
-  def castVal(v:QValue) = v.asInstanceOf[QValue]
-  def pair(v:QValue) = PropAndVal(this, castVal(v))
+  def pair(v:QValue) = PropAndVal(this, v)
 
   override lazy val props:PropMap = propFetcher() + 
 		  (CollectionPropOID -> Core.ExactlyOne(Core.LinkType(cType))) +
@@ -66,8 +63,8 @@ case class Property[VT, RT](
     fromType.getOrElse(renderProps)
   }
   
-  def from(m:PropMap):QValue = castVal(m(this))
-  def fromOpt(m:PropMap):Option[QValue] = m.get(this.id) map castVal
+  def from(m:PropMap):QValue = m(this)
+  def fromOpt(m:PropMap):Option[QValue] = m.get(this.id)
   
   /**
    * Convenience method to fetch the value of this property in this map.
@@ -91,11 +88,27 @@ case class Property[VT, RT](
   
   // TODO: this clearly isn't correct. How are we actually going to handle more complex types?
   def toUser(v:QValue)(implicit state:SpaceState):String = {
-    val cv = castVal(v)
-    if (cType.isEmpty(cv))
+    if (cType.isEmpty(v))
       ""
     else
-      pType.toUser(cType.first(cv))
+      pType.toUser(cType.first(v))
+  }
+  
+  /**
+   * This is a deliberately hardcoded and SpaceState-less lookup of whether this Property is NotInherited. It is
+   * designed to be as fast as possible, because getPropOpt depends on it. (Which is why it doesn't use a SpaceState;
+   * that way, it can be a lazy val.)
+   * 
+   * TBD: this explicitly assumes that we don't have Not Inherited Properties descending from each other. That's
+   * a potentially questionable assumption in principle, but until we have mechanisms for Property inheritance, it'll do.
+   */
+  lazy val notInherited:Boolean = {
+    if (props.contains(querki.core.MOIDs.NotInheritedOID)) {
+      // EEEEVIL! Do not imitate this code, which makes all sorts of horrible assumptions that do not
+      // generalize! This is designed to be fast, not correct.
+      props(querki.core.MOIDs.NotInheritedOID).first.elem.asInstanceOf[Boolean]
+    } else
+      false
   }
   
   def serialize(v:QValue)(implicit state:SpaceState):String = validatingQValue(v){ v.serialize(pType) }

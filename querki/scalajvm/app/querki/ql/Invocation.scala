@@ -105,10 +105,13 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
 {
   lazy val QL = interface[querki.ql.QL]
   lazy val Core = interface[querki.core.Core]
+  lazy val Profiler = interface[querki.tools.Profiler]
   lazy val Types = interface[querki.types.Types]
   
   lazy val displayName = invokedOn.displayName
   lazy val LinkType = Core.LinkType
+  
+  lazy val prof = Profiler.createHandle("Invocation")
   
   def error[VT](name:String, params:String*) = InvocationValueImpl[VT](this, None, Some(PublicException(name, params:_*)))
   

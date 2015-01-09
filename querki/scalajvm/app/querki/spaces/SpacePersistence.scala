@@ -77,7 +77,7 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
           val oid = prop.id
           oid.toString + 
             ":" + 
-            escape(prop.serialize(prop.castVal(v)))
+            escape(prop.serialize(v))
         }
         case None => {
           // This is *very* weird, and typically means that an Ecot has failed to register a Property in System Space: 

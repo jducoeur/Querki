@@ -1,5 +1,7 @@
 package models
 
+import scala.annotation.tailrec
+
 import querki.ecology._
 import querki.ql.{Invocation, QLFunction, QLPhrase}
 import querki.time.DateTime
@@ -130,24 +132,33 @@ abstract class Thing(
   def asThing:Option[Thing] = Some(this)
 
   /**
-   * DEPRECATED: use getModelOpt instead!
+   * DEPRECATED: use getModelOpt instead! It is not only more correct, it's likely to be faster!
    */
   def getModel(implicit state:SpaceState):Thing = { 
-      state.anything(model).getOrElse{
-        try {
-          throw new Exception("Trying to get unknown Model " + model + " for " + displayName)
-        } catch {
-          case error:Exception => QLog.error("Unable to find Model", error); throw error
-        }
+    state.anything(model).getOrElse{
+      try {
+        throw new Exception("Trying to get unknown Model " + model + " for " + displayName)
+      } catch {
+        case error:Exception => QLog.error("Unable to find Model", error); throw error
       }
+    }
   }
   def getModelOpt(implicit state:SpaceState):Option[Thing] = {
-    if (hasModel)
-      Some(getModel)
-    else
-      None
+    if (_modelPtr.isEmpty) {
+      _modelPtr = Some(if (hasModel) Some(getModel) else None)
+    }
+    _modelPtr.get
   }
   def hasModel = (model != UnknownOID)
+  
+  /**
+   * EFFICIENCY HACK: getModelOpt is called a *lot* -- it is one of the most-called methods in the
+   * entire system. So this is basically a hardcoded memoization of its result. This is an ugly
+   * thing to do, but I *think* is technically correct: AFAIK, when you change a Thing (by copying
+   * one of the case classes derived from it), it shouldn't copy the value of this var, so it should
+   * be recalculated. (This is important in case this Thing's model changes.)
+   */
+  private var _modelPtr:Option[Option[Thing]] = None
   
   /**
    * The Property as defined on *this* specific Thing.
@@ -285,29 +296,35 @@ abstract class Thing(
    * Convenience method -- returns either the value of the specified property or None.
    */
   def getPropOpt(propId:OID)(implicit state:SpaceState):Option[PropAndVal[_]] = {
-    if (hasProp(propId))
-      Some(getProp(propId))
-    else
-      None
+    state.prop(propId).flatMap { prop =>
+      if (prop.notInherited)
+        localProp(prop)
+      else
+        getUntypedPropOptRec(prop)
+    }
   }
   // TODO: fix the duplication of these two methods. It appears that the compiler occasionally is choosing
   // the less-powerful OID version of getPropOpt instead of the one I want, presumably through the implicit
   // conversion of Property to OID.
   def getPropOpt[VT](prop:Property[VT, _])(implicit state:SpaceState):Option[PropAndVal[VT]] = {
-    // TODO: this is inefficient -- it's traversing the tree twice, first to test whether the value
-    // exists, then to fetch it. Rework all three of these methods to fix that.
-    if (hasProp(prop))
-      Some(getProp(prop))
-    else
-      None
+    getPropOptTyped(prop)
   }
   def getPropOptTyped[VT](prop:Property[VT, _])(implicit state:SpaceState):Option[PropAndVal[VT]] = {
-    if (hasProp(prop))
-      Some(getProp(prop))
+    if (prop.notInherited)
+      localProp(prop)
     else
-      None
+      getPropOptRec(prop)
   }
   
+  // TBD: is it possible to combine these? The Untyped version seems to be necessary to make 
+  // getPropOpt(OID) work, but it really feels like there should be a way to work around it...
+  private def getPropOptRec[VT](prop:Property[VT, _])(implicit state:SpaceState):Option[PropAndVal[VT]] = {
+    localProp(prop).orElse(getModelOpt.flatMap(_.getPropOptRec(prop)))
+  }
+  private def getUntypedPropOptRec(prop:Property[_, _])(implicit state:SpaceState):Option[PropAndVal[_]] = {
+    localProp(prop).orElse(getModelOpt.flatMap(_.getUntypedPropOptRec(prop)))
+  }
+    
   def localPropsAndVals(implicit state:SpaceState):Iterable[PropAndVal[_]] = {
     for (
       entry <- props;

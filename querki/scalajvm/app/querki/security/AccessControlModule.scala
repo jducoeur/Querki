@@ -35,11 +35,15 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   val Basic = initRequires[querki.basic.Basic]
   val Links = initRequires[querki.links.Links]
   val Person = initRequires[querki.identity.Person]
+  val Profiler = initRequires[querki.tools.Profiler]
     
   lazy val QLType = Basic.QLType
   
   lazy val LinkModelProp = Links.LinkModelProp
   lazy val abstractPerson = Person.SecurityPrincipal
+  
+  lazy val hasPermissionProfile = Profiler.createHandle("AccessControl.hasPermission")
+  lazy val hasPermissionFuncProfile = Profiler.createHandle("AccessControl.hasPermissionFunc")
   
   // TBD: this checks whether this person is a Member based on the Person records in the Space. Should we use
   // the SpaceMembership table instead? In general, there is a worrying semantic duplication here. We should
@@ -47,15 +51,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   // TODO: is this method simply broken conceptually? Shouldn't we be checking whether an *Identity* is a Member
   // of the Space? Is it ever appropriate for this to be the User that we're checking?
   def isMember(who:User, state:SpaceState):Boolean = {
-    implicit val s = state
-    val members = Person.members(state)
-    members.exists { person =>
-      val personIdentityOpt = person.getPropOpt(Person.IdentityLink)
-      personIdentityOpt.map { personIdentity =>
-        val oid = personIdentity.first
-        who.hasIdentity(oid)
-      }.getOrElse(false)
-    }
+    who.identities.exists(identity => isMember(identity.id, state))
   }
 
   // This code is intentionally duplicated from the above; I think this version is more correct, and should
@@ -66,14 +62,8 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   // TODO: this code is highly duplicative of stuff in PersonModule. It belongs in one or t'other, and should
   // be rationalized.
   def isMember(identityId:OID, state:SpaceState):Boolean = {
-    implicit val s = state
-    val members = Person.members(state)
-    members.exists { person =>
-      val personIdentityOpt = person.getPropOpt(Person.IdentityLink)
-      personIdentityOpt.map { personIdentity =>
-        val oid = personIdentity.first
-        oid == identityId
-      }.getOrElse(false)
+    hasPermissionFuncProfile.profileAs(" isMember") {
+      Person.hasMember(identityId)(state)
     }
   }
   
@@ -82,6 +72,8 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   }
   
   def hasPermission(aclProp:Property[OID,_], state:SpaceState, identityId:OID, thingId:OID):Boolean = {
+    hasPermissionProfile.profile {
+    
     if (identityId == state.owner || identityId == querki.identity.MOIDs.SystemIdentityOID)
       true
     else {
@@ -151,6 +143,8 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
           // ... or just give up and say no.
           false))))
     }
+    
+    }
   }
   
   def canCreate(state:SpaceState, who:User, modelId:OID):Boolean = {
@@ -166,6 +160,8 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   }
   
   def canEdit(state:SpaceState, who:User, thingIdIn:OID):Boolean = {
+    hasPermissionProfile.profile {
+    
     // Sadly, Edit turns out to be more complex than Create and Read -- simple inheritance of the value,
     // while conceptually elegant, doesn't actually work in practice. So we need to juggle two properties
     // instead.
@@ -241,6 +237,8 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
             state.getPropOpt(CanEditChildrenProp).map(checkPerms(_)).getOrElse(
               false))))
     }    
+    
+    }
   }
   
   def canChangePropertyValue(state:SpaceState, who:User, propId:OID):Boolean = {
@@ -432,13 +430,14 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
           |This is typically used in _filter or _if.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QValue = {
+      hasPermissionFuncProfile.profile {
       val resultInv = for {
-        dummy <- inv.returnsType(YesNoType)
-        thing <- inv.contextAllThings
-        permId <- inv.processParamFirstAs(0, LinkType)
-        propRaw <- inv.opt(inv.state.prop(permId))
-        prop <- inv.opt(propRaw.confirmType(LinkType))
-        who <- inv.opt(inv.context.request.localIdentity)
+        dummy <- hasPermissionFuncProfile.profileAs(" returnsType") { inv.returnsType(YesNoType) }
+        thing <- hasPermissionFuncProfile.profileAs(" contextAllThings") { inv.contextAllThings }
+        permId <- hasPermissionFuncProfile.profileAs(" processParamFirstAs") { inv.processParamFirstAs(0, LinkType) }
+        propRaw <- hasPermissionFuncProfile.profileAs(" prop") { inv.opt(inv.state.prop(permId)) }
+        prop <- hasPermissionFuncProfile.profileAs(" confirmType") { inv.opt(propRaw.confirmType(LinkType)) }
+        who <- hasPermissionFuncProfile.profileAs(" localIdentity") { inv.opt(inv.context.request.localIdentity) }
       }
         yield ExactlyOne(hasPermission(prop, inv.state, who.id, thing))
         
@@ -446,6 +445,8 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         ExactlyOne(False)
       else
         resultInv
+        
+      }
     }
   }
 
