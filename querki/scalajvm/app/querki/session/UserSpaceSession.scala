@@ -79,7 +79,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
                 curState.copy(things = (curState.things - thingId))
             }
           }
-        (rs /: userValues) { (curState, uv) =>
+        (safeState /: userValues) { (curState, uv) =>
           if (uv.thingId == curState.id) {
             // We're enhancing the Space itself:
             curState.copy(pf = () => (curState.props + (uv.propId -> uv.v)))

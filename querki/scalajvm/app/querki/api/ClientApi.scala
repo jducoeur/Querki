@@ -84,11 +84,16 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
   }
   
   def requestInfo(rc:RequestContext):RequestInfo = {
-    RequestInfo(
-      userInfo(rc.requester), 
-      spaceInfo(rc.state, rc), 
-      rc.isOwner,
-      rc.requesterOrAnon.isAdmin)
+    if (AccessControl.canRead(rc.state.get, rc.requesterOrAnon, rc.state.get.id)) {
+      RequestInfo(
+        userInfo(rc.requester), 
+        spaceInfo(rc.state, rc), 
+        rc.isOwner,
+        rc.requesterOrAnon.isAdmin)
+    } else {
+      // Signal that this person doesn't have access to the Space:
+      RequestInfo(None, None, false, false, true)
+    }
   }
   
   def propInfo(prop:AnyProp, rc:RequestContext):PropInfo = {

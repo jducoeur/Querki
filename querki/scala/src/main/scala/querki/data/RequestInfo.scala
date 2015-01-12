@@ -10,5 +10,6 @@ case class RequestInfo(
   user:Option[UserInfo], 
   space:Option[SpaceInfo],
   isOwner:Boolean,
-  isAdmin:Boolean
+  isAdmin:Boolean,
+  forbidden:Boolean = false
   )

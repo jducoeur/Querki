@@ -68,7 +68,11 @@ class ClientController extends ApplicationBase {
     val client = new LocalClient(rc)
     
     client[ThingFunctions].getRequestInfo().call().map { requestInfo =>
-      Ok(views.html.client(rc, write(requestInfo)))
+      if (requestInfo.forbidden) {
+        unknownSpace(spaceId)
+      } else {
+        Ok(views.html.client(rc, write(requestInfo)))
+      }
     }
   }
   

@@ -51,6 +51,9 @@ class ApplicationBase extends Controller with EcologyMember {
   
   def doError(redirectTo:Call, ex:PublicException)(implicit rc:PlayRequestContext):Future[Result] = doError(redirectTo, ex.display(rc.request))
   
+  def unknownSpace(spaceId:String):Result = 
+    Redirect(routes.Application.index).flashing("error" -> s"Either $spaceId doesn't exist, or you don't have permission to read it.")
+  
   def doInfo(redirectTo:Call, msg:String):Result = {
     Redirect(redirectTo).flashing("info" -> msg)
   }
