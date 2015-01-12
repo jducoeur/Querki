@@ -92,41 +92,45 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
    */
   def invokeFromHash() = {
     val fullHash = window.location.hash
-    // Actually, we do want to be able to reload the current page:
-//    if (fullHash != _currentHash) {
-    // Before we "navigate", give any outstanding InputGadgets a chance to save their values:
-    InputGadgets.afterAllSaved.foreach { dummy =>
-      _currentHash = fullHash
+    
+    if (fullHash.length == 0)
+      showRoot()
+    else
+      // Before we "navigate", give any outstanding InputGadgets a chance to save their values:
+      InputGadgets.afterAllSaved.foreach { dummy =>
+        _currentHash = fullHash
 	    // Slice off the hash itself:
 	    val hash = fullHash.substring(1)
 	    val hashParts = hash.split("\\?")
 	    if (hashParts.length == 0)
-	      throw new Exception("Somehow wound up with a completely empty hash?")
-	    
-	    val pageName = hashParts(0)
-	    val pageParams =
-	      if (hashParts.length == 1)
-	        None
-	      else
-	        Some(hashParts(1).split("&"))
-	    val paramMap = pageParams match {
-	      case Some(params) => {
-	        val pairs = params.map { param =>
-	          val pairArray = param.split("=")
-	          val key = pairArray(0)
-	          val v =
-	            if (pairArray.length == 1)
-	              "true"
-	            else
-	              pairArray(1)
-	          (key, v)
+	      // There is a hash, but nothing else, so it's presumptively root:
+	      showRoot()
+	    else {
+    	  val pageName = hashParts(0)
+	      val pageParams =
+	        if (hashParts.length == 1)
+	          None
+	        else
+	          Some(hashParts(1).split("&"))
+	      val paramMap = pageParams match {
+	        case Some(params) => {
+	          val pairs = params.map { param =>
+	            val pairArray = param.split("=")
+	            val key = pairArray(0)
+	            val v =
+	              if (pairArray.length == 1)
+	                "true"
+	              else
+	                pairArray(1)
+	            (key, v)
+	          }
+	          Map(pairs:_*)
 	        }
-	        Map(pairs:_*)
+	        case None => Map.empty[String, String]
 	      }
-	      case None => Map.empty[String, String]
-	    }
 	    
-	    renderPage(pageName, paramMap)
+	      renderPage(pageName, paramMap)
+	    }
     }
   }
   
@@ -141,6 +145,12 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   
   def showPage(pageName:String, paramMap:ParamMap) = {
     window.location.hash = pageUrl(pageName, paramMap)
+  }
+  
+  def showRoot() = {
+    // TBD: in principle, this ought to be going through a factory for the Space Thing.
+    // But we don't actually *have* a factory for Thing pages. Should we?
+    DataAccess.space.foreach(space => showPage(space.urlName.underlying, Map.empty))
   }
   
   def renderPage(pageName:String, paramMap:ParamMap):Unit = {
