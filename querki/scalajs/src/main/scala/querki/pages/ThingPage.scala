@@ -120,7 +120,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
       ),
       
       modelOpt match {
-        case Some(model) => {
+        case Some(model) if (!thing.isTag) => {
           p(cls:="_smallSubtitle _noPrint",
             "(OID: ", a(href:=page.thingUrl(thing.oid), thing.oid.underlying),
             thing.linkName.map { linkName =>
@@ -128,6 +128,10 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
             },
             ", Model: ", a(href:=page.thingUrl(model), model.displayName),
             ")")
+        }
+        case Some(model) if (thing.isTag) => {
+          p(cls:="_smallSubtitle _noPrint", 
+            "(Tag based on ", thingLink(model), ")")
         }
         case None => {}
       }

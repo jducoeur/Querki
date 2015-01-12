@@ -119,7 +119,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
    * exists to support the display of the Undefined Tag View.
    */
   case class TagThing(nameIn:String, space:SpaceState)(implicit e:Ecology) 
-    extends Thing(UnknownOID, space.id, UnknownOID, Kind.Thing, () => Thing.emptyProps, querki.time.epoch)(e)
+    extends Thing(UnknownOID, space.id, preferredModelForTag(space, SafeUrl.decode(nameIn)), Kind.Thing, () => Thing.emptyProps, querki.time.epoch)(e)
     with IsTag
   {
     // Undo the effects of SafeUrl.
@@ -131,10 +131,12 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     override lazy val canonicalName = Some(name)
     override lazy val linkName = Some(name)
     override lazy val toThingId:ThingId = new AsDisplayName(name)
-  
-    override def render(implicit rc:RequestContext, prop:Option[Property[_,_]] = None):Wikitext = {
+    
+    def pseudoModel = preferredModelForTag(space, name)
+      
+   override def render(implicit rc:RequestContext, prop:Option[Property[_,_]] = None):Wikitext = {
       implicit val s = space
-      val model = preferredModelForTag(space, name)
+      val model = pseudoModel
       val propAndValOpt = model.getPropOpt(ShowUnknownProp) orElse space.getPropOpt(ShowUnknownProp)
       val nameVal = ExactlyOne(PlainTextType(name))
       val nameAsContext = QLContext(nameVal, Some(rc))

@@ -95,7 +95,7 @@ class PlayAjax(call:PlayCall) {
   
     // Uncomment this line to print all API calls. Note that this is *not* the literal dataStr,
     // mainly because that is fairly hard to read!
-//    println(s"Sending AJAX call ${data.map(pair => s"${pair._1}=${pair._2}").mkString("&")}")
+    println(s"Sending AJAX call ${data.map(pair => s"${pair._1}=${pair._2}").mkString("&")}")
 
     val dataStr = data.map { pair =>
       // TODO: in ScalaJS 0.6, encodeURIComponent has been moved to js.URIUtils:
@@ -106,7 +106,7 @@ class PlayAjax(call:PlayCall) {
     val deferred = call.ajax(settings).asInstanceOf[JQueryDeferred]
     deferred.done { (data:String, textStatus:String, jqXHR:JQueryDeferred) => 
       // Uncomment this link to print the results of API calls.
-//      println(s"Got AJAX response $data")
+      println(s"Got AJAX response $data")
       promise.success(data)
     }
     deferred.fail { (jqXHR:JQueryDeferred, textStatus:String, errorThrown:String) => 
