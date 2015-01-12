@@ -43,7 +43,6 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   lazy val abstractPerson = Person.SecurityPrincipal
   
   lazy val hasPermissionProfile = Profiler.createHandle("AccessControl.hasPermission")
-  lazy val hasPermissionFuncProfile = Profiler.createHandle("AccessControl.hasPermissionFunc")
   
   // TBD: this checks whether this person is a Member based on the Person records in the Space. Should we use
   // the SpaceMembership table instead? In general, there is a worrying semantic duplication here. We should
@@ -62,9 +61,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   // TODO: this code is highly duplicative of stuff in PersonModule. It belongs in one or t'other, and should
   // be rationalized.
   def isMember(identityId:OID, state:SpaceState):Boolean = {
-    hasPermissionFuncProfile.profileAs(" isMember") {
-      Person.hasMember(identityId)(state)
-    }
+    Person.hasMember(identityId)(state)
   }
   
   def hasPermission(aclProp:Property[OID,_], state:SpaceState, who:User, thingId:OID):Boolean = {
@@ -430,23 +427,20 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
           |This is typically used in _filter or _if.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QValue = {
-      hasPermissionFuncProfile.profile {
       val resultInv = for {
-        dummy <- hasPermissionFuncProfile.profileAs(" returnsType") { inv.returnsType(YesNoType) }
-        thing <- hasPermissionFuncProfile.profileAs(" contextAllThings") { inv.contextAllThings }
-        permId <- hasPermissionFuncProfile.profileAs(" processParamFirstAs") { inv.processParamFirstAs(0, LinkType) }
-        propRaw <- hasPermissionFuncProfile.profileAs(" prop") { inv.opt(inv.state.prop(permId)) }
-        prop <- hasPermissionFuncProfile.profileAs(" confirmType") { inv.opt(propRaw.confirmType(LinkType)) }
-        who <- hasPermissionFuncProfile.profileAs(" localIdentity") { inv.opt(inv.context.request.localIdentity) }
+        dummy <- inv.returnsType(YesNoType)
+        thing <- inv.contextAllThings
+        permId <- inv.processParamFirstAs(0, LinkType)
+        propRaw <- inv.opt(inv.state.prop(permId))
+        prop <- inv.opt(propRaw.confirmType(LinkType))
+        who <- inv.opt(inv.context.request.localIdentity)
       }
         yield ExactlyOne(hasPermission(prop, inv.state, who.id, thing))
         
       if (resultInv.get.isEmpty)
         ExactlyOne(False)
       else
-        resultInv
-        
-      }
+        resultInv        
     }
   }
 
