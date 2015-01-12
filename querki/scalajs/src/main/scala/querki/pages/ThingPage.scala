@@ -15,7 +15,7 @@ import models.{Kind, Wikitext}
 
 import querki.globals._
 
-import querki.api.ThingFunctions
+import querki.api.{StandardThings, ThingFunctions}
 import querki.comm._
 import querki.conversations.ConversationPane
 import querki.data.ThingInfo
@@ -30,6 +30,7 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
     // NOTE: doing this with async/await seems to swallow exceptions in Autowire:
     for {
       pageDetails:ThingPageDetails <- Client[ThingFunctions].getThingPage(name).call()
+      standardThings <- DataAccess.standardThings
       rendered = pageDetails.rendered
       dummy = {
         DataSetting.setThing(Some(pageDetails.thingInfo))
@@ -43,7 +44,7 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
           div(id:="_topEdit", display.none),
           pageDetails.customHeader match {
             case Some(header) => new QText(header)
-            case None => new StandardThingHeader(pageDetails.thingInfo, this)
+            case None => new StandardThingHeader(pageDetails.thingInfo, this, standardThings)
           },
           new QText(rendered),
           new ConversationPane(pageDetails.thingInfo)
@@ -53,7 +54,7 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
   }
 }
 
-class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+class StandardThingHeader(thing:ThingInfo, page:Page, standardThings:StandardThings)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
 
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
@@ -99,7 +100,14 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
           // Not a Model
           MSeq(
             if (thing.isEditable) {
-              if (thing.isTag || thing.kind == Kind.Property) {
+              if (thing.isTag) {
+                iconButton("edit")(
+                  title:=s"Make $thingName into a real Thing",
+                  href:=
+                    Pages.createAndEditFactory.pageUrl(
+                      modelOpt.getOrElse(standardThings.basic.simpleThing),
+                      (Editing.propPath(standardThings.basic.displayNameProp.oid) -> thingName)))
+              } else if (thing.kind == Kind.Property) {
 			    iconButton("edit")(
 			      title:=s"Edit $thingName",
 			      href:=Editing.advancedEditorFactory.pageUrl(thing))

@@ -30,7 +30,7 @@ package object pages {
      * Pass in a Thing to get the URL for this page. Prefer to use this instead of the lower-level version
      * of pageUrl() when possible -- it's much more safe, and introduces less coupling.
      */
-    def pageUrl(thing:BasicThingInfo):URL
+    def pageUrl(thing:BasicThingInfo, addlParams:(String, String)*):URL
     
     /**
      * Actually navigate to this page for this Thing.

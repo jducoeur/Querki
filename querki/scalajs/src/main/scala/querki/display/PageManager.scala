@@ -116,12 +116,12 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
 	        case Some(params) => {
 	          val pairs = params.map { param =>
 	            val pairArray = param.split("=")
-	            val key = pairArray(0)
+	            val key = decode(pairArray(0))
 	            val v =
 	              if (pairArray.length == 1)
 	                "true"
 	              else
-	                pairArray(1)
+	                decode(pairArray(1))
 	            (key, v)
 	          }
 	          Map(pairs:_*)
@@ -134,12 +134,15 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     }
   }
   
+  def encode(str:String) = js.encodeURIComponent(str)
+  def decode(str:String) = js.decodeURIComponent(str)
+  
   def pageUrl(pageName:String, paramMap:ParamMap = Map.empty):URL = {
     val paramStr =
       if (paramMap.isEmpty)
         ""
       else
-        "?" + paramMap.map(pair => s"${pair._1}=${pair._2}").mkString("&")
+        "?" + paramMap.map(pair => s"${encode(pair._1)}=${encode(pair._2)}").mkString("&")
     s"#$pageName$paramStr"    
   }
   

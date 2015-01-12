@@ -2,6 +2,7 @@ package querki.pages
 
 import querki.globals._
 
+import querki.comm.URL
 import querki.data.BasicThingInfo
 
 /**
@@ -17,13 +18,13 @@ class PageFactoryBase(registeredName:String, const:ParamMap => Page)(implicit va
       None
   }
   
-  def pageUrl(params:(String, String)*) = PageManager.pageUrl(registeredName, Map(params:_*))  
+  def pageUrl(params:(String, String)*):URL = PageManager.pageUrl(registeredName, Map(params:_*))  
 }
 
 class ThingPageFactoryBase(registeredName:String, const:ParamMap => Page, paramName:String)(implicit e:Ecology) 
   extends PageFactoryBase(registeredName, const) with ThingPageFactory 
 {
-  def pageUrl(thing:BasicThingInfo) = pageUrl((paramName -> thing.urlName.underlying))
+  def pageUrl(thing:BasicThingInfo, addlParams:(String, String)*):URL = pageUrl((addlParams :+ (paramName -> thing.urlName.underlying)):_*)
   
   def showPage(thing:BasicThingInfo) = showPage(thing.urlName)
   
