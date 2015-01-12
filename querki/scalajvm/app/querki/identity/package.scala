@@ -86,7 +86,8 @@ package object identity {
     
     def getPersonIdentity(person:Thing)(implicit state:SpaceState):Option[OID]
     def hasPerson(user:User, personId:OID)(implicit state:SpaceState):Boolean
-    def hasPerson(user:User, person:Thing)(implicit state:SpaceState):Boolean
+    // Simply asks whether this is a Member of this Space
+    def hasMember(identity:IdentityId)(implicit state:SpaceState):Boolean
     def isPerson(identityId:OID, personId:OID)(implicit state:SpaceState):Boolean
     def isPerson(identity:Identity, person:Thing)(implicit state:SpaceState):Boolean
     /**

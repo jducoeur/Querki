@@ -29,6 +29,7 @@ private [ql] class QLProfilers(implicit val ecology:Ecology) extends EcologyMemb
   lazy val processTextStage = Profiler.createHandle("QLParser.processTextStage")
   lazy val processNumber = Profiler.createHandle("QLParser.processNumber")
   lazy val processCallDetail = Profiler.createHandle("QLParser.call")
+  lazy val processThing = Profiler.createHandle("QLParser.processThing")
   lazy val wikify = Profiler.createHandle("QLParser.wikify")
 }
 
@@ -146,7 +147,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   private def processCall(call:QLCall, context:QLContext, isParam:Boolean):QLContext = {
     logContext("processCall " + call, context) {
       
-      def processThing(t:Thing):(QValue, Thing) = {
+      def processThing(t:Thing):(QValue, Thing) = qlProfilers.processThing.profile {
         // If there are parameters to the call, they are a collection of phrases.
         val params = call.params
         val methodOpt = call.methodName.flatMap(context.state.anythingByName(_))

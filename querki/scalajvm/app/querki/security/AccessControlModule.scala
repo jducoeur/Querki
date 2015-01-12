@@ -35,11 +35,14 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   val Basic = initRequires[querki.basic.Basic]
   val Links = initRequires[querki.links.Links]
   val Person = initRequires[querki.identity.Person]
+  val Profiler = initRequires[querki.tools.Profiler]
     
   lazy val QLType = Basic.QLType
   
   lazy val LinkModelProp = Links.LinkModelProp
   lazy val abstractPerson = Person.SecurityPrincipal
+  
+  lazy val hasPermissionProfile = Profiler.createHandle("AccessControl.hasPermission")
   
   // TBD: this checks whether this person is a Member based on the Person records in the Space. Should we use
   // the SpaceMembership table instead? In general, there is a worrying semantic duplication here. We should
@@ -47,15 +50,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   // TODO: is this method simply broken conceptually? Shouldn't we be checking whether an *Identity* is a Member
   // of the Space? Is it ever appropriate for this to be the User that we're checking?
   def isMember(who:User, state:SpaceState):Boolean = {
-    implicit val s = state
-    val members = Person.members(state)
-    members.exists { person =>
-      val personIdentityOpt = person.getPropOpt(Person.IdentityLink)
-      personIdentityOpt.map { personIdentity =>
-        val oid = personIdentity.first
-        who.hasIdentity(oid)
-      }.getOrElse(false)
-    }
+    who.identities.exists(identity => isMember(identity.id, state))
   }
 
   // This code is intentionally duplicated from the above; I think this version is more correct, and should
@@ -66,15 +61,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   // TODO: this code is highly duplicative of stuff in PersonModule. It belongs in one or t'other, and should
   // be rationalized.
   def isMember(identityId:OID, state:SpaceState):Boolean = {
-    implicit val s = state
-    val members = Person.members(state)
-    members.exists { person =>
-      val personIdentityOpt = person.getPropOpt(Person.IdentityLink)
-      personIdentityOpt.map { personIdentity =>
-        val oid = personIdentity.first
-        oid == identityId
-      }.getOrElse(false)
-    }
+    Person.hasMember(identityId)(state)
   }
   
   def hasPermission(aclProp:Property[OID,_], state:SpaceState, who:User, thingId:OID):Boolean = {
@@ -82,6 +69,8 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   }
   
   def hasPermission(aclProp:Property[OID,_], state:SpaceState, identityId:OID, thingId:OID):Boolean = {
+    hasPermissionProfile.profile {
+    
     if (identityId == state.owner || identityId == querki.identity.MOIDs.SystemIdentityOID)
       true
     else {
@@ -151,6 +140,8 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
           // ... or just give up and say no.
           false))))
     }
+    
+    }
   }
   
   def canCreate(state:SpaceState, who:User, modelId:OID):Boolean = {
@@ -166,6 +157,8 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   }
   
   def canEdit(state:SpaceState, who:User, thingIdIn:OID):Boolean = {
+    hasPermissionProfile.profile {
+    
     // Sadly, Edit turns out to be more complex than Create and Read -- simple inheritance of the value,
     // while conceptually elegant, doesn't actually work in practice. So we need to juggle two properties
     // instead.
@@ -241,6 +234,8 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
             state.getPropOpt(CanEditChildrenProp).map(checkPerms(_)).getOrElse(
               false))))
     }    
+    
+    }
   }
   
   def canChangePropertyValue(state:SpaceState, who:User, propId:OID):Boolean = {
@@ -445,7 +440,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
       if (resultInv.get.isEmpty)
         ExactlyOne(False)
       else
-        resultInv
+        resultInv        
     }
   }
 

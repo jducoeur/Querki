@@ -56,6 +56,14 @@ case class SpaceState(
     cache:Map[StateCacheKey, Any] = Map.empty) 
   extends Thing(s, s, m, Kind.Space, pf, mt)(e) with EcologyMemberBase[SpaceState, EcotImpl]
 {
+  lazy val Profiler = interface[querki.tools.Profiler]
+  
+  /**
+   * Profiler Handle for use with the various Space Models. Other models are explicitly permitted to
+   * use this Handle on an ad-hoc basis.
+   */
+  lazy val profilerHandle = Profiler.createHandle("SpaceState")
+  
   override def toString = s"SpaceState '${toThingId}' (${id.toThingId})"
   
   // *******************************************
@@ -130,16 +138,32 @@ case class SpaceState(
             app.flatMap(_.anythingByDisplayName(rawName))))))
   }
   
-  // TBD: changed this to look up the app stack. That's clearly right sometimes, like in QL.
-  // Is it always right?
+  /**
+   * We maintain an internal lazy map of all the Thing in this Space, by their Canonical name.
+   * This is specifically to make name lookups decently efficient, since we do that a *lot* when
+   * processing QL.
+   * 
+   * Note that, since this is lazy, it will get regenerated every time we version the Space. A
+   * tad expensive, but a hell of a lot cheaper than doing a longhand search by name every time.
+   */ 
+  private lazy val byCanonicalName:Map[String,Thing] = {
+    def addTable[T <: Thing](things:Map[OID, T]):Map[String,T] = {
+      val pairs = things.values.map { thing =>
+        thing.canonicalName.map((NameUtils.canonicalize(_) -> thing))
+      }.flatten.toSeq
+      Map(pairs:_*)
+    }
+    
+    addTable(things) ++
+    addTable(spaceProps) ++
+    addTable(types) ++
+    addTable(colls) +
+    (NameUtils.canonicalize(canonicalName.get) -> this)
+  }
+  
   def anythingByName(rawName:String):Option[Thing] = {
-    val name = NameUtils.toInternal(rawName)
-    thingWithName(name, things).orElse(
-      thingWithName(name, spaceProps).orElse(
-        thingWithName(name, types).orElse(
-          thingWithName(name, colls).orElse(
-            spaceByName(name).orElse(
-              app.flatMap(_.anythingByName(rawName))))))).orElse(anythingByDisplayName(rawName))
+    val name = NameUtils.canonicalize(rawName)
+    byCanonicalName.get(name).orElse(app.flatMap(_.anythingByName(rawName))).orElse(anythingByDisplayName(rawName))
   }
   
   def anything(thingId:ThingId):Option[Thing] = {
