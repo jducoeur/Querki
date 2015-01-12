@@ -102,7 +102,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
               if (thing.isTag || thing.kind == Kind.Property) {
 			    iconButton("edit")(
 			      title:=s"Edit $thingName",
-			      href:=Editing.modelDesignerFactory.pageUrl(thing))
+			      href:=Editing.advancedEditorFactory.pageUrl(thing))
               } else {
                 topEditButton
               }
