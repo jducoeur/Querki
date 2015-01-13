@@ -65,7 +65,7 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
       
   // TODO: add the CanDesignModel permission. Editors should have this; Contributors should not.
   // TODO: once we have Moderation, add the CanModerate permission here. 
-  lazy val editorPerms = Seq() ++ contributorPerms
+  lazy val editorPerms = Seq(AccessControl.CanEditProp) ++ contributorPerms
   lazy val EditorRole =
     defineRole(EditorOID, "Editor Role",
       """Editor / Designer -- can do everything a Contributor can, plus design Models and moderate contributions from non-Members
