@@ -1,15 +1,20 @@
 package querki.text
 
+import querki.globals._
+
 import querki.ecology._
 
 import models.Wikitext
 
-import querki.ql.QLPhrase
+import querki.core.QLText
+import querki.ql.{QLCall, QLPhrase}
 import querki.values.{QLContext}
 
 object MOIDs extends EcotIds(23) {
   val PluralizeOID = sysId(54)
   val JoinMethodOID = sysId(65)
+  
+  val MatchCaseOID = moid(1)
 }
 
 class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
@@ -119,9 +124,71 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	    QL.WikitextValue(result)
 	  }
 	}
-
+	
+  lazy val MatchCaseMethod = new InternalMethod(MatchCaseOID,
+	    toProps(
+	      setName("_matchCase"),
+	      SkillLevel(SkillLevelAdvanced),
+	      Summary("Tweaks the case of the received Text to match that of the Function this is defined in."),
+	      Details("""    SOMETHING -> \""TEXT\"" -> _matchCase
+	          |
+	          |This is a very specialized function, designed for cases where you want to define a Text or Function
+	          |that results in some Text, but you want the *case* of that Text (upper or lower) to match the way
+	          |the Function was *invoked*.
+	          |
+	          |So for example, if you have a Function named Sie (one of the common choices for a gender-neutral
+	          |pronoun), which produces "he" if the received value is male or "she" if it's female, you would
+	          |use _matchCase so that, when I invoke it as \[[James -> sie\]] I get "he", but when I invoke it
+	          |as \[[Mary -> Sie\]], I get "She".
+	          |
+	          |This will probably get moved to a text-manipulation Mixin at some time down the road.""".stripMargin)))
+  {
+	override def qlApply(inv:Invocation):QValue = {
+	  for {
+	    lexicalProp <- inv.opt(inv.context.parser.flatMap(_.lexicalProp))
+	    call <- inv.opt(findCall(inv, lexicalProp))
+	    text <- inv.contextAllAs(QL.ParsedTextType)
+	    adjusted = adjustCase(text, call)
+	  }
+	    yield ExactlyOne(QL.ParsedTextType(Wikitext(adjusted)))
+	}
+	
+	private def findCall(inv:Invocation, thing:Thing):Option[QLCall] = {
+	  def findRec(context:QLContext):Option[QLCall] = {
+	    val result = for {
+	      // fromTransformOpt indicates the actual Thing being called inside each QLCall:
+	      transformer <- context.fromTransformOpt
+	      if (transformer.id == thing.id)
+	      call <- context.withCallOpt
+	    }
+	      yield call
+	      
+	    result.orElse(context.parentOpt.flatMap(findRec(_)))
+	  }
+	  
+	  findRec(inv.context)
+	}
+	
+	private def adjustCase(text:Wikitext, call:QLCall):String = {
+	  val charToMatch = call.name.name(0)
+	  val actualText = text.plaintext
+	  val charToAdjust = actualText(0)
+	  val adjusted = 
+	    if (charToMatch.isUpper)
+	      charToAdjust.toUpper
+	    else if (charToMatch.isLower)
+	      charToAdjust.toLower
+	    else
+	      // Odd...
+	      charToAdjust
+	  
+	  adjusted + actualText.substring(1)
+	}
+  }
+  
   override lazy val props = Seq(
     PluralizeMethod,
-    JoinMethod
+    JoinMethod,
+    MatchCaseMethod
   )
 }

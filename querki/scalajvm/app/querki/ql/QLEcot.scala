@@ -3,6 +3,8 @@ package querki.ql
 // TODO: this is an abstraction break!!! It should be replaced by use of Scala's XHtml instead.
 import play.twirl.api.Html
 
+import querki.globals._
+
 import querki.ecology._
 
 import models.{PropertyBundle, PType, PTypeBuilder, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
@@ -90,13 +92,17 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
     }
   }
   
-  def process(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = {
-    val parser = parserCreateProfiler.profile { new QLParser(input, ci, invOpt, lexicalThing) }
+  def process(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 
+      lexicalThing:Option[PropertyBundle] = None, lexicalProp:Option[AnyProp] = None):Wikitext = 
+  {
+    val parser = parserCreateProfiler.profile { new QLParser(input, ci, invOpt, lexicalThing, lexicalProp) }
     parserProcessProfiler.profile { parser.process }
   }
   
-  def processMethod(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, lexicalThing:Option[PropertyBundle] = None):QValue = {
-    val parser = parserCreateProfiler.profile { new QLParser(input, ci, invOpt, lexicalThing) }
+  def processMethod(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 
+      lexicalThing:Option[PropertyBundle] = None, lexicalProp:Option[AnyProp] = None):QValue = 
+  {
+    val parser = parserCreateProfiler.profile { new QLParser(input, ci, invOpt, lexicalThing, lexicalProp) }
     parserProcessMethodProfiler.profile { parser.processMethod.value }
   }
   
