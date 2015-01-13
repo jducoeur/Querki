@@ -81,7 +81,7 @@ trait TextTypeBasis { self:CoreEcot =>
         qlText <- inv.iter(pv.v.rawList(this))
       }
         // ... and process that element through QL.
-        yield Core.ExactlyOne(QL.ParsedTextType(QL.process(qlText, elemContext, Some(inv), Some(bundle))))
+        yield Core.ExactlyOne(QL.ParsedTextType(QL.process(qlText, elemContext, Some(inv), Some(bundle), Some(prop))))
         
       Some(result)
     }

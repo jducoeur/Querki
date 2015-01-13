@@ -33,7 +33,10 @@ private [ql] class QLProfilers(implicit val ecology:Ecology) extends EcologyMemb
   lazy val wikify = Profiler.createHandle("QLParser.wikify")
 }
 
-class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, val lexicalThing:Option[PropertyBundle] = None) extends RegexParsers with EcologyMember {
+class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 
+  val lexicalThing:Option[PropertyBundle] = None, val lexicalProp:Option[AnyProp] = None) 
+  extends RegexParsers with EcologyMember 
+{
   
   // Add the parser to the context, so that methods can call back into it. Note that we are treating this as essentially
   // a modification, rather than another level of depth:
@@ -151,18 +154,19 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
         // If there are parameters to the call, they are a collection of phrases.
         val params = call.params
         val methodOpt = call.methodName.flatMap(context.state.anythingByName(_))
+        val contextWithCall = context.withCall(call, t)
         try {
           methodOpt match {
             case Some(method) => {
               val definingContext = context.next(Core.ExactlyOne(Core.LinkType(t.id)))
               qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
                 val partialFunction = method.partiallyApply(definingContext)
-                (partialFunction.qlApply(InvocationImpl(t, context, Some(definingContext), params)), method)
+                (partialFunction.qlApply(InvocationImpl(t, contextWithCall, Some(definingContext), params)), method)
               }
             }
             case None => {
               qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
-                val inv = InvocationImpl(t, context, None, params)
+                val inv = InvocationImpl(t, contextWithCall, None, params)
                 (t.qlApply(inv), t)
               }
             }
@@ -185,7 +189,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
           
           tOpt.map { t =>
             val res = processThing(t)
-            context.nextFrom(res._1, res._2, call) 
+            context.nextFrom(res._1, res._2) 
           }.getOrElse(resolvedBinding)
         }
         case _ => {
@@ -193,7 +197,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
         
           tOpt.map { t =>
             val res = processThing(t)
-            context.nextFrom(res._1, res._2, call) 
+            context.nextFrom(res._1, res._2) 
           }.getOrElse(context.next(Core.ExactlyOne(QL.UnknownNameType(call.name.name))))
         }
       }

@@ -10,7 +10,8 @@ import querki.util.DebugRenderable
 
 case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:Option[QLContext] = None, 
                      parser:Option[QLParser] = None, depth:Int = 0, useCollStack:Int = 0, propOpt:Option[Property[_,_]] = None,
-                     currentValue:Option[DisplayPropVal] = None, fromTransformOpt:Option[Thing] = None, fromCallOpt:Option[QLCall] = None) 
+                     currentValue:Option[DisplayPropVal] = None, 
+                     fromTransformOpt:Option[Thing] = None, withCallOpt:Option[QLCall] = None) 
   extends DebugRenderable with EcologyMember
 {
   lazy val Core = interface[querki.core.Core]
@@ -161,8 +162,16 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
   /**
    * Variant that indicates which "transformation" (Property or Function) caused this value to be calculated.
    */
-  def nextFrom(v:QValue, transform:Thing, call:QLCall) = 
-    copy(value = v, parentOpt = Some(this), depth = depth + 1, fromTransformOpt = Some(transform), fromCallOpt = Some(call))  
+  def nextFrom(v:QValue, transform:Thing) = 
+    copy(value = v, parentOpt = Some(this), depth = depth + 1, fromTransformOpt = Some(transform))  
+    
+  /**
+   * Variant that notes which Call we are currently processing.
+   * 
+   * TBD: we're making fromTransformOpt indicate subtly different things depending on whether we're in
+   * nextFrom or withCall. That's convenient, but suspicious.
+   */
+  def withCall(call:QLCall, transform:Thing) = copy(depth = depth + 1, withCallOpt = Some(call), fromTransformOpt = Some(transform))
 
   /**
    * asCollection means "right now, evaluate the very next operation as a collection."

@@ -38,6 +38,7 @@ class ProfilerEcot(e:Ecology) extends QuerkiEcot(e) with Profiler {
   private [tools] def recordRun(instance:ProfileInstanceImpl):Unit = {
     val name = instance.name
     val time = new Duration(instance.startTime, DateTime.now)
+    // TODO: this should be replaced with profiles.getOrElseUpdate --
     profiles.get(name) match {
       case Some(record) => {
         profiles += (name -> record.copy(runs = record.runs + 1, time = record.time + time))

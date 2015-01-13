@@ -128,6 +128,7 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   lazy val MatchCaseMethod = new InternalMethod(MatchCaseOID,
 	    toProps(
 	      setName("_matchCase"),
+	      SkillLevel(SkillLevelAdvanced),
 	      Summary("Tweaks the case of the received Text to match that of the Function this is defined in."),
 	      Details("""    SOMETHING -> \""TEXT\"" -> _matchCase
 	          |
@@ -138,25 +139,27 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	          |So for example, if you have a Function named Sie (one of the common choices for a gender-neutral
 	          |pronoun), which produces "he" if the received value is male or "she" if it's female, you would
 	          |use _matchCase so that, when I invoke it as \[[James -> sie\]] I get "he", but when I invoke it
-	          |as \[[Mary -> Sie\]], I get "She".""".stripMargin)))
+	          |as \[[Mary -> Sie\]], I get "She".
+	          |
+	          |This will probably get moved to a text-manipulation Mixin at some time down the road.""".stripMargin)))
   {
 	override def qlApply(inv:Invocation):QValue = {
 	  for {
-	    definingBundle <- spewing("Lexical Thing") { inv.opt(inv.lexicalThing) }
-	    thing <- spewing("As Thing") { inv.opt(definingBundle.asThing) }
-	    call <- spewing("Call") { inv.opt(findCall(inv, thing)) }
-	    text <- spewing("Text") { inv.contextAllAs(Core.TextType) }
-	    adjusted = spewing("Adjusted") { adjustCase(text, call) }
+	    lexicalProp <- inv.opt(inv.context.parser.flatMap(_.lexicalProp))
+	    call <- inv.opt(findCall(inv, lexicalProp))
+	    text <- inv.contextAllAs(QL.ParsedTextType)
+	    adjusted = adjustCase(text, call)
 	  }
-	    yield ExactlyOne(Core.TextType(adjusted))
+	    yield ExactlyOne(QL.ParsedTextType(Wikitext(adjusted)))
 	}
 	
 	private def findCall(inv:Invocation, thing:Thing):Option[QLCall] = {
 	  def findRec(context:QLContext):Option[QLCall] = {
 	    val result = for {
+	      // fromTransformOpt indicates the actual Thing being called inside each QLCall:
 	      transformer <- context.fromTransformOpt
 	      if (transformer.id == thing.id)
-	      call <- context.fromCallOpt
+	      call <- context.withCallOpt
 	    }
 	      yield call
 	      
@@ -166,9 +169,9 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	  findRec(inv.context)
 	}
 	
-	private def adjustCase(text:QLText, call:QLCall):String = {
+	private def adjustCase(text:Wikitext, call:QLCall):String = {
 	  val charToMatch = call.name.name(0)
-	  val actualText = text.text
+	  val actualText = text.plaintext
 	  val charToAdjust = actualText(0)
 	  val adjusted = 
 	    if (charToMatch.isUpper)
