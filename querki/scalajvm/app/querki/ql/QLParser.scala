@@ -185,7 +185,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
           
           tOpt.map { t =>
             val res = processThing(t)
-            context.nextFrom(res._1, res._2 ) 
+            context.nextFrom(res._1, res._2, call) 
           }.getOrElse(resolvedBinding)
         }
         case _ => {
@@ -193,7 +193,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
         
           tOpt.map { t =>
             val res = processThing(t)
-            context.nextFrom(res._1, res._2 ) 
+            context.nextFrom(res._1, res._2, call) 
           }.getOrElse(context.next(Core.ExactlyOne(QL.UnknownNameType(call.name.name))))
         }
       }

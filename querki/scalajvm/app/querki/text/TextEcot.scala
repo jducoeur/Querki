@@ -1,15 +1,20 @@
 package querki.text
 
+import querki.globals._
+
 import querki.ecology._
 
 import models.Wikitext
 
-import querki.ql.QLPhrase
+import querki.core.QLText
+import querki.ql.{QLCall, QLPhrase}
 import querki.values.{QLContext}
 
 object MOIDs extends EcotIds(23) {
   val PluralizeOID = sysId(54)
   val JoinMethodOID = sysId(65)
+  
+  val MatchCaseOID = moid(1)
 }
 
 class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
@@ -119,9 +124,68 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	    QL.WikitextValue(result)
 	  }
 	}
-
+	
+  lazy val MatchCaseMethod = new InternalMethod(MatchCaseOID,
+	    toProps(
+	      setName("_matchCase"),
+	      Summary("Tweaks the case of the received Text to match that of the Function this is defined in."),
+	      Details("""    SOMETHING -> \""TEXT\"" -> _matchCase
+	          |
+	          |This is a very specialized function, designed for cases where you want to define a Text or Function
+	          |that results in some Text, but you want the *case* of that Text (upper or lower) to match the way
+	          |the Function was *invoked*.
+	          |
+	          |So for example, if you have a Function named Sie (one of the common choices for a gender-neutral
+	          |pronoun), which produces "he" if the received value is male or "she" if it's female, you would
+	          |use _matchCase so that, when I invoke it as \[[James -> sie\]] I get "he", but when I invoke it
+	          |as \[[Mary -> Sie\]], I get "She".""".stripMargin)))
+  {
+	override def qlApply(inv:Invocation):QValue = {
+	  for {
+	    definingBundle <- spewing("Lexical Thing") { inv.opt(inv.lexicalThing) }
+	    thing <- spewing("As Thing") { inv.opt(definingBundle.asThing) }
+	    call <- spewing("Call") { inv.opt(findCall(inv, thing)) }
+	    text <- spewing("Text") { inv.contextAllAs(Core.TextType) }
+	    adjusted = spewing("Adjusted") { adjustCase(text, call) }
+	  }
+	    yield ExactlyOne(Core.TextType(adjusted))
+	}
+	
+	private def findCall(inv:Invocation, thing:Thing):Option[QLCall] = {
+	  def findRec(context:QLContext):Option[QLCall] = {
+	    val result = for {
+	      transformer <- context.fromTransformOpt
+	      if (transformer.id == thing.id)
+	      call <- context.fromCallOpt
+	    }
+	      yield call
+	      
+	    result.orElse(context.parentOpt.flatMap(findRec(_)))
+	  }
+	  
+	  findRec(inv.context)
+	}
+	
+	private def adjustCase(text:QLText, call:QLCall):String = {
+	  val charToMatch = call.name.name(0)
+	  val actualText = text.text
+	  val charToAdjust = actualText(0)
+	  val adjusted = 
+	    if (charToMatch.isUpper)
+	      charToAdjust.toUpper
+	    else if (charToMatch.isLower)
+	      charToAdjust.toLower
+	    else
+	      // Odd...
+	      charToAdjust
+	  
+	  adjusted + actualText.substring(1)
+	}
+  }
+  
   override lazy val props = Seq(
     PluralizeMethod,
-    JoinMethod
+    JoinMethod,
+    MatchCaseMethod
   )
 }
