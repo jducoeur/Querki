@@ -10,6 +10,14 @@ object QLog {
   
   lazy val inPlay:Boolean = Play.maybeApplication.isDefined 
   
+  def stackTrace(message: => String) = {
+    try {
+      throw new Exception("Debugging Stack Trace requested")
+    } catch {
+      case ex:Exception => error(message, ex)
+    }
+  }
+  
   def error(message: => String, error: => Throwable) = {
     if (inPlay)
       Logger.error(message, error)
