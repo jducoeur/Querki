@@ -78,9 +78,16 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
     }
   }
   
+  def alwaysLinks:Seq[Navigable] = {
+    Seq(
+      NavLink("Refresh", onClick = Some({ () => PageManager.reload() }))
+    )
+  }
+  
   def spaceLinks:Option[Seq[Navigable]] = {
     spaceOpt.map { space =>
       Seq(
+        NavDivider,
         NavLink("Design a Model", onClick = Some({ () => DataModel.designAModel() })),
         // TODO: this one currently hooks into Javascript. They should instead be direct callbacks to Scala:
         NavLink("Create any Thing", PageManager.pageUrl("_create"), Some("createThing")),
@@ -115,13 +122,14 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   }
   
   def actionSection = {
-    val allLinks = spaceLinks.map { sl =>
+    val allSpaceLinks = spaceLinks.map { sl =>
       thingLinks match {
         case Some(tl) => sl ++ tl
         case None => sl
       }
     }
-    allLinks.map(NavSection("Actions", _))
+    val allLinks = alwaysLinks ++ allSpaceLinks.getOrElse(Seq.empty)
+    Some(NavSection("Actions", allLinks))
   }
   
   def loginSection = {
