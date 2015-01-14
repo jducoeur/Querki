@@ -11,7 +11,7 @@ import models.{AsOID, OID, ThingId, UnknownOID}
 import querki.conversations.messages.ConversationMessage
 import querki.identity.User
 import querki.session.messages.SessionMessage
-import querki.values.SpaceState
+import querki.values.{RequestContext, SpaceState}
 import querki.util.PublicException
 
 sealed trait SpaceMgrMsg
@@ -93,6 +93,11 @@ import SpaceError._
 // General message published from a Space to its subscribers. Possibly still a bit half-baked, but is likely to become
 // important.
 case class CurrentState(state:SpaceState)
+
+case class JoinRequest(req:User, own:OID, space:ThingId, rc:RequestContext) extends SpaceMessage(req, own, space)
+sealed trait JoinResult
+case object Joined extends JoinResult
+case class JoinFailed(ex:PublicException) extends JoinResult
 
 // This is the most common response when you create/fetch any sort of Thing
 sealed trait SpaceResponse

@@ -15,7 +15,7 @@ import models._
 import querki.ecology._
 import querki.email.EmailAddress
 import querki.identity._
-import querki.spaces.messages.{ThingError, ThingFound}
+import querki.spaces.messages._
 import querki.time.DateTime
 import querki.util._
 import querki.values.QLRequestContext
@@ -185,6 +185,7 @@ class LoginController extends ApplicationBase {
     )
   }
     
+  // Is there any reason this actually needs withSpace, other than proving the Space exists?
   def signup(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId, allowAnyone = true) { implicit rc =>
     implicit val request = rc.request
     val rawForm = signupForm.bindFromRequest
@@ -218,14 +219,10 @@ class LoginController extends ApplicationBase {
     )
   }
   
-  def joinSpace(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId, allowAnyone = true) { implicit rc =>
-    val joinOpt = Person.acceptInvitation(rc) {
-      case ThingFound(id, state) => Redirect(routes.Application.thing(ownerId, spaceId, spaceId))
-      case ThingError(error, stateOpt) => doError(routes.Application.index, error)
-    }
-    joinOpt match {
-      case Some(f) => f
-      case None => doError(routes.Application.index, "Something went wrong during joining -- sorry!")
+  def joinSpace(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { rc =>
+    askSpace(JoinRequest(rc.requesterOrAnon, rc.ownerId, ThingId(rc.spaceIdOpt.get), rc)) {
+      case Joined => Redirect(routes.Application.thing(ownerId, spaceId, spaceId))
+      case JoinFailed(error) => doError(routes.Application.index, error)(rc)
     }
   }
 

@@ -37,6 +37,7 @@ private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpaceP
   var conversations:ActorRef = null
   var space:ActorRef = null
   var sessions:ActorRef = null
+  var members:ActorRef = null
   
   var state:SpaceState = null
 
@@ -44,6 +45,7 @@ private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpaceP
     space = context.actorOf(Space.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
     sessions = context.actorOf(UserSpaceSessions.actorProps(ecology, spaceId, self), "Sessions")
     conversations = context.actorOf(Conversations.conversationActorProps(persistenceFactory, spaceId, self), "Conversations") 
+    members = context.actorOf(SpaceMembersActor.actorProps(ecology, spaceId, self), "Members")
     super.preStart()
   }
   
@@ -56,6 +58,7 @@ private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpaceP
       state = curState
       conversations.forward(msg)
       sessions.forward(msg)
+      members.forward(msg)
     }
     
     /**
@@ -81,6 +84,9 @@ private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpaceP
     
     // HACK: messages heading for the User Value Persister:
     case msg:UserValuePersistRequest => sessions.forward(msg)
+    
+    // Messages for the SpaceMembersActor:
+    case msg:JoinRequest => members.forward(msg)
     
     // Message for the Space:
     case msg:CreateSpace => space.forward(msg)

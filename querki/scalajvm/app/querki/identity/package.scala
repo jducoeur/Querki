@@ -82,7 +82,7 @@ package object identity {
     // TODO: this is a horrible abstraction break. Do we really need PlayRequestContext here? Odds are
     // that this method doesn't belong in Person at all, given that *all* of its parameters involve weird
     // imports:
-    def acceptInvitation[B](rc:controllers.PlayRequestContext)(cb:querki.spaces.messages.ThingResponse => Future[B]):Option[scala.concurrent.Future[B]]
+    def acceptInvitation[B](rc:RequestContext)(cb:querki.spaces.messages.ThingResponse => Future[B]):Option[scala.concurrent.Future[B]]
     
     def getPersonIdentity(person:Thing)(implicit state:SpaceState):Option[OID]
     def hasPerson(user:User, personId:OID)(implicit state:SpaceState):Boolean

@@ -176,6 +176,8 @@ class ApplicationBase extends Controller with EcologyMember {
    * 
    * TODO: this is fundamentally broken at the moment. withUser() is potentially long-running -- it can
    * involve DB lookups -- so we need to think about how to restructure things accordingly.
+   * 
+   * TODO: all uses of withSpace should be considered bad smells, and deprecated.
    */
 //  @deprecated("withSpace is fundamentally broken -- it requires fetching the SpaceState to the Play level. Gradually replace it.", "0.11.0")
   def withSpace[B](

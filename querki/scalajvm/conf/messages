@@ -25,6 +25,8 @@ Space.create.pendingUser=You are not allowed to create Spaces until you are upgr
 Space.createThing.nameExists=This Space already has a Thing with the name {0}
 Space.createThing.notAllowed=You are not allowed to create that
 
+Space.join.unknownError=Unknown error while trying to join space {0}
+
 Space.modifyThing.notAllowed=You are not allowed to modify that
 Space.modifyThing.propNotAllowed=You're not allowed to edit property {0}
 Space.modifyThing.illegalTypeChange=You are not currently allowed to change a Property from {0} to {1}
