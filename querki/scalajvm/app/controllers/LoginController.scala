@@ -84,15 +84,11 @@ class LoginController extends ApplicationBase {
     }
   }
   
-  lazy val maxMembers = Config.getInt("querki.public.maxMembersPerSpace", 100)
-  
-  def inviteMembers(ownerId:String, spaceId:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
+  def inviteMembers(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { implicit rc =>
     implicit val request = rc.request
     val rawForm = inviteForm.bindFromRequest
     rawForm.fold(
       errorForm => {
-        // NOTE: the theoretically-correct error message would be retrived this way, but it's unhelpful:
-        //Logger.info("----> errors: " + errorForm.errors.map(error => play.api.i18n.Messages(error.message, error.args: _*)));
         // TODO: internationalize this message:
         val errorMsg = "Not a valid email address: " + errorForm.errors.flatMap(error => errorForm(error.key).value).mkString(", ")
         // TODO: this ought to reuse errorForm, to leave the invitees filled-in, but I'm not yet clear on how to do that:
@@ -101,33 +97,10 @@ class LoginController extends ApplicationBase {
       inviteeForm => {
         val emailStrs = inviteeForm.emails
         val collabs = inviteeForm.collabs.map(OID(_))
-        val nCurrentMembers = Person.people(rc.state.get).size
-        // TODO: internationalize these messages!
-        val resultFut =
-	        if (!rc.requesterOrAnon.isAdmin && (nCurrentMembers + emailStrs.size + collabs.size) > maxMembers) {
-	          Future.successful(s"Sorry: at the moment you are limited to $maxMembers members per Space, and this would make more than that.")
-	        } else {
-	          val context = QLRequestContext(rc)
-	        
-	          val inviteeEmails = emailStrs.map(querki.email.EmailAddress(_))
-	          Person.inviteMembers(rc, inviteeEmails, collabs).map { result =>
-	            val resultStr = 
-		          (
-		            if (result.invited.length > 0)
-		               result.invited.mkString("Sent invitations to ", ", ", ". ")
-		            else
-		              ""
-		          ) + (
-		            if (result.alreadyInvited.length > 0)
-		               result.alreadyInvited.mkString("Resent to ", ", ", ".") 
-		            else
-		              ""
-		          )
-		        resultStr
-	          }
-	        }
-        
-        resultFut.map(msg => Redirect(routes.Application.sharing(ownerId, spaceId)).flashing("info" -> msg))
+        val inviteeEmails = emailStrs.map(querki.email.EmailAddress(_))
+        askSpace(InviteRequest(rc.requesterOrAnon, rc.ownerId, ThingId(rc.spaceIdOpt.get), rc, inviteeEmails, collabs)) {
+          case InviteResult(msg) => Redirect(routes.Application.sharing(ownerId, spaceId)).flashing("info" -> msg)
+        }
       }
     )
   }

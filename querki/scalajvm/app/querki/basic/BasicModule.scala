@@ -240,6 +240,13 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
         (SystemOnlyPropOID -> ExactlyOne(YesNoType(true))),
         AppliesToKindProp(Kind.Property),
         Summary("A sort of weak version of InternalProp -- this is a Property that users can not add to Things, but you can read and use it.")))
+  
+  lazy val SystemHiddenProp = new SystemProperty(SystemHiddenPropOID, YesNoType, ExactlyOne,
+      toProps(
+        setName("System Hidden Property"),
+        (SystemOnlyPropOID -> ExactlyOne(YesNoType(true))),
+        AppliesToKindProp(Kind.Property),
+        Summary("An extreme version of InternalProp -- this is a Property that is not even visible in user space.")))
 
   override lazy val props = Seq(
     ApplyMethod,
@@ -248,7 +255,8 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
     DeprecatedProp,
     ExplicitProp,
     SystemOnlyProp,
-    ModelViewProp
+    ModelViewProp,
+    SystemHiddenProp
   )
   
   /***********************************************

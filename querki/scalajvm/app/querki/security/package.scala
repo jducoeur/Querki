@@ -9,6 +9,7 @@ import querki.values.SpaceState
 package object security {
 
   trait AccessControl extends EcologyInterface {
+    def PersonModel:Thing
     def PublicTag:Thing
     def MembersTag:Thing
     def OwnerTag:Thing

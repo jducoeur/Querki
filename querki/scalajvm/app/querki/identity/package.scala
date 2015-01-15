@@ -71,9 +71,6 @@ package object identity {
   val personParam = "person"
   
   trait Person extends EcologyInterface {
-    def SecurityPrincipal:Thing
-    def PersonModel:Thing
-    
     def IdentityLink:Property[OID,OID]
     def InviteText:Property[QLText, String]    
    

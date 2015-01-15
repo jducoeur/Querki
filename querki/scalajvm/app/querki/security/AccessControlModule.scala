@@ -33,6 +33,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   import MOIDs._
 
   val Basic = initRequires[querki.basic.Basic]
+  val Email = initRequires[querki.email.Email]
   val Links = initRequires[querki.links.Links]
   val Person = initRequires[querki.identity.Person]
   val Profiler = initRequires[querki.tools.Profiler]
@@ -40,7 +41,6 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   lazy val QLType = Basic.QLType
   
   lazy val LinkModelProp = Links.LinkModelProp
-  lazy val abstractPerson = Person.SecurityPrincipal
   
   lazy val hasPermissionProfile = Profiler.createHandle("AccessControl.hasPermission")
   
@@ -269,28 +269,44 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
    * THINGS
    ***********************************************/
   
-  lazy val PublicTag = ThingState(PublicTagOID, systemOID, abstractPerson,
+  // SecurityPrincipal and PersonModel used to live in PersonModule. They were moved in order to avoid
+  // order-of-initialization conflicts.
+  
+  lazy val SecurityPrincipal = ThingState(querki.identity.MOIDs.SecurityPrincipalOID, systemOID, querki.basic.MOIDs.SimpleThingOID,
+      toProps(
+        setName("Security Principal"),
+        Summary("""For internal use -- this the concept of a Thing that can be given permissions.""")))
+  
+  lazy val PersonModel = ThingState(querki.identity.MOIDs.PersonOID, systemOID, querki.identity.MOIDs.SecurityPrincipalOID,
+      toProps(
+        setName("Person"),
+        Core.InternalProp(true),
+        Core.IsModelProp(true),
+        Email.EmailAddressProp(Core.QNone),
+        Summary("""This represents a Member of this Space.""")))
+  
+  lazy val PublicTag = ThingState(PublicTagOID, systemOID, SecurityPrincipal,
       toProps(
         setName("Public"),
         Summary("""
 Use this Tag in Can Read if you want your Space or Thing to be readable by everybody.
 """)))
     
-  lazy val MembersTag = ThingState(MembersTagOID, systemOID, abstractPerson,
+  lazy val MembersTag = ThingState(MembersTagOID, systemOID, SecurityPrincipal,
       toProps(
         setName("Members"),
         Summary("""
 Use this Tag in Can Read if you want your Space or Thing to be readable by members of the Space.
 """)))
     
-  lazy val OwnerTag = ThingState(OwnerTagOID, systemOID, abstractPerson,
+  lazy val OwnerTag = ThingState(OwnerTagOID, systemOID, SecurityPrincipal,
       toProps(
         setName("Owner"),
         Summary("""
 Use this Tag in Can Read if you want your Space or Thing to be readable only by the owner and specific other people.
 """)))
 
-  lazy val RoleModel = ThingState(RoleModelOID, systemOID, abstractPerson,
+  lazy val RoleModel = ThingState(RoleModelOID, systemOID, SecurityPrincipal,
       toProps(
         setName("Role"),
         Core.IsModelProp(true),
@@ -305,6 +321,8 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
             |of this Model, add the desired permission Properties to it, and assign Members to the new Role.""".stripMargin)))
     
   override lazy val things = Seq(
+    SecurityPrincipal,
+    PersonModel,
     PublicTag,
     MembersTag,
     OwnerTag,
@@ -321,7 +339,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         setName(name),
         isPermissionProp(true),
         SkillLevel(SkillLevelAdvanced),
-        LinkModelProp(abstractPerson),
+        LinkModelProp(SecurityPrincipal),
         Summary(summary),
         DefaultPermissionProp(defaults:_*),
         PublicAllowedProp(publicAllowed)))
@@ -347,7 +365,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         setName("Who Can Edit"),
         isPermissionProp(true),
         SkillLevel(SkillLevelAdvanced),
-        LinkModelProp(abstractPerson),
+        LinkModelProp(SecurityPrincipal),
         Summary("Who else can edit Things in this Space"),
         Details("""Note that this Property is *not* inherited, unlike most. If you want to
             |say who can edit Things made from this Model, use [[Who Can Edit Children._self]] instead.""".stripMargin)))
@@ -357,7 +375,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         setName("Who Can Edit Children"),
         isPermissionProp(true),
         SkillLevel(SkillLevelAdvanced),
-        LinkModelProp(abstractPerson),
+        LinkModelProp(SecurityPrincipal),
         Summary("Who else can edit children of this Thing"),
         Details("""This Property is useful on Models and Spaces, and works as follows.
             |

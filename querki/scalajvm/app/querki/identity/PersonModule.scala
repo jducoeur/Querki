@@ -238,28 +238,6 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     meMethod,
     PersonIdentityFunction
   )
-  
-  /***********************************************
-   * THINGS
-   ***********************************************/
-  
-  lazy val SecurityPrincipal = ThingState(SecurityPrincipalOID, systemOID, querki.basic.MOIDs.SimpleThingOID,
-      toProps(
-        setName("Security Principal"),
-        Summary("""For internal use -- this the concept of a Thing that can be given permissions.""")))
-  
-  lazy val PersonModel = ThingState(PersonOID, systemOID, SecurityPrincipalOID,
-      toProps(
-        setName("Person"),
-        Core.InternalProp(true),
-        Core.IsModelProp(true),
-        EmailAddressProp(Core.QNone),
-        Summary("""This represents a Member of this Space.""")))
-    
-  override lazy val things = Seq(
-    SecurityPrincipal,
-    PersonModel
-  )
 
   /*************************************************************
    * INVITATION MANAGEMENT
