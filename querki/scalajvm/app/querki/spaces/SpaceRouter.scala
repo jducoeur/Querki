@@ -86,8 +86,7 @@ private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpaceP
     case msg:UserValuePersistRequest => sessions.forward(msg)
     
     // Messages for the SpaceMembersActor:
-    case msg:JoinRequest => members.forward(msg)
-    case msg:InviteRequest => members.forward(msg)
+    case msg:SpaceMembersMessage => members.forward(msg)
     
     // Message for the Space:
     case msg:CreateSpace => space.forward(msg)

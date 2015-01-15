@@ -98,7 +98,7 @@ class LoginController extends ApplicationBase {
         val emailStrs = inviteeForm.emails
         val collabs = inviteeForm.collabs.map(OID(_))
         val inviteeEmails = emailStrs.map(querki.email.EmailAddress(_))
-        askSpace(InviteRequest(rc.requesterOrAnon, rc.ownerId, ThingId(rc.spaceIdOpt.get), rc, inviteeEmails, collabs)) {
+        askSpace(SpaceMembersMessage(rc.requesterOrAnon, rc.ownerId, ThingId(rc.spaceIdOpt.get), InviteRequest(rc, inviteeEmails, collabs))) {
           case InviteResult(msg) => Redirect(routes.Application.sharing(ownerId, spaceId)).flashing("info" -> msg)
         }
       }
@@ -193,7 +193,7 @@ class LoginController extends ApplicationBase {
   }
   
   def joinSpace(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { rc =>
-    askSpace(JoinRequest(rc.requesterOrAnon, rc.ownerId, ThingId(rc.spaceIdOpt.get), rc)) {
+    askSpace(SpaceMembersMessage(rc.requesterOrAnon, rc.ownerId, ThingId(rc.spaceIdOpt.get), JoinRequest(rc))) {
       case Joined => Redirect(routes.Application.thing(ownerId, spaceId, spaceId))
       case JoinFailed(error) => doError(routes.Application.index, error)(rc)
     }

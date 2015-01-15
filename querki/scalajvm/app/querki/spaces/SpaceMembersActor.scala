@@ -34,45 +34,47 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
   def normalReceive(state:SpaceState):Receive = {
     case CurrentState(newState) => context.become(normalReceive(newState))
     
-    // Someone is attempting to join this Space:
-    case JoinRequest(_, _, _, rcRaw) => {
-      val rc = rcRaw + state
-      val result:Option[Future[JoinResult]] = Person.acceptInvitation(rc) {
-        case ThingFound(id, state) => Future.successful(Joined) 
-        case ThingError(error, stateOpt) => Future.successful(JoinFailed(error))
-        case _ => Future.successful(JoinFailed(new PublicException("Space.join.unknownError", state.displayName)))
-      }
-      result match {
-        case Some(fut) => pipe(fut) to sender
-        case None => sender ! JoinFailed(new PublicException("Space.join.unknownError", state.displayName))
-      }
-    }
-    
-    case InviteRequest(_, _, _, rcRaw, inviteeEmails, collabs) => {
-      val rc = rcRaw + state
-      val nCurrentMembers = Person.people(state).size
-      val resultFut = 
-	    if (!rc.requesterOrAnon.isAdmin && (nCurrentMembers + inviteeEmails.size + collabs.size) > maxMembers) {
-          Future.successful(s"Sorry: at the moment you are limited to $maxMembers members per Space, and this would make more than that.")
-        } else {
-          Person.inviteMembers(rc, inviteeEmails, collabs).map { result =>
-          val resultStr = 
-            (
-              if (result.invited.length > 0)
-                 result.invited.mkString("Sent invitations to ", ", ", ". ")
-              else
-                ""
-            ) + (
-              if (result.alreadyInvited.length > 0)
-                 result.alreadyInvited.mkString("Resent to ", ", ", ".") 
-              else
-                ""
-            )
-          resultStr
-        }
-      }
-      
-      pipe(resultFut.map(InviteResult(_))) to sender
+    case SpaceMembersMessage(_, _, _, msg) => msg match {
+	  // Someone is attempting to join this Space:
+	  case JoinRequest(rcRaw) => {
+	    val rc = rcRaw + state
+	    val result:Option[Future[JoinResult]] = Person.acceptInvitation(rc) {
+	      case ThingFound(id, state) => Future.successful(Joined) 
+	      case ThingError(error, stateOpt) => Future.successful(JoinFailed(error))
+	      case _ => Future.successful(JoinFailed(new PublicException("Space.join.unknownError", state.displayName)))
+	    }
+	    result match {
+	      case Some(fut) => pipe(fut) to sender
+	      case None => sender ! JoinFailed(new PublicException("Space.join.unknownError", state.displayName))
+	    }
+	  }
+	    
+	  case InviteRequest(rcRaw, inviteeEmails, collabs) => {
+	    val rc = rcRaw + state
+	    val nCurrentMembers = Person.people(state).size
+	    val resultFut = 
+	      if (!rc.requesterOrAnon.isAdmin && (nCurrentMembers + inviteeEmails.size + collabs.size) > maxMembers) {
+	        Future.successful(s"Sorry: at the moment you are limited to $maxMembers members per Space, and this would make more than that.")
+	      } else {
+	        Person.inviteMembers(rc, inviteeEmails, collabs).map { result =>
+	        val resultStr = 
+	          (
+	            if (result.invited.length > 0)
+	               result.invited.mkString("Sent invitations to ", ", ", ". ")
+	            else
+	               ""
+	          ) + (
+	            if (result.alreadyInvited.length > 0)
+	               result.alreadyInvited.mkString("Resent to ", ", ", ".") 
+	            else
+	               ""
+	            )
+	        resultStr
+	      }
+	    }
+	    
+	    pipe(resultFut.map(InviteResult(_))) to sender
+	  }      
     }
   }
 }

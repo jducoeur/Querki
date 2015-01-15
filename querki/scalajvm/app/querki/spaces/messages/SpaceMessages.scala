@@ -94,11 +94,14 @@ import SpaceError._
 // important.
 case class CurrentState(state:SpaceState)
 
-case class InviteRequest(req:User, own:OID, space:ThingId, rc:RequestContext, emails:Seq[querki.email.EmailAddress], collabs:Seq[OID]) 
-  extends SpaceMessage(req, own, space)
+case class SpaceMembersMessage(req:User, own:OID, space:ThingId, msg:SpaceMembersBase) extends SpaceMessage(req, own, space)
+sealed trait SpaceMembersBase
+
+case class InviteRequest(rc:RequestContext, emails:Seq[querki.email.EmailAddress], collabs:Seq[OID]) 
+  extends SpaceMembersBase
 case class InviteResult(msg:String)
 
-case class JoinRequest(req:User, own:OID, space:ThingId, rc:RequestContext) extends SpaceMessage(req, own, space)
+case class JoinRequest(rc:RequestContext) extends SpaceMembersBase
 sealed trait JoinResult
 case object Joined extends JoinResult
 case class JoinFailed(ex:PublicException) extends JoinResult
