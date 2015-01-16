@@ -41,6 +41,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Person = interface[querki.identity.Person]
+  lazy val System = interface[querki.system.System]
   lazy val UserValues = interface[querki.uservalues.UserValues]
   
   /**
@@ -52,6 +53,18 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
     clearEnhancedState()
     _rawState = Some(s)
   }
+  
+  /**
+   * These are the OIDs of Properties that are marked SystemHidden -- that is, the end user should *never*
+   * see them.
+   * 
+   * Note the implicit assumption that these are only defined in SystemState, and therefore this list is
+   * immutable.
+   */
+  lazy val hiddenOIDs = {
+    val hiddenProps = System.State.spaceProps.values.filter(_.ifSet(Basic.SystemHiddenProp)(System.State))
+    hiddenProps.map(_.id)
+  }
 
   var _enhancedState:Option[SpaceState] = None
   def clearEnhancedState() = _enhancedState = None
@@ -60,10 +73,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
       case Some(rs) => {
         val isOwner = user.hasIdentity(rs.owner)
         val safeState =
-          if (isOwner)
-            // The Owner of the Space is allowed to read everything, so don't waste time on it:
-            rs
-          else {
+    	  {
             // TODO: MAKE THIS MUCH FASTER! This is probably O(n**2), maybe worse. We need to do heavy
             // caching, and do much more sensitive updating as things change.
             (rs /: rs.things) { (curState, thingPair) =>
@@ -73,9 +83,14 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
               // have already exised a Model from curState (because we don't have permission) when we get
               // to an Instance of that Model. Things can then get horribly confused when we try to look
               // at the Instance, try to examine its Model, and *boom*.
-              if (AccessControl.canRead(rs, user, thingId))
-                curState
-              else
+              if (AccessControl.canRead(rs, user, thingId)) {
+                // Remove any SystemHidden Properties from this Thing, if there are any:
+                if (hiddenOIDs.exists(thing.props.contains(_))) {
+                  val newThing = thing.copy(pf = { () => (thing.props -- hiddenOIDs) })
+                  curState.copy(things = (curState.things + (newThing.id -> newThing)))
+                } else
+                  curState
+              } else
                 curState.copy(things = (curState.things - thingId))
             }
           }

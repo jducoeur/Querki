@@ -282,6 +282,14 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
         setName("Person"),
         Core.InternalProp(true),
         Core.IsModelProp(true),
+        // TODO: it is fundamentally suspicious that Email Address even exists on Person. It is convenient, and used in
+        // PersonModule, but is (a) an information leak waiting to happen and (b) duplicate data. We really should always
+        // be getting it from the Identity.
+        //
+        // The only real problem is that the Identity doesn't exist until the recipient *accepts* the invitation; that is
+        // why it lives on the Person initially. But that's arguably a bug: we really should create an Identity for an
+        // email address as soon as we first send an email to it, so that the owner of that email address can block all
+        // further communications. (Unfortunately, but it needs to be an option.)
         Email.EmailAddressProp(Core.QNone),
         Summary("""This represents a Member of this Space.""")))
   

@@ -79,22 +79,17 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   
   class EmailAddressType(tid:OID) extends SystemType[EmailAddress](tid,
       toProps(
-        setName("Email Address Type"),
+        setName("_Email Address Type"),
         Core.InternalProp(true),
         Summary("Represents an email address"),
         Details("""This Type represents an email address.
             |
-            |For the time being, Email Address Type is marked Internal, so you can't create an Email Address Property.
-            |This is because the entire email stack has been undergoing massive revisions since the initial Querki
-            |prototype, and is not available for routine end-user use yet. We do expect to add limited email capabilities
-            |back in, but they will fall under the more-general Notifications system when that happens. (That is, you
-            |won't be able to explicitly send an email from Querki, but you will be able to send Notifications to Members
-            |of this Space; how those Notifications are actually sent will be up to the recipients.)
+            |_Email Address Type is, quite intentionally, marked System Hidden. That is, values of
+            |_Email Address Type are scrubbed out before end users get to see them; this is
+            |important for privacy.
             |
-            |If you don't need to send emails, but have a particular use for Email Address as a data type, please ask:
-            |it would not be terribly difficult to add back. However, note that mass mailings are *not* an intended
-            |use for Querki, and using Querki for spam, abuse or anything that looks similar to them will be considered
-            |grounds for termination and deletion of your account. Don't do it.""".stripMargin)
+            |You should not try to use this type yourself. We might add a user-visible Email Address Type
+            |sometime later, but you should never use this internal one.""".stripMargin)
       )) with PTypeBuilder[EmailAddress,String]
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = EmailAddress(v)
@@ -129,17 +124,21 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   
   lazy val EmailAddressProp = new SystemProperty(EmailPropOID, EmailAddressType, Optional,
       toProps(
-        setName("Email Address"),
+        setName("_Email Address"),
         InternalProp(true),
+        Basic.SystemHiddenProp(true),
         DeprecatedProp(true),
         Summary("An email address for a Person"),
-        Details("""This Property represents the general notion of something that can have an email
-            |address. It is available on Person, but you can reuse it wherever you like. In theory, you can
-            |send email to anything that has an Email Address property.
+        Details("""This Property represents an email address.
             |
-            |Note, however, that this Property is one optional address. If you want to require
-            |that an address be given, or allow a list of them, you will need to create a
-            |separate Property with the Email Address type.""".stripMargin)))
+            |_Email Address is, quite intentionally, marked System Hidden. That is, values of
+            |_Email Address are scrubbed out before end users get to see them; this is
+            |important for privacy.
+            |
+            |You should not try to use this property yourself. We might add a user-visible Email Address Type
+            |sometime later, but you should never use this internal one.
+            |
+            |This Probably will probably be eliminated entirely in the medium term.""".stripMargin)))
   
   lazy val emailTo = new SystemProperty(EmailToOID, LinkType, QSet,
         toProps(

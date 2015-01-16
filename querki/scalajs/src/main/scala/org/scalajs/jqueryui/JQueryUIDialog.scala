@@ -171,6 +171,8 @@ class DialogOptionBuilder(val dict:OptMap) extends JSOptionBuilder[DialogOptions
    * The of property defaults to the window, but you can specify another element to position against. 
    * You can refer to the jQuery UI Position utility for more details about the available properties.
    * 
+   * TODO: this should take a proper strongly-typed structure!
+   * 
    * Default: { my: "center", at: "center", of: window }
    */
   def position(v:js.Object) = jsOpt("position", v)
