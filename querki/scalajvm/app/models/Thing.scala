@@ -144,21 +144,9 @@ abstract class Thing(
     }
   }
   def getModelOpt(implicit state:SpaceState):Option[Thing] = {
-    if (_modelPtr.isEmpty) {
-      _modelPtr = Some(if (hasModel) Some(getModel) else None)
-    }
-    _modelPtr.get
+    if (hasModel) Some(getModel) else None
   }
   def hasModel = (model != UnknownOID)
-  
-  /**
-   * EFFICIENCY HACK: getModelOpt is called a *lot* -- it is one of the most-called methods in the
-   * entire system. So this is basically a hardcoded memoization of its result. This is an ugly
-   * thing to do, but I *think* is technically correct: AFAIK, when you change a Thing (by copying
-   * one of the case classes derived from it), it shouldn't copy the value of this var, so it should
-   * be recalculated. (This is important in case this Thing's model changes.)
-   */
-  private var _modelPtr:Option[Option[Thing]] = None
   
   /**
    * The Property as defined on *this* specific Thing.
