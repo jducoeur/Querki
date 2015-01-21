@@ -3,7 +3,7 @@ package querki.editing
 import scala.scalajs.js
 import org.scalajs.dom
 import org.scalajs.jquery._
-import org.scalajs.jqueryui._
+import org.querki.facades.jqueryui._
 import scalatags.JsDom.all._
 import autowire._
 import rx._

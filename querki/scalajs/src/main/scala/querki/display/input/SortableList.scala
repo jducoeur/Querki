@@ -5,7 +5,7 @@ import org.scalajs.dom
 import org.scalajs.jquery._
 import scalatags.JsDom.all._
 
-import org.scalajs.jqueryui._
+import org.querki.facades.jqueryui._
 
 import querki.globals._
 

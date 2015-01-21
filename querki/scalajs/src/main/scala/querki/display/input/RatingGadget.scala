@@ -5,8 +5,7 @@ import js.UndefOr
 import org.scalajs.dom
 import org.scalajs.jquery._
 
-import org.scalajs.ext._
-import raty._
+import org.querki.facades.raty._
 
 import querki.globals._
 

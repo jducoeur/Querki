@@ -7,7 +7,7 @@ import org.scalajs.jquery._
 import scalatags.JsDom.all.{input => inp, _}
 import autowire._
 
-import moment._
+import org.querki.facades.moment._
 
 import querki.globals._
 

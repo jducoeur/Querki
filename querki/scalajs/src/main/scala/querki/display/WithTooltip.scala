@@ -4,7 +4,7 @@ import scala.scalajs.js
 import org.scalajs.dom
 import scalatags.JsDom.all._
 
-import bootstrap._
+import org.querki.facades.bootstrap._
 
 import querki.globals._
 
