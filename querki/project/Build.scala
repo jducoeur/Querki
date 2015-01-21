@@ -85,10 +85,10 @@ object ApplicationBuild extends Build with UniversalKeys {
 	  jsDependencies += ProvidedJS / "jquery.histogram.js" dependsOn "jquery.js",
 	  jsDependencies += ProvidedJS / "moment.min.js",
 	  
-	  jsDependencies += ProvidedJS / "load-image.min.js" dependsOn "jquery.js",
+	  jsDependencies += ProvidedJS / "load-image.min.js" dependsOn "jquery-ui-1.10.0.custom.js",
 	  jsDependencies += ProvidedJS / "canvas-to-blob.min.js" dependsOn "load-image.min.js",
 	  jsDependencies += ProvidedJS / "jquery.iframe-transport.js" dependsOn "load-image.min.js",
-	  jsDependencies += ProvidedJS / "jquery.fileupload.js" dependsOn "load-image.min.js",
+	  jsDependencies += ProvidedJS / "jquery.fileupload.js" dependsOn "jquery.iframe-transport.js",
 	  jsDependencies += ProvidedJS / "jquery.fileupload-process.js" dependsOn "jquery.fileupload.js",
 	  jsDependencies += ProvidedJS / "jquery.fileupload-image.js" dependsOn "jquery.fileupload.js",
 	  
