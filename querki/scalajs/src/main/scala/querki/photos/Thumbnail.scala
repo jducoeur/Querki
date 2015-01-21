@@ -15,10 +15,19 @@ class Thumbnail(implicit e:Ecology) extends InputGadget[dom.HTMLImageElement](e)
   def doRender() = ???
   def values = ???
   
+  def datum(name:String) = $(elem).data(name)
+  lazy val fullSrc = datum("fullsrc")
+  lazy val fullWidth = datum("fullwidth")
+  lazy val fullHeight = datum("fullheight")
+  lazy val fromProp = datum("fromprop")
+  
+  def showFull() = {
+    
+  }
+  
   def hook() = {
-    println("Got a tooltip")
     $(elem).click({ evt:JQueryEventObject =>
-      //showFull
+      showFull()
     })
     
     $(elem).tooltip(TooltipOptions.title("Click to see full sized"))

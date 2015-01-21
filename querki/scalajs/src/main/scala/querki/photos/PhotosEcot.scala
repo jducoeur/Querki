@@ -9,6 +9,7 @@ class PhotosEcot(e:Ecology) extends ClientEcot(e) {
   lazy val Gadgets = interface[querki.display.Gadgets]
   
   override def postInit() = {
-//    Gadgets.registerSimpleGadget("._photoThumbnail", { new Thumbnail })
+    Gadgets.registerSimpleGadget("._photoThumbnail", { new Thumbnail })
+    Gadgets.registerSimpleGadget("._photoTarget", { new PhotoTarget })
   }
 }
