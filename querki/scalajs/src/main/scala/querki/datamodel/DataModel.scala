@@ -89,6 +89,15 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
       })
   }
   
+  def createAThing() = {
+    modelSelectionForm(
+      "Create a Thing",
+      "What kind of Thing do you want to create? (Just use Simple Thing if you just want a plain page.)",
+      "Create",
+      { selection => Pages.createAndEditFactory.showPage(selection) }
+    )
+  }
+  
   def changeModel(thing:ThingInfo, cb:ThingInfo => Unit) = {
     modelSelectionForm(
       s"Change Model for ${thing.displayName}",

@@ -17,6 +17,11 @@ package object datamodel {
     def designAModel():Unit
     
     /**
+     * Allows the user to select a Model, creates a new Instance, and opens the editor for it.
+     */
+    def createAThing():Unit
+    
+    /**
      * Displays a dialog to let the user choose a new Model for the Thing, makes the
      * change, and calls cb().
      */

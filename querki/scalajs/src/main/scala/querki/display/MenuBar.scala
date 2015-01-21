@@ -89,8 +89,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
       Seq(
         NavDivider,
         NavLink("Design a Model", onClick = Some({ () => DataModel.designAModel() })),
-        // TODO: this one currently hooks into Javascript. They should instead be direct callbacks to Scala:
-        NavLink("Create any Thing", PageManager.pageUrl("_create"), Some("createThing")),
+        NavLink("Create any Thing", onClick = Some({ () => DataModel.createAThing() })),
         NavLink("Show all Things", thing("All-Things")),
         NavLink("Show all Properties", thing("All-Properties")),
         NavLink("Sharing and Security", controllers.Application.sharing(ownerId, spaceId.underlying), enabled = DataAccess.request.isOwner)        
