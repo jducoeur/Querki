@@ -144,8 +144,10 @@ trait ModelTypeDefiner { self:EcologyMember =>
     
     def doDefault(implicit state:SpaceState) = { 
       state.anything(basedOn) match {
-        // The defaults for this Type are exactly the values defined in the Model it is based on:
-        case Some(model) => ModeledPropertyBundle(this, basedOn, relevantProps(model, model))
+        // The "default value" for a Model Type simply passes through to the Model. Note that this
+        // is a change from the old code, which copied the props from the model into the bundle. That
+        // was wrong, because it meant that changes to the Model's values didn't pass through.
+        case Some(model) => ModeledPropertyBundle(this, basedOn, Thing.emptyProps)
         case None => throw new Exception(s"Model $basedOn for Model Type $id no longer exists!")
       }
     }
