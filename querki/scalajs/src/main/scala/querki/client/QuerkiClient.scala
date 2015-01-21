@@ -57,6 +57,7 @@ object QuerkiClient extends JSApp with EcologyMember {
     new querki.pages.PagesEcot(ecology)
     new querki.qtext.QTextUtilsEcot(ecology)
     new querki.search.SearchEcot(ecology)
+    new querki.photos.PhotosEcot(ecology)
   }
 
   /**
