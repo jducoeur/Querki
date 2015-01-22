@@ -39,6 +39,15 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
   val renderedContentFuture = renderedContentPromise.future
   
   /**
+   * Miscellaneous metadata that other systems can store on the Page when appropriate.
+   * This is deliberately unstructured.
+   */
+  private var metadata = Map.empty[String, Any]
+  
+  def storeMetadata(name:String, contents:Any):Unit = metadata += (name -> contents)
+  def getMetadata(name:String):Option[Any] = metadata.get(name)
+  
+  /**
    * This is called before the Page begins to render. Pages should override it to do
    * things like register page-specific Gadget hooks. 
    */

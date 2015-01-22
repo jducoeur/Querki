@@ -79,6 +79,7 @@ package object globals {
   implicit class jqExt2(jq:JQuery) {
     // The value of this Element; use this when it can only make sense as a String in context:
     def valueString = jq.value().asInstanceOf[String]
+    def dataString(name:String) = jq.data(name).asInstanceOf[String]
   }
   
   // These are improved signatures that can't simply be implicit, because they conflict with existing ones in the

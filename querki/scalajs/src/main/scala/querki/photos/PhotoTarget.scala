@@ -7,18 +7,23 @@ import querki.globals._
 import querki.display.input.InputGadget
 
 class PhotoTarget(implicit e:Ecology) extends InputGadget[dom.HTMLImageElement](e) {
-  
-  lazy val Pages = interface[querki.pages.Pages]
+
+  lazy val PhotosInternal = interface[PhotosInternal]
   
   // At least for now, this just wraps incoming images:
   def doRender() = ???
   def values = ???
   
-  lazy val fromProp = $(elem).data("fromprop")
+  lazy val fromProp = $(elem).dataString("fromprop")
   
   def hook() = {
-    println("Finding the page")
-    val myPage = Pages.findPageFor(this)
-    println(s"Got Page $myPage")
+    PhotosInternal.recordTarget(this)
+  }
+  
+  def displayFrom(thumbnail:Thumbnail) = {
+    $(elem)
+      .attr("src", thumbnail.fullSrc)
+      .width(thumbnail.fullWidth)
+      .height(thumbnail.fullHeight)
   }
 }
