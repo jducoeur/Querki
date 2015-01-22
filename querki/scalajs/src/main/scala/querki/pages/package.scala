@@ -4,6 +4,7 @@ import querki.globals._
 
 import querki.comm.URL
 import querki.data.{BasicThingInfo, SpaceInfo}
+import querki.display.ManagedFrag
 
 package object pages {
   
@@ -82,6 +83,14 @@ package object pages {
      * Fetch the message to show, if any. Note that this will reset to None after it gets called.
      */
     def getFlash:Option[(Boolean, String)]
+    
+    /**
+     * Returns the Page that contains the given Frag.
+     * 
+     * IMPORTANT: the Frag *must* have been rendered before you call this, and it must be currently
+     * on the Page, or this is likely to crash!
+     */
+    def findPageFor(node:ManagedFrag[_]):Page
   }
   
   /**

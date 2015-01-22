@@ -5,6 +5,8 @@ import querki.globals._
 import querki.data.SpaceInfo
 import querki.search.SearchResultsPage
 
+import querki.display.ManagedFrag
+
 class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   
   def implements = Set(classOf[Pages])
@@ -49,14 +51,14 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   }
   
   /**
-   * The big hardcoded factory for Pages.
+   * Construct the correct Page, based on the passed-in page name.
    * 
-   * This is a bit inelegant and coupled, but there is no great answer, and it doesn't
-   * actually violate DRY.
+   * This basically goes through the registered factories, and the first one that actually
+   * constructs a Page based on this name wins.
    * 
-   * TODO: a better way for this to work would be for each Page to have a factory, and
-   * have its corresponding Ecot register that factory in postInit(). That probably implies
-   * moving each Page to the relevant package, but that seems more and more correct anyway.
+   * TODO: this is arguably a stupid way for this to work, and should probably be
+   * restructured to have a Map of factories by name instead. The current approach is
+   * mostly a historical artifact.
    */
   def constructPage(name:String, params:ParamMap):Page = {
     val pageOpt = (Option.empty[Page] /: factories) { (opt, factory) =>
@@ -70,4 +72,7 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
     pageOpt.getOrElse(new ThingPage(TID(name), params))
   }
   
+  def findPageFor(node:ManagedFrag[_]):Page = {
+    node.findParentGadget(_.isInstanceOf[Page]).asInstanceOf[Page]
+  }
 }

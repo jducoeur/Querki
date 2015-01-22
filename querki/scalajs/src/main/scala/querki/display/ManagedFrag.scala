@@ -1,5 +1,7 @@
 package querki.display
 
+import scala.annotation.tailrec
+
 import scala.scalajs.js
 import scalatags.JsDom.all._
 import org.scalajs.dom
@@ -80,6 +82,21 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
     val gadgetOptsSeq:Seq[Seq[AnyFrag]] = gadgetOptsArray.asInstanceOf[js.Array[Seq[AnyFrag]]]
         
     gadgetOptsSeq.flatten
+  }
+  
+  @tailrec private def findParentGadgetRec(node:JQuery, pred:AnyFrag => Boolean):AnyFrag = {
+    val frags =
+      if (node.hasClass("_withGadget"))
+        node.data("gadgets").asInstanceOf[Seq[AnyFrag]]
+      else
+        Seq.empty
+    frags.find(pred(_)) match {
+      case Some(result) => result
+      case None => findParentGadgetRec(node.parent(), pred)
+    }
+  }
+  def findParentGadget(pred:AnyFrag => Boolean):AnyFrag = {
+    findParentGadgetRec($(elem), pred)
   }
   
   /**
