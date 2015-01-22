@@ -2,6 +2,7 @@ package querki.photos
 
 import org.scalajs.dom
 import org.scalajs.jquery._
+import scalatags.JsDom.all._
 
 import org.querki.facades.bootstrap._
 
@@ -25,7 +26,9 @@ class Thumbnail(implicit e:Ecology) extends InputGadget[dom.HTMLImageElement](e)
   def showFull() = {
     PhotosInternal.findTargetFor(this) match {
       case Some(target) => target.displayFrom(this)
-      case None => println("TODO: pop a dialog!")
+      // There is no target on the page for this Property's pictures, so pop a
+      // dialog instead:
+      case None => PhotosInternal.showInDialog(this)
     }
   }
   

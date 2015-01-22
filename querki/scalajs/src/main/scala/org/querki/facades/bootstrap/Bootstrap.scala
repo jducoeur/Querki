@@ -5,11 +5,28 @@ import js.{Dynamic, UndefOr, undefined => undef}
 import js.JSConverters._
 import org.querki.jsext._
 
+/**
+ * A very partial, quick-and-dirty facade for the parts of Bootstrap 2.3 that we are currently
+ * using.
+ * 
+ * TODO: after Querki gets upgraded to Bootstrap 3, begin to evolve this into a proper open-source
+ * facade, and encourage folks to help fill it in.
+ */
 trait BootstrapFacade extends js.Object {
+  def modal(cmd:ModalCommand.ModalCommand):Any = ???
+  
   def popover(options:PopoverOptions):Any = ???
   def popover(cmd:PopoverCommand.PopoverCommand):Any = ???
   
   def tooltip(options:TooltipOptions):Any = ???
+}
+
+object ModalCommand {
+  type ModalCommand = String
+  
+  val show = "show"
+  val hide = "hide"
+  val toggle = "toggle"
 }
 
 object Position extends Enumeration {

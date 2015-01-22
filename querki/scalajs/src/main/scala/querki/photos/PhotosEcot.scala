@@ -5,6 +5,7 @@ import querki.globals._
 private [photos] trait PhotosInternal extends EcologyInterface {
   def recordTarget(target:PhotoTarget):Unit
   def findTargetFor(thumbnail:Thumbnail):Option[PhotoTarget]
+  def showInDialog(thumbnail:Thumbnail):Unit
 }
 
 class PhotosEcot(e:Ecology) extends ClientEcot(e) with PhotosInternal {
@@ -21,6 +22,8 @@ class PhotosEcot(e:Ecology) extends ClientEcot(e) with PhotosInternal {
   
   val targetKey = "Photo Targets"
   type TargetMap = Map[String, PhotoTarget]
+  
+  val showDialogKey = "Show Photo Dialog"
   
   def recordTarget(target:PhotoTarget):Unit = {
     val page = Pages.findPageFor(target)
@@ -43,5 +46,20 @@ class PhotosEcot(e:Ecology) extends ClientEcot(e) with PhotosInternal {
       target <- map.get(prop)
     }
       yield target
+  }
+  
+  def showInDialog(thumbnail:Thumbnail):Unit = {
+    val page = Pages.findPageFor(thumbnail)
+    // Since it isn't often needed, we build the ViewPhotoDialog on-demand
+    val dialog = page.getMetadata(showDialogKey).map(_.asInstanceOf[ViewPhotoDialog]) match {
+      case Some(dialog) => dialog
+      case None => {
+        val d = new ViewPhotoDialog
+        $(page.elem).append(d.render)
+        page.storeMetadata(showDialogKey, d)
+        d
+      }
+    }
+    dialog.showFrom(thumbnail)
   }
 }
