@@ -40,7 +40,7 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   }  
   
   // TODO: this doesn't yet work correctly to navigate cross-Spaces:
-  def showSpacePage(space:SpaceInfo) = PageManager.showPage(s"${space.urlName}", Map.empty)
+  def showSpacePage(space:SpaceInfo) = PageManager.showPage(s"${space.urlName.underlying}", Map.empty)
   
   var flash:Option[(Boolean, String)] = None
   def flashMessage(error:Boolean, msg:String) = flash = Some((error, msg))

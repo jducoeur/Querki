@@ -145,7 +145,7 @@ object Dependencies {
   ) ++ shared
 
   val scalajs = Seq(
-	  "org.scala-lang.modules.scalajs" %%%! "scalajs-dom" % "0.6",
+	  "org.scala-lang.modules.scalajs" %%%! "scalajs-dom" % "0.6.1",
       "org.scala-lang.modules.scalajs" %%%! "scalajs-jquery" % "0.6",
       "org.scalatest" %% "scalatest" % "2.2.0" % "test",
       "com.lihaoyi" %%%! "utest" % "0.2.4" % "test",

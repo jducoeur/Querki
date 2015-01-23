@@ -6,6 +6,7 @@ private [photos] trait PhotosInternal extends EcologyInterface {
   def recordTarget(target:PhotoTarget):Unit
   def findTargetFor(thumbnail:Thumbnail):Option[PhotoTarget]
   def showInDialog(thumbnail:Thumbnail):Unit
+  def showInputDialog(button:PhotoInputButton):Unit
 }
 
 class PhotosEcot(e:Ecology) extends ClientEcot(e) with PhotosInternal {
@@ -18,12 +19,14 @@ class PhotosEcot(e:Ecology) extends ClientEcot(e) with PhotosInternal {
   override def postInit() = {
     Gadgets.registerSimpleGadget("._photoThumbnail", { new Thumbnail })
     Gadgets.registerSimpleGadget("._photoTarget", { new PhotoTarget })
+    Gadgets.registerSimpleGadget("._photoEdit", { new PhotoInputButton })
   }
   
   val targetKey = "Photo Targets"
   type TargetMap = Map[String, PhotoTarget]
   
   val showDialogKey = "Show Photo Dialog"
+  val showInputKey = "Show Photo Input"
   
   def recordTarget(target:PhotoTarget):Unit = {
     val page = Pages.findPageFor(target)
@@ -61,5 +64,19 @@ class PhotosEcot(e:Ecology) extends ClientEcot(e) with PhotosInternal {
       }
     }
     dialog.showFrom(thumbnail)
+  }
+  
+  def showInputDialog(button:PhotoInputButton):Unit = {
+    val page = Pages.findPageFor(button)
+    val dialog = page.getMetadata(showInputKey).map(_.asInstanceOf[PhotoInputDialog]) match {
+      case Some(dialog) => dialog
+      case None => {
+        val d = new PhotoInputDialog
+        $(page.elem).append(d.render)
+        page.storeMetadata(showInputKey, d)
+        d
+      }
+    }
+    dialog.showFrom(button)    
   }
 }
