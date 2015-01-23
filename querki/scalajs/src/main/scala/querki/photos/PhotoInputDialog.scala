@@ -56,6 +56,8 @@ class PhotoInputDialog(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivE
   lazy val PageManager = interface[querki.display.PageManager]
   
   def showFrom(button:PhotoInputButton) = {
+    val agent = dom.window.navigator.userAgent
+    val disableResize = (agent.contains("Opera") || (agent.contains("Android") && !agent.contains("Chrome")))
     $(photoInputElem.elem).fileupload(FileUploadOptions
       .url(
         controllers.PhotoController.upload(
@@ -69,14 +71,16 @@ class PhotoInputDialog(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivE
       // Enable image resizing, except for Android and Opera,
       // which actually support image resizing, but fail to
       // send Blob objects via XHR requests:
-      .disableImageResize(Pattern.matches("Android(?!.*Chrome)|Opera", dom.window.navigator.userAgent))
+      .disableImageResize(disableResize)
       // Cap it at 1000 on a side, which is the current Querki maximum. Note that the server
       // may reduce this further based on user preference, but we leave it to do further
       // reduction there, since the server's algorithm does it more cleanly, with less aliasing.
       // Here, we are reducing it mainly to reduce unnecessary transmission time. 
       .imageMaxWidth(1000)
       .imageMaxHeight(1000)
-      .start({ evt:JQueryEventObject => setStatus("Uploading...")})
+      .start({ evt:JQueryEventObject =>
+        setStatus("Uploading...")
+      })
       .progress({ (evt:JQueryEventObject, data:FileUploadProgress) =>
         val percent = (data.loaded / data.total) * 100
         println(s"Progress: $percent")
