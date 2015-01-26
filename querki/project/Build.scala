@@ -159,7 +159,7 @@ object Dependencies {
 }
 
 object Versions {
-  val app = "0.11.3.1"
+  val app = "0.11.4"
   val scala = "2.11.1"
   val scalajsDom = "0.6"
 }
