@@ -313,14 +313,25 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
           }
         }
     
-        <form class="_pickList"><ul class="_listContent"> {
+        // TODO: this should really all be generated client-side once everyone's on the new Client; we
+        // should just send a fairly abstract ul with the data:
+        val deleteableClass =
+          if (isNameType)
+            ""
+          else
+            " _deleteable"
+        <form class={s"_pickList$deleteableClass"}><ul class="_listContent"> {
           sortedInstances.map { pair =>
             val (instance, index) = pair
             <li>{
             if (isListed(instance))
-              Seq(<input class="_pickOption" name={s"$listName[$index]"} value={instance.id.toThingId.toString} type="checkbox" checked="checked"></input>, Text(" " + instance.displayName))
+              Seq(<input class="_pickOption" name={s"$listName[$index]"} value={instance.id.toThingId.toString} type="checkbox" checked="checked"></input>, 
+                  Text(" "),
+                  <div class="_pickName">{instance.displayName}</div>)
             else
-              Seq(<input class="_pickOption" name={s"$listName[$index]"} value={instance.id.toThingId.toString} type="checkbox"></input>, Text(" " + instance.displayName))
+              Seq(<input class="_pickOption" name={s"$listName[$index]"} value={instance.id.toThingId.toString} type="checkbox"></input>, 
+                  Text(" "),
+                  <div class="_pickName">{instance.displayName}</div>)
             }</li>
           }
         } </ul> {

@@ -436,3 +436,37 @@ body {
   height: 100%;
 }
 
+/******************************
+ * Pick List styles
+ */
+ 
+ ._pickList ._listContent {
+   list-style-type: none;
+ }
+ 
+ ._pickName {
+   display: inline-block;
+   height: 20px;
+ }
+ 
+._pickName ._deleteInstanceButton {
+  margin-left: 4px;
+  line-height: 14px;
+  background-color: lightpink;
+  width: 18px;
+  height: 18px;
+  padding-top: 2px;
+  text-align: center;
+  border: 1px solid;
+  cursor: pointer;
+  z-index:100;
+}
+
+._pickName ._deleteInstanceButton {
+  display: none;
+}
+
+._pickName:hover ._deleteInstanceButton {
+  display: inherit;
+}
+ 

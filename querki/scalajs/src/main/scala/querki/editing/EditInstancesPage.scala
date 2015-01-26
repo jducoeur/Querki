@@ -68,7 +68,7 @@ class EditInstancesPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
           yield thingEditor
           
         editorFut.foreach { editorWikitext =>
-          val qt = new QText(editorWikitext)
+          val qt = new QText(editorWikitext)(ecology)
           val newEditor = qt.render
           $(newEditor).insertBefore($(elem))
           InputGadgets.hookPendingGadgets()

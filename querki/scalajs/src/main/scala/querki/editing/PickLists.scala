@@ -7,9 +7,9 @@ import autowire._
 
 import querki.globals._
 
-import querki.api.EditFunctions
+import querki.api.{EditFunctions, ThingFunctions}
 import EditFunctions._
-import querki.display.input.InputGadget
+import querki.display.input.{DeleteInstanceButton, InputGadget}
 
 /**
  * This is a very unconventional InputGadget, because we have deliberately moved away from
@@ -19,10 +19,13 @@ import querki.display.input.InputGadget
 class PickListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListElement](e) {
   
   lazy val Editing = interface[Editing]
+  lazy val InputGadgets = interface[querki.display.input.InputGadgets]
   lazy val PageManager = interface[querki.display.PageManager]
   
   def values = ???
   def doRender() = ???
+  
+  def deleteable = $(elem).hasClass("_deleteable")
   
   def saveCheckbox(checkbox:dom.HTMLElement) = {
     val v = $(checkbox).valueString
@@ -35,12 +38,34 @@ class PickListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListElemen
     saveChange(msg)
   }
   
+  def deleteItem(e:dom.Element) = {
+    val listItem = $(e).parent()
+    // The key information is on the _pickOption:
+    val checkbox = listItem.find("._pickOption")
+    val v = $(checkbox).valueString
+    // First, remove it from the set...
+    val removeMsg = RemoveFromSet(path, v)
+    saveChange(removeMsg).foreach { response =>
+      // ... then actually delete it...
+      Client[ThingFunctions].deleteThing(TID(v)).call().foreach { deleteResp =>
+        // ... then slurp it away on-screen.
+        listItem.hide(400, { () => listItem.remove() })
+      }
+    }
+  }
+  
   def hook() = {
     $(elem).find("._pickOption").change({ evt:JQueryEventObject =>
       val checkbox = evt.target.asInstanceOf[dom.HTMLElement]
       saveCheckbox(checkbox)
     })
     
+    if (deleteable) {
+      $(elem).find("._pickName").each({ e:dom.Element =>
+        $(e).append(new DeleteInstanceButton({ () => deleteItem(e) }).render)
+      }:js.ThisFunction0[dom.Element, Any])
+    }
+     
     $(elem).find("._quickCreator").each({ e:dom.Element => hookCreator(e) }:js.ThisFunction0[dom.Element, Any])
   }
   

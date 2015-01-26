@@ -74,8 +74,15 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
     unhookedGadgets += gadget
   
   def hookPendingGadgets() = {
-    unhookedGadgets.foreach(_.prep())
+    // What's going on here? We need to allow for InputGadgets whose hook creates
+    // *more* InputGadgets. So we deal with this list, then check whether more got
+    // created along the way:
+    val pending = unhookedGadgets
     unhookedGadgets = Set.empty
+    pending.foreach(_.prep())
+    if (!unhookedGadgets.isEmpty)
+      // Recurse to do more:
+      hookPendingGadgets()
   }
   
   /**

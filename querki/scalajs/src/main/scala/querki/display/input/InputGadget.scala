@@ -18,7 +18,9 @@ import querki.display._
  * Base class for input controls. When you create a new concrete class, make sure to add it to
  * InputGadgets.registry.
  */
-abstract class InputGadget[T <: dom.Element](val ecology:Ecology) extends Gadget[T] with EcologyMember {
+abstract class InputGadget[T <: dom.Element](e:Ecology) extends Gadget[T] with EcologyMember {
+  
+  implicit val ecology = e
   
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
