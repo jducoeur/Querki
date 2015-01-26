@@ -32,7 +32,7 @@ class ViewPhotoDialog extends Gadget[dom.HTMLDivElement] {
     div(cls:="modal hide",
       title:="View Photo",
       display:="none",
-      div(cls:="modal-header",
+      div(id:="photo-full-header", cls:="modal-header",
         // TODO: add aria.hidden:="true" -- Aria support is new in Scalatags:
         button(tpe:="button", cls:="close", data("dismiss"):="modal", "x"),
         p(b("View Image"))
