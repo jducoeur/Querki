@@ -103,7 +103,7 @@ package object display {
     /**
      * Reload the current page, based on its hash.
      */
-    def reload():Unit
+    def reload():Future[Page]
     
     /**
      * Listen to this publication point if you want to be notified *before* each Page load.

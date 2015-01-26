@@ -85,7 +85,11 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   var _currentHash = ""
     
   def currentHash = _currentHash
-  def reload() = invokeFromHash()
+  def reload():Future[Page] = {
+    val fut = nextChangeFuture
+    invokeFromHash()
+    fut
+  }
   
   /**
    * Based on the hash part of the current location, load the appropriate page.

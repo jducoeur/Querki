@@ -313,20 +313,20 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
           }
         }
     
-        <form><ul class="_listContent" name={currentValue.inputControlId}> {
+        <form class="_pickList"><ul class="_listContent"> {
           sortedInstances.map { pair =>
             val (instance, index) = pair
             <li>{
             if (isListed(instance))
-              Seq(<input name={s"$listName[$index]"} value={instance.id.toThingId.toString} type="checkbox" checked="checked"></input>, Text(" " + instance.displayName))
+              Seq(<input class="_pickOption" name={s"$listName[$index]"} value={instance.id.toThingId.toString} type="checkbox" checked="checked"></input>, Text(" " + instance.displayName))
             else
-              Seq(<input name={s"$listName[$index]"} value={instance.id.toThingId.toString} type="checkbox"></input>, Text(" " + instance.displayName))
+              Seq(<input class="_pickOption" name={s"$listName[$index]"} value={instance.id.toThingId.toString} type="checkbox"></input>, Text(" " + instance.displayName))
             }</li>
           }
         } </ul> {
           if (specialization.contains(WithAdd)) {
-            <div class="input-append">
-              <input type="text" class="_quickCreateProp" placeholder="New Item Name" data-model={modelOID.toString} data-propid={querki.basic.MOIDs.DisplayNameOID.toString} data-addtolist="true"></input>
+            <div class="input-append _quickCreator">
+              <input type="text" class="_quickCreateProp" placeholder="New Item Name" data-model={modelOID.toThingId.toString} data-propid={querki.basic.MOIDs.DisplayNameOID.toThingId.toString} data-addtolist="true"></input>
               <button type="button" class="btn _quickCreate">Add</button>
             </div>
           }
