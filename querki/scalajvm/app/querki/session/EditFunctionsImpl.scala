@@ -105,14 +105,16 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   
   def alterProperty(thingId:TID, change:PropertyChange):Future[PropertyChangeResponse] = withThing(thingId) { thing =>
     if (doLogEdits) QLog.spew(s"Got alterProperty on $thingId: $change")
+    implicit val s = state
     
     val propsOpt:Option[PropMap] = change match {
       case ChangePropertyValue(path, vs) => changeToProps(Some(thing), path, vs)
       
       case MoveListItem(path, from, to) => alterListOrder(thing, path, from, to)
       
+      // TODO: figure out the right refactoring for the clauses below. They're very similar, but vary
+      // in multiple dimensions:
       case AddListItem(path) => {
-        implicit val s = state
         for {
 	      fieldIds <- DisplayPropVal.propPathFromName(path, Some(thing))
 	      prop = fieldIds.p
@@ -130,7 +132,6 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
       }
       
       case DeleteListItem(path, index) => {
-        implicit val s = state
 	    for {
 	      fieldIds <- DisplayPropVal.propPathFromName(path, Some(thing))
 	      prop = fieldIds.p
@@ -142,6 +143,36 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
 	      newV = v.cType.makePropValue(newList, v.pType)
 	    }
 	      yield Core.toProps((prop, newV))()        
+      }
+      
+      case AddToSet(path, value) => {
+        for {
+          fieldIds <- DisplayPropVal.propPathFromName(path, Some(thing))
+          prop = fieldIds.p
+          pt = prop.pType
+          pv <- thing.getPropOpt(prop)
+          v = pv.v
+	      list = v.cv.toSeq
+          newElem = pt.fromUser(value)
+          newList = list :+ newElem
+          newV = v.cType.makePropValue(newList, pt)
+        }
+          yield Core.toProps((prop, newV))()
+      }
+      
+      case RemoveFromSet(path, value) => {
+        for {
+          fieldIds <- DisplayPropVal.propPathFromName(path, Some(thing))
+          prop = fieldIds.p
+          pt = prop.pType
+          pv <- thing.getPropOpt(prop)
+          v = pv.v
+	      list = v.cv.toSeq
+          deadElem = pt.fromUser(value)
+          newList = list.filterNot(pt.matches(_, deadElem))
+          newV = v.cType.makePropValue(newList, pt)
+        }
+          yield Core.toProps((prop, newV))()
       }
       
       case DeleteProperty => None  // NYI

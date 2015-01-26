@@ -313,7 +313,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
           }
         }
     
-        <form><ul class="_listContent"> {
+        <form><ul class="_listContent" name={currentValue.inputControlId}> {
           sortedInstances.map { pair =>
             val (instance, index) = pair
             <li>{

@@ -64,6 +64,9 @@ object EditFunctions {
   
   case class DeleteListItem(path:String, index:Int) extends PropertyChange
   
+  case class AddToSet(path:String, value:String) extends PropertyChange
+  case class RemoveFromSet(path:String, value:String) extends PropertyChange
+  
   sealed trait PropertyChangeResponse
   case object PropertyChanged extends PropertyChangeResponse
   case class PropertyChangeError(msg:String) extends PropertyChangeResponse
