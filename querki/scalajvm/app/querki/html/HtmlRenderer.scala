@@ -318,9 +318,9 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
             val (instance, index) = pair
             <li>{
             if (isListed(instance))
-              Seq(<input name={s"$listName[$index]"} value={instance.id.toString} type="checkbox" checked="checked"></input>, Text(" " + instance.displayName))
+              Seq(<input name={s"$listName[$index]"} value={instance.id.toThingId.toString} type="checkbox" checked="checked"></input>, Text(" " + instance.displayName))
             else
-              Seq(<input name={s"$listName[$index]"} value={instance.id.toString} type="checkbox"></input>, Text(" " + instance.displayName))
+              Seq(<input name={s"$listName[$index]"} value={instance.id.toThingId.toString} type="checkbox"></input>, Text(" " + instance.displayName))
             }</li>
           }
         } </ul> {
