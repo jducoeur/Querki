@@ -18,6 +18,7 @@ class GadgetsEcot(e:Ecology) extends ClientEcot(e) with Gadgets {
   override def postInit() = {
     registerSimpleGadget("._withTooltip", { new WithTooltip(span()) })
     registerSimpleGadget("._qlInvoke", { new QLButtonGadget(span()) })
+    registerSimpleGadget(".histogram", { new HistogramGadget })
     
     PageManager.beforePageLoads += new Contributor[Page,Unit] {
       def notify(evt:Page, sender:Publisher[Page, Unit]) = {

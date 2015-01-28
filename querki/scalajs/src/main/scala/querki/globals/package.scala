@@ -80,6 +80,18 @@ package object globals {
     // The value of this Element; use this when it can only make sense as a String in context:
     def valueString = jq.value().asInstanceOf[String]
     def dataString(name:String) = jq.data(name).asInstanceOf[String]
+    /**
+     * Wrap $.map in something more idiomatic and convenient for Scala
+     * 
+     * This applies the given function to each element in this JQuery object, and returns the
+     * results. Note that, unlike JQuery.map(), this produces the unwrapped results, since that
+     * is typically what you want in Scala code. 
+     */ 
+    def mapElems[T](func:Element => T):Seq[T] = {
+      jq.map({ e:Element =>
+        func(e)
+      }:js.ThisFunction0[Element, Any]).toArray().toArray.asInstanceOf[Array[T]]
+    }
   }
   
   // These are improved signatures that can't simply be implicit, because they conflict with existing ones in the
