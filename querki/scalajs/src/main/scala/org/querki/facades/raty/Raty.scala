@@ -2,7 +2,7 @@ package org.querki.facades.raty
 
 import scala.scalajs.js
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 import org.querki.jsext._
 
 trait RatyFacade extends js.Object {

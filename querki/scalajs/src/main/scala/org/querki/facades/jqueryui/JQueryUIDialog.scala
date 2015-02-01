@@ -3,7 +3,7 @@ package org.querki.facades.jqueryui
 import scala.scalajs.js
 import js.{Dynamic, UndefOr, undefined => undef}
 import js.JSConverters._
-import org.scalajs.jquery._
+import org.querki.jquery._
 import org.querki.jsext._
 
 /**

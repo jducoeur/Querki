@@ -1,7 +1,7 @@
 package querki.display.rx
 
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
 import rx.ops._
@@ -35,7 +35,7 @@ class RxText(mods:Modifier*) extends Gadget[dom.HTMLInputElement] {
   private def update() = { textOpt() = curValue }
   
   override def onCreate(e:dom.HTMLInputElement) = {
-    $(e).change({ evt:JQueryEventObject => update() })
+    $(e).change({ e:dom.Element => update() })
     update()
   }
 }

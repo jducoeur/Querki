@@ -6,7 +6,7 @@ import upickle._
 import autowire._
 
 import org.scalajs.dom 
-import org.scalajs.jquery._
+import org.querki.jquery._
 
 import scalatags.JsDom.all._
 import scalatags.JsDom.tags2

@@ -2,7 +2,7 @@ package querki.display.input
 
 import scala.scalajs.js
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 import scalatags.JsDom.all.{input => inp, _}
 import org.querki.facades.bootstrap._
 
@@ -14,7 +14,7 @@ class DeleteButton(doDelete:() => Unit)(implicit e:Ecology) extends InputGadget[
   def doRender() = span(cls:="_deleteCommentButton", "x")
   
   def hook() = {
-    $(elem).on("click", null, null, confirmDelete)
+    $(elem).on("click", confirmDelete)
   }
 
   lazy val confirmDelete:Function1[JQueryEventObject, js.Any] = { (evt:JQueryEventObject) =>
@@ -26,11 +26,11 @@ class DeleteButton(doDelete:() => Unit)(implicit e:Ecology) extends InputGadget[
     )
     deleteButton.popover(PopoverCommand.show)
     deleteButton.off("click", null)
-    deleteButton.on("click", null, null, reallyDelete)
+    deleteButton.on("click", reallyDelete)
     dom.window.setTimeout({ () =>
       deleteButton.popover(PopoverCommand.hide)
       deleteButton.off("click", null)
-      deleteButton.on("click", null, null, confirmDelete)
+      deleteButton.on("click", confirmDelete)
     }, 2000)
   }
   

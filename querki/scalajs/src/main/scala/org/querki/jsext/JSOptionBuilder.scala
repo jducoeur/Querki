@@ -15,7 +15,7 @@ abstract class JSOptionBuilder[T <: js.Object, B <: JSOptionBuilder[T, _]](copy:
     copy(dict + (name -> opt))
   }
   
-  def result = {
+  def _result = {
     dict.toJSDictionary.asInstanceOf[T]
   }
   

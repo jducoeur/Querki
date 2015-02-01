@@ -4,7 +4,7 @@ package querki.client
 import scala.scalajs.js.annotation.JSExport
 import scala.scalajs.js.JSApp
 
-import org.scalajs.jquery.{jQuery, JQueryEventObject}
+import org.querki.jquery.{jQuery, JQueryEventObject}
 
 import querki.ecology._
 import querki.qtext.ActuariusTransformer

@@ -1,7 +1,7 @@
 package querki.display.rx
 
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
 import rx.ops._
@@ -66,7 +66,7 @@ class RxSelect(options:Rx[Seq[Frag]], mods:Modifier*) extends Gadget[dom.HTMLSel
   }
   
   override def onCreate(e:dom.HTMLSelectElement) = {
-    $(e).change({ evt:JQueryEventObject => updateSelected() })
+    $(e).change({ e:dom.Element => updateSelected() })
     updateSelected()
   }
 }

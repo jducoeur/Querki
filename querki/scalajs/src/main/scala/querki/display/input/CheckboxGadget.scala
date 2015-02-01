@@ -2,7 +2,7 @@ package querki.display.input
 
 import scala.scalajs.js
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 
 import querki.globals._
 
@@ -15,8 +15,8 @@ class CheckboxGadget(implicit e:Ecology) extends InputGadget[dom.HTMLInputElemen
   }
   
   def hook() = {
-    $(elem).change({ event:JQueryEventObject => 
-      save() 
+    $(elem).change({ e:dom.Element => 
+      save()
     })
   }
   

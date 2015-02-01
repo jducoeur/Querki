@@ -2,7 +2,7 @@ package querki.display.input
 
 import scala.scalajs.js
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 
 import querki.globals._
 
@@ -23,7 +23,7 @@ class OptYesNoGadget(implicit e:Ecology) extends InputGadget[dom.HTMLSpanElement
   def hook() = {
     $(elem).find("button").click({ btn:dom.Element =>
       val btnElem = $(btn)
-      saveChange(ChangePropertyValue(btnElem.attr("name"), List(btnElem.valueString)))
+      saveChange(ChangePropertyValue(btnElem.Attr("name"), List(btnElem.valueString)))
     }:js.ThisFunction0[dom.Element, Any])
   }
   

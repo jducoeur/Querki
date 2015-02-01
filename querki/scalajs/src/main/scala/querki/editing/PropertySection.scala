@@ -2,7 +2,7 @@ package querki.editing
 
 import scala.scalajs.js
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 import org.querki.facades.jqueryui._
 import scalatags.JsDom.all._
 import autowire._
@@ -32,7 +32,7 @@ class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEdit
     def values = {
       $(elem).children("li").map({ propElem:dom.Element =>
         $(propElem).data("propid")
-      }:js.ThisFunction0[dom.Element, Any]).jqf.get().asInstanceOf[js.Array[String]]
+      }:js.ThisFunction0[dom.Element, Any]).get().asInstanceOf[js.Array[String]]
     }
   
     // Note that this is only ever invoked on the Instance Property Section:

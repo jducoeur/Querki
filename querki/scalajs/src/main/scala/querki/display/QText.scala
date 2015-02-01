@@ -2,7 +2,7 @@ package querki.display
 
 import scala.scalajs.js
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 import scalatags.JsDom.all._
 
 import models.Wikitext
@@ -19,14 +19,14 @@ trait ServerHtmlHolder extends EcologyMember {
   
   def prepContents(root:dom.Element) = {
     val currentHash = PageManager.currentHash
-    $(root).find("a").each { (index:js.Any, child:dom.Element) =>
+    $(root).find("a").each { (child:dom.Element, index:Int) =>
       try {
 	    // Adjust the URLs of any links we find.
 	    // TODO: this is a serious hack, reflecting the fact that a painful amount of server code
 	    // generates <a> tags with raw URLs that don't match current reality. Eventually, we should
 	    // fix that somehow -- likely by making the URL scheme consistent everywhere, once we are
 	    // more comfortable with the Client.
-        val originalHref = $(child).attr("href")
+        val originalHref = $(child).Attr("href")
         val fixedHref = QTextUtils.adjustUrl(originalHref)
         $(child).attr("href", fixedHref)
         // HACK, but possibly a necessary one. If this link points to exactly the current hash, it

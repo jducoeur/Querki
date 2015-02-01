@@ -3,7 +3,7 @@ package querki.display.rx
 import scala.scalajs.js
 import js.JSConverters._
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
 import rx.ops._

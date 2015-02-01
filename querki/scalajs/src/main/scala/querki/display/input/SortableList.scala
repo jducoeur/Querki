@@ -2,7 +2,7 @@ package querki.display.input
 
 import scala.scalajs.js
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 import scalatags.JsDom.all._
 
 import org.querki.facades.jqueryui._
@@ -132,7 +132,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     // be suspicious about all of this until we implement history, maintain version stamps, and have
     // a clear mechanism for merging collisions. This should be sending a change *relative* to
     // a specific version of the Thing.
-    val path = propWrapper.attr("name")
+    val path = propWrapper.Attr("name")
     saveChange(mkMsg(path))    
   }
   

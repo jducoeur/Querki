@@ -4,7 +4,7 @@ import scala.scalajs.js
 import js.{Dynamic, UndefOr, undefined => undef}
 import js.JSConverters._
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 import org.querki.jsext._
 
 trait JQueryUISortableFacade extends js.Object {

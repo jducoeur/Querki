@@ -1,7 +1,7 @@
 package querki.display.input
 
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 
 import querki.globals._
 
@@ -12,7 +12,7 @@ class SelectGadget(implicit e:Ecology) extends InputGadget[dom.HTMLSelectElement
   def values = List($(elem).find("option:selected").value().asInstanceOf[String])
   
   def hook() = {
-    $(elem).change({ event:JQueryEventObject => save() })    
+    $(elem).change({ e:dom.Element => save() })    
   }
   
   def doRender() = ???

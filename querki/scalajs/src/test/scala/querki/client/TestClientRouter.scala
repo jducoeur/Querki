@@ -3,7 +3,7 @@ package querki.client
 import scala.concurrent.Future
 
 import scala.scalajs.js
-import org.scalajs.jquery.JQueryDeferred
+import org.querki.jquery.JQueryDeferred
 
 import upickle._
 import autowire._

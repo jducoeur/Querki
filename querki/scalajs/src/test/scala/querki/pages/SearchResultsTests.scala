@@ -5,7 +5,7 @@ import scala.concurrent.{Future, Promise}
 import scala.scalajs.js
 
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 
 import utest._
 import utest.ExecutionContext.RunNow

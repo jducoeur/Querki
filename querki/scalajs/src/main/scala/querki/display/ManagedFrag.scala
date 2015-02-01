@@ -5,7 +5,7 @@ import scala.annotation.tailrec
 import scala.scalajs.js
 import scalatags.JsDom.all._
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 
 import querki.globals._
 
@@ -77,7 +77,7 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
     val gadgetOptsArray = root.find("._withGadget").map({ (e:dom.Element) =>
       val frags = $(e).data("gadgets").asInstanceOf[Seq[AnyFrag]]
       frags.filter(pred(_))
-    }:js.ThisFunction0[dom.Element, Any]).jqf.get()
+    }:js.ThisFunction0[dom.Element, Any]).get()
     
     val gadgetOptsSeq:Seq[Seq[AnyFrag]] = gadgetOptsArray.asInstanceOf[js.Array[Seq[AnyFrag]]]
         

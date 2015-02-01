@@ -4,7 +4,7 @@ import scala.concurrent.{Future, Promise}
 import scala.scalajs.js
 import scala.util.{Failure, Success, Try}
 
-import org.scalajs.jquery.{JQueryAjaxSettings, JQueryDeferred}
+import org.querki.jquery.{JQueryAjaxSettings, JQueryDeferred}
 
 import querki.globals._
 

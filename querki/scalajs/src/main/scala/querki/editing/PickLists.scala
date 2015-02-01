@@ -2,7 +2,7 @@ package querki.editing
 
 import scala.scalajs.js
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 import autowire._
 
 import querki.globals._
@@ -55,7 +55,7 @@ class PickListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListElemen
   }
   
   def hook() = {
-    $(elem).find("._pickOption").change({ evt:JQueryEventObject =>
+    $(elem).find("._pickOption").change({ (evt:JQueryEventObject) =>
       val checkbox = evt.target.asInstanceOf[dom.HTMLElement]
       saveCheckbox(checkbox)
     })

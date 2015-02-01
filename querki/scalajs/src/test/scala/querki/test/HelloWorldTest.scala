@@ -5,7 +5,7 @@ import scala.scalajs.js
 import utest._
 
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 import scalatags.JsDom.all._
 
 import querki.globals._

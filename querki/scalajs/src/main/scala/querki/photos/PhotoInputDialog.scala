@@ -4,7 +4,7 @@ import java.util.regex.Pattern
 
 import scala.scalajs.js
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 import scalatags.JsDom.all._
 
 import org.querki.facades.bootstrap._

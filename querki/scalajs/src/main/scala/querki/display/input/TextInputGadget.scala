@@ -3,7 +3,7 @@ package querki.display.input
 import scala.scalajs.js
 import js._
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 import scalatags.JsDom.all._
 
 import querki.globals._
@@ -14,7 +14,7 @@ class TextInputGadget(classes:Seq[String], mods:Modifier*)(implicit e:Ecology) e
   
   // TBD: do we need an unhook, to avoid leaks?
   def hook() = {
-    $(elem).change({ event:JQueryEventObject => save() })
+    $(elem).change({ e:dom.Element => save() })
     
     $(elem).keypress({ (evt:JQueryEventObject) => beginChanges() })
   }
@@ -53,7 +53,7 @@ class LargeTextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLTextA
     // Note that we define the :notUnder selector in PageManager:
     $(elem).filter(":notUnder(.inputTemplate)").autosize()
     
-    $(elem).change({ (evt:JQueryEventObject) => save() })
+    $(elem).change({ e:dom.Element => save() })
     
     // Intercept ctrl-s, and save the value of this text. This is a bit horrible, but
     // necessary in order to work cross-browser.

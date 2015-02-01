@@ -1,6 +1,6 @@
 package org.querki.facades
 
-import org.scalajs.jquery._
+import org.querki.jquery._
 import org.querki.jsext._
 
 package object jqueryui {
@@ -13,6 +13,6 @@ package object jqueryui {
   implicit def jq2UI(jq:JQuery):JQueryUIDialogFacade = jq.asInstanceOf[JQueryUIDialogFacade]
   implicit def jq2Sortable(jq:JQuery):JQueryUISortableFacade = jq.asInstanceOf[JQueryUISortableFacade]
   
-  implicit def builder2SortableOptions(builder:SortableOptionBuilder) = builder.result
-  implicit def builder2DialogOptions(builder:DialogOptionBuilder) = builder.result
+  implicit def builder2SortableOptions(builder:SortableOptionBuilder) = builder._result
+  implicit def builder2DialogOptions(builder:DialogOptionBuilder) = builder._result
 }

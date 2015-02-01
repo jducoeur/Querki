@@ -5,7 +5,7 @@ import js.JSConverters._
 
 import utest._
 import scalatags.JsDom.all._
-import org.scalajs.jquery._
+import org.querki.jquery._
 
 import querki.globals._
 

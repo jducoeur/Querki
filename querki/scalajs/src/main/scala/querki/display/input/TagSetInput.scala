@@ -4,7 +4,7 @@ import scala.scalajs.js
 import js.JSConverters._
 
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 import scalatags.JsDom.all._
 
 import querki.globals._
@@ -57,7 +57,7 @@ trait MarcoPoloUser extends EcologyMember {
   )
 }
   
-class TagSetInput(val propId:String, val required:Boolean, val kind:TagSetKind.TagSetKind, initialValuesJs:js.Dynamic)(implicit e:Ecology) 
+class TagSetInput(val propId:String, val required:Boolean, val kind:TagSetKind.TagSetKind, initialValuesJs:js.Any)(implicit e:Ecology) 
   extends InputGadget[dom.HTMLInputElement](e) with MarcoPoloUser
 {
   def values = { 
@@ -83,7 +83,7 @@ class TagSetInput(val propId:String, val required:Boolean, val kind:TagSetKind.T
     // pretty easy for us to generate a *change* event here, not necessarily a full rewrite! We are currently
     // grabbing and sending the full values list, but we could instead combine changeType and data into a
     // proper change event.
-    $(elem).on("manifestchange", { (/*evt:JQueryEventObject, changeType:String, data:js.Any*/) =>
+    $(elem).on("manifestchange", { e:dom.Element =>
       save()
     })
   }
@@ -151,7 +151,7 @@ class MarcoPoloInput(val propId:String, val required:Boolean, val kind:TagSetKin
   def hook() = {
     $(elem).marcoPolo(marcoPoloDefWithSelect)
     
-    $(elem).change( { (evt:JQueryEventObject) =>
+    $(elem).change( { (e:dom.Element) =>
       onChange()
     })
   }

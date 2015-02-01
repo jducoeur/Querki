@@ -4,7 +4,7 @@ import scala.concurrent.{Future, Promise}
 
 import scala.scalajs.js
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 import scalatags.JsDom.all._
 
 import querki.globals._
@@ -34,7 +34,7 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     // by the specified selector. See: 
     // http://stackoverflow.com/questions/965816/what-jquery-selector-excludes-items-with-a-parent-that-matches-a-given-selector
     // TODO: where does this jQuery hack belong?
-    $.expr.asInstanceOf[js.Dynamic].`:`.notUnder = { (elem:dom.Element, i:js.Any, m:js.Array[String]) =>
+    $.expr.`:`.notUnder = { (elem:dom.Element, i:js.Any, m:js.Array[String]) =>
       $(elem).parents(m(3)).length < 1;
     }
   }
@@ -70,7 +70,7 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
 
     // Whenever the hash changes, update the window. This is the main mechanism for navigation
     // within the client!
-    $(windowIn).on("hashchange", { (evt:JQueryEventObject) =>
+    $(windowIn).on("hashchange", { e:dom.Element =>
       invokeFromHash()
     })
   }
@@ -198,6 +198,6 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   
   def instantScrollToBottom() = {
     val document = window.document
-    $("html, body").scrollTop($(document).jqf.height()-$(window).jqf.height());
+    $("html, body").scrollTop(($(document).height()-$(window).height()).toInt);
   }
 }

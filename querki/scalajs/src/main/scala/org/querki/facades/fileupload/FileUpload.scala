@@ -1,7 +1,7 @@
 package org.querki.facades.fileupload
 
 import scala.scalajs.js
-import org.scalajs.jquery.{JQueryEventObject, JQueryXHR}
+import org.querki.jquery.{JQueryEventObject, JQueryXHR}
 import org.querki.jsext._
 
 /**

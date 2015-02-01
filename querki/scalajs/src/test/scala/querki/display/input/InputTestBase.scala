@@ -1,8 +1,8 @@
 package querki.display.input
 
 import scala.concurrent.{Future, Promise}
-
-import org.scalajs.jquery.JQuery
+import org.scalajs.dom
+import org.querki.jquery._
 
 import utest._
 import utest.ExecutionContext.RunNow
@@ -35,7 +35,7 @@ trait InputTestBase extends ThingPageTests with ScalatagUtils {
     val promise = Promise[String]
     // savecomplete is triggered when InputGadget receives a PropertyChanged from the server.
     // We need to set it now, because things happen synchronously in utest:
-    elem.on("savecomplete", { () => promise.success("Got it") })
+    elem.on("savecomplete", { (e:dom.Element) => promise.success("Got it") })
     // Wait to be told that we're gotten to savecomplete:
     promise.future.map { result =>
       assert(result == "Got it")

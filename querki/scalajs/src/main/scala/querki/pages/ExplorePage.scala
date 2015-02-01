@@ -4,7 +4,7 @@ import scala.concurrent.Future
 
 import scalatags.JsDom.all.{input => inp, _}
 import org.scalajs.dom
-import org.scalajs.jquery._
+import org.querki.jquery._
 import autowire._
 
 import querki.globals._
