@@ -6,6 +6,7 @@ import upickle._
 import autowire._
 
 import org.scalajs.dom
+import org.querki.jquery._
 import scalatags.JsDom.all._
 
 import querki.globals._
@@ -66,7 +67,7 @@ abstract class InputGadget[T <: dom.Element](e:Ecology) extends Gadget[T] with E
    * The path to the field. This is called when we are saving. *Usually*, this is the name of the element,
    * but there are a few unfortunate inconsistencies.
    */
-  def path = $(elem).attr("name")
+  def path = $(elem).Attr("name")
   
   /**
    * Save the current state of this InputGadget. This can potentially be overridden, but shouldn't

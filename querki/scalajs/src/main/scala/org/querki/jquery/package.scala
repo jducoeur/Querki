@@ -13,20 +13,27 @@ package object jquery extends js.GlobalScope {
   val $ = jQuery
   
   /**
-   * A shorter alias for JQuery events.
+   * A shorter alias for JQuery events, just to reduce keystrokes.
    */
-  type JQE = JQueryEventObject
+  type JQEvt = JQueryEventObject
   
   implicit def builder2DialogOptions(builder:JQueryEventObjectBuilder) = builder._result
 
   implicit def jQuery2Ext(jq:JQuery):JQueryExtensions = new JQueryExtensions(jq)
   
-  /**
-   * This is a nasty trick to allow pseudo-union Types.
-   */
-  sealed trait StringOrInt
   implicit def strToStringOrInt(s: String): StringOrInt = s.asInstanceOf[StringOrInt]
   implicit def intToStringOrInt(i: Int): StringOrInt = i.asInstanceOf[StringOrInt]
   
-  // TODO: add a similar "union trait" for Selector, and rewrite signatures to use that.
+  implicit def strToAttrVal(v:String):AttrVal = v.asInstanceOf[AttrVal]
+  implicit def intToAttrVal(v:Int):AttrVal = v.asInstanceOf[AttrVal]
+  implicit def boolToAttrVal(v:Boolean):AttrVal = v.asInstanceOf[AttrVal]
+  
+  implicit def strToElementDesc(v:String):ElementDesc = v.asInstanceOf[ElementDesc]
+  implicit def elementToElementDesc(v:Element):ElementDesc = v.asInstanceOf[ElementDesc]
+  implicit def jqToElementDesc(v:JQuery):ElementDesc = v.asInstanceOf[ElementDesc]
+  implicit def arrayToElementDesc(v:Array[Element]):ElementDesc = v.asInstanceOf[ElementDesc]
+  
+  implicit def strToSelector(v:String):Selector = v.asInstanceOf[Selector]
+  implicit def elementToSelector(v:Element):Selector = v.asInstanceOf[Selector]
+  implicit def arrayToSelector(v:Array[Element]):Selector = v.asInstanceOf[Selector]
 }

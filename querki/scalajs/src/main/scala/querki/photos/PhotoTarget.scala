@@ -1,6 +1,7 @@
 package querki.photos
 
 import org.scalajs.dom
+import org.querki.jquery._
 
 import querki.globals._
 

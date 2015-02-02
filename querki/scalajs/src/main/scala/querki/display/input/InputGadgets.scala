@@ -3,6 +3,7 @@ package querki.display.input
 import scala.scalajs.js
 import js.ThisFunction._
 import org.scalajs.dom
+import org.querki.jquery._
 
 import querki.globals._
 
@@ -59,7 +60,7 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
   def hookOtherPropEditor[Output <: dom.Element](elem:Output):Seq[Gadget[Output]] = {
     val e = $(elem)
     val tagName = e.prop("tagName").asInstanceOf[String].toLowerCase
-    val tagType = e.jqf.attr("type")
+    val tagType = e.attr("type")
     val results = if ((tagName == "input") && (tagType.isDefined) && (tagType.get == "checkbox")) {
       Seq((new CheckboxGadget).asInstanceOf[Gadget[Output]])
     } else

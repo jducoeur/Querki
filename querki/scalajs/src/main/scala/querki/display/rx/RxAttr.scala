@@ -2,6 +2,7 @@ package querki.display.rx
 
 import scala.scalajs.js
 import org.scalajs.dom
+import org.querki.jquery._
 import rx._
 import querki.globals._
 import querki.display.ManagedFrag
@@ -10,7 +11,7 @@ import querki.display.ManagedFrag
  * Defines an attribute, suitable for embedding in Scalatags, whose value is based on a
  * reactive.
  */
-class RxAttr[T <% js.Any](name:String, rx:Rx[T]) extends ManagedFrag[dom.Attr] {
+class RxAttr[T <% AttrVal](name:String, rx:Rx[T]) extends ManagedFrag[dom.Attr] {
   def createFrag = dom.document.createAttribute(name)
   
   lazy val obs = Obs(rx) {
@@ -32,5 +33,5 @@ class RxAttr[T <% js.Any](name:String, rx:Rx[T]) extends ManagedFrag[dom.Attr] {
   }
 }
 object RxAttr {
-  def apply[T <% js.Any](name:String, rx:Rx[T]) = new RxAttr(name, rx)
+  def apply[T <% AttrVal](name:String, rx:Rx[T]) = new RxAttr(name, rx)
 }

@@ -1,6 +1,7 @@
 package querki.notifications
 
 import org.scalajs.dom
+import org.querki.jquery._
 import scalatags.JsDom.all._
 import rx._
 import rx.ops._

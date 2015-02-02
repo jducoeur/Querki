@@ -1,6 +1,7 @@
 package querki.display.rx
 
 import org.scalajs.dom
+import org.querki.jquery._
 import rx._
 import querki.globals._
 import querki.display.ManagedFrag

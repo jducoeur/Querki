@@ -1,5 +1,7 @@
 package querki.photos
 
+import org.querki.jquery._
+
 import querki.globals._
 
 private [photos] trait PhotosInternal extends EcologyInterface {

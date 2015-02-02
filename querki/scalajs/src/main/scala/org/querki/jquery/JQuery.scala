@@ -8,6 +8,41 @@ import org.scalajs.dom
 import dom.Element
 
 /**
+ * This is a particularly important pseudo-union type. Selector is a common parameter type
+ * in jQuery, meaning essentially a filter for choosing some elements. It can be a string
+ * describing a kind of node (using a CSS-ish syntax), an Element, or an Array of Elements.
+ * 
+ * The actual types you can pass in to a Selector are defined by the implicit defs in
+ * jquery.Defs. Note that the jQuery API documentation is *extremely* inconsistent about
+ * how it treats the term "Selector" -- sometimes it just uses the term to mean Strings,
+ * sometimes it means all of the possible types.
+ * 
+ * TODO: as of 0.5.5, this doesn't compile, because js.Any was sealed. This is fixed in 0.6.
+ * 
+ * TODO: many of the signatures below should be tweaked to use Selector, once we've proved
+ * that works!
+ */
+sealed trait Selector extends js.Any
+
+/**
+ * This is a pseudo-union type. From the Scala POV, it's simply an anonymous trait, but we
+ * use it in jQuery signatures, for the fairly common scenario where a signature takes
+ * either a String or an Int, to reduce multiplicative explosion of overloads.
+ */
+sealed trait StringOrInt extends js.Any
+
+/**
+ * This pseudo-union type represents the various types that can be returned from replaceWith().
+ * Note that there are a bunch of implicit defs that describe conversions to this.
+ */
+sealed trait ElementDesc extends js.Any
+
+/**
+ * This pseudo-union type represents the types that can be passed into attr().
+ */
+sealed trait AttrVal extends js.Any
+
+/**
  * A facade for the main jQuery object.
  * 
  * This is a reimplementation, very loosely based on the existing scala-js-jquery. It aims to be much
@@ -15,9 +50,13 @@ import dom.Element
  * as possible.
  * 
  * TODO: as of this writing, this is *quite* incomplete; I am only adding functions as I use them. Pull
- * requests are greatly welcomed. In particular, we are lacking many overloads of Selectors -- I have
- * generally put in the String form, but there are usually other overloads that are at least technically
- * legal (if uncommon).
+ * requests are greatly welcomed. In particular, we are lacking many overloads -- I've added some of them,
+ * but many jQuery functions have a considerable number of potential overloads.
+ * 
+ * Many parameters are polymorphic. When there is a common pattern to that polymorphism -- that is, when
+ * the same overloads are repeatedly used in many functions -- I've pulled that out into a pseudo-union
+ * trait. (Notably Selector, but not limited to that.) We shouldn't go overboard on that, but this seems
+ * a practical approach in many cases.
  * 
  * NOTE: discussion on scalajs Gitter, 1/28/15, says that facades should *return* Any, but
  * *take* js.Any *if* the Javascript is going to process the value in any way. This is the guiding principle here.
@@ -32,6 +71,13 @@ trait JQuery extends js.Object {
    */
   def addClass(classNames:String):JQuery = ???
   def addClass(func:js.ThisFunction2[Element, Int, String, String]):JQuery = ???
+  
+  /**
+   * Insert content, specified by the parameter, after each element in the set of matched elements.
+   */
+  def after(content:ElementDesc):JQuery = ???
+  def after(func:js.ThisFunction0[Element, ElementDesc]):JQuery = ???
+  def after(func:js.ThisFunction1[Element, Int, ElementDesc]):JQuery = ???
   
   /**
    * Insert content, specified by the parameter, to the end of each element in the set of matched elements.
@@ -56,10 +102,9 @@ trait JQuery extends js.Object {
    * the attribute is not present, and that causes things to crash if it is not UndefOr.
    */
   def attr(attributeName:String):UndefOr[String] = ???
-  def attr(attributeName:String, v:String):JQuery = ???
-  def attr(attributeName:String, v:Int):JQuery = ???
+  def attr(attributeName:String, v:AttrVal):JQuery = ???
   def attr(attributes:js.Dictionary[String]):JQuery = ???
-  def attr(attributeName:String, func:js.ThisFunction2[Element, Int, String, StringOrInt]):JQuery = ???
+  def attr(attributeName:String, func:js.ThisFunction2[Element, Int, String, AttrVal]):JQuery = ???
   
   /**
    * Bind an event handler to the "change" JavaScript event, or trigger that event on an element.
@@ -90,8 +135,11 @@ trait JQuery extends js.Object {
   
   /**
    * Create a deep copy of the set of matched elements.
+   * 
+   * Note that this requires an override because Scala.Object declares a clone() method which
+   * is entirely unrelated.
    */
-  def clone():JQuery = ???
+  override def clone():JQuery = ???
   def clone(withDataAndEvents:Boolean):JQuery = ???
   def clone(withDataAndEvents:Boolean, deepWithDataAndEvents:Boolean):JQuery = ???
   
@@ -235,6 +283,17 @@ trait JQuery extends js.Object {
   def insertBefore(selector:JQuery):JQuery = ???
   
   /**
+   * Check the current matched set of elements against a selector, element,
+   * or jQuery object and return true if at least one of these elements matches the given arguments.
+   */
+  def is(selector:Selector):Boolean = ???
+  /**
+   * Note that this overload doesn't precisely match the jQuery documentation; we
+   * elide the redundant Element param, since you have Element as the this parameter.
+   */
+  def is(func:js.ThisFunction1[Element, Int, Boolean]):Boolean = ???
+  
+  /**
    * Bind an event handler to the "keydown" JavaScript event, or trigger that event on an element.
    */
   def keydown(handler:js.Function1[JQueryEventObject, Any]):JQuery = ???
@@ -348,13 +407,12 @@ trait JQuery extends js.Object {
   
   /**
    * Replace each element in the set of matched elements with the provided new content and return the set of elements that was removed.
+   * 
+   * Note that this takes the ElementDesc pseudo-type. See the jquery package for the implicit defs that
+   * convert to this.
    */
-  def replaceWith(content:String):JQuery = ???
-  def replaceWith(content:Element):JQuery = ???
-  def replaceWith(content:JQuery):JQuery = ???
-  def replaceWith(func:js.ThisFunction0[Element, String]):JQuery = ???
-  def replaceWith(func:js.ThisFunction0[Element, Element]):JQuery = ???
-  def replaceWith(func:js.ThisFunction0[Element, JQuery]):JQuery = ???
+  def replaceWith(content:ElementDesc):JQuery = ???
+  def replaceWith(func:js.ThisFunction0[Element, ElementDesc]):JQuery = ???
   
   /**
    * Get the current vertical position of the scroll bar for the first element in the set of
@@ -374,6 +432,18 @@ trait JQuery extends js.Object {
   // TODO: add the complex version of show(), with a Builder to construct the Options.
   
   /**
+   * Display the matched elements with a sliding motion.
+   */
+  def slideDown():JQuery = ???
+  def slideDown(duration:StringOrInt):JQuery = ???
+  
+  /**
+   * Hide the matched elements with a sliding motion.
+   */
+  def slideUp():JQuery = ???
+  def slideUp(duration:StringOrInt):JQuery = ???
+  
+  /**
    * Get the combined text contents of each element in the set of matched elements, including their descendants.
    */
   def text():String = ???
@@ -390,6 +460,12 @@ trait JQuery extends js.Object {
   def toArray():js.Array[_] = ???
   
   /**
+   * Execute all handlers and behaviors attached to the matched elements for the given event type.
+   */
+  def trigger(eventType:String):JQuery = ???
+  def trigger(event:JQueryEventObject):JQuery = ???
+  
+  /**
    * Get the value of this JQuery.
    * 
    * "value" is highly context-dependent. The signature is loose because it can return a
@@ -404,5 +480,17 @@ trait JQuery extends js.Object {
   @JSName("val") def value(): js.Dynamic = ???
   @JSName("val") def value(value: js.Array[String]): JQuery = ???
   @JSName("val") def value(value: String): JQuery = ???
-  @JSName("val") def value(func: js.Function2[Int, String, String]): JQuery = ???  
+  @JSName("val") def value(func: js.Function2[Int, String, String]): JQuery = ???
+  
+  
+  /**
+   * Get the current computed width for the first element in the set of matched elements.
+   */
+  def width():Double = ???
+  /**
+   * Set the CSS width of every matched element.
+   */
+  def width(value:Double):JQuery = ???
+  def width(value:String):JQuery = ???
+  def width(func:js.ThisFunction2[Element, Int, Int, StringOrInt]):JQuery = ???
 }

@@ -9,6 +9,9 @@ import org.scalajs.dom.Element
  * Basically, when you want to express a common idiom, especially one that is particularly helpful
  * in the Scala environment, it belongs here. But this isn't for complex high-level logic, just for
  * stuff that makes JQuery easier to use in Scala.
+ * 
+ * Within those constraints, pull requests are welcome for additional utility functions that seem
+ * to be at the same level.
  */
 class JQueryExtensions(jq:JQuery) {
   /**

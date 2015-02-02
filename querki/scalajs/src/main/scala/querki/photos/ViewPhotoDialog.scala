@@ -1,6 +1,8 @@
 package querki.photos
 
+import scala.scalajs.js
 import org.scalajs.dom
+import org.querki.jquery._
 import scalatags.JsDom.all._
 
 import querki.globals._
@@ -17,7 +19,7 @@ class ViewPhotoDialog extends Gadget[dom.HTMLDivElement] {
       .width(thumbnail.fullWidth + 31)
       .height(thumbnail.fullHeight + 50)
       // TBD: can we use Scalatags here somehow?
-      .css(lit(
+      .css(js.Dictionary[StringOrInt](
         "max-height" -> "100%",
         "margin-left" -> s"-${thumbnail.fullWidth / 2}px"
       ))
