@@ -248,7 +248,6 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
         AppliesToKindProp(Kind.Property),
         Summary("An extreme version of InternalProp -- this is a Property that is not even visible in user space.")))
   
-  // TODO: the name DisplayTextProp still need to be renamed to DefaultViewProp:
   lazy val PrintViewProp = new SystemProperty(PrintViewOID, LargeTextType, Optional,
       toProps(
         setName("Print View"),
@@ -265,8 +264,25 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
             |print from the Actions menu.
             |
             |**Advanced:** To make printing look *exactly* like you want, you may need to fiddle with CSS. The Print
-            |View will be wrapped in the class "_printView", so you can use ._printView in CSS to define styles that
-            |only happen in the Print View.""".stripMargin)
+            |View will be wrapped in the class "\_printView", so you can use .\_printView in CSS to define styles that
+            |only happen in the Print View.
+            |
+            |To hide the page headers and footers, you can do something like this:
+            |```
+            |@media print {
+            |  @page {
+            |    margin-top: 0mm;
+            |    margin-bottom: 0mm;
+            |  }
+            |
+            |  body {
+            |    padding-top: 0.25in;
+            |    padding-bottom: 0.25in;
+            |  }
+            |}
+            |```
+            |Unfortunately, there is currently no consistent way to control the headers and footers the way you
+            |would like. This is a browser limitation, which hopefully will one day get fixed.""".stripMargin)
         ))
 
   override lazy val props = Seq(
