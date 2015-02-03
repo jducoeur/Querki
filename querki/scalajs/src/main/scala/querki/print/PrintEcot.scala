@@ -44,6 +44,7 @@ class PrintEcot(e:Ecology) extends ClientEcot(e) with Print {
     // This part is tricky: we want to copy in all of the stylesheets, but then we have to wait until they
     // finish loading before we actually print.
     // IMPORTANT: note the explicit assumption that the number of links is non-zero!
+    // TODO: rewrite all of this in org.querki.jquery as soon as possible. Add Scala-ish versions of filter and each:
     var outstandingLinks = 0
     $("link").filter({ (index:Int, e:dom.Element) =>
       $(e).attr("rel") == "stylesheet"
