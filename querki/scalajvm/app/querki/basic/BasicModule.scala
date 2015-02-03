@@ -247,6 +247,23 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
         (SystemOnlyPropOID -> ExactlyOne(YesNoType(true))),
         AppliesToKindProp(Kind.Property),
         Summary("An extreme version of InternalProp -- this is a Property that is not even visible in user space.")))
+  
+  // TODO: the name DisplayTextProp still need to be renamed to DefaultViewProp:
+  lazy val PrintViewProp = new SystemProperty(PrintViewOID, LargeTextType, Optional,
+      toProps(
+        setName("Print View"),
+        Summary("How this Thing will be printed"),
+        Details("""Most of the time, you can just print Querki pages, and they will work as you want. But in some
+            |cases, you may want to print a Thing differently from how you look at it on the page -- you may want
+            |to show different fields, summarize differently, and so on. When that is the case, add the Print View
+            |Property. This is another Large Text, and works very much like Default View, but will only be used for
+            |printing.
+            |
+            |**Important:** the Print View will only be used when you select Print... from the Querki Actions menu;
+            |it will not be used if you say Print Page or something like that from the browser itself. This is a
+            |technical limitation of browsers that is difficult to work around. So if you want to use Print View,
+            |print from the Actions menu.""".stripMargin)
+        ))
 
   override lazy val props = Seq(
     ApplyMethod,
@@ -256,7 +273,8 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
     ExplicitProp,
     SystemOnlyProp,
     ModelViewProp,
-    SystemHiddenProp
+    SystemHiddenProp,
+    PrintViewProp
   )
   
   /***********************************************

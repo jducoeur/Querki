@@ -32,6 +32,7 @@ class StandardThings(h:PassthroughHandler) {
   object basic {
     val simpleThing = h.pass("Simple-Thing")
     val displayNameProp = h.pass("Display Name")
+	val printView = h.pass("Print View")
   }
   
   object conventions {
