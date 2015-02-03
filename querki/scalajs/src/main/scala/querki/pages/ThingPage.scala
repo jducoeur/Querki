@@ -40,7 +40,7 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
         div(
           pageDetails.headers.map(raw(_)),
           if (!pageDetails.stylesheets.isEmpty)
-            tags2.style(pageDetails.stylesheets.mkString("\n")),
+            tags2.style(id:="_pageStyles", pageDetails.stylesheets.mkString("\n")),
           div(id:="_topEdit", display.none),
           pageDetails.customHeader match {
             case Some(header) => new QText(header)

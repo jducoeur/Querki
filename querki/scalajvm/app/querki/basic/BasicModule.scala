@@ -262,7 +262,11 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
             |**Important:** the Print View will only be used when you select Print... from the Querki Actions menu;
             |it will not be used if you say Print Page or something like that from the browser itself. This is a
             |technical limitation of browsers that is difficult to work around. So if you want to use Print View,
-            |print from the Actions menu.""".stripMargin)
+            |print from the Actions menu.
+            |
+            |**Advanced:** To make printing look *exactly* like you want, you may need to fiddle with CSS. The Print
+            |View will be wrapped in the class "_printView", so you can use ._printView in CSS to define styles that
+            |only happen in the Print View.""".stripMargin)
         ))
 
   override lazy val props = Seq(
