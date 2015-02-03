@@ -63,6 +63,11 @@ package object display {
     def setRoot(windowIn:dom.Window, root:dom.Element):Unit
     
     /**
+     * The window that we are operating within.
+     */
+    def window:dom.Window
+    
+    /**
      * Set the folder where images are kept.
      */
     def setImagePath(path:String):Unit

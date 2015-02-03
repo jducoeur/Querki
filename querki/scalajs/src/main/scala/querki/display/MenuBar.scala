@@ -11,6 +11,13 @@ import querki.comm._
 import querki.notifications.NotifierGadget
 import querki.search.SearchGadget
 
+/**
+ * The Gadget that renders and manages the Menu Bar.
+ * 
+ * TBD: this is arguably more coupled than it should be. Ideally, each subsystem would register its menu
+ * items here, and this wouldn't have to know about all of them. The only issue is, how do we manage the
+ * overall ordering of the list?
+ */
 class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember with QuerkiUIUtils {
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
@@ -19,6 +26,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   lazy val Editing = interface[querki.editing.Editing]
   lazy val PageManager = interface[PageManager]
   lazy val Pages = interface[querki.pages.Pages]
+  lazy val Print = interface[querki.print.Print]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
   def spaceOpt = DataAccess.space
@@ -111,6 +119,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
         NavLink("View Source", Pages.viewFactory.pageUrl(thing)),
         NavLink("Advanced...", controllers.Application.showAdvancedCommands(ownerId, spaceId.underlying, thingId)),
         NavLink("Explore...", Pages.exploreFactory.pageUrl(thing), enabled = thing.isEditable),
+        NavLink("Print...", onClick = Some({ () => Print.print(thing)})),
         NavLink("Delete " + thing.displayName, enabled = thing.isDeleteable, onClick = Some({ () => DataModel.deleteAfterConfirm(thing) }))
       ) ++
       (if (thing.isModel)
