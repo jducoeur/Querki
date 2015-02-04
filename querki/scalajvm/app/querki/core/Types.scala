@@ -169,6 +169,8 @@ trait IntTypeBasis { self:CoreEcot =>
     
     override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = {
       implicit val s = state
+      if (v.length == 0)
+        throw new PublicException("Types.Int.empty")
       for (
         minValPO <- prop.getPropOpt(Types.MinIntValueProp)(state);
         minVal <- minValPO.firstOpt;

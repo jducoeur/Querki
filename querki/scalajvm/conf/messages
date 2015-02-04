@@ -41,6 +41,7 @@ Thing.find.unknownName=No Thing found with that name
 Types.Int.tooLow=Values of {0} can be no less than {1}
 Types.Int.tooHigh=Values of {0} can be no more than {1}
 Types.Int.badFormat=Numbers can only contain digits
+Types.Int.empty=A required Number field may not be empty
 
 Types.Name.empty=Names must have non-zero length
 Types.Name.tooLong=Names should not be excessively long

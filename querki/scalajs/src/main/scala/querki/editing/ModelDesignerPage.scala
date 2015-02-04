@@ -86,10 +86,10 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   }
   
   def removeProperty(editor:PropValueEditor) = {
+    // TODO: this should handle exceptions!
     Client[EditFunctions].removeProperty(modelId, editor.propInfo.oid).call().foreach { result =>
       result match {
         case PropertyChanged => editor.section.removeEditor(editor)
-        case PropertyChangeError(msg) => StatusLine.showBriefly(msg)        
       }
     }
   }

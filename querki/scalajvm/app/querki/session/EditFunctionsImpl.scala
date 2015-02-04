@@ -99,9 +99,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     self.request(createSelfRequest(ChangeProps2(thing.toThingId, props))) {
       case ThingFound(_, _) => promise.success(PropertyChanged)
       
-      // TODO: instead of PropertyChangeError, we really should have a generalized exception mechanism
-      // at the autowire level, and do a promise.failure() here:
-      case ThingError(ex, _) => promise.failure(new PublicException("Api.edit.noChange")) //promise.success(PropertyChangeError(ex.display(Some(rc))))
+       case ThingError(ex, _) => promise.failure(new querki.api.GeneralChangeFailure("Error during save"))
     }
     
     promise.future
@@ -184,8 +182,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     
     propsOpt match {
       case Some(props) => doChangeProps(thing, props)
-      case None => Future.failed(new querki.api.GeneralChangeFailure()) 
-        //Future.failed(new PublicException("Api.edit.noChange")) //Future.successful(PropertyChangeError("Unable to change property!"))
+      case None => Future.failed(new querki.api.GeneralChangeFailure("Error during save"))
     }
   }
   
@@ -383,7 +380,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
 
     propsOpt match {
       case Some(props) => doChangeProps(thing, props)
-      case _ => Future.successful(PropertyChangeError(s"Couldn't find Property $propId!"))
+      case _ => Future.failed(querki.api.GeneralChangeFailure(s"Couldn't find Property $propId!"))
     }
   }
   
