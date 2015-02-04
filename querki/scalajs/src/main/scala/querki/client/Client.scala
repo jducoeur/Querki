@@ -15,28 +15,58 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
   lazy val StatusLine = interface[querki.display.StatusLine]
   
   def interceptFailures(caller: => Future[String]):Future[String] = {
-    val fut = caller
-    fut.onFailure {
-      case ex @ PlayAjaxException(jqXHR, textStatus, errorThrown) => {
-        try {
-          println(s"Trying to read ${jqXHR.responseText} as an ApiException")
-          val aex = read[querki.api.ApiException](jqXHR.responseText)
-          println("Deserialized")
-          throw aex
-        } catch {
-          case aex:querki.api.ApiException => {
-            println("Passing along the ApiException")
-            throw aex
-          }
-          case _:Throwable => {
-            println("Rethrowing non-ApiException")
-            StatusLine.showUntilChange(jqXHR.responseText)
-	        throw ex	              
-          }
+    caller.transform(
+      { result => result },
+      { ex =>
+        ex match {
+	      case ex @ PlayAjaxException(jqXHR, textStatus, errorThrown) => {
+	        try {
+	          println(s"Trying to read ${jqXHR.responseText} as an ApiException")
+	          val aex = read[querki.api.ApiException](jqXHR.responseText)
+	          println("Deserialized")
+	          throw aex
+	        } catch {
+	          case aex:querki.api.ApiException => {
+	            println("Passing along the ApiException")
+	            throw aex
+	          }
+	          case _:Throwable => {
+	            println("Rethrowing non-ApiException")
+	            StatusLine.showUntilChange(jqXHR.responseText)
+		        throw ex	              
+	          }
+	        }
+	      }
+	      case _:Throwable => {
+	        println(s"Client.interceptFailures somehow got non-PlayAjaxException $ex")
+	        throw ex
+	      }
         }
       }
-    } 
-    fut
+    )
+//    
+//    val fut = caller
+//    fut.onFailure {
+//      case ex @ PlayAjaxException(jqXHR, textStatus, errorThrown) => {
+//        try {
+//          println(s"Trying to read ${jqXHR.responseText} as an ApiException")
+//          val aex = read[querki.api.ApiException](jqXHR.responseText)
+//          println("Deserialized")
+//          throw aex
+//        } catch {
+//          case aex:querki.api.ApiException => {
+//            println("Passing along the ApiException")
+//            throw aex
+//          }
+//          case _:Throwable => {
+//            println("Rethrowing non-ApiException")
+//            StatusLine.showUntilChange(jqXHR.responseText)
+//	        throw ex	              
+//          }
+//        }
+//      }
+//    } 
+//    fut
   }
   
   override def doCall(req: Request): Future[String] = {
