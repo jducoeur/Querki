@@ -1,5 +1,6 @@
 package querki.session
 
+import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
 import akka.actor._
@@ -289,19 +290,6 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
   def read[Result: Reader](p: String) = upickle.read[Result](p)
   
   def mkParams(rc:RequestContext) = AutowireParams(user, state, rc + state, spaceRouter, this)
-
-  // TODO: is there any way to get this to work? It compiles, but crashes with a MatchError. Look into it more:
-//  case class AutowireHandler[T](constr:AutowireParams => T) {
-//    def routeRequest(req:autowire.Core.Request[String], params:AutowireParams)(f:String => Unit) = {
-//      route[T](constr(params))(req).foreach(f)
-//    }
-//  }
-//  var autowireHandlerRegistry:Map[String,AutowireHandler[_]] = Map.empty
-//  def registerAutowireHandler[T](name:String, constr:AutowireParams => T) = autowireHandlerRegistry += (name -> AutowireHandler[T](constr))
-//  registerAutowireHandler[ThingFunctions]("ThingFunctions", { new ThingFunctionsImpl(_) })
-//  registerAutowireHandler[EditFunctions]("EditFunctions", { new EditFunctionsImpl(_) })
-//  registerAutowireHandler[SearchFunctions]("SearchFunctions", { new SearchFunctionsImpl(_) })
-//  registerAutowireHandler[ConversationFunctions]("ConversationFunctions", { new ConversationFunctionsImpl(_) })
   
   def normalReceive:Receive = LoggingReceive {
     case CurrentState(s) => setRawState(s)
@@ -311,59 +299,42 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
       payload match {
         
         case ClientRequest(req, rc) => {
+          val apiName = req.path(2)
           try {
             def params = mkParams(rc)
-          
-          // TODO: the calling side of that registry above:
-//          val handler = autowireHandlerRegistry(req.path(2))
-//          // routeRequest() is async, so we need to save sender in the closure:
-//          val senderSaved = sender
-//          handler.routeRequest(req, params) { result =>
-//            senderSaved ! ClientResponse(result)
-//          }
-          
-            // TODO: this matching approach is horrible, but at least doesn't duplicate any
-            // information. Make it more formal and automated:
-            req.path(2) match {
-              case "ThingFunctions" => {
+            
+            def handleRequest[T <: AutowireApiImpl](mkHandler: => T)(doRoute:T => Future[String]) = {
                 // route() is asynchronous, so we need to store away the sender!
                 val senderSaved = sender
-                val handler = new ThingFunctionsImpl(params)
-                route[ThingFunctions](handler)(req).foreach { result =>
-                  senderSaved ! ClientResponse(result)                  
-                }
-              }
-              case "EditFunctions" => {
-                // route() is asynchronous, so we need to store away the sender!
-                val senderSaved = sender
-                val handler = new EditFunctionsImpl(params)
-                route[EditFunctions](handler)(req).onComplete { 
+                val handler = mkHandler
+                doRoute(handler).onComplete { 
                   case Success(result) => senderSaved ! ClientResponse(result)
                   case Failure(ex) => { ex match {
                     case aex:querki.api.ApiException => senderSaved ! ClientError(write(aex))
-                    case pex:PublicException => senderSaved ! ClientError(pex.display(Some(handler.rc)))
+                    case pex:PublicException => {
+                      QLog.error(s"$apiName replied with PublicException $ex instead of ApiException when invoking $req")
+                      senderSaved ! ClientError(pex.display(Some(handler.rc)))
+                    }
                     case _ => {
-                      QLog.error(s"Got exception from EditFunctions when invoking $req: $ex")
+                      QLog.error(s"Got exception from $apiName when invoking $req: $ex")
                       senderSaved ! UnexpectedPublicException.display(Some(handler.rc))
                     }
                   }}
-                }
+                }              
+            }
+          
+            apiName match {
+              case "ThingFunctions" => {
+                handleRequest(new ThingFunctionsImpl(params))(route[ThingFunctions](_)(req))
+              }
+              case "EditFunctions" => {
+                handleRequest(new EditFunctionsImpl(params))(route[EditFunctions](_)(req))
               }
               case "SearchFunctions" => {
-                // route() is asynchronous, so we need to store away the sender!
-                val senderSaved = sender
-                val handler = new SearchFunctionsImpl(params)
-                route[SearchFunctions](handler)(req).foreach { result =>
-                  senderSaved ! ClientResponse(result)                  
-                }
+                handleRequest(new SearchFunctionsImpl(params))(route[SearchFunctions](_)(req))
               }
               case "ConversationFunctions" => {
-                // route() is asynchronous, so we need to store away the sender!
-                val senderSaved = sender
-                val handler = new ConversationFunctionsImpl(params)
-                route[ConversationFunctions](handler)(req).foreach { result =>
-                  senderSaved ! ClientResponse(result)                  
-                }
+                handleRequest(new ConversationFunctionsImpl(params))(route[ConversationFunctions](_)(req))
               }
               case _ => { sender ! ClientError("Unknown API ID!") }
             }
