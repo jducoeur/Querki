@@ -4,7 +4,7 @@ import scala.concurrent.{Future, Promise}
 import scala.scalajs.js
 import scala.util.{Failure, Success, Try}
 
-import org.scalajs.jquery.{JQueryAjaxSettings, JQueryDeferred}
+import org.scalajs.jquery.{JQueryAjaxSettings, JQueryDeferred, JQueryXHR}
 
 import querki.globals._
 
@@ -80,10 +80,10 @@ trait PlayCall extends js.Object {
 }
 
 sealed trait AjaxResult
-case class AjaxSuccess(data:String, textStatus:String, jqXHR:JQueryDeferred) extends AjaxResult
-case class AjaxFailure(jqXHR:JQueryDeferred, textStatus:String, errorThrown:String) extends AjaxResult
+case class AjaxSuccess(data:String, textStatus:String, jqXHR:JQueryXHR) extends AjaxResult
+case class AjaxFailure(jqXHR:JQueryXHR, textStatus:String, errorThrown:String) extends AjaxResult
 
-case class PlayAjaxException(jqXHR:JQueryDeferred, textStatus:String, errorThrown:String) extends Exception 
+case class PlayAjaxException(jqXHR:JQueryXHR, textStatus:String, errorThrown:String) extends Exception 
 
 /**
  * This wrapper around PlayCall exposes the Ajax stuff in a more Scala-idiomatic way, using Futures.
@@ -104,12 +104,13 @@ class PlayAjax(call:PlayCall) {
     }.mkString("&")
     val settings = lit(data = dataStr).asInstanceOf[JQueryAjaxSettings]
     val deferred = call.ajax(settings).asInstanceOf[JQueryDeferred]
-    deferred.done { (data:String, textStatus:String, jqXHR:JQueryDeferred) => 
+    deferred.done { (data:String, textStatus:String, jqXHR:JQueryXHR) => 
       // Uncomment this link to print the results of API calls.
       println(s"Got AJAX response $data")
       promise.success(data)
     }
-    deferred.fail { (jqXHR:JQueryDeferred, textStatus:String, errorThrown:String) => 
+    deferred.fail { (jqXHR:JQueryXHR, textStatus:String, errorThrown:String) => 
+      println(s"Got AJAX error $errorThrown with ${jqXHR.responseText}")
       promise.failure(PlayAjaxException(jqXHR, textStatus, errorThrown))
     }
     
@@ -120,10 +121,10 @@ class PlayAjax(call:PlayCall) {
     val promise = Promise[Try[U]]
     
     val deferred = call.ajax().asInstanceOf[JQueryDeferred]
-    deferred.done { (data:String, textStatus:String, jqXHR:JQueryDeferred) => 
+    deferred.done { (data:String, textStatus:String, jqXHR:JQueryXHR) => 
       promise.success(Success(cb(AjaxSuccess(data, textStatus, jqXHR))))
     }
-    deferred.fail { (jqXHR:JQueryDeferred, textStatus:String, errorThrown:String) => 
+    deferred.fail { (jqXHR:JQueryXHR, textStatus:String, errorThrown:String) => 
       promise.success(Failure({
         cb(AjaxFailure(jqXHR, textStatus, errorThrown))
         PlayAjaxException(jqXHR, textStatus, errorThrown)

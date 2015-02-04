@@ -1,5 +1,7 @@
 package querki.session
 
+import scala.util.{Failure, Success}
+
 import akka.actor._
 import akka.event.LoggingReceive
 
@@ -335,8 +337,15 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
                 // route() is asynchronous, so we need to store away the sender!
                 val senderSaved = sender
                 val handler = new EditFunctionsImpl(params)
-                route[EditFunctions](handler)(req).foreach { result =>
-                  senderSaved ! ClientResponse(result)                  
+                route[EditFunctions](handler)(req).onComplete { 
+                  case Success(result) => senderSaved ! ClientResponse(result)
+                  case Failure(ex) => { ex match {
+                    case pex:PublicException => senderSaved ! ClientError(pex.display(Some(handler.rc)))
+                    case _ => {
+                      QLog.error(s"Got exception from EditFunctions when invoking $req: $ex")
+                      senderSaved ! UnexpectedPublicException.display(Some(handler.rc))
+                    }
+                  }}
                 }
               }
               case "SearchFunctions" => {

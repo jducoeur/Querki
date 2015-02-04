@@ -1,6 +1,8 @@
 General=Unexpected error. The details have been logged, and we will look into it. Sorry for the inconvenience.
 General.public={0}
 
+Api.edit.noChange=Unable to change property -- sorry!
+
 Editor.temp.InstanceEditorRequired=For the time being, _edit can only be used on Things that have the Instance Edit View Property set.
 
 Func.insufficientParams={0} requires at least {1} parameters

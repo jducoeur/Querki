@@ -12,6 +12,7 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
+  lazy val StatusLine = interface[querki.display.StatusLine]
   
   override def doCall(req: Request): Future[String] = {
     try {
@@ -32,9 +33,15 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
         }
         
         case _ => {
-	      controllers.ClientController.apiRequest(
+	      val fut = controllers.ClientController.apiRequest(
 	          DataAccess.userName, 
 	          DataAccess.spaceId.underlying).callAjax("pickledRequest" -> upickle.write(req))
+	      fut.onFailure {
+	        case PlayAjaxException(jqXHR, textStatus, errorThrown) => {
+	          StatusLine.showUntilChange(jqXHR.responseText)
+	        }
+	      } 
+	      fut
         }
       }
     } catch {

@@ -15,7 +15,7 @@ import querki.core.QLText
 import querki.data._
 import querki.session.messages.ChangeProps2
 import querki.spaces.messages.{CreateThing, ModifyThing, ThingFound, ThingError}
-import querki.util.Requester
+import querki.util.{PublicException, Requester}
 import querki.values.{QLRequestContext, RequestContext}
 
 class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with EditFunctions {
@@ -97,7 +97,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
       
       // TODO: instead of PropertyChangeError, we really should have a generalized exception mechanism
       // at the autowire level, and do a promise.failure() here:
-      case ThingError(ex, _) => promise.success(PropertyChangeError(ex.display(Some(rc))))
+      case ThingError(ex, _) => promise.failure(new PublicException("Api.edit.noChange")) //promise.success(PropertyChangeError(ex.display(Some(rc))))
     }
     
     promise.future
@@ -180,7 +180,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     
     propsOpt match {
       case Some(props) => doChangeProps(thing, props)
-      case None => Future.successful(PropertyChangeError("Unable to change property!"))
+      case None => Future.failed(new PublicException("Api.edit.noChange")) //Future.successful(PropertyChangeError("Unable to change property!"))
     }
   }
   
