@@ -159,7 +159,7 @@ trait IntTypeBasis { self:CoreEcot =>
     def doDeserialize(v:String)(implicit state:SpaceState) = try {
       java.lang.Integer.parseInt(v)
     } catch {
-      case ex:java.lang.NumberFormatException => throw new PublicException("Types.Number.badFormat", v)
+      case ex:java.lang.NumberFormatException => throw new PublicException("Types.Int.badFormat")
     }
     
     def doSerialize(v:Int)(implicit state:SpaceState) = v.toString
