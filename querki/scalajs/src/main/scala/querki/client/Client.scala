@@ -14,6 +14,31 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
+  def interceptFailures(caller: => Future[String]):Future[String] = {
+    val fut = caller
+    fut.onFailure {
+      case ex @ PlayAjaxException(jqXHR, textStatus, errorThrown) => {
+        try {
+          println(s"Trying to read ${jqXHR.responseText} as an ApiException")
+          val aex = read[querki.api.ApiException](jqXHR.responseText)
+          println("Deserialized")
+          throw aex
+        } catch {
+          case aex:querki.api.ApiException => {
+            println("Passing along the ApiException")
+            throw aex
+          }
+          case _:Throwable => {
+            println("Rethrowing non-ApiException")
+            StatusLine.showUntilChange(jqXHR.responseText)
+	        throw ex	              
+          }
+        }
+      }
+    } 
+    fut
+  }
+  
   override def doCall(req: Request): Future[String] = {
     try {
       // TODO: handle HTTP errors from this apiRequest call. What should we do with them?
@@ -33,16 +58,9 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
         }
         
         case _ => {
-	      val fut = controllers.ClientController.apiRequest(
+	      interceptFailures(controllers.ClientController.apiRequest(
 	          DataAccess.userName, 
-	          DataAccess.spaceId.underlying).callAjax("pickledRequest" -> upickle.write(req))
-	      fut.onFailure {
-	        case ex @ PlayAjaxException(jqXHR, textStatus, errorThrown) => {
-	          StatusLine.showUntilChange(jqXHR.responseText)
-	          throw ex
-	        }
-	      } 
-	      fut
+	          DataAccess.spaceId.underlying).callAjax("pickledRequest" -> upickle.write(req)))
         }
       }
     } catch {

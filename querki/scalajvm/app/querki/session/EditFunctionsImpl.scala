@@ -180,7 +180,8 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     
     propsOpt match {
       case Some(props) => doChangeProps(thing, props)
-      case None => Future.failed(new PublicException("Api.edit.noChange")) //Future.successful(PropertyChangeError("Unable to change property!"))
+      case None => Future.failed(new querki.api.GeneralChangeFailure()) 
+        //Future.failed(new PublicException("Api.edit.noChange")) //Future.successful(PropertyChangeError("Unable to change property!"))
     }
   }
   
