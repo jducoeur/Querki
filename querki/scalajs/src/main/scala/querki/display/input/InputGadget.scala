@@ -110,7 +110,14 @@ abstract class InputGadget[T <: dom.Element](e:Ecology) extends Gadget[T] with E
         }
         promise.success(response)
       }
-      case Failure(ex) => println(s"InputGadget got exception $ex")
+      case Failure(ex) => {
+        ex match {
+          case querki.api.GeneralChangeFailure() => {
+            StatusLine.showUntilChange(s"Something went wrong during save -- sorry!")
+            $(elem).trigger("saveerror")
+          }
+        }
+      }
     }
     promise.future
   }

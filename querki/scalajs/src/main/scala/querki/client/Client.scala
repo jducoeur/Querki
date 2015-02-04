@@ -44,29 +44,6 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
         }
       }
     )
-//    
-//    val fut = caller
-//    fut.onFailure {
-//      case ex @ PlayAjaxException(jqXHR, textStatus, errorThrown) => {
-//        try {
-//          println(s"Trying to read ${jqXHR.responseText} as an ApiException")
-//          val aex = read[querki.api.ApiException](jqXHR.responseText)
-//          println("Deserialized")
-//          throw aex
-//        } catch {
-//          case aex:querki.api.ApiException => {
-//            println("Passing along the ApiException")
-//            throw aex
-//          }
-//          case _:Throwable => {
-//            println("Rethrowing non-ApiException")
-//            StatusLine.showUntilChange(jqXHR.responseText)
-//	        throw ex	              
-//          }
-//        }
-//      }
-//    } 
-//    fut
   }
   
   override def doCall(req: Request): Future[String] = {
