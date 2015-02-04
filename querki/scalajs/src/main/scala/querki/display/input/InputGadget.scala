@@ -103,6 +103,7 @@ abstract class InputGadget[T <: dom.Element](e:Ecology) extends Gadget[T] with E
             StatusLine.showBriefly("Saved")
             $(elem).trigger("savecomplete")
           }
+          // TODO: this clause is obsolete, I believe, and can go away:
           case PropertyChangeError(msg) => {
             StatusLine.showUntilChange(s"Error: $msg")
             $(elem).trigger("saveerror")
@@ -112,6 +113,11 @@ abstract class InputGadget[T <: dom.Element](e:Ecology) extends Gadget[T] with E
       }
       case Failure(ex) => {
         ex match {
+          case querki.api.ValidationException(msg) => {
+            // TODO: highlight the field and show the error in context
+            StatusLine.showUntilChange(msg)
+            $(elem).trigger("saveerror")            
+          }
           case querki.api.GeneralChangeFailure() => {
             StatusLine.showUntilChange(s"Something went wrong during save -- sorry!")
             $(elem).trigger("saveerror")

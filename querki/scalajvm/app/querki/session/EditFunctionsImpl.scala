@@ -45,6 +45,10 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
 	  // a Bundle:
 	  val context = QLRequestContext(rc)
 	  val actualFormFieldInfo = HtmlRenderer.propValFromUser(fieldIds, vs.toList, context)
+	  if (!actualFormFieldInfo.isValid){
+	    val msg = actualFormFieldInfo.error.map(_.display(Some(rc))).getOrElse("Validation Error")
+	    throw new querki.api.ValidationException(msg)
+	  }
 	  val result = fieldIds.container match {
 	    // If this value is contained inside (potentially nested) Bundles, dive down into them
 	    // and adjust the results:

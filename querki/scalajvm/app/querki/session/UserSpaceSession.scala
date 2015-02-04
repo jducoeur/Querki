@@ -300,6 +300,21 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
         
         case ClientRequest(req, rc) => {
           val apiName = req.path(2)
+            
+          def handleException(ex:Throwable, s:ActorRef, rc:RequestContext) = {
+            ex match {
+              case aex:querki.api.ApiException => s ! ClientError(write(aex))
+              case pex:PublicException => {
+                QLog.error(s"$apiName replied with PublicException $ex instead of ApiException when invoking $req")
+                s ! ClientError(pex.display(Some(rc)))
+              }
+              case _ => {
+                QLog.error(s"Got exception from $apiName when invoking $req: $ex")
+                s ! UnexpectedPublicException.display(Some(rc))
+              }
+            }              
+          }
+          
           try {
             def params = mkParams(rc)
             
@@ -309,17 +324,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
                 val handler = mkHandler
                 doRoute(handler).onComplete { 
                   case Success(result) => senderSaved ! ClientResponse(result)
-                  case Failure(ex) => { ex match {
-                    case aex:querki.api.ApiException => senderSaved ! ClientError(write(aex))
-                    case pex:PublicException => {
-                      QLog.error(s"$apiName replied with PublicException $ex instead of ApiException when invoking $req")
-                      senderSaved ! ClientError(pex.display(Some(handler.rc)))
-                    }
-                    case _ => {
-                      QLog.error(s"Got exception from $apiName when invoking $req: $ex")
-                      senderSaved ! UnexpectedPublicException.display(Some(handler.rc))
-                    }
-                  }}
+                  case Failure(ex) => handleException(ex, senderSaved, handler.rc)
                 }              
             }
           
@@ -339,11 +344,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
               case _ => { sender ! ClientError("Unknown API ID!") }
             }
           } catch {
-            case ex:Exception => {
-              QLog.error(s"Exception while trying to handle Client Request $req", ex)
-              // TODO: ideally, this should return the exception through a side-channel
-              sender ! ClientError("Exception while trying to handle message")
-            }
+            case ex:Exception => handleException(ex, sender, rc)
           }
         }
         
