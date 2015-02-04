@@ -37,8 +37,9 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
 	          DataAccess.userName, 
 	          DataAccess.spaceId.underlying).callAjax("pickledRequest" -> upickle.write(req))
 	      fut.onFailure {
-	        case PlayAjaxException(jqXHR, textStatus, errorThrown) => {
+	        case ex @ PlayAjaxException(jqXHR, textStatus, errorThrown) => {
 	          StatusLine.showUntilChange(jqXHR.responseText)
+	          throw ex
 	        }
 	      } 
 	      fut

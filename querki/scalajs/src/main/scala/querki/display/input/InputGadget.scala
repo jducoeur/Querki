@@ -1,5 +1,6 @@
 package querki.display.input
 
+import scala.util.{Failure, Success}
 import scala.scalajs.js
 import js.UndefOr
 import upickle._
@@ -94,19 +95,22 @@ abstract class InputGadget[T <: dom.Element](e:Ecology) extends Gadget[T] with E
   def saveChange(msg:PropertyChange):Future[PropertyChangeResponse] = {
     StatusLine.showUntilChange("Saving...")
     val promise = Promise[PropertyChangeResponse]
-    Client[EditFunctions].alterProperty(thingId, msg).call().foreach { response =>
-      InputGadgetsInternal.saveComplete(this)
-	  response match {
-        case PropertyChanged => {
-          StatusLine.showBriefly("Saved")
-          $(elem).trigger("savecomplete")
+    Client[EditFunctions].alterProperty(thingId, msg).call().onComplete {
+      case Success(response) => {
+        InputGadgetsInternal.saveComplete(this)
+	    response match {
+          case PropertyChanged => {
+            StatusLine.showBriefly("Saved")
+            $(elem).trigger("savecomplete")
+          }
+          case PropertyChangeError(msg) => {
+            StatusLine.showUntilChange(s"Error: $msg")
+            $(elem).trigger("saveerror")
+          }
         }
-        case PropertyChangeError(msg) => {
-          StatusLine.showUntilChange(s"Error: $msg")
-          $(elem).trigger("saveerror")
-        }
+        promise.success(response)
       }
-      promise.success(response)
+      case Failure(ex) => println(s"InputGadget got exception $ex")
     }
     promise.future
   }
