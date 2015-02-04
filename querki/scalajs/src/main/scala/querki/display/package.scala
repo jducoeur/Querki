@@ -136,5 +136,10 @@ package object display {
      * Display the given message until there is another show.
      */
     def showUntilChange(msg:String):Unit
+    
+    /**
+     * Hide the status line.
+     */
+    def clear():Unit
   }
 }

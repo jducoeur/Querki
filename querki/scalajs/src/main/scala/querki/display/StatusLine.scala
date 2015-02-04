@@ -39,4 +39,6 @@ class StatusLineEcot(e:Ecology) extends ClientEcot(e) with StatusLine with Statu
   def showUntilChange(msg:String):Unit = showInternal(msg, { jq => jq.show() })
   
   def showBriefly(msg:String):Unit = showInternal(msg, { jq => jq.show().delay(4000).hide("slow") } )
+  
+  def clear():Unit = showInternal("", { jq => jq.hide("slow") })
 }

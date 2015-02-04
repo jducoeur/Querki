@@ -469,4 +469,25 @@ body {
 ._pickName:hover ._deleteInstanceButton {
   display: inherit;
 }
+
+/****************************
+ * Error styles
+ */
  
+._validationError {
+  display: inline-block;
+  padding: 5px;
+  background: #dddddd;
+  border-radius: 4px;
+}
+
+._validationError p {
+  color: red;
+  font-size: x-small;
+  margin-left: 10px;
+  margin-bottom: 0px;
+}
+
+._validationError input {
+  margin-bottom: 0px;
+}

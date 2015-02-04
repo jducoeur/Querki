@@ -84,7 +84,30 @@ abstract class InputGadget[T <: dom.Element](e:Ecology) extends Gadget[T] with E
    * 
    * If you call this, you should also define the save() method.
    */
-  def beginChanges() = InputGadgetsInternal.startingEdits(this)
+  def beginChanges() = {
+    InputGadgetsInternal.startingEdits(this)
+  }
+  
+  var errorWrapper:Option[dom.HTMLDivElement] = None
+  def showValidationError(msg:String) = {
+    val wrapper =
+      div(cls:="_validationError",
+        p(msg)
+      ).render
+    $(wrapper).insertBefore(elem)
+    $(elem).detach()
+    $(wrapper).prepend(elem)
+    $(elem).focus()
+    
+    errorWrapper = Some(wrapper)
+  }
+  def clearValidationError() = {
+    errorWrapper.foreach { wrapper =>
+      $(elem).detach()
+      $(wrapper).replaceWith(elem)
+      errorWrapper = None
+    }
+  }
   
   /**
    * Records a change that the user has made. This should be called by the specific Gadget when
@@ -94,6 +117,7 @@ abstract class InputGadget[T <: dom.Element](e:Ecology) extends Gadget[T] with E
    */
   def saveChange(msg:PropertyChange):Future[PropertyChangeResponse] = {
     StatusLine.showUntilChange("Saving...")
+    clearValidationError()
     val promise = Promise[PropertyChangeResponse]
     Client[EditFunctions].alterProperty(thingId, msg).call().onComplete {
       case Success(response) => {
@@ -114,9 +138,9 @@ abstract class InputGadget[T <: dom.Element](e:Ecology) extends Gadget[T] with E
       case Failure(ex) => {
         ex match {
           case querki.api.ValidationException(msg) => {
-            // TODO: highlight the field and show the error in context
-            StatusLine.showUntilChange(msg)
-            $(elem).trigger("saveerror")            
+            StatusLine.clear()
+            showValidationError(msg)
+            $(elem).trigger("saveerror")
           }
           case querki.api.GeneralChangeFailure() => {
             StatusLine.showUntilChange(s"Something went wrong during save -- sorry!")
