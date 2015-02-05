@@ -68,6 +68,15 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
     val hiddenProps = System.State.spaceProps.values.filter(_.ifSet(Basic.SystemHiddenProp)(System.State))
     hiddenProps.map(_.id)
   }
+  
+  /**
+   * This is the dumping ground for exceptions to the rule that your Space only contains Things you can
+   * read. There should *not* be many of these.
+   */
+  def isReadException(thingId:OID)(implicit state:SpaceState):Boolean = {
+    // I always have access to my own Person record, so that _me always works:
+    Person.hasPerson(user, thingId)
+  }
 
   var _enhancedState:Option[SpaceState] = None
   def clearEnhancedState() = _enhancedState = None
@@ -86,7 +95,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
               // have already exised a Model from curState (because we don't have permission) when we get
               // to an Instance of that Model. Things can then get horribly confused when we try to look
               // at the Instance, try to examine its Model, and *boom*.
-              if (AccessControl.canRead(rs, user, thingId)) {
+              if (AccessControl.canRead(rs, user, thingId) || isReadException(thingId)(rs)) {
                 // Remove any SystemHidden Properties from this Thing, if there are any:
                 if (hiddenOIDs.exists(thing.props.contains(_))) {
                   val newThing = thing.copy(pf = { () => (thing.props -- hiddenOIDs) })
