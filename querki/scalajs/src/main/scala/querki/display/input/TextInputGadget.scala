@@ -45,6 +45,11 @@ class LargeTextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLTextA
   
   def values = List(elem.value)
   
+  override def setValue(v:String):Unit = {
+    $(elem).value(v).trigger("autosize.resize")
+    save()
+  }
+  
   // TBD: do we need an unhook, to avoid leaks?
   def hook() = {
     // Mark LargeTextInputs as autosized.

@@ -80,7 +80,7 @@ object ApplicationBuild extends Build with UniversalKeys {
 	  jsDependencies += ProvidedJS / "jquery.manifest.js" dependsOn "jquery.js",
 	  jsDependencies += ProvidedJS / "jquery.ui.touch-punch.js" dependsOn "jquery-ui-1.10.0.custom.js",
 	  jsDependencies += ProvidedJS / "bootstrap.min.js" dependsOn "jquery.js",
-	  jsDependencies += ProvidedJS / "jquery.autosize-min.js" dependsOn "jquery.js",
+	  jsDependencies += ProvidedJS / "jquery.autosize.min.js" dependsOn "jquery.js",
 	  jsDependencies += ProvidedJS / "jquery.raty.js" dependsOn "jquery.js",
 	  jsDependencies += ProvidedJS / "jquery.histogram.js" dependsOn "jquery.js",
 	  jsDependencies += ProvidedJS / "moment.min.js",

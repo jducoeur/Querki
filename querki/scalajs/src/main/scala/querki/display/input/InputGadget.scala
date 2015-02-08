@@ -32,6 +32,17 @@ abstract class InputGadget[T <: dom.Element](e:Ecology) extends Gadget[T] with E
    * Hook whatever events are appropriate for this Gadget.
    */
   protected def hook():Unit
+  
+  /**
+   * Iff this Gadget allows its value to be changed from the outside, set the value.
+   * 
+   * TODO: this is pretty much a hack, mainly in place for CreateAndEditPage's setValue().
+   * It's clearly undertyped and wrong. What's the right approach here? In principle, it seems
+   * like each Gadget type should optionally expose the type of its value, which we should use
+   * here. But I'd prefer to not have to specify that explicit for each and every Gadget. Is
+   * there a way to have a "default type" in the type parameters?
+   */
+  def setValue(v:String):Unit = {}
 
   /**
    * Called by InputGadgets when it is time to prepare this Gadget for the world.

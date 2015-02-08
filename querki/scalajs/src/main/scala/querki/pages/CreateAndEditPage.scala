@@ -53,12 +53,13 @@ class CreateAndEditPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
    * It is currently used from the Explore page.
    */
   def setValue(prop:TID, v:String) = {
+    // Controls are identified by their path. Assuming the desired Property is here, its path
+    // should exist as an ID:
     val path = Editing.propPathOldStyleHack(prop, thingInfoOpt.map(_.oid))
     val control = $(elem).find(s"#$path")
-    control.html(v)
     findGadgets(control).foreach {
       case gadget:InputGadget[_] => {
-        gadget.save()
+        gadget.setValue(v)
       }
     }
   }
