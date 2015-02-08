@@ -193,6 +193,10 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
         
     $(displayRoot).empty()
     $(displayRoot).append(fullPage.render)
+    
+    // Note that onPageRendered doesn't get called here, because most Pages involve
+    // async calls to the server. When the Page is actually finished loading and
+    // rendering, it will call onPageRendered().
   }
   
   def onPageRendered(page:Page) = {

@@ -6,9 +6,11 @@ import scalatags.JsDom.all.{input => inp, _}
 import org.scalajs.dom
 import org.scalajs.jquery._
 import autowire._
+import rx._
 
 import querki.globals._
 
+import models.Wikitext
 import querki.api.ThingFunctions
 import querki.display.{ButtonGadget, ButtonKind, QText, WrapperDiv}
 import querki.display.input.{InputGadget, ManifestItem, MarcoPoloInput, TagSetKind}
@@ -68,6 +70,7 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
   def evaluate() = {
     println(s"Evaluating $thingId on ${qlInput.value}")
     Client[ThingFunctions].evaluateQL(thingId, qlInput.value).call().foreach { result =>
+      rawResults() = result
       val qtext = new QText(result)
       results.replaceContents(qtext.render)
       InputGadgets.hookPendingGadgets()
@@ -76,6 +79,7 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
   
   lazy val qlInput = new QLInput
   lazy val results = new WrapperDiv
+  lazy val rawResults = Var[Wikitext](Wikitext.empty)
   
   lazy val ReifyButton = new ButtonGadget(ButtonKind.Normal, "Make a Page")({
     val createFut = for {
@@ -83,6 +87,15 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
       createPage <- Pages.createAndEditFactory.showPage(std.basic.simpleThing)
       // TODO: we could get rid of this asInstanceOf by tweaking the type signature of showPage?
       dummy = createPage.asInstanceOf[CreateAndEditPage].setValue(std.basic.defaultView, s"[[${qlInput.value}]]")
+    }
+      yield createPage
+  })
+  
+  lazy val SaveButton = new ButtonGadget(ButtonKind.Normal, "Save Results")({
+    val saveFut = for {
+      std <- DataAccess.standardThings
+      createPage <- Pages.createAndEditFactory.showPage(std.basic.simpleThing)
+      dummy = createPage.asInstanceOf[CreateAndEditPage].setValue(std.basic.defaultView, s"${rawResults().plaintext}")
     }
       yield createPage
   })
@@ -105,7 +118,9 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
         
         hr,
         
-        results
+        results,
+        
+        p(SaveButton)
       )
     }
   	  yield PageContents(s"QL Explorer for ${thingInfo.displayName}", guts)
