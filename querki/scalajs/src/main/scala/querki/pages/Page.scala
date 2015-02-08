@@ -93,6 +93,7 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
       PageManager.update(content.title)
       InputGadgets.hookPendingGadgets()
       renderedContentPromise.success(fullyRendered)
+      PageManager.onPageRendered(this)
     }
     
     outerPage

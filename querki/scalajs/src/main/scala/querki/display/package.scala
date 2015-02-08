@@ -90,7 +90,7 @@ package object display {
     /**
      * Switch to the specified page. This is fairly low-level; use higher-level APIs when possible.
      */
-    def showPage(pageName:String, paramMap:ParamMap)
+    def showPage(pageName:String, paramMap:ParamMap):Future[Page]
     
     /**
      * If you need to be signaled when the page next changes, use this.
@@ -124,6 +124,12 @@ package object display {
      * Scrolls to the bottom of the page.
      */
     def instantScrollToBottom():Unit
+    
+    /**
+     * Each page calls this when it is *finished* rendering; this in turn kicks off the
+     * afterPageLoads and nextChangeFuture events.
+     */
+    def onPageRendered(page:Page):Unit
   }
   
   trait StatusLine extends EcologyInterface {

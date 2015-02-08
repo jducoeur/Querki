@@ -85,11 +85,7 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
   }
   
   @tailrec private def findParentGadgetRec(node:JQuery, pred:AnyFrag => Boolean):AnyFrag = {
-    val frags =
-      if (node.hasClass("_withGadget"))
-        node.data("gadgets").asInstanceOf[Seq[AnyFrag]]
-      else
-        Seq.empty
+    val frags = findGadgets(node)
     frags.find(pred(_)) match {
       case Some(result) => result
       case None => findParentGadgetRec(node.parent(), pred)
@@ -97,6 +93,13 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
   }
   def findParentGadget(pred:AnyFrag => Boolean):AnyFrag = {
     findParentGadgetRec($(elem), pred)
+  }
+  
+  def findGadgets(node:JQuery):Seq[AnyFrag] = {
+    if (node.hasClass("_withGadget"))
+      node.data("gadgets").asInstanceOf[Seq[AnyFrag]]
+    else
+      Seq.empty
   }
   
   /**

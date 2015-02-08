@@ -10,7 +10,7 @@ import autowire._
 import querki.globals._
 
 import querki.api.ThingFunctions
-import querki.display.{QText, WrapperDiv}
+import querki.display.{ButtonGadget, ButtonKind, QText, WrapperDiv}
 import querki.display.input.{InputGadget, ManifestItem, MarcoPoloInput, TagSetKind}
 
 class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
@@ -76,6 +76,16 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
   
   lazy val qlInput = new QLInput
   lazy val results = new WrapperDiv
+  
+  lazy val ReifyButton = new ButtonGadget(ButtonKind.Normal, "Make a Page")({
+    val createFut = for {
+      std <- DataAccess.standardThings
+      createPage <- Pages.createAndEditFactory.showPage(std.basic.simpleThing)
+      // TODO: we could get rid of this asInstanceOf by tweaking the type signature of showPage?
+      dummy = createPage.asInstanceOf[CreateAndEditPage].setValue(std.basic.defaultView, s"[[${qlInput.value}]]")
+    }
+      yield createPage
+  })
 
   def pageContent = for {
     thingInfo <- DataAccess.getThing(thingId)
@@ -88,6 +98,8 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
           div(id:="_exploreQlInputDiv", cls:="span8", qlInput),
           div(cls:="span1 _exploreSurround", "]]")
         ),
+        
+        p(ReifyButton),
         
         p(b("Results:")),
         

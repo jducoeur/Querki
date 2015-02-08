@@ -150,8 +150,10 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     s"#$pageName$paramStr"    
   }
   
-  def showPage(pageName:String, paramMap:ParamMap) = {
+  def showPage(pageName:String, paramMap:ParamMap):Future[Page] = {
+    val fut = nextChangeFuture
     window.location.hash = pageUrl(pageName, paramMap)
+    fut
   }
   
   def showRoot() = {
@@ -191,9 +193,12 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
         
     $(displayRoot).empty()
     $(displayRoot).append(fullPage.render)
-    
-    _nextChangePromise.foreach { _.success(page) }
+  }
+  
+  def onPageRendered(page:Page) = {
     afterPageLoads(page)
+    _nextChangePromise.foreach { _.success(page) }
+    _nextChangePromise = None    
   }
   
   def instantScrollToBottom() = {
