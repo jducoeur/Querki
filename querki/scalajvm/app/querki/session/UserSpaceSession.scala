@@ -350,6 +350,9 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
               case "ConversationFunctions" => {
                 handleRequest(new ConversationFunctionsImpl(params))(route[ConversationFunctions](_)(req))
               }
+              case "SecurityFunctions" => {
+                handleRequest(new querki.security.SecurityFunctionsImpl(params))(route[SecurityFunctions](_)(req))
+              }
               case _ => { sender ! ClientError("Unknown API ID!") }
             }
           } catch {

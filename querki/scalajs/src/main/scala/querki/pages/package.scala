@@ -69,6 +69,7 @@ package object pages {
     def exploreFactory:ThingPageFactory
     def viewFactory:ThingPageFactory
     def createAndEditFactory:ThingPageFactory
+    def sharingFactory:PageFactory
     
     /**
      * Navigate to the given Space.
