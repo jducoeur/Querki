@@ -56,6 +56,8 @@ class ConversationPane(val thingInfo:ThingInfo, focusedComment:Option[String])(i
       // If we're supposed to be focusing on a specific comment, show that:
       focusedComment.foreach { commentId =>
         val target = $(elem).find(s"a[name=$commentId]")
+        // TODO: this highlight should probably fade out over, eg, three seconds?
+        $(target).parent().addClass("_commentHighlight")
         // TODO: Eeeek! The signature for offset was more bad than usual. Fix this in the JQuery rewrite:
         $("html,body").scrollTop(target.offset().asInstanceOf[js.Dynamic].top.asInstanceOf[Int])        
       }
