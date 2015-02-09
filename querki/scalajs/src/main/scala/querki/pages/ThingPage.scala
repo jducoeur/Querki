@@ -2,6 +2,7 @@ package querki.pages
 
 import scala.util.{Failure, Success}
 
+import scala.scalajs.js
 import upickle._
 import autowire._
 
@@ -25,6 +26,7 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
 
   lazy val Client = interface[querki.client.Client]
   lazy val DataSetting = interface[querki.data.DataSetting]
+
   
   def pageContent = {
     // NOTE: doing this with async/await seems to swallow exceptions in Autowire:
@@ -32,9 +34,18 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
       pageDetails:ThingPageDetails <- Client[ThingFunctions].getThingPage(name).call()
       standardThings <- DataAccess.standardThings
       rendered = pageDetails.rendered
+      convPane = new ConversationPane(pageDetails.thingInfo)
       dummy = {
         DataSetting.setThing(Some(pageDetails.thingInfo))
         DataSetting.setModel(pageDetails.modelInfo)
+        // We've got a link to a specific comment:
+	    params.get("showComment").foreach { comment =>
+	      convPane.onDisplayFut.foreach { convPane =>
+	        val target = $(elem).find(s"a[name=$comment]")
+	        // TODO: Eeeek! The signature for offset was more bad than usual. Fix this in the JQuery rewrite:
+	        $("html,body").scrollTop(target.offset().asInstanceOf[js.Dynamic].top.asInstanceOf[Int])
+	      }
+        }
       }
       guts = 
         div(
@@ -47,7 +58,7 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
             case None => new StandardThingHeader(pageDetails.thingInfo, this, standardThings)
           },
           new QText(rendered),
-          new ConversationPane(pageDetails.thingInfo)
+          convPane
         )
     }
       yield PageContents(pageDetails.thingInfo.displayName, guts)

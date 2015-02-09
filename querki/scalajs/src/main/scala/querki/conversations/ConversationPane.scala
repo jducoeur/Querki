@@ -25,6 +25,9 @@ class ConversationPane(val thingInfo:ThingInfo)(implicit val ecology:Ecology) ex
   
   implicit val t = thingInfo
   
+  lazy val _onDisplay = Promise[ConversationPane]
+  lazy val onDisplayFut:Future[ConversationPane] = _onDisplay.future
+  
   override def onCreate(e:dom.HTMLDivElement) = {
     val fut = Client[ConversationFunctions].getConversationsFor(thingInfo.oid).call()
     // TODO: how can we encapsulate this error-catching universally for Client? This needs research:
@@ -49,6 +52,7 @@ class ConversationPane(val thingInfo:ThingInfo)(implicit val ecology:Ecology) ex
         
       allWrapper.replaceContents(guts.render)
       InputGadgets.hookPendingGadgets()
+      _onDisplay.success(this)
     }
   }
   
