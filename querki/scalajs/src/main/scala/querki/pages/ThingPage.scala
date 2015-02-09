@@ -34,18 +34,10 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
       pageDetails:ThingPageDetails <- Client[ThingFunctions].getThingPage(name).call()
       standardThings <- DataAccess.standardThings
       rendered = pageDetails.rendered
-      convPane = new ConversationPane(pageDetails.thingInfo)
+      convPane = new ConversationPane(pageDetails.thingInfo, params.get("showComment"))
       dummy = {
         DataSetting.setThing(Some(pageDetails.thingInfo))
         DataSetting.setModel(pageDetails.modelInfo)
-        // We've got a link to a specific comment:
-	    params.get("showComment").foreach { comment =>
-	      convPane.onDisplayFut.foreach { convPane =>
-	        val target = $(elem).find(s"a[name=$comment]")
-	        // TODO: Eeeek! The signature for offset was more bad than usual. Fix this in the JQuery rewrite:
-	        $("html,body").scrollTop(target.offset().asInstanceOf[js.Dynamic].top.asInstanceOf[Int])
-	      }
-        }
       }
       guts = 
         div(

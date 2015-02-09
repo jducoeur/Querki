@@ -18,7 +18,7 @@ import querki.display.input.AutosizeFacade._
 
 import messages._
 
-class ConversationPane(val thingInfo:ThingInfo)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember  {
+class ConversationPane(val thingInfo:ThingInfo, focusedComment:Option[String])(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember  {
   
   lazy val Client = interface[querki.client.Client]
   lazy val InputGadgets = interface[querki.display.input.InputGadgets]
@@ -52,6 +52,14 @@ class ConversationPane(val thingInfo:ThingInfo)(implicit val ecology:Ecology) ex
         
       allWrapper.replaceContents(guts.render)
       InputGadgets.hookPendingGadgets()
+      
+      // If we're supposed to be focusing on a specific comment, show that:
+      focusedComment.foreach { commentId =>
+        val target = $(elem).find(s"a[name=$commentId]")
+        // TODO: Eeeek! The signature for offset was more bad than usual. Fix this in the JQuery rewrite:
+        $("html,body").scrollTop(target.offset().asInstanceOf[js.Dynamic].top.asInstanceOf[Int])        
+      }
+      
       _onDisplay.success(this)
     }
   }
