@@ -18,8 +18,8 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
   case class RoleInfo(map:Map[TID, ThingInfo], default:ThingInfo)
   def makeRoleMap(roles:Seq[ThingInfo]) = RoleInfo(Map(roles.map(role => (role.oid -> role)):_*), roles.head)
   
-  def renderPerson(person:PersonInfo, roleInfo:RoleInfo) = {
-    tr(cls:="info",
+  def renderPerson(showCls:String, person:PersonInfo, roleInfo:RoleInfo) = {
+    tr(cls:=showCls,
       td({
         val role = person.roles.headOption.map(roleInfo.map(_)).getOrElse(roleInfo.default)
         MSeq(
@@ -41,7 +41,17 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
       div(
         section(id:="sendInvitations"),
         
-        section(id:="invitees"),
+        section(id:="invitees",
+          h2("Outstanding Invitations"),
+          p("The following invitations have been sent but not yet accepted."),
+          
+          table(cls:="table table-hover",
+            tbody(
+              for (member <- invitees) 
+                yield renderPerson("warning", member, roleMap)
+            )
+          )          
+        ),
         
         section(id:="members",
           h2("Members"),
@@ -50,7 +60,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
           table(cls:="table table-hover",
             tbody(
               for (member <- members) 
-                yield renderPerson(member, roleMap)
+                yield renderPerson("info", member, roleMap)
             )
           )
         )
