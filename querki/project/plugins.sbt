@@ -23,3 +23,6 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-rjs" % "1.0.1")
 addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.0.0")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.0")
+
+// Adds the stats command -- see https://github.com/orrsella/sbt-stats
+addSbtPlugin("com.orrsella" % "sbt-stats" % "1.0.5")

@@ -1,6 +1,7 @@
 package querki
 
 import scala.scalajs.js
+import js.annotation.JSName
 import org.scalajs.dom
 import dom.Element
 import org.scalajs.jquery._
@@ -64,6 +65,7 @@ package object globals {
    * for a PR to the main facade.
    */
   class JQExt extends js.Object {
+    @JSName("each") def foreach(func:js.ThisFunction0[Element, Any]):JQuery = ???
     def each(func:js.ThisFunction0[Element, Any]):JQuery = ???
     def each(func:js.ThisFunction1[Element, Int, Any]):JQuery = ???
     def map(func:js.ThisFunction0[Element, Any]):JQuery = ???

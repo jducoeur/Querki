@@ -3,6 +3,7 @@ package querki.display
 import scala.annotation.tailrec
 
 import scala.scalajs.js
+import js.UndefOr
 import scalatags.JsDom.all._
 import org.scalajs.dom
 import org.scalajs.jquery._
@@ -32,7 +33,7 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
     _elem = Some(e.asInstanceOf[Output])
     val gadgets =
       if ($(elem).hasClass("_withGadget")) {
-        val existingGadgets = $(elem).data("gadgets").asInstanceOf[Seq[AnyFrag]]
+        val existingGadgets = $(elem).data("gadgets").asInstanceOf[UndefOr[Seq[AnyFrag]]].getOrElse(Seq.empty)
         existingGadgets :+ this
       } else {
         Seq(this)

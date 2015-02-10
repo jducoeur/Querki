@@ -25,6 +25,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
   def values = ???
   
   def propWrapper = $(elem).parent()
+  def propIdRaw = propWrapper.dataString("propid")
   
   // The template is the model for new elements, and includes some metadata. It sits next
   // to the sortable list itself:
@@ -37,7 +38,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     
     // Have each li know its current index, to make changes easier:
     var i = 0
-    $(elem).children("li").each({ (liElem:dom.Element) =>
+    $(elem).children("li").foreach({ (liElem:dom.Element) =>
       // Assign the new index to this element:
       $(liElem).data("index", i)
       // And rewrite its path, for when its own value gets saved:
@@ -45,8 +46,27 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
       // notion of "path"?
       val inputField = $(liElem).find(".list-input-element")
       inputField.attr("name", s"$baseItemName[$i]")
+      
+      // Now, rewrite the paths of any *child* editors under this, in case this is a Model Type:
+      // TODO: this will work for first-level children, but might foul up lower-level ones.
+      // Investigate what happens in the case of deeply-nested structures:
+      inputField.find(".propEditor").foreach({ (childElem:dom.Element) =>
+        val childjq = $(childElem)
+        val childName = childjq.attr("name")
+        // This is probably better done with a Regex, but I can't be arsed to figure out the
+        // syntax right now:
+        val rewriteKey = s"$propIdRaw["
+        val rewritePreIndex = childName.indexOf(rewriteKey)
+        if (rewritePreIndex != -1) {
+          val rewriteIndex = rewritePreIndex + rewriteKey.length
+          val rewriteEnd = childName.indexOf(']', rewriteIndex)
+          val newName = childName.substring(0, rewriteIndex) + i.toString + childName.substring(rewriteEnd)
+          childjq.attr("name", newName)
+        }
+      }:js.ThisFunction0[dom.Element, Any])
+      
       i += 1
-    }:js.ThisFunction0[dom.Element, Any])    
+    }:js.ThisFunction0[dom.Element, Any])
   }
   
   def setupButton(buttonElem:dom.Element, icon:String, tit:String, onClick:(JQueryEventObject) => Unit) = {
@@ -72,7 +92,8 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
   }
     
   def handleAddListItem(evt:JQueryEventObject) = {
-    val newItem = template.clone(true)
+    // Don't pick up existing data, especially existing Gadget links:
+    val newItem = template.clone(false)
     newItem.removeClass("inputTemplate")
     val delButton = button(cls:="delete-item-button btn-mini").render
     setupDeleteButton(delButton)
@@ -81,7 +102,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     // broken the factoring is. *ALL* of this sort of stuff belongs here.
     val newLiElem = li(span(cls:="icon-move"), newItem.get(0).asInstanceOf[dom.Element], delButton).render
     $(elem).append(newLiElem)
-    numberItems()
+  	numberItems()
     // Do our best to set focus to the first relevant field of the new element:
     $(newLiElem).find(".propEditor,input,textarea").first.focus()
     Gadgets.createGadgets(newLiElem)
