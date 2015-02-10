@@ -38,7 +38,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     
     // Have each li know its current index, to make changes easier:
     var i = 0
-    $(elem).children("li").foreach({ (liElem:dom.Element) =>
+    $(elem).children("li").foreach({ liElem =>
       // Assign the new index to this element:
       $(liElem).data("index", i)
       // And rewrite its path, for when its own value gets saved:
@@ -50,7 +50,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
       // Now, rewrite the paths of any *child* editors under this, in case this is a Model Type:
       // TODO: this will work for first-level children, but might foul up lower-level ones.
       // Investigate what happens in the case of deeply-nested structures:
-      inputField.find(".propEditor").foreach({ (childElem:dom.Element) =>
+      inputField.find(".propEditor").foreach({ childElem =>
         val childjq = $(childElem)
         val childName = childjq.attr("name")
         // This is probably better done with a Regex, but I can't be arsed to figure out the
@@ -63,10 +63,10 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
           val newName = childName.substring(0, rewriteIndex) + i.toString + childName.substring(rewriteEnd)
           childjq.attr("name", newName)
         }
-      }:js.ThisFunction0[dom.Element, Any])
+      })
       
       i += 1
-    }:js.ThisFunction0[dom.Element, Any])
+    })
   }
   
   def setupButton(buttonElem:dom.Element, icon:String, tit:String, onClick:(JQueryEventObject) => Unit) = {

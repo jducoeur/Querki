@@ -65,7 +65,6 @@ package object globals {
    * for a PR to the main facade.
    */
   class JQExt extends js.Object {
-    @JSName("each") def foreach(func:js.ThisFunction0[Element, Any]):JQuery = ???
     def each(func:js.ThisFunction0[Element, Any]):JQuery = ???
     def each(func:js.ThisFunction1[Element, Int, Any]):JQuery = ???
     def map(func:js.ThisFunction0[Element, Any]):JQuery = ???
@@ -93,6 +92,12 @@ package object globals {
       jq.map({ e:Element =>
         func(e)
       }:js.ThisFunction0[Element, Any]).toArray().toArray.asInstanceOf[Array[T]]
+    }
+    def foreach(func:Element => Unit):JQuery = {
+      jq2Ext(jq).each({ e:Element =>
+        func(e)
+      }:js.ThisFunction0[Element, Any])
+      jq
     }
   }
   
