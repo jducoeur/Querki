@@ -59,6 +59,8 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
         
       class RoleSelector extends Gadget[dom.HTMLSelectElement] {
         override def onCreate(e:dom.HTMLSelectElement) = {
+          $(elem).value(role().oid.underlying)
+          
           $(elem).change({ evt:JQueryEventObject =>
             val chosen = $(elem).find(":selected").valueString
             roleChosen(chosen)
