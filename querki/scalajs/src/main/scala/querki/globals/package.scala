@@ -92,6 +92,17 @@ package object globals {
         func(e)
       }:js.ThisFunction0[Element, Any]).toArray().toArray.asInstanceOf[Array[T]]
     }
+    
+    /**
+     * JQuery's native replaceWith is useful *if* you are planning on throwing away the node you're
+     * replacing. But if you're going to want to restore it, it's bad because it *removes* the old
+     * element from the DOM, losing its data and stuff. So this is a similar function, which
+     * *detaches* the old element instead of removing it.
+     */
+    def detachReplaceWith(e:Element):JQuery = {
+      $(e).insertBefore(jq)
+      jq.detach()
+    }
   }
   
   // These are improved signatures that can't simply be implicit, because they conflict with existing ones in the
