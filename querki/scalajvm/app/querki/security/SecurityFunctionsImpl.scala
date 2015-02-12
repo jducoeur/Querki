@@ -13,10 +13,15 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Aut
   
   lazy val AccessControl = interface[AccessControl]
   lazy val ClientApi = interface[querki.api.ClientApi]
+  lazy val Email = interface[querki.email.Email]
   lazy val Person = interface[querki.identity.Person]
   lazy val Roles = interface[Roles]
   
   implicit def oid2tid(oid:OID):TID = TID(oid.toThingId.toString)
+  
+  def getSecurityInfo():SpaceSecurityInfo = {
+    SpaceSecurityInfo(Email.from)
+  }
   
   def getRoles():Seq[ThingInfo] = {
     val roles = Roles.allRoles(info.state)

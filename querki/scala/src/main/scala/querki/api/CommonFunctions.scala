@@ -46,6 +46,7 @@ class StandardThings(h:PassthroughHandler) {
   }
   
   object security {
+    val inviteTextProp = h.pass("Space Invitation Text")
     val personRolesProp = h.pass("Person Roles")
   }
   

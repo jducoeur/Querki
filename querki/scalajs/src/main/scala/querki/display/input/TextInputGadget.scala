@@ -41,7 +41,7 @@ object JQueryEventEnhanced {
 }
 import JQueryEventEnhanced._
 
-class LargeTextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLTextAreaElement](e) {
+class LargeTextInputGadget(mods:Modifier*)(implicit e:Ecology) extends InputGadget[dom.HTMLTextAreaElement](e) {
   
   def values = List(elem.value)
   
@@ -52,6 +52,8 @@ class LargeTextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLTextA
   
   // TBD: do we need an unhook, to avoid leaks?
   def hook() = {
+    $(elem).addClass("span10")
+    
     // Mark LargeTextInputs as autosized.
     // We specifically need to *not* apply autosize to the template elements, or else it won't
     // successfully apply to them when we actually instantiate them.
@@ -78,6 +80,6 @@ class LargeTextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLTextA
   }
   
   def doRender() =
-    textarea(cls:="_largeTextEdit")
+    textarea(cls:="_largeTextEdit", mods)
     
 }

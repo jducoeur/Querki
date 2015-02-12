@@ -11,8 +11,8 @@ import querki.globals._
 
 import querki.api._
 import querki.data.ThingInfo
-import querki.display.Gadget
-import querki.display.input.InputGadget
+import querki.display.{Gadget, RawDiv}
+import querki.display.input.{InputGadget, LargeTextInputGadget}
 import querki.display.rx.RxTextFrag
 
 class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
@@ -90,12 +90,31 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
   
   def pageContent = for {
     std <- DataAccess.standardThings
+    securityInfo <- Client[SecurityFunctions].getSecurityInfo().call()
     roles <- Client[SecurityFunctions].getRoles().call()
+    inviteEditInfo <- Client[EditFunctions].getOnePropertyEditor(DataAccess.space.get.oid, std.security.inviteTextProp).call()
     roleMap = makeRoleMap(roles)
     (members, invitees) <- Client[SecurityFunctions].getMembers().call()
     guts =
       div(
-        section(id:="sendInvitations"),
+        section(id:="sendInvitations",
+          h2("Send Invitations to Join this Space"),
+          
+          p("""Use this form to invite people to become Members of this Space. The Invitation Message may contain the usual Querki Text formatting,
+          |including [[]]-style expressions; however, links may not yet work quite the way you expect.""".stripMargin),
+          
+          p("""Specify invitees by email address. Note that your current invitations are listed below. While it is acceptable to retry once or
+          |twice, doing so excessively is frowned upon, as is sending unwelcome invitations. Either of these is considered spam, and is
+          |grounds for removal from Querki.""".stripMargin),
+          
+          p(s"""Invitations will come from "${securityInfo.fromEmail}". If your invitations are getting spam-filtered, tell your invitees
+          |to add that address to their Contacts.""".stripMargin),
+          
+          p("""Invitations will have your email address included as the Reply-To, so if the invitees write back, it will go directly to you.
+          |(Eventually, we may have replies come to you via Querki, but for now, keep in mind that your invitees will see your email address.)""".stripMargin),
+          
+          new RawDiv(inviteEditInfo.editor)
+        ),
         
         section(id:="invitees",
           h2("Outstanding Invitations"),
