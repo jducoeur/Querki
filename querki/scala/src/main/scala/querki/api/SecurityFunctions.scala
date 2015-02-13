@@ -28,4 +28,4 @@ case class PersonInfo(person:ThingInfo, roles:Seq[TID])
  * as a high-security mechanism, and certainly must NEVER include anything that routine end
  * users aren't allowed to see.
  */
-case class SpaceSecurityInfo(fromEmail:String)
+case class SpaceSecurityInfo(fromEmail:String, defaultRole:TID)

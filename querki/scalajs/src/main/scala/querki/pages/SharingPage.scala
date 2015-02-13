@@ -27,54 +27,57 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
   }
   def makeRoleMap(roles:Seq[ThingInfo]) = RoleInfo(Map(roles.map(role => (role.oid -> role)):_*), roles)
   
-  class PersonDisplay(showCls:String, person:PersonInfo, roleInfo:RoleInfo, std:StandardThings) extends Gadget[dom.HTMLTableRowElement] {
     
-    class RoleDisplay extends InputGadget[dom.HTMLSpanElement](ecology) {
-      val role = Var(person.roles.headOption.map(roleInfo.map(_)).getOrElse(roleInfo.default))
-      val roleName = Rx(role().displayName)
+  class RoleDisplay(initialRole:ThingInfo, tid:TID, roleInfo:RoleInfo, std:StandardThings) extends InputGadget[dom.HTMLSpanElement](ecology) {
+    val role = Var(initialRole)
+    val roleName = Rx(role().displayName)
       
-      override lazy val thingId = person.person.oid
-      override def path = Editing.propPath(std.security.personRolesProp.oid, Some(thingId))
-      def values = List(role().oid.underlying)
+    override lazy val thingId = tid
+    override def path = Editing.propPath(std.security.personRolesProp.oid, Some(thingId))
+    def values = List(role().oid.underlying)
       
-      def roleChosen(roleId:String) = {
-        role() = roleInfo.map(TID(roleId))
-        $(selector).detachReplaceWith(elem)
-        save()
-      }
+    def roleChosen(roleId:String) = {
+      role() = roleInfo.map(TID(roleId))
+      $(selector).detachReplaceWith(elem)
+      save()
+    }
       
-      def hook() = {
-        $(elem).click({ evt:JQueryEventObject =>
-          $(elem).detachReplaceWith(selector)
+    def hook() = {
+      $(elem).click({ evt:JQueryEventObject =>
+        $(elem).detachReplaceWith(selector)
+      })
+    }
+	        
+    def doRender() =
+      span(cls:="_chooseRole label label-info",
+        data("personid"):=thingId.underlying,
+        new RxTextFrag(roleName)
+      )
+        
+    lazy val selector = (new RoleSelector).render
+        
+    class RoleSelector extends Gadget[dom.HTMLSelectElement] {
+      override def onCreate(e:dom.HTMLSelectElement) = {
+        $(elem).value(role().oid.underlying)
+          
+        $(elem).change({ evt:JQueryEventObject =>
+          val chosen = $(elem).find(":selected").valueString
+          roleChosen(chosen)
         })
       }
-	        
+        
       def doRender() =
-        span(cls:="_chooseRole label label-info",
-          data("personid"):=person.person.oid.underlying,
-          new RxTextFrag(roleName)
+        select(
+          for (r <- roleInfo.roles)
+            yield option(value:=r.oid.underlying,
+              r.displayName)
         )
-        
-      lazy val selector = (new RoleSelector).render
-        
-      class RoleSelector extends Gadget[dom.HTMLSelectElement] {
-        override def onCreate(e:dom.HTMLSelectElement) = {
-          $(elem).value(role().oid.underlying)
-          
-          $(elem).change({ evt:JQueryEventObject =>
-            val chosen = $(elem).find(":selected").valueString
-            roleChosen(chosen)
-          })
-        }
-        
-        def doRender() =
-          select(
-            for (r <- roleInfo.roles)
-              yield option(value:=r.oid.underlying,
-                r.displayName)
-          )
-      }
     }
+  }
+  
+  
+  class PersonDisplay(showCls:String, person:PersonInfo, roleInfo:RoleInfo, std:StandardThings) extends Gadget[dom.HTMLTableRowElement] {
+    val initPersonRole = person.roles.headOption.map(roleInfo.map(_)).getOrElse(roleInfo.default)
     
     def doRender() =
       tr(cls:=showCls,
@@ -82,7 +85,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
 	      MSeq(
 	        person.person.displayName, 
 	        " -- ",
-	        new RoleDisplay
+	        new RoleDisplay(initPersonRole, person.person.oid, roleInfo, std)
 	      )
 	    })
 	  )
@@ -113,7 +116,15 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
           p("""Invitations will have your email address included as the Reply-To, so if the invitees write back, it will go directly to you.
           |(Eventually, we may have replies come to you via Querki, but for now, keep in mind that your invitees will see your email address.)""".stripMargin),
           
-          new RawDiv(inviteEditInfo.editor)
+          new RawDiv(inviteEditInfo.editor),
+        
+          div(cls:="control-group",
+            div(cls:="controls",
+              "These people should be invited as ",
+              new RoleDisplay(roleMap.map(securityInfo.defaultRole), DataAccess.space.get.oid, roleMap, std)
+            )
+          )
+        
         ),
         
         section(id:="invitees",

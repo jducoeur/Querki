@@ -20,7 +20,16 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Aut
   implicit def oid2tid(oid:OID):TID = TID(oid.toThingId.toString)
   
   def getSecurityInfo():SpaceSecurityInfo = {
-    SpaceSecurityInfo(Email.from)
+    val currentDefaultOpt:Option[Thing] = for {
+      rolesPV <- state.getPropOpt(AccessControl.PersonRolesProp)
+      roleId <- rolesPV.firstOpt
+      role <- state.anything(roleId)
+    }
+      yield role
+      
+    val currentDefault = currentDefaultOpt.getOrElse(Roles.BasicMemberRole)    
+    
+    SpaceSecurityInfo(Email.from, currentDefault.id)
   }
   
   def getRoles():Seq[ThingInfo] = {
