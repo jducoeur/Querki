@@ -117,6 +117,13 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
           |(Eventually, we may have replies come to you via Querki, but for now, keep in mind that your invitees will see your email address.)""".stripMargin),
           
           new RawDiv(inviteEditInfo.editor),
+          
+          div(cls:="control-group",
+            label(cls:="control-label", "Who to Invite by email (enter email addresses, comma-separated)"),
+            div(cls:="controls",
+              input(tpe:="text", id:="invitees", name:="inviteesRaw")
+            )
+          ),
         
           div(cls:="control-group",
             div(cls:="controls",
