@@ -4,6 +4,7 @@ import models.{Property, PropertyBundle, Thing, Wikitext}
 
 import querki.core.QLText
 import querki.ecology._
+import querki.globals._
 import querki.ql.Invocation
 import querki.util.QLog
 import querki.values.{QLContext, SpaceState}
@@ -87,7 +88,7 @@ trait ThingEditor { self:EditorModule =>
     /**
      * This is a place to stick weird, special filters.
      */
-    def specialFilter(thing:PropertyBundle, prop:Property[_,_])(implicit state:SpaceState):Boolean = {
+    private def specialFilter(thing:PropertyBundle, prop:Property[_,_])(implicit state:SpaceState):Boolean = {
       // We display Default View iff it is defined locally on this Thing, or it is *not*
       // defined for the Model.
       // TBD: this is kind of a weird hack. Is it peculiar to Default View, or is there
@@ -112,6 +113,9 @@ trait ThingEditor { self:EditorModule =>
       } else if (prop == NameProp && thing.isThing) {
         // We only should show Name if it is not derived:
         !DeriveName.nameIsDerived(thing.asThing.get, state)
+      } else if (prop.id == querki.core.MOIDs.IsModelOID || prop.id == querki.types.DeriveNameMOIDs.DeriveNameOID) {
+        // These are implicit properties, and we don't show them in the editor explicitly any more:
+        false
       } else
         true
     }
@@ -142,7 +146,7 @@ trait ThingEditor { self:EditorModule =>
         yield props
 
       // Note that the toList here implicitly sorts the PropList, more or less by display name:
-      result.getOrElse(PropListMgr.from(thing).toList.map(_._1).filterNot(SkillLevel.isAdvanced(_)).filter(specialFilter(thing, _)))
+      result.getOrElse(PropListMgr.from(thing).toList.map(_._1).filter(specialFilter(thing, _)))
     }
     
     val thingButtons = """{{_advancedEditButton:<i class="icon-edit _withTooltip" title="Click to open the Advanced Editor"></i>}}
