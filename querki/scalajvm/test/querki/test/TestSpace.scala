@@ -52,6 +52,7 @@ case class SpaceMember(user:User, person:ThingState)
  */
 trait TestSpace extends EcologyMember with ModelTypeDefiner {
   
+  lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Core = interface[querki.core.Core]
   lazy val Person = interface[querki.identity.Person]
   lazy val SpaceChangeManager = interface[querki.spaces.SpaceChangeManager]
@@ -154,7 +155,7 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
    */
   def member(name:String, handle:String, level:UserLevel, pairs:(OID, QValue)*):SpaceMember = {
     val user = userAs(name, handle, level)
-    val person = new TestThing(name, Person.PersonModel, (pairs :+ Person.IdentityLink(user.mainIdentity.id)):_*)
+    val person = new TestThing(name, AccessControl.PersonModel, (pairs :+ Person.IdentityLink(user.mainIdentity.id)):_*)
     SpaceMember(user, person)
   }
 
