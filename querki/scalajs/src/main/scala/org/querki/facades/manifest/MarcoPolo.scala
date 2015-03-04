@@ -182,6 +182,7 @@ class MarcoPoloOptionBuilder(val dict:OptMap) extends JSOptionBuilder[MarcoPoloO
    * Return: array of objects to use as the data.
    */
   def formatData(v:js.ThisFunction1[JQuery, js.Array[js.Object], js.Array[js.Object]]) = jsOpt("formatData", v)
+  def formatData(v:js.Function1[js.Array[js.Object], js.Array[js.Object]]) = jsOpt("formatData", v)
   
   /**
    * Format the text that's displayed when the ajax request fails. The message is displayed in a list item with the class mp_error:
@@ -225,9 +226,9 @@ class MarcoPoloOptionBuilder(val dict:OptMap) extends JSOptionBuilder[MarcoPoloO
    * 
    * Return: string, DOM element, or jQuery object to use as the display.
    */
-  def formatItem(v:js.ThisFunction2[JQuery, js.Object, JQuery, js.Any]) = jsOpt("formatItem", v)
-  def formatItem(v:js.ThisFunction1[JQuery, js.Object, js.Any]) = jsOpt("formatItem", v)
-  def formatItem(v:js.Function1[js.Object, js.Any]) = jsOpt("formatItem", v)
+  def formatItem(v:js.ThisFunction2[JQuery, js.Dynamic, JQuery, js.Any]) = jsOpt("formatItem", v)
+  def formatItem(v:js.ThisFunction1[JQuery, js.Dynamic, js.Any]) = jsOpt("formatItem", v)
+  def formatItem(v:js.Function1[js.Dynamic, js.Any]) = jsOpt("formatItem", v)
   
   /**
    * Format the text that's displayed when the minimum number of characters (specified with the minChars option) 

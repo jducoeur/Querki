@@ -16,7 +16,7 @@ import querki.globals._
 import querki.api._
 import querki.data.ThingInfo
 import querki.display.{Gadget, RawDiv}
-import querki.display.input.{InputGadget, LargeTextInputGadget}
+import querki.display.input.{InputGadget, LargeTextInputGadget, ManifestItem}
 import querki.display.rx.RxTextFrag
 
 class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
@@ -109,6 +109,41 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
     }
     def values = ???
   }
+
+  def stringOrItem(data:js.Any)(f:ManifestItem => String):String = {
+    if (data.isInstanceOf[js.prim.String]) 
+      data.asInstanceOf[String]
+    else 
+      f(data.asInstanceOf[ManifestItem])
+  }
+  
+  class CollaboratorInput() extends InputGadget[dom.HTMLInputElement](ecology) {
+    def doRender() = input(tpe:="text", id:="collaborators", name:="collaboratorsRaw")
+    
+    def hook() = {
+      // TODO: this still calls the old _getCollaborators entry point, which is potentially grungy. This should
+      // get rewritten to call a more-official Client API instead.
+      $(elem).manifest(ManifestOptions.
+        marcoPolo(
+          MarcoPoloOptions.
+            url("_getCollaborators").
+            minChars(3).
+            required(true).
+            formatData({ (data:js.Array[js.Object]) => data }).
+            formatItem({ data:js.Dynamic => data.display }).
+            formatNoResults({ q:String => s"No collaborator named $q found.".asInstanceOf[js.prim.String] })
+        ).
+        // 188 is the *keycode* for comma:
+        separator(Seq[Int](13, ',', 188).toJSArray).
+        required(true).
+        valuesName("collaborators").
+        formatDisplay({ data:js.Any => data.asInstanceOf[ManifestItem].display }:Function1[js.Any, js.Any]).
+        formatValue({ data:js.Object => data.asInstanceOf[ManifestItem].id })
+      )      
+    }
+    
+    def values = ???
+  }
   
   def pageContent = for {
     std <- DataAccess.standardThings
@@ -141,6 +176,13 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
             label(cls:="control-label", "Who to Invite by email (enter email addresses, comma-separated)"),
             div(cls:="controls",
               new InviteeInput()
+            )
+          ),
+          
+          div(cls:="control-group",
+            label(cls:="control-label", "Or give the names or handles of collaborators you know from other Spaces:"),
+            div(cls:="controls",
+              new CollaboratorInput()
             )
           ),
         

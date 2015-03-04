@@ -43,7 +43,7 @@ trait MarcoPoloUser extends EcologyMember {
     minChars(1).
     required(required).
     formatData({ (jq:JQuery, data:js.Array[js.Object]) => data }).
-    formatItem({ data:js.Object => data.asInstanceOf[ManifestItem].display }:Function1[js.Object, js.Any]).
+    formatItem({ data:js.Dynamic => data.asInstanceOf[ManifestItem].display }:Function1[js.Dynamic, js.Any]).
     formatNoResults({ (q:String) => s"No existing $kind with <b>$q</b> found." }:Function1[String, js.Any])
 }
   
