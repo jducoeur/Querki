@@ -21,7 +21,7 @@ trait MarcoPoloFacade extends js.Object {
 }
 
 trait MarcoPoloOptions extends js.Object 
-
+object MarcoPoloOptions extends MarcoPoloOptionBuilder(noOpts)
 class MarcoPoloOptionBuilder(val dict:OptMap) extends JSOptionBuilder[MarcoPoloOptions, MarcoPoloOptionBuilder](new MarcoPoloOptionBuilder(_)) {
   
   ///////////////////////////////////
@@ -226,6 +226,8 @@ class MarcoPoloOptionBuilder(val dict:OptMap) extends JSOptionBuilder[MarcoPoloO
    * Return: string, DOM element, or jQuery object to use as the display.
    */
   def formatItem(v:js.ThisFunction2[JQuery, js.Object, JQuery, js.Any]) = jsOpt("formatItem", v)
+  def formatItem(v:js.ThisFunction1[JQuery, js.Object, js.Any]) = jsOpt("formatItem", v)
+  def formatItem(v:js.Function1[js.Object, js.Any]) = jsOpt("formatItem", v)
   
   /**
    * Format the text that's displayed when the minimum number of characters (specified with the minChars option) 
@@ -274,5 +276,36 @@ class MarcoPoloOptionBuilder(val dict:OptMap) extends JSOptionBuilder[MarcoPoloO
    * 
    * Return: string, DOM element, or jQuery object to use as the message.
    */
+  def formatNoResults(v:js.Function1[String, js.Any]) = jsOpt("formatNoResults", v)
   def formatNoResults(v:js.ThisFunction2[JQuery, String, JQuery, js.Any]) = jsOpt("formatNoResults", v)
+  
+  
+  ////////////////////////////////////
+  //
+  // Events
+  //
+  // TODO: finish filling these in
+  //
+  
+  /**
+   * Called when an item is selected from the results list or an initial value (see Setting an Initial Value). 
+   * By default, the title or name value of the data object is used to populate the input value.
+   * 
+   * Default:
+   * 
+   * this.val(data.title || data.name);
+   * 
+   * Parameters:
+   * 
+   * data string, object Data returned from the request.
+   * $item jQuery object, null Selected results list item. null if selected option used.
+   * initial boolean Whether this is an initial value.
+   * this: jQuery object Text input (no need to wrap like $(this)).
+   * 
+   * Event: You can also bind to the marcopoloselect event:
+   * 
+   * $(selector).on('marcopoloselect', function (event, data, $item, initial) { ... });
+   */
+  def onSelect(v:js.ThisFunction3[JQuery, js.Any, JQuery, Boolean, Any]) = jsOpt("onSelect", v)
+  def onSelect(v:js.Function1[js.Any, Any]) = jsOpt("onSelect", v)
 }

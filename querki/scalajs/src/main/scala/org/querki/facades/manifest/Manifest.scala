@@ -15,10 +15,30 @@ import org.querki.jsext._
  */
 trait ManifestFacade extends js.Object {
   def manifest(config:ManifestOptions):JQuery = ???
+  def manifest(cmd:ManifestCommand):Any = ???
+}
+
+/**
+ * This is kind of a horrible hack, but seems to be the only way to define an enumeration that
+ * is *actually* just Strings, to pass into a Facade. (As opposed to normal Scala, where you would
+ * define a wrapper class.)
+ * 
+ * TODO: post-0.6, this should in principle extend js.Any instead of js.Object.
+ */
+sealed trait ManifestCommand extends js.Object
+object ManifestCommand {
+  // TODO: can we macroize these? This mechanism seems likely to be used a lot...
+  val add = "add".asInstanceOf[ManifestCommand]
+  val container = "container".asInstanceOf[ManifestCommand]
+  val destroy = "destroy".asInstanceOf[ManifestCommand]
+  val list = "list".asInstanceOf[ManifestCommand]
+  val option = "option".asInstanceOf[ManifestCommand]
+  val remove = "remove".asInstanceOf[ManifestCommand]
+  val values = "values".asInstanceOf[ManifestCommand]
 }
 
 trait ManifestOptions extends js.Object 
-
+object ManifestOptions extends ManifestOptionBuilder(noOpts)
 class ManifestOptionBuilder(val dict:OptMap) extends JSOptionBuilder[ManifestOptions, ManifestOptionBuilder](new ManifestOptionBuilder(_)) {
   
   /////////////////////////////////////////
@@ -49,7 +69,7 @@ class ManifestOptionBuilder(val dict:OptMap) extends JSOptionBuilder[ManifestOpt
    * Default: ,
    */
   def separator(v:String) = jsOpt("separator", v)
-  def separator(v:js.Array[String]) = jsOpt("separator", v)
+  def separator(v:js.Array[Int]) = jsOpt("separator", v)
   
   /**
    * One or more initial values to add to the list.
@@ -57,7 +77,7 @@ class ManifestOptionBuilder(val dict:OptMap) extends JSOptionBuilder[ManifestOpt
    * Default: null
    */
   def values(v:String) = jsOpt("values", v)
-  def values(v:js.Object) = jsOpt("values", v)
+  def values(v:js.Dynamic) = jsOpt("values", v)
   
   /**
    * Name of the hidden input value fields. Do not include [] at the end, as that will be added. If unset, 
@@ -78,7 +98,7 @@ class ManifestOptionBuilder(val dict:OptMap) extends JSOptionBuilder[ManifestOpt
    * 
    * <li class="mf_item">
    *   "Lindsay Weir" (lweir65@gmail.com)
-   *   …
+   *   ...
    * </li>
    * 
    * Default:
@@ -100,15 +120,16 @@ class ManifestOptionBuilder(val dict:OptMap) extends JSOptionBuilder[ManifestOpt
    * Return: string, DOM element, or jQuery object to use as the display. A Deferred object can also be 
    * returned if an asynchronous process needs to be run that resolves with one of these types later.
    */
+  def formatDisplay(v:js.Function1[js.Any, js.Any]) = jsOpt("formatDisplay", v)
   def formatDisplay(v:js.ThisFunction3[JQuery, js.Any, JQuery, UndefOr[JQuery], js.Any]) = jsOpt("formatDisplay", v)
   
   /**
    * Format the display of the remove link included with each item. The returned value is added to $remove with the class mf_remove:
    * 
    * <li class="mf_item">
-   *   …
+   *   ...
    *  <a href="#" class="mf_remove" title="Remove">X</a>
-   *   …
+   *   ...
    * </li>
    * 
    * Default:
@@ -130,7 +151,7 @@ class ManifestOptionBuilder(val dict:OptMap) extends JSOptionBuilder[ManifestOpt
    * Format the hidden value to be submitted for the item. The returned value is set as the value of $value with the class mf_value:
    * 
    * <li class="mf_item">
-   *   …
+   *   ...
    *   <input type="hidden" class="mf_value" value="lweir65@gmail.com">
    * </li>
    * 
@@ -153,5 +174,6 @@ class ManifestOptionBuilder(val dict:OptMap) extends JSOptionBuilder[ManifestOpt
    *
    * Return: string value. A Deferred object can also be returned if an asynchronous process needs to be run that resolves with a string value later.
    */
+  def formatValue(v:js.Function1[js.Object, String]) = jsOpt("formatValue", v)
   def formatValue(v:js.ThisFunction4[JQuery, js.Object, JQuery, JQuery, UndefOr[JQuery], String]) = jsOpt("formatValue", v)
 }
