@@ -52,6 +52,7 @@ class ManifestOptionBuilder(val dict:OptMap) extends JSOptionBuilder[ManifestOpt
    * Default: false
    */
   def marcoPolo(v:MarcoPoloOptions) = jsOpt("marcoPolo", v)
+  def marcoPolo(v:Boolean) = jsOpt("marcoPolo", v)
   
   /**
    * Whether to only allow items to be selected from the autocomplete results list when autocomplete is enabled. 

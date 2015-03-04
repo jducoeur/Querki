@@ -1,11 +1,15 @@
 package querki.pages
 
+import scala.scalajs.js
+import js.JSConverters._
 import org.scalajs.dom
 import org.scalajs.jquery._
 import scalatags.JsDom.all._
 import scalatags.JsDom.tags2.section
 import autowire._
 import rx._
+
+import org.querki.facades.manifest._
 
 import querki.globals._
 
@@ -91,6 +95,21 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
 	  )
   }
   
+  class InviteeInput() extends InputGadget[dom.HTMLInputElement](ecology) {
+    def doRender() = input(tpe:="text", id:="invitees", name:="inviteesRaw")
+      
+    def hook() = {
+      // Invitees use the Manifest UI, but don't actually do any MarcoPolo'ing:
+      $(elem).manifest(ManifestOptions.
+        marcoPolo(false).
+        // 188 is the *keycode* for comma:
+        separator(Seq[Int](13, ',', 188).toJSArray).
+        valuesName("invitees")
+      )
+    }
+    def values = ???
+  }
+  
   def pageContent = for {
     std <- DataAccess.standardThings
     securityInfo <- Client[SecurityFunctions].getSecurityInfo().call()
@@ -121,7 +140,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
           div(cls:="control-group",
             label(cls:="control-label", "Who to Invite by email (enter email addresses, comma-separated)"),
             div(cls:="controls",
-              input(tpe:="text", id:="invitees", name:="inviteesRaw")
+              new InviteeInput()
             )
           ),
         
