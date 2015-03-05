@@ -18,12 +18,14 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   lazy val viewFactory = registerThingPageFactory("_view", { (params) => new ViewPage(params) }, "thingId")
   lazy val createAndEditFactory = registerThingPageFactory("_createAndEdit", { (params) => new CreateAndEditPage(params) }, "model")
   lazy val sharingFactory = registerStandardFactory("_sharing", { (params) => new SharingPage })
+  lazy val advancedFactory = registerThingPageFactory("_advanced", { (params) => new AdvancedPage(params) }, "thingId")
   
   override def postInit() = {
     exploreFactory
     viewFactory
     createAndEditFactory
     sharingFactory
+    advancedFactory
   }
   
   private var factories = Seq.empty[PageFactory]

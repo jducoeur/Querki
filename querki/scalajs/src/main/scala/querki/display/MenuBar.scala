@@ -100,8 +100,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
         NavLink("Create any Thing", onClick = Some({ () => DataModel.createAThing() })),
         NavLink("Show all Things", thing("All-Things")),
         NavLink("Show all Properties", thing("All-Properties")),
-        NavLink("Sharing", Pages.sharingFactory.pageUrl(), enabled = DataAccess.request.isOwner),
-        NavLink("Sharing and Security", controllers.Application.sharing(ownerId, spaceId.underlying), enabled = DataAccess.request.isOwner)        
+        NavLink("Sharing", Pages.sharingFactory.pageUrl(), enabled = DataAccess.request.isOwner)
       )
     }
   }
@@ -118,7 +117,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
             NavLink("Advanced Edit " + thing.displayName, Editing.advancedEditorFactory.pageUrl(thing), enabled = thing.isEditable)
         },
         NavLink("View Source", Pages.viewFactory.pageUrl(thing)),
-        NavLink("Advanced...", controllers.Application.showAdvancedCommands(ownerId, spaceId.underlying, thingId)),
+        NavLink("Advanced...", Pages.advancedFactory.pageUrl(thing)),
         NavLink("Explore...", Pages.exploreFactory.pageUrl(thing)),
         NavLink("Print...", onClick = Some({ () => Print.print(thing)})),
         NavLink("Delete " + thing.displayName, enabled = thing.isDeleteable, onClick = Some({ () => DataModel.deleteAfterConfirm(thing) }))
