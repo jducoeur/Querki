@@ -1,8 +1,12 @@
 package querki.api
 
+import scala.concurrent.Future
+
 import querki.data._
 
 trait SecurityFunctions {
+  import SecurityFunctions._
+  
   /**
    * Gets general information for security management.
    */
@@ -17,6 +21,12 @@ trait SecurityFunctions {
    * Fetch all of the members and invitees of this Space.
    */
   def getMembers():(Seq[PersonInfo], Seq[PersonInfo])
+  
+  /**
+   * Invite people to join this Space. This may be any number of invitees by email address and any
+   * number of known Collaborators by Identity.
+   */
+  def invite(emails:Seq[String], collabs:Seq[TID]):Future[InviteResponse]
 }
 
 case class PersonInfo(person:ThingInfo, roles:Seq[TID])
@@ -29,3 +39,7 @@ case class PersonInfo(person:ThingInfo, roles:Seq[TID])
  * users aren't allowed to see.
  */
 case class SpaceSecurityInfo(fromEmail:String, defaultRole:TID)
+
+object SecurityFunctions {
+  case class InviteResponse(newInvites:Seq[String], resends:Seq[String])
+}

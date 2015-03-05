@@ -2,6 +2,7 @@ package querki.pages
 
 import scala.scalajs.js
 import js.JSConverters._
+import scala.util.{Failure, Success}
 import org.scalajs.dom
 import org.scalajs.jquery._
 import scalatags.JsDom.all._
@@ -15,7 +16,7 @@ import querki.globals._
 
 import querki.api._
 import querki.data.ThingInfo
-import querki.display.{Gadget, RawDiv}
+import querki.display.{ButtonGadget, ButtonKind, Gadget, RawDiv}
 import querki.display.input.{InputGadget, LargeTextInputGadget, ManifestItem}
 import querki.display.rx.RxTextFrag
 
@@ -23,6 +24,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
   
   lazy val Client = interface[querki.client.Client]
   lazy val Editing = interface[querki.editing.Editing]
+  lazy val StatusLine = interface[querki.display.StatusLine]
   
   lazy val space = DataAccess.space.get
   
@@ -97,6 +99,8 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
   
   class InviteeInput() extends InputGadget[dom.HTMLInputElement](ecology) {
     def doRender() = input(tpe:="text", id:="invitees", name:="inviteesRaw")
+    
+    // TODO: validate that the email addresses input here are properly formatted
       
     def hook() = {
       // Invitees use the Manifest UI, but don't actually do any MarcoPolo'ing:
@@ -191,8 +195,32 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
               "These people should be invited as ",
               new RoleDisplay(roleMap.map(securityInfo.defaultRole), DataAccess.space.get.oid, roleMap, std)
             )
-          )
+          ),
         
+          div(cls:="control-group",
+            div(cls:="controls",
+              new ButtonGadget(ButtonKind.Normal, "Invite Members")({
+                Client[SecurityFunctions].invite(Seq.empty[String], Seq.empty[TID]).call().onComplete {
+                  case Success(response) => {
+                    // TODO: we really want to make a prettier display for this message, probably as part
+                    // of a general rewrite of StatusLine:
+                    val allInvites = response.newInvites ++ response.resends
+                    StatusLine.showBriefly(s"Sent invites to ${allInvites.mkString(", ")}")
+                  }
+                  case Failure(ex) => {
+                    ex match {
+                      case MaxMembersPerSpaceException(maxMembers) => {
+                        StatusLine.showUntilChange(s"Sorry: at the moment you are limited to $maxMembers members per Space, and this would make more than that.")
+                      }
+                      case _ => {
+                        StatusLine.showUntilChange(s"Error while trying to invite members!")
+                      }
+                    }
+                  }
+                }
+              })
+            )
+          )
         ),
         
         section(id:="invitees",

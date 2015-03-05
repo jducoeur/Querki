@@ -1,11 +1,18 @@
 package querki.security
 
+import scala.concurrent.Future
+
 import querki.globals._
 
-import models.Thing
+import models.{AsOID, Thing, ThingId}
 import querki.api._
 import querki.data._
+import querki.globals._
+import Implicits.execContext
+import querki.identity.InvitationResult
 import querki.session.{AutowireApiImpl, AutowireParams}
+
+import SecurityFunctions._
 
 class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with SecurityFunctions {
   
@@ -44,5 +51,25 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Aut
     }
     
     (Person.members(state).toSeq.map(toPersonInfo(_)), Person.invitees(state).toSeq.map(toPersonInfo(_)))
+  }
+  
+  lazy val maxMembers = Config.getInt("querki.public.maxMembersPerSpace", 100)
+  
+  def invite(emailStrs:Seq[String], collabTids:Seq[TID]):Future[InviteResponse] = {
+	val nCurrentMembers = Person.people(state).size
+    val inviteeEmails = emailStrs.map(querki.email.EmailAddress(_))
+    val collabs = for {
+      tid <- collabTids
+      thingId = ThingId(tid.underlying)
+      AsOID(oid) = thingId
+    }
+	  yield oid
+    
+    if (!rc.requesterOrAnon.isAdmin && (nCurrentMembers + inviteeEmails.size + collabs.size) > maxMembers)
+      throw new MaxMembersPerSpaceException(maxMembers)
+	
+    Person.inviteMembers(rc, inviteeEmails, collabs).map { case InvitationResult(invited, alreadyInvited) =>
+      InviteResponse(invited, alreadyInvited)
+    }
   }
 }

@@ -14,6 +14,7 @@ package querki.api
  */
 sealed trait ApiException extends Exception
 
+
 /**
  * Expected exceptions that can be returned from EditFunctions.
  */
@@ -26,3 +27,13 @@ case class GeneralChangeFailure(msg:String) extends EditException
  * in the Client. But this serves as a decent belt-and-suspenders check.
  */
 case class ValidationException(msg:String) extends EditException
+
+
+/**
+ * Expected exceptions that can be returned from SecurityFunctions.
+ */
+sealed trait SecurityException extends ApiException
+/**
+ * This invitation would exceed the maximum members per Space.
+ */
+case class MaxMembersPerSpaceException(curMax:Int) extends SecurityException
