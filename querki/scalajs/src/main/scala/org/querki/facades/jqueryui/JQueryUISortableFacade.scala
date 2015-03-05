@@ -9,6 +9,8 @@ import org.querki.jsext._
 
 trait JQueryUISortableFacade extends js.Object {
   def sortable(options:SortableOptions):JQuery = ???
+  
+  // TODO: see the ManifestFacade for a stronger way to do this:
   def sortable(cmd:String):Any = ???
 }
 

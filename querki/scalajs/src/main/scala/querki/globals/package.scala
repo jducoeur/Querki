@@ -93,11 +93,27 @@ package object globals {
         func(e)
       }:js.ThisFunction0[Element, Any]).toArray().toArray.asInstanceOf[Array[T]]
     }
+	
+    /**
+     * Execute the given code over each Element in the returned set. This is just convenience sugar
+     * around $.each(), but is typically easier to use.
+     */
     def foreach(func:Element => Unit):JQuery = {
       jq2Ext(jq).each({ e:Element =>
         func(e)
       }:js.ThisFunction0[Element, Any])
       jq
+	}
+    
+    /**
+     * JQuery's native replaceWith is useful *if* you are planning on throwing away the node you're
+     * replacing. But if you're going to want to restore it, it's bad because it *removes* the old
+     * element from the DOM, losing its data and stuff. So this is a similar function, which
+     * *detaches* the old element instead of removing it.
+     */
+    def detachReplaceWith(e:Element):JQuery = {
+      $(e).insertBefore(jq)
+      jq.detach()
     }
   }
   

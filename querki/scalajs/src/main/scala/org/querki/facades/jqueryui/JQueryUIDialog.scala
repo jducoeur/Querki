@@ -22,6 +22,8 @@ trait JQueryUIDialogFacade extends js.Object {
   
   /**
    * Given a command to this dialog.
+   * 
+   * TODO: see the ManifestFacade for a stronger way to do this:
    */
   def dialog(cmd:String):Any = ???
 }

@@ -100,6 +100,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
         NavLink("Create any Thing", onClick = Some({ () => DataModel.createAThing() })),
         NavLink("Show all Things", thing("All-Things")),
         NavLink("Show all Properties", thing("All-Properties")),
+        NavLink("Sharing", Pages.sharingFactory.pageUrl(), enabled = DataAccess.request.isOwner),
         NavLink("Sharing and Security", controllers.Application.sharing(ownerId, spaceId.underlying), enabled = DataAccess.request.isOwner)        
       )
     }

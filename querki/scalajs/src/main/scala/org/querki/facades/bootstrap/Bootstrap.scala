@@ -21,6 +21,7 @@ trait BootstrapFacade extends js.Object {
   def tooltip(options:TooltipOptions):Any = ???
 }
 
+// TODO: see the ManifestFacade for a stronger way to do this:
 object ModalCommand {
   type ModalCommand = String
   
@@ -29,6 +30,8 @@ object ModalCommand {
   val toggle = "toggle"
 }
 
+// TODO: does this actually work? When we pass this into the facade, does it receive a String?
+// I suspect not.
 object Position extends Enumeration {
   type Position = Value
   val left = Value("left")
@@ -45,6 +48,7 @@ object Trigger extends Enumeration {
   val manual = Value("manual")
 }
 
+// TODO: see the ManifestFacade for a stronger way to do this:
 object PopoverCommand {
   type PopoverCommand = String
   

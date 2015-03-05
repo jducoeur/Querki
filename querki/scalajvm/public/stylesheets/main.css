@@ -491,3 +491,11 @@ body {
 ._validationError input {
   margin-bottom: 0px;
 }
+
+/****************************
+ * Sharing page styles
+ */
+ 
+._chooseRole {
+  cursor: pointer;
+}
