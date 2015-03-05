@@ -145,4 +145,5 @@ package object globals {
       case ex:Exception => { println(s"  $msg failed: $ex"); ex.printStackTrace(); throw ex }
     }
   }
+  def spew(msg:String) = println(msg)
 }

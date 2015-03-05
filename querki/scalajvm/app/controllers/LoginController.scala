@@ -79,7 +79,7 @@ class LoginController extends ApplicationBase {
     UserSession.getCollaborators(rc.requesterOrAnon, rc.localIdentity.get, q).map { collabs =>
       // TODO: introduce better JSONification for the AJAX code:
       // TODO: refactor this with getTags and getLinks; there is a common "return Manifest" function here:
-      val JSONcollabs = "[" + collabs.acs.map(identity => "{\"display\":\"" + identity.name + "\", \"id\":\"" + identity.id + "\"}").mkString(",") + "]"
+      val JSONcollabs = "[" + collabs.acs.map(identity => "{\"display\":\"" + identity.name + "\", \"id\":\"" + identity.id.toThingId + "\"}").mkString(",") + "]"
       Ok(JSONcollabs)
     }
   }

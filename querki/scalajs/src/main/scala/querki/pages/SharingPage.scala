@@ -97,7 +97,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
 	  )
   }
   
-  class InviteeInput() extends InputGadget[dom.HTMLInputElement](ecology) {
+  class InviteeInput extends InputGadget[dom.HTMLInputElement](ecology) {
     def doRender() = input(tpe:="text", id:="invitees", name:="inviteesRaw")
     
     // TODO: validate that the email addresses input here are properly formatted
@@ -111,8 +111,9 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
         valuesName("invitees")
       )
     }
-    def values = ???
+    def values = $(elem).manifest(ManifestCommand.values).asInstanceOf[js.Array[String]].toList
   }
+  lazy val inviteeInput = new InviteeInput
 
   def stringOrItem(data:js.Any)(f:ManifestItem => String):String = {
     if (data.isInstanceOf[js.prim.String]) 
@@ -121,7 +122,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
       f(data.asInstanceOf[ManifestItem])
   }
   
-  class CollaboratorInput() extends InputGadget[dom.HTMLInputElement](ecology) {
+  class CollaboratorInput extends InputGadget[dom.HTMLInputElement](ecology) {
     def doRender() = input(tpe:="text", id:="collaborators", name:="collaboratorsRaw")
     
     def hook() = {
@@ -146,8 +147,9 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
       )      
     }
     
-    def values = ???
+    def values = $(elem).manifest(ManifestCommand.values).asInstanceOf[js.Array[String]].toList
   }
+  lazy val collaboratorInput = new CollaboratorInput
   
   def pageContent = for {
     std <- DataAccess.standardThings
@@ -179,14 +181,14 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
           div(cls:="control-group",
             label(cls:="control-label", "Who to Invite by email (enter email addresses, comma-separated)"),
             div(cls:="controls",
-              new InviteeInput()
+              inviteeInput
             )
           ),
           
           div(cls:="control-group",
             label(cls:="control-label", "Or give the names or handles of collaborators you know from other Spaces:"),
             div(cls:="controls",
-              new CollaboratorInput()
+              collaboratorInput
             )
           ),
         
@@ -200,7 +202,9 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
           div(cls:="control-group",
             div(cls:="controls",
               new ButtonGadget(ButtonKind.Normal, "Invite Members")({
-                Client[SecurityFunctions].invite(Seq.empty[String], Seq.empty[TID]).call().onComplete {
+                val emails = inviteeInput.values
+                val collabs = collaboratorInput.values.map(TID(_))
+                Client[SecurityFunctions].invite(emails, collabs).call().onComplete {
                   case Success(response) => {
                     // TODO: we really want to make a prettier display for this message, probably as part
                     // of a general rewrite of StatusLine:
