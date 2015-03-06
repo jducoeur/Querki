@@ -1,6 +1,7 @@
 package querki.display.input
 
 import scala.scalajs.js
+import js.JSConverters._
 import js.UndefOr
 import org.scalajs.dom
 import org.scalajs.jquery._
@@ -30,7 +31,7 @@ class RatingGadget(implicit e:Ecology) extends InputGadget[dom.HTMLDivElement](e
 
     addData[Int]("rating", { v => options.score(v) })
     addData[String]("labels", { v =>
-      val labels = v.split(",")
+      val labels = v.split(",").toJSArray
       options.hints(labels).number(labels.length) 
     })
     addData[Boolean]("readonly", { v => options.readOnly(v) })

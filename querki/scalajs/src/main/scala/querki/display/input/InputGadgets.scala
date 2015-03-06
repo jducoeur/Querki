@@ -100,13 +100,13 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
     if (gadgetsBeingEdited.isEmpty && savePromise.isDefined) {
       val promise = savePromise.get
       savePromise = None
-      promise.success()
+      promise.success(())
     }
   }
   
   def afterAllSaved:Future[Unit] = {
     if (gadgetsBeingEdited.isEmpty)
-      Future.successful()
+      Future.successful(())
     else {
       val promise = Promise[Unit]
       savePromise = Some(promise)
