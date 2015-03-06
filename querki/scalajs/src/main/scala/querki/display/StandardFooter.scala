@@ -16,7 +16,7 @@ class StandardFooter(implicit val ecology:Ecology) extends Gadget[dom.HTMLElemen
     footer(cls:="_mainFooter _noPrint",
       hr,
       raw("&copy;"), " Querki 2013-2014 | ",
-      a(href:=controllers.Application.thing("systemUser", "documentation", "documentation").url, "Help"),
+      a(href:=controllers.ClientController.space("systemUser", "documentation").url, "Help"),
       " | ",
       a(href:=controllers.TOSController.showTOS().url, "Terms of Service")
     )

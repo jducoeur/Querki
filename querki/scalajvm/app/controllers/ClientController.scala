@@ -22,6 +22,7 @@ import querki.session.UserSessionMessages.{UserSessionClientRequest, UserSession
 import querki.session.messages._
 import querki.spaces.messages.{SessionRequest, SpaceMgrMsg, ThingError}
 import querki.spaces.messages.SpaceError._
+import querki.util.PublicException
 
 class ClientController extends ApplicationBase {
   
@@ -58,6 +59,7 @@ class ClientController extends ApplicationBase {
 	  askUserSpaceSession(rc, ClientRequest(req, rc)) {
 	    case ClientResponse(pickled) => Future.successful(pickled)
 	    case ClientError(msg) => Future.failed(new Exception(msg))
+	    case ThingError(pex, _) => Future.failed(pex)
 	  }
 	}
 	
@@ -74,6 +76,8 @@ class ClientController extends ApplicationBase {
       } else {
         Ok(views.html.client(rc, write(requestInfo)))
       }
+    } recoverWith {
+      case pex:PublicException => doError(routes.Application.index, pex) 
     }
   }
   
