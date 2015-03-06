@@ -6,6 +6,7 @@ import akka.util.Timeout
 
 import play.api.data._
 import play.api.data.Forms._
+import play.api.mvc.{Action, Call}
 
 import upickle._
 import autowire._
@@ -74,6 +75,11 @@ class ClientController extends ApplicationBase {
         Ok(views.html.client(rc, write(requestInfo)))
       }
     }
+  }
+  
+  def thingRedirect(ownerId:String, spaceId:String, thingId:String) = Action {
+    val spaceCall = routes.ClientController.space(ownerId, spaceId) 
+    Redirect(new Call(spaceCall.method, spaceCall.url + s"#$thingId"))
   }
   
   def unpickleRequest(rc:PlayRequestContext):autowire.Core.Request[String] = {
