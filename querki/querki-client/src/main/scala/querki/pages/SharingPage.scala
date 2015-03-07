@@ -32,8 +32,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
     def default = roles.head
   }
   def makeRoleMap(roles:Seq[ThingInfo]) = RoleInfo(Map(roles.map(role => (role.oid -> role)):_*), roles)
-  
-    
+
   class RoleDisplay(initialRole:ThingInfo, tid:TID, roleInfo:RoleInfo, std:StandardThings) extends InputGadget[dom.HTMLSpanElement](ecology) {
     val role = Var(initialRole)
     val roleName = Rx(role().displayName)
