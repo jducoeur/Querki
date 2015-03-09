@@ -3,7 +3,7 @@ package querki.pages
 import scala.scalajs.js
 import js.JSConverters._
 import scala.util.{Failure, Success}
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 import org.scalajs.jquery._
 import scalatags.JsDom.all._
 import scalatags.JsDom.tags2.section
@@ -114,13 +114,6 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
     def values = $(elem).manifest(ManifestCommand.values).asInstanceOf[js.Array[String]].toList
   }
   lazy val inviteeInput = new InviteeInput
-
-  def stringOrItem(data:js.Any)(f:ManifestItem => String):String = {
-    if (data.isInstanceOf[js.prim.String]) 
-      data.asInstanceOf[String]
-    else 
-      f(data.asInstanceOf[ManifestItem])
-  }
   
   class CollaboratorInput extends InputGadget[dom.HTMLInputElement](ecology) {
     def doRender() = input(tpe:="text", id:="collaborators", name:="collaboratorsRaw")
@@ -136,7 +129,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
             required(true).
             formatData({ (data:js.Array[js.Object]) => data }).
             formatItem({ data:js.Dynamic => data.display }).
-            formatNoResults({ q:String => s"No collaborator named $q found.".asInstanceOf[js.prim.String] })
+            formatNoResults({ q:String => s"No collaborator named $q found.".asInstanceOf[js.Any] })
         ).
         // 188 is the *keycode* for comma:
         separator(Seq[Int](13, ',', 188).toJSArray).

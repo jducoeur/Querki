@@ -2,7 +2,7 @@ package querki.conversations
 
 import scala.scalajs.js
 import js.JSConverters._
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 import org.scalajs.jquery._
 import scalatags.JsDom.all.{input => inp, _}
 import autowire._

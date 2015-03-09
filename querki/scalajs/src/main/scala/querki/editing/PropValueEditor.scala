@@ -1,6 +1,6 @@
 package querki.editing
 
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 import scalatags.JsDom.all._
 import rx._
 

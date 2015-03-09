@@ -312,7 +312,19 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
             
           def handleException(ex:Throwable, s:ActorRef, rc:RequestContext) = {
             ex match {
-              case aex:querki.api.ApiException => s ! ClientError(write(aex))
+              case aex:querki.api.ApiException => {
+                // TODO: IMPORTANT: these two lines totally should not be necessary, but without
+                // them, the write() currently is failing, apparently because it is failing to grok
+                // that Edit/SecurityException are themselves traits.
+                // There might be a bug in upickle, possibly having to do with SI-7046:
+                //   https://issues.scala-lang.org/browse/SI-7046
+                // Investigate this further when I have a minute. Possibly something like this needs
+                // to be automated into the macro? Or possibly we have to tweak the way we're using
+                // knownDirectSubclasses in the macro...
+                val y = upickle.Writer.macroW[EditException]
+                val x = upickle.Writer.macroW[SecurityException]
+                s ! ClientError(write(aex))
+              }
               case pex:PublicException => {
                 QLog.error(s"$apiName replied with PublicException $ex instead of ApiException when invoking $req")
                 s ! ClientError(pex.display(Some(rc)))

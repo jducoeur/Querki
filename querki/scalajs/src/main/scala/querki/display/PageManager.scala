@@ -138,13 +138,13 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     }
   }
   
-  def encode(str:String) = js.encodeURIComponent(str)
+  def encode(str:String) = js.URIUtils.encodeURIComponent(str)
   // TODO: this problem comes from the fact that the server-side SafeUrl, used in Tag links,
   // uses java.net.URLEncoder, which uses + for spaces. But decodeURIComponent does *not* do
   // that, so we have to hack it a bit. *Sigh*.
   def decode(str:String) = {
     val plusedStr = str.replaceAllLiterally("+", " ")
-    js.decodeURIComponent(plusedStr)
+    js.URIUtils.decodeURIComponent(plusedStr)
   }
   
   def pageUrl(pageName:String, paramMap:ParamMap = Map.empty):URL = {

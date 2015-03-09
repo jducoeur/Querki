@@ -6,7 +6,7 @@ import js.UndefOr
 import upickle._
 import autowire._
 
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 import scalatags.JsDom.all._
 
 import querki.globals._

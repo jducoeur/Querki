@@ -1,6 +1,6 @@
 package querki.editing
 
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 
 import autowire._
 import rx._

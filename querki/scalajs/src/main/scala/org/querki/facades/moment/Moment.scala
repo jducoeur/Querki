@@ -9,10 +9,9 @@ trait MomentStatic extends js.Object {
   /**
    * Create a Moment from an integer Timestamp.
    * 
-   * Note that this needs to be declared as a raw Number. Not certain why, but I suspect that Moment
-   * is doing some internal type-checking. Passing a Scala Int or Long simply doesn't work.
+   * Note that this can't be a Long, because that isn't a native type.
    */
-  def apply(timestamp:js.prim.Number):Moment = ???
+  def apply(timestamp:Double):Moment = js.native
 }
 
 trait Moment extends js.Object {
@@ -21,5 +20,5 @@ trait Moment extends js.Object {
    * 
    * See http://momentjs.com/docs/#/displaying/calendar-time/
    */
-  def calendar():String = ???
+  def calendar():String = js.native
 }

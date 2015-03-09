@@ -6,7 +6,7 @@ import scala.scalajs.js
 import upickle._
 import autowire._
 
-import org.scalajs.dom 
+import org.scalajs.dom.{raw => dom}
 import org.scalajs.jquery._
 
 import scalatags.JsDom.all._

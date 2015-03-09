@@ -3,7 +3,7 @@ package querki.pages
 import scala.concurrent.Future
 
 import scalatags.JsDom.all.{input => inp, _}
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 import org.scalajs.jquery._
 import autowire._
 import rx._

@@ -1,7 +1,7 @@
 package querki.editing
 
 import scala.scalajs.js
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 import org.scalajs.jquery._
 import org.querki.facades.jqueryui._
 import scalatags.JsDom.all._

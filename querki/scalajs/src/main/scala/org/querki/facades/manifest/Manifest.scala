@@ -14,8 +14,8 @@ import org.querki.jsext._
  * Note that Manifest depends on MarcoPolo.
  */
 trait ManifestFacade extends js.Object {
-  def manifest(config:ManifestOptions):JQuery = ???
-  def manifest(cmd:ManifestCommand):Any = ???
+  def manifest(config:ManifestOptions):JQuery = js.native
+  def manifest(cmd:ManifestCommand):Any = js.native
 }
 
 /**

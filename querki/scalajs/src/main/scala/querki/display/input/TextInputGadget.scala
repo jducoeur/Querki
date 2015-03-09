@@ -2,7 +2,7 @@ package querki.display.input
 
 import scala.scalajs.js
 import js._
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 import org.scalajs.jquery._
 import scalatags.JsDom.all._
 
@@ -25,7 +25,7 @@ class TextInputGadget(classes:Seq[String], mods:Modifier*)(implicit e:Ecology) e
 }
 
 trait AutosizeFacade extends JQuery {
-  def autosize():JQuery = ???
+  def autosize():JQuery = js.native
 }
 object AutosizeFacade {
   implicit def jq2Autosize(jq:JQuery):AutosizeFacade = jq.asInstanceOf[AutosizeFacade]
@@ -34,7 +34,7 @@ import AutosizeFacade._
 
 trait JQueryEventEnhanced extends js.Object {
   // This should be a standard part of JQueryEventObject, IMO:
-  def ctrlKey:UndefOr[Boolean] = ???
+  def ctrlKey:UndefOr[Boolean] = js.native
 }
 object JQueryEventEnhanced {
   implicit def jqe2Enhanced(evt:JQueryEventObject):JQueryEventEnhanced = evt.asInstanceOf[JQueryEventEnhanced]

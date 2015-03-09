@@ -1,6 +1,6 @@
 package querki.photos
 
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 
 import querki.globals._
 

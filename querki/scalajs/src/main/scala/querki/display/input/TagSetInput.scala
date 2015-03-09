@@ -3,7 +3,7 @@ package querki.display.input
 import scala.scalajs.js
 import js.JSConverters._
 
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 import org.scalajs.jquery._
 import scalatags.JsDom.all._
 import org.querki.facades.manifest._
@@ -13,8 +13,16 @@ import querki.globals._
 import querki.comm._
 
 trait ManifestItem extends js.Object {
-  def display:String = ???
-  def id:String = ???
+  def display:String = js.native
+  def id:String = js.native
+}
+object ManifestItem {
+  def stringOrItem(data:Any)(f:ManifestItem => String):String = {
+    data match {
+      case s:String => s
+      case _ => f(data.asInstanceOf[ManifestItem])
+    }
+  }  
 }
 
 object TagSetKind {
@@ -27,13 +35,6 @@ object TagSetKind {
 trait MarcoPoloUser extends EcologyMember {
   lazy val controllers = interface[querki.comm.ApiComm].controllers
     
-  def stringOrItem(data:js.Any)(f:ManifestItem => String):String = {
-    if (data.isInstanceOf[js.prim.String]) 
-      data.asInstanceOf[String]
-    else 
-      f(data.asInstanceOf[ManifestItem])
-  }
-  
   def propId:String 
   def required:Boolean
   def kind:TagSetKind.TagSetKind
@@ -65,8 +66,8 @@ class TagSetInput(val propId:String, val required:Boolean, val kind:TagSetKind.T
         values(initialValuesJs).
         required(required).
         // TODO: this is fugly. Try simplifying after 0.6, and if that hasn't helped, think about this carefully:
-        formatDisplay({ (data:js.Any) => stringOrItem(data.asInstanceOf[ManifestItem])(_.display).asInstanceOf[js.Any] }).
-        formatValue({ (data:js.Any) => stringOrItem(data.asInstanceOf[ManifestItem])(_.id) })
+        formatDisplay({ (data:js.Any) => ManifestItem.stringOrItem(data)(_.display).asInstanceOf[js.Any] }).
+        formatValue({ (data:js.Any) => ManifestItem.stringOrItem(data)(_.id) })
     )
   
     // TODO: Note that Manifest actually tells us what's been added or removed, so in principle it's actually
@@ -106,7 +107,7 @@ class MarcoPoloInput(val propId:String, val required:Boolean, val kind:TagSetKin
   def marcoPoloDefWithSelect = {
     marcoPoloDef.
       onSelect(
-        { (dataRaw:js.Any) => stringOrItem(dataRaw) { data =>
+        { (dataRaw:js.Any) => ManifestItem.stringOrItem(dataRaw) { data =>
           val q = data.display
           onSelect(data)
           $(elem).value(q)

@@ -8,7 +8,7 @@ import org.querki.facades.bootstrap._
 
 import querki.globals._
 
-class DeleteButton(doDelete:() => Unit)(implicit e:Ecology) extends InputGadget[dom.HTMLSpanElement](e) {
+class DeleteButton(doDelete:() => Unit)(implicit e:Ecology) extends InputGadget[dom.html.Span](e) {
   def values = ???
   
   def doRender() = span(cls:="_deleteCommentButton", "x")

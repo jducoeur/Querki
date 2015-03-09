@@ -9,5 +9,5 @@ package object moment extends js.GlobalScope {
   /**
    * Exposes the global "moment" object, to access the Moment library for time.
    */
-  val moment:MomentStatic = ???
+  val moment:MomentStatic = js.native
 }

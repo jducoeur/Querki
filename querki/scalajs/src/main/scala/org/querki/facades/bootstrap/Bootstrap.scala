@@ -13,12 +13,12 @@ import org.querki.jsext._
  * facade, and encourage folks to help fill it in.
  */
 trait BootstrapFacade extends js.Object {
-  def modal(cmd:ModalCommand.ModalCommand):Any = ???
+  def modal(cmd:ModalCommand.ModalCommand):Any = js.native
   
-  def popover(options:PopoverOptions):Any = ???
-  def popover(cmd:PopoverCommand.PopoverCommand):Any = ???
+  def popover(options:PopoverOptions):Any = js.native
+  def popover(cmd:PopoverCommand.PopoverCommand):Any = js.native
   
-  def tooltip(options:TooltipOptions):Any = ???
+  def tooltip(options:TooltipOptions):Any = js.native
 }
 
 // TODO: see the ManifestFacade for a stronger way to do this:

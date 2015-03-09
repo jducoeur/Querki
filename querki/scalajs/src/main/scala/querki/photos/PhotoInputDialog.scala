@@ -20,7 +20,7 @@ import querki.display.input.InputGadget
  * This represents a button labeled something like "Add Photo", with metadata about where to
  * put the resulting photo.
  */
-class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.HTMLInputElement](e) {
+class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e) {
   
   lazy val PhotosInternal = interface[PhotosInternal]
   
@@ -42,14 +42,14 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.HTMLInputElem
 // a "files" member, but it does in the case of a file input field
 // TODO: submit this as a PR to scala-js-dom:
 trait FileTarget extends js.Object {
-  def files:dom.FileList = ???
+  def files:dom.raw.FileList = js.native
 }
 object FileTarget {
   implicit def EventTarget2FileTarget(t:dom.EventTarget):FileTarget = t.asInstanceOf[FileTarget]
 }
 import FileTarget._
 
-class PhotoInputDialog(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+class PhotoInputDialog(implicit val ecology:Ecology) extends Gadget[dom.html.Div] with EcologyMember {
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]

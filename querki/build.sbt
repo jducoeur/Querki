@@ -2,7 +2,7 @@ import sbt.Project.projectToRef
 
 lazy val clients = Seq(querkiClient)
 
-lazy val scalaV = "2.11.4"
+lazy val scalaV = "2.11.5"
 lazy val appV = "0.11.9.1"
 
 lazy val sharedSrcDir = "scala"
@@ -65,7 +65,7 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   libraryDependencies ++= sharedDependencies.value ++ Seq(
     "org.scala-js" %%% "scalajs-dom" % "0.8.0",
     "be.doeraene" %%% "scalajs-jquery" % "0.8.0",
-    "com.lihaoyi" %%% "utest" % "0.3.0" % "test",
+    "com.lihaoyi" %%% "utest" % "0.3.1" % "test",
     "org.scala-js" %%% "scala-parser-combinators" % "1.0.2",
     "org.scala-lang.modules" %% "scala-async" % "0.9.2"
   )).
@@ -80,10 +80,10 @@ lazy val sharedDirectorySettings = Seq(
 )
 
 lazy val sharedDependencies = Def.setting(Seq(
-  "com.lihaoyi" %%% "upickle" % "0.2.6",
-  "com.lihaoyi" %%% "scalarx" % "0.2.7",
-  "com.lihaoyi" %%% "autowire" % "0.2.4",
-  "com.lihaoyi" %%% "scalatags" % "0.4.5",
+  "com.lihaoyi" %%% "upickle" % "0.2.7",
+  "com.lihaoyi" %%% "scalarx" % "0.2.8",
+  "com.lihaoyi" %%% "autowire" % "0.2.5",
+  "com.lihaoyi" %%% "scalatags" % "0.4.6",
   "org.scalatest" %% "scalatest" % "2.2.0" % "test"
 ))
 

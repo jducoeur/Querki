@@ -3,7 +3,7 @@ package querki.display.input
 import scala.scalajs.js
 import js.JSConverters._
 import js.UndefOr
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 import org.scalajs.jquery._
 
 import org.querki.facades.raty._

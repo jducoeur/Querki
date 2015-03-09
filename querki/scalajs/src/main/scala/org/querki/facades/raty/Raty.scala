@@ -9,7 +9,7 @@ trait RatyFacade extends js.Object {
   /**
    * Interpret this JQuery element (which should point to a div) as a Raty.
    */
-  def raty(opts:RatyOptions):Any = ???
+  def raty(opts:RatyOptions):Any = js.native
 }
 
 trait RatyOptions extends js.Object

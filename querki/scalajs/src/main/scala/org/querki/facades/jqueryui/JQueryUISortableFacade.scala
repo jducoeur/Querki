@@ -8,10 +8,10 @@ import org.scalajs.jquery._
 import org.querki.jsext._
 
 trait JQueryUISortableFacade extends js.Object {
-  def sortable(options:SortableOptions):JQuery = ???
+  def sortable(options:SortableOptions):JQuery = js.native
   
   // TODO: see the ManifestFacade for a stronger way to do this:
-  def sortable(cmd:String):Any = ???
+  def sortable(cmd:String):Any = js.native
 }
 
 /**
@@ -244,8 +244,8 @@ class SortableOptionBuilder(val dict:OptMap) extends JSOptionBuilder[SortableOpt
 }
 
 trait SortPosition extends js.Object {
-  var top:Int = _
-  var left:Int = _
+  def top:Int = js.native
+  def left:Int = js.native
 }
 
 /**
@@ -259,35 +259,35 @@ trait SortChangeUI extends js.Object {
   /**
    * The jQuery object representing the helper being sorted.
    */
-  var helper:UndefOr[JQuery] = _
+  def helper:UndefOr[JQuery] = js.native
   
   /**
    * The jQuery object representing the current dragged element.
    */
-  var item:UndefOr[JQuery] = _
+  def item:UndefOr[JQuery] = js.native
   
   /**
    * The current absolute position of the helper represented as { top, left }.
    */
-  var offset:UndefOr[SortPosition] = _
+  def offset:UndefOr[SortPosition] = js.native
   
   /**
    * The current position of the helper represented as { top, left }.
    */
-  var position:UndefOr[SortPosition] = _
+  def position:UndefOr[SortPosition] = js.native
   
   /**
    * The original position of the element represented as { top, left }.
    */
-  var originalPosition:UndefOr[SortPosition] = _
+  def originalPosition:UndefOr[SortPosition] = js.native
   
   /**
    * The sortable that the item comes from if moving from one sortable to another.
    */
-  var sender:UndefOr[JQuery] = _
+  def sender:UndefOr[JQuery] = js.native
   
   /**
    * The jQuery object representing the element being used as a placeholder.
    */
-  var placeholder:UndefOr[JQuery] = _
+  def placeholder:UndefOr[JQuery] = js.native
 }

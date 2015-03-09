@@ -65,12 +65,12 @@ package object globals {
    * for a PR to the main facade.
    */
   class JQExt extends js.Object {
-    def each(func:js.ThisFunction0[Element, Any]):JQuery = ???
-    def each(func:js.ThisFunction1[Element, Int, Any]):JQuery = ???
-    def map(func:js.ThisFunction0[Element, Any]):JQuery = ???
-    def map(func:js.ThisFunction1[Element, Int, Any]):JQuery = ???
-    def click(func:js.ThisFunction0[Element, Any]):JQuery = ???
-    def click(func:js.ThisFunction1[Element, JQueryEventObject, Any]):JQuery = ???
+    def each(func:js.ThisFunction0[Element, Any]):JQuery = js.native
+    def each(func:js.ThisFunction1[Element, Int, Any]):JQuery = js.native
+    def map(func:js.ThisFunction0[Element, Any]):JQuery = js.native
+    def map(func:js.ThisFunction1[Element, Int, Any]):JQuery = js.native
+    def click(func:js.ThisFunction0[Element, Any]):JQuery = js.native
+    def click(func:js.ThisFunction1[Element, JQueryEventObject, Any]):JQuery = js.native
   }
   implicit def jq2Ext(jq:JQuery):JQExt = jq.asInstanceOf[JQExt]
   
@@ -121,10 +121,10 @@ package object globals {
   // jQuery facade.
   class JQFixes extends js.Object {
     // scala-js-jquery crashes if the attribute is not defined:
-    def attr(attributeName:String):js.UndefOr[String] = ???
-    def get():js.Array[_] = ???
+    def attr(attributeName:String):js.UndefOr[String] = js.native
+    def get():js.Array[_] = js.native
     // Height is always in px, right? And can never be non-integer, correct?
-    def height():Int = ???
+    def height():Int = js.native
   }
   implicit class JQFAdaptor(jq:JQuery) {
     // Note that jqf turns the jq *into* a jqf, rather than extending it, so that we can get around inference
