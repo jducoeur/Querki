@@ -315,7 +315,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	  val numParams = 2
 	  
 	  def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem = {
-	    <a class="btn btn-default btn-xs btn-primary" href={url} title={params(1).raw}><i class={"glyphicon glyph" + params(0).raw}></i></a>
+	    <a class="btn btn-default btn-xs btn-primary" href={url} title={params(1).raw}><i class={"glyphicon glyphicon-" + params(0).raw}></i></a>
 	  }
 	}
 	
@@ -335,7 +335,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	  val numParams = 2
 	  
 	  def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem = {
-	    <a class="btn btn-primary" href={url}><i class={params(0).raw + " icon-white"}></i> {params(1).raw}</a>
+	    <a class="btn btn-default btn-sm btn-primary" href={url}><i class={"glyphicon glyphicon-" + params(0).raw}></i> {params(1).raw}</a>
 	  }
 	}
 	

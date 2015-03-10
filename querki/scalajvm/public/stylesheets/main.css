@@ -204,8 +204,8 @@ body {
   line-height: 14px;
   background-color: lightpink;
   width: 18px;
-  height: 18px;
-  padding-top: 2px;
+  height: 20px;
+  padding: 0px;
   text-align: center;
   border: 1px solid;
   cursor: pointer;
@@ -220,17 +220,22 @@ body {
   display: inherit;
 }
 
+._instanceEditor ._deleteInstanceButton .btn-xs {
+  padding: 0px;
+  top: 0;
+}
+
 ._instanceEditor ._advancedEditButton {
   position: absolute;
   right: 35px;
   line-height: 14px;
   background-color: lightgreen;
   width: 18px;
-  height: 18px;
-  padding-top: 2px;
+  height: 20px;
   text-align: center;
   border: 1px solid;
   cursor: pointer;
+  padding: 0px;
 }
 
 ._instanceEditor ._advancedEditButton {
@@ -239,6 +244,11 @@ body {
 
 ._instanceEditor:hover ._advancedEditButton {
   display: inherit;
+}
+
+._instanceEditor ._advancedEditButton .btn-xs {
+  padding: 0px;
+  top: 0;
 }
 
 /*

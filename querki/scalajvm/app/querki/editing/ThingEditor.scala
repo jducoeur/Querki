@@ -55,7 +55,7 @@ trait ThingEditor { self:EditorModule =>
     
     private case class EditorLinkButtonLayout() extends LayoutElement {
       def span = 12
-      def layout = s"""[[_oidLink -> _mixedButton(""icon-share-alt"", ""Done"")]]""".stripMargin
+      def layout = s"""[[_oidLink -> _mixedButton(""share-alt"", ""Done"")]]""".stripMargin
     }
     
     private case class EditorRowLayout(props:Seq[LayoutElement]) {
@@ -149,8 +149,8 @@ trait ThingEditor { self:EditorModule =>
       result.getOrElse(PropListMgr.from(thing).toList.map(_._1).filter(specialFilter(thing, _)))
     }
     
-    val thingButtons = """{{_advancedEditButton:<i class="icon-edit _withTooltip" title="Click to open the Advanced Editor"></i>}}
-      |{{_deleteInstanceButton:<i class="icon-trash _withTooltip" title="Click to delete this"></i>}}""".stripMargin
+    val thingButtons = """{{_advancedEditButton:<i class="glyphicon glyphicon-edit btn-xs _withTooltip" title="Click to open the Advanced Editor"></i>}}
+      |{{_deleteInstanceButton:<i class="glyphicon glyphicon-trash btn-xs _withTooltip" title="Click to delete this"></i>}}""".stripMargin
     
     private def editorLayoutForThing(thing:PropertyBundle, state:SpaceState):QLText = {
       implicit val s = state
