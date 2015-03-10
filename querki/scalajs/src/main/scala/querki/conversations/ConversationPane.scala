@@ -132,7 +132,7 @@ class ReplyGadget(replyTo:Option[CommentId], ph:String, onPosted:ConvNode => Uni
     div(cls:="_addComment row-fluid",
       div(cls:="span11",
         commentInput,
-        inp(cls:="_postCommentButton btn btn-info btn-mini", 
+        inp(cls:="_postCommentButton btn btn-info btn-sm", 
           tpe:="button", 
           value:="Post Comment",
           onclick:={ () => postComment() })

@@ -92,11 +92,11 @@ class StandardThingHeader(thing:ThingInfo, page:Page, standardThings:StandardThi
                 href:=Editing.modelDesignerFactory.pageUrl(thing))
             },
             if (thing.isInstantiatable) {
-              iconButton("plus-sign")(
+              iconButton("plus")(
                 title:=s"Create a $thingName",
                 href:=Pages.createAndEditFactory.pageUrl(thing))
             },
-            querkiButton(MSeq(icon("edit"), icon("edit"), icon("edit"), "..."))(
+            querkiButton(MSeq(icon("edit"), " ", icon("edit"), " ", icon("edit"), "..."))(
               title:=s"Edit all instances of $thingName",
               href:=Editing.editInstancesFactory.pageUrl(thing))
           )

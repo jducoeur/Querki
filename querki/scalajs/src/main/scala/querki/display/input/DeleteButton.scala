@@ -40,7 +40,7 @@ class DeleteButton(doDelete:() => Unit)(implicit e:Ecology) extends InputGadget[
 }
 
 class DeleteInstanceButton(doDelete:() => Unit)(implicit e:Ecology) extends DeleteButton(doDelete)(e) {
-  override def doRender() = span(cls:="_deleteInstanceButton", i(title:="Click to delete this", cls:="icon-trash _withTooltip"))  
+  override def doRender() = span(cls:="_deleteInstanceButton", i(title:="Click to delete this", cls:="glyphicon glyphicon-trash _withTooltip"))  
 }
 
 /**
