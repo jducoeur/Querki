@@ -22,7 +22,7 @@ class SearchGadget(implicit val ecology:Ecology) extends Gadget[dom.HTMLInputEle
   lazy val PageManager = interface[querki.display.PageManager]
   
   def doRender() = 
-    inp(cls:="search-query", 
+    inp(cls:="search-query form-control", 
       tpe:="text",
       placeholder:="Search")
   

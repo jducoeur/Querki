@@ -205,6 +205,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
         data("target"):=s"#$title",
         href:=s"#$title",
         data("toggle"):="dropdown",
+        role:="button",
         title + " ",
         b(cls:="caret")
       ),
@@ -233,43 +234,44 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   
   def doRender() =
       div(cls:="container",
-        div(cls:="navbar navbar-fixed-top _noPrint",
-          div(cls:="navbar-inner",
-            div(cls:="container",
-              
+        div(cls:="navbar navbar-default navbar-fixed-top _noPrint",
+          div(cls:="container-fluid",
+            div(cls:="navbar-header",  
               // This is the collapsed menu icon that we show on a small screen:
-              a(cls:="btn btn-navbar",
+              button(tpe:="button", cls:="navbar-toggle collapsed",
                 data("toggle"):="collapse",
                 data("target"):=".nav-collapse",
+                span(cls:="sr-only", "Toggle navigation"),
                 span(cls:="icon-bar"),
                 span(cls:="icon-bar"),
                 span(cls:="icon-bar")
               ),
               
               // Show the logo on the left-hand side:
-              a(cls:="brand",
+              a(cls:="navbar-brand",
                 // TODO: where should we define this call?
                 href:="/",
                 img(src:=s"${PageManager.imagePath}/Logo-menubar.png")
-              ),
-              
-              div(cls:="nav-collapse collapse",
-                ul(cls:="nav",
-                  for (section <- sections)
-                    yield displayNavigable(section)
-                ),
-                
-                ul(cls:="nav pull-right", displayNavigable(loginSection)),
-                
-                form(cls:="navbar-search pull-right",
-                  new SearchGadget()),
-                  
-                if (UserAccess.user.isDefined) {
-                  ul(cls:="nav pull-right",
-                    li(new NotifierGadget)
-                  )
-                }
               )
+            ),
+              
+            div(cls:="collapse navbar-collapse",
+              ul(cls:="nav navbar-nav",
+                for (section <- sections)
+                  yield displayNavigable(section)
+              ),
+                
+              ul(cls:="nav navbar-nav navbar-right", displayNavigable(loginSection)),
+                
+              form(cls:="navbar-form navbar-search navbar-right", role:="search",
+                div(cls:="form-group",
+                  new SearchGadget())),
+                  
+              if (UserAccess.user.isDefined) {
+                ul(cls:="nav pull-right",
+                  li(new NotifierGadget)
+                )
+              }
             )
           )
         )
