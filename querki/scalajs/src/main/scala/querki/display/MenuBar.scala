@@ -240,7 +240,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
               // This is the collapsed menu icon that we show on a small screen:
               button(tpe:="button", cls:="navbar-toggle collapsed",
                 data("toggle"):="collapse",
-                data("target"):=".nav-collapse",
+                data("target"):="#collapsing-menu",
                 span(cls:="sr-only", "Toggle navigation"),
                 span(cls:="icon-bar"),
                 span(cls:="icon-bar"),
@@ -255,7 +255,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
               )
             ),
               
-            div(cls:="collapse navbar-collapse",
+            div(cls:="collapse navbar-collapse", id:="collapsing-menu",
               ul(cls:="nav navbar-nav",
                 for (section <- sections)
                   yield displayNavigable(section)
@@ -263,12 +263,12 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
                 
               ul(cls:="nav navbar-nav navbar-right", displayNavigable(loginSection)),
                 
-              form(cls:="navbar-form navbar-search navbar-right", role:="search",
+              form(cls:="navbar-form navbar-right", role:="search",
                 div(cls:="form-group",
                   new SearchGadget())),
                   
               if (UserAccess.user.isDefined) {
-                ul(cls:="nav pull-right",
+                ul(cls:="nav navbar-right",
                   li(new NotifierGadget)
                 )
               }

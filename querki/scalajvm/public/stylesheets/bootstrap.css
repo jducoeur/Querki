@@ -5,8 +5,8 @@
  */
 
 /*!
- * Generated using the Bootstrap Customizer (http://getbootstrap.com/customize/?id=52109e996130184b54d0)
- * Config saved to config.json and https://gist.github.com/52109e996130184b54d0
+ * Generated using the Bootstrap Customizer (http://getbootstrap.com/customize/?id=53aea9cb9a8b7a17479d)
+ * Config saved to config.json and https://gist.github.com/53aea9cb9a8b7a17479d
  */
 /*! normalize.css v3.0.2 | MIT License | git.io/normalize */
 html {
@@ -4418,10 +4418,10 @@ select[multiple].input-group-sm > .input-group-btn > .btn {
 }
 .navbar-default .navbar-toggle:hover,
 .navbar-default .navbar-toggle:focus {
-  background-color: #dddddd;
+  background-color: #076017;
 }
 .navbar-default .navbar-toggle .icon-bar {
-  background-color: #888888;
+  background-color: #ffffff;
 }
 .navbar-default .navbar-collapse,
 .navbar-default .navbar-form {
@@ -4517,7 +4517,7 @@ fieldset[disabled] .navbar-default .btn-link:focus {
   background-color: #333333;
 }
 .navbar-inverse .navbar-toggle .icon-bar {
-  background-color: #ffffff;
+  background-color: #076017;
 }
 .navbar-inverse .navbar-collapse,
 .navbar-inverse .navbar-form {
