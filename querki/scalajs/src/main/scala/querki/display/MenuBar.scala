@@ -2,11 +2,8 @@ package querki.display
 
 import scala.scalajs.js
 import org.scalajs.dom.{raw => dom}
-import org.scalajs.jquery._
 
 import scalatags.JsDom.all._
-
-import org.querki.facades.bootstrap._
 
 import querki.globals._
 
@@ -27,7 +24,6 @@ class MenuBar(implicit e:Ecology) extends InputGadget[dom.HTMLDivElement](e) wit
   def values = ???
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
-//  lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val DataModel = interface[querki.datamodel.DataModel]
   lazy val Editing = interface[querki.editing.Editing]
   lazy val PageManager = interface[PageManager]
@@ -284,19 +280,5 @@ class MenuBar(implicit e:Ecology) extends InputGadget[dom.HTMLDivElement](e) wit
         )
       )
       
-  def hook() = {
-//    $(".querki-navbar-collapse").collapse()    
-  }
-      
-  override def onCreate(e:dom.HTMLDivElement) = {
-    // This is entirely idiotic, but apparently the collapsed Bootstrap menu, once opened,
-    // doesn't close by itself. See:
-    //
-    //   http://stackoverflow.com/questions/21203111/bootstrap-3-collapsed-menu-doesnt-close-on-click
-    //
-    // No, I have no idea why Bootstrap chose this particular misfeature.
-//    $(".navbar-toggle").click({ evt:JQueryEventObject => 
-//      $(".navbar-collapse").collapse(ModalCommand.toggle)
-//    })
-  }
+  def hook() = {}
 }
