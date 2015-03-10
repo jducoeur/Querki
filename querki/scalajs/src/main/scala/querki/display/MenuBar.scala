@@ -2,12 +2,16 @@ package querki.display
 
 import scala.scalajs.js
 import org.scalajs.dom.{raw => dom}
+import org.scalajs.jquery._
 
 import scalatags.JsDom.all._
+
+import org.querki.facades.bootstrap._
 
 import querki.globals._
 
 import querki.comm._
+import querki.display.input.InputGadget
 import querki.notifications.NotifierGadget
 import querki.search.SearchGadget
 
@@ -18,10 +22,12 @@ import querki.search.SearchGadget
  * items here, and this wouldn't have to know about all of them. The only issue is, how do we manage the
  * overall ordering of the list?
  */
-class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember with QuerkiUIUtils {
+class MenuBar(implicit e:Ecology) extends InputGadget[dom.HTMLDivElement](e) with QuerkiUIUtils {
+  
+  def values = ???
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
-  lazy val DataAccess = interface[querki.data.DataAccess]
+//  lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val DataModel = interface[querki.datamodel.DataModel]
   lazy val Editing = interface[querki.editing.Editing]
   lazy val PageManager = interface[PageManager]
@@ -235,12 +241,13 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
   def doRender() =
       div(cls:="container",
         div(cls:="navbar navbar-default navbar-fixed-top _noPrint",
-          div(cls:="container-fluid",
+          role:="navigation",
+          div(cls:="container",
             div(cls:="navbar-header",  
               // This is the collapsed menu icon that we show on a small screen:
-              button(tpe:="button", cls:="navbar-toggle collapsed",
+              button(tpe:="button", cls:="navbar-toggle",
                 data("toggle"):="collapse",
-                data("target"):="#collapsing-menu",
+                data("target"):=".querki-navbar-collapse",
                 span(cls:="sr-only", "Toggle navigation"),
                 span(cls:="icon-bar"),
                 span(cls:="icon-bar"),
@@ -255,7 +262,7 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
               )
             ),
               
-            div(cls:="collapse navbar-collapse", id:="collapsing-menu",
+            div(cls:="querki-navbar-collapse navbar-collapse collapse",
               ul(cls:="nav navbar-nav",
                 for (section <- sections)
                   yield displayNavigable(section)
@@ -276,4 +283,20 @@ class MenuBar(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] w
           )
         )
       )
+      
+  def hook() = {
+//    $(".querki-navbar-collapse").collapse()    
+  }
+      
+  override def onCreate(e:dom.HTMLDivElement) = {
+    // This is entirely idiotic, but apparently the collapsed Bootstrap menu, once opened,
+    // doesn't close by itself. See:
+    //
+    //   http://stackoverflow.com/questions/21203111/bootstrap-3-collapsed-menu-doesnt-close-on-click
+    //
+    // No, I have no idea why Bootstrap chose this particular misfeature.
+//    $(".navbar-toggle").click({ evt:JQueryEventObject => 
+//      $(".navbar-collapse").collapse(ModalCommand.toggle)
+//    })
+  }
 }

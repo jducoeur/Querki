@@ -3,6 +3,7 @@ package org.querki.facades.bootstrap
 import scala.scalajs.js
 import js.{Dynamic, UndefOr, undefined => undef}
 import js.JSConverters._
+import org.scalajs.jquery._
 import org.querki.jsext._
 
 /**
@@ -19,6 +20,9 @@ trait BootstrapFacade extends js.Object {
   def popover(cmd:PopoverCommand.PopoverCommand):Any = js.native
   
   def tooltip(options:TooltipOptions):Any = js.native
+  
+  def collapse():JQuery = js.native
+  def collapse(cmd:ModalCommand.ModalCommand):JQuery = js.native
 }
 
 // TODO: see the ManifestFacade for a stronger way to do this:
