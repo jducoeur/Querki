@@ -71,7 +71,7 @@ class ConversationPane(val thingInfo:ThingInfo, focusedComment:Option[String])(i
     $(convWrapper.elem).append(convGadget.render)
   }
   
-  lazy val convWrapper = new WrapperDiv
+  lazy val convWrapper = (new WrapperDiv)(cls:="container")
   lazy val allWrapper = new WrapperDiv
   
   def doRender() = div(allWrapper)
@@ -126,7 +126,7 @@ class ReplyGadget(replyTo:Option[CommentId], ph:String, onPosted:ConvNode => Uni
     }
   }
 
-  lazy val commentInput = Gadget(textarea(cls:="_commentInput", placeholder:=ph))
+  lazy val commentInput = Gadget(textarea(cls:="_commentInput form-control", placeholder:=ph))
   
   def doRender() =
     div(cls:="_addComment row",
@@ -170,7 +170,7 @@ private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boole
   lazy val replyContainer = (new WrapperDiv)(cls:="_replyContainer col-md-offset1 col-md-9").initialContent(replyPlaceholder)
   
   lazy val replyPlaceholder = Gadget(
-    inp(cls:="_replyPlaceholder", 
+    inp(cls:="_replyPlaceholder form-control", 
       tpe:="text", 
       placeholder:="Click here to reply...",
       onclick:={ () => showRealReplyInput() },
