@@ -264,10 +264,12 @@ body {
   font-weight: bold;
   text-align: right;
   padding-right: 0;
+  padding-top: 3px;
 }
 
 ._advancedEditor ._propListItem {
   list-style-type: none;
+  margin-bottom: 20px;
 }
 
 /*
