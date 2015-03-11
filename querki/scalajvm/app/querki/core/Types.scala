@@ -658,7 +658,14 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
             |avoiding that particular bit of computer-science jargon.""".stripMargin)
         )) with SimplePTypeBuilder[Boolean]
   {
-    override def editorSpan(prop:Property[_,_]):Int = 1
+    // This is horribly hackish, and illustrates that editorSpan is more than just a function of
+    // the PType:
+    override def editorSpan(prop:Property[_,_]):Int = {
+      if (prop.cType == Optional)
+        2
+      else
+        1
+    }
     
     // It turns out that Java's parseBoolean is both too tolerant of nonsense, and
     // doesn't handle many common cases. So we'll do it ourselves:

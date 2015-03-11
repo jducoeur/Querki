@@ -45,7 +45,7 @@ trait ThingEditor { self:EditorModule =>
           case Some(summaryText) => s"""[[""$displayName"" -> _tooltip(""$summaryText"")]]"""
           case None => displayName
         })
-      def layout = s"""{{span$span:
+      def layout = s"""{{col-md-$span:
       |${displayNamePhrase.map(dnp => s"{{_propTitle: $dnp:}}").getOrElse("")}
       |
       |[[${prop.toThingId}._edit]]
@@ -55,7 +55,9 @@ trait ThingEditor { self:EditorModule =>
     
     private case class EditorLinkButtonLayout() extends LayoutElement {
       def span = 12
-      def layout = s"""[[_oidLink -> _mixedButton(""share-alt"", ""Done"")]]""".stripMargin
+      def layout = s"""{{col-md-2:
+      |[[_oidLink -> _mixedButton(""share-alt"", ""Done"")]]
+      |}}""".stripMargin
     }
     
     private case class EditorRowLayout(props:Seq[LayoutElement]) {
