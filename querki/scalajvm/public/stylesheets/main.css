@@ -257,6 +257,7 @@ body {
  
 ._advancedEditor ._propertySection {
   margin: 0;
+  padding: 0;
 }
 
 ._advancedEditor ._propPrompt {

@@ -11,8 +11,8 @@
 	  <h1>@title</h1>
 	</div>
 	
-	<div class="row-fluid">
-	  <div class="span10">
+	<div class="row">
+	  <div class="col-md-10">
 	    <p>@rc.ownerName has invited you to join the Space "@{rc.state.get.displayName}". Would you like to join it now?</p>
 	
 	    <p><a href="@routes.LoginController.joinSpace(rc.ownerHandle, rc.state.get.toThingId)" class="btn btn-primary">Join</a>

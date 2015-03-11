@@ -52,7 +52,7 @@ class LargeTextInputGadget(mods:Modifier*)(implicit e:Ecology) extends InputGadg
   
   // TBD: do we need an unhook, to avoid leaks?
   def hook() = {
-    $(elem).addClass("span10")
+    $(elem).addClass("col-md-10")
     
     // Mark LargeTextInputs as autosized.
     // We specifically need to *not* apply autosize to the template elements, or else it won't

@@ -61,14 +61,16 @@ class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEd
     def doRender() = 
       // HACK: we're calling this _instanceEditor in order to make the DeleteButton's style work. Let's
       // refactor this somehow:
-      li(cls:="_propListItem form-group _instanceEditor",
+      li(cls:="_propListItem _instanceEditor",
         data("propid"):=propInfo,
-        new WithTooltip(label(cls:="_propPrompt control-label", 
-          onclick:={ () => toggleDetails() },
-          new DeleteInstanceButton({() => section.page.removeProperty(this)}), 
-          raw(s"$prompt ")),
-          tooltip),
-        new RawDiv(info.editor, cls:=""),
+        div(cls:="row", width:="100%",
+          new WithTooltip(label(cls:="_propPrompt col-md-2", 
+            onclick:={ () => toggleDetails() },
+            raw(s"$prompt ")),
+            tooltip),
+          new RawDiv(info.editor, cls:="col-md-9"),
+          new DeleteInstanceButton({() => section.page.removeProperty(this)}) 
+        ),
         if (propId == stdThings.basic.displayNameProp.oid)
           new DeriveNameCheck(this),
         propDetailsArea

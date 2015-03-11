@@ -103,10 +103,10 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     lazy val propertyDescriptionDiv = selectedPropertyDescription.descriptionDiv
     
     def doRender() = {
-      val result = div(cls:="well container span12",
+      val result = div(cls:="well container col-md-12",
         p(i(cls:="fa fa-spinner fa-spin"), """Choose a property from this list of existing properties, or press "Create a New Property" to do something different."""),
-        div(cls:="row-fluid",
-          div(cls:="span4",
+        div(cls:="row",
+          div(cls:="col-md-4",
             p(
               propSelector
             ),
@@ -116,7 +116,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
             hr,
             p(new ButtonGadget(ButtonKind.Info, "Create a new Property instead")({ mainDiv.replaceContents(createNew.rendered, true) }), cancelButton)
           ),
-          div(cls:="span7", propertyDescriptionDiv)
+          div(cls:="col-md-7", propertyDescriptionDiv)
         )
       )
       result
@@ -131,7 +131,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
       modelSelector.setValue("")
     }
     
-    lazy val nameInput = new RxText(cls:="span6", placeholder:="Name (required)...")
+    lazy val nameInput = new RxText(cls:="col-md-6", placeholder:="Name (required)...")
     
     // TODO: should the Collections simply come from the global info instead of typeInfo? They aren't changeable yet.
     lazy val collButtons =
@@ -143,13 +143,13 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
       val typeOpts = typeInfo.advancedTypes.sortBy(_.displayName).map(typ => option(value:=typ, typ.displayName))
       option(value:="", "Choose a Type...") +: typeOpts
     })
-    val typeSelector = new RxSelect(advTypeOptions, cls:="span5")
+    val typeSelector = new RxSelect(advTypeOptions, cls:="col-md-5")
     
     val modelOptions = Var({
       val modelOpts = typeInfo.models.sortBy(_.displayName).map(model => option(value:=model, model.displayName))
       option(value:="", "Base it on a Model...") +: modelOpts
     })
-    val modelSelector = new RxSelect(modelOptions, cls:="span5")
+    val modelSelector = new RxSelect(modelOptions, cls:="col-md-5")
 
     // You choose *either* a Type or a Model; when you set one, we unset the other:
     val modelClearer = Obs(typeSelector.selectedValOpt) {
@@ -203,23 +203,23 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     }
     
     def doRender() =
-      div(cls:="well container span12",
+      div(cls:="well container col-md-12",
         p(i(cls:="fa fa-spinner fa-spin"), """Describe the new property to create, or press "Add an Existing Property" to use one that already exists."""),
-        div(cls:="row-fluid",
-          div(cls:="span6",
-            div(cls:="row-fluid",
+        div(cls:="row",
+          div(cls:="col-md-6",
+            div(cls:="row",
               nameInput
             ),
-            div(cls:="row-fluid",
+            div(cls:="row",
               collSelector
             ),
-            div(cls:="row-fluid",
-              typeSelector, " or ", modelSelector
+            div(cls:="row",
+              typeSelector, span(cls:="col-md-1", " or "), modelSelector
             )
           ),
-          div(cls:="span6", selectedBasisDescriptionDiv)
+          div(cls:="col-md-6", selectedBasisDescriptionDiv)
         ),
-        p(cls:="offset1",
+        p(cls:="col-md-offset1",
           addButton
         ),
         hr,

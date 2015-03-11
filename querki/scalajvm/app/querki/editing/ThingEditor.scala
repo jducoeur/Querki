@@ -60,7 +60,7 @@ trait ThingEditor { self:EditorModule =>
     
     private case class EditorRowLayout(props:Seq[LayoutElement]) {
       def span = (0 /: props) { (sum, propLayout) => sum + propLayout.span }
-      def layout = s"""{{row-fluid:
+      def layout = s"""{{row:
     		  |${props.map(_.layout).mkString}
               |}}
     		  |""".stripMargin

@@ -71,9 +71,8 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
   override def beforeRender() = {
     // Page-specific gadget hooks:
-    // TODO: these need to be updated for the new Bootstrap. Can we come up with a better abstraction here?
-    Gadgets.registerHook("._largeTextEdit") { elem => $(elem).addClass("span10") }
-    Gadgets.registerHook("input[type='text']") { elem => $(elem).filter(".propEditor").addClass("span10") }    
+    Gadgets.registerHook("._largeTextEdit") { elem => $(elem).addClass("col-md-10") }
+    Gadgets.registerHook("input[type='text']") { elem => $(elem).filter(".propEditor").addClass("col-md-10") }    
   }
   
   def addProperty(propId:TID, openEditor:Boolean = false) = {

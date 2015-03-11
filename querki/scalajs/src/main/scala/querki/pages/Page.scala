@@ -57,8 +57,8 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
     val renderedContent = new WrapperDiv
     
     val outerPage = div(cls:="guts container-fluid",
-      div(cls:="row-fluid",
-        div(cls:="querki-content span12",
+      div(cls:="row",
+        div(cls:="querki-content col-md-12",
           // If there is a message to flash, show it:
           Pages.getFlash.map { pair =>
             val (isError, msg) = pair

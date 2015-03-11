@@ -419,8 +419,8 @@
 
 	<!-- This container stuff is likely to go into a lower-level, Space-rendering template -->
 	<div class="guts container-fluid">
-      <div class="row-fluid">
-        <div class="querki-content span12">
+      <div class="row">
+        <div class="querki-content col-md-12">
 
 		  @errors match {
 			case None => {}
@@ -449,7 +449,7 @@
 	      }
           @content
 	
-		</div><!--/span12-->
+		</div><!--/col-md-12-->
       </div><!--/row-->
 
       @if(!rc.chromeless) {

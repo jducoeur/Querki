@@ -29,7 +29,7 @@ class ViewPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecology
             }
           ),
           
-          div(cls:="row-fluid",
+          div(cls:="row",
             dl(
               for { 
                 prop <- props

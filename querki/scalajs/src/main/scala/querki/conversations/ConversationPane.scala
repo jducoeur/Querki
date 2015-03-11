@@ -129,8 +129,8 @@ class ReplyGadget(replyTo:Option[CommentId], ph:String, onPosted:ConvNode => Uni
   lazy val commentInput = Gadget(textarea(cls:="_commentInput", placeholder:=ph))
   
   def doRender() =
-    div(cls:="_addComment row-fluid",
-      div(cls:="span11",
+    div(cls:="_addComment row",
+      div(cls:="col-md-11",
         commentInput,
         inp(cls:="_postCommentButton btn btn-info btn-sm", 
           tpe:="button", 
@@ -156,18 +156,18 @@ private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boole
   }
   lazy val flattenedNodes = flattenNodes(conv)
   
-  lazy val commentContainer = Gadget(div(cls:="_commentContainer offset1 span9", flattenedNodes))
+  lazy val commentContainer = Gadget(div(cls:="_commentContainer col-md-offset1 col-md-9", flattenedNodes))
   
   def doRender() =
     div(
-      cls:="_convThread row-fluid",
+      cls:="_convThread row",
       commentContainer,
       if (canComment) {
         replyContainer
       }
     )
       
-  lazy val replyContainer = (new WrapperDiv)(cls:="_replyContainer offset1 span9").initialContent(replyPlaceholder)
+  lazy val replyContainer = (new WrapperDiv)(cls:="_replyContainer col-md-offset1 col-md-9").initialContent(replyPlaceholder)
   
   lazy val replyPlaceholder = Gadget(
     inp(cls:="_replyPlaceholder", 
