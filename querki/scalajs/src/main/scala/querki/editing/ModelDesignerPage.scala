@@ -71,10 +71,10 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
   override def beforeRender() = {
     // Page-specific gadget hooks:
-    Gadgets.registerHook("._largeTextEdit") { elem => $(elem).addClass("col-md-10") }
+    Gadgets.registerHook("._largeTextEdit") { elem => $(elem).addClass("col-md-10 form-control") }
     Gadgets.registerHook("input[type='text']") { elem => 
       val inputs = $(elem).filter(".propEditor").filter(":not(._tagSetInput)")
-      inputs.addClass("col-md-10") 
+      inputs.addClass("col-md-10 form-control") 
     }    
   }
   
