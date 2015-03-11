@@ -79,7 +79,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
   }
   
   def setupDeleteButton(buttonElem:dom.Element) = {
-    setupButton(buttonElem, "icon-remove-sign", "Delete Item", handleDeleteListItem) 
+    setupButton(buttonElem, "glyphicon glyphicon-remove-sign", "Delete Item", handleDeleteListItem) 
   }
   
   def handleDeleteListItem(evt:JQueryEventObject) = {
@@ -95,12 +95,12 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     // Don't pick up existing data, especially existing Gadget links:
     val newItem = template.clone(false)
     newItem.removeClass("inputTemplate")
-    val delButton = button(cls:="delete-item-button btn-mini").render
+    val delButton = button(cls:="delete-item-button btn-xs").render
     setupDeleteButton(delButton)
     // TODO: what about replaceIndexes()? Don't we need to do that every time we renumber?
     // TODO: the fact that we are creating this here, but the originals in the server, shows how
     // broken the factoring is. *ALL* of this sort of stuff belongs here.
-    val newLiElem = li(span(cls:="icon-move"), newItem.get(0).asInstanceOf[dom.Element], delButton).render
+    val newLiElem = li(span(cls:="glyphicon glyphicon-move"), newItem.get(0).asInstanceOf[dom.Element], delButton).render
     $(elem).append(newLiElem)
   	numberItems()
     // Do our best to set focus to the first relevant field of the new element:
@@ -122,7 +122,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
   def hook() = {
     // Hook the Add/Delete Item buttons:
     $(elem).parent().find(".add-item-button").each({ (buttonElem:dom.Element) => 
-      setupButton(buttonElem, "icon-plus-sign", "Add Item", handleAddListItem) 
+      setupButton(buttonElem, "glyphicon glyphicon-plus", "Add Item", handleAddListItem) 
     }:js.ThisFunction0[dom.Element, Any])
     $(elem).parent().find(".delete-item-button").each({ (buttonElem:dom.Element) => 
       setupDeleteButton(buttonElem)

@@ -188,11 +188,11 @@ trait CollectionBase { self:CoreEcot =>
               	  Attribute("id", Text(currentValue.collectionControlId + "-item[" + i + "]"), 
               	  Attribute("name", Text(currentValue.collectionControlId + "-item[" + i + "]"), Null))
               }
-              <li><span class="icon-move"></span>{itemRendered}<button class="delete-item-button btn-mini">&nbsp;</button></li>
+              <li><span class="glyphicon glyphicon-move"></span>{itemRendered}<button class="delete-item-button btn-xs">&nbsp;</button></li>
             }
           }.getOrElse(NodeSeq.Empty)
         }</ul>
-        <button class="add-item-button btn-mini" id={addButtonId} data-size={currentValue.collectionControlId + "-size"}>&nbsp;</button>
+        <button class="add-item-button btn-xs" id={addButtonId} data-size={currentValue.collectionControlId + "-size"}>&nbsp;</button>
         <input type="hidden" id={currentValue.collectionControlId + "-size"} value={currentValue.v.map(_.cv.size).getOrElse(0).toString}/>
         {inputTemplate}
       </div>

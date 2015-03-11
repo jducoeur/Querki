@@ -262,6 +262,8 @@ body {
 
 ._advancedEditor ._propPrompt {
   font-weight: bold;
+  text-align: right;
+  padding-right: 0;
 }
 
 ._advancedEditor ._propListItem {
