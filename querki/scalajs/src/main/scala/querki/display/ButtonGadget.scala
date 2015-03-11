@@ -20,7 +20,7 @@ import ButtonKind._
 class ButtonGadget(kind:ButtonKind, mods:Modifier*)(onClick: => Unit) extends Gadget[dom.HTMLAnchorElement] {
   def doRender() = {
     val kindStr = kind match {
-      case Normal => ""
+      case Normal => "btn-default"
       case Info => "btn-info"
       case Primary => "btn-primary"
     }

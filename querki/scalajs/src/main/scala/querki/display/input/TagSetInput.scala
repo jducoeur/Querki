@@ -140,7 +140,7 @@ class MarcoPoloInput(val propId:String, val required:Boolean, val kind:TagSetKin
   }
   
   def doRender() =
-    input(cls:="_tagInput", tpe:="text", mods)
+    input(cls:="_tagInput form-control", tpe:="text", mods)
 }
 
 object MarcoPoloInput {
