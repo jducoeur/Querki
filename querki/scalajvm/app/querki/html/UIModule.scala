@@ -460,7 +460,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         url <- getCreateInstanceUrl(inv)
         labelWikitext <- inv.processParamFirstAs(0, QL.ParsedTextType)
         label = labelWikitext.raw.str
-        xml = <a class="btn" href={url}>{label}</a>
+        xml = <a class="btn btn-default" href={url}>{label}</a>
       }
         yield QL.WikitextValue(toWikitext(xml))
     }
