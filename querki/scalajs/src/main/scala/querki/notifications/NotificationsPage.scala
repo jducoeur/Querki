@@ -2,6 +2,7 @@ package querki.notifications
 
 import scala.scalajs.js
 import org.scalajs.dom.{raw => dom}
+import org.querki.jquery._
 import scalatags.JsDom.all.{input => inp, _}
 
 import autowire._
@@ -33,12 +34,12 @@ class NotificationsPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   override def beforeRender() = {
     renderedContentFuture.foreach { thisPage =>
       // WTF? Why is this JQExt conversion needed? For some reason, the usual implicit isn't working?
-      $(elem).find(".noteHeadline a").asInstanceOf[JQExt].each({ (rawElem:dom.Element) =>
+      $(elem).find(".noteHeadline a").foreach({ rawElem:dom.Element =>
         val anchor = rawElem.asInstanceOf[dom.HTMLAnchorElement]
-        val href = $(anchor).attr("href")
+        val href = $(anchor).attr("href").get
         val adjusted = href.replace("#comment", "?showComment=comment")
         $(anchor).attr("href", adjusted)
-      }:js.ThisFunction0[dom.Element, Any])
+      })
     }
   }
   

@@ -19,7 +19,7 @@ trait ServerHtmlHolder extends EcologyMember {
   
   def prepContents(root:dom.Element) = {
     val currentHash = PageManager.currentHash
-    $(root).find("a").each({ (child:dom.Element, index:Int) =>
+    $(root).find("a").foreach({ child:dom.Element =>
       try {
 	    // Adjust the URLs of any links we find.
 	    // TODO: this is a serious hack, reflecting the fact that a painful amount of server code
@@ -46,7 +46,6 @@ trait ServerHtmlHolder extends EcologyMember {
           e.printStackTrace()
         }
       }
-      1:js.Any
     })
     
     Gadgets.createGadgets(root)    

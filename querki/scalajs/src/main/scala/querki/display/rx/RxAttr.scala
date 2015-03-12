@@ -8,6 +8,15 @@ import querki.globals._
 import querki.display.ManagedFrag
 
 /**
+ * TODO: this is a horrible hacked workaround for the lack of true union types.
+ * We really want AttrVal to be a proper union in the signature of attr(); lacking
+ * that, we're shielding the js.Any of this version behind the firewall of AttrVal.
+ */
+trait AttrExt extends js.Object {
+  def attr(attributeName:String, v:js.Any):JQuery = js.native
+}
+  
+/**
  * Defines an attribute, suitable for embedding in Scalatags, whose value is based on a
  * reactive.
  */
@@ -16,7 +25,7 @@ class RxAttr[T <% AttrVal](name:String, rx:Rx[T]) extends ManagedFrag[dom.Attr] 
   
   lazy val obs = Obs(rx) {
     parentOpt.foreach { parent =>
-      $(parent).attr(name, rx())
+      $(parent).asInstanceOf[AttrExt].attr(name, rx().asInstanceOf[js.Any])
     }
   }
   

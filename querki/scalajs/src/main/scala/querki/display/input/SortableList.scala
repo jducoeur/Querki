@@ -52,7 +52,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
       // Investigate what happens in the case of deeply-nested structures:
       inputField.find(".propEditor").foreach({ childElem =>
         val childjq = $(childElem)
-        val childName = childjq.attr("name")
+        val childName = childjq.attr("name").get
         // This is probably better done with a Regex, but I can't be arsed to figure out the
         // syntax right now:
         val rewriteKey = s"$propIdRaw["
@@ -153,7 +153,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     // be suspicious about all of this until we implement history, maintain version stamps, and have
     // a clear mechanism for merging collisions. This should be sending a change *relative* to
     // a specific version of the Thing.
-    val path = propWrapper.Attr("name")
+    val path = propWrapper.attr("name").get
     saveChange(mkMsg(path))    
   }
   

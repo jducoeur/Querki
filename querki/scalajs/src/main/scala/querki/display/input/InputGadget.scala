@@ -79,7 +79,7 @@ abstract class InputGadget[T <: dom.Element](e:Ecology) extends Gadget[T] with E
    * The path to the field. This is called when we are saving. *Usually*, this is the name of the element,
    * but there are a few unfortunate inconsistencies.
    */
-  def path = $(elem).Attr("name")
+  def path = $(elem).attr("name").get
   
   /**
    * Save the current state of this InputGadget. This can potentially be overridden, but shouldn't

@@ -3,6 +3,7 @@ package org.querki.jquery
 import scala.scalajs.js
 import org.scalajs.dom.XMLHttpRequest
 
-trait JQueryXHR extends XMLHttpRequest {
-  def overrideMimeType(): js.Dynamic = ???
+// TBD: is this signature correct?
+trait JQueryXHR extends XMLHttpRequest with JQueryDeferred {
+  def overrideMimeType(): js.Dynamic = js.native
 }

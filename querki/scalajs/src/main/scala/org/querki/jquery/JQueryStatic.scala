@@ -1,18 +1,20 @@
 package org.querki.jquery
 
 import scala.scalajs.js
+import js.annotation.JSName
 import org.scalajs.dom
 import dom.Element
 
-trait JQueryStatic extends js.Object {
-  def apply(selector: String, context: js.Any): JQuery = ???
-  def apply(selector: String): JQuery = ???
-  def apply(element: Element): JQuery = ???
-  def apply(`object`: js.Any): JQuery = ???
-  def apply(elementArray: js.Array[Element]): JQuery = ???
-  def apply(`object`: JQuery): JQuery = ???
-  def apply(func: js.Function): JQuery = ???
-  def apply(): JQuery = ???
+@JSName("jQuery")
+object JQueryStatic extends js.Object {
+  def apply(selector: String, context: js.Any): JQuery = js.native
+  def apply(selector: String): JQuery = js.native
+  def apply(element: Element): JQuery = js.native
+  def apply(`object`: js.Any): JQuery = js.native
+  def apply(elementArray: js.Array[Element]): JQuery = js.native
+  def apply(`object`: JQuery): JQuery = js.native
+  def apply(func: js.Function): JQuery = js.native
+  def apply(): JQuery = js.native
   
-  var expr: js.Dynamic = ???
+  var expr: js.Dynamic = js.native
 }

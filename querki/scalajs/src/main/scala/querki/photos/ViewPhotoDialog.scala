@@ -19,7 +19,7 @@ class ViewPhotoDialog extends Gadget[dom.HTMLDivElement] {
       .width(thumbnail.fullWidth + 31)
       .height(thumbnail.fullHeight + 50)
       // TBD: can we use Scalatags here somehow?
-      .css(js.Dictionary[StringOrInt](
+      .css(js.Dictionary[js.Any](
         "max-height" -> "100%",
         "margin-left" -> s"-${thumbnail.fullWidth / 2}px"
       ))

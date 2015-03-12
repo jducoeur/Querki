@@ -1,5 +1,6 @@
 package querki.pages
 
+import org.querki.jquery._
 import scalatags.JsDom.all.{input => inp, _}
 import autowire._
 

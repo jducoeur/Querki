@@ -78,7 +78,7 @@ class ManifestOptionBuilder(val dict:OptMap) extends JSOptionBuilder[ManifestOpt
    * Default: null
    */
   def values(v:String) = jsOpt("values", v)
-  def values(v:js.Dynamic) = jsOpt("values", v)
+  def values(v:js.Any) = jsOpt("values", v)
   
   /**
    * Name of the hidden input value fields. Do not include [] at the end, as that will be added. If unset, 
