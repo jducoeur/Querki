@@ -63,6 +63,11 @@ package object display {
     def setRoot(windowIn:dom.Window, root:dom.Element):Unit
     
     /**
+     * The window that we are operating within.
+     */
+    def window:dom.Window
+    
+    /**
      * Set the folder where images are kept.
      */
     def setImagePath(path:String):Unit
@@ -85,7 +90,7 @@ package object display {
     /**
      * Switch to the specified page. This is fairly low-level; use higher-level APIs when possible.
      */
-    def showPage(pageName:String, paramMap:ParamMap)
+    def showPage(pageName:String, paramMap:ParamMap):Future[Page]
     
     /**
      * If you need to be signaled when the page next changes, use this.
@@ -119,6 +124,12 @@ package object display {
      * Scrolls to the bottom of the page.
      */
     def instantScrollToBottom():Unit
+    
+    /**
+     * Each page calls this when it is *finished* rendering; this in turn kicks off the
+     * afterPageLoads and nextChangeFuture events.
+     */
+    def onPageRendered(page:Page):Unit
   }
   
   trait StatusLine extends EcologyInterface {
@@ -131,5 +142,10 @@ package object display {
      * Display the given message until there is another show.
      */
     def showUntilChange(msg:String):Unit
+    
+    /**
+     * Hide the status line.
+     */
+    def clear():Unit
   }
 }

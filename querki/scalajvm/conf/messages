@@ -1,6 +1,8 @@
 General=Unexpected error. The details have been logged, and we will look into it. Sorry for the inconvenience.
 General.public={0}
 
+Api.edit.noChange=Unable to change property -- sorry!
+
 Editor.temp.InstanceEditorRequired=For the time being, _edit can only be used on Things that have the Instance Edit View Property set.
 
 Func.insufficientParams={0} requires at least {1} parameters
@@ -38,11 +40,12 @@ Thing.find.unknownName=No Thing found with that name
 
 Types.Int.tooLow=Values of {0} can be no less than {1}
 Types.Int.tooHigh=Values of {0} can be no more than {1}
+Types.Int.badFormat=Numbers can only contain digits
+Types.Int.empty=A required Number field may not be empty
 
 Types.Name.empty=Names must have non-zero length
 Types.Name.tooLong=Names should not be excessively long
 Types.Name.badChars=Names may only contain letters, digits, and spaces
-Types.Number.badFormat=Illegal number {0}; numbers should only contain digits
 Types.Text.tooShort={0} must be at least {1} characters long, not counting spaces at the beginning and end
 
 UI.transform.htmlRequired=The {0} function only works with raw HTML values (such as those produced by _edit) or Text blocks

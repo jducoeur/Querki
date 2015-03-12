@@ -47,6 +47,8 @@ package object globals {
     }
   }
   
+  def spew(msg:String) = QLog.spew(msg)
+  
   object Implicits {
     implicit lazy val execContext = scala.concurrent.ExecutionContext.Implicits.global
   }

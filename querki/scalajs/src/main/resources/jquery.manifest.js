@@ -1,4 +1,6 @@
 /*!
+ * IMPORTANT: the below has been forked for Querki. Look for FORKED to find the changes.
+ *
  * Marco Polo v1.8.0
  *
  * A jQuery autocomplete plugin for the discerning developer.
@@ -1815,7 +1817,7 @@
           };
           
       // FORKED by jducoeur, to allow cache invalidation for Querki.
-      if (arbitrary) {
+      if (arbitrary && self.options.marcoPolo) {
         // This was an "arbitrary" input, that didn't come from the given list. In this case,
         // it may mean that we've just created a new Tag, so we need to clear the cache.
         // TODO: ideally, this would be smarter, and only clear the bits of cache that might

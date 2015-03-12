@@ -33,6 +33,7 @@ package object basic {
     val SystemOnlyPropOID = moid(2)
     val ModelViewOID = moid(3)
     val SystemHiddenPropOID = moid(4)
+    val PrintViewOID = moid(5)
   }
   
   /**

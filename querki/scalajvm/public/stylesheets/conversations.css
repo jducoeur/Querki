@@ -73,3 +73,7 @@
 ._comment:hover ._deleteCommentButton {
   display: inherit;
 }
+
+._commentHighlight {
+  background-color: #EEFFEE;
+}

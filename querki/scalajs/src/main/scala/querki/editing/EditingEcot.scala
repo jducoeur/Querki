@@ -31,4 +31,10 @@ class EditingEcot(e:Ecology) extends ClientEcot(e) with Editing {
     s"v-${propId.underlying}-${thingId.underlying}"
   }
   def propPath(propId:TID):String = propPath(propId, None)
+  
+  def propPathOldStyleHack(propId:TID, thingIdOpt:Option[TID]):String = {
+    val actualPropId = TID(propId.underlying.substring(1))
+    val actualThingIdOpt = thingIdOpt.map(tid => TID(tid.underlying.substring(1)))
+    propPath(actualPropId, actualThingIdOpt)
+  }
 }

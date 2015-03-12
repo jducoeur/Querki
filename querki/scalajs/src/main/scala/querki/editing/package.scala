@@ -26,5 +26,12 @@ package object editing {
      */
     def propPath(propId:TID, thingIdOpt:Option[TID]):String
     def propPath(propId:TID):String
+    /**
+     * Like the name says -- this is a workaround while we are evolving the API.
+     * 
+     * TODO: this is only necessary because the server is still generating paths including
+     * raw OIDs that don't start with a dot. Fix that, and this should be able to go away.
+     */
+    def propPathOldStyleHack(propId:TID, thingIdOpt:Option[TID]):String
   }
 }

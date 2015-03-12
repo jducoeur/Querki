@@ -3,6 +3,7 @@ package querki.display
 import scala.annotation.tailrec
 
 import scala.scalajs.js
+import js.UndefOr
 import scalatags.JsDom.all._
 import org.scalajs.dom
 import org.querki.jquery._
@@ -32,7 +33,7 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
     _elem = Some(e.asInstanceOf[Output])
     val gadgets =
       if ($(elem).hasClass("_withGadget")) {
-        val existingGadgets = $(elem).data("gadgets").asInstanceOf[Seq[AnyFrag]]
+        val existingGadgets = $(elem).data("gadgets").asInstanceOf[UndefOr[Seq[AnyFrag]]].getOrElse(Seq.empty)
         existingGadgets :+ this
       } else {
         Seq(this)
@@ -85,11 +86,7 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
   }
   
   @tailrec private def findParentGadgetRec(node:JQuery, pred:AnyFrag => Boolean):AnyFrag = {
-    val frags =
-      if (node.hasClass("_withGadget"))
-        node.data("gadgets").asInstanceOf[Seq[AnyFrag]]
-      else
-        Seq.empty
+    val frags = findGadgets(node)
     frags.find(pred(_)) match {
       case Some(result) => result
       case None => findParentGadgetRec(node.parent(), pred)
@@ -97,6 +94,13 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
   }
   def findParentGadget(pred:AnyFrag => Boolean):AnyFrag = {
     findParentGadgetRec($(elem), pred)
+  }
+  
+  def findGadgets(node:JQuery):Seq[AnyFrag] = {
+    if (node.hasClass("_withGadget"))
+      node.data("gadgets").asInstanceOf[Seq[AnyFrag]]
+    else
+      Seq.empty
   }
   
   /**

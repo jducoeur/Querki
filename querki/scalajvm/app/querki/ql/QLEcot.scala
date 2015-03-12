@@ -269,9 +269,10 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
 	                val propOpt = space.anythingByName(thingName)
 	                propOpt match {
 	                  case Some(propThing) => {
-	                    applyToIncomingThing(inv) { (thing, _) =>
-	                      encodeThingAndProp(thing, propThing).getOrElse(encodeString(phrase.reconstructString))
+	                    for {
+	                      thing <- inv.contextAllThings
 	                    }
+	                      yield encodeThingAndProp(thing, propThing).getOrElse(encodeString(phrase.reconstructString))
 	                  }
 	                  case None => encodeString(phrase.reconstructString)
 	                }

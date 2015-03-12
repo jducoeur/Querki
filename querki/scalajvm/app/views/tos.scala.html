@@ -10,14 +10,14 @@
 	
 	<p>Please read and agree to the following agreement in order to use Querki.</p>
 
-	<div class="row-fluid">
+	<div class="row">
     @form(routes.TOSController.handleTOS) {
       
-      <div class="well offset1 span10">
+      <div class="well col-md-offset1 col-md-10">
         @Html(TOSModule.current)
       </div>
       
-      <div class="span12">
+      <div class="col-md-12">
       <p><input type="checkbox" id="agreed" name="agreed"> I agree to the above Terms and Conditions.</p>
       <input type="hidden" id="version" name="version" value="@TOSModule.currentVersion.version">
       

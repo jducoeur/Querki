@@ -1,6 +1,6 @@
 package querki.display
 
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
 import scalatags.JsDom.all._
 
@@ -39,4 +39,6 @@ class StatusLineEcot(e:Ecology) extends ClientEcot(e) with StatusLine with Statu
   def showUntilChange(msg:String):Unit = showInternal(msg, { jq => jq.show() })
   
   def showBriefly(msg:String):Unit = showInternal(msg, { jq => jq.show().delay(4000).hide("slow") } )
+  
+  def clear():Unit = showInternal("", { jq => jq.hide("slow") })
 }

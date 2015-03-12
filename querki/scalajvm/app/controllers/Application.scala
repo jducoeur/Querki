@@ -146,7 +146,7 @@ disallow: /
         TryTrans[Unit, Future[Result]] { Core.NameProp.validate(name, System.State) }.
           onSucc { _ =>
             askSpaceMgr[ThingResponse](CreateSpace(requester, name)) {
-              case ThingFound(_, state) => Redirect(routes.Application.thing(requester.mainIdentity.handle, state.toThingId, state.toThingId))
+              case ThingFound(_, state) => Redirect(routes.ClientController.thingRedirect(requester.mainIdentity.handle, state.toThingId, state.toThingId))
               case ThingError(ex, _) => doError(routes.Application.newSpace, ex)
             }
           }.

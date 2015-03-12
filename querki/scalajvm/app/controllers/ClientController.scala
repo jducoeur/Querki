@@ -6,6 +6,7 @@ import akka.util.Timeout
 
 import play.api.data._
 import play.api.data.Forms._
+import play.api.mvc.{Action, Call}
 
 import upickle._
 import autowire._
@@ -21,6 +22,7 @@ import querki.session.UserSessionMessages.{UserSessionClientRequest, UserSession
 import querki.session.messages._
 import querki.spaces.messages.{SessionRequest, SpaceMgrMsg, ThingError}
 import querki.spaces.messages.SpaceError._
+import querki.util.PublicException
 
 class ClientController extends ApplicationBase {
   
@@ -57,6 +59,7 @@ class ClientController extends ApplicationBase {
 	  askUserSpaceSession(rc, ClientRequest(req, rc)) {
 	    case ClientResponse(pickled) => Future.successful(pickled)
 	    case ClientError(msg) => Future.failed(new Exception(msg))
+	    case ThingError(pex, _) => Future.failed(pex)
 	  }
 	}
 	
@@ -73,7 +76,14 @@ class ClientController extends ApplicationBase {
       } else {
         Ok(views.html.client(rc, write(requestInfo)))
       }
+    } recoverWith {
+      case pex:PublicException => doError(routes.Application.index, pex) 
     }
+  }
+  
+  def thingRedirect(ownerId:String, spaceId:String, thingId:String) = Action {
+    val spaceCall = routes.ClientController.space(ownerId, spaceId) 
+    Redirect(new Call(spaceCall.method, spaceCall.url + s"#$thingId"))
   }
   
   def unpickleRequest(rc:PlayRequestContext):autowire.Core.Request[String] = {

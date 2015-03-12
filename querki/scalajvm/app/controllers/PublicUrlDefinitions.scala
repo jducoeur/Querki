@@ -1,5 +1,7 @@
 package controllers
 
+import play.api.mvc.Call
+
 import models.ThingId
 
 import querki.ecology._
@@ -19,7 +21,10 @@ class PublicUrlDefinitions(e:Ecology) extends QuerkiEcot(e) with PublicUrls {
     rc match {
       case prc:PlayRequestContext => {
         implicit val req = prc.request
-        val call = routes.Application.doCreateThing2(rc.ownerHandle, rc.state.get.toThingId, modelId.toString)
+        // TODO: this code arguably belongs in ClientController somehow, but I'd prefer to not
+        // force a pointless redirect:
+        val spaceCall = routes.ClientController.space(rc.ownerHandle, rc.state.get.toThingId)
+        val call = new Call(spaceCall.method, spaceCall.url + s"#_createAndEdit?model=$modelId")
         call.absoluteURL()
       }
       case _ => throw new Exception("PublicUrlDefinitions somehow got a non-Play RequestContext!")

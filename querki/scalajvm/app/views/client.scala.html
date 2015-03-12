@@ -13,33 +13,33 @@
     <title>Querki: Loading...</title>
 
     <!-- TODO: aggregate all these CSS files together, to reduce queries. -->    
-    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/jquery-ui-1.10.0.custom.css")">
-    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap.css")">
+    <link rel="stylesheet" href="@routes.Assets.at("stylesheets/jquery-ui-1.10.0.custom.css")">
+    <link rel="stylesheet" href="@routes.Assets.at("stylesheets/bootstrap.css")">
     <!-- This padding is needed for the top navbar. Bootstrap doc says to put it between the main and responsive CSS: -->
     <style>
       body {
         padding-top: 40px;
       }
     </style>
-    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/bootstrap-responsive.css")">
+    <link rel="stylesheet" href="@routes.Assets.at("stylesheets/bootstrap-theme.css")">
 <!-- Add this when we upgrade to Bootstrap 3:
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css">
 -->
-    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/manifest.css")">
-    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/notifications.css")">
-    <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
-	<link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/conversations.css")">
+    <link rel="stylesheet" href="@routes.Assets.at("stylesheets/manifest.css")">
+    <link rel="stylesheet" href="@routes.Assets.at("stylesheets/notifications.css")">
+    <link rel="stylesheet" href="@routes.Assets.at("stylesheets/main.css")">
+	<link rel="stylesheet" href="@routes.Assets.at("stylesheets/conversations.css")">
     <link rel="stylesheet" media="print" href="@routes.Assets.at("stylesheets/print.css")">
 
     <link rel="shortcut icon" href="@routes.Assets.at("images/Capital.png")">
     
     <!-- Include JavaScript libraries, which are bundled together by SBT: -->
-    <script src="@routes.Assets.at("javascripts/querki-client-jsdeps.js")"></script>
+    <script src="@routes.Assets.at("querkiclient-jsdeps.js")"></script>
     
     @if(isProd) {
-      <script src="@routes.Assets.at("javascripts/querki-client-opt.js")" type="text/javascript"></script>
+      <script src="@routes.Assets.at("querkiclient-opt.js")" type="text/javascript"></script>
     } else {
-      <script src="@routes.Assets.at("javascripts/querki-client-fastopt.js")" type="text/javascript"></script>
+      <script src="@routes.Assets.at("querkiclient-fastopt.js")" type="text/javascript"></script>
     }
     
     <script>
@@ -78,7 +78,7 @@
 		})
     </script>
     
-    <script src="@routes.Assets.at("javascripts/querki-client-launcher.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("querkiclient-launcher.js")" type="text/javascript"></script>
     
     <script>
       var pickledJSON = @Html(pickled)

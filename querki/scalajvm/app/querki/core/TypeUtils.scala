@@ -18,13 +18,13 @@ object TypeUtils {
   
     def renderLargeText(prop:Property[_, _], context:QLContext, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_]):NodeSeq = {
       renderAnyText(prop, context, currentValue, v, elemT) { cv =>
-        <textarea class="_largeTextEdit" rows="2">{cv}</textarea>
+        <textarea class="_largeTextEdit form-control" rows="2">{cv}</textarea>
       }
     }
   
     def renderText(prop:Property[_, _], context:QLContext, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_]):NodeSeq = {
       renderAnyText(prop, context, currentValue, v, elemT) { cv =>
-        <input class="_textEdit" type="text" value={cv}/>
+        <input class="_textEdit form-control" type="text" value={cv}/>
       }
     }
   

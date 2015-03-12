@@ -352,10 +352,10 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
     }
 
     val emailFut:Future[Seq[Invitee]] =
-      if (newCollabs.length > 0) {
+      if (collaboratorIds.length > 0) {
         // If we're inviting Collaborators, we need to go ask the Identity Cache for their info, to find out their email
         // addresses:
-        val idFut = IdentityAccess.identityCache ? FullIdentityMessages.GetFullIdentities(newCollabs)
+        val idFut = IdentityAccess.identityCache ? FullIdentityMessages.GetFullIdentities(collaboratorIds)
         idFut.mapTo[FullIdentityMessages.FullIdentitiesFound].map { found =>
           val collabIdentities = found.identities.values
           val collabInvitees = collabIdentities.map { identity =>
@@ -407,7 +407,9 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
 	      // to email under certain circumstances:
 	      val sentTo = Email.sendToPeople(context, people ++ existingPeople, subjectQL, bodyQL)
 	    
-	      InvitationResult(people.map(_.displayName), existingPeople.map(_.displayName))  
+	      val existingIds = existingPeople.map(_.id).toSet
+	      val newPeople = people.filter(p => existingIds.contains(p.id))
+	      InvitationResult(newPeople.map(_.displayName), existingPeople.map(_.displayName))  
 	    }          
     }
 

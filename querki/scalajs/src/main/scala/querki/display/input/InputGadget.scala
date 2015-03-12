@@ -1,11 +1,12 @@
 package querki.display.input
 
+import scala.util.{Failure, Success}
 import scala.scalajs.js
 import js.UndefOr
 import upickle._
 import autowire._
 
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
 import scalatags.JsDom.all._
 
@@ -32,6 +33,17 @@ abstract class InputGadget[T <: dom.Element](e:Ecology) extends Gadget[T] with E
    * Hook whatever events are appropriate for this Gadget.
    */
   protected def hook():Unit
+  
+  /**
+   * Iff this Gadget allows its value to be changed from the outside, set the value.
+   * 
+   * TODO: this is pretty much a hack, mainly in place for CreateAndEditPage's setValue().
+   * It's clearly undertyped and wrong. What's the right approach here? In principle, it seems
+   * like each Gadget type should optionally expose the type of its value, which we should use
+   * here. But I'd prefer to not have to specify that explicit for each and every Gadget. Is
+   * there a way to have a "default type" in the type parameters?
+   */
+  def setValue(v:String):Unit = {}
 
   /**
    * Called by InputGadgets when it is time to prepare this Gadget for the world.
@@ -84,7 +96,30 @@ abstract class InputGadget[T <: dom.Element](e:Ecology) extends Gadget[T] with E
    * 
    * If you call this, you should also define the save() method.
    */
-  def beginChanges() = InputGadgetsInternal.startingEdits(this)
+  def beginChanges() = {
+    InputGadgetsInternal.startingEdits(this)
+  }
+  
+  var errorWrapper:Option[dom.HTMLDivElement] = None
+  def showValidationError(msg:String) = {
+    val wrapper =
+      div(cls:="_validationError",
+        p(msg)
+      ).render
+    $(wrapper).insertBefore(elem)
+    $(elem).detach()
+    $(wrapper).prepend(elem)
+    $(elem).focus()
+    
+    errorWrapper = Some(wrapper)
+  }
+  def clearValidationError() = {
+    errorWrapper.foreach { wrapper =>
+      $(elem).detach()
+      $(wrapper).replaceWith(elem)
+      errorWrapper = None
+    }
+  }
   
   /**
    * Records a change that the user has made. This should be called by the specific Gadget when
@@ -94,20 +129,32 @@ abstract class InputGadget[T <: dom.Element](e:Ecology) extends Gadget[T] with E
    */
   def saveChange(msg:PropertyChange):Future[PropertyChangeResponse] = {
     StatusLine.showUntilChange("Saving...")
+    clearValidationError()
     val promise = Promise[PropertyChangeResponse]
-    Client[EditFunctions].alterProperty(thingId, msg).call().foreach { response =>
-      InputGadgetsInternal.saveComplete(this)
-	  response match {
-        case PropertyChanged => {
-          StatusLine.showBriefly("Saved")
-          $(elem).trigger("savecomplete")
+    Client[EditFunctions].alterProperty(thingId, msg).call().onComplete {
+      case Success(response) => {
+        InputGadgetsInternal.saveComplete(this)
+	    response match {
+          case PropertyChanged => {
+            StatusLine.showBriefly("Saved")
+            $(elem).trigger("savecomplete")
+          }
         }
-        case PropertyChangeError(msg) => {
-          StatusLine.showUntilChange(s"Error: $msg")
-          $(elem).trigger("saveerror")
+        promise.success(response)
+      }
+      case Failure(ex) => {
+        ex match {
+          case querki.api.ValidationException(msg) => {
+            StatusLine.clear()
+            showValidationError(msg)
+            $(elem).trigger("saveerror")
+          }
+          case querki.api.GeneralChangeFailure(msg) => {
+            StatusLine.showUntilChange(msg)
+            $(elem).trigger("saveerror")
+          }
         }
       }
-      promise.success(response)
     }
     promise.future
   }

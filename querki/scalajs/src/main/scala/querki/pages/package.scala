@@ -36,12 +36,12 @@ package object pages {
     /**
      * Actually navigate to this page for this Thing.
      */
-    def showPage(thing:BasicThingInfo):Unit
+    def showPage(thing:BasicThingInfo):Future[Page]
     
     /**
      * Actually navigate to this page for this Thing.
      */
-    def showPage(tid:TID):Unit
+    def showPage(tid:TID):Future[Page]
   }
   
   trait Pages extends EcologyInterface {
@@ -69,6 +69,8 @@ package object pages {
     def exploreFactory:ThingPageFactory
     def viewFactory:ThingPageFactory
     def createAndEditFactory:ThingPageFactory
+    def sharingFactory:PageFactory
+    def advancedFactory:ThingPageFactory
     
     /**
      * Navigate to the given Space.

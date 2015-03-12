@@ -110,7 +110,7 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
 	      // There is a hash, but nothing else, so it's presumptively root:
 	      showRoot()
 	    else {
-    	  val pageName = hashParts(0)
+    	  val pageName = decode(hashParts(0))
 	      val pageParams =
 	        if (hashParts.length == 1)
 	          None
@@ -138,8 +138,14 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     }
   }
   
-  def encode(str:String) = js.encodeURIComponent(str)
-  def decode(str:String) = js.decodeURIComponent(str)
+  def encode(str:String) = js.URIUtils.encodeURIComponent(str)
+  // TODO: this problem comes from the fact that the server-side SafeUrl, used in Tag links,
+  // uses java.net.URLEncoder, which uses + for spaces. But decodeURIComponent does *not* do
+  // that, so we have to hack it a bit. *Sigh*.
+  def decode(str:String) = {
+    val plusedStr = str.replaceAllLiterally("+", " ")
+    js.URIUtils.decodeURIComponent(plusedStr)
+  }
   
   def pageUrl(pageName:String, paramMap:ParamMap = Map.empty):URL = {
     val paramStr =
@@ -150,8 +156,10 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     s"#$pageName$paramStr"    
   }
   
-  def showPage(pageName:String, paramMap:ParamMap) = {
+  def showPage(pageName:String, paramMap:ParamMap):Future[Page] = {
+    val fut = nextChangeFuture
     window.location.hash = pageUrl(pageName, paramMap)
+    fut
   }
   
   def showRoot() = {
@@ -192,8 +200,15 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     $(displayRoot).empty()
     $(displayRoot).append(fullPage.render)
     
-    _nextChangePromise.foreach { _.success(page) }
+    // Note that onPageRendered doesn't get called here, because most Pages involve
+    // async calls to the server. When the Page is actually finished loading and
+    // rendering, it will call onPageRendered().
+  }
+  
+  def onPageRendered(page:Page) = {
     afterPageLoads(page)
+    _nextChangePromise.foreach { _.success(page) }
+    _nextChangePromise = None    
   }
   
   def instantScrollToBottom() = {

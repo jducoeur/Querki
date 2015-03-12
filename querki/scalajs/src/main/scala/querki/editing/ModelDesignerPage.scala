@@ -71,9 +71,11 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
   override def beforeRender() = {
     // Page-specific gadget hooks:
-    // TODO: these need to be updated for the new Bootstrap. Can we come up with a better abstraction here?
-    Gadgets.registerHook("._largeTextEdit") { elem => $(elem).addClass("span10") }
-    Gadgets.registerHook("input[type='text']") { elem => $(elem).filter(".propEditor").addClass("span10") }    
+    Gadgets.registerHook("._largeTextEdit") { elem => $(elem).addClass("col-md-10 form-control") }
+    Gadgets.registerHook("input[type='text']") { elem => 
+      val inputs = $(elem).filter(".propEditor").filter(":not(._tagSetInput)")
+      inputs.addClass("col-md-10 form-control") 
+    }    
   }
   
   def addProperty(propId:TID, openEditor:Boolean = false) = {
@@ -86,10 +88,10 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   }
   
   def removeProperty(editor:PropValueEditor) = {
+    // TODO: this should handle exceptions!
     Client[EditFunctions].removeProperty(modelId, editor.propInfo.oid).call().foreach { result =>
       result match {
         case PropertyChanged => editor.section.removeEditor(editor)
-        case PropertyChangeError(msg) => StatusLine.showBriefly(msg)        
       }
     }
   }

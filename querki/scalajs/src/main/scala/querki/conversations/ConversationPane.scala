@@ -2,7 +2,7 @@ package querki.conversations
 
 import scala.scalajs.js
 import js.JSConverters._
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
 import scalatags.JsDom.all.{input => inp, _}
 import autowire._
@@ -18,12 +18,15 @@ import querki.display.input.AutosizeFacade._
 
 import messages._
 
-class ConversationPane(val thingInfo:ThingInfo)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember  {
+class ConversationPane(val thingInfo:ThingInfo, focusedComment:Option[String])(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember  {
   
   lazy val Client = interface[querki.client.Client]
   lazy val InputGadgets = interface[querki.display.input.InputGadgets]
   
   implicit val t = thingInfo
+  
+  lazy val _onDisplay = Promise[ConversationPane]
+  lazy val onDisplayFut:Future[ConversationPane] = _onDisplay.future
   
   override def onCreate(e:dom.HTMLDivElement) = {
     val fut = Client[ConversationFunctions].getConversationsFor(thingInfo.oid).call()
@@ -49,6 +52,17 @@ class ConversationPane(val thingInfo:ThingInfo)(implicit val ecology:Ecology) ex
         
       allWrapper.replaceContents(guts.render)
       InputGadgets.hookPendingGadgets()
+      
+      // If we're supposed to be focusing on a specific comment, show that:
+      focusedComment.foreach { commentId =>
+        val target = $(elem).find(s"a[name=$commentId]")
+        // TODO: this highlight should probably fade out over, eg, three seconds?
+        $(target).parent().addClass("_commentHighlight")
+        // TODO: Eeeek! The signature for offset was more bad than usual. Fix this in the JQuery rewrite:
+        $("html,body").scrollTop(target.offset().asInstanceOf[js.Dynamic].top.asInstanceOf[Int])        
+      }
+      
+      _onDisplay.success(this)
     }
   }
   
@@ -57,7 +71,7 @@ class ConversationPane(val thingInfo:ThingInfo)(implicit val ecology:Ecology) ex
     $(convWrapper.elem).append(convGadget.render)
   }
   
-  lazy val convWrapper = new WrapperDiv
+  lazy val convWrapper = (new WrapperDiv)(cls:="container")
   lazy val allWrapper = new WrapperDiv
   
   def doRender() = div(allWrapper)
@@ -112,13 +126,13 @@ class ReplyGadget(replyTo:Option[CommentId], ph:String, onPosted:ConvNode => Uni
     }
   }
 
-  lazy val commentInput = Gadget(textarea(cls:="_commentInput", placeholder:=ph))
+  lazy val commentInput = Gadget(textarea(cls:="_commentInput form-control", placeholder:=ph))
   
   def doRender() =
-    div(cls:="_addComment row-fluid",
-      div(cls:="span11",
+    div(cls:="_addComment row",
+      div(cls:="col-md-11",
         commentInput,
-        inp(cls:="_postCommentButton btn btn-info btn-mini", 
+        inp(cls:="_postCommentButton btn btn-info btn-sm", 
           tpe:="button", 
           value:="Post Comment",
           onclick:={ () => postComment() })
@@ -142,21 +156,21 @@ private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boole
   }
   lazy val flattenedNodes = flattenNodes(conv)
   
-  lazy val commentContainer = Gadget(div(cls:="_commentContainer offset1 span9", flattenedNodes))
+  lazy val commentContainer = Gadget(div(cls:="_commentContainer col-md-offset1 col-md-9", flattenedNodes))
   
   def doRender() =
     div(
-      cls:="_convThread row-fluid",
+      cls:="_convThread row",
       commentContainer,
       if (canComment) {
         replyContainer
       }
     )
       
-  lazy val replyContainer = (new WrapperDiv)(cls:="_replyContainer offset1 span9").initialContent(replyPlaceholder)
+  lazy val replyContainer = (new WrapperDiv)(cls:="_replyContainer col-md-offset1 col-md-9").initialContent(replyPlaceholder)
   
   lazy val replyPlaceholder = Gadget(
-    inp(cls:="_replyPlaceholder", 
+    inp(cls:="_replyPlaceholder form-control", 
       tpe:="text", 
       placeholder:="Click here to reply...",
       onclick:={ () => showRealReplyInput() },

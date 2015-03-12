@@ -1,6 +1,6 @@
 package querki.search
 
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
 import scalatags.JsDom.all.{input => inp, _}
 import autowire._
@@ -22,7 +22,7 @@ class SearchGadget(implicit val ecology:Ecology) extends Gadget[dom.HTMLInputEle
   lazy val PageManager = interface[querki.display.PageManager]
   
   def doRender() = 
-    inp(cls:="search-query", 
+    inp(cls:="search-query form-control", 
       tpe:="text",
       placeholder:="Search")
   

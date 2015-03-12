@@ -2,7 +2,7 @@ package querki.display
 
 import scala.scalajs.js
 
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
 
 import scalatags.JsDom.all._
@@ -109,10 +109,10 @@ trait QuerkiUIUtils extends ScalatagUtils {
    * Show a standard Querki button, displaying whatever contents are given.
    */
   def querkiButton(show:Modifier, addlCls:Seq[String] = Seq.empty) =
-    a(classes(Seq("btn", "btn-mini", "btn-primary", "_noPrint", "querki-icon-button") ++ addlCls),
+    a(classes(Seq("btn", "btn-default", "btn-xs", "btn-primary", "_noPrint", "querki-icon-button") ++ addlCls),
       show)
   
-  def icon(iconName:String) = i(classes(Seq("icon-white", s"icon-$iconName")))
+  def icon(iconName:String) = i(classes(Seq("glyphicon", s"glyphicon-$iconName")))
   
   /**
    * Show a standard Querki icon button.

@@ -2,7 +2,7 @@ package querki.display.input
 
 import scala.scalajs.js
 import js._
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
 import scalatags.JsDom.all._
 
@@ -25,7 +25,7 @@ class TextInputGadget(classes:Seq[String], mods:Modifier*)(implicit e:Ecology) e
 }
 
 trait AutosizeFacade extends JQuery {
-  def autosize():JQuery = ???
+  def autosize():JQuery = js.native
 }
 object AutosizeFacade {
   implicit def jq2Autosize(jq:JQuery):AutosizeFacade = jq.asInstanceOf[AutosizeFacade]
@@ -34,19 +34,26 @@ import AutosizeFacade._
 
 trait JQueryEventEnhanced extends js.Object {
   // This should be a standard part of JQueryEventObject, IMO:
-  def ctrlKey:UndefOr[Boolean] = ???
+  def ctrlKey:UndefOr[Boolean] = js.native
 }
 object JQueryEventEnhanced {
   implicit def jqe2Enhanced(evt:JQueryEventObject):JQueryEventEnhanced = evt.asInstanceOf[JQueryEventEnhanced]
 }
 import JQueryEventEnhanced._
 
-class LargeTextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLTextAreaElement](e) {
+class LargeTextInputGadget(mods:Modifier*)(implicit e:Ecology) extends InputGadget[dom.HTMLTextAreaElement](e) {
   
   def values = List(elem.value)
   
+  override def setValue(v:String):Unit = {
+    $(elem).value(v).trigger("autosize.resize")
+    save()
+  }
+  
   // TBD: do we need an unhook, to avoid leaks?
   def hook() = {
+    $(elem).addClass("col-md-10")
+    
     // Mark LargeTextInputs as autosized.
     // We specifically need to *not* apply autosize to the template elements, or else it won't
     // successfully apply to them when we actually instantiate them.
@@ -73,6 +80,6 @@ class LargeTextInputGadget(implicit e:Ecology) extends InputGadget[dom.HTMLTextA
   }
   
   def doRender() =
-    textarea(cls:="_largeTextEdit")
+    textarea(cls:="_largeTextEdit", mods)
     
 }

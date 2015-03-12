@@ -2,10 +2,11 @@ package querki.pages
 
 import scala.util.{Failure, Success}
 
+import scala.scalajs.js
 import upickle._
 import autowire._
 
-import org.scalajs.dom 
+import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
 
 import scalatags.JsDom.all._
@@ -25,6 +26,7 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
 
   lazy val Client = interface[querki.client.Client]
   lazy val DataSetting = interface[querki.data.DataSetting]
+
   
   def pageContent = {
     // NOTE: doing this with async/await seems to swallow exceptions in Autowire:
@@ -32,6 +34,7 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
       pageDetails:ThingPageDetails <- Client[ThingFunctions].getThingPage(name).call()
       standardThings <- DataAccess.standardThings
       rendered = pageDetails.rendered
+      convPane = new ConversationPane(pageDetails.thingInfo, params.get("showComment"))
       dummy = {
         DataSetting.setThing(Some(pageDetails.thingInfo))
         DataSetting.setModel(pageDetails.modelInfo)
@@ -40,14 +43,14 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
         div(
           pageDetails.headers.map(raw(_)),
           if (!pageDetails.stylesheets.isEmpty)
-            tags2.style(pageDetails.stylesheets.mkString("\n")),
+            tags2.style(id:="_pageStyles", pageDetails.stylesheets.mkString("\n")),
           div(id:="_topEdit", display.none),
           pageDetails.customHeader match {
             case Some(header) => new QText(header)
             case None => new StandardThingHeader(pageDetails.thingInfo, this, standardThings)
           },
           new QText(rendered),
-          new ConversationPane(pageDetails.thingInfo)
+          convPane
         )
     }
       yield PageContents(pageDetails.thingInfo.displayName, guts)
@@ -59,6 +62,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page, standardThings:StandardThi
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val Editing = interface[querki.editing.Editing]
+  lazy val PageManager = interface[querki.display.PageManager]
   lazy val Pages = interface[querki.pages.Pages]
   
   val thingName = thing.displayName
@@ -88,11 +92,11 @@ class StandardThingHeader(thing:ThingInfo, page:Page, standardThings:StandardThi
                 href:=Editing.modelDesignerFactory.pageUrl(thing))
             },
             if (thing.isInstantiatable) {
-              iconButton("plus-sign")(
+              iconButton("plus")(
                 title:=s"Create a $thingName",
                 href:=Pages.createAndEditFactory.pageUrl(thing))
             },
-            querkiButton(MSeq(icon("edit"), icon("edit"), icon("edit"), "..."))(
+            querkiButton(MSeq(icon("edit"), " ", icon("edit"), " ", icon("edit"), "..."))(
               title:=s"Edit all instances of $thingName",
               href:=Editing.editInstancesFactory.pageUrl(thing))
           )
@@ -114,17 +118,12 @@ class StandardThingHeader(thing:ThingInfo, page:Page, standardThings:StandardThi
               } else {
                 topEditButton
               }
-            },
-            modelOpt match {
-              case Some(model) if (model.isInstantiatable) => {
-                querkiButton(MSeq(icon("plus-sign"), "..."))(
-                  title:=s"Create another ${model.displayName}",
-                  href:=Pages.createAndEditFactory.pageUrl(model))
-              }
-              case _ => {}
             }
           )
-        }
+        },
+        Gadget(iconButton("refresh")(title:="Refresh this page"), { e => 
+          $(e).click({ evt:JQueryEventObject => PageManager.reload() }) 
+        })
       ),
       
       modelOpt match {

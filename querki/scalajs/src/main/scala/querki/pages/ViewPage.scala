@@ -22,14 +22,14 @@ class ViewPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecology
       guts = 
         div(
           div(cls:="page-header",
-            h1(cls:="_defaultTitle", pageTitle, " ", a(cls:="cancelButton btn", href:=thingUrl(thing), "Done")),
+            h1(cls:="_defaultTitle", pageTitle, " ", a(cls:="cancelButton btn btn-default", href:=thingUrl(thing), "Done")),
             DataAccess.mainModel match {
               case Some(model) => p(cls:="_smallSubtitle", "(", thingLink(model), ")")
               case _ => {}
             }
           ),
           
-          div(cls:="row-fluid",
+          div(
             dl(
               for { 
                 prop <- props

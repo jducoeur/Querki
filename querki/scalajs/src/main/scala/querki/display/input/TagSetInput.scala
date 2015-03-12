@@ -3,27 +3,26 @@ package querki.display.input
 import scala.scalajs.js
 import js.JSConverters._
 
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
 import scalatags.JsDom.all._
+import org.querki.facades.manifest._
 
 import querki.globals._
 
 import querki.comm._
 
-trait ManifestFacade extends JQuery {
-  def manifest(cmd:String):Any = ???
-  def manifest(cmd:String, params:js.Object):Any = ???
-  def manifest(config:js.Object):this.type = ???
-}
-object ManifestFacade {
-  implicit def jq2Manifest(jq:JQuery):ManifestFacade = jq.asInstanceOf[ManifestFacade]
-}
-import ManifestFacade._
-
 trait ManifestItem extends js.Object {
-  def display:String = ???
-  def id:String = ???
+  def display:String = js.native
+  def id:String = js.native
+}
+object ManifestItem {
+  def stringOrItem(data:Any)(f:ManifestItem => String):String = {
+    data match {
+      case s:String => s
+      case _ => f(data.asInstanceOf[ManifestItem])
+    }
+  }  
 }
 
 object TagSetKind {
@@ -36,48 +35,40 @@ object TagSetKind {
 trait MarcoPoloUser extends EcologyMember {
   lazy val controllers = interface[querki.comm.ApiComm].controllers
     
-  def stringOrItem(data:js.Any)(f:ManifestItem => String) = {
-    if (data.isInstanceOf[js.prim.String]) 
-      data 
-    else 
-      f(data.asInstanceOf[ManifestItem])
-  }
-  
   def propId:String 
   def required:Boolean
   def kind:TagSetKind.TagSetKind
   
-  def marcoPoloDef = lit(
-    url = controllers.ClientController.marcoPolo.spaceUrl(propId),
-    minChars = 1,
-    required = required,
-    formatData = { data:js.Object => data },
-    formatItem = { (data:ManifestItem) => data.display },
-    formatNoResults = { (q:String) => s"No existing $kind with <b>$q</b> found." }
-  )
+  def marcoPoloDef = MarcoPoloOptions.
+    url(controllers.ClientController.marcoPolo.spaceUrl(propId)).
+    minChars(1).
+    required(required).
+    formatData({ (jq:JQuery, data:js.Array[js.Object]) => data }).
+    formatItem({ data:js.Dynamic => data.asInstanceOf[ManifestItem].display }:Function1[js.Dynamic, js.Any]).
+    formatNoResults({ (q:String) => s"No existing $kind with <b>$q</b> found." }:Function1[String, js.Any])
 }
   
 class TagSetInput(val propId:String, val required:Boolean, val kind:TagSetKind.TagSetKind, initialValuesJs:js.Any)(implicit e:Ecology) 
   extends InputGadget[dom.HTMLInputElement](e) with MarcoPoloUser
 {
   def values = { 
-    $(elem).manifest("values").asInstanceOf[js.Array[String]].toList
+    $(elem).manifest(ManifestCommand.values).asInstanceOf[js.Array[String]].toList
   }
   
   // TBD: do we need an unhook, to avoid leaks?
   def hook() = {
     // The constructor for the Manifest object itself. This prompts you when you start typing,
     // using MarcoPolo, and organizes results into a nice list.
-    $(elem).manifest(lit(
-      marcoPolo = marcoPoloDef,
-      // Yes, these two are horrible, but represent an unfortunate quirk of Manifest: these sometimes get called with
-      // items, sometimes with Strings:
-      formatDisplay = { (data:js.Any) => stringOrItem(data)(_.display) },
-      formatValue = { (data:js.Any) => stringOrItem(data)(_.id) },
-      separator = Seq[Int](13).toJSArray,
-      values = initialValuesJs,
-      required = required
-    ))
+    $(elem).manifest(
+      ManifestOptions.
+        marcoPolo(marcoPoloDef).
+        separator(Seq[Int](13).toJSArray).
+        values(initialValuesJs).
+        required(required).
+        // TODO: this is fugly. Try simplifying after 0.6, and if that hasn't helped, think about this carefully:
+        formatDisplay({ (data:js.Any) => ManifestItem.stringOrItem(data)(_.display).asInstanceOf[js.Any] }).
+        formatValue({ (data:js.Any) => ManifestItem.stringOrItem(data)(_.id) })
+    )
   
     // TODO: Note that Manifest actually tells us what's been added or removed, so in principle it's actually
     // pretty easy for us to generate a *change* event here, not necessarily a full rewrite! We are currently
@@ -109,28 +100,20 @@ object TagSetInput {
 }
 
 
-trait MarcoPoloFacade extends JQuery {
-  def marcoPolo(config:js.Object):this.type = ???
-}
-object MarcoPoloFacade {
-  implicit def jqMarcoPolo(jq:JQuery):MarcoPoloFacade = jq.asInstanceOf[MarcoPoloFacade]
-}
-import MarcoPoloFacade._
-
 class MarcoPoloInput(val propId:String, val required:Boolean, val kind:TagSetKind.TagSetKind, mods:Modifier*)(implicit e:Ecology) 
   extends InputGadget[dom.HTMLInputElement](e) with MarcoPoloUser
 {
   // We need to do stuff at Select time, and the external "marcopoloselect" event doesn't seem to work well enough:
-  def marcoPoloDefWithSelect:js.Object = {
-    val mpd = marcoPoloDef
-    mpd.onSelect = 
-      { (dataRaw:js.Any) => stringOrItem(dataRaw) { data =>
-        val q = data.display
-        onSelect(data)
-        $(elem).value(q)
-        q
-      }}
-    mpd
+  def marcoPoloDefWithSelect = {
+    marcoPoloDef.
+      onSelect(
+        { (dataRaw:js.Any) => ManifestItem.stringOrItem(dataRaw) { data =>
+          val q = data.display
+          onSelect(data)
+          $(elem).value(q)
+          q
+        }}
+      )
   }
   
   def values = List($(elem).value().asInstanceOf[String])
@@ -157,7 +140,7 @@ class MarcoPoloInput(val propId:String, val required:Boolean, val kind:TagSetKin
   }
   
   def doRender() =
-    input(cls:="_tagInput", tpe:="text", mods)
+    input(cls:="_tagInput form-control", tpe:="text", mods)
 }
 
 object MarcoPoloInput {

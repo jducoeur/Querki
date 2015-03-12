@@ -4,6 +4,7 @@ import scala.scalajs.js
 import js.{Dynamic, UndefOr, undefined => undef}
 import js.JSConverters._
 import org.querki.jsext._
+import org.querki.jquery._
 
 /**
  * A very partial, quick-and-dirty facade for the parts of Bootstrap 2.3 that we are currently
@@ -13,14 +14,18 @@ import org.querki.jsext._
  * facade, and encourage folks to help fill it in.
  */
 trait BootstrapFacade extends js.Object {
-  def modal(cmd:ModalCommand.ModalCommand):Any = ???
+  def modal(cmd:ModalCommand.ModalCommand):Any = js.native
   
-  def popover(options:PopoverOptions):Any = ???
-  def popover(cmd:PopoverCommand.PopoverCommand):Any = ???
+  def popover(options:PopoverOptions):Any = js.native
+  def popover(cmd:PopoverCommand.PopoverCommand):Any = js.native
   
-  def tooltip(options:TooltipOptions):Any = ???
+  def tooltip(options:TooltipOptions):Any = js.native
+  
+  def collapse():JQuery = js.native
+  def collapse(cmd:ModalCommand.ModalCommand):JQuery = js.native
 }
 
+// TODO: see the ManifestFacade for a stronger way to do this:
 object ModalCommand {
   type ModalCommand = String
   
@@ -29,6 +34,8 @@ object ModalCommand {
   val toggle = "toggle"
 }
 
+// TODO: does this actually work? When we pass this into the facade, does it receive a String?
+// I suspect not.
 object Position extends Enumeration {
   type Position = Value
   val left = Value("left")
@@ -45,6 +52,7 @@ object Trigger extends Enumeration {
   val manual = Value("manual")
 }
 
+// TODO: see the ManifestFacade for a stronger way to do this:
 object PopoverCommand {
   type PopoverCommand = String
   

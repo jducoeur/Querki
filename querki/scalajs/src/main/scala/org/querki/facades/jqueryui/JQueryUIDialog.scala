@@ -18,12 +18,14 @@ trait JQueryUIDialogFacade extends js.Object {
    * Defines this jQuery object as a Dialog, with the given options, and enables the
    * other commands to work.
    */
-  def dialog(options:DialogOptions):JQuery = ???
+  def dialog(options:DialogOptions):JQuery = js.native
   
   /**
    * Given a command to this dialog.
+   * 
+   * TODO: see the ManifestFacade for a stronger way to do this:
    */
-  def dialog(cmd:String):Any = ???
+  def dialog(cmd:String):Any = js.native
 }
 
 trait DialogOptions extends js.Object 

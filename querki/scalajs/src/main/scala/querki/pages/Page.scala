@@ -2,7 +2,7 @@ package querki.pages
 
 import scala.concurrent.{Future, Promise}
 
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 import scalatags.JsDom.all._
 import scalatags.JsDom.TypedTag
 
@@ -57,8 +57,8 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
     val renderedContent = new WrapperDiv
     
     val outerPage = div(cls:="guts container-fluid",
-      div(cls:="row-fluid",
-        div(cls:="querki-content span12",
+      div(cls:="row",
+        div(cls:="querki-content col-md-12",
           // If there is a message to flash, show it:
           Pages.getFlash.map { pair =>
             val (isError, msg) = pair
@@ -93,6 +93,7 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
       PageManager.update(content.title)
       InputGadgets.hookPendingGadgets()
       renderedContentPromise.success(fullyRendered)
+      PageManager.onPageRendered(this)
     }
     
     outerPage

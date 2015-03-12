@@ -9,15 +9,16 @@ import autowire._
 import querki.globals._
 
 import querki.api.ThingFunctions
+import querki.display.input.InputGadget
 
-class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output])(implicit val ecology:Ecology) extends Gadget[Output] with EcologyMember {
+class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output])(implicit e:Ecology) extends InputGadget[Output](e) with EcologyMember {
   
-  lazy val Client = interface[querki.client.Client]
   lazy val InputGadgets = interface[querki.display.input.InputGadgets]
   
   def doRender() = tag
+  def values = ???
   
-  override def onCreate(elem:Output) = {
+  def hook() = {
     val jq = $(elem)
     val thingId = jq.tidString("thingid")
     val ql = jq.data("ql").asInstanceOf[String]

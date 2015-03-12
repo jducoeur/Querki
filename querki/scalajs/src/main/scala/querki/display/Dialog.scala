@@ -2,8 +2,8 @@ package querki.display
 
 import scala.scalajs.js
 import js.JSConverters._
-import org.scalajs.dom
 import org.querki.jquery._
+import org.scalajs.dom.{raw => dom}
 import org.querki.facades.jqueryui._
 
 import scalatags.JsDom.all._

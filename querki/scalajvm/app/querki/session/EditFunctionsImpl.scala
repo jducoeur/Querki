@@ -15,7 +15,7 @@ import querki.core.QLText
 import querki.data._
 import querki.session.messages.ChangeProps2
 import querki.spaces.messages.{CreateThing, ModifyThing, ThingFound, ThingError}
-import querki.util.Requester
+import querki.util.{PublicException, Requester}
 import querki.values.{QLRequestContext, RequestContext}
 
 class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with EditFunctions {
@@ -45,6 +45,10 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
 	  // a Bundle:
 	  val context = QLRequestContext(rc)
 	  val actualFormFieldInfo = HtmlRenderer.propValFromUser(fieldIds, vs.toList, context)
+	  if (!actualFormFieldInfo.isValid){
+	    val msg = actualFormFieldInfo.error.map(_.display(Some(rc))).getOrElse("Validation Error")
+	    throw new querki.api.ValidationException(msg)
+	  }
 	  val result = fieldIds.container match {
 	    // If this value is contained inside (potentially nested) Bundles, dive down into them
 	    // and adjust the results:
@@ -95,9 +99,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     self.request(createSelfRequest(ChangeProps2(thing.toThingId, props))) {
       case ThingFound(_, _) => promise.success(PropertyChanged)
       
-      // TODO: instead of PropertyChangeError, we really should have a generalized exception mechanism
-      // at the autowire level, and do a promise.failure() here:
-      case ThingError(ex, _) => promise.success(PropertyChangeError(ex.display(Some(rc))))
+       case ThingError(ex, _) => promise.failure(new querki.api.GeneralChangeFailure("Error during save"))
     }
     
     promise.future
@@ -180,7 +182,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     
     propsOpt match {
       case Some(props) => doChangeProps(thing, props)
-      case None => Future.successful(PropertyChangeError("Unable to change property!"))
+      case None => Future.failed(new querki.api.GeneralChangeFailure("Error during save"))
     }
   }
   
@@ -378,7 +380,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
 
     propsOpt match {
       case Some(props) => doChangeProps(thing, props)
-      case _ => Future.successful(PropertyChangeError(s"Couldn't find Property $propId!"))
+      case _ => Future.failed(querki.api.GeneralChangeFailure(s"Couldn't find Property $propId!"))
     }
   }
   

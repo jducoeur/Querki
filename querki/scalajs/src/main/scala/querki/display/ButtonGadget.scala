@@ -1,6 +1,6 @@
 package querki.display
 
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
 import scalatags.JsDom.all._
 
@@ -20,7 +20,7 @@ import ButtonKind._
 class ButtonGadget(kind:ButtonKind, mods:Modifier*)(onClick: => Unit) extends Gadget[dom.HTMLAnchorElement] {
   def doRender() = {
     val kindStr = kind match {
-      case Normal => ""
+      case Normal => "btn-default"
       case Info => "btn-info"
       case Primary => "btn-primary"
     }

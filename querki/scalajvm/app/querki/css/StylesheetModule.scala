@@ -30,6 +30,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) with Stylesheets {
   import MOIDs._
   
   val Basic = initRequires[querki.basic.Basic]
+  val Editor = initRequires[querki.editing.Editor]
   val Links = initRequires[querki.links.Links]
   val PageEventManager = initRequires[controllers.PageEventManager]
   
@@ -173,6 +174,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) with Stylesheets {
       setName("Google Font Name"),
       // TODO: in fact, this only applies to Stylesheets:
       AppliesToKindProp(Kind.Thing),
+      SkillLevel(SkillLevelAdvanced),
       Summary("The name of a Google Font to use in these styles"),
       Details("""Google provides a [large number of webfonts](http://www.google.com/fonts/) for public use.
           |We find them useful, so we've made them available through Querki.
@@ -204,6 +206,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) with Stylesheets {
     toProps(
       setName("Stylesheet"),
       Core.IsModelProp(true),
+      Editor.InstanceProps(Basic.DisplayNameProp, CSSProp),
       Basic.DisplayTextProp("[[_code(CSS)]]"),
       CSSProp("")))
   

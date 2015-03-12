@@ -24,7 +24,7 @@ import querki.globals._
  */
 @scala.scalajs.js.annotation.JSName("clientRoutes")
 private [comm] object ClientRoutes extends js.Object {
-  def controllers:js.Dynamic = ???
+  def controllers:js.Dynamic = js.native
 }
 
 class ApiCommEcot(e:Ecology) extends ClientEcot(e) with ApiComm {
@@ -51,32 +51,32 @@ trait PlayCall extends js.Object {
   /**
    * Call this entry point with AJAX, using the default settings.
    */
-  def ajax():js.Dynamic = ???
+  def ajax():js.Dynamic = js.native
   
   /**
    * Call this AJAX entry point with the given jQuery settings.
    */
-  def ajax(settings:JQueryAjaxSettings):js.Dynamic = ???
+  def ajax(settings:JQueryAjaxSettings):js.Dynamic = js.native
   
   /**
    * The method of this entry point -- "GET", "POST" or whatever. Known in jQuery as "type".
    */
-  def method:String = ???
+  def method:String = js.native
   
   /**
    * Synonym for method.
    */
-  def `type`:String = ???
+  def `type`:String = js.native
   
   /**
    * The relative URL of this call.
    */
-  def url:URL = ???
+  def url:URL = js.native
   
   /**
    * The absolute URL of this call.
    */
-  def absoluteURL:URL = ???
+  def absoluteURL:URL = js.native
 }
 
 sealed trait AjaxResult
@@ -99,7 +99,7 @@ class PlayAjax(call:PlayCall) {
 
     val dataStr = data.map { pair =>
       // TODO: in ScalaJS 0.6, encodeURIComponent has been moved to js.URIUtils:
-      val encoded = js.encodeURIComponent(pair._2)
+      val encoded = js.URIUtils.encodeURIComponent(pair._2)
       s"${pair._1}=$encoded"
     }.mkString("&")
     val settings = lit(data = dataStr).asInstanceOf[JQueryAjaxSettings]
@@ -110,6 +110,7 @@ class PlayAjax(call:PlayCall) {
       promise.success(data)
     }
     deferred.fail { (jqXHR:JQueryDeferred, textStatus:String, errorThrown:String) => 
+      println(s"Got AJAX error $errorThrown with ${jqXHR.responseText}")
       promise.failure(PlayAjaxException(jqXHR, textStatus, errorThrown))
     }
     

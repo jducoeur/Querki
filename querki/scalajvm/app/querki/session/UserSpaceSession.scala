@@ -1,5 +1,8 @@
 package querki.session
 
+import scala.concurrent.Future
+import scala.util.{Failure, Success}
+
 import akka.actor._
 import akka.event.LoggingReceive
 
@@ -65,6 +68,15 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
     val hiddenProps = System.State.spaceProps.values.filter(_.ifSet(Basic.SystemHiddenProp)(System.State))
     hiddenProps.map(_.id)
   }
+  
+  /**
+   * This is the dumping ground for exceptions to the rule that your Space only contains Things you can
+   * read. There should *not* be many of these.
+   */
+  def isReadException(thingId:OID)(implicit state:SpaceState):Boolean = {
+    // I always have access to my own Person record, so that _me always works:
+    Person.hasPerson(user, thingId)
+  }
 
   var _enhancedState:Option[SpaceState] = None
   def clearEnhancedState() = _enhancedState = None
@@ -83,7 +95,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
               // have already exised a Model from curState (because we don't have permission) when we get
               // to an Instance of that Model. Things can then get horribly confused when we try to look
               // at the Instance, try to examine its Model, and *boom*.
-              if (AccessControl.canRead(rs, user, thingId)) {
+              if (AccessControl.canRead(rs, user, thingId) || isReadException(thingId)(rs)) {
                 // Remove any SystemHidden Properties from this Thing, if there are any:
                 if (hiddenOIDs.exists(thing.props.contains(_))) {
                   val newThing = thing.copy(pf = { () => (thing.props -- hiddenOIDs) })
@@ -287,19 +299,6 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
   def read[Result: Reader](p: String) = upickle.read[Result](p)
   
   def mkParams(rc:RequestContext) = AutowireParams(user, state, rc + state, spaceRouter, this)
-
-  // TODO: is there any way to get this to work? It compiles, but crashes with a MatchError. Look into it more:
-//  case class AutowireHandler[T](constr:AutowireParams => T) {
-//    def routeRequest(req:autowire.Core.Request[String], params:AutowireParams)(f:String => Unit) = {
-//      route[T](constr(params))(req).foreach(f)
-//    }
-//  }
-//  var autowireHandlerRegistry:Map[String,AutowireHandler[_]] = Map.empty
-//  def registerAutowireHandler[T](name:String, constr:AutowireParams => T) = autowireHandlerRegistry += (name -> AutowireHandler[T](constr))
-//  registerAutowireHandler[ThingFunctions]("ThingFunctions", { new ThingFunctionsImpl(_) })
-//  registerAutowireHandler[EditFunctions]("EditFunctions", { new EditFunctionsImpl(_) })
-//  registerAutowireHandler[SearchFunctions]("SearchFunctions", { new SearchFunctionsImpl(_) })
-//  registerAutowireHandler[ConversationFunctions]("ConversationFunctions", { new ConversationFunctionsImpl(_) })
   
   def normalReceive:Receive = LoggingReceive {
     case CurrentState(s) => setRawState(s)
@@ -309,60 +308,67 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
       payload match {
         
         case ClientRequest(req, rc) => {
+          val apiName = req.path(2)
+            
+          def handleException(ex:Throwable, s:ActorRef, rc:RequestContext) = {
+            ex match {
+              case aex:querki.api.ApiException => {
+                // TODO: IMPORTANT: these two lines totally should not be necessary, but without
+                // them, the write() currently is failing, apparently because it is failing to grok
+                // that Edit/SecurityException are themselves traits.
+                // There might be a bug in upickle, possibly having to do with SI-7046:
+                //   https://issues.scala-lang.org/browse/SI-7046
+                // Investigate this further when I have a minute. Possibly something like this needs
+                // to be automated into the macro? Or possibly we have to tweak the way we're using
+                // knownDirectSubclasses in the macro...
+                val y = upickle.Writer.macroW[EditException]
+                val x = upickle.Writer.macroW[SecurityException]
+                s ! ClientError(write(aex))
+              }
+              case pex:PublicException => {
+                QLog.error(s"$apiName replied with PublicException $ex instead of ApiException when invoking $req")
+                s ! ClientError(pex.display(Some(rc)))
+              }
+              case _ => {
+                QLog.error(s"Got exception from $apiName when invoking $req: $ex")
+                s ! UnexpectedPublicException.display(Some(rc))
+              }
+            }              
+          }
+          
           try {
             def params = mkParams(rc)
-          
-          // TODO: the calling side of that registry above:
-//          val handler = autowireHandlerRegistry(req.path(2))
-//          // routeRequest() is async, so we need to save sender in the closure:
-//          val senderSaved = sender
-//          handler.routeRequest(req, params) { result =>
-//            senderSaved ! ClientResponse(result)
-//          }
-          
-            // TODO: this matching approach is horrible, but at least doesn't duplicate any
-            // information. Make it more formal and automated:
-            req.path(2) match {
-              case "ThingFunctions" => {
+            
+            def handleRequest[T <: AutowireApiImpl](mkHandler: => T)(doRoute:T => Future[String]) = {
                 // route() is asynchronous, so we need to store away the sender!
                 val senderSaved = sender
-                val handler = new ThingFunctionsImpl(params)
-                route[ThingFunctions](handler)(req).foreach { result =>
-                  senderSaved ! ClientResponse(result)                  
-                }
+                val handler = mkHandler
+                doRoute(handler).onComplete { 
+                  case Success(result) => senderSaved ! ClientResponse(result)
+                  case Failure(ex) => handleException(ex, senderSaved, handler.rc)
+                }              
+            }
+          
+            apiName match {
+              case "ThingFunctions" => {
+                handleRequest(new ThingFunctionsImpl(params))(route[ThingFunctions](_)(req))
               }
               case "EditFunctions" => {
-                // route() is asynchronous, so we need to store away the sender!
-                val senderSaved = sender
-                val handler = new EditFunctionsImpl(params)
-                route[EditFunctions](handler)(req).foreach { result =>
-                  senderSaved ! ClientResponse(result)                  
-                }
+                handleRequest(new EditFunctionsImpl(params))(route[EditFunctions](_)(req))
               }
               case "SearchFunctions" => {
-                // route() is asynchronous, so we need to store away the sender!
-                val senderSaved = sender
-                val handler = new SearchFunctionsImpl(params)
-                route[SearchFunctions](handler)(req).foreach { result =>
-                  senderSaved ! ClientResponse(result)                  
-                }
+                handleRequest(new SearchFunctionsImpl(params))(route[SearchFunctions](_)(req))
               }
               case "ConversationFunctions" => {
-                // route() is asynchronous, so we need to store away the sender!
-                val senderSaved = sender
-                val handler = new ConversationFunctionsImpl(params)
-                route[ConversationFunctions](handler)(req).foreach { result =>
-                  senderSaved ! ClientResponse(result)                  
-                }
+                handleRequest(new ConversationFunctionsImpl(params))(route[ConversationFunctions](_)(req))
+              }
+              case "SecurityFunctions" => {
+                handleRequest(new querki.security.SecurityFunctionsImpl(params))(route[SecurityFunctions](_)(req))
               }
               case _ => { sender ! ClientError("Unknown API ID!") }
             }
           } catch {
-            case ex:Exception => {
-              QLog.error(s"Exception while trying to handle Client Request $req", ex)
-              // TODO: ideally, this should return the exception through a side-channel
-              sender ! ClientError("Exception while trying to handle message")
-            }
+            case ex:Exception => handleException(ex, sender, rc)
           }
         }
         

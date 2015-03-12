@@ -1,7 +1,7 @@
 package querki.editing
 
 import scala.scalajs.js
-import org.scalajs.dom
+import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
 import org.querki.facades.jqueryui._
 import scalatags.JsDom.all._
@@ -89,7 +89,7 @@ class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEdit
         if (props.isEmpty)
           // Show *something*, so there is a drop target:
           // TODO: when stuff is dragged in and out, we should remove/add this dummy target when needed:
-          li(cls:="_propListItem control-group _instanceEditor",
+          li(cls:="_propListItem form-group _instanceEditor",
             raw("&nbsp;"))
         else
           props.map(new PropValueEditor(_, this))
