@@ -1,7 +1,7 @@
 package querki.editing
 
 import org.scalajs.dom.{raw => dom}
-
+import org.querki.jquery._
 import autowire._
 import rx._
 import rx.ops._
