@@ -46,6 +46,7 @@ lazy val querkiClient = (project in file("scalajs")).settings(
 
   // Javascript libraries we require:
   skip in packageJSDependencies := false,
+  jsDependencies += "org.webjars" % "jquery" % "2.1.3" / "jquery.js",
   jsDependencies += ProvidedJS / "jquery-ui-1.10.0.custom.js" dependsOn "jquery.js",
   jsDependencies += ProvidedJS / "jquery.manifest.js" dependsOn "jquery.js",
   jsDependencies += ProvidedJS / "jquery.ui.touch-punch.js" dependsOn "jquery-ui-1.10.0.custom.js",
@@ -64,7 +65,6 @@ lazy val querkiClient = (project in file("scalajs")).settings(
 
   libraryDependencies ++= sharedDependencies.value ++ Seq(
     "org.scala-js" %%% "scalajs-dom" % "0.8.0",
-    "be.doeraene" %%% "scalajs-jquery" % "0.8.0",
     "com.lihaoyi" %%% "utest" % "0.3.1" % "test",
     "org.scala-js" %%% "scala-parser-combinators" % "1.0.2",
     "org.scala-lang.modules" %% "scala-async" % "0.9.2"
