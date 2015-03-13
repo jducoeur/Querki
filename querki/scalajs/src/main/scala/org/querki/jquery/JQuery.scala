@@ -18,12 +18,9 @@ import dom.Element
  * requests are greatly welcomed. In particular, we are lacking many overloads -- I've added some of them,
  * but many jQuery functions have a considerable number of potential overloads.
  * 
- * Many parameters are polymorphic. In the case of Selector, which is used a *lot*, we've pulled that out
- * into a pseudo-union type, using implicit def trickery to make it work. That functions pretty well, but
- * unfortunately can't be generalized: if we do that too often, we wind up with implicit conflicts because
- * of multiple implicit paths from, eg, String to js.Any. So I'm still looking for a better approach to
- * defining these union types. We might yet resort to Scalaz for this, but I'm reluctant to introduce such
- * a bit dependency.
+ * Many parameters are polymorphic. We are currently dealing with the messy cases by defining a polymorphic
+ * type in package.scala, using the "tor" type-union trick, and then defining a mid-level facade for that
+ * method in JQueryTyped. Then we put a primitive "Internal" version of the method in here.
  * 
  * (Why the implicit conflicts? The issue is that this facade pseudo-union must extend js.Any in order for
  * the asInstanceOfs to work -- otherwise, the system gets to, say, "my string".asInstanceOf[Selector] and
