@@ -15,9 +15,8 @@ import dom.Element
  * The actual types you can pass in to a Selector are defined by the implicit defs in
  * jquery.Defs. Note that the jQuery API documentation is *extremely* inconsistent about
  * how it treats the term "Selector" -- sometimes it just uses the term to mean Strings,
- * sometimes it means all of the possible types.
- * 
- * TODO: as of 0.5.5, this doesn't compile, because js.Any was sealed. This is fixed in 0.6.
+ * sometimes it means all of the possible types. We use this type for signatures that appear
+ * to accept Strings, Elements and Arrays of Elements.
  * 
  * TODO: many of the signatures below should be tweaked to use Selector, once we've proved
  * that works!
@@ -35,11 +34,12 @@ sealed trait Selector extends js.Any
  * requests are greatly welcomed. In particular, we are lacking many overloads -- I've added some of them,
  * but many jQuery functions have a considerable number of potential overloads.
  * 
- * Many parameters are polymorphic. When there is a common pattern to that polymorphism -- that is, when
- * the same overloads are repeatedly used in many functions -- I've pulled that out into a pseudo-union
- * trait. (Notably Selector, but not limited to that.) This seems to be a practical approach, but it is
- * currently *very* experimental: I'm seeing signs that, if taken too far, it winds up producing spurious
- * ambiguities, especially when interacting with more loosely-typed code.
+ * Many parameters are polymorphic. In the case of Selector, which is used a *lot*, we've pulled that out
+ * into a pseudo-union type, using implicit def trickery to make it work. That functions pretty well, but
+ * unfortunately can't be generalized: if we do that too often, we wind up with implicit conflicts because
+ * of multiple implicit paths from, eg, String to js.Any. So I'm still looking for a better approach to
+ * defining these union types. We might yet resort to Scalaz for this, but I'm reluctant to introduce such
+ * a bit dependency.
  * 
  * NOTE: discussion on scalajs Gitter, 1/28/15, says that facades should *return* Any, but
  * *take* js.Any *if* the Javascript is going to process the value in any way. This is the guiding principle here.
