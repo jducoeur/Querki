@@ -22,12 +22,6 @@ import dom.Element
  * type in package.scala, using the "tor" type-union trick, and then defining a mid-level facade for that
  * method in JQueryTyped. Then we put a primitive "Internal" version of the method in here.
  * 
- * (Why the implicit conflicts? The issue is that this facade pseudo-union must extend js.Any in order for
- * the asInstanceOfs to work -- otherwise, the system gets to, say, "my string".asInstanceOf[Selector] and
- * goes, "wait, this isn't a Selector", and crashes. But if you have multiple pseudo-unions extending js.Any,
- * then when we are trying to pass a value into a function that really *does* take js.Any -- like scalajs-dom --
- * then there are multiple ways to interpret that parameter.)
- * 
  * NOTE: discussion on scalajs Gitter, 1/28/15, says that facades should *return* Any, but
  * *take* js.Any *if* the Javascript is going to process the value in any way. This is the guiding principle here.
  * 
