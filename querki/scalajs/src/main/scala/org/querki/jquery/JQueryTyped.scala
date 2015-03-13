@@ -1,6 +1,7 @@
 package org.querki.jquery
 
 import scala.scalajs.js
+import js.UndefOr
 import org.scalajs.dom._
 
 /**
@@ -17,7 +18,51 @@ class JQueryTyped(jq:JQuery) {
    * Insert content, specified by the parameter, after each element in the set of matched elements.
    */
   def after(content:ElementDesc):JQuery = jq.afterInternal(toJsAny(content))
-
+  def after(func:js.ThisFunction0[Element, ElementDesc]):JQuery = jq.afterInternal(func)
+  def after(func:js.ThisFunction1[Element, Int, ElementDesc]):JQuery =  jq.afterInternal(func)
+  
+  /**
+   * Insert every element in the set of matched elements to the end of the target.
+   */
+  def appendTo(target:ElementDesc):JQuery = jq.appendToInternal(toJsAny(target))
+  
+  /**
+   * Get the value of an attribute for the first element in the set of matched elements.
+   * 
+   * Note that this returns UndefOr -- it is entirely legal for this to return undefined if
+   * the attribute is not present, and that causes things to crash if it is not UndefOr.
+   */
+  def attr(attributeName:String):UndefOr[String] = jq.attrInternal(attributeName)
+  def attr(attributes:js.Dictionary[String]):JQuery = jq.attrInternal(attributes)
+  /**
+   * Set an attribute for the set of matched elements.
+   */
+  def attr(attributeName:String, v:AttrVal):JQuery = jq.attrInternal(attributeName, toJsAny(v))
+  def attr(attributeName:String, func:js.ThisFunction2[Element, Int, String, AttrVal]):JQuery = jq.attrInternal(attributeName, func)
+  
+  /**
+   * Reduce the set of matched elements to those that match the selector or pass the function's test.
+   */
+  def filter(selector:Selector):JQuery = jq.filterInternal(toJsAny(selector))
+  def filter(func:js.ThisFunction0[Element, Boolean]):JQuery = jq.filterInternal(func)
+  def filter(func:js.ThisFunction1[Element, Int, Boolean]):JQuery = jq.filterInternal(func)
+  
+  /**
+   * Get the descendants of each element in the current set of matched elements, filtered by a selector, jQuery object, or element.
+   */
+  def find(selector:Selector):JQuery = jq.findInternal(toJsAny(selector))
+  
+  /**
+   * Search for a given element from among the matched elements.
+   */
+  def index():Int = jq.indexInternal()
+  def index(selector:ElementDesc):Int = jq.indexInternal(toJsAny(selector))
+  
+  /**
+   * Insert every element in the set of matched elements before the target.
+   */
+  def insertBefore(target:ElementDesc):JQuery = jq.insertBeforeInternal(toJsAny(target))
+  
   /**
    * Check the current matched set of elements against a selector, element,
    * or jQuery object and return true if at least one of these elements matches the given arguments.

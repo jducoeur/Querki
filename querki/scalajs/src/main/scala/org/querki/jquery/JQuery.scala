@@ -56,30 +56,16 @@ trait JQuery extends js.Object {
    */
   def append(content:js.Any*):JQuery = js.native
   def append(func:js.ThisFunction2[Element, Int, String, js.Any]):JQuery = js.native
+
+  @JSName("appendTo")
+  def appendToInternal(target:js.Any):JQuery = js.native
   
-  /**
-   * Insert every element in the set of matched elements to the end of the target.
-   */
-  def appendTo(target:String):JQuery = js.native
-  def appendTo(target:Element):JQuery = js.native
-  def appendTo(target:JQuery):JQuery = js.native
-  
-  /**
-   * Get the value of an attribute for the first element in the set of matched elements.
-   * 
-   * Note that this returns UndefOr -- it is entirely legal for this to return undefined if
-   * the attribute is not present, and that causes things to crash if it is not UndefOr.
-   */
-  def attr(attributeName:String):UndefOr[String] = js.native
-  def attr(attributeName:String, v:String):JQuery = js.native
-  def attr(attributeName:String, v:Int):JQuery = js.native
-  def attr(attributeName:String, v:Boolean):JQuery = js.native
-  def attr(attributes:js.Dictionary[String]):JQuery = js.native
-  /**
-   * TODO: this overload really shouldn't allow you to set Any, but we run into erasure problems
-   * if we have separate overloads for String, Int and Boolean. Is there a good way to tighten this?
-   */
-  def attr(attributeName:String, func:js.ThisFunction2[Element, Int, String, Any]):JQuery = js.native
+  @JSName("attr")
+  def attrInternal(attributeName:String):UndefOr[String] = js.native
+  @JSName("attr")
+  def attrInternal(attributes:js.Dictionary[String]):JQuery = js.native
+  @JSName("attr")
+  def attrInternal(attributeName:String, v:js.Any):JQuery = js.native
   
   /**
    * Bind an event handler to the "change" JavaScript event, or trigger that event on an element.
@@ -177,21 +163,11 @@ trait JQuery extends js.Object {
    */
   def empty():JQuery = js.native
   
-  /**
-   * Reduce the set of matched elements to those that match the selector or pass the function's test.
-   */
-  def filter(selector:String):JQuery = js.native
-  def filter(func:js.ThisFunction0[Element, Boolean]):JQuery = js.native
-  def filter(func:js.ThisFunction1[Element, Int, Boolean]):JQuery = js.native
-  def filter(elements:Element*):JQuery = js.native
-  def filter(selector:JQuery):JQuery = js.native
-  
-  /**
-   * Get the descendants of each element in the current set of matched elements, filtered by a selector, jQuery object, or element.
-   */
-  def find(selector:String):JQuery = js.native
-  def find(selector:Element):JQuery = js.native
-  def find(selector:JQuery):JQuery = js.native
+  @JSName("filter")
+  def filterInternal(selectorOrFunc:js.Any):JQuery = js.native
+
+  @JSName("find")
+  def findInternal(selector:js.Any):JQuery = js.native
   
   /**
    * Reduce the set of matched elements to the first in the set.
@@ -246,20 +222,13 @@ trait JQuery extends js.Object {
   def hide(duration:Int, easing:String, complete:js.Function):JQuery = js.native
   // TODO: add the complex version of hide(), with a Builder to construct the Options.
   
-  /**
-   * Search for a given element from among the matched elements.
-   */
-  def index():Int = js.native
-  def index(selector:String):Int = js.native
-  def index(selector:Element):Int = js.native
-  def index(selector:JQuery):Int = js.native
-  
-  /**
-   * Insert every element in the set of matched elements before the target.
-   */
-  def insertBefore(selector:String):JQuery = js.native
-  def insertBefore(selector:Element):JQuery = js.native
-  def insertBefore(selector:JQuery):JQuery = js.native
+  @JSName("index")
+  def indexInternal():Int = js.native
+  @JSName("index")
+  def indexInternal(selector:js.Any):Int = js.native
+
+  @JSName("insertBefore")
+  def insertBeforeInternal(selector:js.Any):JQuery = js.native
   
   /**
    * Check the current matched set of elements against a selector, element,
@@ -351,6 +320,8 @@ trait JQuery extends js.Object {
 
   /**
    * Get the parent of each element in the current set of matched elements, optionally filtered by a selector.
+   * 
+   * TBD: is the parameter really a Selector, or just a String? The JQuery API docs are unclear.
    */
   def parent(selector: String): JQuery = js.native
   def parent(): JQuery = js.native

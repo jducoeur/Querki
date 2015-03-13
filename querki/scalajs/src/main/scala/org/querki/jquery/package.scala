@@ -86,7 +86,12 @@ package object jquery {
   
   /**
    * This union type gets used for several functions that really allow anything that can describe an
-   * Element.
+   * Element. This is similar to Selector, but allows you to pass in a JQuery as well.
    */
   type ElementDesc = String tor Element tor JQuery tor Array[Element]
+  
+  /**
+   * This union type represents valid types that you can set an attribute to.
+   */
+  type AttrVal = String tor Int tor Boolean
 }
