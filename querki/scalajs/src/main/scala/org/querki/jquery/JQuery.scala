@@ -8,22 +8,6 @@ import org.scalajs.dom
 import dom.Element
 
 /**
- * This is a particularly important pseudo-union type. Selector is a common parameter type
- * in jQuery, meaning essentially a filter for choosing some elements. It can be a string
- * describing a kind of node (using a CSS-ish syntax), an Element, or an Array of Elements.
- * 
- * The actual types you can pass in to a Selector are defined by the implicit defs in
- * jquery.Defs. Note that the jQuery API documentation is *extremely* inconsistent about
- * how it treats the term "Selector" -- sometimes it just uses the term to mean Strings,
- * sometimes it means all of the possible types. We use this type for signatures that appear
- * to accept Strings, Elements and Arrays of Elements.
- * 
- * TODO: many of the signatures below should be tweaked to use Selector, once we've proved
- * that works!
- */
-sealed trait Selector extends js.Any
-
-/**
  * A facade for the main jQuery object.
  * 
  * This is a reimplementation, very loosely based on the existing scala-js-jquery. It aims to be much
@@ -61,13 +45,8 @@ trait JQuery extends js.Object {
   def addClass(classNames:String):JQuery = js.native
   def addClass(func:js.ThisFunction2[Element, Int, String, String]):JQuery = js.native
   
-  /**
-   * Insert content, specified by the parameter, after each element in the set of matched elements.
-   */
-  def after(content:String):JQuery = js.native
-  def after(content:Element):JQuery = js.native
-  def after(content:JQuery):JQuery = js.native
-  def after(content:Array[Element]):JQuery = js.native
+  @JSName("after")
+  def afterInternal(content:js.Any):JQuery = js.native
   
   /**
    * Insert content, specified by the parameter, to the end of each element in the set of matched elements.
@@ -286,12 +265,8 @@ trait JQuery extends js.Object {
    * Check the current matched set of elements against a selector, element,
    * or jQuery object and return true if at least one of these elements matches the given arguments.
    */
-  def is(selector:Selector):Boolean = js.native
-  /**
-   * Note that this overload doesn't precisely match the jQuery documentation; we
-   * elide the redundant Element param, since you have Element as the this parameter.
-   */
-  def is(func:js.ThisFunction1[Element, Int, Boolean]):Boolean = js.native
+  @JSName("is")
+  def isInternal(selector:js.Any):Boolean = js.native
   
   /**
    * Bind an event handler to the "keydown" JavaScript event, or trigger that event on an element.
@@ -389,8 +364,8 @@ trait JQuery extends js.Object {
   /**
    * Insert content, specified by the parameters, to the beginning of each element in the set of matched elements.
    */
-  def prepend(contents:Selector*):JQuery = js.native
-  def prepend(func:js.ThisFunction2[Element, Int, String, Selector]):JQuery = js.native
+  @JSName("prepend")
+  def prependInternal(contents:js.Any*):JQuery = js.native
   
   /**
    * Get the value of a property for the first element in the set of matched elements.
@@ -416,13 +391,8 @@ trait JQuery extends js.Object {
   def removeClass(classNames:String):JQuery = js.native
   def removeClass(func:js.ThisFunction2[Element, Int, String, String]):JQuery = js.native
   
-  /**
-   * Replace each element in the set of matched elements with the provided new content and return the set of elements that was removed.
-   */
-  def replaceWith(content:String):JQuery = js.native
-  def replaceWith(content:Element):JQuery = js.native
-  def replaceWith(content:JQuery):JQuery = js.native
-  def replaceWith(content:Array[Element]):JQuery = js.native
+  @JSName("replaceWith")
+  def replaceWithInternal(content:js.Any):JQuery = js.native
   
   /**
    * Get the current vertical position of the scroll bar for the first element in the set of
