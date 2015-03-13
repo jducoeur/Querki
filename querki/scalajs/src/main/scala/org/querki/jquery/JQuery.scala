@@ -417,7 +417,7 @@ trait JQuery extends js.Object {
   /**
    * Retrieve all the elements contained in the jQuery set, as an array.
    */
-  def toArray():js.Array[_] = js.native
+  def toArray():js.Array[Element] = js.native
   
   /**
    * Execute all handlers and behaviors attached to the matched elements for the given event type.
