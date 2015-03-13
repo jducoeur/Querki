@@ -1,6 +1,7 @@
 package org.querki
 
 import scala.scalajs.js
+import js.JSConverters._
 import org.scalajs.dom
 import dom.Element
 
@@ -55,11 +56,15 @@ package object jquery {
    * Given a parameter of a "tor"ed type, extract the actual value and cast it to js.Any. You
    * use this in a strongly-typed mid-level facade, and pass the result into a weakly-typed
    * low-level facade.
+   * 
+   * Note that this automatically turns a Seq[_] into a js.Array, to make it a bit easier to
+   * write idiomatic Scala code for signatures that take js.Array.
    */
   def toJsAny[A, B, T <% tor[A, B]](v: T):js.Any = {
     def rec(inner:Any):js.Any = {
       inner match {
         case o:tor[_, _] => toJsAny(o)
+        case s:Seq[_] => s.toJSArray
         case x => x.asInstanceOf[js.Any]
       }
     }
@@ -78,21 +83,14 @@ package object jquery {
    * Note that the jQuery API documentation is *extremely* inconsistent about
    * how it treats the term "Selector" -- sometimes it just uses the term to mean Strings,
    * sometimes it means all of the possible types. So use this with some care.
-   * 
-   * TBD: the js.Array[Element] here is kind of a pain in the butt from a Scala POV, both
-   * because it often requires converting a Scala Seq into a js.Array at the call site, and
-   * because Array is invariant, so a Sequence of a subclass of Element can't be used here.
-   * We should see whether we can do something clever so that these accept Seq[+Element], which
-   * would be far more idiomatic Scala. (See Querki's ConversationPane.onNewComment() as a good
-   * test to play with.)
    */
-  type Selector = String tor Element tor js.Array[Element]
+  type Selector = String tor Element tor js.Array[Element] tor Seq[Element]
   
   /**
    * This union type gets used for several functions that really allow anything that can describe an
    * Element. This is similar to Selector, but allows you to pass in a JQuery as well.
    */
-  type ElementDesc = String tor Element tor JQuery tor js.Array[Element]
+  type ElementDesc = String tor Element tor JQuery tor js.Array[Element] tor Seq[Element]
   
   /**
    * This union type represents valid types that you can set an attribute to.
