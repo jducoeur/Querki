@@ -20,7 +20,7 @@ package object jquery {
   implicit def jQuery2Ext(jq:JQuery):JQueryExtensions = new JQueryExtensions(jq)
   implicit def jQuery2Typed(jq:JQuery):JQueryTyped = new JQueryTyped(jq)
 
-  // Union type enablers. This trick comes from this article:
+  // "Type or" -- union type enablers. This trick comes from this article:
   //
   //    http://cleverlytitled.blogspot.com/2009/03/disjoint-bounded-views-redux.html
   //
@@ -34,7 +34,14 @@ package object jquery {
   // due to ambiguity -- for instance, you wind up with multiple paths from String to
   // js.Any, and when you hit a function that really *does* take js.Any, the compiler gets
   // confused. Hence this less-efficient but more-robust approach instead.
-  type or[A,B] = Either[A,B]
+  //
+  // TODO: conceptually, this really belongs in the org.querki.jsext library, since it is
+  // a general-purpose mechanism. However, I do *not* want to require calling code to have
+  // to include jsext in order to get the imports. We could create a trait that we mix into
+  // the jquery package, but I am concerned whether using it in other packages as well might
+  // produce implicit conflicts. This therefore needs some experimentation, to see whether
+  // it is safe...
+  type tor[A,B] = Either[A,B]
   implicit def l[T](t: T) = Left(t)  
   implicit def r[T](t: T) = Right(t)  
   implicit def ll[T](t: T) = Left(Left(t))  
@@ -44,10 +51,15 @@ package object jquery {
   implicit def llll[T](t: T) = Left(Left(Left(Left(t))))    
   implicit def lllr[T](t: T) = Left(Left(Left(Right(t))))
   
-  def toJsAny[A, B, T <% or[A, B]](v: T):js.Any = {
+  /**
+   * Given a parameter of a "tor"ed type, extract the actual value and cast it to js.Any. You
+   * use this in a strongly-typed mid-level facade, and pass the result into a weakly-typed
+   * low-level facade.
+   */
+  def toJsAny[A, B, T <% tor[A, B]](v: T):js.Any = {
     def rec(inner:Any):js.Any = {
       inner match {
-        case o:or[_, _] => toJsAny(o)
+        case o:tor[_, _] => toJsAny(o)
         case x => x.asInstanceOf[js.Any]
       }
     }
@@ -70,11 +82,11 @@ package object jquery {
    * TODO: many of the signatures in JQuery should be tweaked to use Selector, now that we've proved
    * that works!
    */
-  type Selector = String or Element or Array[Element]
+  type Selector = String tor Element tor Array[Element]
   
   /**
    * This union type gets used for several functions that really allow anything that can describe an
    * Element.
    */
-  type ElementDesc = String or Element or JQuery or Array[Element]
+  type ElementDesc = String tor Element tor JQuery tor Array[Element]
 }
