@@ -79,16 +79,20 @@ package object jquery {
    * how it treats the term "Selector" -- sometimes it just uses the term to mean Strings,
    * sometimes it means all of the possible types. So use this with some care.
    * 
-   * TODO: many of the signatures in JQuery should be tweaked to use Selector, now that we've proved
-   * that works!
+   * TBD: the js.Array[Element] here is kind of a pain in the butt from a Scala POV, both
+   * because it often requires converting a Scala Seq into a js.Array at the call site, and
+   * because Array is invariant, so a Sequence of a subclass of Element can't be used here.
+   * We should see whether we can do something clever so that these accept Seq[+Element], which
+   * would be far more idiomatic Scala. (See Querki's ConversationPane.onNewComment() as a good
+   * test to play with.)
    */
-  type Selector = String tor Element tor Array[Element]
+  type Selector = String tor Element tor js.Array[Element]
   
   /**
    * This union type gets used for several functions that really allow anything that can describe an
    * Element. This is similar to Selector, but allows you to pass in a JQuery as well.
    */
-  type ElementDesc = String tor Element tor JQuery tor Array[Element]
+  type ElementDesc = String tor Element tor JQuery tor js.Array[Element]
   
   /**
    * This union type represents valid types that you can set an attribute to.

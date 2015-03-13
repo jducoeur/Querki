@@ -10,17 +10,23 @@ import dom.Element
 /**
  * A facade for the main jQuery object.
  * 
- * This is a reimplementation, very loosely based on the existing scala-js-jquery. It aims to be much
+ * This is a reimplementation, very loosely based on the existing scalajs-jquery. It aims to be much
  * more strongly and precisely typed, while being as literal a translation of the functionality of jQuery
- * as possible.
+ * as possible. It is intentionally pretty close to scalajs-jquery, and many files can be switched over
+ * by simply switching the import, but compatibility has *not* been a priority, and a modest number of
+ * functions have changed in breaking ways. (This is one reason why I treated this as a rewrite rather
+ * than as an evolution of the existing library.)
  * 
- * TODO: as of this writing, this is *quite* incomplete; I am only adding functions as I use them. Pull
- * requests are greatly welcomed. In particular, we are lacking many overloads -- I've added some of them,
- * but many jQuery functions have a considerable number of potential overloads.
+ * TODO: as of this writing, this is *quite* incomplete; I am only adding functions as I use them, and
+ * at least half of them are currently missing. Pull requests are greatly welcomed. In particular, we are
+ * lacking many overloads -- I've added some of them, but many jQuery functions have a considerable number
+ * of potential overloads.
  * 
  * Many parameters are polymorphic. We are currently dealing with the messy cases by defining a polymorphic
  * type in package.scala, using the "tor" type-union trick, and then defining a mid-level facade for that
- * method in JQueryTyped. Then we put a primitive "Internal" version of the method in here.
+ * method in JQueryTyped. Then we put a primitive "Internal" version of the method in here. As a rule, you
+ * should not directly use any methods here named [something]Internal -- they should always have a more precisely-typed
+ * version in JQueryTyped.
  * 
  * NOTE: discussion on scalajs Gitter, 1/28/15, says that facades should *return* Any, but
  * *take* js.Any *if* the Javascript is going to process the value in any way. This is the guiding principle here.
@@ -39,14 +45,8 @@ trait JQuery extends js.Object {
   @JSName("after")
   def afterInternal(content:js.Any):JQuery = js.native
   
-  /**
-   * Insert content, specified by the parameter, to the end of each element in the set of matched elements.
-   * 
-   * The content can be any number of elements, each one an HTML String *or* an Element *or* an Array
-   * *or* a jQuery. There is no clean way to build a strongly-typed Scala signature for this.
-   */
-  def append(content:js.Any*):JQuery = js.native
-  def append(func:js.ThisFunction2[Element, Int, String, js.Any]):JQuery = js.native
+  @JSName("append")
+  def appendInternal(content:js.Any*):JQuery = js.native
 
   @JSName("appendTo")
   def appendToInternal(target:js.Any):JQuery = js.native

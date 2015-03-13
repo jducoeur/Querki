@@ -61,7 +61,9 @@ class RxSelect(options:Rx[Seq[Frag]], mods:Modifier*) extends Gadget[dom.HTMLSel
   
   private val obs = Obs(options, skipInitial=true) {
     $(elem).empty()
-    options().map(_.render).map(opt => $(elem).append(opt))
+    // TBD: this cast is ugly, and results from the fact that options is Seq[Frag], which
+    // is awfully loose. Can/should we tighten up that signature?
+    options().map(_.render).map(opt => $(elem).append(opt.asInstanceOf[dom.Element]))
     updateSelected()
   }
   

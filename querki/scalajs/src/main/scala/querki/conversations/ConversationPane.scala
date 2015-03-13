@@ -184,7 +184,7 @@ private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boole
   
   def onNewComment(newNode:ConvNode) = {
     val gadgets = flattenNodes(newNode).map(_.rendered)
-    $(commentContainer.elem).append(gadgets.toJSArray)
+    $(commentContainer.elem).append(gadgets.toJSArray.asInstanceOf[js.Array[dom.Element]])
     replyContainer.replaceContents(replyPlaceholder.rendered)
     InputGadgets.hookPendingGadgets()
   }

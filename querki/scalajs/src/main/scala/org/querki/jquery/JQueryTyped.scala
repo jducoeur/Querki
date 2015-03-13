@@ -22,6 +22,12 @@ class JQueryTyped(jq:JQuery) {
   def after(func:js.ThisFunction1[Element, Int, ElementDesc]):JQuery =  jq.afterInternal(func)
   
   /**
+   * Insert content, specified by the parameter, to the end of each element in the set of matched elements.
+   */
+  def append(content:ElementDesc*):JQuery = jq.appendInternal(content.map(toJsAny(_)):_*)
+  def append(func:js.ThisFunction2[Element, Int, String, js.Any]):JQuery = jq.appendInternal(func)
+  
+  /**
    * Insert every element in the set of matched elements to the end of the target.
    */
   def appendTo(target:ElementDesc):JQuery = jq.appendToInternal(toJsAny(target))
