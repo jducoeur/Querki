@@ -540,20 +540,8 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
       context.value.firstAs(this).flatMap(follow(context)(_))
     }
     
-    def pathAdjustments(context:QLContext):String = {
-      // Find the Thing that we're actually rendering...
-      val rootThingOpt = followLink(context.root)
-      val adjustmentsOpt = rootThingOpt.map { rootThing =>
-        val name = rootThing.toThingId.toString()
-        val slashes = name.count(_ == '/')
-        "../" * slashes
-      }
-
-      adjustmentsOpt.getOrElse("")
-    }
-    
     def makeWikiLink(context:QLContext, thing:Thing, display:Wikitext):Wikitext = {
-      Wikitext("[") + display + Wikitext("](" + pathAdjustments(context) + thing.toThingId + ")")
+      Wikitext("[") + display + Wikitext("](" + thing.toThingId + ")")
     }
 
     def doWikify(context:QLContext)(v:OID, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
