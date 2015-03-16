@@ -523,7 +523,7 @@ disallow: /
     val thing = rc.thing.get
     // TODO: security check that I'm allowed to edit this
 	val model = thing.getModel
-	showEditPage(rc, Some(thing), model, PropListMgr.from(thing))
+	showEditPage(rc, Some(thing), model, PropListMgr.from(thing, false))
   }
   
   def editInstances(ownerId:String, spaceId:String, modelIdStr:String) = withThing(true, ownerId, spaceId, modelIdStr) { implicit rc =>

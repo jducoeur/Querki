@@ -148,7 +148,7 @@ trait ThingEditor { self:EditorModule =>
         yield props
 
       // Note that the toList here implicitly sorts the PropList, more or less by display name:
-      result.getOrElse(PropListMgr.from(thing).toList.map(_._1).filter(specialFilter(thing, _)))
+      result.getOrElse(PropListMgr.from(thing, false).toList.map(_._1).filter(specialFilter(thing, _)))
     }
     
     val thingButtons = """{{_advancedEditButton:<i class="glyphicon glyphicon-edit btn-xs _withTooltip" title="Click to open the Advanced Editor"></i>}}

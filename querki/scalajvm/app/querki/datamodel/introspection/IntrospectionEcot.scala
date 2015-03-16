@@ -60,7 +60,7 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   def bundle2Props(bundle:PropertyBundle)(implicit state:SpaceState):Iterable[QValue] = {
     bundle.getModelOpt match {
       case Some(model) => {
-        val propList = PropListMgr.from(bundle)
+        val propList = PropListMgr.from(bundle, false)
         val orderedList = PropListMgr.prepPropList(propList, Some(bundle), model, state)
         orderedList.filterNot(_._2.effectiveV.isEmpty).map { propListEntry =>
           val (prop, displayVal) = propListEntry

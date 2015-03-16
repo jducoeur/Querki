@@ -11,7 +11,7 @@ import querki.globals._
 
 import querki.api.EditFunctions
 import EditFunctions._
-import querki.core.QLText
+import querki.core.{PropList, QLText}
 import querki.data._
 import querki.session.messages.ChangeProps2
 import querki.spaces.messages.{CreateThing, ModifyThing, ThingFound, ThingError}
@@ -254,8 +254,6 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   private def getThingPropertyEditors(thing:Thing) = {
     implicit val s = state
     val model = thing.getModel
-    val props = PropListManager.from(thing)
-    val propList = PropListManager.prepPropList(props, Some(thing), model, state)
     
     val deriveNameOpt =
       for {
@@ -274,6 +272,15 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
       ) ++
       // If we are deriving the name, don't show the Name's Editor:
       (if (deriveName) Set(querki.core.MOIDs.NameOID) else Set())
+    
+    // If we're not auto-deriving the name, tell the PropListManager to add it in.
+    // (Yes, this is badly coupled, and could probably use some rethinking.)
+    val props = PropListManager.from(thing, !deriveName)
+    val propList = 
+      PropListManager.prepPropList(
+          props, 
+          Some(thing), 
+          model, state)
     
     val propInfos = propList.filter(propPair => !filteredProps.contains(propPair._1.id)).map { entry =>
       val (prop, propVal) = entry

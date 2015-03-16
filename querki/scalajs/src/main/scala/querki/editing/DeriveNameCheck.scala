@@ -37,13 +37,15 @@ class DeriveNameCheck(valEditor:PropValueEditor)(implicit e:Ecology) extends Inp
           }
         ))
     def doRender() = 
-      div(cls:="controls",
+      div(cls:="row",
         // Needed for save() to work:
         data("thing"):=section.thing,
         name:=Editing.propPath(stdThings.types.deriveNameProp, Some(section.thing)),
-        // TODO: all this style stuff belongs in CSS:
-        p(cls:="_smallSubtitle", marginBottom:=0,
-          deriveNameCheckbox, " Derive the Link Name from the Display Name")
+        div(cls:="col-md-offset-2 col-md-9",
+          // TODO: all this style stuff belongs in CSS:
+          p(cls:="_smallSubtitle", marginBottom:=0,
+            deriveNameCheckbox, " Derive the Link Name from the Display Name")
+        )
       )
       
     def hook() = {}

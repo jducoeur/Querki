@@ -116,7 +116,7 @@ package object core {
   trait PropListManager extends EcologyInterface {
     def apply(pairs:(Property[_,_], DisplayPropVal)*):PropList
     def inheritedProps(thing:Option[PropertyBundle], model:Thing)(implicit state:SpaceState):PropList
-    def from(thing:PropertyBundle)(implicit state:SpaceState):PropList
+    def from(thing:PropertyBundle, ensureName:Boolean)(implicit state:SpaceState):PropList
     def prepPropList(propList:PropList, thing:Option[PropertyBundle], model:Thing, state:SpaceState):Seq[(Property[_,_], DisplayPropVal)]
   }
 }
