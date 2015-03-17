@@ -280,7 +280,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
       PropListManager.prepPropList(
           props, 
           Some(thing), 
-          model, state)
+          model, state, true)
     
     val propInfos = propList.filter(propPair => !filteredProps.contains(propPair._1.id)).map { entry =>
       val (prop, propVal) = entry

@@ -124,7 +124,7 @@ class PropListManagerEcot(e:Ecology) extends QuerkiEcot(e) with PropListManager 
 
   // TODO: this overlaps horribly with code in EditorModel. This determines the Properties in the Advanced Editor; that has the ones
   // in the Instance Editor. Merge them together!
-  def prepPropList(propList:PropList, thingOpt:Option[PropertyBundle], model:Thing, state:SpaceState):Seq[(Property[_,_], DisplayPropVal)] = {
+  def prepPropList(propList:PropList, thingOpt:Option[PropertyBundle], model:Thing, state:SpaceState, forceName:Boolean = false):Seq[(Property[_,_], DisplayPropVal)] = {
     val propsToEdit = model.getPropOpt(Editor.InstanceProps)(state).map(_.rawList)
     propsToEdit match {
       // If the model specifies which properties we actually want to edit, then use just those, in that order:
@@ -137,7 +137,7 @@ class PropListManagerEcot(e:Ecology) extends QuerkiEcot(e) with PropListManager 
             // because it usually *is* set there. But since it's not inherited, it gets overlooked. So we add it by hand here.
             // This is ugly and horrible. We should consider changing propsNotInModel to also return any that are
             // non-inherited, but I am not at all sure that's correct, so think about it carefully.
-            (if (propList.contains(Core.NameProp) && !editList.contains(Core.NameProp.id)) List(Core.NameProp.id) else List.empty)
+            (if (forceName && propList.contains(Core.NameProp) && !editList.contains(Core.NameProp.id)) List(Core.NameProp.id) else List.empty)
           case None => editList
         }
         val withOpts = (Seq.empty[(Property[_,_], Option[DisplayPropVal])] /: fullEditList) { (list, oid) =>
