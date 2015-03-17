@@ -14,3 +14,11 @@
 .notePage .noteContent {
 
 }
+
+.notifier-empty {
+  color: black;
+}
+
+.notifier-full {
+  color: white;
+}

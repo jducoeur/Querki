@@ -150,7 +150,7 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
       // URLs. Fixing that is probably going to require getting the pipeline to work async, though, so we can
       // fetch the names.
       yield s""" <a href="/u/${ownerId.toThingId}/${spaceId.toThingId}/${thingId.toThingId}#comment$commentId" title="Click to go to this comment">""" +
-             """<i class="icon-share-alt"></i></a>"""
+             """<i class="glyphicon glyphicon-share-alt"></i></a>"""
   }
     
   def render(context:QLContext, note:Notification):RenderedNotification = {

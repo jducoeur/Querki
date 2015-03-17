@@ -16,13 +16,13 @@ class NotifierGadget(implicit val ecology:Ecology) extends Gadget[dom.HTMLAnchor
   lazy val n = Notifications.numNotifications
   lazy val nStr = n.map(_.toString)
   
-  lazy val emptyIcon = i(cls:="glyphicon glyphicon-bell")
+  lazy val emptyIcon = i(cls:="glyphicon glyphicon-bell notifier-empty")
   lazy val emptyRendered = emptyIcon.render
   
   lazy val fullIcon = 
     span(
-      i(cls:="glyphicon glyphicon-bell icon-white"),
-      span(cls:="badge badge-info", sub(style:="font-size:x-small", new RxTextFrag(nStr)))
+      i(cls:="glyphicon glyphicon-bell notifier-full"),
+      span(cls:="badge badge-info", new RxTextFrag(nStr))
     )
   lazy val fullRendered = fullIcon.render
     

@@ -271,7 +271,7 @@ class MenuBar(implicit e:Ecology) extends InputGadget[dom.HTMLDivElement](e) wit
                   new SearchGadget())),
                   
               if (UserAccess.user.isDefined) {
-                ul(cls:="nav navbar-right",
+                ul(cls:="nav navbar-nav navbar-right",
                   li(new NotifierGadget)
                 )
               }
