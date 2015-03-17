@@ -304,8 +304,10 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
           "Add"
         }
       // TODO: render the thumbnails of the existing photos, so that they can be rearranged or deleted
-      <input class="_photoEdit btn" value={verb + " photo"}></input>
+      <input class="_photoEdit btn btn-default" value={verb + " photo"}></input>
     }
+    
+    override def editorSpan(prop:Property[_,_]):Int = 6
   }
   
   def fromPropStr(context:QLContext) = context.fromPropertyOfType(PhotoType).map(prop => s""" data-fromprop="${prop.id.toString}" """).getOrElse("")

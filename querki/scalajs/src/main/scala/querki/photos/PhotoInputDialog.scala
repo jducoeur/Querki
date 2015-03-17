@@ -124,24 +124,28 @@ class PhotoInputDialog(implicit val ecology:Ecology) extends Gadget[dom.html.Div
   lazy val photoThumb = Gadget(span())
 
   def doRender() =
-    // TODO: add aria-labelledby="myModalLabel" aria-hidden="true"
-    div(cls:="modal hide",
+    div(cls:="modal fade",
       tabindex:="-1",
       role:="dialog",
-      display:="none",
-      div(cls:="modal-header",
-        button(tpe:="button", cls:="close", data("dismiss"):="modal", "x"),
-        h3("Take a photo")
-      ),
-      div(cls:="modal-body",
-        p("""Press the button below, then choose "Camera" to take a photo now:"""),
-        p(photoInputElem),
-        photoStatus,
-        photoProgress,
-        photoThumb
-      ),
-      div(cls:="modal-footer",
-        button(cls:="button", data("dismiss"):="modal", "Cancel")
+      aria.labelledby:="Take a photo",
+      aria.hidden:="true",
+      div(cls:="modal-dialog",
+        div(cls:="modal-content",
+	      div(cls:="modal-header",
+	        button(tpe:="button", cls:="close", data("dismiss"):="modal", "x"),
+	        h3(cls:="modal-title", "Take a photo")
+	      ),
+	      div(cls:="modal-body",
+	        p("""Press the button below, then choose "Camera" to take a photo now:"""),
+	        p(photoInputElem),
+	        photoStatus,
+	        photoProgress,
+	        photoThumb
+	      ),
+	      div(cls:="modal-footer",
+	        button(cls:="button", data("dismiss"):="modal", "Cancel")
+	      )
+	    )
       )
     )
 }
