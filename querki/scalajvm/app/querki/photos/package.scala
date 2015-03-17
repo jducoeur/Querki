@@ -14,6 +14,6 @@ package object photos {
      * This will create a worker Actor that deals with the actual processing and uploading to storage.
      * The calling code should then send messages to that Actor, with the actual body of the image.
      */
-    def createWorker():Future[ActorRef]
+    def createWorker(mimeType:Option[String]):Future[ActorRef]
   }
 }

@@ -17,6 +17,7 @@ import play.api.mvc._
 
 import models.OID
 
+import querki.globals._
 import querki.photos.PhotoUploadMessages._
 import querki.session.messages.ChangeProps2
 import querki.spaces.messages.{SessionRequest, ThingError, ThingFound}
@@ -27,7 +28,7 @@ class PhotoController extends ApplicationBase {
   lazy val Photos = interface[querki.photos.Photos]
   
   def photoReceiver(rh:RequestHeader):Iteratee[Array[Byte], Either[Result, Future[ActorRef]]] = {
-    val workerRefFuture = Photos.createWorker
+    val workerRefFuture = Photos.createWorker(rh.contentType)
     Iteratee.fold[Array[Byte], Future[ActorRef]](workerRefFuture) { (fut, bytes) => 
       val newFut = fut.map { ref => ref ! PhotoChunk(bytes); ref }
       newFut

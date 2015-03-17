@@ -76,8 +76,8 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
     _ref = createActorCb(Props(new PhotoUploadManager(ecology)), "PhotoUploadManager")
   }
   
-  def createWorker():Future[ActorRef] = {
-    val fut = photoUploadManager.ask(BeginProcessing())(3 seconds)
+  def createWorker(mimeType:Option[String]):Future[ActorRef] = {
+    val fut = photoUploadManager.ask(BeginProcessing(mimeType))(3 seconds)
     fut.mapTo[ActorRef]
   }
   

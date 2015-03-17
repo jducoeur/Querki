@@ -41,9 +41,13 @@ private [photos] class PhotoUploadActor(val ecology:Ecology) extends Actor with 
   
   var chunkBuffer:Vector[Byte] = Vector.empty
   
+  var _mimeType:Option[String] = None
+  def mimeType = _mimeType.getOrElse(MIMEType.JPEG)
+  
   def receive = LoggingReceive {
     
-    case BeginProcessing() => {
+    case BeginProcessing(tpe) => {
+      _mimeType = tpe
     }
     
     case PhotoChunk(chunk) => {
@@ -52,7 +56,7 @@ private [photos] class PhotoUploadActor(val ecology:Ecology) extends Actor with 
     }
     
     case UploadDone(oldValueOpt, prop, state) => {
-      QLog.spew(s"UploadDone -- got ${chunkBuffer.size} bytes")
+      QLog.spew(s"UploadDone -- got ${chunkBuffer.size} bytes; type is $mimeType")
       val inputStream = new ByteArrayInputStream(chunkBuffer.toArray)
       val originalImage = ImageIO.read(inputStream)
       
@@ -69,20 +73,36 @@ private [photos] class PhotoUploadActor(val ecology:Ecology) extends Actor with 
         QLog.error("OriginalImage is null! WTF?")
       }
       
+      // For the time being, we are presuming that PNGs are screenshots, and should just be left alone:
+      val shouldResize = !(mimeType == MIMEType.PNG) 
+      
       val digester = MessageDigest.getInstance("SHA-1")
       def resizeImage(size:Int):(ByteArrayOutputStream, String, Int, Int) = {
         // Using QUALITY is a bit slower, but I find that a few JPEGs wind up badly messed-up without it:
-        val resizedImage = Scalr.resize(originalImage, Scalr.Method.QUALITY, size)
+        val resizedImage =
+          if (size > 0)
+            Scalr.resize(originalImage, Scalr.Method.QUALITY, size)
+          else
+            originalImage
         val outputStream = new ByteArrayOutputStream()
-        ImageIO.write(resizedImage, "jpeg", outputStream)
+        val ioType = mimeType match {
+          case MIMEType.PNG => "png"
+          case _ => "jpeg"
+        }
+        val fileSuffix = mimeType match {
+          case MIMEType.PNG => ".png"
+          case MIMEType.JPEG => ".jpg"
+          case _ => ""
+        }
+        ImageIO.write(resizedImage, ioType, outputStream)
         resizedImage.flush()
         val digest = digester.digest(outputStream.toByteArray)
         val digestInt = new BigInteger(1, digest)
-        val filename = state.id.toString + "/" + digestInt.toString(16) + ".jpg"
+        val filename = state.id.toString + "/" + digestInt.toString(16) + fileSuffix
         (outputStream, filename, resizedImage.getHeight(), resizedImage.getWidth())
       }
       
-      val (outputStream, filename, height, width) = resizeImage(maxSize)
+      val (outputStream, filename, height, width) = resizeImage(if (shouldResize) maxSize else 0)
       val (thumbnailOutputStream, thumbnailFilename, thumbHeight, thumbWidth) = resizeImage(100)
       
       // Send it off to Amazon...
@@ -91,7 +111,7 @@ private [photos] class PhotoUploadActor(val ecology:Ecology) extends Actor with 
       s3client.setRegion(Region.getRegion(Regions.US_WEST_2))
       def uploadToS3(stream:ByteArrayOutputStream, name:String) = {
         val metadata = new ObjectMetadata()
-        metadata.setContentType("image/jpeg")
+        metadata.setContentType(mimeType)
         // Our photographs deliberately have nigh-infinite expiration. 1 year is the max, per HTTP spec:
         metadata.setExpirationTime(DateTime.now.plusYears(1).toDate())
         // For the time being, all photos are world-readable; we only have security-through-obscurity
@@ -172,7 +192,7 @@ object PhotoUploadActor {
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
   def actorProps(ecology:Ecology):Props = Props(new PhotoUploadActor(ecology)) 
   
-  case class BeginProcessing()
+  case class BeginProcessing(mimeType:Option[String])
   
   case object ImageComplete
 }
