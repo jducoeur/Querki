@@ -271,7 +271,7 @@ class DataModelTests extends QuerkiTests {
     
     "work for a Model" in {
       implicit val s = commonSpace
-      pql("""[[My Model -> _model]]""") should equal(linkText(Basic.Page))
+      pql("""[[My Model -> _model]]""") should equal(linkText(Basic.SimpleThing))
     }
     
     "work for a list of Things" in {
@@ -279,7 +279,7 @@ class DataModelTests extends QuerkiTests {
         val thingWithList = new SimpleTestThing("Thing With List", listLinksProp(instance, testModel))
       }
       implicit val s = new TSpace
-      pql("""[[Thing With List -> My List of Links -> _model]]""") should equal(listOfLinkText(s.testModel, Basic.Page))
+      pql("""[[Thing With List -> My List of Links -> _model]]""") should equal(listOfLinkText(s.testModel, Basic.SimpleThing))
     }
   }
   

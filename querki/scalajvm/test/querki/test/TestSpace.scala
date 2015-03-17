@@ -94,7 +94,7 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
     extends TestThingBase(pid, name, model, pairs:_*)
   {
     def this(pid:OID, name:String, pairs:(OID, QValue)*) = {
-      this(pid, name, querki.basic.MOIDs.PageOID, pairs:_*)
+      this(pid, name, querki.basic.MOIDs.SimpleThingOID, pairs:_*)
     }
     def this(name:String, model:OID, pairs:(OID, QValue)*) = {
       this(toid(), name, model, pairs:_*)
