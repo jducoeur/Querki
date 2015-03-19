@@ -9,6 +9,7 @@ import play.api.mvc._
 import models._
 
 import querki.ecology._
+import querki.globals._
 import querki.identity._
 import querki.session.messages.GetThing
 import querki.spaces.SpaceManager
@@ -160,7 +161,13 @@ class ApplicationBase extends Controller with EcologyMember {
     (ownerIdStr:String, spaceId:String)
     (f: (PlayRequestContext => Future[Result])):EssentialAction = 
   withUser(false) { originalRC =>
-    for {
+    // Give the listeners a chance to chime in. Note that this is where things like invitation
+    // management come into play.
+    val rcWithPath = originalRC.copy(spaceIdOpt = Some(spaceId), reqOwnerHandle = Some(ownerIdStr))
+    val updatedRC = PageEventManager.requestReceived(rcWithPath)
+    if (updatedRC.redirectTo.isDefined) {
+      Future.successful(updatedRC.updateSession(Redirect(updatedRC.redirectTo.get)))      
+    } else for {
       ownerId <- getOwnerIdentity(ownerIdStr)
       rc = originalRC.copy(ownerId = ownerId, spaceIdOpt = Some(spaceId), reqOwnerHandle = Some(ownerIdStr))
       result <- f(rc)

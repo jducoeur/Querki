@@ -14,16 +14,15 @@ import models._
 import querki.core.QLText
 import querki.ecology._
 import querki.email.emailSepChar
+import querki.globals._
 import querki.ql.QLPhrase
 import querki.spaces.{CacheUpdate, SpaceManager}
 import querki.spaces.messages.{ChangeProps, CreateThing, ThingError, ThingFound, ThingResponse}
-import querki.util._
+import querki.util.{Contributor, Publisher, Hasher, SignedHash}
 import querki.values._
 
 import querki.identity._
 import querki.email.EmailAddress
-
-import querki.util._
 
 import controllers.{PageEventManager, PlayRequestContext}
 
@@ -280,9 +279,8 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
           encoded = encodeURL(signed.toString);
           // TODO: this surely belongs in a utility somewhere -- it constructs the full path to a Thing, plus some paths.
 	      // Technically speaking, we are converting a Link to an ExternalLink, then adding params.
-          // Note that we need to avoid the empty URL for this Space, which is the new Client:
-	      url = urlBase + "u/" + rc.ownerHandle + "/" + state.toThingId + "/" + state.toThingId +
-	        "/?" + inviteParam + "=" + encoded
+	      url = urlBase + "u/" + rc.ownerHandle + "/" + state.toThingId + "/" + 
+	        "?" + inviteParam + "=" + encoded
         }
         yield HtmlUI.HtmlValue(s"""<b><a href="$url">Click here</a></b> to accept the invitation.""")
         

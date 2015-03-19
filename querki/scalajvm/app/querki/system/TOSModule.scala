@@ -78,8 +78,8 @@ object TOSModule {
 case class TOSVersion(version:Int, text:String)
 
 object TOS1 extends TOSVersion(1, """
-Draft Terms of Service for Querki
-=================================
+Terms of Service for Querki
+===========================
 
 Welcome to Querki! These Terms of Service govern your access to and use of the service.
 By using or accessing Querki and the Spaces, Things and Pages contained in it, you agree to
