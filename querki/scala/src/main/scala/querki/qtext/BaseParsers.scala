@@ -201,7 +201,8 @@ trait BaseParsers extends RegexParsers {
      *  We are currently *whitelisting* tags. If it doesn't appear here, it's illegal.
      */
 //    def xmlName:Parser[String] = xmlNameStartChar ~ (xmlNameChar*) ^^ {case c ~ cs => c + cs.mkString}
-    def xmlName:Parser[String] = "input" | "div" | "span" | "i" | "strike" | "br" | "p" |
+    def xmlName:Parser[String] = "a" |
+	  "input" | "div" | "span" | "i" | "strike" | "br" | "p" |
       "dl" | "dd" | "dt" |
       "ul" | "ol" | "li" |
       "table" | "tr" | "th" | "td"
@@ -234,7 +235,7 @@ trait BaseParsers extends RegexParsers {
      * The legal attributes. For now, we're being pretty dumb with attributes (rather than matching
      * legal tags and attributes), but attributes are, again, whitelisted.
      */
-    def xmlAttrName:Parser[String] = "class" | "id" | "title" | "name" |
+    def xmlAttrName:Parser[String] = "class" | "id" | "title" | "name" | "href" |
       "colspan" | "rowspan" |
       "type" | "value" |
       dataAttrName
