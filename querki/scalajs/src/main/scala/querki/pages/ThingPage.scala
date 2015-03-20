@@ -119,6 +119,14 @@ class StandardThingHeader(thing:ThingInfo, page:Page, standardThings:StandardThi
               } else {
                 topEditButton
               }
+            },
+            modelOpt match {
+              case Some(model) if (model.isInstantiatable) => {
+                querkiButton(MSeq(icon("plus-sign"), "..."))(
+                  title:=s"Create another ${model.displayName}",
+                  href:=Pages.createAndEditFactory.pageUrl(model))
+              }
+              case _ => {}
             }
           )
         },
