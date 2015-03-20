@@ -196,16 +196,24 @@ class MenuBar(implicit e:Ecology) extends InputGadget[dom.HTMLDivElement](e) wit
   }
 
   val displayNavDivider = li(cls:="divider")
+  
+  def filterLegal(s:String):String = {
+    // This is more complex than one would like, because Char.isLetterOrDigit is unimplemented in
+    // Scala.js. (Presumably because the proper Java definition requires handling all of Unicode?)
+    s.toLowerCase.filter(c => (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == ' ')
+  }
 
   /**
    * Displays a NavSection == that is, a single menu.
    */
   def displayNavSection(title:String, links:Seq[Navigable]):Frag = {
+    // Filter out characters that aren't legal in tag IDs, or the data-target will cause Bootstrap to choke:
+    val legalTitle = filterLegal(title)
     li(cls:="dropdown",
       // The clickable drop-down head of the menu
       a(cls:="dropdown-toggle",
-        data("target"):=s"#$title",
-        href:=s"#$title",
+        data("target"):=s"#$legalTitle",
+        href:=s"#$legalTitle",
         data("toggle"):="dropdown",
         role:="button",
         title + " ",
