@@ -12,7 +12,9 @@ class SelectGadget(implicit e:Ecology) extends InputGadget[dom.HTMLSelectElement
   def values = List($(elem).find("option:selected").value().asInstanceOf[String])
   
   def hook() = {
-    $(elem).change({ e:dom.Element => save() })    
+    $(elem).change({ e:dom.Element => save() })
+    // For Bootstrap:
+    $(elem).addClass("form-control")
   }
   
   def doRender() = ???
