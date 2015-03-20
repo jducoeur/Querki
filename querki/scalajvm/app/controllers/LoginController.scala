@@ -117,7 +117,7 @@ class LoginController extends ApplicationBase {
             // Yes. Am I already a member of this Space?
             if (AccessControl.isMember(user, rc.state.get)) {
               // Yes. Okay, just go the Space, since there's nothing to do here:
-              Redirect(routes.Application.thing(ownerId, spaceId, spaceId))
+              Redirect(routes.ClientController.space(ownerId, spaceId))
             } else {
               // Not yet. Okay, go to joining the space:
               Ok(views.html.joinSpace(rc))
@@ -147,7 +147,7 @@ class LoginController extends ApplicationBase {
             // Yes. Am I already a member of this Space?
             if (AccessControl.isMember(user, rc.state.get)) {
               // Yes. Okay, just go the Space, since there's nothing to do here:
-              Redirect(routes.Application.thing(ownerId, spaceId, spaceId)).withSession(user.toSession:_*)
+              Redirect(routes.ClientController.space(ownerId, spaceId)).withSession(user.toSession:_*)
             } else {
               Ok(views.html.joinSpace(rc)).withSession(Session(request.session.data ++ user.toSession))
             }
@@ -194,7 +194,7 @@ class LoginController extends ApplicationBase {
   
   def joinSpace(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { rc =>
     askSpace(SpaceMembersMessage(rc.requesterOrAnon, rc.ownerId, ThingId(rc.spaceIdOpt.get), JoinRequest(rc))) {
-      case Joined => Redirect(routes.Application.thing(ownerId, spaceId, spaceId))
+      case Joined => Redirect(routes.ClientController.space(ownerId, spaceId))
       case JoinFailed(error) => doError(routes.Application.index, error)(rc)
     }
   }
