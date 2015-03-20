@@ -73,7 +73,7 @@ class PhotosEcot(e:Ecology) extends ClientEcot(e) with PhotosInternal {
     val dialog = page.getMetadata(showInputKey).map(_.asInstanceOf[PhotoInputDialog]) match {
       case Some(dialog) => dialog
       case None => {
-        val d = new PhotoInputDialog
+        val d = new PhotoInputDialog(page)
         $(page.elem).append(d.render)
         page.storeMetadata(showInputKey, d)
         d

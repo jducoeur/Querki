@@ -15,6 +15,7 @@ import querki.globals._
 import querki.comm._
 import querki.display.Gadget
 import querki.display.input.InputGadget
+import querki.pages.Page
 
 /**
  * This represents a button labeled something like "Add Photo", with metadata about where to
@@ -49,7 +50,7 @@ object FileTarget {
 }
 import FileTarget._
 
-class PhotoInputDialog(implicit val ecology:Ecology) extends Gadget[dom.html.Div] with EcologyMember {
+class PhotoInputDialog(page:Page)(implicit val ecology:Ecology) extends Gadget[dom.html.Div] with EcologyMember {
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
@@ -92,9 +93,9 @@ class PhotoInputDialog(implicit val ecology:Ecology) extends Gadget[dom.html.Div
         $(photoProgress.elem).removeClass("active")
         setStatus("Done!")
         println(data.result)
-        // TODO: for now, we're just hard-reloading the page to refresh the images. This is crude:
-        // we should build a smarter protocol, and just refresh the relevant images.
-        PageManager.reload()
+        $(elem).modal(ModalCommand.hide)
+        // Refresh the Page, in case we're currently displaying this photo:
+        page.refresh()
       })
     )
     

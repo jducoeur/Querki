@@ -27,6 +27,7 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
   lazy val Client = interface[querki.client.Client]
   lazy val DataSetting = interface[querki.data.DataSetting]
 
+  override def refresh() = PageManager.reload()
   
   def pageContent = {
     // NOTE: doing this with async/await seems to swallow exceptions in Autowire:

@@ -30,6 +30,13 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
    */
   def pageContent:Future[PageContents]
   
+  /**
+   * This is an optional method that Pages can fill in, to refresh their content.
+   * It is optional because it is Very Very Bad for certain pages (such as CreateThing)
+   * to naively refresh.
+   */
+  def refresh():Unit = {}
+  
   private val renderedContentPromise = Promise[dom.HTMLDivElement]
   /**
    * External tools can observe this; it will be fulfilled once this Page is
