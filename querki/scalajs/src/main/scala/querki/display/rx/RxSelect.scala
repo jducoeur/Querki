@@ -50,7 +50,7 @@ class RxSelect(options:Rx[Seq[Frag]], mods:Modifier*) extends Gadget[dom.HTMLSel
    */
   lazy val selectedWithTID = Rx { selectedTIDOpt().map(v => (this, v)) }
   
-  def doRender() = select(mods, options())
+  def doRender() = select(mods, cls:="form-control", options())
   
   def setValue(v:String) = {
     $(elem).value(v)
