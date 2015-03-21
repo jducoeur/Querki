@@ -252,6 +252,7 @@ body {
   border: 1px solid;
   cursor: pointer;
   padding: 0px;
+  z-index: 1000;
 }
 
 ._instanceEditor ._advancedEditButton {
