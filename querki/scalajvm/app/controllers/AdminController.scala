@@ -75,15 +75,13 @@ class AdminController extends ApplicationBase {
       // TODO: these strings should be internationalized
       // TODO: re-examine this email when we get to Beta.
       val subject = Wikitext("Welcome to full membership in Querki!")
-      val body = Wikitext(s"""Your Querki account, ${newUser.mainIdentity.handle}, has been approved for all features. 
-        |This means that you can now create Spaces of your own, and share them with your friends. Go to the "Your Spaces"
-        |page (which you can get to by clicking on "Logged in as ${newUser.mainIdentity.name}" in the upper-right-hand corner)
-        |to create a new Space.
-        |
-        |Remember, Querki is still in "Alpha", which means that there are still some bugs, and lots of features are yet to be
-        |implemented. But we hope there is enough there now for you to find it useful.
-        |
-        |Have fun, and please contact us if you need any help!""".stripMargin)
+      val body = Wikitext(s"""<p>Your Querki account, ${newUser.mainIdentity.handle}, has been approved for all features. 
+        |This means that you can now create Spaces of your own, and share them with your friends. <a href="http://www.querki.net/">Log into Querki</a>, or
+        |click on the "Querki" icon in the upper-left corner of the page if you are already logged in,
+        |to create a new Space.</p>
+        |<p>Remember, Querki is still in "Beta", which means that there are still some bugs, and lots of features are yet to be
+        |implemented. But we hope there is enough there now for you to find it useful.</p>
+        |<p>Have fun, and please contact us if you need any help!</p>""".stripMargin)
       Email.sendSystemEmail(newUser.mainIdentity, subject, body)
     }
     
