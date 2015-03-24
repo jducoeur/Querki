@@ -67,7 +67,8 @@ lazy val querkiClient = (project in file("scalajs")).settings(
     "org.scala-js" %%% "scalajs-dom" % "0.8.0",
     "com.lihaoyi" %%% "utest" % "0.3.1" % "test",
     "org.scala-js" %%% "scala-parser-combinators" % "1.0.2",
-    "org.scala-lang.modules" %% "scala-async" % "0.9.2"
+    "org.scala-lang.modules" %% "scala-async" % "0.9.2",
+	"org.querki" %%% "querki-jsext" % "0.1"
   )).
   settings(sharedDirectorySettings: _*).
   enablePlugins(ScalaJSPlugin, ScalaJSPlay)
