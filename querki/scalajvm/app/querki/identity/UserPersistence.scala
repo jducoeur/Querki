@@ -310,8 +310,15 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     }
   }
   
-  def changeUserLevel(userId:OID, requester:User, level:UserLevel):Option[User] = requester.requireAdmin {
-    DB.withConnection(dbName(System)) { implicit conn =>
+  private def updateUserCacheFor(userOpt:Option[User]) = {
+    userOpt match {
+      case Some(user) => UserCacheAccess.updateCacheAndThen(user).map(Some(_))
+      case None => Future.successful(None)
+    }    
+  }
+  
+  def changeUserLevel(userId:OID, requester:User, level:UserLevel):Future[Option[User]] = requester.requireAdmin {
+    val userOpt = DB.withConnection(dbName(System)) { implicit conn =>
       val update = SQL("""
           UPDATE User
              SET level={lv}
@@ -321,6 +328,8 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
       
       loadByUserId(userId)
     }
+    
+    updateUserCacheFor(userOpt)
   }
 
   def setTOSVersion(userId:OID, version:Int) = {
@@ -335,10 +344,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
       loadByUserId(userId)
     }
     
-    userOpt match {
-      case Some(user) => UserCacheAccess.updateCacheAndThen(user).map(Some(_))
-      case None => Future.successful(None)
-    }
+    updateUserCacheFor(userOpt)
   }
   
   def getAcquaintanceIds(identityId:IdentityId):Seq[IdentityId] = {
