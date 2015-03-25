@@ -109,13 +109,13 @@ abstract class Thing(
   lazy val unsafeDisplayName:String = {
     val localName = lookupDisplayName
     if (localName.isEmpty)
-      id.toString
+      id.toThingId.toString
     else {
       val rendered = localName.get.renderPlain.plaintext
       if (rendered.length() > 0)
         rendered
       else
-        id.toString
+        id.toThingId.toString
     }    
   }
   
