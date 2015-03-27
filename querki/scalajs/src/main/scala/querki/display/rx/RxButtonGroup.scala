@@ -22,16 +22,18 @@ class RxButtonGroup(buttons:Rx[Seq[ButtonInfo]], mods:Modifier*) extends Gadget[
   private def renderButtons() = {
     buttons().map { buttonInfo =>
       val clses = Seq("btn", "btn-primary") ++ (if (buttonInfo.initiallyActive) Seq("active") else Seq.empty)
-      button(tpe:="button", 
-        classes(clses), 
-        value:=buttonInfo.value,
-        onclick:={ () => select(buttonInfo) },
-        buttonInfo.display)      
+      label(classes(clses),
+        input(
+          tpe:="radio",
+          if (buttonInfo.initiallyActive) checked:="checked",
+          value:=buttonInfo.value),
+        onclick:={ () => spew(s"Setting buttons to $buttonInfo"); select(buttonInfo) },
+        buttonInfo.display)
     }    
   }
   
   def doRender() =
-    div(cls:="btn-group", data("toggle"):="buttons-radio", mods, renderButtons)
+    div(cls:="btn-group", data("toggle"):="buttons", mods, renderButtons)
     
   def updateSelected() = {
     buttons().find(_.initiallyActive).map(select(_))
