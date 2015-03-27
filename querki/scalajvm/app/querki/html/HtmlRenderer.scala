@@ -198,13 +198,15 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     def oneButton(label:String, value:String, checked:Boolean):NodeSeq = {
       def inputElem = {
         if (checked)
-          <button type="button" class="radioBtn btn btn-primary active" value={value}
-            onclick={"$('#" + currentValue.inputControlId + "').val($(this).val())"}
-          >{label}</button>
+          <label class="btn btn-primary active radioBtn">
+            <input type="radio" value={value} checked="checked"/>
+            {label}
+          </label>
         else
-          <button type="button" class="radioBtn btn btn-primary" value={value}
-            onclick={"$('#" + currentValue.inputControlId + "').val($(this).val())"}
-          >{label}</button>
+          <label class="btn btn-primary radioBtn">
+            <input type="radio" value={value}/>
+            {label}
+          </label>
       }
       val id = currentValue.inputControlId + "-" + label
       val name = currentValue.inputControlId
@@ -216,7 +218,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     // To make this work on conventional forms like the Advanced Editor, we need a shim to hold the chosen value, because
     // the buttons aren't submittable form elements. Hence the hidden field below: when we click on a button, that gets
     // changed:
-      <span class="btn-group _optYesNo" data-toggle="buttons-radio" name={currentValue.inputControlId + "-wrapper"} id={currentValue.inputControlId + "-wrapper"}>
+      <span class="btn-group _optYesNo" data-toggle="buttons" name={currentValue.inputControlId + "-wrapper"} id={currentValue.inputControlId + "-wrapper"}>
         {oneButton("Yes", "true", (isSet && v))}{oneButton("Maybe", "maybe", (!isSet))}{oneButton("No", "false", (isSet && !v))}
         <input type="hidden" id={currentValue.inputControlId} name={currentValue.inputControlId}
           value={if (isSet) {v.toString} else "maybe"}

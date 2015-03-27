@@ -21,9 +21,10 @@ class OptYesNoGadget(implicit e:Ecology) extends InputGadget[dom.HTMLSpanElement
   def values = ???
   
   def hook() = {
-    $(elem).find("button").click({ btn:dom.Element =>
+    $(elem).find(".radioBtn").click({ btn:dom.Element =>
       val btnElem = $(btn)
-      saveChange(ChangePropertyValue(btnElem.attr("name").get, List(btnElem.valueString)))
+      val inputElem = btnElem.find("input")
+      saveChange(ChangePropertyValue(btnElem.attr("name").get, List(inputElem.valueString)))
     }:js.ThisFunction0[dom.Element, Any])
   }
   
