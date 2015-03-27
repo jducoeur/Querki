@@ -310,8 +310,8 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
         case ClientRequest(req, rc) => {
           val apiName = req.path(2)
             
-          def handleException(ex:Throwable, s:ActorRef, rc:RequestContext) = {
-            ex match {
+          def handleException(th:Throwable, s:ActorRef, rc:RequestContext) = {
+            th match {
               case aex:querki.api.ApiException => {
                 // TODO: IMPORTANT: these two lines totally should not be necessary, but without
                 // them, the write() currently is failing, apparently because it is failing to grok
@@ -326,11 +326,15 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
                 s ! ClientError(write(aex))
               }
               case pex:PublicException => {
-                QLog.error(s"$apiName replied with PublicException $ex instead of ApiException when invoking $req")
+                QLog.error(s"$apiName replied with PublicException $th instead of ApiException when invoking $req")
                 s ! ClientError(pex.display(Some(rc)))
               }
+              case ex:Exception => {
+                QLog.error(s"Got exception from $apiName when invoking $req", ex)
+                s ! UnexpectedPublicException.display(Some(rc))                
+              }
               case _ => {
-                QLog.error(s"Got exception from $apiName when invoking $req: $ex")
+                QLog.error(s"Got exception from $apiName when invoking $req: $th")
                 s ! UnexpectedPublicException.display(Some(rc))
               }
             }              

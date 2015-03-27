@@ -132,12 +132,7 @@ class PropListManagerEcot(e:Ecology) extends QuerkiEcot(e) with PropListManager 
         val fullEditList = thingOpt match {
           case Some(thing) => 
             editList ++ 
-            Editor.propsNotInModel(thing, state) ++
-            // HACK: if Name is in propList but *not* in the Instance Props, it usually won't show up in propsNotInModel
-            // because it usually *is* set there. But since it's not inherited, it gets overlooked. So we add it by hand here.
-            // This is ugly and horrible. We should consider changing propsNotInModel to also return any that are
-            // non-inherited, but I am not at all sure that's correct, so think about it carefully.
-            (if (forceName && propList.contains(Core.NameProp) && !editList.contains(Core.NameProp.id)) List(Core.NameProp.id) else List.empty)
+            Editor.propsNotInModel(thing, editList, state)
           case None => editList
         }
         val withOpts = (Seq.empty[(Property[_,_], Option[DisplayPropVal])] /: fullEditList) { (list, oid) =>

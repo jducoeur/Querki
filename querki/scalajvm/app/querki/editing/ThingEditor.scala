@@ -122,19 +122,33 @@ trait ThingEditor { self:EditorModule =>
         true
     }
     
-    // This returns only the properties that are defined on this Thing and *not* on its Model:
-    def propsNotInModel(thing:PropertyBundle, state:SpaceState):Iterable[OID] = {
+    // This returns only the properties that are defined on this Thing and are not in the Instance Properties:
+    def propsNotInModel(thing:PropertyBundle, instanceProps:List[OID], state:SpaceState):Iterable[OID] = {
       implicit val s = state
-      thing.getModelOpt match {
-        case Some(model) => {
-          for {
-            propId <- thing.props.keys
-            if (!model.hasProp(propId))
-          }
-            yield propId
+    
+      val deriveNameOpt =
+        for {
+          pv <- thing.getPropOpt(DeriveName.DeriveNameProp)
+          deriveLink <- pv.firstOpt
         }
-        case None => Iterable.empty
+          yield deriveLink == DeriveName.DeriveAlways.id
+      val deriveName = deriveNameOpt.getOrElse(false)
+        
+      // These Properties do not get Editors sent, because they are handled specially in the Editor:
+      val filteredProps = 
+        Set(
+          querki.editing.MOIDs.InstanceEditPropsOID,
+          querki.core.MOIDs.IsModelOID,
+          querki.types.DeriveNameMOIDs.DeriveNameOID
+        )
+        
+      for {
+        propId <- thing.props.keys
+        if (propId != Core.NameProp.id || !deriveName)
+        if (!filteredProps.contains(propId))
+        if (!instanceProps.contains(propId))
       }
+        yield propId
     }
     
     private def propsToEditForThing(thing:PropertyBundle, state:SpaceState):Iterable[Property[_,_]] = {
@@ -142,7 +156,7 @@ trait ThingEditor { self:EditorModule =>
       val result = for {
         propsToEdit <- thing.getPropOpt(InstanceProps)
         // If we are using the InstanceProps, then also add in the instance-local properties:
-        propIds = propsToEdit.v.rawList(LinkType) ++ propsNotInModel(thing, state)
+        propIds = propsToEdit.v.rawList(LinkType) ++ propsNotInModel(thing, propsToEdit.rawList, state)
         props = propIds.map(state.prop(_)).flatten
       }
         yield props

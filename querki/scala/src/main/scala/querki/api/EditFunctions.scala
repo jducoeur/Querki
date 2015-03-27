@@ -47,6 +47,11 @@ trait EditFunctions {
    * Changes the Model that this Thing is based on.
    */
   def changeModel(thingId:TID, newModel:TID):Future[ThingInfo]
+  
+  /**
+   * Fetch the Large Text value used to reify Tags for this Model.
+   */
+  def getUndefinedTagView(modelId:TID):String
 }
 
 object EditFunctions {

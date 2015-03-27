@@ -49,6 +49,6 @@ package object editing {
      * TODO: this really shouldn't be public, but the whole problem of "which properties are editable on this Thing?"
      * is currently scattered around too much.
      */
-    def propsNotInModel(thing:PropertyBundle, state:SpaceState):Iterable[OID]
+    def propsNotInModel(thing:PropertyBundle, instanceProps:List[OID], state:SpaceState):Iterable[OID]
   }
 }

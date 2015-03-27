@@ -20,12 +20,15 @@ class CreateAndEditPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
   lazy val modelId = TID(params("model"))
   
+  lazy val _reifyTag = params.get("reifyTag")
+  def reifyTag = _reifyTag.isDefined
+  
   var thingInfoOpt:Option[ThingInfo] = None
 
   def pageContent = for {
     modelInfo <- Client[ThingFunctions].getThingInfo(modelId).call()
-    // TODO: pick up initial values from the params
-    thingInfo <- Client[EditFunctions].create(modelId, initialValues).call()
+    initVals <- initialValues
+    thingInfo <- Client[EditFunctions].create(modelId, initVals).call()
     dummy = {
       DataSetting.setThing(Some(thingInfo))
       DataSetting.setModel(Some(modelInfo))
@@ -36,13 +39,28 @@ class CreateAndEditPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   }
     yield PageContents(s"Create a ${modelInfo.displayName}", guts)
     
-  def initialValues:Seq[PropertyChange] = {
-    val otherParams = params - "model"
+  def initialValues:Future[Seq[PropertyChange]] = {
+    val otherParams = params - "model" - "reifyTag"
     val changes = otherParams.map { pair =>
       val (path, v) = pair
       ChangePropertyValue(path, List(v))
-    }
-    changes.toSeq
+    }.toSeq
+    
+    // If we're reifying a Tag, we have to fetch the initial value of the Default View
+    // TODO: this coupling bites. Is there a better place to put this logic?
+    val withReify = 
+      if (reifyTag) {
+        for {
+	      tagView <- Client[EditFunctions].getUndefinedTagView(modelId).call()
+	      std <- DataAccess.standardThings
+        }
+        yield {
+          changes :+ ChangePropertyValue(Editing.propPath(std.basic.defaultView), List(tagView))
+        }
+      } else {
+        Future.successful(changes)
+      }
+    withReify
   }
     
   /**

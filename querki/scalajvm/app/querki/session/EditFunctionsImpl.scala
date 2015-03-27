@@ -31,6 +31,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
   lazy val PropListManager = interface[querki.core.PropListManager]
   lazy val QL = interface[querki.ql.QL]
+  lazy val Tags = interface[querki.tags.Tags]
   lazy val Types = interface[querki.types.Types]
   
   lazy val doLogEdits = Config.getBoolean("querki.test.logEdits", false)
@@ -263,16 +264,6 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
         yield deriveLink == DeriveName.DeriveAlways.id
     val deriveName = deriveNameOpt.getOrElse(false)
     
-    // These Properties do not get Editors sent, because they are handled specially in the Editor:
-    val filteredProps = 
-      Set(
-        querki.editing.MOIDs.InstanceEditPropsOID,
-        querki.core.MOIDs.IsModelOID,
-        querki.types.DeriveNameMOIDs.DeriveNameOID
-      ) ++
-      // If we are deriving the name, don't show the Name's Editor:
-      (if (deriveName) Set(querki.core.MOIDs.NameOID) else Set())
-    
     // If we're not auto-deriving the name, tell the PropListManager to add it in.
     // (Yes, this is badly coupled, and could probably use some rethinking.)
     val props = PropListManager.from(thing, !deriveName)
@@ -282,7 +273,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
           Some(thing), 
           model, state, true)
     
-    val propInfos = propList.filter(propPair => !filteredProps.contains(propPair._1.id)).map { entry =>
+    val propInfos = propList.map { entry =>
       val (prop, propVal) = entry
       getOnePropEditor(thing, prop, propVal)
     }
@@ -451,5 +442,15 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
       case None => promise.failure(new Exception(s"Unknown model $newModelId!")) 
     }
     promise.future
+  }
+  
+  def getUndefinedTagView(modelId:TID):String = withThing(modelId) { model =>
+    implicit val s = state
+    // First, we look at whether the Model defines the TagView, then we try the Space, and only
+    // then do we fall back to the default.
+    // TBD: is the fallback needed? Can this ever *not* be set on the Space?
+    model.getPropOpt(Tags.ShowUnknownProp).orElse(state.getPropOpt(Tags.ShowUnknownProp)).
+          map(_.v.firstAs(Core.LargeTextType).get.text).
+          getOrElse(querki.tags.defaultDisplayText)
   }
 }

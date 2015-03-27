@@ -111,7 +111,8 @@ class StandardThingHeader(thing:ThingInfo, page:Page, standardThings:StandardThi
                   href:=
                     Pages.createAndEditFactory.pageUrl(
                       modelOpt.getOrElse(standardThings.basic.simpleThing),
-                      (Editing.propPath(standardThings.basic.displayNameProp.oid) -> thingName)))
+                      (Editing.propPath(standardThings.basic.displayNameProp.oid) -> thingName),
+                      "reifyTag" -> "true"))
               } else if (thing.kind == Kind.Property) {
 			    iconButton("edit")(
 			      title:=s"Edit $thingName",

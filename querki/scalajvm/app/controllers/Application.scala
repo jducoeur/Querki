@@ -414,7 +414,7 @@ disallow: /
                     // It's not a partial, but since there are Instance Properties at play, we have to dance around
                     // to figure out whether anything got cleared or deleted:
                     case Some(thing) => {
-                      val locals = Editor.propsNotInModel(thing, state)
+                      val locals = Editor.propsNotInModel(thing, List.empty, state)
                       // First, we delete the local properties:
                       val localDeletions = (Map.empty[OID, QValue] /: locals) { (curMap, propId) =>
                         if (!props.contains(propId))
