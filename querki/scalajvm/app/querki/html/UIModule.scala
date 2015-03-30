@@ -202,8 +202,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           |treated as follows:
           |
           |* HEADER is shown first, if the incoming List is non-empty. It gets the entire List as its Context.
-          |* DETAILS is shown after the header. It is repeated for each element in the List, just as it would
-          |if you fed a List into a normal text block.
+          |* DETAILS is shown after the header, also getting the incoming List as its Context.
           |* EMPTY is shown if and only if the List is empty. This lets you show something else if appropriate.
           |It is optional -- you can leave it off.
           |
