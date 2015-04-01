@@ -2,7 +2,7 @@ import sbt.Project.projectToRef
 
 lazy val clients = Seq(querkiClient)
 
-lazy val scalaV = "2.11.5"
+lazy val scalaV = "2.11.6"
 lazy val appV = "1.0"
 
 lazy val sharedSrcDir = "scala"
@@ -46,7 +46,6 @@ lazy val querkiClient = (project in file("scalajs")).settings(
 
   // Javascript libraries we require:
   skip in packageJSDependencies := false,
-  jsDependencies += "org.webjars" % "jquery" % "2.1.3" / "jquery.js",
   jsDependencies += ProvidedJS / "jquery-ui-1.10.0.custom.js" dependsOn "jquery.js",
   jsDependencies += ProvidedJS / "jquery.manifest.js" dependsOn "jquery.js",
   jsDependencies += ProvidedJS / "jquery.ui.touch-punch.js" dependsOn "jquery-ui-1.10.0.custom.js",
@@ -68,7 +67,8 @@ lazy val querkiClient = (project in file("scalajs")).settings(
     "com.lihaoyi" %%% "utest" % "0.3.1" % "test",
     "org.scala-js" %%% "scala-parser-combinators" % "1.0.2",
     "org.scala-lang.modules" %% "scala-async" % "0.9.2",
-	"org.querki" %%% "querki-jsext" % "0.1"
+	"org.querki" %%% "querki-jsext" % "0.1",
+	"org.querki" %%% "jquery-facade" % "0.1"
   )).
   settings(sharedDirectorySettings: _*).
   enablePlugins(ScalaJSPlugin, ScalaJSPlay)
