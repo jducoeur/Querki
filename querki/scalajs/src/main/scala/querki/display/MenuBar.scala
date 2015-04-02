@@ -24,6 +24,7 @@ class MenuBar(implicit e:Ecology) extends InputGadget[dom.HTMLDivElement](e) wit
   def values = ???
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
+  lazy val Admin = interface[querki.admin.Admin]
   lazy val DataModel = interface[querki.datamodel.DataModel]
   lazy val Editing = interface[querki.editing.Editing]
   lazy val PageManager = interface[PageManager]
@@ -162,6 +163,7 @@ class MenuBar(implicit e:Ecology) extends InputGadget[dom.HTMLDivElement](e) wit
   def adminSection = {
     if (DataAccess.request.isAdmin)
       Some(NavSection("Admin", Seq(
+        NavLink("Querki Statistics", Admin.statisticsFactory.pageUrl()),
         NavLink("Manage Users", controllers.AdminController.manageUsers()),
         NavLink("Show Space Status", controllers.AdminController.showSpaceStatus()),
         NavLink("Send System Message", controllers.AdminController.sendSystemMessage())

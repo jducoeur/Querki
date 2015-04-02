@@ -44,6 +44,7 @@ object QuerkiClient extends JSApp with EcologyMember {
    * Creates the Ecots that are used straightforwardly by most tests, as well as the running code.
    */
   def createCommonEcots(ecology:Ecology) = {
+    new querki.admin.AdminEcot(ecology)
     new querki.client.ClientImpl(ecology)
     new querki.data.ClientDataEcot(ecology)
     new querki.datamodel.DataModelEcot(ecology)
