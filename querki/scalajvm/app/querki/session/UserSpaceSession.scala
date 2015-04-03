@@ -354,8 +354,11 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
             }
           
             apiName match {
-              case "ThingFunctions" => {
-                handleRequest(new ThingFunctionsImpl(params))(route[ThingFunctions](_)(req))
+              case "AdminFunctions" => {
+                handleRequest(new querki.admin.AdminFunctionsImpl(params))(route[AdminFunctions](_)(req))
+              }
+              case "ConversationFunctions" => {
+                handleRequest(new ConversationFunctionsImpl(params))(route[ConversationFunctions](_)(req))
               }
               case "EditFunctions" => {
                 handleRequest(new EditFunctionsImpl(params))(route[EditFunctions](_)(req))
@@ -363,11 +366,11 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
               case "SearchFunctions" => {
                 handleRequest(new SearchFunctionsImpl(params))(route[SearchFunctions](_)(req))
               }
-              case "ConversationFunctions" => {
-                handleRequest(new ConversationFunctionsImpl(params))(route[ConversationFunctions](_)(req))
-              }
               case "SecurityFunctions" => {
                 handleRequest(new querki.security.SecurityFunctionsImpl(params))(route[SecurityFunctions](_)(req))
+              }
+              case "ThingFunctions" => {
+                handleRequest(new ThingFunctionsImpl(params))(route[ThingFunctions](_)(req))
               }
               case _ => { sender ! ClientError("Unknown API ID!") }
             }

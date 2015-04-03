@@ -12,9 +12,9 @@ trait AdminFunctions {
    * Fetch the current system statistics. This may eventually grow into a proper Dashboard, but let's
    * not over-complicate it yet.
    */
-  def statistics:Future[QuerkiStats]
+  def statistics():Future[QuerkiStats]
 }
 
 object AdminFunctions {
-  case class QuerkiStats(nInvitees:Int, nFullUsers:Int, nSpaces:Int)
+  case class QuerkiStats(nInvitees:Int, nFullUsers:Int, nTestUsers:Int, nSpaces:Int)
 }
