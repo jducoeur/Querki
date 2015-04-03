@@ -3,11 +3,93 @@ package querki.util
 import scala.util.{Success,Failure}
 
 import scala.concurrent.duration._
-import scala.concurrent.Future
+import scala.concurrent.{Future, Promise}
 
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
+
+/**
+ * Implicit that hooks into *other* Actors, to provide the nice request() syntax to send
+ * messages to them. These implicits are available to any Actor that mixes in Requester, but
+ * RequesterImplicits should also be mixed into any other class that wants access to this
+ * capability. Those other classes must have access to a Requester -- usually, they should be
+ * functional classes owned *by* a Requester.
+ */
+trait RequesterImplicits {
+  
+  /**
+   * The actual Requester that is going to send the requests and process the responses. If
+   * you mix RequesterImplicits into a non-Requester, this must point to that Actor, which
+   * does all the real work.
+   */
+  def requester:Requester
+  
+  /**
+   * Hook to add the request() methods to a third-party Actor.
+   */
+  implicit class RequestableActorRef(target:ActorRef) {
+    /**
+     * The basic, simple version of request() -- sends a message, process the response.
+     * 
+     * This version doesn't return anything, and is intended for use inside normal Actors.
+     * Usually, handler will pass messages back to other Actors, or simply alter the state
+     * of this one.
+     * 
+     * @param msg The message to send to the target actor.
+     * @param handler A standard Receive handler, which deals with all of the known responses.
+     */
+    def request(msg:Any)(handler:Actor.Receive) = requester.doRequest(target, msg)(handler)
+    
+    /**
+     * A request mechanism that returns a Future of the *handled* response. That is, this should
+     * be used when you want to get a response, massage it, and pass along that massaged result.
+     * 
+     * Use this with care -- the returned Future should not usually be processed much in the context
+     * of the Actor, for the usual reason that Futures inside Actors are problematic. But it is a nice
+     * concise way to pass along results to, eg, Autowire, to send those results back to the client.
+     * 
+     * @param msg The message to send to the target Actor
+     * @param handler A function that deals with the response from the target and massages it
+     *   as desired. This returns a value of type T, or throws an exception if something goes wrong.
+     * @tparam T The type that should be returned by handler.
+     */
+    def requestFor[T](msg:Any)(handler:PartialFunction[Any,T]):Future[T] = {
+      val promise = Promise[T]
+      val wrappedHandler:Actor.Receive = PartialFunction({ response:Any =>
+        try {
+          val result = handler(response)
+          promise.success(result)
+        } catch {
+          case th:Throwable => promise.failure(th)
+        }
+      })
+      requester.doRequest(target, msg)(wrappedHandler)
+      promise.future
+    }
+    
+    /**
+     * The outer layer for nested Requests that return Futures. Think of this as flatMap, where
+     * requestFor is map.
+     * 
+     * TODO: there is a monadic handler, usable with for expressions, desperately trying to break out here...
+     */
+    def requestNested[T](msg:Any)(handler:PartialFunction[Any,Future[T]]):Future[T] = {
+      val promise = Promise[T]
+      val wrappedHandler:Actor.Receive = PartialFunction({ response:Any =>
+        try {
+          val result = handler(response)
+          promise.completeWith(result)
+        } catch {
+          case th:Throwable => promise.failure(th)
+        }
+      })
+      requester.doRequest(target, msg)(wrappedHandler)
+      promise.future
+    }
+  }
+
+}
 
 /**
  * Easy and relatively safe variant of "ask".
@@ -63,11 +145,9 @@ import akka.util.Timeout
  * may no longer be in a compatible state by the time the response is received. Requester is mainly intended
  * for Actors that spend most or all of their time in a single state; it generally works quite well for those.
  */
-trait Requester extends Actor {
+trait Requester extends Actor with RequesterImplicits {
   
-  implicit class RequestableActorRef(a:ActorRef) {
-    def request(msg:Any)(handler:Actor.Receive) = doRequest(a, msg)(handler)
-  }
+  val requester = this
   
   /**
    * The response from request() will be wrapped up in here and looped around. You shouldn't need to

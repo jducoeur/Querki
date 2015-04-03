@@ -68,9 +68,6 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
 	    implicit val theRc = rc
 	    spaceRouter.requestNested(ConversationRequest(rc.requesterOrAnon, rc.ownerId, rc.state.get.id, GetConversations(rc.thing.get.id))) {
 	      case ThingConversations(convs) => {
-	        // TODO: this is a beautiful example of where what we really *want* is to make Requester monadic, at least
-	        // conceptually: these nested requests feel like they belong in a for comprehension. Is that possible? It's
-	        // certainly worth thinking about, anyway.
 	        // TODO: the IdentityCache is a bit of a bottleneck. Should we have a temp cache locally here?
 	        IdentityAccess.identityCache.requestFor(GetIdentities(getIds(convs).toSeq)) {
 		      case IdentitiesFound(identities) => {

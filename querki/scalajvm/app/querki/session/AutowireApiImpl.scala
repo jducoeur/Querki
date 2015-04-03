@@ -12,7 +12,7 @@ import querki.globals._
 import querki.data.TID
 import querki.identity.User
 import querki.spaces.messages.SessionRequest
-import querki.util.Requester
+import querki.util.{Requester, RequesterImplicits}
 import querki.values.{RequestContext, SpaceState}
 
 import messages.SessionMessage
@@ -59,7 +59,7 @@ case class AutowireParams(
  * pointers to instances of this class!!! If you do, they will become enormous memory leaks!
  * Remember, functional programming is your friend...
  */
-class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends EcologyMember {
+class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends EcologyMember with RequesterImplicits {
   def user = info.user
   def state = info.state
   val curThingRx = Var[Option[Thing]](None)
@@ -67,6 +67,7 @@ class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends EcologyM
   def rc = rcRx()
   def self = info.actor.self
   val spaceRouter = info.spaceRouter
+  val requester = info.actor
   
   def withThing[R](thingId:TID)(f:Thing => R):R = {
     val oid = ThingId(thingId.underlying)
@@ -74,58 +75,6 @@ class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends EcologyM
     val thing = state.anything(oid).getOrElse(interface[querki.tags.Tags].getTag(thingId.underlying, state))
     curThingRx() = Some(thing)
     f(thing)
-  }
-  
-  // TBD: this is basically copied out of Requester. It's bad coupling, but I'm not sure it's
-  // worth polluting Requester with the notion of making this all delegatable.
-  implicit class RequestableActorRef(a:ActorRef) {
-    def request(msg:Any)(handler:Actor.Receive) = info.actor.doRequest(a, msg)(handler)
-    
-    /**
-     * A request mechanism that returns a Future of the *handled* response. That is, this should
-     * be used when you want to get a response, massage it, and pass along that massaged result.
-     * 
-     * Use this with care -- the returned Future should not usually be processed much in the context
-     * of the Actor, for the usual reason that Futures inside Actors are problematic. But it is a nice
-     * concise way to pass along results to, eg, Autowire, to send those results back to the client.
-     * 
-     * @param msg The message to send to the target Actor
-     * @param handler A function that deals with the response from the target and massages it
-     *   as desired. This returns a value of type T, or throws an exception if something goes wrong.
-     * @tparam T The type that should be returned by handler.
-     */
-    def requestFor[T](msg:Any)(handler:PartialFunction[Any,T]):Future[T] = {
-      val promise = Promise[T]
-      val wrappedHandler:Actor.Receive = PartialFunction({ response:Any =>
-        try {
-          val result = handler(response)
-          promise.success(result)
-        } catch {
-          case th:Throwable => promise.failure(th)
-        }
-      })
-      info.actor.doRequest(a, msg)(wrappedHandler)
-      promise.future
-    }
-    
-    /**
-     * The outer layer for nested Requests that return Futures.
-     * 
-     * TODO: there is a monadic handler, usable with for expressions, desperately trying to break out here...
-     */
-    def requestNested[T](msg:Any)(handler:PartialFunction[Any,Future[T]]):Future[T] = {
-      val promise = Promise[T]
-      val wrappedHandler:Actor.Receive = PartialFunction({ response:Any =>
-        try {
-          val result = handler(response)
-          promise.completeWith(result)
-        } catch {
-          case th:Throwable => promise.failure(th)
-        }
-      })
-      info.actor.doRequest(a, msg)(wrappedHandler)
-      promise.future
-    }
   }
   
   /**
