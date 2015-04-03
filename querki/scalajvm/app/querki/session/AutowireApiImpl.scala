@@ -1,5 +1,6 @@
 package querki.session
 
+import scala.concurrent.{Future, Promise}
 import akka.actor._
 
 import rx._
@@ -79,6 +80,52 @@ class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends EcologyM
   // worth polluting Requester with the notion of making this all delegatable.
   implicit class RequestableActorRef(a:ActorRef) {
     def request(msg:Any)(handler:Actor.Receive) = info.actor.doRequest(a, msg)(handler)
+    
+    /**
+     * A request mechanism that returns a Future of the *handled* response. That is, this should
+     * be used when you want to get a response, massage it, and pass along that massaged result.
+     * 
+     * Use this with care -- the returned Future should not usually be processed much in the context
+     * of the Actor, for the usual reason that Futures inside Actors are problematic. But it is a nice
+     * concise way to pass along results to, eg, Autowire, to send those results back to the client.
+     * 
+     * @param msg The message to send to the target Actor
+     * @param handler A function that deals with the response from the target and massages it
+     *   as desired. This returns a value of type T, or throws an exception if something goes wrong.
+     * @tparam T The type that should be returned by handler.
+     */
+    def requestFor[T](msg:Any)(handler:PartialFunction[Any,T]):Future[T] = {
+      val promise = Promise[T]
+      val wrappedHandler:Actor.Receive = PartialFunction({ response:Any =>
+        try {
+          val result = handler(response)
+          promise.success(result)
+        } catch {
+          case th:Throwable => promise.failure(th)
+        }
+      })
+      info.actor.doRequest(a, msg)(wrappedHandler)
+      promise.future
+    }
+    
+    /**
+     * The outer layer for nested Requests that return Futures.
+     * 
+     * TODO: there is a monadic handler, usable with for expressions, desperately trying to break out here...
+     */
+    def requestNested[T](msg:Any)(handler:PartialFunction[Any,Future[T]]):Future[T] = {
+      val promise = Promise[T]
+      val wrappedHandler:Actor.Receive = PartialFunction({ response:Any =>
+        try {
+          val result = handler(response)
+          promise.completeWith(result)
+        } catch {
+          case th:Throwable => promise.failure(th)
+        }
+      })
+      info.actor.doRequest(a, msg)(wrappedHandler)
+      promise.future
+    }
   }
   
   /**

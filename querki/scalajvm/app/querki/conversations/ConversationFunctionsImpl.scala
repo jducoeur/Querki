@@ -58,9 +58,6 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
   }
   
   def getConversationsFor(thingId:TID):Future[ConversationInfo] = withThing(thingId) { thing =>
-    // TODO: this pattern, which melds a Requester with Futures, seems useful. Can we abstract it a bit?
-    val promise = Promise[ConversationInfo]
-  
     val canComment = rc.localIdentity.map(identity => Conversations.canWriteComments(identity.id, thing, state)).getOrElse(false)
 	val canReadComments = Conversations.canReadComments(user, thing, state)
 		    
@@ -69,30 +66,27 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
 	    // TODO: *Sigh*. We'd really like to have something like Spores in Request, to catch bugs like this in
 	    // the compiler...
 	    implicit val theRc = rc
-	    spaceRouter.request(ConversationRequest(rc.requesterOrAnon, rc.ownerId, rc.state.get.id, GetConversations(rc.thing.get.id))) {
 	      case ThingConversations(convs) => {
 	        // TODO: this is a beautiful example of where what we really *want* is to make Requester monadic, at least
 	        // conceptually: these nested requests feel like they belong in a for comprehension. Is that possible? It's
 	        // certainly worth thinking about, anyway.
 	        // TODO: the IdentityCache is a bit of a bottleneck. Should we have a temp cache locally here?
-	        IdentityAccess.identityCache.request(GetIdentities(getIds(convs).toSeq)) {
 		      case IdentitiesFound(identities) => {
 		        // Okay, we now have all the necessary info, so build the API version of the conversations.
 		        implicit val ids = identities
 		        val apiConvs = convs.map(toApi(_))
 		        
-		    	promise.success(ConversationInfo(canComment, canReadComments, apiConvs))
+		    	ConversationInfo(canComment, canReadComments, apiConvs)
 		      }
-		      case _ => promise.failure(new Exception("Unable to find Conversation identities!"))
+		      case _ => throw new Exception("Unable to find Conversation identities!")
 	        }
 	      }
-	      case ThingError(ex, stateOpt) => promise.failure(ex)
+	      case ThingError(ex, stateOpt) => throw ex
 	    }
 	} else {
 	  // The requester can't read the comments, so don't bother collecting them:
-	  promise.success(ConversationInfo(canComment, canReadComments, Seq.empty))
+	  Future.successful(ConversationInfo(canComment, canReadComments, Seq.empty))
 	}
-    promise.future
   }
   
   def addComment(thingId:TID, text:String, responseTo:Option[CommentId]):Future[ConvNode] = withThing(thingId) { thing =>
@@ -131,11 +125,9 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
   }
   
   def deleteComment(thingId:TID, commentId:CommentId):Future[Unit] = withThing(thingId) { thing =>
-    val promise = Promise[Unit]
-    spaceRouter.request(ConversationRequest(user, rc.ownerId, state.id, DeleteComment(thing.id, commentId))) {
-      case CommentDeleted => promise.success(())
-      case CommentNotDeleted => promise.failure(new Exception("Unable to delete comment"))      
+    spaceRouter.requestFor(ConversationRequest(user, rc.ownerId, state.id, DeleteComment(thing.id, commentId))) {
+      case CommentDeleted => ()
+      case CommentNotDeleted => throw new Exception("Unable to delete comment")      
     }
-    promise.future
   }
 }
