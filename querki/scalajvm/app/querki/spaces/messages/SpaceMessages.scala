@@ -26,6 +26,9 @@ sealed trait ListMySpacesResponse
 case class SpaceDetails(handle:ThingId, id:OID, display:String, ownerHandle:ThingId)
 case class MySpaces(ownedByMe:Seq[SpaceDetails], memberOf:Seq[SpaceDetails]) extends ListMySpacesResponse
 
+case class GetSpaceCount(requester:User) extends SpaceMgrMsg
+case class SpaceCount(count:Long)
+
 case class GetSpacesStatus(val requester:User) extends SpaceMgrMsg
 case class SpaceStatus(spaceId:OID, name:String, thingConvs:Int, nSessions:Int)
 

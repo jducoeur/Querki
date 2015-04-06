@@ -66,6 +66,14 @@ class SpaceManager(val ecology:Ecology) extends Actor with Requester with Ecolog
         QLog.error("Illegal request for GetSpacesStatus, from user " + requester.id)
       }
     } 
+    
+    case req @ GetSpaceCount(requester) => {
+      if (requester.isAdmin) {
+        persister.forward(req)
+      } else {
+        QLog.error("Illegal request for GetSpaceCount, from user " + requester.id)        
+      }
+    }
 
     case req @ CreateSpace(requester, display) => {
       Tryer 

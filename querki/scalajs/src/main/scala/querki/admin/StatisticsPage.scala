@@ -23,7 +23,7 @@ class StatisticsPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
           for (count <- counts)
             yield p(b(levelName(count._1).capitalize, ": "), count._2),
           h3("Spaces"),
-          p(s"Total Spaces: ${stats.nSpaces}")
+          p(b("Total spaces: "), stats.nSpaces)
         )
     }
       yield PageContents("Current Querki Statistics", guts)

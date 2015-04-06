@@ -167,5 +167,12 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
         case None => sender ! ThingError(new PublicException("Thing.find.noSuch"))
       }
     }
+    
+    case GetSpaceCount(requester) => {
+      val result = DB.withTransaction(dbName(System)) { implicit conn =>
+        SQL("SELECT COUNT(*) AS c FROM Spaces")().head[Long]("c")
+      }
+      sender ! SpaceCount(result)
+    }
   }
 }

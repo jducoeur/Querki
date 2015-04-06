@@ -14,9 +14,9 @@ trait AdminFunctions {
    * Fetch the current system statistics. This may eventually grow into a proper Dashboard, but let's
    * not over-complicate it yet.
    */
-  def statistics():QuerkiStats
+  def statistics():Future[QuerkiStats]
 }
 
 object AdminFunctions {
-  case class QuerkiStats(userCountsByLevel:Map[UserLevel, Int], nSpaces:Int)
+  case class QuerkiStats(userCountsByLevel:Map[UserLevel, Int], nSpaces:Long)
 }
