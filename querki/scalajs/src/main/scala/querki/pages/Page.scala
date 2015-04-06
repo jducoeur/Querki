@@ -70,8 +70,9 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
           Pages.getFlash.map { pair =>
             val (isError, msg) = pair
             div(
-              classes(Seq("alert", if (isError) "alert-error" else "alert-info")),
-              button(tpe:="button", cls:="close", data("dismiss"):="alert", "x"),
+              classes(Seq("alert alert-dismissible", if (isError) "alert-error" else "alert-info")),
+              role:="alert",
+              button(tpe:="button", cls:="close", data("dismiss"):="alert", aria.label:="Close", "x"),
               if (isError) {
                 strong("Error: ")
               },

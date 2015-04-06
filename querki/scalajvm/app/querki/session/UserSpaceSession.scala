@@ -331,11 +331,11 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
               }
               case ex:Exception => {
                 QLog.error(s"Got exception from $apiName when invoking $req", ex)
-                s ! UnexpectedPublicException.display(Some(rc))                
+                s ! ClientError(UnexpectedPublicException.display(Some(rc)))                
               }
               case _ => {
                 QLog.error(s"Got exception from $apiName when invoking $req: $th")
-                s ! UnexpectedPublicException.display(Some(rc))
+                s ! ClientError(UnexpectedPublicException.display(Some(rc)))
               }
             }              
           }

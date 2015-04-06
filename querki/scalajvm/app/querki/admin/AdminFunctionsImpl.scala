@@ -2,10 +2,14 @@ package querki.admin
 
 import scala.concurrent.Future
 
+import models.{AsOID, ThingId}
+
 import querki.globals._
+import querki.globals.Implicits._
 
 import querki.api.AdminFunctions
 import AdminFunctions._
+import querki.data.TID
 import querki.identity.UserLevel
 import querki.session.{AutowireApiImpl, AutowireParams}
 import querki.spaces.messages._
@@ -39,4 +43,22 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
     }
   }
   
+  def pendingUsers():Future[Seq[AdminUserView]] = {
+    val pendingUsers = UserAccess.getPendingForAdmin(info.user)
+    val adminViews = pendingUsers.map { user =>
+      val identity = user.mainIdentity
+      AdminUserView(TID(user.id.toThingId.toString), identity.handle, identity.email.addr, user.level)
+    }
+    Future.successful(adminViews)
+  }
+  
+  def upgradePendingUser(id:TID):Future[Unit] = {
+    ThingId(id.underlying) match {
+      case AsOID(userId) => {
+	    UserAccess.changeUserLevel(userId, user, UserLevel.FreeUser).map { newUser => () }
+      }
+      case _ => Future.failed(new Exception(s"Got non-OID UserId $id"))
+    }
+
+  }
 }

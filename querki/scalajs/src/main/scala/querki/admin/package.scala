@@ -7,6 +7,7 @@ package object admin {
   
   trait Admin extends EcologyInterface {
     def statisticsFactory:PageFactory
+    def manageUsersFactory:PageFactory
   }
 
 }

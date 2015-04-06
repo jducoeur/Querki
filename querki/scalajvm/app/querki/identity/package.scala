@@ -181,6 +181,7 @@ package object identity {
     // them, which will probably involve changing all calls to them!
     def getAllForAdmin(requester:User):Seq[User]
     def getAllIdsForAdmin(requester:User):Seq[UserId]
+    def getPendingForAdmin(requester:User):Seq[User]
     
     def getIdentity(rawHandle:String):Option[OID]
     def getIdentity(id:OID):Option[Identity]
