@@ -17,18 +17,18 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
   
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
-  def statistics():Future[QuerkiStats] = {
+  def statistics():QuerkiStats = {
     // TODO: this call is heavier-weight than we need. Slim it to just getting counts from the DB
     // TODO: this call really ought to return a Future, but we'll probably move to Slick streaming in
     // due course
     val allUsers = UserAccess.getAllForAdmin(info.user)
     
     val usersByLevel = allUsers.groupBy(_.level)
-    def levelCount(level:UserLevel.UserLevel):Int = usersByLevel.get(level).map(_.size).getOrElse(0)
-    
-    val nPending = levelCount(UserLevel.PendingUser)
-    val nFull = levelCount(UserLevel.FreeUser) + levelCount(UserLevel.PaidUser) + levelCount(UserLevel.PermanentUser)
-    Future.successful(QuerkiStats(nPending, nFull, 0, 0))
+    val userCountsByLevel = usersByLevel.map { pair =>
+      val (level, users) = pair
+      (level -> users.size)
+    }
+    QuerkiStats(userCountsByLevel, 0)
   }
   
 }

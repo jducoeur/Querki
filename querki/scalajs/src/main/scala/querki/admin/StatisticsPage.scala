@@ -5,6 +5,7 @@ import autowire._
 
 import querki.api._
 import querki.globals._
+import querki.identity.UserLevel._
 import querki.pages._
 
 class StatisticsPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
@@ -14,10 +15,15 @@ class StatisticsPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
   def pageContent =
     for {
       stats <- Client[AdminFunctions].statistics().call()
+      counts = stats.userCountsByLevel.toSeq.sortBy(_._1)
       guts =
         div(
           h1("Current Querki Statistics"),
-          p(s"Invitees: ${stats.nInvitees} Full Users: ${stats.nFullUsers} Test Users: ${stats.nTestUsers} Spaces: ${stats.nSpaces}")
+          h3("User Counts"),
+          for (count <- counts)
+            yield p(b(levelName(count._1).capitalize, ": "), count._2),
+          h3("Spaces"),
+          p(s"Total Spaces: ${stats.nSpaces}")
         )
     }
       yield PageContents("Current Querki Statistics", guts)
