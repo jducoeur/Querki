@@ -18,7 +18,7 @@ import querki.api._
 import querki.data.ThingInfo
 import querki.display.{ButtonGadget, ButtonKind, Gadget, RawDiv}
 import querki.display.input.{InputGadget, LargeTextInputGadget, ManifestItem}
-import querki.display.rx.RxTextFrag
+import querki.display.rx.{RxAttr, RxTextFrag}
 
 class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
   
@@ -144,6 +144,9 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
   }
   lazy val collaboratorInput = new CollaboratorInput
   
+  // This gets set to false while we are actually sending invitations:
+  lazy val inviting = Var(false)
+  
   def pageContent = for {
     std <- DataAccess.standardThings
     securityInfo <- Client[SecurityFunctions].getSecurityInfo().call()
@@ -194,7 +197,12 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
         
           div(cls:="control-group",
             div(cls:="controls",
-              new ButtonGadget(ButtonKind.Normal, "Invite Members")({
+              new ButtonGadget(
+                ButtonKind.Normal, 
+                RxAttr("disabled", Rx[AttrVal]{inviting()}), 
+                new RxTextFrag(Rx{if (inviting()) "Inviting..." else "Invite Members"}))
+              ({
+                inviting() = true
                 val emails = inviteeInput.values
                 val collabs = collaboratorInput.values.map(TID(_))
                 Client[SecurityFunctions].invite(emails, collabs).call().onComplete {
@@ -205,6 +213,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
                     PageManager.reload().flashing(false, s"Sent invites to ${allInvites.mkString(", ")}")
                   }
                   case Failure(ex) => {
+                    inviting() = false
                     ex match {
                       case MaxMembersPerSpaceException(maxMembers) => {
                         StatusLine.showUntilChange(s"Sorry: at the moment you are limited to $maxMembers members per Space, and this would make more than that.")
