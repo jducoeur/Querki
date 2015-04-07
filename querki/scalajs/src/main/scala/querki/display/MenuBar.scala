@@ -165,7 +165,6 @@ class MenuBar(implicit e:Ecology) extends InputGadget[dom.HTMLDivElement](e) wit
       Some(NavSection("Admin", Seq(
         NavLink("Querki Statistics", Admin.statisticsFactory.pageUrl()),
         NavLink("Manage Users", Admin.manageUsersFactory.pageUrl()),
-        NavLink("Old Manage Users", controllers.AdminController.manageUsers()),
         NavLink("Show Space Status", controllers.AdminController.showSpaceStatus()),
         NavLink("Send System Message", controllers.AdminController.sendSystemMessage())
       )))
