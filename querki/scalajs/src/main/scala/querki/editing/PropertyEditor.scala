@@ -39,7 +39,7 @@ class PropertyEditor(val valEditor:PropValueEditor)(implicit val ecology:Ecology
       div(
         hr,
         contentDiv,
-        p(new ButtonGadget(ButtonKind.Primary, "Done")({ 
+        p(new ButtonGadget(ButtonKind.Primary, "Done")({ () =>
           valEditor.propEditDone() 
         }))
       )

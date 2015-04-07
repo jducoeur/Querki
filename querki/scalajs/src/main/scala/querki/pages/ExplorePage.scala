@@ -81,7 +81,7 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
   lazy val results = new WrapperDiv
   lazy val rawResults = Var[Wikitext](Wikitext.empty)
   
-  lazy val ReifyButton = new ButtonGadget(ButtonKind.Normal, "Make a Page")({
+  lazy val ReifyButton = new ButtonGadget(ButtonKind.Normal, "Make a Page")({ () =>
     val createFut = for {
       std <- DataAccess.standardThings
       createPage <- Pages.createAndEditFactory.showPage(std.basic.simpleThing)
@@ -91,7 +91,7 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
       yield createPage
   })
   
-  lazy val SaveButton = new ButtonGadget(ButtonKind.Normal, "Save Results")({
+  lazy val SaveButton = new ButtonGadget(ButtonKind.Normal, "Save Results")({ () =>
     val saveFut = for {
       std <- DataAccess.standardThings
       createPage <- Pages.createAndEditFactory.showPage(std.basic.simpleThing)

@@ -26,11 +26,11 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   
   lazy val mainDiv = (new WrapperDiv).initialContent(initButton)
   
-  lazy val initButton:ButtonGadget = new ButtonGadget(ButtonKind.Info, icon("plus"), " Add a Property")({
+  lazy val initButton:ButtonGadget = new ButtonGadget(ButtonKind.Info, icon("plus"), " Add a Property")({ () =>
     mainDiv.replaceContents(addExisting.rendered, true)
   })
   
-  lazy val cancelButton = new ButtonGadget(ButtonKind.Normal, "Cancel")({ reset() })
+  lazy val cancelButton = new ButtonGadget(ButtonKind.Normal, "Cancel")({ () => reset() })
   
   val stdThingFut = DataAccess.standardThings
   def allTypesFut = page.allTypesFut
@@ -50,7 +50,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
 
     // The add button is only enabled when the selection is non-empty; when pressed, it tells the parent
     // page to add the Property:
-    lazy val addButton = new ButtonGadget(ButtonKind.Info, RxAttr("disabled", Rx{ selectedProperty().isEmpty }), "Add")({
+    lazy val addButton = new ButtonGadget(ButtonKind.Info, RxAttr("disabled", Rx{ selectedProperty().isEmpty }), "Add")({ () =>
       page.addProperty(selectedProperty().get)
       reset()
     })
@@ -114,7 +114,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
               addButton
             ),
             hr,
-            p(new ButtonGadget(ButtonKind.Info, "Create a new Property instead")({ mainDiv.replaceContents(createNew.rendered, true) }), cancelButton)
+            p(new ButtonGadget(ButtonKind.Info, "Create a new Property instead")({ () => mainDiv.replaceContents(createNew.rendered, true) }), cancelButton)
           ),
           div(cls:="col-md-7", propertyDescriptionDiv)
         )
@@ -170,7 +170,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     lazy val addButton = 
       new ButtonGadget(ButtonKind.Info, 
           RxAttr("disabled", Rx{ nameInput.textOpt().isEmpty || collSelector.selectedTIDOpt().isEmpty || selectedBasis().isEmpty }), 
-          "Create")({
+          "Create")({ () =>
         val name = nameInput.textOpt().get
         val coll = collSelector.selectedTIDOpt().get
         val (selector, oid) = selectedBasis().get
@@ -227,7 +227,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
           addButton
         ),
         hr,
-        p(new ButtonGadget(ButtonKind.Info, "Add an Existing Property")({ mainDiv.replaceContents(addExisting.rendered, true) }), cancelButton)
+        p(new ButtonGadget(ButtonKind.Info, "Add an Existing Property")({ () => mainDiv.replaceContents(addExisting.rendered, true) }), cancelButton)
       )
   }
   

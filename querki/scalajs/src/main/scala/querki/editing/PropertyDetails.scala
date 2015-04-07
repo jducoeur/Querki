@@ -30,7 +30,7 @@ import querki.display.rx.RxThingSelector
         hr,
         propertyDescriptionDiv,
         if (editInfo.canEditProperty) {
-          p(new ButtonGadget(ButtonKind.Primary, "Edit Property")({ valEditor.showPropEditor() }))        
+          p(new ButtonGadget(ButtonKind.Primary, "Edit Property")({ () => valEditor.showPropEditor() }))        
         }
       )
     }
