@@ -202,7 +202,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
                     // TODO: we really want to make a prettier display for this message, probably as part
                     // of a general rewrite of StatusLine:
                     val allInvites = response.newInvites ++ response.resends
-                    StatusLine.showBriefly(s"Sent invites to ${allInvites.mkString(", ")}")
+                    PageManager.reload().flashing(false, s"Sent invites to ${allInvites.mkString(", ")}")
                   }
                   case Failure(ex) => {
                     ex match {

@@ -406,7 +406,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
 	      val sentTo = Email.sendToPeople(context, people ++ existingPeople, subjectQL, bodyQL)
 	    
 	      val existingIds = existingPeople.map(_.id).toSet
-	      val newPeople = people.filter(p => existingIds.contains(p.id))
+	      val newPeople = people.filterNot(p => existingIds.contains(p.id))
 	      InvitationResult(newPeople.map(_.displayName), existingPeople.map(_.displayName))  
 	    }          
     }
