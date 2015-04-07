@@ -29,8 +29,7 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
 	              tr(td(user.mainHandle), td(user.email), 
 	                td(new ButtonGadget(ButtonKind.Normal, "Upgrade")({
 	                  Client[AdminFunctions].upgradePendingUser(user.userId).call().foreach { dummy =>
-	                    Pages.flashMessage(false, s"Updated ${user.mainHandle} to full user")
-	                    PageManager.reload()
+	                    PageManager.reload().flashing(false, s"Updated ${user.mainHandle} to full user")
 	                  }
 	                })))
             )

@@ -75,16 +75,7 @@ package object pages {
     /**
      * Navigate to the given Space.
      */
-    def showSpacePage(space:SpaceInfo):Unit
-    
-    /**
-     * Display a message on the next Page.
-     */
-    def flashMessage(error:Boolean, msg:String):Unit
-    /**
-     * Fetch the message to show, if any. Note that this will reset to None after it gets called.
-     */
-    def getFlash:Option[(Boolean, String)]
+    def showSpacePage(space:SpaceInfo):Future[Page]
     
     /**
      * Returns the Page that contains the given Frag.

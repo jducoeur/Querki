@@ -46,16 +46,6 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   // TODO: this doesn't yet work correctly to navigate cross-Spaces:
   def showSpacePage(space:SpaceInfo) = PageManager.showPage(s"${space.urlName.underlying}", Map.empty)
   
-  // TODO: this is smelly. What we really should do instead is have a PageFutureOps on Future[Page], which alters
-  // the page before rendering:
-  var flash:Option[(Boolean, String)] = None
-  def flashMessage(error:Boolean, msg:String) = flash = Some((error, msg))
-  def getFlash:Option[(Boolean, String)] = {
-    val ret = flash
-    flash = None
-    ret
-  }
-  
   /**
    * Construct the correct Page, based on the passed-in page name.
    * 

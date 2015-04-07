@@ -5,16 +5,18 @@ import scala.concurrent.{Future, Promise}
 import org.scalajs.dom.{raw => dom}
 import scalatags.JsDom.all._
 import scalatags.JsDom.TypedTag
+import rx._
 
 import querki.globals._
 
 import querki.comm._
 import querki.data.ThingInfo
 import querki.display.{Gadget, WrapperDiv}
+import querki.display.rx.RxDiv
   
 case class PageContents(title:String, content:TypedTag[dom.HTMLDivElement])
 
-abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember with PageImplicits {
   
   implicit val ecology = e
   
@@ -60,15 +62,14 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
    */
   def beforeRender() = {}
   
-  def doRender() = {
-    val renderedContent = new WrapperDiv
-    
-    val outerPage = div(cls:="guts container-fluid",
-      div(cls:="row",
-        div(cls:="querki-content col-md-12",
-          // If there is a message to flash, show it:
-          Pages.getFlash.map { pair =>
-            val (isError, msg) = pair
+  /**
+   * Display the specified alert at the top of the page.
+   * 
+   * TBD: instead of isError, we should probably take an enumeration of the four standard Alert types from
+   * Bootstrap: success, info, warning and danger.
+   */
+  def flash(isError:Boolean, msg:String) = {
+    val newAlert:Gadget[_] = 
             div(
               classes(Seq("alert alert-dismissible", if (isError) "alert-error" else "alert-info")),
               role:="alert",
@@ -78,7 +79,19 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
               },
               msg
             )
-          },
+    flashContents() = flashContents() :+ newAlert
+  }
+  lazy val flashContents = Var[Seq[Gadget[_]]](Seq.empty)
+  lazy val flashDiv = new RxDiv(flashContents)
+  
+  def doRender() = {
+    val renderedContent = new WrapperDiv
+    
+    val outerPage = div(cls:="guts container-fluid",
+      div(cls:="row",
+        div(cls:="querki-content col-md-12",
+          // Placeholder for "flash" content in Play-speak (alert messages):
+          flashDiv,
           
           // The link to the Space:
           DataAccess.space match {

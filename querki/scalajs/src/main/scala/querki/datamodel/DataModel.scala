@@ -12,8 +12,9 @@ import EditFunctions.ChangePropertyValue
 import querki.data.ThingInfo
 import querki.display.Dialog
 import querki.display.rx.RxSelect
+import querki.pages.PageImplicits
 
-class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.util.ScalatagUtils {
+class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.util.ScalatagUtils with PageImplicits {
   
   def implements = Set(classOf[DataModel])
   
@@ -31,8 +32,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
           // TODO: display a spinner
           Client[ThingFunctions].deleteThing(thing.oid).call().foreach { dummy =>
             dialog.done()
-            Pages.flashMessage(false, s"${thing.displayName} deleted.")
-            Pages.showSpacePage(DataAccess.space.get)
+            Pages.showSpacePage(DataAccess.space.get).flashing(false, s"${thing.displayName} deleted.")
           }
         }),
         ("Cancel" -> { dialog => dialog.done() })
