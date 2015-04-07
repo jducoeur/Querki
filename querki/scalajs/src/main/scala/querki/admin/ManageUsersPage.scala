@@ -4,7 +4,8 @@ import scalatags.JsDom.all._
 import autowire._
 
 import querki.api.AdminFunctions
-import querki.display.{ButtonGadget, ButtonKind}
+import querki.display.{ButtonKind}
+import querki.display.rx.RxButton
 import querki.globals._
 import querki.pages._
 
@@ -27,7 +28,7 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
 	          for (user <- pendingUsers)
 	            yield 
 	              tr(td(user.mainHandle), td(user.email), 
-	                td(new ButtonGadget(ButtonKind.Normal, "Upgrade")({ () =>
+	                td(new RxButton(ButtonKind.Normal, "Upgrade", "Upgrading...")({ btn =>
 	                  Client[AdminFunctions].upgradePendingUser(user.userId).call().foreach { dummy =>
 	                    PageManager.reload().flashing(false, s"Updated ${user.mainHandle} to full user")
 	                  }
