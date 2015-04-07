@@ -32,5 +32,8 @@
     
     @if(rc.requesterOrAnon.canOwnSpaces) {
       <p><a href="/newSpace" class="btn btn-primary">Create a new Space</a></p>
-    }
+    } else { @if(rc.requesterOrAnon.level == PendingUser) {
+      <p><a href="#" class="btn btn-primary disabled">Create a new Space</a></p>
+      <p class="_smallSubtitle">As a new user, you are not yet allowed to create Spaces. Check back soon - you should be upgraded within a few days.</p>
+    }}
 }
