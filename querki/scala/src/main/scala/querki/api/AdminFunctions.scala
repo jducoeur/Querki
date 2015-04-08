@@ -23,9 +23,22 @@ trait AdminFunctions {
   def pendingUsers():Future[Seq[AdminUserView]]
   
   /**
+   * Fetch *all* the users in the system.
+   *
+   * Do *not* get too attached to this! In principle, it's obviously a bad idea, and will eventually have
+   * to be replaced by a search function instead.
+   */
+  def allUsers():Future[Seq[AdminUserView]]
+  
+  /**
    * Upgrade the specified User to full-User status. Presumed to succeed unless it returns an Exception.
    */
-  def upgradePendingUser(id:TID):Future[Unit]
+  def upgradePendingUser(id:TID):Future[AdminUserView]
+  
+  /**
+   * Change the given user to the given level. Note that only Superadmin can make an Admin, and nobody can make a Superadmin.
+   */
+  def changeUserLevel(id:TID, level:UserLevel):Future[AdminUserView]
 }
 
 object AdminFunctions {

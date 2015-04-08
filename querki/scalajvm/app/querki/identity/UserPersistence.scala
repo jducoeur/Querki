@@ -106,6 +106,10 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     getUser(userQuery)    
   }
   
+  def getByUserId(requester:User, userId:OID):Option[User] = requester.requireAdmin {
+    loadByUserId(userId)
+  }
+  
   // DEPRECATED:
   def getAllForAdmin(requester:User):Seq[User] = requester.requireAdmin {
     val userQuery = userLoadSqlWhere("""User.level != 0""")

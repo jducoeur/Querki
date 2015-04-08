@@ -10,7 +10,8 @@ import querki.globals.Implicits._
 import querki.api.AdminFunctions
 import AdminFunctions._
 import querki.data.TID
-import querki.identity.UserLevel
+import querki.identity.{User, UserLevel}
+import UserLevel._
 import querki.session.{AutowireApiImpl, AutowireParams}
 import querki.spaces.messages._
 
@@ -43,22 +44,51 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
     }
   }
   
-  def pendingUsers():Future[Seq[AdminUserView]] = {
-    val pendingUsers = UserAccess.getPendingForAdmin(info.user)
-    val adminViews = pendingUsers.map { user =>
+  private def convertUser(user:User):AdminUserView = {
       val identity = user.mainIdentity
-      AdminUserView(TID(user.id.toThingId.toString), identity.handle, identity.email.addr, user.level)
-    }
-    Future.successful(adminViews)
+      AdminUserView(TID(user.id.toThingId.toString), identity.handle, identity.email.addr, user.level)    
+  }
+  private def convertUsers(users:Seq[User]):Future[Seq[AdminUserView]] = {
+    val adminViews = users.map { convertUser(_) }
+    Future.successful(adminViews)    
   }
   
-  def upgradePendingUser(id:TID):Future[Unit] = {
+  def pendingUsers():Future[Seq[AdminUserView]] = {
+    convertUsers(UserAccess.getPendingForAdmin(info.user))
+  }
+  
+  def allUsers():Future[Seq[AdminUserView]] = {
+    convertUsers(UserAccess.getAllForAdmin(info.user))    
+  }
+  
+  private def alterUserLevel(id:TID, level:UserLevel):Future[AdminUserView] = {
     ThingId(id.underlying) match {
       case AsOID(userId) => {
-	    UserAccess.changeUserLevel(userId, user, UserLevel.FreeUser).map { newUser => () }
+        val checkUser = UserAccess.getByUserId(user, userId).get
+        if (checkUser.level == SuperadminUser)
+          throw new Exception("No one is allowed to downgrade Superadmin!")
+        if (checkUser.level == AdminUser && user.level != SuperadminUser)
+          throw new Exception("Only Superadmin is allowed to downgrade an Admin!")
+	    UserAccess.changeUserLevel(userId, user, level).map { 
+	      case Some(newUser) => convertUser(newUser)
+	      case None => throw new Exception(s"Failed to convert user $id!")
+	    }
       }
       case _ => Future.failed(new Exception(s"Got non-OID UserId $id"))
+    }    
+  }
+  
+  def upgradePendingUser(id:TID):Future[AdminUserView] = {
+    alterUserLevel(id, FreeUser)
+  }
+  
+  def changeUserLevel(id:TID, level:UserLevel):Future[AdminUserView] = {
+    level match {
+      case SuperadminUser => throw new Exception("No one is allowed to create a Superadmin!")
+      case AdminUser => if (user.level != SuperadminUser) throw new Exception("Only Superadmin is allowed to create Admins!")
+      case _ => {}
     }
-
+    
+    alterUserLevel(id, level)
   }
 }

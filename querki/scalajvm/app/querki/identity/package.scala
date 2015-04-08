@@ -183,6 +183,7 @@ package object identity {
     def getAllIdsForAdmin(requester:User):Seq[UserId]
     def getPendingForAdmin(requester:User):Seq[User]
     
+    def getByUserId(requester:User, userId:OID):Option[User]
     def getIdentity(rawHandle:String):Option[OID]
     def getIdentity(id:OID):Option[Identity]
     def getFullIdentity(id:IdentityId):Option[FullIdentity]
