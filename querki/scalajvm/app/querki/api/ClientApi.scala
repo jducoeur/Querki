@@ -89,10 +89,10 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
         userInfo(rc.requester), 
         spaceInfo(rc.state, rc), 
         rc.isOwner,
-        rc.requesterOrAnon.isAdmin)
+        rc.requesterOrAnon.level)
     } else {
       // Signal that this person doesn't have access to the Space:
-      RequestInfo(None, None, false, false, true)
+      RequestInfo(None, None, false, rc.requesterOrAnon.level, true)
     }
   }
   

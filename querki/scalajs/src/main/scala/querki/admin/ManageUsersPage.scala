@@ -22,10 +22,10 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
     PendingUser,
     FreeUser,
     PaidUser,
-    PermanentUser,
-    AdminUser,
-    SuperadminUser
-  )
+    PermanentUser
+  ) ++ (if (myLevel == SuperadminUser) Seq(AdminUser) else Seq.empty)
+  
+  lazy val myLevel = DataAccess.request.userLevel
     
   class UserView(user:AdminUserView) extends Gadget[dom.html.TableRow] {
     lazy val levelOptions = 
@@ -56,7 +56,12 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
       tr(
         td(user.mainHandle), 
         td(user.email), 
-        td(levelSelector)
+        if (user.level == SuperadminUser)
+          td("Superadmin")
+        else if (user.level == AdminUser && myLevel != SuperadminUser)
+          td("Admin")
+        else
+          td(levelSelector)
       )
     }
   }

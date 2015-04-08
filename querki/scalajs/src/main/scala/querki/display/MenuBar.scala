@@ -9,6 +9,7 @@ import querki.globals._
 
 import querki.comm._
 import querki.display.input.InputGadget
+import querki.identity.UserLevel
 import querki.notifications.NotifierGadget
 import querki.search.SearchGadget
 
@@ -161,7 +162,7 @@ class MenuBar(implicit e:Ecology) extends InputGadget[dom.HTMLDivElement](e) wit
   }
   
   def adminSection = {
-    if (DataAccess.request.isAdmin)
+    if (UserLevel.isAdmin(DataAccess.request.userLevel))
       Some(NavSection("Admin", Seq(
         NavLink("Querki Statistics", Admin.statisticsFactory.pageUrl()),
         NavLink("Manage Users", Admin.manageUsersFactory.pageUrl()),

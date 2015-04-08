@@ -1,5 +1,6 @@
 package querki.data
 
+import querki.identity.UserLevel.UserLevel
 import querki.pages.PageDetails
 
 /**
@@ -10,6 +11,6 @@ case class RequestInfo(
   user:Option[UserInfo], 
   space:Option[SpaceInfo],
   isOwner:Boolean,
-  isAdmin:Boolean,
+  userLevel:UserLevel,
   forbidden:Boolean = false
   )
