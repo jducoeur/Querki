@@ -415,12 +415,13 @@ body {
  */
  
 #statusLine {
-  width: 50px;
+  width: 100px;
   position: fixed;
-  right: 0px;
+  right: 10px;
   top: 50px;
   z-index: 100;
   color: green;
+  text-align: right;
 }
  
 #statusText {
