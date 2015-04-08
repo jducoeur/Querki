@@ -12,6 +12,8 @@ object UserLevel {
   val SpaceSpecific = 5
   
   val AdminUser = 10
+
+  val TestUser = 20
   
   val SuperadminUser = 100
   
@@ -21,6 +23,7 @@ object UserLevel {
     case PaidUser => "paid"
     case PermanentUser => "permanent"
     case AdminUser => "admin"
+	case TestUser => "test"
     case SuperadminUser => "superadmin"
       
     case _ => "Unknown: " + level.toString

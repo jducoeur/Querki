@@ -22,7 +22,8 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
     PendingUser,
     FreeUser,
     PaidUser,
-    PermanentUser
+    PermanentUser,
+    TestUser
   ) ++ (if (myLevel == SuperadminUser) Seq(AdminUser) else Seq.empty)
   
   lazy val myLevel = DataAccess.request.userLevel
