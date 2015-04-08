@@ -6,7 +6,7 @@ import autowire._
 import rx._
 import org.querki.jquery._
 
-import querki.api.AdminFunctions
+import querki.api._
 import AdminFunctions._
 import querki.display.{ButtonKind, Gadget}
 import querki.display.rx.{RxDiv, RxButton, RxSelect}
@@ -18,6 +18,15 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
   
   lazy val Client = interface[querki.client.Client]
   lazy val StatusLine = interface[querki.display.StatusLine]
+  
+  implicit class CallExt[T](fut:Future[T]) {
+    def checkForeach[U](cb:(T) => U) = {
+      fut.onFailure {
+        case NotAnAdminException() => Pages.showSpacePage(DataAccess.space.get).flashing(true, "Manage Users is for Querki Administrators only. Sorry.")
+      }
+      fut.foreach(cb)
+    }
+  }
   
   // TODO: add the ability for Superadmin to create Admins
   lazy val levels = Seq(
@@ -43,7 +52,7 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
     lazy val choiceObserver = Obs(levelSelector.selectedOption, skipInitial=true) {
       levelSelector.selectedOption().map { opt =>
         val newLevel = Integer.parseInt(opt.valueString)
-        Client[AdminFunctions].changeUserLevel(user.userId, newLevel).call().foreach { newView =>
+        Client[AdminFunctions].changeUserLevel(user.userId, newLevel).call().checkForeach { newView =>
           $(elem).replaceWith(new UserView(newView).render)
           StatusLine.showBriefly(s"Switched ${newView.mainHandle} to ${levelName(newView.level)}")
         }
@@ -85,7 +94,7 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
   
   lazy val allUsersButton =
     new RxButton(ButtonKind.Normal, "Fetch all users", "Fetching...")({ btn =>
-      Client[AdminFunctions].allUsers().call.foreach { userList =>
+      Client[AdminFunctions].allUsers().call.checkForeach { userList =>
         allUsers() =
           Seq[Gadget[_]](
             h3("All Users"),
@@ -121,7 +130,7 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
 	            yield 
 	              tr(cls:="warning", td(user.mainHandle), td(user.email), 
 	                td(new RxButton(ButtonKind.Normal, "Upgrade", "Upgrading...")({ btn =>
-	                  Client[AdminFunctions].upgradePendingUser(user.userId).call().foreach { upgraded =>
+	                  Client[AdminFunctions].upgradePendingUser(user.userId).call().checkForeach { upgraded =>
 	                    PageManager.reload().flashing(false, s"Updated ${user.mainHandle} to full user")
 	                  }
 	                })))

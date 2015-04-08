@@ -7,7 +7,7 @@ import models.{AsOID, ThingId}
 import querki.globals._
 import querki.globals.Implicits._
 
-import querki.api.AdminFunctions
+import querki.api._
 import AdminFunctions._
 import querki.data.TID
 import querki.identity.{User, UserLevel}
@@ -19,7 +19,7 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
   
   // Head off illegal access here in the constructor, before we even try processing the request:
   if (!info.user.isAdmin)
-    throw new Exception("Not allowed to use Admin functions!")
+    throw new NotAnAdminException
   
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val UserAccess = interface[querki.identity.UserAccess]

@@ -37,3 +37,13 @@ sealed trait SecurityException extends ApiException
  * This invitation would exceed the maximum members per Space.
  */
 case class MaxMembersPerSpaceException(curMax:Int) extends SecurityException
+
+
+/**
+ * Expected exceptions that can be returned from AdminFunctions.
+ */
+sealed trait AdminException extends ApiException
+/**
+ * You tried to perform an Admin function from a non-Admin account.
+ */
+case class NotAnAdminException() extends AdminException
