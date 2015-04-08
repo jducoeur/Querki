@@ -53,8 +53,22 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
       choiceObserver
     }
     
+    def colorClass = {
+      user.level match {
+        case PendingUser => "warning"
+          
+        case FreeUser | PaidUser | PermanentUser => ""
+          
+        case TestUser => "active"
+          
+        case AdminUser | SuperadminUser => "success"
+          
+        case _ => "danger"
+      }
+    }
+    
     def doRender() = {
-      tr(
+      tr(cls:=colorClass,
         td(user.mainHandle), 
         td(user.email), 
         if (user.level == SuperadminUser)
@@ -103,7 +117,7 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
             tbody(
 	          for (user <- pendingUsers)
 	            yield 
-	              tr(td(user.mainHandle), td(user.email), 
+	              tr(cls:="warning", td(user.mainHandle), td(user.email), 
 	                td(new RxButton(ButtonKind.Normal, "Upgrade", "Upgrading...")({ btn =>
 	                  Client[AdminFunctions].upgradePendingUser(user.userId).call().foreach { upgraded =>
 	                    PageManager.reload().flashing(false, s"Updated ${user.mainHandle} to full user")
