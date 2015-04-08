@@ -4,6 +4,7 @@ import org.scalajs.dom
 import scalatags.JsDom.all._
 import autowire._
 import rx._
+import org.querki.jquery._
 
 import querki.api.AdminFunctions
 import AdminFunctions._
@@ -16,6 +17,7 @@ import querki.pages._
 class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
   
   lazy val Client = interface[querki.client.Client]
+  lazy val StatusLine = interface[querki.display.StatusLine]
   
   // TODO: add the ability for Superadmin to create Admins
   lazy val levels = Seq(
@@ -42,8 +44,8 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
       levelSelector.selectedOption().map { opt =>
         val newLevel = Integer.parseInt(opt.valueString)
         Client[AdminFunctions].changeUserLevel(user.userId, newLevel).call().foreach { newView =>
-          // TODO: replace the value in-place:
-          PageManager.reload().flashing(false, s"Changed ${user.mainHandle} to ${levelName(newLevel)}")
+          $(elem).replaceWith(new UserView(newView).render)
+          StatusLine.showBriefly(s"Switched ${newView.mainHandle} to ${levelName(newView.level)}")
         }
       }
     }
