@@ -84,17 +84,6 @@ trait StandardTestEntryPoints extends TestClientRouter {
     def controllers = commStub.controllers
     
     // Entry points referenced in the MenuBar, so need to be present in essentially every Page:
-    controllers.Application.createProperty = { entryPoint0("createProperty") _ }
-    controllers.Application.doCreateThing2 = { entryPoint1("doCreateThing2") _ }
-    controllers.Application.editThing = { entryPoint1("editThing") _ }
-    controllers.Application.sharing = { entryPoint0("sharing") _ }
-    controllers.Application.showAdvancedCommands = { entryPoint1("showAdvancedCommands") _ }
-    controllers.Application.thing = { entryPoint1("thing") _ }
-    controllers.Application.viewThing = { entryPoint1("viewThing") _ }
-    
-    controllers.ExploreController.showExplorer = { entryPoint1("showExplorer") _ }
-    
-    controllers.AdminController.manageUsers = { rawEntryPoint0("manageUsers") _ }
     controllers.AdminController.showSpaceStatus = { rawEntryPoint0("showSpaceStatus") _ }
     controllers.AdminController.sendSystemMessage = { rawEntryPoint0("sendSystemMessage") _ }
     

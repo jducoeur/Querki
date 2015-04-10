@@ -1,8 +1,12 @@
 package org.querki.facades.manifest
 
 import scala.scalajs.js
-import org.querki.jquery._
+import js.annotation.JSName
+import js.JSConverters._
 import js.{Dynamic, UndefOr}
+
+import org.scalajs.dom
+import org.querki.jquery._
 import org.querki.jsext._
 
 /**
@@ -15,26 +19,72 @@ import org.querki.jsext._
  */
 trait ManifestFacade extends js.Object {
   def manifest(config:ManifestOptions):JQuery = js.native
-  def manifest(cmd:ManifestCommand):Any = js.native
+  
+  /**
+   * Give a command to Manifest. Don't use this directly, use the better-typed signatures in
+   * ManifestCommands instead.
+   */
+  @JSName("manifest")
+  def manifestInternal(cmd:String, params:js.Any*):Any = js.native
 }
 
 /**
- * This is kind of a horrible hack, but seems to be the only way to define an enumeration that
- * is *actually* just Strings, to pass into a Facade. (As opposed to normal Scala, where you would
- * define a wrapper class.)
- * 
- * TODO: post-0.6, this should in principle extend js.Any instead of js.Object.
+ * This class (which is implicitly converted from ManifestFacade or JQuery) wraps Manifest's
+ * commands in strongly-typed signatures, to make them easier to call reliably from Scala.
  */
-sealed trait ManifestCommand extends js.Object
-object ManifestCommand {
-  // TODO: can we macroize these? This mechanism seems likely to be used a lot...
-  val add = "add".asInstanceOf[ManifestCommand]
-  val container = "container".asInstanceOf[ManifestCommand]
-  val destroy = "destroy".asInstanceOf[ManifestCommand]
-  val list = "list".asInstanceOf[ManifestCommand]
-  val option = "option".asInstanceOf[ManifestCommand]
-  val remove = "remove".asInstanceOf[ManifestCommand]
-  val values = "values".asInstanceOf[ManifestCommand]
+class ManifestCommands(manifest:ManifestFacade) {
+  /**
+   * Add one or more items to the end of the list.
+   */
+  def manifestAdd(data:Map[String,String]) = manifest.manifestInternal("add", data.toJSDictionary)
+  
+  /**
+   * Get the container element.
+   * 
+   * TBD: is the return signature correct?
+   */
+  def manifestContainer():dom.Element = manifest.manifestInternal("container").asInstanceOf[dom.Element]
+  
+  /**
+   * Remove the elements, events, and functionality of this plugin and return the input to its original state.
+   */
+  def manifestDestroy() = manifest.manifestInternal("destroy")
+  
+  /**
+   * Get the list element.
+   * 
+   * TBD: is the return signature correct?
+   */
+  def manifestList():dom.Element = manifest.manifestInternal("list").asInstanceOf[dom.Element]
+  
+  /**
+   * Get the entire options object.
+   */
+  def manifestGetOptions():js.Dictionary[js.Any] = manifest.manifestInternal("option").asInstanceOf[js.Dictionary[js.Any]]
+  /**
+   * Get a specific option.
+   */
+  def manifestGetOption(name:String):Any = manifest.manifestInternal("option", name)
+  /**
+   * Set a specific option.
+   * 
+   * Note that manifestSetOptions() is more strongly-typed, and recommended instead.
+   */
+  def manifestSetOption(name:String, value:js.Any) = manifest.manifestInternal("option", name, value)
+  /**
+   * Set multiple options.
+   */
+  def manifestSetOptions(opts:ManifestOptions) = manifest.manifestInternal("option", opts)
+  
+  /**
+   * Remove one or more list items, specifying either jQuery objects or a selector that matches list children.
+   */
+  def manifestRemove(selector:ElementDesc) = manifest.manifestInternal("remove", toJsAny(selector))
+  
+  /**
+   * Get an array of the current values.
+   */
+  def manifestValues():Seq[String] = manifest.manifestInternal("values").asInstanceOf[js.Array[String]].toSeq
 }
 
 trait ManifestOptions extends js.Object 

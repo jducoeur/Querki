@@ -55,8 +55,11 @@ trait EditFunctions {
 }
 
 object EditFunctions {
-  sealed abstract trait PropertyChange
-  case object DeleteProperty extends PropertyChange
+  sealed abstract trait PropertyChange {
+    // The path to the Property being altered:
+    def path:String
+  }
+  
   /**
    * Describes a changed value on a Property. Note that the values are a List, to be able to support
    * Optional, List and Set.

@@ -8,6 +8,7 @@ import autowire._
 
 import scala.scalajs.js
 import org.scalajs.dom
+import dom.html
 import org.querki.jquery._
 import scalatags.JsDom.all._
 
@@ -15,8 +16,9 @@ import querki.globals._
 
 import querki.client.QuerkiClient
 import querki.comm._
-import querki.data._
+import querki.data.{TID => TIDdummy, _}
 import querki.ecology._
+import querki.identity.UserLevel
 import querki.pages.ThingPageDetails
 
 trait QuerkiTests extends TestSuite with EcologyMember with querki.client.StandardTestEntryPoints {
@@ -55,24 +57,24 @@ trait QuerkiTests extends TestSuite with EcologyMember with querki.client.Standa
   /**
    * The default SpaceInfo. Tests may override this if necessary.
    */
-  def spaceInfo = SpaceInfo(".spaceOid", Some("Test-Space"), "Test Space", "testUser1")
+  def spaceInfo = SpaceInfo(TID(".spaceOid"), Some("Test-Space"), "Test Space", ".testUser1", "testUser1")
   
   /**
    * A very simple base Thing.
    */
-  def thing1 = ThingInfo(".thingOid", Some("My-Thing"), "My Thing", ".modelOid", models.Kind.Thing, false, true, true, false, false)
+  def thing1 = ThingInfo(TID(".thingOid"), Some("My-Thing"), "My Thing", TID(".modelOid"), models.Kind.Thing, false, true, true, false, false, None)
   
   /**
    * A very simple Model.
    */
-  def model1 = ThingInfo(".modelOId", Some("My-Model"), "My Model", ".simpleThing", models.Kind.Thing, true, false, false, true, false)
+  def model1 = ThingInfo(TID(".modelOId"), Some("My-Model"), "My Model", TID(".simpleThing"), models.Kind.Thing, true, false, false, true, false, None)
 
   /**
    * The RequestInfo for a very generic ThingPage.
    */
-  def requestInfo = RequestInfo(Some(userInfo), Some(spaceInfo), false, false)
+  def requestInfo = RequestInfo(Some(userInfo), Some(spaceInfo), false, UserLevel.FreeUser)
   
-  def pageBody = $("body").get(0).asInstanceOf[dom.HTMLBodyElement]
+  def pageBody = $("body").get(0).asInstanceOf[dom.html.Body]
   
   def setup(bodyContents:Option[dom.Element] = None, addEntryPointsCb:Option[js.Dynamic => Unit] = None) = {
     // First, boot the system itself. This is more or less what happens in QuerkiClient:
@@ -93,8 +95,8 @@ trait QuerkiTests extends TestSuite with EcologyMember with querki.client.Standa
    * and returns a Future that will be fulfilled once the resulting Page is fully
    * loaded. 
    */
-  def afterPageChange(trigger: => Unit):Future[dom.HTMLDivElement] = {
-    val promise = Promise[dom.HTMLDivElement]
+  def afterPageChange(trigger: => Unit):Future[html.Div] = {
+    val promise = Promise[html.Div]
     PageManager.nextChangeFuture.map { page =>
       page.renderedContentFuture.map { content =>
         promise.success(content)
@@ -110,7 +112,6 @@ trait ThingPageTests extends QuerkiTests {
   
   import models.Wikitext
   import querki.api._
-  import utest.ExecutionContext.RunNow
   
   def pageName = thing1.linkName.get
   
@@ -128,14 +129,20 @@ trait ThingPageTests extends QuerkiTests {
           thing1,
           Some(model1),
           None,
-          Wikitext(renderedGuts)
+          Wikitext(renderedGuts),
+          Seq.empty,
+          Seq.empty
         )
       }
     
       def handle(request:Core.Request[String]):Future[String] = route[ThingFunctions](this)(request)
     })
     
-    val window = pageBody.ownerDocument.defaultView
+    // TODO: once my PR for scala-js-dom gets released, making ownerDocument an HTMLDocument in this
+    // context, replace this with the commented-out version:
+    val window = pageBody.ownerDocument.asInstanceOf[html.Document].defaultView
+//    val window = pageBody.ownerDocument.defaultView
+    
     window.location.hash = "#" + pageName
     // This will cause the page to render, based on the current hash:
     PageManager.setRoot(window, pageBody)

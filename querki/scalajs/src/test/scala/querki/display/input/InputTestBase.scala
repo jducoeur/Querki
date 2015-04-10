@@ -5,7 +5,6 @@ import org.scalajs.dom
 import org.querki.jquery._
 
 import utest._
-import utest.ExecutionContext.RunNow
 import autowire._
 
 import querki.globals._

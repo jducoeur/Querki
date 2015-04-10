@@ -52,7 +52,7 @@ class TagSetInput(val propId:String, val required:Boolean, val kind:TagSetKind.T
   extends InputGadget[dom.HTMLInputElement](e) with MarcoPoloUser
 {
   def values = { 
-    $(elem).manifest(ManifestCommand.values).asInstanceOf[js.Array[String]].toList
+    $(elem).manifestValues().toList
   }
   
   // TBD: do we need an unhook, to avoid leaks?

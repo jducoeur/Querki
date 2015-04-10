@@ -111,7 +111,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
         valuesName("invitees")
       )
     }
-    def values = $(elem).manifest(ManifestCommand.values).asInstanceOf[js.Array[String]].toList
+    def values = $(elem).manifestValues().toList
   }
   lazy val inviteeInput = new InviteeInput
   
@@ -140,7 +140,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
       )      
     }
     
-    def values = $(elem).manifest(ManifestCommand.values).asInstanceOf[js.Array[String]].toList
+    def values = $(elem).manifestValues().toList
   }
   lazy val collaboratorInput = new CollaboratorInput
   

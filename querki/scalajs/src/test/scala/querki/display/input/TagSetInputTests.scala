@@ -12,7 +12,7 @@ import querki.globals._
 import querki.api._
 import querki.test._
 
-import ManifestFacade._
+import org.querki.facades.manifest._
 
 object TagSetInputTests extends InputTestBase {
         
@@ -41,7 +41,7 @@ object TagSetInputTests extends InputTestBase {
       // This will be called when we trigger the manifestchange -- it is the stub for the server call to save the
       // value.
       expectedChange { change =>
-        assertMatch(change) { case EditFunctions.ChangePropertyValue(List("My First Tag", "My Second Tag")) => }
+        assertMatch(change) { case EditFunctions.ChangePropertyValue(propPath, List("My First Tag", "My Second Tag")) => }
       }
       
       // Since things run synchronously, the page content should have filled by now:

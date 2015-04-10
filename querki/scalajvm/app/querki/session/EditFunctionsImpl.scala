@@ -177,8 +177,6 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
         }
           yield Core.toProps((prop, newV))()
       }
-      
-      case DeleteProperty => None  // NYI
     }
     
     propsOpt match {
