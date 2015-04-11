@@ -1,9 +1,10 @@
 package querki.display.input
 
 import utest._
-import utest.ExecutionContext.RunNow
 
 import scalatags.JsDom.all._
+
+import org.querki.jquery._
 
 import querki.globals._
 
@@ -29,7 +30,7 @@ object TextInputTests extends InputTestBase {
         )
       )
       expectedChange { change =>
-        assertMatch(change) { case EditFunctions.ChangePropertyValue(List(newValue)) => }
+        assertMatch(change) { case EditFunctions.ChangePropertyValue(propPath, List(newValue)) => }
       }
       
       // Since things run synchronously, the page content should have filled by now:
@@ -63,7 +64,7 @@ object TextInputTests extends InputTestBase {
         )
       )
       expectedChange { change =>
-        assertMatch(change) { case EditFunctions.ChangePropertyValue(List(newValue)) => }
+        assertMatch(change) { case EditFunctions.ChangePropertyValue(propPath, List(newValue)) => }
       }
       
       // Since things run synchronously, the page content should have filled by now:

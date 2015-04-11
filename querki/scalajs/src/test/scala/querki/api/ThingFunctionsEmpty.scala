@@ -1,12 +1,21 @@
 package querki.api
 
+import scala.concurrent.Future
+
 import models.Wikitext
-import querki.data.{RequestInfo, ThingInfo}
+
+import querki.data._
 import querki.pages.ThingPageDetails
 
 class ThingFunctionsEmpty extends ThingFunctions {
   def getRequestInfo():RequestInfo = ???
-  def getThingPage(thingId:String):ThingPageDetails = ???
-  def getThingInfo(thingId:String):ThingInfo = ???
-  def evaluateQL(thingId:String, ql:String):Wikitext = ???
+  def getThingPage(thingId:TID):ThingPageDetails = ???
+  def getThingInfo(thingId:TID):ThingInfo = ???
+  def evaluateQL(thingId:TID, ql:String):Wikitext = ???
+  def getProperties(thingId:TID):Seq[PropValInfo] = ???
+  def getPropertyDisplay(thingId:TID, propId:TID):Option[Wikitext] = ???
+  def getAllProperties():SpaceProps = ???
+  def getAllTypes():AllTypeInfo = ???
+  def deleteThing(thingId:TID):Future[Unit] = ???
+  def getNumInstances(modelId:TID):Int = ???
 }

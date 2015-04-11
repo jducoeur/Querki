@@ -19,10 +19,12 @@ trait InputTestBase extends ThingPageTests with ScalatagUtils {
   
   def expectedChange(test:PropertyChange => Unit) = {
     registerApiHandler[EditFunctions]("alterProperty")(new EditFunctionsEmpty with AutowireHandler {
-      override def alterProperty(thingId:String, change:PropertyChange):PropertyChangeResponse = {
-        test(change)
-        assert(change.path == propPath)
-        PropertyChanged
+      override def alterProperty(thingId:TID, change:PropertyChange):Future[PropertyChangeResponse] = {
+        Future {
+          test(change)
+          assert(change.path == propPath)
+          PropertyChanged
+        }
       }
     
       def handle(request:Core.Request[String]):Future[String] = route[EditFunctions](this)(request)

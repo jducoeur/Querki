@@ -8,7 +8,6 @@ import org.scalajs.dom
 import org.querki.jquery._
 
 import utest._
-import utest.ExecutionContext.RunNow
 import scalatags.JsDom.all._
 import autowire._
 
@@ -16,18 +15,9 @@ import querki.globals._
 
 import querki.api.SearchFunctions
 import SearchFunctions._
-import querki.data.ThingInfo
+import querki.data.{TID, ThingInfo}
 import querki.test._
 import querki.util.ScalatagUtils
-
-trait JQueryEventCreator extends js.Object {
-  def Event(name:String):JQueryEventObject = ???
-}
-object JQueryEventCreator {
-  implicit def jq2EventCreator(jqs:JQueryStatic):JQueryEventCreator =
-    jqs.asInstanceOf[JQueryEventCreator]
-}
-import JQueryEventCreator._
 
 object SearchResultsTests extends ThingPageTests {
 
@@ -41,19 +31,19 @@ object SearchResultsTests extends ThingPageTests {
       
       val query1 = "sand"
       val result1 = SearchResult(
-          ThingInfo(".sandbox", Some("Sandbox"), "Sandbox", ".simpleThing", models.Kind.Thing, false, true, true, false, false),
+          ThingInfo(TID(".sandbox"), Some("Sandbox"), "Sandbox", TID(".simpleThing"), models.Kind.Thing, false, true, true, false, false, None),
           "Display Name",
           .75,
           "Sandbox",
           List(0))
       val result2 = SearchResult(
-          ThingInfo(".sandbox2", Some("Sandbox-2"), "Sandbox 2", ".simpleThing", models.Kind.Thing, false, true, true, false, false),
+          ThingInfo(TID(".sandbox2"), Some("Sandbox-2"), "Sandbox 2", TID(".simpleThing"), models.Kind.Thing, false, true, true, false, false, None),
           "Display Name",
           .70,
           "Sandbox 2",
           List(0))
       val result3 = SearchResult(
-          ThingInfo(".anotherThing", Some("Another-Thing"), "Another Thing", ".simpleThing", models.Kind.Thing, false, true, true, false, false),
+          ThingInfo(TID(".anotherThing"), Some("Another-Thing"), "Another Thing", TID(".simpleThing"), models.Kind.Thing, false, true, true, false, false, None),
           "Default View",
           .60,
           "A random sandbox, containing sand.",
@@ -83,8 +73,7 @@ object SearchResultsTests extends ThingPageTests {
       
       def enterSearchTerm(term:String) = {
         searchInput.value(term)
-        val triggerEvent = $.Event("keydown")
-        triggerEvent.which = 13
+        val triggerEvent = $.Event("keydown", JQueryEventObject.which(13))
         searchInput.trigger(triggerEvent)        
       }
       

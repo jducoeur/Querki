@@ -49,7 +49,7 @@ object TagSetInputTests extends InputTestBase {
       val fut = prepToChange(manifestBase)
       
       // Change the contents of the Manifest, which should cause the save message to go out:
-      manifestBase.manifest("add", lit(
+      manifestBase.manifestAdd(Map(
         "display" -> "My Second Tag",
         "id" -> "My Second Tag"
       ))
