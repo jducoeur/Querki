@@ -41,18 +41,27 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   persistLauncher in Test := false,
   sourceMapsDirectories += file(sharedSrcDir),
   unmanagedSourceDirectories in Compile := Seq((scalaSource in Compile).value),
-  // These are to give Rhino a pseudo-DOM for testing:
+  
   jsDependencies += RuntimeDOM,
+//  postLinkJSEnv := PhantomJSEnv(autoExit = false).value,
+  testFrameworks += new TestFramework("utest.runner.Framework"),
 
   // Javascript libraries we require:
   skip in packageJSDependencies := false,
-  jsDependencies += ProvidedJS / "jquery-ui-1.10.0.custom.js" dependsOn "jquery.js",
-  jsDependencies += ProvidedJS / "jquery.manifest.js" dependsOn "jquery.js",
+  
+  // When we need to debug into jQuery itself, uncomment these two lines, and comment out the one below them:
+//  jsDependencies += "org.webjars" % "jquery" % "2.1.3" / "jquery.js" dependsOn "jquery.min.js",
+//  jsDependencies += ProvidedJS / "jquery-shim.js" dependsOn "jquery.js",
+  // Normal case: use the minified version of JQuery:
+  jsDependencies += ProvidedJS / "jquery-shim.js" dependsOn "jquery.min.js",
+  
+  jsDependencies += ProvidedJS / "jquery-ui-1.10.0.custom.js" dependsOn "jquery-shim.js",
+  jsDependencies += ProvidedJS / "jquery.manifest.js" dependsOn "jquery-shim.js",
   jsDependencies += ProvidedJS / "jquery.ui.touch-punch.js" dependsOn "jquery-ui-1.10.0.custom.js",
-  jsDependencies += ProvidedJS / "bootstrap.min.js" dependsOn "jquery.js",
-  jsDependencies += ProvidedJS / "jquery.autosize.min.js" dependsOn "jquery.js",
-  jsDependencies += ProvidedJS / "jquery.raty.js" dependsOn "jquery.js",
-  jsDependencies += ProvidedJS / "jquery.histogram.js" dependsOn "jquery.js",
+  jsDependencies += ProvidedJS / "bootstrap.min.js" dependsOn "jquery-shim.js",
+  jsDependencies += ProvidedJS / "jquery.autosize.min.js" dependsOn "jquery-shim.js",
+  jsDependencies += ProvidedJS / "jquery.raty.js" dependsOn "jquery-shim.js",
+  jsDependencies += ProvidedJS / "jquery.histogram.js" dependsOn "jquery-shim.js",
   jsDependencies += ProvidedJS / "moment.min.js",
 
   jsDependencies += ProvidedJS / "load-image.min.js" dependsOn "jquery-ui-1.10.0.custom.js",
@@ -64,11 +73,11 @@ lazy val querkiClient = (project in file("scalajs")).settings(
 
   libraryDependencies ++= sharedDependencies.value ++ Seq(
     "org.scala-js" %%% "scalajs-dom" % "0.8.0",
-    "com.lihaoyi" %%% "utest" % "0.3.1" % "test",
+    "com.lihaoyi" %%% "utest" % "0.3.1",
     "org.scala-js" %%% "scala-parser-combinators" % "1.0.2",
     "org.scala-lang.modules" %% "scala-async" % "0.9.2",
 	"org.querki" %%% "querki-jsext" % "0.2",
-	"org.querki" %%% "jquery-facade" % "0.2"
+	"org.querki" %%% "jquery-facade" % "0.3"
   )).
   settings(sharedDirectorySettings: _*).
   enablePlugins(ScalaJSPlugin, ScalaJSPlay)
