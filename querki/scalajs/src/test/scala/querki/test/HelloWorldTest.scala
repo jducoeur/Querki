@@ -25,11 +25,6 @@ object HelloWorldTest extends TestSuite {
       val d:js.Dynamic = lit()
       d.hello = ((t:String) => s"hello $t")
       println(s"Dynamic hello is ${d.hello(" there")}")
-//      
-//      // But that doesn't let me do so with a string name. For that I need an Object:
-//      val o:js.Object with js.Dynamic = lit()
-//      js.Object.defineProperty(o, "hi", lit(there = "there").asInstanceOf[js.PropertyDescriptor])
-//      println(s"Object hello is ${o.hi.there}")
     }
   }
 }

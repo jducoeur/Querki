@@ -105,7 +105,7 @@ class PlayAjax(call:PlayCall) {
     val settings = lit(data = dataStr).asInstanceOf[JQueryAjaxSettings]
     val deferred = call.ajax(settings).asInstanceOf[JQueryDeferred]
     deferred.done { (data:String, textStatus:String, jqXHR:JQueryDeferred) => 
-      // Uncomment this link to print the results of API calls.
+      // Uncomment this line to print the results of API calls.
       println(s"Got AJAX response $data")
       promise.success(data)
     }

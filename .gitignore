@@ -6,6 +6,7 @@
 testdb/
 *.db
 application.conf
+local.sbt
 
 #################
 ## Eclipse
