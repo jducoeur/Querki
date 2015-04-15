@@ -3,7 +3,7 @@ package querki.client
 import scala.concurrent.Future
 
 import scala.scalajs.js
-import org.querki.jquery.JQueryDeferred
+import org.querki.jquery._
 
 import upickle._
 import autowire._
@@ -50,22 +50,34 @@ trait TestClientRouter {
       url = s"/test/$userName/$spaceId/$name/$p1"
     )
   }
-  def ajaxCommonEntryPoint(name:String, handler:(String => Future[String]))(p1:String) = {
+  def ajaxCommonEntryPoint(name:String, handler:(String => Future[String])) = {
     println("Calling ajaxCommonEntryPoint")
     lit(
-      url = s"/test/$name/$p1",
+      url = s"/test/$name",
       
       // This is returning a JQueryDeferred, essentially.
-      // TODO: make this pluggable!
-      ajax = { () =>
+      ajax = { (settings:JQueryAjaxSettings) =>
         lit(
           done = { (cb:js.Function3[String, String, JQueryDeferred, Any]) =>
+            val data = settings.data.asInstanceOf[String]
+            val rawPairs = data.split("&")
+            // NOTE: for the moment, we're only dealing with proper key=value pairs, since we really
+            // only care about the pickledRequest:
+            val splitPairs = rawPairs.map(_.split("=")).filter(_.length == 2)
+            val pairs = splitPairs.map { pair =>
+              (pair(0), js.URIUtils.decodeURIComponent(pair(1)))
+            }
+            val pickledRequest = pairs.find(_._1 == "pickledRequest") match {
+              case Some(req) => req._2
+              case None => throw new Exception("Didn't get a pickledRequest in an API call!")
+            }
+            
             // Note that we actually call the callback, and thus fulfill the Future in PlayAjax, synchronously.
             // This is an inaccuracy that could lead to us missing some bugs, but does make the testing more
             // deterministic.
             // TODO: enhance the framework to fire the callbacks asynchronously. We'll have to make sure the
             // Javascript framework doesn't exit prematurely, though, and the test will have to wait for results.
-            val fut = handler(p1)
+            val fut = handler(pickledRequest)
             fut.onFailure {
               case ex:Exception => println(s"Got async error $ex"); throw ex
             }
@@ -135,14 +147,14 @@ trait StandardTestEntryPoints extends TestClientRouter {
         case None => throw new Exception(s"Couldn't find handler for trait ${request.path}")
       }
     }) _ }
-    def commonFunc():Function[String, js.Dynamic] = { println("In commonFunc") 
+    def commonFunc():js.Dynamic = { println("In commonFunc") 
       ajaxCommonEntryPoint("commonApiRequest", { pickledRequest =>
         val request = read[Core.Request[String]](pickledRequest)
         handlers.get(request.path) match {
           case Some(handler) => handler.handle(request)
           case None => throw new Exception(s"Couldn't find handler for trait ${request.path}")
         }
-      }) _ 
+      })
     }
     controllers.ClientController.commonApiRequest = { commonFunc _ }
     

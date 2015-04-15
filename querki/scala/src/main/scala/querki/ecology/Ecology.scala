@@ -219,8 +219,11 @@ class EcologyImplBase[ST, ET <: EcotBase[ST, ET]] extends EcologyBase[ST, ET] wi
   def init(initialSpaceState:ST)(specializedInit:ST => ST):ST = {
 //    println("Starting Ecology initialization...")
     val mainState = initializeRemainingEcots(_registeredEcots, initialSpaceState)
+//	println("Main initialization complete")
     val finalState = specializedInit(mainState)
+//	println("SpecializedInit complete")
     postInitialize(_registeredEcots)
+//	println("PostInit complete")
     finalState
   }
   
@@ -350,6 +353,15 @@ class EcologyImplBase[ST, ET <: EcotBase[ST, ET]] extends EcologyBase[ST, ET] wi
   }
   
   private def postInitialize(ecots:Set[ET]) = {
-    ecots.foreach(_.postInit)
+    ecots.foreach { ecot =>
+	  try {
+	    ecot.postInit 
+	  } catch {
+	    case ex:Exception => {
+		  println(s"Got exception while post-initializing ${ecot.fullName}: $ex")
+		  throw ex
+		}
+	  }
+	}
   }
 }
