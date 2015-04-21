@@ -102,7 +102,7 @@ class PlayAjax(call:PlayCall) {
       val encoded = js.URIUtils.encodeURIComponent(pair._2)
       s"${pair._1}=$encoded"
     }.mkString("&")
-    val settings = lit(data = dataStr).asInstanceOf[JQueryAjaxSettings]
+    val settings = JQueryAjaxSettings.data(dataStr)
     val deferred = call.ajax(settings).asInstanceOf[JQueryDeferred]
     deferred.done { (data:String, textStatus:String, jqXHR:JQueryDeferred) => 
       // Uncomment this line to print the results of API calls.
