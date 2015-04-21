@@ -10,21 +10,14 @@ import utest._
  */
 object FutureCrashTest extends TestSuite {
 
-  def spewing[T](msg:String)(f: => T):T = {
-    try {
-      val result = f
-      result
-    } catch {
-      case ex:Exception => { println(s"  $msg failed: $ex"); ex.printStackTrace(); throw ex }
-    }
+  def wrapping[T](f: => T):T = {
+    f
   }
   implicit val queue = scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
 
   def tests = TestSuite {
     "Crash the compiler when I spew a future" - {
-      spewing("Nothing much") {
-        val fut = Future { 1 }
-      }
+      wrapping { val fut = Future { 1 } }
 //      println("This prevents the crash")
     }
   }
