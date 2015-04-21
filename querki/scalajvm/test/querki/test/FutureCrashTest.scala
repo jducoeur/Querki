@@ -13,7 +13,7 @@ object FutureCrashTest extends TestSuite {
   def wrapping[T](f: => T):T = {
     f
   }
-  implicit val queue = scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+  implicit val queue = scala.concurrent.ExecutionContext.Implicits.global
 
   def tests = TestSuite {
     "Crash the compiler when I spew a future" - {
