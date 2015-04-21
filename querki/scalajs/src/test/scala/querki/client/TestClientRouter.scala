@@ -50,10 +50,10 @@ trait TestClientRouter {
       url = s"/test/$userName/$spaceId/$name/$p1"
     )
   }
-  def ajaxCommonEntryPoint(name:String, handler:(String => Future[String])) = {
-    println("Calling ajaxCommonEntryPoint")
+  
+  def ajaxEntryPointBase(name:String, url:String, handler:(String => Future[String])) = {
     lit(
-      url = s"/test/$name",
+      url = url,
       
       // This is returning a JQueryDeferred, essentially.
       ajax = { (settings:JQueryAjaxSettings) =>
@@ -92,40 +92,15 @@ trait TestClientRouter {
 	      
 	  method = "PUT",
 	  `type` = "PUT",
-	  absoluteURL = new URL("http://www.querki.net/dummy/")  
+	  absoluteURL = s"http://www.querki.net$url"
     )
   }
-  def ajaxEntryPoint1(name:String, handler:(String => Future[String]))(userName:String, spaceId:String, p1:String) = {
-    lit(
-      url = s"/test/$userName/$spaceId/$name/$p1",
-      
-      // This is returning a JQueryDeferred, essentially.
-      // TODO: make this pluggable!
-      ajax = { () =>
-        lit(
-          done = { (cb:js.Function3[String, String, JQueryDeferred, Any]) =>
-            // Note that we actually call the callback, and thus fulfill the Future in PlayAjax, synchronously.
-            // This is an inaccuracy that could lead to us missing some bugs, but does make the testing more
-            // deterministic.
-            // TODO: enhance the framework to fire the callbacks asynchronously. We'll have to make sure the
-            // Javascript framework doesn't exit prematurely, though, and the test will have to wait for results.
-            val fut = handler(p1)
-            fut.onFailure {
-              case ex:Exception => println(s"Got async error $ex"); throw ex
-            }
-            fut.map { result => cb(result, "", lit().asInstanceOf[JQueryDeferred]) }
-          },
-          fail = { (cb:js.Function3[JQueryDeferred, String, String, Any]) =>
-            // We don't do anything here -- we're not failing for now.
-            // TODO: we should do some fail tests!
-          }
-        ) 
-      },
-	      
-	  method = "PUT",
-	  `type` = "PUT",
-	  absoluteURL = new URL("http://www.querki.net/dummy/")  
-    )
+  
+  def ajaxCommonEntryPoint(name:String, handler:(String => Future[String])) = {
+    ajaxEntryPointBase(name, s"/test/$name", handler)
+  }
+  def ajaxApiEntryPoint(name:String, handler:(String => Future[String]))(userName:String, spaceId:String) = {
+    ajaxEntryPointBase(name, s"/test/$userName/$spaceId/$name", handler)
   }
 }
 
@@ -140,14 +115,16 @@ trait StandardTestEntryPoints extends TestClientRouter {
     
     controllers.TOSController.showTOS = { rawEntryPoint0("showTOS") _ }
     
-    controllers.ClientController.apiRequest = { ajaxEntryPoint1("apiRequest", { pickledRequest =>
-      val request = read[Core.Request[String]](pickledRequest)
-      handlers.get(request.path) match {
-        case Some(handler) => handler.handle(request)
-        case None => throw new Exception(s"Couldn't find handler for trait ${request.path}")
-      }
-    }) _ }
-    def commonFunc():js.Dynamic = { println("In commonFunc") 
+    controllers.ClientController.apiRequest = {
+      ajaxApiEntryPoint("apiRequest", { pickledRequest =>
+        println("Handling apiRequest")
+        val request = read[Core.Request[String]](pickledRequest)
+        handlers.get(request.path) match {
+          case Some(handler) => handler.handle(request)
+          case None => throw new Exception(s"Couldn't find handler for trait ${request.path}")
+        }
+      }) _ }
+    def commonFunc():js.Dynamic = { 
       ajaxCommonEntryPoint("commonApiRequest", { pickledRequest =>
         val request = read[Core.Request[String]](pickledRequest)
         handlers.get(request.path) match {
@@ -157,8 +134,6 @@ trait StandardTestEntryPoints extends TestClientRouter {
       })
     }
     controllers.ClientController.commonApiRequest = { commonFunc _ }
-    
-    println(s"Initially, commonApiRequest = ${controllers.ClientController.commonApiRequest}")
     
     registerApiHandler[CommonFunctions]("getStandardThings")(new CommonFunctionsEmpty with AutowireHandler {
       def handle(request:Core.Request[String]):Future[String] = route[CommonFunctions](this)(request) 

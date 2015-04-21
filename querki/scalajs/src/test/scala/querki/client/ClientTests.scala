@@ -6,9 +6,9 @@ import scala.async.Async._
 
 import utest._
 import autowire._
-import utest.ExecutionContext.RunNow
 
 import querki.comm._
+import querki.globals._
 import querki.test._
 
 object ClientTests extends QuerkiTests {
@@ -29,6 +29,9 @@ object ClientTests extends QuerkiTests {
 
   def tests = TestSuite {
     
+    /**
+     * To a substantial degree, this test is testing the test infrastructure itself.
+     */
     "Test url and ajax calls" - {
       setup() 
       registerApiHandler[ClientTestTrait]("getMsg")(new ClientTestEmpty with AutowireHandler {
@@ -37,10 +40,11 @@ object ClientTests extends QuerkiTests {
         def handle(request:Core.Request[String]):Future[String] = route[ClientTestTrait](this)(request)
       })
       val controllers = interface[querki.comm.ApiComm].controllers
-      val entryPoint:PlayCall = controllers.Application.thing("User", "Space", "Thing")
+      val entryPoint:PlayCall = controllers.ClientController.apiRequest("User", "Space")
       val url = entryPoint.url
-      assert(url == "/test/User/Space/thing/Thing")
-      
+      assert(url == "/test/User/Space/apiRequest")
+      assert(entryPoint.absoluteURL == "http://www.querki.net/test/User/Space/apiRequest")
+          
       async {
         val result = await(Client[ClientTestTrait].getMsg("hi there").call())
 	    assert(result == "ClientTestImpl got the message hi there")
@@ -48,5 +52,4 @@ object ClientTests extends QuerkiTests {
     }
     
   }
-  
 }
