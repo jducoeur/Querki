@@ -12,6 +12,7 @@ import querki.api.{CommonFunctions, CommonFunctionsEmpty}
 import querki.comm.URL
 import querki.conversations.{ConversationFunctions, ConversationFunctionsEmpty, ConversationInfo}
 import querki.globals._
+import querki.notifications.{NotificationFunctions, NotificationFunctionsEmpty, NotificationInfo}
 
 trait TestClientRouter {
   
@@ -97,7 +98,7 @@ trait TestClientRouter {
     )
   }
   
-  def ajaxCommonEntryPoint(name:String, handler:(String => Future[String])) = {
+  def ajaxCommonEntryPoint(name:String, handler:(String => Future[String]))() = {
     ajaxEntryPointBase(name, s"/test/$name", handler)
   }
   def ajaxApiEntryPoint(name:String, handler:(String => Future[String]))(userName:String, spaceId:String) = {
@@ -124,26 +125,22 @@ trait StandardTestEntryPoints extends TestClientRouter {
     controllers.ClientController.space = { rawEntryPoint0("space") _ }
     
     // ************************
-    // The main API handlers:
+    // The main API handlers. Note that all handlers are currently placed in a common registry. I believe that should
+    // be fine -- I don't see any way for them to conflict.
     //    
-    controllers.ClientController.apiRequest = {
-      ajaxApiEntryPoint("apiRequest", { pickledRequest =>
-        val request = read[Core.Request[String]](pickledRequest)
-        handlers.get(request.path) match {
-          case Some(handler) => handler.handle(request)
-          case None => throw new Exception(s"Couldn't find test handler for API trait ${request.path}")
+    def apiHandler(pickledRequest:String):Future[String] = {
+      val request = read[Core.Request[String]](pickledRequest)
+      handlers.get(request.path) match {
+        case Some(handler) => handler.handle(request)
+        case None => {
+          val path = request.path.mkString(".")
+          throw new Exception(s"Couldn't find registered handler for API call $path")
         }
-      }) _ }
-    def commonFunc():js.Dynamic = { 
-      ajaxCommonEntryPoint("commonApiRequest", { pickledRequest =>
-        val request = read[Core.Request[String]](pickledRequest)
-        handlers.get(request.path) match {
-          case Some(handler) => handler.handle(request)
-          case None => throw new Exception(s"Couldn't find test handler for API trait ${request.path}")
-        }
-      })
+      }      
     }
-    controllers.ClientController.commonApiRequest = { commonFunc _ }
+    controllers.ClientController.apiRequest = { ajaxApiEntryPoint("apiRequest", apiHandler) _ }
+    controllers.ClientController.commonApiRequest = { ajaxCommonEntryPoint("commonApiRequest", apiHandler) _ }
+    controllers.ClientController.userApiRequest = { ajaxCommonEntryPoint("userApiRequest", apiHandler) _ }
     
     registerApiHandler[CommonFunctions]("getStandardThings")(new CommonFunctionsEmpty with AutowireHandler {
       def handle(request:Core.Request[String]):Future[String] = route[CommonFunctions](this)(request) 
@@ -157,7 +154,17 @@ trait StandardTestEntryPoints extends TestClientRouter {
       }
       
       def handle(request:Core.Request[String]):Future[String] = route[ConversationFunctions](this)(request) 
-    })    
+    })
+    
+    // We'll eventually want to allow notification tests to override this, but for now let's define the standard
+    // empty version:
+    registerApiHandler[NotificationFunctions]("numNewNotifications")(new NotificationFunctionsEmpty with AutowireHandler {
+      override def numNewNotifications():Int = {
+        0
+      }
+      
+      def handle(request:Core.Request[String]):Future[String] = route[NotificationFunctions](this)(request) 
+    })
   }
 
 }
