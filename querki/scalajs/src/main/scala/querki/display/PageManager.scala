@@ -61,18 +61,18 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
    * is typically going to be the body itself, but we're deliberately not assuming that.
    */
   @JSExport
-  def setRoot(windowIn:dom.Window, root:dom.Element) = {
+  def setRoot(windowIn:dom.Window, root:dom.Element):Future[Page] = {
     _displayRoot = Some(root)
     _window = Some(windowIn)
     
-    // The system should all be booted, so let's go render:
-    invokeFromHash()
-
     // Whenever the hash changes, update the window. This is the main mechanism for navigation
     // within the client!
     $(windowIn).on("hashchange", { e:dom.Element =>
       invokeFromHash()
     })
+    
+    // The system should all be booted, so let's go render:
+    invokeFromHash()
   }
   
   var _imagePath:Option[String] = None
@@ -94,14 +94,14 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   /**
    * Based on the hash part of the current location, load the appropriate page.
    */
-  def invokeFromHash() = {
+  def invokeFromHash():Future[Page] = {
     val fullHash = window.location.hash
     
     if (fullHash.length == 0)
       showRoot()
     else
       // Before we "navigate", give any outstanding InputGadgets a chance to save their values:
-      InputGadgets.afterAllSaved.foreach { dummy =>
+      InputGadgets.afterAllSaved.flatMap { dummy =>
         _currentHash = fullHash
 	    // Slice off the hash itself:
 	    val hash = fullHash.substring(1)
@@ -162,23 +162,25 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     fut
   }
   
-  def showRoot() = {
+  def showRoot():Future[Page] = {
     // TBD: in principle, this ought to be going through a factory for the Space Thing.
     // But we don't actually *have* a factory for Thing pages. Should we?
-    DataAccess.space.foreach(space => showPage(space.urlName.underlying, Map.empty))
+    showPage(DataAccess.space.get.urlName.underlying, Map.empty)
   }
   
-  def renderPage(pageName:String, paramMap:ParamMap):Unit = {
+  def renderPage(pageName:String, paramMap:ParamMap):Future[Page] = {
     try {
       val page = Pages.constructPage(pageName, paramMap)
       renderPage(page)
     } catch {
-      case MissingPageParameterException(paramName) => 
+      case MissingPageParameterException(paramName) => {
         StatusLine.showUntilChange(s"Missing page parameter $paramName")
+        Future.failed(new Exception(s"Missing page parameter $paramName"))
+      }
       case ex:Exception => {
         println(s"Exception trying to render page $pageName")
         ex.printStackTrace()
-        throw ex
+        Future.failed(ex)
       }
     }
   }
@@ -186,7 +188,9 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   /**
    * Actually display the full page.
    */
-  def renderPage(page:Page) = {
+  def renderPage(page:Page):Future[Page] = {
+    val fut = nextChangeFuture
+    
     beforePageLoads(page)
     
     val fullPage =
@@ -204,6 +208,8 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     // Note that onPageRendered doesn't get called here, because most Pages involve
     // async calls to the server. When the Page is actually finished loading and
     // rendering, it will call onPageRendered().
+    
+    fut
   }
   
   def onPageRendered(page:Page) = {

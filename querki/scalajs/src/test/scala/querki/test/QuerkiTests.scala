@@ -147,11 +147,8 @@ trait ThingPageTests extends QuerkiTests {
     
     window.location.hash = "#" + pageName
     // This will cause the page to render, based on the current hash:
-    println("About to setRoot")
-    val pageFut = PageManager.nextChangeFuture
-    PageManager.setRoot(window, pageBody)
-    
     // This triggers an exception if something went wrong during page rendering:
-    pageFut.withTimeout("Page failed to render")
+    println("About to setRoot")
+    PageManager.setRoot(window, pageBody).withTimeout("Page failed to render")
   }
 }

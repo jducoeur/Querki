@@ -60,7 +60,7 @@ package object display {
     /**
      * Actually render the page, inside the given root.
      */
-    def setRoot(windowIn:dom.Window, root:dom.Element):Unit
+    def setRoot(windowIn:dom.Window, root:dom.Element):Future[Page]
     
     /**
      * The window that we are operating within.
