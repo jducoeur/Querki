@@ -148,7 +148,6 @@ trait ThingPageTests extends QuerkiTests {
     window.location.hash = "#" + pageName
     // This will cause the page to render, based on the current hash:
     // This triggers an exception if something went wrong during page rendering:
-    println("About to setRoot")
     PageManager.setRoot(window, pageBody).withTimeout("Page failed to render")
   }
 }

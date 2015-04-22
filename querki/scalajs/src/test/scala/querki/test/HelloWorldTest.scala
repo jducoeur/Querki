@@ -17,14 +17,14 @@ object HelloWorldTest extends TestSuite {
       val h = head(scalatags.JsDom.tags2.title("This is the title")).render
       $(h).appendTo($("body"))
       
-      println("The title is now " + $("title").text)
+//      println("The title is now " + $("title").text)
       
       assert(1 == 1)
       
       // I can update a literal easily, because it is js.Dynamic:
       val d:js.Dynamic = lit()
       d.hello = ((t:String) => s"hello $t")
-      println(s"Dynamic hello is ${d.hello(" there")}")
+//      println(s"Dynamic hello is ${d.hello(" there")}")
     }
   }
 }

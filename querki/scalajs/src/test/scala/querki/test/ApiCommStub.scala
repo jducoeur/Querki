@@ -20,7 +20,8 @@ class ApiCommStub(e:Ecology) extends ClientEcot(e) with ApiComm {
     ExploreController = lit(),
     AdminController = lit(),
     ClientController = lit(),
-    TOSController = lit()
+    TOSController = lit(),
+    LoginController = lit()
   )
   
 }

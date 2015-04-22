@@ -10,6 +10,7 @@ import autowire._
 
 import querki.api.{CommonFunctions, CommonFunctionsEmpty}
 import querki.comm.URL
+import querki.conversations.{ConversationFunctions, ConversationFunctionsEmpty, ConversationInfo}
 import querki.globals._
 
 trait TestClientRouter {
@@ -109,19 +110,28 @@ trait StandardTestEntryPoints extends TestClientRouter {
   def setupStandardEntryPoints() = {
     def controllers = commStub.controllers
     
-    // Entry points referenced in the MenuBar, so need to be present in essentially every Page:
+    // ************************
+    // Entry points referenced in the MenuBar, Footer, etc, so need to be present in essentially every Page:
+    //
     controllers.AdminController.showSpaceStatus = { rawEntryPoint0("showSpaceStatus") _ }
     controllers.AdminController.sendSystemMessage = { rawEntryPoint0("sendSystemMessage") _ }
     
     controllers.TOSController.showTOS = { rawEntryPoint0("showTOS") _ }
     
+    controllers.LoginController.userByName = { rawEntryPoint0("userByName") _ }
+    controllers.LoginController.logout = { rawEntryPoint0("logout") _ }
+    
+    controllers.ClientController.space = { rawEntryPoint0("space") _ }
+    
+    // ************************
+    // The main API handlers:
+    //    
     controllers.ClientController.apiRequest = {
       ajaxApiEntryPoint("apiRequest", { pickledRequest =>
-        println("Handling apiRequest")
         val request = read[Core.Request[String]](pickledRequest)
         handlers.get(request.path) match {
           case Some(handler) => handler.handle(request)
-          case None => throw new Exception(s"Couldn't find handler for trait ${request.path}")
+          case None => throw new Exception(s"Couldn't find test handler for API trait ${request.path}")
         }
       }) _ }
     def commonFunc():js.Dynamic = { 
@@ -129,7 +139,7 @@ trait StandardTestEntryPoints extends TestClientRouter {
         val request = read[Core.Request[String]](pickledRequest)
         handlers.get(request.path) match {
           case Some(handler) => handler.handle(request)
-          case None => throw new Exception(s"Couldn't find handler for trait ${request.path}")
+          case None => throw new Exception(s"Couldn't find test handler for API trait ${request.path}")
         }
       })
     }
@@ -138,6 +148,16 @@ trait StandardTestEntryPoints extends TestClientRouter {
     registerApiHandler[CommonFunctions]("getStandardThings")(new CommonFunctionsEmpty with AutowireHandler {
       def handle(request:Core.Request[String]):Future[String] = route[CommonFunctions](this)(request) 
     })
+    
+    // We'll eventually want to allow conversation tests to override this, but for now let's define the standard
+    // empty version:
+    registerApiHandler[ConversationFunctions]("getConversationsFor")(new ConversationFunctionsEmpty with AutowireHandler {
+      override def getConversationsFor(thingId:TID):Future[ConversationInfo] = {
+        Future.successful(ConversationInfo(true, true, Seq.empty))
+      }
+      
+      def handle(request:Core.Request[String]):Future[String] = route[ConversationFunctions](this)(request) 
+    })    
   }
 
 }
