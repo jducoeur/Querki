@@ -16,6 +16,17 @@ import querki.test._
 import querki.util.ScalatagUtils
 
 trait InputTestBase extends ThingPageTests with ScalatagUtils {
+
+  /**
+   * Concise wrapper to define the "expected" value for a normal ChangePropertyValue message.
+   * 
+   * @param propPath The expected Path for the Property to change.
+   * @param newValue The expected stringified value.
+   */
+  def stdChangePropMsg(propPath:String, newValue:String):PartialFunction[PropertyChange, Unit] = {
+    { case EditFunctions.ChangePropertyValue(pp, Vector(nv)) if (pp == propPath && nv == newValue) => {} }
+  }
+  
   /**
    * Test a change to an InputGadget.
    * 

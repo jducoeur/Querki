@@ -36,7 +36,7 @@ object TextInputTests extends InputTestBase {
 	        elem.value(newValue)
 	        elem.change()
           },
-          expected = { case EditFunctions.ChangePropertyValue(pp, Vector(nv)) if (pp == propPath && nv == newValue) => {} }
+          expected = stdChangePropMsg(propPath, newValue)
         )
       }
     }
@@ -64,13 +64,11 @@ object TextInputTests extends InputTestBase {
           propPath,
           mkChange = { elem =>
   	        elem.value(newValue)
-  	        val storedValue = elem.valueString
-  	        println(s"Original value was $newValue")
-  	        println(s"After jQuery, value is $storedValue")
-  	        println(s"Stripped original is ${newValue.replaceAll("\\r\\n", " ")}")
 	        elem.change()
           },
-          expected = { case EditFunctions.ChangePropertyValue(pp, Vector(nv)) if (pp == propPath && nv == newValue.replaceAll("\\r\\n", " ")) => {} }
+          // It turns out that jQuery does *not* entirely preserve the value of a textarea!!! Why is this working properly
+          // in the real code???
+          expected = stdChangePropMsg(propPath, newValue.replaceAll("\\r\\n", " "))
         )
       }  
     }
