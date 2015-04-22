@@ -8,6 +8,7 @@ import utest._
  * This test has nothing to do with Querki per se -- it's just a minimized test for a bad
  * interaction between the Scala.js compiler and uTest. See utest Issue #70.
  */
+/*
 object FutureCrashTest extends TestSuite {
 
   def wrapping[T](f: => T):T = {
@@ -22,3 +23,4 @@ object FutureCrashTest extends TestSuite {
     }
   }
 }
+*/

@@ -77,7 +77,7 @@ lazy val querkiClient = (project in file("scalajs")).settings(
     "com.lihaoyi" %%% "utest" % "0.3.1",
     "org.scala-js" %%% "scala-parser-combinators" % "1.0.2",
     "org.scala-lang.modules" %% "scala-async" % "0.9.2",
-	"org.querki" %%% "querki-jsext" % "0.2",
+	"org.querki" %%% "querki-jsext" % "0.4",
 	"org.querki" %%% "jquery-facade" % "0.4"
   )).
   settings(sharedDirectorySettings: _*).

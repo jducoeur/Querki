@@ -2,6 +2,8 @@ package querki.test
 
 import scala.concurrent.{Future, Promise}
 
+import scala.async.Async._
+
 import upickle._
 import utest._
 import autowire._
@@ -10,6 +12,7 @@ import scala.scalajs.js
 import org.scalajs.dom
 import dom.html
 import org.querki.jquery._
+import org.querki.jsext._
 import scalatags.JsDom.all._
 
 import querki.globals._
@@ -19,7 +22,7 @@ import querki.comm._
 import querki.data.{TID => TIDdummy, _}
 import querki.ecology._
 import querki.identity.UserLevel
-import querki.pages.ThingPageDetails
+import querki.pages.{Page, ThingPageDetails}
 
 trait QuerkiTests extends TestSuite with EcologyMember with querki.client.StandardTestEntryPoints {
   var ecology:EcologyImpl = null
@@ -105,7 +108,6 @@ trait QuerkiTests extends TestSuite with EcologyMember with querki.client.Standa
     trigger
     promise.future
   }
-
 }
 
 trait ThingPageTests extends QuerkiTests {
@@ -117,7 +119,7 @@ trait ThingPageTests extends QuerkiTests {
   
   def setupPage[Output <: dom.Element](
     pageContent:scalatags.JsDom.TypedTag[Output],
-    addEntryPointsCb:Option[js.Dynamic => Unit] = None) = 
+    addEntryPointsCb:Option[js.Dynamic => Unit] = None):Future[Page] = 
   {
     setup(addEntryPointsCb = addEntryPointsCb)
     
@@ -145,6 +147,11 @@ trait ThingPageTests extends QuerkiTests {
     
     window.location.hash = "#" + pageName
     // This will cause the page to render, based on the current hash:
+    println("About to setRoot")
+    val pageFut = PageManager.nextChangeFuture
     PageManager.setRoot(window, pageBody)
+    
+    // This triggers an exception if something went wrong during page rendering:
+    pageFut.withTimeout("Page failed to render")
   }
 }
