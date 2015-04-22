@@ -13,7 +13,7 @@ import querki.test._
 
 object TextInputTests extends InputTestBase {
   val propPath = "v-textoid-MyThingId"
-        
+
   def tests = TestSuite {
     "A small Text should be editable" - {
         
@@ -28,23 +28,18 @@ object TextInputTests extends InputTestBase {
             name:=propPath
           )
         )
-      )
-      expectedChange { change =>
-        assertMatch(change) { case EditFunctions.ChangePropertyValue(propPath, List(newValue)) => }
+      ) flatMap { page =>
+        testChange(
+          $("._textEdit"),
+          mkChange = { elem =>
+	        elem.value(newValue)
+	        elem.change()
+          },
+          expected = { case EditFunctions.ChangePropertyValue(propPath, Vector(newValue)) => {} }
+        )
       }
-      
-      // Since things run synchronously, the page content should have filled by now:
-      val elem = $("._textEdit")
-      val fut = prepToChange(elem)
-      
-      // Fire the change:
-      elem.text(newValue)
-      elem.change()
-      
-      // Wait to be told that we're gotten to savecomplete:
-      fut      
     }
-    
+/*    
     "A large Text should be editable" - {
         
       val newValue = """This is some new multi-paragraph text.
@@ -78,5 +73,6 @@ object TextInputTests extends InputTestBase {
       // Wait to be told that we're gotten to savecomplete:
       fut      
     }
+*/
   }
 }
