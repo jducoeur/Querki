@@ -36,7 +36,7 @@ object TextInputTests extends InputTestBase {
 	        elem.value(newValue)
 	        elem.change()
           },
-          expected = stdChangePropMsg(propPath, newValue)
+          expected = stdChangePropMsg(propPath, Seq(newValue))
         )
       }
     }
@@ -68,7 +68,7 @@ object TextInputTests extends InputTestBase {
           },
           // It turns out that jQuery does *not* entirely preserve the value of a textarea!!! Why is this working properly
           // in the real code???
-          expected = stdChangePropMsg(propPath, newValue.replaceAll("\\r\\n", " "))
+          expected = stdChangePropMsg(propPath, Seq(newValue.replaceAll("\\r\\n", " ")))
         )
       }  
     }

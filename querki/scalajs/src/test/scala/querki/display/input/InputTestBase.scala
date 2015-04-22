@@ -23,8 +23,8 @@ trait InputTestBase extends ThingPageTests with ScalatagUtils {
    * @param propPath The expected Path for the Property to change.
    * @param newValue The expected stringified value.
    */
-  def stdChangePropMsg(propPath:String, newValue:String):PartialFunction[PropertyChange, Unit] = {
-    { case EditFunctions.ChangePropertyValue(pp, Vector(nv)) if (pp == propPath && nv == newValue) => {} }
+  def stdChangePropMsg(propPath:String, newValue:Seq[String]):PartialFunction[PropertyChange, Unit] = {
+    { case EditFunctions.ChangePropertyValue(pp, nv) if (pp == propPath && nv == newValue) => {} }
   }
   
   /**
