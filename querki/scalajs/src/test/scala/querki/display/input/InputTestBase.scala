@@ -16,40 +16,19 @@ import querki.test._
 import querki.util.ScalatagUtils
 
 trait InputTestBase extends ThingPageTests with ScalatagUtils {
-  def propPath:String
-  
-  // DEPRECATED -- switch to the more-complete testChange()
-  def expectedChange(test:PropertyChange => Unit) = {
-    registerApiHandler[EditFunctions]("alterProperty")(new EditFunctionsEmpty with AutowireHandler {
-      override def alterProperty(thingId:TID, change:PropertyChange):Future[PropertyChangeResponse] = {
-        Future {
-          test(change)
-          assert(change.path == propPath)
-          PropertyChanged
-        }
-      }
-    
-      def handle(request:Core.Request[String]):Future[String] = route[EditFunctions](this)(request)
-    })    
-  }
-  
-  // DEPRECATED -- switch to the more-complete testChange()
-  def prepToChange(elem:JQuery):Future[Unit] = {
-    assert(elem.length == 1)
-    val promise = Promise[String]
-    // savecomplete is triggered when InputGadget receives a PropertyChanged from the server.
-    // We need to set it now, because things happen synchronously in utest:
-    elem.on("savecomplete", { (e:dom.Element) => promise.success("Got it") })
-    // Wait to be told that we're gotten to savecomplete:
-    println("Have set the savecomplete callback")
-    promise.future.map { result =>
-      assert(result == "Got it")
-      assert($("#statusText").text == "Saved")
-      println("Got all the way through")
-    }    
-  }
-  
-  def testChange(elem:JQuery, mkChange:JQuery => Unit, expected:PartialFunction[PropertyChange, Unit]):Future[Unit] = {
+  /**
+   * Test a change to an InputGadget.
+   * 
+   * @param elem The JQuery handle to the element we're going to change.
+   * @param propPath The expected path to the Property being changed.
+   * @param mkChange A block that actually makes the change and causes save() to be invoked in some natural way.
+   *   This will often call jQuery.change() to fire the event.
+   * @param expected A PartialFunction that matches the PropertyChange message we expected to receive on the server.
+   * 
+   * @returns A Future that will succeed if everything goes smoothly, or contain an Exception if not. Note that this
+   *   will automatically time out if it fails.
+   */
+  def testChange(elem:JQuery, propPath:String, mkChange:JQuery => Unit, expected:PartialFunction[PropertyChange, Unit]):Future[Unit] = {
     assert(elem.length == 1)
     val promise = Promise[Unit]
     

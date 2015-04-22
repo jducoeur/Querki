@@ -12,12 +12,11 @@ import querki.api._
 import querki.test._
 
 object TextInputTests extends InputTestBase {
-  val propPath = "v-textoid-MyThingId"
-
   def tests = TestSuite {
     "A small Text should be editable" - {
         
       val newValue = "New text value"
+      val propPath = "v-textoid-MyThingId"      
         
       setupPage(
         // Guts of the Thing Page:
@@ -31,6 +30,7 @@ object TextInputTests extends InputTestBase {
       ) flatMap { page =>
         testChange(
           $("._textEdit"),
+          propPath,
           mkChange = { elem =>
 	        elem.value(newValue)
 	        elem.change()
