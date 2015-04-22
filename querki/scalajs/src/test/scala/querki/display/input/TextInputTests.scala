@@ -12,11 +12,12 @@ import querki.api._
 import querki.test._
 
 object TextInputTests extends InputTestBase {
+  val propPath = "v-textoid-MyThingId"
+        
   def tests = TestSuite {
     "A small Text should be editable" - {
         
       val newValue = "New text value"
-      val propPath = "v-textoid-MyThingId"      
         
       setupPage(
         // Guts of the Thing Page:
@@ -35,11 +36,11 @@ object TextInputTests extends InputTestBase {
 	        elem.value(newValue)
 	        elem.change()
           },
-          expected = { case EditFunctions.ChangePropertyValue(propPath, Vector(newValue)) => {} }
+          expected = { case EditFunctions.ChangePropertyValue(pp, Vector(nv)) if (pp == propPath && nv == newValue) => {} }
         )
       }
     }
-/*    
+ 
     "A large Text should be editable" - {
         
       val newValue = """This is some new multi-paragraph text.
@@ -57,22 +58,21 @@ object TextInputTests extends InputTestBase {
             name:=propPath
           )
         )
-      )
-      expectedChange { change =>
-        assertMatch(change) { case EditFunctions.ChangePropertyValue(propPath, List(newValue)) => }
-      }
-      
-      // Since things run synchronously, the page content should have filled by now:
-      val elem = $("._largeTextEdit")
-      val fut = prepToChange(elem)
-      
-      // Fire the change:
-      elem.text(newValue)
-      elem.change()
-      
-      // Wait to be told that we're gotten to savecomplete:
-      fut      
+      ) flatMap { page =>
+        testChange(
+          $("._largeTextEdit"),
+          propPath,
+          mkChange = { elem =>
+  	        elem.value(newValue)
+  	        val storedValue = elem.valueString
+  	        println(s"Original value was $newValue")
+  	        println(s"After jQuery, value is $storedValue")
+  	        println(s"Stripped original is ${newValue.replaceAll("\\r\\n", " ")}")
+	        elem.change()
+          },
+          expected = { case EditFunctions.ChangePropertyValue(pp, Vector(nv)) if (pp == propPath && nv == newValue.replaceAll("\\r\\n", " ")) => {} }
+        )
+      }  
     }
-*/
   }
 }
