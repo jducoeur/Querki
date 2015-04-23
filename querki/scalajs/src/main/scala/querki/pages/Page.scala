@@ -6,6 +6,7 @@ import org.scalajs.dom.{raw => dom}
 import scalatags.JsDom.all._
 import scalatags.JsDom.TypedTag
 import rx._
+import org.querki.jsext._
 
 import querki.globals._
 
@@ -108,7 +109,7 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
       )
     )
 
-    pageContent.foreach { content =>
+    pageContent.notYet.foreach { content =>
       val fullyRendered = content.content.render
       renderedContent.replaceContents(fullyRendered)
       PageManager.update(content.title)

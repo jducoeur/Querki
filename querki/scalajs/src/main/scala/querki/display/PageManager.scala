@@ -68,7 +68,9 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     // Whenever the hash changes, update the window. This is the main mechanism for navigation
     // within the client!
     $(windowIn).on("hashchange", { e:dom.Element =>
-      invokeFromHash()
+      // Suppress redundant hashchange events; code should use reload() to force that.
+      if (window.location.hash != currentHash)
+        invokeFromHash()
     })
     
     // The system should all be booted, so let's go render:
@@ -214,9 +216,11 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   
   def onPageRendered(page:Page) = {
     afterPageLoads(page)
-    _nextChangePromise.foreach { _.success(page) }
+    // Need to do the dance here, because these things can run synchronously during testing:
+    val oldPromise = _nextChangePromise
     _nextChangePromise = None    
-  }
+    oldPromise.foreach { _.success(page) }
+ }
   
   def instantScrollToBottom() = {
     val document = window.document

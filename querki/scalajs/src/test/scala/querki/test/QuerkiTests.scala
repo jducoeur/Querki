@@ -98,15 +98,10 @@ trait QuerkiTests extends TestSuite with EcologyMember with querki.client.Standa
    * and returns a Future that will be fulfilled once the resulting Page is fully
    * loaded. 
    */
-  def afterPageChange(trigger: => Unit):Future[html.Div] = {
-    val promise = Promise[html.Div]
-    PageManager.nextChangeFuture.map { page =>
-      page.renderedContentFuture.map { content =>
-        promise.success(content)
-      }
-    }
+  def afterPageChange(trigger: => Unit):Future[Page] = {
+    val fut = PageManager.nextChangeFuture
     trigger
-    promise.future
+    fut
   }
 }
 
