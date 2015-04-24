@@ -51,7 +51,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) with Stylesheets {
       // TODO: this will need adjusting when we switch to a List-oriented version of this Property:
       fontPropOpt = stylesheet.getPropOpt(GoogleFontProp)
       fontOpt = fontPropOpt.flatMap(_.firstOpt).map(_.raw.toString)
-      fontTagOpt = fontOpt.map(font => <link rel="stylesheet" type="text/css" href={"http://fonts.googleapis.com/css?family=" + font} />)
+      fontTagOpt = fontOpt.map(font => <link rel="stylesheet" type="text/css" href={"//fonts.googleapis.com/css?family=" + font} />)
     }
       yield StyleInfo(css.toSeq, fontTagOpt.map(_.toString).toSeq)
       
@@ -228,7 +228,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) with Stylesheets {
           fontProp <- stylesheet.getPropOpt(GoogleFontProp);
           fonts = fontProp.first.raw.toString()
             )
-          yield "<link rel=\"stylesheet\" type=\"text/css\" href=\"http://fonts.googleapis.com/css?family=" + fonts + "\">"
+          yield "<link rel=\"stylesheet\" type=\"text/css\" href=\"//fonts.googleapis.com/css?family=" + fonts + "\">"
       parentStylesheetStr + localStylesheetStr.getOrElse("") + googleFontStr.getOrElse("")
     }
     
