@@ -217,7 +217,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
       sender ! ThingError(new PublicException(NameExists, name.get))
     else {
       val modTime = DateTime.now
-      persister.request(Create(state, modelId, kind, props, modTime)) {
+      persister.request(Create(state, modelId, kind, props, modTime)).foreach {
         case Changed(thingId, _) => {
           implicit val e = ecology
           kind match {
@@ -328,7 +328,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
 	      }
           
           // ... and persist the change. Note that this is fire-and-forget, and happens after we respond to the caller!
-          persister.request(Change(state, thingId, modelId, modTime, newProps, spaceChangeOpt)) {
+          persister.request(Change(state, thingId, modelId, modTime, newProps, spaceChangeOpt)).foreach {
             case Changed(_, _) => {
               // Do we do anything? This just signifies success
             }
