@@ -45,11 +45,13 @@ class NotificationsPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
   def pageContent = {
     Client[NotificationFunctions].getRecentNotifications().call().map { notifications =>
-      val maxNote = notifications.map(_.id).max
-      Client[NotificationFunctions].readThrough(maxNote).call().foreach { dummy =>
-        // Once we tell the server to update, refresh things.
-        // TODO: eventually, this should become reactively automatic.
-        Notifications.checkNotifications()
+      if (notifications.length > 0) {
+        val maxNote = notifications.map(_.id).max
+        Client[NotificationFunctions].readThrough(maxNote).call().foreach { dummy =>
+          // Once we tell the server to update, refresh things.
+          // TODO: eventually, this should become reactively automatic.
+          Notifications.checkNotifications()
+        }
       }
       val guts = 
         div(
