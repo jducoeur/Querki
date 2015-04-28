@@ -30,7 +30,6 @@ class RequestM[T](val promise:Promise[_]) {
   }
   
   private [util] def resolve(v:Try[T]):Unit = {
-//    println(s"$this: Resolving with $v -- callbacks are $callbacks")
     v match {
       case Success(v) => {
         try {
@@ -48,9 +47,7 @@ class RequestM[T](val promise:Promise[_]) {
   }
   
   def foreach(handler:T => Unit):Unit = {
-//    println(s"$this adding foreach $handler")
     val wrappedHandler:Function[T,Unit] = { v =>
-//      println(s"$this calling foreach handler")
       handler(v)
     }
     handle(handler)
@@ -58,9 +55,7 @@ class RequestM[T](val promise:Promise[_]) {
   
   def map[U](handler:T => U):RequestM[U] = {
     val child:RequestM[U] = new RequestM(promise)
-//    println(s"$this adding map $child")
     val wrappedHandler:Function[T,U] = { v =>
-//      println(s"$this calling mapped handler $child")
       val result = handler(v)
       child.resolve(Success(result))
       result
@@ -72,7 +67,6 @@ class RequestM[T](val promise:Promise[_]) {
   def flatMap[U](handler:T => RequestM[U]):RequestM[U] = {
     handle(handler)
     val child:RequestM[U] = new RequestM(promise)
-//    println(s"$this adding flatMap $child")    
     child
   }
   
@@ -80,12 +74,10 @@ class RequestM[T](val promise:Promise[_]) {
     val filtered = new RequestM[T](promise)
     val filteringCb:Function[T,_] = { v:T =>
       if (p(v)) {
-//        println(s"$this: Passed filtering -- resolving $filtered")
         filtered.resolve(Success(v))
       }
     }
     handle(filteringCb)
-//    println(s"$this adding filter $filtered")
     filtered
   }
   
@@ -131,14 +123,12 @@ trait RequesterImplicits {
     def request(msg:Any)(implicit promise:Promise[_] = Requester.emptyPromise):RequestM[Any] = {
       val req = new RequestM[Any](promise)
       requester.doRequest[Any](target, msg, req)
-//      println(s"------> $req created for request $msg")
       req
     }
     
     def requestFor[T](msg:Any)(implicit promise:Promise[_] = Requester.emptyPromise, tag: ClassTag[T]):RequestM[T] = {
       val req = new RequestM[T](promise)
       requester.doRequest[T](target, msg, req)
-//      println(s"------> $req created for request $msg")
       req
     }
   }
@@ -221,14 +211,12 @@ trait Requester extends Actor with RequesterImplicits {
    * response within the timeout window.)
    */
   def doRequest[T](otherActor:ActorRef, msg:Any, handler:RequestM[T])(implicit tag: ClassTag[T]) = {
-//    println(s"$handler Asking request $msg")
     val originalSender = sender
     val f = otherActor ask msg
     import context.dispatcher
     val fTyped = f.mapTo[T]
     fTyped.onComplete {
       case Success(resp) => {
-//        println(s"$handler: $msg got successful response $resp")
         try {
           self.tell(RequestedResponse(Success(resp), handler), originalSender)
         } catch {
@@ -238,7 +226,6 @@ trait Requester extends Actor with RequesterImplicits {
         }
       }
       case Failure(thrown) => {
-//        println(s"$handler: $msg got error $thrown")
         self.tell(RequestedResponse(Failure(thrown), handler), originalSender)
       }
     }
