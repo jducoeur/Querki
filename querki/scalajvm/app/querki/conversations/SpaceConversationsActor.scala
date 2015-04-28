@@ -67,16 +67,15 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
      */
     case CurrentState(current) => {
       state = current
-      persister.request(GetMaxCommentId) {
-        case CurrentMaxCommentId(n) => {
-          nextId = n + 1
-          space.request(UserValuePersistRequest(User.Anonymous, state.owner, state.toThingId, LoadAllPropValues(NotifyComments.GetCommentNotesPref, state))) {
-            case ValuesForUser(prefs) => {
-              commentNotifyPrefs = prefs
-              become(normalReceive)
-            }
-          }
-        }
+      
+      for {
+        CurrentMaxCommentId(n) <- persister.request(GetMaxCommentId)
+        ValuesForUser(prefs) <- space.request(UserValuePersistRequest(User.Anonymous, state.owner, state.toThingId, LoadAllPropValues(NotifyComments.GetCommentNotesPref, state)))
+      }
+      {
+        nextId = n + 1
+        commentNotifyPrefs = prefs
+        become(normalReceive)
       }
     }
   }
@@ -121,7 +120,7 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
     loadedConversations.get(thingId) match {
       case Some(convs) => f(convs)
       case None => {
-        persister.request(LoadCommentsFor(thingId, state)) {
+        persister.request(LoadCommentsFor(thingId, state)) foreach {
           case AllCommentsFor(_, comments) => {
             // Race condition check: some other request might have loaded this Thing's conversations while
             // we were in the roundtrip. In that case, the already-existing copy is authoritative, because it

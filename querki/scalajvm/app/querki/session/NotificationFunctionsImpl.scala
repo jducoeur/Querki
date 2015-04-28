@@ -58,13 +58,11 @@ trait UserNotifications extends autowire.Server[String, upickle.Reader, upickle.
   def nextNoteId:Int = currentMaxNote + 1
   
   def initNotes() = {
-    notePersister.request(Load) {
-	  case notes:CurrentNotifications => {
-	    currentNotes = notes.notes.sortBy(_.id).reverse
+    notePersister.requestFor[CurrentNotifications](Load) foreach { notes =>
+	  currentNotes = notes.notes.sortBy(_.id).reverse
 	    
-	    // Okay, we're ready to roll:
-	    self ! InitComplete
-	  }
+	  // Okay, we're ready to roll:
+	  self ! InitComplete
 	}
   }
   

@@ -65,15 +65,11 @@ private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpaceP
      * Admin has asked all of the Spaces to give a quick status report.
      */
     case GetSpacesStatus(requester) => {
-      conversations.request(GetActiveThings) {
-        case ActiveThings(nConvs) => {
-          sessions.request(GetActiveSessions) {
-            case ActiveSessions(nSessions) => {
-              sender ! SpaceStatus(spaceId, state.displayName, nConvs, nSessions)
-            }
-          }
-        }
+      for {
+        ActiveThings(nConvs) <- conversations.request(GetActiveThings)
+        ActiveSessions(nSessions) <- sessions.request(GetActiveSessions)
       }
+        sender ! SpaceStatus(spaceId, state.displayName, nConvs, nSessions)
     }
     
     // Message for the Conversation system:

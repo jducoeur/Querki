@@ -86,7 +86,7 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
       // This must happen *after* we close the Transaction, because we're about to do an asynchronous roundtrip to
       // the IdentityCache:
       val idents = tuples.map(_._1)
-      identityCache.request(GetIdentities(idents)) {
+      identityCache.request(GetIdentities(idents)) foreach {
         case IdentitiesFound(identities) => {
           val results = tuples.map(tuple => 
             OneUserValue(
@@ -152,7 +152,7 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
       // This must happen *after* we close the Transaction, because we're about to do an asynchronous roundtrip to
       // the IdentityCache:
       val idents = tuples.map(_._1)
-      identityCache.request(GetIdentities(idents)) {
+      identityCache.request(GetIdentities(idents)) foreach {
         case IdentitiesFound(identities) => {
           val results = tuples.map(tuple => 
             OneUserValue(
