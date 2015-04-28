@@ -53,7 +53,9 @@ class LoginController extends ApplicationBase {
   val signupForm = Form(
     mapping(
       "email" -> email,
-      "password" -> (nonEmptyText verifying minLength(8)),
+      // Note that we intentionally do *not* validate the minimum length here, because Play
+      // foolishly display the error with the password in plaintext on the screen:
+      "password" -> nonEmptyText,
       "handle" -> (text verifying pattern("""[a-zA-Z0-9]+""".r, error="A handle can only contain letters and numbers")),
       "display" -> nonEmptyText
     )(SignupInfo.apply)(SignupInfo.unapply)
@@ -157,6 +159,16 @@ class LoginController extends ApplicationBase {
       }
     )
   }
+  
+  val minPasswordLen = 8
+  
+  def passwordValidationError(password:String):Option[String] = {
+    // For now, we're not doing much except the most trivial check:
+    if (password.length >= minPasswordLen)
+      None
+    else
+      Some(s"Password must be at least $minPasswordLen characters long")
+  }
     
   // Is there any reason this actually needs withSpace, other than proving the Space exists?
   def signup(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId, allowAnyone = true) { implicit rc =>
@@ -167,27 +179,32 @@ class LoginController extends ApplicationBase {
         BadRequest(views.html.handleInvite(rc, errorForm))
       },
       info => {
-        // Make sure we have a Person in a Space in the cookies -- that is required for a legitimate request
-    	val personOpt = rc.sessionCookie(querki.identity.personParam)
-    	personOpt match {
-    	  case Some(personId) => {
-	    	val result = UserAccess.createProvisional(info)
-	        result match {
-	          case Success(user) => {
-	            // We're now logged in, so start a new session. But preserve the personParam for the next step:
-	            Redirect(routes.LoginController.joinSpace(ownerId, spaceId)).withSession(user.toSession :+ (querki.identity.personParam -> personId):_*)
-	          }
-	          case Failure(error) => {
-	            val msg = error match {
-	              case err:PublicException => err.display(request)
-	              case _ => QLog.error("Internal Error during signup", error); "Something went wrong; please try again"
-	            }
-	            BadRequest(views.html.handleInvite(rc.withError(msg), rawForm))
-	          }
-	        }    	    
-    	  }
-    	  case None => doError(routes.Application.index, "For now, you can only sign up for Querki through an invitation. Try again soon.")
-    	}
+        passwordValidationError(info.password) match {
+          case Some(err) => BadRequest(views.html.handleInvite(rc.withError(err), rawForm))
+          case None => {
+	        // Make sure we have a Person in a Space in the cookies -- that is required for a legitimate request
+	    	val personOpt = rc.sessionCookie(querki.identity.personParam)
+	    	personOpt match {
+	    	  case Some(personId) => {
+		    	val result = UserAccess.createProvisional(info)
+		        result match {
+		          case Success(user) => {
+		            // We're now logged in, so start a new session. But preserve the personParam for the next step:
+		            Redirect(routes.LoginController.joinSpace(ownerId, spaceId)).withSession(user.toSession :+ (querki.identity.personParam -> personId):_*)
+		          }
+		          case Failure(error) => {
+		            val msg = error match {
+		              case err:PublicException => err.display(request)
+		              case _ => QLog.error("Internal Error during signup", error); "Something went wrong; please try again"
+		            }
+		            BadRequest(views.html.handleInvite(rc.withError(msg), rawForm))
+		          }
+		        }    	    
+	    	  }
+	    	  case None => doError(routes.Application.index, "For now, you can only sign up for Querki through an invitation. Try again soon.")
+	    	}
+          }
+        }
       }
     )
   }
