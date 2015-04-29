@@ -6,9 +6,11 @@ import akka.actor._
 import akka.event.LoggingReceive
 import akka.pattern.AskTimeoutException
 
+import org.querki.requester._
+
 import querki.ecology._
 import querki.session.UserSessionMessages
-import querki.util.{Config, QLog, Requester}
+import querki.util.{Config, QLog}
 
 class CollaboratorCache(val ecology:Ecology, val userId:UserId) extends Actor with Requester with EcologyMember  {
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]

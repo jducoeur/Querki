@@ -12,6 +12,8 @@ import akka.event.LoggingReceive
 import akka.pattern.ask
 import akka.util.Timeout
 
+import org.querki.requester._
+
 import models.{Kind, MIMEType}
 import models.{AsOID, AsName, OID, ThingId, UnknownOID}
 import models.{Collection, Property, PType, PTypeBuilder, Thing, ThingState}

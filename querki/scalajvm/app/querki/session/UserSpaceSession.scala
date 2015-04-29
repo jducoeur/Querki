@@ -9,6 +9,8 @@ import akka.event.LoggingReceive
 import upickle._
 import autowire._
 
+import org.querki.requester._
+
 import models.{AsName, AsOID, OID, PType, Thing, ThingId, ThingState, UnknownOID}
 import models.Thing.PropMap
 
@@ -24,7 +26,7 @@ import querki.spaces.messages.SpaceError._
 import querki.time.DateTime
 import querki.uservalues.SummarizeChange
 import querki.uservalues.PersistMessages._
-import querki.util.{PublicException, QLog, Requester, TimeoutChild, UnexpectedPublicException}
+import querki.util.{PublicException, QLog, TimeoutChild, UnexpectedPublicException}
 import querki.values.{QValue, RequestContext, SpaceState}
 
 /**

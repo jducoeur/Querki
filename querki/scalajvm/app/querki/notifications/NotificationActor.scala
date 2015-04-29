@@ -2,6 +2,8 @@ package querki.notifications
 
 import akka.actor._
 
+import org.querki.requester._
+
 import querki.ecology._
 import querki.identity.{IdentityCacheMessages, PublicIdentity, User, UserCacheMessages, UserLevel}
 import querki.session.UserSessionMessages

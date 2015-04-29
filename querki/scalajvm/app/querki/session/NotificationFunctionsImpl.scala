@@ -7,13 +7,14 @@ import akka.event.LoggingReceive
 import upickle._
 import autowire._
 
+import org.querki.requester._
+
 import querki.globals._
 import Implicits.execContext
 
 import querki.notifications._
 import querki.notifications.NotificationPersister._
 import querki.values.RequestContext
-import querki.util.Requester
 
 import messages.{ClientRequest, ClientResponse}
 

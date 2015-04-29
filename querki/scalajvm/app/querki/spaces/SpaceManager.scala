@@ -3,6 +3,8 @@ package querki.spaces
 import language.postfixOps
 import scala.util._
 
+import org.querki.requester._
+
 import models.{AsName, AsOID, OID}
 import models.{Kind, Thing}
 import messages._

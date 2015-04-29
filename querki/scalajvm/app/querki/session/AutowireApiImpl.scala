@@ -5,6 +5,8 @@ import akka.actor._
 
 import rx._
 
+import org.querki.requester._
+
 import models.{Thing, ThingId}
 
 import querki.globals._
@@ -12,7 +14,6 @@ import querki.globals._
 import querki.data.TID
 import querki.identity.User
 import querki.spaces.messages.SessionRequest
-import querki.util.{Requester, RequesterImplicits}
 import querki.values.{RequestContext, SpaceState}
 
 import messages.SessionMessage

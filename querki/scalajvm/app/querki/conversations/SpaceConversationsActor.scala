@@ -5,6 +5,8 @@ import akka.event.LoggingReceive
 
 import models.OID
 
+import org.querki.requester._
+
 import querki.conversations.messages._
 import querki.ecology._
 import querki.identity.User
@@ -12,7 +14,7 @@ import querki.spaces.SpacePersistenceFactory
 import querki.spaces.messages._
 import querki.time.{DateTime, DateTimeOrdering}
 import querki.uservalues.PersistMessages._
-import querki.util.{PublicException, Requester}
+import querki.util.PublicException
 import querki.values.SpaceState
 
 import PersistMessages._

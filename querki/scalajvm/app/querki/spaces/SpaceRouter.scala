@@ -3,6 +3,8 @@ package querki.spaces
 import akka.actor._
 import akka.event.LoggingReceive
 
+import org.querki.requester._
+
 import models.OID
 
 import querki.conversations.messages.{ActiveThings, GetActiveThings}
@@ -10,7 +12,7 @@ import querki.ecology._
 import querki.session.UserSpaceSessions
 import querki.session.messages._
 import querki.spaces.messages._
-import querki.util.{Requester, TimeoutChild}
+import querki.util.TimeoutChild
 import querki.values.SpaceState
 
 /**

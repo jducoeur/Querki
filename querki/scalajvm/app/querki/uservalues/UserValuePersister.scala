@@ -7,6 +7,8 @@ import anorm.{Success=>AnormSuccess,_}
 import play.api.db._
 import play.api.Play.current
 
+import org.querki.requester._
+
 import models.OID
 
 import querki.db._
@@ -17,7 +19,7 @@ import querki.identity.IdentityCacheMessages._
 import querki.spaces.messages.UserValuePersistRequest
 import querki.time.DateTime
 import querki.time.TimeAnorm._
-import querki.util.{QLog, Requester}
+import querki.util.QLog
 import querki.util.SqlHelpers._
 import querki.values.{EmptyValue, QValue}
 

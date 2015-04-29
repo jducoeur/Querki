@@ -1,4 +1,4 @@
-package querki.util
+package org.querki.requester
 
 import scala.concurrent.duration._
 import scala.concurrent.{Future, Promise}
@@ -39,7 +39,7 @@ class RequestM[T](val promise:Promise[_]) {
     }    
   }
   
-  private [util] def resolve(v:Try[T]):Unit = {
+  private [requester] def resolve(v:Try[T]):Unit = {
     v match {
       case Success(v) => {
         try {

@@ -6,6 +6,8 @@ import akka.event.LoggingReceive
 // TEMP: while hacking the timestamps:
 import com.github.nscala_time.time.Imports._
 
+import org.querki.requester._
+
 import querki.globals._
 import Implicits.execContext
 
@@ -14,7 +16,7 @@ import querki.identity.{CollaboratorCache, IdentityId, PublicIdentity, UserId}
 import querki.notifications.{CurrentNotifications, EmptyNotificationId, LoadInfo, Notification, NotificationFunctions, UpdateLastChecked, UserInfo}
 import querki.notifications.NotificationPersister.Load
 import querki.time.DateTime
-import querki.util.{Requester, TimeoutChild}
+import querki.util.TimeoutChild
 import querki.values.RequestContext
 
 import messages.ClientRequest
