@@ -13,7 +13,6 @@ import querki.identity.PublicIdentity
 import querki.identity.IdentityCacheMessages._
 import querki.session.{AutowireApiImpl, AutowireParams}
 import querki.spaces.messages.{ConversationRequest, ThingError}
-import querki.util.Requester
 import querki.values.RequestContext
 
 import messages._
@@ -66,31 +65,22 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
 	    // TODO: *Sigh*. We'd really like to have something like Spores in Request, to catch bugs like this in
 	    // the compiler...
 	    implicit val theRc = rc
-	    spaceRouter.requestNested(ConversationRequest(rc.requesterOrAnon, rc.ownerId, rc.state.get.id, GetConversations(rc.thing.get.id))) {
-	      case ThingConversations(convs) => {
-	        // TODO: the IdentityCache is a bit of a bottleneck. Should we have a temp cache locally here?
-	        IdentityAccess.identityCache.requestFor(GetIdentities(getIds(convs).toSeq)) {
-		      case IdentitiesFound(identities) => {
-		        // Okay, we now have all the necessary info, so build the API version of the conversations.
-		        implicit val ids = identities
-		        val apiConvs = convs.map(toApi(_))
-		        
-		    	ConversationInfo(canComment, canReadComments, apiConvs)
-		      }
-		      case _ => throw new Exception("Unable to find Conversation identities!")
-	        }
+	    
+	    requestFuture[ConversationInfo] { implicit promise =>
+  	      for {
+	        ThingConversations(convs) <- spaceRouter.requestFor[ThingConversations](ConversationRequest(rc.requesterOrAnon, rc.ownerId, rc.state.get.id, GetConversations(rc.thing.get.id)))
+	        IdentitiesFound(identities) <- IdentityAccess.identityCache.requestFor[IdentitiesFound](GetIdentities(getIds(convs).toSeq))
+            apiConvs = convs.map(toApi(_)(identities, theRc))
 	      }
-	      case ThingError(ex, stateOpt) => throw ex
+	        promise.success(ConversationInfo(canComment, canReadComments, apiConvs))
 	    }
 	} else {
 	  // The requester can't read the comments, so don't bother collecting them:
 	  Future.successful(ConversationInfo(canComment, canReadComments, Seq.empty))
 	}
   }
-  
+
   def addComment(thingId:TID, text:String, responseTo:Option[CommentId]):Future[ConvNode] = withThing(thingId) { thing =>
-    val promise = Promise[ConvNode]
-    
     // TODO: we need a better concept of "my current identity in this Space"!
     val authorId = rc.localIdentity.map(_.id).getOrElse(UnknownOID)
     
@@ -107,26 +97,21 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
     )
     
     val theRc = rc
-    spaceRouter.request(ConversationRequest(user, rc.ownerId, state.id, NewComment(comment))) {
-      case reply @ AddedNode(parentId, node) => {
-        IdentityAccess.identityCache.request(GetIdentityRequest(authorId)) {
-	      case IdentityFound(identity) => {
-	    	promise.success(toApi(node)(Map(authorId -> identity), theRc))
-	      }
-	      case _ => promise.failure(new Exception("Unable to find Conversation identities!"))
-        }
-
+    requestFuture[ConvNode] { implicit promise =>
+      for {
+        AddedNode(parentId, node) <- spaceRouter.request(ConversationRequest(user, rc.ownerId, state.id, NewComment(comment)))
+        IdentityFound(identity) <- IdentityAccess.identityCache.request(GetIdentityRequest(authorId))
       }
-      case ThingError(ex, stateOpt) => promise.failure(ex)
+        promise.success(toApi(node)(Map(authorId -> identity), theRc))
     }
-
-    promise.future
   }
   
   def deleteComment(thingId:TID, commentId:CommentId):Future[Unit] = withThing(thingId) { thing =>
-    spaceRouter.requestFor(ConversationRequest(user, rc.ownerId, state.id, DeleteComment(thing.id, commentId))) {
-      case CommentDeleted => ()
-      case CommentNotDeleted => throw new Exception("Unable to delete comment")      
+    requestFuture[Unit] { implicit promise =>
+	  spaceRouter.request(ConversationRequest(user, rc.ownerId, state.id, DeleteComment(thing.id, commentId))).map {
+	    case CommentDeleted => promise.success(())
+	    case CommentNotDeleted => throw new Exception("Unable to delete comment")      
+	  }      
     }
   }
 }

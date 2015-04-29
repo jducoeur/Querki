@@ -54,7 +54,7 @@ class SpaceManager(val ecology:Ecology) extends Actor with Requester with Ecolog
   
   def createChild(key:OID):ActorRef = context.actorOf(SpaceRouter.actorProps(ecology, persistenceFactory, key), sid(key))
   
-  def receive = {
+  def receive = handleRequestResponse orElse {
     // This is entirely a DB operation, so just have the Persister deal with it:
     case req @ ListMySpaces(owner) => persister.forward(req)
     
@@ -86,7 +86,7 @@ class SpaceManager(val ecology:Ecology) extends Actor with Requester with Ecolog
               maxSpaces
           }
           
-          persister.request(CreateSpacePersist(requester.mainIdentity.id, userMaxSpaces, NameUtils.canonicalize(display), display)) {
+          persister.request(CreateSpacePersist(requester.mainIdentity.id, userMaxSpaces, NameUtils.canonicalize(display), display)) foreach {
             case err:ThingError => sender ! err
             // Now, let the Space Actor finish the process once it is ready:
             case Changed(spaceId, _) => routeToChild(spaceId, req)
@@ -103,7 +103,7 @@ class SpaceManager(val ecology:Ecology) extends Actor with Requester with Ecolog
           spaceNameCache.get(canonName) match {
             case Some(SpaceInfo(spaceId, name)) => routeToChild(spaceId, req)
             case None => {
-	          persister.request(GetSpaceByName(ownerId, canonName)) {
+	          persister.request(GetSpaceByName(ownerId, canonName)) foreach {
 	            case SpaceId(spaceId) => {
 	              routeToChild(spaceId, req)
 	              spaceNameCache = spaceNameCache + (canonName -> SpaceInfo(spaceId, canonName))

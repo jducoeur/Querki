@@ -1,13 +1,98 @@
 package querki.util
 
-import scala.util.{Success,Failure}
-
 import scala.concurrent.duration._
 import scala.concurrent.{Future, Promise}
+import scala.util.{Try,Success,Failure}
+import scala.reflect.ClassTag
 
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
+  
+/**
+ * The request "monad". It's actually a bit suspicious, in that it's mutable, but by and
+ * large this behaves the way you expect a monad to work. In particular, it works with for
+ * comprehensions, allowing you to compose requests much the way you normally do Futures.
+ * 
+ * @param promise If this request had an implicit Promise in scope, that Promise gets saved
+ *   away here. This is mainly so that exceptions can properly fail the Promise. If there is
+ *   no implicit Promise, this will be set to Requester.emptyPromise, which is simply a signal
+ *   that there isn't really one.
+ */
+class RequestM[T](val promise:Promise[_]) {
+  /**
+   * The actions to take after this Request resolves.
+   * 
+   * Yes, this is mutable. That's arguably sad and evil, but remember that this is only intended
+   * for use inside the pseudo-single-threaded world of an Actor.
+   */
+  private var callbacks = List.empty[Function[T, _]]
+  
+  private def propagateError(th:Throwable) = {
+    if (promise eq Requester.emptyPromise) {
+      // Do nothing -- we don't have a real promise to fulfill
+      println(s"$this got error $th")
+      // TBD: should we crash the requester?
+    } else {
+      // We've failed, so stop here and report the exception
+      promise.failure(th)
+    }    
+  }
+  
+  private [util] def resolve(v:Try[T]):Unit = {
+    v match {
+      case Success(v) => {
+        try {
+          callbacks foreach { cb => cb(v) }
+        } catch {
+          case th:Throwable => propagateError(th)
+        }
+      }
+      case Failure(ex) => propagateError(ex)
+    }
+  }
+  
+  def handle(handler:T => _):Unit = {
+    callbacks :+= handler
+  }
+  
+  def foreach(handler:T => Unit):Unit = {
+    val wrappedHandler:Function[T,Unit] = { v =>
+      handler(v)
+    }
+    handle(handler)
+  }
+  
+  def map[U](handler:T => U):RequestM[U] = {
+    val child:RequestM[U] = new RequestM(promise)
+    val wrappedHandler:Function[T,U] = { v =>
+      val result = handler(v)
+      child.resolve(Success(result))
+      result
+    }
+    handle(wrappedHandler)
+    child
+  }
+  
+  def flatMap[U](handler:T => RequestM[U]):RequestM[U] = {
+    handle(handler)
+    val child:RequestM[U] = new RequestM(promise)
+    child
+  }
+  
+  def filter(p:T => Boolean):RequestM[T] = {
+    val filtered = new RequestM[T](promise)
+    val filteringCb:Function[T,_] = { v:T =>
+      if (p(v)) {
+        filtered.resolve(Success(v))
+      }
+    }
+    handle(filteringCb)
+    filtered
+  }
+  
+  def withFilter(p:T => Boolean):RequestM[T] = filter(p)
+}
 
 /**
  * Implicit that hooks into *other* Actors, to provide the nice request() syntax to send
@@ -15,15 +100,46 @@ import akka.util.Timeout
  * RequesterImplicits should also be mixed into any other class that wants access to this
  * capability. Those other classes must have access to a Requester -- usually, they should be
  * functional classes owned *by* a Requester.
+ * 
+ * This trait gives you the functions that you actually call directly -- request(), requestFor()
+ * and requestFuture(). But those calls mostly create RequestM objects, and the actual work gets
+ * done by the associated Requester.
  */
 trait RequesterImplicits {
   
   /**
    * The actual Requester that is going to send the requests and process the responses. If
    * you mix RequesterImplicits into a non-Requester, this must point to that Actor, which
-   * does all the real work.
+   * does all the real work. (If you are using this from within Requester, it's already set.)
    */
   def requester:Requester
+    
+  /**
+   * This is a wrapper, intended to surround a request clause whose value you want to return
+   * as a Future. There is no magic here -- it is simply syntactic sugar to make this pattern
+   * easier. You should use it along these lines:
+   * {{{
+   * requestFuture[TargetType] { implicit promise =>
+   *   for {
+   *     v1 <- someActor.request(MyMessage)
+   *     v2 <- anotherActor.request(AnotherMessage(v1))
+   *   }
+   *     promise.success(v2)
+   * }
+   * }}}
+   * That is, requestFuture expects a block that takes a Promise of the type you want to return.
+   * This block should declare that Promise as implicit -- that implicit Promise gets sucked into
+   * the requests, and is used if an exception is thrown.
+   * 
+   * @param reqFunc An arbitrarily-complex request clause, which eventually calls promise.success()
+   *   when it gets the desired answer.
+   * @returns A Future of the specified type, which is hooked into the requests.
+   */
+  def requestFuture[R](reqFunc:Promise[R] => Any)(implicit tag: ClassTag[R]):Future[R] = {
+    val promise = Promise[R]
+    reqFunc(promise)
+    promise.future
+  }
   
   /**
    * Hook to add the request() methods to a third-party Actor.
@@ -32,63 +148,41 @@ trait RequesterImplicits {
     /**
      * The basic, simple version of request() -- sends a message, process the response.
      * 
-     * This version doesn't return anything, and is intended for use inside normal Actors.
-     * Usually, handler will pass messages back to other Actors, or simply alter the state
-     * of this one.
+     * You can think of request as a better-behaved version of ask. Where ask sends a message to the
+     * target actor, and gives you a Future that will execute when the response is received, request
+     * does the same thing but will process the resulting RequestM '''in the Actor's receive loop'''.
+     * While this doesn't save you from every possible problem, it makes it much easier to write clear
+     * and complex operations, involving coordinating several different Actors, without violating the
+     * central invariants of the Actor model.
+     * 
+     * The current sender will be preserved and will be active during the processing of the results,
+     * so you can use it as normal.
+     * 
+     * This version of the call does not impose any expectations on the results. You can use a
+     * destructuring case class in a for comprehension if you want just a single return type, or you
+     * can map the RequestM to a PartialFunction in order to handle several possible returns.
      * 
      * @param msg The message to send to the target actor.
-     * @param handler A standard Receive handler, which deals with all of the known responses.
+     * @param promise If there is an implicit Promise in scope, errors will cause that Promise to fail.
      */
-    def request(msg:Any)(handler:Actor.Receive) = requester.doRequest(target, msg)(handler)
-    
-    /**
-     * A request mechanism that returns a Future of the *handled* response. That is, this should
-     * be used when you want to get a response, massage it, and pass along that massaged result.
-     * 
-     * Use this with care -- the returned Future should not usually be processed much in the context
-     * of the Actor, for the usual reason that Futures inside Actors are problematic. But it is a nice
-     * concise way to pass along results to, eg, Autowire, to send those results back to the client.
-     * 
-     * @param msg The message to send to the target Actor
-     * @param handler A function that deals with the response from the target and massages it
-     *   as desired. This returns a value of type T, or throws an exception if something goes wrong.
-     * @tparam T The type that should be returned by handler.
-     */
-    def requestFor[T](msg:Any)(handler:PartialFunction[Any,T]):Future[T] = {
-      val promise = Promise[T]
-      val wrappedHandler:Actor.Receive = PartialFunction({ response:Any =>
-        try {
-          val result = handler(response)
-          promise.success(result)
-        } catch {
-          case th:Throwable => promise.failure(th)
-        }
-      })
-      requester.doRequest(target, msg)(wrappedHandler)
-      promise.future
+    def request(msg:Any)(implicit promise:Promise[_] = Requester.emptyPromise):RequestM[Any] = {
+      val req = new RequestM[Any](promise)
+      requester.doRequest[Any](target, msg, req)
+      req
     }
     
     /**
-     * The outer layer for nested Requests that return Futures. Think of this as flatMap, where
-     * requestFor is map.
+     * A more strongly-typed version of request().
      * 
-     * TODO: there is a monadic handler, usable with for expressions, desperately trying to break out here...
+     * This works pretty much exactly like request, but expects that the response will be of type T. It will
+     * throw a ClassCastException if anything else is received. Otherwise, it is identical to request().
      */
-    def requestNested[T](msg:Any)(handler:PartialFunction[Any,Future[T]]):Future[T] = {
-      val promise = Promise[T]
-      val wrappedHandler:Actor.Receive = PartialFunction({ response:Any =>
-        try {
-          val result = handler(response)
-          promise.completeWith(result)
-        } catch {
-          case th:Throwable => promise.failure(th)
-        }
-      })
-      requester.doRequest(target, msg)(wrappedHandler)
-      promise.future
+    def requestFor[T](msg:Any)(implicit promise:Promise[_] = Requester.emptyPromise, tag: ClassTag[T]):RequestM[T] = {
+      val req = new RequestM[T](promise)
+      requester.doRequest[T](target, msg, req)
+      req
     }
   }
-
 }
 
 /**
@@ -108,7 +202,7 @@ trait RequesterImplicits {
  * def receive = {
  *   ...
  *   case MyMessage(a, b) => {
- *     otherActor.request(MyRequest(b)) {
+ *     otherActor.request(MyRequest(b)).foreach {
  *       case OtherResponse(c) => ...
  *     }
  *   }
@@ -116,10 +210,6 @@ trait RequesterImplicits {
  * 
  * While OtherResponse is lexically part of MyRequest, it actually *runs* during receive, just like
  * any other incoming message, so it isn't prone to the threading problems that ask is.
- * 
- * Note that point-free style does *not* work, unfortunately -- because request has multiple parameter
- * lists, my attempts to use this point-free get confused about what the block belongs to. I don't know
- * if there's a way to fix that.
  * 
  * How does this work? Under the hood, it actually does use ask, but in a very specific and constrained
  * way. We send the message off using ask, and then hook the resulting Future. When the Future completes,
@@ -153,8 +243,8 @@ trait Requester extends Actor with RequesterImplicits {
    * The response from request() will be wrapped up in here and looped around. You shouldn't need to
    * use this directly. 
    */
-  case class RequestedResponse(response:Any, handler:Actor.Receive) {
-    def invoke = handler(response)
+  case class RequestedResponse[T](response:Try[T], handler:RequestM[T]) {
+    def invoke = { handler.resolve(response) }
   }
   
   /**
@@ -167,20 +257,37 @@ trait Requester extends Actor with RequesterImplicits {
    * which will be run if the operation fails for some reason. (Most often, because we didn't receive a
    * response within the timeout window.)
    */
-  def doRequest(otherActor:ActorRef, msg:Any)(handler:Actor.Receive) = {
+  def doRequest[T](otherActor:ActorRef, msg:Any, handler:RequestM[T])(implicit tag: ClassTag[T]) = {
     val originalSender = sender
     val f = otherActor ask msg
     import context.dispatcher
-    f.onComplete {
-      case Success(resp) => self.tell(RequestedResponse(resp, handler), originalSender) 
-      case Failure(thrown) => self.tell(RequestedResponse(thrown, handler), originalSender) 
+    val fTyped = f.mapTo[T]
+    fTyped.onComplete {
+      case Success(resp) => {
+        try {
+          self.tell(RequestedResponse(Success(resp), handler), originalSender)
+        } catch {
+          // TBD: is this ever going to plausibly happen?
+          case ex:Exception => {
+            self.tell(RequestedResponse(Failure(ex), handler), originalSender)
+          }
+        }
+      }
+      case Failure(thrown) => {
+        self.tell(RequestedResponse(Failure(thrown), handler), originalSender)
+      }
     }
   }
   
-  override def unhandled(message: Any): Unit = {
-    message match {
-      case resp:RequestedResponse => resp.invoke
-      case other => super.unhandled(other)
-    }
+  def handleRequestResponse:Actor.Receive = {
+    case resp:RequestedResponse[_] => resp.invoke
   }
+}
+
+object Requester {
+  /**
+   * This is the default Promise, used if there isn't an implicit one in scope. It signals that there is
+   * *not* a Future being worked on, so we shouldn't try sticking Exceptions into it.
+   */
+  val emptyPromise = Promise[Unit]
 }

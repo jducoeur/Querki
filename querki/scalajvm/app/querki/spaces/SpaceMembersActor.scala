@@ -10,10 +10,9 @@ import querki.globals._
 import Implicits.execContext
 
 import querki.spaces.messages._
-import querki.util.Requester
 
 private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRouter:ActorRef)
-  extends Actor with Stash with Requester with EcologyMember
+  extends Actor with Stash with EcologyMember
 {
   implicit val ecology = e
   

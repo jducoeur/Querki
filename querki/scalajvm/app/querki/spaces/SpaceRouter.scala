@@ -49,7 +49,7 @@ private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpaceP
     super.preStart()
   }
   
-  def receive = LoggingReceive {
+  def receive = LoggingReceive (handleRequestResponse orElse {
     
     /**
      * The Space has sent an updated State, so tell everyone about it.
@@ -65,15 +65,11 @@ private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpaceP
      * Admin has asked all of the Spaces to give a quick status report.
      */
     case GetSpacesStatus(requester) => {
-      conversations.request(GetActiveThings) {
-        case ActiveThings(nConvs) => {
-          sessions.request(GetActiveSessions) {
-            case ActiveSessions(nSessions) => {
-              sender ! SpaceStatus(spaceId, state.displayName, nConvs, nSessions)
-            }
-          }
-        }
+      for {
+        ActiveThings(nConvs) <- conversations.request(GetActiveThings)
+        ActiveSessions(nSessions) <- sessions.request(GetActiveSessions)
       }
+        sender ! SpaceStatus(spaceId, state.displayName, nConvs, nSessions)
     }
     
     // Message for the Conversation system:
@@ -91,7 +87,7 @@ private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpaceP
     // Message for the Space:
     case msg:CreateSpace => space.forward(msg)
     case msg:SpaceMessage => space.forward(msg)
-  }
+  })
 }
 
 object SpaceRouter {

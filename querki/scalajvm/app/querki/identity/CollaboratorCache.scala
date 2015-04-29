@@ -31,7 +31,7 @@ class CollaboratorCache(val ecology:Ecology, val userId:UserId) extends Actor wi
     requester ! UserSessionMessages.Collaborators(results)
   }
 
-  def receive = LoggingReceive {
+  def receive = LoggingReceive (handleRequestResponse orElse {
     case UserSessionMessages.GetCollaborators(_, identityId, term) => {
       _allCollaborators match {
         case Some(collabs) => {
@@ -49,7 +49,7 @@ class CollaboratorCache(val ecology:Ecology, val userId:UserId) extends Actor wi
             // Get the IdentityIds of everyone I share a Space with:
 	        val acquaintanceIds = UserAccess.getAcquaintanceIds(identityId)
 	        // Get their Identities from the IdentityCache:
-	        IdentityAccess.identityCache.request(IdentityCacheMessages.GetIdentities(acquaintanceIds)) {
+	        IdentityAccess.identityCache.request(IdentityCacheMessages.GetIdentities(acquaintanceIds)) foreach {
 	          case IdentityCacheMessages.IdentitiesFound(identities) => {
 	            import context.dispatcher
 	            val collabs = identities.values
@@ -85,7 +85,7 @@ class CollaboratorCache(val ecology:Ecology, val userId:UserId) extends Actor wi
     }
     
     case ClearCache => _allCollaborators = None
-  }
+  })
 }
 
 object CollaboratorCache {

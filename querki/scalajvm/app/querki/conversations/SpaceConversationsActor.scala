@@ -61,25 +61,29 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
    */
   var nextId:CommentId = 1
   
-  def receive = LoggingReceive {
+  def receive = LoggingReceive(handleRequestResponse orElse {
     /**
      * This Actor can't become properly active until we receive the current state to work with:
      */
     case CurrentState(current) => {
+      // Only go through boot if this is the first time we get the state.
+      val boot = (state == null)
+      
       state = current
-      persister.request(GetMaxCommentId) {
-        case CurrentMaxCommentId(n) => {
-          nextId = n + 1
-          space.request(UserValuePersistRequest(User.Anonymous, state.owner, state.toThingId, LoadAllPropValues(NotifyComments.GetCommentNotesPref, state))) {
-            case ValuesForUser(prefs) => {
-              commentNotifyPrefs = prefs
-              become(normalReceive)
-            }
-          }
+      
+      if (boot) {
+        for {
+          CurrentMaxCommentId(n) <- persister.request(GetMaxCommentId)
+          ValuesForUser(prefs) <- space.request(UserValuePersistRequest(User.Anonymous, state.owner, state.toThingId, LoadAllPropValues(NotifyComments.GetCommentNotesPref, state)))
         }
+        {
+          nextId = n + 1
+          commentNotifyPrefs = prefs
+          become(normalReceive)
+        }        
       }
     }
-  }
+  })
   
   /**
    * Given a bunch of Comments, stitch them together into Conversations.
@@ -121,7 +125,7 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
     loadedConversations.get(thingId) match {
       case Some(convs) => f(convs)
       case None => {
-        persister.request(LoadCommentsFor(thingId, state)) {
+        persister.request(LoadCommentsFor(thingId, state)) foreach {
           case AllCommentsFor(_, comments) => {
             // Race condition check: some other request might have loaded this Thing's conversations while
             // we were in the roundtrip. In that case, the already-existing copy is authoritative, because it
@@ -189,7 +193,7 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
     convs.copy(comments = pre ++ theOne ++ post)
   }
   
-  def normalReceive:Receive = LoggingReceive {
+  def normalReceive:Receive = LoggingReceive(handleRequestResponse orElse {
     /**
      * Update from the Space Actor that the state has been changed.
      */
@@ -322,5 +326,5 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
         }
       }
     }
-  }
+  })
 }

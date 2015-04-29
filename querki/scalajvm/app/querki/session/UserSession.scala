@@ -19,8 +19,8 @@ import querki.values.RequestContext
 
 import messages.ClientRequest
 
-private [session] class UserSession(val ecology:Ecology, val userId:UserId) extends Actor with Stash with Requester 
-  with TimeoutChild with EcologyMember with UserNotifications
+private [session] class UserSession(val ecology:Ecology, val userId:UserId) extends Actor with Stash
+  with TimeoutChild with Requester with EcologyMember with UserNotifications
 {
   import UserSessionMessages._
   
@@ -38,7 +38,7 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
   /**
    * The initial receive just handles setup, and then switches to mainReceive once it is ready:
    */
-  def receive = LoggingReceive {
+  def receive = LoggingReceive (handleRequestResponse orElse {
     case UserInfo(id, version, lastChecked) => {
       lastNoteChecked = lastChecked
       
@@ -57,16 +57,16 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
 
     // Hold everything else off until we've created them all:
     case msg:UserSessionMsg => stash()
-  }
+  })
   
-  def mainReceive:Receive = notificationMessageReceive orElse LoggingReceive {
+  def mainReceive:Receive = notificationMessageReceive orElse LoggingReceive (handleRequestResponse orElse {
     case FetchSessionInfo(_) => {
       // TODO: make this real
       sender ! UserSessionInfo(numNewNotes)
     }
     
     case msg:GetCollaborators => collaborators.forward(msg)
-  }
+  })
 }
 
 object UserSessionMessages {

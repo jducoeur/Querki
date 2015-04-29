@@ -15,7 +15,7 @@ import querki.core.{PropList, QLText}
 import querki.data._
 import querki.session.messages.ChangeProps2
 import querki.spaces.messages.{CreateThing, ModifyThing, ThingFound, ThingError}
-import querki.util.{PublicException, Requester}
+import querki.util.{PublicException}
 import querki.values.{QLRequestContext, RequestContext}
 
 class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with EditFunctions {
@@ -95,15 +95,12 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   }
   
   def doChangeProps(thing:Thing, props:PropMap):Future[PropertyChangeResponse] = {
-    val promise = Promise[PropertyChangeResponse]
-
-    self.request(createSelfRequest(ChangeProps2(thing.toThingId, props))) {
-      case ThingFound(_, _) => promise.success(PropertyChanged)
-      
-       case ThingError(ex, _) => promise.failure(new querki.api.GeneralChangeFailure("Error during save"))
+    requestFuture[PropertyChangeResponse] { implicit promise =>
+      self.request(createSelfRequest(ChangeProps2(thing.toThingId, props))) foreach {
+        case ThingFound(_, _) => promise.success(PropertyChanged)
+        case ThingError(ex, _) => promise.failure(new querki.api.GeneralChangeFailure("Error during save"))
+      } 
     }
-    
-    promise.future
   }
   
   def alterProperty(thingId:TID, change:PropertyChange):Future[PropertyChangeResponse] = withThing(thingId) { thing =>
@@ -186,8 +183,6 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   }
   
   def create(modelId:TID, initialProps:Seq[PropertyChange]):Future[ThingInfo] = withThing(modelId) { model =>
-    val promise = Promise[ThingInfo]
-    
     val props = (emptyProps /: initialProps) { (map, change) =>
       change match {
         case ChangePropertyValue(path, vs) => changeToProps(None, path, vs) match {
@@ -198,19 +193,19 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
       }
     }
     
-    spaceRouter.request(CreateThing(user, state.owner, state.toThingId, model.kind, model.id, props)) {
-      case ThingFound(thingId, newState) => {
-        newState.anything(thingId) match {
-          case Some(thing) => {
-	        promise.success(ClientApi.thingInfo(thing, rc))
+    requestFuture[ThingInfo] { promise =>
+      spaceRouter.request(CreateThing(user, state.owner, state.toThingId, model.kind, model.id, props)) foreach {
+        case ThingFound(thingId, newState) => {
+          newState.anything(thingId) match {
+            case Some(thing) => {
+	          promise.success(ClientApi.thingInfo(thing, rc))
+            }
+            case None => promise.failure(new Exception("INTERNAL ERROR: Space claimed to create a new Thing, but seems to have failed?!?"))
           }
-          case None => promise.failure(new Exception("INTERNAL ERROR: Space claimed to create a new Thing, but seems to have failed?!?"))
         }
+        case ThingError(error, stateOpt) => promise.failure(error)
       }
-      case ThingError(error, stateOpt) => promise.failure(error)
     }
-    
-    promise.future
   }
   
   private def getOnePropEditor(thing:Thing, prop:AnyProp, propVal:DisplayPropVal):PropEditInfo = {
@@ -336,8 +331,6 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   }
   
   def addPropertyAndGetEditor(thingId:TID, propIdStr:TID):Future[PropEditInfo] = withThing(thingId) { thing =>
-    val promise = Promise[PropEditInfo]
-    
     implicit val s = state
     val propId = propIdStr.toThingId
     val propsOpt = for {
@@ -346,23 +339,23 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     }
       yield Core.toProps((prop, newV))()  
 
-    self.request(createSelfRequest(ChangeProps2(thing.toThingId, propsOpt.get))) {
-      case ThingFound(id, newState) => {
-        val result = for {
-          newThing <- newState.anything(id)
-          prop <- newState.prop(propId)
-          pv <- newThing.getPropOpt(prop)
-          propVal = DisplayPropVal(Some(newThing), prop, Some(pv.v))
-        }
-          yield getOnePropEditor(newThing, prop, propVal)
+    requestFuture[PropEditInfo] { implicit promise =>
+      self.request(createSelfRequest(ChangeProps2(thing.toThingId, propsOpt.get))) foreach {
+        case ThingFound(id, newState) => {
+          val result = for {
+            newThing <- newState.anything(id)
+            prop <- newState.prop(propId)
+            pv <- newThing.getPropOpt(prop)
+            propVal = DisplayPropVal(Some(newThing), prop, Some(pv.v))
+          }
+            yield getOnePropEditor(newThing, prop, propVal)
           
-        promise.success(result.get)
-      }
+          promise.success(result.get)
+        }
       
-      case ThingError(ex, _) => promise.failure(ex)
+        case ThingError(ex, _) => promise.failure(ex)
+      }        
     }
-    
-    promise.future    
   }
   
   def removeProperty(thingId:TID, propIdStr:TID):Future[PropertyChangeResponse] = withThing(thingId) { thing =>
@@ -391,9 +384,8 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     
     def toTypeInfo(t:PType[_]) = TypeInfo(t, t.linkName, t.displayName)
     
-    val promise = Promise[TypeInfo]
     typOpt match {
-      case Some(typ) => promise.success(toTypeInfo(typ))
+      case Some(typ) => Future.successful(toTypeInfo(typ))
       case None => {
         val props = Map(
             Types.ModelForTypeProp(model),
@@ -406,40 +398,39 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
         // is based on, and fails if the stamp is out of date.
         val spaceMsg = CreateThing(rc.requesterOrAnon, rc.ownerId, state.toThingId, Kind.Type, Core.UrType, props)
         
-        spaceRouter.request(spaceMsg) {
-          case ThingFound(typeId, newState) => {
-            val typ = newState.typ(typeId)
-            promise.success(toTypeInfo(typ))
-          }
-          case ThingError(error, stateOpt) => promise.failure(error)
+        requestFuture[TypeInfo] { implicit promise =>
+          spaceRouter.request(spaceMsg) foreach {
+            case ThingFound(typeId, newState) => {
+              val typ = newState.typ(typeId)
+              promise.success(toTypeInfo(typ))
+            }
+            case ThingError(error, stateOpt) => promise.failure(error)
+          }          
         }
       }
     }
-    promise.future
   }
 
   def changeModel(thingId:TID, newModelId:TID):Future[ThingInfo] = withThing(thingId) { thing =>
-    val promise = Promise[ThingInfo]
     state.anything(newModelId.toThingId) match {
       case Some(newModel) => {
         // TODO: in principle, this should route through the UserSpaceSession. It doesn't matter yet, but is
         // likely to once we put Experiment Mode into place.
         val spaceMsg = ModifyThing(user, state.owner, state.id.toThingId, thing.id.toThingId, newModel.id, thing.props)
-        spaceRouter.request(spaceMsg) {
-          case ThingFound(newThingId, newState) => {
-            newState.anything(newThingId) match {
-              case Some(newThing) => promise.success(ClientApi.thingInfo(newThing, rc))
-              case None => promise.failure(new Exception(s"Change Model somehow resulted in unknown Thing $newThingId!"))
-             }
-         }
-          case ThingError(error, stateOpt) => {
-        	promise.failure(error)
+        requestFuture[ThingInfo] { implicit promise =>
+          spaceRouter.request(spaceMsg) foreach {
+            case ThingFound(newThingId, newState) => {
+              newState.anything(newThingId) match {
+                case Some(newThing) => promise.success(ClientApi.thingInfo(newThing, rc))
+                case None => promise.failure(new Exception(s"Change Model somehow resulted in unknown Thing $newThingId!"))
+              }
+            }
+            case ThingError(error, stateOpt) => promise.failure(error)          
           }          
         }
       }
-      case None => promise.failure(new Exception(s"Unknown model $newModelId!")) 
+      case None => Future.failed(new Exception(s"Unknown model $newModelId!")) 
     }
-    promise.future
   }
   
   def getUndefinedTagView(modelId:TID):String = withThing(modelId) { model =>
