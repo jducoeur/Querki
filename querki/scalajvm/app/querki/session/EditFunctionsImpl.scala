@@ -15,7 +15,7 @@ import querki.core.{PropList, QLText}
 import querki.data._
 import querki.session.messages.ChangeProps2
 import querki.spaces.messages.{CreateThing, ModifyThing, ThingFound, ThingError}
-import querki.util.{PublicException, Requester}
+import querki.util.{PublicException}
 import querki.values.{QLRequestContext, RequestContext}
 
 class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with EditFunctions {

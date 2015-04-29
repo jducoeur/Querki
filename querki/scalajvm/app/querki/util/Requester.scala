@@ -279,11 +279,8 @@ trait Requester extends Actor with RequesterImplicits {
     }
   }
   
-  override def unhandled(message: Any): Unit = {
-    message match {
-      case resp:RequestedResponse[_] => resp.invoke
-      case other => super.unhandled(other)
-    }
+  def handleRequestResponse:Actor.Receive = {
+    case resp:RequestedResponse[_] => resp.invoke
   }
 }
 

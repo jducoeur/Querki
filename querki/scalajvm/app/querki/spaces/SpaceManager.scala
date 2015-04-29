@@ -54,7 +54,7 @@ class SpaceManager(val ecology:Ecology) extends Actor with Requester with Ecolog
   
   def createChild(key:OID):ActorRef = context.actorOf(SpaceRouter.actorProps(ecology, persistenceFactory, key), sid(key))
   
-  def receive = {
+  def receive = handleRequestResponse orElse {
     // This is entirely a DB operation, so just have the Persister deal with it:
     case req @ ListMySpaces(owner) => persister.forward(req)
     

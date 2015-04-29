@@ -366,7 +366,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
   }
   
   // If it isn't a message that we know how to handle, let the plugins take a crack at it:
-  def receive = LoggingReceive(mainReceive orElse pluginReceive)
+  def receive = LoggingReceive(handleRequestResponse orElse mainReceive orElse pluginReceive)
   
   def mainReceive:Receive = {
     case req:CreateSpace => {

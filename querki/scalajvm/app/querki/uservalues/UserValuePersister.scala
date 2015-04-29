@@ -33,7 +33,7 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
   
   def SpaceSQL(query:String):SqlQuery = SpacePersistence.SpaceSQL(spaceId, query)
   
-  def receive = LoggingReceive {
+  def receive = LoggingReceive (handleRequestResponse orElse {
     case LoadValuesForUser(identity, state) => {
       DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
         val valueStream = SpaceSQL("""
@@ -210,5 +210,5 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
       }
       
     }
-  }
+  })
 }

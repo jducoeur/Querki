@@ -13,7 +13,6 @@ import querki.core.QLText
 import querki.data._
 import querki.pages.ThingPageDetails
 import querki.spaces.messages.{DeleteThing, ThingFound, ThingError}
-import querki.util.Requester
 
 class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with ThingFunctions {
   
@@ -125,10 +124,6 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
     )
   }
   
-  /**
-   * TODO: rewrite this using the new Requester Monad, after I write that. Use it to help
-   * drive the question of how we propagate an exception inside the ThingError.
-   */
   def deleteThing(thingId:TID):Future[Unit] = withThing(thingId) { thing =>
     requestFuture[Unit] { implicit promise =>
       spaceRouter.request(DeleteThing(user, state.owner, state.toThingId, thing.toThingId)) foreach {

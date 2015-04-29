@@ -13,8 +13,6 @@ import querki.identity.PublicIdentity
 import querki.identity.IdentityCacheMessages._
 import querki.session.{AutowireApiImpl, AutowireParams}
 import querki.spaces.messages.{ConversationRequest, ThingError}
-import querki.util.Requester
-import Requester._
 import querki.values.RequestContext
 
 import messages._

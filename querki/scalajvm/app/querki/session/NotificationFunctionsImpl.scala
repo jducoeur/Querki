@@ -66,7 +66,7 @@ trait UserNotifications extends autowire.Server[String, upickle.Reader, upickle.
 	}
   }
   
-  def notificationMessageReceive:Receive = LoggingReceive {
+  def notificationMessageReceive:Receive = LoggingReceive (handleRequestResponse orElse {
     
     case NewNotification(_, noteRaw) => {
       // We decide what the actual Notification Id is:
@@ -95,7 +95,7 @@ trait UserNotifications extends autowire.Server[String, upickle.Reader, upickle.
         }
       }
     }    
-  }  
+  })
 }
 
 class NotificationFunctionsImpl(notes:UserNotifications, rc:RequestContext)(implicit val ecology:Ecology) 
