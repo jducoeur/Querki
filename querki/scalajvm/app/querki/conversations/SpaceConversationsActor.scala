@@ -66,16 +66,21 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
      * This Actor can't become properly active until we receive the current state to work with:
      */
     case CurrentState(current) => {
+      // Only go through boot if this is the first time we get the state.
+      val boot = (state == null)
+      
       state = current
       
-      for {
-        CurrentMaxCommentId(n) <- persister.request(GetMaxCommentId)
-        ValuesForUser(prefs) <- space.request(UserValuePersistRequest(User.Anonymous, state.owner, state.toThingId, LoadAllPropValues(NotifyComments.GetCommentNotesPref, state)))
-      }
-      {
-        nextId = n + 1
-        commentNotifyPrefs = prefs
-        become(normalReceive)
+      if (boot) {
+        for {
+          CurrentMaxCommentId(n) <- persister.request(GetMaxCommentId)
+          ValuesForUser(prefs) <- space.request(UserValuePersistRequest(User.Anonymous, state.owner, state.toThingId, LoadAllPropValues(NotifyComments.GetCommentNotesPref, state)))
+        }
+        {
+          nextId = n + 1
+          commentNotifyPrefs = prefs
+          become(normalReceive)
+        }        
       }
     }
   }
