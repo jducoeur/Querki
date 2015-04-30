@@ -50,5 +50,11 @@ package object editing {
      * is currently scattered around too much.
      */
     def propsNotInModel(thing:PropertyBundle, instanceProps:List[OID], state:SpaceState):Iterable[OID]
+    
+    /**
+     * The OIDs of Properties that should *not* be sent explicitly as part of the Editor, because they are
+     * handled specially.
+     */
+    def filteredPropIds:Set[OID]
   }
 }

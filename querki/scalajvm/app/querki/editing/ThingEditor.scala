@@ -122,6 +122,14 @@ trait ThingEditor { self:EditorModule =>
         true
     }
     
+      // These Properties do not get Editors sent, because they are handled specially in the Editor:
+    val filteredPropIds =
+      Set(
+        querki.editing.MOIDs.InstanceEditPropsOID,
+        querki.core.MOIDs.IsModelOID,
+        querki.types.DeriveNameMOIDs.DeriveNameOID
+      )
+        
     // This returns only the properties that are defined on this Thing and are not in the Instance Properties:
     def propsNotInModel(thing:PropertyBundle, instanceProps:List[OID], state:SpaceState):Iterable[OID] = {
       implicit val s = state
@@ -134,18 +142,10 @@ trait ThingEditor { self:EditorModule =>
           yield deriveLink == DeriveName.DeriveAlways.id
       val deriveName = deriveNameOpt.getOrElse(false)
         
-      // These Properties do not get Editors sent, because they are handled specially in the Editor:
-      val filteredProps = 
-        Set(
-          querki.editing.MOIDs.InstanceEditPropsOID,
-          querki.core.MOIDs.IsModelOID,
-          querki.types.DeriveNameMOIDs.DeriveNameOID
-        )
-        
       for {
         propId <- thing.props.keys
         if (propId != Core.NameProp.id || !deriveName)
-        if (!filteredProps.contains(propId))
+        if (!filteredPropIds.contains(propId))
         if (!instanceProps.contains(propId))
       }
         yield propId
