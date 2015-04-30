@@ -28,7 +28,8 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "org.imgscalr" % "imgscalr-lib" % "4.2",
     "com.amazonaws" % "aws-java-sdk" % "1.8.4",
     "com.vmunier" %% "play-scalajs-scripts" % "0.1.0",
-	"com.lihaoyi" %% "utest" % "0.3.1"
+	"com.lihaoyi" %% "utest" % "0.3.1",
+	"org.querki" %% "requester" % "1.0"
   ),
   EclipseKeys.skipParents in ThisBuild := false).
   settings(sharedDirectorySettings: _*).
