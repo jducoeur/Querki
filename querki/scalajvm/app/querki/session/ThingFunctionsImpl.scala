@@ -43,6 +43,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
     
     val customHeaderOpt = for {
       pv <- thing.getPropOpt(HtmlUI.PageHeaderProperty)
+      if (!thing.isModel)
     }
       yield pv.v.wikify(thing.thisAsContext(rc))
 
