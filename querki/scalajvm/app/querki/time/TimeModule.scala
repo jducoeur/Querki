@@ -1,11 +1,13 @@
 package querki.time
 
+import scala.xml.NodeSeq
+
 import com.github.nscala_time.time.Imports._
 
 import models._
 
 import querki.ecology._
-import querki.values.{QLContext, SpaceState}
+import querki.values.{ElemValue, QLContext, SpaceState}
 
 /**
  * The TimeModule is responsible for all things Time-related in the Querki API.
@@ -28,6 +30,46 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
    * TYPES
    ******************************************/
   
+  lazy val QDate = new SystemType[DateTime](DateTypeOID,
+      toProps(
+        setName("Date Type"),
+        Summary("Represents a particular date"),
+        Details("""A value of this Type indicates a specific date.
+            |ADVANCED: under the hood, DateTimes are based on the [Joda-Time](http://www.joda.org/joda-time/)
+            |library, and you can use Joda-Time format strings when displaying a Date. For example,
+            |if you say:
+            |```
+            |\[[My Thing -> My Date Property -> \""\__MMM dd 'yy\__\""\]]
+            |```
+            |it will display as something like "Mar 10 '96".
+            |
+            |In the long time, we will probably add functions corresponding to most of the capabilities
+            |of Joda-Time. If there are specific functions or features that you need, please ask for them.""".stripMargin)))
+     with SimplePTypeBuilder[DateTime]
+  {
+    def doDeserialize(v:String)(implicit state:SpaceState) = new DateTime(v.toLong)
+    def doSerialize(v:DateTime)(implicit state:SpaceState) = v.getMillis().toString
+    override def doToUser(v:DateTime)(implicit state:SpaceState):String = defaultRenderFormat.print(v)
+    val defaultRenderFormat = DateTimeFormat.forPattern("MM-dd-yyyy")
+    
+    def doWikify(context:QLContext)(v:DateTime, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
+      val formatter = displayOpt match {
+        case Some(displayText) => DateTimeFormat.forPattern(displayText.plaintext)
+        case None => defaultRenderFormat
+      }
+      Wikitext(formatter.print(v))
+    }
+    
+    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
+      val str = toUser(v)(context.state)
+      <input type="text" class="_dateInput" value={str}/>
+    }
+    
+    override def doComp(context:QLContext)(left:DateTime, right:DateTime):Boolean = { left < right } 
+    override def doMatches(left:DateTime, right:DateTime):Boolean = { left.getMillis == right.getMillis }
+    def doDefault(implicit state:SpaceState) = epoch    
+  }
+  
   class QDateTime(tid:OID) extends SystemType[DateTime](tid,
       toProps(
         setName("Date and Time Type"),
@@ -39,7 +81,7 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
             |produces the DateTime when the given Thing was last changed.
             |
             |ADVANCED: under the hood, DateTimes are based on the [Joda-Time](http://www.joda.org/joda-time/)
-            |library, and you can use Joda-Time format strings when displaying a DataTime. For example,
+            |library, and you can use Joda-Time format strings when displaying a DateTime. For example,
             |if you say:
             |```
             |\[[My Thing -> _modTime -> \""\__KK:mm MMM dd 'yy\__\""\]]
