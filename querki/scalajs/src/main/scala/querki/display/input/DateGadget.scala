@@ -27,8 +27,7 @@ class DateGadget(implicit e:Ecology) extends InputGadget[html.Input](e)  {
       orientation(Orientation.Top)
     // Iff this Date is Optional, show the Clear button:
     val opts = 
-      // TODO: once it's working, make this generally available:
-      if ($(elem).dataString("collid") == DataAccess.std.core.optionalColl.oid.underlying)
+      if (isOptional)
         baseOpts.clearBtn(true)
       else
         baseOpts

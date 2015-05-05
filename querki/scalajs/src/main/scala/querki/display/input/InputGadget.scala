@@ -14,6 +14,7 @@ import querki.globals._
 
 import querki.api.EditFunctions
 import EditFunctions._
+import querki.data.BasicThingInfo
 import querki.display._
 
 /**
@@ -80,6 +81,35 @@ abstract class InputGadget[T <: dom.Element](e:Ecology) extends Gadget[T] with E
    * but there are a few unfortunate inconsistencies.
    */
   def path = $(elem).attr("name").get
+  
+  private def isColl(propColl:String, coll:BasicThingInfo):Option[BasicThingInfo] = {
+    if (propColl == coll.oid.underlying)
+      Some(coll)
+    else
+      None
+  }
+  /**
+   * Returns the Collection for this Property.
+   * 
+   * This must only be called after the InputGadget is fully set up! (Usually in hook().)
+   */
+  def propCollection:BasicThingInfo = {
+    val propColl = $(elem).dataString("collid")
+    val core = DataAccess.std.core
+    isColl(propColl, core.optionalColl).getOrElse(
+      isColl(propColl, core.exactlyOneColl).getOrElse(
+      isColl(propColl, core.listColl).getOrElse(
+      isColl(propColl, core.setColl).getOrElse(
+      throw new Exception(s"Property has unknown collection $propColl")))))
+  }
+  /**
+   * True iff this Property is Optional.
+   */
+  def isOptional:Boolean = {
+    val propColl = $(elem).dataString("collid")
+    val core = DataAccess.std.core
+    isColl(propColl, core.optionalColl).isDefined
+  }
   
   /**
    * Save the current state of this InputGadget. This can potentially be overridden, but shouldn't
