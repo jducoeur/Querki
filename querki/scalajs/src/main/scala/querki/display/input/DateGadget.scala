@@ -7,20 +7,33 @@ import org.querki.facades.bootstrap.datepicker._
 
 import querki.globals._
 
-class DateGadget(implicit e:Ecology) extends InputGadget[html.Input](e)  {
+class DateGadget(implicit e:Ecology) extends InputGadget[html.Input](e)  {  
   def values = {
     val date = $(elem).getDate()
-    val timestamp = date.getTime().toLong
-    List(timestamp.toString)
+    if (date == null) {
+      List()
+    } else {
+      val timestamp = date.getTime().toLong
+      List(timestamp.toString)
+    }
   }
   
   def hook() = {
-    $(elem).datepicker(BootstrapDatepickerOptions.
+    val baseOpts = BootstrapDatepickerOptions.
       autoclose(true).
       todayHighlight(true).
-      todayBtn(true).
-      disableTouchKeyboard(true)
-    )
+      todayBtnLinked().
+      disableTouchKeyboard(true).
+      orientation(Orientation.Top)
+    // Iff this Date is Optional, show the Clear button:
+    val opts = 
+      // TODO: once it's working, make this generally available:
+      if ($(elem).dataString("collid") == DataAccess.std.core.optionalColl.oid.underlying)
+        baseOpts.clearBtn(true)
+      else
+        baseOpts
+        
+    $(elem).datepicker(opts)
     
     $(elem).on("changeDate", { rawEvt:JQueryEventObject =>
       save()

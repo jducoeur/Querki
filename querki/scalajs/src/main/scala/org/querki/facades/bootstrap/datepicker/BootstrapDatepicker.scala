@@ -130,7 +130,7 @@ class BootstrapDatepickerOptionBuilder(val dict:OptMap) extends JSOptionBuilder[
   
   def multidateSeparator(v:String) = jsOpt("multidateSeparator", v)
   
-  def orientation(v:String) = jsOpt("orientation", v)
+  def orientation(v:Orientation*) = jsOpt("orientation", v.map(_.underlying).mkString(""))
   
   def showOnFocus(v:Boolean) = jsOpt("showOnFocus", v)
   
@@ -171,4 +171,13 @@ object StartView {
   val Month = StartView(0)
   val Year = StartView(1)
   val Decade = StartView(2)
+}
+
+case class Orientation(val underlying:String) extends AnyVal
+object Orientation {
+  val Auto = Orientation("auto")
+  val Top = Orientation("top")
+  val Bottom = Orientation("bottom")
+  val Left = Orientation("left")
+  val Right = Orientation("right")
 }

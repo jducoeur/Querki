@@ -59,15 +59,32 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
       }
       Wikitext(formatter.print(v))
     }
-    
+
+    /**
+     * TODO: as usual, this is too incestuous with the actual implementation on the client side. We should be sending
+     * more abstract information here, and having the client actually render the datepicker.
+     */
     override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
-      val str = toUser(v)(context.state)
+      val date = get(v)
+      val str =
+        if (date == epoch) {
+          // Leave the field empty iff it's Optional
+          // TODO: Uggggly. I think there's something fundamentally broken with Optional.doRenderInput, in that it's
+          // forcing the default value in here even in the None case. Do we need separate concepts of "default" and "zero"?
+          // Our doDefault here is really returning the zero (the epoch), but there is a *separate* concept of the default
+          // (today).
+          if (prop.cType == Optional)
+            ""
+          else
+            doToUser(DateTime.now)(context.state)
+        } else
+          toUser(v)(context.state)
       <input type="text" class="_dateInput" value={str}/>
     }
     
     override def doComp(context:QLContext)(left:DateTime, right:DateTime):Boolean = { left < right } 
     override def doMatches(left:DateTime, right:DateTime):Boolean = { left.getMillis == right.getMillis }
-    def doDefault(implicit state:SpaceState) = DateTime.now    
+    def doDefault(implicit state:SpaceState) = epoch
   }
   
   class QDateTime(tid:OID) extends SystemType[DateTime](tid,

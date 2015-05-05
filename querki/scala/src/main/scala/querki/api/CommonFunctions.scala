@@ -22,6 +22,11 @@ trait CommonFunctions {
  */
 class StandardThings(h:PassthroughHandler) {
   object core {
+    val exactlyOneColl = h.pass("Exactly One")
+	val optionalColl = h.pass("Optional")
+	val listColl = h.pass("List")
+	val setColl = h.pass("Set")
+  
     val urProp = h.pass("Property")
     val nameProp = h.pass("Name")
     val collectionProp = h.pass("Property Collection")

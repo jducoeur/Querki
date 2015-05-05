@@ -149,11 +149,13 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
           case _ => addClasses(elem, "propEditor")
         }
       }
+      val collId = prop.cType.id.toThingId.toString
       val xml2 = asEditor.asInstanceOf[scala.xml.Elem] %
       	Attribute("name", Text(newName),
     	Attribute("data-prop", Text(prop.id.toThingId),
     	Attribute("data-propId", Text(currentValue.fullPropId),
-    	Attribute("id", Text(newId), Null))))
+    	Attribute("data-collId", Text(collId),
+    	Attribute("id", Text(newId), Null)))))
       val xml3 = currentValue.thingId match {
         case Some(thing) => xml2 % Attribute("data-thing", Text(thing), Null)
         case None => xml2

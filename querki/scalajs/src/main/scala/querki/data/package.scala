@@ -71,6 +71,12 @@ package object data {
      * this Future will resolve once that is ready.
      */
     def standardThings:Future[StandardThings]
+    
+    /**
+     * Returns the system-wide StandardThings. This shortcut assumes that they have been fetched
+     * successfully, so only use it after system startup!
+     */
+    def std = standardThings.value.get.get
   }
   
   /**
