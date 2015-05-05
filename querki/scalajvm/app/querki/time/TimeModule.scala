@@ -50,7 +50,7 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
     def doDeserialize(v:String)(implicit state:SpaceState) = new DateTime(v.toLong)
     def doSerialize(v:DateTime)(implicit state:SpaceState) = v.getMillis().toString
     override def doToUser(v:DateTime)(implicit state:SpaceState):String = defaultRenderFormat.print(v)
-    val defaultRenderFormat = DateTimeFormat.forPattern("MM-dd-yyyy")
+    val defaultRenderFormat = DateTimeFormat.forPattern("MM/dd/yyyy")
     
     def doWikify(context:QLContext)(v:DateTime, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
       val formatter = displayOpt match {
@@ -67,7 +67,7 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
     
     override def doComp(context:QLContext)(left:DateTime, right:DateTime):Boolean = { left < right } 
     override def doMatches(left:DateTime, right:DateTime):Boolean = { left.getMillis == right.getMillis }
-    def doDefault(implicit state:SpaceState) = epoch    
+    def doDefault(implicit state:SpaceState) = DateTime.now    
   }
   
   class QDateTime(tid:OID) extends SystemType[DateTime](tid,
@@ -114,7 +114,12 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
     def doDefault(implicit state:SpaceState) = epoch
   }
   lazy val QDateTime = new QDateTime(DateTimeTypeOID)
-  override lazy val types = Seq(QDateTime)
+  
+  override lazy val types = 
+    Seq(
+      QDate,
+      QDateTime
+    )
 
   /***********************************************
    * PROPERTIES

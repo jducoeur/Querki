@@ -532,3 +532,11 @@ body {
 ._chooseRole {
   cursor: pointer;
 }
+
+/****************************
+ * Datepicker tweaks
+ */
+ 
+.datepicker table {
+  background-color: #ffffff;
+}

@@ -60,7 +60,7 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   jsDependencies += ProvidedJS / "jquery-ui-1.10.0.custom.js" dependsOn "jquery-shim.js",
   jsDependencies += ProvidedJS / "jquery.manifest.js" dependsOn "jquery-shim.js",
   jsDependencies += ProvidedJS / "jquery.ui.touch-punch.js" dependsOn "jquery-ui-1.10.0.custom.js",
-  jsDependencies += ProvidedJS / "bootstrap.min.js" dependsOn "jquery-shim.js",
+  jsDependencies += "org.webjars" % "bootstrap" % "3.3.4" / "bootstrap.min.js" dependsOn "jquery-shim.js",
   jsDependencies += ProvidedJS / "jquery.autosize.min.js" dependsOn "jquery-shim.js",
   jsDependencies += ProvidedJS / "jquery.raty.js" dependsOn "jquery-shim.js",
   jsDependencies += ProvidedJS / "jquery.histogram.js" dependsOn "jquery-shim.js",
@@ -72,6 +72,8 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   jsDependencies += ProvidedJS / "jquery.fileupload.js" dependsOn "jquery.iframe-transport.js",
   jsDependencies += ProvidedJS / "jquery.fileupload-process.js" dependsOn "jquery.fileupload.js",
   jsDependencies += ProvidedJS / "jquery.fileupload-image.js" dependsOn "jquery.fileupload.js",
+  
+  jsDependencies += "org.webjars" % "bootstrap-datepicker" % "1.4.0" / "bootstrap-datepicker.min.js" dependsOn "bootstrap.min.js",
 
   libraryDependencies ++= sharedDependencies.value ++ Seq(
     "org.scala-js" %%% "scalajs-dom" % "0.8.0",

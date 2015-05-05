@@ -49,6 +49,7 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
     Gadgets.registerSimpleGadget("._rating", { new RatingGadget })
     Gadgets.registerSimpleGadget("._optYesNo", { new OptYesNoGadget })
     Gadgets.registerGadgets(".propEditor", hookOtherPropEditor)
+    Gadgets.registerSimpleGadget("._dateInput", { new DateGadget })
   }
   
   /**
