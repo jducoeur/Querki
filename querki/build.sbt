@@ -73,15 +73,14 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   jsDependencies += ProvidedJS / "jquery.fileupload-process.js" dependsOn "jquery.fileupload.js",
   jsDependencies += ProvidedJS / "jquery.fileupload-image.js" dependsOn "jquery.fileupload.js",
   
-  jsDependencies += "org.webjars" % "bootstrap-datepicker" % "1.4.0" / "bootstrap-datepicker.min.js" dependsOn "bootstrap.min.js",
-
   libraryDependencies ++= sharedDependencies.value ++ Seq(
     "org.scala-js" %%% "scalajs-dom" % "0.8.0",
     "com.lihaoyi" %%% "utest" % "0.3.1",
     "org.scala-js" %%% "scala-parser-combinators" % "1.0.2",
     "org.scala-lang.modules" %% "scala-async" % "0.9.2",
 	"org.querki" %%% "querki-jsext" % "0.5",
-	"org.querki" %%% "jquery-facade" % "0.4"
+	"org.querki" %%% "jquery-facade" % "0.4",
+	"org.querki" %%% "bootstrap-datepicker-facade" % "0.1"
   )).
   settings(sharedDirectorySettings: _*).
   enablePlugins(ScalaJSPlugin, ScalaJSPlay)
