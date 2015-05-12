@@ -34,12 +34,11 @@
 
     <link rel="shortcut icon" href="@routes.Assets.at("images/Capital.png")">
     
-    <!-- Include JavaScript libraries, which are bundled together by SBT: -->
-    <script src="@routes.Assets.at("querkiclient-jsdeps.js")"></script>
-    
     @if(isProd) {
+      <script src="@routes.Assets.at("querkiclient-jsdeps.min.js")"></script>
       <script src="@routes.Assets.at("querkiclient-opt.js")" type="text/javascript"></script>
     } else {
+      <script src="@routes.Assets.at("querkiclient-jsdeps.js")"></script>
       <script src="@routes.Assets.at("querkiclient-fastopt.js")" type="text/javascript"></script>
     }
     

@@ -24,7 +24,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.sun.mail" % "smtp" % "1.5.0",
     "com.sun.mail" % "mailapi" % "1.5.0",
     "com.github.nscala-time" %% "nscala-time" % "1.6.0",
-    "com.typesafe.akka" %% "akka-testkit" % "2.3.4",
+    "com.typesafe.akka" %% "akka-testkit" % "2.3.9",
     "org.imgscalr" % "imgscalr-lib" % "4.2",
     "com.amazonaws" % "aws-java-sdk" % "1.8.4",
     "com.vmunier" %% "play-scalajs-scripts" % "0.1.0",
@@ -51,27 +51,21 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   // Javascript libraries we require:
   skip in packageJSDependencies := false,
   
-  // When we need to debug into jQuery itself, uncomment these two lines, and comment out the one below them:
-//  jsDependencies += "org.webjars" % "jquery" % "2.1.3" / "jquery.js" dependsOn "jquery.min.js",
-//  jsDependencies += ProvidedJS / "jquery-shim.js" dependsOn "jquery.js",
-  // Normal case: use the minified version of JQuery:
-  jsDependencies += ProvidedJS / "jquery-shim.js" dependsOn "jquery.min.js",
-  
-  jsDependencies += ProvidedJS / "jquery-ui-1.10.0.custom.js" dependsOn "jquery-shim.js",
-  jsDependencies += ProvidedJS / "jquery.manifest.js" dependsOn "jquery-shim.js",
-  jsDependencies += ProvidedJS / "jquery.ui.touch-punch.js" dependsOn "jquery-ui-1.10.0.custom.js",
-  jsDependencies += "org.webjars" % "bootstrap" % "3.3.4" / "bootstrap.min.js" dependsOn "jquery-shim.js",
-  jsDependencies += ProvidedJS / "jquery.autosize.min.js" dependsOn "jquery-shim.js",
-  jsDependencies += ProvidedJS / "jquery.raty.js" dependsOn "jquery-shim.js",
-  jsDependencies += ProvidedJS / "jquery.histogram.js" dependsOn "jquery-shim.js",
+  jsDependencies += ProvidedJS / "jquery-ui-1.10.0.custom.js" minified "jquery-ui-1.10.0.custom.min.js" dependsOn "jquery.js",
+  jsDependencies += ProvidedJS / "jquery.manifest.js" minified "jquery.manifest.min.js" dependsOn "jquery.js",
+  jsDependencies += ProvidedJS / "jquery.ui.touch-punch.js" minified "jquery.ui.touch-punch.min.js" dependsOn "jquery-ui-1.10.0.custom.js",
+  jsDependencies += "org.webjars" % "bootstrap" % "3.3.4" / "bootstrap.js" minified "bootstrap.min.js" dependsOn "jquery.js",
+  jsDependencies += ProvidedJS / "jquery.autosize.min.js" dependsOn "jquery.js",
+  jsDependencies += ProvidedJS / "jquery.raty.js" minified "jquery.raty.min.js" dependsOn "jquery.js",
+  jsDependencies += ProvidedJS / "jquery.histogram.js" dependsOn "jquery.js",
   jsDependencies += ProvidedJS / "moment.min.js",
 
   jsDependencies += ProvidedJS / "load-image.min.js" dependsOn "jquery-ui-1.10.0.custom.js",
   jsDependencies += ProvidedJS / "canvas-to-blob.min.js" dependsOn "load-image.min.js",
-  jsDependencies += ProvidedJS / "jquery.iframe-transport.js" dependsOn "load-image.min.js",
-  jsDependencies += ProvidedJS / "jquery.fileupload.js" dependsOn "jquery.iframe-transport.js",
-  jsDependencies += ProvidedJS / "jquery.fileupload-process.js" dependsOn "jquery.fileupload.js",
-  jsDependencies += ProvidedJS / "jquery.fileupload-image.js" dependsOn "jquery.fileupload.js",
+  jsDependencies += ProvidedJS / "jquery.iframe-transport.js" minified "jquery.iframe-transport.min.js" dependsOn "load-image.min.js",
+  jsDependencies += ProvidedJS / "jquery.fileupload.js" minified "jquery.fileupload.min.js" dependsOn "jquery.iframe-transport.js",
+  jsDependencies += ProvidedJS / "jquery.fileupload-process.js" minified "jquery.fileupload-process.min.js" dependsOn "jquery.fileupload.js",
+  jsDependencies += ProvidedJS / "jquery.fileupload-image.js" minified "jquery.fileupload-image.min.js" dependsOn "jquery.fileupload.js",
   
   libraryDependencies ++= sharedDependencies.value ++ Seq(
     "org.scala-js" %%% "scalajs-dom" % "0.8.0",
@@ -79,8 +73,8 @@ lazy val querkiClient = (project in file("scalajs")).settings(
     "org.scala-js" %%% "scala-parser-combinators" % "1.0.2",
     "org.scala-lang.modules" %% "scala-async" % "0.9.2",
 	"org.querki" %%% "querki-jsext" % "0.5",
-	"org.querki" %%% "jquery-facade" % "0.4",
-	"org.querki" %%% "bootstrap-datepicker-facade" % "0.1"
+	"org.querki" %%% "jquery-facade" % "0.5",
+	"org.querki" %%% "bootstrap-datepicker-facade" % "0.2"
   )).
   settings(sharedDirectorySettings: _*).
   enablePlugins(ScalaJSPlugin, ScalaJSPlay)
@@ -97,7 +91,7 @@ lazy val sharedDependencies = Def.setting(Seq(
   "com.lihaoyi" %%% "scalarx" % "0.2.8",
   "com.lihaoyi" %%% "autowire" % "0.2.5",
   "com.lihaoyi" %%% "scalatags" % "0.4.6",
-  "org.scalatest" %% "scalatest" % "2.2.0" % "test"
+  "org.scalatest" %% "scalatest" % "2.2.4" % "test"
 ))
 
 onLoad in Global := (Command.process("project querkiServer", _: State)) compose (onLoad in Global).value
