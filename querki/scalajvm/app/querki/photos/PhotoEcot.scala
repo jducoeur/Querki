@@ -9,6 +9,8 @@ import akka.actor.{ActorRef, Props}
 import akka.pattern.ask
 import akka.util.Timeout
 
+import scalatags.Text.all.{span => htmlSpan, _}
+
 import models.{Collection, DelegatingType, DisplayPropVal, FullInputRendering, HtmlWikitext, Kind, Property, PropertyBundle, PType, PTypeBuilder, ThingState, Wikitext}
 import models.MIMEType.MIMEType
 
@@ -16,7 +18,7 @@ import querki.basic.PlainText
 import querki.ecology._
 import querki.time.DateTime
 import querki.types.{ModeledPropertyBundle, ModelTypeDefiner, SimplePropertyBundle}
-import querki.util.{Config,QLog}
+import querki.util.{Config,QLog, XmlHelpers}
 import querki.values.{ElemValue, QLContext, SpaceState}
 
 private [photos] object MOIDs extends EcotIds(52) {
@@ -303,26 +305,36 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
           // Curious -- an unknown cType of photos!
           "Add"
         }
-      // TODO: render the thumbnails of the existing photos, so that they can be rearranged or deleted
-      <input class="_photoEdit btn btn-default" value={verb + " photo"}></input>
+      
+      val currentPhotosOpt = currentValue.effectiveV
+      val tag =
+        htmlSpan(
+          currentPhotosOpt.map { currentPhotos =>
+            for {
+              v <- currentPhotos.rawList(this)
+              text = thumbnailText(context, v)
+            }
+              yield raw(text.getOrElse(""))
+          },
+          input(
+            cls:="_photoEdit btn btn-default",
+            value:=s"$verb photo"
+          )
+        )
+        
+      XmlHelpers.toNodes(tag)
     }
     
-    override def editorSpan(prop:Property[_,_]):Int = 6
+    override def editorSpan(prop:Property[_,_]):Int = 12
   }
   
   def fromPropStr(context:QLContext) = context.fromPropertyOfType(PhotoType).map(prop => s""" data-fromprop="${prop.id.toString}" """).getOrElse("")
-  
-  /**
-   * A variant of PhotoType, which differs only in that it renders as the thumbnail instead of the actual
-   * image. This is what comes out of the _thumbnail function.
-   */
-  lazy val ThumbnailType = new DelegatingType(PhotoType) {
-    override def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = {
+  def thumbnailText(context:QLContext, v:ModeledPropertyBundle):Option[String] = {
       implicit val s = context.state
       
       val fromProp = fromPropStr(context)
       
-      val result = for {
+      for {
         filename <- v.getFirstOpt(ImageThumbnailFilenameProp)
         width <- v.getFirstOpt(ImageThumbnailWidthProp)
         height <- v.getFirstOpt(ImageThumbnailHeightProp)
@@ -331,10 +343,19 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
         fullHeight <- v.getFirstOpt(ImageHeightProp)
         fromPropOpt = context.fromPropertyOfType(PhotoType)
       }
-        yield HtmlWikitext(s"""<img src="$bucketUrl/${filename.raw}" class="img-polaroid _photoThumbnail" width="$width" height="$height"""" +
-            s""" data-fullsrc="$bucketUrl/${fullFilename.raw}" data-fullwidth="$fullWidth" data-fullheight="$fullHeight" alt="${filename.raw}" $fromProp/>""")
-        
-      result.getOrElse(Wikitext(""))
+        yield s"""<div class="photoThumbnailFrame">
+            |  <img src="$bucketUrl/${filename.raw}" class="img-polaroid _photoThumbnail" width="$width" height="$height"
+            |     data-fullsrc="$bucketUrl/${fullFilename.raw}" data-fullwidth="$fullWidth" data-fullheight="$fullHeight" alt="${filename.raw}" $fromProp/>
+            |</div>""".stripMargin 
+  }
+  
+  /**
+   * A variant of PhotoType, which differs only in that it renders as the thumbnail instead of the actual
+   * image. This is what comes out of the _thumbnail function.
+   */
+  lazy val ThumbnailType = new DelegatingType(PhotoType) {
+    override def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = {
+      thumbnailText(context, v).map(HtmlWikitext(_)).getOrElse(Wikitext(""))
     }
   }
   

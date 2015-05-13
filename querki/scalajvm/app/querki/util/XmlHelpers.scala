@@ -5,6 +5,8 @@ import models.DisplayText
 import scala.xml._
 import scala.xml.parsing.XhtmlParser
 
+import scalatags.Text.TypedTag
+
 object XmlHelpers {
   /**
    * This deals with a pretty common pattern. We're generally passing NodeSeqs around to represent blocks of HTML.
@@ -56,6 +58,24 @@ object XmlHelpers {
     } catch {
       case ex:Exception => {
         QLog.error(s"Exception while trying to parse XML ${displayText.str}", ex)
+        NodeSeq.Empty
+      }
+    }
+  }
+  
+  /**
+   * Semi-temporary converter from Scalatags to scala.xml.
+   * 
+   * For now, this is fine. In the medium term, we might explore enhancing Scalatags to emit NodeSeq
+   * directly, to improve efficiency.
+   */
+  def toNodes(tag:TypedTag[String]):NodeSeq = {
+    val htmlStr = tag.toString
+    try {
+      parseXhtmlFragment(htmlStr)
+    } catch {
+      case ex:Exception => {
+        QLog.error(s"Exception while trying to parse XML ${htmlStr}", ex)
         NodeSeq.Empty
       }
     }

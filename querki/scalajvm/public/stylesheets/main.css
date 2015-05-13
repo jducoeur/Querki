@@ -409,6 +409,20 @@ body {
  #photo-full-header p {
    margin-bottom: 0px;
  } 
+ 
+ .photoThumbnailFrame {
+   display: inline-block;
+   width: 108px;
+   height: 108px;
+   padding: 2px;
+   border-style: solid;
+   border-color: #37A807;
+   border-width: 1px;
+   border-radius: 4px;
+   margin: 2px;
+   text-align: center;
+   vertical-align: middle;
+ }
 
 /*******************************
  * Status styles
