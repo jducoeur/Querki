@@ -398,31 +398,53 @@ body {
  * Photo styles
  */
 
- #photo-full-header {
-   padding: 2px 15px;
- }
+#photo-full-header {
+  padding: 2px 15px;
+}
  
- #photo-full-header .close {
-   margin-top: 0px;
- }
+#photo-full-header .close {
+  margin-top: 0px;
+}
  
- #photo-full-header p {
-   margin-bottom: 0px;
- } 
+#photo-full-header p {
+  margin-bottom: 0px;
+} 
  
- .photoThumbnailFrame {
-   display: inline-block;
-   width: 108px;
-   height: 108px;
-   padding: 2px;
-   border-style: solid;
-   border-color: #37A807;
-   border-width: 1px;
-   border-radius: 4px;
-   margin: 2px;
-   text-align: center;
-   vertical-align: middle;
- }
+._photoThumbnailFrame {
+  display: inline-block;
+  width: 108px;
+  height: 108px;
+  padding: 2px;
+  border-style: solid;
+  border-color: #37A807;
+  border-width: 1px;
+  border-radius: 4px;
+  margin: 2px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+._photoThumbnail {
+  /* 
+   * This odd bit of magic is to align the thumbnails in their frames.
+   * See http://zerosixthree.se/vertical-align-anything-with-just-3-lines-of-css/
+   */
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+._photoAddButton {
+  color: #37A807;
+  background-color: #dddddd;
+  cursor: pointer;
+}
+
+._photoAddButton .glyphicon {
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+}
 
 /*******************************
  * Status styles

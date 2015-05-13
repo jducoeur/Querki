@@ -8,6 +8,7 @@ import org.querki.jquery._
 import scalatags.JsDom.all._
 
 import org.querki.facades.bootstrap._
+import org.querki.facades.bootstrap.filestyle._
 import org.querki.facades.fileupload._
 
 import querki.globals._
@@ -29,8 +30,8 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
   def doRender() = ???
   def values = ???
   
-  lazy val propId = $(elem).data("propid").asInstanceOf[String]
-  lazy val thing = $(elem).data("thing").asInstanceOf[String]
+  lazy val propId = $(elem).parent().data("propid").asInstanceOf[String]
+  lazy val thing = $(elem).parent().data("thing").asInstanceOf[String]
   
   def hook() = {
     $(elem).click({ evt:JQueryEventObject =>
@@ -54,9 +55,11 @@ class PhotoInputDialog(page:Page)(implicit val ecology:Ecology) extends Gadget[d
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
+  lazy val InputGadgets = interface[querki.display.input.InputGadgets]
   lazy val PageManager = interface[querki.display.PageManager]
   
   def showFrom(button:PhotoInputButton) = {
+    InputGadgets.hookPendingGadgets()
     val agent = dom.window.navigator.userAgent
     val disableResize = (agent.contains("Opera") || (agent.contains("Android") && !agent.contains("Chrome")))
     $(photoInputElem.elem).fileupload(FileUploadOptions
@@ -118,7 +121,22 @@ class PhotoInputDialog(page:Page)(implicit val ecology:Ecology) extends Gadget[d
   
   def setStatus(msg:String) = $(photoStatus.elem).text(msg)
   
-  lazy val photoInputElem = Gadget(input(tpe:="file", accept:="image/*;capture=camera"))
+  class PhotoUploadButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e) {
+    def doRender() =
+      input(cls:="_photoInputElem", tpe:="file", accept:="image/*;capture=camera")
+  
+    def values = ???
+  
+    def hook() = {
+      $(elem).filestyle(BootstrapFilestyleOptions.
+        input(false).
+        iconName("glyphicon-camera").
+        buttonText("Take / upload picture")
+      )
+    }
+  }
+  
+  lazy val photoInputElem = new PhotoUploadButton
   lazy val photoStatus = Gadget(p(raw("&nbsp;")))
   lazy val photoProgressBar = Gadget(div(cls:="bar", width:="0%"))
   lazy val photoProgress = Gadget(div(cls:="progress progress-striped active", photoProgressBar))

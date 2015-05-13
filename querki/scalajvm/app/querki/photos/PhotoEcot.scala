@@ -316,9 +316,9 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
             }
               yield raw(text.getOrElse(""))
           },
-          input(
-            cls:="_photoEdit btn btn-default",
-            value:=s"$verb photo"
+          div(
+            cls:="_photoThumbnailFrame _photoEdit _photoAddButton",
+            i(cls:="glyphicon glyphicon-plus")
           )
         )
         
@@ -343,7 +343,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
         fullHeight <- v.getFirstOpt(ImageHeightProp)
         fromPropOpt = context.fromPropertyOfType(PhotoType)
       }
-        yield s"""<div class="photoThumbnailFrame">
+        yield s"""<div class="_photoThumbnailFrame">
             |  <img src="$bucketUrl/${filename.raw}" class="img-polaroid _photoThumbnail" width="$width" height="$height"
             |     data-fullsrc="$bucketUrl/${fullFilename.raw}" data-fullwidth="$fullWidth" data-fullheight="$fullHeight" alt="${filename.raw}" $fromProp/>
             |</div>""".stripMargin 
