@@ -35,6 +35,8 @@ class PhotoController extends ApplicationBase {
     } map (fut => Right(fut))
   }
 
+  // TODO: in general, this all needs a rework to function correctly in the clustered world. withThing() is becoming illegal.
+  // This code probably all needs to move into UserSpaceState, at least as much as possible:
   def upload(ownerId:String, spaceId:String, thingId:String) = withThing(true, ownerId, spaceId, thingId, parser = BodyParser(photoReceiver _)) { rc =>
     QLog.spew(s"Finished receiving")
     // TODO: this should really check headOption, and give some more-meaningful error if it is empty:
@@ -47,6 +49,7 @@ class PhotoController extends ApplicationBase {
     val body = rc.request.body.asInstanceOf[Future[ActorRef]]
     body flatMap { workerRef =>
       val resultsFut = workerRef.ask(UploadDone(existingValOpt, prop, s))(30 seconds).mapTo[PhotoInfo]
+      // TODO: all of this needs to move into the Actors themselves! This is passing state around, which is a no-no!
       resultsFut.flatMap { info =>
         QLog.spew(s"About to actually update the Space -- the QValue is ${info.newValue}")
         val sessionRequest = 

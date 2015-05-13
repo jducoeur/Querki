@@ -74,6 +74,7 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
       .imageMaxWidth(1000)
       .imageMaxHeight(1000)
       .start({ evt:JQueryEventObject =>
+        $(elem).find(".glyphicon").removeClass("glypicon glyphicon-plus").addClass("fa fa-spinner fa-3x fa-pulse")
 //        setStatus("Uploading...")
       })
       .progress({ (evt:JQueryEventObject, data:FileUploadProgress) =>

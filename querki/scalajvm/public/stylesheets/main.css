@@ -412,7 +412,7 @@ body {
  
 ._photoThumbnailFrame {
   display: inline-block;
-  width: 108px;
+  width: 110px;
   height: 108px;
   padding: 2px;
   border-style: solid;
@@ -424,14 +424,18 @@ body {
   vertical-align: middle;
 }
 
+/**
+ * This "helper" forces the vertical alignment within a thumbnail frame. For an explanation, see:
+ * http://stackoverflow.com/questions/7273338/how-to-vertically-align-an-image-inside-div
+ */
+._photoThumbnailHelper {
+  display: inline-block;
+  height: 100%;
+  vertical-align: middle;
+}
+
 ._photoThumbnail {
-  /* 
-   * This odd bit of magic is to align the thumbnails in their frames.
-   * See http://zerosixthree.se/vertical-align-anything-with-just-3-lines-of-css/
-   */
-  position: relative;
-  top: 50%;
-  transform: translateY(-50%);
+  vertical-align: middle;
 }
 
 ._photoAddButton {
@@ -441,9 +445,11 @@ body {
 }
 
 ._photoAddButton .glyphicon {
-  position: relative;
-  top: 50%;
-  transform: translateY(-50%);
+  vertical-align: middle;
+}
+
+._photoAddButton .fa {
+  vertical-align: middle;
 }
 
 ._photoInputElem {

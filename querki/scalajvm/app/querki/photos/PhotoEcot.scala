@@ -318,6 +318,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
           },
           div(
             cls:="_photoThumbnailFrame _photoEdit _photoAddButton",
+            htmlSpan(cls:="_photoThumbnailHelper"),
             i(cls:="glyphicon glyphicon-plus")
           )
         )
@@ -343,10 +344,11 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
         fullHeight <- v.getFirstOpt(ImageHeightProp)
         fromPropOpt = context.fromPropertyOfType(PhotoType)
       }
-        yield s"""<div class="_photoThumbnailFrame">
-            |  <img src="$bucketUrl/${filename.raw}" class="img-polaroid _photoThumbnail" width="$width" height="$height"
-            |     data-fullsrc="$bucketUrl/${fullFilename.raw}" data-fullwidth="$fullWidth" data-fullheight="$fullHeight" alt="${filename.raw}" $fromProp/>
-            |</div>""".stripMargin 
+        // IMPORTANT: the tags are split across lines so as not to introduce any whitespace between them!
+        yield s"""<div class="_photoThumbnailFrame"><span class="_photoThumbnailHelper"></span><img 
+            |     src="$bucketUrl/${filename.raw}" class="img-polaroid _photoThumbnail" width="$width" height="$height"
+            |     data-fullsrc="$bucketUrl/${fullFilename.raw}" data-fullwidth="$fullWidth" data-fullheight="$fullHeight" alt="${filename.raw}" 
+            |     $fromProp/></div>""".stripMargin 
   }
   
   /**
