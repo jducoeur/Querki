@@ -446,6 +446,11 @@ body {
   transform: translateY(-50%);
 }
 
+._photoInputElem {
+  position: absolute;
+  clip: rect(0px 0px 0px 0px);
+}
+
 /*******************************
  * Status styles
  */

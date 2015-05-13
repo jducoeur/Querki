@@ -18,30 +18,6 @@ import querki.display.Gadget
 import querki.display.input.InputGadget
 import querki.pages.Page
 
-/**
- * This represents a button labeled something like "Add Photo", with metadata about where to
- * put the resulting photo.
- */
-class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e) {
-  
-  lazy val PhotosInternal = interface[PhotosInternal]
-  
-  // At least for now, this just wraps incoming buttons:
-  def doRender() = ???
-  def values = ???
-  
-  lazy val propId = $(elem).parent().data("propid").asInstanceOf[String]
-  lazy val thing = $(elem).parent().data("thing").asInstanceOf[String]
-  
-  def hook() = {
-	$(elem).tooltip(TooltipOptions.title("Click to add a new photo"))
-	
-    $(elem).click({ evt:JQueryEventObject =>
-      PhotosInternal.showInputDialog(this)
-    })
-  }
-} 
-
 // Necessary DOM enhancement -- the scala-js-dom doesn't realize that EventTarget can have
 // a "files" member, but it does in the case of a file input field
 // TODO: submit this as a PR to scala-js-dom:
@@ -52,6 +28,96 @@ object FileTarget {
   implicit def EventTarget2FileTarget(t:dom.EventTarget):FileTarget = t.asInstanceOf[FileTarget]
 }
 import FileTarget._
+
+/**
+ * This represents a button labeled something like "Add Photo", with metadata about where to
+ * put the resulting photo.
+ */
+class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e) {
+  
+  lazy val controllers = interface[querki.comm.ApiComm].controllers
+  lazy val Pages = interface[querki.pages.Pages]
+  lazy val PhotosInternal = interface[PhotosInternal]
+  
+  // At least for now, this just wraps incoming buttons:
+  def doRender() = ???
+  def values = ???
+  
+  lazy val propId = $(elem).parent().data("propid").asInstanceOf[String]
+  lazy val thing = $(elem).parent().data("thing").asInstanceOf[String]
+  
+  lazy val photoInputElem = Gadget(input(cls:="_photoInputElem", tpe:="file", accept:="image/*;capture=camera"))
+  
+  def hook() = {
+    photoInputElem.render
+    $(elem).after(photoInputElem.elem)
+    val agent = dom.window.navigator.userAgent
+    val disableResize = (agent.contains("Opera") || (agent.contains("Android") && !agent.contains("Chrome")))
+    $(photoInputElem.elem).fileupload(FileUploadOptions
+      .url(
+        controllers.PhotoController.upload(
+          DataAccess.userName, 
+          DataAccess.spaceId.underlying, 
+          // TODO: change the signature of upload() to take propId as a proper parameter.
+          // Not sure why I did it this awkward way in the old code, but it's now just stupid:
+          thing).url + "&propId=" + propId)
+      .multipart(false)
+      .maxFileSize(5000000) // 5 MB
+      // Enable image resizing, except for Android and Opera,
+      // which actually support image resizing, but fail to
+      // send Blob objects via XHR requests:
+      .disableImageResize(disableResize)
+      // Cap it at 1000 on a side, which is the current Querki maximum. Note that the server
+      // may reduce this further based on user preference, but we leave it to do further
+      // reduction there, since the server's algorithm does it more cleanly, with less aliasing.
+      // Here, we are reducing it mainly to reduce unnecessary transmission time. 
+      .imageMaxWidth(1000)
+      .imageMaxHeight(1000)
+      .start({ evt:JQueryEventObject =>
+//        setStatus("Uploading...")
+      })
+      .progress({ (evt:JQueryEventObject, data:FileUploadProgress) =>
+        val percent = (data.loaded / data.total) * 100
+//        println(s"Progress: $percent")
+//        $(photoProgressBar.elem).css("width", s"$percent%")
+//        if (data.loaded == data.total)
+//          setStatus("Processing...")
+      })
+      .done({ (evt:JQueryEventObject, data:FileUploadResults) =>
+//        $(photoProgress.elem).removeClass("active")
+//        setStatus("Done!")
+        println(data.result)
+        $(elem).modal(ModalCommand.hide)
+        // Refresh the Page, in case we're currently displaying this photo:
+        Pages.findPageFor(this).refresh()
+      })
+    )
+    
+    $(photoInputElem.elem).change({ evt:JQueryEventObject =>
+      val file = evt.target.files(0)
+      if (Pattern.matches("image.*", file.`type`)) {
+        val reader = new dom.FileReader()
+        reader.onload = { uievt:dom.UIEvent =>
+//          // Render the thumbnail
+//          val thumb = img(height:=120, src:=reader.result, title:=file.name)
+//          $(photoThumb.elem).append(thumb.render)
+        }
+      } else {
+//        setStatus(s"I don't know what that is -- the type is ${file.`type`}.")
+      }
+    })
+    /*
+    *
+    */
+    
+	$(elem).tooltip(TooltipOptions.title("Click to add a new photo"))
+	
+    $(elem).click({ evt:JQueryEventObject =>
+//      PhotosInternal.showInputDialog(this)
+      $(photoInputElem.elem).click()
+    })
+  }
+} 
 
 class PhotoInputDialog(page:Page)(implicit val ecology:Ecology) extends Gadget[dom.html.Div] with EcologyMember {
   
