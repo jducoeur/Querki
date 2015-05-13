@@ -34,6 +34,8 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
   lazy val thing = $(elem).parent().data("thing").asInstanceOf[String]
   
   def hook() = {
+	$(elem).tooltip(TooltipOptions.title("Click to add a new photo"))
+	
     $(elem).click({ evt:JQueryEventObject =>
       PhotosInternal.showInputDialog(this)
     })
