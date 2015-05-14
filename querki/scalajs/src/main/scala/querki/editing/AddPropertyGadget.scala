@@ -104,7 +104,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     
     def doRender() = {
       val result = div(cls:="well container col-md-12",
-        p(i(cls:="fa fa-spinner fa-spin"), """Choose a property from this list of existing properties, or press "Create a New Property" to do something different."""),
+        p("""Choose a property from this list of existing properties, or press "Create a New Property" to do something different."""),
         div(cls:="row",
           div(cls:="col-md-4",
             p(
