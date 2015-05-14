@@ -52,6 +52,23 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
   lazy val thing = $(elem).parent().data("thing").asInstanceOf[String]
   
   lazy val photoInputElem = Gadget(input(cls:="_photoInputElem", tpe:="file", accept:="image/*;capture=camera"))
+  lazy val addReadyIcon = Gadget(i(cls:="glyphicon glyphicon-plus _addPhotoIcon"))
+  lazy val addRunningIcon = Gadget(i(cls:="fa fa-spinner fa-3x fa-pulse _addPhotoIcon"))
+  
+  def showState(indicator:Gadget[dom.Element]) = {
+    val frame = $(elem)
+    frame.find("._addPhotoIcon").detach()
+    val indicatorElem = indicator.rendered
+    frame.append(indicatorElem)
+  }
+  def showReady() = {
+    showState(addReadyIcon)
+    $(elem).data("ready", true)
+  }
+  def showRunning() = {
+    showState(addRunningIcon)
+    $(elem).data("ready", false)
+  }
   
   def hook() = {
     photoInputElem.render
@@ -79,9 +96,7 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
       .imageMaxWidth(1000)
       .imageMaxHeight(1000)
       .processstart({ evt:JQueryEventObject =>
-        // TODO: this is clumsy. Create a better representation of the "ready" vs. "in process" states.
-        $(elem).find(".glyphicon").removeClass("glypicon glyphicon-plus").addClass("fa fa-spinner fa-3x fa-pulse")
-//        setStatus("Uploading...")
+        showRunning()
       })
       .progress({ (evt:JQueryEventObject, data:FileUploadProgress) =>
         val percent = (data.loaded / data.total) * 100
@@ -91,20 +106,14 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
 //          setStatus("Processing...")
       })
       .done({ (evt:JQueryEventObject, data:FileUploadResults) =>
-//        $(photoProgress.elem).removeClass("active")
-//        setStatus("Done!")
-        println("Done: " + data.result)
         val wiki = upickle.read[Wikitext](data.result.asInstanceOf[String])
         val wikiStr = wiki.raw.html.toString
-        println(s"Wikistr: $wikiStr")
         val rawGadget = new RawSpan(wikiStr)
         rawGadget.render
         $(rawGadget.elem).insertBefore(elem)
         InputGadgets.hookPendingGadgets()
-        $(elem).find(".fa").removeClass("fa fa-spinner fa-3x fa-pulse").addClass("glypicon glyphicon-plus")
-//        $(elem).modal(ModalCommand.hide)
-        // Refresh the Page, in case we're currently displaying this photo:
-//        Pages.findPageFor(this).refresh()
+        
+        showReady()
       })
     )
     
@@ -126,8 +135,13 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
 	
     $(elem).click({ evt:JQueryEventObject =>
 //      PhotosInternal.showInputDialog(this)
-      $(photoInputElem.elem).click()
+      $(elem).data("ready").asInstanceOf[js.UndefOr[Boolean]].map { ready =>
+        if (ready)
+          $(photoInputElem.elem).click()        
+      }
     })
+    
+    showReady()
   }
 } 
 

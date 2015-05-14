@@ -318,8 +318,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
           },
           div(
             cls:="_photoThumbnailFrame _photoEdit _photoAddButton",
-            htmlSpan(cls:="_photoThumbnailHelper"),
-            i(cls:="glyphicon glyphicon-plus")
+            htmlSpan(cls:="_photoThumbnailHelper")
           )
         )
         

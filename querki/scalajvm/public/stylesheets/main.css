@@ -444,11 +444,7 @@ body {
   cursor: pointer;
 }
 
-._photoAddButton .glyphicon {
-  vertical-align: middle;
-}
-
-._photoAddButton .fa {
+._addPhotoIcon {
   vertical-align: middle;
 }
 
