@@ -61,7 +61,6 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   jsDependencies += ProvidedJS / "jquery.manifest.js" dependsOn "jquery-shim.js",
   jsDependencies += ProvidedJS / "jquery.ui.touch-punch.js" dependsOn "jquery-ui-1.10.0.custom.js",
   jsDependencies += "org.webjars" % "bootstrap" % "3.3.4" / "bootstrap.min.js" dependsOn "jquery-shim.js",
-  jsDependencies += ProvidedJS / "bootstrap-filestyle.min.js" dependsOn "bootstrap.min.js",
   jsDependencies += ProvidedJS / "jquery.autosize.min.js" dependsOn "jquery-shim.js",
   jsDependencies += ProvidedJS / "jquery.raty.js" dependsOn "jquery-shim.js",
   jsDependencies += ProvidedJS / "jquery.histogram.js" dependsOn "jquery-shim.js",

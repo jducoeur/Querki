@@ -11,7 +11,6 @@ import scalatags.JsDom.all._
 import upickle._
 
 import org.querki.facades.bootstrap._
-import org.querki.facades.bootstrap.filestyle._
 import org.querki.facades.fileupload._
 
 import models.Wikitext
