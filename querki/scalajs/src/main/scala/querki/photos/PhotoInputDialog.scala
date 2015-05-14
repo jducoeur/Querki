@@ -3,6 +3,7 @@ package querki.photos
 import java.util.regex.Pattern
 
 import scala.scalajs.js
+import js.annotation.JSName
 import org.scalajs.dom
 import org.querki.jquery._
 
@@ -33,6 +34,15 @@ object FileTarget {
 }
 import FileTarget._
 
+// TODO: once Querki catches up with the JQuery facade, this should go away:
+trait JQueryTempHack extends js.Object {
+  @JSName("has")
+  def hasInternal(selector:js.Any):JQuery = js.native
+}
+class JQueryTempHackTyped(jq:JQueryTempHack) {
+  def has(selector:Selector):JQuery = jq.hasInternal(toJsAny(selector))
+}
+
 /**
  * This represents a button labeled something like "Add Photo", with metadata about where to
  * put the resulting photo.
@@ -49,9 +59,19 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
   def values = ???
   
   lazy val propId = $(elem).parent().data("propid").asInstanceOf[String]
+  lazy val collId = $(elem).parent().data("collid").asInstanceOf[String]
   lazy val thing = $(elem).parent().data("thing").asInstanceOf[String]
   
-  lazy val addReadyIcon = Gadget(i(cls:="glyphicon glyphicon-plus _addPhotoIcon"))
+  lazy val isSingleton:Boolean = {
+    val core = DataAccess.std.core
+    (collId == core.exactlyOneColl.oid.underlying) || (collId == core.optionalColl.oid.underlying)
+  }
+  
+  def hasExistingPhotos:Boolean = {
+    $(elem).parent().find("._photoThumbnail").length > 0
+  }
+  
+  lazy val addReadyIcon = Gadget(i(cls:="glyphicon glyphicon-camera _addPhotoIcon"))
   lazy val addRunningIcon = Gadget(i(cls:="fa fa-spinner fa-3x fa-pulse _addPhotoIcon"))
   
   def showState(indicator:Gadget[dom.Element]) = {
@@ -114,6 +134,14 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
         println(s"Progress: $percent")
       })
       .done({ (evt:JQueryEventObject, data:FileUploadResults) =>
+        if (isSingleton && hasExistingPhotos) {
+          // Need to delete the old thumbnail first
+          // TODO: delete this line once we catch back up to the JQuery facade!
+          implicit def jq2Hack(jq:JQuery):JQueryTempHackTyped = new JQueryTempHackTyped(jq.asInstanceOf[JQueryTempHack])
+          $(elem).parent().find("._photoThumbnailFrame").has("._photoThumbnail").remove()
+        }
+        
+        // The result should be the pickled Wikitext of the new thumbnail:
         val wiki = upickle.read[Wikitext](data.result.asInstanceOf[String])
         val wikiStr = wiki.raw.html.toString
         val rawGadget = new RawSpan(wikiStr)
@@ -152,7 +180,12 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
     
     addRealInputButton()
  
-	$(elem).tooltip(TooltipOptions.title("Click to add a new photo"))
+    val text =
+      if (isSingleton && hasExistingPhotos)
+        "Click to replace the photo"
+      else
+        "Click to add a photo"
+	$(elem).tooltip(TooltipOptions.title(text))
 	
     showReady()
   }
