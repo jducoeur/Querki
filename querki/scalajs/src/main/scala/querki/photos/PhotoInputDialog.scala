@@ -76,8 +76,7 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
     val verticalHelper = Gadget(span(cls:="_photoThumbnailHelper"))
     $(elem).append(verticalHelper.rendered)
     
-    photoInputElem.render
-    $(elem).after(photoInputElem.elem)
+    $(elem).after(photoInputElem.rendered)
     val agent = dom.window.navigator.userAgent
     val disableResize = (agent.contains("Opera") || (agent.contains("Android") && !agent.contains("Chrome")))
     $(photoInputElem.elem).fileupload(FileUploadOptions
@@ -105,7 +104,7 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
       })
       .progress({ (evt:JQueryEventObject, data:FileUploadProgress) =>
         val percent = (data.loaded / data.total) * 100
-//        println(s"Progress: $percent")
+        println(s"Progress: $percent")
 //        $(photoProgressBar.elem).css("width", s"$percent%")
 //        if (data.loaded == data.total)
 //          setStatus("Processing...")
@@ -126,20 +125,15 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
       val file = evt.target.files(0)
       if (Pattern.matches("image.*", file.`type`)) {
         val reader = new dom.FileReader()
-        reader.onload = { uievt:dom.UIEvent =>
-//          // Render the thumbnail
-//          val thumb = img(height:=120, src:=reader.result, title:=file.name)
-//          $(photoThumb.elem).append(thumb.render)
-        }
+        reader.onload = { uievt:dom.UIEvent => }
       } else {
-//        setStatus(s"I don't know what that is -- the type is ${file.`type`}.")
+        StatusLine.showBriefly(s"That is a ${file.`type`}. You can only upload images.")
       }
     })
     
 	$(elem).tooltip(TooltipOptions.title("Click to add a new photo"))
 	
     $(elem).click({ evt:JQueryEventObject =>
-//      PhotosInternal.showInputDialog(this)
       $(elem).data("ready").asInstanceOf[js.UndefOr[Boolean]].map { ready =>
         if (ready)
           $(photoInputElem.elem).click()        
