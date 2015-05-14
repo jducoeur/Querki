@@ -8,6 +8,8 @@ import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
 
+import upickle._
+
 import play.api.data._
 import play.api.data.Forms._
 import play.api.data.format.Formats._
@@ -15,17 +17,21 @@ import play.api.data.validation.Constraints._
 import play.api.libs.iteratee._
 import play.api.mvc._
 
-import models.OID
+import models.{OID, Wikitext}
 
+import querki.core.QLText
 import querki.globals._
 import querki.photos.PhotoUploadMessages._
 import querki.session.messages.ChangeProps2
 import querki.spaces.messages.{SessionRequest, ThingError, ThingFound}
 import querki.util.QLog
+import querki.values.QLContext
 
 class PhotoController extends ApplicationBase {
   
+  lazy val Core = interface[querki.core.Core]
   lazy val Photos = interface[querki.photos.Photos]
+  lazy val QL = interface[querki.ql.QL]
   
   def photoReceiver(rh:RequestHeader):Iteratee[Array[Byte], Either[Result, Future[ActorRef]]] = {
     val workerRefFuture = Photos.createWorker(rh.contentType)
@@ -57,7 +63,11 @@ class PhotoController extends ApplicationBase {
               ChangeProps2(rc.thing.get.id.toThingId, Map((propId -> info.newValue))))
         askSpace(sessionRequest) {
           case ThingFound(thingId, newState) => {
-            Ok("Got it!")
+            // Okay, we're successful. Send the Wikitext for thumbnail of the new photo back to the Client:
+            val lastElem = info.newValue.cv.last
+            val wikified:Wikitext = QL.process(QLText("[[_thumbnail]]"), QLContext(Core.ExactlyOne(lastElem), Some(rc)))
+            val pickled = upickle.write(wikified)
+            Ok(pickled)
           }
           case ThingError(error, stateOpt) => {
             // TODO: do more here...

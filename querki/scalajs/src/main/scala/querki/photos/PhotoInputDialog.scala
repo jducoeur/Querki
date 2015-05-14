@@ -5,16 +5,20 @@ import java.util.regex.Pattern
 import scala.scalajs.js
 import org.scalajs.dom
 import org.querki.jquery._
+
 import scalatags.JsDom.all._
+import upickle._
 
 import org.querki.facades.bootstrap._
 import org.querki.facades.bootstrap.filestyle._
 import org.querki.facades.fileupload._
 
+import models.Wikitext
+
 import querki.globals._
 
 import querki.comm._
-import querki.display.Gadget
+import querki.display.{Gadget, RawSpan}
 import querki.display.input.InputGadget
 import querki.pages.Page
 
@@ -36,6 +40,7 @@ import FileTarget._
 class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e) {
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
+  lazy val InputGadgets = interface[querki.display.input.InputGadgets]
   lazy val Pages = interface[querki.pages.Pages]
   lazy val PhotosInternal = interface[PhotosInternal]
   
@@ -74,6 +79,7 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
       .imageMaxWidth(1000)
       .imageMaxHeight(1000)
       .processstart({ evt:JQueryEventObject =>
+        // TODO: this is clumsy. Create a better representation of the "ready" vs. "in process" states.
         $(elem).find(".glyphicon").removeClass("glypicon glyphicon-plus").addClass("fa fa-spinner fa-3x fa-pulse")
 //        setStatus("Uploading...")
       })
@@ -87,10 +93,18 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
       .done({ (evt:JQueryEventObject, data:FileUploadResults) =>
 //        $(photoProgress.elem).removeClass("active")
 //        setStatus("Done!")
-        println(data.result)
-        $(elem).modal(ModalCommand.hide)
+        println("Done: " + data.result)
+        val wiki = upickle.read[Wikitext](data.result.asInstanceOf[String])
+        val wikiStr = wiki.raw.html.toString
+        println(s"Wikistr: $wikiStr")
+        val rawGadget = new RawSpan(wikiStr)
+        rawGadget.render
+        $(rawGadget.elem).insertBefore(elem)
+        InputGadgets.hookPendingGadgets()
+        $(elem).find(".fa").removeClass("fa fa-spinner fa-3x fa-pulse").addClass("glypicon glyphicon-plus")
+//        $(elem).modal(ModalCommand.hide)
         // Refresh the Page, in case we're currently displaying this photo:
-        Pages.findPageFor(this).refresh()
+//        Pages.findPageFor(this).refresh()
       })
     )
     
@@ -107,9 +121,6 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
 //        setStatus(s"I don't know what that is -- the type is ${file.`type`}.")
       }
     })
-    /*
-    *
-    */
     
 	$(elem).tooltip(TooltipOptions.title("Click to add a new photo"))
 	
