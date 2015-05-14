@@ -71,6 +71,11 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
   }
   
   def hook() = {
+    // This is a tad stupid, but necessary to get the visual layout of the thumbnails to work
+    // right. See http://stackoverflow.com/questions/7273338/how-to-vertically-align-an-image-inside-div
+    val verticalHelper = Gadget(span(cls:="_photoThumbnailHelper"))
+    $(elem).append(verticalHelper.rendered)
+    
     photoInputElem.render
     $(elem).after(photoInputElem.elem)
     val agent = dom.window.navigator.userAgent

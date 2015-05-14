@@ -281,31 +281,8 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
 
     /**
      * All Collections of Photos currently edit pretty much the same way for now.
-     * 
-     * TODO: we take ownership of the full rendering here, at least for now, instead of using the default
-     * mechanisms. In the long run, we should consider that a hack, separating the server-generated logic of
-     * "a list of Foos" from the client-side rendering of the actual edit control. 
      */
     def renderInputFull(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal):NodeSeq = {
-      implicit val s = context.state
-      val cType = prop.cType 
-      val verb =
-        if (cType == ExactlyOne || cType == Optional) {
-          val result = for {
-            v <- currentValue.effectiveV
-            photoBundle <- v.firstAs(this)
-            filename <- photoBundle.getFirstOpt(ImageFilenameProp)
-          }
-            yield "Replace"
-          
-          result.getOrElse("Add")
-        } else if (cType == QList || cType == QSet) {
-          "Add"
-        } else {
-          // Curious -- an unknown cType of photos!
-          "Add"
-        }
-      
       val currentPhotosOpt = currentValue.effectiveV
       val tag =
         htmlSpan(
@@ -316,10 +293,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
             }
               yield raw(text.getOrElse(""))
           },
-          div(
-            cls:="_photoThumbnailFrame _photoEdit _photoAddButton",
-            htmlSpan(cls:="_photoThumbnailHelper")
-          )
+          div(cls:="_photoThumbnailFrame _photoEdit _photoAddButton")
         )
         
       XmlHelpers.toNodes(tag)
