@@ -99,6 +99,11 @@ class FileUploadOptionBuilder(val dict:OptMap) extends JSOptionBuilder[FileUploa
    * Callback for uploads start, equivalent to the global ajaxStart event (but for file upload requests only).
    */
   def start(v:js.Function1[JQueryEventObject, Any]) = jsOpt("start", v)
+  
+  /**
+   * Callback for the start of the fileupload processing queue.
+   */
+  def processstart(v:js.Function1[JQueryEventObject, Any]) = jsOpt("processstart", v)
 }
 
 object FileUploadOptions extends FileUploadOptionBuilder(noOpts)

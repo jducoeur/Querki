@@ -73,7 +73,7 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
       // Here, we are reducing it mainly to reduce unnecessary transmission time. 
       .imageMaxWidth(1000)
       .imageMaxHeight(1000)
-      .start({ evt:JQueryEventObject =>
+      .processstart({ evt:JQueryEventObject =>
         $(elem).find(".glyphicon").removeClass("glypicon glyphicon-plus").addClass("fa fa-spinner fa-3x fa-pulse")
 //        setStatus("Uploading...")
       })
