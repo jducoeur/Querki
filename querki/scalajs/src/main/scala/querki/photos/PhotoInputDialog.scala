@@ -51,7 +51,6 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
   lazy val propId = $(elem).parent().data("propid").asInstanceOf[String]
   lazy val thing = $(elem).parent().data("thing").asInstanceOf[String]
   
-  lazy val photoInputElem = Gadget(input(cls:="_photoInputElem", tpe:="file", accept:="image/*;capture=camera"))
   lazy val addReadyIcon = Gadget(i(cls:="glyphicon glyphicon-plus _addPhotoIcon"))
   lazy val addRunningIcon = Gadget(i(cls:="fa fa-spinner fa-3x fa-pulse _addPhotoIcon"))
   
@@ -70,11 +69,18 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
     $(elem).data("ready", false)
   }
   
-  def hook() = {
-    // This is a tad stupid, but necessary to get the visual layout of the thumbnails to work
-    // right. See http://stackoverflow.com/questions/7273338/how-to-vertically-align-an-image-inside-div
-    val verticalHelper = Gadget(span(cls:="_photoThumbnailHelper"))
-    $(elem).append(verticalHelper.rendered)
+  def addRealInputButton():Unit = {
+    val photoInputElem = Gadget(input(cls:="_photoInputElem", tpe:="file", accept:="image/*;capture=camera"))
+    
+    def clickTransfer(evt:JQueryEventObject) = {
+      $(elem).data("ready").asInstanceOf[js.UndefOr[Boolean]].map { ready =>
+        if (ready)
+          $(photoInputElem.elem).click()        
+      }
+    }
+    val clickT:js.Function1[JQueryEventObject, Any] = clickTransfer _
+     
+    $(elem).on("click", clickT)
     
     $(elem).after(photoInputElem.rendered)
     val agent = dom.window.navigator.userAgent
@@ -104,10 +110,8 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
       })
       .progress({ (evt:JQueryEventObject, data:FileUploadProgress) =>
         val percent = (data.loaded / data.total) * 100
+        // TODO: is this ever producing useful information?
         println(s"Progress: $percent")
-//        $(photoProgressBar.elem).css("width", s"$percent%")
-//        if (data.loaded == data.total)
-//          setStatus("Processing...")
       })
       .done({ (evt:JQueryEventObject, data:FileUploadResults) =>
         val wiki = upickle.read[Wikitext](data.result.asInstanceOf[String])
@@ -116,6 +120,13 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
         rawGadget.render
         $(rawGadget.elem).insertBefore(elem)
         InputGadgets.hookPendingGadgets()
+        
+	    // TODO: for the moment, we are using the real input button as a one-shot -- after each upload, we're removing
+	    // it and creating another. This is stupid, but it is working around the fact that things only seem to be
+	    // working once otherwise. Figure out why that's happening!
+        $(elem).off("click")
+        $(photoInputElem.elem).remove()
+        addRealInputButton()
         
         showReady()
       })
@@ -130,16 +141,19 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
         StatusLine.showBriefly(s"That is a ${file.`type`}. You can only upload images.")
       }
     })
+
+  }
+  
+  def hook() = {
+    // This is a tad stupid, but necessary to get the visual layout of the thumbnails to work
+    // right. See http://stackoverflow.com/questions/7273338/how-to-vertically-align-an-image-inside-div
+    val verticalHelper = Gadget(span(cls:="_photoThumbnailHelper"))
+    $(elem).append(verticalHelper.rendered)
     
+    addRealInputButton()
+ 
 	$(elem).tooltip(TooltipOptions.title("Click to add a new photo"))
 	
-    $(elem).click({ evt:JQueryEventObject =>
-      $(elem).data("ready").asInstanceOf[js.UndefOr[Boolean]].map { ready =>
-        if (ready)
-          $(photoInputElem.elem).click()        
-      }
-    })
-    
     showReady()
   }
 } 
