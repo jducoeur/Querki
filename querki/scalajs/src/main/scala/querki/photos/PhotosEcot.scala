@@ -8,7 +8,6 @@ private [photos] trait PhotosInternal extends EcologyInterface {
   def recordTarget(target:PhotoTarget):Unit
   def findTargetFor(thumbnail:Thumbnail):Option[PhotoTarget]
   def showInDialog(thumbnail:Thumbnail):Unit
-  def showInputDialog(button:PhotoInputButton):Unit
 }
 
 class PhotosEcot(e:Ecology) extends ClientEcot(e) with PhotosInternal {
@@ -66,19 +65,5 @@ class PhotosEcot(e:Ecology) extends ClientEcot(e) with PhotosInternal {
       }
     }
     dialog.showFrom(thumbnail)
-  }
-  
-  def showInputDialog(button:PhotoInputButton):Unit = {
-    val page = Pages.findPageFor(button)
-    val dialog = page.getMetadata(showInputKey).map(_.asInstanceOf[PhotoInputDialog]) match {
-      case Some(dialog) => dialog
-      case None => {
-        val d = new PhotoInputDialog(page)
-        $(page.elem).append(d.render)
-        page.storeMetadata(showInputKey, d)
-        d
-      }
-    }
-    dialog.showFrom(button)    
   }
 }
