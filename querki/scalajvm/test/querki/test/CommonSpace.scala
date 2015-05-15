@@ -19,6 +19,7 @@ class CommonSpace(implicit ecologyIn:Ecology) extends TestSpace {
   def ecology = ecologyIn
   
   lazy val Links = interface[querki.links.Links]
+  lazy val Tags = interface[querki.tags.Tags]
   
   lazy val ExactlyOne = Core.ExactlyOne
   lazy val Optional = Core.Optional
@@ -28,6 +29,7 @@ class CommonSpace(implicit ecologyIn:Ecology) extends TestSpace {
   lazy val ExternalLinkType = Links.URLType
   lazy val TextType = Core.TextType
   lazy val LinkType = Core.LinkType
+  lazy val TagType = Tags.NewTagSetType
   
   // In the simple case, we only have one Space, so it can own the World:
   val world = new TestWorld
@@ -40,6 +42,11 @@ class CommonSpace(implicit ecologyIn:Ecology) extends TestSpace {
   val optLinkProp = new TestProperty(LinkType, Optional, "Optional Link")
   val listLinksProp = new TestProperty(LinkType, QList, "My List of Links")
   val setLinksProp = new TestProperty(LinkType, QSet, "My Set of Links")
+  
+  val singleTagProp = new TestProperty(TagType, ExactlyOne, "Single Tag")
+  val optTagProp = new TestProperty(TagType, Optional, "Optional Tag")
+  val listTagsProp = new TestProperty(TagType, QList, "My List of Tags")
+  val setTagsProp = new TestProperty(TagType, QSet, "My Set of Tags")
   
   val listURLProp = new TestProperty(ExternalLinkType, QList, "My List of URLs")
   val optURLProp = new TestProperty(ExternalLinkType, Optional, "My Optional URL")

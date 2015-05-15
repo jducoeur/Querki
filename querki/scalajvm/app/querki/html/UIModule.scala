@@ -38,8 +38,10 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   lazy val Links = interface[querki.links.Links]
   lazy val PublicUrls = interface[PublicUrls]
   lazy val QL = interface[querki.ql.QL]
+  lazy val Tags = interface[querki.tags.Tags]
   
   lazy val ExternalLinkType = Links.URLType
+  lazy val NewTagSetType = Tags.NewTagSetType
   lazy val ParsedTextType = QL.ParsedTextType
 
   /***********************************************
@@ -398,10 +400,15 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         case Some(definingContext) => {
           val invStr = for {
             lexicalThing <- inv.opt(inv.lexicalThing match { case Some(t:Thing) => Some(t); case _ => None})
-            linkProp <- inv.definingContextAsPropertyOf(LinkType)
+            linkProp <- inv.definingContextAsProperty
             fieldId = new FieldIds(None, linkProp)
+            backLink <- inv.opt(linkProp.pType match {
+              case LinkType => Some(lexicalThing.id.toThingId.toString)
+              case NewTagSetType => Some(lexicalThing.toThingId.toString)
+              case _ => None
+            })
           }
-            yield s"&${fieldId.inputControlId}=${lexicalThing.id.toThingId.toString}"
+            yield s"&${fieldId.inputControlId}=$backLink"
             
           invStr.get.headOption.getOrElse("")
         }

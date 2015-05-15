@@ -63,21 +63,61 @@ class UITests extends QuerkiTests {
     }
   }
   
-  def testBackLinkWith(cmd:String, parent:Thing, prop:AnyProp) = {
+  def testBackLinkWith(cmd:String, parent:Thing, prop:AnyProp, f:Thing => String) = {
     processQText(commonThingAsContext(_ => parent), s"""[[My Model -> ${prop.displayName}.$cmd(""Create"")]]""", Some(parent)) should
-      include (s"""&amp;v-${prop.id.toString}-=${parent.id.toThingId.toString}""")      
+      include (s"""v-${prop.id.toString}-=${f(parent)}""")      
   }
     
   // === _createButton ===
   "_createButton" should {
-    def testWith(parent:Thing, prop:AnyProp) = testBackLinkWith("_createButton", parent, prop)
+    def testWith(parent:Thing, prop:AnyProp)(implicit f:Thing => String) = testBackLinkWith("_createButton", parent, prop, f)
     
+    // Note that these tests are a bit unrealistic: we're using Properties that don't actually exist on the
+    // target Model, so they'd fail when you press the button. But the code doesn't currently sanity-check
+    // that.
     "work with Links" in {
+      implicit val f:Thing => String = _.id.toThingId.toString
+      
       testWith(commonSpace.instance, commonSpace.singleLinkProp)
       testWith(commonSpace.instance, commonSpace.optLinkProp)
       testWith(commonSpace.instance, commonSpace.listLinksProp)
       testWith(commonSpace.instance, commonSpace.setLinksProp)
-    }  
+    }
+    
+    "work with Tags" in {
+      implicit val f:Thing => String = _.toThingId.toString
+      
+      testWith(commonSpace.instance, commonSpace.singleTagProp)
+      testWith(commonSpace.instance, commonSpace.optTagProp)
+      testWith(commonSpace.instance, commonSpace.listTagsProp)
+      testWith(commonSpace.instance, commonSpace.setTagsProp)
+    }    
+  }
+  
+  // === _createInstanceLink ===
+  "_createInstanceLink" should {
+    def testWith(parent:Thing, prop:AnyProp)(implicit f:Thing => String) = testBackLinkWith("_createInstanceLink", parent, prop, f)
+    
+    // Note that these tests are a bit unrealistic: we're using Properties that don't actually exist on the
+    // target Model, so they'd fail when you press the button. But the code doesn't currently sanity-check
+    // that.
+    "work with Links" in {
+      implicit val f:Thing => String = _.id.toThingId.toString
+      
+      testWith(commonSpace.instance, commonSpace.singleLinkProp)
+      testWith(commonSpace.instance, commonSpace.optLinkProp)
+      testWith(commonSpace.instance, commonSpace.listLinksProp)
+      testWith(commonSpace.instance, commonSpace.setLinksProp)
+    }
+    
+    "work with Tags" in {
+      implicit val f:Thing => String = _.toThingId.toString
+      
+      testWith(commonSpace.instance, commonSpace.singleTagProp)
+      testWith(commonSpace.instance, commonSpace.optTagProp)
+      testWith(commonSpace.instance, commonSpace.listTagsProp)
+      testWith(commonSpace.instance, commonSpace.setTagsProp)
+    }    
   }
   
   // === _data ===
