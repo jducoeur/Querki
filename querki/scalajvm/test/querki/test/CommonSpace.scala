@@ -36,12 +36,13 @@ class CommonSpace(implicit ecologyIn:Ecology) extends TestSpace {
    * PROPERTIES
    ***********************************************/
   
-  val listLinksProp = new TestProperty(LinkType, QList, "My List of Links")
-  val listURLProp = new TestProperty(ExternalLinkType, QList, "My List of URLs")
-  
-  val optURLProp = new TestProperty(ExternalLinkType, Optional, "My Optional URL")
-  
   val singleLinkProp = new TestProperty(LinkType, ExactlyOne, "Single Link")
+  val optLinkProp = new TestProperty(LinkType, Optional, "Optional Link")
+  val listLinksProp = new TestProperty(LinkType, QList, "My List of Links")
+  val setLinksProp = new TestProperty(LinkType, QSet, "My Set of Links")
+  
+  val listURLProp = new TestProperty(ExternalLinkType, QList, "My List of URLs")
+  val optURLProp = new TestProperty(ExternalLinkType, Optional, "My Optional URL")
   
   val optTextProp = new TestProperty(TextType, Optional, "My Optional Text")
 

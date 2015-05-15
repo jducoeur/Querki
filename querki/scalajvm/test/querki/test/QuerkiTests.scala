@@ -39,6 +39,7 @@ class QuerkiTests
 
     // Testable stubs:
     new UserAccessStub(e)
+    new PublicUrlStub(e)
   }
   
   def createEcology() = {
@@ -94,9 +95,9 @@ class QuerkiTests
   }
   def commonState = commonSpace.state
   
-  def processQText(context:QLContext, text:String):String = {
+  def processQText(context:QLContext, text:String, lexicalOpt:Option[Thing] = None):String = {
     val qt = QLText(text)
-    val wikitext = QL.process(qt, context)
+    val wikitext = QL.process(qt, context, None, lexicalOpt)
     wikitext.plaintext.stripReturns
   }
   

@@ -20,6 +20,13 @@ object SystemCreator {
   }
   
   /**
+   * This creates the other Ecots that need to be stubbed in unit testing.
+   */
+  def createStubbableEcots(ecology:Ecology) = {
+    new controllers.PublicUrlDefinitions(ecology)                  // 53    
+  }
+  
+  /**
    * This creates the Ecots that can potentially be used in testing.
    * 
    * As of this writing, I haven't gone through this list carefully. Some of these
@@ -81,7 +88,7 @@ object SystemCreator {
     new querki.conversations.CommentNotifierEcot(ecology)          // 50
     new querki.security.RolesEcot(ecology)                         // 51
     new querki.photos.PhotoEcot(ecology)                           // 52
-    new controllers.PublicUrlDefinitions(ecology)                  // 53
+    															   // 53
     new querki.api.ClientApiEcot(ecology)                          // 54
     new querki.tools.ProfilerEcot(ecology)                         // 55
   }
@@ -89,6 +96,7 @@ object SystemCreator {
   def createAllEcots(ecology:Ecology):Ecology = {
     createTestableEcots(ecology)
     createDBEcots(ecology)
+    createStubbableEcots(ecology)
     
     ecology
   }

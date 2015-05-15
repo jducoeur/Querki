@@ -2,6 +2,8 @@ package querki.html
 
 import scala.xml.XML
 
+import models.{Thing, AnyProp}
+
 import querki.test._
 
 class UITests extends QuerkiTests {
@@ -59,6 +61,23 @@ class UITests extends QuerkiTests {
           |world"" -> _class(""myClass otherClass"")]]""".stripMargin) should
         equal ("""<span class="myClass otherClass">hello</span><span class="myClass otherClass">world</span>""")
     }
+  }
+  
+  def testBackLinkWith(cmd:String, parent:Thing, prop:AnyProp) = {
+    processQText(commonThingAsContext(_ => parent), s"""[[My Model -> ${prop.displayName}.$cmd(""Create"")]]""", Some(parent)) should
+      include (s"""&amp;v-${prop.id.toString}-=${parent.id.toThingId.toString}""")      
+  }
+    
+  // === _createButton ===
+  "_createButton" should {
+    def testWith(parent:Thing, prop:AnyProp) = testBackLinkWith("_createButton", parent, prop)
+    
+    "work with Links" in {
+      testWith(commonSpace.instance, commonSpace.singleLinkProp)
+      testWith(commonSpace.instance, commonSpace.optLinkProp)
+      testWith(commonSpace.instance, commonSpace.listLinksProp)
+      testWith(commonSpace.instance, commonSpace.setLinksProp)
+    }  
   }
   
   // === _data ===
