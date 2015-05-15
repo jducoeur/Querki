@@ -268,6 +268,11 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
           |_tagRefs is designed to receive a "name" (which is what a Tag is). If you send it a Thing, then it will use
           |the Name of that Thing.
           |
+          |    NAME -> PROPERTY._tagRefs -> THINGS
+          |
+          |If you specify a PROPERTY like this, it will only produce Things that point to this through that
+          |*specific* Tag Property.
+          |
           |NOTE: _tagRefs and _refs are closely related concepts. They currently work differently, but we might
           |at some point combine them for simplicity.""".stripMargin)))
   { 
@@ -277,7 +282,13 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
         nameableType <- inv.contextTypeAs[NameableType]
         // TODO: this only works with a single received name. It should work with any number!
         oldName = nameableType.getName(inv.context)(inv.context.value.first)
-        tagProps = inv.state.propList.filter(prop => prop.pType == TagSetType || prop.pType == NewTagSetType)
+        definingProp = inv.definingContextAsPropertyOf(NewTagSetType).get
+        tagProps =
+          if (definingProp.isEmpty)
+            // There was no property specified, so use all Tag Properties
+            inv.state.propList.filter(prop => prop.pType == TagSetType || prop.pType == NewTagSetType)
+          else
+            definingProp
         thingOpt = nameableType match {
             case LinkType => Core.followLink(inv.context)
             case _ => None

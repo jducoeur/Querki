@@ -251,6 +251,7 @@ class DataModelTests extends QuerkiTests {
     }
   }
   
+  // === _kind ===
   "_kind" should {
     "work with the common Types" in {
       implicit val s = commonSpace

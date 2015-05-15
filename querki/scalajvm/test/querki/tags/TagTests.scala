@@ -75,6 +75,29 @@ class TagTests extends QuerkiTests {
       pql("""[[Tag 2 -> _tagRefs -> _sort]]""") should
         equal(listOfLinkText(s.instance2, s.instance3))
     }
+    
+    // Test for Issue .3y286oo
+    "work with a specified Property" in {
+      class TSpace extends CommonSpace {
+        val tagProp1 = new TestProperty(Tags.NewTagSetType, QSet, "First Tag Prop")
+        val tagProp2 = new TestProperty(Tags.NewTagSetType, QSet, "Second Tag Prop")
+        
+        val targetThing = new SimpleTestThing("Target Thing")
+        
+        val source1 = new SimpleTestThing("Source 1", tagProp1("Target Thing"))
+        val source2 = new SimpleTestThing("Source 2", tagProp2("Target Thing"))
+        val source3 = new SimpleTestThing("Source 3", tagProp1("Target Thing"))
+        val source4 = new SimpleTestThing("Source 4", tagProp2("Target Thing"))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Target Thing -> _tagRefs -> _sort]]""") should
+        equal(listOfLinkText(s.source1, s.source2, s.source3, s.source4))
+      pql("""[[Target Thing -> First Tag Prop._tagRefs -> _sort]]""") should
+        equal(listOfLinkText(s.source1, s.source3))
+      pql("""[[Target Thing -> Second Tag Prop._tagRefs -> _sort]]""") should
+        equal(listOfLinkText(s.source2, s.source4))
+    }
   }
   
   // === _tagsForProperty ===
