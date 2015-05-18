@@ -3,7 +3,7 @@ import sbt.Project.projectToRef
 lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.6"
-lazy val appV = "1.1.1"
+lazy val appV = "1.1.2"
 
 lazy val sharedSrcDir = "scala"
 
