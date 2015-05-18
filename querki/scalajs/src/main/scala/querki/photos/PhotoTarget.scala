@@ -24,7 +24,5 @@ class PhotoTarget(implicit e:Ecology) extends InputGadget[dom.HTMLImageElement](
   def displayFrom(thumbnail:Thumbnail) = {
     $(elem)
       .attr("src", thumbnail.fullSrc)
-      .width(thumbnail.fullWidth)
-      .height(thumbnail.fullHeight)
   }
 }

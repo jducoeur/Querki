@@ -259,7 +259,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
         width <- v.getFirstOpt(ImageWidthProp)
         height <- v.getFirstOpt(ImageHeightProp)
       }
-        yield HtmlWikitext(s"""<img src="$bucketUrl/${filename.raw}" width="$width" height="$height" alt="${filename.raw}" />""")
+        yield HtmlWikitext(s"""<img class="img-responsive" src="$bucketUrl/${filename.raw}" alt="${filename.raw}" />""")
         
       result.getOrElse(Wikitext(""))
     }
@@ -347,7 +347,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
         width <- v.getFirstOpt(ImageWidthProp)
         height <- v.getFirstOpt(ImageHeightProp)
       }
-        yield HtmlWikitext(s"""<img class="_photoTarget" src="$bucketUrl/${filename.raw}" width="$width" height="$height" alt="${filename.raw}" $fromProp/>""")
+        yield HtmlWikitext(s"""<img class="_photoTarget img-responsive" src="$bucketUrl/${filename.raw}" alt="${filename.raw}" $fromProp/>""")
         
       result.getOrElse(Wikitext(""))
     }    
