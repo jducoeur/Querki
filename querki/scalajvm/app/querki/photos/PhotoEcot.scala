@@ -259,9 +259,24 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
         width <- v.getFirstOpt(ImageWidthProp)
         height <- v.getFirstOpt(ImageHeightProp)
       }
-        yield HtmlWikitext(s"""<img class="img-responsive" src="$bucketUrl/${filename.raw}" alt="${filename.raw}" />""")
+        yield HtmlWikitext(s"""<img class="img-responsive center-block" src="$bucketUrl/${filename.raw}" alt="${filename.raw}" />""")
         
       result.getOrElse(Wikitext(""))
+    }
+    
+    /**
+     * We wrap List or Sets of Photos up specially, so that the Client can render them nicely.
+     */
+    override def fullWikify(context:QLContext, qv:QValue, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Option[Wikitext] = {
+      qv.cType match {
+        case QList | QSet => {
+          Some(
+            Wikitext("{{_photoList:\n") +
+              qv.cType.doWikify(context)(qv.cv, this, displayOpt, lexicalThing) +
+            Wikitext("\n}}"))
+        }
+        case _ => None
+      }
     }
     
     override def doComp(context:QLContext)(left:ModeledPropertyBundle, right:ModeledPropertyBundle):Boolean = {

@@ -54,6 +54,18 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecology
    */
   final def wikify(context:QLContext)(v:ElemValue, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = 
     doWikify(context)(get(v), displayOpt, lexicalThing)
+    
+  /**
+   * This gives a PType the opportunity to take complete control of the rendering of a QValue of this PType,
+   * without going through the Collection. In this case, doWikify() will never be called from the outside;
+   * the PType needs to do everything. This is an exceptional case, and only for use when, eg, a PType needs to
+   * handle List display differently than the usual.
+   * 
+   * TBD: this is a bit of a hack, originally intended as a way to inject a little "wrapper" for Photo Lists. Would it be
+   * better to *always* put a wrapper around Lists and Sets? That would break a thousand unit tests, and we would
+   * need to figure out whether that wrapper is a div or span, but it seems conceptually plausible.
+   */
+  def fullWikify(context:QLContext, qv:QValue, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Option[Wikitext] = None
   
   /**
    * Takes a value of this type, and renders it for showing in debug messages.

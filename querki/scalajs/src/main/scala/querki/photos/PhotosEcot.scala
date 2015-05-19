@@ -21,6 +21,7 @@ class PhotosEcot(e:Ecology) extends ClientEcot(e) with PhotosInternal {
     Gadgets.registerSimpleGadget("._photoThumbnail", { new Thumbnail })
     Gadgets.registerSimpleGadget("._photoTarget", { new PhotoTarget })
     Gadgets.registerSimpleGadget("._photoEdit", { new PhotoInputButton })
+    Gadgets.registerHook("._photoList")(PhotoList.hook)
   }
   
   val targetKey = "Photo Targets"
