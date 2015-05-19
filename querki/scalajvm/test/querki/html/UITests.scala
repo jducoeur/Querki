@@ -191,6 +191,12 @@ class UITests extends QuerkiTests {
 			4
 			5""".strip)
     }
+    
+    "work with an empty list" in {
+      implicit val s = commonSpace
+      pql("""The result is [[Trivial._instances -> _section(""Inner Header"", _bulleted)]]""") should
+        equal("""The result is """)
+    }
   }
   
   // === _showLink ===

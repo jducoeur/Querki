@@ -137,10 +137,14 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     logContext("processTextStage " + text, context) {
 	    val ct = context.value.cType
 	    // For each element of the incoming context, recurse in and process the embedded Text
-	    // in that context.
-	    val transformed = context.map { elemContext =>
-	      QL.ParsedTextType(processParseTree(text.contents, elemContext))
-	    }
+	    // in that context. Iff the context is empty, though, just produce an empty result.
+	    val transformed =
+	      if (context.isEmpty)
+	        Iterable.empty
+	      else
+  	        context.map { elemContext =>
+	          QL.ParsedTextType(processParseTree(text.contents, elemContext))
+	        }
 	    // TBD: the asInstanceOf here is surprising -- I would have expected transformed to come out
 	    // as the right type simply by type signature. Can we get rid of it?
 	    context.next(ct.makePropValue(transformed.asInstanceOf[ct.implType], QL.ParsedTextType))

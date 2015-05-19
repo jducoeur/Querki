@@ -14,9 +14,7 @@ class CollectionRenderingTests extends QuerkiTests {
       implicit val s = new TSpace
       
       pql("""The result is: [[Thing 1 -> My List -> _bulleted]]""") should 
-        equal ("""The result is: 
-            |<ul>
-            |</ul>""".stripReturns)
+        equal ("""The result is: """.stripReturns)
       pql("""The result is: [[Thing 2 -> My List -> _bulleted]]""") should 
         equal ("""The result is: 
             |<ul>
@@ -52,9 +50,7 @@ class CollectionRenderingTests extends QuerkiTests {
       implicit val s = new TSpace
       
       pql("""The result is: [[Thing 1 -> My List -> _bulleted]]""") should 
-        equal ("""The result is: 
-            |<ul>
-            |</ul>""".stripReturns)
+        equal ("""The result is: """.stripReturns)
       // This line is the unit test for bug .3y2852x:
       pql("""The result is: [[Thing 2 -> My List -> _bulleted]]""") should 
         equal ("""The result is: 
