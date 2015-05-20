@@ -548,7 +548,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
       val target = follow(context)(v)
       val text = target match {
         case Some(t) => {
-          val display = displayOpt.getOrElse(t.displayNameText.htmlWikitext)
+          val display = displayOpt.getOrElse(context.requestOpt.map(t.nameOrComputed(_)).getOrElse(t.displayNameText).htmlWikitext)
           makeWikiLink(context, t, display)
         }
         case None => Wikitext("Bad Link: Thing " + v.toString + " not found")
