@@ -187,6 +187,26 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
           |from that instead.""".stripMargin)
       ))
   
+  lazy val ComputedNameProp = new SystemProperty(ComputedNameOID, TextType, ExactlyOne,
+    toProps(
+      setName("Computed Name"),
+      SkillLevel(SkillLevelAdvanced),
+      Summary("How to compute a name, for Things that don't have their own names"),
+      Details("""Most Things in Querki use the Display Name Property to set a name for this specific Thing.
+          |But that sometimes isn't appropriate, especially for "child" Things that are providing more detail
+          |to a "parent". In those cases, you often would like to still be able to display links to the child
+          |in a way that is clearer than an Object ID like ".3y286ks".
+          |
+          |Computed Name exists for this sort of situation. This is a Text Property, which you usually define
+          |as a Model Property for the Child Model, to give this Child a pseudo-name based on its properties.
+          |For example, to show a name based on the Parent and the Child's "My Date" Property, you would set
+          |Computed Name to `\[[Parent -> Display Name\]]-\[[My Date\]]`.
+          |
+          |The resulting displayed name is only as unique as you make it. Try to use a combination of Properties
+          |that will consistently result in a unique name, to make it clear which Thing is which.
+          |
+          |This is a pretty advanced Property, and only recommended for relatively complex Spaces.""".stripMargin)))
+  
   // TODO: the name DisplayTextProp still need to be renamed to DefaultViewProp:
   lazy val DisplayTextProp = new SystemProperty(DisplayTextOID, LargeTextType, Optional,
       toProps(
@@ -288,6 +308,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
   override lazy val props = Seq(
     ApplyMethod,
     DisplayNameProp,
+    ComputedNameProp,
     DisplayTextProp,
     DeprecatedProp,
     ExplicitProp,

@@ -34,6 +34,7 @@ package object basic {
     val ModelViewOID = moid(3)
     val SystemHiddenPropOID = moid(4)
     val PrintViewOID = moid(5)
+    val ComputedNameOID = moid(6)
   }
   
   /**
@@ -56,6 +57,7 @@ package object basic {
     def ApplyMethod:Property[QLText,String]    
     def DeprecatedProp:Property[Boolean,Boolean]
     def DisplayNameProp:Property[PlainText,String]
+    def ComputedNameProp:Property[QLText,String]
     def DisplayTextProp:Property[QLText,String]
     def ExplicitProp:Property[Boolean,Boolean]
     def SystemOnlyProp:Property[Boolean,Boolean]

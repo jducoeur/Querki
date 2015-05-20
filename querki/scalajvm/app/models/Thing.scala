@@ -119,6 +119,26 @@ abstract class Thing(
     }    
   }
   
+  def unsafeNameOrComputed(implicit rc:RequestContext):String = {
+    implicit val s = rc.state.get
+    val localName = lookupDisplayName
+    def fallback() = id.toThingId.toString
+    if (localName.isEmpty) {
+      val computed = for {
+        pv <- getPropOpt(Basic.ComputedNameProp)
+        v <- pv.firstOpt
+      }
+        yield QL.process(v, thisAsContext).raw.toString
+      computed.getOrElse(fallback())
+    } else {
+      val rendered = localName.get.renderPlain.plaintext
+      if (rendered.length() > 0)
+        rendered
+      else
+        fallback()
+    }    
+  }
+  
   lazy val canonicalName:Option[String] = {
     NameProp.firstOpt(props).filter(_.length() > 0)
   }

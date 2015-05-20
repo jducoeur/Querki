@@ -45,7 +45,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
       ThingInfo(
         t, 
         t.linkName, 
-        t.unsafeDisplayName,
+        t.unsafeNameOrComputed(rc),
         t.model,
         t.kind,
         isModel,
