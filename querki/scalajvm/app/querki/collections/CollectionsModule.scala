@@ -20,6 +20,8 @@ object MOIDs extends EcotIds(6) {
   val NextInListOID = moid(2)
   val ForeachMethodOID = moid(3)
   val ContainsMethodOID = moid(4)
+  val TakeOID = moid(5)
+  val DropOID = moid(6)
 }
 
 class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with querki.logic.YesNoUtils {
@@ -77,6 +79,44 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	      QL.EmptyListCut()
 	    else
 	      QList.makePropValue(sourceColl.cv.tail.toList, context.value.pType)
+	  }
+	}
+	
+	lazy val TakeMethod = new InternalMethod(TakeOID,
+	    toProps(
+	      setName("_take"),
+	      Summary("""Produces the first N values from the received context."""),
+	      Details("""    LIST -> _take(N) -> LIST
+	          |Sometimes you want just the first few elements of a List. _take does that -- think of
+	          |it as taking the beginning of the List, and leaving the rest behind.
+	          |
+	          |Note that _first is roughly the same as _take(1).""".stripMargin)))
+	{
+	  override def qlApply(inv:Invocation):QValue = {
+	    for {
+	      n <- inv.processParamFirstAs(0, IntType)
+	      qv <- inv.contextValue
+	    }
+	      yield QList.makePropValue(qv.cv.take(n), inv.context.value.pType)
+	  }
+	}
+	
+	lazy val DropMethod = new InternalMethod(DropOID,
+	    toProps(
+	      setName("_drop"),
+	      Summary("""Produces all but the first N values from the received context."""),
+	      Details("""    LIST -> _drop(N) -> LIST
+	          |_drop is the inverse of _take -- it drops the first N values, and produces what's left,
+	          |if anything.
+	          |
+	          |Note that _rest is roughly the same as _drop(1).""".stripMargin)))
+	{
+	  override def qlApply(inv:Invocation):QValue = {
+	    for {
+	      n <- inv.processParamFirstAs(0, IntType)
+	      qv <- inv.contextValue
+	    }
+	      yield QList.makePropValue(qv.cv.drop(n), inv.context.value.pType)
 	  }
 	}
 
@@ -532,6 +572,8 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   override lazy val props = Seq(
     FirstMethod,
     RestMethod,
+    TakeMethod,
+    DropMethod,
     IsNonEmptyMethod,
     IsEmptyMethod,
     FilterMethod,

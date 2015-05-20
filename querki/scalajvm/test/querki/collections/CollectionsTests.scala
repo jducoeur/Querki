@@ -51,6 +51,35 @@ class CollectionsTests extends QuerkiTests {
     }
   }
   
+  // === _drop ===
+  "_drop" should {
+    class TSpace extends CommonSpace {
+      val thingWithList = new SimpleTestThing("My Thing", listTagsProp("One", "Two", "Three", "Four", "Five", "Six"))
+      val thingWithEmptyList = new SimpleTestThing("My Empty Thing", listTagsProp())
+    }
+    
+    "work normally" in {
+      implicit val s = new TSpace
+      
+      pql("""[[My Thing -> My List of Tags -> _drop(3) -> _commas]]""") should
+        equal ("[Four](Four), [Five](Five), [Six](Six)")
+    }
+    
+    "produce an empty list if too far" in {
+      implicit val s = new TSpace
+      
+      pql("""[[My Thing -> My List of Tags -> _drop(8) -> _commas]]""") should
+        equal ("")      
+    }
+    
+    "work with an empty List" in {
+      implicit val s = new TSpace
+      
+      pql("""[[My Empty Thing -> My List of Tags -> _drop(2) -> _commas]]""") should
+        equal ("")      
+    }
+  }
+  
   // === _filter ===
   "_filter" should {
     "work with _equals" in {
@@ -328,6 +357,35 @@ Wild!, 19, """.stripReturns)
       implicit val s = new TSpace
       
       pql("""[[My Thing -> List of Ints -> _sort -> _commas]]""") should equal ("0, 6, 12, 44, 83, 92873")
+    }
+  }
+    
+  // === _take ===
+  "_take" should {
+    class TSpace extends CommonSpace {
+      val thingWithList = new SimpleTestThing("My Thing", listTagsProp("One", "Two", "Three", "Four", "Five", "Six"))
+      val thingWithEmptyList = new SimpleTestThing("My Empty Thing", listTagsProp())
+    }
+    
+    "work normally" in {
+      implicit val s = new TSpace
+      
+      pql("""[[My Thing -> My List of Tags -> _take(3) -> _commas]]""") should
+        equal ("[One](One), [Two](Two), [Three](Three)")
+    }
+    
+    "produce an empty list if too far" in {
+      implicit val s = new TSpace
+      
+      pql("""[[My Thing -> My List of Tags -> _drop(5) -> _take(3) -> _commas]]""") should
+        equal ("[Six](Six)")
+    }
+    
+    "work with an empty List" in {
+      implicit val s = new TSpace
+      
+      pql("""[[My Empty Thing -> My List of Tags -> _take(2) -> _commas]]""") should
+        equal ("")      
     }
   }
 }
