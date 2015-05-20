@@ -128,7 +128,7 @@ abstract class Thing(
         pv <- getPropOpt(Basic.ComputedNameProp)
         v <- pv.firstOpt
       }
-        yield QL.process(v, thisAsContext).display
+        yield QL.process(v, thisAsContext).raw
       computed.getOrElse(fallback())
     } else {
       val rendered = localName.get.renderPlain.raw

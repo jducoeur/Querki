@@ -292,10 +292,11 @@ trait LinkUtils { self:CoreEcot =>
           // Note: the unsafeDisplayNames below are because Scala's XML interpolator appears to be doing the
           // name sanitizing for us:
           candidates map { candidate:Thing =>
+            val name = context.requestOpt.map(candidate.unsafeNameOrComputed(_)).getOrElse(candidate.unsafeDisplayName)
             if(candidate.id == v.elem) {
-              <option value={candidate.id.toString} selected="selected">{candidate.unsafeDisplayName}</option>        
+              <option value={candidate.id.toString} selected="selected">{name}</option>        
             } else {
-              <option value={candidate.id.toString}>{candidate.unsafeDisplayName}</option>
+              <option value={candidate.id.toString}>{name}</option>
             }
           }
         }
