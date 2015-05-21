@@ -90,6 +90,11 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
   {
     registerThing(this)
   }
+  class UnnamedThing(model:OID, pairs:(OID, QValue)*)
+    extends ThingState(toid(), spaceId, model, Core.toProps(pairs:_*))
+  {
+    registerThing(this)
+  }
   class TestThing(pid:OID, name:String, model:OID, pairs:(OID, QValue)*)
     extends TestThingBase(pid, name, model, pairs:_*)
   {

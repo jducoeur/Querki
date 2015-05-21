@@ -64,4 +64,22 @@ class BasicTests extends QuerkiTests {
 			</ul>""".strip)
     }
   }
+  
+  // === Computed Name ===
+  "Computed Name" should {
+    class TSpace extends CommonSpace {
+      val linkedTo = new SimpleTestThing("Thing to Link")
+      val compModel = new SimpleTestThing("Model With Computed", singleLinkProp(), Basic.ComputedNameProp("""Child of [[Single Link -> Name]]"""))
+      
+      val unnamed = new UnnamedThing(compModel, singleLinkProp(linkedTo))
+      val named = new TestThing("My Named Thing", compModel)
+    }
+    
+    "be used iff there isn't a Display Name" in {
+      implicit val s = new TSpace
+
+      pql("""[[Model With Computed._instances -> _sort -> _commas]]""") should
+        equal (s"[Child of Thing to Link](${s.unnamed.id.toThingId.toString}), [My Named Thing](My-Named-Thing)")
+    }
+  }
 }
