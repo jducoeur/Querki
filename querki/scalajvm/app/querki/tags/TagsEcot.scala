@@ -4,7 +4,7 @@ import scala.xml.NodeSeq
 
 import querki.ecology._
 
-import models.{AsDisplayName, Collection, DisplayPropVal, Kind, PropertyBundle, Thing, ThingId, UnknownOID, Wikitext}
+import models.{AsDisplayName, Collection, DisplayPropVal, DisplayText, Kind, PropertyBundle, Thing, ThingId, UnknownOID, Wikitext}
 
 import querki.globals._
 
@@ -128,6 +128,8 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     val name = SafeUrl.decode(nameIn)
     override lazy val displayName = name
     override lazy val unsafeDisplayName = name
+    override def nameOrComputed(implicit rc:RequestContext) = DisplayText(name)
+    override def unsafeNameOrComputed(implicit rc:RequestContext) = name
     override lazy val canonicalName = Some(name)
     override lazy val linkName = Some(name)
     override lazy val toThingId:ThingId = new AsDisplayName(name)
