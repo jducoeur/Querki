@@ -150,6 +150,11 @@ class QuerkiTests
     lines.mkString
   }
   
+  def listOfTags(tags:String*):String = {
+    val lines = tags.map(tag => s"\n[$tag](${tag.replace(" ", "+")})")
+    lines.mkString
+  }
+  
   def expectedWarning(warningName:String):String = s"{{_warning:$warningName}}"
   
   // Commonly used Ecots and pieces therein:

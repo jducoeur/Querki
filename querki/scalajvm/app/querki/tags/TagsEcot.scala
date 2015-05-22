@@ -149,19 +149,31 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   
   def getTag(name:String, state:SpaceState):Thing = TagThing(name, state)
 
-  def fetchTags(space:SpaceState, propIn:Property[_,_]):Set[String] = {
-    implicit val s = space
-    val thingsWithProp = space.thingsWithProp(propIn)
+  def fetchTags(state:SpaceState, propIn:Property[_,_]):Set[String] = {
+    implicit val s = state
     if (propIn.pType == TagSetType) {
+      // Note: this still works the "old" way, and doesn't delve into Model Types. Since TagSetType is
+      // deprecated anyway, I'm not going to worry about it.
+      val thingsWithProp = state.thingsWithProp(propIn)
       val prop = propIn.confirmType(TagSetType).get
       (Set.empty[String] /: thingsWithProp) { (set, thing) =>
         set ++ thing.getProp(prop).rawList
       }
     } else if (propIn.pType == NewTagSetType) {
       val prop = propIn.confirmType(NewTagSetType).get
-      (Set.empty[String] /: thingsWithProp) { (set, thing) =>
-        set ++ thing.getProp(prop).rawList.map(_.text)
-      }      
+      // TODO: wow, this is kind of horrifying, but that's the current state of things.
+      // We probably need to do some caching to make this suck less, but it needs some
+      // thought.
+      // (Note: this algorithm takes nPaths * nThings * nVals -- potentially very slow.)
+      val tagList = for {
+        path <- PropPaths.pathsToProperty(prop)(state)
+        thing <- state.allThings
+        pv <- path.getPropOpt(thing)(state)
+        text <- pv.rawList
+      }
+        yield text.text
+        
+      tagList.toSet.filter(_.length > 0)     
     } else
       // TODO: should this be a PublicException?
       throw new Exception("Trying to fetchTags on a non-Tag Property!")

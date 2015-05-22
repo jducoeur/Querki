@@ -123,5 +123,30 @@ class TagTests extends QuerkiTests {
       pql("""[[Genres._self -> _tagsForProperty -> _sort -> _commas]]""") should
         equal("[Folk](Folk), [Pop](Pop), [Rock](Rock), [Weird](Weird)")      
     }
+    
+    // Test for Issue .3y286so
+    "work for Tags embedded in Model Types" in {
+      // This example is adapted from the Cooks Guild Space, where it came up:
+      class TSpace extends CommonSpace {
+        val source = new SimpleTestThing("Source")
+        val secondarySourceProp = new TestProperty(Tags.NewTagSetType, ExactlyOne, "Secondary Source")
+        // Yes, we have an empty ExactlyOne in the Model. That's a bit suspicious, and worth thinking about:
+        val secondarySourceDetails = new SimpleTestThing("Secondary Source Details", secondarySourceProp())
+        val secondarySources = TestModelProperty("Secondary Sources", secondarySourceDetails, QList)
+        
+        val recon1 = new SimpleTestThing("Recon1", 
+            secondarySources(SimplePropertyBundle(secondarySourceProp("Medieval Arab Cookery"))))
+        val recon2 = new SimpleTestThing("Recon2", 
+            secondarySources(SimplePropertyBundle(secondarySourceProp("Medieval Arab Cookery", "Pleyn Delit"))))
+        val recon3 = new SimpleTestThing("Recon3", 
+            secondarySources(SimplePropertyBundle(secondarySourceProp("The Medieval Kitchen"))))
+        val recon4 = new SimpleTestThing("Recon4", 
+            secondarySources(SimplePropertyBundle(secondarySourceProp("Pleyn Delit"))))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Secondary Source._tagsForProperty -> _sort]]""") should
+        equal (listOfTags("Medieval Arab Cookery", "Pleyn Delit", "The Medieval Kitchen"))
+    }
   }
 }
