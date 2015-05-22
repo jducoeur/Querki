@@ -582,9 +582,12 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
           |```""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QValue = {
+      val firstParam = inv.processParam(0)
+      val targetType = firstParam.pType
 	  for {
 	    n <- inv.iter(0 to (inv.numParams-1))
 	    paramVals <- inv.processParam(n)
+	    typeCheck <- inv.test(paramVals.pType == targetType, "Collections.concat.mismatchedTypes", targetType.displayName, paramVals.pType.displayName)
 	  }
 	    yield paramVals
 	}

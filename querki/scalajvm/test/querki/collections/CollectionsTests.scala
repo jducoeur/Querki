@@ -16,6 +16,21 @@ class CollectionsTests extends QuerkiTests {
       pql("""[[My Favorites -> _concat(Favorite Artists, Interesting Artists) -> _sort]]""") should
         equal(listOfLinkText(s.blackmores, s.eurythmics, s.tmbg))
     }
+    
+    // Test for Issue .3y286sw
+    "give a good error in case of type mismatch" in {
+      class TSpace extends CDSpace {
+        val favoriteGenresProp = new TestProperty(TagType, QSet, "Favorite Genres", Links.LinkModelProp(genreModel))
+        
+	    new SimpleTestThing("More Favorites", 
+	      favoriteArtistsProp(tmbg, blackmores),
+	      favoriteGenresProp("Rock", "Weird"))
+      }
+      implicit val s = new CDSpace
+      
+      pql("""[[My Favorites -> _concat(Favorite Artists, Favorite Genres)]]""") should
+        equal (expectedWarning("Collections.concat.mismatchedTypes"))
+    }
   }
   
   // === _contains ===

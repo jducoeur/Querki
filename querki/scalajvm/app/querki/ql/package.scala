@@ -91,6 +91,14 @@ package object ql {
     def iter[T](it:Iterable[T], errOpt:Option[PublicException] = None):InvocationValue[T]
     
     /**
+     * Test the situation. This is essentially a runtime assertion, and can be used to check that the
+     * user's code is correctly formed. The predicate should normally return true. If it does *not* return
+     * true, processing will be aborted, and we'll instead return a PublicException using the given errorName
+     * (which should be registered in the messages file) with the given params.
+     */
+    def test(predicate: => Boolean, errorName:String, params:Any*):InvocationValue[Boolean]
+    
+    /**
      * Declares the return type for the expected result. This can occasionally be crucial in order to
      * cast an empty return collection to the right type. It is strongly recommended if this function
      * can return an empty collection and you know the desired Type.
