@@ -94,9 +94,10 @@ package object ql {
      * Test the situation. This is essentially a runtime assertion, and can be used to check that the
      * user's code is correctly formed. The predicate should normally return true. If it does *not* return
      * true, processing will be aborted, and we'll instead return a PublicException using the given errorName
-     * (which should be registered in the messages file) with the given params.
+     * (which should be registered in the messages file) with the given params. Params is intentionally done
+     * as a callback, for efficiency's sake.
      */
-    def test(predicate: => Boolean, errorName:String, params:Any*):InvocationValue[Boolean]
+    def test(predicate: => Boolean, errorName:String, params: => Seq[Any]):InvocationValue[Boolean]
     
     /**
      * Declares the return type for the expected result. This can occasionally be crucial in order to

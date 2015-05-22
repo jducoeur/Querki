@@ -112,7 +112,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
   
   def error[VT](name:String, params:String*) = InvocationValueImpl[VT](this, None, Some(PublicException(name, params:_*)))
   
-  def test(predicate: => Boolean, errorName:String, params:Any*):InvocationValue[Boolean] = {
+  def test(predicate: => Boolean, errorName:String, params: => Seq[Any]):InvocationValue[Boolean] = {
     if (predicate)
       InvocationValueImpl(this, Some(true), None)
     else
