@@ -35,10 +35,12 @@ class CDSpace(implicit ecologyIn:Ecology) extends CommonSpace {
   new TestThing("We Too Are One", albumModel, artistsProp(eurythmics))
   
   val favoriteArtistsProp = new TestProperty(LinkType, QList, "Favorite Artists", Links.LinkModelProp(artistModel))
+  val interestingArtistsProp = new TestProperty(LinkType, QList, "Interesting Artists", Links.LinkModelProp(artistModel))
   
   val faveDisplayProp = new TestProperty(TextType, ExactlyOne, "Show Favorites")
   
   new SimpleTestThing("My Favorites", 
     favoriteArtistsProp(tmbg, blackmores),
+    interestingArtistsProp(eurythmics),
     faveDisplayProp("My favorite bands are: [[My Favorites -> _bulleted]]"))
 }

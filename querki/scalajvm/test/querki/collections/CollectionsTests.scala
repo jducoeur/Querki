@@ -6,6 +6,18 @@ class CollectionsTests extends QuerkiTests {
   
   lazy val LargeTextType = Core.LargeTextType
   
+  // === _concat ===
+  "_concat" should {
+    // NOTE: _concat() of Tags is tested over in TagTests
+    
+    "work through Properties" in {
+      implicit val s = new CDSpace
+      
+      pql("""[[My Favorites -> _concat(Favorite Artists, Interesting Artists) -> _sort]]""") should
+        equal(listOfLinkText(s.blackmores, s.eurythmics, s.tmbg))
+    }
+  }
+  
   // === _contains ===
   "_contains" should {
     "work with simple numbers" in {

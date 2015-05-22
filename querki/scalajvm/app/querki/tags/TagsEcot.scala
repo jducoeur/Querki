@@ -282,8 +282,6 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
       for {
         dummy <- inv.preferCollection(QSet)
         nameableType <- inv.contextTypeAs[NameableType]
-        // TODO: this only works with a single received name. It should work with any number!
-        oldName = nameableType.getName(inv.context)(inv.context.value.first)
         definingProp = inv.definingContextAsPropertyOf(NewTagSetType).get
         tagProps =
           if (definingProp.isEmpty)
@@ -295,7 +293,6 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
             case LinkType => Core.followLink(inv.context)
             case _ => None
           }
-        namePt = thingOpt.map(thing => PlainText(thing.unsafeDisplayName)).getOrElse(PlainText(oldName))
         prop <- inv.iter(tagProps)
         // Since the tag might be contained inside a Model Value, we need to figure out all the paths
         // that might be used to get to the Property:
@@ -303,6 +300,9 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
         candidate <- inv.iter(inv.context.state.allThings)
         path <- inv.iter(paths)
         propAndVal <- inv.iter(path.getPropOpt(candidate)(inv.state))
+        tagElem <- inv.contextElements
+        oldName = nameableType.getName(inv.context)(tagElem.value.first)
+        namePt = thingOpt.map(thing => PlainText(thing.unsafeDisplayName)).getOrElse(PlainText(oldName))
         if (hasName(propAndVal, oldName, namePt, prop))
       }
         yield ExactlyOne(LinkType(candidate))

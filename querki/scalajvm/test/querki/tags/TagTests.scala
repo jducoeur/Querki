@@ -51,6 +51,14 @@ class TagTests extends QuerkiTests {
         equal(listOfLinkText(s.blackmores, s.eurythmics, s.tmbg))
     }
     
+    // Test for Issue .3y286st
+    "work with multiple Tags" in {
+      implicit val s = new CDSpace
+      
+      pql("""[[_concat(Pop, Weird) -> _tagRefs -> _sort]]""") should
+        equal (listOfLinkText(s.tmbg, s.whitney))
+    }
+    
     // Test for Issue .3y285gi
     "find references from inside Model Types" in {
       class TSpace extends CommonSpace {

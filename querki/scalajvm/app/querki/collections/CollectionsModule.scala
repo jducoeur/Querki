@@ -22,6 +22,7 @@ object MOIDs extends EcotIds(6) {
   val ContainsMethodOID = moid(4)
   val TakeOID = moid(5)
   val DropOID = moid(6)
+  val ConcatOID = moid(7)
 }
 
 class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with querki.logic.YesNoUtils {
@@ -569,6 +570,26 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
     }
   }
 
+  lazy val ConcatMethod = new InternalMethod(ConcatOID,
+    toProps(
+      setName("_concat"),
+      Summary("Concatenates the Lists given as parameters"),
+      Details("""    CONTEXT -> _concat(LIST1, LIST2, LIST3...) -> LIST
+          |Occasionally, you want to take several separate lists, and treat them as a single list. This allows
+          |you to do something like
+          |```
+          |\[[My Thing -> _concat(Primary Sources, Secondary Sources) -> _bulleted\]]
+          |```""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+	  for {
+	    n <- inv.iter(0 to (inv.numParams-1))
+	    paramVals <- inv.processParam(n)
+	  }
+	    yield paramVals
+	}
+  }
+	
   override lazy val props = Seq(
     FirstMethod,
     RestMethod,
@@ -581,6 +602,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
     DescMethod,
     CountMethod,
     ReverseMethod,
+    ConcatMethod,
       
     prevInListMethod,
     nextInListMethod,
