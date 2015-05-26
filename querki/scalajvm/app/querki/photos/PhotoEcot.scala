@@ -273,7 +273,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
         }
         image = HtmlWikitext(s"""<img class="img-responsive center-block" src="$bucketUrl/${filename.raw}" alt="${filename.raw}" />""")
       }
-        yield Wikitext(s"{{item:\n") + image + caption + Wikitext("\n}}") 
+        yield Wikitext(s"\n{{item:\n") + image + caption + Wikitext("\n}}") 
         
       result.getOrElse(Wikitext(""))
     }
