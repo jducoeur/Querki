@@ -267,9 +267,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
         filename <- v.getFirstOpt(ImageFilenameProp)
         width <- v.getFirstOpt(ImageWidthProp)
         height <- v.getFirstOpt(ImageHeightProp)
-        capPVOpt = v.getPropOpt(ImageCaptionProp)
-        capOpt = capPVOpt.flatMap(_.firstOpt)
-        caption = capOpt match {
+        caption = v.getFirstOpt(ImageCaptionProp) match {
           case Some(cap) => Wikitext(s"\n{{carousel-caption:\n") + cap + Wikitext("\n}}")
           case None => Wikitext.empty
         }
