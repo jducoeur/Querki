@@ -453,6 +453,11 @@ body {
   clip: rect(0px 0px 0px 0px);
 }
 
+/** Fix the color of anchors used as captions */
+.carousel-caption a {
+  color: inherit;
+}
+
 /*******************************
  * Status styles
  */

@@ -36,6 +36,7 @@ private [photos] object MOIDs extends EcotIds(52) {
   val ThumbnailFuncOID = moid(12)
   val PreferredImageSizeOID = moid(13)
   val PhotoTargetFuncOID = moid(14)
+  val ImageCaptionOID = moid(15)
 }
 
 private [photos] trait PhotosInternal extends EcologyInterface {
@@ -60,6 +61,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
   import PhotoUploadActor._
   
   val Basic = initRequires[querki.basic.Basic]
+  val QL = initRequires[querki.ql.QL]
   val Time = initRequires[querki.time.Time]
   val Types = initRequires[querki.types.Types]
   
@@ -161,6 +163,12 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
           |
           |Note that you can not set this number to be larger than 1000 at this time. This may change in the future,
     	  |but photo storage costs real money, and we have to keep things limited until we have paid memberships. Sorry.""".stripMargin)))
+  
+  lazy val ImageCaptionProp = new SystemProperty(ImageCaptionOID, QL.ParsedTextType, Optional,
+    toProps(
+      setName("Image Caption"),
+      SystemOnly,
+      Core.AppliesToKindProp(Kind.Property)))
     
   /***********************************************
    * FUNCTIONS
@@ -229,6 +237,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
     ImageThumbnailHeightProp,
     ImageThumbnailWidthProp,
     PreferredImageSizeProp,
+    ImageCaptionProp,
     
     ThumbnailFunction,
     PhotoTargetFunction
@@ -258,8 +267,15 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
         filename <- v.getFirstOpt(ImageFilenameProp)
         width <- v.getFirstOpt(ImageWidthProp)
         height <- v.getFirstOpt(ImageHeightProp)
+        capPVOpt = v.getPropOpt(ImageCaptionProp)
+        capOpt = capPVOpt.flatMap(_.firstOpt)
+        caption = capOpt match {
+          case Some(cap) => Wikitext(s"\n{{carousel-caption:\n") + cap + Wikitext("\n}}")
+          case None => Wikitext.empty
+        }
+        image = HtmlWikitext(s"""<img class="img-responsive center-block" src="$bucketUrl/${filename.raw}" alt="${filename.raw}" />""")
       }
-        yield HtmlWikitext(s"""<img class="img-responsive center-block" src="$bucketUrl/${filename.raw}" alt="${filename.raw}" />""")
+        yield Wikitext(s"{{item:\n") + image + caption + Wikitext("\n}}") 
         
       result.getOrElse(Wikitext(""))
     }

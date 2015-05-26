@@ -11,7 +11,7 @@ import querki.values._
 
 import querki.types._
 
-class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefiner with EcologyMember {
+class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefiner with EcologyMember with querki.core.MethodDefs {
   import MOIDs._
     
   /******************************************
@@ -188,6 +188,33 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
             |
             |This is an extremely advanced meta-Property, mostly used internally, but it may be more useful
             |for user code in the future.""".stripMargin)))
+  
+  /***********************************************
+   * FUNCTIONS
+   ***********************************************/
+  
+  lazy val WithPropertyFunction = new InternalMethod(WithPropertyOID, 
+      toProps(
+        setName("_withProperty"),
+        SkillLevel(SkillLevelAdvanced),
+        Summary("Add a Property to a Model Value"),
+        Details("""    MODEL VALUE -> PROP._withProperty(VALUE) -> MODEL VALUE
+            |This allows you to add another Property to a complex Value as you are working with it.
+            |This is just for rendering -- the added value does not get saved anywhere.
+            |
+            |This function is quite advanced, and doesn't do much hand-holding yet.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      for {
+        prop <- inv.definingContextAsProperty
+        v <- inv.processParam(0)
+        bundle <- inv.contextAllBundles
+        if (!bundle.isThing)
+        modeled = bundle.asInstanceOf[ModeledPropertyBundle]
+      }
+        yield ExactlyOne(modeled.modelType(SimplePropertyBundle(modeled.props + (prop.id -> v))))
+    }
+  }
 
   override lazy val props = Seq(
     ModelForTypeProp,
@@ -198,6 +225,8 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
     MaxIntValueProp,
     
     DefaultValueProp,
-    AppliesToTypesProp
+    AppliesToTypesProp,
+    
+    WithPropertyFunction
   )
 }

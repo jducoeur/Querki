@@ -18,6 +18,8 @@ package object types {
     val DefaultValuePropOID = moid(4)
     val ModelForTypePropOID = moid(5)
     val AppliesToTypesPropOID = moid(6)
+    
+    val WithPropertyOID = moid(7)
   }
   
   implicit def vals2Bundle(vals:(OID, QValue)*):SimplePropertyBundle = SimplePropertyBundle(vals:_*)

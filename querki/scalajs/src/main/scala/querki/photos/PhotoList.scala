@@ -18,8 +18,8 @@ import querki.globals._
 object PhotoList {
   def hook(e:Element) = {
     // Remove the images; we'll re-attach them in a minute:
-    val images = $(e).find("img").get().asInstanceOf[js.Array[Element]]
-    $(e).find("img").detach()
+    val images = $(e).find(".item").get().asInstanceOf[js.Array[Element]]
+    $(e).find(".item").detach()
     
     // A randomly-chosen id to use for the new carousel
     val nodeId = s"carousel-${(Math.random() * Int.MaxValue).toInt}"
@@ -71,10 +71,10 @@ object PhotoList {
     // Stuff the photos into the carousel. This is a bit roundabout because Scalatags has no
     // way to include an existing Element:
     val innards = $(newDiv).find(".carousel-inner")
-    for ((photo, index) <- images.zipWithIndex) 
+    for ((wrapper, index) <- images.zipWithIndex) 
     {
-      val wrapper = div(cls:=s"item${if (index == 0) " active" else ""}").render
-      $(wrapper).append(photo)
+      if (index == 0)
+        $(wrapper).addClass("active")
       innards.append(wrapper)
     }
   }
