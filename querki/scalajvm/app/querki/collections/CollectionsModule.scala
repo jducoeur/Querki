@@ -23,6 +23,7 @@ object MOIDs extends EcotIds(6) {
   val TakeOID = moid(5)
   val DropOID = moid(6)
   val ConcatOID = moid(7)
+  val RandomOID = moid(8)
 }
 
 class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs with querki.logic.YesNoUtils {
@@ -592,6 +593,31 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    yield paramVals
 	}
   }
+  
+  lazy val RandomMethod = new InternalMethod(RandomOID,
+    toProps(
+      setName("_random"),
+      Summary("Select an item at random from a list"),
+      Details("""    LIST -> _random -> RANDOM ITEM
+          |Most of the time, you want your Querki pages to be nice and predictable. But occasionally,
+          |you might want some randomness. For example, if you have a Cookbook Space, you might want a
+          |page that gives you a recipe at random, to give you ideas for dinner. The _random function
+          |does that, allowing you to do something like:
+          |```
+          |\[[Recipes._instances -> _random\]]
+          |```""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      import scala.math._
+      for {
+        v <- inv.contextValue
+        len = v.cv.size
+        rnd = floor(random * len).toInt
+        item = v.cv.drop(rnd).head
+      }
+        yield ExactlyOne(item)
+    }
+  }
 	
   override lazy val props = Seq(
     FirstMethod,
@@ -606,6 +632,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
     CountMethod,
     ReverseMethod,
     ConcatMethod,
+    RandomMethod,
       
     prevInListMethod,
     nextInListMethod,
