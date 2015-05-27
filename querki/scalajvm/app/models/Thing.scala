@@ -387,10 +387,6 @@ abstract class Thing(
    * 
    * If you specify a property, that property will be rendered with this Thing as a context;
    * otherwise, DisplayText will be rendered.
-   * 
-   * TODO: allow this to be redefined with a QL Property if desired.
-   * TODO: the prop-rendering version of this is just plain broken. Deprecate the second
-   * parameter, and probably just do that by hand in the couple of places it's needed.
    */
   def render(implicit request:RequestContext, prop:Option[Property[_,_]] = None):Wikitext = {
     implicit val state = request.state.get

@@ -31,7 +31,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
     ClientApi.thingInfo(thing, rc)
   }
 
-  def getThingPage(thingId:TID):ThingPageDetails = withThing(thingId) { thing =>
+  def getThingPage(thingId:TID, renderPropIdOpt:Option[TID]):ThingPageDetails = withThing(thingId) { thing =>
     implicit val state = rc.state.get
     
     val thingInfo = ClientApi.thingInfo(thing, rc)
@@ -46,8 +46,14 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
       if (!thing.isModel)
     }
       yield pv.v.wikify(thing.thisAsContext(rc))
+      
+    val renderPropOpt = renderPropIdOpt.flatMap { propTid =>
+      val oid = ThingId(propTid.underlying)
+      // Either show this actual Thing, or a synthetic TagThing if it's not found:
+      state.prop(oid)
+    }
 
-    val rendered = thing.render(rc)
+    val rendered = thing.render(rc, renderPropOpt)
     
     val styleinfo = Stylesheets.stylesheetsFor(thing)
     

@@ -26,13 +26,17 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
 
   lazy val Client = interface[querki.client.Client]
   lazy val DataSetting = interface[querki.data.DataSetting]
+  
+  // If there is a "prop" parameter, that declares a Property that we're trying to render
+  // instead of Default View:
+  lazy val propOpt = params.get("prop").map(TID(_))
 
   override def refresh() = PageManager.reload()
   
   def pageContent = {
     // NOTE: doing this with async/await seems to swallow exceptions in Autowire:
     for {
-      pageDetails:ThingPageDetails <- Client[ThingFunctions].getThingPage(name).call()
+      pageDetails:ThingPageDetails <- Client[ThingFunctions].getThingPage(name, propOpt).call()
       standardThings <- DataAccess.standardThings
       rendered = pageDetails.rendered
       convPane = new ConversationPane(pageDetails.thingInfo, params.get("showComment"))
