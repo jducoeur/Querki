@@ -118,7 +118,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
         for {
 	      fieldIds <- DisplayPropVal.propPathFromName(path, Some(thing))
 	      prop = fieldIds.p
-	      if (prop.cType == Core.QList)
+	      if ((prop.cType == Core.QList) || (prop.cType == Core.QSet))
 	      pt = prop.pType
 	      pv <- thing.getPropOpt(prop)
 	      v = pv.v
