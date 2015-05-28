@@ -5,6 +5,7 @@ import scala.xml.XML
 import models.{Thing, AnyProp}
 
 import querki.test._
+import querki.util.SafeUrl
 
 class UITests extends QuerkiTests {
   // === _class ===
@@ -85,7 +86,7 @@ class UITests extends QuerkiTests {
     }
     
     "work with Tags" in {
-      implicit val f:Thing => String = _.toThingId.toString
+      implicit val f:Thing => String = { t => SafeUrl(t.displayName) }
       
       testWith(commonSpace.instance, commonSpace.singleTagProp)
       testWith(commonSpace.instance, commonSpace.optTagProp)
@@ -111,7 +112,7 @@ class UITests extends QuerkiTests {
     }
     
     "work with Tags" in {
-      implicit val f:Thing => String = _.toThingId.toString
+      implicit val f:Thing => String = { t => SafeUrl(t.displayName) }
       
       testWith(commonSpace.instance, commonSpace.singleTagProp)
       testWith(commonSpace.instance, commonSpace.optTagProp)
