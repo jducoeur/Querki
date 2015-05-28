@@ -404,11 +404,12 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
             fieldId = new FieldIds(None, linkProp)
             backLink <- inv.opt(linkProp.pType match {
               case LinkType => Some(lexicalThing.id.toThingId.toString)
-              case NewTagSetType => Some(lexicalThing.toThingId.toString)
+              case NewTagSetType => lexicalThing.linkName
               case _ => None
             })
+            backLinkSafe = SafeUrl(backLink)
           }
-            yield s"&${fieldId.inputControlId}=$backLink"
+            yield s"&${fieldId.inputControlId}=$backLinkSafe"
             
           invStr.get.headOption.getOrElse("")
         }
