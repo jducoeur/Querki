@@ -271,6 +271,30 @@ case class SpaceState(
     else
       app.flatMap(_.getApp(appId))
   }
+  
+  /***************************************
+   * The Dynamic Cache
+   * 
+   * This is a secondary cache, constructed very differently from the one in the main case class
+   * values. Whereas the one at the top is built during Space modification, by the Space itself,
+   * this one permits the more dangerous but easier to use direct modification by subsystems when
+   * needed.
+   * 
+   * The idea here is that we have a lot of things we'd like to cache lazily on-demand, rather than
+   * every time the SpaceState is modified. So we allow that here, hedged with some big warnings.
+   * 
+   * All values here *MUST* be managed in a threadsafe way. By and large, we expect this to be
+   * populated by subsidiary concurrent.Maps. Keep in mind that any value in here might be modified
+   * by multiple UserSpaceSessions simultaneously.
+   * 
+   * Since this is a lazy val, it will not be preserved when the SpaceState is copied. Values in here
+   * should be caches of expensive computations on the current SpaceState.
+   * 
+   * DO NOT USE THIS CASUALLY! This is trading memory for speed. Sometimes it is very valuable, but
+   * only use it when there is a high likelihood of a common speedup. 
+   */
+  private lazy val dynCache = scala.collection.concurrent.TrieMap.empty[StateCacheKey, Any]
+  def fetchOrCreateCache(key:StateCacheKey, creator: => Any):Any = dynCache.getOrElseUpdate(key, creator)
 }
 
 object SpaceState {

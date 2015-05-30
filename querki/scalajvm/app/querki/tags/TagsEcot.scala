@@ -4,7 +4,7 @@ import scala.xml.NodeSeq
 
 import querki.ecology._
 
-import models.{AsDisplayName, Collection, DisplayPropVal, DisplayText, Kind, PropertyBundle, Thing, ThingId, UnknownOID, Wikitext}
+import models.{AsDisplayName, Collection, DisplayPropVal, DisplayText, Kind, PropertyBundle, PType, Thing, ThingId, UnknownOID, Wikitext}
 
 import querki.globals._
 
@@ -29,6 +29,66 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   lazy val NameType = Core.NameType
     
   lazy val LinkModelOID = querki.links.PublicMOIDs.LinkModelOID
+
+  /***********************************************
+   * TAGREF CACHE
+   * 
+   * The TagRefCache records all of the Tag references -- that is, which Things use a given Tag --
+   * for each Property. It is computed on-demand when we need to look up the references for that
+   * Property. It is built upon the SpaceState's dynamic cache.
+   ***********************************************/
+  
+  lazy val cacheKey = StateCacheKey(ecotId, "tagRefs")
+  type TagMapT = scala.collection.mutable.HashMap[String, scala.collection.mutable.Set[Thing]] with scala.collection.mutable.MultiMap[String, Thing]
+  type TagRefCacheT = scala.collection.concurrent.Map[OID, TagMapT]
+  def trCache(implicit state:SpaceState) = 
+    state.fetchOrCreateCache(cacheKey, { scala.collection.concurrent.TrieMap.empty[OID, TagMapT] }).asInstanceOf[TagRefCacheT]
+  
+  // The nameCache stores the map from canonical to actual Tag Names, as best we can figure out:
+  lazy val nameCacheKey = StateCacheKey(ecotId, "tagNames")
+  type NameCacheT = scala.collection.concurrent.Map[String, String]
+  def nameCache(implicit state:SpaceState) =
+    state.fetchOrCreateCache(nameCacheKey, { scala.collection.concurrent.TrieMap.empty[String, String] }).asInstanceOf[NameCacheT]
+  
+  /**
+   * The heart of Tag reference caching.
+   * 
+   * For any given Property, this will compute *all* of the Tag references for that Property in this Space, *once*,
+   * and cache the results with the Space. That way, we don't need to iterate over all the Things in the Space over and
+   * over again.
+   * 
+   * Note that, while the Map under the hood here is technically mutable, that is solely for ease of building it. It should
+   * be considered to be immutable once it is returned from this function.
+   * 
+   * TODO: the names in here should theoretically be canonicalized, but we *also* care about storing them in their
+   * "real" form. How do we best handle this?
+   */
+  def cachedTagRefsFor(rawProp:Property[_,_])(implicit state:SpaceState):scala.collection.Map[String, scala.collection.mutable.Set[Thing]] = {
+    // Note that the trCache is indexed by Property OID:
+    trCache.getOrElseUpdate(rawProp.id, 
+      {
+        def addBindings[VT](prop:Property[_,_], pt:PType[VT], getTag: VT => String)(implicit state:SpaceState):TagMapT = 
+        {
+          val prop = rawProp.confirmType(pt).get
+          val tagMap = new scala.collection.mutable.HashMap[String, scala.collection.mutable.Set[Thing]] with scala.collection.mutable.MultiMap[String, Thing]
+          for {
+	        path <- PropPaths.pathsToProperty(prop)(state)
+	        thing <- state.allThings
+	        pv <- path.getPropOpt(thing)(state)
+	        text <- pv.rawList
+          }
+            tagMap.addBinding(canonicalize(getTag(text)), thing)
+          tagMap          
+        }
+      
+        rawProp.pType match {
+          case NewTagSetType => addBindings(rawProp, NewTagSetType, { tag:PlainText => tag.text })
+          case TagSetType => addBindings(rawProp, TagSetType, { tag:String => tag })
+          case _ => throw new Exception(s"cachedTagRefsFor got unexpected Type ${rawProp.pType} from Property $rawProp")
+        }
+      }
+    )
+  }
 
   /***********************************************
    * TYPES
@@ -151,32 +211,9 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
 
   def fetchTags(state:SpaceState, propIn:Property[_,_]):Set[String] = {
     implicit val s = state
-    if (propIn.pType == TagSetType) {
-      // Note: this still works the "old" way, and doesn't delve into Model Types. Since TagSetType is
-      // deprecated anyway, I'm not going to worry about it.
-      val thingsWithProp = state.thingsWithProp(propIn)
-      val prop = propIn.confirmType(TagSetType).get
-      (Set.empty[String] /: thingsWithProp) { (set, thing) =>
-        set ++ thing.getProp(prop).rawList
-      }
-    } else if (propIn.pType == NewTagSetType) {
-      val prop = propIn.confirmType(NewTagSetType).get
-      // TODO: wow, this is kind of horrifying, but that's the current state of things.
-      // We probably need to do some caching to make this suck less, but it needs some
-      // thought.
-      // (Note: this algorithm takes nPaths * nThings * nVals -- potentially very slow.)
-      val tagList = for {
-        path <- PropPaths.pathsToProperty(prop)(state)
-        thing <- state.allThings
-        pv <- path.getPropOpt(thing)(state)
-        text <- pv.rawList
-      }
-        yield text.text
-        
-      tagList.toSet.filter(_.length > 0)     
-    } else
-      // TODO: should this be a PublicException?
-      throw new Exception("Trying to fetchTags on a non-Tag Property!")
+    val tagList = cachedTagRefsFor(propIn).keys
+    // Screen out any null tags, in case they have snuck in:
+    tagList.toSet.filter(_.length > 0)
   }
     
   def preferredModelForTag(implicit state:SpaceState, nameIn:String):Thing = {
@@ -291,6 +328,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
           |at some point combine them for simplicity.""".stripMargin)))
   { 
     override def qlApply(inv:Invocation):QValue = {
+      implicit val s = inv.state
       for {
         dummy <- inv.preferCollection(QSet)
         nameableType <- inv.contextTypeAs[NameableType]
@@ -301,21 +339,24 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
             inv.state.propList.filter(prop => prop.pType == TagSetType || prop.pType == NewTagSetType)
           else
             definingProp
-        thingOpt = nameableType match {
-            case LinkType => Core.followLink(inv.context)
-            case _ => None
-          }
+//        thingOpt = nameableType match {
+//            case LinkType => Core.followLink(inv.context)
+//            case _ => None
+//          }
         prop <- inv.iter(tagProps)
-        // Since the tag might be contained inside a Model Value, we need to figure out all the paths
-        // that might be used to get to the Property:
-        paths = PropPaths.pathsToProperty(prop)(inv.state)
-        candidate <- inv.iter(inv.context.state.allThings)
-        path <- inv.iter(paths)
-        propAndVal <- inv.iter(path.getPropOpt(candidate)(inv.state))
+        refMap = cachedTagRefsFor(prop)
         tagElem <- inv.contextElements
-        oldName = nameableType.getName(inv.context)(tagElem.value.first)
-        namePt = thingOpt.map(thing => PlainText(thing.unsafeDisplayName)).getOrElse(PlainText(oldName))
-        if (hasName(propAndVal, oldName, namePt, prop))
+        name = nameableType.getName(inv.context)(tagElem.value.first)
+        refs = refMap.get(name).getOrElse(Set.empty[Thing])
+        candidate <- inv.iter(refs)
+//        namePt = thingOpt.map(thing => PlainText(thing.unsafeDisplayName)).getOrElse(PlainText(oldName))
+//        // Since the tag might be contained inside a Model Value, we need to figure out all the paths
+//        // that might be used to get to the Property:
+//        paths = PropPaths.pathsToProperty(prop)(inv.state)
+//        candidate <- inv.iter(inv.context.state.allThings)
+//        path <- inv.iter(paths)
+//        propAndVal <- inv.iter(path.getPropOpt(candidate)(inv.state))
+//        if (hasName(propAndVal, oldName, namePt, prop))
       }
         yield ExactlyOne(LinkType(candidate))
     }
