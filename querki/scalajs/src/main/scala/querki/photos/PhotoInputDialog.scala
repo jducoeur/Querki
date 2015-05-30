@@ -33,15 +33,6 @@ object FileTarget {
 }
 import FileTarget._
 
-// TODO: once Querki catches up with the JQuery facade, this should go away:
-trait JQueryTempHack extends js.Object {
-  @JSName("has")
-  def hasInternal(selector:js.Any):JQuery = js.native
-}
-class JQueryTempHackTyped(jq:JQueryTempHack) {
-  def has(selector:Selector):JQuery = jq.hasInternal(toJsAny(selector))
-}
-
 /**
  * This represents a button labeled something like "Add Photo", with metadata about where to
  * put the resulting photo.
@@ -135,8 +126,6 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
       .done({ (evt:JQueryEventObject, data:FileUploadResults) =>
         if (isSingleton && hasExistingPhotos) {
           // Need to delete the old thumbnail first
-          // TODO: delete this line once we catch back up to the JQuery facade!
-          implicit def jq2Hack(jq:JQuery):JQueryTempHackTyped = new JQueryTempHackTyped(jq.asInstanceOf[JQueryTempHack])
           $(elem).parent().find("._photoThumbnailFrame").has("._photoThumbnail").remove()
         }
         

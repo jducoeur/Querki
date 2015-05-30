@@ -25,11 +25,11 @@ class DeleteButton(doDelete:() => Unit)(implicit e:Ecology) extends InputGadget[
       trigger(Trigger.manual)
     )
     deleteButton.popover(PopoverCommand.show)
-    deleteButton.off("click", null)
+    deleteButton.off("click")
     deleteButton.on("click", reallyDelete)
     dom.window.setTimeout({ () =>
       deleteButton.popover(PopoverCommand.hide)
-      deleteButton.off("click", null)
+      deleteButton.off("click")
       deleteButton.on("click", confirmDelete)
     }, 2000)
   }
