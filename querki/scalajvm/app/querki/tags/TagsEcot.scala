@@ -49,6 +49,8 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   type NameCacheT = scala.collection.concurrent.Map[String, String]
   def nameCache(implicit state:SpaceState) =
     state.fetchOrCreateCache(nameCacheKey, { scala.collection.concurrent.TrieMap.empty[String, String] }).asInstanceOf[NameCacheT]
+  // Given a canonical name from the trCache, fetch the name to show to the users:
+  def publicTag(canon:String)(implicit state:SpaceState):String = nameCache(state)(canon)
   
   /**
    * The heart of Tag reference caching.
@@ -69,6 +71,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
       {
         def addBindings[VT](prop:Property[_,_], pt:PType[VT], getTag: VT => String)(implicit state:SpaceState):TagMapT = 
         {
+          val nc = nameCache
           val prop = rawProp.confirmType(pt).get
           val tagMap = new scala.collection.mutable.HashMap[String, scala.collection.mutable.Set[Thing]] with scala.collection.mutable.MultiMap[String, Thing]
           for {
@@ -76,8 +79,31 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
 	        thing <- state.allThings
 	        pv <- path.getPropOpt(thing)(state)
 	        text <- pv.rawList
+	        raw = getTag(text)
+	        canon = canonicalize(raw)
           }
-            tagMap.addBinding(canonicalize(getTag(text)), thing)
+          {
+            // Record the actual backtag:
+            tagMap.addBinding(canon, thing)
+            
+            // Now, record the mapping from the canonical name to the real name of this 
+            nc.get(canon) match {
+              case Some(found) => // Already have it, so we're set
+              case None => {
+                // There are multiple Tags that can result in a given canonical name. Check whether
+                // this Tag is reified, and use that as the official name if so; otherwise, just trust
+                // the Tag:
+                val realName = 
+                  for {
+                    t <- state.anythingByName(canon)
+                    real <- t.linkName
+                    if (real != raw)
+                  }
+                    yield real
+                nc(canon) = realName.getOrElse(raw)
+              }
+            }
+          }
           tagMap          
         }
       
@@ -212,8 +238,8 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   def fetchTags(state:SpaceState, propIn:Property[_,_]):Set[String] = {
     implicit val s = state
     val tagList = cachedTagRefsFor(propIn).keys
-    // Screen out any null tags, in case they have snuck in:
-    tagList.toSet.filter(_.length > 0)
+    // Screen out any null tags, in case they have snuck in, and translate the "canonical" names to "public" ones:
+    tagList.toSet.filter(_.length > 0).map(publicTag(_))
   }
     
   def preferredModelForTag(implicit state:SpaceState, nameIn:String):Thing = {
@@ -339,24 +365,12 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
             inv.state.propList.filter(prop => prop.pType == TagSetType || prop.pType == NewTagSetType)
           else
             definingProp
-//        thingOpt = nameableType match {
-//            case LinkType => Core.followLink(inv.context)
-//            case _ => None
-//          }
         prop <- inv.iter(tagProps)
         refMap = cachedTagRefsFor(prop)
         tagElem <- inv.contextElements
-        name = nameableType.getName(inv.context)(tagElem.value.first)
+        name = canonicalize(nameableType.getName(inv.context)(tagElem.value.first))
         refs = refMap.get(name).getOrElse(Set.empty[Thing])
         candidate <- inv.iter(refs)
-//        namePt = thingOpt.map(thing => PlainText(thing.unsafeDisplayName)).getOrElse(PlainText(oldName))
-//        // Since the tag might be contained inside a Model Value, we need to figure out all the paths
-//        // that might be used to get to the Property:
-//        paths = PropPaths.pathsToProperty(prop)(inv.state)
-//        candidate <- inv.iter(inv.context.state.allThings)
-//        path <- inv.iter(paths)
-//        propAndVal <- inv.iter(path.getPropOpt(candidate)(inv.state))
-//        if (hasName(propAndVal, oldName, namePt, prop))
       }
         yield ExactlyOne(LinkType(candidate))
     }
