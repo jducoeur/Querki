@@ -87,9 +87,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
             tagMap.addBinding(canon, thing)
             
             // Now, record the mapping from the canonical name to the real name of this 
-            nc.get(canon) match {
-              case Some(found) => // Already have it, so we're set
-              case None => {
+            nc.getOrElseUpdate(canon, {
                 // There are multiple Tags that can result in a given canonical name. Check whether
                 // this Tag is reified, and use that as the official name if so; otherwise, just trust
                 // the Tag:
@@ -100,9 +98,9 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
                     if (real != raw)
                   }
                     yield real
-                nc(canon) = realName.getOrElse(raw)
+                realName.getOrElse(raw)
               }
-            }
+            )
           }
           tagMap          
         }
@@ -329,11 +327,6 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     }
   }
 
-  /**
-   * TODO: man, this code is horrible. It needs a *lot* of cleanup. It is extraordinarily inefficient -- enough
-   * so that it may be better for us to precalculate all of the references and stick them into the State Cache
-   * instead.
-   */
   lazy val TagRefsMethod = new InternalMethod(TagRefsOID,
     toProps(
       setName("_tagRefs"),
