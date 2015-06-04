@@ -95,3 +95,5 @@ lazy val sharedDependencies = Def.setting(Seq(
 ))
 
 onLoad in Global := (Command.process("project querkiServer", _: State)) compose (onLoad in Global).value
+
+fork in run := true

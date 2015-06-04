@@ -8,6 +8,15 @@ testdb/
 application.conf
 local.sbt
 
+*.class
+*.sjsir
+*.log
+
+.cache-*
+.sbtserver*
+play-fork-run.sbt
+sbt-ui.sbt
+
 #################
 ## Eclipse
 #################
