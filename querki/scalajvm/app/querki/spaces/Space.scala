@@ -371,15 +371,11 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
   def receive = LoggingReceive(handleRequestResponse orElse mainReceive orElse pluginReceive)
   
   def mainReceive:Receive = {
-//    case req:CreateSpaceContinue => {
-//      sender ! ThingFound(UnknownOID, state)
-//    }
-//
-    case CreateThing(who, owner, spaceId, kind, modelId, props) => {
+    case CreateThing(who, spaceId, kind, modelId, props) => {
       createSomething(spaceId, who, modelId, props, kind)
     }
     
-    case ChangeProps(who, owner, spaceThingId, thingId, changedProps) => {
+    case ChangeProps(who, spaceThingId, thingId, changedProps) => {
       modifyThing(who, thingId, None, { thing =>
         (thing.props /: changedProps) { (current, pair) =>
           val (propId, v) = pair
@@ -392,11 +388,11 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
       })
     }
     
-    case ModifyThing(who, owner, spaceThingId, thingId, modelId, newProps) => {
+    case ModifyThing(who, spaceThingId, thingId, modelId, newProps) => {
       modifyThing(who, thingId, Some(modelId), (_ => newProps))
     }
     
-    case DeleteThing(who, owner, spaceThingId, thingId) => {
+    case DeleteThing(who, spaceThingId, thingId) => {
       deleteThing(who, spaceThingId, thingId)
     }
   }

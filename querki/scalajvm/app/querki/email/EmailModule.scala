@@ -388,7 +388,7 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
 	      case Some(previouslySentTo) => previouslySentTo ++ sentTo
 	      case None => resultingList
 	    } 
-	    val changeRequest = ChangeProps(req.requester.get, state.owner, state.id, t.toThingId, toProps(SentToOID -> fullSentTo)())
+	    val changeRequest = ChangeProps(req.requester.get, state.id, t.toThingId, toProps(SentToOID -> fullSentTo)())
 	    SpaceOps.askSpace(changeRequest) { resp:ThingResponse =>
 	      resp match {
 	        case ThingFound(id, state) => Logger.info("Noted email recipients"); Future.successful {}

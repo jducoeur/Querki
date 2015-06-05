@@ -76,7 +76,7 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
       if (boot) {
         for {
           CurrentMaxCommentId(n) <- persister.request(GetMaxCommentId)
-          ValuesForUser(prefs) <- space.request(UserValuePersistRequest(User.Anonymous, state.owner, state.id, LoadAllPropValues(NotifyComments.GetCommentNotesPref, state)))
+          ValuesForUser(prefs) <- space.request(UserValuePersistRequest(User.Anonymous, state.id, LoadAllPropValues(NotifyComments.GetCommentNotesPref, state)))
         }
         {
           nextId = n + 1
@@ -205,7 +205,7 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
     
     case GetActiveThings => sender ! ActiveThings(loadedConversations.size)
     
-    case ConversationRequest(req, _, _, msg) => {
+    case ConversationRequest(req, _, msg) => {
       msg match {
 	    /**
 	     * Requester is fetching the current Conversations for this Thing.

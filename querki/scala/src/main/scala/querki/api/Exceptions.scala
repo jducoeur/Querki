@@ -18,7 +18,7 @@ sealed trait ApiException extends Exception
 /**
  * Expected exceptions that can be returned from EditFunctions.
  */
-sealed trait EditException extends ApiException
+sealed trait EditException extends ApiException 
 case class GeneralChangeFailure(msg:String) extends EditException
 /**
  * A value that was sent for saving didn't pass validation for its type.

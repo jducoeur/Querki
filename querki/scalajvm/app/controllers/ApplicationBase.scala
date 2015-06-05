@@ -236,7 +236,7 @@ class ApplicationBase extends Controller with EcologyMember {
       
       for {
         ownerId <- getOwnerIdentity(ownerIdStr)
-        result <- askSpace(ownerId, spaceIdStr)(SessionRequest(requester, ownerId, _, GetThing(thingId))) {
+        result <- askSpace(ownerId, spaceIdStr)(SessionRequest(requester, _, GetThing(thingId))) {
           case ThingFound(id, state) => {
             val thingOpt = id match {
               case UnknownOID => None

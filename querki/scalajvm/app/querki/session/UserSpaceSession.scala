@@ -198,14 +198,14 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
    * TBD: in general, the way we have denormalized the Display Name between Identity and Person is kind of suspicious.
    * There are good efficiency arguments for it, but I am suspicious.
    */
-  def checkDisplayName(req:User, own:OID, space:OID) = {
+  def checkDisplayName(req:User, space:OID) = {
     localPerson match {
       case Some(person) => {
 	    val curIdentity = Person.localIdentities(req)(_rawState.get).headOption.getOrElse(user.mainIdentity)
 	    val curDisplayName = curIdentity.name
 	    if (person.displayName != curDisplayName) {
 	      // Tell the Space to alter the name of the Person record to fit our new expectations:
-	      spaceRouter ! ChangeProps(req, own, space, person.id, Map(Basic.DisplayNameProp(curDisplayName)))
+	      spaceRouter ! ChangeProps(req, space, person.id, Map(Basic.DisplayNameProp(curDisplayName)))
 	      // Update the local identity:
 	      _identity = Some(curIdentity)
 	    }
@@ -244,7 +244,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
   }
   
   def changeProps(currentRequest:SessionRequest, thingId:ThingId, props:PropMap) = {
-    val SessionRequest(req, own, space, payload) = currentRequest
+    val SessionRequest(req, space, payload) = currentRequest
     
     // For the time being, we cope only with a single UserValue property being set at a time.
     // TODO: generalize this properly!
@@ -277,7 +277,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
    	            summaryPropId <- summaryLinkPV.firstOpt
    	            newV = if (v.isDeleted) None else Some(v)
    	          }
-                yield SpacePluginMsg(req, own, space, SummarizeChange(thing.id, prop, summaryPropId, previous, newV))
+                yield SpacePluginMsg(req, space, SummarizeChange(thing.id, prop, summaryPropId, previous, newV))
               msg.map(spaceRouter ! _)
                 
               // ... then tell the user we're set.
@@ -292,7 +292,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
         }
       }
       // It's not a UserValue, so just tell the Space about the change:
-      case None => spaceRouter.forward(ChangeProps(req, own, space, thingId, props))
+      case None => spaceRouter.forward(ChangeProps(req, space, thingId, props))
     }    
   }
   
@@ -305,8 +305,8 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
   def normalReceive:Receive = LoggingReceive (handleRequestResponse orElse {
     case CurrentState(s) => setRawState(s)
     
-    case request @ SessionRequest(req, own, space, payload) => { 
-      checkDisplayName(req, own, space)
+    case request @ SessionRequest(req, space, payload) => { 
+      checkDisplayName(req, space)
       payload match {
         
         case ClientRequest(req, rc) => {

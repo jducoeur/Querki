@@ -28,6 +28,6 @@ class SpaceRegion(val ecology:Ecology) extends Actor with EcologyMember with Rou
   def createChild(key:OID):ActorRef = context.actorOf(SpaceRouter.actorProps(ecology, persistenceFactory, key), sid(key))
 
   def receive = {
-    case req @ SpaceMessage(_, _, spaceId) => routeToChild(spaceId, req)   
+    case req @ SpaceMessage(_, spaceId) => routeToChild(spaceId, req)   
   }
 }

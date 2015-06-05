@@ -61,7 +61,7 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
       }
     }
     
-    case UserValuePersistRequest(req, own, space, LoadThingPropValues(thingId, propId, state)) => {
+    case UserValuePersistRequest(req, space, LoadThingPropValues(thingId, propId, state)) => {
       val tuples = DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
         val valueStream = SpaceSQL("""
 	          SELECT * FROM {uvname} 
@@ -102,7 +102,7 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
       }
     }
     
-    case UserValuePersistRequest(req, own, space, LoadUserPropValues(identity, state)) => {
+    case UserValuePersistRequest(req, space, LoadUserPropValues(identity, state)) => {
       val tuples = DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
         val valueStream = SpaceSQL("""
 	          SELECT * FROM {uvname} 
@@ -128,7 +128,7 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
     
     // TODO: this should probably get refactored with LoadThingPropValues above -- they are close
     // to identical:
-    case UserValuePersistRequest(req, own, space, LoadAllPropValues(propId, state)) => {
+    case UserValuePersistRequest(req, space, LoadAllPropValues(propId, state)) => {
       val tuples = DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
         val valueStream = SpaceSQL("""
 	          SELECT * FROM {uvname} 

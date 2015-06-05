@@ -33,7 +33,7 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
   def normalReceive(state:SpaceState):Receive = {
     case CurrentState(newState) => context.become(normalReceive(newState))
     
-    case SpaceMembersMessage(_, _, _, msg) => msg match {
+    case SpaceMembersMessage(_, _, msg) => msg match {
 	  // Someone is attempting to join this Space:
 	  case JoinRequest(rcRaw) => {
 	    val rc = rcRaw + state

@@ -48,7 +48,7 @@ class ClientController extends ApplicationBase {
       case AsOID(id) => id
       case AsName(name) => throw new Exception(s"Trying to send message $msg, but only have Space name $name!")
     } 
-    SpaceOps.askSpace2(SessionRequest(rc.requesterOrAnon, rc.ownerId, spaceId, msg))(cb)
+    SpaceOps.askSpace2(SessionRequest(rc.requesterOrAnon, spaceId, msg))(cb)
   }
   
   def askUserSession[B](rc:PlayRequestContext, msg:UserSessionMsg)(cb: PartialFunction[Any, Future[B]]):Future[B] = {

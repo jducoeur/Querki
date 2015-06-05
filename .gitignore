@@ -16,6 +16,7 @@ local.sbt
 .sbtserver*
 play-fork-run.sbt
 sbt-ui.sbt
+querki/scalajs/.gitignore
 
 #################
 ## Eclipse

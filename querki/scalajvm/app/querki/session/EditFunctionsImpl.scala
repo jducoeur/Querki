@@ -194,7 +194,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     }
     
     requestFuture[ThingInfo] { promise =>
-      spaceRouter.request(CreateThing(user, state.owner, state.id, model.kind, model.id, props)) foreach {
+      spaceRouter.request(CreateThing(user, state.id, model.kind, model.id, props)) foreach {
         case ThingFound(thingId, newState) => {
           newState.anything(thingId) match {
             case Some(thing) => {
@@ -398,7 +398,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
         // devastating, but it *is* unintentional, and it's a good example of why we need to move towards a more
         // transactional view of things, where our CreateThing message includes the version stamp of the state it
         // is based on, and fails if the stamp is out of date.
-        val spaceMsg = CreateThing(rc.requesterOrAnon, rc.ownerId, state.id, Kind.Type, Core.UrType, props)
+        val spaceMsg = CreateThing(rc.requesterOrAnon, state.id, Kind.Type, Core.UrType, props)
         
         requestFuture[TypeInfo] { implicit promise =>
           spaceRouter.request(spaceMsg) foreach {
@@ -418,7 +418,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
       case Some(newModel) => {
         // TODO: in principle, this should route through the UserSpaceSession. It doesn't matter yet, but is
         // likely to once we put Experiment Mode into place.
-        val spaceMsg = ModifyThing(user, state.owner, state.id, thing.id.toThingId, newModel.id, thing.props)
+        val spaceMsg = ModifyThing(user, state.id, thing.id.toThingId, newModel.id, thing.props)
         requestFuture[ThingInfo] { implicit promise =>
           spaceRouter.request(spaceMsg) foreach {
             case ThingFound(newThingId, newState) => {

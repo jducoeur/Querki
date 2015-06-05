@@ -68,7 +68,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
 	    
 	    requestFuture[ConversationInfo] { implicit promise =>
   	      for {
-	        ThingConversations(convs) <- spaceRouter.requestFor[ThingConversations](ConversationRequest(rc.requesterOrAnon, rc.ownerId, rc.state.get.id, GetConversations(rc.thing.get.id)))
+	        ThingConversations(convs) <- spaceRouter.requestFor[ThingConversations](ConversationRequest(rc.requesterOrAnon, rc.state.get.id, GetConversations(rc.thing.get.id)))
 	        IdentitiesFound(identities) <- IdentityAccess.identityCache.requestFor[IdentitiesFound](GetIdentities(getIds(convs).toSeq))
             apiConvs = convs.map(toApi(_)(identities, theRc))
 	      }
@@ -99,7 +99,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
     val theRc = rc
     requestFuture[ConvNode] { implicit promise =>
       for {
-        AddedNode(parentId, node) <- spaceRouter.request(ConversationRequest(user, rc.ownerId, state.id, NewComment(comment)))
+        AddedNode(parentId, node) <- spaceRouter.request(ConversationRequest(user, state.id, NewComment(comment)))
         IdentityFound(identity) <- IdentityAccess.identityCache.request(GetIdentityRequest(authorId))
       }
         promise.success(toApi(node)(Map(authorId -> identity), theRc))
@@ -108,7 +108,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
   
   def deleteComment(thingId:TID, commentId:CommentId):Future[Unit] = withThing(thingId) { thing =>
     requestFuture[Unit] { implicit promise =>
-	  spaceRouter.request(ConversationRequest(user, rc.ownerId, state.id, DeleteComment(thing.id, commentId))).map {
+	  spaceRouter.request(ConversationRequest(user, state.id, DeleteComment(thing.id, commentId))).map {
 	    case CommentDeleted => promise.success(())
 	    case CommentNotDeleted => throw new Exception("Unable to delete comment")      
 	  }      

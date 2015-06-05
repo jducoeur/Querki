@@ -45,7 +45,7 @@ private [session] class UserSpaceSessions(val ecology:Ecology, val spaceId:OID, 
     /**
      * Message to forward to a UserSpaceSession. Create the session, if needed.
      */
-    case msg @ SessionRequest(requester, _, _, payload) => routeToChild(requester, msg)
+    case msg @ SessionRequest(requester, _, payload) => routeToChild(requester, msg)
   }
 
 }

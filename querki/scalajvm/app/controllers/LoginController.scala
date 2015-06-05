@@ -189,7 +189,7 @@ class LoginController extends ApplicationBase {
   }
   
   def joinSpace(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { rc =>
-    askSpace(rc.ownerId, rc.spaceIdOpt.get)(SpaceMembersMessage(rc.requesterOrAnon, rc.ownerId, _, JoinRequest(rc))) {
+    askSpace(rc.ownerId, rc.spaceIdOpt.get)(SpaceMembersMessage(rc.requesterOrAnon, _, JoinRequest(rc))) {
       case Joined => Redirect(routes.ClientController.space(ownerId, spaceId))
       case JoinFailed(error) => doError(routes.Application.index, error)(rc)
     }

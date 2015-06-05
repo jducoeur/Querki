@@ -381,7 +381,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
 	            DisplayNameProp(invitee.display),
 	            AccessControl.PersonRolesProp(inviteeRole),
 	            AccessControl.CanReadProp(AccessControl.OwnerTag))()
-	        val msg = CreateThing(rc.requester.get, rc.ownerId, state.id, Kind.Thing, PersonOID, propMap)
+	        val msg = CreateThing(rc.requester.get, state.id, Kind.Thing, PersonOID, propMap)
 	        val nextFuture = SpaceOps.spaceRegion ? msg
           // TODO: this code is fundamentally suspicious. It *probably* doesn't actually send SpaceState
           // cross-node, but it comes closer than I like:
@@ -462,7 +462,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
       // to choose which of my identities is joining this Space:
       identity <- user.identityBy(_ => true);
       membershipResult = UserAccess.addSpaceMembership(identity.id, state.id);
-      changeRequest = ChangeProps(SystemUser, state.owner, state.id, person.toThingId, 
+      changeRequest = ChangeProps(SystemUser, state.id, person.toThingId, 
           toProps(
             IdentityLink(identity.id),
             DisplayNameProp(identity.name))())
