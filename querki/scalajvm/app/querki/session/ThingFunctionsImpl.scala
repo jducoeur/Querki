@@ -133,7 +133,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
   
   def deleteThing(thingId:TID):Future[Unit] = withThing(thingId) { thing =>
     requestFuture[Unit] { implicit promise =>
-      spaceRouter.request(DeleteThing(user, state.owner, state.toThingId, thing.toThingId)) foreach {
+      spaceRouter.request(DeleteThing(user, state.owner, state.id, thing.toThingId)) foreach {
         // TODO: there is no longer an obvious reason to return newState here, and probably good
         // reasons not to:
         case ThingFound(thingId, newState) => promise.success(())

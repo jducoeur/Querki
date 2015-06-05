@@ -4,12 +4,16 @@ import scala.concurrent.duration._
 import scala.concurrent.Future
 
 import akka.actor.{ActorRef, Props}
+import akka.pattern._
 import akka.util.Timeout
 
 // TODO: this is a very unfortunate layer break, but is needed to provide the execution context for
 // sending asks to the SpaceManager. Can/should we wrap it in something?
 import play.api.libs.concurrent.Execution.Implicits._
 
+import models.{AsName, AsOID, ThingId}
+
+import querki.core.NameUtils
 import querki.ecology._
 import querki.spaces.messages._
 
@@ -21,19 +25,44 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps {
    */
   var _ref:Option[ActorRef] = None
   lazy val spaceManager = _ref.get
+  var _region:Option[ActorRef] = None
+  lazy val spaceRegion = _region.get
   
   override def createActors(createActorCb:CreateActorFunc):Unit = {
-    // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
-    // with "Props(classOf(Space), ...)". See:
-    //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-    _ref = createActorCb(Props(new SpaceManager(ecology)), "SpaceManager")
+    _region = createActorCb(Props(classOf[SpaceRegion], ecology), "SpaceRegion")
+    _ref = createActorCb(Props(classOf[SpaceManager], ecology, spaceRegion), "SpaceManager")
+  }
+  
+  implicit val stdTimeout = Timeout(5 seconds)
+  
+  def getSpaceId(ownerId:OID, spaceId:String):Future[OID] = {
+    ThingId(spaceId) match {
+      case AsOID(oid) => Future.successful(oid)
+      case AsName(name) => {
+        val canonName = NameUtils.canonicalize(name)
+        ask(spaceManager, PersistMessages.GetSpaceByName(ownerId, canonName)).map {
+          case SpaceId(spaceId) => spaceId
+          // TODO: this should really be a PublicException, I think:
+          case err:ThingError => throw new Exception(s"Couldn't find space $spaceId")
+        }
+      }
+    }
   }
     
   def askSpaceManager[A,B](msg:SpaceMgrMsg)(cb: A => Future[B])(implicit m:Manifest[A]):Future[B] = {
-    akka.pattern.ask(spaceManager, msg)(Timeout(5 seconds)).mapTo[A].flatMap(cb)
+    akka.pattern.ask(spaceManager, msg).mapTo[A].flatMap(cb)
   }
   
   def askSpaceManager2[B](msg:SpaceMgrMsg)(cb: PartialFunction[Any, Future[B]]):Future[B] = {
-    akka.pattern.ask(spaceManager, msg)(Timeout(5 seconds)).flatMap(cb)
+    akka.pattern.ask(spaceManager, msg).flatMap(cb)
+  }
+  
+  // TODO: make this signature less idiotic:
+  def askSpace[A, B](msg:SpaceMessage)(cb: A => Future[B])(implicit m:Manifest[A]):Future[B] = {
+    akka.pattern.ask(spaceRegion, msg).mapTo[A].flatMap(cb)
+  }
+  
+  def askSpace2[B](msg:SpaceMessage)(cb: PartialFunction[Any, Future[B]]):Future[B] = {
+    akka.pattern.ask(spaceRegion, msg).flatMap(cb)
   }
 }

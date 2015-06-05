@@ -36,43 +36,47 @@ case class SpaceStatus(spaceId:OID, name:String, thingConvs:Int, nSessions:Int)
 case class CreateSpace(requester:User, name:String) extends SpaceMgrMsg
 
 /**
- * The base class for message that get routed to a Space. Note that owner is only relevant if
- * the spaceId is AsName (which needs to be disambiguated by owner).
+ * The base class for message that get routed to a Space.
+ * 
+ * TODO: owner is now vestigial -- remove it.
  */
-sealed class SpaceMessage(val requester:User, val owner:OID, val spaceId:ThingId) extends SpaceMgrMsg
+sealed class SpaceMessage(val requester:User, val owner:OID, val spaceId:OID)
 object SpaceMessage {
   def unapply(input:SpaceMessage) = Some((input.requester, input.owner, input.spaceId))
 }
+  
+case class SpaceId(id:OID)
+case class SpaceInfo(id:OID, linkName:String)
 
-case class CreateThing(req:User, own:OID, space:ThingId, kind:Kind, modelId:OID, props:PropMap) extends SpaceMessage(req, own, space)
+case class CreateThing(req:User, own:OID, space:OID, kind:Kind, modelId:OID, props:PropMap) extends SpaceMessage(req, own, space)
 
-case class ModifyThing(req:User, own:OID, space:ThingId, id:ThingId, modelId:OID, props:PropMap) extends SpaceMessage(req, own, space)
+case class ModifyThing(req:User, own:OID, space:OID, id:ThingId, modelId:OID, props:PropMap) extends SpaceMessage(req, own, space)
 
 /**
  * A specialized form of ModifyThing for the most common case, especially for internal use: changing a few specific properties.
  */
-case class ChangeProps(req:User, own:OID, space:ThingId, id:ThingId, changedProps:PropMap) extends SpaceMessage(req, own, space)
+case class ChangeProps(req:User, own:OID, space:OID, id:ThingId, changedProps:PropMap) extends SpaceMessage(req, own, space)
 
 // TODO: this message needs cleanup before we start using it, to match the rest:
-case class CreateProperty(id:OID, req:User, model:OID, pType:OID, cType:OID, props:PropMap) extends SpaceMessage(req, UnknownOID, AsOID(id))
+case class CreateProperty(id:OID, req:User, model:OID, pType:OID, cType:OID, props:PropMap) extends SpaceMessage(req, UnknownOID, id)
 
-case class DeleteThing(req:User, own:OID, space:ThingId, thing:ThingId) extends SpaceMessage(req, own, space)
+case class DeleteThing(req:User, own:OID, space:OID, thing:ThingId) extends SpaceMessage(req, own, space)
 
 /**
  * All Conversation-oriented messages get wrapped in a ConversationRequest.
  */
-case class ConversationRequest(req:User, own:OID, space:ThingId, payload:ConversationMessage) extends SpaceMessage(req, own, space)
+case class ConversationRequest(req:User, own:OID, space:OID, payload:ConversationMessage) extends SpaceMessage(req, own, space)
 
 /**
  * All User Session-oriented messages get wrapped in a SessionRequest.
  */
-case class SessionRequest(req:User, own:OID, space:ThingId, payload:SessionMessage) extends SpaceMessage(req, own, space)
+case class SessionRequest(req:User, own:OID, space:OID, payload:SessionMessage) extends SpaceMessage(req, own, space)
 
 /**
  * TODO: HACK: this exposes the UserValues for a Space, outside that Space. It should really go away, but is necessary for
  * _userValues and _thingValues.
  */
-case class UserValuePersistRequest(req:User, own:OID, space:ThingId, payload:querki.uservalues.PersistMessages.ExternallyExposed) extends SpaceMessage(req, own, space)
+case class UserValuePersistRequest(req:User, own:OID, space:OID, payload:querki.uservalues.PersistMessages.ExternallyExposed) extends SpaceMessage(req, own, space)
 
 /**
  * An open-ended variant of SpaceMgrMsg, which gets routed to Space and can contain anything. This is intended
@@ -81,7 +85,7 @@ case class UserValuePersistRequest(req:User, own:OID, space:ThingId, payload:que
  * (Why the indirection through payload? So that we can leave this mechanism open-ended, while still leaving SpaceMgrMsg and SpaceMessage
  * sealed here.)
  */
-case class SpacePluginMsg(req:User, own:OID, space:ThingId, payload:Any) extends SpaceMessage(req, own, space) 
+case class SpacePluginMsg(req:User, own:OID, space:OID, payload:Any) extends SpaceMessage(req, own, space) 
 
 object SpaceError {  
   val CreateNotAllowed = "Space.createThing.notAllowed"
@@ -97,7 +101,7 @@ import SpaceError._
 // important.
 case class CurrentState(state:SpaceState)
 
-case class SpaceMembersMessage(req:User, own:OID, space:ThingId, msg:SpaceMembersBase) extends SpaceMessage(req, own, space)
+case class SpaceMembersMessage(req:User, own:OID, space:OID, msg:SpaceMembersBase) extends SpaceMessage(req, own, space)
 sealed trait SpaceMembersBase
 
 case class InviteRequest(rc:RequestContext, emails:Seq[querki.email.EmailAddress], collabs:Seq[OID]) 

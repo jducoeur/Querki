@@ -11,7 +11,7 @@ import play.api.mvc.{Action, Call}
 import upickle._
 import autowire._
 
-import models.{Thing, ThingId}
+import models.{AsName, AsOID, Thing, ThingId}
 
 import querki.globals._
 import Implicits.execContext
@@ -44,7 +44,11 @@ class ClientController extends ApplicationBase {
    * The more we can reduce the SpaceManager as a bottleneck, the better.
    */
   def askUserSpaceSession[B](rc:PlayRequestContext, msg:SessionMessage)(cb: PartialFunction[Any, Future[B]]):Future[B] = {
-    SpaceOps.askSpaceManager2(SessionRequest(rc.requesterOrAnon, rc.ownerId, ThingId(rc.spaceIdOpt.get), msg))(cb)
+    val spaceId = ThingId(rc.spaceIdOpt.get) match {
+      case AsOID(id) => id
+      case AsName(name) => throw new Exception(s"Trying to send message $msg, but only have Space name $name!")
+    } 
+    SpaceOps.askSpace2(SessionRequest(rc.requesterOrAnon, rc.ownerId, spaceId, msg))(cb)
   }
   
   def askUserSession[B](rc:PlayRequestContext, msg:UserSessionMsg)(cb: PartialFunction[Any, Future[B]]):Future[B] = {
@@ -67,17 +71,21 @@ class ClientController extends ApplicationBase {
 	def write[Result: upickle.Writer](r: Result) = upickle.write(r)
   }
   
-  def space(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { implicit rc =>
-    val client = new LocalClient(rc)
-    
-    client[ThingFunctions].getRequestInfo().call().map { requestInfo =>
-      if (requestInfo.forbidden) {
-        unknownSpace(spaceId)
-      } else {
-        Ok(views.html.client(rc, write(requestInfo)))
+  def space(ownerId:String, spaceIdStr:String) = withRouting(ownerId, spaceIdStr) { implicit rawRc =>
+    // Unlike the API calls, we have to assume we have a name-style ThingId here:
+    SpaceOps.getSpaceId(rawRc.ownerId, spaceIdStr).flatMap { spaceId =>
+      val rc = rawRc.copy(spaceIdOpt = Some(spaceId.toThingId))
+      val client = new LocalClient(rc)
+      
+      client[ThingFunctions].getRequestInfo().call().map { requestInfo =>
+        if (requestInfo.forbidden) {
+          unknownSpace(spaceIdStr)
+        } else {
+          Ok(views.html.client(rc, write(requestInfo)))
+        }
+      } recoverWith {
+        case pex:PublicException => doError(routes.Application.index, pex) 
       }
-    } recoverWith {
-      case pex:PublicException => doError(routes.Application.index, pex) 
     }
   }
   

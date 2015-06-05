@@ -198,7 +198,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
    * TBD: in general, the way we have denormalized the Display Name between Identity and Person is kind of suspicious.
    * There are good efficiency arguments for it, but I am suspicious.
    */
-  def checkDisplayName(req:User, own:OID, space:ThingId) = {
+  def checkDisplayName(req:User, own:OID, space:OID) = {
     localPerson match {
       case Some(person) => {
 	    val curIdentity = Person.localIdentities(req)(_rawState.get).headOption.getOrElse(user.mainIdentity)

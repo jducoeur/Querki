@@ -58,10 +58,7 @@ class PhotoController extends ApplicationBase {
       // TODO: all of this needs to move into the Actors themselves! This is passing state around, which is a no-no!
       resultsFut.flatMap { info =>
         QLog.spew(s"About to actually update the Space -- the QValue is ${info.newValue}")
-        val sessionRequest = 
-          SessionRequest(rc.requesterOrAnon, rc.ownerId, rc.state.get.id.toThingId, 
-              ChangeProps2(rc.thing.get.id.toThingId, Map((propId -> info.newValue))))
-        askSpace(sessionRequest) {
+        askSpace(rc.ownerId, spaceId)(SessionRequest(rc.requesterOrAnon, rc.ownerId, _, ChangeProps2(rc.thing.get.id.toThingId, Map((propId -> info.newValue))))) {
           case ThingFound(thingId, newState) => {
             // Okay, we're successful. Send the Wikitext for thumbnail of the new photo back to the Client:
             val lastElem = info.newValue.cv.last

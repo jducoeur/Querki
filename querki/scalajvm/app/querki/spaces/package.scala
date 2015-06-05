@@ -10,7 +10,7 @@ import models.{OID, PType, Thing}
 import models.Thing.PropMap
 
 import querki.ecology._
-import querki.spaces.messages.SpaceMgrMsg
+import querki.spaces.messages.{SpaceMessage, SpaceMgrMsg}
 import querki.time.DateTime
 import querki.util.Sequencer
 import querki.values.{QValue, SpaceState, StateCacheKey}
@@ -28,6 +28,15 @@ package object spaces {
      * only legal entry point to the Space Management system from Play! 
      */
     def spaceManager:ActorRef
+    
+    def spaceRegion:ActorRef
+    
+    /**
+     * Given a string representation of a Space (which we presume is a ThingId), returns the
+     * actual OID of that Space. Will fail the Future if the ID doesn't represent an actual
+     * Space. Requires that you have already looked up the owner.
+     */
+    def getSpaceId(ownerId:OID, spaceId:String):Future[OID]
     
     /**
      * Send a message to the SpaceManager, expecting a return of type A to be 
@@ -50,6 +59,9 @@ package object spaces {
      * end, which the older ask() does not.
      */
     def askSpaceManager2[B](msg:SpaceMgrMsg)(cb: PartialFunction[Any, Future[B]]):Future[B]
+    
+    def askSpace[A, B](msg:SpaceMessage)(cb: A => Future[B])(implicit m:Manifest[A]):Future[B]
+    def askSpace2[B](msg:SpaceMessage)(cb: PartialFunction[Any, Future[B]]):Future[B]
   }
     
   trait SpacePersistence extends EcologyInterface {

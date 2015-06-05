@@ -9,8 +9,6 @@ GET     /spaces                     @controllers.Application.spaces
 GET     /newSpace                   @controllers.Application.newSpace
 POST    /doNewSpace                 @controllers.Application.doNewSpace
 
-#GET     /help/                      @controllers.Application.thing(userName = "systemUser", spaceId = "documentation", thingId = "documentation")
-#GET     /help/:thingId              @controllers.Application.thing(userName = "systemUser", spaceId = "documentation", thingId)
 GET     /help/                      @controllers.ClientController.space(userName = "systemUser", spaceId = "documentation")
 GET     /help/:thingId              @controllers.ClientController.thingRedirect(userName = "systemUser", spaceId = "documentation", thingId)
 
@@ -20,31 +18,8 @@ POST    /TOS                        @controllers.TOSController.handleTOS
 # The old way to address a Space, now replaced by the new client:
 GET     /u/:userName/:spaceId/      @controllers.ClientController.space(userName, spaceId)
 
-GET     /old/:userName/:spaceId/createThing @controllers.Application.createThing(userName, spaceId, model:Option[String])
-GET     /old/:userName/:spaceId/createProperty @controllers.Application.createProperty(userName, spaceId)
-POST    /old/:userName/:spaceId/createThing @controllers.Application.doCreateThing(userName, spaceId, subCreate:Option[Boolean])
-GET     /old/:userName/:spaceId/_createAndEdit @controllers.Application.doCreateThing2(userName, spaceId, model)
-POST    /old/:userName/:spaceId/_createAndEdit @controllers.Application.doCreateThing2(userName, spaceId, model)
-POST    /old/:userName/:spaceId/setProperty2 @controllers.Application.setProperty2(userName, spaceId, thingId)
-GET		/old/:userName/:spaceId/getPropertyDisplay @controllers.Application.getPropertyDisplay(userName, spaceId, thingId, prop)
-GET     /old/:userName/:spaceId/getPropertyEditor @controllers.Application.getPropertyEditor(userName, spaceId, thingId, prop, i:Int)
-GET     /old/:userName/:spaceId/_getThingEditor @controllers.Application.getThingEditor(userName, spaceId, thingId)
-GET     /old/:userName/:spaceId/_editInstances @controllers.Application.editInstances(userName, spaceId, modelId)
-GET     /old/:userName/:spaceId/_getModelType @controllers.Application.getModelType(userName, spaceId, modelId)
-GET     /old/:userName/:spaceId/_exportModel @controllers.Application.exportModel(userName, spaceId, modelId, format:Int)
-GET     /old/:userName/:spaceId/_advanced @controllers.Application.showAdvancedCommands(userName, spaceId, thingId)
-
 GET     /old/:userName/:spaceId/_explorer @controllers.ExploreController.showExplorer(userName, spaceId, thingId)
 POST    /old/:userName/:spaceId/_evaluate @controllers.ExploreController.evaluate(userName, spaceId, thingId, ql)
-
-GET     /old/:userName/:spaceId/edit @controllers.Application.editThing(userName, spaceId, thingId)
-POST    /old/:userName/:spaceId/edit @controllers.Application.doEditThing(userName, spaceId, thingId)
-GET     /old/:userName/:spaceId/_changeModel @controllers.Application.changeModel(userName, spaceId, thingId)
-GET     /old/:userName/:spaceId/view @controllers.Application.viewThing(userName, spaceId, thingId)
-GET     /old/:userName/:spaceId/delete  @controllers.Application.deleteThing(userName, spaceId, thingId)
-
-GET     /old/:userName/:spaceId/_sharing    @controllers.Application.sharing(userName, spaceId)
-POST    /old/:userName/:spaceId/_inviteMembers @controllers.LoginController.inviteMembers(userName, spaceId)
 
 # Note that these are still direct pages, not through the Client:
 GET     /u/:userName/:spaceId/_handleInvite @controllers.LoginController.handleInvite(userName, spaceId)
@@ -52,13 +27,6 @@ POST    /u/:userName/:spaceId/_handleInvite @controllers.LoginController.signup(
 POST    /u/:userName/:spaceId/_joinLogin  @controllers.LoginController.joinlogin(userName, spaceId)
 GET     /u/:userName/:spaceId/_joinSpace  @controllers.LoginController.joinSpace(userName, spaceId)
 GET     /u/:userName/:spaceId/_getCollaborators @controllers.LoginController.getCollaborators(userName, spaceId, q)
-
-# GET     /u/:userName/:spaceId/export @controllers.Application.exportThing(userName, spaceId, thingId)
-
-GET     /old/:userName/:spaceId/getTags     @controllers.Application.getTags(userName, spaceId, propId, q)
-GET     /old/:userName/:spaceId/getLinks    @controllers.Application.getLinks(userName, spaceId, propId, q)
-
-POST    /old/:userName/:spaceId/search      @controllers.Application.search(userName, spaceId)
 
 POST    /u/:userName/:spaceId/_photoUpload   @controllers.PhotoController.upload(userName, spaceId, thingId)
 
@@ -91,30 +59,15 @@ GET     /admin/showSpaceStatus      @controllers.AdminController.showSpaceStatus
 GET     /admin/sendSystemMessage    @controllers.AdminController.sendSystemMessage
 POST    /admin/sendSystemMessage    @controllers.AdminController.doSendSystemMessage
 
-# Conversations
-GET     /old/:userName/:spaceId/__getConv @controllers.ConversationController.getConversations(userName, spaceId, thingId)
-POST    /old/:userName/:spaceId/__addComment @controllers.ConversationController.addComment(userName, spaceId, thingId, text, responseTo)
-GET     /old/:userName/:spaceId/__deleteComment @controllers.ConversationController.deleteComment(userName, spaceId, thingId, commentId)
-GET     /convJs                     @controllers.ConversationController.javascriptRoutes
-
 # Notifications
 GET     /_notifications             @controllers.NotificationController.showNotifications
 
 # Redirect pointers to Things to go to the Client: 
 GET     /u/:userName/:spaceId/*thingId    @controllers.ClientController.thingRedirect(userName, spaceId, thingId)
 
-# Fetch a Thing by ThingId
-# Note that Things can have slashes in their names!
-# IMPORTANT: this needs to come *after* all Space-based special-purpose pages!
-GET     /old/:userName/:spaceId/*thingId    @controllers.Application.thing(userName, spaceId, thingId)
-
 # AJAX test stuff:
-GET     /showTestAjax               @controllers.Application.showTestAjax
-POST    /testAjax                   @controllers.Application.testAjax(i1, i2)
-GET     /javascriptRoutes           @controllers.Application.javascriptRoutes
 GET     /exploreRoutes              @controllers.ExploreController.javascriptRoutes
 
-GET     /testHello                  @controllers.Application.testHello
 # Serve scala files under the scalajs subproject to be used by sourcemaps.
 # TODO: This route and its controller method should be removed for production
 GET     /scalajs/*file              @controllers.Application.scalajsFile(file)

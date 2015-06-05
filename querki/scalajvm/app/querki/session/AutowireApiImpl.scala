@@ -82,7 +82,7 @@ class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends EcologyM
    * Constructs a request suitable for looping back to the UserSpaceSession.
    */
   def createSelfRequest(payload:SessionMessage):SessionRequest = {
-    SessionRequest(user, state.owner, state.id.toThingId, payload)
+    SessionRequest(user, state.owner, state.id, payload)
   }
   
   implicit def thing2TID(t:Thing):TID = TID(t.id.toThingId)

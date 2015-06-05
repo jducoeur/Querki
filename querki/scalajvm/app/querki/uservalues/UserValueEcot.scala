@@ -245,7 +245,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
         thingId <- inv.contextAllAs(LinkType)
         prop <- inv.definingContextAsProperty
         msg = UserValuePersistRequest(
-                inv.context.request.requesterOrAnon, inv.state.ownerIdentity.map(_.id).get, inv.state.toThingId, 
+                inv.context.request.requesterOrAnon, inv.state.ownerIdentity.map(_.id).get, inv.state.id, 
                 LoadThingPropValues(thingId, prop.id, inv.state))
         // Here is the moment of great evil -- this is actually a blocking request to the Space's User Value Persister:
         uv <-  inv.iter(SpaceOps.spaceManager.askBlocking(msg) {
@@ -275,7 +275,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
       for {
         identity <- inv.contextAllAs(IdentityType)
         msg = UserValuePersistRequest(
-                inv.context.request.requesterOrAnon, inv.state.ownerIdentity.map(_.id).get, inv.state.toThingId, 
+                inv.context.request.requesterOrAnon, inv.state.ownerIdentity.map(_.id).get, inv.state.id, 
                 LoadUserPropValues(identity, inv.state))
         // Here is the moment of great evil -- this is actually a blocking request to the Space's User Value Persister:
         uv <-  inv.iter(SpaceOps.spaceManager.askBlocking(msg) {
@@ -314,12 +314,12 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
         case Some((prop, summaryId)) => {
           // ... go fetch the actual User Values for this Property...
           val msg = UserValuePersistRequest(
-                  inv.context.request.requesterOrAnon, inv.state.ownerIdentity.map(_.id).get, inv.state.toThingId, 
+                  inv.context.request.requesterOrAnon, inv.state.ownerIdentity.map(_.id).get, inv.state.id, 
                   LoadAllPropValues(prop, inv.state))
           // IMPORTANT: note that this wanders off into asynchrony. It is *not* fundamentally evil, since we don't
           // block on the response, but we don't actually give the user any interesting feedback.
           // TODO: once QL has the ability to cope with asynchronous functions, this should become one.
-          val fut = SpaceOps.askSpaceManager2(msg) {
+          val fut = SpaceOps.askSpace2(msg) {
             case ValuesForUser(values) => {
               // ... and tell the SpaceManager to recompute the Summaries. (Note that the handler for this is above.)
 	          val msg = SpacePluginMsg(inv.context.request.requesterOrAnon, inv.state.owner, inv.state.id, RecalculateSummaries(prop, summaryId, values))

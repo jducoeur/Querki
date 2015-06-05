@@ -16,8 +16,6 @@
 @thing = @{ rc.thing }
 @nav = @{ NavSectionMgr.nav(rc) }
 
-@showSpaceLink = @{ space.isDefined && (thing.isEmpty || thing.get.id != space.get.id) }
-
 @formErrors = @{
   val formsWithErrors = forms.filter(_.hasErrors)
   if (formsWithErrors.isEmpty)
@@ -47,22 +45,6 @@
   space match {
     case Some(s) => s.toThingId.toString
     case None => ""
-  }
-}
-
-@createThingRoute = @{
-  space match {
-    case Some(s) => routes.Application.createThing(rc.ownerHandle, s.toThingId, None)
-    case _ => ""
-  }
-}
-
-@photoUploadRoute = @{
-  thing match {
-    // TODO: this really should be generated from the routes file, but the thingId is determined dynamically
-    // in Javascript:
-    case Some(t) => s"/u/${rc.ownerHandle}/$spaceId/_photoUpload"
-    case _ => ""
   }
 }
 
@@ -106,27 +88,6 @@
   }
 }
 
-@displayNotifications(n:Int) = {
-  <ul class="nav navbar-right">
-    <li><a href="@routes.NotificationController.showNotifications">
-      @if(n == 0) {
-        <i class="icon-bell"></i>
-      } else {
-        <i class="icon-bell icon-white"></i><span class="badge badge-info"><subscript style="font-size:x-small">@n</subscript></span>
-      }
-    </a></li>
-  </ul>
-}
-
-@displayNotificationsIfLoggedIn = @{
-  rc.requester match {
-    case Some(user) => {
-      displayNotifications(rc.numNotifications)      
-    }
-    case None => {}
-  }
-}
-
 <!DOCTYPE html>
 
 @*********************
@@ -158,31 +119,15 @@
         <link rel="stylesheet" media="screen" href="@routes.Assets.at("stylesheets/main.css")">
         
         <script src="//cdn.jsdelivr.net/webjars/jquery/2.1.3/jquery.js"></script>
-<!--
-        <script src="@routes.Assets.at("javascripts/jquery-1.9.0.js")"></script>
-        <script src="@routes.Assets.at("javascripts/jquery.manifest.js")"></script>
--->
         <script src="@routes.Assets.at("javascripts/jquery.manifest-forked.min.js")"></script>
         <script src="@routes.Assets.at("javascripts/jquery-ui-1.10.0.custom.js")"></script>
         <script src="@routes.Assets.at("javascripts/jquery.ui.touch-punch.min.js")"></script>
         <script src="@routes.Assets.at("javascripts/jquery.ui.menubar.js")"></script>
         <script src="@routes.Assets.at("javascripts/bootstrap.js")"></script>
-		<!-- <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery.selectboxit/3.6.0/jquery.selectBoxIt.min.js"></script> -->
-        <script src="@routes.Assets.at("javascripts/underscore-min.js")"></script>
         <script src="@routes.Assets.at("javascripts/jquery.autosize-min.js")"></script>
         <script src="@routes.Assets.at("javascripts/jquery.raty.min.js")"></script>
         <script src="@routes.Assets.at("javascripts/jquery.histogram.js")"></script>
         <script src="@routes.Assets.at("javascripts/querki-common.js")"></script>
-        
-		<script src="@routes.Assets.at("javascripts/load-image.min.js")"></script>
-		<script src="@routes.Assets.at("javascripts/canvas-to-blob.min.js")"></script>
-        <script src="@routes.Assets.at("javascripts/jquery.iframe-transport.js")"></script>
-        <script src="@routes.Assets.at("javascripts/jquery.fileupload.js")"></script>
-        <script src="@routes.Assets.at("javascripts/jquery.fileupload-process.js")"></script>
-        <script src="@routes.Assets.at("javascripts/jquery.fileupload-image.js")"></script>
-        
-        <script type="text/javascript" src='@routes.Application.javascriptRoutes()'></script>
-        <script type="text/javascript" src='@routes.ExploreController.javascriptRoutes()'></script>
         
         @PageEventManager.addHeaders(rc, template)
 
@@ -211,89 +156,9 @@
 				at: "right"
 			});
 			
-			@if(space.isDefined) {
-			  var designingModel = false;
-			  
-				$("#createThing").on("click", function(evt) {
-				  designingModel = false;
-				  $("#create-dialog").dialog("open");
-				});
-			
-				$("#designModel").on("click", function(evt) {
-				  designingModel = true;
-				  $("#create-dialog").dialog("open");
-				});
-			
-				$("#create-dialog").dialog({
-				  autoOpen:false,
-				  height: 300,
-				  width: 350,
-				  modal: true,
-				  buttons: {
-				    "Create": function () {
-				      var modelId = $("#newModel :selected").first().val()
-				      if (modelId && (modelId.length > 0)) {
-				        // TBD: Bit of an abstraction break here -- the Javascript needs to know the URL syntax for
-				        // model creation. Can we do this better somehow?
-				        if (designingModel) {
-						  window.location = 
-						    "@routes.Application.createThing(rc.ownerHandle, space.get.toThingId, None)" 
-						    + "?model=" + modelId
-						    + "&asModel=true";
-				        } else {
-				          // HACK: HORRIBLE HACK! This is a consequence of using ThingIds in some places and OIDs in
-				          // others: we have to strip the dot off the modelId here to make it work. Ick. Time to fix
-				          // editThingInternal to stop expecting raw OIDs!
-				          window.location = "_createAndEdit?model=" + modelId.substring(1);
-				        }
-				      } else {
-				        // TODO: The Create button should really be disabled unless a legit option
-				        // is picked; not quite sure how to do that in jQuery UI. 
-				      }
-				    },
-				    "Cancel": function () {
-				      $(this).dialog("close");
-				    }
-				  },
-				  close: function () {
-				  }
-				});
-			}
-			
-			@if(thing.isDefined) {
-				$("#deleteThing").on("click", function(evt) {
-				  $("#delete-dialog").dialog("open");
-				  return false;
-				});
-			
-				$("#delete-dialog").dialog({
-				  autoOpen:false,
-				  height: 200,
-				  width: 350,
-				  modal: true,
-				  buttons: {
-				    "Delete": function () {
-		              window.location = "@routes.Application.deleteThing(rc.ownerHandle, space.get.toThingId, thing.get.toThingId)";
-				    },
-				    "Cancel": function () {
-				      $(this).dialog("close");
-				    }
-				  },
-				  close: function () {
-				  }
-				});		
-			}
-			
 			finalSetup("@ownerId", "@spaceId", $('body'));
 		});
-		
-		// HACK: provide the route for Thing creation, for querki-common to use:
-		function createThingRoute() {
-		  return "@createThingRoute";
-		}
-		function photoUploadRoute() {
-		  return "@photoUploadRoute";
-		}
+
 		</script>
 		
 	<style>
@@ -362,60 +227,11 @@
                         @displayNavigable(section)
                       }
 	                </ul>
-	                
-	                @if(space.isDefined) {
-                      @form(routes.Application.search(rc.ownerHandle, space.get.toThingId), 'class -> "navbar-form navbar-right") {	                
-                        <input id="searchInput" name="searchInput" type="text" class="search-query" placeholder="Search">
-                      }
-                    }
-                    @displayNotificationsIfLoggedIn
 	            </div>
 	          </div>
 	        </div>
 	      </div>
 	    }
-
-    @if(space.isDefined) {
-      @modelSelectionForm(rc, space.get, "create-dialog", "Create a Thing", "Choose which kind of Thing to create:", "newModel")    
-    }	    
-    
-    <div id="create-instance-dialog" title="" style="display:none">
-      <iframe id="create-instance-iframe" src="" style="width: 95%; height: 95%"></iframe>
-    </div>
-    
-    <div id="photo-input" class="modal hide" tabindex="-1" role="dialog" style="display:none" aria-labelledby="myModalLabel" aria-hidden="true">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
-        <h3>Take a photo</h3>
-      </div>
-      <div id="photo-input-content" class="modal-body">
-        <p>Press the button below, then choose "Camera" to take a photo now:</p>
-        <p><input id="photo-input-elem" type="file" accept="image/*;capture=camera"></p>
-        <p id="photo-status">&nbsp;</p>
-        <div id="photo-progress" class="progress progress-striped active">
-          <div class="bar" style="width: 0%;"></div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
-      </div>
-    </div>
-    
-    <div id="photo-full-dialog" class="modal hide" title="View Photo" style="display:none">
-      <div id="photo-full-header" class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
-        <p><b>View Image</b></p>
-      </div>
-      <div id="photo-full-content" class="modal-body">
-        <img id="photo-full-image"/>
-      </div>      
-    </div>
-	
-	@if(thing.isDefined) {
-      <div id="delete-dialog" title="Confirm Delete" style="display:none">
-        <p><b>Are you sure you want to delete @Html(thing.get.displayName)? There is currently no way to get it back!</b></p>
-      </div>	
-	}
 
 	<!-- This container stuff is likely to go into a lower-level, Space-rendering template -->
 	<div class="guts container-fluid">
@@ -442,11 +258,7 @@
 			}
 	      }
 	      
-	      @if(showSpaceLink) {
-	        <div class="_smallSubtitle _spaceLink _noPrint"><a href="@routes.Application.thing(ownerId, spaceId, spaceId)">@space.get.displayName</a></div>
-	      } else {
-	        <div class="_smallSubtitle _spaceLink _noPrint">&nbsp;</div>
-	      }
+          <div class="_smallSubtitle _spaceLink _noPrint">&nbsp;</div>
           @content
 	
 		</div><!--/col-md-12-->

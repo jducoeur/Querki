@@ -85,28 +85,7 @@ class LoginController extends ApplicationBase {
       Ok(JSONcollabs)
     }
   }
-  
-  def inviteMembers(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { implicit rc =>
-    implicit val request = rc.request
-    val rawForm = inviteForm.bindFromRequest
-    rawForm.fold(
-      errorForm => {
-        // TODO: internationalize this message:
-        val errorMsg = "Not a valid email address: " + errorForm.errors.flatMap(error => errorForm(error.key).value).mkString(", ")
-        // TODO: this ought to reuse errorForm, to leave the invitees filled-in, but I'm not yet clear on how to do that:
-        doError(routes.Application.sharing(ownerId, spaceId), errorMsg) 
-      },
-      inviteeForm => {
-        val emailStrs = inviteeForm.emails
-        val collabs = inviteeForm.collabs.map(OID(_))
-        val inviteeEmails = emailStrs.map(querki.email.EmailAddress(_))
-        askSpace(SpaceMembersMessage(rc.requesterOrAnon, rc.ownerId, ThingId(rc.spaceIdOpt.get), InviteRequest(rc, inviteeEmails, collabs))) {
-          case InviteResult(msg) => Redirect(routes.Application.sharing(ownerId, spaceId)).flashing("info" -> msg)
-        }
-      }
-    )
-  }
-  
+
   def handleInvite(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId, allowAnyone = true) { implicit rc =>
     // This cookie gets set in PersonModule.InviteLoginChecker. If it isn't set, somebody is trying to sneak
     // in through the back door:
@@ -210,7 +189,7 @@ class LoginController extends ApplicationBase {
   }
   
   def joinSpace(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { rc =>
-    askSpace(SpaceMembersMessage(rc.requesterOrAnon, rc.ownerId, ThingId(rc.spaceIdOpt.get), JoinRequest(rc))) {
+    askSpace(rc.ownerId, rc.spaceIdOpt.get)(SpaceMembersMessage(rc.requesterOrAnon, rc.ownerId, _, JoinRequest(rc))) {
       case Joined => Redirect(routes.ClientController.space(ownerId, spaceId))
       case JoinFailed(error) => doError(routes.Application.index, error)(rc)
     }

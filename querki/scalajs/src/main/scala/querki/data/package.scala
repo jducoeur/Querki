@@ -58,7 +58,7 @@ package object data {
      * Convenience function to get the "spaceId" part of a typical path. Should only be used if
      * you know that the space exists!
      */
-    def spaceId = space.get.urlName
+    def spaceId = space.get.oid
     
     /**
      * Convenience function to get the "thingId" part of a typical path. Should only be used if

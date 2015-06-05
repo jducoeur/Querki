@@ -77,8 +77,6 @@ private [spaces] object PersistMessages {
    */
   case class GetSpaceByName(ownerId:OID, name:String)
   
-  case class SpaceId(id:OID)
-  
   /**
    * The general error response when things go wrong. This probably needs to become more
    * complex as we go along.

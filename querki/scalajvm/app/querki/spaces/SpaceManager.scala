@@ -40,7 +40,7 @@ import querki.util.SqlHelpers._
 
 import PersistMessages._
 
-class SpaceManager(val ecology:Ecology) extends Actor with Requester with EcologyMember with RoutingParent[OID] {
+class SpaceManager(val ecology:Ecology, val region:ActorRef) extends Actor with Requester with EcologyMember {
   
   lazy val persistenceFactory = interface[SpacePersistenceFactory]
   
@@ -49,25 +49,19 @@ class SpaceManager(val ecology:Ecology) extends Actor with Requester with Ecolog
    */
   lazy val persister = persistenceFactory.getSpaceManagerPersister
   
-  // Cache of the mapping from Space Name to OID.
-  // TODO: forcibly expire this cache on Space Name change.
-  private case class SpaceInfo(id:OID, name:String)
-  private var spaceNameCache:Map[String,SpaceInfo] = Map.empty
-  
-  def createChild(key:OID):ActorRef = context.actorOf(SpaceRouter.actorProps(ecology, persistenceFactory, key), sid(key))
-  
   def receive = handleRequestResponse orElse {
     // This is entirely a DB operation, so just have the Persister deal with it:
     case req @ ListMySpaces(owner) => persister.forward(req)
     
-    case req @ GetSpacesStatus(requester) => {
-      if (requester.isAdmin) {
-        // Each Space responds for itself:
-        children.foreach(space => space.forward(req))
-      } else {
-        QLog.error("Illegal request for GetSpacesStatus, from user " + requester.id)
-      }
-    } 
+//    TODO: how do we implement this in Cluster Sharding?
+//    case req @ GetSpacesStatus(requester) => {
+//      if (requester.isAdmin) {
+//        // Each Space responds for itself:
+//        children.foreach(space => space.forward(req))
+//      } else {
+//        QLog.error("Illegal request for GetSpacesStatus, from user " + requester.id)
+//      }
+//    } 
     
     case req @ GetSpaceCount(requester) => {
       if (requester.isAdmin) {
@@ -88,38 +82,16 @@ class SpaceManager(val ecology:Ecology) extends Actor with Requester with Ecolog
               maxSpaces
           }
           
-          persister.request(CreateSpacePersist(requester.mainIdentity.id, userMaxSpaces, NameUtils.canonicalize(display), display)) foreach {
+          val canon = NameUtils.canonicalize(display)
+          persister.request(CreateSpacePersist(requester.mainIdentity.id, userMaxSpaces, canon, display)) foreach {
             case err:ThingError => sender ! err
-            // Now, let the Space Actor finish the process once it is ready:
-            case Changed(spaceId, _) => routeToChild(spaceId, req)
+            case Changed(spaceId, _) => sender ! SpaceInfo(spaceId, canon)
           }
         }  
         { sender ! ThingError(_) }
     }
-
-    case req:SpaceMessage => {
-      req match {
-        case SpaceMessage(_, _, AsOID(spaceId)) => routeToChild(spaceId, req)
-        case SpaceMessage(_, ownerId, AsName(spaceName)) => {
-          val canonName = NameUtils.canonicalize(spaceName)
-          spaceNameCache.get(canonName) match {
-            case Some(SpaceInfo(spaceId, name)) => routeToChild(spaceId, req)
-            case None => {
-	          persister.request(GetSpaceByName(ownerId, canonName)) foreach {
-	            case SpaceId(spaceId) => {
-	              routeToChild(spaceId, req)
-	              spaceNameCache = spaceNameCache + (canonName -> SpaceInfo(spaceId, canonName))
-	            }
-	            case err:ThingError => sender ! err
-	          }
-            }
-          }
-        }
-        // I sincerely don't believe this case is possible, but Scala is now insisting that the match is
-        // not exhaustive without it:
-        case _ => QLog.error("Got a weirdly formed SpaceMessage! This should be impossible, shouldn't it?")
-      }
-    }
+    
+    case req:GetSpaceByName => persister.forward(req)
   }
   
   // Any checks we can make without needing to go to the DB should go here. Note that we
