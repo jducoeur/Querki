@@ -53,7 +53,8 @@ class SpaceManager(val ecology:Ecology, val region:ActorRef) extends Actor with 
     // This is entirely a DB operation, so just have the Persister deal with it:
     case req @ ListMySpaces(owner) => persister.forward(req)
     
-//    TODO: how do we implement this in Cluster Sharding?
+//    TODO: how do we implement this in Cluster Sharding? Current theory is that we'll use
+//    Distributed PubSub, with each SpaceRouter subscribing and the Admin system sending.
 //    case req @ GetSpacesStatus(requester) => {
 //      if (requester.isAdmin) {
 //        // Each Space responds for itself:
