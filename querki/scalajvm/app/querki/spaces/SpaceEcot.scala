@@ -4,7 +4,7 @@ import scala.concurrent.duration._
 import scala.concurrent.Future
 
 import akka.actor.{ActorRef, Props}
-import akka.contrib.pattern.ClusterSharding
+import akka.contrib.pattern.{ClusterSharding, ShardRegion}
 import akka.pattern._
 import akka.util.Timeout
 
@@ -32,18 +32,27 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps {
   var _region:Option[ActorRef] = None
   lazy val spaceRegion = _region.get
   
-  override def init() = {
-//    _region = Some(ClusterSharding(SystemManagement.actorSystem).start(
-//        "Space", 
-//        entryProps, idExtractor, shardResolver))
+  // These two functions tell ClusterSharding the ID and shard for a given SpaceMessage. They are
+  // then used to decide how to find/create the Space's Router (and thus, its troupe).
+  val idExtractor:ShardRegion.IdExtractor = {
+    case msg @ SpaceMessage(req, spaceId) => { println(s"----> Extracting $spaceId"); (spaceId.toString(), msg) } 
+  }
+  
+  val shardResolver:ShardRegion.ShardResolver = msg => msg match {
+    case msg @ SpaceMessage(req, spaceId) => { println(s"----> Resolving $spaceId"); (spaceId.raw % 30).toString() }
   }
   
   override def createActors(createActorCb:CreateActorFunc):Unit = {
-    _region = createActorCb(Props(classOf[SpaceRegion], ecology), "SpaceRegion")
+//    _region = createActorCb(Props(classOf[SpaceRegion], ecology), "SpaceRegion")
+    _region = Some(ClusterSharding(SystemManagement.actorSystem).start(
+        typeName = "Space", 
+        entryProps = Some(SpaceRouter.actorProps(ecology)), 
+        idExtractor = idExtractor, 
+        shardResolver = shardResolver))
     _ref = createActorCb(Props(classOf[SpaceManager], ecology, spaceRegion), "SpaceManager")
   }
   
-  implicit val stdTimeout = Timeout(5 seconds)
+  implicit val stdTimeout = Timeout(15 seconds)
   
   def getSpaceId(ownerId:OID, spaceId:String):Future[OID] = {
     ThingId(spaceId) match {
@@ -69,10 +78,12 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps {
   
   // TODO: make this signature less idiotic:
   def askSpace[A, B](msg:SpaceMessage)(cb: A => Future[B])(implicit m:Manifest[A]):Future[B] = {
+    println(s"Sending message $msg to SpaceRegion")
     akka.pattern.ask(spaceRegion, msg).mapTo[A].flatMap(cb)
   }
   
   def askSpace2[B](msg:SpaceMessage)(cb: PartialFunction[Any, Future[B]]):Future[B] = {
+    println(s"Sending message $msg to SpaceRegion")
     akka.pattern.ask(spaceRegion, msg).flatMap(cb)
   }
 }

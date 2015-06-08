@@ -29,6 +29,7 @@ import querki.values.SpaceState
 private[spaces] class SpaceRouter(val ecology:Ecology) 
   extends Actor with EcologyMember with Requester with TimeoutChild
 {
+  println("----> Constructing SpaceRouter")
   
   lazy val Conversations = interface[querki.conversations.Conversations]
   lazy val persistenceFactory = interface[SpacePersistenceFactory]
@@ -47,6 +48,7 @@ private[spaces] class SpaceRouter(val ecology:Ecology)
   var state:SpaceState = null
 
   override def preStart() = {
+    println(s"In preStart for Space ${self.path.name}")
     space = context.actorOf(Space.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
     sessions = context.actorOf(UserSpaceSessions.actorProps(ecology, spaceId, self), "Sessions")
     conversations = context.actorOf(Conversations.conversationActorProps(persistenceFactory, spaceId, self), "Conversations") 
@@ -96,8 +98,5 @@ private[spaces] class SpaceRouter(val ecology:Ecology)
 }
 
 object SpaceRouter {
-  // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
-  // with "Props(classOf(Space), ...)". See:
-  //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-  def actorProps(ecology:Ecology):Props = Props(new SpaceRouter(ecology))
+  def actorProps(ecology:Ecology):Props = Props(classOf[SpaceRouter], ecology)
 }
