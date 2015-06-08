@@ -78,10 +78,10 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
    * need to know about all that.
    */
   class UserValueSpacePlugin(s:SpaceAPI) extends SpacePlugin(s) {
-    // This is a bit weird and hairy, but allows us to use the received message's type parameters to sanity-check that
-    // the Summarizer Property actually matches the values we are passing in to it:
+    // TBD: this doesn't really check the types as well as we'd like it to do, due to erasure. Are all the needed types
+    // lost too far upstream? Is there any way to introduce TypeTags to allow us to actually check Summarizer[UVT,VT]?
     def asSummarizer[UVT,MSG[UVT],VT](prop:Property[VT,_], msg:MSG[UVT]):Option[(Property[VT,_], Summarizer[UVT,VT])] = {
-      if (prop.pType.isInstanceOf[Summarizer[UVT,VT]])
+      if (prop.pType.isInstanceOf[Summarizer[_,_]])
         Some((prop.asInstanceOf[Property[VT,_]], prop.pType.asInstanceOf[Summarizer[UVT,VT]]))
       else
         None
