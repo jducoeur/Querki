@@ -25,7 +25,7 @@ class SpaceRegion(val ecology:Ecology) extends Actor with EcologyMember with Rou
   /**
    * TODO: take persistenceFactory out of the constructor for SpaceRouter; have it deal with that itself.
    */
-  def createChild(key:OID):ActorRef = context.actorOf(SpaceRouter.actorProps(ecology, persistenceFactory, key), sid(key))
+  def createChild(key:OID):ActorRef = context.actorOf(SpaceRouter.actorProps(ecology), sid(key))
 
   def receive = {
     case req @ SpaceMessage(_, spaceId) => routeToChild(spaceId, req)   

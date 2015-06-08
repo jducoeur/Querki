@@ -1,5 +1,7 @@
 package querki.system
 
+import akka.actor.ActorSystem
+
 import querki.ecology._
 
 /**
@@ -32,7 +34,7 @@ object SystemCreator {
    * As of this writing, I haven't gone through this list carefully. Some of these
    * will need to be moved to createDBEcots eventually.
    */
-  def createTestableEcots(ecology:Ecology) = {
+  def createTestableEcots(ecology:Ecology, actorSystem:Option[ActorSystem]) = {
     // IMPORTANT: The numbers attached to these Ecots must NEVER BE CHANGED!!!!! They
     // get built into the moid's, and thence into the database! If an Ecot is removed,
     // comment it out, but leave its number and all others alone.
@@ -53,7 +55,7 @@ object SystemCreator {
     new querki.conventions.ConventionsModule(ecology)              // 15
     new querki.core.CoreModule(ecology)                            // 16
     new querki.basic.BasicModule(ecology)                          // 17
-    new querki.system.SystemEcot(ecology)                          // 18
+    new querki.system.SystemEcot(ecology, actorSystem)             // 18
     new querki.search.SearchEcot(ecology)                          // 19
     new querki.core.PropListManagerEcot(ecology)                   // 20
     new querki.datamodel.DataModelAccessEcot(ecology)              // 21
@@ -93,8 +95,8 @@ object SystemCreator {
     new querki.tools.ProfilerEcot(ecology)                         // 55
   }
   
-  def createAllEcots(ecology:Ecology):Ecology = {
-    createTestableEcots(ecology)
+  def createAllEcots(ecology:Ecology, actorSystem:Option[ActorSystem]):Ecology = {
+    createTestableEcots(ecology, actorSystem)
     createDBEcots(ecology)
     createStubbableEcots(ecology)
     

@@ -3,6 +3,7 @@ import sbt.Project.projectToRef
 lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.6"
+lazy val akkaV = "2.3.11"
 lazy val appV = "1.1.6.1"
 
 lazy val sharedSrcDir = "scala"
@@ -24,12 +25,14 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.sun.mail" % "smtp" % "1.5.0",
     "com.sun.mail" % "mailapi" % "1.5.0",
     "com.github.nscala-time" %% "nscala-time" % "1.6.0",
-    "com.typesafe.akka" %% "akka-testkit" % "2.3.9",
+    "com.typesafe.akka" %% "akka-testkit" % akkaV,
+    "com.typesafe.akka" %% "akka-contrib" % akkaV,
+    "com.typesafe.akka" %% "akka-cluster" % akkaV,
     "org.imgscalr" % "imgscalr-lib" % "4.2",
     "com.amazonaws" % "aws-java-sdk" % "1.8.4",
     "com.vmunier" %% "play-scalajs-scripts" % "0.2.2",
-	"com.lihaoyi" %% "utest" % "0.3.1",
-	"org.querki" %% "requester" % "1.0"
+    "com.lihaoyi" %% "utest" % "0.3.1",
+    "org.querki" %% "requester" % "1.0"
   ),
   EclipseKeys.skipParents in ThisBuild := false).
   settings(sharedDirectorySettings: _*).

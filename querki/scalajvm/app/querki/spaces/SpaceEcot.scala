@@ -4,6 +4,7 @@ import scala.concurrent.duration._
 import scala.concurrent.Future
 
 import akka.actor.{ActorRef, Props}
+import akka.contrib.pattern.ClusterSharding
 import akka.pattern._
 import akka.util.Timeout
 
@@ -20,6 +21,9 @@ import querki.spaces.messages._
 object SpaceEcotMOIDs extends EcotIds(37) {}
 
 class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps {
+  
+  val SystemManagement = initRequires[querki.system.SystemManagement]
+  
   /**
    * The one true handle to the Space Management system.
    */
@@ -27,6 +31,12 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps {
   lazy val spaceManager = _ref.get
   var _region:Option[ActorRef] = None
   lazy val spaceRegion = _region.get
+  
+  override def init() = {
+//    _region = Some(ClusterSharding(SystemManagement.actorSystem).start(
+//        "Space", 
+//        entryProps, idExtractor, shardResolver))
+  }
   
   override def createActors(createActorCb:CreateActorFunc):Unit = {
     _region = createActorCb(Props(classOf[SpaceRegion], ecology), "SpaceRegion")

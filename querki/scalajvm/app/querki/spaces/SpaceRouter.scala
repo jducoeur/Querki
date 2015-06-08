@@ -26,11 +26,14 @@ import querki.values.SpaceState
  * is mainly for efficiency -- the hive passes the SpaceState around frequently, and we do *not* want to
  * be serializing that.
  */
-private[spaces] class SpaceRouter(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, val spaceId:OID) 
+private[spaces] class SpaceRouter(val ecology:Ecology) 
   extends Actor with EcologyMember with Requester with TimeoutChild
 {
   
   lazy val Conversations = interface[querki.conversations.Conversations]
+  lazy val persistenceFactory = interface[SpacePersistenceFactory]
+  
+  lazy val spaceId:OID = OID(self.path.name)
   
   // How long we can be inactive before timing out this entire hive:
   def timeoutConfig:String = "querki.space.timeout"
@@ -96,5 +99,5 @@ object SpaceRouter {
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
   // with "Props(classOf(Space), ...)". See:
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-  def actorProps(ecology:Ecology, persistenceFactory:SpacePersistenceFactory, spaceId:OID):Props = Props(new SpaceRouter(ecology, persistenceFactory, spaceId))
+  def actorProps(ecology:Ecology):Props = Props(new SpaceRouter(ecology))
 }

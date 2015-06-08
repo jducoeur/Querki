@@ -27,7 +27,7 @@ class QuerkiRoot extends Actor {
       println("Creating the Ecology...")
       val ecologyImpl = new EcologyImpl
       ecology = ecologyImpl
-      SystemCreator.createAllEcots(ecology)
+      SystemCreator.createAllEcots(ecology, Some(context.system))
       println("... initializing the Ecology...")
       val finalState = ecologyImpl.init(InitialSystemState.create(ecology), createActor)
       

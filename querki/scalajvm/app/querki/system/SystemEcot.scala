@@ -1,5 +1,7 @@
 package querki.system
 
+import akka.actor.ActorSystem
+
 import querki.ecology._
 import querki.values.SpaceState
 
@@ -11,11 +13,22 @@ trait SystemManagement extends EcologyInterface {
    * Set the final System Space. The code that initialized the Ecology *must* call this once complete!
    */
   def setState(state:SpaceState)
+  
+  /**
+   * The one true ActorSystem that everybody is living in. Ecots should obtain the ActorSystem through this,
+   * if they need it.
+   * 
+   * Note the explicit assumption that there is a 1-to-1 correspondence between the Ecology and the
+   * ActorSystem.
+   * 
+   * This will throw an exception if called when there is no ActorSystem, as in unit tests!
+   */
+  def actorSystem:ActorSystem
 }
 
 object SystemMOIDs extends EcotIds(18)
 
-class SystemEcot(e:Ecology) extends QuerkiEcot(e) with System with SystemManagement {
+class SystemEcot(e:Ecology, actorSystemOpt:Option[ActorSystem]) extends QuerkiEcot(e) with System with SystemManagement {
   
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Tags = interface[querki.tags.Tags]
@@ -53,4 +66,6 @@ class SystemEcot(e:Ecology) extends QuerkiEcot(e) with System with SystemManagem
   
   var _state:Option[SpaceState] = None
   def State = _state.getOrElse(throw new Exception("Attempting to access the System Space before init is complete!"))
+  
+  def actorSystem = actorSystemOpt.get
 }
