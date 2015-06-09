@@ -9,11 +9,6 @@
 querki {
   # These are the initial system logins. They will go away soon.
   test {
-    password {
-      system: xxxx
-      mark: xxxx
-      jducoeur: xxxx
-    }
     # If enabled, this logs voluminous QL-parsing info
     logContexts : false
     # This logs the details of Thing Edit requests
@@ -75,14 +70,55 @@ querki {
   }
 }
 
+session {
+  # By default, we give a one-month timeout on sessions
+  # This key is undocumented but crucial!
+  maxAge : 259200000
+  # On the real site, this should be set to true once we are all-HTTPS:
+  #secure : true
+}
+
 # Dispatcher for UserSessions    
 session-dispatcher {
   # UserSession Actors need a DequeBasedMailbox, so they can use Stash:
   mailbox-type = "akka.dispatch.UnboundedDequeBasedMailbox"
 }
 
-#akka {
-#  actor {
+    
+akka {
+#  event-handlers = ["akka.event.slf4j.Slf4jEventHandler"]
+  loglevel = "DEBUG"
+  debug {
+    lifecycle = off
+  }
+
+  remote {
+    log-remote-lifecycle-events = off
+    netty.tcp {
+      hostname = "127.0.0.1"
+      port = 2551
+    }
+  }
+    
+  cluster {
+    seed-nodes = [
+      "akka.tcp://application@127.0.0.1:2551"
+    ]
+      
+    auto-down-unreachable-after = 10s
+  }
+    
+  actor {
+    provider = "akka.cluster.ClusterActorRefProvider"
+  
+    debug {
+      # Enables LoggingReceive
+      receive = on
+      # Turns on logging of special system messages
+      autoreceive = on
+      # Turns on logging of actor lifecycle events
+      lifecycle = on
+    }
 #    deployment {
 # In principle, the SpaceManagerPersister should be defined here in config. In practice, I'm
 # not clear on how to do that in Akka 2.1.4 while giving a supervisor strategy. So for now,
@@ -95,8 +131,9 @@ session-dispatcher {
 #        }
 #      }
 #    }
-#  }
-#}
+  }
+}
+
 
 # Secret key
 # ~~~~~
