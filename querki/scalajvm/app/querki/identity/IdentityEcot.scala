@@ -80,11 +80,16 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
   }
   
   def getIdentities(ids:Seq[OID]):Future[Map[OID, PublicIdentity]] = {
-    val fut = identityCache ? GetIdentities(ids)
-    fut map {
-      case IdentitiesFound(identities) => identities
-      case _ => Map.empty
-    }    
+    val requests:Set[Future[Any]] = ids.toSet.map { id:OID => identityCache ? GetIdentityRequest(id) }
+    val resultSetFut = Future.sequence(requests)
+    resultSetFut.map { resultSet =>
+      (Map.empty[OID, PublicIdentity] /: resultSet) { (m, response) =>
+        response match {
+          case IdentityFound(identity) => m + (identity.id -> identity)
+          case IdentityNotFound => m
+        }
+      }
+    } 
   }
   
   def invalidateCache(id:OID):Unit = {

@@ -171,8 +171,6 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
   }
   
   def loadSpace() = {
-    // TEMP: temporary logging message, to see if *anything* is coming out:
-    println("TEMP: Loading Space " + id)
     // TEMP: just as a proof of concept. This is entirely wrong in the long run: we should be using
     // FSM and Requester instead of blocking here:
     val persistFuture = persister ? Load
