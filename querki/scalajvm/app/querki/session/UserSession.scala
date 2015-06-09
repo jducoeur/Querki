@@ -45,11 +45,11 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
       lastNoteChecked = lastChecked
       
       // NOTE: this can take a long time! This is the point where we evolve the User to the
-	  // current version:
-	  UserEvolutions.checkUserEvolution(userId, version)
+  	  // current version:
+	    UserEvolutions.checkUserEvolution(userId, version)
 	  
-	  // This will send InitComplete when it is done:
-	  initNotes()
+	    // This will send InitComplete when it is done:
+	    initNotes()
     }
     
     case InitComplete => {

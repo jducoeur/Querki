@@ -40,6 +40,11 @@ import querki.util.SqlHelpers._
 
 import PersistMessages._
 
+/**
+ * TODO: all the features here probably can and should be moved out of this singleton, and be handled
+ * from UserSession instead. Provided we can hook UserSession to the pool of Persisters, that ought to just
+ * work.
+ */
 class SpaceManager(val ecology:Ecology, val region:ActorRef) extends Actor with Requester with EcologyMember {
   
   lazy val persistenceFactory = interface[SpacePersistenceFactory]

@@ -12,7 +12,7 @@ import querki.ecology._
 import querki.session.UserSpaceSessions
 import querki.session.messages._
 import querki.spaces.messages._
-import querki.util.TimeoutChild
+import querki.util.ClusterTimeoutChild
 import querki.values.SpaceState
 
 /**
@@ -27,7 +27,7 @@ import querki.values.SpaceState
  * be serializing that.
  */
 private[spaces] class SpaceRouter(val ecology:Ecology) 
-  extends Actor with EcologyMember with Requester with TimeoutChild
+  extends Actor with EcologyMember with Requester with ClusterTimeoutChild
 {  
   lazy val Conversations = interface[querki.conversations.Conversations]
   lazy val persistenceFactory = interface[SpacePersistenceFactory]

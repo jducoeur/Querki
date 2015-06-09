@@ -6,12 +6,10 @@ import scala.concurrent.duration._
 import akka.actor._
 
 /**
- * Request sent from a child to the parent, telling the parent to kill it.
- */
-case object KillMe
-
-/**
  * The child of a RoutingParent, which has a built-in inactivity timeout.
+ * 
+ * Note that ClusterTimeoutChild is quite similar, but designed specifically to work with
+ * ClusterSharding.
  */
 trait TimeoutChild extends Actor {
   
