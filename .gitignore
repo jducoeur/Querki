@@ -18,6 +18,7 @@ play-fork-run.sbt
 sbt-ui.sbt
 querki/scalajs/.gitignore
 querki/journal/
+querki/snapshots/
 
 #################
 ## Eclipse
