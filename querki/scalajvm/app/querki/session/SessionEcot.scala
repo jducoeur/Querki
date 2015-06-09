@@ -4,6 +4,7 @@ import scala.concurrent.duration._
 import scala.concurrent.Future
 
 import akka.actor.{ActorRef, Props}
+import akka.contrib.pattern.{ClusterSharding, ShardRegion}
 import akka.pattern.ask
 import akka.util.Timeout
 
@@ -16,17 +17,29 @@ import UserSessionMessages._
 private object MOIDs extends EcotIds(47)
 
 class SessionEcot(e:Ecology) extends QuerkiEcot(e) with Session {
+  val SystemManagement = initRequires[querki.system.SystemManagement]
+  
   /**
    * The one true handle to the Space Management system.
    */
   var _ref:Option[ActorRef] = None
   lazy val sessionManager = _ref.get
   
+  // These two functions tell ClusterSharding the ID and shard for a given UserSessionMsg.
+  val idExtractor:ShardRegion.IdExtractor = {
+    case msg:UserSessionMsg => (msg.userId.toString(), msg) 
+  }
+  
+  val shardResolver:ShardRegion.ShardResolver = msg => msg match {
+    case msg:UserSessionMsg => (msg.userId.raw % 30).toString()
+  }
+  
   override def createActors(createActorCb:CreateActorFunc):Unit = {
-    // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
-    // with "Props(classOf(Space), ...)". See:
-    //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-    _ref = createActorCb(Props(new UserSessionManager(ecology)), "UserSessionManager")
+    _ref = Some(ClusterSharding(SystemManagement.actorSystem).start(
+        typeName = "User", 
+        entryProps = Some(UserSession.actorProps(ecology)), 
+        idExtractor = idExtractor, 
+        shardResolver = shardResolver))
   }
   
   /**************************************************

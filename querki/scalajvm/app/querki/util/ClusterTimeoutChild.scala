@@ -28,6 +28,9 @@ trait ClusterTimeoutChild extends Actor {
    */
   def timeoutConfig:String
   
+  /**
+   * IMPORTANT: instances must call super.preStart()!!!
+   */
   override def preStart() = {
     val timeout = context.system.settings.config.getDuration(timeoutConfig, java.util.concurrent.TimeUnit.MILLISECONDS)
     context.setReceiveTimeout(Duration(timeout, MILLISECONDS))

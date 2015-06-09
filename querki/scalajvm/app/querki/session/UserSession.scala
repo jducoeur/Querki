@@ -11,18 +11,20 @@ import org.querki.requester._
 import querki.globals._
 import Implicits.execContext
 
+import models.OID
+
 import querki.ecology._
 import querki.identity.{CollaboratorCache, IdentityId, PublicIdentity, UserId}
 import querki.notifications.{CurrentNotifications, EmptyNotificationId, LoadInfo, Notification, NotificationFunctions, UpdateLastChecked, UserInfo}
 import querki.notifications.NotificationPersister.Load
 import querki.time.DateTime
-import querki.util.TimeoutChild
+import querki.util.ClusterTimeoutChild
 import querki.values.RequestContext
 
 import messages.ClientRequest
 
-private [session] class UserSession(val ecology:Ecology, val userId:UserId) extends Actor with Stash
-  with TimeoutChild with Requester with EcologyMember with UserNotifications
+private [session] class UserSession(val ecology:Ecology) extends Actor with Stash
+  with Requester with EcologyMember with UserNotifications with ClusterTimeoutChild 
 {
   import UserSessionMessages._
   
@@ -30,11 +32,14 @@ private [session] class UserSession(val ecology:Ecology, val userId:UserId) exte
   
   def timeoutConfig:String = "querki.userSession.timeout"
   
+  lazy val userId:OID = OID(self.path.name)
+  
   lazy val collaborators = context.actorOf(CollaboratorCache.actorProps(ecology, userId))
   
   override def preStart() = {
     // TODO: this shouldn't be going through the NotificationPersister:
     notePersister ! LoadInfo
+    super.preStart()
   }
 
   /**
@@ -117,8 +122,5 @@ object UserSessionMessages {
 }
 
 object UserSession {
-  // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
-  // with "Props(classOf(Space), ...)". See:
-  //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-  def actorProps(ecology:Ecology, id:UserId):Props = Props(new UserSession(ecology, id)) 
+  def actorProps(ecology:Ecology):Props = Props(classOf[UserSession], ecology).withDispatcher("session-dispatcher")
 }
