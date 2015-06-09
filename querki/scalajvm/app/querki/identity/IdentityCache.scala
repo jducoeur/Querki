@@ -52,16 +52,6 @@ private[identity] class IdentityCache(val ecology:Ecology) extends Actor with Ec
       }
     }
     
-    case GetIdentities(ids) => {
-      val result = (Map.empty[OID, PublicIdentity] /: ids.toSet) { (curmap, id) =>
-        fetch (id) match {
-          case Some(identity) => curmap + (id -> identity)
-          case None => curmap
-        }
-      }
-      sender ! IdentitiesFound(result)
-    }
-    
     case GetFullIdentities(ids) => {
       val result = (Map.empty[OID, FullIdentity] /: ids.toSet) { (curmap, id) =>
         fetch (id) match {
@@ -103,9 +93,6 @@ object IdentityCacheMessages {
   case class GetIdentityRequest(id:OID)
   case class IdentityFound(identity:PublicIdentity)
   case object IdentityNotFound
-  
-  case class GetIdentities(ids:Seq[OID])
-  case class IdentitiesFound(identities:Map[OID,PublicIdentity])
   
   case class InvalidateCacheForIdentity(id:OID)
   

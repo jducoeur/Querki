@@ -31,8 +31,6 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   lazy val UserValues = interface[querki.uservalues.UserValues]
   
-  lazy val identityCache = IdentityAccess.identityCache
-  
   def SpaceSQL(query:String):SqlQuery = SpacePersistence.SpaceSQL(spaceId, query)
   
   def receive = LoggingReceive (handleRequestResponse orElse {
@@ -88,17 +86,15 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
       // This must happen *after* we close the Transaction, because we're about to do an asynchronous roundtrip to
       // the IdentityCache:
       val idents = tuples.map(_._1)
-      identityCache.request(GetIdentities(idents)) foreach {
-        case IdentitiesFound(identities) => {
-          val results = tuples.map(tuple => 
-            OneUserValue(
-              identities.get(tuple._1).getOrElse(Identity.AnonymousIdentity),
-              tuple._2,
-              tuple._3,
-              tuple._4,
-              tuple._5))
-          sender ! ValuesForUser(results)
-        }
+      loopback(IdentityAccess.getIdentities(idents)) foreach { identities =>
+        val results = tuples.map(tuple => 
+          OneUserValue(
+            identities.get(tuple._1).getOrElse(Identity.AnonymousIdentity),
+            tuple._2,
+            tuple._3,
+            tuple._4,
+            tuple._5))
+        sender ! ValuesForUser(results)
       }
     }
     
@@ -154,17 +150,15 @@ private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecolo
       // This must happen *after* we close the Transaction, because we're about to do an asynchronous roundtrip to
       // the IdentityCache:
       val idents = tuples.map(_._1)
-      identityCache.request(GetIdentities(idents)) foreach {
-        case IdentitiesFound(identities) => {
-          val results = tuples.map(tuple => 
-            OneUserValue(
-              identities.get(tuple._1).getOrElse(Identity.AnonymousIdentity),
-              tuple._2,
-              tuple._3,
-              tuple._4,
-              tuple._5))
-          sender ! ValuesForUser(results)
-        }
+      loopback(IdentityAccess.getIdentities(idents)) foreach { identities =>
+        val results = tuples.map(tuple => 
+          OneUserValue(
+            identities.get(tuple._1).getOrElse(Identity.AnonymousIdentity),
+            tuple._2,
+            tuple._3,
+            tuple._4,
+            tuple._5))
+        sender ! ValuesForUser(results)
       }
     }
     

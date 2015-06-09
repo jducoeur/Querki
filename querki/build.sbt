@@ -32,7 +32,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.amazonaws" % "aws-java-sdk" % "1.8.4",
     "com.vmunier" %% "play-scalajs-scripts" % "0.2.2",
     "com.lihaoyi" %% "utest" % "0.3.1",
-    "org.querki" %% "requester" % "1.0"
+    "org.querki" %% "requester" % "1.1"
   ),
   EclipseKeys.skipParents in ThisBuild := false).
   settings(sharedDirectorySettings: _*).

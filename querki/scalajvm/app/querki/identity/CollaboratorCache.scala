@@ -49,10 +49,9 @@ class CollaboratorCache(val ecology:Ecology, val userId:UserId) extends Actor wi
             // Time to go fetch the full collaborator list:
             fetching = true
             // Get the IdentityIds of everyone I share a Space with:
-	        val acquaintanceIds = UserAccess.getAcquaintanceIds(identityId)
-	        // Get their Identities from the IdentityCache:
-	        IdentityAccess.identityCache.request(IdentityCacheMessages.GetIdentities(acquaintanceIds)) foreach {
-	          case IdentityCacheMessages.IdentitiesFound(identities) => {
+  	        val acquaintanceIds = UserAccess.getAcquaintanceIds(identityId)
+  	        // Get their Identities from the IdentityCache:
+            loopback(IdentityAccess.getIdentities(acquaintanceIds)) foreach { identities =>
 	            import context.dispatcher
 	            val collabs = identities.values
 	            _allCollaborators = Some(collabs)
@@ -64,23 +63,11 @@ class CollaboratorCache(val ecology:Ecology, val userId:UserId) extends Actor wi
 	            }
 	            currentRequests = Seq.empty
 	            // We need to recheck this cache periodically, to make sure we stay decently up to date.
-  	            // Ideally we would just tweak it as changes come in, but that's a pain; for now, just
+  	          // Ideally we would just tweak it as changes come in, but that's a pain; for now, just
 	            // do a simple cache flush every now and then.
 	            context.system.scheduler.scheduleOnce(cacheTimeout, self, ClearCache)
 	            fetching = false
 	          }
-	          
-	          case ex:AskTimeoutException => {
-	            QLog.warn(s"CollaboratorCache timed out while trying to load collaborators for $userId")
-	            sendResults(Iterable.empty, term, sender)
-	            currentRequests.map { request =>
-	              val (requester, otherTerm) = request
-	              sendResults(Iterable.empty, otherTerm, requester) 
-	            }
-	            currentRequests = Seq.empty
-	            fetching = false
-	          }
-	        }
           }
         }
       }

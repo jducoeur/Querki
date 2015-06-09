@@ -7,6 +7,7 @@ import akka.actor._
 import models.{UnknownOID, Wikitext}
 
 import querki.globals._
+import Implicits._
 
 import querki.data.TID
 import querki.identity.PublicIdentity
@@ -58,26 +59,26 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
   
   def getConversationsFor(thingId:TID):Future[ConversationInfo] = withThing(thingId) { thing =>
     val canComment = rc.localIdentity.map(identity => Conversations.canWriteComments(identity.id, thing, state)).getOrElse(false)
-	val canReadComments = Conversations.canReadComments(user, thing, state)
+	  val canReadComments = Conversations.canReadComments(user, thing, state)
 		    
-	if (canReadComments) {
+  	if (canReadComments) {
 	    // We need to store away the RC for this request, to have it available when the requests come back:
 	    // TODO: *Sigh*. We'd really like to have something like Spores in Request, to catch bugs like this in
 	    // the compiler...
 	    implicit val theRc = rc
 	    
 	    requestFuture[ConversationInfo] { implicit promise =>
-  	      for {
+  	    for {
 	        ThingConversations(convs) <- spaceRouter.requestFor[ThingConversations](ConversationRequest(rc.requesterOrAnon, rc.state.get.id, GetConversations(rc.thing.get.id)))
-	        IdentitiesFound(identities) <- IdentityAccess.identityCache.requestFor[IdentitiesFound](GetIdentities(getIds(convs).toSeq))
-            apiConvs = convs.map(toApi(_)(identities, theRc))
+	        identities <- IdentityAccess.getIdentities(getIds(convs).toSeq) //IdentityAccess.identityCache.requestFor[IdentitiesFound](GetIdentities(getIds(convs).toSeq))
+          apiConvs = convs.map(toApi(_)(identities, theRc))
 	      }
 	        promise.success(ConversationInfo(canComment, canReadComments, apiConvs))
 	    }
-	} else {
-	  // The requester can't read the comments, so don't bother collecting them:
-	  Future.successful(ConversationInfo(canComment, canReadComments, Seq.empty))
-	}
+	  } else {
+	    // The requester can't read the comments, so don't bother collecting them:
+	    Future.successful(ConversationInfo(canComment, canReadComments, Seq.empty))
+	  }
   }
 
   def addComment(thingId:TID, text:String, responseTo:Option[CommentId]):Future[ConvNode] = withThing(thingId) { thing =>
