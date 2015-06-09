@@ -28,9 +28,7 @@ import querki.values.SpaceState
  */
 private[spaces] class SpaceRouter(val ecology:Ecology) 
   extends Actor with EcologyMember with Requester with TimeoutChild
-{
-  println("----> Constructing SpaceRouter")
-  
+{  
   lazy val Conversations = interface[querki.conversations.Conversations]
   lazy val persistenceFactory = interface[SpacePersistenceFactory]
   
@@ -48,7 +46,6 @@ private[spaces] class SpaceRouter(val ecology:Ecology)
   var state:SpaceState = null
 
   override def preStart() = {
-    println(s"In preStart for Space ${self.path.name}")
     space = context.actorOf(Space.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
     sessions = context.actorOf(UserSpaceSessions.actorProps(ecology, spaceId, self), "Sessions")
     conversations = context.actorOf(Conversations.conversationActorProps(persistenceFactory, spaceId, self), "Conversations") 
