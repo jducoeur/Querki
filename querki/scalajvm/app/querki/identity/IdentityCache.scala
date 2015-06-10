@@ -55,12 +55,10 @@ private[identity] class IdentityCache(val ecology:Ecology) extends Actor with Ec
       identities = identities - id
     }
     
-    case RouteToUsers(identityIds, msg) => {
-      identityIds.foreach { id =>
-        fetch(id) match {
-          case Some(identity) => sessionManager.forward(msg.copyTo(identity.userId))
-          case None => {}
-        }
+    case RouteToUser(id, msg) => {
+      fetch(id) match {
+        case Some(identity) => sessionManager.forward(msg.copyTo(identity.userId))
+        case None => {}
       }
     }
   }
@@ -74,7 +72,7 @@ object IdentityCacheMessages {
   case class InvalidateCacheForIdentity(id:OID)
   
   /**
-   * Sends the given msg to all of the UserSessions behind the given identityIds.
+   * Sends the given msg to the UserSession behind the given identityIds.
    */
-  case class RouteToUsers(identityIds:Seq[OID], msg:UserSessionMsg)
+  case class RouteToUser(identityId:OID, msg:UserSessionMsg)
 }

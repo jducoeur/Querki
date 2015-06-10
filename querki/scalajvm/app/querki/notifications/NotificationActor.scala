@@ -22,7 +22,6 @@ private[notifications] class NotificationActor(val ecology:Ecology) extends Acto
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val SessionAccess = interface[querki.session.Session]
   
-  lazy val identityCache = IdentityAccess.identityCache
   lazy val sessionManager = SessionAccess.sessionManager
   lazy val userCache = IdentityAccess.userCache
   
@@ -50,7 +49,7 @@ private[notifications] class NotificationActor(val ecology:Ecology) extends Acto
         
         case ExplicitRecipients(identityIds) => {
           // The actual UserIds will be filled in by the router:
-          identityCache ! IdentityCacheMessages.RouteToUsers(identityIds, UserSessionMessages.NewNotification(User.Anonymous.id, note))
+          IdentityAccess.routeToUsers(identityIds, UserSessionMessages.NewNotification(User.Anonymous.id, note))
         }
       }
     }

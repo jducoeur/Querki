@@ -14,7 +14,7 @@ import querki.ecology._
 
 import querki.core.QLText
 import querki.email.EmailAddress
-
+import querki.session.UserSessionMessages.UserSessionMsg
 import querki.values.{RequestContext, SpaceState}
 
 package object identity {
@@ -142,6 +142,9 @@ package object identity {
     
     /**
      * Fetch a number of identities at once.
+     * 
+     * IMPORTANT: it is *absolutely forbidden* to cast this PublicIdentity to FullIdentity. Yes, it's true
+     * now, but that may not continue in the future; we may well divide them for security.
      */
     def getIdentities(ids:Seq[OID]):Future[Map[OID, PublicIdentity]]
     
@@ -150,6 +153,11 @@ package object identity {
      * to prevent leakage.
      */
     private [identity] def getFullIdentities(ids:Seq[OID]):Future[Map[OID, FullIdentity]]
+    
+    /**
+     * Send the given message to the UserSessions for all the provided IDs.
+     */
+    def routeToUsers(identityIds:Seq[OID], msg:UserSessionMsg):Unit
     
     /**
      * Tells the system that, if this Identity is currently cached, we should clear that cache and reload it.

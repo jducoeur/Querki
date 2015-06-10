@@ -13,6 +13,7 @@ import play.api.mvc.{RequestHeader, Security}
 import models.{PropertyBundle, SimplePTypeBuilder, ThingState, Wikitext}
 
 import querki.ecology._
+import querki.session.UserSessionMessages.UserSessionMsg
 import querki.util.ActorHelpers._
 import querki.values.{QLContext, SpaceState}
 import querki.util.QLog
@@ -102,6 +103,10 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
   
   def invalidateCache(id:OID):Unit = {
     identityCache ! InvalidateCacheForIdentity(id)
+  }
+  
+  def routeToUsers(identityIds:Seq[OID], msg:UserSessionMsg):Unit = {
+    identityIds.foreach(id => identityCache ! RouteToUser(id, msg))
   }
   
   /**
