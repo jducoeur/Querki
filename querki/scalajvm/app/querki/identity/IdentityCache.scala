@@ -1,6 +1,10 @@
 package querki.identity
 
+import scala.concurrent.Future
+
 import akka.actor._
+
+import org.querki.requester.Requester
 
 import models.{OID}
 
@@ -11,44 +15,41 @@ import querki.session.UserSessionMessages.UserSessionMsg
  * The front-end cache for Users and Identities. All interactions with these tables should
  * go through here, or at least inform this Cache about invalidating operations.
  * 
- * TODO: this is currently calling UserPersistence directly. In principle, it shouldn't be
- * doing do, since those are blocking operations. Instead, those calls should be doled out
- * to workers, so that they don't block other requests for the cache.
+ * TODO: on principle, we should time out entries in this cache every now and then, maybe once an
+ * hour, so that if something caches we pick it up eventually. This is low-priority for the moment,
+ * since there isn't much you can *do* to an Identity.
  */
-private[identity] class IdentityCache(val ecology:Ecology) extends Actor with EcologyMember {
+private[identity] class IdentityCache(val ecology:Ecology) extends Actor with Requester with EcologyMember {
   
   import IdentityCacheMessages._
   
-  lazy val UserAccess = interface[UserAccess]
   lazy val UserSessions = interface[querki.session.Session]
   
   lazy val sessionManager = UserSessions.sessionManager
   
   var identities = Map.empty[OID, FullIdentity]
   
-  // TODO: this Actor is getting to be too central to be doing its own DB lookups. The call to
-  // UserAccess should be doled out to a pool of workers, and fetch() should be asynchronous:
-  def fetch(id:OID):Option[FullIdentity] = {
+  // The worker that deals with actual DB lookups, so that those don't block the rest of the cache.
+  // TODO: I suspect this should be a pool of shared workers rather than a single one per IdentityCache,
+  // but this is good enough for now.
+  lazy val worker = context.actorOf(Props(classOf[IdentityCacheFetcher], ecology))
+  
+  def fetchAndThen(id:OID)(cb:IdentityResponse => Unit) = {
     identities.get(id) match {
-      case Some(identity) => Some(identity)
-      case None => {
-        UserAccess.getFullIdentity(id) match {
-          case Some(identity) => {
-            identities += (id -> identity)
-            Some(identity)
-          }
-          case None => None
+      case Some(identity) => cb(IdentityFound(identity))
+      case None => worker.requestFor[IdentityResponse](GetIdentityRequest(id)) foreach {
+        case resp @ IdentityFound(identity) => {
+          identities += (id -> identity)
+          cb(resp)
         }
+        case IdentityNotFound => cb(IdentityNotFound)
       }
-    }    
+    }
   }
   
-  def receive = {
+  def receive = handleRequestResponse orElse {
     case GetIdentityRequest(id) => {
-      fetch(id) match {
-        case Some(identity) => sender ! IdentityFound(identity)
-        case None => sender ! IdentityNotFound
-      }
+      fetchAndThen(id) { resp => sender ! resp }
     }
     
     case InvalidateCacheForIdentity(id) => {
@@ -56,18 +57,38 @@ private[identity] class IdentityCache(val ecology:Ecology) extends Actor with Ec
     }
     
     case RouteToUser(id, msg) => {
-      fetch(id) match {
-        case Some(identity) => sessionManager.forward(msg.copyTo(identity.userId))
-        case None => {}
+      fetchAndThen(id) {
+        case IdentityFound(identity) => sessionManager.forward(msg.copyTo(identity.userId))
+        case IdentityNotFound => {}
       }
+    }
+  }
+}
+
+/**
+ * A small internal Actor that does the actual database lookups for IdentityCache. This is split out
+ * so that IdentityCache can stay fast and non-blocking for cache hits, and only slow down for the misses.
+ */
+private [identity] class IdentityCacheFetcher(val ecology:Ecology) extends Actor with EcologyMember {
+  import IdentityCacheMessages._
+  
+  lazy val UserAccess = interface[UserAccess]
+  
+  def receive = {
+    case GetIdentityRequest(id) => {
+      UserAccess.getFullIdentity(id) match {
+        case Some(identity) => sender ! IdentityFound(identity)
+        case None => sender ! IdentityNotFound
+      }      
     }
   }
 }
 
 object IdentityCacheMessages {
   case class GetIdentityRequest(id:OID)
-  case class IdentityFound(identity:FullIdentity)
-  case object IdentityNotFound
+  sealed trait IdentityResponse
+  case class IdentityFound(identity:FullIdentity) extends IdentityResponse
+  case object IdentityNotFound extends IdentityResponse
   
   case class InvalidateCacheForIdentity(id:OID)
   
