@@ -52,7 +52,7 @@ class PhotoController extends ApplicationBase {
   }
 
   def upload(ownerId:String, spaceId:String, thingIdStr:String) = 
-    withThing(true, ownerId, spaceId, thingIdStr, parser = BodyParser(photoReceiver(ownerId, spaceId) _)) 
+    withUser(true, parser = BodyParser(photoReceiver(ownerId, spaceId) _)) 
   { rc =>
     // By the time we get here, we have fired up a PhotoUploadActor, and we have a pointer to a Future that
     // will be completed once all of the chunks are sent to it:
