@@ -146,6 +146,12 @@ package object identity {
     def getIdentities(ids:Seq[OID]):Future[Map[OID, PublicIdentity]]
     
     /**
+     * Obtain the FullIdentity views of these identities. Only allowed within the Identity system itself,
+     * to prevent leakage.
+     */
+    private [identity] def getFullIdentities(ids:Seq[OID]):Future[Map[OID, FullIdentity]]
+    
+    /**
      * Tells the system that, if this Identity is currently cached, we should clear that cache and reload it.
      * 
      * IMPORTANT: this is a fire-and-forget asynchronous call! Do not count upon it instantly taking effect!

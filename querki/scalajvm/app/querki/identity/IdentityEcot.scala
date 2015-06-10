@@ -79,11 +79,11 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
     }
   }
   
-  def getIdentities(ids:Seq[OID]):Future[Map[OID, PublicIdentity]] = {
+  def getIdentitiesInternal[T >: FullIdentity](ids:Seq[OID]):Future[Map[OID, T]] = {
     val requests:Set[Future[Any]] = ids.toSet.map { id:OID => identityCache ? GetIdentityRequest(id) }
     val resultSetFut = Future.sequence(requests)
     resultSetFut.map { resultSet =>
-      (Map.empty[OID, PublicIdentity] /: resultSet) { (m, response) =>
+      (Map.empty[OID, T] /: resultSet) { (m, response) =>
         response match {
           case IdentityFound(identity) => m + (identity.id -> identity)
           case IdentityNotFound => m
@@ -91,6 +91,14 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
       }
     } 
   }
+  
+  def getIdentities(ids:Seq[OID]):Future[Map[OID, PublicIdentity]] = {
+    getIdentitiesInternal[PublicIdentity](ids)
+  }
+  
+  def getFullIdentities(ids:Seq[OID]):Future[Map[OID, FullIdentity]] = {
+    getIdentitiesInternal[FullIdentity](ids)
+  }  
   
   def invalidateCache(id:OID):Unit = {
     identityCache ! InvalidateCacheForIdentity(id)

@@ -353,9 +353,8 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
       if (collaboratorIds.length > 0) {
         // If we're inviting Collaborators, we need to go ask the Identity Cache for their info, to find out their email
         // addresses:
-        val idFut = IdentityAccess.identityCache ? FullIdentityMessages.GetFullIdentities(collaboratorIds)
-        idFut.mapTo[FullIdentityMessages.FullIdentitiesFound].map { found =>
-          val collabIdentities = found.identities.values
+        IdentityAccess.getFullIdentities(collaboratorIds).map { found =>
+          val collabIdentities = found.values
           val collabInvitees = collabIdentities.map { identity =>
             Invitee(identity.email, identity.name)
           }
