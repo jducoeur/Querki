@@ -36,6 +36,10 @@ private [identity] class UserCache(val ecology:Ecology) extends Actor with Ecolo
   }
 }
 
+object UserCache {
+  def actorProps(ecology:Ecology) = Props(classOf[UserCache], ecology)
+}
+
 object UserCacheMessages {
   sealed trait UserCacheRequest {
     def handle:String

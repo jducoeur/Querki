@@ -58,18 +58,31 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
   val identityExtractor:ShardRegion.IdExtractor = {
     case msg:IdentityRequest => (msg.id.shard, msg) 
   }
-  
   val identityResolver:ShardRegion.ShardResolver = msg => msg match {
     case msg:IdentityRequest => msg.id.shard
   }
   
+  // These tell how to shard the UserCache. Similarly to identity, there is a single entity per
+  // shard, but in this case it's based on the handle in the message.
+  def userShard(msg:UserCacheRequest) = (msg.handle.hashCode() % 30).toString
+  val userExtractor:ShardRegion.IdExtractor = {
+    case msg:UserCacheRequest => (userShard(msg), msg) 
+  }
+  val userResolver:ShardRegion.ShardResolver = msg => msg match {
+    case msg:UserCacheRequest => userShard(msg)
+  }  
+  
   override def createActors(createActorCb:CreateActorFunc):Unit = {
     _ref = Some(ClusterSharding(SystemManagement.actorSystem).start(
-        typeName = "Identity", 
+        typeName = "IdentityCache", 
         entryProps = Some(IdentityCache.actorProps(ecology)), 
         idExtractor = identityExtractor, 
         shardResolver = identityResolver))
-    _userRef = createActorCb(Props(new UserCache(ecology)), "UserCache")
+    _userRef = Some(ClusterSharding(SystemManagement.actorSystem).start(
+        typeName = "UserCache", 
+        entryProps = Some(UserCache.actorProps(ecology)), 
+        idExtractor = userExtractor, 
+        shardResolver = userResolver))
   }
   
   implicit val cacheTimeout = Timeout(5 seconds)
