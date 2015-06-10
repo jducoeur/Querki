@@ -18,9 +18,6 @@ POST    /TOS                        @controllers.TOSController.handleTOS
 # The old way to address a Space, now replaced by the new client:
 GET     /u/:userName/:spaceId/      @controllers.ClientController.space(userName, spaceId)
 
-GET     /old/:userName/:spaceId/_explorer @controllers.ExploreController.showExplorer(userName, spaceId, thingId)
-POST    /old/:userName/:spaceId/_evaluate @controllers.ExploreController.evaluate(userName, spaceId, thingId, ql)
-
 # Note that these are still direct pages, not through the Client:
 GET     /u/:userName/:spaceId/_handleInvite @controllers.LoginController.handleInvite(userName, spaceId)
 POST    /u/:userName/:spaceId/_handleInvite @controllers.LoginController.signup(userName, spaceId)
@@ -64,9 +61,6 @@ GET     /_notifications             @controllers.NotificationController.showNoti
 
 # Redirect pointers to Things to go to the Client: 
 GET     /u/:userName/:spaceId/*thingId    @controllers.ClientController.thingRedirect(userName, spaceId, thingId)
-
-# AJAX test stuff:
-GET     /exploreRoutes              @controllers.ExploreController.javascriptRoutes
 
 # Serve scala files under the scalajs subproject to be used by sourcemaps.
 # TODO: This route and its controller method should be removed for production
