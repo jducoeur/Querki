@@ -30,7 +30,6 @@ import querki.values.QLContext
 class PhotoController extends ApplicationBase {
   
   lazy val Core = interface[querki.core.Core]
-  lazy val Photos = interface[querki.photos.Photos]
   lazy val QL = interface[querki.ql.QL]
   
   def photoReceiver(ownerIdStr:String, spaceIdStr:String)(rh:RequestHeader):Iteratee[Array[Byte], Either[Result, Future[ActorRef]]] = {

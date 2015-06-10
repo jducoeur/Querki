@@ -55,7 +55,7 @@ private [photos] trait PhotosInternal extends EcologyInterface {
 }
 
 class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with EcologyMember with querki.core.MethodDefs
-  with Photos with PhotosInternal 
+  with PhotosInternal 
 {
   import MOIDs._
   import PhotoUploadActor._
@@ -66,25 +66,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
   val Types = initRequires[querki.types.Types]
   
   lazy val SystemOnly = Basic.SystemOnlyProp(true)
-  
-  /**
-   * The one true handle to the Photo Upload Manager for this node.
-   */
-  var _ref:Option[ActorRef] = None
-  lazy val photoUploadManager = _ref.get
-  
-  override def createActors(createActorCb:CreateActorFunc):Unit = {
-    // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
-    // with "Props(classOf(Space), ...)". See:
-    //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-    _ref = createActorCb(Props(new PhotoUploadManager(ecology)), "PhotoUploadManager")
-  }
-//  
-//  def createWorker(mimeType:Option[String]):Future[ActorRef] = {
-//    val fut = photoUploadManager.ask(BeginProcessing(mimeType))(3 seconds)
-//    fut.mapTo[ActorRef]
-//  }
-  
+
   lazy val bucketUrl = Config.getString("querki.aws.bucketUrl")
   
   /***********************************************
