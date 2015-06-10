@@ -1,8 +1,8 @@
-@(rc:PlayRequestContext, signupForm:Form[querki.identity.SignupInfo])
+@(rc:PlayRequestContext, signupForm:Form[querki.identity.SignupInfo], info:querki.spaces.messages.SpaceInfo)
 
 @import helper._
 
-@title = @{ s"You've been invited to join ${rc.state.get.displayName}!" }
+@title = @{ s"You've been invited to join ${info.display}!" }
 
 @main(QuerkiTemplate.Login, title, rc, forms=Seq(signupForm)) {
 
@@ -15,7 +15,7 @@
 	    <p>If you already have a Querki login and password, please give them here. If don't have one, but you were sent an email invitation to a specific
 	    Querki Space, please go that that email and click one of the links in that -- that link should log you in to Querki.</p>
 	
-	    @form(routes.LoginController.joinlogin(rc.ownerHandle, rc.state.get.toThingId)) {
+	    @form(routes.LoginController.joinlogin(rc.ownerHandle, info.linkName)) {
 	      <input type="text" name="name" id="name" value="" placeholder="Email Address">
 	      <input type="password" name="password" value="" placeholder="Password">
 	      <input type="submit" value="Log in" class="btn btn-primary">
@@ -24,7 +24,7 @@
 	  
 	  <div class="col-md-6">
 	    <p>If you aren't yet a Querki member, sign up here -- it only takes a minute! All fields are required.</p>
-	    @form(routes.LoginController.signup(rc.ownerHandle, rc.state.get.toThingId)) {
+	    @form(routes.LoginController.signup(rc.ownerHandle, info.linkName)) {
           @inputText(
             signupForm("email"), 
             '_label -> "Your Email Address",

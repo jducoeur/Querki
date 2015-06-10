@@ -369,6 +369,10 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
   def receive = LoggingReceive(handleRequestResponse orElse mainReceive orElse pluginReceive)
   
   def mainReceive:Receive = {
+    case GetSpaceInfo(who, spaceId) => {
+      sender ! SpaceInfo(state.id, state.name, state.displayName)
+    }
+    
     case CreateThing(who, spaceId, kind, modelId, props) => {
       createSomething(spaceId, who, modelId, props, kind)
     }

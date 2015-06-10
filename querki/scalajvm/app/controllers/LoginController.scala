@@ -89,6 +89,15 @@ class LoginController extends ApplicationBase {
       Ok(JSONcollabs)
     }
   }
+  
+  def withSpaceInfo(cb:(SpaceInfo, PublicIdentity) => Future[Result])(implicit rc:PlayRequestContext):Future[Result] = {
+    IdentityAccess.getIdentity(rc.ownerId).flatMap { ownerIdOpt =>
+      val ownerId = ownerIdOpt.get
+      askSpace(rc.ownerId, rc.spaceIdOpt.get)(GetSpaceInfo(rc.requesterOrAnon, _)) {
+        case info:SpaceInfo => cb(info, ownerId)
+      }
+    }
+  }
 
   def handleInvite(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { implicit rc =>
     // This cookie gets set in PersonModule.InviteLoginChecker. If it isn't set, somebody is trying to sneak
@@ -107,16 +116,18 @@ class LoginController extends ApplicationBase {
                   Redirect(routes.ClientController.space(ownerId, spaceId))
                 } else {
                   // Not yet. Okay, go to joining the space:
-                  Ok(views.html.joinSpace(rc))
+                  withSpaceInfo { (info, ownerIdentity) => Ok(views.html.joinSpace(rc, info, ownerIdentity)) }
                 }                
               }
             }
           }
           
           case None => {
-            // Nope. Let them sign up for Querki. This will loop through to signup, below:
-            val startForm = SignupInfo(email, "", "", "")
-            Ok(views.html.handleInvite(rc, signupForm.fill(startForm)))
+            withSpaceInfo { (info, ownerIdentity) =>
+              // Nope. Let them sign up for Querki. This will loop through to signup, below:
+              val startForm = SignupInfo(email, "", "", "")
+              Ok(views.html.handleInvite(rc, signupForm.fill(startForm), info))
+            }
           }
         }
       }
@@ -141,7 +152,7 @@ class LoginController extends ApplicationBase {
                   // Yes. Okay, just go the Space, since there's nothing to do here:
                   Redirect(routes.ClientController.space(ownerId, spaceId)).withSession(user.toSession:_*)
                 } else {
-                  Ok(views.html.joinSpace(rc)).withSession(Session(request.session.data ++ user.toSession))
+                  withSpaceInfo { (info, ownerIdentity) => Ok(views.html.joinSpace(rc, info, ownerIdentity)).withSession(Session(request.session.data ++ user.toSession)) }
                 }
               }
             }
@@ -162,17 +173,16 @@ class LoginController extends ApplicationBase {
       Some(s"Password must be at least $minPasswordLen characters long")
   }
     
-  // Is there any reason this actually needs withSpace, other than proving the Space exists?
-  def signup(ownerId:String, spaceId:String) = withSpace(false, ownerId, spaceId, allowAnyone = true) { implicit rc =>
+  def signup(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { implicit rc =>
     implicit val request = rc.request
     val rawForm = signupForm.bindFromRequest
     rawForm.fold(
       errorForm => {
-        BadRequest(views.html.handleInvite(rc, errorForm))
+        withSpaceInfo { (info, ownerIdentity) => BadRequest(views.html.handleInvite(rc, errorForm, info)) }
       },
       info => {
         passwordValidationError(info.password) match {
-          case Some(err) => BadRequest(views.html.handleInvite(rc.withError(err), rawForm))
+          case Some(err) => withSpaceInfo { (info, ownerIdentity) => BadRequest(views.html.handleInvite(rc.withError(err), rawForm, info)) }
           case None => {
 	        // Make sure we have a Person in a Space in the cookies -- that is required for a legitimate request
 	    	val personOpt = rc.sessionCookie(querki.identity.personParam)
@@ -189,7 +199,7 @@ class LoginController extends ApplicationBase {
 		              case err:PublicException => err.display(request)
 		              case _ => QLog.error("Internal Error during signup", error); "Something went wrong; please try again"
 		            }
-		            BadRequest(views.html.handleInvite(rc.withError(msg), rawForm))
+		            withSpaceInfo { (info, ownerIdentity) => BadRequest(views.html.handleInvite(rc.withError(msg), rawForm, info)) }
 		          }
 		        }    	    
 	    	  }
