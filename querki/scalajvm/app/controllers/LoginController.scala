@@ -77,8 +77,12 @@ class LoginController extends ApplicationBase {
     mapping("name" -> nonEmptyText)((handle) => handle)((handle:String) => Some(handle))
   )
   
-  def getCollaborators(ownerId:String, spaceId:String, q:String) = withSpace(true, ownerId, spaceId) { implicit rc =>
-    UserSession.getCollaborators(rc.requesterOrAnon, rc.localIdentity.get, q).map { collabs =>
+  def getCollaborators(ownerId:String, spaceId:String, q:String) = withUser(true) { implicit rc =>
+    // TODO: in principle, this isn't quite right -- the Identity in getCollaborators ought to be the localIdentity
+    // for this Space. I've removed that for now, so that we don't need to have the Space. At some point, this entry
+    // point ought to go through Autowire instead, to the UserSpaceSession, but that requires moving away from MarcoPolo
+    // on the client:
+    UserSession.getCollaborators(rc.requesterOrAnon, rc.requesterOrAnon.mainIdentity, q).map { collabs =>
       // TODO: introduce better JSONification for the AJAX code:
       // TODO: refactor this with getTags and getLinks; there is a common "return Manifest" function here:
       val JSONcollabs = "[" + collabs.acs.map(identity => "{\"display\":\"" + identity.name + "\", \"id\":\"" + identity.id.toThingId + "\"}").mkString(",") + "]"
