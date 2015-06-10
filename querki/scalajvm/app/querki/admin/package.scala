@@ -5,7 +5,7 @@ import scala.concurrent.Future
 import models.Wikitext
 
 import querki.ecology._
-import querki.identity.User
+import querki.identity.{User, UserId}
 
 package object admin {
   
@@ -21,5 +21,13 @@ package object admin {
      * This is fire-and-forget!
      */
     def sendSystemMessage(req:User, header:String, body:String):Unit
+    
+    /**
+     * Fetch all the UserIds registered.
+     * 
+     * TODO: this method is stupid and deprecated. It will be replaced by something stream-oriented
+     * as soon as I have a chance.
+     */
+    def getAllUserIds(req:User):Future[Seq[UserId]]
   }
 }

@@ -19,6 +19,7 @@ import querki.util._
 private[notifications] class NotificationActor(val ecology:Ecology) extends Actor with EcologyMember with Requester {
   import NotificationActor._
   
+  lazy val AdminOps = interface[querki.admin.AdminOps]
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val SessionAccess = interface[querki.session.Session]
   
@@ -31,12 +32,10 @@ private[notifications] class NotificationActor(val ecology:Ecology) extends Acto
       val identities = recipients match {
         case AllUsers => {
           if (req.isAdmin) {
-            userCache.request(UserCacheMessages.GetAllUserIdsForAdmin(req)) foreach {
-              case UserCacheMessages.AllUserIds(ids) => {
-                // Dole the actual sending out to each User Session
-                // TODO: this does not scale well. We really ought to handle System Messages in some other way!
-                ids.foreach { id => sessionManager ! UserSessionMessages.NewNotification(id, note) }
-              }
+            loopback(AdminOps.getAllUserIds(req)) foreach { ids =>
+              // Dole the actual sending out to each User Session
+              // TODO: this does not scale well. We really ought to handle System Messages in some other way!
+              ids.foreach { id => sessionManager ! UserSessionMessages.NewNotification(id, note) }
             }
           } else {
             QLog.error("NotificationActor received an AllUsers message from someone who isn't an admin:\n" + msg)

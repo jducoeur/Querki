@@ -7,7 +7,7 @@ import akka.actor._
 import models.Wikitext
 
 import querki.ecology._
-import querki.identity.User
+import querki.identity.{User, UserId}
 import querki.notifications.{AllUsers}
 import querki.spaces.messages.{GetSpacesStatus, SpaceStatus}
 
@@ -25,18 +25,18 @@ private[admin] class AdminActor(val ecology:Ecology) extends Actor with EcologyM
   
   import AdminActor._
   
+  def toWorker[T <: Actor](msg:Any)(implicit tag:scala.reflect.ClassTag[T]) = {
+    // Fire it off to a worker:
+    val worker = context.actorOf(Props(tag.runtimeClass, ecology))
+    worker.forward(msg)    
+  }
+  
   def receive = {
-    case msg:GetSpacesStatus => {
-      // Fire it off to a worker:
-      val worker = context.actorOf(Props(classOf[AdminStatusWorker], ecology))
-      worker.forward(msg)
-    }
+    case msg:GetSpacesStatus => toWorker[AdminStatusWorker](msg)
     
-    case msg:SendSystemMessage => {
-      // Fire it off to a worker:
-      val worker = context.actorOf(Props(classOf[AdminSystemMessageWorker], ecology))
-      worker.forward(msg)
-    }
+    case msg:SendSystemMessage => toWorker[AdminSystemMessageWorker](msg)
+    
+    case msg:GetAllUserIdsForAdmin => toWorker[AdminUserIdFetcher](msg)
   }
 }
 
@@ -92,8 +92,38 @@ private[admin] class AdminSystemMessageWorker(val ecology:Ecology) extends Actor
   }
 }
 
+/**
+ * This is a tiny worker Actor, which deals with the long-running operation of fetching *all* of the
+ * userIds in the system.
+ * 
+ * TODO: this is clearly broken. Rewrite this using akka-stream, to stream the userIds into something.
+ */
+private [admin] class AdminUserIdFetcher(val ecology:Ecology) extends Actor with EcologyMember {
+  
+  import AdminActor._
+  
+  lazy val UserAccess = interface[querki.identity.UserAccess]
+
+  def receive = {    
+    case GetAllUserIdsForAdmin(req) => req.requireAdmin {
+      val userIds = UserAccess.getAllIdsForAdmin(req)
+      sender ! AllUserIds(userIds)
+      context.stop(self)
+    }
+  }
+}
+
 private[admin] object AdminActor {
   case object StatusTimeout
   
   case class SendSystemMessage(req:User, header:String, body:String)
+  
+  /**
+   * Note that only Admins are allowed to call this!
+   * 
+   * TODO: this is a scalability bug! We need to come up with more stream-compatible ways to do this!
+   * This will fail horribly once we're past a few thousand users!
+   */
+  case class GetAllUserIdsForAdmin(req:User)  
+  case class AllUserIds(users:Seq[UserId])
 }

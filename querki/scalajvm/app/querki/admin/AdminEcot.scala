@@ -4,6 +4,7 @@ import scala.concurrent.duration._
 import scala.concurrent.Future
 
 import akka.actor.{ActorRef, Props}
+import akka.pattern._
 import akka.util.Timeout
 
 import play.api.libs.concurrent.Execution.Implicits._
@@ -12,7 +13,7 @@ import models.Wikitext
 
 import querki.core.QLText
 import querki.ecology._
-import querki.identity.{Identity, PublicIdentity, User}
+import querki.identity.{Identity, PublicIdentity, User, UserId}
 import querki.notifications._
 import querki.spaces.messages.{GetSpacesStatus, SpaceStatus}
 import querki.time.DateTime
@@ -63,6 +64,13 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
   
   def sendSystemMessage(req:User, header:String, body:String) = {
     adminActor ! SendSystemMessage(req, header:String, body:String)
+  }
+  
+  def getAllUserIds(req:User):Future[Seq[UserId]] = {
+    // Very long timeout for this one, becaue it really might take a long time:
+    implicit val timeout = Timeout(1 minute)
+    val fut = adminActor ? GetAllUserIdsForAdmin(req)
+    fut.mapTo[AllUserIds].map { _.users }
   }
   
   object Notifiers {

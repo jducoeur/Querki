@@ -29,11 +29,6 @@ private [identity] class UserCache(val ecology:Ecology) extends Actor with Ecolo
       }
     }
     
-    case GetAllUserIdsForAdmin(req) => req.requireAdmin {
-      val userIds = UserAccess.getAllIdsForAdmin(req)
-      sender ! AllUserIds(userIds)
-    }
-    
     case UpdateUser(user) => {
       user.identities.map { identity =>
         usersByHandle += (identity.handle -> user)
@@ -49,15 +44,6 @@ object UserCacheMessages {
   sealed trait UserLookupResult
   case class UserFound(user:User) extends UserLookupResult
   case object UserNotFound extends UserLookupResult
-  
-  /**
-   * Note that only Admins are allowed to call this!
-   * 
-   * TODO: this is a scalability bug! We need to come up with more stream-compatible ways to do this!
-   * This will fail horribly once we're past a few thousand users!
-   */
-  case class GetAllUserIdsForAdmin(req:User)  
-  case class AllUserIds(users:Seq[UserId])
   
   /**
    * This message tells the Cache to update the provided User record.
