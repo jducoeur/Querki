@@ -56,9 +56,6 @@ GET     /admin/showSpaceStatus      @controllers.AdminController.showSpaceStatus
 GET     /admin/sendSystemMessage    @controllers.AdminController.sendSystemMessage
 POST    /admin/sendSystemMessage    @controllers.AdminController.doSendSystemMessage
 
-# Notifications
-GET     /_notifications             @controllers.NotificationController.showNotifications
-
 # Redirect pointers to Things to go to the Client: 
 GET     /u/:userName/:spaceId/*thingId    @controllers.ClientController.thingRedirect(userName, spaceId, thingId)
 
