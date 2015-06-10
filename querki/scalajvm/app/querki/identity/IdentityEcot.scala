@@ -33,7 +33,7 @@ private [identity] trait UserCacheAccess extends EcologyInterface {
    * This is used by UserPersistence to kick the UserCache. Note that this returns a Future, which will resolve after
    * the Cache has acknowledged the update.
    */
-  def updateCacheAndThen(user:User):Future[User]
+  def updateCacheAndThen(user:User):Future[Any]
 }
 
 class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with querki.core.MethodDefs with UserCacheAccess {
@@ -141,9 +141,9 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
     }
   }
   
-  def updateCacheAndThen(user:User):Future[User] = {
-    val fut = userCache ? UpdateUser(user)
-    fut.mapTo[UpdateAck].map(_.user)
+  def updateCacheAndThen(user:User):Future[Any] = {
+    val futs = user.identities.map { identity => userCache ? UpdateUser(identity.handle, user) }
+    Future.sequence(futs)
   }
   
   /***********************************************

@@ -325,7 +325,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
   
   private def updateUserCacheFor(userOpt:Option[User]) = {
     userOpt match {
-      case Some(user) => UserCacheAccess.updateCacheAndThen(user).map(Some(_))
+      case Some(user) => UserCacheAccess.updateCacheAndThen(user).map( _ => Some(user))
       case None => Future.successful(None)
     }    
   }

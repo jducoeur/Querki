@@ -29,17 +29,19 @@ private [identity] class UserCache(val ecology:Ecology) extends Actor with Ecolo
       }
     }
     
-    case UpdateUser(user) => {
-      user.identities.map { identity =>
-        usersByHandle += (identity.handle -> user)
-      }
-      sender ! UpdateAck(user)
+    case UpdateUser(handle, user) => {
+      usersByHandle += (handle -> user)
+      sender ! UpdateAck
     }
   }
 }
 
 object UserCacheMessages {
-  case class GetUserByHandle(handle:String)
+  sealed trait UserCacheRequest {
+    def handle:String
+  }
+  
+  case class GetUserByHandle(handle:String) extends UserCacheRequest
   
   sealed trait UserLookupResult
   case class UserFound(user:User) extends UserLookupResult
@@ -48,6 +50,6 @@ object UserCacheMessages {
   /**
    * This message tells the Cache to update the provided User record.
    */
-  case class UpdateUser(user:User)
-  case class UpdateAck(user:User)
+  case class UpdateUser(handle:String, user:User) extends UserCacheRequest
+  case object UpdateAck
 }
