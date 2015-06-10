@@ -22,9 +22,9 @@ import querki.spaces.messages.{BeginProcessingPhoto, ImageComplete}
 import querki.time.DateTime
 import querki.types.SimplePropertyBundle
 import querki.util.{Config, QLog}
-import querki.values.ElemValue
+import querki.values.{ElemValue, SpaceState}
 
-class PhotoUploadActor(val ecology:Ecology) extends Actor with EcologyMember {
+class PhotoUploadActor(val ecology:Ecology, state:SpaceState) extends Actor with EcologyMember {
   
   import PhotoUploadActor._
   import PhotoUploadMessages._
@@ -56,7 +56,7 @@ class PhotoUploadActor(val ecology:Ecology) extends Actor with EcologyMember {
       QLog.spew(s"Actor got ${chunk.length} bytes")
     }
     
-    case UploadDone(oldValueOpt, prop, state) => {
+    case UploadDone(oldValueOpt, prop) => {
       QLog.spew(s"UploadDone -- got ${chunkBuffer.size} bytes; type is $mimeType")
       val inputStream = new ByteArrayInputStream(chunkBuffer.toArray)
       val originalImage = ImageIO.read(inputStream)
@@ -188,5 +188,5 @@ class PhotoUploadActor(val ecology:Ecology) extends Actor with EcologyMember {
 }
 
 object PhotoUploadActor {
-  def actorProps(ecology:Ecology):Props = Props(classOf[PhotoUploadActor], ecology) 
+  def actorProps(ecology:Ecology, state:SpaceState):Props = Props(classOf[PhotoUploadActor], ecology, state) 
 }

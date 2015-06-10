@@ -61,7 +61,7 @@ class PhotoController extends ApplicationBase {
     
     val body = rc.request.body.asInstanceOf[Future[ActorRef]]
     body flatMap { workerRef =>
-      val resultsFut = workerRef.ask(UploadDone(existingValOpt, prop, s))(30 seconds).mapTo[PhotoInfo]
+      val resultsFut = workerRef.ask(UploadDone(existingValOpt, prop))(30 seconds).mapTo[PhotoInfo]
       // TODO: all of this needs to move into the Actors themselves! This is passing state around, which is a no-no!
       resultsFut.flatMap { info =>
         QLog.spew(s"About to actually update the Space -- the QValue is ${info.newValue}")
