@@ -62,7 +62,7 @@ class PhotoUploadActor(val ecology:Ecology, state:SpaceState, router:ActorRef) e
       QLog.spew(s"Actor got ${chunk.length} bytes")
     }
     
-    case UploadDone(rc, propId, thingId) => { //(oldValueOpt, prop) => {
+    case UploadDone(rc, propId, thingId) => {
       QLog.spew(s"UploadDone -- got ${chunkBuffer.size} bytes; type is $mimeType")
       val inputStream = new ByteArrayInputStream(chunkBuffer.toArray)
       val originalImage = ImageIO.read(inputStream)
