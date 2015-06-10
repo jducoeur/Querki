@@ -24,7 +24,7 @@ class PhotoUploadManager(val ecology:Ecology) extends Actor with EcologyMember {
   import PhotoUploadActor._
 
   def receive = LoggingReceive {
-    case msg @ BeginProcessing(_) => {
+    case msg @ querki.spaces.messages.BeginProcessingPhoto(_, _, _) => {
       val worker = context.actorOf(PhotoUploadActor.actorProps(ecology))
       worker.forward(msg)
       sender ! worker

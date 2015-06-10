@@ -9,6 +9,7 @@ import models.OID
 
 import querki.conversations.messages.{ActiveThings, GetActiveThings}
 import querki.ecology._
+import querki.photos.PhotoUploadActor
 import querki.session.UserSpaceSessions
 import querki.session.messages._
 import querki.spaces.messages._
@@ -88,8 +89,17 @@ private[spaces] class SpaceRouter(val ecology:Ecology)
     // Messages for the SpaceMembersActor:
     case msg:SpaceMembersMessage => members.forward(msg)
     
+    // Request for an upload actor under this Space. We create it as part of the troupe, but it's
+    // basically anonymous after creation:
+    case msg:BeginProcessingPhoto => {
+      val worker = context.actorOf(PhotoUploadActor.actorProps(ecology))
+      worker.forward(msg)
+      sender ! worker
+    }
+    
     // Message for the Space:
     case msg:CreateSpace => space.forward(msg)
+    // FALLBACK -- NOTHING SHOULD GO BELOW HERE:
     case msg:SpaceMessage => space.forward(msg)
   })
 }

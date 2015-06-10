@@ -79,11 +79,11 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
     //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
     _ref = createActorCb(Props(new PhotoUploadManager(ecology)), "PhotoUploadManager")
   }
-  
-  def createWorker(mimeType:Option[String]):Future[ActorRef] = {
-    val fut = photoUploadManager.ask(BeginProcessing(mimeType))(3 seconds)
-    fut.mapTo[ActorRef]
-  }
+//  
+//  def createWorker(mimeType:Option[String]):Future[ActorRef] = {
+//    val fut = photoUploadManager.ask(BeginProcessing(mimeType))(3 seconds)
+//    fut.mapTo[ActorRef]
+//  }
   
   lazy val bucketUrl = Config.getString("querki.aws.bucketUrl")
   

@@ -15,15 +15,16 @@ import com.amazonaws.regions.{Region, Regions}
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.{AccessControlList, GroupGrantee, ObjectMetadata, Permission, PutObjectRequest}
 
-import models.MIMEType
+import models.{MIMEType, OID}
 
 import querki.ecology._
+import querki.spaces.messages.{BeginProcessingPhoto, ImageComplete}
 import querki.time.DateTime
 import querki.types.SimplePropertyBundle
 import querki.util.{Config, QLog}
 import querki.values.ElemValue
 
-private [photos] class PhotoUploadActor(val ecology:Ecology) extends Actor with EcologyMember {
+class PhotoUploadActor(val ecology:Ecology) extends Actor with EcologyMember {
   
   import PhotoUploadActor._
   import PhotoUploadMessages._
@@ -46,7 +47,7 @@ private [photos] class PhotoUploadActor(val ecology:Ecology) extends Actor with 
   
   def receive = LoggingReceive {
     
-    case BeginProcessing(tpe) => {
+    case BeginProcessingPhoto(req, spaceId, tpe) => {
       _mimeType = tpe
     }
     
@@ -187,12 +188,5 @@ private [photos] class PhotoUploadActor(val ecology:Ecology) extends Actor with 
 }
 
 object PhotoUploadActor {
-  // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
-  // with "Props(classOf(Space), ...)". See:
-  //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-  def actorProps(ecology:Ecology):Props = Props(new PhotoUploadActor(ecology)) 
-  
-  case class BeginProcessing(mimeType:Option[String])
-  
-  case object ImageComplete
+  def actorProps(ecology:Ecology):Props = Props(classOf[PhotoUploadActor], ecology) 
 }

@@ -86,6 +86,12 @@ case class UserValuePersistRequest(req:User, space:OID, payload:querki.uservalue
  * sealed here.)
  */
 case class SpacePluginMsg(req:User, space:OID, payload:Any) extends SpaceMessage(req, space) 
+  
+/**
+ * Launch a PhotoUploadActor.
+ */
+case class BeginProcessingPhoto(req:User, space:OID, mimeType:Option[String]) extends SpaceMessage(req, space) 
+case object ImageComplete
 
 object SpaceError {  
   val CreateNotAllowed = "Space.createThing.notAllowed"

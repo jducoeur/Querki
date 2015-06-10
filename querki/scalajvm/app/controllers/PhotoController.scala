@@ -33,8 +33,16 @@ class PhotoController extends ApplicationBase {
   lazy val Photos = interface[querki.photos.Photos]
   lazy val QL = interface[querki.ql.QL]
   
-  def photoReceiver(rh:RequestHeader):Iteratee[Array[Byte], Either[Result, Future[ActorRef]]] = {
-    val workerRefFuture = Photos.createWorker(rh.contentType)
+  def photoReceiver(ownerIdStr:String, spaceIdStr:String)(rh:RequestHeader):Iteratee[Array[Byte], Either[Result, Future[ActorRef]]] = {
+    implicit val timeout = Timeout(5 seconds)
+    
+    val workerRefFuture = for {
+      ownerId <- getOwnerIdentity(ownerIdStr)
+      spaceId <- SpaceOps.getSpaceId(ownerId, spaceIdStr)
+      response <- (SpaceOps.spaceRegion ? querki.spaces.messages.BeginProcessingPhoto(querki.identity.User.Anonymous, spaceId, rh.contentType)).mapTo[ActorRef]
+    }
+      yield response
+      
     Iteratee.fold[Array[Byte], Future[ActorRef]](workerRefFuture) { (fut, bytes) => 
       val newFut = fut.map { ref => ref ! PhotoChunk(bytes); ref }
       newFut
@@ -43,7 +51,7 @@ class PhotoController extends ApplicationBase {
 
   // TODO: in general, this all needs a rework to function correctly in the clustered world. withThing() is becoming illegal.
   // This code probably all needs to move into UserSpaceState, at least as much as possible:
-  def upload(ownerId:String, spaceId:String, thingId:String) = withThing(true, ownerId, spaceId, thingId, parser = BodyParser(photoReceiver _)) { rc =>
+  def upload(ownerId:String, spaceId:String, thingId:String) = withThing(true, ownerId, spaceId, thingId, parser = BodyParser(photoReceiver(ownerId, spaceId) _)) { rc =>
     QLog.spew(s"Finished receiving")
     // TODO: this should really check headOption, and give some more-meaningful error if it is empty:
     val propIdStr = rc.queryParam("propId").head
