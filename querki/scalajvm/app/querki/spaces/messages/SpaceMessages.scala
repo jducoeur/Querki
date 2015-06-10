@@ -119,6 +119,9 @@ sealed trait JoinResult
 case object Joined extends JoinResult
 case class JoinFailed(ex:PublicException) extends JoinResult
 
+case class IsSpaceMemberP(rc:RequestContext) extends SpaceMembersBase
+case class IsSpaceMember(result:Boolean)
+
 // This is the most common response when you create/fetch any sort of Thing
 sealed trait SpaceResponse
 sealed trait ThingResponse extends SpaceResponse
