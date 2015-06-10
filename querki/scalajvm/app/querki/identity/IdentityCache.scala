@@ -65,6 +65,10 @@ private[identity] class IdentityCache(val ecology:Ecology) extends Actor with Re
   }
 }
 
+object IdentityCache {
+  def actorProps(ecology:Ecology) = Props(classOf[IdentityCache], ecology)
+}
+
 /**
  * A small internal Actor that does the actual database lookups for IdentityCache. This is split out
  * so that IdentityCache can stay fast and non-blocking for cache hits, and only slow down for the misses.
@@ -85,15 +89,19 @@ private [identity] class IdentityCacheFetcher(val ecology:Ecology) extends Actor
 }
 
 object IdentityCacheMessages {
-  case class GetIdentityRequest(id:OID)
+  sealed trait IdentityRequest {
+    def id:OID
+  }
+  
+  case class GetIdentityRequest(id:OID) extends IdentityRequest
   sealed trait IdentityResponse
   case class IdentityFound(identity:FullIdentity) extends IdentityResponse
   case object IdentityNotFound extends IdentityResponse
   
-  case class InvalidateCacheForIdentity(id:OID)
+  case class InvalidateCacheForIdentity(id:OID) extends IdentityRequest
   
   /**
    * Sends the given msg to the UserSession behind the given identityIds.
    */
-  case class RouteToUser(identityId:OID, msg:UserSessionMsg)
+  case class RouteToUser(id:OID, msg:UserSessionMsg) extends IdentityRequest
 }

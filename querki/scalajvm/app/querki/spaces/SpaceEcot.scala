@@ -39,7 +39,7 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps {
   }
   
   val shardResolver:ShardRegion.ShardResolver = msg => msg match {
-    case msg @ SpaceMessage(req, spaceId) => (spaceId.raw % 30).toString()
+    case msg @ SpaceMessage(req, spaceId) => spaceId.shard
   }
   
   override def createActors(createActorCb:CreateActorFunc):Unit = {

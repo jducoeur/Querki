@@ -5,6 +5,7 @@ import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.{Await, Future}
 
 import akka.actor.{ActorRef, Props}
+import akka.contrib.pattern.{ClusterSharding, ShardRegion}
 import akka.pattern.ask
 import akka.util.Timeout
 
@@ -39,7 +40,8 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
   
   import IdentityMOIDs._
   
-  val Basic = initRequires[querki.basic.Basic]
+  val Basic = initRequires[querki.basic.Basic]  
+  val SystemManagement = initRequires[querki.system.SystemManagement]
   
   /**
    * The one true handle to the Identity Cache.
@@ -50,11 +52,23 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
   var _userRef:Option[ActorRef] = None
   lazy val userCache = _userRef.get
   
+  // These two functions tell ClusterSharding the ID and shard for a given IdentityRequest.
+  // Note that the name of the shard and the name of the entity are the same. That's intentional:
+  // we want one entity -- one IdentityCache -- per shard.
+  val identityExtractor:ShardRegion.IdExtractor = {
+    case msg:IdentityRequest => (msg.id.shard, msg) 
+  }
+  
+  val identityResolver:ShardRegion.ShardResolver = msg => msg match {
+    case msg:IdentityRequest => msg.id.shard
+  }
+  
   override def createActors(createActorCb:CreateActorFunc):Unit = {
-    // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
-    // with "Props(classOf(Space), ...)". See:
-    //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-    _ref = createActorCb(Props(new IdentityCache(ecology)), "IdentityCache")
+    _ref = Some(ClusterSharding(SystemManagement.actorSystem).start(
+        typeName = "Identity", 
+        entryProps = Some(IdentityCache.actorProps(ecology)), 
+        idExtractor = identityExtractor, 
+        shardResolver = identityResolver))
     _userRef = createActorCb(Props(new UserCache(ecology)), "UserCache")
   }
   

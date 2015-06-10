@@ -39,6 +39,12 @@ class OID(val raw:Long) {
     }
   }
   override def hashCode = raw.hashCode
+  
+  // For cluster sharding, this is our current algorithm for sharding by OID. Note that
+  // this presumes that we shard the same way for all types; we'll see if that is true.
+  // TODO: the modulus should really be from config, usually ten times the number of expected
+  // nodes.
+  def shard = (raw % 30).toString
 }
 
 object OID {
