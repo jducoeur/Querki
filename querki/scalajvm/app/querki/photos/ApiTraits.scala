@@ -1,13 +1,14 @@
 package querki.photos
 
-import models.Property
+import models.{OID, Wikitext}
 
-import querki.values.{QValue, SpaceState}
+import querki.values.RequestContext
 
 object PhotoUploadMessages {
   case class PhotoChunk(chunk:Array[Byte])
   
-  case class UploadDone(oldValue:Option[QValue], prop:Property[_,_])
+  case class UploadDone(rc:RequestContext, propId:OID, thingId:OID)
   
-  case class PhotoInfo(newValue:QValue)
+  case class PhotoInfo(wikitext:Wikitext)
+  case object PhotoFailed
 }

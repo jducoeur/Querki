@@ -2,6 +2,7 @@ package querki.photos
 
 import akka.actor._
 import akka.event.LoggingReceive
+import akka.pattern.ask
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import javax.imageio.ImageIO
@@ -15,22 +16,27 @@ import com.amazonaws.regions.{Region, Regions}
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model.{AccessControlList, GroupGrantee, ObjectMetadata, Permission, PutObjectRequest}
 
-import models.{MIMEType, OID}
+import org.querki.requester.Requester
 
+import models.{MIMEType, OID, Wikitext}
+
+import querki.core.QLText
 import querki.ecology._
-import querki.spaces.messages.{BeginProcessingPhoto, ImageComplete}
+import querki.session.messages.ChangeProps2
+import querki.spaces.messages.{BeginProcessingPhoto, ImageComplete, SessionRequest, ThingError, ThingFound}
 import querki.time.DateTime
 import querki.types.SimplePropertyBundle
 import querki.util.{Config, QLog}
-import querki.values.{ElemValue, SpaceState}
+import querki.values.{ElemValue, QLContext, SpaceState}
 
-class PhotoUploadActor(val ecology:Ecology, state:SpaceState) extends Actor with EcologyMember {
+class PhotoUploadActor(val ecology:Ecology, state:SpaceState, router:ActorRef) extends Actor with Requester with EcologyMember {
   
   import PhotoUploadActor._
   import PhotoUploadMessages._
   
   lazy val Core = interface[querki.core.Core]
   lazy val PhotosInternal = interface[PhotosInternal]
+  lazy val QL = interface[querki.ql.QL]
   
   object AWS {
     def get(name:String) = Config.getString("querki.aws." + name)
@@ -45,9 +51,9 @@ class PhotoUploadActor(val ecology:Ecology, state:SpaceState) extends Actor with
   var _mimeType:Option[String] = None
   def mimeType = _mimeType.getOrElse(MIMEType.JPEG)
   
-  def receive = LoggingReceive {
+  def receive = LoggingReceive (handleRequestResponse orElse {
     
-    case BeginProcessingPhoto(req, spaceId, tpe) => {
+    case BeginProcessingPhoto(_, spaceId, tpe) => {
       _mimeType = tpe
     }
     
@@ -56,7 +62,7 @@ class PhotoUploadActor(val ecology:Ecology, state:SpaceState) extends Actor with
       QLog.spew(s"Actor got ${chunk.length} bytes")
     }
     
-    case UploadDone(oldValueOpt, prop) => {
+    case UploadDone(rc, propId, thingId) => { //(oldValueOpt, prop) => {
       QLog.spew(s"UploadDone -- got ${chunkBuffer.size} bytes; type is $mimeType")
       val inputStream = new ByteArrayInputStream(chunkBuffer.toArray)
       val originalImage = ImageIO.read(inputStream)
@@ -64,6 +70,10 @@ class PhotoUploadActor(val ecology:Ecology, state:SpaceState) extends Actor with
       QLog.spew(s"Original Image size is ${originalImage.getWidth()}x${originalImage.getHeight()}")
       
       implicit val s = state
+      
+      val prop = s.prop(propId).getOrElse(throw new Exception(s"Attempting to upload unknown Property $propId"))
+      val thing = s.anything(thingId).getOrElse(throw new Exception(s"Attempting to upload unknown Property $propId"))
+      val oldValueOpt = thing.getPropOpt(propId).map(_.v)
       
       val maxSize = prop.getFirstOpt(PhotosInternal.PreferredImageSizeProp).getOrElse(1000)
       
@@ -174,19 +184,32 @@ class PhotoUploadActor(val ecology:Ecology, state:SpaceState) extends Actor with
         case None => prop.cType.makePropValue(Some(elem), PhotosInternal.PhotoType)
       }
       
-      sender ! PhotoInfo(qv)
+      QLog.spew(s"About to actually update the Space -- the QValue is $qv")
+      loopback(router ? SessionRequest(rc.requesterOrAnon, state.id, ChangeProps2(thing.id.toThingId, Map((propId -> qv))))) foreach { response =>
+        response match {
+          case ThingFound(thingId, newState) => {
+            // Okay, we're successful. Send the Wikitext for thumbnail of the new photo back to the Client:
+            val lastElem = qv.cv.last
+            val wikified:Wikitext = QL.process(QLText("[[_thumbnail]]"), QLContext(Core.ExactlyOne(lastElem), Some(rc)))
+            sender ! PhotoInfo(wikified)
+          }
+          case ThingError(error, stateOpt) => {
+            sender ! PhotoFailed
+          }          
+        }
       
-      // Okay, start shutting down...
-      originalImage.flush()
-      self ! ImageComplete
+        // Okay, start shutting down...
+        originalImage.flush()
+        self ! ImageComplete
+      }
     }
     
     case ImageComplete => {
       context.stop(self)
     }
-  }
+  })
 }
 
 object PhotoUploadActor {
-  def actorProps(ecology:Ecology, state:SpaceState):Props = Props(classOf[PhotoUploadActor], ecology, state) 
+  def actorProps(ecology:Ecology, state:SpaceState, router:ActorRef):Props = Props(classOf[PhotoUploadActor], ecology, state, router) 
 }

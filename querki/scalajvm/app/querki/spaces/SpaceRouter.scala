@@ -92,7 +92,7 @@ private[spaces] class SpaceRouter(val ecology:Ecology)
     // Request for an upload actor under this Space. We create it as part of the troupe, but it's
     // basically anonymous after creation:
     case msg:BeginProcessingPhoto => {
-      val worker = context.actorOf(PhotoUploadActor.actorProps(ecology, state))
+      val worker = context.actorOf(PhotoUploadActor.actorProps(ecology, state, self))
       worker.forward(msg)
       sender ! worker
     }
