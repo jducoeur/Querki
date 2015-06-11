@@ -63,9 +63,7 @@ case class AutowireParams(
 class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends EcologyMember with RequesterImplicits {
   def user = info.user
   def state = info.state
-  val curThingRx = Var[Option[Thing]](None)
-  val rcRx = Rx { curThingRx().map(thing => info.rc + thing).getOrElse(info.rc) }
-  def rc = rcRx()
+  def rc = info.rc
   def self = info.actor.self
   val spaceRouter = info.spaceRouter
   val requester = info.actor
@@ -74,7 +72,6 @@ class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends EcologyM
     val oid = ThingId(thingId.underlying)
     // Either show this actual Thing, or a synthetic TagThing if it's not found:
     val thing = state.anything(oid).getOrElse(interface[querki.tags.Tags].getTag(thingId.underlying, state))
-    curThingRx() = Some(thing)
     f(thing)
   }
   

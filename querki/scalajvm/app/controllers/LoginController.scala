@@ -360,7 +360,7 @@ class LoginController extends ApplicationBase {
   def login = Redirect(routes.Application.index)
   
   def dologin = Action.async { implicit request =>
-    val rc = PlayRequestContextFull(request, None, UnknownOID, None, None, ecology)
+    val rc = PlayRequestContextFull(request, None, UnknownOID, None, ecology)
     userForm.bindFromRequest.fold(
       errors => doError(routes.Application.index, "I didn't understand that"),
       form => {

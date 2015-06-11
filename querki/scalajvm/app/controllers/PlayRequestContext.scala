@@ -63,7 +63,6 @@ case class PlayRequestContextFull[B](
     // Note that this is an *identity*
     override val ownerId:OID, 
     override val state:Option[SpaceState], 
-    override val thing:Option[Thing],
     override val ecology:Ecology,
     error:Option[String] = None,
     sessionUpdates:Seq[(String,String)] = Seq.empty,
@@ -71,7 +70,7 @@ case class PlayRequestContextFull[B](
     spaceIdOpt:Option[String] = None,
     reqOwnerHandle:Option[String] = None,
     override val numNotifications:Int = 0) 
-  extends RequestContext(requester, ownerId, state, thing, ecology, numNotifications)
+  extends RequestContext(requester, ownerId, state, ecology, numNotifications)
   with RequestHeaderParser
 {
   def renderer:UIRenderer = interface[querki.html.HtmlRenderer]
@@ -145,5 +144,4 @@ case class PlayRequestContextFull[B](
   }  
   
   def +(state:SpaceState):RequestContext = copy(state = Some(state))
-  def +(thing:Thing):RequestContext = copy(thing = Some(thing))
 }

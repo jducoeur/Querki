@@ -32,7 +32,6 @@ abstract class RequestContext(
     // Note that this is an *identity*
     val ownerId:OID, 
     val state:Option[SpaceState], 
-    val thing:Option[Thing],
     val ecology:Ecology,
     val numNotifications:Int = 0) extends EcologyMember
 {
@@ -79,9 +78,4 @@ abstract class RequestContext(
    * Replace the State and return the modified RequestContext. Basically a limited copy() function.
    */
   def +(state:SpaceState):RequestContext
-  
-  /**
-   * Replace the State and return the modified RequestContext. Basically a limited copy() function.
-   */
-  def +(thing:Thing):RequestContext
 }

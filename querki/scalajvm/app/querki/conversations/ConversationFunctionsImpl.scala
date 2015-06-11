@@ -69,7 +69,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
 	    
 	    requestFuture[ConversationInfo] { implicit promise =>
   	    for {
-	        ThingConversations(convs) <- spaceRouter.requestFor[ThingConversations](ConversationRequest(rc.requesterOrAnon, rc.state.get.id, GetConversations(rc.thing.get.id)))
+	        ThingConversations(convs) <- spaceRouter.requestFor[ThingConversations](ConversationRequest(rc.requesterOrAnon, rc.state.get.id, GetConversations(thing.id)))
 	        identities <- IdentityAccess.getIdentities(getIds(convs).toSeq) //IdentityAccess.identityCache.requestFor[IdentitiesFound](GetIdentities(getIds(convs).toSeq))
           apiConvs = convs.map(toApi(_)(identities, theRc))
 	      }
