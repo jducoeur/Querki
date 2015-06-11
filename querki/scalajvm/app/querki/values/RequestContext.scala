@@ -52,11 +52,6 @@ abstract class RequestContext(
   def queryParam(paramName:String):Seq[String]
   
   /**
-   * The UIRenderer to use for displaying stuff to the user in this context.
-   */
-  def renderer:UIRenderer
-  
-  /**
    * The identity that is making this request.
    * 
    * TODO: we need a much, much better concept of "the Identity that I am using within this Space", if we're

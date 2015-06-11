@@ -45,6 +45,7 @@ abstract class Thing(
   def Core = interface[querki.core.Core]
   def Basic = interface[querki.basic.Basic]
   def QL = interface[querki.ql.QL]
+  def Renderer = interface[querki.html.HtmlRenderer]
   
   def ApplyMethod = Basic.ApplyMethod
   def NotInheritedProp = Core.NotInheritedProp
@@ -369,7 +370,7 @@ abstract class Thing(
   }
   
   def renderProps(implicit request:RequestContext, state:SpaceState):Wikitext = {
-    request.renderer.renderThingDefault(this)
+    Renderer.renderThingDefault(this)
   }
   
   /**

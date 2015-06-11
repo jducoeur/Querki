@@ -72,8 +72,6 @@ case class PlayRequestContextFull[B](
   extends RequestContext(requester, ownerId, ecology, numNotifications)
   with RequestHeaderParser
 {
-  def renderer:UIRenderer = interface[querki.html.HtmlRenderer]
-  
   // NOTE: this may be wrong, but at the moment is the way the logic works
   val returnToHere:Boolean = false
   
