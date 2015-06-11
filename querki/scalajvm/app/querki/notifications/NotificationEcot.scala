@@ -10,13 +10,15 @@ import play.api.libs.concurrent.Execution.Implicits._
 
 import querki.ecology._
 import querki.identity.{PublicIdentity, User}
-import querki.values.{QLRequestContext, RequestContext}
+import querki.values.{QLRequestContext, RequestContext, SpaceState}
 
 private object MOIDs extends EcotIds(48)
 
 class NotificationEcot(e:Ecology) extends QuerkiEcot(e) with NotifierRegistry with Notifications {
   
   import NotificationActor._
+  
+  lazy val System = interface[querki.system.System]
   
   /**
    * The one true handle to the Notifications Actor.
@@ -56,7 +58,9 @@ class NotificationEcot(e:Ecology) extends QuerkiEcot(e) with NotifierRegistry wi
   
   def render(rc:RequestContext, note:Notification):RenderedNotification = {
     val notifier = notifiers(note.notifier)
-    val context = QLRequestContext(rc)
+    // Note that notifications, necessarily, render against SystemState. That has to be the case,
+    // because the Notifications page displays notes from many different Spaces.
+    val context = QLRequestContext(rc)(System.State)
     notifier.render(context, note)
   }
 }

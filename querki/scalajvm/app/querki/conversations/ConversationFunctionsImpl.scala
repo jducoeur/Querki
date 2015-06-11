@@ -58,6 +58,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
   }
   
   def getConversationsFor(thingId:TID):Future[ConversationInfo] = withThing(thingId) { thing =>
+    implicit val s = state
     val canComment = rc.localIdentity.map(identity => Conversations.canWriteComments(identity.id, thing, state)).getOrElse(false)
 	  val canReadComments = Conversations.canReadComments(user, thing, state)
 		    
@@ -69,7 +70,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
 	    
 	    requestFuture[ConversationInfo] { implicit promise =>
   	    for {
-	        ThingConversations(convs) <- spaceRouter.requestFor[ThingConversations](ConversationRequest(rc.requesterOrAnon, rc.state.get.id, GetConversations(thing.id)))
+	        ThingConversations(convs) <- spaceRouter.requestFor[ThingConversations](ConversationRequest(rc.requesterOrAnon, state.id, GetConversations(thing.id)))
 	        identities <- IdentityAccess.getIdentities(getIds(convs).toSeq) //IdentityAccess.identityCache.requestFor[IdentitiesFound](GetIdentities(getIds(convs).toSeq))
           apiConvs = convs.map(toApi(_)(identities, theRc))
 	      }
@@ -82,6 +83,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
   }
 
   def addComment(thingId:TID, text:String, responseTo:Option[CommentId]):Future[ConvNode] = withThing(thingId) { thing =>
+    implicit val s = state
     // TODO: we need a better concept of "my current identity in this Space"!
     val authorId = rc.localIdentity.map(_.id).getOrElse(UnknownOID)
     

@@ -3,7 +3,7 @@ package querki
 import models.{Thing, Wikitext}
 
 import querki.ecology._
-import querki.values.RequestContext
+import querki.values.{RequestContext, SpaceState}
 
 /**
  * This package represents the *abstraction* of a user interface. Note the contrast with querki.html,
@@ -17,6 +17,6 @@ package object ui {
    * instead, you access the appropriate Renderer via the RequestContext.
    */
   trait UIRenderer {
-    def renderThingDefault(thing:Thing)(implicit rc:RequestContext):Wikitext    
+    def renderThingDefault(thing:Thing)(implicit rc:RequestContext, state:SpaceState):Wikitext    
   }
 }

@@ -64,6 +64,6 @@ package object html {
     /**
      * Returns the URL to create a new Instance of the specified Model and begin editing it.
      */
-    def createAndEditUrl(rc:RequestContext, modelId:ThingId):String
+    def createAndEditUrl(rc:RequestContext, modelId:ThingId)(implicit state:SpaceState):String
   }
 }

@@ -38,7 +38,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   lazy val NameProp = Core.NameProp
   
   def getInstanceEditor(thing:PropertyBundle, context:QLContext, currentValue:Option[DisplayPropVal] = None):Wikitext = {
-    instanceEditorForThing(thing, context.next(thing.thisAsQValue).copy(currentValue = currentValue), None)
+    instanceEditorForThing(thing, context.next(thing.thisAsQValue).copy(currentValue = currentValue)(context.state), None)
   }
   
   /***********************************************
@@ -256,7 +256,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
           val startAt = pageSize * page
           val instances = allInstances.drop(startAt).take(pageSize)
           val wikitexts = 
-            instances.map { instance => instanceEditorForThing(instance, instance.thisAsContext(context.request), Some(inv)) } ++
+            instances.map { instance => instanceEditorForThing(instance, instance.thisAsContext(context.request, state), Some(inv)) } ++
             {
               if (addPaginator)
                 Seq(createInstanceButton(thing, mainContext))

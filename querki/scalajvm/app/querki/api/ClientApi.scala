@@ -32,8 +32,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
   implicit def thing2TID(t:Thing) = TID(t.id.toThingId.toString)
   implicit def OID2TID(oid:OID) = TID(oid.toThingId.toString)
   
-  def thingInfo(t:Thing, rc:RequestContext):ThingInfo = {
-      implicit val state = rc.state.get
+  def thingInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):ThingInfo = {
       val user = rc.requesterOrAnon
       val editable = AccessControl.canEdit(state, user, t.id)
       val isModel = t.isModel
@@ -45,7 +44,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
       ThingInfo(
         t, 
         t.linkName, 
-        t.unsafeNameOrComputed(rc),
+        t.unsafeNameOrComputed(rc, state),
         t.model,
         t.kind,
         isModel,
@@ -83,11 +82,11 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
     }
   }
   
-  def requestInfo(rc:RequestContext):RequestInfo = {
-    if (AccessControl.canRead(rc.state.get, rc.requesterOrAnon, rc.state.get.id)) {
+  def requestInfo(rc:RequestContext)(implicit state:SpaceState):RequestInfo = {
+    if (AccessControl.canRead(state, rc.requesterOrAnon, state.id)) {
       RequestInfo(
         userInfo(rc.requester), 
-        spaceInfo(rc.state, rc), 
+        spaceInfo(Some(state), rc), 
         rc.isOwner,
         rc.requesterOrAnon.level)
     } else {
@@ -96,8 +95,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
     }
   }
   
-  def propInfo(prop:AnyProp, rc:RequestContext):PropInfo = {
-    implicit val s = rc.state.get
+  def propInfo(prop:AnyProp, rc:RequestContext)(implicit state:SpaceState):PropInfo = {
     val typeId = prop.pType match {
       case mt:ModelTypeBase => {
         if (prop.pType.ifSet(Basic.ExplicitProp))
@@ -116,9 +114,8 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
       typeId)
   }
   
-  def propValInfo(t:Thing, rc:RequestContext):Seq[PropValInfo] = {
-    implicit val state = rc.state.get
-    def oneProp(prop:AnyProp, v:QValue):PropValInfo = {
+  def propValInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):Seq[PropValInfo] = {
+     def oneProp(prop:AnyProp, v:QValue):PropValInfo = {
       val prompt = prop.getPropOpt(Editor.PromptProp).map(_.renderPlain)
       val renderedV =
         if (v.pType.isInstanceOf[querki.core.IsTextType]) {
@@ -126,7 +123,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
         } else {
           v.wikify(QLRequestContext(rc))
       }
-      val tooltip = prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc)))
+      val tooltip = prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc, state)))
           
       PropValInfo(propInfo(prop, rc), prompt, renderedV, tooltip)
     }

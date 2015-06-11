@@ -119,8 +119,7 @@ abstract class Thing(
     }    
   }
   
-  def nameOrComputed(implicit rc:RequestContext):DisplayText = {
-    implicit val s = rc.state.get
+  def nameOrComputed(implicit request:RequestContext, state:SpaceState):DisplayText = {
     val localName = lookupDisplayName
     def fallback() = DisplayText(id.toThingId.toString)
     if (localName.isEmpty) {
@@ -139,8 +138,7 @@ abstract class Thing(
     }    
   }
   
-  def unsafeNameOrComputed(implicit rc:RequestContext):String = {
-    implicit val s = rc.state.get
+  def unsafeNameOrComputed(implicit rc:RequestContext, state:SpaceState):String = {
     val localName = lookupDisplayName
     def fallback() = id.toThingId.toString
     if (localName.isEmpty) {
@@ -195,6 +193,8 @@ abstract class Thing(
     val propOpt = state.prop(pid)
     propOpt.flatMap(prop => props.get(pid).map(v => prop.pair(v)))
   }
+  // Note that this does *not* require a SpaceState. This is very, very important, so that it can be used
+  // for lazy vals:
   def localProp[VT, CT](prop:Property[VT, _]):Option[PropAndVal[VT]] = {
     prop.fromOpt(this.props) map prop.pair
   }
@@ -368,7 +368,7 @@ abstract class Thing(
     (other == model) || getModelOpt.map(_.isAncestor(other)).getOrElse(false)
   }
   
-  def renderProps(implicit request:RequestContext):Wikitext = {
+  def renderProps(implicit request:RequestContext, state:SpaceState):Wikitext = {
     request.renderer.renderThingDefault(this)
   }
   
@@ -377,8 +377,8 @@ abstract class Thing(
    * 
    * This mainly exists so that the different Kinds can override it and do their own thing.
    */
-  def renderDefault(implicit request:RequestContext):Wikitext = {
-    renderProps(request)
+  def renderDefault(implicit request:RequestContext, state:SpaceState):Wikitext = {
+    renderProps
   }
   
   /**
@@ -388,8 +388,7 @@ abstract class Thing(
    * If you specify a property, that property will be rendered with this Thing as a context;
    * otherwise, DisplayText will be rendered.
    */
-  def render(implicit request:RequestContext, prop:Option[Property[_,_]] = None):Wikitext = {
-    implicit val state = request.state.get
+  def render(implicit request:RequestContext, state:SpaceState, prop:Option[Property[_,_]] = None):Wikitext = {
     val actualProp = 
       if (ifSet(Core.IsModelProp))
         prop.getOrElse(Basic.ModelViewProp)

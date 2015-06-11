@@ -36,8 +36,8 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
     
     case SpaceMembersMessage(_, _, msg) => msg match {
   	  // Someone is attempting to join this Space:
-  	  case JoinRequest(rcRaw) => {
-  	    val rc = rcRaw + state
+  	  case JoinRequest(rc) => {
+        implicit val s = state
   	    val result:Option[Future[JoinResult]] = Person.acceptInvitation(rc) {
   	      case ThingFound(id, state) => Future.successful(Joined) 
   	      case ThingError(error, stateOpt) => Future.successful(JoinFailed(error))
@@ -49,14 +49,13 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
   	    }
   	  }
   	    
-  	  case InviteRequest(rcRaw, inviteeEmails, collabs) => {
-  	    val rc = rcRaw + state
+  	  case InviteRequest(rc, inviteeEmails, collabs) => {
   	    val nCurrentMembers = Person.people(state).size
   	    val resultFut = 
   	      if (!rc.requesterOrAnon.isAdmin && (nCurrentMembers + inviteeEmails.size + collabs.size) > maxMembers) {
   	        Future.successful(s"Sorry: at the moment you are limited to $maxMembers members per Space, and this would make more than that.")
   	      } else {
-  	        Person.inviteMembers(rc, inviteeEmails, collabs).map { result =>
+  	        Person.inviteMembers(rc, inviteeEmails, collabs, state).map { result =>
   	        val resultStr = 
   	          (
   	            if (result.invited.length > 0)

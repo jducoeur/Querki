@@ -6,7 +6,7 @@ import models.ThingId
 
 import querki.ecology._
 import querki.html.PublicUrls
-import querki.values.RequestContext
+import querki.values.{RequestContext, SpaceState}
 
 /**
  * This is the glue that exposes the relevant parts of the reverse router without causing
@@ -17,13 +17,13 @@ import querki.values.RequestContext
  * doesn't have to depend on controllers.
  */
 class PublicUrlDefinitions(e:Ecology) extends QuerkiEcot(e) with PublicUrls {
-  def createAndEditUrl(rc:RequestContext, modelId:ThingId):String = {
+  def createAndEditUrl(rc:RequestContext, modelId:ThingId)(implicit state:SpaceState):String = {
     rc match {
       case prc:PlayRequestContext => {
         implicit val req = prc.request
         // TODO: this code arguably belongs in ClientController somehow, but I'd prefer to not
         // force a pointless redirect:
-        val spaceCall = routes.ClientController.space(rc.ownerHandle, rc.state.get.toThingId)
+        val spaceCall = routes.ClientController.space(rc.ownerHandle, state.toThingId)
         val call = new Call(spaceCall.method, spaceCall.url + s"#_createAndEdit?model=$modelId")
         call.absoluteURL()
       }

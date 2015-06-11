@@ -395,6 +395,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	}
 	
   def getCreateInstanceUrl(inv:Invocation):InvocationValue[String] = {
+    implicit val state = inv.state
       // First, figure out the linkback if there is one:
       val linkParam = inv.definingContext match {
         case Some(definingContext) => {

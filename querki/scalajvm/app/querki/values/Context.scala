@@ -11,7 +11,7 @@ import querki.util.DebugRenderable
 case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:Option[QLContext] = None, 
                      parser:Option[QLParser] = None, depth:Int = 0, useCollStack:Int = 0, propOpt:Option[Property[_,_]] = None,
                      currentValue:Option[DisplayPropVal] = None, 
-                     fromTransformOpt:Option[Thing] = None, withCallOpt:Option[QLCall] = None) 
+                     fromTransformOpt:Option[Thing] = None, withCallOpt:Option[QLCall] = None)(implicit val state:SpaceState)
   extends DebugRenderable with EcologyMember
 {
   lazy val Core = interface[querki.core.Core]
@@ -34,7 +34,6 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
       case None => throw new Exception("Attempting to fetch the RequestContext from a Context that doesn't have one!")
     }
   }
-  def state:SpaceState = request.state.getOrElse(System.State)
   def isEmpty = value.isEmpty
   // Parent matters at rendering time -- we render the final context in the context of its parent.
   // This matter most when (as often), the last context is a Text; it needs to be rendered correctly
@@ -248,7 +247,7 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
  * Play template level.
  */
 object QLRequestContext {
-  def apply(request:RequestContext) = QLContext(EmptyValue.untyped(request.ecology), Some(request))
+  def apply(request:RequestContext)(implicit state:SpaceState) = QLContext(EmptyValue.untyped(request.ecology), Some(request))
 }
 
 /**
@@ -259,5 +258,5 @@ object QLRequestContext {
  * TODO: deprecate and remove this.
  */
 object EmptyContext {
-  def apply(implicit ecology:Ecology) = QLContext(EmptyValue.untyped, None)
+  def apply(implicit ecology:Ecology) = QLContext(EmptyValue.untyped, None)(ecology.api[querki.system.System].State)
 }

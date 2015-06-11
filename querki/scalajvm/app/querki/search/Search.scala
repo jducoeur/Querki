@@ -6,7 +6,7 @@ import querki.ecology._
 
 import querki.identity.User
 
-import querki.values.RequestContext
+import querki.values.{RequestContext, SpaceState}
 
 object MOIDs extends EcotIds(19)
 
@@ -16,24 +16,14 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search {
   
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
   
-  def search(rc:RequestContext, searchStr:String):Option[SearchResults] = {
+  def search(searchStr:String)(implicit state:SpaceState):Option[SearchResults] = {
     if (searchStr.length() < 3)
       None
-    else if (rc.state.isEmpty)
-      None
     else {
-      implicit val space = rc.state.get
-      
       val searchComp = searchStr.toLowerCase()
-      val requester = rc.requester.getOrElse(User.Anonymous)
       
       def checkOne(t:Thing):Seq[SearchResult] = {
-        // TODO: this isn't strictly correct -- ideally, this is a subtle combination of Can Read and Can View Source.
-        // If the user Can View Source, then it's fine; otherwise, if he Can Read, we should really be checking the
-        // *rendered* view of this Thing. But that's challenging, so this should probably become Can View Source for now.
-        if (!AccessControl.canRead(space, requester, t.id))
-          Seq()
-        else if (t.unsafeDisplayName.toLowerCase().contains(searchComp)) {
+        if (t.unsafeDisplayName.toLowerCase().contains(searchComp)) {
           Seq(SearchResult(t, DisplayNameProp, 1.0, t.unsafeDisplayName, List(t.unsafeDisplayName.toLowerCase().indexOf(searchComp))))
         } else {
           // For now, we're only going to deal with Text types.
@@ -57,7 +47,7 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search {
                         i :: matchLocs(i + 1)
                     }
 
-                    Some(SearchResult(t, space.prop(propId).get, 0.5, qtext.text, matchLocs(0)))
+                    Some(SearchResult(t, state.prop(propId).get, 0.5, qtext.text, matchLocs(0)))
                   }
                   else
                     None
@@ -70,7 +60,7 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search {
         }
       }
       
-      val allResults = space.everythingLocal.map(checkOne(_)).flatten.toSeq
+      val allResults = state.everythingLocal.map(checkOne(_)).flatten.toSeq
     
       Some(SearchResults(searchStr, allResults))      
     }

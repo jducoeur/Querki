@@ -102,7 +102,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   
   // TODO: I don't love having this renderer level dependent on QL. Think about whether this is the right place
   // for this code.
-  def renderThingDefault(thing:Thing)(implicit rc:RequestContext):Wikitext = {
+  def renderThingDefault(thing:Thing)(implicit rc:RequestContext, state:SpaceState):Wikitext = {
     val text = """
         |<dl>
         |[[_foreachProperty -> 
@@ -111,7 +111,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
         |]]
         |</dl>""".stripMargin
     val fullText =
-      if (thing.ifSet(Core.IsModelProp)(rc.state.get)) {
+      if (thing.ifSet(Core.IsModelProp)(state)) {
         text + """
         |------
         |

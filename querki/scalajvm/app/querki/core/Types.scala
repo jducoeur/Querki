@@ -292,7 +292,7 @@ trait LinkUtils { self:CoreEcot =>
           // Note: the unsafeDisplayNames below are because Scala's XML interpolator appears to be doing the
           // name sanitizing for us:
           candidates map { candidate:Thing =>
-            val name = context.requestOpt.map(candidate.unsafeNameOrComputed(_)).getOrElse(candidate.unsafeDisplayName)
+            val name = context.requestOpt.map(candidate.unsafeNameOrComputed(_, state)).getOrElse(candidate.unsafeDisplayName)
             if(candidate.id == v.elem) {
               <option value={candidate.id.toString} selected="selected">{name}</option>        
             } else {
@@ -549,7 +549,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
       val target = follow(context)(v)
       val text = target match {
         case Some(t) => {
-          val display = displayOpt.getOrElse(context.requestOpt.map(t.nameOrComputed(_)).getOrElse(t.displayNameText).htmlWikitext)
+          val display = displayOpt.getOrElse(context.requestOpt.map(t.nameOrComputed(_, context.state)).getOrElse(t.displayNameText).htmlWikitext)
           makeWikiLink(context, t, display)
         }
         case None => Wikitext("Bad Link: Thing " + v.toString + " not found")

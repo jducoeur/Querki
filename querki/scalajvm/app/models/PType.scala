@@ -167,7 +167,7 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher)(implicit e:Ecology
   /**
    * Types can override this to provide default renderings when you look at a Property of this Type.
    */
-  def renderProperty(prop:Property[_,_])(implicit request:RequestContext):Option[Wikitext] = None
+  def renderProperty(prop:Property[_,_])(implicit request:RequestContext, state:SpaceState):Option[Wikitext] = None
   
   /**
    * The PType-math version of ==; this is here so that specific PTypes can override it.

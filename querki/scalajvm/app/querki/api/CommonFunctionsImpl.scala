@@ -15,7 +15,7 @@ class PassthroughHandler(val ecology:Ecology, rc:RequestContext) extends Ecology
   
   def pass(name:String) = {
     state.anythingByName(name) match {
-      case Some(t) => contents += (name -> ClientApi.thingInfo(t, rc + state))
+      case Some(t) => contents += (name -> ClientApi.thingInfo(t, rc))
       case None => QLog.error(s"Attempting to send unknown Standard Thing $name")
     }
   }

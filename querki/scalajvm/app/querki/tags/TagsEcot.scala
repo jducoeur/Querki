@@ -143,7 +143,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     // name-based.
     def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = nameToLink(context)(v)
     
-    override def renderProperty(prop:Property[_,_])(implicit request:RequestContext):Option[Wikitext] = {
+    override def renderProperty(prop:Property[_,_])(implicit request:RequestContext, state:SpaceState):Option[Wikitext] = {
       Some(QL.process(querki.core.QLText("""These tags are currently being used:
 [[_tagsForProperty -> _sort -> _bulleted]]"""), prop.thisAsContext))
     }
@@ -187,7 +187,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
       Wikitext("[") + display + Wikitext(s"](${SafeUrl(v.text)})") 
     }
     
-    override def renderProperty(prop:Property[_,_])(implicit request:RequestContext):Option[Wikitext] = {
+    override def renderProperty(prop:Property[_,_])(implicit request:RequestContext, state:SpaceState):Option[Wikitext] = {
       Some(QL.process(QLText("""These tags are currently being used:
 [[_tagsForProperty -> _sort -> _bulleted]]"""), prop.thisAsContext))
     }
@@ -212,16 +212,15 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     val name = SafeUrl.decode(nameIn)
     override lazy val displayName = name
     override lazy val unsafeDisplayName = name
-    override def nameOrComputed(implicit rc:RequestContext) = DisplayText(name)
-    override def unsafeNameOrComputed(implicit rc:RequestContext) = name
+    override def nameOrComputed(implicit rc:RequestContext, state:SpaceState) = DisplayText(name)
+    override def unsafeNameOrComputed(implicit rc:RequestContext, state:SpaceState) = name
     override lazy val canonicalName = Some(name)
     override lazy val linkName = Some(name)
     override lazy val toThingId:ThingId = new AsDisplayName(name)
     
     def pseudoModel = preferredModelForTag(space, name)
       
-   override def render(implicit rc:RequestContext, prop:Option[Property[_,_]] = None):Wikitext = {
-      implicit val s = space
+   override def render(implicit rc:RequestContext, state:SpaceState, prop:Option[Property[_,_]] = None):Wikitext = {
       val model = pseudoModel
       val propAndValOpt = model.getPropOpt(ShowUnknownProp) orElse space.getPropOpt(ShowUnknownProp)
       val nameVal = ExactlyOne(PlainTextType(name))

@@ -453,6 +453,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
           |This is typically used in _filter or _if.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QValue = {
+      implicit val s = inv.state
       val resultInv = for {
         dummy <- inv.returnsType(YesNoType)
         thing <- inv.contextAllThings

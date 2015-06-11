@@ -121,10 +121,10 @@ class ApplicationBase extends Controller with EcologyMember {
       userParam match {
         case Some(u) => {
           UserSessionMgr.getSessionInfo(user) flatMap { info =>
-            f(PlayRequestContextFull(request, userParam, UnknownOID, None, ecology, numNotifications = info.numNewNotes))          
+            f(PlayRequestContextFull(request, userParam, UnknownOID, ecology, numNotifications = info.numNewNotes))          
           }
         }
-        case None => f(PlayRequestContextFull(request, userParam, UnknownOID, None, ecology))
+        case None => f(PlayRequestContextFull(request, userParam, UnknownOID, ecology))
       }
     }
   }

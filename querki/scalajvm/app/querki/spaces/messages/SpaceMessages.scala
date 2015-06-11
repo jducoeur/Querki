@@ -48,7 +48,7 @@ object SpaceMessage {
 case class GetSpaceInfo(req:User, space:OID) extends SpaceMessage(req, space)
   
 case class SpaceId(id:OID)
-case class SpaceInfo(id:OID, linkName:String, display:String)
+case class SpaceInfo(id:OID, linkName:String, display:String, ownerHandle:String)
 
 case class CreateThing(req:User, space:OID, kind:Kind, modelId:OID, props:PropMap) extends SpaceMessage(req, space)
 

@@ -62,7 +62,6 @@ case class PlayRequestContextFull[B](
     override val requester:Option[User], 
     // Note that this is an *identity*
     override val ownerId:OID, 
-    override val state:Option[SpaceState], 
     override val ecology:Ecology,
     error:Option[String] = None,
     sessionUpdates:Seq[(String,String)] = Seq.empty,
@@ -70,15 +69,13 @@ case class PlayRequestContextFull[B](
     spaceIdOpt:Option[String] = None,
     reqOwnerHandle:Option[String] = None,
     override val numNotifications:Int = 0) 
-  extends RequestContext(requester, ownerId, state, ecology, numNotifications)
+  extends RequestContext(requester, ownerId, ecology, numNotifications)
   with RequestHeaderParser
 {
   def renderer:UIRenderer = interface[querki.html.HtmlRenderer]
   
   // NOTE: this may be wrong, but at the moment is the way the logic works
   val returnToHere:Boolean = false
-  
-  def withUpdatedState(newState:SpaceState):RequestContext = copy(state = Some(newState))
   
   def turningOn(name:String):Boolean = paramIs(name, "on")
   def turningOff(name:String):Boolean = paramIs(name, "off")
@@ -137,11 +134,7 @@ case class PlayRequestContextFull[B](
   def propStr = firstQueryParam(propStrName)
   // If there was a property specified as a query parameter, that is the property we should
   // evaluate and render. This returns that property, if there is one:
-  def prop:Option[Property[_,_]] = {
-    // TBD: I should be able to write this as a for comprehension, but I'm doing
-    // something wrong in the syntax. Fix it:
-    state.flatMap(space => propStr.flatMap(id => space.prop(ThingId(id))))
+  def prop(implicit state:SpaceState):Option[Property[_,_]] = {
+    propStr.flatMap(id => state.prop(ThingId(id)))
   }  
-  
-  def +(state:SpaceState):RequestContext = copy(state = Some(state))
 }

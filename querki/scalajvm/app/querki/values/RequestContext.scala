@@ -31,7 +31,6 @@ abstract class RequestContext(
     val requester:Option[User], 
     // Note that this is an *identity*
     val ownerId:OID, 
-    val state:Option[SpaceState], 
     val ecology:Ecology,
     val numNotifications:Int = 0) extends EcologyMember
 {
@@ -39,10 +38,8 @@ abstract class RequestContext(
   
   def requesterOrAnon = requester getOrElse User.Anonymous
   def requesterOID = requester map (_.id) getOrElse UnknownOID  
-  def ownerHandle = state.map(_.ownerHandle).getOrElse(ownerId.toThingId.toString)
-  def ownerName = state.map(_.ownerName).getOrElse(ownerId.toThingId.toString)
-  
-  def withUpdatedState(newState:SpaceState):RequestContext
+  def ownerHandle(implicit state:SpaceState) = state.ownerHandle
+  def ownerName(implicit state:SpaceState) = state.ownerName
   
   def isOwner = requesterOrAnon.hasIdentity(ownerId)
   
@@ -65,17 +62,11 @@ abstract class RequestContext(
    * TODO: we need a much, much better concept of "the Identity that I am using within this Space", if we're
    * going to truly support Identity separation properly.
    */
-  def localIdentity:Option[Identity] = {
+  def localIdentity(implicit state:SpaceState):Option[Identity] = {
     for {
       req <- requester
-      s <- state
-      firstIdentity <- Person.localIdentities(req)(s).headOption
+      firstIdentity <- Person.localIdentities(req)(state).headOption
     }
       yield firstIdentity
   }
-  
-  /**
-   * Replace the State and return the modified RequestContext. Basically a limited copy() function.
-   */
-  def +(state:SpaceState):RequestContext
 }

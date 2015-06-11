@@ -9,7 +9,7 @@ import models.Thing.PropMap
 import querki.ecology._
 import querki.identity.{IdentityId, PublicIdentity, User, UserId}
 import querki.notifications.Common
-import querki.values.RequestContext
+import querki.values.{RequestContext, SpaceState}
 
 package object notifications {
   /**

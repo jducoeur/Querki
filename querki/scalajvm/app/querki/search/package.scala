@@ -2,10 +2,10 @@ package querki
 
 import querki.ecology._
 
-import querki.values.RequestContext
+import querki.values.{RequestContext, SpaceState}
 
 package object search {
   trait Search extends EcologyInterface {
-    def search(rc:RequestContext, searchStr:String):Option[SearchResults]
+    def search(searchStr:String)(implicit state:SpaceState):Option[SearchResults]
   }
 }

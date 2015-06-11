@@ -25,14 +25,14 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
   lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   lazy val Stylesheets = interface[querki.css.Stylesheets]
   
-  def getRequestInfo():RequestInfo = ClientApi.requestInfo(rc)
+  def getRequestInfo():RequestInfo = ClientApi.requestInfo(rc)(state)
   
   def getThingInfo(thingId:TID) = withThing(thingId) { thing =>
-    ClientApi.thingInfo(thing, rc)
+    ClientApi.thingInfo(thing, rc)(state)
   }
 
   def getThingPage(thingId:TID, renderPropIdOpt:Option[TID]):ThingPageDetails = withThing(thingId) { thing =>
-    implicit val state = rc.state.get
+    implicit val s = state
     
     val thingInfo = ClientApi.thingInfo(thing, rc)
     // Note that both the root Thing and (more importantly) TagThings won't have a Model:
@@ -45,7 +45,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
       pv <- thing.getPropOpt(HtmlUI.PageHeaderProperty)
       if (!thing.isModel)
     }
-      yield pv.v.wikify(thing.thisAsContext(rc))
+      yield pv.v.wikify(thing.thisAsContext(rc, state))
       
     val renderPropOpt = renderPropIdOpt.flatMap { propTid =>
       val oid = ThingId(propTid.underlying)
@@ -53,7 +53,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
       state.prop(oid)
     }
 
-    val rendered = thing.render(rc, renderPropOpt)
+    val rendered = thing.render(rc, state, renderPropOpt)
     
     val styleinfo = Stylesheets.stylesheetsFor(thing)
     
@@ -62,12 +62,13 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
   
   def evaluateQL(thingId:TID, ql:String):Wikitext = withThing(thingId) { thing =>
     implicit val r = rc
+    implicit val s = state
     val context = thing.thisAsContext
     QL.processMethod(QLText(ql), context, None, Some(thing)).wikify(context)
   }
   
   def getProperties(thingId:TID):Seq[PropValInfo] = withThing(thingId) { thing =>
-    ClientApi.propValInfo(thing, rc)
+    ClientApi.propValInfo(thing, rc)(state)
   }
   
   def getPropertyDisplay(thingId:TID, propIdStr:TID):Option[Wikitext] = withThing(thingId) { thing =>

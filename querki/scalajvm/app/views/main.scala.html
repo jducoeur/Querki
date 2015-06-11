@@ -11,8 +11,6 @@
 @Core = @{ rc.interface[querki.core.Core] }
 @PageEventManager = @{ rc.interface[controllers.PageEventManager] }
 @NavSectionMgr = @{ rc.interface[controllers.NavSectionMgr] }
-
-@space = @{ rc.state }
 @nav = @{ NavSectionMgr.nav(rc) }
 
 @formErrors = @{
@@ -32,20 +30,6 @@
 }
 
 @requester = @{ rc.requester }
-
-@ownerId = @{
-  space match {
-    case Some(s) => s.ownerHandle
-    case None => ""
-  }
-}
-
-@spaceId = @{
-  space match {
-    case Some(s) => s.toThingId.toString
-    case None => ""
-  }
-}
 
 @displayNavLink(display:String, url:Call, idStr:String, enabled:Boolean) = {
   @if(enabled) {
@@ -155,7 +139,7 @@
 				at: "right"
 			});
 			
-			finalSetup("@ownerId", "@spaceId", $('body'));
+			finalSetup("", "", $('body'));
 		});
 
 		</script>

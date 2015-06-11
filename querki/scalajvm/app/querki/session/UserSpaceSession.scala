@@ -300,7 +300,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
   def write[Result: Writer](r: Result) = upickle.write(r)
   def read[Result: Reader](p: String) = upickle.read[Result](p)
   
-  def mkParams(rc:RequestContext) = AutowireParams(user, state, rc + state, spaceRouter, this)
+  def mkParams(rc:RequestContext) = AutowireParams(user, state, rc, spaceRouter, this)
   
   def normalReceive:Receive = LoggingReceive (handleRequestResponse orElse {
     case CurrentState(s) => setRawState(s)

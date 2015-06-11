@@ -74,12 +74,9 @@ package object identity {
     def IdentityLink:Property[OID,OID]
     def InviteText:Property[QLText, String]    
    
-    def inviteMembers(rc:RequestContext, invitees:Seq[EmailAddress], collaboratorIds:Seq[OID]):Future[InvitationResult]
+    def inviteMembers(rc:RequestContext, invitees:Seq[EmailAddress], collaboratorIds:Seq[OID], originalState:SpaceState):Future[InvitationResult]
     
-    // TODO: this is a horrible abstraction break. Do we really need PlayRequestContext here? Odds are
-    // that this method doesn't belong in Person at all, given that *all* of its parameters involve weird
-    // imports:
-    def acceptInvitation[B](rc:RequestContext)(cb:querki.spaces.messages.ThingResponse => Future[B]):Option[scala.concurrent.Future[B]]
+    def acceptInvitation[B](rc:RequestContext)(cb:querki.spaces.messages.ThingResponse => Future[B])(implicit state:SpaceState):Option[scala.concurrent.Future[B]]
     
     def getPersonIdentity(person:Thing)(implicit state:SpaceState):Option[OID]
     def hasPerson(user:User, personId:OID)(implicit state:SpaceState):Boolean

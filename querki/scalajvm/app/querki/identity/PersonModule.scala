@@ -297,8 +297,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
    * TODO: *boy*, this is mapping a lot of Futures together. Can we rewrite this as a clean for comprehension over
    * Futures, with some subroutines?
    */
-  def inviteMembers(rc:RequestContext, inviteeEmails:Seq[EmailAddress], collaboratorIds:Seq[OID]):Future[InvitationResult] = {
-    val originalState = rc.state.get
+  def inviteMembers(rc:RequestContext, inviteeEmails:Seq[EmailAddress], collaboratorIds:Seq[OID], originalState:SpaceState):Future[InvitationResult] = {
     // TODO: this is much too arbitrary:
     implicit val timeout = Timeout(30 seconds)
     
@@ -392,8 +391,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
 	    
 	    futs.map { case (updatedState, people) =>
 	      implicit val finalState = updatedState
-	      val newRc = rc.withUpdatedState(updatedState)
-	      val context = updatedState.thisAsContext(newRc)
+	      val context = updatedState.thisAsContext(rc, finalState)
 	      val subjectQL = QLText(rc.ownerName + " has invited you to join the Space " + updatedState.displayName)
 	      val inviteLink = QLText("""
 	        |
@@ -449,12 +447,11 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
    * 
    * TODO: this depends on Play, so it should be in controllers!
    */
-  def acceptInvitation[B](rcRaw:RequestContext)(cb:ThingResponse => Future[B]):Option[Future[B]] = {
+  def acceptInvitation[B](rcRaw:RequestContext)(cb:ThingResponse => Future[B])(implicit state:SpaceState):Option[Future[B]] = {
     val rc = rcRaw.asInstanceOf[PlayRequestContext]
     for (
       personIdStr <- rc.sessionCookie(personParam);
       personId = OID(personIdStr);
-      state <- rc.state;
       person <- state.anything(personId);
       user <- rc.requester;
       // TODO: currently, we're just taking the first identity, arbitrarily. But in the long run, I should be able

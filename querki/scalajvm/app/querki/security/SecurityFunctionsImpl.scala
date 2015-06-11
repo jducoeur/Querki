@@ -56,7 +56,7 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Aut
   lazy val maxMembers = Config.getInt("querki.public.maxMembersPerSpace", 100)
   
   def invite(emailStrs:Seq[String], collabTids:Seq[TID]):Future[InviteResponse] = {
-	val nCurrentMembers = Person.people(state).size
+	  val nCurrentMembers = Person.people(state).size
     val inviteeEmails = emailStrs.map(querki.email.EmailAddress(_))
     val collabs = for {
       tid <- collabTids
@@ -68,7 +68,7 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Aut
     if (!rc.requesterOrAnon.isAdmin && (nCurrentMembers + inviteeEmails.size + collabs.size) > maxMembers)
       throw new MaxMembersPerSpaceException(maxMembers)
 	
-    Person.inviteMembers(rc, inviteeEmails, collabs).map { case InvitationResult(invited, alreadyInvited) =>
+    Person.inviteMembers(rc, inviteeEmails, collabs, state).map { case InvitationResult(invited, alreadyInvited) =>
       InviteResponse(invited, alreadyInvited)
     }
   }

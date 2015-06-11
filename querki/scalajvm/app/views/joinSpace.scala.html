@@ -15,7 +15,7 @@
 	  <div class="col-md-10">
 	    <p>@ownerIdentity.name has invited you to join the Space "@{info.display}". Would you like to join it now?</p>
 	
-	    <p><a href="@routes.LoginController.joinSpace(rc.ownerHandle, info.linkName)" class="btn btn-primary">Join</a>
+	    <p><a href="@routes.LoginController.joinSpace(info.ownerHandle, info.linkName)" class="btn btn-primary">Join</a>
 	    &nbsp;
 	    <a href="@routes.Application.index" class="btn">Cancel</a></p>
 	  </div>

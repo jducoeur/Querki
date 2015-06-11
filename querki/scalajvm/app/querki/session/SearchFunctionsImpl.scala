@@ -11,7 +11,8 @@ class SearchFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autow
   lazy val Search = interface[querki.search.Search]
   
   def search(q:String):Option[SearchResults] = {
-    val rawResultsOpt = Search.search(rc, q)
+    implicit val s = state
+    val rawResultsOpt = Search.search(q)
     rawResultsOpt.map { rawResults =>
       val transformed = rawResults.results.map { result =>
         SearchResult(

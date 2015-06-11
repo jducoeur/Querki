@@ -91,7 +91,7 @@ class SpaceManager(val ecology:Ecology, val region:ActorRef) extends Actor with 
           val canon = NameUtils.canonicalize(display)
           persister.request(CreateSpacePersist(requester.mainIdentity.id, userMaxSpaces, canon, display)) foreach {
             case err:ThingError => sender ! err
-            case Changed(spaceId, _) => sender ! SpaceInfo(spaceId, canon, display)
+            case Changed(spaceId, _) => sender ! SpaceInfo(spaceId, canon, display, requester.mainIdentity.handle)
           }
         }  
         { sender ! ThingError(_) }

@@ -80,7 +80,7 @@ disallow: /
         TryTrans[Unit, Future[Result]] { Core.NameProp.validate(name, System.State) }.
           onSucc { _ =>
             SpaceOps.askSpaceManager2(CreateSpace(requester, name)) {
-              case SpaceInfo(spaceId, linkName, display) => {
+              case SpaceInfo(spaceId, linkName, display, ownerHandle) => {
                 val tid = AsName(linkName)
                 Redirect(routes.ClientController.thingRedirect(requester.mainIdentity.handle, tid, tid))
               }

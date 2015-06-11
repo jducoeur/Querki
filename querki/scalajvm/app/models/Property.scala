@@ -58,7 +58,7 @@ case class Property[VT, RT](
   /**
    * This renders the Property itself, if it has no DisplayText defined.
    */
-  override def renderDefault(implicit request:RequestContext):Wikitext = {
+  override def renderDefault(implicit request:RequestContext, state:SpaceState):Wikitext = {
     val fromType = pType.renderProperty(this)
     fromType.getOrElse(renderProps)
   }

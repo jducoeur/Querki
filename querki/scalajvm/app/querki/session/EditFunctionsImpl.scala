@@ -183,6 +183,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   }
   
   def create(modelId:TID, initialProps:Seq[PropertyChange]):Future[ThingInfo] = withThing(modelId) { model =>
+    implicit val s = state
     val props = (emptyProps /: initialProps) { (map, change) =>
       change match {
         case ChangePropertyValue(path, vs) => changeToProps(None, path, vs) match {
@@ -210,13 +211,13 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   
   private def getOnePropEditor(thing:Thing, prop:AnyProp, propVal:DisplayPropVal):PropEditInfo = {
     implicit val s = state
-    val context = thing.thisAsContext(rc)
+    val context = thing.thisAsContext(rc, state)
     val rendered = HtmlRenderer.renderPropertyInputStr(context, prop, propVal)
     PropEditInfo(
       ClientApi.propInfo(prop, rc),
       propVal.inputControlId,
       prop.getPropOpt(Editor.PromptProp).filter(!_.isEmpty).map(_.renderPlain),
-      prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc))),
+      prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc, state))),
       propVal.inheritedFrom.map(_.displayName),
       AccessControl.canEdit(state, user, prop),
       rendered
@@ -414,6 +415,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   }
 
   def changeModel(thingId:TID, newModelId:TID):Future[ThingInfo] = withThing(thingId) { thing =>
+    implicit val s = state
     state.anything(newModelId.toThingId) match {
       case Some(newModel) => {
         // TODO: in principle, this should route through the UserSpaceSession. It doesn't matter yet, but is

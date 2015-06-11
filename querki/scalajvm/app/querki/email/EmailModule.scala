@@ -351,7 +351,7 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
     val previouslySentToOpt = t.getPropOpt(sentToProp)
     
     // Get the actual list of recipients:
-    val recipients = QL.processMethod(recipientsIndirect.first, t.thisAsContext(context.request).forProperty(recipientsProp))
+    val recipients = QL.processMethod(recipientsIndirect.first, t.thisAsContext(context.request, state).forProperty(recipientsProp))
     if (recipients.pType != LinkType) {
       QL.ErrorValue("The Recipient property of an Email Message must return a collection of Links; instead, it produced " + recipients.pType.displayName)
     } else {

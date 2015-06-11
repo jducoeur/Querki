@@ -14,15 +14,15 @@ import querki.values.RequestContext
 
 package object api {
   trait ClientApi extends EcologyInterface {
-    def requestInfo(rc:RequestContext):RequestInfo
+    def requestInfo(rc:RequestContext)(implicit state:SpaceState):RequestInfo
     
-    def thingInfo(t:Thing, rc:RequestContext):ThingInfo
+    def thingInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):ThingInfo
     
     def identityInfo(identity:PublicIdentity):IdentityInfo
     
-    def propInfo(prop:AnyProp, rc:RequestContext):PropInfo
+    def propInfo(prop:AnyProp, rc:RequestContext)(implicit state:SpaceState):PropInfo
     
-    def propValInfo(t:Thing, rc:RequestContext):Seq[PropValInfo]
+    def propValInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):Seq[PropValInfo]
     
     def handleCommonFunction(rc:RequestContext, req:autowire.Core.Request[String]):Future[ClientAnswer]
   }
