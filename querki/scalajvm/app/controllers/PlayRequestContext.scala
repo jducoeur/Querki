@@ -62,7 +62,6 @@ case class PlayRequestContextFull[B](
     override val requester:Option[User], 
     // Note that this is an *identity*
     override val ownerId:OID, 
-    val ecology:Ecology,
     error:Option[String] = None,
     sessionUpdates:Seq[(String,String)] = Seq.empty,
     redirectTo:Option[Call] = None,
