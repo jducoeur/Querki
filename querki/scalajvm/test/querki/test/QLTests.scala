@@ -211,17 +211,17 @@ class QLTests extends QuerkiTests {
   "Query bindings" should {
     "work for a single value" in {
       val thing = commonSpace.sandbox
-      val rc = SimpleTestRequestContext(commonSpace.owner.mainIdentity.id, ecology, 
+      val rc = SimpleTestRequestContext(commonSpace.owner.mainIdentity.id,
           Map("foo" -> Seq("bar")))
-      val context = thing.thisAsContext(rc, commonSpace.state)
+      val context = thing.thisAsContext(rc, commonSpace.state, ecology)
       processQText(context, "[[$foo]]") should equal ("bar")
     }
 
     "work for multiple values" in {
       val thing = commonSpace.sandbox
-      val rc = SimpleTestRequestContext(commonSpace.owner.mainIdentity.id, ecology, 
+      val rc = SimpleTestRequestContext(commonSpace.owner.mainIdentity.id,
           Map("foo" -> Seq("bar", "baz", "bletch")))
-      val context = thing.thisAsContext(rc, commonSpace.state)
+      val context = thing.thisAsContext(rc, commonSpace.state, ecology)
       processQText(context, "[[$foo]]") should equal ("""
           |bar
           |baz

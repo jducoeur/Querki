@@ -51,7 +51,7 @@ class QuerkiTests
   }
   
   def getRcs[S <: CommonSpace](state:SpaceState)(implicit space:S, requester:User = BasicTestUser):RequestContext = {
-    SimpleTestRequestContext(space.owner.mainIdentity.id, ecology)
+    SimpleTestRequestContext(space.owner.mainIdentity.id)
   }
   def getRc[S <: CommonSpace](implicit space:S, requester:User = BasicTestUser):RequestContext = {
     getRcs(space.state)
@@ -67,7 +67,7 @@ class QuerkiTests
   }
   def pqls[S <: CommonSpace](text:String, state:SpaceState)(implicit space:S, requester:User = BasicTestUser):String = {
     val rc = getRcs(state)
-    val context = state.thisAsContext(rc, state)
+    val context = state.thisAsContext(rc, state, ecology)
     processQText(context, text)
   }
 
@@ -112,8 +112,8 @@ class QuerkiTests
    */
   def thingAsContext[S <: CommonSpace](space:S, f: S => Thing)(implicit requester:User = BasicTestUser):QLContext = {
     val (state, thing) = spaceAndThing(space, f)
-    val rc = SimpleTestRequestContext(space.owner.mainIdentity.id, ecology)
-    thing.thisAsContext(rc, state)
+    val rc = SimpleTestRequestContext(space.owner.mainIdentity.id)
+    thing.thisAsContext(rc, state, ecology)
   }
   
   def commonThingAsContext(f: CommonSpace => Thing)(implicit requester:User = BasicTestUser):QLContext = thingAsContext(commonSpace, f)
@@ -124,8 +124,8 @@ class QuerkiTests
    */
   def loadedContext(state:SpaceState, id:OID)(implicit requester:User = BasicTestUser):QLContext = {
     val thing = state.anything(id).get
-    val rc = SimpleTestRequestContext(state.owner, ecology)
-    thing.thisAsContext(rc, state)
+    val rc = SimpleTestRequestContext(state.owner)
+    thing.thisAsContext(rc, state, ecology)
   }
   
   /**

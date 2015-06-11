@@ -190,6 +190,7 @@ class PhotoUploadActor(val ecology:Ecology, state:SpaceState, router:ActorRef) e
           case ThingFound(thingId, newState) => {
             // Okay, we're successful. Send the Wikitext for thumbnail of the new photo back to the Client:
             val lastElem = qv.cv.last
+            implicit val e = ecology
             val wikified:Wikitext = QL.process(QLText("[[_thumbnail]]"), QLContext(Core.ExactlyOne(lastElem), Some(rc)))
             sender ! PhotoInfo(wikified)
           }

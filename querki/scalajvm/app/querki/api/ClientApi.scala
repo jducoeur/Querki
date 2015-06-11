@@ -123,7 +123,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
         } else {
           v.wikify(QLRequestContext(rc))
       }
-      val tooltip = prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc, state)))
+      val tooltip = prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc, state, ecology)))
           
       PropValInfo(propInfo(prop, rc), prompt, renderedV, tooltip)
     }

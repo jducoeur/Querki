@@ -45,7 +45,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
       pv <- thing.getPropOpt(HtmlUI.PageHeaderProperty)
       if (!thing.isModel)
     }
-      yield pv.v.wikify(thing.thisAsContext(rc, state))
+      yield pv.v.wikify(thing.thisAsContext(rc, state, ecology))
       
     val renderPropOpt = renderPropIdOpt.flatMap { propTid =>
       val oid = ThingId(propTid.underlying)
@@ -63,7 +63,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
   def evaluateQL(thingId:TID, ql:String):Wikitext = withThing(thingId) { thing =>
     implicit val r = rc
     implicit val s = state
-    val context = thing.thisAsContext
+    val context = thing.thisAsContext(rc, state, ecology)
     QL.processMethod(QLText(ql), context, None, Some(thing)).wikify(context)
   }
   
@@ -80,7 +80,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
       pv <- thing.getPropOpt(prop)
       if (!pv.isEmpty)
     }
-      yield pv.render(thing.thisAsContext.forProperty(pv.prop), Some(thing))
+      yield pv.render(thing.thisAsContext(rc, state, ecology).forProperty(pv.prop), Some(thing))
   }
   
   def getAllProperties():SpaceProps = {

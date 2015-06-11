@@ -11,7 +11,7 @@ import querki.util.DebugRenderable
 case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:Option[QLContext] = None, 
                      parser:Option[QLParser] = None, depth:Int = 0, useCollStack:Int = 0, propOpt:Option[Property[_,_]] = None,
                      currentValue:Option[DisplayPropVal] = None, 
-                     fromTransformOpt:Option[Thing] = None, withCallOpt:Option[QLCall] = None)(implicit val state:SpaceState)
+                     fromTransformOpt:Option[Thing] = None, withCallOpt:Option[QLCall] = None)(implicit val state:SpaceState, val ecology:Ecology)
   extends DebugRenderable with EcologyMember
 {
   lazy val Core = interface[querki.core.Core]
@@ -27,7 +27,6 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
   // Note that this will crash if we don't have a RequestContext!
   lazy val System = interface[querki.system.System]
   
-  implicit def ecology:Ecology = request.ecology
   def request:RequestContext = {
     requestOpt match {
       case Some(r) => r
@@ -247,7 +246,7 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
  * Play template level.
  */
 object QLRequestContext {
-  def apply(request:RequestContext)(implicit state:SpaceState) = QLContext(EmptyValue.untyped(request.ecology), Some(request))
+  def apply(request:RequestContext)(implicit state:SpaceState, ecology:Ecology) = QLContext(EmptyValue.untyped, Some(request))
 }
 
 /**
@@ -258,5 +257,5 @@ object QLRequestContext {
  * TODO: deprecate and remove this.
  */
 object EmptyContext {
-  def apply(implicit ecology:Ecology) = QLContext(EmptyValue.untyped, None)(ecology.api[querki.system.System].State)
+  def apply(implicit ecology:Ecology) = QLContext(EmptyValue.untyped, None)(ecology.api[querki.system.System].State, ecology)
 }

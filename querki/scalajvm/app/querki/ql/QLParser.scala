@@ -40,7 +40,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   
   // Add the parser to the context, so that methods can call back into it. Note that we are treating this as essentially
   // a modification, rather than another level of depth:
-  val initialContext = ci.copy(parser = Some(this))(ci.state)
+  val initialContext = ci.copy(parser = Some(this))(ci.state, ecology)
   
   val paramsOpt = invOpt.flatMap(_.paramsOpt)
   

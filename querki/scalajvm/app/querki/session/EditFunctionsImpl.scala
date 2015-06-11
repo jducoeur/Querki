@@ -211,13 +211,13 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   
   private def getOnePropEditor(thing:Thing, prop:AnyProp, propVal:DisplayPropVal):PropEditInfo = {
     implicit val s = state
-    val context = thing.thisAsContext(rc, state)
+    val context = thing.thisAsContext(rc, state, ecology)
     val rendered = HtmlRenderer.renderPropertyInputStr(context, prop, propVal)
     PropEditInfo(
       ClientApi.propInfo(prop, rc),
       propVal.inputControlId,
       prop.getPropOpt(Editor.PromptProp).filter(!_.isEmpty).map(_.renderPlain),
-      prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc, state))),
+      prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc, state, ecology))),
       propVal.inheritedFrom.map(_.displayName),
       AccessControl.canEdit(state, user, prop),
       rendered

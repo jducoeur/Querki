@@ -18,13 +18,9 @@ case object BasicTestUser extends User {
   val tosVersion = noTOSUserVersion  
 }
 
-case class SimpleTestRequestContext(o:OID, e:Ecology, qs:Map[String,Seq[String]] = Map.empty)(implicit requester:User = BasicTestUser) extends RequestContext(
+case class SimpleTestRequestContext(o:OID, qs:Map[String,Seq[String]] = Map.empty)(implicit requester:User = BasicTestUser) extends RequestContext(
     Some(requester),
-    o,
-    e)
+    o)
 {
-  // In principle, we really should have a test renderer here instead:
-  def renderer = interface[querki.html.HtmlRenderer]
-  
   def queryParam(paramName:String):Seq[String] = qs(paramName)
 }

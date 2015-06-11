@@ -391,7 +391,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
 	    
 	    futs.map { case (updatedState, people) =>
 	      implicit val finalState = updatedState
-	      val context = updatedState.thisAsContext(rc, finalState)
+	      val context = updatedState.thisAsContext(rc, finalState, ecology)
 	      val subjectQL = QLText(rc.ownerName + " has invited you to join the Space " + updatedState.displayName)
 	      val inviteLink = QLText("""
 	        |

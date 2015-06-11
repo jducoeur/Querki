@@ -2,6 +2,7 @@ package models
 
 import models.Thing.{PropMap, emptyProps}
 
+import querki.ecology.Ecology
 import querki.values.{PropAndVal, QLContext, QValue, RequestContext, SpaceState}
 
 /**
@@ -45,7 +46,7 @@ trait PropertyBundle {
    * Given the request we're operating within, this produces a Context you can use for
    * handle QL expressions.
    */
-  def thisAsContext(implicit request:RequestContext, state:SpaceState):QLContext = QLContext(thisAsQValue, Some(request))
+  def thisAsContext(implicit request:RequestContext, state:SpaceState, ecology:Ecology):QLContext = QLContext(thisAsQValue, Some(request))
   
   /**
    * Fetch the actual Property values contained in this Bundle.
