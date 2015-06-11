@@ -8,7 +8,6 @@ import play.api.mvc._
 
 import models._
 
-import querki.ecology._
 import querki.globals._
 import querki.identity._
 import querki.session.messages.GetThing
@@ -18,8 +17,6 @@ import querki.util._
 import querki.values.SpaceState
 
 class ApplicationBase extends Controller with EcologyMember {
-  
-  implicit var ecology:Ecology = null
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
@@ -121,10 +118,10 @@ class ApplicationBase extends Controller with EcologyMember {
       userParam match {
         case Some(u) => {
           UserSessionMgr.getSessionInfo(user) flatMap { info =>
-            f(PlayRequestContextFull(request, userParam, UnknownOID, ecology, numNotifications = info.numNewNotes))          
+            f(PlayRequestContextFull(request, userParam, UnknownOID, numNotifications = info.numNewNotes))          
           }
         }
-        case None => f(PlayRequestContextFull(request, userParam, UnknownOID, ecology))
+        case None => f(PlayRequestContextFull(request, userParam, UnknownOID))
       }
     }
   }

@@ -32,7 +32,7 @@ import PersistMessages._
  * happens. We should receive a Command, validate that Command, and then persist an Event that makes the actual change
  * to the state.
  */
-private [conversations] class SpaceConversationsActor(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, val spaceId:OID, val space:ActorRef)
+private [conversations] class SpaceConversationsActor(persistenceFactory:SpacePersistenceFactory, val spaceId:OID, val space:ActorRef)
   extends Actor with Requester with EcologyMember
 {
   import context._

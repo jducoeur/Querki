@@ -34,7 +34,7 @@ import MOIDs._
  * This is an internal cache of the People in a Space (that is to say, all Person records), indexed
  * by PersonId and IdentityId. It is stored in the Space's cache, and is private to the Identity system.
  */
-private [identity] case class CachedPeople(val ecology:Ecology, state:SpaceState) extends EcologyMember {
+private [identity] case class CachedPeople(state:SpaceState) extends EcologyMember {
   
   implicit val s = state
   
@@ -108,14 +108,14 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
    */
   def notify(evt:CacheUpdate, sender:Publisher[CacheUpdate, CacheUpdate]):CacheUpdate = {
     implicit val state = evt.current
-    val cache:CachedPeople = CachedPeople(ecology, state)
+    val cache:CachedPeople = CachedPeople(state)
         
     evt.updateCacheWith(MOIDs.ecotId, StateCacheKeys.people, cache)
   }
   
   def withCache[T](f:CachedPeople => T)(implicit state:SpaceState):T = {
     state.cache.get(peopleKey) match {
-      case Some(cache @ CachedPeople(_, _)) => { 
+      case Some(cache @ CachedPeople(_)) => { 
         f(cache)
       }
       case other => throw new Exception(s"Didn't find CachedPeople for space ${state.id} -- got $other instead!")

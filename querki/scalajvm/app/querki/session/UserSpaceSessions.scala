@@ -12,7 +12,7 @@ import querki.spaces.messages.{SessionRequest, CurrentState, UserValuePersistReq
 import querki.util._
 import querki.values.SpaceState
 
-private [session] class UserSpaceSessions(val ecology:Ecology, val spaceId:OID, val spaceRouter:ActorRef)
+private [session] class UserSpaceSessions(val spaceId:OID, val spaceRouter:ActorRef)
   extends Actor with EcologyMember with RoutingParent[User]
 {
   lazy val SpacePersistenceFactory = interface[querki.spaces.SpacePersistenceFactory]
@@ -23,7 +23,7 @@ private [session] class UserSpaceSessions(val ecology:Ecology, val spaceId:OID, 
   
   def createChild(key:User):ActorRef = {
     // Sessions need a special dispatcher so they can use Stash. (Seriously? Unfortunate leakage in the Akka API.)
-    context.actorOf(UserSpaceSession.actorProps(ecology, spaceId, key, spaceRouter, persister).withDispatcher("session-dispatcher"), key.id.toString)
+    context.actorOf(UserSpaceSession.actorProps(spaceId, key, spaceRouter, persister).withDispatcher("session-dispatcher"), key.id.toString)
   }
   
   override def initChild(child:ActorRef) = state.map(child ! CurrentState(_))
@@ -54,5 +54,5 @@ object UserSpaceSessions {
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
   // with "Props(classOf(Space), ...)". See:
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-  def actorProps(ecology:Ecology, spaceId:OID, spaceRouter:ActorRef):Props = Props(new UserSpaceSessions(ecology, spaceId, spaceRouter))
+  def actorProps(spaceId:OID, spaceRouter:ActorRef):Props = Props(new UserSpaceSessions(spaceId, spaceRouter))
 }

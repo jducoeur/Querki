@@ -27,7 +27,6 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
   // Note that this will crash if we don't have a RequestContext!
   lazy val System = interface[querki.system.System]
   
-  implicit def ecology:Ecology = request.ecology
   def request:RequestContext = {
     requestOpt match {
       case Some(r) => r

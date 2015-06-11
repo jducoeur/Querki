@@ -12,7 +12,7 @@ import querki.identity.MembershipState
 import querki.util.QLog
 import querki.util.SqlHelpers._
 
-class Step6(implicit val ecology:Ecology) extends Step {
+class Step6 extends Step {
   val version = 6
   
   lazy val UserAccess = ecology.api[querki.identity.UserAccess]

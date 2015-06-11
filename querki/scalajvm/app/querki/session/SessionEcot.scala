@@ -37,7 +37,7 @@ class SessionEcot(e:Ecology) extends QuerkiEcot(e) with Session {
   override def createActors(createActorCb:CreateActorFunc):Unit = {
     _ref = Some(ClusterSharding(SystemManagement.actorSystem).start(
         typeName = "User", 
-        entryProps = Some(UserSession.actorProps(ecology)), 
+        entryProps = Some(UserSession.actorProps), 
         idExtractor = idExtractor, 
         shardResolver = shardResolver))
   }

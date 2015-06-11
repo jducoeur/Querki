@@ -5,7 +5,7 @@ import querki.globals._
 import querki.data.ThingInfo
 import querki.values.RequestContext
 
-class PassthroughHandler(val ecology:Ecology, rc:RequestContext) extends EcologyMember {
+class PassthroughHandler(rc:RequestContext) extends EcologyMember {
   val ClientApi = interface[ClientApi]
   val System = interface[querki.system.System]
   
@@ -21,10 +21,10 @@ class PassthroughHandler(val ecology:Ecology, rc:RequestContext) extends Ecology
   }
 }
 
-class CommonFunctionsImpl(val ecology:Ecology, rc:RequestContext) extends CommonFunctions with EcologyMember
+class CommonFunctionsImpl(rc:RequestContext) extends CommonFunctions with EcologyMember
 { 
   def getStandardThings():Map[String, ThingInfo] = {
-    val passthrough = new PassthroughHandler(ecology, rc)
+    val passthrough = new PassthroughHandler(rc)
     val translator = new StandardThings(passthrough)
     val toucher = translator.touchEverything()
     passthrough.contents

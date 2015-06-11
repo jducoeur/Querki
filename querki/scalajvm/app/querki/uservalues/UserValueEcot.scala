@@ -146,7 +146,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
   // with "Props(classOf(Space), ...)". See:
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
   def userValuePersisterProps(spaceId:OID):Props = 
-    Props(new UserValuePersister(spaceId, ecology))
+    Props(new UserValuePersister(spaceId))
       
   /***********************************************
    * THINGS

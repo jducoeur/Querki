@@ -294,7 +294,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
    * THINGS
    ******************************************/
   
-  class BooleanValue(tid:OID, elem:ElemValue, pf:PropFetcher) extends ThingState(tid, systemOID, RootOID, pf)(ecology)
+  class BooleanValue(tid:OID, elem:ElemValue, pf:PropFetcher) extends ThingState(tid, systemOID, RootOID, pf)
   {
     val v = ExactlyOne(elem)
     override def qlApply(inv:Invocation):QValue = v

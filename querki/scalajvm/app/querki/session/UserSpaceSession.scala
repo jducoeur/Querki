@@ -37,12 +37,10 @@ import querki.values.{QValue, RequestContext, SpaceState}
  * to grow a lot in the future, and to become much more heterogeneous, so we may want to separate all of those
  * concerns.
  */
-private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
+private [session] class UserSpaceSession(val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
   extends Actor with Stash with Requester with EcologyMember with TimeoutChild
   with autowire.Server[String, upickle.Reader, upickle.Writer]
 {
-  implicit val ecology = e
-  
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Person = interface[querki.identity.Person]
@@ -408,7 +406,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
 	    }
 	    
 	    case MarcoPoloRequest(propId, q, rc) => {
-	      val response = new MarcoPoloImpl(mkParams(rc))(ecology).handleMarcoPoloRequest(propId, q)
+	      val response = new MarcoPoloImpl(mkParams(rc)).handleMarcoPoloRequest(propId, q)
 	      sender ! response
 	    }
       }
@@ -420,5 +418,5 @@ object UserSpaceSession {
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
   // with "Props(classOf(Space), ...)". See:
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-  def actorProps(ecology:Ecology, spaceId:OID, user:User, spaceRouter:ActorRef, persister:ActorRef):Props = Props(new UserSpaceSession(ecology, spaceId, user, spaceRouter, persister))
+  def actorProps(spaceId:OID, user:User, spaceRouter:ActorRef, persister:ActorRef):Props = Props(new UserSpaceSession(spaceId, user, spaceRouter, persister))
 }

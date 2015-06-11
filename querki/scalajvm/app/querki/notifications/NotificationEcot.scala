@@ -30,7 +30,7 @@ class NotificationEcot(e:Ecology) extends QuerkiEcot(e) with NotifierRegistry wi
     // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
     // with "Props(classOf(Space), ...)". See:
     //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-    _ref = createActorCb(Props(new NotificationActor(ecology)), "Notifications")
+    _ref = createActorCb(Props(new NotificationActor), "Notifications")
   }
 
   /***********************************************

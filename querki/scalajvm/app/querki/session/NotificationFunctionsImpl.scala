@@ -89,7 +89,7 @@ trait UserNotifications extends autowire.Server[String, upickle.Reader, upickle.
         case "NotificationFunctions" => {
           // route() is asynchronous, so we need to store away the sender!
           val senderSaved = sender
-          val handler = new NotificationFunctionsImpl(this, rc)(ecology)
+          val handler = new NotificationFunctionsImpl(this, rc)
           route[NotificationFunctions](handler)(req).foreach { result =>
             senderSaved ! ClientResponse(result)
           }          
@@ -99,7 +99,7 @@ trait UserNotifications extends autowire.Server[String, upickle.Reader, upickle.
   })
 }
 
-class NotificationFunctionsImpl(notes:UserNotifications, rc:RequestContext)(implicit val ecology:Ecology) 
+class NotificationFunctionsImpl(notes:UserNotifications, rc:RequestContext)
   extends NotificationFunctions with EcologyMember
 {
   lazy val ClientApi = interface[querki.api.ClientApi]

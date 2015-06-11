@@ -75,12 +75,12 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
   override def createActors(createActorCb:CreateActorFunc):Unit = {
     _ref = Some(ClusterSharding(SystemManagement.actorSystem).start(
         typeName = "IdentityCache", 
-        entryProps = Some(IdentityCache.actorProps(ecology)), 
+        entryProps = Some(IdentityCache.actorProps), 
         idExtractor = identityExtractor, 
         shardResolver = identityResolver))
     _userRef = Some(ClusterSharding(SystemManagement.actorSystem).start(
         typeName = "UserCache", 
-        entryProps = Some(UserCache.actorProps(ecology)), 
+        entryProps = Some(UserCache.actorProps), 
         idExtractor = userExtractor, 
         shardResolver = userResolver))
   }

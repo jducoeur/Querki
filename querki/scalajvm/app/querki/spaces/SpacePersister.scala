@@ -52,7 +52,7 @@ import PersistMessages._
  * manages the whole hive of Actors for this Space. (That might be the better architecture,
  * now that I think of it.)
  */
-private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) extends Actor with EcologyMember with SpaceLoader with ModelTypeDefiner {
+private [spaces] class SpacePersister(val id:OID) extends Actor with EcologyMember with SpaceLoader with ModelTypeDefiner {
   
   lazy val SystemInterface = interface[querki.system.System]
   lazy val Core = interface[querki.core.Core]

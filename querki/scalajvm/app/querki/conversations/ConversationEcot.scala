@@ -23,13 +23,13 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
   // with "Props(classOf(Space), ...)". See:
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
   def conversationActorProps(persistenceFactory:SpacePersistenceFactory, spaceId:OID, space:ActorRef):Props = 
-    Props(new SpaceConversationsActor(ecology, persistenceFactory, spaceId, space))
+    Props(new SpaceConversationsActor(persistenceFactory, spaceId, space))
   
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
   // with "Props(classOf(Space), ...)". See:
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
   def conversationPersisterProps(spaceId:OID):Props = 
-    Props(new ConversationPersister(spaceId, ecology))
+    Props(new ConversationPersister(spaceId))
       
   def canReadComments(req:User, thingId:OID, state:SpaceState) = {
     AccessControl.hasPermission(CanReadComments, state, req, thingId)

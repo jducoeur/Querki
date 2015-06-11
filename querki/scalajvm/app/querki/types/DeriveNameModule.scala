@@ -67,7 +67,7 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with Nam
     def notify(evt:ThingChangeRequest, sender:Publisher[ThingChangeRequest,ThingChangeRequest]):ThingChangeRequest = {
       evt.thingOpt match {
         // Don't even try this on Spaces -- it's too dangerous:
-        case Some(SpaceState(_, _, _, _, spaceName, _, _, _, _, _, _, _, _, _)) => {
+        case Some(SpaceState(_, _, _, _, spaceName, _, _, _, _, _, _, _, _)) => {
           if (evt.newProps.contains(querki.core.MOIDs.NameOID))
             evt
           else

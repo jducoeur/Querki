@@ -20,7 +20,7 @@ class PartiallyAppliedFunction(partialContext:QLContext, action:(Invocation) => 
 /**
  * This is created by and obtained from the QLEcot:
  */
-private [ql] class QLProfilers(implicit val ecology:Ecology) extends EcologyMember {
+private [ql] class QLProfilers extends EcologyMember {
   lazy val Profiler = interface[querki.tools.Profiler]  
   
   lazy val parseMethod = Profiler.createHandle("QLParser.parseMethod")
@@ -43,8 +43,6 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   val initialContext = ci.copy(parser = Some(this))(ci.state)
   
   val paramsOpt = invOpt.flatMap(_.paramsOpt)
-  
-  implicit def ecology:Ecology = ci.state.ecology
   
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Core = interface[querki.core.Core]

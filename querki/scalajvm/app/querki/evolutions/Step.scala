@@ -24,8 +24,6 @@ trait Step extends EcologyMember {
    */
   def version:Int
   
-  implicit def ecology:Ecology
-  
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   def SpaceSQL(spaceId:OID, query:String, version:Int = 0):SqlQuery = SpacePersistence.SpaceSQL(spaceId, query, version)
   
@@ -71,9 +69,9 @@ trait Step extends EcologyMember {
   def doEvolve(info:SpaceInfo)(implicit conn:Connection):Unit
 }
   
-case class SpaceInfo(id:OID, version:Int)(implicit val ecology:Ecology) extends EcologyMember {
+case class SpaceInfo(id:OID, version:Int) extends EcologyMember {
   def thingTable = interface[querki.spaces.SpacePersistence].thingTable(id)
 }
 object SpaceInfo {
-  def apply(row:Row)(implicit ecology:Ecology):SpaceInfo = SpaceInfo(OID(row[Long]("id")), row[Int]("version"))
+  def apply(row:Row):SpaceInfo = SpaceInfo(OID(row[Long]("id")), row[Int]("version"))
 }

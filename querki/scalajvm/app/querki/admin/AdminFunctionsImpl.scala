@@ -15,7 +15,7 @@ import UserLevel._
 import querki.session.{AutowireApiImpl, AutowireParams}
 import querki.spaces.messages._
 
-class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with AdminFunctions {
+class AdminFunctionsImpl(info:AutowireParams) extends AutowireApiImpl(info) with AdminFunctions {
   
   // Head off illegal access here in the constructor, before we even try processing the request:
   if (!info.user.isAdmin)

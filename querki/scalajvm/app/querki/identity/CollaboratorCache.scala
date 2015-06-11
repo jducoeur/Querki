@@ -12,7 +12,7 @@ import querki.ecology._
 import querki.session.UserSessionMessages
 import querki.util.{Config, QLog}
 
-class CollaboratorCache(val ecology:Ecology, val userId:UserId) extends Actor with Requester with EcologyMember  {
+class CollaboratorCache(val userId:UserId) extends Actor with Requester with EcologyMember  {
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
@@ -81,5 +81,5 @@ object CollaboratorCache {
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
   // with "Props(classOf(Space), ...)". See:
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-  def actorProps(ecology:Ecology, id:UserId):Props = Props(new CollaboratorCache(ecology, id)) 
+  def actorProps(id:UserId):Props = Props(new CollaboratorCache(id)) 
 }

@@ -5,7 +5,7 @@ import akka.actor._
 import querki.ecology._
 import querki.util.QLog
 
-private [identity] class UserCache(val ecology:Ecology) extends Actor with EcologyMember {
+private [identity] class UserCache extends Actor with EcologyMember {
   
   import UserCacheMessages._
   
@@ -37,7 +37,7 @@ private [identity] class UserCache(val ecology:Ecology) extends Actor with Ecolo
 }
 
 object UserCache {
-  def actorProps(ecology:Ecology) = Props(classOf[UserCache], ecology)
+  def actorProps = Props(classOf[UserCache])
 }
 
 object UserCacheMessages {

@@ -51,8 +51,8 @@ trait SummarizerDefs { self:QuerkiEcot =>
    * Note that this does *not* derive from SystemType, mainly because I want there to be a common Model
    * for Summarizers.
    */
-  abstract class SummarizerBase[UVT,VT](tid:OID, pf:PropFetcher)(implicit e:Ecology) 
-    extends PType[VT](tid, SystemIds.systemOID, MOIDs.SummarizerBaseOID, pf)(e) with Summarizer[UVT,VT]
+  abstract class SummarizerBase[UVT,VT](tid:OID, pf:PropFetcher) 
+    extends PType[VT](tid, SystemIds.systemOID, MOIDs.SummarizerBaseOID, pf) with Summarizer[UVT,VT]
     with SimplePTypeBuilder[VT]
   {
     // HACK: so far, I haven't come up with a compile-time way to deal with this, so we need to do the typechecking at runtime.

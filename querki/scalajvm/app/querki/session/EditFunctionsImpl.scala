@@ -18,7 +18,7 @@ import querki.spaces.messages.{CreateThing, ModifyThing, ThingFound, ThingError}
 import querki.util.{PublicException}
 import querki.values.{QLRequestContext, RequestContext}
 
-class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with EditFunctions {
+class EditFunctionsImpl(info:AutowireParams) extends AutowireApiImpl(info) with EditFunctions {
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]

@@ -47,7 +47,7 @@ case class ModelPropAccessor(prop:Property[ModeledPropertyBundle,_], children:Se
   def getTitles:Seq[String] = children.flatMap(_.getTitles)
 }
 
-case class CategoryPropAccessor(prop:Property[OID,_], values:Seq[Thing])(implicit val ecology:Ecology) extends PropAccessor with EcologyMember {
+case class CategoryPropAccessor(prop:Property[OID,_], values:Seq[Thing]) extends PropAccessor with EcologyMember {
   lazy val Core = interface[querki.core.Core]
   lazy val LinkType = Core.LinkType
   lazy val ExactlyOne = Core.ExactlyOne

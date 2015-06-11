@@ -25,7 +25,7 @@ import querki.values.{EmptyValue, QValue}
 
 import PersistMessages._
 
-private[uservalues] class UserValuePersister(val spaceId:OID, implicit val ecology:Ecology) extends Actor with EcologyMember with Requester {
+private[uservalues] class UserValuePersister(val spaceId:OID) extends Actor with EcologyMember with Requester {
   
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]

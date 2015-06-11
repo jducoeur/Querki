@@ -18,7 +18,7 @@ class QuerkiRoot extends Actor {
   
   import QuerkiRoot._
   
-  var ecology:Ecology = null
+  def ecology = Ecology.ecology
   
   def createActor(props:Props, name:String):Option[ActorRef] = Some(context.actorOf(props, name))
   
@@ -26,7 +26,7 @@ class QuerkiRoot extends Actor {
     case Initialize => {
       println("Creating the Ecology...")
       val ecologyImpl = new EcologyImpl
-      ecology = ecologyImpl
+      Ecology.setEcology(ecologyImpl)
       SystemCreator.createAllEcots(ecology, Some(context.system))
       println("... initializing the Ecology...")
       val finalState = ecologyImpl.init(InitialSystemState.create(ecology), createActor)

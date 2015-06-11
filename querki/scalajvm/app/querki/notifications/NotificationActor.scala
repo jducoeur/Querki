@@ -16,7 +16,7 @@ import querki.util._
  * TODO: once I understand this code better, refactor it into more Actors, to remove this
  * bottleneck.
  */
-private[notifications] class NotificationActor(val ecology:Ecology) extends Actor with EcologyMember with Requester {
+private[notifications] class NotificationActor extends Actor with EcologyMember with Requester {
   import NotificationActor._
   
   lazy val AdminOps = interface[querki.admin.AdminOps]

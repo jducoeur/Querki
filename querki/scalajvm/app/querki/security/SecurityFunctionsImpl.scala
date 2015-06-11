@@ -14,7 +14,7 @@ import querki.session.{AutowireApiImpl, AutowireParams}
 
 import SecurityFunctions._
 
-class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with SecurityFunctions {
+class SecurityFunctionsImpl(info:AutowireParams) extends AutowireApiImpl(info) with SecurityFunctions {
   
   implicit val s = state
   

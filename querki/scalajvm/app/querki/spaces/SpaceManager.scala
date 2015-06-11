@@ -45,7 +45,7 @@ import PersistMessages._
  * from UserSession instead. Provided we can hook UserSession to the pool of Persisters, that ought to just
  * work.
  */
-class SpaceManager(val ecology:Ecology, val region:ActorRef) extends Actor with Requester with EcologyMember {
+class SpaceManager(val region:ActorRef) extends Actor with Requester with EcologyMember {
   
   lazy val persistenceFactory = interface[SpacePersistenceFactory]
   

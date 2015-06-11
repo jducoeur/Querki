@@ -4,6 +4,29 @@ import scala.reflect.ClassTag
 
 import querki.values.SpaceState
 
+object Ecology {
+  private var _theEcology:Option[Ecology] = None
+  /**
+   * The One True Pointer to the Ecology.
+   * 
+   * The Ecology system was originally lovely and pure, requiring you to pass the Ecology pointer into
+   * all sorts of things. That turns out to be a real hassle in a distributed environment, since the
+   * Ecology is absolutely not serializable, and we want to use it in various case classes.
+   */
+  lazy val ecology = _theEcology.get
+  
+  def setEcology(e:Ecology) = {
+    _theEcology match {
+      case Some(existing) => throw new Exception("Trying to set the Ecology a second time!")
+      case None => _theEcology = Some(e)
+    }
+  }
+}
+
+trait EcologyMember extends EcologyMemberBase[SpaceState, EcotImpl] {
+  implicit def ecology = Ecology.ecology
+}
+
 /**
  * Definition of the Ids for an Ecot.
  * 

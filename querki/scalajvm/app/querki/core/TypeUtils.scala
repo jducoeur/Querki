@@ -33,8 +33,8 @@ object TypeUtils {
     }
   }
 
-  abstract class SystemType[T](tid:OID, pf:PropFetcher)(implicit e:Ecology) 
-    extends PType[T](tid, SystemIds.systemOID, MOIDs.UrTypeOID, pf)(e) with CommonInputRenderers
+  abstract class SystemType[T](tid:OID, pf:PropFetcher)
+    extends PType[T](tid, SystemIds.systemOID, MOIDs.UrTypeOID, pf) with CommonInputRenderers
   {
     // Types is where the various validators and such live:
     lazy val Types = interface[querki.types.Types]
