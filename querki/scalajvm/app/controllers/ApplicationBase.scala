@@ -263,15 +263,4 @@ class ApplicationBase extends Controller with EcologyMember {
 		    yield result 
     }
   }
-
-  /**
-   * Convenience wrapper for withSpace -- use this for pages that are talking about
-   * a specific Thing.
-   */
-  def withThing[B](requireLogin:Boolean, ownerId:String, spaceId:String, thingIdStr:String,
-        errorHandler:Option[PartialFunction[(ThingResponse, PlayRequestContext), Result]] = None, 
-        parser:BodyParser[B] = BodyParsers.parse.anyContent) = 
-  { 
-    withSpace(requireLogin, ownerId, spaceId, Some(thingIdStr), errorHandler, parser = parser) _
-  }
 }
