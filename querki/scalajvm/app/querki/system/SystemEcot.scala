@@ -15,6 +15,12 @@ trait SystemManagement extends EcologyInterface {
   def setState(state:SpaceState)
   
   /**
+   * The ActorSystem, if it exists. Note that it does *not* exist in many unit tests, and thus
+   * createActors() will not be called on the Ecots!
+   */
+  def actorSystemOpt:Option[ActorSystem]
+  
+  /**
    * The one true ActorSystem that everybody is living in. Ecots should obtain the ActorSystem through this,
    * if they need it.
    * 
@@ -28,7 +34,7 @@ trait SystemManagement extends EcologyInterface {
 
 object SystemMOIDs extends EcotIds(18)
 
-class SystemEcot(e:Ecology, actorSystemOpt:Option[ActorSystem]) extends QuerkiEcot(e) with System with SystemManagement {
+class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem]) extends QuerkiEcot(e) with System with SystemManagement {
   
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Tags = interface[querki.tags.Tags]

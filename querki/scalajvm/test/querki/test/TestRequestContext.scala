@@ -18,18 +18,13 @@ case object BasicTestUser extends User {
   val tosVersion = noTOSUserVersion  
 }
 
-case class SimpleTestRequestContext(o:OID, s:SpaceState, t:Thing, e:Ecology, qs:Map[String,Seq[String]] = Map.empty)(implicit requester:User = BasicTestUser) extends RequestContext(
+case class SimpleTestRequestContext(o:OID, e:Ecology, qs:Map[String,Seq[String]] = Map.empty)(implicit requester:User = BasicTestUser) extends RequestContext(
     Some(requester),
     o,
-    Some(s),
-    Some(t),
     e)
 {
-  def withUpdatedState(newState:SpaceState):RequestContext = copy(s = newState)
   // In principle, we really should have a test renderer here instead:
   def renderer = interface[querki.html.HtmlRenderer]
   
   def queryParam(paramName:String):Seq[String] = qs(paramName)
-  def +(state:SpaceState):RequestContext = copy(s = state)
-  def +(thing:Thing):RequestContext = copy(t = thing)
 }

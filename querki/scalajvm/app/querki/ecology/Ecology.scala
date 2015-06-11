@@ -131,6 +131,10 @@ class EcologyImpl extends EcologyImplBase[SpaceState, EcotImpl] {
   }
   
   private def initializeActors(createActorCb:CreateActorFunc) = {
-    _initializedEcots.foreach(_.createActors(createActorCb))
+    // Only call createActors() iff there is an ActorSystem in the first place:
+    val SystemManagement = ecology.api[querki.system.SystemManagement]
+    SystemManagement.actorSystemOpt.foreach { actorSystem => 
+      _initializedEcots.foreach(_.createActors(createActorCb))
+    }
   }  
 }

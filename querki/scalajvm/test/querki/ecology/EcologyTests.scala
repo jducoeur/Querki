@@ -23,7 +23,7 @@ class EcologyTests extends WordSpec
   def doInit(eco:Ecology):SpaceState = {
     // The Ecology itself assumes that Core is registered, and System is needed to finish things up:
     new querki.core.CoreModule(eco)
-    new querki.system.SystemEcot(eco)
+    new querki.system.SystemEcot(eco, None)
     // HACK: since init() differs depending on implementation, we need to cast to that:
     eco.manager.asInstanceOf[EcologyImpl].init(querki.system.InitialSystemState.create(eco), { (props, name) => None })
   }
