@@ -19,7 +19,7 @@ import querki.session.UserSessionMessages.UserSessionMsg
  * hour, so that if something caches we pick it up eventually. This is low-priority for the moment,
  * since there isn't much you can *do* to an Identity.
  */
-private[identity] class IdentityCache extends Actor with Requester with EcologyMember {
+private[identity] class IdentityCache(val ecology:Ecology) extends Actor with Requester with EcologyMember {
   
   import IdentityCacheMessages._
   
@@ -32,7 +32,7 @@ private[identity] class IdentityCache extends Actor with Requester with EcologyM
   // The worker that deals with actual DB lookups, so that those don't block the rest of the cache.
   // TODO: I suspect this should be a pool of shared workers rather than a single one per IdentityCache,
   // but this is good enough for now.
-  lazy val worker = context.actorOf(Props(classOf[IdentityCacheFetcher]))
+  lazy val worker = context.actorOf(Props(classOf[IdentityCacheFetcher], ecology))
   
   def fetchAndThen(id:OID)(cb:IdentityResponse => Unit) = {
     identities.get(id) match {
@@ -66,14 +66,14 @@ private[identity] class IdentityCache extends Actor with Requester with EcologyM
 }
 
 object IdentityCache {
-  def actorProps = Props(classOf[IdentityCache])
+  def actorProps(ecology:Ecology) = Props(classOf[IdentityCache], ecology)
 }
 
 /**
  * A small internal Actor that does the actual database lookups for IdentityCache. This is split out
  * so that IdentityCache can stay fast and non-blocking for cache hits, and only slow down for the misses.
  */
-private [identity] class IdentityCacheFetcher extends Actor with EcologyMember {
+private [identity] class IdentityCacheFetcher(val ecology:Ecology) extends Actor with EcologyMember {
   import IdentityCacheMessages._
   
   lazy val UserAccess = interface[UserAccess]

@@ -6,7 +6,7 @@ import querki.globals._
 
 import querki.session.messages.{MarcoPoloItem, MarcoPoloResponse}
 
-class MarcoPoloImpl(info:AutowireParams) extends AutowireApiImpl(info) {
+class MarcoPoloImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) {
   
   lazy val Core = interface[querki.core.Core]
   lazy val Links = interface[querki.links.Links]

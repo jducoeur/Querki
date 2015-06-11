@@ -70,7 +70,8 @@ trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
              Map.empty[OID, ThingState],
              // TODO (probably rather later): dynamic Collections
              Map.empty[OID, Collection],
-             None
+             None,
+             ecology
             )
       }
       
@@ -96,7 +97,8 @@ trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
             Map.empty[OID, ThingState],
             // TODO (probably rather later): dynamic Collections
             Map.empty[OID, Collection],
-            None
+            None,
+            ecology
             )
         } else
           spaceStream.head

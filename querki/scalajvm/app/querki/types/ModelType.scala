@@ -23,7 +23,7 @@ object SimplePropertyBundle {
  * TODO: a good deal of this code is copied from Thing. Think carefully about the right factoring here. I kind of
  * want PropertyBundle to remain a pure interface, but we may want to carefully lift out a base implementation.
  */
-case class ModeledPropertyBundle(modelType:ModelTypeDefiner#ModelType, basedOn:OID, props:PropMap)
+case class ModeledPropertyBundle(modelType:ModelTypeDefiner#ModelType, basedOn:OID, props:PropMap)(implicit val ecology:Ecology) 
   extends PropertyBundle with EcologyMember 
 {
   def isThing:Boolean = false

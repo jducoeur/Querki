@@ -31,7 +31,7 @@ class DBSpacePersistenceFactory(e:Ecology) extends QuerkiEcot(e) with SpacePersi
     // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
     // with "Props(classOf(Space), ...)". See:
     //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-    context.actorOf(Props(new SpacePersister(spaceId)), sid(spaceId) + "-persist")
+    context.actorOf(Props(new SpacePersister(spaceId, ecology)), sid(spaceId) + "-persist")
   }
 
   // Note that we actually create a *pool* of persistence routers for this job, because it is important,
@@ -39,7 +39,7 @@ class DBSpacePersistenceFactory(e:Ecology) extends QuerkiEcot(e) with SpacePersi
   def getSpaceManagerPersister(implicit context:ActorContext):ActorRef = {
     // TODO: this really ought to be defined in config, but there doesn't appear to be a way in 2.1.4
     // to define the supervisorStrategy with FromConfig() yet. So for now, we do it by hand:
-    context.actorOf(Props(new SpaceManagerPersister).withRouter(
+    context.actorOf(Props(new SpaceManagerPersister(ecology)).withRouter(
         SmallestMailboxPool(2, resizer = Some(DefaultResizer(lowerBound = 2, upperBound = 10)), supervisorStrategy = stoppingStrategy)), 
       "space-manager-persist")
 //    context.actorOf(Props[SpaceManagerPersister].withRouter(FromConfig(supervisorStrategy = stoppingStrategy)), "space-manager-persist")    

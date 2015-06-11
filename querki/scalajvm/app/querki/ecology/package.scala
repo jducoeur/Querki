@@ -11,6 +11,8 @@ package object ecology {
 
   type Ecology = EcologyBase[SpaceState, EcotImpl]
   
+  type EcologyMember = EcologyMemberBase[SpaceState, EcotImpl]
+  
   type Ecot = EcotBase[SpaceState, EcotImpl]
   
   type CreateActorFunc = (Props, String) => Option[ActorRef]

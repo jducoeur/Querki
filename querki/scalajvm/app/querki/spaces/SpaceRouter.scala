@@ -27,7 +27,7 @@ import querki.values.SpaceState
  * is mainly for efficiency -- the hive passes the SpaceState around frequently, and we do *not* want to
  * be serializing that.
  */
-private[spaces] class SpaceRouter
+private[spaces] class SpaceRouter(val ecology:Ecology) 
   extends Actor with EcologyMember with Requester with ClusterTimeoutChild
 {  
   lazy val Conversations = interface[querki.conversations.Conversations]
@@ -47,10 +47,10 @@ private[spaces] class SpaceRouter
   var state:SpaceState = null
 
   override def preStart() = {
-    space = context.actorOf(Space.actorProps(persistenceFactory, self, spaceId), "Space")
-    sessions = context.actorOf(UserSpaceSessions.actorProps(spaceId, self), "Sessions")
+    space = context.actorOf(Space.actorProps(ecology, persistenceFactory, self, spaceId), "Space")
+    sessions = context.actorOf(UserSpaceSessions.actorProps(ecology, spaceId, self), "Sessions")
     conversations = context.actorOf(Conversations.conversationActorProps(persistenceFactory, spaceId, self), "Conversations") 
-    members = context.actorOf(SpaceMembersActor.actorProps(spaceId, self), "Members")
+    members = context.actorOf(SpaceMembersActor.actorProps(ecology, spaceId, self), "Members")
     super.preStart()
   }
   
@@ -92,7 +92,7 @@ private[spaces] class SpaceRouter
     // Request for an upload actor under this Space. We create it as part of the troupe, but it's
     // basically anonymous after creation:
     case msg:BeginProcessingPhoto => {
-      val worker = context.actorOf(PhotoUploadActor.actorProps(state, self))
+      val worker = context.actorOf(PhotoUploadActor.actorProps(ecology, state, self))
       worker.forward(msg)
       sender ! worker
     }
@@ -105,5 +105,5 @@ private[spaces] class SpaceRouter
 }
 
 object SpaceRouter {
-  def actorProps:Props = Props(classOf[SpaceRouter])
+  def actorProps(ecology:Ecology):Props = Props(classOf[SpaceRouter], ecology)
 }

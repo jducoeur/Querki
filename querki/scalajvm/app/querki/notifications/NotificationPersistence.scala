@@ -106,5 +106,5 @@ class NotificationPersistenceEcot(e:Ecology) extends QuerkiEcot(e) with Notifica
     }
   }
   
-  def notificationPersisterProps(userId:UserId):Props = NotificationPersister.actorProps(userId)
+  def notificationPersisterProps(userId:UserId):Props = NotificationPersister.actorProps(ecology, userId)
 }

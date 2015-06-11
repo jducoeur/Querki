@@ -62,13 +62,14 @@ case class PlayRequestContextFull[B](
     override val requester:Option[User], 
     // Note that this is an *identity*
     override val ownerId:OID, 
+    override val ecology:Ecology,
     error:Option[String] = None,
     sessionUpdates:Seq[(String,String)] = Seq.empty,
     redirectTo:Option[Call] = None,
     spaceIdOpt:Option[String] = None,
     reqOwnerHandle:Option[String] = None,
     override val numNotifications:Int = 0) 
-  extends RequestContext(requester, ownerId, numNotifications)
+  extends RequestContext(requester, ownerId, ecology, numNotifications)
   with RequestHeaderParser
 {
   // NOTE: this may be wrong, but at the moment is the way the logic works

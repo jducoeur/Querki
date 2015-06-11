@@ -39,7 +39,7 @@ private[ql] case class IVMetadata(
   }
 }
 
-private[ql] case class InvocationValueImpl[T](inv:Invocation, vs:Iterable[T], errOpt:Option[PublicException] = None, metadata:IVMetadata = IVMetadata())
+private[ql] case class InvocationValueImpl[T](inv:Invocation, vs:Iterable[T], errOpt:Option[PublicException] = None, metadata:IVMetadata = IVMetadata())(implicit val ecology:Ecology) 
   extends InvocationValue[T] with EcologyMember
 { self =>
   lazy val QL = interface[QL]
@@ -100,7 +100,7 @@ private[ql] case class InvocationValueImpl[T](inv:Invocation, vs:Iterable[T], er
   def preferredColl:Option[Collection] = metadata.preferredColl
 }
 
-private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext, val definingContext:Option[QLContext], paramsOpt:Option[Seq[QLPhrase]], sig:Option[Signature] = None) 
+private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext, val definingContext:Option[QLContext], paramsOpt:Option[Seq[QLPhrase]], sig:Option[Signature] = None)(implicit val ecology:Ecology) 
   extends Invocation with EcologyMember
 {
   lazy val QL = interface[querki.ql.QL]

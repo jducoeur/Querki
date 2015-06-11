@@ -55,16 +55,13 @@ object Global extends WithFilters(LoggingFilter) with GlobalSettings {
    * IMPORTANT: the consequence of this is that all controller routes need to start with '@',
    * which tells Play to use this mechanism. It also implies that all of our controllers need
    * to be classes, not objects. They should all derive from ApplicationBase.
-   * 
-   * TODO: this is probably no longer needed, now that we've backed off to a static pointer to
-   * the Ecology.
    */
   override def getControllerInstance[A](controllerClass: Class[A]) : A = {
     val controller = super.getControllerInstance(controllerClass)
     controller match {
       case querkiController:controllers.ApplicationBase => {
         // Inject the Ecology into the controller:
-//        querkiController.ecology = ecology
+        querkiController.ecology = ecology
       }
       case _ => { }
     }

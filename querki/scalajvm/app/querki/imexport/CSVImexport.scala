@@ -8,7 +8,7 @@ import querki.values.{QValue, SpaceState}
 /**
  * Deals with import and export of CSV files.
  */
-private[imexport] class CSVImexport extends Exporter with SquareExporter with EcologyMember {
+private[imexport] class CSVImexport(implicit val ecology:Ecology) extends Exporter with SquareExporter with EcologyMember {
   def exportInstances(model:Thing, instances:Seq[Thing])(implicit state:SpaceState):ExportedContent = {
     val cols = columns(model)
     

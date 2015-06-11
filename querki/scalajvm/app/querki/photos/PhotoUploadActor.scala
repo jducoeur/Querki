@@ -29,7 +29,7 @@ import querki.types.SimplePropertyBundle
 import querki.util.{Config, QLog}
 import querki.values.{ElemValue, QLContext, SpaceState}
 
-class PhotoUploadActor(state:SpaceState, router:ActorRef) extends Actor with Requester with EcologyMember {
+class PhotoUploadActor(val ecology:Ecology, state:SpaceState, router:ActorRef) extends Actor with Requester with EcologyMember {
   
   import PhotoUploadActor._
   import PhotoUploadMessages._
@@ -211,5 +211,5 @@ class PhotoUploadActor(state:SpaceState, router:ActorRef) extends Actor with Req
 }
 
 object PhotoUploadActor {
-  def actorProps(state:SpaceState, router:ActorRef):Props = Props(classOf[PhotoUploadActor], state, router) 
+  def actorProps(ecology:Ecology, state:SpaceState, router:ActorRef):Props = Props(classOf[PhotoUploadActor], ecology, state, router) 
 }

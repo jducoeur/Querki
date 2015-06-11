@@ -14,7 +14,7 @@ import querki.evolutions._
  * 
  * This Step adds Modified timestamps for all Things.
  */
-class Step2 extends Step {
+class Step2(implicit val ecology:Ecology) extends Step {
   val version = 2
   
   def doEvolve(info:SpaceInfo)(implicit conn:java.sql.Connection):Unit = {

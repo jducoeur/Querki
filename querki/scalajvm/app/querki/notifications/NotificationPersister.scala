@@ -24,7 +24,7 @@ import querki.values.QValue
  * 
  * TODO: this currently has more than just Notifications. Should it get split?
  */
-class NotificationPersister(val userId:UserId) extends Actor with EcologyMember {
+class NotificationPersister(val userId:UserId, implicit val ecology:Ecology) extends Actor with EcologyMember {
   import NotificationPersister._
   
   lazy val NotificationPersistence = interface[NotificationPersistence]
@@ -59,5 +59,5 @@ object NotificationPersister {
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
   // with "Props(classOf(Space), ...)". See:
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-  def actorProps(id:UserId):Props = Props(new NotificationPersister(id))
+  def actorProps(ecology:Ecology, id:UserId):Props = Props(new NotificationPersister(id, ecology))
 }

@@ -21,13 +21,13 @@ import querki.spaces.messages.{GetSpacesStatus, SpaceStatus}
  * If we ever get anything truly long-running (eg, an open AdminConsole), that probably should be run under the
  * aegis of the UserSession, not under this Actor.
  */
-private[admin] class AdminActor extends Actor with EcologyMember {
+private[admin] class AdminActor(val ecology:Ecology) extends Actor with EcologyMember {
   
   import AdminActor._
   
   def toWorker[T <: Actor](msg:Any)(implicit tag:scala.reflect.ClassTag[T]) = {
     // Fire it off to a worker:
-    val worker = context.actorOf(Props(tag.runtimeClass))
+    val worker = context.actorOf(Props(tag.runtimeClass, ecology))
     worker.forward(msg)    
   }
   
@@ -44,7 +44,7 @@ private[admin] class AdminActor extends Actor with EcologyMember {
  * Worker to deal with a request for a status update. This needs rewriting, but is at least being extracted now
  * to the worker it belongs in.
  */
-private [admin] class AdminStatusWorker extends Actor with EcologyMember {
+private [admin] class AdminStatusWorker(val ecology:Ecology) extends Actor with EcologyMember {
 
   import AdminActor._
   
@@ -77,7 +77,7 @@ private [admin] class AdminStatusWorker extends Actor with EcologyMember {
  * long-running. Indeed, this is almost certainly broken, and needs rethinking -- it's not going to
  * scale in the medium term.
  */
-private[admin] class AdminSystemMessageWorker extends Actor with EcologyMember {
+private[admin] class AdminSystemMessageWorker(val ecology:Ecology) extends Actor with EcologyMember {
   import AdminActor._
   
   lazy val AdminInternal = interface[AdminInternal]
@@ -98,7 +98,7 @@ private[admin] class AdminSystemMessageWorker extends Actor with EcologyMember {
  * 
  * TODO: this is clearly broken. Rewrite this using akka-stream, to stream the userIds into something.
  */
-private [admin] class AdminUserIdFetcher extends Actor with EcologyMember {
+private [admin] class AdminUserIdFetcher(val ecology:Ecology) extends Actor with EcologyMember {
   
   import AdminActor._
   

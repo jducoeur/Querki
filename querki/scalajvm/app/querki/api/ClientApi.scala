@@ -141,7 +141,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
   def read[Result: Reader](p: String) = upickle.read[Result](p)
   
   def handleCommonFunction(rc:RequestContext, req:autowire.Core.Request[String]):Future[ClientAnswer] = {
-    val handler = new CommonFunctionsImpl(rc)
+    val handler = new CommonFunctionsImpl(ecology, rc)
     route[CommonFunctions](handler)(req).map(ClientResponse(_))
   }
 }

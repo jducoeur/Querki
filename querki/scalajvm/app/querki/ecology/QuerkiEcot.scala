@@ -8,7 +8,10 @@ import querki.values.{QValue, SpaceState}
  * This is a simplified version of QuerkiEcot, which is used only by the Core, so that
  * QuerkiEcot can depend on this.
  */
-abstract class CoreEcot(ecologyIn:Ecology) extends EcotImpl with EcologyMember {
+abstract class CoreEcot(ecologyIn:Ecology) extends EcotImpl {
+  
+  // Note that this cannot, sadly, be a val, because it is needed in Ecot's constructor:
+  implicit def ecology = ecologyIn
   
   // Common classes:
   type SystemType[T] = querki.core.TypeUtils.SystemType[T]

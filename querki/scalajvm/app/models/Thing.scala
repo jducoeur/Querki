@@ -32,7 +32,7 @@ abstract class Thing(
     val model:OID, 
     val kind:Kind.Kind,
     val propFetcher: PropFetcher,
-    val modTime:DateTime) extends QLFunction with PropertyBundle with EcologyMember
+    val modTime:DateTime)(implicit val ecology:Ecology) extends QLFunction with PropertyBundle with EcologyMember
 {
   lazy val props:PropMap = propFetcher()
   
@@ -450,5 +450,5 @@ abstract class Thing(
  * 
  * Note that Models are basically just ordinary Things.
  */
-case class ThingState(i:OID, s:OID, m:OID, pf: PropFetcher, mt:DateTime = querki.time.epoch, k:Kind.Kind = Kind.Thing)
-  extends Thing(i, s, m, k, pf, mt) with EcologyMember {}
+case class ThingState(i:OID, s:OID, m:OID, pf: PropFetcher, mt:DateTime = querki.time.epoch, k:Kind.Kind = Kind.Thing)(implicit e:Ecology) 
+  extends Thing(i, s, m, k, pf, mt)(e) with EcologyMember {}

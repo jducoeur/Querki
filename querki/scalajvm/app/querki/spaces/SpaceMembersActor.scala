@@ -11,9 +11,11 @@ import Implicits.execContext
 
 import querki.spaces.messages._
 
-private [spaces] class SpaceMembersActor(val spaceId:OID, val spaceRouter:ActorRef)
+private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRouter:ActorRef)
   extends Actor with Stash with EcologyMember
 {
+  implicit val ecology = e
+  
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Person = interface[querki.identity.Person]
   
@@ -81,5 +83,5 @@ private [spaces] class SpaceMembersActor(val spaceId:OID, val spaceRouter:ActorR
 }
 
 private [spaces] object SpaceMembersActor {
-  def actorProps(spaceId:OID, spaceRouter:ActorRef) = Props(classOf[SpaceMembersActor], spaceId, spaceRouter)  
+  def actorProps(e:Ecology, spaceId:OID, spaceRouter:ActorRef) = Props(classOf[SpaceMembersActor], e, spaceId, spaceRouter)  
 }

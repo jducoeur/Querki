@@ -13,6 +13,7 @@ import Implicits.execContext
 
 import models.OID
 
+import querki.ecology._
 import querki.identity.{CollaboratorCache, IdentityId, PublicIdentity, UserId}
 import querki.notifications.{CurrentNotifications, EmptyNotificationId, LoadInfo, Notification, NotificationFunctions, UpdateLastChecked, UserInfo}
 import querki.notifications.NotificationPersister.Load
@@ -22,7 +23,7 @@ import querki.values.RequestContext
 
 import messages.ClientRequest
 
-private [session] class UserSession extends Actor with Stash
+private [session] class UserSession(val ecology:Ecology) extends Actor with Stash
   with Requester with EcologyMember with UserNotifications with ClusterTimeoutChild 
 {
   import UserSessionMessages._
@@ -33,7 +34,7 @@ private [session] class UserSession extends Actor with Stash
   
   lazy val userId:OID = OID(self.path.name)
   
-  lazy val collaborators = context.actorOf(CollaboratorCache.actorProps(userId))
+  lazy val collaborators = context.actorOf(CollaboratorCache.actorProps(ecology, userId))
   
   override def preStart() = {
     // TODO: this shouldn't be going through the NotificationPersister:
@@ -121,5 +122,5 @@ object UserSessionMessages {
 }
 
 object UserSession {
-  def actorProps:Props = Props(classOf[UserSession]).withDispatcher("session-dispatcher")
+  def actorProps(ecology:Ecology):Props = Props(classOf[UserSession], ecology).withDispatcher("session-dispatcher")
 }

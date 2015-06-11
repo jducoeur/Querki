@@ -18,6 +18,8 @@ import querki.ecology._
  * own VT? Or make this wrapper no longer require the Property, just carry the VT itself?
  */
 case class PropAndVal[VT](prop:Property[VT, _], v:QValue) extends EcologyMember {
+  implicit def ecology:Ecology = prop.ecology
+  
   def render(context:QLContext, lexicalThing:Option[PropertyBundle] = None) = v.wikify(context, lexicalThing = lexicalThing)
   def renderPlain = render(EmptyContext(ecology))
   def renderOr(context:QLContext)(other: => Wikitext) = if (v.isEmpty) other else render(context)

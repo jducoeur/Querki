@@ -3,7 +3,7 @@ package querki.evolutions.steps
 import querki.ecology._
 import querki.evolutions._
 
-class UserStep1 extends UserStep {
+class UserStep1(implicit val ecology:Ecology) extends UserStep {
   val version = 1
   
   def doEvolve(info:UserInfo)(implicit conn:java.sql.Connection):Unit = {

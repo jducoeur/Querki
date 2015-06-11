@@ -6,7 +6,7 @@ import querki.ecology._
 
 import querki.evolutions._
 
-class Step4 extends Step {
+class Step4(implicit val ecology:Ecology) extends Step {
   val version = 4
   
   def doEvolve(info:SpaceInfo)(implicit conn:java.sql.Connection):Unit = {

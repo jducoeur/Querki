@@ -23,7 +23,7 @@ import messages._
  * 
  * Note that this trait is specifically design to be mixed into the UserSession.
  */
-class ConversationFunctionsImpl(info:AutowireParams) extends AutowireApiImpl(info) with ConversationFunctions {
+class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with ConversationFunctions {
 
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Conversations = interface[querki.conversations.Conversations]

@@ -17,6 +17,8 @@ trait UserStep extends EcologyMember {
    */
   def version:Int
   
+  implicit def ecology:Ecology
+  
   lazy val NotificationPersistence = interface[querki.notifications.NotificationPersistence]
   def UserSQL(userId:OID, query:String, version:Int = 0):SqlQuery = NotificationPersistence.UserSQL(userId, query, version)
   
@@ -63,8 +65,8 @@ trait UserStep extends EcologyMember {
   def doEvolve(info:UserInfo)(implicit conn:Connection):Unit
 }
   
-case class UserInfo(id:UserId, version:Int) extends EcologyMember {
+case class UserInfo(id:UserId, version:Int)(implicit val ecology:Ecology) extends EcologyMember {
 }
 object UserInfo {
-  def apply(row:Row):UserInfo = UserInfo(OID(row[Long]("id")), row[Int]("userVersion"))
+  def apply(row:Row)(implicit ecology:Ecology):UserInfo = UserInfo(OID(row[Long]("id")), row[Int]("userVersion"))
 }

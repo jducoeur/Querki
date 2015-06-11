@@ -14,7 +14,7 @@ import querki.data._
 import querki.pages.ThingPageDetails
 import querki.spaces.messages.{DeleteThing, ThingFound, ThingError}
 
-class ThingFunctionsImpl(info:AutowireParams) extends AutowireApiImpl(info) with ThingFunctions {
+class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with ThingFunctions {
   
   lazy val Basic = interface[querki.basic.Basic]
   lazy val ClientApi = interface[querki.api.ClientApi]

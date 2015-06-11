@@ -51,7 +51,7 @@ import PersistMessages._
  * to get the name. Note that this has *nothing* to do with the Space's Display Name, which
  * is user-defined. (And unique only to that user.)
  */
-private [spaces] class Space(persistenceFactory:SpacePersistenceFactory, stateRouter:ActorRef, id:OID) 
+private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, stateRouter:ActorRef, id:OID) 
   extends Actor with Requester with EcologyMember with ModelTypeDefiner with SpaceAPI
 {
   
@@ -407,5 +407,5 @@ object Space {
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
   // with "Props(classOf(Space), ...)". See:
   //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-  def actorProps(persistenceFactory:SpacePersistenceFactory, stateRouter:ActorRef, id:OID):Props = Props(new Space(persistenceFactory, stateRouter, id))
+  def actorProps(ecology:Ecology, persistenceFactory:SpacePersistenceFactory, stateRouter:ActorRef, id:OID):Props = Props(new Space(ecology, persistenceFactory, stateRouter, id))
 }

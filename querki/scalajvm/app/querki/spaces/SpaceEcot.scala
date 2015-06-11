@@ -45,10 +45,10 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps {
   override def createActors(createActorCb:CreateActorFunc):Unit = {
     _region = Some(ClusterSharding(SystemManagement.actorSystem).start(
         typeName = "Space", 
-        entryProps = Some(SpaceRouter.actorProps), 
+        entryProps = Some(SpaceRouter.actorProps(ecology)), 
         idExtractor = idExtractor, 
         shardResolver = shardResolver))
-    _ref = createActorCb(Props(classOf[SpaceManager], spaceRegion), "SpaceManager")
+    _ref = createActorCb(Props(classOf[SpaceManager], ecology, spaceRegion), "SpaceManager")
   }
   
   implicit val stdTimeout = Timeout(10 seconds)

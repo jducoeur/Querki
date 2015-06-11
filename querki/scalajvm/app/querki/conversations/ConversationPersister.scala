@@ -23,7 +23,7 @@ import PersistMessages._
  * TODO: in principle, this Actor (as well as the other Persisters) should be broken out into a separate Dispatcher,
  * so that they can't clog up all the system threads.
  */
-private[conversations] class ConversationPersister(val spaceId:OID) extends Actor with EcologyMember {
+private[conversations] class ConversationPersister(val spaceId:OID, implicit val ecology:Ecology) extends Actor with EcologyMember {
   
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   

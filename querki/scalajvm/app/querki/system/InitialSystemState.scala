@@ -17,6 +17,6 @@ object InitialSystemState {
     SpaceState(SystemIds.systemOID, querki.core.MOIDs.RootOID, () => emptyProps,
       querki.identity.MOIDs.SystemUserOID, "System", querki.time.epoch, None, 
       OIDMap[PType[_]](), OIDMap[Property[_,_]](), OIDMap[ThingState](), OIDMap[Collection](), 
-      None)    
+      None, ecology)    
   }
 }

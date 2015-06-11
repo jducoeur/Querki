@@ -31,6 +31,7 @@ abstract class RequestContext(
     val requester:Option[User], 
     // Note that this is an *identity*
     val ownerId:OID, 
+    val ecology:Ecology,
     val numNotifications:Int = 0) extends EcologyMember
 {
   def requesterOrAnon = requester getOrElse User.Anonymous

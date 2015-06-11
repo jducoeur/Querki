@@ -60,7 +60,7 @@ case class AutowireParams(
  * pointers to instances of this class!!! If you do, they will become enormous memory leaks!
  * Remember, functional programming is your friend...
  */
-class AutowireApiImpl(info:AutowireParams) extends EcologyMember with RequesterImplicits {
+class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends EcologyMember with RequesterImplicits {
   def user = info.user
   def state = info.state
   def rc = info.rc
