@@ -29,6 +29,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
   lazy val Conversations = interface[querki.conversations.Conversations]
   lazy val Core = interface[querki.core.Core]
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
+  lazy val Person = interface[querki.identity.Person]
   
   def getIds(node:ConversationNode):Set[OID] = {
     getIds(node.responses) + node.comment.authorId
@@ -57,9 +58,11 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
     ConvNode(toApi(node.comment), node.responses.map(toApi(_)))
   }
   
+  def localIdentity = Person.localIdentities(user)(state).headOption
+  
   def getConversationsFor(thingId:TID):Future[ConversationInfo] = withThing(thingId) { thing =>
     implicit val s = state
-    val canComment = rc.localIdentity.map(identity => Conversations.canWriteComments(identity.id, thing, state)).getOrElse(false)
+    val canComment = localIdentity.map(identity => Conversations.canWriteComments(identity.id, thing, state)).getOrElse(false)
 	  val canReadComments = Conversations.canReadComments(user, thing, state)
 		    
   	if (canReadComments) {
@@ -84,8 +87,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
 
   def addComment(thingId:TID, text:String, responseTo:Option[CommentId]):Future[ConvNode] = withThing(thingId) { thing =>
     implicit val s = state
-    // TODO: we need a better concept of "my current identity in this Space"!
-    val authorId = rc.localIdentity.map(_.id).getOrElse(UnknownOID)
+    val authorId = localIdentity.map(_.id).getOrElse(UnknownOID)
     
     val comment = Comment(
         state.id,

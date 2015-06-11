@@ -34,8 +34,6 @@ abstract class RequestContext(
     val ecology:Ecology,
     val numNotifications:Int = 0) extends EcologyMember
 {
-  lazy val Person = interface[querki.identity.Person]
-  
   def requesterOrAnon = requester getOrElse User.Anonymous
   def requesterOID = requester map (_.id) getOrElse UnknownOID  
   def ownerHandle(implicit state:SpaceState) = state.ownerHandle
@@ -50,18 +48,4 @@ abstract class RequestContext(
    * but we'll see whether it's right.
    */
   def queryParam(paramName:String):Seq[String]
-  
-  /**
-   * The identity that is making this request.
-   * 
-   * TODO: we need a much, much better concept of "the Identity that I am using within this Space", if we're
-   * going to truly support Identity separation properly.
-   */
-  def localIdentity(implicit state:SpaceState):Option[Identity] = {
-    for {
-      req <- requester
-      firstIdentity <- Person.localIdentities(req)(state).headOption
-    }
-      yield firstIdentity
-  }
 }

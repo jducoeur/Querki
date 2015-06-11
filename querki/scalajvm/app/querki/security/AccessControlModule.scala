@@ -460,7 +460,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
         permId <- inv.processParamFirstAs(0, LinkType)
         propRaw <- inv.opt(inv.state.prop(permId))
         prop <- inv.opt(propRaw.confirmType(LinkType))
-        who <- inv.opt(inv.context.request.localIdentity)
+        who <- inv.opt(Person.localIdentities(inv.context.request.requesterOrAnon).headOption)
       }
         yield ExactlyOne(hasPermission(prop, inv.state, who.id, thing))
         
