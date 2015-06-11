@@ -116,7 +116,7 @@ class LoginController extends ApplicationBase {
                   Redirect(routes.ClientController.space(ownerId, spaceId))
                 } else {
                   // Not yet. Okay, go to joining the space:
-                  withSpaceInfo { (info, ownerIdentity) => Ok(views.html.joinSpace(rc, info, ownerIdentity)) }
+                  withSpaceInfo { (info, ownerIdentity) => Ok(views.html.joinSpace(this, rc, info, ownerIdentity)) }
                 }                
               }
             }
@@ -126,7 +126,7 @@ class LoginController extends ApplicationBase {
             withSpaceInfo { (info, ownerIdentity) =>
               // Nope. Let them sign up for Querki. This will loop through to signup, below:
               val startForm = SignupInfo(email, "", "", "")
-              Ok(views.html.handleInvite(rc, signupForm.fill(startForm), info))
+              Ok(views.html.handleInvite(this, rc, signupForm.fill(startForm), info))
             }
           }
         }
@@ -152,7 +152,7 @@ class LoginController extends ApplicationBase {
                   // Yes. Okay, just go the Space, since there's nothing to do here:
                   Redirect(routes.ClientController.space(ownerId, spaceId)).withSession(user.toSession:_*)
                 } else {
-                  withSpaceInfo { (info, ownerIdentity) => Ok(views.html.joinSpace(rc, info, ownerIdentity)).withSession(Session(request.session.data ++ user.toSession)) }
+                  withSpaceInfo { (info, ownerIdentity) => Ok(views.html.joinSpace(this, rc, info, ownerIdentity)).withSession(Session(request.session.data ++ user.toSession)) }
                 }
               }
             }
@@ -178,11 +178,11 @@ class LoginController extends ApplicationBase {
     val rawForm = signupForm.bindFromRequest
     rawForm.fold(
       errorForm => {
-        withSpaceInfo { (info, ownerIdentity) => BadRequest(views.html.handleInvite(rc, errorForm, info)) }
+        withSpaceInfo { (info, ownerIdentity) => BadRequest(views.html.handleInvite(this, rc, errorForm, info)) }
       },
       info => {
         passwordValidationError(info.password) match {
-          case Some(err) => withSpaceInfo { (info, ownerIdentity) => BadRequest(views.html.handleInvite(rc.withError(err), rawForm, info)) }
+          case Some(err) => withSpaceInfo { (info, ownerIdentity) => BadRequest(views.html.handleInvite(this, rc.withError(err), rawForm, info)) }
           case None => {
 	        // Make sure we have a Person in a Space in the cookies -- that is required for a legitimate request
 	    	val personOpt = rc.sessionCookie(querki.identity.personParam)
@@ -199,7 +199,7 @@ class LoginController extends ApplicationBase {
 		              case err:PublicException => err.display(request)
 		              case _ => QLog.error("Internal Error during signup", error); "Something went wrong; please try again"
 		            }
-		            withSpaceInfo { (info, ownerIdentity) => BadRequest(views.html.handleInvite(rc.withError(msg), rawForm, info)) }
+		            withSpaceInfo { (info, ownerIdentity) => BadRequest(views.html.handleInvite(this, rc.withError(msg), rawForm, info)) }
 		          }
 		        }    	    
 	    	  }
@@ -223,7 +223,7 @@ class LoginController extends ApplicationBase {
     pairOpt match {
       case Some((identity, level)) => {
         val initialPasswordForm = PasswordChangeInfo("", "", "")
-        Ok(views.html.profile(rc, identity, level, passwordChangeForm.fill(initialPasswordForm)))
+        Ok(views.html.profile(this, rc, identity, level, passwordChangeForm.fill(initialPasswordForm)))
       }
       case None => doError(routes.Application.index, "That isn't a legal path")
     }
@@ -255,7 +255,7 @@ class LoginController extends ApplicationBase {
   }
   
   def sendPasswordReset() = withUser(false) { rc =>
-    Ok(views.html.sendPasswordReset(rc))
+    Ok(views.html.sendPasswordReset(this, rc))
   }
   
   def resetValidationStr(email:String, expires:Long) = s"${email} ${expires}"
@@ -297,7 +297,7 @@ class LoginController extends ApplicationBase {
   
   def resetPassword(email:String, expiresMillis:Long, hash:String) = withUser(false) { rc =>
     val initialPasswordForm = PasswordChangeInfo(hash, "", "")
-    Ok(views.html.resetPassword(rc, email, expiresMillis, hash, passwordChangeForm.fill(initialPasswordForm)))
+    Ok(views.html.resetPassword(this, rc, email, expiresMillis, hash, passwordChangeForm.fill(initialPasswordForm)))
   }
   
   def doResetPassword(email:String, expiresMillis:Long, hash:String) = withUser(false) { rc =>

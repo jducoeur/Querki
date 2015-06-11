@@ -1,4 +1,4 @@
-@(rc:PlayRequestContext, identity:querki.identity.Identity, level:querki.identity.UserLevel.UserLevel, passwordChangeForm:Form[PasswordChangeInfo])
+@(eco:querki.ecology.EcologyMember, rc:PlayRequestContext, identity:querki.identity.Identity, level:querki.identity.UserLevel.UserLevel, passwordChangeForm:Form[PasswordChangeInfo])
 
 @import helper._
 
@@ -9,7 +9,7 @@
 @lookingAtSelf = @{ requester.hasIdentity(identity.id) }
 @title = @{ "Profile for " + userName }
 
-@main(QuerkiTemplate.Profile, title, rc) {
+@main(eco, QuerkiTemplate.Profile, title, rc) {
 
 	<div class="page-header">
 	  <h1>@title</h1>

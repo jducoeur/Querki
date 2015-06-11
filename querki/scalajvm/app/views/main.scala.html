@@ -1,4 +1,4 @@
-@(template:QuerkiTemplate.QuerkiTemplate, title: String, rc:PlayRequestContext, addStyles:Boolean = false, forms:Seq[Form[_]] = Seq.empty)(content: Html)
+@(eco:querki.ecology.EcologyMember, template:QuerkiTemplate.QuerkiTemplate, title: String, rc:PlayRequestContext, addStyles:Boolean = false, forms:Seq[Form[_]] = Seq.empty)(content: Html)
 
 @import play.api.Logger
 
@@ -7,8 +7,8 @@
 @import querki.values.SpaceState
 @import querki.values.SpaceState._
 
-@PageEventManager = @{ rc.interface[controllers.PageEventManager] }
-@NavSectionMgr = @{ rc.interface[controllers.NavSectionMgr] }
+@PageEventManager = @{ eco.interface[controllers.PageEventManager] }
+@NavSectionMgr = @{ eco.interface[controllers.NavSectionMgr] }
 @nav = @{ NavSectionMgr.nav(rc) }
 
 @formErrors = @{

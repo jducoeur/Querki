@@ -1,10 +1,10 @@
-@(rc:PlayRequestContext, mySpaces:Seq[querki.spaces.messages.SpaceDetails], memberOf:Seq[querki.spaces.messages.SpaceDetails])
+@(eco:querki.ecology.EcologyMember, rc:PlayRequestContext, mySpaces:Seq[querki.spaces.messages.SpaceDetails], memberOf:Seq[querki.spaces.messages.SpaceDetails])
 
 @import querki.identity.UserLevel._
 
 @user = @{ rc.requester.get }
 
-@main(QuerkiTemplate.SpaceList, "Your Spaces", rc) {
+@main(eco, QuerkiTemplate.SpaceList, "Your Spaces", rc) {
 
 	<div class="page-header">
 	  <h1>Your Spaces</h1>

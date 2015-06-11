@@ -25,7 +25,7 @@ class TOSController extends ApplicationBase {
   lazy val TOS = interface[querki.system.TermsOfService]
   
   def showTOS = withUser(true) { rc =>
-    Ok(views.html.tos(rc, tosForm.fill(TOSForm())))
+    Ok(views.html.tos(this, rc, tosForm.fill(TOSForm())))
   }
   
   def handleTOS = withUser(true) { implicit rc =>

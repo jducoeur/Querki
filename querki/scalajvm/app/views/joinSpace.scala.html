@@ -1,11 +1,11 @@
-@(rc:PlayRequestContext, info:querki.spaces.messages.SpaceInfo, ownerIdentity:querki.identity.PublicIdentity)
+@(eco:querki.ecology.EcologyMember, rc:PlayRequestContext, info:querki.spaces.messages.SpaceInfo, ownerIdentity:querki.identity.PublicIdentity)
 
 @import helper._
 @import helper.twitterBootstrap._
 
 @title = @{ s"You've been invited to join ${info.display}!" }
 
-@main(QuerkiTemplate.Login, title, rc) {
+@main(eco, QuerkiTemplate.Login, title, rc) {
 
 	<div class="page-header">
 	  <h1>@title</h1>

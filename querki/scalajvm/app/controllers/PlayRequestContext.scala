@@ -71,7 +71,6 @@ case class PlayRequestContextFull[B](
     override val numNotifications:Int = 0) 
   extends RequestContext(requester, ownerId, numNotifications)
   with RequestHeaderParser
-  with EcologyMember
 {
   // NOTE: this may be wrong, but at the moment is the way the logic works
   val returnToHere:Boolean = false

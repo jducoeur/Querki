@@ -1,11 +1,11 @@
-@(rc:PlayRequestContext)
+@(eco:querki.ecology.EcologyMember, rc:PlayRequestContext)
 
 @import helper._
 @import helper.twitterBootstrap._
 
 @user = @{ rc.requester }
 
-@main(QuerkiTemplate.Index, "Welcome to Querki", rc) {
+@main(eco, QuerkiTemplate.Index, "Welcome to Querki", rc) {
 	
     <div class="hero-unit">
       <h1>Welcome to <img src="@routes.Assets.at("images/Logo-green.png")"></h1>

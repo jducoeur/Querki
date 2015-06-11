@@ -46,7 +46,7 @@ class AdminController extends ApplicationBase {
 
   def manageUsers = withAdmin { rc =>
     val users = UserAccess.getAllForAdmin(rc.requesterOrAnon)
-    Ok(views.html.manageUsers(rc, users))
+    Ok(views.html.manageUsers(this, rc, users))
   }
   
   def showSpaceStatus = withAdmin { rc =>
@@ -60,7 +60,7 @@ class AdminController extends ApplicationBase {
             |The following Spaces are currently live:
             |
             |${spaceDisplays.mkString("\n")}""".stripMargin)
-        Ok(views.html.main(QuerkiTemplate.Admin, "Space Status", rc)(contents.display.html))
+        Ok(views.html.main(this, QuerkiTemplate.Admin, "Space Status", rc)(contents.display.html))
     }
   }
   
@@ -105,7 +105,9 @@ class AdminController extends ApplicationBase {
   }
   
   def sendSystemMessage = withAdmin { rc =>
-    Ok(views.html.systemMessage(rc))
+    // For now, we've just scragged this function. Rewrite it using the new UI:
+    Redirect(routes.Application.index).flashing("info" -> "System Message is disabled until I rewrite it")
+//    Ok(views.html.systemMessage(rc))
   }
   
   // TODO: in the long run, there is *way* too much boilerplate for this feature! We have a Play template; a

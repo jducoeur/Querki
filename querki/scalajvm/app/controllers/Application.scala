@@ -39,10 +39,10 @@ class Application extends ApplicationBase {
     rc.requester match {
       case Some(requester) => {
 	    askSpaceMgr[ListMySpacesResponse](ListMySpaces(requester.id)) { 
-	      case MySpaces(mySpaces, memberOf) => Ok(views.html.spaces(rc, mySpaces, memberOf))
+	      case MySpaces(mySpaces, memberOf) => Ok(views.html.spaces(this, rc, mySpaces, memberOf))
 	    }        
       }
-      case _ => Ok(views.html.index(rc))
+      case _ => Ok(views.html.index(this, rc))
     }
  }    
   
@@ -58,13 +58,13 @@ disallow: /
 
   def spaces = withUser(true) { rc => 
     askSpaceMgr[ListMySpacesResponse](ListMySpaces(rc.requester.get.id)) { 
-      case MySpaces(mySpaces, memberOf) => Ok(views.html.spaces(rc, mySpaces, memberOf))
+      case MySpaces(mySpaces, memberOf) => Ok(views.html.spaces(this, rc, mySpaces, memberOf))
     }
   }
 
   def newSpace = withUser(true) { implicit rc =>
     if (rc.requesterOrAnon.canOwnSpaces) {
-      Ok(views.html.newSpace(rc))
+      Ok(views.html.newSpace(this, rc))
     } else {
       // TODO: internationalize this error message
       doError(routes.Application.index, "You aren't yet allowed to create Spaces")

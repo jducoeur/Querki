@@ -1,9 +1,9 @@
-@(rc:PlayRequestContext)
+@(eco:querki.ecology.EcologyMember, rc:PlayRequestContext)
 
 @import helper._
 @import helper.twitterBootstrap._
 
-@main(QuerkiTemplate.NewSpace, "Create a new Space", rc) {
+@main(eco, QuerkiTemplate.NewSpace, "Create a new Space", rc) {
 	
 	<div class="page-header">
 	  <h1>Create a New Space</h1>

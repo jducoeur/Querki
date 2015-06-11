@@ -1,10 +1,10 @@
-@(rc:PlayRequestContext, tosForm:Form[TOSForm])
+@(eco:querki.ecology.EcologyMember, rc:PlayRequestContext, tosForm:Form[TOSForm])
 
 @import helper._
 
 @import querki.system.TOSModule
 
-@main(QuerkiTemplate.SpaceList, "Terms of Service", rc) {
+@main(eco, QuerkiTemplate.SpaceList, "Terms of Service", rc) {
 
 	<h1>Querki Terms of Service</h1>
 	

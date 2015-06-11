@@ -1,4 +1,4 @@
-@(rc:PlayRequestContext, users:Seq[querki.identity.User])
+@(eco:querki.ecology.EcologyMember, rc:PlayRequestContext, users:Seq[querki.identity.User])
 
 @import helper._
 @import helper.twitterBootstrap._
@@ -22,7 +22,7 @@
   }
 }
 
-@main(QuerkiTemplate.View, pageTitle, rc) {
+@main(eco, QuerkiTemplate.View, pageTitle, rc) {
 
   <script type="text/javascript" src='@routes.AdminController.javascriptRoutes()'></script>
   <script>
