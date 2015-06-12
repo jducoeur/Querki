@@ -11,15 +11,15 @@ import querki.identity.{Identity, IdentityId, User}
 import querki.ui.UIRenderer
 
 /**
- * As Querki gets more complex, we're passing larger and larger bundles of information around.
- * So instead of trying to do that all in separate parameters, we're taking all the common
- * parts and building up this RequestContext object.
+ * This is information about the current Request, which gets sent to the back end.
  * 
- * This initially gets filled by the request itself; as things process, this may get replaced
- * by more-filled versions.
+ * Note that this is highly incomplete. That's intentional. PlayRequestContext contains
+ * everything, the full soup-to-nuts information about the request, but that's bulky and
+ * not necessarily serializable. So this is just the key bits that are actually used by
+ * the back end.
  * 
- * This object is a bit squishy semantically, but the high concept is that it should encapsulate
- * all the data that we *typically* pass around into *most* page renders.
+ * At this point, this is almost *too* stripped-down. Think carefully about whether anything
+ * should be added to or removed from this structure.
  * 
  * @param requester The validated User who is asking for this page, if any.
  */

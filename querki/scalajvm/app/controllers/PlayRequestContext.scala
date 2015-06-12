@@ -90,10 +90,6 @@ case class PlayRequestContextFull[B](
   def withError(err:String) = copy(error = Some(err))
   
   def APICall:Boolean = isTrue("API")
-  
-  // TODO: these probably don't belong here in the long run:
-  val chromelessName = "cl"
-  def chromeless = isOn(chromelessName)
     
   private def updatesFor(updates:Seq[(String, String)], name:String) = {
     if (turningOn(name))
@@ -102,14 +98,6 @@ case class PlayRequestContextFull[B](
       updates :+ (name -> "off")
     else
       updates    
-  }
-  
-  def allSessionUpdates:Seq[(String, String)] = {
-    // TODO: rewrite this whole mechanism so that we look for each parameter that is "=on" or "=off",
-    // and make those adjustments:
-    val update1 = updatesFor(sessionUpdates, chromelessName)
-
-    update1
   }
   
   /**

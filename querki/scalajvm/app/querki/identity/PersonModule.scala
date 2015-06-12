@@ -155,21 +155,6 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
         Core.InternalProp(true),
         Summary("INTERNAL: points from a Space-scoped Person to a System-scoped Identity")))
   
-  lazy val chromelessInvites = new SystemProperty(ChromelessInvitesOID, YesNoType, ExactlyOne,
-      toProps(
-        setName("Chromeless Invites"),
-        Basic.DeprecatedProp(true),
-        Summary("Should invitees to this Space see it unadorned with Querki chrome?"),
-        Details("""If you set this to Yes on a Space or Thing, then Invite Links pointing
-            |to that will show up without Querki chrome. That is, when they join, they'll just see your
-            |pages, with no top menu or Querki footer.
-            |
-            |This feature is mainly intended for "white-labeling" Spaces, so that they don't look
-            |as Querki-ish. We make it available for Spaces that care a great deal about how they look.
-            |(It was originally designed for wedding invitations.)
-            |
-            |NOTE: this will probably become a paid-users-only feature in the future.""".stripMargin)))
-  
   lazy val InviteText = new SystemProperty(InviteTextOID, LargeTextType, ExactlyOne,
       toProps(
         setName("Space Invitation Text"),
@@ -230,7 +215,6 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
 
   override lazy val props = Seq(
     IdentityLink,
-    chromelessInvites,
     InviteText,
     spaceInvite,
     

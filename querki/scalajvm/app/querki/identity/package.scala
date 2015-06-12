@@ -31,9 +31,11 @@ package object identity {
     val PersonOID = oldMoid(1)
     val InviteLinkCmdOID = oldMoid(2)
     val IdentityLinkOID = oldMoid(3)
+    // DEAD:
     val ChromelessInviteLinkOID = oldMoid(4)
     val MeMethodOID = oldMoid(5)
     val SecurityPrincipalOID = oldMoid(6)
+    // DEAD:
     val ChromelessInvitesOID = moid(7)
     val InviteTextOID = moid(8)
     val SpaceInviteOID = moid(9)
