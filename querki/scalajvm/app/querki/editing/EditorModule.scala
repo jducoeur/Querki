@@ -171,20 +171,15 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       def editThing(thing:Thing, context:QLContext)(implicit state:SpaceState):QValue = {
         if (thing.ifSet(Core.IsModelProp)) {
           val allInstances = state.descendants(thing.id, false, true).toSeq.sortBy(_.displayName)
-          val (page:Int, pageSize:Int) = {
-            val invV = for {
-              p <- inv.processParamFirstAs(0, IntType)
-              ps <- inv.processParamFirstAs(1, IntType)
-            }
-              yield (p - 1, ps)
-              
-            invV.get.head
+          for {
+            p <- inv.processParamFirstAs(0, IntType)
+            page = p - 1
+            pageSize <- inv.processParamFirstAs(1, IntType)
+            startAt = pageSize * page
+            instance <- inv.iter(allInstances.drop(startAt).take(pageSize))
+            wikitext = instanceEditorForThing(instance, instance.thisAsContext(context.request, state, ecology), Some(inv))
           }
-          val startAt = pageSize * page
-          val instances = allInstances.drop(startAt).take(pageSize)
-          val wikitexts = 
-            instances.map { instance => instanceEditorForThing(instance, instance.thisAsContext(context.request, state, ecology), Some(inv)) }
-          Core.listFrom(wikitexts, QL.ParsedTextType)
+            yield ExactlyOne(QL.ParsedTextType(wikitext))
         } else {
           QL.WikitextValue(instanceEditorForThing(thing, context, Some(inv)))
         }
