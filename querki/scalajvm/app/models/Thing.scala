@@ -309,20 +309,6 @@ abstract class Thing(
   }
   
   /**
-   * Convenience method, to check whether a YesNo Property is non-empty, and is true.
-   */
-  def ifSet(prop:Property[Boolean, _])(implicit state:SpaceState):Boolean = {
-    firstOr(prop, false)
-  }
-  
-  /**
-   * Returns true iff this Thing has the IsModel flag set to true on it.
-   */
-  def isModel(implicit state:SpaceState):Boolean = {
-    ifSet(Core.IsModelProp)
-  }
-  
-  /**
    * Convenience method -- returns either the value of the specified property or None.
    */
   def getPropOpt(propId:OID)(implicit state:SpaceState):Option[PropAndVal[_]] = {
@@ -417,6 +403,20 @@ class ThingOps(thing:Thing)(implicit val ecology:Ecology) extends EcologyMember 
   def Basic = interface[querki.basic.Basic]
   def Renderer = interface[querki.html.HtmlRenderer]
   
+  /**
+   * Convenience method, to check whether a YesNo Property is non-empty, and is true.
+   */
+  def ifSet(prop:Property[Boolean, _])(implicit state:SpaceState):Boolean = {
+    thing.firstOr(prop, false)
+  }
+  
+  /**
+   * Returns true iff this Thing has the IsModel flag set to true on it.
+   */
+  def isModel(implicit state:SpaceState):Boolean = {
+    ifSet(Core.IsModelProp)
+  }
+  
   def renderProps(implicit request:RequestContext, state:SpaceState):Wikitext = {
     Renderer.renderThingDefault(thing)
   }
@@ -439,7 +439,7 @@ class ThingOps(thing:Thing)(implicit val ecology:Ecology) extends EcologyMember 
    */
   def render(implicit request:RequestContext, state:SpaceState, prop:Option[Property[_,_]] = None):Wikitext = {
     val actualProp = 
-      if (thing.ifSet(Core.IsModelProp))
+      if (ifSet(Core.IsModelProp))
         prop.getOrElse(Basic.ModelViewProp)
       else
         prop.getOrElse(Basic.DisplayTextProp)
