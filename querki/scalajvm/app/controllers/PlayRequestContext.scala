@@ -5,7 +5,7 @@ import models._
 
 import language.implicitConversions
 import querki.ecology._
-import querki.identity.User
+import querki.identity.{IdentityId, User}
 
 import querki.ui.UIRenderer
 import querki.values.{RequestContext, SpaceState}
@@ -59,18 +59,19 @@ case class SimpleRequestHeaderParser(request:RequestHeader, sessionUpdates:Seq[(
  */
 case class PlayRequestContextFull[B](
     request:Request[B], 
-    override val requester:Option[User], 
-    // Note that this is an *identity*
-    override val ownerId:OID, 
+    requester:Option[User], 
+    ownerId:IdentityId, 
     error:Option[String] = None,
     sessionUpdates:Seq[(String,String)] = Seq.empty,
     redirectTo:Option[Call] = None,
     spaceIdOpt:Option[String] = None,
     reqOwnerHandle:Option[String] = None,
-    override val numNotifications:Int = 0) 
-  extends RequestContext(requester, ownerId, numNotifications)
-  with RequestHeaderParser
+    numNotifications:Int = 0) 
+  extends RequestHeaderParser
 {
+  lazy val rc = RequestContext(requester, ownerId, numNotifications)
+  def requesterOrAnon = rc.requesterOrAnon
+  
   // NOTE: this may be wrong, but at the moment is the way the logic works
   val returnToHere:Boolean = false
   

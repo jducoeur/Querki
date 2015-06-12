@@ -18,9 +18,6 @@ case object BasicTestUser extends User {
   val tosVersion = noTOSUserVersion  
 }
 
-case class SimpleTestRequestContext(o:OID, qs:Map[String,Seq[String]] = Map.empty)(implicit requester:User = BasicTestUser) extends RequestContext(
-    Some(requester),
-    o)
-{
-  def queryParam(paramName:String):Seq[String] = qs(paramName)
+object SimpleTestRequestContext{
+  def apply(o:OID)(implicit requester:User = BasicTestUser) = RequestContext(Some(requester), o)
 }
