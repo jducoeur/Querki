@@ -18,16 +18,10 @@ import querki.values.{RequestContext, SpaceState}
  */
 class PublicUrlDefinitions(e:Ecology) extends QuerkiEcot(e) with PublicUrls {
   def createAndEditUrl(rc:RequestContext, modelId:ThingId)(implicit state:SpaceState):String = {
-    rc match {
-      case prc:PlayRequestContext => {
-        implicit val req = prc.request
-        // TODO: this code arguably belongs in ClientController somehow, but I'd prefer to not
-        // force a pointless redirect:
-        val spaceCall = routes.ClientController.space(rc.ownerHandle, state.toThingId)
-        val call = new Call(spaceCall.method, spaceCall.url + s"#_createAndEdit?model=$modelId")
-        call.absoluteURL()
-      }
-      case _ => throw new Exception("PublicUrlDefinitions somehow got a non-Play RequestContext!")
-    }
+    // TODO: this code arguably belongs in ClientController somehow, but I'd prefer to not
+    // force a pointless redirect:
+    val spaceCall = routes.ClientController.space(rc.ownerHandle, state.toThingId)
+    val call = new Call(spaceCall.method, spaceCall.url + s"#_createAndEdit?model=$modelId")
+    call.url
   }
 }
