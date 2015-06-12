@@ -4,7 +4,7 @@ import scala.xml.NodeSeq
 
 import querki.ecology._
 
-import models.{AsDisplayName, Collection, DisplayPropVal, DisplayText, Kind, PropertyBundle, PType, Thing, ThingId, UnknownOID, Wikitext}
+import models.{AsDisplayName, Collection, DisplayPropVal, DisplayText, Kind, PropertyBundle, PType, Thing, ThingId, ThingOps, UnknownOID, Wikitext}
 
 import querki.globals._
 
@@ -218,9 +218,15 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     override lazy val linkName = Some(name)
     override lazy val toThingId:ThingId = new AsDisplayName(name)
     
+    override def thingOps(e:Ecology) = new TagThingOps(this)
+  }
+  
+  class TagThingOps(tag:TagThing) extends ThingOps(tag)(ecology) {
+    def space = tag.space
+    def name = tag.name
     def pseudoModel = preferredModelForTag(space, name)
-      
-   override def render(implicit rc:RequestContext, state:SpaceState, prop:Option[Property[_,_]] = None):Wikitext = {
+    
+    override def render(implicit rc:RequestContext, state:SpaceState, prop:Option[Property[_,_]] = None):Wikitext = {
       val model = pseudoModel
       val propAndValOpt = model.getPropOpt(ShowUnknownProp) orElse space.getPropOpt(ShowUnknownProp)
       val nameVal = ExactlyOne(PlainTextType(name))

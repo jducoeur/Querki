@@ -2,7 +2,7 @@ package models
 
 import language.existentials
 
-import Thing.{PropFetcher, PropMap}
+import Thing._
 
 import querki.core.MOIDs._
 import querki.ecology._
@@ -53,14 +53,6 @@ case class Property[VT, RT](
       Some(this.asInstanceOf[Property[PVT,_]])
     else
       None
-  }
-  
-  /**
-   * This renders the Property itself, if it has no DisplayText defined.
-   */
-  override def renderDefault(implicit request:RequestContext, state:SpaceState):Wikitext = {
-    val fromType = pType.renderProperty(this)
-    fromType.getOrElse(renderProps)
   }
   
   def from(m:PropMap):QValue = m(this)
@@ -163,4 +155,18 @@ case class Property[VT, RT](
     }
     new PartiallyAppliedFunction(leftContext, handleRemainder)
   }
+  
+  override def thingOps(ecology:Ecology) = new PropertyThingOps(this)(ecology)
+}
+
+class PropertyThingOps(prop:AnyProp)(implicit e:Ecology) extends ThingOps(prop) {
+
+  /**
+   * This renders the Property itself, if it has no DisplayText defined.
+   */
+  override def renderDefault(implicit request:RequestContext, state:SpaceState):Wikitext = {
+    val fromType = prop.pType.renderProperty(prop)
+    fromType.getOrElse(renderProps)
+  }
+  
 }

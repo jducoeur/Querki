@@ -13,6 +13,8 @@ object Thing {
   type PropFetcher = () => PropMap
   
   def emptyProps = Map.empty[OID, QValue]
+  
+  implicit def thing2Ops(thing:Thing)(implicit ecology:Ecology):ThingOps = thing.thingOps(ecology)
 }
 
 import Thing._
@@ -45,7 +47,6 @@ abstract class Thing(
   def Core = interface[querki.core.Core]
   def Basic = interface[querki.basic.Basic]
   def QL = interface[querki.ql.QL]
-  def Renderer = interface[querki.html.HtmlRenderer]
   
   def ApplyMethod = Basic.ApplyMethod
   def NotInheritedProp = Core.NotInheritedProp
@@ -369,41 +370,6 @@ abstract class Thing(
     (other == model) || getModelOpt.map(_.isAncestor(other)).getOrElse(false)
   }
   
-  def renderProps(implicit request:RequestContext, state:SpaceState):Wikitext = {
-    Renderer.renderThingDefault(this)
-  }
-  
-  /**
-   * Show the default rendering for this Thing, if it has no DisplayTextProp defined.
-   * 
-   * This mainly exists so that the different Kinds can override it and do their own thing.
-   */
-  def renderDefault(implicit request:RequestContext, state:SpaceState):Wikitext = {
-    renderProps
-  }
-  
-  /**
-   * Every Thing can be rendered -- this returns a Wikitext string that will then be
-   * displayed in-page.
-   * 
-   * If you specify a property, that property will be rendered with this Thing as a context;
-   * otherwise, DisplayText will be rendered.
-   */
-  def render(implicit request:RequestContext, state:SpaceState, prop:Option[Property[_,_]] = None):Wikitext = {
-    val actualProp = 
-      if (ifSet(Core.IsModelProp))
-        prop.getOrElse(Basic.ModelViewProp)
-      else
-        prop.getOrElse(Basic.DisplayTextProp)
-    val renderedOpt = for (
-      pv <- getPropOpt(actualProp);
-      if (!pv.isEmpty)
-        )
-      yield pv.render(thisAsContext.forProperty(pv.prop), Some(this))
-    
-    renderedOpt.getOrElse(renderDefault)
-  }
-  
   /**
    * Called when this Thing is encountered with no method invocation in a QL expression.
    * Subclasses are allowed to override it as make sense.
@@ -440,6 +406,50 @@ abstract class Thing(
    */
   def partiallyApply(context:QLContext):QLFunction = {
     new BogusFunction
+  }
+  
+  def thingOps(e:Ecology) = new ThingOps(this)(e)
+}
+
+class ThingOps(thing:Thing)(implicit val ecology:Ecology) extends EcologyMember {
+  
+  def Core = interface[querki.core.Core]
+  def Basic = interface[querki.basic.Basic]
+  def Renderer = interface[querki.html.HtmlRenderer]
+  
+  def renderProps(implicit request:RequestContext, state:SpaceState):Wikitext = {
+    Renderer.renderThingDefault(thing)
+  }
+  
+  /**
+   * Show the default rendering for this Thing, if it has no DisplayTextProp defined.
+   * 
+   * This mainly exists so that the different Kinds can override it and do their own thing.
+   */
+  def renderDefault(implicit request:RequestContext, state:SpaceState):Wikitext = {
+    renderProps
+  }
+  
+  /**
+   * Every Thing can be rendered -- this returns a Wikitext string that will then be
+   * displayed in-page.
+   * 
+   * If you specify a property, that property will be rendered with this Thing as a context;
+   * otherwise, DisplayText will be rendered.
+   */
+  def render(implicit request:RequestContext, state:SpaceState, prop:Option[Property[_,_]] = None):Wikitext = {
+    val actualProp = 
+      if (thing.ifSet(Core.IsModelProp))
+        prop.getOrElse(Basic.ModelViewProp)
+      else
+        prop.getOrElse(Basic.DisplayTextProp)
+    val renderedOpt = for (
+      pv <- thing.getPropOpt(actualProp);
+      if (!pv.isEmpty)
+        )
+      yield pv.render(thing.thisAsContext.forProperty(pv.prop), Some(thing))
+    
+    renderedOpt.getOrElse(renderDefault)
   }
 }
 
