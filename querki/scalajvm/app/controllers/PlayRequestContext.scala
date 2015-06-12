@@ -75,30 +75,11 @@ case class PlayRequestContextFull[B](
   // NOTE: this may be wrong, but at the moment is the way the logic works
   val returnToHere:Boolean = false
   
-  def turningOn(name:String):Boolean = paramIs(name, "on")
-  def turningOff(name:String):Boolean = paramIs(name, "off")
-  // Major session params can generally be turned on for one display, or as a "mode" in the cookies
-  def isOn(name:String) = {
-    !turningOff(name) && 
-      (hasQueryParam(name) || turningOn(name) || request.session.get(name).map(_ == "on").getOrElse(false))
-  }
-  
   def sessionCookie(name:String) = request.session.get(name)
   
   def returningToHere = copy(sessionUpdates = sessionUpdates ++ returnToHereUpdate)
 
   def withError(err:String) = copy(error = Some(err))
-  
-  def APICall:Boolean = isTrue("API")
-    
-  private def updatesFor(updates:Seq[(String, String)], name:String) = {
-    if (turningOn(name))
-      updates :+ (name -> "on")
-    else if (turningOff(name))
-      updates :+ (name -> "off")
-    else
-      updates    
-  }
   
   /**
    * This looks for a previously-set returnToHere. If found, it redirects there; otherwise, it redirects to the
@@ -114,13 +95,4 @@ case class PlayRequestContextFull[B](
       case None => Results.Redirect(other)
     }    
   }
-  
-  val propStrName = "prop"
-  def hasProp = hasQueryParam(propStrName)
-  def propStr = firstQueryParam(propStrName)
-  // If there was a property specified as a query parameter, that is the property we should
-  // evaluate and render. This returns that property, if there is one:
-  def prop(implicit state:SpaceState):Option[Property[_,_]] = {
-    propStr.flatMap(id => state.prop(ThingId(id)))
-  }  
 }
