@@ -39,12 +39,4 @@ abstract class RequestContext(
   def ownerName(implicit state:SpaceState) = state.ownerName
   
   def isOwner = requesterOrAnon.hasIdentity(ownerId)
-  
-  /**
-   * Fetch the value of the named parameter of this request.
-   * 
-   * TBD: this is an HTTP-ism bleeding into the abstraction. Is it appropriate? It's awfully *convenient*,
-   * but we'll see whether it's right.
-   */
-  def queryParam(paramName:String):Seq[String]
 }

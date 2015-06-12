@@ -209,14 +209,10 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   }
   
   private def processNormalBinding(binding:QLBinding, context:QLContext, isParam:Boolean, resolvingParser:QLParser):QLContext = {
-    // For now, we are only dealing with bindings from the query string of the URL
+    // TODO: reintroduce a way to put a binding into the page URL and pass that through to here.
+    // We had such a mechanism, but it no longer works in the new client.
     // TODO: deal with proper value bindings here, before the query string
-    val fromQuery = context.request.queryParam(binding.name)
-    fromQuery match {
-      case Seq() => context.next(WarningValue("Didn't find bound name $" + binding.name))
-      case Seq(item) => context.next(ExactlyOne(PlainTextType(item)))
-      case _ => context.next(Core.QList.makePropValue(fromQuery.map(PlainTextType(_)), PlainTextType))
-    }
+    context.next(WarningValue(s"Found bound name ${binding.name}, but bindings aren't implemented yet"))
   }
   
   private def processInternalBinding(binding:QLBinding, context:QLContext, isParam:Boolean, resolvingParser:QLParser):QLContext = {

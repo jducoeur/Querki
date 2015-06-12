@@ -168,110 +168,23 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       val partialContextOpt = inv.definingContext
       val params = inv.paramsOpt
       
-      // TODO: this belongs in Invocation as a general mechanism:
-      def intParam(name:String, default:Int):Int = {
-        val rc = mainContext.request
-        val strs = rc.queryParam(name)
-        if (strs.length > 0) {
-          try {
-            java.lang.Integer.parseInt(strs.head)
-          } catch {
-            case _:Throwable => default
-          }
-        } else
-          default
-      }
-      
-      // TODO: For now, we're just going to go with an abstraction break. But figure out how this should work:
-      def paginator(rc:controllers.PlayRequestContext, allInstances:Seq[Thing], startAt:Int, pageSize:Int):Wikitext = {
-        val req = rc.request
-        val reqParams = (req.queryString - "page").map { pair =>
-          val (k, v) = pair
-          val vs = v.mkString(",")
-          s"$k=$vs"
-        }.toSeq.mkString("&")
-        val baseUri = req.path + "?" + reqParams
-        
-        def urlForPage(num:Int):String = {
-          baseUri + "&page=" + num.toString
-        }
-        
-        // Suggested on this page: http://stackoverflow.com/questions/17944/how-to-round-up-the-result-of-integer-division
-        val totalPages = (allInstances.length - 1) / pageSize + 1
-        if (totalPages > 1) {
-          val curPage = (Math.floor(startAt / pageSize)).toInt + 1
-          val leftPage = Math.max(curPage - 3, 0) + 1
-          val rightPage = Math.min(curPage + 3, totalPages) + 1
-          val range = leftPage until rightPage
-          val pages = range.map { pageNum =>
-              <li class={ if (pageNum == curPage) "active" else "" }><a href={urlForPage(pageNum)}>{pageNum}</a></li>
-          }
-          val leftEllipses:Seq[Elem] = { 
-            if (leftPage > 1)
-              Seq(<li class="disabled"><a href="#">...</a></li>)
-            else
-              Seq.empty
-          }
-          val rightEllipses:Seq[Elem] = { 
-            if (rightPage <= totalPages)
-              Seq(<li class="disabled"><a href="#">...</a></li>)
-            else
-              Seq.empty
-          }
-          val xml =
-            <div class="pagination pagination-centered">
-              <ul>
-              <li><a href={urlForPage(1)}>&laquo;</a></li>
-              <li><a href={ if (curPage == 1) "#" else urlForPage(curPage - 1) } class={ if (curPage == 1) "disabled" else "" }>&lsaquo;</a></li>
-              { leftEllipses }
-              { pages }
-              { rightEllipses }
-              <li><a href={ if (curPage == totalPages) "#" else urlForPage(curPage + 1) } class={ if (curPage == totalPages) "disabled" else "" }>&rsaquo;</a></li>
-              <li><a href={urlForPage(totalPages)}>&raquo;</a></li>
-              </ul>
-            </div>
-          HtmlUI.toWikitext(xml)
-        } else
-          Wikitext("")
-      }
-      
       def editThing(thing:Thing, context:QLContext)(implicit state:SpaceState):QValue = {
         if (thing.ifSet(Core.IsModelProp)) {
           val allInstances = state.descendants(thing.id, false, true).toSeq.sortBy(_.displayName)
-          // HACK: quick-and-dirty enhancement to allow but not require parameters for _edit. This is used
-          // by the Client, but not yet documented. These should become optional named parameters:
-          val (page:Int, pageSize:Int, addPaginator:Boolean) = {
-            if (inv.numParams == 2) {
-              val invV = for {
-                p <- inv.processParamFirstAs(0, IntType)
-                ps <- inv.processParamFirstAs(1, IntType)
-              }
-                yield (p - 1, ps, false)
-                
-              invV.get.head
-            } else {
-              (intParam("page", 1) - 1, intParam("pageSize", 10), true)
+          val (page:Int, pageSize:Int) = {
+            val invV = for {
+              p <- inv.processParamFirstAs(0, IntType)
+              ps <- inv.processParamFirstAs(1, IntType)
             }
+              yield (p - 1, ps)
+              
+            invV.get.head
           }
           val startAt = pageSize * page
           val instances = allInstances.drop(startAt).take(pageSize)
           val wikitexts = 
-            instances.map { instance => instanceEditorForThing(instance, instance.thisAsContext(context.request, state, ecology), Some(inv)) } ++
-            {
-              if (addPaginator)
-                Seq(createInstanceButton(thing, mainContext))
-              else
-                Seq.empty
-            }
-          // HACK: if we've received the page info as parameters to _edit(), we are presuming this comes from the Client,
-          // which has its own paginator. So suppress the paginator if so.
-          // TODO: once the Client is firmly entrenched, drop the server-generated paginator entirely.
-          val pag =
-            if (addPaginator)
-              Seq(paginator(context.request.asInstanceOf[controllers.PlayRequestContext], allInstances, startAt, pageSize))
-            else
-              Seq.empty[Wikitext]
-          Core.listFrom(pag ++ wikitexts, QL.ParsedTextType)
+            instances.map { instance => instanceEditorForThing(instance, instance.thisAsContext(context.request, state, ecology), Some(inv)) }
+          Core.listFrom(wikitexts, QL.ParsedTextType)
         } else {
           QL.WikitextValue(instanceEditorForThing(thing, context, Some(inv)))
         }
