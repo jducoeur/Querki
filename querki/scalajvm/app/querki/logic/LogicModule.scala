@@ -1,6 +1,6 @@
 package querki.logic
 
-import models.{OID, PType, ThingState}
+import models.{OID, PType, ThingOps, ThingState}
 
 import querki.ecology._
 import querki.ql.{InvocationValue, QLPhrase}
@@ -294,10 +294,13 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
    * THINGS
    ******************************************/
   
+  class BooleanThingOps(v:BooleanValue) extends ThingOps(v) {
+    override def qlApply(inv:Invocation):QValue = v.v    
+  }
   class BooleanValue(tid:OID, elem:ElemValue, pf:PropFetcher) extends ThingState(tid, systemOID, RootOID, pf)(ecology)
   {
     val v = ExactlyOne(elem)
-    override def qlApply(inv:Invocation):QValue = v
+    override def thingOps(e:Ecology) = new BooleanThingOps(this)
   }
   
   lazy val trueVal = new BooleanValue(TrueOID, True,

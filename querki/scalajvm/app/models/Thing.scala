@@ -34,7 +34,7 @@ abstract class Thing(
     val model:OID, 
     val kind:Kind.Kind,
     val propFetcher: PropFetcher,
-    val modTime:DateTime)(implicit val ecology:Ecology) extends QLFunction with PropertyBundle with EcologyMember
+    val modTime:DateTime)(implicit val ecology:Ecology) extends PropertyBundle with EcologyMember
 {
   lazy val props:PropMap = propFetcher()
   
@@ -355,53 +355,19 @@ abstract class Thing(
   def isAncestor(other:OID)(implicit state:SpaceState):Boolean = {
     (other == model) || getModelOpt.map(_.isAncestor(other)).getOrElse(false)
   }
-  
-  /**
-   * Called when this Thing is encountered with no method invocation in a QL expression.
-   * Subclasses are allowed to override it as make sense.
-   * 
-   * This basic version returns a Link to this thing.
-   */
-  def qlApply(inv:Invocation):QValue = {
-    val context = inv.context
-    val paramsOpt = inv.paramsOpt
-    
-    val applyOpt = getPropOpt(ApplyMethod)(context.state)
-    applyOpt match {
-      case Some(apply) => {
-        val qlText = apply.first
-        QL.processMethod(qlText, context.forProperty(apply.prop), Some(inv), Some(this))
-      }
-      case None => Core.ExactlyOne(Core.LinkType(id))
-    }
-  }
-  
-  class BogusFunction extends QLFunction {
-    def qlApply(inv:Invocation):QValue = {
-      QL.WarningValue("It does not make sense to put this after a dot.")
-    }
-  }
 
-  /**
-   * This is specifically for the right-hand side of a dot in QL processing. This counts
-   * as partial application, and should return a function that will handle the rest of the
-   * function.
-   * 
-   * Partial application is nonsensical for most Things; it is mainly intended for methods
-   * on properties.
-   */
-  def partiallyApply(context:QLContext):QLFunction = {
-    new BogusFunction
-  }
   
   def thingOps(e:Ecology) = new ThingOps(this)(e)
 }
 
-class ThingOps(thing:Thing)(implicit val ecology:Ecology) extends EcologyMember {
+class ThingOps(thing:Thing)(implicit val ecology:Ecology) extends EcologyMember with QLFunction {
   
   def Core = interface[querki.core.Core]
   def Basic = interface[querki.basic.Basic]
+  def QL = interface[querki.ql.QL]
   def Renderer = interface[querki.html.HtmlRenderer]
+  
+  def ApplyMethod = Basic.ApplyMethod
   
   /**
    * Convenience method, to check whether a YesNo Property is non-empty, and is true.
@@ -450,6 +416,44 @@ class ThingOps(thing:Thing)(implicit val ecology:Ecology) extends EcologyMember 
       yield pv.render(thing.thisAsContext.forProperty(pv.prop), Some(thing))
     
     renderedOpt.getOrElse(renderDefault)
+  }
+  
+  /**
+   * Called when this Thing is encountered with no method invocation in a QL expression.
+   * Subclasses are allowed to override it as make sense.
+   * 
+   * This basic version returns a Link to this thing.
+   */
+  def qlApply(inv:Invocation):QValue = {
+    val context = inv.context
+    val paramsOpt = inv.paramsOpt
+    
+    val applyOpt = thing.getPropOpt(ApplyMethod)(context.state)
+    applyOpt match {
+      case Some(apply) => {
+        val qlText = apply.first
+        QL.processMethod(qlText, context.forProperty(apply.prop), Some(inv), Some(thing))
+      }
+      case None => Core.ExactlyOne(Core.LinkType(thing.id))
+    }
+  }
+  
+  class BogusFunction extends QLFunction {
+    def qlApply(inv:Invocation):QValue = {
+      QL.WarningValue("It does not make sense to put this after a dot.")
+    }
+  }
+
+  /**
+   * This is specifically for the right-hand side of a dot in QL processing. This counts
+   * as partial application, and should return a function that will handle the rest of the
+   * function.
+   * 
+   * Partial application is nonsensical for most Things; it is mainly intended for methods
+   * on properties.
+   */
+  def partiallyApply(context:QLContext):QLFunction = {
+    new BogusFunction
   }
 }
 

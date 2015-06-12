@@ -124,6 +124,21 @@ case class Property[VT, RT](
       yield action(bundle, elemContext)
   }
   
+  override def thingOps(ecology:Ecology):ThingOps = new PropertyThingOps(this)(ecology)
+}
+
+class PropertyThingOps[VT,RT](prop:Property[VT,RT])(implicit e:Ecology) extends ThingOps(prop) {
+  
+  def pType = prop.pType
+
+  /**
+   * This renders the Property itself, if it has no DisplayText defined.
+   */
+  override def renderDefault(implicit request:RequestContext, state:SpaceState):Wikitext = {
+    val fromType = pType.renderProperty(prop)
+    fromType.getOrElse(renderProps)
+  }
+  
   /**
    * By default, qlApply on a Property expects the input context to be a single Link. It returns the value
    * of this Property on that Link.
@@ -134,9 +149,9 @@ case class Property[VT, RT](
   override def qlApply(inv:Invocation):QValue = {
     // Give the Type first dibs at handling the call; otherwise, return the value of this property
     // on the incoming thing.
-    pType.qlApplyFromProp(inv, this).getOrElse(
-      applyToIncomingProps(inv) { (t, innerContext) =>
-        t.getPropVal(this)(innerContext.state)
+    pType.qlApplyFromProp(inv, prop).getOrElse(
+      prop.applyToIncomingProps(inv) { (t, innerContext) =>
+        t.getPropVal(prop)(innerContext.state)
       })
   }  
   
@@ -154,19 +169,6 @@ case class Property[VT, RT](
 //      })
     }
     new PartiallyAppliedFunction(leftContext, handleRemainder)
-  }
-  
-  override def thingOps(ecology:Ecology) = new PropertyThingOps(this)(ecology)
-}
-
-class PropertyThingOps(prop:AnyProp)(implicit e:Ecology) extends ThingOps(prop) {
-
-  /**
-   * This renders the Property itself, if it has no DisplayText defined.
-   */
-  override def renderDefault(implicit request:RequestContext, state:SpaceState):Wikitext = {
-    val fromType = prop.pType.renderProperty(prop)
-    fromType.getOrElse(renderProps)
   }
   
 }

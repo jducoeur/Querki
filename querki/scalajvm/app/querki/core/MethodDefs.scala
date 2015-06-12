@@ -1,5 +1,7 @@
 package querki.core
 
+import models.{PropertyThingOps, ThingOps}
+
 import querki.ecology._
 
 import querki.ql.{PartiallyAppliedFunction, QLFunction, QLPhrase}
@@ -17,6 +19,15 @@ trait MethodDefs { self:QuerkiEcot =>
   
   lazy val QUnit = Core.QUnit
   
+  class MethodThingOps(method:InternalMethod) extends PropertyThingOps(method) 
+  {
+    // Okay, this is a bit horrible, bouncing back and forth to the Thing like this. But
+    // it allows us to declare InternalMethods (which don't need to be serialized) concisely.
+    override def qlApply(inv:Invocation):QValue = {
+      method.qlApply(inv)
+    }
+  }
+  
   /**
    * Internal methods -- functions defined in-code that can be assigned as properties -- should
    * inherit from this.
@@ -27,10 +38,12 @@ trait MethodDefs { self:QuerkiEcot =>
     /**
      * Methods should override this to implement their own functionality.
      */
-    override def qlApply(inv:Invocation):QValue = {
+    def qlApply(inv:Invocation):QValue = {
       // By default, we just pass the incoming context right through:
       inv.context.value
     }
+    
+    override def thingOps(e:Ecology):ThingOps = new MethodThingOps(this)
   }
 
   /**
