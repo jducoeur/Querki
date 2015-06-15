@@ -57,15 +57,8 @@ case class SpaceState(
   extends Thing(s, s, m, Kind.Space, pf, mt) with EcologyMemberBase[SpaceState, EcotImpl]
 {
   def Core = interface[querki.core.Core]  
-  lazy val Profiler = interface[querki.tools.Profiler]
   
   implicit val e = ecology
-  
-  /**
-   * Profiler Handle for use with the various Space Models. Other models are explicitly permitted to
-   * use this Handle on an ad-hoc basis.
-   */
-  lazy val profilerHandle = Profiler.createHandle("SpaceState")
   
   override def toString = s"SpaceState '$toThingId' (${id.toThingId})"
   
