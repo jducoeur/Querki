@@ -56,8 +56,6 @@ case class SpaceState(
     cache:Map[StateCacheKey, Any] = Map.empty) 
   extends Thing(s, s, m, Kind.Space, pf, mt) with EcologyMemberBase[SpaceState, EcotImpl]
 {
-  def Core = interface[querki.core.Core]  
-  
   implicit val e = ecology
   
   override def toString = s"SpaceState '$toThingId' (${id.toThingId})"
@@ -195,19 +193,6 @@ case class SpaceState(
   def allProps:Map[OID, Property[_,_]] = if (app.isEmpty) spaceProps else spaceProps ++ app.get.allProps
   
   def allTypes:Map[OID, PType[_]] = if (app.isEmpty) types else types ++ app.get.types
-
-  def models:Iterable[ThingState] = {
-    implicit val s = this
-    things.values.filter(_.first(Core.IsModelProp))    
-  }
-  def allModels:Iterable[ThingState] = {
-    val myModels = models
-    if (app.isEmpty) {
-      myModels
-    } else {
-      myModels ++ app.get.allModels
-    }
-  }
   
   def root(t:Thing):OID = {
     val modelId = t.model
@@ -291,6 +276,28 @@ case class SpaceState(
    */
   private lazy val dynCache = scala.collection.concurrent.TrieMap.empty[StateCacheKey, Any]
   def fetchOrCreateCache(key:StateCacheKey, creator: => Any):Any = dynCache.getOrElseUpdate(key, creator)
+  
+  def spaceStateOps(implicit e:Ecology) = new SpaceStateOps()(this, e)
+}
+
+class SpaceStateOps(implicit state:SpaceState, val ecology:Ecology) extends EcologyMember {
+  def Core = interface[querki.core.Core]
+  
+  def app = state.app
+  def things = state.things
+
+  def models:Iterable[ThingState] = {
+    implicit val s = this
+    things.values.filter(_.first(Core.IsModelProp))    
+  }
+  def allModels:Iterable[ThingState] = {
+    val myModels = models
+    if (app.isEmpty) {
+      myModels
+    } else {
+      myModels ++ app.get.allModels
+    }
+  }  
 }
 
 object SpaceState {

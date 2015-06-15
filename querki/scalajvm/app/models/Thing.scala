@@ -17,6 +17,7 @@ object Thing {
   
   implicit def bundle2Ops(thing:PropertyBundle)(implicit ecology:Ecology):PropertyBundleOps = thing.thingOps(ecology)
   implicit def thing2Ops(thing:Thing)(implicit ecology:Ecology):ThingOps = thing.thingOps(ecology)
+  implicit def space2Ops(state:SpaceState)(implicit ecology:Ecology) = state.spaceStateOps
 }
 
 import Thing._
