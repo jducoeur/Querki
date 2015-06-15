@@ -25,7 +25,7 @@ import MOIDs._
 trait CollectionBase { self:CoreEcot =>
   def UnknownType:PType[Unit]
   
-  abstract class SystemCollection(cid:OID, pf:PropFetcher)(implicit e:Ecology) extends Collection(cid, systemOID, UrCollectionOID, pf)(e)
+  abstract class SystemCollection(cid:OID, pf:PropFetcher)(implicit e:Ecology) extends Collection(cid, systemOID, UrCollectionOID, pf)
 
   abstract private[core] class SingleElementBase(cid:OID, pf:PropFetcher)(implicit e:Ecology) extends SystemCollection(cid, pf)(e)
   {

@@ -24,8 +24,8 @@ case class Property[VT, RT](
     val pType:PType[VT] with PTypeBuilder[VT, RT], 
     val cType:Collection, 
     pf:PropFetcher,
-    mt:DateTime)(implicit e:Ecology) 
-  extends Thing(i, s, m, Kind.Property, pf, mt)(e)
+    mt:DateTime)(implicit val ecology:Ecology) 
+  extends Thing(i, s, m, Kind.Property, pf, mt) with EcologyMember
 {
   def Core = interface[querki.core.Core]
   

@@ -52,12 +52,14 @@ case class SpaceState(
     things:Map[OID, ThingState],
     colls:Map[OID, Collection],
     ownerIdentity:Option[querki.identity.Identity],
-    e:Ecology,
+    ecology:Ecology,
     cache:Map[StateCacheKey, Any] = Map.empty) 
-  extends Thing(s, s, m, Kind.Space, pf, mt)(e) with EcologyMemberBase[SpaceState, EcotImpl]
+  extends Thing(s, s, m, Kind.Space, pf, mt) with EcologyMemberBase[SpaceState, EcotImpl]
 {
   def Core = interface[querki.core.Core]  
   lazy val Profiler = interface[querki.tools.Profiler]
+  
+  implicit val e = ecology
   
   /**
    * Profiler Handle for use with the various Space Models. Other models are explicitly permitted to
