@@ -2,7 +2,7 @@ package querki.types
 
 import scala.xml.NodeSeq
 
-import models.{DisplayPropVal, OID, Property, PropertyBundle, PType, PTypeBuilder, Thing, Wikitext}
+import models.{DisplayPropVal, OID, Property, PropertyBundle, PropertyBundleOps, PType, PTypeBuilder, Thing, Wikitext}
 import models.Thing.{PropMap, emptyProps}
 
 import querki.ecology._
@@ -23,7 +23,7 @@ object SimplePropertyBundle {
  * TODO: a good deal of this code is copied from Thing. Think carefully about the right factoring here. I kind of
  * want PropertyBundle to remain a pure interface, but we may want to carefully lift out a base implementation.
  */
-case class ModeledPropertyBundle(modelType:ModelTypeDefiner#ModelType, basedOn:OID, props:PropMap)(implicit val ecology:Ecology) 
+case class ModeledPropertyBundle(val modelType:ModelTypeDefiner#ModelType, basedOn:OID, props:PropMap)(implicit val ecology:Ecology) 
   extends PropertyBundle with EcologyMember 
 {
   def isThing:Boolean = false
@@ -36,8 +36,6 @@ case class ModeledPropertyBundle(modelType:ModelTypeDefiner#ModelType, basedOn:O
   def getModelOpt(implicit state:SpaceState):Option[Thing] = {
     state.anything(modelType.basedOn)
   }
-  
-  def thisAsQValue:QValue = interface[querki.core.Core].ExactlyOne(ElemValue(this, modelType))
   
   def getPropOpt[VT](prop:Property[VT, _])(implicit state:SpaceState):Option[PropAndVal[VT]] = {
     if (hasProp(prop))
@@ -70,6 +68,12 @@ case class ModeledPropertyBundle(modelType:ModelTypeDefiner#ModelType, basedOn:O
   override def toString = {
     "ModeledPropertyBundle " + modelType.displayName + ": " + props
   }
+  
+  def thingOps(e:Ecology):PropertyBundleOps = new ModelTypeOps(this)(e)
+}
+
+class ModelTypeOps(bundle:ModeledPropertyBundle)(implicit e:Ecology) extends PropertyBundleOps(bundle) {
+  def thisAsQValue:QValue = interface[querki.core.Core].ExactlyOne(ElemValue(this, bundle.modelType))  
 }
 
 /**

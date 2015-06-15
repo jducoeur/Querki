@@ -4,7 +4,6 @@ import models._
 
 // TODO: both of these should get evolved away!
 import play.api.Logger
-import play.api.templates.Html
 
 import querki.ecology.Ecology
 import querki.util._

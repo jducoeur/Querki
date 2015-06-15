@@ -64,7 +64,7 @@ case class SpaceState(
    */
   lazy val profilerHandle = Profiler.createHandle("SpaceState")
   
-  override def toString = s"SpaceState '${toThingId}' (${id.toThingId})"
+  override def toString = s"SpaceState '$toThingId' (${id.toThingId})"
   
   // *******************************************
   

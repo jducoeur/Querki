@@ -212,8 +212,6 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     val name = SafeUrl.decode(nameIn)
     override lazy val displayName = name
     override lazy val unsafeDisplayName = name
-    override def nameOrComputed(implicit rc:RequestContext, state:SpaceState) = DisplayText(name)
-    override def unsafeNameOrComputed(implicit rc:RequestContext, state:SpaceState) = name
     override lazy val canonicalName = Some(name)
     override lazy val linkName = Some(name)
     override lazy val toThingId:ThingId = new AsDisplayName(name)
@@ -225,6 +223,9 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     def space = tag.space
     def name = tag.name
     def pseudoModel = preferredModelForTag(space, name)
+    
+    override def nameOrComputed(implicit rc:RequestContext, state:SpaceState) = DisplayText(name)
+    override def unsafeNameOrComputed(implicit rc:RequestContext, state:SpaceState) = name
     
     override def render(implicit rc:RequestContext, state:SpaceState, prop:Option[Property[_,_]] = None):Wikitext = {
       val model = pseudoModel

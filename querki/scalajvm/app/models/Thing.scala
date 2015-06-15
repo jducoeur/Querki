@@ -2,6 +2,7 @@ package models
 
 import scala.annotation.tailrec
 
+import querki.basic.PlainText
 import querki.ecology._
 import querki.ql.{Invocation, QLFunction, QLPhrase}
 import querki.time.DateTime
@@ -14,6 +15,7 @@ object Thing {
   
   def emptyProps = Map.empty[OID, QValue]
   
+  implicit def bundle2Ops(thing:PropertyBundle)(implicit ecology:Ecology):PropertyBundleOps = thing.thingOps(ecology)
   implicit def thing2Ops(thing:Thing)(implicit ecology:Ecology):ThingOps = thing.thingOps(ecology)
 }
 
@@ -38,19 +40,14 @@ abstract class Thing(
 {
   lazy val props:PropMap = propFetcher()
   
-  def thisAsQValue:QValue = Core.ExactlyOne(Core.LinkType(this.id))
-  
   // These are defs instead of vals, because any vals defined here will be for every single Thing in the
   // world. Don't val-ify too casually. In this case, I believe we're willing to accept a little lookup
   // overhead, to save space:
-  def DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
   def Core = interface[querki.core.Core]
   def Basic = interface[querki.basic.Basic]
   def QL = interface[querki.ql.QL]
   
-  def ApplyMethod = Basic.ApplyMethod
   def NotInheritedProp = Core.NotInheritedProp
-  def NameProp = Core.NameProp
   
   override def toString = s"$displayName ($id)"
   
@@ -59,12 +56,13 @@ abstract class Thing(
    * 
    * IMPORTANT: only use this if you know what you're doing. Usually, you want displayName instead.
    */
-  lazy val linkName:Option[String] = {
-    for (
-      nameVal <- localProp(NameProp);
-      plaintext <- nameVal.firstOpt 
-        )
-      yield plaintext
+  lazy val linkName:Option[String] = rawLocalProp[String](querki.core.MOIDs.NameOID)
+  
+  lazy val canonicalName:Option[String] = linkName.filter(_.length() > 0)
+  
+  lazy val toThingId:ThingId = {
+    val nameOpt = canonicalName
+    nameOpt map AsName getOrElse AsOID(id)
   }
   
   /**
@@ -75,12 +73,9 @@ abstract class Thing(
    */
   lazy val displayName:String = displayNameText.toString
   
-  def lookupDisplayName:Option[PropAndVal[_]] = {
-    val dispOpt = localProp(DisplayNameProp)
-    if (dispOpt.isEmpty || dispOpt.get.isEmpty)
-      localProp(NameProp)
-    else
-      dispOpt
+  def lookupDisplayName:Option[String] = {
+    val dispOpt = rawLocalProp[PlainText](querki.basic.MOIDs.DisplayNameOID).map(_.text)
+    dispOpt orElse linkName
   }
   
   /**
@@ -89,16 +84,14 @@ abstract class Thing(
    * is the safest and most flexible way to use this name.
    */
   lazy val displayNameText:DisplayText = {
-    val localName = lookupDisplayName
-    if (localName.isEmpty)
-      DisplayText(id.toThingId.toString)
-    else {
-      val rendered = localName.get.renderPlain.raw
+    val display = for {
+      localName <- lookupDisplayName
+      rendered = Wikitext(localName).raw
       if (rendered.str.length() > 0)
-        rendered
-      else
-        DisplayText(id.toThingId.toString)
-    }    
+    }
+      yield rendered
+      
+    display.getOrElse(DisplayText(id.toThingId.toString))
   }
   
   /**
@@ -109,63 +102,14 @@ abstract class Thing(
    * you will be using it in!
    */
   lazy val unsafeDisplayName:String = {
-    val localName = lookupDisplayName
-    if (localName.isEmpty)
-      id.toThingId.toString
-    else {
-      val rendered = localName.get.renderPlain.plaintext
+    val display = for {
+      localName <- lookupDisplayName
+      rendered = Wikitext(localName).plaintext
       if (rendered.length() > 0)
-        rendered
-      else
-        id.toThingId.toString
-    }    
-  }
-  
-  def nameOrComputed(implicit request:RequestContext, state:SpaceState):DisplayText = {
-    val localName = lookupDisplayName
-    def fallback() = DisplayText(id.toThingId.toString)
-    if (localName.isEmpty) {
-      val computed = for {
-        pv <- getPropOpt(Basic.ComputedNameProp)
-        v <- pv.firstOpt
-      }
-        yield QL.process(v, thisAsContext).raw
-      computed.getOrElse(fallback())
-    } else {
-      val rendered = localName.get.renderPlain.raw
-      if (rendered.length() > 0)
-        rendered
-      else
-        fallback()
-    }    
-  }
-  
-  def unsafeNameOrComputed(implicit rc:RequestContext, state:SpaceState):String = {
-    val localName = lookupDisplayName
-    def fallback() = id.toThingId.toString
-    if (localName.isEmpty) {
-      val computed = for {
-        pv <- getPropOpt(Basic.ComputedNameProp)
-        v <- pv.firstOpt
-      }
-        yield QL.process(v, thisAsContext).plaintext
-      computed.getOrElse(fallback())
-    } else {
-      val rendered = localName.get.renderPlain.plaintext
-      if (rendered.length() > 0)
-        rendered
-      else
-        fallback()
-    }    
-  }
-  
-  lazy val canonicalName:Option[String] = {
-    NameProp.firstOpt(props).filter(_.length() > 0)
-  }
-  
-  lazy val toThingId:ThingId = {
-    val nameOpt = canonicalName
-    nameOpt map AsName getOrElse AsOID(id)
+    }
+      yield rendered
+      
+    display.getOrElse(id.toThingId.toString)
   }
   
   def isThing:Boolean = true
@@ -177,7 +121,8 @@ abstract class Thing(
   def getModel(implicit state:SpaceState):Thing = { 
     state.anything(model).getOrElse{
       try {
-        throw new Exception("Trying to get unknown Model " + model + " for " + displayName)
+        // TODO: make this work again!
+        throw new Exception("Trying to get unknown Model " + model + " for "/* + displayName*/)
       } catch {
         case error:Exception => QLog.error("Unable to find Model", error); throw error
       }
@@ -187,6 +132,20 @@ abstract class Thing(
     if (hasModel) Some(getModel) else None
   }
   def hasModel = (model != UnknownOID)
+  
+  /**
+   * HACK: in order to make linkName and displayName work quickly, without the usual external
+   * dependencies, we do brutally horrible stuff here. This fetches the raw QValue specified,
+   * takes the first element if found, and slams it to T
+   */
+  private def rawLocalProp[T](pid:OID):Option[T] = {
+    for {
+      qv <- props.get(pid)
+      elem <- qv.firstOpt
+      raw = elem.elem
+    }
+      yield raw.asInstanceOf[T]
+  }
   
   /**
    * The Property as defined on *this* specific Thing.
@@ -340,121 +299,8 @@ abstract class Thing(
   private def getUntypedPropOptRec(prop:Property[_, _])(implicit state:SpaceState):Option[PropAndVal[_]] = {
     localProp(prop).orElse(getModelOpt.flatMap(_.getUntypedPropOptRec(prop)))
   }
-    
-  def localPropsAndVals(implicit state:SpaceState):Iterable[PropAndVal[_]] = {
-    for (
-      entry <- props;
-      prop <- state.prop(entry._1)
-        )
-      yield prop.pair(entry._2)
-  }
-  
-  /**
-   * True iff the other is an ancestor of this Thing via the Model chain.
-   */
-  def isAncestor(other:OID)(implicit state:SpaceState):Boolean = {
-    (other == model) || getModelOpt.map(_.isAncestor(other)).getOrElse(false)
-  }
-
   
   def thingOps(e:Ecology) = new ThingOps(this)(e)
-}
-
-class ThingOps(thing:Thing)(implicit val ecology:Ecology) extends EcologyMember with QLFunction {
-  
-  def Core = interface[querki.core.Core]
-  def Basic = interface[querki.basic.Basic]
-  def QL = interface[querki.ql.QL]
-  def Renderer = interface[querki.html.HtmlRenderer]
-  
-  def ApplyMethod = Basic.ApplyMethod
-  
-  /**
-   * Convenience method, to check whether a YesNo Property is non-empty, and is true.
-   */
-  def ifSet(prop:Property[Boolean, _])(implicit state:SpaceState):Boolean = {
-    thing.firstOr(prop, false)
-  }
-  
-  /**
-   * Returns true iff this Thing has the IsModel flag set to true on it.
-   */
-  def isModel(implicit state:SpaceState):Boolean = {
-    ifSet(Core.IsModelProp)
-  }
-  
-  def renderProps(implicit request:RequestContext, state:SpaceState):Wikitext = {
-    Renderer.renderThingDefault(thing)
-  }
-  
-  /**
-   * Show the default rendering for this Thing, if it has no DisplayTextProp defined.
-   * 
-   * This mainly exists so that the different Kinds can override it and do their own thing.
-   */
-  def renderDefault(implicit request:RequestContext, state:SpaceState):Wikitext = {
-    renderProps
-  }
-  
-  /**
-   * Every Thing can be rendered -- this returns a Wikitext string that will then be
-   * displayed in-page.
-   * 
-   * If you specify a property, that property will be rendered with this Thing as a context;
-   * otherwise, DisplayText will be rendered.
-   */
-  def render(implicit request:RequestContext, state:SpaceState, prop:Option[Property[_,_]] = None):Wikitext = {
-    val actualProp = 
-      if (ifSet(Core.IsModelProp))
-        prop.getOrElse(Basic.ModelViewProp)
-      else
-        prop.getOrElse(Basic.DisplayTextProp)
-    val renderedOpt = for (
-      pv <- thing.getPropOpt(actualProp);
-      if (!pv.isEmpty)
-        )
-      yield pv.render(thing.thisAsContext.forProperty(pv.prop), Some(thing))
-    
-    renderedOpt.getOrElse(renderDefault)
-  }
-  
-  /**
-   * Called when this Thing is encountered with no method invocation in a QL expression.
-   * Subclasses are allowed to override it as make sense.
-   * 
-   * This basic version returns a Link to this thing.
-   */
-  def qlApply(inv:Invocation):QValue = {
-    val context = inv.context
-    val paramsOpt = inv.paramsOpt
-    
-    val applyOpt = thing.getPropOpt(ApplyMethod)(context.state)
-    applyOpt match {
-      case Some(apply) => {
-        val qlText = apply.first
-        QL.processMethod(qlText, context.forProperty(apply.prop), Some(inv), Some(thing))
-      }
-      case None => Core.ExactlyOne(Core.LinkType(thing.id))
-    }
-  }
-  
-  class BogusFunction extends QLFunction {
-    def qlApply(inv:Invocation):QValue = {
-      QL.WarningValue("It does not make sense to put this after a dot.")
-    }
-  }
-
-  /**
-   * This is specifically for the right-hand side of a dot in QL processing. This counts
-   * as partial application, and should return a function that will handle the rest of the
-   * function.
-   * 
-   * Partial application is nonsensical for most Things; it is mainly intended for methods
-   * on properties.
-   */
-  def partiallyApply(context:QLContext):QLFunction = {
-    new BogusFunction
-  }
 }
 
 /**

@@ -17,7 +17,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
   
   def LinkKindProp(kind:Kind.Kind) = (querki.links.PublicMOIDs.LinkKindOID -> ExactlyOne(IntType(kind)))
   def LinkAllowAppsProp(b:Boolean) = (querki.links.PublicMOIDs.LinkAllowAppsOID -> ExactlyOne(YesNoType(b)))
-
+  
   /**
    * The Ur-Thing, from which the entire world descends. Note that this is
    * its own parent!
@@ -46,9 +46,11 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
     
     override def allProps(implicit state:SpaceState):Set[Property[_,_]] = localProps
   
-    override def isAncestor(other:OID)(implicit state:SpaceState):Boolean = false
-  
     override def hasModel = false
+    
+    override def thingOps(e:Ecology) = new ThingOps(this) {
+      override def isAncestor(other:OID)(implicit state:SpaceState):Boolean = false    
+    }
   }
   
   override lazy val things = Seq(

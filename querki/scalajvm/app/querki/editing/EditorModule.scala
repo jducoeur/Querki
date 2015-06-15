@@ -3,6 +3,7 @@ package querki.editing
 import scala.xml.Elem
 
 import models.{DisplayPropVal, Kind, OID, Property, PropertyBundle, Thing, ThingState, Wikitext}
+import Thing._
 
 import querki.core.{LinkCandidateProvider, QLText}
 
