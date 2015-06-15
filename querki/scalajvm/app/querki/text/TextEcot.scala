@@ -19,8 +19,6 @@ object MOIDs extends EcotIds(23) {
 
 class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   import MOIDs._
-  
-  lazy val QL = interface[querki.ql.QL]
 
   /***********************************************
    * FUNCTIONS

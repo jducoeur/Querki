@@ -72,7 +72,6 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   val PageEventManager = initRequires[controllers.PageEventManager]
   val SpaceChangeManager = initRequires[querki.spaces.SpaceChangeManager]
   
-  lazy val QL = interface[querki.ql.QL]
   lazy val Links = interface[querki.links.Links]
   lazy val HtmlUI = interface[querki.html.HtmlUI]
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]

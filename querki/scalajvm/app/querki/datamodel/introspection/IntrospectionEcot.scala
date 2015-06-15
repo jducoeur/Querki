@@ -20,7 +20,6 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   import MOIDs._
   
   lazy val PropListMgr = interface[querki.core.PropListManager]
-  lazy val QL = interface[querki.ql.QL]
       
   /******************************************
    * TYPES

@@ -35,9 +35,6 @@ trait LinkCandidateProvider {
 }
 
 trait TextTypeBasis { self:CoreEcot =>
-  
-  lazy val QL = interface[querki.ql.QL]
-  
   trait TextTypeUtils { self:SystemType[_] =>
     def validateText(v:String, prop:Property[_,_], state:SpaceState):Unit = {
       for (

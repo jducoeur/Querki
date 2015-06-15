@@ -10,6 +10,8 @@ import querki.values.{QValue, SpaceState}
  */
 abstract class CoreEcot(ecologyIn:Ecology) extends EcotImpl {
   
+  lazy val QL = interface[querki.ql.QL]
+  
   // Note that this cannot, sadly, be a val, because it is needed in Ecot's constructor:
   implicit def ecology = ecologyIn
   

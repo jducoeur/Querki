@@ -54,7 +54,6 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     SpaceChangeManager.thingChanges += PropCopier
   }
   
-  lazy val QL = interface[querki.ql.QL]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Links = interface[querki.links.Links]
   lazy val PropPaths = interface[querki.types.PropPaths]

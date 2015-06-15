@@ -30,7 +30,6 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
   val Basic = initRequires[querki.basic.Basic]
   val Links = initRequires[querki.links.Links]
   
-  lazy val QL = interface[querki.ql.QL]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
   lazy val QLType = Basic.QLType

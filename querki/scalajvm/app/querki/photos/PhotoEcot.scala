@@ -61,7 +61,9 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
   import PhotoUploadActor._
   
   val Basic = initRequires[querki.basic.Basic]
-  val QL = initRequires[querki.ql.QL]
+  // Note that this needs to be named something other than QL, because the inherited QL is lazy, and this needs
+  // to not be.
+  val RQL = initRequires[querki.ql.QL]
   val Time = initRequires[querki.time.Time]
   val Types = initRequires[querki.types.Types]
   
@@ -146,7 +148,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
           |Note that you can not set this number to be larger than 1000 at this time. This may change in the future,
     	  |but photo storage costs real money, and we have to keep things limited until we have paid memberships. Sorry.""".stripMargin)))
   
-  lazy val ImageCaptionProp = new SystemProperty(ImageCaptionOID, QL.ParsedTextType, Optional,
+  lazy val ImageCaptionProp = new SystemProperty(ImageCaptionOID, RQL.ParsedTextType, Optional,
     toProps(
       setName("Image Caption"),
       SystemOnly,

@@ -45,7 +45,6 @@ abstract class Thing(
   // overhead, to save space:
   def Core = interface[querki.core.Core]
   def Basic = interface[querki.basic.Basic]
-  def QL = interface[querki.ql.QL]
   
   override def toString = s"$displayName ($id)"
   
