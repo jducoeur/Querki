@@ -82,6 +82,8 @@ class ModelTypeOps(bundle:ModeledPropertyBundle)(implicit e:Ecology) extends Pro
  */
 trait ModelTypeDefiner { self:EcologyMember =>
   
+  private lazy val Core = interface[querki.core.Core]
+  
   class ModelType(tid:OID, val basedOn:OID, typeProps:() => PropMap) extends querki.core.TypeUtils.SystemType[ModeledPropertyBundle](tid,
       typeProps) with PTypeBuilder[ModeledPropertyBundle, SimplePropertyBundle] with ModelTypeBase
   {

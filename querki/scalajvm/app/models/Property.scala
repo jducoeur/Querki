@@ -27,6 +27,8 @@ case class Property[VT, RT](
     mt:DateTime)(implicit e:Ecology) 
   extends Thing(i, s, m, Kind.Property, pf, mt)(e)
 {
+  def Core = interface[querki.core.Core]
+  
   lazy val DefaultValueProp = interface[Types].DefaultValueProp
   def WarningValue(msg:String) = interface[querki.ql.QL].WarningValue(msg)
   def ErrorValue(msg:String) = interface[querki.ql.QL].ErrorValue(msg)

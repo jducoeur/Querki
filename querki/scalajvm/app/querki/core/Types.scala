@@ -49,6 +49,8 @@ trait TextTypeBasis { self:CoreEcot =>
   abstract class TextTypeBase(oid:OID, pf:PropFetcher) extends SystemType[QLText](oid, pf
       ) with PTypeBuilder[QLText,String] with querki.ql.CodeType with IsTextType with TextTypeUtils
   {
+    private lazy val Core = interface[querki.core.Core]
+    
     def doDeserialize(v:String)(implicit state:SpaceState) = QLText(v)
     def doSerialize(v:QLText)(implicit state:SpaceState) = v.text
     def doWikify(context:QLContext)(v:QLText, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {

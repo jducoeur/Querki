@@ -56,6 +56,7 @@ case class SpaceState(
     cache:Map[StateCacheKey, Any] = Map.empty) 
   extends Thing(s, s, m, Kind.Space, pf, mt)(e) with EcologyMemberBase[SpaceState, EcotImpl]
 {
+  def Core = interface[querki.core.Core]  
   lazy val Profiler = interface[querki.tools.Profiler]
   
   /**

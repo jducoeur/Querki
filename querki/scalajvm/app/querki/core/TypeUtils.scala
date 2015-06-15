@@ -9,7 +9,9 @@ import querki.ecology._
 import querki.values.{ElemValue, QLContext, SpaceState}
 
 object TypeUtils {
-  trait CommonInputRenderers { self:SystemType[_] =>
+  trait CommonInputRenderers { self:SystemType[_] with EcologyMember =>
+    private lazy val Core = interface[querki.core.Core]
+    
     def renderAnyText(prop:Property[_, _], context:QLContext, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_])(doRender: (String) => NodeSeq):NodeSeq = {
       val str = elemT.toUser(v)(context.state)
       val xml = doRender(str)
@@ -38,6 +40,7 @@ object TypeUtils {
   {
     // Types is where the various validators and such live:
     lazy val Types = interface[querki.types.Types]
+    private lazy val Core = interface[querki.core.Core]
     
     def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
       // TBD: this is smelly -- the fact that we need to know here how to render Optional is a nasty abstraction

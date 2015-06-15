@@ -40,12 +40,6 @@ abstract class Thing(
 {
   lazy val props:PropMap = propFetcher()
   
-  // These are defs instead of vals, because any vals defined here will be for every single Thing in the
-  // world. Don't val-ify too casually. In this case, I believe we're willing to accept a little lookup
-  // overhead, to save space:
-  def Core = interface[querki.core.Core]
-  def Basic = interface[querki.basic.Basic]
-  
   override def toString = s"$displayName ($id)"
   
   /**
