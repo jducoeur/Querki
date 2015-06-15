@@ -29,12 +29,11 @@ case class Property[VT, RT](
 {
   def Core = interface[querki.core.Core]
   
-  lazy val DefaultValueProp = interface[Types].DefaultValueProp
   def WarningValue(msg:String) = interface[querki.ql.QL].WarningValue(msg)
   def ErrorValue(msg:String) = interface[querki.ql.QL].ErrorValue(msg)
     
   def default(implicit state:SpaceState) = {
-    val explicitDefault = localProp(DefaultValueProp).map(_.v)
+    val explicitDefault = rawLocalProp[QValue](querki.types.MOIDs.DefaultValuePropOID)
     explicitDefault.getOrElse(cType.default(pType))
   }
   def defaultPair(implicit state:SpaceState):PropAndVal[VT] = PropAndVal(this, default)

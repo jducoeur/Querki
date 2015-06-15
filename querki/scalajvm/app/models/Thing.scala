@@ -40,6 +40,26 @@ abstract class Thing(
 {
   lazy val props:PropMap = propFetcher()
   
+  /**
+   * USE WITH EXTREME CAUTION: this function is for use *only* in the core classes. Its purpose is to allow
+   * a Thing to fetch the value of a Property on itself (without inheritance), without using the
+   * Ecology. In other words, it does an end-run around ordinary Property fetching and all the
+   * type-checking built into that, and instead simply asserts "here's an OID that might exist
+   * and might have a single value; if you find it, cast it to this expected type".
+   * 
+   * (Why bother? It allows the core classes to declare some parameter-free lazy vals.)
+   * 
+   * If you don't know what you're doing, or don't absolutely need to use this, don't.
+   */
+  protected def rawLocalProp[T](pid:OID):Option[T] = {
+    for {
+      qv <- props.get(pid)
+      elem <- qv.firstOpt
+      raw = elem.elem
+    }
+      yield raw.asInstanceOf[T]
+  }
+  
   override def toString = s"$displayName ($id)"
   
   /**
@@ -123,20 +143,6 @@ abstract class Thing(
     if (hasModel) Some(getModel) else None
   }
   def hasModel = (model != UnknownOID)
-  
-  /**
-   * HACK: in order to make linkName and displayName work quickly, without the usual external
-   * dependencies, we do brutally horrible stuff here. This fetches the raw QValue specified,
-   * takes the first element if found, and slams it to T
-   */
-  private def rawLocalProp[T](pid:OID):Option[T] = {
-    for {
-      qv <- props.get(pid)
-      elem <- qv.firstOpt
-      raw = elem.elem
-    }
-      yield raw.asInstanceOf[T]
-  }
   
   /**
    * The Property as defined on *this* specific Thing.
