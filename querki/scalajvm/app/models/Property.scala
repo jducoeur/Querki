@@ -25,9 +25,9 @@ case class Property[VT, RT](
     val cType:Collection, 
     pf:PropFetcher,
     mt:DateTime)(implicit val ecology:Ecology) 
-  extends Thing(i, s, m, Kind.Property, pf, mt) with EcologyMember
+  extends Thing(i, s, m, Kind.Property, pf, mt)
 {
-  def Core = interface[querki.core.Core]
+  def Core = ecology.api[querki.core.Core]
     
   def default(implicit state:SpaceState) = {
     val explicitDefault = rawLocalProp[QValue](querki.types.MOIDs.DefaultValuePropOID)

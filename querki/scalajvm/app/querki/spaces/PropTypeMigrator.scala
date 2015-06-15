@@ -13,7 +13,7 @@ import messages.SpaceMessage
 case class TypeChangeInfo(typeChanged:Boolean, newType:PType[Any] with PTypeBuilder[Any, Any], serializedValues:Map[Thing, String],
     prop:Property[_,_])
 {
-  def finish(newProp:Property[_,_], stateIn:SpaceState, updateState:(SpaceState, Option[SpaceMessage]) => Unit):Unit = {
+  def finish(newProp:Property[_,_], stateIn:SpaceState, updateState:(SpaceState, Option[SpaceMessage]) => Unit)(implicit e:Ecology):Unit = {
     if (typeChanged) {
       // Now, run through all of the previously-serialized values, and rebuild them with the new Type:
       val newState = (stateIn /: serializedValues) { (state, oldPair) =>
@@ -24,7 +24,6 @@ case class TypeChangeInfo(typeChanged:Boolean, newType:PType[Any] with PTypeBuil
         usingThing match {
           case t:ThingState => state.copy(things = state.things + (usingThingId -> t.copy(pf = () => usingProps)))
           case p:Property[_,_] => {
-            implicit val e = p.ecology
             state.copy(spaceProps = state.spaceProps + (usingThingId -> p.copy(pf = () => usingProps)))
           }
           case s:SpaceState => state.copy(pf = () => usingProps)
