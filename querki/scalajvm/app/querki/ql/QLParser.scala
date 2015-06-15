@@ -34,7 +34,7 @@ private [ql] class QLProfilers(implicit val ecology:Ecology) extends EcologyMemb
 }
 
 class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 
-  val lexicalThing:Option[PropertyBundle] = None, val lexicalProp:Option[AnyProp] = None) 
+  val lexicalThing:Option[PropertyBundle] = None, val lexicalProp:Option[AnyProp] = None)(implicit val ecology:Ecology) 
   extends RegexParsers with EcologyMember 
 {
   
@@ -43,8 +43,6 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   val initialContext = ci.copy(parser = Some(this))(ci.state, ecology)
   
   val paramsOpt = invOpt.flatMap(_.paramsOpt)
-  
-  implicit def ecology:Ecology = ci.state.ecology
   
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Core = interface[querki.core.Core]

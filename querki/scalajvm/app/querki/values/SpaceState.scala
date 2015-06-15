@@ -52,9 +52,8 @@ case class SpaceState(
     things:Map[OID, ThingState],
     colls:Map[OID, Collection],
     ownerIdentity:Option[querki.identity.Identity],
-    ecology:Ecology,
     cache:Map[StateCacheKey, Any] = Map.empty) 
-  extends Thing(s, s, m, Kind.Space, pf, mt) with EcologyMemberBase[SpaceState, EcotImpl]
+  extends Thing(s, s, m, Kind.Space, pf, mt)
 {
   override def toString = s"SpaceState '$toThingId' (${id.toThingId})"
   
