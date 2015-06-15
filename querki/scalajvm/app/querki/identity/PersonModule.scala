@@ -37,6 +37,7 @@ import MOIDs._
 private [identity] case class CachedPeople(val ecology:Ecology, state:SpaceState) extends EcologyMember {
   
   implicit val s = state
+  implicit val e = ecology
   
   lazy val Person = interface[Person]
   

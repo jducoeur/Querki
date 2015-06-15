@@ -56,8 +56,6 @@ case class SpaceState(
     cache:Map[StateCacheKey, Any] = Map.empty) 
   extends Thing(s, s, m, Kind.Space, pf, mt) with EcologyMemberBase[SpaceState, EcotImpl]
 {
-  implicit val e = ecology
-  
   override def toString = s"SpaceState '$toThingId' (${id.toThingId})"
   
   // *******************************************
@@ -218,34 +216,6 @@ case class SpaceState(
     things.values.filter(_.model == tid)
   }
   
-  def descendantsTyped[T <: Thing](root:OID, includeModels:Boolean, includeInstances:Boolean, map:Map[OID, T]):Iterable[Thing] = {
-    map.values.filter(_.isAncestor(root)(this))
-  }
-  
-  // TODO: this is pretty inefficient -- it is going to fully walk the tree for every object, with
-  // a lot of redundancy and no sensible snipping. We can probably do a lot to optimize it.
-  def descendants(root:OID, includeModels:Boolean, includeInstances:Boolean):Iterable[Thing] = {
-    val candidates = 
-      descendantsTyped(root, includeModels, includeInstances, types) ++
-      descendantsTyped(root, includeModels, includeInstances, spaceProps) ++
-      descendantsTyped(root, includeModels, includeInstances, things) ++
-      descendantsTyped(root, includeModels, includeInstances, colls)
-      
-    val stripModels =
-      if (includeModels)
-        candidates
-      else
-        candidates.filterNot(_.isModel(this))
-        
-    val stripInstances =
-      if (includeInstances)
-        stripModels
-      else
-        stripModels.filter(_.isModel(this))
-        
-     stripInstances
-  }
-  
   def getApp(appId:OID):Option[SpaceState] = {
     if (appId == id)
       Some(this)
@@ -298,6 +268,35 @@ class SpaceStateOps(implicit state:SpaceState, val ecology:Ecology) extends Ecol
       myModels ++ app.get.allModels
     }
   }  
+    
+  def descendantsTyped[T <: Thing](root:OID, includeModels:Boolean, includeInstances:Boolean, map:Map[OID, T]):Iterable[Thing] = {
+    map.values.filter(_.isAncestor(root)(state))
+  }
+  
+  // TODO: this is pretty inefficient -- it is going to fully walk the tree for every object, with
+  // a lot of redundancy and no sensible snipping. We can probably do a lot to optimize it.
+  def descendants(root:OID, includeModels:Boolean, includeInstances:Boolean):Iterable[Thing] = {
+    val candidates = 
+      descendantsTyped(root, includeModels, includeInstances, state.types) ++
+      descendantsTyped(root, includeModels, includeInstances, state.spaceProps) ++
+      descendantsTyped(root, includeModels, includeInstances, things) ++
+      descendantsTyped(root, includeModels, includeInstances, state.colls)
+      
+    val stripModels =
+      if (includeModels)
+        candidates
+      else
+        candidates.filterNot(_.isModel)
+        
+    val stripInstances =
+      if (includeInstances)
+        stripModels
+      else
+        stripModels.filter(_.isModel)
+        
+     stripInstances
+  }
+
 }
 
 object SpaceState {
