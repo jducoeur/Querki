@@ -339,7 +339,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
         case Some(params) => {
           val param = params(0);
           val QLCall(kindName, _, _, _) = param.ops(0)
-          Kind.fromName(kindName.name).map(kind => ExactlyOne(IntType(kind))).getOrElse(WarningValue("Unknown Kind: " + kindName))
+          Kind.fromName(kindName.name).map(kind => ExactlyOne(IntType(kind))).getOrElse(QL.WarningValue("Unknown Kind: " + kindName))
         }
       
         // Second version: return the Kind of the received value:

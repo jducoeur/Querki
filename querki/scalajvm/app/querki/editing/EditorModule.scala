@@ -295,7 +295,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
           case Some(params) if (params.length > 0) => {
             context.parser.get.processPhrase(params(0).ops, context).value
           }
-          case _ => WarningValue("_editOrElse requires a parameter")
+          case _ => QL.WarningValue("_editOrElse requires a parameter")
         }
     }  
   }
@@ -370,7 +370,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	          control.wikify(context) +
 	          Wikitext("\n}}\n}}\n}}\n"))
 	      }
-	      case _ => WarningValue("_formLine requires two parameters")
+	      case _ => QL.WarningValue("_formLine requires two parameters")
 	    }
 	  }
 	}

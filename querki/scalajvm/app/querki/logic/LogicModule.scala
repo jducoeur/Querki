@@ -67,7 +67,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	        // suss that?
 	        result.getOrElse(EmptyValue(context.value.pType))
 	      }
-	      case None => WarningValue("_firstNonEmpty() is meaningless if you don't give it any parameters")
+	      case None => QL.WarningValue("_firstNonEmpty() is meaningless if you don't give it any parameters")
 	    }
 	  }
 	}
@@ -135,7 +135,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	          }
 	        }
 	      }
-	      case _ => WarningValue("_if requires at least two parameters.")
+	      case _ => QL.WarningValue("_if requires at least two parameters.")
 	    }
 	  }
 	}

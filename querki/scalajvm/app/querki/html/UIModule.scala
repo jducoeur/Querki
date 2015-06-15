@@ -278,7 +278,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	          case None => EmptyValue(RawHtmlType)
 	        }
 	      }
-	      case None => WarningValue(displayName + " requires " + numParams + " parameters.")
+	      case None => QL.WarningValue(displayName + " requires " + numParams + " parameters.")
 	    }
 	  }
 	}

@@ -56,7 +56,7 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	    )
 	      yield parser.processPhrase(phrase.ops, context.asCollection).value
 	      
-	    result.getOrElse(WarningValue("_pluralize requires exactly two parameters"))
+	    result.getOrElse(QL.WarningValue("_pluralize requires exactly two parameters"))
 	  }
 	}
 	

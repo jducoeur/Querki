@@ -28,9 +28,6 @@ case class Property[VT, RT](
   extends Thing(i, s, m, Kind.Property, pf, mt) with EcologyMember
 {
   def Core = interface[querki.core.Core]
-  
-  def WarningValue(msg:String) = interface[querki.ql.QL].WarningValue(msg)
-  def ErrorValue(msg:String) = interface[querki.ql.QL].ErrorValue(msg)
     
   def default(implicit state:SpaceState) = {
     val explicitDefault = rawLocalProp[QValue](querki.types.MOIDs.DefaultValuePropOID)
@@ -106,17 +103,6 @@ case class Property[VT, RT](
   
   def serialize(v:QValue)(implicit state:SpaceState):String = validatingQValue(v){ v.serialize(pType) }
   def deserialize(str:String)(implicit state:SpaceState):QValue = cType.deserialize(str, pType)
-  
-  // TODO: these two methods are probably obsolete. Can they consistently be replaced by
-  // inv.bundlesAndContextsForProp?
-  def applyToIncomingThing(inv:Invocation)(action:(Thing, QLContext) => QValue):QValue = {
-    applyToIncomingProps(inv) { (props, internalContext) =>
-      props match {
-        case t:Thing => action(t, internalContext)
-        case _ => ErrorValue("Got a PropertyBundle where we we expected a Thing -- there is probably a call to applyToIncomingThing that should be Props")
-      }
-    }
-  }
   
   def applyToIncomingProps(inv:Invocation)(action:(PropertyBundle, QLContext) => QValue):QValue = {
     for {

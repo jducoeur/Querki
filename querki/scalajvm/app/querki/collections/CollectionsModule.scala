@@ -427,7 +427,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	        val innerRes = context.parser.get.processPhrase(params(0).ops, context).value;
 	        innerRes.cType.makePropValue(innerRes.cv, new DescendingType(innerRes.pType))
 	      }
-	      case None => WarningValue("_desc is meaningless without a parameter")
+	      case None => QL.WarningValue("_desc is meaningless without a parameter")
 	    }
 	  }
 	}
@@ -493,7 +493,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
             case None => EmptyValue(thing.pType)
           }
         }
-        case _ => WarningValue("_prevInList requires a List parameter")
+        case _ => QL.WarningValue("_prevInList requires a List parameter")
       }
     }
   }
@@ -525,7 +525,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
             case None => EmptyValue(thing.pType)
           }
         }
-        case _ => WarningValue("_nextInList requires a List parameter")
+        case _ => QL.WarningValue("_nextInList requires a List parameter")
       }
     }
   }

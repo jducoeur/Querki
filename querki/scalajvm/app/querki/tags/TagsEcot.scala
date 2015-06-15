@@ -400,17 +400,20 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
           |In general, you only want to receive the Property like this if you are passing it into a Function.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QValue = {
-      applyToIncomingThing(inv.preferDefiningContext) { (shouldBeProp, _) =>
-        shouldBeProp match {
-          case prop:Property[_,_] if (prop.pType == TagSetType || prop.pType == NewTagSetType) => {
-            prop.pType match {
-              case TagSetType => Core.listFrom(fetchTags(inv.state, prop), TagSetType)
-              case NewTagSetType => Core.listFrom(fetchTags(inv.state, prop), NewTagSetType)
+      for {
+        (shouldBeProp, _) <- inv.preferDefiningContext.bundlesAndContextsForProp(this)
+      }
+        yield {
+          shouldBeProp match {
+            case prop:Property[_,_] if (prop.pType == TagSetType || prop.pType == NewTagSetType) => {
+              prop.pType match {
+                case TagSetType => Core.listFrom(fetchTags(inv.state, prop), TagSetType)
+                case NewTagSetType => Core.listFrom(fetchTags(inv.state, prop), NewTagSetType)
+              }
             }
-          }
-          case _ => WarningValue("The _tagsForProperty method can only be used on Tag Set Properties")
+            case _ => QL.WarningValue("The _tagsForProperty method can only be used on Tag Set Properties")
+          } 
         } 
-      }    
     }
   }
   

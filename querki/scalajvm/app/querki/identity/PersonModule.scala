@@ -186,7 +186,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
       val userOpt = context.request.requester
       implicit val state = context.state
       val personOpt = userOpt.flatMap(localPerson(_))
-      personOpt.map(person => Links.LinkValue(person)).getOrElse(WarningValue("You are not a member of this Space"))
+      personOpt.map(person => Links.LinkValue(person)).getOrElse(QL.WarningValue("You are not a member of this Space"))
     }
   }
   
@@ -267,7 +267,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
         }
         yield HtmlUI.HtmlValue(s"""<b><a href="$url">Click here</a></b> to accept the invitation.""")
         
-      inviteOpt.getOrElse(WarningValue("This appears to be an incorrect use of _spaceInvitation."))
+      inviteOpt.getOrElse(QL.WarningValue("This appears to be an incorrect use of _spaceInvitation."))
     }
   }
   
