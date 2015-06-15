@@ -47,8 +47,6 @@ abstract class Thing(
   def Basic = interface[querki.basic.Basic]
   def QL = interface[querki.ql.QL]
   
-  def NotInheritedProp = Core.NotInheritedProp
-  
   override def toString = s"$displayName ($id)"
   
   /**
@@ -172,7 +170,7 @@ abstract class Thing(
     val propOpt = state.prop(propId)
     propOpt match {
       case Some(prop) => 
-        if (prop.first(NotInheritedProp))
+        if (prop.notInherited)
           localOrDefault(propId)
         else
           localProp(propId).getOrElse(getModelOpt.map(_.getProp(propId)).getOrElse(prop.defaultPair))
@@ -182,7 +180,7 @@ abstract class Thing(
   def getProp[VT, CT](prop:Property[VT, _])(implicit state:SpaceState):PropAndVal[VT] = {
     // TODO: we're doing redundant lookups of the property. Rationalize this stack of calls.
     // Note: the != here is because NotInheritedProp gets into an infinite loop otherwise:
-    if (this != NotInheritedProp && prop.first(NotInheritedProp))
+    if (this.id != querki.core.MOIDs.NotInheritedOID && prop.notInherited)
       localOrDefault(prop)
     else
       localProp(prop).getOrElse(getModelOpt.map(_.getProp(prop)).getOrElse(prop.defaultPair))
@@ -204,7 +202,7 @@ abstract class Thing(
     val local = localPropVal(prop)
     if (local.isDefined)
       local.get
-    else if (prop.first(NotInheritedProp))
+    else if (prop.notInherited)
       prop.default
     else
       getModel.getPropVal(prop)
