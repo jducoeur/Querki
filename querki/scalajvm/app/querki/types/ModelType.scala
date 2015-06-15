@@ -73,7 +73,7 @@ case class ModeledPropertyBundle(val modelType:ModelTypeDefiner#ModelType, based
 }
 
 class ModelTypeOps(bundle:ModeledPropertyBundle)(implicit e:Ecology) extends PropertyBundleOps(bundle) {
-  def thisAsQValue:QValue = interface[querki.core.Core].ExactlyOne(ElemValue(this, bundle.modelType))  
+  def thisAsQValue:QValue = interface[querki.core.Core].ExactlyOne(ElemValue(bundle, bundle.modelType))  
 }
 
 /**
