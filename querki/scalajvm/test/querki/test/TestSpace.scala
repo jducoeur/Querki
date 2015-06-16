@@ -209,8 +209,7 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
       OIDMap(props:_*),
       OIDMap(things:_*),
       OIDMap(Seq.empty:_*),  // This Space's Collections
-      None,      // The Owner's actual Identity
-      ecology
+      None      // The Owner's actual Identity
     )
     
     val results = SpaceChangeManager.updateStateCache(CacheUpdate(None, None, s))

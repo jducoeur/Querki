@@ -132,7 +132,9 @@ class QuerkiTests
    * The standard rendering for a single Link that makes its way to the output.
    */
   def linkText(t:Thing):String = {
-    val display = t.displayName
+    // This is a bit convoluted, but is what we actually display in the link text. Indeed, it's
+    // arguably insufficient -- we should probably be factoring nameOrComputed into here.
+    val display = t.fullLookupDisplayName.get.renderPlain.raw
     val name = t.canonicalName.map(querki.core.NameUtils.toUrl(_)).getOrElse(display)
     "[" + display + "](" + name + ")"     
   }
