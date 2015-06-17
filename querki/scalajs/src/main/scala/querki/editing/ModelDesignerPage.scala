@@ -14,7 +14,7 @@ import querki.globals._
 import querki.api.{EditFunctions, StandardThings}
 import EditFunctions._
 import querki.data.{BasicThingInfo, PropInfo, SpaceProps, ThingInfo}
-import querki.display.{ButtonGadget, ButtonKind, Gadget, RawDiv, WithTooltip}
+import querki.display.{ButtonKind, Gadget, RawDiv, WithTooltip}
 import querki.display.input.{DeleteInstanceButton, InputGadget}
 import querki.display.rx.{RxDiv, RxThingSelector}
 import querki.pages._
