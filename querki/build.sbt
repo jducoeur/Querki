@@ -61,7 +61,6 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   jsDependencies += ProvidedJS / "jquery.autosize.min.js" dependsOn "jquery.js",
   jsDependencies += ProvidedJS / "jquery.raty.js" minified "jquery.raty.min.js" dependsOn "jquery.js",
   jsDependencies += ProvidedJS / "jquery.histogram.js" dependsOn "jquery.js",
-  jsDependencies += ProvidedJS / "moment.min.js",
 
   jsDependencies += ProvidedJS / "load-image.min.js" dependsOn "jquery-ui-1.10.0.custom.js",
   jsDependencies += ProvidedJS / "canvas-to-blob.min.js" dependsOn "load-image.min.js",
@@ -75,9 +74,10 @@ lazy val querkiClient = (project in file("scalajs")).settings(
     "com.lihaoyi" %%% "utest" % "0.3.1",
     "org.scala-js" %%% "scala-parser-combinators" % "1.0.2",
     "org.scala-lang.modules" %% "scala-async" % "0.9.2",
-	"org.querki" %%% "querki-jsext" % "0.5",
-	"org.querki" %%% "jquery-facade" % "0.6",
-	"org.querki" %%% "bootstrap-datepicker-facade" % "0.3"
+    "org.querki" %%% "querki-jsext" % "0.5",
+    "org.querki" %%% "jquery-facade" % "0.6",
+    "org.querki" %%% "bootstrap-datepicker-facade" % "0.3",
+    "io.github.widok" %%% "scala-js-momentjs" % "0.1.0"
   )).
   settings(sharedDirectorySettings: _*).
   enablePlugins(ScalaJSPlugin, ScalaJSPlay)

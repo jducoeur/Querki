@@ -2,6 +2,7 @@ package querki.notifications
 
 import autowire._
 import rx._
+import org.widok.moment._
 
 import querki.globals._
 
@@ -44,5 +45,8 @@ class NotificationsEcot(e:Ecology) extends ClientEcot(e) with Notifications {
     }
     
     Pages.registerStandardFactory(pageName, { (params) => new NotificationsPage(params) })
+    
+    // Since *somebody* apparently has to do this:
+    Moment.locale("en_GB")
   }
 }

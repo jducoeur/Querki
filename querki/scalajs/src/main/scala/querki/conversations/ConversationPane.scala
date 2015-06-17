@@ -7,7 +7,7 @@ import org.querki.jquery._
 import scalatags.JsDom.all.{input => inp, _}
 import autowire._
 
-import org.querki.facades.moment._
+import org.widok.moment._
 
 import querki.globals._
 
@@ -82,7 +82,7 @@ private [conversations] class CommentGadget(val comment:CommentInfo)(implicit va
   lazy val Client = interface[querki.client.Client]
   
   val cid = comment.id
-  val created = moment(comment.createTime).calendar()
+  val created = Moment(comment.createTime).calendar()
   
   def doRender() =
     div(
