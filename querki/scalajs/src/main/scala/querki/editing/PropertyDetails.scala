@@ -6,7 +6,7 @@ import rx._
 
 import querki.globals._
 
-import querki.display.{ButtonGadget, ButtonKind, Gadget}
+import querki.display.{ButtonGadget, Gadget}
 import querki.display.rx.RxThingSelector
   
   class PropertyDetails(val valEditor:PropValueEditor)(implicit val ecology:Ecology) extends Gadget[dom.html.Div] {
@@ -30,7 +30,7 @@ import querki.display.rx.RxThingSelector
         hr,
         propertyDescriptionDiv,
         if (editInfo.canEditProperty) {
-          p(new ButtonGadget(ButtonKind.Primary, "Edit Property")({ () => valEditor.showPropEditor() }))        
+          p(new ButtonGadget(ButtonGadget.Primary, "Edit Property")({ () => valEditor.showPropEditor() }))        
         }
       )
     }

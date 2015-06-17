@@ -6,7 +6,7 @@ import scalatags.JsDom.all._
 import rx._
 
 import querki.data.{TID => _TID, _}
-import querki.display.{ButtonGadget, ButtonKind, Gadget}
+import querki.display.{ButtonGadget, Gadget}
 import querki.display.rx.{RxAttr, RxSelect}
 import querki.globals._
 
@@ -22,7 +22,7 @@ class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpa
 
   // The add button is only enabled when the selection is non-empty; when pressed, it tells the parent
   // page to add the Property:
-  lazy val addButton = new ButtonGadget(ButtonKind.Info, RxAttr("disabled", Rx{ selectedProperty().isEmpty }), "Add")({ () =>
+  lazy val addButton = new ButtonGadget(ButtonGadget.Info, RxAttr("disabled", Rx{ selectedProperty().isEmpty }), "Add")({ () =>
     page.addProperty(selectedProperty().get)
     reset()
   })
@@ -86,7 +86,7 @@ class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpa
             addButton
           ),
           hr,
-          p(new ButtonGadget(ButtonKind.Info, "Create a new Property instead")({ () => apg.mainDiv.replaceContents(apg.createNew.rendered, true) }), apg.cancelButton)
+          p(new ButtonGadget(ButtonGadget.Info, "Create a new Property instead")({ () => apg.mainDiv.replaceContents(apg.createNew.rendered, true) }), apg.cancelButton)
         ),
         div(cls:="col-md-7", propertyDescriptionDiv)
       )

@@ -8,7 +8,7 @@ import rx._
 import querki.globals._
 
 import querki.api.EditFunctions
-import querki.display.{ButtonGadget, ButtonKind, Gadget}
+import querki.display.{ButtonGadget, Gadget}
 import querki.display.rx.RxDiv
   
 class PropertyEditor(val valEditor:PropValueEditor)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
@@ -39,7 +39,7 @@ class PropertyEditor(val valEditor:PropValueEditor)(implicit val ecology:Ecology
       div(
         hr,
         contentDiv,
-        p(new ButtonGadget(ButtonKind.Primary, "Done")({ () =>
+        p(new ButtonGadget(ButtonGadget.Primary, "Done")({ () =>
           valEditor.propEditDone() 
         }))
       )

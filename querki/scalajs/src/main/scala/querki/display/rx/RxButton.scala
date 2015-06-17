@@ -5,10 +5,10 @@ import scalatags.JsDom.all._
 import rx._
 import org.querki.jquery._
 
-import querki.display.{ButtonKind, ButtonGadget, Gadget}
+import querki.display.{ButtonGadget, Gadget}
 import querki.globals._
 
-class RxButton(kind:ButtonKind.ButtonKind, inactiveLabel:String, activeLabel:String)(onClick:RxButton => Unit) extends Gadget[dom.html.Span]  {
+class RxButton(kind:ButtonGadget.ButtonKind, inactiveLabel:String, activeLabel:String)(onClick:RxButton => Unit) extends Gadget[dom.html.Span]  {
   private lazy val active = Var(false)
   
   private lazy val actualButton = 

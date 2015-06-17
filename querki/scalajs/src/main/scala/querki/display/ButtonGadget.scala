@@ -6,12 +6,14 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
-object ButtonKind extends Enumeration {
-  type ButtonKind = Value
+object ButtonGadget {
+  type ButtonKind = Int
   
-  val Normal, Info, Primary = Value
+  val Normal:ButtonKind = 1
+  val Info:ButtonKind = 2
+  val Primary:ButtonKind = 3
 }
-import ButtonKind._
+import ButtonGadget._
 
 /**
  * A simple Gadget that encapsulates the notion of a Button that does something when clicked. Almost

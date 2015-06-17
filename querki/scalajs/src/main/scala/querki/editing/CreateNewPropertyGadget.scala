@@ -9,7 +9,8 @@ import rx._
 import querki.api.{EditFunctions}
 import EditFunctions._
 import querki.data.{TID => _TID, _}
-import querki.display.{ButtonGadget, ButtonKind, Gadget}
+import querki.display.{ButtonGadget, Gadget}
+import ButtonGadget._
 import querki.display.rx.{ButtonInfo, RxAttr, RxButtonGroup, RxSelect, RxText}
 import querki.globals._
   
@@ -64,7 +65,7 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   // The add button is only enabled when all fields are non-empty; when pressed, it tells the parent
   // page to add the Property:
   lazy val addButton = 
-    new ButtonGadget(ButtonKind.Info, 
+    new ButtonGadget(Info, 
         RxAttr("disabled", Rx{ nameInput.textOpt().isEmpty || collSelector.selectedTIDOpt().isEmpty || selectedBasis().isEmpty }), 
         "Create")({ () =>
       val name = nameInput.textOpt().get
@@ -123,6 +124,6 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
         addButton
       ),
       hr,
-      p(new ButtonGadget(ButtonKind.Info, "Add an Existing Property")({ () => apg.mainDiv.replaceContents(apg.addExisting.rendered, true) }), apg.cancelButton)
+      p(new ButtonGadget(Info, "Add an Existing Property")({ () => apg.mainDiv.replaceContents(apg.addExisting.rendered, true) }), apg.cancelButton)
     )
 }

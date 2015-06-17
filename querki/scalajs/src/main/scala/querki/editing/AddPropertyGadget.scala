@@ -8,7 +8,8 @@ import scalatags.JsDom.all._
 import querki.globals._
 
 import querki.data.{TID => _TID, _}
-import querki.display.{AfterLoading, ButtonGadget, ButtonKind, Gadget, WrapperDiv}
+import querki.display.{AfterLoading, ButtonGadget, Gadget, WrapperDiv}
+import ButtonGadget._
 
 class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
   
@@ -16,11 +17,11 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   
   lazy val mainDiv = (new WrapperDiv).initialContent(initButton)
   
-  lazy val initButton:ButtonGadget = new ButtonGadget(ButtonKind.Info, icon("plus"), " Add a Property")({ () =>
+  lazy val initButton:ButtonGadget = new ButtonGadget(Info, icon("plus"), " Add a Property")({ () =>
     mainDiv.replaceContents(addExisting.rendered, true)
   })
   
-  lazy val cancelButton = new ButtonGadget(ButtonKind.Normal, "Cancel")({ () => reset() })
+  lazy val cancelButton = new ButtonGadget(Normal, "Cancel")({ () => reset() })
   
   val stdThingFut = DataAccess.standardThings
   def allTypesFut = page.allTypesFut

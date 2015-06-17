@@ -12,7 +12,8 @@ import querki.globals._
 
 import models.Wikitext
 import querki.api.ThingFunctions
-import querki.display.{ButtonGadget, ButtonKind, QText, WrapperDiv}
+import querki.display.{ButtonGadget, QText, WrapperDiv}
+import ButtonGadget.Normal
 import querki.display.input.{InputGadget, ManifestItem, MarcoPoloInput, TagSetKind}
 
 class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
@@ -81,7 +82,7 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
   lazy val results = new WrapperDiv
   lazy val rawResults = Var[Wikitext](Wikitext.empty)
   
-  lazy val ReifyButton = new ButtonGadget(ButtonKind.Normal, "Make a Page")({ () =>
+  lazy val ReifyButton = new ButtonGadget(Normal, "Make a Page")({ () =>
     val createFut = for {
       std <- DataAccess.standardThings
       createPage <- Pages.createAndEditFactory.showPage(std.basic.simpleThing)
@@ -91,7 +92,7 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
       yield createPage
   })
   
-  lazy val SaveButton = new ButtonGadget(ButtonKind.Normal, "Save Results")({ () =>
+  lazy val SaveButton = new ButtonGadget(Normal, "Save Results")({ () =>
     val saveFut = for {
       std <- DataAccess.standardThings
       createPage <- Pages.createAndEditFactory.showPage(std.basic.simpleThing)

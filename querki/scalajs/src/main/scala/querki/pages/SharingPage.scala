@@ -16,7 +16,7 @@ import querki.globals._
 
 import querki.api._
 import querki.data.ThingInfo
-import querki.display.{ButtonGadget, ButtonKind, Gadget, RawDiv}
+import querki.display.{ButtonGadget, Gadget, RawDiv}
 import querki.display.input.{InputGadget, LargeTextInputGadget, ManifestItem}
 import querki.display.rx.{RxAttr, RxButton, RxTextFrag}
 
@@ -195,7 +195,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
           div(cls:="control-group",
             div(cls:="controls",
               new RxButton(
-                ButtonKind.Normal, 
+                ButtonGadget.Normal, 
                 "Invite Members",
                 "Inviting...")
               ({ btn =>
