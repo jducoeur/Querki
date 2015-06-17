@@ -26,7 +26,7 @@ object RatingMOIDs extends EcotIds(45) {
   val RatingShowTargetOID = moid(12)
 }
 
-class RatingEcot(e:Ecology) extends QuerkiEcot(e) with IntTypeBasis with SummarizerDefs with querki.core.MethodDefs
+class RatingEcot(e:Ecology) extends QuerkiEcot(e) with Ratings with IntTypeBasis with SummarizerDefs with querki.core.MethodDefs
   with ModelTypeDefiner with EcologyMember 
 {
   import RatingMOIDs._

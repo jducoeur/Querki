@@ -39,4 +39,8 @@ package object uservalues {
      */
     def isUserValueProp(propId:OID)(implicit state:SpaceState):Boolean
   }
+  
+  trait Ratings extends EcologyInterface {
+    def RatingProperty:Property[Int,Int]
+  }
 }
