@@ -41,33 +41,33 @@ class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpa
   // properties that already exist.
   lazy val propOptions = Rx {
     // The SpaceProps are actually a tree: each level contains this Space's Properties, and the
-  // SpaceProps for its Apps. So we do a recursive dive to build our options:
-  def processProps(spaceProps:SpaceProps):Seq[Frag] = {
-   
-    def processPropSection(prefix:String, allProps:Seq[PropInfo]):Option[Frag] = {
-      // Filter out Properties that don't apply to this Thing, or are already in use:
-      val props = 
-        allProps.
-          filter(_.appliesTo.map(_ == thing.kind).getOrElse(true)).
-          filter(prop => !existingPropIds().contains(prop.oid)).
-          sortBy(_.linkName)
-        
-      if (props.isEmpty)
-        None
-      else
-        Some(optgroup(optLabel:=s"$prefix Properties in ${spaceProps.displayName}",
-          props.map { prop => option(value:=prop, prop.linkName) }
-        ))
+    // SpaceProps for its Apps. So we do a recursive dive to build our options:
+    def processProps(spaceProps:SpaceProps):Seq[Frag] = {
+     
+      def processPropSection(prefix:String, allProps:Seq[PropInfo]):Option[Frag] = {
+        // Filter out Properties that don't apply to this Thing, or are already in use:
+        val props = 
+          allProps.
+            filter(_.appliesTo.map(_ == thing.kind).getOrElse(true)).
+            filter(prop => !existingPropIds().contains(prop.oid)).
+            sortBy(_.linkName)
+          
+        if (props.isEmpty)
+          None
+        else
+          Some(optgroup(optLabel:=s"$prefix Properties in ${spaceProps.displayName}",
+            props.map { prop => option(value:=prop, prop.linkName) }
+          ))
+      }
+      
+      FSeq(
+        processPropSection("", spaceProps.standardProps),
+        processPropSection("Advanced ", spaceProps.advancedProps),
+        spaceProps.apps.flatMap(processProps(_))
+      )
     }
-    
-    FSeq(
-      processPropSection("", spaceProps.standardProps),
-      processPropSection("Advanced ", spaceProps.advancedProps),
-      spaceProps.apps.flatMap(processProps(_))
-    )
-  }
-    
-  option("Choose a Property...", value:="") +: processProps(mainSpaceProps)
+      
+    option("Choose a Property...", value:="") +: processProps(mainSpaceProps)
   }
   
   lazy val selectedProperty = propSelector.selectedTIDOpt
