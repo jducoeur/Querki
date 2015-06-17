@@ -10,12 +10,14 @@ import querki.globals._
 import querki.data.{TID => _TID, _}
 import querki.display.{AfterLoading, ButtonGadget, Gadget, WrapperDiv}
 import ButtonGadget._
+import querki.display.rx.RxGadget
+import RxGadget._
 
 class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
   
   lazy val DataAccess = interface[querki.data.DataAccess]
   
-  lazy val mainDiv = (new WrapperDiv).initialContent(initButton)
+  val mainDiv = RxGadget[WrapperDiv]
   
   lazy val initButton:ButtonGadget = new ButtonGadget(Info, icon("plus"), " Add a Property")({ () =>
     mainDiv.replaceContents(addExisting.rendered, true)
@@ -51,6 +53,8 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   val createNewGadget = Var[Option[CreateNewPropertyGadget]](None)
   
   def doRender() = {
-    div(mainDiv)
+    div(
+      mainDiv((new WrapperDiv).initialContent(initButton))
+    )
   }
 }
