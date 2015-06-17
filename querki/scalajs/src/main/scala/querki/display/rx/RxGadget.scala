@@ -34,6 +34,12 @@ class RxGadget[G <: Gadget[_]] {
 }
 
 object RxGadget {
+  /**
+   * Given an RxGadget, cast it to the actual underlying gadget.
+   * 
+   * IMPORTANT: this uses RxGadget.gadget under the hood, and should only be invoked if you are
+   * confident that the gadget has been initialized!
+   */
   implicit def rx2Gadget[G <: Gadget[_]](rx:RxGadget[G]):G = rx.gadget
   
   def apply[G <: Gadget[_]] = new RxGadget[G]

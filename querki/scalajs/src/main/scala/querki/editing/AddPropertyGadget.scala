@@ -22,31 +22,23 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   lazy val cancelButton = new ButtonGadget(Normal, "Cancel")({ () => reset() })
   
   val stdThingFut = DataAccess.standardThings
-  def allTypesFut = page.allTypesFut
-  def allPropsFut = page.allPropsFut
   
   def reset() = {
-    addExistingGadget().map(_.reset())
-    createNewGadget().map(_.reset())
+    addExistingGadget.reset()
+    createNewGadget.reset()
     mainDiv.replaceContents(initButton.rendered, true)
   }
   
-  lazy val addExisting = AfterLoading(allPropsFut) { spaceProps => 
-    val g = new AddExistingPropertyGadget(page, thing, spaceProps, this)
-    addExistingGadget() = Some(g)
-    g
+  lazy val addExisting = AfterLoading(page.allPropsFut) { spaceProps => 
+    addExistingGadget(new AddExistingPropertyGadget(page, thing, spaceProps, this))
   }
   // This is a bit boilerplatey, but we're trying not to evaluate addExisting unnecessarily
-  // TODO: should we enhance AfterLoading to be able to put the laziness into there
-  // explicitly?
-  val addExistingGadget = Var[Option[AddExistingPropertyGadget]](None)
+  val addExistingGadget = RxGadget[AddExistingPropertyGadget]
   
-  lazy val createNew = AfterLoading(allTypesFut) { allTypes =>
-    val g = new CreateNewPropertyGadget(page, allTypes, this)
-    createNewGadget() = Some(g)
-    g
+  lazy val createNew = AfterLoading(page.allTypesFut) { allTypes =>
+    createNewGadget(new CreateNewPropertyGadget(page, allTypes, this))
   }
-  val createNewGadget = Var[Option[CreateNewPropertyGadget]](None)
+  val createNewGadget = RxGadget[CreateNewPropertyGadget]
   
   def doRender() = {
     div(
