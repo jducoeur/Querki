@@ -30,7 +30,9 @@ case class Property[VT, RT](
   def Core = ecology.api[querki.core.Core]
     
   def default(implicit state:SpaceState) = {
-    val explicitDefault = rawLocalProp[QValue](querki.types.MOIDs.DefaultValuePropOID)
+    // Note that we deliberately do this completely raw, to avoid Ecology dependency.
+    // Fortunately, that's what we want anyway:
+    val explicitDefault = props.get(querki.types.MOIDs.DefaultValuePropOID)
     explicitDefault.getOrElse(cType.default(pType))
   }
   def defaultPair(implicit state:SpaceState):PropAndVal[VT] = PropAndVal(this, default)
