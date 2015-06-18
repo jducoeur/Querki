@@ -26,23 +26,22 @@ class DescriptionDiv(page:ModelDesignerPage, selector:Rx[Option[(RxThingSelector
   lazy val DataAccess = interface[querki.data.DataAccess]
   
   def thingLink = page.thingLink _
+  def std = page.std
   
   val immediate = selector().isDefined
   
-  val stdThingFut = DataAccess.standardThings
   val emptyDescription = span(raw("&nbsp;"))
   val selectedDescriptionObs = Obs(selector, skipInitial=(!immediate)) {
     selector() match {
       case Some((sel, oid)) => {
         val name = sel.selectedText()
         val fut = for {
-          stdThings <- stdThingFut
           propMap <- page.propMapFut
           typeMap <- page.typeMapFut
           collMap <- page.collMapFut
           modelMap <- page.modelMapFut
-          summaryOpt <- Client[ThingFunctions].getPropertyDisplay(oid, stdThings.conventions.summaryProp).call()
-          detailsOpt <- Client[ThingFunctions].getPropertyDisplay(oid, stdThings.conventions.detailsProp).call()
+          summaryOpt <- Client[ThingFunctions].getPropertyDisplay(oid, std.conventions.summaryProp).call()
+          detailsOpt <- Client[ThingFunctions].getPropertyDisplay(oid, std.conventions.detailsProp).call()
         }
           yield
             // ... build the display of the Property info...

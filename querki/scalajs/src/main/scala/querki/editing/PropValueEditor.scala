@@ -27,7 +27,7 @@ class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEd
     // but there is no way to use raw() on an attribute value. So we instead are displaying
     // the raw, unprocessed form, knowing that Scalatags will escape it.
     val tooltip = info.tooltip.map(_.plaintext).getOrElse(propInfo.displayName)
-    def stdThings = section.stdThings
+    def stdThings = section.page.std
     
     // Functions to toggle the PropertyEditor in and out when you click the name of the property:
     val detailsShown = Var(false)

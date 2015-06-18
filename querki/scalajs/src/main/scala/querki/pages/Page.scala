@@ -10,6 +10,7 @@ import org.querki.jsext._
 
 import querki.globals._
 
+import querki.api.StandardThings
 import querki.comm._
 import querki.data.ThingInfo
 import querki.display.{Gadget, WrapperDiv}
@@ -32,6 +33,10 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
    * The contents of this page. Concrete subclasses must fill this in.
    */
   def pageContent:Future[PageContents]
+  
+  private var _std:Option[StandardThings] = None
+  def std = _std.get
+  def setStd:Future[Unit] = DataAccess.standardThings.map { s => _std = Some(s) }
   
   /**
    * This is an optional method that Pages can fill in, to refresh their content.
@@ -109,7 +114,7 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
       )
     )
 
-    pageContent.notYet.foreach { content =>
+    setStd.flatMap(_ => pageContent).notYet.foreach { content =>
       val fullyRendered = content.content.render
       renderedContent.replaceContents(fullyRendered)
       PageManager.update(content.title)

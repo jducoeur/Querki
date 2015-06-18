@@ -52,9 +52,8 @@ class CreateAndEditPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
     val withReify = 
       if (reifyTag) {
         for {
-	      std <- DataAccess.standardThings
           modelDefaultView <- Client[ThingFunctions].getPropertyDisplay(modelId, std.basic.defaultView).call()
-	      tagView <- Client[EditFunctions].getUndefinedTagView(modelId).call()
+  	      tagView <- Client[EditFunctions].getUndefinedTagView(modelId).call()
         }
         yield {
           changes ++ (if (modelDefaultView.isEmpty) Seq(ChangePropertyValue(Editing.propPath(std.basic.defaultView), List(tagView))) else Seq.empty)

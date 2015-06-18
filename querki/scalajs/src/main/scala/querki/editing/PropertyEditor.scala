@@ -24,7 +24,7 @@ class PropertyEditor(val valEditor:PropValueEditor)(implicit val ecology:Ecology
       for {
         editInfo <- Client[EditFunctions].getPropertyEditors(propId).call()
       }
-        yield new PropertySection(valEditor.section.page, s"Property $propId", editInfo.propInfos, prop, editInfo, valEditor.stdThings, false)
+        yield new PropertySection(valEditor.section.page, s"Property $propId", editInfo.propInfos, prop, editInfo, false)
     }
     lazy val editTrigger = contentFut.foreach { section => 
       guts() = section

@@ -16,7 +16,7 @@ import models.{Kind, Wikitext}
 
 import querki.globals._
 
-import querki.api.{StandardThings, ThingFunctions}
+import querki.api.ThingFunctions
 import querki.comm._
 import querki.conversations.ConversationPane
 import querki.data.ThingInfo
@@ -37,7 +37,6 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
     // NOTE: doing this with async/await seems to swallow exceptions in Autowire:
     for {
       pageDetails:ThingPageDetails <- Client[ThingFunctions].getThingPage(name, propOpt).call()
-      standardThings <- DataAccess.standardThings
       rendered = pageDetails.rendered
       convPane = new ConversationPane(pageDetails.thingInfo, params.get("showComment"))
       dummy = {
@@ -52,7 +51,7 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
           div(id:="_topEdit", display.none),
           pageDetails.customHeader match {
             case Some(header) => new QText(header)
-            case None => new StandardThingHeader(pageDetails.thingInfo, this, standardThings)
+            case None => new StandardThingHeader(pageDetails.thingInfo, this)
           },
           new QText(rendered),
           convPane
@@ -62,7 +61,7 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
   }
 }
 
-class StandardThingHeader(thing:ThingInfo, page:Page, standardThings:StandardThings)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
+class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
 
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
@@ -71,6 +70,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page, standardThings:StandardThi
   lazy val Pages = interface[querki.pages.Pages]
   
   val thingName = thing.displayName
+  val std = page.std
   
   val modelOpt = DataAccess.mainModel
   
@@ -114,8 +114,8 @@ class StandardThingHeader(thing:ThingInfo, page:Page, standardThings:StandardThi
                   title:=s"Make $thingName into a real Thing",
                   href:=
                     Pages.createAndEditFactory.pageUrl(
-                      modelOpt.getOrElse(standardThings.basic.simpleThing),
-                      (Editing.propPath(standardThings.basic.displayNameProp.oid) -> thingName),
+                      modelOpt.getOrElse(std.basic.simpleThing),
+                      (Editing.propPath(std.basic.displayNameProp.oid) -> thingName),
                       "reifyTag" -> "true"))
               } else if (thing.kind == Kind.Property) {
 			    iconButton("edit")(

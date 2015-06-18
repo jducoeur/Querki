@@ -10,13 +10,13 @@ import rx._
 
 import querki.globals._
 
-import querki.api.{EditFunctions, StandardThings}
+import querki.api.EditFunctions
 import EditFunctions.{FullEditInfo, PropEditInfo}
 import querki.data.{BasicThingInfo}
 import querki.display.input.InputGadget
 
 class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEditInfo], val thing:BasicThingInfo, 
-  val editInfo:FullEditInfo, val stdThings:StandardThings, sortable:Boolean = true)(implicit val e:Ecology) 
+  val editInfo:FullEditInfo, sortable:Boolean = true)(implicit val e:Ecology) 
   extends InputGadget[dom.HTMLUListElement](e) 
 {
   lazy val InputGadgets = interface[querki.display.input.InputGadgets]

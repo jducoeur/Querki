@@ -11,7 +11,7 @@ import rx.ops._
 
 import querki.globals._
 
-import querki.api.{EditFunctions, StandardThings}
+import querki.api.EditFunctions
 import EditFunctions._
 import querki.data.{BasicThingInfo, PropInfo, SpaceProps, ThingInfo}
 import querki.display.{Gadget, RawDiv, WithTooltip}
@@ -100,9 +100,9 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   
   class PropSectionHolder {
     var _propSection:Option[PropertySection] = None
-    def make(thing:BasicThingInfo, sortedProps:Seq[PropEditInfo], editInfo:FullEditInfo, stdThings:StandardThings, path:String) = {
+    def make(thing:BasicThingInfo, sortedProps:Seq[PropEditInfo], editInfo:FullEditInfo, path:String) = {
       _propSection = 
-        Some(new PropertySection(page, path, sortedProps, thing, editInfo, stdThings,
+        Some(new PropertySection(page, path, sortedProps, thing, editInfo,
           thing match {
             case t:ThingInfo => t.isModel
             case _ => false
@@ -120,7 +120,6 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       model <- DataAccess.getThing(modelId)
       modelModel <- DataAccess.getThing(model.modelOid)
       fullEditInfo <- Client[EditFunctions].getPropertyEditors(modelId).call()
-      stdThings <- DataAccess.standardThings
       allProps = fullEditInfo.propInfos
       (instanceProps, modelProps) = allProps.partition(propEditInfo => fullEditInfo.instancePropIds.contains(propEditInfo.propInfo.oid))
       sortedInstanceProps = (Seq.empty[PropEditInfo] /: fullEditInfo.instancePropIds) { (current, propId) =>
@@ -155,15 +154,15 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
                 """These are the Properties that can be different for each Instance. Drag a Property into here if you
                   |want to edit it for each Instance, or out if you don't. The order of the Properties here will be
                   |the order they show up in the Instance Editor.""".stripMargin),
-              instancePropSection.make(model, sortedInstanceProps, fullEditInfo, stdThings, fullEditInfo.instancePropPath),
+              instancePropSection.make(model, sortedInstanceProps, fullEditInfo, fullEditInfo.instancePropPath),
               new AddPropertyGadget(this, model),
               h3(cls:="_defaultTitle", "Model Properties"),
               p(cls:="_smallSubtitle", "These Properties are the same for all Instances of this Model"),
-              modelPropSection.make(model, modelProps, fullEditInfo, stdThings, "modelProps")
+              modelPropSection.make(model, modelProps, fullEditInfo, "modelProps")
             )
           } else {
             MSeq(
-              instancePropSection.make(model, allProps, fullEditInfo, stdThings, "allProps"),
+              instancePropSection.make(model, allProps, fullEditInfo, "allProps"),
               new AddPropertyGadget(this, model)
             )
           },

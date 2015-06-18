@@ -34,7 +34,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
   def makeRoleMap(roles:Seq[ThingInfo]) = RoleInfo(Map(roles.map(role => (role.oid -> role)):_*), roles)
   
     
-  class RoleDisplay(initialRole:ThingInfo, tid:TID, roleInfo:RoleInfo, std:StandardThings) extends InputGadget[dom.HTMLSpanElement](ecology) {
+  class RoleDisplay(initialRole:ThingInfo, tid:TID, roleInfo:RoleInfo) extends InputGadget[dom.HTMLSpanElement](ecology) {
     val role = Var(initialRole)
     val roleName = Rx(role().displayName)
       
@@ -82,7 +82,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
   }
   
   
-  class PersonDisplay(showCls:String, person:PersonInfo, roleInfo:RoleInfo, std:StandardThings) extends Gadget[dom.HTMLTableRowElement] {
+  class PersonDisplay(showCls:String, person:PersonInfo, roleInfo:RoleInfo) extends Gadget[dom.HTMLTableRowElement] {
     val initPersonRole = person.roles.headOption.map(roleInfo.map(_)).getOrElse(roleInfo.default)
     
     def doRender() =
@@ -91,7 +91,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
 	      MSeq(
 	        person.person.displayName, 
 	        " -- ",
-	        new RoleDisplay(initPersonRole, person.person.oid, roleInfo, std)
+	        new RoleDisplay(initPersonRole, person.person.oid, roleInfo)
 	      )
 	    })
 	  )
@@ -145,7 +145,6 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
   lazy val collaboratorInput = new CollaboratorInput
   
   def pageContent = for {
-    std <- DataAccess.standardThings
     securityInfo <- Client[SecurityFunctions].getSecurityInfo().call()
     roles <- Client[SecurityFunctions].getRoles().call()
     inviteEditInfo <- Client[EditFunctions].getOnePropertyEditor(DataAccess.space.get.oid, std.security.inviteTextProp).call()
@@ -188,7 +187,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
           div(cls:="control-group",
             div(cls:="controls",
               "These people should be invited as ",
-              new RoleDisplay(roleMap.map(securityInfo.defaultRole), DataAccess.space.get.oid, roleMap, std)
+              new RoleDisplay(roleMap.map(securityInfo.defaultRole), DataAccess.space.get.oid, roleMap)
             )
           ),
         
@@ -232,7 +231,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
           table(cls:="table table-hover",
             tbody(
               for (member <- invitees) 
-                yield new PersonDisplay("warning", member, roleMap, std)
+                yield new PersonDisplay("warning", member, roleMap)
             )
           )          
         ),
@@ -244,7 +243,7 @@ class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
           table(cls:="table table-hover",
             tbody(
               for (member <- members) 
-                yield new PersonDisplay("info", member, roleMap, std)
+                yield new PersonDisplay("info", member, roleMap)
             )
           )
         )

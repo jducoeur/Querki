@@ -84,7 +84,6 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
   
   lazy val ReifyButton = new ButtonGadget(Normal, "Make a Page")({ () =>
     val createFut = for {
-      std <- DataAccess.standardThings
       createPage <- Pages.createAndEditFactory.showPage(std.basic.simpleThing)
       // TODO: we could get rid of this asInstanceOf by tweaking the type signature of showPage?
       dummy = createPage.asInstanceOf[CreateAndEditPage].setValue(std.basic.defaultView, s"[[${qlInput.value}]]")
@@ -94,7 +93,6 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
   
   lazy val SaveButton = new ButtonGadget(Normal, "Save Results")({ () =>
     val saveFut = for {
-      std <- DataAccess.standardThings
       createPage <- Pages.createAndEditFactory.showPage(std.basic.simpleThing)
       dummy = createPage.asInstanceOf[CreateAndEditPage].setValue(std.basic.defaultView, s"${rawResults().plaintext}")
     }
