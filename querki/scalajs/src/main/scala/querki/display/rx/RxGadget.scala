@@ -27,7 +27,7 @@ class RxGadget[G <: Gadget[_]] {
    * Set this to the actual Gadget when it's created. We only expect this to be called once
    * per RxGadget, although nothing currently enforces that.
    */
-  def apply(g:G):G = {
+  def :=(g:G):G = {
     gadgetOpt() = Some(g)
     g
   }
