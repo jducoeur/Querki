@@ -37,19 +37,12 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   lazy val collSelector = RxGadget[RxButtonGroup]
 
   // Note that Type and Model both register listeners so that, when the user sets one, it clears the other:
-  val advTypeOptions = Var({
-    typeInfo.advancedTypes.sortBy(_.displayName).map(typ => option(value:=typ, typ.displayName))
-  })
   val typeSelector:RxGadget[RxSelect] = RxGadget[RxSelect].
     whenSet { g => 
       Obs(g.selectedValOpt) {
         g.selectedValOpt().map(_ => modelSelector.map(_.setValue("")))
       } 
     }
-  
-  val modelOptions = Var({
-    typeInfo.models.sortBy(_.displayName).map(model => option(value:=model, model.displayName))
-  })
   val modelSelector = RxGadget[RxSelect].
     whenSet { g => 
       Obs(g.selectedValOpt) {
@@ -114,9 +107,17 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
             )
           ),
           div(cls:="row",
-            div(cls:="col-md-5", typeSelector <= RxSelect(advTypeOptions, "Choose a Type...", cls:="form-control")), 
+            div(cls:="col-md-5", 
+              typeSelector <= RxSelect(
+                Var({typeInfo.advancedTypes.sortBy(_.displayName).map(typ => option(value:=typ, typ.displayName))}), 
+                "Choose a Type...", 
+                cls:="form-control")), 
             span(cls:="col-md-1", " or "), 
-            div(cls:="col-md-5", modelSelector <= RxSelect(modelOptions, "Base it on a Model...", cls:="form-control"))
+            div(cls:="col-md-5", 
+              modelSelector <= RxSelect(
+                Var({typeInfo.models.sortBy(_.displayName).map(model => option(value:=model, model.displayName))}), 
+                "Base it on a Model...", 
+                cls:="form-control"))
           )
         ),
         div(cls:="col-md-6", 
