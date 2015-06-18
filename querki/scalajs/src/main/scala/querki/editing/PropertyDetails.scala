@@ -20,15 +20,12 @@ import querki.display.rx.RxThingSelector
         val selectedText = Var(propInfo.displayName)
         def selectedTID = Var(propInfo.oid)
       } 
-    val selectorWrapper = Var[Option[(RxThingSelector, TID)]](None)
-    val descDiv = new DescriptionDiv(page, selectorWrapper)
-    val propertyDescriptionDiv = descDiv.descriptionDiv
-    selectorWrapper() = Some((thingSelector, propInfo.oid))
+    val selectorWrapper = Var[Option[(RxThingSelector, TID)]](Some((thingSelector, propInfo.oid)))
     
     def doRender() = {
       div(
         hr,
-        propertyDescriptionDiv,
+        new DescriptionDiv(page, selectorWrapper, true),
         if (editInfo.canEditProperty) {
           p(new ButtonGadget(ButtonGadget.Primary, "Edit Property")({ () => valEditor.showPropEditor() }))        
         }
