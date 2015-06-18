@@ -13,6 +13,14 @@ import querki.globals._
 class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpaceProps:SpaceProps, apg:AddPropertyGadget)(implicit val ecology:Ecology)
   extends Gadget[dom.HTMLDivElement] 
 {
+  class RxAttr[T <% AttrVal] extends AttrValue[Rx[T]] {
+    def apply(t:dom.Element, a:Attr, v:Rx[T]):Unit = {
+      Obs(v) {
+        $(t).attr(a.name, v())
+      }
+    }
+  }
+  implicit def rxAttr[T <% AttrVal] = new RxAttr[T]
   
   val optLabel = "label".attr
   
@@ -78,7 +86,7 @@ class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpa
           ),
           p(
             addButton <= 
-              new ButtonGadget(ButtonGadget.Info, RxAttr("disabled", Rx{ selectedProperty().isEmpty }), "Add")({ () =>
+              new ButtonGadget(ButtonGadget.Info, disabled := Rx{ selectedProperty().isEmpty }, "Add")({ () =>
                 page.addProperty(selectedProperty().get)
                 reset()
               })
