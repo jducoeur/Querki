@@ -20,7 +20,7 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val Editing = interface[Editing]
   
-  val stdThingFut = DataAccess.standardThings
+  val std = DataAccess.std
   
   def reset() = {
     nameInput.setValue("")
@@ -73,21 +73,18 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
     })
     
   def createProperty(name:String, collId:TID, typeId:TID) = {
-    // Technically, we have to wait for the StandardInfo to be available:
-    stdThingFut.foreach { stdThings =>
-      def mkPV(oid:BasicThingInfo, v:String) = {
-        val path = Editing.propPath(oid)
-        ChangePropertyValue(path, Seq(v))
-      }
-      val initProps = Seq(
-        mkPV(stdThings.core.nameProp, name),
-        mkPV(stdThings.core.collectionProp, collId.underlying),
-        mkPV(stdThings.core.typeProp, typeId.underlying)
-      )
-      Client[EditFunctions].create(stdThings.core.urProp, initProps).call().foreach { propInfo =>
-        page.addProperty(propInfo.oid, true)
-        reset()
-      }
+    def mkPV(oid:BasicThingInfo, v:String) = {
+      val path = Editing.propPath(oid)
+      ChangePropertyValue(path, Seq(v))
+    }
+    val initProps = Seq(
+      mkPV(std.core.nameProp, name),
+      mkPV(std.core.collectionProp, collId.underlying),
+      mkPV(std.core.typeProp, typeId.underlying)
+    )
+    Client[EditFunctions].create(std.core.urProp, initProps).call().foreach { propInfo =>
+      page.addProperty(propInfo.oid, true)
+      reset()
     }
   }
   
