@@ -7,7 +7,7 @@ import rx._
 
 import querki.data.{TID => _TID, _}
 import querki.display.{ButtonGadget, Gadget}
-import querki.display.rx.{RxAttr, RxSelect}
+import querki.display.rx.{RxAttr, RxGadget, RxSelect}
 import querki.globals._
 
 class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpaceProps:SpaceProps, apg:AddPropertyGadget)(implicit val ecology:Ecology)
@@ -22,12 +22,8 @@ class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpa
 
   // The add button is only enabled when the selection is non-empty; when pressed, it tells the parent
   // page to add the Property:
-  lazy val addButton = new ButtonGadget(ButtonGadget.Info, RxAttr("disabled", Rx{ selectedProperty().isEmpty }), "Add")({ () =>
-    page.addProperty(selectedProperty().get)
-    reset()
-  })
-  
-  lazy val propSelector = RxSelect(propOptions, cls:="form-control")
+  val addButton = RxGadget[ButtonGadget]
+  val propSelector = RxGadget[RxSelect]
   
   lazy val existingPropIds = Rx { 
     page.instancePropSection().propIds() ++
@@ -80,10 +76,14 @@ class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpa
       div(cls:="row",
         div(cls:="col-md-4",
           p(
-            propSelector
+            propSelector <= RxSelect(propOptions, cls:="form-control")
           ),
           p(
-            addButton
+            addButton <= 
+              new ButtonGadget(ButtonGadget.Info, RxAttr("disabled", Rx{ selectedProperty().isEmpty }), "Add")({ () =>
+                page.addProperty(selectedProperty().get)
+                reset()
+              })
           ),
           hr,
           p(new ButtonGadget(ButtonGadget.Info, "Create a new Property instead")({ () => apg.mainDiv.replaceContents(apg.createNew.rendered, true) }), apg.cancelButton)

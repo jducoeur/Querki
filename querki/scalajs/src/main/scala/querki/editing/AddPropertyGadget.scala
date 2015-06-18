@@ -21,18 +21,16 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   
   lazy val cancelButton = new ButtonGadget(Normal, "Cancel")({ () => reset() })
   
-  val stdThingFut = DataAccess.standardThings
-  
   def reset() = {
-    addExistingGadget.reset()
-    createNewGadget.reset()
+    addExistingGadget.map(_.reset())
+    createNewGadget.map(_.reset())
     mainDiv.replaceContents(initButton.rendered, true)
   }
   
+  // This is a bit boilerplatey, but we're trying not to evaluate addExisting unnecessarily
   lazy val addExisting = AfterLoading(page.allPropsFut) { spaceProps => 
     addExistingGadget <= new AddExistingPropertyGadget(page, thing, spaceProps, this)
   }
-  // This is a bit boilerplatey, but we're trying not to evaluate addExisting unnecessarily
   val addExistingGadget = RxGadget[AddExistingPropertyGadget]
   
   lazy val createNew = AfterLoading(page.allTypesFut) { allTypes =>
