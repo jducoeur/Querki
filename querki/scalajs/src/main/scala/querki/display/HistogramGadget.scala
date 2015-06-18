@@ -6,14 +6,11 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
-import querki.display.input.InputGadget
-
 /**
  * This receives a DList from the server, describing the histogram data, and transforms
  * it into a graphical histogram.
  */
-class HistogramGadget(implicit e:Ecology) extends InputGadget[dom.HTMLTableElement](e) {
-  def values = ???
+class HistogramGadget(implicit e:Ecology) extends HookedGadget[dom.HTMLTableElement](e) {
   def doRender() = ???
   
   def hook() = {

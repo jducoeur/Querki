@@ -11,8 +11,7 @@ import querki.globals._
 import querki.api.{EditFunctions, ThingFunctions}
 import EditFunctions.PropertyChange
 import querki.data.ThingInfo
-import querki.display.{PagePaginator, QText}
-import querki.display.input.InputGadget
+import querki.display.{HookedGadget, PagePaginator, QText}
 import querki.pages._
 
 /**
@@ -56,9 +55,7 @@ class EditInstancesPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   /**
    * This button sits at the bottom of the page, and lets the user create a new instance.
    */
-  class CreateAnotherButton(modelInfo:ThingInfo) extends InputGadget[dom.HTMLInputElement](ecology) {
-    def values = ???
-  
+  class CreateAnotherButton(modelInfo:ThingInfo) extends HookedGadget[dom.HTMLInputElement](ecology) {
     def hook() = {
       $(elem).click({ event:JQueryEventObject => 
         val editorFut = for {

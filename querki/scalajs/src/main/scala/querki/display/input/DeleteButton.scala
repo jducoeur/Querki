@@ -6,11 +6,10 @@ import org.querki.jquery._
 import scalatags.JsDom.all.{input => inp, _}
 import org.querki.facades.bootstrap._
 
+import querki.display.HookedGadget
 import querki.globals._
 
-class DeleteButton(doDelete:() => Unit)(implicit e:Ecology) extends InputGadget[dom.html.Span](e) {
-  def values = ???
-  
+class DeleteButton(doDelete:() => Unit)(implicit e:Ecology) extends HookedGadget[dom.html.Span](e) {
   def doRender() = span(cls:="_deleteCommentButton", "x")
   
   def hook() = {

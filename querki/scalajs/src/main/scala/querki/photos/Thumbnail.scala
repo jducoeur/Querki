@@ -8,15 +8,14 @@ import org.querki.facades.bootstrap._
 
 import querki.globals._
 
-import querki.display.input.InputGadget
+import querki.display.HookedGadget
 
-class Thumbnail(implicit e:Ecology) extends InputGadget[dom.HTMLImageElement](e) {
+class Thumbnail(implicit e:Ecology) extends HookedGadget[dom.HTMLImageElement](e) {
   
   lazy val PhotosInternal = interface[PhotosInternal]
 
   // At least for now, this just wraps incoming thumbnails:
   def doRender() = ???
-  def values = ???
   
   lazy val fullSrc = $(elem).dataString("fullsrc")
   lazy val fullWidth = $(elem).data("fullwidth").asInstanceOf[Int]

@@ -5,15 +5,14 @@ import org.querki.jquery._
 
 import querki.globals._
 
-import querki.display.input.InputGadget
+import querki.display.HookedGadget
 
-class PhotoTarget(implicit e:Ecology) extends InputGadget[dom.HTMLImageElement](e) {
+class PhotoTarget(implicit e:Ecology) extends HookedGadget[dom.HTMLImageElement](e) {
 
   lazy val PhotosInternal = interface[PhotosInternal]
   
   // At least for now, this just wraps incoming images:
   def doRender() = ???
-  def values = ???
   
   lazy val fromProp = $(elem).dataString("fromprop")
   

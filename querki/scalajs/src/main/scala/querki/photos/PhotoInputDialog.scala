@@ -18,8 +18,7 @@ import models.Wikitext
 import querki.globals._
 
 import querki.comm._
-import querki.display.{Gadget, RawSpan}
-import querki.display.input.InputGadget
+import querki.display.{Gadget, HookedGadget, RawSpan}
 import querki.pages.Page
 
 // Necessary DOM enhancement -- the scala-js-dom doesn't realize that EventTarget can have
@@ -37,16 +36,17 @@ import FileTarget._
  * This represents a button labeled something like "Add Photo", with metadata about where to
  * put the resulting photo.
  */
-class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e) {
+class PhotoInputButton(implicit e:Ecology) extends HookedGadget[dom.html.Input](e) {
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
+  lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val Gadgets = interface[querki.display.Gadgets]
   lazy val Pages = interface[querki.pages.Pages]
   lazy val PhotosInternal = interface[PhotosInternal]
+  lazy val StatusLine = interface[querki.display.StatusLine]
   
   // At least for now, this just wraps incoming buttons:
   def doRender() = ???
-  def values = ???
   
   lazy val propId = $(elem).parent().data("propid").asInstanceOf[String]
   lazy val collId = $(elem).parent().data("collid").asInstanceOf[String]

@@ -8,7 +8,6 @@ import scalatags.JsDom.all._
 import querki.globals._
 
 import querki.comm._
-import querki.display.input.InputGadget
 import querki.identity.UserLevel
 import querki.notifications.NotifierGadget
 import querki.search.SearchGadget
@@ -20,12 +19,11 @@ import querki.search.SearchGadget
  * items here, and this wouldn't have to know about all of them. The only issue is, how do we manage the
  * overall ordering of the list?
  */
-class MenuBar(implicit e:Ecology) extends InputGadget[dom.HTMLDivElement](e) with QuerkiUIUtils {
-  
-  def values = ???
+class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) with QuerkiUIUtils {
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val Admin = interface[querki.admin.Admin]
+  lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val DataModel = interface[querki.datamodel.DataModel]
   lazy val Editing = interface[querki.editing.Editing]
   lazy val PageManager = interface[PageManager]
