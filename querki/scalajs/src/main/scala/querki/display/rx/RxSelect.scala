@@ -25,7 +25,7 @@ trait RxThingSelector {
  * It is legal for the options to include one (usually at the top) with "" as its value. That is considered
  * to be the "not set" state.
  */
-class RxSelect(options:Rx[Seq[Frag]], mods:Modifier*) extends Gadget[dom.HTMLSelectElement] with RxThingSelector {
+class RxSelect(options:Rx[Seq[Frag]], emptyText:Option[String], mods:Modifier*) extends Gadget[dom.HTMLSelectElement] with RxThingSelector {
   
   private def curSelected = {
     elemOpt.map(e => $(e).find("option:selected"))
@@ -45,12 +45,22 @@ class RxSelect(options:Rx[Seq[Frag]], mods:Modifier*) extends Gadget[dom.HTMLSel
   lazy val selectedTID = selectedVal.map(TID(_))
   
   /**
+   * This is all of the options, including the "empty" option at the top iff one was specified.
+   */
+  lazy val allOptions = Rx { 
+    emptyText match {
+      case Some(text) => option(value:="", text) +: options()
+      case None => options()
+    } 
+  }
+  
+  /**
    * Non-empty iff this RxSelect has a non-empty value. That way, you can build an Rx based on whether
    * this is set or not.
    */
   lazy val selectedWithTID = Rx { selectedTIDOpt().map(v => (this, v)) }
   
-  def doRender() = select(mods, cls:="form-control", options())
+  def doRender() = select(mods, cls:="form-control", allOptions())
   
   def setValue(v:String) = {
     $(elem).value(v)
@@ -59,11 +69,11 @@ class RxSelect(options:Rx[Seq[Frag]], mods:Modifier*) extends Gadget[dom.HTMLSel
   
   private def updateSelected() = { selectedOption() = curSelected }
   
-  private val obs = Obs(options, skipInitial=true) {
+  private val obs = Obs(allOptions, skipInitial=true) {
     $(elem).empty()
     // TBD: this cast is ugly, and results from the fact that options is Seq[Frag], which
     // is awfully loose. Can/should we tighten up that signature?
-    options().map(_.render).map(opt => $(elem).append(opt.asInstanceOf[dom.Element]))
+    allOptions().map(_.render).map(opt => $(elem).append(opt.asInstanceOf[dom.Element]))
     updateSelected()
   }
   
@@ -73,6 +83,7 @@ class RxSelect(options:Rx[Seq[Frag]], mods:Modifier*) extends Gadget[dom.HTMLSel
   }
 }
 object RxSelect {
-  def apply(options:Rx[Seq[Frag]], mods:Modifier*) = new RxSelect(options, mods)
-  def apply(mods:Modifier*) = new RxSelect(Var(Seq.empty), mods)
+  def apply(options:Rx[Seq[Frag]], emptyText:String, mods:Modifier*) = new RxSelect(options, Some(emptyText), mods)
+  def apply(options:Rx[Seq[Frag]], mods:Modifier*) = new RxSelect(options, None, mods)
+  def apply(mods:Modifier*) = new RxSelect(Var(Seq.empty), None, mods)
 }

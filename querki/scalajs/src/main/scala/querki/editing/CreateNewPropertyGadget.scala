@@ -35,10 +35,10 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
     typeInfo.collections.headOption.map { coll => ButtonInfo(coll.oid.underlying, coll.displayName, true) } ++
     typeInfo.collections.tail.map { coll => ButtonInfo(coll.oid.underlying, coll.displayName) }
   lazy val collSelector = RxGadget[RxButtonGroup]
-  
+
+  // Note that Type and Model both register listeners so that, when the user sets one, it clears the other:
   val advTypeOptions = Var({
-    val typeOpts = typeInfo.advancedTypes.sortBy(_.displayName).map(typ => option(value:=typ, typ.displayName))
-    option(value:="", "Choose a Type...") +: typeOpts
+    typeInfo.advancedTypes.sortBy(_.displayName).map(typ => option(value:=typ, typ.displayName))
   })
   val typeSelector:RxGadget[RxSelect] = RxGadget[RxSelect].
     whenSet { g => 
@@ -48,8 +48,7 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
     }
   
   val modelOptions = Var({
-    val modelOpts = typeInfo.models.sortBy(_.displayName).map(model => option(value:=model, model.displayName))
-    option(value:="", "Base it on a Model...") +: modelOpts
+    typeInfo.models.sortBy(_.displayName).map(model => option(value:=model, model.displayName))
   })
   val modelSelector = RxGadget[RxSelect].
     whenSet { g => 
@@ -71,7 +70,7 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
       val name = nameInput.textOpt().get
       val coll = collSelector.selectedTIDOpt().get
       val (selector, oid) = selectedBasis().get
-      if (selector == modelSelector) {
+      if (selector == modelSelector.get) {
         // We're creating it based on a Model, so we need to get the Model Type. Note that this is async:
         Client[EditFunctions].getModelType(oid).call().foreach { typeInfo => createProperty(name, coll, typeInfo.oid) }
       } else {
@@ -115,9 +114,9 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
             )
           ),
           div(cls:="row",
-            div(cls:="col-md-5", typeSelector <= new RxSelect(advTypeOptions, cls:="form-control")), 
+            div(cls:="col-md-5", typeSelector <= RxSelect(advTypeOptions, "Choose a Type...", cls:="form-control")), 
             span(cls:="col-md-1", " or "), 
-            div(cls:="col-md-5", modelSelector <= new RxSelect(modelOptions, cls:="form-control"))
+            div(cls:="col-md-5", modelSelector <= RxSelect(modelOptions, "Base it on a Model...", cls:="form-control"))
           )
         ),
         div(cls:="col-md-6", 
