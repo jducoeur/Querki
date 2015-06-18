@@ -30,20 +30,20 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   }
   
   lazy val addExisting = AfterLoading(page.allPropsFut) { spaceProps => 
-    addExistingGadget := new AddExistingPropertyGadget(page, thing, spaceProps, this)
+    addExistingGadget <= new AddExistingPropertyGadget(page, thing, spaceProps, this)
   }
   // This is a bit boilerplatey, but we're trying not to evaluate addExisting unnecessarily
   val addExistingGadget = RxGadget[AddExistingPropertyGadget]
   
   lazy val createNew = AfterLoading(page.allTypesFut) { allTypes =>
-    createNewGadget := new CreateNewPropertyGadget(page, allTypes, this)
+    createNewGadget <= new CreateNewPropertyGadget(page, allTypes, this)
   }
   val createNewGadget = RxGadget[CreateNewPropertyGadget]
   
   def doRender() = {
     div(
-      mainDiv := (new WrapperDiv).initialContent(
-        initButton := new ButtonGadget(Info, icon("plus"), " Add a Property")({ () =>
+      mainDiv <= (new WrapperDiv).initialContent(
+        initButton <= new ButtonGadget(Info, icon("plus"), " Add a Property")({ () =>
           mainDiv.replaceContents(addExisting.rendered, true)
         })
       )
