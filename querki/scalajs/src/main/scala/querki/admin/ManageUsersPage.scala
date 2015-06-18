@@ -9,7 +9,7 @@ import org.querki.jquery._
 import querki.api._
 import AdminFunctions._
 import querki.display.{ButtonGadget, Gadget}
-import querki.display.rx.{RxDiv, RxButton, RxSelect}
+import querki.display.rx.{RxDiv, RunButton, RxSelect}
 import querki.globals._
 import querki.identity.UserLevel._
 import querki.pages._
@@ -93,7 +93,7 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
   }
   
   lazy val allUsersButton =
-    new RxButton(ButtonGadget.Normal, "Fetch all users", "Fetching...")({ btn =>
+    new RunButton(ButtonGadget.Normal, "Fetch all users", "Fetching...")({ btn =>
       Client[AdminFunctions].allUsers().call.checkForeach { userList =>
         allUsers() =
           Seq[Gadget[_]](
@@ -129,7 +129,7 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
 	          for (user <- pendingUsers)
 	            yield 
 	              tr(cls:="warning", td(user.mainHandle), td(user.email), 
-	                td(new RxButton(ButtonGadget.Normal, "Upgrade", "Upgrading...")({ btn =>
+	                td(new RunButton(ButtonGadget.Normal, "Upgrade", "Upgrading...")({ btn =>
 	                  Client[AdminFunctions].upgradePendingUser(user.userId).call().checkForeach { upgraded =>
 	                    PageManager.reload().flashing(false, s"Updated ${user.mainHandle} to full user")
 	                  }

@@ -20,7 +20,7 @@ import ButtonGadget._
  * trivial, but this saves some boilerplate.
  * 
  * NOTE: if you want a stateful button -- one that changes label and disables itself until completed --
- * then use RxButton instead. By and large, err on the side of using that.
+ * then use RunButton instead. By and large, err on the side of using that.
  */
 class ButtonGadget(kind:ButtonKind, mods:Modifier*)(onClick:() => Unit) extends Gadget[dom.HTMLAnchorElement] {
   def doRender() = {
