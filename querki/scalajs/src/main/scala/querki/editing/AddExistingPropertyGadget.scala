@@ -67,8 +67,6 @@ class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpa
   }
   
   lazy val selectedProperty = propSelector.selectedTIDOpt
-  lazy val selectedPropertyDescription = new DescriptionDiv(page, propSelector.selectedWithTID)
-  lazy val propertyDescriptionDiv = selectedPropertyDescription.descriptionDiv
   
   def doRender() = {
     val result = div(cls:="well container col-md-12",
@@ -88,7 +86,9 @@ class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpa
           hr,
           p(new ButtonGadget(ButtonGadget.Info, "Create a new Property instead")({ () => apg.mainDiv.replaceContents(apg.createNew.rendered, true) }), apg.cancelButton)
         ),
-        div(cls:="col-md-7", propertyDescriptionDiv)
+        div(cls:="col-md-7", 
+          new DescriptionDiv(page, propSelector.selectedWithTID)
+        )
       )
     )
     result

@@ -59,8 +59,6 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   // The chosen basis is *either* a Model or a Type. selected() combines the currently-chosen value and its
   // RxSelect:
   lazy val selectedBasis = Rx { modelSelector.selectedWithTID() orElse typeSelector.selectedWithTID() }
-  lazy val selectedBasisDescription = new DescriptionDiv(page, selectedBasis)
-  lazy val selectedBasisDescriptionDiv = selectedBasisDescription.descriptionDiv
   
   // The add button is only enabled when all fields are non-empty; when pressed, it tells the parent
   // page to add the Property:
@@ -118,7 +116,9 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
             div(cls:="col-md-5", typeSelector), span(cls:="col-md-1", " or "), div(cls:="col-md-5", modelSelector)
           )
         ),
-        div(cls:="col-md-6", selectedBasisDescriptionDiv)
+        div(cls:="col-md-6", 
+          new DescriptionDiv(page, selectedBasis)
+        )
       ),
       p(cls:="col-md-offset1",
         addButton

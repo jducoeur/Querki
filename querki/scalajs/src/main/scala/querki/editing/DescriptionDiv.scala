@@ -67,3 +67,7 @@ class DescriptionDiv(page:ModelDesignerPage, selector:Rx[Option[(RxThingSelector
     
   val descriptionDiv = RxDiv(Rx {Seq(selectionDescription())})
 }
+
+object DescriptionDiv {
+  implicit def getRxDiv(desc:DescriptionDiv):RxDiv = desc.descriptionDiv
+}
