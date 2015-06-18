@@ -21,19 +21,10 @@ import querki.display._
  * Base class for input controls. When you create a new concrete class, make sure to add it to
  * InputGadgets.registry.
  */
-abstract class InputGadget[T <: dom.Element](e:Ecology) extends Gadget[T] with EcologyMember {
-  
-  implicit val ecology = e
-  
+abstract class InputGadget[T <: dom.Element](e:Ecology) extends HookedGadget[T](e) with EcologyMember {
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
-  lazy val InputGadgetsInternal = interface[InputGadgetsInternal]
   lazy val StatusLine = interface[querki.display.StatusLine]
-  
-  /**
-   * Hook whatever events are appropriate for this Gadget.
-   */
-  protected def hook():Unit
   
   /**
    * Iff this Gadget allows its value to be changed from the outside, set the value.
@@ -45,21 +36,6 @@ abstract class InputGadget[T <: dom.Element](e:Ecology) extends Gadget[T] with E
    * there a way to have a "default type" in the type parameters?
    */
   def setValue(v:String):Unit = {}
-
-  /**
-   * Called by InputGadgets when it is time to prepare this Gadget for the world.
-   */
-  def prep() = {
-    // Don't hook templates! That causes nothing but havoc.
-    // TODO: inputTemplate should simply go away ASAP -- it's an old approach to adding new list items.
-    if (!$(elem).hasClass("inputTemplate")) {
-      hook()
-    }
-  }
-  
-  // Register ourselves, so that we get hooked. Note that hooking needs to happen *after* onCreate,
-  // since some libraries operate on the context we are found in:
-  InputGadgetsInternal.gadgetCreated(this)
   
   /**
    * Concrete gadgets should define this. It is the current value of this Gadget, based on what's

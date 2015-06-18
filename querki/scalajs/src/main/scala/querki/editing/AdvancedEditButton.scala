@@ -7,16 +7,14 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
-import querki.display.input.InputGadget
+import querki.display.input.HookedGadget
 
-class AdvancedEditButton(implicit e:Ecology) extends InputGadget[dom.html.Span](e) {
+class AdvancedEditButton(implicit e:Ecology) extends HookedGadget[dom.html.Span](e) {
   
   lazy val Editing = interface[Editing]
   
   lazy val editor = $(elem).parents("._instanceEditor")
   lazy val tid = editor.tidString("thingid")
-  
-  def values = ???
   
   def doRender() = span(cls:="_advancedCommentButton", "x")
   

@@ -16,7 +16,7 @@ private [input] trait InputGadgetsInternal extends EcologyInterface {
     /**
      * Each InputGadget should register itself here, to ensure that it gets hooked.
      */
-    def gadgetCreated(gadget:InputGadget[_]):Unit
+    def gadgetCreated(gadget:HookedGadget[_]):Unit
     
     /**
      * Record that this Gadget has begun to be edited, and is not yet saved. Use this for complex Gadgets
@@ -70,9 +70,9 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
     results
   }
   
-  var unhookedGadgets = Set.empty[InputGadget[_]]
+  var unhookedGadgets = Set.empty[HookedGadget[_]]
   
-  def gadgetCreated(gadget:InputGadget[_]) =
+  def gadgetCreated(gadget:HookedGadget[_]) =
     unhookedGadgets += gadget
   
   def hookPendingGadgets() = {
