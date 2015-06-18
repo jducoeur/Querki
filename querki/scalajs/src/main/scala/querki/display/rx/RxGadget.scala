@@ -22,11 +22,16 @@ class RxGadget[G <: Gadget[_]] {
    */
   def map[T](f:G => T):Option[T] = opt().map(f)
   
+  def flatMap[T](f:G => Option[T]) = opt().flatMap(f)
+  
   /**
    * Returns the underlying Gadget. Use with care: this will throw if the Gadget hasn't been
    * created yet!
    */
   def get = opt().get
+  
+  def isDefined = opt().isDefined
+  def isEmpty = opt().isEmpty
   
   /**
    * Set this to the actual Gadget when it's created. We only expect this to be called once
@@ -35,6 +40,19 @@ class RxGadget[G <: Gadget[_]] {
   def <=(g:G):G = {
     opt() = Some(g)
     g
+  }
+  
+  /**
+   * This defines a callback for when the Gadget actually gets defined. Note that this does *not*
+   * mean that the underlying Element has been created!
+   * 
+   * This function is chainable.
+   */
+  def whenSet(f:G => Unit) = {
+    Obs(opt) {
+      map(f)
+    }
+    this
   }
 }
 

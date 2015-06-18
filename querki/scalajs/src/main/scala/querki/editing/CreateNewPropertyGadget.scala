@@ -28,37 +28,39 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
     modelSelector.setValue("")
   }
   
-  lazy val nameInput = new RxText(cls:="col-md-6 form-control", placeholder:="Name (required)...")
+  val nameInput = RxGadget[RxText]
   
   // TODO: should the Collections simply come from the global info instead of typeInfo? They aren't changeable yet.
   lazy val collButtons =
     typeInfo.collections.headOption.map { coll => ButtonInfo(coll.oid.underlying, coll.displayName, true) } ++
     typeInfo.collections.tail.map { coll => ButtonInfo(coll.oid.underlying, coll.displayName) }
-  lazy val collSelector = new RxButtonGroup(Var(collButtons.toSeq))
+  lazy val collSelector = RxGadget[RxButtonGroup]
   
   val advTypeOptions = Var({
     val typeOpts = typeInfo.advancedTypes.sortBy(_.displayName).map(typ => option(value:=typ, typ.displayName))
     option(value:="", "Choose a Type...") +: typeOpts
   })
-  val typeSelector = new RxSelect(advTypeOptions, cls:="form-control")
+  val typeSelector:RxGadget[RxSelect] = RxGadget[RxSelect].
+    whenSet { g => 
+      Obs(g.selectedValOpt) {
+        g.selectedValOpt().map(_ => modelSelector.map(_.setValue("")))
+      } 
+    }
   
   val modelOptions = Var({
     val modelOpts = typeInfo.models.sortBy(_.displayName).map(model => option(value:=model, model.displayName))
     option(value:="", "Base it on a Model...") +: modelOpts
   })
-  val modelSelector = new RxSelect(modelOptions, cls:="form-control")
-
-  // You choose *either* a Type or a Model; when you set one, we unset the other:
-  val modelClearer = Obs(typeSelector.selectedValOpt) {
-    typeSelector.selectedValOpt().map(_ => modelSelector.setValue(""))
-  }
-  val typeClearer = Obs(modelSelector.selectedValOpt) {
-    modelSelector.selectedValOpt().map(_ => typeSelector.setValue(""))
-  }
+  val modelSelector = RxGadget[RxSelect].
+    whenSet { g => 
+      Obs(g.selectedValOpt) {
+        g.selectedValOpt().map(_ => typeSelector.map(_.setValue("")))
+      }
+    }
   
   // The chosen basis is *either* a Model or a Type. selected() combines the currently-chosen value and its
   // RxSelect:
-  lazy val selectedBasis = Rx { modelSelector.selectedWithTID() orElse typeSelector.selectedWithTID() }
+  lazy val selectedBasis = Rx { modelSelector.selectedWithTID() orElse typeSelector.flatMap(_.selectedWithTID()) }
   
   // The add button is only enabled when all fields are non-empty; when pressed, it tells the parent
   // page to add the Property:
@@ -104,16 +106,18 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
         div(cls:="col-md-6",
           div(cls:="row",
             div(cls:="col-md-12",
-              nameInput
+              nameInput <= new RxText(cls:="col-md-6 form-control", placeholder:="Name (required)...")
             )
           ),
           div(cls:="row",
             div(cls:="col-md-12",
-              collSelector
+              collSelector <= new RxButtonGroup(Var(collButtons.toSeq))
             )
           ),
           div(cls:="row",
-            div(cls:="col-md-5", typeSelector), span(cls:="col-md-1", " or "), div(cls:="col-md-5", modelSelector)
+            div(cls:="col-md-5", typeSelector <= new RxSelect(advTypeOptions, cls:="form-control")), 
+            span(cls:="col-md-1", " or "), 
+            div(cls:="col-md-5", modelSelector <= new RxSelect(modelOptions, cls:="form-control"))
           )
         ),
         div(cls:="col-md-6", 
