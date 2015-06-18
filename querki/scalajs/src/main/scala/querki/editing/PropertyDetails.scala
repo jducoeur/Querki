@@ -25,7 +25,7 @@ import querki.display.rx.RxThingSelector
     def doRender() = {
       div(
         hr,
-        new DescriptionDiv(page, selectorWrapper, true),
+        new DescriptionDiv(page, selectorWrapper),
         if (editInfo.canEditProperty) {
           p(new ButtonGadget(ButtonGadget.Primary, "Edit Property")({ () => valEditor.showPropEditor() }))        
         }

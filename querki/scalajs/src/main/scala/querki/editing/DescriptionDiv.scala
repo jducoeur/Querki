@@ -18,15 +18,16 @@ import querki.util.ScalatagUtils
  * 
  * @param selector Typically the selected() reactive of an RxSelect. We pass in this instead of the RxSelect itself
  *   so that you can orElse multiple RxSelects and feed the union into here.
- * @param immediate Set this to true iff the selector is already set to a valid value when this is created.
  */
-class DescriptionDiv(page:ModelDesignerPage, selector:Rx[Option[(RxThingSelector, TID)]], immediate:Boolean = false)(implicit val ecology:Ecology) 
+class DescriptionDiv(page:ModelDesignerPage, selector:Rx[Option[(RxThingSelector, TID)]])(implicit val ecology:Ecology) 
   extends EcologyMember with ScalatagUtils 
 {
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
   
   def thingLink = page.thingLink _
+  
+  val immediate = selector().isDefined
   
   val stdThingFut = DataAccess.standardThings
   val emptyDescription = span(raw("&nbsp;"))
