@@ -5,17 +5,15 @@ import scala.scalajs.js
 import js.UndefOr
 import upickle._
 import autowire._
-
 import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
 import scalatags.JsDom.all._
-
 import querki.globals._
-
 import querki.api.EditFunctions
 import EditFunctions._
 import querki.data.BasicThingInfo
 import querki.display._
+import querki.display.HookedGadget
 
 /**
  * Base class for input controls. When you create a new concrete class, make sure to add it to
@@ -23,7 +21,8 @@ import querki.display._
  */
 abstract class InputGadget[T <: dom.Element](e:Ecology) extends HookedGadget[T](e) with EcologyMember {
   lazy val Client = interface[querki.client.Client]
-  lazy val DataAccess = interface[querki.data.DataAccess]
+  lazy val DataAccess = interface[querki.data.DataAccess]  
+  lazy val InputGadgetsInternal = interface[InputGadgetsInternal]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
   /**

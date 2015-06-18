@@ -25,7 +25,7 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   
   lazy val DataAccess = interface[querki.data.DataAccess]
-  lazy val InputGadgets = interface[querki.display.input.InputGadgets]
+  lazy val Gadgets = interface[querki.display.Gadgets]
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val Pages = interface[Pages]
   
@@ -118,7 +118,7 @@ abstract class Page(e:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMe
       val fullyRendered = content.content.render
       renderedContent.replaceContents(fullyRendered)
       PageManager.update(content.title)
-      InputGadgets.hookPendingGadgets()
+      Gadgets.hookPendingGadgets()
       renderedContentPromise.success(fullyRendered)
       PageManager.onPageRendered(this)
     }

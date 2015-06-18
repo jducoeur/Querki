@@ -74,7 +74,7 @@ class ExplorePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
       rawResults() = result
       val qtext = new QText(result)
       results.replaceContents(qtext.render)
-      InputGadgets.hookPendingGadgets()
+      Gadgets.hookPendingGadgets()
     }
   }
   

@@ -13,7 +13,7 @@ import querki.display.input.InputGadget
 
 class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output])(implicit e:Ecology) extends InputGadget[Output](e) with EcologyMember {
   
-  lazy val InputGadgets = interface[querki.display.input.InputGadgets]
+  lazy val Gadgets = interface[querki.display.Gadgets]
   
   def doRender() = tag
   def values = ???
@@ -44,7 +44,7 @@ class QLButtonGadget[Output <: dom.Element](tag:scalatags.JsDom.TypedTag[Output]
           $(elem).attr("disabled", false)
           $(elem).removeClass("running")
           $(elem).addClass("open")
-          InputGadgets.hookPendingGadgets()
+          Gadgets.hookPendingGadgets()
         }
       }
       

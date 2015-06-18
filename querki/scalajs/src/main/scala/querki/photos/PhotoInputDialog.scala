@@ -40,7 +40,7 @@ import FileTarget._
 class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e) {
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
-  lazy val InputGadgets = interface[querki.display.input.InputGadgets]
+  lazy val Gadgets = interface[querki.display.Gadgets]
   lazy val Pages = interface[querki.pages.Pages]
   lazy val PhotosInternal = interface[PhotosInternal]
   
@@ -135,7 +135,7 @@ class PhotoInputButton(implicit e:Ecology) extends InputGadget[dom.html.Input](e
         val rawGadget = new RawSpan(wikiStr)
         rawGadget.render
         $(rawGadget.elem).insertBefore(elem)
-        InputGadgets.hookPendingGadgets()
+        Gadgets.hookPendingGadgets()
         
 	    // TODO: for the moment, we are using the real input button as a one-shot -- after each upload, we're removing
 	    // it and creating another. This is stupid, but it is working around the fact that things only seem to be

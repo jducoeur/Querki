@@ -26,7 +26,6 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   lazy val Client = interface[querki.client.Client]
   lazy val DataModel = interface[querki.datamodel.DataModel]
   lazy val Editing = interface[Editing]
-  lazy val Gadgets = interface[querki.display.Gadgets]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
   // We start loading this at page load, so that it's available when we inspect Properties.
@@ -83,7 +82,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       // TODO: introduce the concept of Properties that are mainly for Models; if that is
       // set, put it in the Model section instead:
       instancePropSection().appendEditor(editInfo, openEditor)
-      InputGadgets.hookPendingGadgets()
+      Gadgets.hookPendingGadgets()
     }
   }
   

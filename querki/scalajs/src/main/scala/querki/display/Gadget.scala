@@ -14,7 +14,6 @@ import querki.globals._
 
 import querki.comm._
 import querki.data.BasicThingInfo
-import querki.display.input.InputGadget
 import querki.util.ScalatagUtils
 
 /**
@@ -86,15 +85,12 @@ object Gadget {
 /**
  * A trivial Gadget that you can register when you just want to hook some behavior into an Element
  * based on a Selector.
- * 
- * TODO: this really shouldn't be an InputGadget conceptually, but we need that for the hooking:
  */
-class HookGadget(onHook:dom.Element => Unit)(implicit e:Ecology) extends InputGadget[dom.Element](e) {
+class HookGadget(onHook:dom.Element => Unit)(implicit e:Ecology) extends HookedGadget[dom.Element](e) {
   def hook() = { onHook(elem) }
   
   // These should never be directly rendered:
   def doRender() = ???
-  def values = ???
 }
 
 trait QuerkiUIUtils extends ScalatagUtils {

@@ -7,7 +7,7 @@ import scalatags.JsDom.all._
 
 import querki.globals._
 
-import querki.display.input.HookedGadget
+import querki.display.HookedGadget
 
 class AdvancedEditButton(implicit e:Ecology) extends HookedGadget[dom.html.Span](e) {
   

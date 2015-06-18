@@ -4,30 +4,24 @@ import scala.scalajs.js
 import js.ThisFunction._
 import org.scalajs.dom
 import org.querki.jquery._
-
 import querki.globals._
-
 import querki.display.Gadget
+import querki.display.HookedGadget
 
 /**
  * Private interface, allowing InputGadgets to work with their master controller.
  */
 private [input] trait InputGadgetsInternal extends EcologyInterface {
-    /**
-     * Each InputGadget should register itself here, to ensure that it gets hooked.
-     */
-    def gadgetCreated(gadget:HookedGadget[_]):Unit
-    
-    /**
-     * Record that this Gadget has begun to be edited, and is not yet saved. Use this for complex Gadgets
-     * that don't simply save immediately on every change, so that we can force-save when needed.
-     */
-    def startingEdits(gadget:InputGadget[_]):Unit
-    
-    /**
-     * The pair to startingEdits(), which should be called when save is complete.
-     */
-    def saveComplete(gadget:InputGadget[_]):Unit
+  /**
+   * Record that this Gadget has begun to be edited, and is not yet saved. Use this for complex Gadgets
+   * that don't simply save immediately on every change, so that we can force-save when needed.
+   */
+  def startingEdits(gadget:InputGadget[_]):Unit
+  
+  /**
+   * The pair to startingEdits(), which should be called when save is complete.
+   */
+  def saveComplete(gadget:InputGadget[_]):Unit
 }
 
 class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with InputGadgetsInternal {
@@ -68,23 +62,6 @@ class InputGadgetsEcot(e:Ecology) extends ClientEcot(e) with InputGadgets with I
       Seq.empty
     results.map(_.setElem(elem))
     results
-  }
-  
-  var unhookedGadgets = Set.empty[HookedGadget[_]]
-  
-  def gadgetCreated(gadget:HookedGadget[_]) =
-    unhookedGadgets += gadget
-  
-  def hookPendingGadgets() = {
-    // What's going on here? We need to allow for InputGadgets whose hook creates
-    // *more* InputGadgets. So we deal with this list, then check whether more got
-    // created along the way:
-    val pending = unhookedGadgets
-    unhookedGadgets = Set.empty
-    pending.foreach(_.prep())
-    if (!unhookedGadgets.isEmpty)
-      // Recurse to do more:
-      hookPendingGadgets()
   }
   
   /**

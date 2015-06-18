@@ -1,9 +1,7 @@
-package querki.display.input
+package querki.display
 
 import org.scalajs.dom
 import org.querki.jquery._
-
-import querki.display.Gadget
 import querki.globals._
 
 /**
@@ -19,7 +17,7 @@ import querki.globals._
 abstract class HookedGadget[T <: dom.Element](e:Ecology) extends Gadget[T] with EcologyMember {
   implicit val ecology = e
   
-  lazy val InputGadgetsInternal = interface[InputGadgetsInternal]
+  lazy val GadgetsInternal = interface[GadgetsInternal]
   
   /**
    * Hook whatever events are appropriate for this Gadget.
@@ -39,5 +37,5 @@ abstract class HookedGadget[T <: dom.Element](e:Ecology) extends Gadget[T] with 
   
   // Register ourselves, so that we get hooked. Note that hooking needs to happen *after* onCreate,
   // since some libraries operate on the context we are found in:
-  InputGadgetsInternal.gadgetCreated(this)
+  GadgetsInternal.gadgetCreated(this)
 }

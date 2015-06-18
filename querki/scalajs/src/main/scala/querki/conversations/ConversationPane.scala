@@ -21,7 +21,7 @@ import messages._
 class ConversationPane(val thingInfo:ThingInfo, focusedComment:Option[String])(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember  {
   
   lazy val Client = interface[querki.client.Client]
-  lazy val InputGadgets = interface[querki.display.input.InputGadgets]
+  lazy val Gadgets = interface[querki.display.Gadgets]
   
   implicit val t = thingInfo
   
@@ -51,7 +51,7 @@ class ConversationPane(val thingInfo:ThingInfo, focusedComment:Option[String])(i
         )
         
       allWrapper.replaceContents(guts.render)
-      InputGadgets.hookPendingGadgets()
+      Gadgets.hookPendingGadgets()
       
       // If we're supposed to be focusing on a specific comment, show that:
       focusedComment.foreach { commentId =>
@@ -142,7 +142,7 @@ class ReplyGadget(replyTo:Option[CommentId], ph:String, onPosted:ConvNode => Uni
 private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boolean)(implicit val ecology:Ecology, thingInfo:ThingInfo) 
   extends Gadget[dom.HTMLDivElement] with EcologyMember 
 {
-  lazy val InputGadgets = interface[querki.display.input.InputGadgets]
+  lazy val Gadgets = interface[querki.display.Gadgets]
   
   /**
    * TODO: this is all wrong! It just does a straight flattening, but what we really want is much more
@@ -186,6 +186,6 @@ private [conversations] class ConversationGadget(conv:ConvNode, canComment:Boole
     val gadgets = flattenNodes(newNode).map(_.rendered)
     $(commentContainer.elem).append(gadgets)
     replyContainer.replaceContents(replyPlaceholder.rendered)
-    InputGadgets.hookPendingGadgets()
+    Gadgets.hookPendingGadgets()
   }
 }

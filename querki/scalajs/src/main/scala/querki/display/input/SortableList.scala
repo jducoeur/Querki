@@ -20,7 +20,6 @@ import EditFunctions._
 class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListElement](e)  {
   
   lazy val Gadgets = interface[querki.display.Gadgets]
-  lazy val InputGadgets = interface[InputGadgets]
 
   def values = ???
   
@@ -106,7 +105,7 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     // Do our best to set focus to the first relevant field of the new element:
     $(newLiElem).find(".propEditor,input,textarea").first.focus()
     Gadgets.createGadgets(newLiElem)
-    InputGadgets.hookPendingGadgets()
+    Gadgets.hookPendingGadgets()
     saveChange({ path => AddListItem(path) }).foreach { response =>
       // Important: we only try to save the new value *after* the server acks the creation of the new
       // element. Otherwise, there's a horribly easy race condition.

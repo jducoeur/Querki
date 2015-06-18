@@ -10,9 +10,19 @@ import querki.globals._
 import querki.pages.Page
 import querki.util.{Contributor, Publisher}
 
-class GadgetsEcot(e:Ecology) extends ClientEcot(e) with Gadgets {
+/**
+ * Private interface for hooking Gadgets up.
+ */
+private [display] trait GadgetsInternal extends EcologyInterface {
+  /**
+   * Each HookedGadget should register itself here, to ensure that it gets hooked.
+   */
+  def gadgetCreated(gadget:HookedGadget[_]):Unit
+}
+
+class GadgetsEcot(e:Ecology) extends ClientEcot(e) with Gadgets with GadgetsInternal {
   
-  def implements = Set(classOf[Gadgets])
+  def implements = Set(classOf[Gadgets], classOf[GadgetsInternal])
   
   lazy val PageManager = interface[querki.display.PageManager]
   
@@ -80,5 +90,22 @@ class GadgetsEcot(e:Ecology) extends ClientEcot(e) with Gadgets {
         constrs.map(_(elem))
       }:js.ThisFunction0[dom.Element, Any])
     }
+  }
+  
+  var unhookedGadgets = Set.empty[HookedGadget[_]]
+  
+  def gadgetCreated(gadget:HookedGadget[_]) =
+    unhookedGadgets += gadget
+  
+  def hookPendingGadgets() = {
+    // What's going on here? We need to allow for InputGadgets whose hook creates
+    // *more* InputGadgets. So we deal with this list, then check whether more got
+    // created along the way:
+    val pending = unhookedGadgets
+    unhookedGadgets = Set.empty
+    pending.foreach(_.prep())
+    if (!unhookedGadgets.isEmpty)
+      // Recurse to do more:
+      hookPendingGadgets()
   }
 }

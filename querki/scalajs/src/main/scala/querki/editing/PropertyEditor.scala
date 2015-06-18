@@ -13,7 +13,7 @@ import querki.display.rx.RxDiv
   
 class PropertyEditor(val valEditor:PropValueEditor)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
   lazy val Client = interface[querki.client.Client]
-  lazy val InputGadgets = interface[querki.display.input.InputGadgets]
+  lazy val Gadgets = interface[querki.display.Gadgets]
   
     lazy val prop = valEditor.propInfo
     lazy val propId = prop.oid
@@ -31,7 +31,7 @@ class PropertyEditor(val valEditor:PropValueEditor)(implicit val ecology:Ecology
       hookWhenDone
     }
     lazy val hookWhenDone = Obs(contentDiv.elemRx) {
-      InputGadgets.hookPendingGadgets()      
+      Gadgets.hookPendingGadgets()      
     }
     
     def doRender() = {

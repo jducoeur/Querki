@@ -71,7 +71,7 @@ class EditInstancesPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
           val qt = new QText(editorWikitext)(ecology)
           val newEditor = qt.render
           $(newEditor).insertBefore($(elem))
-          InputGadgets.hookPendingGadgets()
+          Gadgets.hookPendingGadgets()
           PageManager.instantScrollToBottom()
           // TODO: is this the right way to do this in the new world? It begs for an abstraction: 
           $(newEditor).find(".propEditor").first().focus()

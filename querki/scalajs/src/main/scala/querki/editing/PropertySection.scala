@@ -19,7 +19,7 @@ class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEdit
   val editInfo:FullEditInfo, sortable:Boolean = true)(implicit val e:Ecology) 
   extends InputGadget[dom.HTMLUListElement](e) 
 {
-  lazy val InputGadgets = interface[querki.display.input.InputGadgets]
+  lazy val Gadgets = interface[querki.display.Gadgets]
   
     val tid = thing.urlName
     
@@ -76,7 +76,7 @@ class PropertySection(val page:ModelDesignerPage, nam:String, props:Seq[PropEdit
         val newEditor = new PropValueEditor(replacementInfo, this)
         // TBD: Do we also need to update the section's doRender? That would require pulling out that props.map below: 
         $(editor.elem).replaceWith(newEditor.render)
-        InputGadgets.hookPendingGadgets()
+        Gadgets.hookPendingGadgets()
       }
     }
     

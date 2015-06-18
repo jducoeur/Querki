@@ -54,6 +54,15 @@ package object display {
      * be called when they actually get added to the DOM and shown, since some controls depend on that.
      */
     def createGadgets(root:dom.Element):Unit    
+    
+    /**
+     * Hook all Gadgets that have been created but not yet hooked.
+     * 
+     * IMPORTANT: you *MUST* call this any time you add Page content that may potentially contain
+     * HookedGadgets! But this must be called *AFTER* that content is fully added to the DOM tree,
+     * and shown!
+     */
+    def hookPendingGadgets():Unit
   }
   
   trait PageManager extends EcologyInterface {
