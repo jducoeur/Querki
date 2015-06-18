@@ -11,7 +11,7 @@ import EditFunctions._
 import querki.data.{TID => _TID, _}
 import querki.display.{ButtonGadget, Gadget}
 import ButtonGadget._
-import querki.display.rx.{ButtonInfo, RxAttr, RxButtonGroup, RxSelect, RxText}
+import querki.display.rx._
 import querki.globals._
   
 class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:AddPropertyGadget)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
@@ -64,7 +64,7 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   // page to add the Property:
   lazy val addButton = 
     new ButtonGadget(Info, 
-        RxAttr("disabled", Rx{ nameInput.textOpt().isEmpty || collSelector.selectedTIDOpt().isEmpty || selectedBasis().isEmpty }), 
+        disabled := Rx{ nameInput.textOpt().isEmpty || collSelector.selectedTIDOpt().isEmpty || selectedBasis().isEmpty }, 
         "Create")({ () =>
       val name = nameInput.textOpt().get
       val coll = collSelector.selectedTIDOpt().get

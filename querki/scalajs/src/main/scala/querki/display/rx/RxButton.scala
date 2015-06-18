@@ -10,11 +10,11 @@ import querki.globals._
 
 class RxButton(kind:ButtonGadget.ButtonKind, inactiveLabel:String, activeLabel:String)(onClick:RxButton => Unit) extends Gadget[dom.html.Span]  {
   private lazy val active = Var(false)
-  
+
   private lazy val actualButton = 
     new ButtonGadget(
       kind,
-      RxAttr("disabled", Rx[AttrVal]{active()}),
+      disabled := active,
       new RxTextFrag(Rx{if (active()) activeLabel else inactiveLabel}))(doClick)
       
   private def doClick():Unit = {

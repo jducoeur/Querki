@@ -3,35 +3,24 @@ package querki.display.rx
 import scala.scalajs.js
 import org.scalajs.dom
 import org.querki.jquery._
+import scalatags.JsDom.all._
 import rx._
 import querki.globals._
 import querki.display.ManagedFrag
   
-/**
- * Defines an attribute, suitable for embedding in Scalatags, whose value is based on a
- * reactive.
- */
-class RxAttr(name:String, rx:Rx[AttrVal]) extends ManagedFrag[dom.Attr] {
-  def createFrag = dom.document.createAttribute(name)
-  
-  lazy val obs = Obs(rx) {
-    parentOpt.foreach { parent =>
-      $(parent).attr(name, rx())
+private [rx] class RxAttrBase[T <% AttrVal, R <: Rx[T]] extends AttrValue[R] {
+  def apply(t:dom.Element, a:Attr, v:R):Unit = {
+    Obs(v) {
+      $(t).attr(a.name, v())
     }
   }
-  
-  override def onCreate(attr:dom.Attr) = obs
+}
 
-  // Note that, unlike an ordinary ManagedFrag, this does *not* delegate to super.applyTo().
-  // That's because the default Frag in the Scalatag's JS world does an appendTo(), which
-  // makes no sense for an attribute. So just as Scalatag's JS Attrs have their own
-  // overrides, so must we. In our case, instead of actually applying anything to the
-  // parent, we kick off rendering, which causes the obs to come into existence:
-  override def applyTo(parent:dom.Element) = {
-    parentOpt = Some(parent)
-    render
-  }
-}
-object RxAttr {
-  def apply(name:String, rx:Rx[AttrVal]) = new RxAttr(name, rx)
-}
+/**
+ * Mechanism for using an Rx as a Scalatags AttrValue.
+ * 
+ * Note that this is used implicitly -- just import querki.display.rx._, and it
+ * will add the ability to use Rx-defined attribute values.
+ */
+class RxAttr[T <% AttrVal] extends RxAttrBase[T, Rx[T]]
+class VarAttr[T <% AttrVal] extends RxAttrBase[T, Var[T]]

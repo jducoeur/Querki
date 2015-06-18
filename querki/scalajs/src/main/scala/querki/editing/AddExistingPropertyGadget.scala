@@ -7,21 +7,12 @@ import rx._
 
 import querki.data.{TID => _TID, _}
 import querki.display.{ButtonGadget, Gadget}
-import querki.display.rx.{RxAttr, RxGadget, RxSelect}
+import querki.display.rx._
 import querki.globals._
 
 class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpaceProps:SpaceProps, apg:AddPropertyGadget)(implicit val ecology:Ecology)
   extends Gadget[dom.HTMLDivElement] 
 {
-  class RxAttr[T <% AttrVal] extends AttrValue[Rx[T]] {
-    def apply(t:dom.Element, a:Attr, v:Rx[T]):Unit = {
-      Obs(v) {
-        $(t).attr(a.name, v())
-      }
-    }
-  }
-  implicit def rxAttr[T <% AttrVal] = new RxAttr[T]
-  
   val optLabel = "label".attr
   
   def reset() = {
