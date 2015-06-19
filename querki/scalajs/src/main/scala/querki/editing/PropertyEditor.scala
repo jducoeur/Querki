@@ -19,6 +19,7 @@ class PropertyEditor(val valEditor:PropValueEditor)(implicit val ecology:Ecology
   lazy val propId = prop.oid
   
   val guts = RxGadget.of[dom.HTMLUListElement]
+  // Initialize guts to empty, so that we can render immediately:
   guts <= ul()
   
   lazy val contentDiv = RxGadget[RxDiv].
@@ -28,18 +29,15 @@ class PropertyEditor(val valEditor:PropValueEditor)(implicit val ecology:Ecology
       }
     }
 
-  lazy val contentFut = {
+  def doRender() = {
     for {
       editInfo <- Client[EditFunctions].getPropertyEditors(propId).call()
+      section = new PropertySection(valEditor.section.page, s"Property $propId", editInfo.propInfos, prop, editInfo, false)
     }
-      yield new PropertySection(valEditor.section.page, s"Property $propId", editInfo.propInfos, prop, editInfo, false)
-  }
-  lazy val editTrigger = contentFut.foreach { section => 
-    guts <= section
-  }
-  
-  def doRender() = {
-    editTrigger
+      // Note that PropertySection is, at heart, a Gadget[UList], so this is legal. This version of
+      // the guts will get swapped in when we get the PropertyEditors:
+      guts <= section
+    
     div(
       hr,
       contentDiv <= RxDiv(Rx { guts.opt().toSeq }),
