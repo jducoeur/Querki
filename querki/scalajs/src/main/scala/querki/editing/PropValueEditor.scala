@@ -31,12 +31,11 @@ class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEd
     
     // Functions to toggle the PropertyEditor in and out when you click the name of the property:
     val detailsShown = Var(false)
-    val detailsHolder = Var[Seq[Gadget[dom.HTMLDivElement]]](Seq.empty, name="detailsHolder")
+    val detailsHolder = RxGadget.of[dom.HTMLDivElement]
     lazy val detailsViewer = new PropertyDetails(this)
-    lazy val detailsViewerSeq = Seq(detailsViewer)
     val propDetailsArea = RxGadget[RxDiv]
     def toggleDetails() = {
-      detailsHolder() = detailsViewerSeq
+      detailsHolder <= detailsViewer
       if (detailsShown()) {
         propDetailsArea.elemOpt.map($(_).slideUp())
       } else {
@@ -46,15 +45,14 @@ class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEd
     }
     
     lazy val propEditor = new PropertyEditor(this)
-    lazy val propEditorSeq = Seq(propEditor)
     def showPropEditor() = {
-      detailsHolder() = propEditorSeq
+      detailsHolder <= propEditor
       propDetailsArea.elemOpt.map($(_).show())
       detailsShown() = true
     }
     
     def propEditDone() = {
-      detailsHolder() = Seq.empty
+      detailsHolder <= div()
       toggleDetails()
       section.refreshEditor(this)
     }
@@ -74,7 +72,7 @@ class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEd
         ),
         if (propId == stdThings.basic.displayNameProp.oid)
           new DeriveNameCheck(this),
-        propDetailsArea <= new RxDiv(detailsHolder, display:="none", width:="100%")
+        propDetailsArea <= RxDiv(detailsHolder, display:="none", width:="100%")
       )
       
     override def onCreate(e:dom.HTMLLIElement) = {
