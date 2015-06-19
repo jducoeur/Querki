@@ -18,16 +18,9 @@ class PropertyEditor(val valEditor:PropValueEditor)(implicit val ecology:Ecology
   lazy val prop = valEditor.propInfo
   lazy val propId = prop.oid
   
-  val guts = RxGadget.of[dom.HTMLUListElement]
+  val guts = RxGadget.of[dom.HTMLUListElement].whenSet { x => Gadgets.hookPendingGadgets() }
   // Initialize guts to empty, so that we can render immediately:
   guts <= ul()
-  
-  lazy val contentDiv = RxGadget[RxDiv].
-    whenSet { g => 
-      Obs(g.elemRx) {
-        Gadgets.hookPendingGadgets()
-      }
-    }
 
   def doRender() = {
     for {
@@ -40,7 +33,7 @@ class PropertyEditor(val valEditor:PropValueEditor)(implicit val ecology:Ecology
     
     div(
       hr,
-      contentDiv <= RxDiv(guts),
+      RxDiv(guts),
       p(new ButtonGadget(ButtonGadget.Primary, "Done")({ () =>
         valEditor.propEditDone() 
       }))

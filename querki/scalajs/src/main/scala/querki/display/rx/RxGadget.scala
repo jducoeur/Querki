@@ -67,9 +67,13 @@ class RxGadget[G <: Gadget[_]] {
   def isEmpty = opt().isEmpty
   
   /**
-   * Set this to the actual Gadget when it's created. This is typically only called once per
+   * Set this to the actual Gadget when it's created. 
+   * 
+   * This is typically only called once per
    * RxGadget, but that is specifically not enforced; it is occasionally appropriate to update
-   * the gadget. Keep in mind that opt() will update when this happens!
+   * the gadget. Keep in mind that opt() will update when this happens! Note that setting this
+   * does *not* cause the view to update; wrap the RxGadget in an RxDiv if you want that to
+   * happen.
    */
   def <=(g:G):G = {
     opt() = Some(g)

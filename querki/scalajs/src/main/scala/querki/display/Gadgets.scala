@@ -98,14 +98,17 @@ class GadgetsEcot(e:Ecology) extends ClientEcot(e) with Gadgets with GadgetsInte
     unhookedGadgets += gadget
   
   def hookPendingGadgets() = {
+    // Only hook gadgets that have actually been created!
+    val (pending, unready) = unhookedGadgets.partition { g => g.elemOpt.isDefined }
     // What's going on here? We need to allow for InputGadgets whose hook creates
     // *more* InputGadgets. So we deal with this list, then check whether more got
     // created along the way:
-    val pending = unhookedGadgets
     unhookedGadgets = Set.empty
     pending.foreach(_.prep())
-    if (!unhookedGadgets.isEmpty)
+    if (!unhookedGadgets.isEmpty) {
       // Recurse to do more:
       hookPendingGadgets()
+    }
+    unhookedGadgets ++= unready
   }
 }
