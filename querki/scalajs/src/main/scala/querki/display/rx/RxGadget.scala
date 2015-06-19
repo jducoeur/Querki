@@ -4,10 +4,13 @@ import org.scalajs.dom
 import scalatags.JsDom.all._
 import rx._
 
-import querki.display.Gadget
+import querki.display.{Gadget, TypedGadget}
 
 /**
  * A wrapper around Gadgets, to make them a bit easier to use.
+ * 
+ * You don't usually create this by hand -- use the methods in the companion object to make
+ * RxGadget and RxElementGadget.
  * 
  * @author jducoeur
  */
@@ -43,13 +46,6 @@ class RxGadget[G <: Gadget[_]] {
     g
   }
   
-  def <=[T <: dom.Element](tag:scalatags.JsDom.TypedTag[T]):G = {
-    // TODO: this is evil and wrong. How can I fix up the type signatures to get G right,
-    // without having to specify *both* G and T all the time?
-    val g = Gadget(tag).asInstanceOf[G]
-    <=(g)
-  }
-  
   /**
    * This defines a callback for when the Gadget actually gets defined. Note that this does *not*
    * mean that the underlying Element has been created!
@@ -64,6 +60,22 @@ class RxGadget[G <: Gadget[_]] {
   }
 }
 
+/**
+ * A variant of RxGadget, which you should use when you're just dealing with a raw TypedTag, not
+ * a Gadget per se.
+ * 
+ * All this really does is provide type-safety for this situation, without requiring that RxGadget
+ * itself know about T.
+ * 
+ * Create this using RxGadget.of[].
+ */
+class RxElementGadget[T <: dom.Element] extends RxGadget[Gadget[T]] {
+  def <=(tag:scalatags.JsDom.TypedTag[T]):Gadget[T] = {
+    val g = new TypedGadget(tag, { elem:T => })
+    <=(g)
+  }
+}
+
 object RxGadget {
   /**
    * Given an RxGadget, cast it to the actual underlying gadget.
@@ -74,5 +86,5 @@ object RxGadget {
   implicit def rx2Gadget[G <: Gadget[_]](rx:RxGadget[G]):G = rx.get
   
   def apply[G <: Gadget[_]] = new RxGadget[G]
-  def of[T <: dom.Element] = new RxGadget[Gadget[T]]
+  def of[T <: dom.Element] = new RxElementGadget[T]
 }
