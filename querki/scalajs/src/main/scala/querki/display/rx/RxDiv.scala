@@ -20,7 +20,6 @@ import querki.display.Gadget
  * the relationship between doRender() and obs below.
  */
 case class RxDiv(rxGuts:Rx[Seq[Gadget[_]]], base:Modifier*) extends Gadget[dom.HTMLDivElement] {
-  
   def doRender() = divTag()
   
   lazy val divTag = Rx(name="divTag") { div(base, rxGuts()) }
@@ -39,4 +38,8 @@ case class RxDiv(rxGuts:Rx[Seq[Gadget[_]]], base:Modifier*) extends Gadget[dom.H
   lazy val elemRx = Var[Option[dom.Element]](None)
   
   override def onCreate(e:dom.HTMLDivElement) = obs
+}
+
+object RxDiv {
+  def apply[G <: Gadget[_]](rx:RxGadget[G], base:Modifier*):RxDiv = RxDiv(Rx{ rx.opt().toSeq }, base)  
 }

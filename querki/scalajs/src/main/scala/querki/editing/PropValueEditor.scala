@@ -11,7 +11,7 @@ import querki.api.EditFunctions
 import EditFunctions.PropEditInfo
 import querki.display.{Gadget, RawDiv, WithTooltip}
 import querki.display.input.DeleteInstanceButton
-import querki.display.rx.RxDiv
+import querki.display.rx._
   
 /**
  * TODO: this was originally a horizontal form, with the labels on the left and the controls on the right.
@@ -34,7 +34,7 @@ class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEd
     val detailsHolder = Var[Seq[Gadget[dom.HTMLDivElement]]](Seq.empty, name="detailsHolder")
     lazy val detailsViewer = new PropertyDetails(this)
     lazy val detailsViewerSeq = Seq(detailsViewer)
-    val propDetailsArea = new RxDiv(detailsHolder, display:="none", width:="100%")
+    val propDetailsArea = RxGadget[RxDiv]
     def toggleDetails() = {
       detailsHolder() = detailsViewerSeq
       if (detailsShown()) {
@@ -74,7 +74,7 @@ class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEd
         ),
         if (propId == stdThings.basic.displayNameProp.oid)
           new DeriveNameCheck(this),
-        propDetailsArea
+        propDetailsArea <= new RxDiv(detailsHolder, display:="none", width:="100%")
       )
       
     override def onCreate(e:dom.HTMLLIElement) = {

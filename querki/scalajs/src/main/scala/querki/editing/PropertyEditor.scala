@@ -40,7 +40,7 @@ class PropertyEditor(val valEditor:PropValueEditor)(implicit val ecology:Ecology
     
     div(
       hr,
-      contentDiv <= RxDiv(Rx { guts.opt().toSeq }),
+      contentDiv <= RxDiv(guts),
       p(new ButtonGadget(ButtonGadget.Primary, "Done")({ () =>
         valEditor.propEditDone() 
       }))
