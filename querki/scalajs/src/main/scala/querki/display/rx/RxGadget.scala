@@ -1,6 +1,7 @@
 package querki.display.rx
 
 import org.scalajs.dom
+import scalatags.JsDom.all._
 import rx._
 
 import querki.display.Gadget
@@ -40,6 +41,13 @@ class RxGadget[G <: Gadget[_]] {
   def <=(g:G):G = {
     opt() = Some(g)
     g
+  }
+  
+  def <=[T <: dom.Element](tag:scalatags.JsDom.TypedTag[T]):G = {
+    // TODO: this is evil and wrong. How can I fix up the type signatures to get G right,
+    // without having to specify *both* G and T all the time?
+    val g = Gadget(tag).asInstanceOf[G]
+    <=(g)
   }
   
   /**
