@@ -7,7 +7,36 @@ import rx._
 import querki.display.{Gadget, TypedGadget}
 
 /**
- * A wrapper around Gadgets, to make them a bit easier to use.
+ * A wrapper around Gadgets, to make them a bit easier to use. 
+ * 
+ * Think of this as a reactive container into which you put a Gadget of a particular type, 
+ * which other code can hang off of. This is how you build complex reactive structures, while
+ * still keep the declarations of the Gadgets in the Scalatags hierarchy so that you can
+ * see what goes where.
+ * 
+ * So you typically declare this as an empty holder, and then assign to it later in the
+ * Scalatags, like this:
+ * {{{
+ * val myGadget = RxGadget[MyGadget]
+ * 
+ * def funcUsingMyGadget = {
+ *   myGadget.someFunction()
+ * }
+ * 
+ * def funcUsingMyGadgetIfExists = {
+ *   myGadget.map(_.someOtherFunction())
+ * }
+ * ...
+ * val rendered =
+ *   p(
+ *     "Here's the gadget",
+ *     myGadget <= new MyGadget(...)
+ *   )
+ * }}}
+ * Note that the RxGadget will implicitly unwrap to the underlying Gadget if the environment
+ * calls for that. Use that with some care -- it will throw an exception if the Gadget hasn't
+ * been set yet! If you aren't certain whether the Gadget has been set, use map() or flatMap()
+ * instead, and it has Option-like semantics. 
  * 
  * You don't usually create this by hand -- use the methods in the companion object to make
  * RxGadget and RxElementGadget.
@@ -38,8 +67,9 @@ class RxGadget[G <: Gadget[_]] {
   def isEmpty = opt().isEmpty
   
   /**
-   * Set this to the actual Gadget when it's created. We only expect this to be called once
-   * per RxGadget, although nothing currently enforces that.
+   * Set this to the actual Gadget when it's created. This is typically only called once per
+   * RxGadget, but that is specifically not enforced; it is occasionally appropriate to update
+   * the gadget. Keep in mind that opt() will update when this happens!
    */
   def <=(g:G):G = {
     opt() = Some(g)
@@ -70,6 +100,10 @@ class RxGadget[G <: Gadget[_]] {
  * Create this using RxGadget.of[].
  */
 class RxElementGadget[T <: dom.Element] extends RxGadget[Gadget[T]] {
+  /**
+   * This is similar to RxGadget's <= operation, but works with a raw TypedTag and wraps it in a
+   * Gadget. This is used when you declared it with RxGadget.of[].
+   */
   def <=(tag:scalatags.JsDom.TypedTag[T]):Gadget[T] = {
     val g = new TypedGadget(tag, { elem:T => })
     <=(g)
