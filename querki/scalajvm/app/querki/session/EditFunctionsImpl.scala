@@ -267,7 +267,11 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
           Some(thing), 
           model, state, true)
           
-    val filtered = Editor.filteredPropIds
+    val filtered =
+      if (deriveName)
+        Editor.filteredPropIds + Core.NameProp.id
+      else
+        Editor.filteredPropIds
     val filteredPropList = propList.filterNot(pair => filtered.contains(pair._1.id))
     val propInfos = filteredPropList.map { entry =>
       val (prop, propVal) = entry
