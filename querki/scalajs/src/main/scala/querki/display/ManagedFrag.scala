@@ -7,6 +7,7 @@ import js.UndefOr
 import scalatags.JsDom.all._
 import org.scalajs.dom
 import org.querki.jquery._
+import _root_.rx._
 
 import querki.globals._
 
@@ -19,9 +20,9 @@ import querki.globals._
  */
 trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
   
-  var _elem:Option[Output] = None
-  def elemOpt = _elem
-  def elem = _elem.get
+  val elemOptRx = Var[Option[Output]](None)
+  def elemOpt = elemOptRx()
+  def elem = elemOpt.get
   
   /**
    * Slam the element for this Gadget. You should only call this iff the element was actually called from
@@ -30,7 +31,7 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
    * This is intentionally designed for chaining, for ease of use -- it returns this Gadget.
    */
   def setElem(e:dom.Node):this.type = {
-    _elem = Some(e.asInstanceOf[Output])
+    elemOptRx() = Some(e.asInstanceOf[Output])
     val gadgets =
       if ($(elem).hasClass("_withGadget")) {
         val existingGadgets = $(elem).data("gadgets").asInstanceOf[UndefOr[Seq[AnyFrag]]].getOrElse(Seq.empty)
@@ -116,13 +117,14 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
   /**
    * The parent of the resulting Node, once it has been created.
    */
-  var parentOpt:Option[dom.Element] = None
+  val parentOptRx = Var[Option[dom.Element]](None)
+  def parentOpt = parentOptRx()
 
   /**
    * We intercept applyTo() (which is part of Scalatags), to record the parent of this Node.
    */
   override def applyTo(parent:dom.Element) = {
-    parentOpt = Some(parent)
+    parentOptRx() = Some(parent)
     super.applyTo(parent)
   }
 }

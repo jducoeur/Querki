@@ -27,7 +27,7 @@ class StatusLineEcot(e:Ecology) extends ClientEcot(e) with StatusLine with Statu
   lazy val statusGadget = new StatusLineGadget
   
   def showInternal(msg:String, showCmd:JQuery => Unit) = {
-    statusGadget.textGadget._elem match {
+    statusGadget.textGadget.elemOpt match {
       case Some(elem) => {
         $(elem).text(msg)
         showCmd($(elem))
