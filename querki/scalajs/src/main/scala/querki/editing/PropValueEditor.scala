@@ -31,9 +31,9 @@ class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEd
     
     // Functions to toggle the PropertyEditor in and out when you click the name of the property:
     val detailsShown = Var(false)
-    val detailsHolder = RxGadget.of[dom.HTMLDivElement]
+    val detailsHolder = GadgetRef.of[dom.HTMLDivElement]
     lazy val detailsViewer = new PropertyDetails(this)
-    val propDetailsArea = RxGadget[RxDiv]
+    val propDetailsArea = GadgetRef[RxDiv]
     def toggleDetails() = {
       detailsHolder <= detailsViewer
       if (detailsShown()) {

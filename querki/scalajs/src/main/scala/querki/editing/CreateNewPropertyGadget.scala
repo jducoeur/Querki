@@ -28,22 +28,22 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
     modelSelector.setValue("")
   }
   
-  val nameInput = RxGadget[RxText]
+  val nameInput = GadgetRef[RxText]
   
   // TODO: should the Collections simply come from the global info instead of typeInfo? They aren't changeable yet.
   lazy val collButtons =
     typeInfo.collections.headOption.map { coll => ButtonInfo(coll.oid.underlying, coll.displayName, true) } ++
     typeInfo.collections.tail.map { coll => ButtonInfo(coll.oid.underlying, coll.displayName) }
-  lazy val collSelector = RxGadget[RxButtonGroup]
+  lazy val collSelector = GadgetRef[RxButtonGroup]
 
   // Note that Type and Model both register listeners so that, when the user sets one, it clears the other:
-  val typeSelector:RxGadget[RxSelect] = RxGadget[RxSelect].
+  val typeSelector:GadgetRef[RxSelect] = GadgetRef[RxSelect].
     whenSet { g => 
       Obs(g.selectedValOpt) {
         g.selectedValOpt().map(_ => modelSelector.map(_.setValue("")))
       } 
     }
-  val modelSelector = RxGadget[RxSelect].
+  val modelSelector = GadgetRef[RxSelect].
     whenSet { g => 
       Obs(g.selectedValOpt) {
         g.selectedValOpt().map(_ => typeSelector.map(_.setValue("")))

@@ -21,8 +21,8 @@ class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpa
 
   // The add button is only enabled when the selection is non-empty; when pressed, it tells the parent
   // page to add the Property:
-  val addButton = RxGadget[ButtonGadget]
-  val propSelector = RxGadget[RxSelect]
+  val addButton = GadgetRef[ButtonGadget]
+  val propSelector = GadgetRef[RxSelect]
   
   lazy val existingPropIds = Rx { 
     page.instancePropSection().propIds() ++

@@ -18,7 +18,7 @@ class PropertyEditor(val valEditor:PropValueEditor)(implicit val ecology:Ecology
   lazy val prop = valEditor.propInfo
   lazy val propId = prop.oid
   
-  val guts = RxGadget.of[dom.HTMLUListElement].whenSet { x => Gadgets.hookPendingGadgets() }
+  val guts = GadgetRef.of[dom.HTMLUListElement].whenSet { x => Gadgets.hookPendingGadgets() }
   // Initialize guts to empty, so that we can render immediately:
   guts <= ul()
 

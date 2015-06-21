@@ -17,7 +17,7 @@ import querki.display.{Gadget, TypedGadget}
  * So you typically declare this as an empty holder, and then assign to it later in the
  * Scalatags, like this:
  * {{{
- * val myGadget = RxGadget[MyGadget]
+ * val myGadget = GadgetRef[MyGadget]
  * 
  * def funcUsingMyGadget = {
  *   myGadget.someFunction()
@@ -33,17 +33,17 @@ import querki.display.{Gadget, TypedGadget}
  *     myGadget <= new MyGadget(...)
  *   )
  * }}}
- * Note that the RxGadget will implicitly unwrap to the underlying Gadget if the environment
+ * Note that the GadgetRef will implicitly unwrap to the underlying Gadget if the environment
  * calls for that. Use that with some care -- it will throw an exception if the Gadget hasn't
  * been set yet! If you aren't certain whether the Gadget has been set, use map() or flatMap()
  * instead, and it has Option-like semantics. 
  * 
  * You don't usually create this by hand -- use the methods in the companion object to make
- * RxGadget and RxElementGadget.
+ * GadgetRef and GadgetElementRef.
  * 
  * @author jducoeur
  */
-class RxGadget[G <: Gadget[_]] {
+class GadgetRef[G <: Gadget[_]] {
   /**
    * The underlying Gadget that we're tracking here. If you want to react to the
    * Gadget's creation, or be safe when you aren't sure about creation order, observe this.
@@ -70,9 +70,9 @@ class RxGadget[G <: Gadget[_]] {
    * Set this to the actual Gadget when it's created. 
    * 
    * This is typically only called once per
-   * RxGadget, but that is specifically not enforced; it is occasionally appropriate to update
+   * GadgetRef, but that is specifically not enforced; it is occasionally appropriate to update
    * the gadget. Keep in mind that opt() will update when this happens! Note that setting this
-   * does *not* cause the view to update; wrap the RxGadget in an RxDiv if you want that to
+   * does *not* cause the view to update; wrap the GadgetRef in an RxDiv if you want that to
    * happen.
    */
   def <=(g:G):G = {
@@ -95,18 +95,18 @@ class RxGadget[G <: Gadget[_]] {
 }
 
 /**
- * A variant of RxGadget, which you should use when you're just dealing with a raw TypedTag, not
+ * A variant of GadgetRef, which you should use when you're just dealing with a raw TypedTag, not
  * a Gadget per se.
  * 
- * All this really does is provide type-safety for this situation, without requiring that RxGadget
+ * All this really does is provide type-safety for this situation, without requiring that GadgetRef
  * itself know about T.
  * 
- * Create this using RxGadget.of[].
+ * Create this using GadgetRef.of[].
  */
-class RxElementGadget[T <: dom.Element] extends RxGadget[Gadget[T]] {
+class GadgetElementRef[T <: dom.Element] extends GadgetRef[Gadget[T]] {
   /**
-   * This is similar to RxGadget's <= operation, but works with a raw TypedTag and wraps it in a
-   * Gadget. This is used when you declared it with RxGadget.of[].
+   * This is similar to GadgetRef <= operation, but works with a raw TypedTag and wraps it in a
+   * Gadget. This is used when you declared it with GadgetRef.of[].
    */
   def <=(tag:scalatags.JsDom.TypedTag[T]):Gadget[T] = {
     val g = new TypedGadget(tag, { elem:T => })
@@ -114,15 +114,15 @@ class RxElementGadget[T <: dom.Element] extends RxGadget[Gadget[T]] {
   }
 }
 
-object RxGadget {
+object GadgetRef {
   /**
-   * Given an RxGadget, cast it to the actual underlying gadget.
+   * Given an GadgetRef, cast it to the actual underlying gadget.
    * 
-   * IMPORTANT: this uses RxGadget.gadget under the hood, and should only be invoked if you are
+   * IMPORTANT: this uses GadgetRef.gadget under the hood, and should only be invoked if you are
    * confident that the gadget has been initialized!
    */
-  implicit def rx2Gadget[G <: Gadget[_]](rx:RxGadget[G]):G = rx.get
+  implicit def rx2Gadget[G <: Gadget[_]](rx:GadgetRef[G]):G = rx.get
   
-  def apply[G <: Gadget[_]] = new RxGadget[G]
-  def of[T <: dom.Element] = new RxElementGadget[T]
+  def apply[G <: Gadget[_]] = new GadgetRef[G]
+  def of[T <: dom.Element] = new GadgetElementRef[T]
 }

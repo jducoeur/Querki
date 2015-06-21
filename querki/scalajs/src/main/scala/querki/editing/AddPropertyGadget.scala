@@ -10,14 +10,14 @@ import querki.globals._
 import querki.data.{TID => _TID, _}
 import querki.display.{AfterLoading, ButtonGadget, Gadget, WrapperDiv}
 import ButtonGadget._
-import querki.display.rx.RxGadget
+import querki.display.rx.GadgetRef
 
 class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ecology:Ecology) extends Gadget[dom.HTMLDivElement] with EcologyMember {
   
   lazy val DataAccess = interface[querki.data.DataAccess]
   
-  val mainDiv = RxGadget[WrapperDiv]
-  val initButton = RxGadget[ButtonGadget]
+  val mainDiv = GadgetRef[WrapperDiv]
+  val initButton = GadgetRef[ButtonGadget]
   
   lazy val cancelButton = new ButtonGadget(Normal, "Cancel")({ () => reset() })
   
@@ -31,12 +31,12 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   lazy val addExisting = AfterLoading(page.allPropsFut) { spaceProps => 
     addExistingGadget <= new AddExistingPropertyGadget(page, thing, spaceProps, this)
   }
-  val addExistingGadget = RxGadget[AddExistingPropertyGadget]
+  val addExistingGadget = GadgetRef[AddExistingPropertyGadget]
   
   lazy val createNew = AfterLoading(page.allTypesFut) { allTypes =>
     createNewGadget <= new CreateNewPropertyGadget(page, allTypes, this)
   }
-  val createNewGadget = RxGadget[CreateNewPropertyGadget]
+  val createNewGadget = GadgetRef[CreateNewPropertyGadget]
   
   def doRender() = {
     div(

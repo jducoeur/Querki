@@ -41,5 +41,5 @@ case class RxDiv(rxGuts:Rx[Seq[Gadget[_]]], base:Modifier*) extends Gadget[dom.H
 }
 
 object RxDiv {
-  def apply[G <: Gadget[_]](rx:RxGadget[G], base:Modifier*):RxDiv = RxDiv(Rx{ rx.opt().toSeq }, base)  
+  def apply[G <: Gadget[_]](rx:GadgetRef[G], base:Modifier*):RxDiv = RxDiv(Rx{ rx.opt().toSeq }, base)  
 }
