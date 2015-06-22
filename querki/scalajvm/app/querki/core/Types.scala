@@ -91,6 +91,12 @@ trait TextTypeBasis { self:CoreEcot =>
   
 trait NameableType {
   def getName(context:QLContext)(v:ElemValue):String
+  
+  /**
+   * Similar to getName, but if this Type potentially has multiple legitimate names, this
+   * returns all of them. Always returns canonical form.
+   */
+  def getNames(context:QLContext)(v:ElemValue):Seq[String] = Seq(NameUtils.canonicalize(getName(context)(v)))
 }
 
 // Marker trait for NameTypeBase and everything that descends from it:
@@ -570,6 +576,20 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
     def getName(context:QLContext)(v:ElemValue) = {
       val id = get(v)
       getNameFromId(context)(id)
+    }
+    // Iff the display name and canonicalName don't match, return both of them:
+    override def getNames(context:QLContext)(v:ElemValue) = {
+      val id = get(v)
+      follow(context)(id) match {
+        case Some(thing) => {
+          val disp = canonicalize(thing.displayName)
+          thing.canonicalName.map(canonicalize) match {
+            case Some(canon) if (canon != disp) => Seq(disp, canon)
+            case _ => Seq(disp)
+          }
+        }
+        case None => throw new Exception("Trying to get name from unknown OID " + id)
+      }
     }
     
     def getURL(context:QLContext)(elem:ElemValue):Option[String] = {

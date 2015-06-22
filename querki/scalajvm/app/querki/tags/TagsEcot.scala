@@ -75,12 +75,12 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
           val prop = rawProp.confirmType(pt).get
           val tagMap = new scala.collection.mutable.HashMap[String, scala.collection.mutable.Set[Thing]] with scala.collection.mutable.MultiMap[String, Thing]
           for {
-	        path <- PropPaths.pathsToProperty(prop)(state)
-	        thing <- state.allThings
-	        pv <- path.getPropOpt(thing)(state)
-	        text <- pv.rawList
-	        raw = getTag(text)
-	        canon = canonicalize(raw)
+  	        path <- PropPaths.pathsToProperty(prop)(state)
+  	        thing <- state.allThings
+  	        pv <- path.getPropOpt(thing)(state)
+  	        text <- pv.rawList
+  	        raw = getTag(text)
+  	        canon = canonicalize(raw)
           }
           {
             // Record the actual backtag:
@@ -88,19 +88,18 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
             
             // Now, record the mapping from the canonical name to the real name of this 
             nc.getOrElseUpdate(canon, {
-                // There are multiple Tags that can result in a given canonical name. Check whether
-                // this Tag is reified, and use that as the official name if so; otherwise, just trust
-                // the Tag:
-                val realName = 
-                  for {
-                    t <- state.anythingByName(canon)
-                    real <- t.linkName
-                    if (real != raw)
-                  }
-                    yield real
-                realName.getOrElse(raw)
-              }
-            )
+              // There are multiple Tags that can result in a given canonical name. Check whether
+              // this Tag is reified, and use that as the official name if so; otherwise, just trust
+              // the Tag:
+              val realName = 
+                for {
+                  t <- state.anythingByName(canon)
+                  real <- t.linkName
+                  if (real != raw)
+                }
+                  yield real
+              realName.getOrElse(raw)
+            })
           }
           tagMap          
         }
@@ -367,7 +366,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
         prop <- inv.iter(tagProps)
         refMap = cachedTagRefsFor(prop)
         tagElem <- inv.contextElements
-        name = canonicalize(nameableType.getName(inv.context)(tagElem.value.first))
+        name <- inv.iter(nameableType.getNames(inv.context)(tagElem.value.first))
         refs = refMap.get(name).getOrElse(Set.empty[Thing])
         candidate <- inv.iter(refs)
       }

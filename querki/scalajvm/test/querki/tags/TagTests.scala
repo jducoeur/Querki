@@ -106,6 +106,18 @@ class TagTests extends QuerkiTests {
       pql("""[[Target Thing -> Second Tag Prop._tagRefs -> _sort]]""") should
         equal(listOfLinkText(s.source2, s.source4))
     }
+    
+    // Test for Issue .3y2874q
+    "work with a different Link Name than Display Name" in {
+      class TSpace extends CommonSpace {
+        val named = new SimpleTestThing("My Link Name", Basic.DisplayNameProp("My Display Name"))
+        val pointer = new SimpleTestThing("Pointing Thing", singleTagProp("My Link Name"))
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[My Link Name -> _tagRefs]]""") should
+        equal(listOfLinkText(s.pointer))
+    }
   }
   
   // === _tagsForProperty ===
