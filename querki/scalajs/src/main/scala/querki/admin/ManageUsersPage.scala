@@ -9,7 +9,7 @@ import org.querki.jquery._
 import querki.api._
 import AdminFunctions._
 import querki.display.{ButtonGadget, Gadget}
-import querki.display.rx.{RxDiv, RunButton, RxSelect}
+import querki.display.rx._
 import querki.globals._
 import querki.identity.UserLevel._
 import querki.pages._
@@ -47,21 +47,19 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
           if (level == user.level) selected:="selected",
           levelName(level).capitalize)
       })
-    lazy val levelSelector = RxSelect(levelOptions)
-    
-    lazy val choiceObserver = Obs(levelSelector.selectedOption, skipInitial=true) {
-      levelSelector.selectedOption().map { opt =>
-        val newLevel = Integer.parseInt(opt.valueString)
-        Client[AdminFunctions].changeUserLevel(user.userId, newLevel).call().checkForeach { newView =>
-          $(elem).replaceWith(new UserView(newView).render)
-          StatusLine.showBriefly(s"Switched ${newView.mainHandle} to ${levelName(newView.level)}")
+      
+    val levelSelector = GadgetRef[RxSelect].whenSet { g => 
+      Obs(g.selectedOption, skipInitial=true) {
+        g.selectedOption().map { opt =>
+          val newLevel = Integer.parseInt(opt.valueString)
+          if (newLevel != user.level) {
+            Client[AdminFunctions].changeUserLevel(user.userId, newLevel).call().checkForeach { newView =>
+              $(elem).replaceWith(new UserView(newView).render)
+              StatusLine.showBriefly(s"Switched ${newView.mainHandle} to ${levelName(newView.level)}")
+            }
+          }
         }
       }
-    }
-    
-    override def onCreate(e:dom.html.TableRow) = {
-      // This needs to be kicked to life *after* rendering:
-      choiceObserver
     }
     
     def colorClass = {
@@ -87,7 +85,7 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
         else if (user.level == AdminUser && myLevel != SuperadminUser)
           td("Admin")
         else
-          td(levelSelector)
+          td(levelSelector <= RxSelect(levelOptions))
       )
     }
   }
@@ -95,8 +93,8 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
   lazy val allUsersButton =
     new RunButton(ButtonGadget.Normal, "Fetch all users", "Fetching...")({ btn =>
       Client[AdminFunctions].allUsers().call.checkForeach { userList =>
-        allUsers() =
-          Seq[Gadget[_]](
+        allUsersSection <=
+          div(
             h3("All Users"),
             table(cls:="table table-hover",
               thead(
@@ -111,8 +109,7 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
         btn.done()
       }
     })
-  lazy val allUsers = Var[Seq[Gadget[_]]](Seq.empty)
-  lazy val allUsersSection = RxDiv(allUsers)
+  val allUsersSection = GadgetRef.of[dom.html.Div]
   
   def pageContent =
     for {
@@ -138,7 +135,7 @@ class ManageUsersPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
           ),
           hr,
           allUsersButton,
-          allUsersSection
+          allUsersSection <= div(display:="none")
         )
     }
       yield PageContents("Manage Users", guts)
