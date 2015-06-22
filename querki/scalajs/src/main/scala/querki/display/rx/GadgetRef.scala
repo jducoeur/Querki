@@ -1,13 +1,15 @@
 package querki.display.rx
 
 import org.scalajs.dom
+import dom.Element
 import scalatags.JsDom.all._
 import rx._
+import org.querki.jquery._
 
-import querki.display.{Gadget, TypedGadget}
+import querki.display.{Gadget, ManagedFrag, TypedGadget}
 
 /**
- * A wrapper around Gadgets, to make them a bit easier to use. 
+ * A reactive wrapper around Gadgets, to make them a bit easier to use. 
  * 
  * Think of this as a reactive container into which you put a Gadget of a particular type, 
  * which other code can hang off of. This is how you build complex reactive structures, while
@@ -43,7 +45,22 @@ import querki.display.{Gadget, TypedGadget}
  * 
  * @author jducoeur
  */
-class GadgetRef[G <: Gadget[_]] {
+class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
+  
+  def doRender = ???
+  
+  /**
+   * The actual renderer for this reference.
+   * 
+   * If this reference has not yet been set, it will create and return an empty span.
+   * 
+   * TODO: this is type-anonymous -- it simply expects to return an Element. Can we do better?
+   */
+  override def createFrag = {
+    println(s"Rendering GadgetRef around ${opt()}")
+    opt().map(g => g.asInstanceOf[Gadget[Element]].render).getOrElse(span().render).asInstanceOf[Element]
+  }
+  
   /**
    * The underlying Gadget that we're tracking here. If you want to react to the
    * Gadget's creation, or be safe when you aren't sure about creation order, observe this.
@@ -67,18 +84,57 @@ class GadgetRef[G <: Gadget[_]] {
   def isEmpty = opt().isEmpty
   
   /**
+   * Reassigns the contents of this reference, rendering the new Gadget and putting it into place if needed.
+   * 
+   * This is usually called via the <= or <~ operators.
+   * 
+   * TODO: the are a bunch of grungy asInstanceOfs in here. Is there any way to pick up the actual type of the
+   * underlying Gadget without polluting the type signature of this call in such a way that you have to
+   * redundantly state it every time?
+   */
+  def reassign(g:G, retainPrevious:Boolean) = {
+    println(s"Assigning GadgetRef. Was ${opt()}, with elemOpt $elemOpt; now assigning $g")
+    if (elemOpt.isDefined && g.elemOpt.isDefined && elemOpt.get == g.elemOpt.get) {
+      // Reassigning the same value is a no-op
+    } else {
+      val prevElemOpt = elemOpt
+      
+      // If we've been through rendering, render and insert the new one:
+      parentOpt.foreach { parent =>
+        println(s"There is a parent $parent")
+        val r = g.rendered.asInstanceOf[Element]
+        $(r).insertBefore(elem)
+        println(s"I have inserted $r before $elem")
+        elemOptRx() = Some(r)
+      }
+      
+      // Detach/remove the previous element from the DOM, if it is there:
+      prevElemOpt.foreach { e =>
+        if (retainPrevious)
+          $(e).detach()
+        else
+          $(e).remove()
+      }
+      
+      opt() = Some(g)
+    }
+    this    
+  }
+  
+  /**
    * Set this to the actual Gadget when it's created. 
    * 
-   * This is typically only called once per
-   * GadgetRef, but that is specifically not enforced; it is occasionally appropriate to update
-   * the gadget. Keep in mind that opt() will update when this happens! Note that setting this
-   * does *not* cause the view to update; wrap the GadgetRef in an RxDiv if you want that to
-   * happen.
+   * If this reference was already rendered, this will render the new gadget and reparent it where the
+   * reference lives.
    */
-  def <=(g:G):G = {
-    opt() = Some(g)
-    g
-  }
+  def <=(g:G) = reassign(g, false)
+  
+  /**
+   * The same as <=, but doesn't remove the old value from the DOM. Use this if you expect to reuse the
+   * Gadgets that you are assigning. (Typically when this reference is somehow modal, and you don't want
+   * to regenerate the Gadgets every time because they are expensive.)
+   */
+  def <~(g:G) = reassign(g, true)
   
   /**
    * This defines a callback for when the Gadget actually gets defined. Note that this does *not*
@@ -108,21 +164,11 @@ class GadgetElementRef[T <: dom.Element] extends GadgetRef[Gadget[T]] {
    * This is similar to GadgetRef <= operation, but works with a raw TypedTag and wraps it in a
    * Gadget. This is used when you declared it with GadgetRef.of[].
    */
-  def <=(tag:scalatags.JsDom.TypedTag[T]):Gadget[T] = {
-    val g = new TypedGadget(tag, { elem:T => })
-    <=(g)
-  }
+  def <=(tag:scalatags.JsDom.TypedTag[T]) = reassign(new TypedGadget(tag, { elem:T => }), false)
+  def <~(tag:scalatags.JsDom.TypedTag[T]) = reassign(new TypedGadget(tag, { elem:T => }), true)
 }
 
 object GadgetRef {
-  /**
-   * Given an GadgetRef, cast it to the actual underlying gadget.
-   * 
-   * IMPORTANT: this uses GadgetRef.gadget under the hood, and should only be invoked if you are
-   * confident that the gadget has been initialized!
-   */
-  implicit def rx2Gadget[G <: Gadget[_]](rx:GadgetRef[G]):G = rx.get
-  
   def apply[G <: Gadget[_]] = new GadgetRef[G]
   def of[T <: dom.Element] = new GadgetElementRef[T]
 }

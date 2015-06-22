@@ -29,32 +29,39 @@ class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEd
     val tooltip = info.tooltip.map(_.plaintext).getOrElse(propInfo.displayName)
     def stdThings = section.page.std
     
+    val propDetailsArea = GadgetRef.of[dom.HTMLDivElement]
     // Functions to toggle the PropertyEditor in and out when you click the name of the property:
     val detailsShown = Var(false)
-    val detailsHolder = GadgetRef.of[dom.HTMLDivElement]
     lazy val detailsViewer = new PropertyDetails(this)
-    val propDetailsArea = GadgetRef[RxDiv]
+    def hideDetails(cb:Function[Unit, Unit]) = {
+      propDetailsArea.elemOpt.map($(_).slideUp(400, cb))
+      detailsShown() = false
+    }
     def toggleDetails() = {
-      detailsHolder <= detailsViewer
       if (detailsShown()) {
-        propDetailsArea.elemOpt.map($(_).slideUp())
+        hideDetails({ _ => })
       } else {
+        propDetailsArea <~ detailsViewer
+        // TODO: we'd really like to slide this down smoothly *after* the details are fetched and rendered,
+        // but the pathways for that are messy, especially because Rx has no good mechanism for expressing
+        // a one-shot edge-trigger. That could use an enhancement.
         propDetailsArea.elemOpt.map($(_).slideDown())
+        detailsShown() = true
       }
-      detailsShown() = !detailsShown()
     }
     
     lazy val propEditor = new PropertyEditor(this)
+    // This gets called by PropertyDetails:
     def showPropEditor() = {
-      detailsHolder <= propEditor
+      propDetailsArea <~ propEditor
       propDetailsArea.elemOpt.map($(_).show())
       detailsShown() = true
     }
     
+    // This gets called by PropertyEditor:
     def propEditDone() = {
-      detailsHolder <= div()
-      toggleDetails()
-      section.refreshEditor(this)
+      // Do the real changes after we slideUp:
+      hideDetails({ _ => section.refreshEditor(this) })
     }
     
     def doRender() = 
@@ -72,7 +79,7 @@ class PropValueEditor(val info:PropEditInfo, val section:PropertySection, openEd
         ),
         if (propId == stdThings.basic.displayNameProp.oid)
           new DeriveNameCheck(this),
-        propDetailsArea <= RxDiv(detailsHolder, display:="none", width:="100%")
+        propDetailsArea <= div(display:="none", width:="100%")
       )
       
     override def onCreate(e:dom.HTMLLIElement) = {

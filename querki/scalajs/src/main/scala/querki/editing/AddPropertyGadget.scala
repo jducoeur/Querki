@@ -24,7 +24,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
   def reset() = {
     addExistingGadget.map(_.reset())
     createNewGadget.map(_.reset())
-    mainDiv.replaceContents(initButton.rendered, true)
+    mainDiv.map(_.replaceContents(initButton.rendered, true))
   }
   
   // This is a bit boilerplatey, but we're trying not to evaluate addExisting unnecessarily
@@ -42,7 +42,7 @@ class AddPropertyGadget(page:ModelDesignerPage, thing:ThingInfo)(implicit val ec
     div(
       mainDiv <= (new WrapperDiv).initialContent(
         initButton <= new ButtonGadget(Info, icon("plus"), " Add a Property")({ () =>
-          mainDiv.replaceContents(addExisting.rendered, true)
+          mainDiv.get.replaceContents(addExisting.rendered, true)
         })
       )
     )

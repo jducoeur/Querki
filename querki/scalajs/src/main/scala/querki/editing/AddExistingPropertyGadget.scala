@@ -16,7 +16,7 @@ class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpa
   val optLabel = "label".attr
   
   def reset() = {
-    propSelector.setValue("")
+    propSelector.get.setValue("")
   }
 
   // The add button is only enabled when the selection is non-empty; when pressed, it tells the parent
@@ -65,7 +65,7 @@ class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpa
     option("Choose a Property...", value:="") +: processProps(mainSpaceProps)
   }
   
-  lazy val selectedProperty = propSelector.selectedTIDOpt
+  lazy val selectedProperty = propSelector.get.selectedTIDOpt
   
   def doRender() = {
     val result = div(cls:="well container col-md-12",
@@ -83,10 +83,10 @@ class AddExistingPropertyGadget(page:ModelDesignerPage, thing:ThingInfo, mainSpa
               })
           ),
           hr,
-          p(new ButtonGadget(ButtonGadget.Info, "Create a new Property instead")({ () => apg.mainDiv.replaceContents(apg.createNew.rendered, true) }), apg.cancelButton)
+          p(new ButtonGadget(ButtonGadget.Info, "Create a new Property instead")({ () => apg.mainDiv.get.replaceContents(apg.createNew.rendered, true) }), apg.cancelButton)
         ),
         div(cls:="col-md-7", 
-          new DescriptionDiv(page, propSelector.selectedWithTID)
+          new DescriptionDiv(page, propSelector.get.selectedWithTID)
         )
       )
     )

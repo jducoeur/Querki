@@ -23,9 +23,9 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   val std = DataAccess.std
   
   def reset() = {
-    nameInput.setValue("")
-    typeSelector.setValue("")
-    modelSelector.setValue("")
+    nameInput.map(_.setValue(""))
+    typeSelector.map(_.setValue(""))
+    modelSelector.map(_.setValue(""))
   }
   
   val nameInput = GadgetRef[RxText]
@@ -52,16 +52,16 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
   
   // The chosen basis is *either* a Model or a Type. selected() combines the currently-chosen value and its
   // RxSelect:
-  lazy val selectedBasis = Rx { modelSelector.selectedWithTID() orElse typeSelector.flatMap(_.selectedWithTID()) }
+  lazy val selectedBasis = Rx { modelSelector.flatMap(_.selectedWithTID()) orElse typeSelector.flatMap(_.selectedWithTID()) }
   
   // The add button is only enabled when all fields are non-empty; when pressed, it tells the parent
   // page to add the Property:
   lazy val addButton = 
     new ButtonGadget(Info, 
-        disabled := Rx{ nameInput.textOpt().isEmpty || collSelector.selectedTIDOpt().isEmpty || selectedBasis().isEmpty }, 
+        disabled := Rx{ nameInput.get.textOpt().isEmpty || collSelector.get.selectedTIDOpt().isEmpty || selectedBasis().isEmpty }, 
         "Create")({ () =>
-      val name = nameInput.textOpt().get
-      val coll = collSelector.selectedTIDOpt().get
+      val name = nameInput.get.textOpt().get
+      val coll = collSelector.get.selectedTIDOpt().get
       val (selector, oid) = selectedBasis().get
       if (selector == modelSelector.get) {
         // We're creating it based on a Model, so we need to get the Model Type. Note that this is async:
@@ -125,6 +125,6 @@ class CreateNewPropertyGadget(page:ModelDesignerPage, typeInfo:AllTypeInfo, apg:
         addButton
       ),
       hr,
-      p(new ButtonGadget(Info, "Add an Existing Property")({ () => apg.mainDiv.replaceContents(apg.addExisting.rendered, true) }), apg.cancelButton)
+      p(new ButtonGadget(Info, "Add an Existing Property")({ () => apg.mainDiv.get.replaceContents(apg.addExisting.rendered, true) }), apg.cancelButton)
     )
 }
