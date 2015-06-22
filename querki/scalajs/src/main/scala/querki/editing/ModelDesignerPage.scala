@@ -16,7 +16,7 @@ import EditFunctions._
 import querki.data.{BasicThingInfo, PropInfo, SpaceProps, ThingInfo}
 import querki.display.{Gadget, RawDiv, WithTooltip}
 import querki.display.input.{DeleteInstanceButton, InputGadget}
-import querki.display.rx.{RxDiv, RxThingSelector}
+import querki.display.rx.{RxThingSelector}
 import querki.pages._
 
 class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
