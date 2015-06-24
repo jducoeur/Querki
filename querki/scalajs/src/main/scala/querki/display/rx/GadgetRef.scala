@@ -46,7 +46,7 @@ import querki.display.{Gadget, ManagedFrag, TypedGadget}
  * @author jducoeur
  */
 class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
-  
+
   def doRender = ???
   
   /**
@@ -57,7 +57,6 @@ class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
    * TODO: this is type-anonymous -- it simply expects to return an Element. Can we do better?
    */
   override def createFrag = {
-    println(s"Rendering GadgetRef around ${opt()}")
     opt().map(g => g.asInstanceOf[Gadget[Element]].render).getOrElse(span().render).asInstanceOf[Element]
   }
   
@@ -93,7 +92,6 @@ class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
    * redundantly state it every time?
    */
   def reassign(g:G, retainPrevious:Boolean) = {
-    println(s"Assigning GadgetRef. Was ${opt()}, with elemOpt $elemOpt; now assigning $g")
     if (elemOpt.isDefined && g.elemOpt.isDefined && elemOpt.get == g.elemOpt.get) {
       // Reassigning the same value is a no-op
     } else {
@@ -101,10 +99,8 @@ class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
       
       // If we've been through rendering, render and insert the new one:
       parentOpt.foreach { parent =>
-        println(s"There is a parent $parent")
         val r = g.rendered.asInstanceOf[Element]
         $(r).insertBefore(elem)
-        println(s"I have inserted $r before $elem")
         elemOptRx() = Some(r)
       }
       
