@@ -38,4 +38,13 @@ class ImexportEcot(e:Ecology) extends QuerkiEcot(e) with Imexport {
     
     exporter.exportInstances(model, instances)
   }
+  
+  def exportSpace(rc:RequestContext)(implicit state:SpaceState):String = {
+    // For now, only the Owner is allowed to Export
+    // TODO: this should really be a permission, that Manager and Owner have
+    if (!rc.requesterOrAnon.hasIdentity(state.owner))
+      throw new PublicException("Imexport.ownerOnly")
+    
+    (new XMLExporter).exportSpace(state)
+  }
 }

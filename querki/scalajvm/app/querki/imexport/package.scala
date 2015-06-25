@@ -18,6 +18,7 @@ package object imexport {
   object Format {    
     val Unknown = 0
     val CSV = 1
+    val XML = 2
   }
   type Format = Int
 
@@ -37,5 +38,15 @@ package object imexport {
      * Will throw a PublicException if something goes wrong, so this should be wrapped in a TryTrans.
      */
     def exportInstances(rc:RequestContext, format:Format, model:Thing)(implicit state:SpaceState):ExportedContent
+    
+    /**
+     * Export an entire Space as XML.
+     * 
+     * For now, we're not bothering to take a Format; I'm not sure we're ever going to do a full
+     * export to anything *but* XML.
+     * 
+     * TODO: in the medium term, this should produce a stream of bytes, not a String.
+     */
+    def exportSpace(rc:RequestContext)(implicit state:SpaceState):String
   }
 }

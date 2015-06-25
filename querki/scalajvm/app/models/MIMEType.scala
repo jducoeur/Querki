@@ -8,4 +8,5 @@ object MIMEType {
   val PNG = "image/png"
   val JSON = "application/json"
   val CSV = "text/csv"
+  val XML = "text/xml"
 }

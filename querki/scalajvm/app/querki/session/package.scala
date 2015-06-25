@@ -1,6 +1,7 @@
 package querki
 
 import scala.concurrent.Future
+import scala.reflect.ClassTag
 
 import akka.actor.ActorRef
 
@@ -35,6 +36,16 @@ package object session {
      * Asynchronously fetch all of this Identity's Collaborators -- people they share Spaces with --  who fit the given search term.
      */
     def getCollaborators(user:User, identity:Identity, term:String):Future[UserSessionMessages.Collaborators]
+  }
+  
+  /**
+   * Post-init-time interface for registering handlers for Session APIs.
+   */
+  trait SessionHandlerRegistry extends EcologyInterface {
+    /**
+     * Registers the given IMPL as the implementation for the specified API. Should be called during postInit()!
+     */
+    def registerUserSessionImplFor[API, IMPL <: API with AutowireApiImpl](implicit apiTag:ClassTag[API], implTag:ClassTag[IMPL])
   }
   
 }

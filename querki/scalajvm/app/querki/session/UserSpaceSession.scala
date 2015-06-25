@@ -20,6 +20,7 @@ import Implicits.execContext
 import querki.api._
 import querki.conversations.{ConversationFunctions, ConversationFunctionsImpl}
 import querki.identity.{Identity, User}
+import querki.imexport.ImexportFunctions
 import querki.session.messages._
 import querki.spaces.messages.{ChangeProps, CurrentState, SessionRequest, SpacePluginMsg, ThingError, ThingFound}
 import querki.spaces.messages.SpaceError._
@@ -46,6 +47,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Person = interface[querki.identity.Person]
+  lazy val SessionInvocation = interface[SessionInvocation]
   lazy val System = interface[querki.system.System]
   lazy val UserValues = interface[querki.uservalues.UserValues]
   
@@ -300,7 +302,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
   def write[Result: Writer](r: Result) = upickle.write(r)
   def read[Result: Reader](p: String) = upickle.read[Result](p)
   
-  def mkParams(rc:RequestContext) = AutowireParams(user, state, rc, spaceRouter, this)
+  def mkParams(rc:RequestContext) = AutowireParams(user, state, rc, spaceRouter, this, sender)
   
   def normalReceive:Receive = LoggingReceive (handleRequestResponse orElse {
     case CurrentState(s) => setRawState(s)
@@ -365,16 +367,18 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
               case "EditFunctions" => {
                 handleRequest(new EditFunctionsImpl(params))(route[EditFunctions](_)(req))
               }
+//              case "ImexportFunctions" => {
+//                handleRequest(new querki.imexport.ImexportFunctionsImpl(params))(route[ImexportFunctions](_)(req))
+//              }
               case "SearchFunctions" => {
                 handleRequest(new SearchFunctionsImpl(params))(route[SearchFunctions](_)(req))
               }
               case "SecurityFunctions" => {
                 handleRequest(new querki.security.SecurityFunctionsImpl(params))(route[SecurityFunctions](_)(req))
               }
-              case "ThingFunctions" => {
-                handleRequest(new ThingFunctionsImpl(params))(route[ThingFunctions](_)(req))
+              case _ => { 
+                SessionInvocation.handleSessionRequest(req, params)
               }
-              case _ => { sender ! ClientError("Unknown API ID!") }
             }
           } catch {
             case ex:Exception => handleException(ex, sender, rc)

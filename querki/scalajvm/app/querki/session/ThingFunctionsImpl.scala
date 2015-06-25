@@ -25,6 +25,8 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
   lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   lazy val Stylesheets = interface[querki.css.Stylesheets]
   
+  override def doRoute(req:Request):Future[String] = route[ThingFunctions](this)(req)
+  
   def getRequestInfo():RequestInfo = ClientApi.requestInfo(rc)(state)
   
   def getThingInfo(thingId:TID) = withThing(thingId) { thing =>

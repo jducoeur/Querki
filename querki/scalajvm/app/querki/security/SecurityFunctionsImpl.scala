@@ -2,13 +2,10 @@ package querki.security
 
 import scala.concurrent.Future
 
-import querki.globals._
-
 import models.{AsOID, Thing, ThingId}
 import querki.api._
 import querki.data._
 import querki.globals._
-import Implicits.execContext
 import querki.identity.InvitationResult
 import querki.session.{AutowireApiImpl, AutowireParams}
 

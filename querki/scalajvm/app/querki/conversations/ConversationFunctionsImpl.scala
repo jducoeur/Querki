@@ -7,7 +7,6 @@ import akka.actor._
 import models.{UnknownOID, Wikitext}
 
 import querki.globals._
-import Implicits._
 
 import querki.data.TID
 import querki.identity.PublicIdentity
