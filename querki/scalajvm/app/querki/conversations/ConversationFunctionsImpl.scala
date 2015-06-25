@@ -30,6 +30,8 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val Person = interface[querki.identity.Person]
   
+  def doRoute(req:Request):Future[String] = route[ConversationFunctions](this)(req)
+  
   def getIds(node:ConversationNode):Set[OID] = {
     getIds(node.responses) + node.comment.authorId
   }

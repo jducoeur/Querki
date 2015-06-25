@@ -23,6 +23,8 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
+  def doRoute(req:Request):Future[String] = route[AdminFunctions](this)(req)
+  
   def statistics():Future[QuerkiStats] = {
     requestFuture[QuerkiStats] { implicit promise =>
       SpaceOps.spaceManager.request(GetSpaceCount(user)) foreach {

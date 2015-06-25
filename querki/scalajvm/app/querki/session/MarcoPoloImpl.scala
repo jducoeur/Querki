@@ -1,5 +1,7 @@
 package querki.session
 
+import scala.concurrent.Future
+
 import models.{OID, Thing, ThingId}
 
 import querki.globals._
@@ -11,6 +13,10 @@ class MarcoPoloImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApi
   lazy val Core = interface[querki.core.Core]
   lazy val Links = interface[querki.links.Links]
   lazy val Tags = interface[querki.tags.Tags]
+  
+  // MarcoPoloImpl behaves differently from everything else. (This should eventually get fixed, but
+  // that requires rewriting the client side.)
+  def doRoute(req:Request):Future[String] = ???
   
   def handleMarcoPoloRequest(propIdOpt:Option[ThingId], q:String):MarcoPoloResponse = {
     implicit val s = state

@@ -50,6 +50,8 @@ class SessionEcot(e:Ecology) extends QuerkiEcot(e) with Session with SessionHand
   
   override def postInit() = {
     registerUserSessionImplFor[querki.api.ThingFunctions, ThingFunctionsImpl]
+    registerUserSessionImplFor[querki.api.EditFunctions, EditFunctionsImpl]
+    registerUserSessionImplFor[querki.api.SearchFunctions, SearchFunctionsImpl]
   }
   
   /**************************************************

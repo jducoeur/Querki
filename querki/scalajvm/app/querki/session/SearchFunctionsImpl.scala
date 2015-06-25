@@ -1,5 +1,7 @@
 package querki.session
 
+import scala.concurrent.Future
+
 import querki.globals._
 
 import querki.api.SearchFunctions
@@ -9,6 +11,8 @@ class SearchFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autow
 
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Search = interface[querki.search.Search]
+  
+  def doRoute(req:Request):Future[String] = route[SearchFunctions](this)(req)
   
   def search(q:String):Option[SearchResults] = {
     implicit val s = state

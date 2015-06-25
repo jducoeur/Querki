@@ -36,6 +36,8 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   
   lazy val doLogEdits = Config.getBoolean("querki.test.logEdits", false)
   
+  def doRoute(req:Request):Future[String] = route[EditFunctions](this)(req)
+  
   // TODO: this should really return a Try, or something like that, returning a more explicit Exception.
   // Getting None here means that the given value failed validation.
   // TODO: do a much finer-grained validation here, and return more-precise errors.

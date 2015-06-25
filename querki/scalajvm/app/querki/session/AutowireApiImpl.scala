@@ -128,7 +128,7 @@ abstract class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends
    * def doRoute(req:Request) = route[ThingyFunctions](this)(req)
    * }}}
    */
-  def doRoute(req:Request):Future[String] = { ??? }
+  def doRoute(req:Request):Future[String]
   
   def handleRequest(req:Request) = {
     doRoute(req).onComplete { 

@@ -9,5 +9,5 @@ trait ImexportFunctions {
    * 
    * Only a Manager may call this.
    */
-  def exportSpace:String
+  def exportSpace():String
 }

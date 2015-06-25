@@ -37,12 +37,17 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   val Links = initRequires[querki.links.Links]
   val Person = initRequires[querki.identity.Person]
   val Profiler = initRequires[querki.tools.Profiler]
+  lazy val SessionHandlerRegistry = interface[querki.session.SessionHandlerRegistry]
     
   lazy val QLType = Basic.QLType
   
   lazy val LinkModelProp = Links.LinkModelProp
   
   lazy val hasPermissionProfile = Profiler.createHandle("AccessControl.hasPermission")
+  
+  override def postInit() = {
+    SessionHandlerRegistry.registerUserSessionImplFor[querki.api.SecurityFunctions, SecurityFunctionsImpl]
+  }
   
   // TBD: this checks whether this person is a Member based on the Person records in the Space. Should we use
   // the SpaceMembership table instead? In general, there is a worrying semantic duplication here. We should

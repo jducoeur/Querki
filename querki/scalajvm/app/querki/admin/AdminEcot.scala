@@ -35,6 +35,7 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
   import MOIDs._
   
   lazy val NotifierRegistry = interface[querki.notifications.NotifierRegistry]
+  lazy val SessionHandlerRegistry = interface[querki.session.SessionHandlerRegistry]
   
   /**
    * The one true handle to the Admin Actor, which deals with asynchronous communications with the other Actors.
@@ -51,6 +52,7 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
   
   override def postInit() = {
     NotifierRegistry.register(SystemMessageNotifier)
+    SessionHandlerRegistry.registerUserSessionImplFor[querki.api.AdminFunctions, AdminFunctionsImpl]
   }
   
   override def term() = {

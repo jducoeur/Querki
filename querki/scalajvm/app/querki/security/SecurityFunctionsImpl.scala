@@ -21,6 +21,8 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Aut
   lazy val Person = interface[querki.identity.Person]
   lazy val Roles = interface[Roles]
   
+  def doRoute(req:Request):Future[String] = route[SecurityFunctions](this)(req)
+  
   implicit def oid2tid(oid:OID):TID = TID(oid.toThingId.toString)
   
   def getSecurityInfo():SpaceSecurityInfo = {
