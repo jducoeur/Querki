@@ -15,12 +15,9 @@ import models.{AsName, AsOID, OID, PType, Thing, ThingId, ThingState, UnknownOID
 import models.Thing.PropMap
 
 import querki.globals._
-import Implicits.execContext
 
-import querki.api._
-import querki.conversations.{ConversationFunctions, ConversationFunctionsImpl}
+import querki.api.{EditException, SecurityException}
 import querki.identity.{Identity, User}
-import querki.imexport.ImexportFunctions
 import querki.session.messages._
 import querki.spaces.messages.{ChangeProps, CurrentState, SessionRequest, SpacePluginMsg, ThingError, ThingFound}
 import querki.spaces.messages.SpaceError._
@@ -312,8 +309,6 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
       payload match {
         
         case ClientRequest(req, rc) => {
-          val apiName = req.path(2)
-            
           def handleException(th:Throwable, s:ActorRef, rc:RequestContext) = {
             th match {
               case aex:querki.api.ApiException => {
@@ -330,57 +325,25 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
                 s ! ClientError(write(aex))
               }
               case pex:PublicException => {
-                QLog.error(s"$apiName replied with PublicException $th instead of ApiException when invoking $req")
+                QLog.error(s"Replied with PublicException $th instead of ApiException when invoking $req")
                 s ! ClientError(pex.display(Some(rc)))
               }
               case ex:Exception => {
-                QLog.error(s"Got exception from $apiName when invoking $req", ex)
+                QLog.error(s"Got exception when invoking $req", ex)
                 s ! ClientError(UnexpectedPublicException.display(Some(rc)))                
               }
               case _ => {
-                QLog.error(s"Got exception from $apiName when invoking $req: $th")
+                QLog.error(s"Got exception when invoking $req: $th")
                 s ! ClientError(UnexpectedPublicException.display(Some(rc)))
               }
             }              
           }
           
           try {
-            def params = mkParams(rc)
-            
-            def handleRequest[T <: AutowireApiImpl](mkHandler: => T)(doRoute:T => Future[String]) = {
-                // route() is asynchronous, so we need to store away the sender!
-                val senderSaved = sender
-                val handler = mkHandler
-                doRoute(handler).onComplete { 
-                  case Success(result) => senderSaved ! ClientResponse(result)
-                  case Failure(ex) => handleException(ex, senderSaved, handler.rc)
-                }              
-            }
-          
-            apiName match {
-//              case "AdminFunctions" => {
-//                handleRequest(new querki.admin.AdminFunctionsImpl(params))(route[AdminFunctions](_)(req))
-//              }
-//              case "ConversationFunctions" => {
-//                handleRequest(new ConversationFunctionsImpl(params))(route[ConversationFunctions](_)(req))
-//              }
-//              case "EditFunctions" => {
-//                handleRequest(new EditFunctionsImpl(params))(route[EditFunctions](_)(req))
-//              }
-//              case "ImexportFunctions" => {
-//                handleRequest(new querki.imexport.ImexportFunctionsImpl(params))(route[ImexportFunctions](_)(req))
-//              }
-//              case "SearchFunctions" => {
-//                handleRequest(new SearchFunctionsImpl(params))(route[SearchFunctions](_)(req))
-//              }
-//              case "SecurityFunctions" => {
-//                handleRequest(new querki.security.SecurityFunctionsImpl(params))(route[SecurityFunctions](_)(req))
-//              }
-              case _ => { 
-                SessionInvocation.handleSessionRequest(req, params)
-              }
-            }
+            SessionInvocation.handleSessionRequest(req, mkParams(rc))
           } catch {
+            // Note that this only catches synchronous exceptions; asynchronous ones get
+            // handled in AutowireApiImpl
             case ex:Exception => handleException(ex, sender, rc)
           }
         }
