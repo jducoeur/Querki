@@ -3,17 +3,19 @@ package querki.display.input
 import scala.util.{Failure, Success}
 import scala.scalajs.js
 import js.UndefOr
+
 import upickle._
 import autowire._
 import org.scalajs.dom.{raw => dom}
 import org.querki.jquery._
 import scalatags.JsDom.all._
+
 import querki.globals._
-import querki.api.EditFunctions
-import EditFunctions._
 import querki.data.BasicThingInfo
 import querki.display._
 import querki.display.HookedGadget
+import querki.editing.EditFunctions
+import EditFunctions._
 
 /**
  * Base class for input controls. When you create a new concrete class, make sure to add it to

@@ -6,11 +6,12 @@ import autowire._
 
 import querki.globals._
 
-import querki.api.{EditFunctions, ThingFunctions}
-import querki.api.EditFunctions.{ChangePropertyValue, PropertyChange}
+import querki.api.ThingFunctions
 import querki.data.ThingInfo
 import querki.display.QText
 import querki.display.input.InputGadget
+import querki.editing.EditFunctions
+import EditFunctions.{ChangePropertyValue, PropertyChange}
 
 class CreateAndEditPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
 

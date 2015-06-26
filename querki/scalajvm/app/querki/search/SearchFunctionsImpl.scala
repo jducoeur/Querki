@@ -1,13 +1,13 @@
-package querki.session
+package querki.search
 
 import scala.concurrent.Future
-
 import querki.globals._
-
-import querki.api.SearchFunctions
-import SearchFunctions._
+import querki.session.AutowireApiImpl
+import querki.session.AutowireParams
 
 class SearchFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with SearchFunctions {
+  
+  import SearchFunctions._
 
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Search = interface[querki.search.Search]

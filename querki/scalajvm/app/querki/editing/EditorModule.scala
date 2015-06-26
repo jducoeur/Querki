@@ -30,12 +30,17 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
   lazy val HtmlUI = interface[querki.html.HtmlUI]
   lazy val DeriveName = interface[querki.types.DeriveName]
+  lazy val SessionHandlerRegistry = interface[querki.session.SessionHandlerRegistry]
   lazy val UserValues = interface[querki.uservalues.UserValues]
   
   lazy val PlainTextType = Basic.PlainTextType
   
   lazy val DisplayTextProp = Basic.DisplayTextProp
   lazy val NameProp = Core.NameProp
+  
+  override def postInit() = {
+    SessionHandlerRegistry.registerUserSessionImplFor[EditFunctions, EditFunctionsImpl]
+  }
   
   def getInstanceEditor(thing:PropertyBundle, context:QLContext, currentValue:Option[DisplayPropVal] = None):Wikitext = {
     instanceEditorForThing(thing, context.next(thing.thisAsQValue).copy(currentValue = currentValue)(context.state, ecology), None)

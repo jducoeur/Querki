@@ -7,11 +7,12 @@ import autowire._
 
 import querki.globals._
 
-import querki.api.{EditFunctions, ThingFunctions}
-import EditFunctions.ChangePropertyValue
+import querki.api.ThingFunctions
 import querki.data.ThingInfo
 import querki.display.Dialog
 import querki.display.rx.RxSelect
+import querki.editing.EditFunctions
+import EditFunctions.ChangePropertyValue
 import querki.pages.PageImplicits
 
 class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.util.ScalatagUtils with PageImplicits {

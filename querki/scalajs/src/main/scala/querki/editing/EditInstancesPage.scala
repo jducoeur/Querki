@@ -8,7 +8,7 @@ import autowire._
 
 import querki.globals._
 
-import querki.api.{EditFunctions, ThingFunctions}
+import querki.api.ThingFunctions
 import EditFunctions.PropertyChange
 import querki.data.ThingInfo
 import querki.display.{HookedGadget, PagePaginator, QText}

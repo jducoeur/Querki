@@ -1,9 +1,10 @@
-package querki.api
+package querki.admin
 
 import scala.concurrent.Future
-
 import querki.data.TID
 import querki.identity.UserLevel._
+import AdminFunctions.AdminUserView
+import AdminFunctions.QuerkiStats
 
 /**
  * Client/Server Admin capabilities. You may only call these APIs if the logged-in session has admin rights.

@@ -1,4 +1,4 @@
-package querki.api
+package querki.search
 
 import querki.data.ThingInfo
 

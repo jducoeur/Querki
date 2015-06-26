@@ -1,11 +1,8 @@
 package querki.admin
 
 import scala.concurrent.Future
-
 import models.{AsOID, ThingId}
-
 import querki.globals._
-
 import querki.api._
 import AdminFunctions._
 import querki.data.TID

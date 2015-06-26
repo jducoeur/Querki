@@ -1,4 +1,4 @@
-package querki.api
+package querki.security
 
 import scala.concurrent.Future
 

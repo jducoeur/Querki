@@ -7,7 +7,6 @@ import rx._
 
 import querki.globals._
 
-import querki.api.EditFunctions
 import querki.display.{ButtonGadget, Gadget}
 import querki.display.rx._
   

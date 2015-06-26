@@ -7,11 +7,10 @@ import rx._
 
 import querki.globals._
 
-import querki.api.EditFunctions
-import EditFunctions.PropEditInfo
 import querki.display.{Gadget, RawDiv, WithTooltip}
 import querki.display.input.DeleteInstanceButton
 import querki.display.rx._
+import EditFunctions.PropEditInfo
   
 /**
  * TODO: this was originally a horizontal form, with the labels on the left and the controls on the right.

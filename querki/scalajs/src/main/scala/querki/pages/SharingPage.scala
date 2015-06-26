@@ -19,6 +19,8 @@ import querki.data.ThingInfo
 import querki.display.{ButtonGadget, Gadget, RawDiv}
 import querki.display.input.{InputGadget, LargeTextInputGadget, ManifestItem}
 import querki.display.rx.{RunButton, RxTextFrag}
+import querki.editing.EditFunctions
+import querki.security.{PersonInfo, SecurityFunctions}
 
 class SharingPage(implicit e:Ecology) extends Page(e) with EcologyMember {
   

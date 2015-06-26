@@ -11,7 +11,6 @@ import rx.ops._
 
 import querki.globals._
 
-import querki.api.EditFunctions
 import EditFunctions._
 import querki.data.{BasicThingInfo, PropInfo, SpaceProps, ThingInfo}
 import querki.display.{Gadget, RawDiv, WithTooltip}

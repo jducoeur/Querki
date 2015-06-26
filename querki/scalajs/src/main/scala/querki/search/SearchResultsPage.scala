@@ -7,8 +7,7 @@ import autowire._
 
 import querki.globals._
 
-import querki.api.SearchFunctions
-import querki.api.SearchFunctions._
+import SearchFunctions._
 import querki.display.Gadget
 import querki.pages.{Page, PageContents, ParamMap}
 import scala.scalajs.js.Any.fromFunction1

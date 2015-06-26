@@ -1,9 +1,12 @@
-package querki.api
+package querki.editing
 
 import scala.concurrent.Future
-
 import models.Wikitext
 import querki.data._
+import EditFunctions.FullEditInfo
+import EditFunctions.PropEditInfo
+import EditFunctions.PropertyChange
+import EditFunctions.PropertyChangeResponse
 
 trait EditFunctions {
   import EditFunctions._

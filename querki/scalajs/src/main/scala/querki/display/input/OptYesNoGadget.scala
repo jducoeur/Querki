@@ -6,7 +6,7 @@ import org.querki.jquery._
 
 import querki.globals._
 
-import querki.api.EditFunctions
+import querki.editing.EditFunctions
 import EditFunctions._
 
 /**

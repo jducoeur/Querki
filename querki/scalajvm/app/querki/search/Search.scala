@@ -13,24 +13,29 @@ object MOIDs extends EcotIds(19)
 class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search {
   
   lazy val AccessControl = interface[querki.security.AccessControl]
+  lazy val SessionHandlerRegistry = interface[querki.session.SessionHandlerRegistry]
+  
+  override def postInit() = {
+    SessionHandlerRegistry.registerUserSessionImplFor[SearchFunctions, SearchFunctionsImpl]
+  }
   
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
   
-  def search(searchStr:String)(implicit state:SpaceState):Option[SearchResults] = {
+  def search(searchStr:String)(implicit state:SpaceState):Option[SearchResultsInternal] = {
     if (searchStr.length() < 3)
       None
     else {
       val searchComp = searchStr.toLowerCase()
       
-      def checkOne(t:Thing):Seq[SearchResult] = {
+      def checkOne(t:Thing):Seq[SearchResultInternal] = {
         if (t.unsafeDisplayName.toLowerCase().contains(searchComp)) {
-          Seq(SearchResult(t, DisplayNameProp, 1.0, t.unsafeDisplayName, List(t.unsafeDisplayName.toLowerCase().indexOf(searchComp))))
+          Seq(SearchResultInternal(t, DisplayNameProp, 1.0, t.unsafeDisplayName, List(t.unsafeDisplayName.toLowerCase().indexOf(searchComp))))
         } else {
           // For now, we're only going to deal with Text types.
           // TODO: cope with Links, Tags, and things like that!
           // TODO: this currently only takes the first elem from the QValue; it should work on
           // all of them!
-          val tResults:Iterable[Option[SearchResult]] = t.props.map { pair =>
+          val tResults:Iterable[Option[SearchResultInternal]] = t.props.map { pair =>
             val (propId, propValue) = pair
             propValue.pType match {
               case textType:querki.core.TextTypeBasis#TextTypeBase => {
@@ -47,7 +52,7 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search {
                         i :: matchLocs(i + 1)
                     }
 
-                    Some(SearchResult(t, state.prop(propId).get, 0.5, qtext.text, matchLocs(0)))
+                    Some(SearchResultInternal(t, state.prop(propId).get, 0.5, qtext.text, matchLocs(0)))
                   }
                   else
                     None
@@ -62,7 +67,7 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search {
       
       val allResults = state.everythingLocal.map(checkOne(_)).flatten.toSeq
     
-      Some(SearchResults(searchStr, allResults))      
+      Some(SearchResultsInternal(searchStr, allResults))      
     }
   }
 }

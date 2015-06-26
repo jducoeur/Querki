@@ -2,7 +2,7 @@ package querki.pages
 
 import models.Wikitext
 
-import querki.api.SearchFunctions.SearchResults
+import querki.search.SearchFunctions.SearchResults
 import querki.data.ThingInfo
 
 sealed trait PageDetails

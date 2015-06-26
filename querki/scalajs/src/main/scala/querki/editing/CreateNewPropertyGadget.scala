@@ -6,7 +6,6 @@ import scalatags.JsDom.all._
 import autowire._
 import rx._
 
-import querki.api.{EditFunctions}
 import EditFunctions._
 import querki.data.{TID => _TID, _}
 import querki.display.{ButtonGadget, Gadget}

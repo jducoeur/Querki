@@ -7,9 +7,9 @@ import autowire._
 
 import querki.globals._
 
-import querki.api.{EditFunctions, ThingFunctions}
-import EditFunctions._
+import querki.api.ThingFunctions
 import querki.display.input.{DeleteInstanceButton, InputGadget}
+import EditFunctions._
 
 /**
  * This is a very unconventional InputGadget, because we have deliberately moved away from

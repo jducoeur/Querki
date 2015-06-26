@@ -10,7 +10,6 @@ import rx._
 
 import querki.globals._
 
-import querki.api.EditFunctions
 import EditFunctions.{FullEditInfo, PropEditInfo}
 import querki.data.{BasicThingInfo}
 import querki.display.input.InputGadget

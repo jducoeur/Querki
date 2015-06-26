@@ -1,22 +1,23 @@
-package querki.session
+package querki.editing
 
-import scala.concurrent.{Future, Promise}
-
+import scala.concurrent.Future
 import akka.actor._
 
-import models.{DisplayPropVal, DisplayText, FieldIds, FormFieldInfo, IndexedOID, Kind, PType, Thing, ThingId, Wikitext}
+import models.{DisplayPropVal, FieldIds, FormFieldInfo, IndexedOID, Kind, PType, Thing}
 import models.Thing.{emptyProps, PropMap}
 
 import querki.globals._
-
-import querki.api.EditFunctions
-import EditFunctions._
-import querki.core.{PropList, QLText}
 import querki.data._
+import EditFunctions._
 import querki.session.messages.ChangeProps2
 import querki.spaces.messages.{CreateThing, ModifyThing, ThingFound, ThingError}
 import querki.util.{PublicException}
-import querki.values.{QLRequestContext, RequestContext}
+import querki.values.QLRequestContext
+import models.OID.thing2OID
+import models.Thing.thing2Ops
+import models.ThingId.thingId2Str
+import querki.session.AutowireApiImpl
+import querki.session.AutowireParams
 
 class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with EditFunctions {
   

@@ -9,7 +9,7 @@ import org.querki.facades.jqueryui._
 
 import querki.globals._
 
-import querki.api.EditFunctions
+import querki.editing.EditFunctions
 import EditFunctions._
 
 /**
