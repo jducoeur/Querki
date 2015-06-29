@@ -77,6 +77,7 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
   lazy val System = interface[querki.system.System]
   
   lazy val LinkType = Core.LinkType
+  lazy val NameType = Core.NameType
   
   implicit def PropNameOrdering = PropListManager.PropNameOrdering
   
@@ -132,7 +133,7 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
   }
   
   def oneProp(prop:AnyProp)(implicit state:SpaceState):Tag = {
-    val propProps = prop.props - CollectionPropOID - TypePropOID - NameOID
+    val propProps = prop.props - CollectionPropOID - TypePropOID
     property(
       name:=canonicalize(prop.linkName.get),
       stdAttrs(prop),
@@ -207,13 +208,17 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
             }
               yield thing
               
-            val result:String = topt.map(tname(_)).getOrElse(s"MISSING THING ${elemv.elem.toString()}")
-            result
+            topt.map(tname(_))
           }
           
           case mt:ModelTypeBase => {
             val bundleOpt = elemv.getOpt(mt)
             bundleOpt.map(bundle => thingProps(bundle, bundle.props))
+          }
+          
+          case NameType => {
+            // We want names in their literal form, not serialized:
+            elemv.getOpt(NameType)
           }
           
           case _ => {
