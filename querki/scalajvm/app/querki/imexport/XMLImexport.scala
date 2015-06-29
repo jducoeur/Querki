@@ -10,6 +10,7 @@ import Thing.PropMap
 import querki.core.NameUtils
 import querki.core.MOIDs._
 import querki.globals._
+import querki.types.ModelTypeBase
 import querki.values.QValue
 
 /**
@@ -29,20 +30,39 @@ private [imexport] object QuerkiML extends scalatags.generic.Util[Builder, Strin
   
   val querki = "querki".t
   val space = "space".t
+  val typ = "type".t
+  val types = "types".t
   val spaceProps = "space-properties".t
   val property = "property".t
   val props = "props".t
   val elem = "e".t
+  val model = "model".t
+  val models = "models".t
+  val instances = "instances".t
   
   val id = "id".a
-  val model = "model".a
+  val modelref = "model".a
   val name = "name".a
   val coll = "coll".a
-  val typ = "type".a
+  val ptyp = "pType".a
+  
+  def exportOID(oid:OID) = s"_${oid.toString}"
 }
 
-class ThingAttr extends scalatags.Text.GenericAttr[ThingId]
-class AsOIDAttr extends scalatags.Text.GenericAttr[AsOID]
+class ThingAttr extends scalatags.Text.AttrValue[ThingId] {
+  def apply(t:Builder, a:Attr, v:ThingId) {
+    val str = v match {
+      case AsOID(oid) => QuerkiML.exportOID(oid)
+      case AsName(name) => NameUtils.canonicalize(name)
+    }
+    t.setAttr(a.name, str)
+  }  
+}
+class AsOIDAttr extends scalatags.Text.AttrValue[AsOID] {
+  def apply(t:Builder, a:Attr, v:AsOID) {
+    t.setAttr(a.name, QuerkiML.exportOID(v.oid))
+  }
+}
 class OIDAttr extends scalatags.Text.GenericAttr[OID]
 
 /**
@@ -70,19 +90,42 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
     implicit val s = state
     prefixMap += (System.State -> "ss")
     prefixMap += (state -> "s1")
+    
+    val (mods, insts) = state.allThings.partition(_.isModel)
       
     val complete =
       querki(
         space(
           stdAttrs(state),
           name:=state.name,
+          types(allTypes),
           spaceProps(allProperties),
-          thingProps(state)
+          thingProps(state),
+          models(mods.toSeq.map(oneModel)),
+          instances(insts.toSeq.map(oneInstance))
         )
       )
     
     val rawStr = """<?xml version="1.0" encoding="UTF-8"?>""" + complete.toString()
     rawStr
+  }
+  
+  def oneType(pt:ModelTypeBase)(implicit state:SpaceState) = {
+    typ(
+      tid(pt),
+      state.anything(pt.basedOn).map { mod =>
+        modelref := tname(mod)
+      }
+    )
+  }
+  
+  def allTypes(implicit state:SpaceState):Seq[Tag] = {
+    state.types.values.toSeq.sortBy(_.linkName).map { pt =>
+      pt match {
+        case mt:ModelTypeBase => Some(oneType(mt))
+        case _ => None
+      }
+    }.flatten
   }
   
   def oneProp(prop:AnyProp)(implicit state:SpaceState):Tag = {
@@ -91,7 +134,7 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
       name:=canonicalize(prop.linkName.get),
       stdAttrs(prop),
       coll:=ref(prop.cType),
-      typ:=ref(prop.pType),
+      ptyp:=ref(prop.pType),
       thingProps(prop, propProps)
     )
   }
@@ -101,12 +144,27 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
       oneProp(prop)
     }
   }
+  
+  def oneModel(t:Thing)(implicit state:SpaceState):Tag = {
+    model(
+      stdAttrs(t),
+      thingProps(t)
+    )
+  }
+  
+  def oneInstance(t:Thing)(implicit state:SpaceState):Tag = {
+    Tag(
+      t.getModelOpt.map(tname).getOrElse(QuerkiML.exportOID(t.model)),
+      List(Seq(thingProps(t))),
+      false
+    )
+  }
     
   def stdAttrs(t:Thing)(implicit state:SpaceState) = {
     Seq(
-      id := t.id.toThingId,
+      tid(t),
       // We explicitly assume that everything has a model, since the only exception is UrThing:
-      model:=ref(t.getModelOpt.get)
+      modelref:=ref(t.getModelOpt.get)
     )
   }
   
@@ -151,11 +209,13 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
     }
   }
   
+  def tid(t:Thing) = id := t.id.toThingId
+  
   def ref(t:Thing)(implicit state:SpaceState) = {
     t.toThingId
   }
   
   def tname(t:Thing)(implicit state:SpaceState) = {
-    t.linkName.map(canonicalize).getOrElse(s"_${t.id.toString}")
+    t.linkName.map(canonicalize).getOrElse(QuerkiML.exportOID(t.id))
   }
 }
