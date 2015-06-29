@@ -5,8 +5,12 @@ import scalatags.generic
 import scalatags.text._
 
 import models._
+import Thing.PropMap
 
+import querki.core.NameUtils
+import querki.core.MOIDs._
 import querki.globals._
+import querki.values.QValue
 
 /**
  * We build the export using Scalatags, because hey -- if it's a better way to write HTML,
@@ -25,7 +29,10 @@ private [imexport] object QuerkiML extends scalatags.generic.Util[Builder, Strin
   
   val querki = "querki".t
   val space = "space".t
+  val spaceProps = "space-properties".t
   val property = "property".t
+  val props = "props".t
+  val elem = "e".t
   
   val id = "id".a
   val model = "model".a
@@ -43,9 +50,12 @@ class OIDAttr extends scalatags.Text.GenericAttr[OID]
  * 
  * @author jducoeur
  */
-private [imexport] class XMLExporter(implicit val ecology:Ecology) extends EcologyMember {
+private [imexport] class XMLExporter(implicit val ecology:Ecology) extends EcologyMember with NameUtils {
   
+  lazy val Core = interface[querki.core.Core]
   lazy val System = interface[querki.system.System]
+  
+  lazy val LinkType = Core.LinkType
   
   type Tag = scalatags.Text.TypedTag[String]
   
@@ -66,7 +76,8 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
         space(
           stdAttrs(state),
           name:=state.name,
-          allProperties
+          spaceProps(allProperties),
+          thingProps(state)
         )
       )
     
@@ -75,24 +86,76 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
   }
   
   def oneProp(prop:AnyProp)(implicit state:SpaceState):Tag = {
+    val propProps = prop.props - CollectionPropOID - TypePropOID - NameOID
     property(
+      name:=canonicalize(prop.linkName.get),
       stdAttrs(prop),
       coll:=ref(prop.cType),
-      typ:=ref(prop.pType)
+      typ:=ref(prop.pType),
+      thingProps(prop, propProps)
     )
   }
   
   def allProperties(implicit state:SpaceState):Seq[Tag] = {
-    state.spaceProps.values.toSeq.map { prop =>
+    state.spaceProps.values.toSeq.sortBy(_.linkName).map { prop =>
       oneProp(prop)
     }
   }
     
   def stdAttrs(t:Thing)(implicit state:SpaceState) = {
-    Seq(id := t.id.toThingId, model := t.model)
+    Seq(
+      id := t.id.toThingId,
+      // We explicitly assume that everything has a model, since the only exception is UrThing:
+      model:=ref(t.getModelOpt.get)
+    )
+  }
+  
+  def thingProps(t:Thing)(implicit state:SpaceState):Tag = thingProps(t, t.props)
+  def thingProps(t:Thing, pm:PropMap)(implicit state:SpaceState):Tag = {
+    props(
+      pm.toSeq.map { pair =>
+        val (propId, qv) = pair
+        state.prop(propId) match {
+          case Some(prop) => {
+            Tag(
+              tname(prop),
+              List(propValue(prop, qv)),
+              false)
+          }
+          case None => Tag("MISSING_${propId.toString}", List.empty, true)
+        }
+      }
+    )
+  }
+  
+  def propValue(prop:AnyProp, qv:QValue)(implicit state:SpaceState):Seq[Tag] = {
+    qv.cv.toSeq.map { elemv =>
+      elem(
+        elemv.pType match {
+          case LinkType => {
+            val topt:Option[Thing] = for {
+              oid <- elemv.getOpt(LinkType)
+              thing <- state.anything(oid)
+            }
+              yield thing
+              
+            val result:String = topt.map(tname(_)).getOrElse(s"MISSING THING ${elemv.elem.toString()}")
+            result
+          }
+          case _ => {
+            // We fall back to ordinary serialization, which is fine for most types:
+            elemv.pType.serialize(elemv)
+          }
+        }
+      )
+    }
   }
   
   def ref(t:Thing)(implicit state:SpaceState) = {
     t.toThingId
+  }
+  
+  def tname(t:Thing)(implicit state:SpaceState) = {
+    t.linkName.map(canonicalize).getOrElse(s"_${t.id.toString}")
   }
 }
