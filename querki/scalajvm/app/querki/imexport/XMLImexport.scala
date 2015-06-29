@@ -172,7 +172,7 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
   }
   
   def thingProps(t:Thing)(implicit state:SpaceState):Tag = thingProps(t, t.props)
-  def thingProps(t:Thing, pm:PropMap)(implicit state:SpaceState):Tag = {
+  def thingProps(t:PropertyBundle, pm:PropMap)(implicit state:SpaceState):Tag = {
     val propPairs = for {
       pair <- pm
       propId = pair._1
@@ -210,6 +210,12 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
             val result:String = topt.map(tname(_)).getOrElse(s"MISSING THING ${elemv.elem.toString()}")
             result
           }
+          
+          case mt:ModelTypeBase => {
+            val bundleOpt = elemv.getOpt(mt)
+            bundleOpt.map(bundle => thingProps(bundle, bundle.props))
+          }
+          
           case _ => {
             // We fall back to ordinary serialization, which is fine for most types:
             elemv.pType.serialize(elemv)
