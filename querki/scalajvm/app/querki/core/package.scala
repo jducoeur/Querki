@@ -118,5 +118,6 @@ package object core {
     def inheritedProps(thing:Option[PropertyBundle], model:Thing)(implicit state:SpaceState):PropList
     def from(thing:PropertyBundle, ensureName:Boolean)(implicit state:SpaceState):PropList
     def prepPropList(propList:PropList, thing:Option[PropertyBundle], model:Thing, state:SpaceState, forceName:Boolean = false):Seq[(Property[_,_], DisplayPropVal)]
+    def PropNameOrdering:Ordering[Property[_,_]]
   }
 }

@@ -73,9 +73,12 @@ class OIDAttr extends scalatags.Text.GenericAttr[OID]
 private [imexport] class XMLExporter(implicit val ecology:Ecology) extends EcologyMember with NameUtils {
   
   lazy val Core = interface[querki.core.Core]
+  lazy val PropListManager = interface[querki.core.PropListManager]
   lazy val System = interface[querki.system.System]
   
   lazy val LinkType = Core.LinkType
+  
+  implicit def PropNameOrdering = PropListManager.PropNameOrdering
   
   type Tag = scalatags.Text.TypedTag[String]
   
@@ -155,7 +158,7 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
   def oneInstance(t:Thing)(implicit state:SpaceState):Tag = {
     Tag(
       t.getModelOpt.map(tname).getOrElse(QuerkiML.exportOID(t.model)),
-      List(Seq(thingProps(t))),
+      List(tid(t) +: Seq(thingProps(t))),
       false
     )
   }
@@ -170,18 +173,25 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
   
   def thingProps(t:Thing)(implicit state:SpaceState):Tag = thingProps(t, t.props)
   def thingProps(t:Thing, pm:PropMap)(implicit state:SpaceState):Tag = {
+    val propPairs = for {
+      pair <- pm
+      propId = pair._1
+      v = pair._2
+      propOpt = state.prop(propId)
+      if (propOpt.isDefined)
+      prop = propOpt.get
+    }
+      yield (prop, v)
+      
+    val sortedProps = propPairs.toSeq.sortBy(_._1)
+    
     props(
-      pm.toSeq.map { pair =>
-        val (propId, qv) = pair
-        state.prop(propId) match {
-          case Some(prop) => {
-            Tag(
-              tname(prop),
-              List(propValue(prop, qv)),
-              false)
-          }
-          case None => Tag("MISSING_${propId.toString}", List.empty, true)
-        }
+      sortedProps map { pair =>
+        val (prop, qv) = pair
+        Tag(
+          tname(prop),
+          List(propValue(prop, qv)),
+          false)
       }
     )
   }
