@@ -1,10 +1,14 @@
 package querki.imexport
 
+// For now, we're using this for pretty-printing:
+import scala.xml._
+import java.io.StringReader
+
 import scalatags.Text.short._
 import scalatags.generic
 import scalatags.text._
 
-import models.{MIMEType, Thing, ThingId}
+import models._
 
 import querki.globals._
 
@@ -25,12 +29,17 @@ private [imexport] object QuerkiML extends scalatags.generic.Util[Builder, Strin
   
   val querki = "querki".t
   val space = "space".t
+  val property = "property".t
   
   val id = "id".a
   val model = "model".a
+  val name = "name".a
+  val coll = "coll".a
+  val typ = "type".a
 }
-  
+
 class ThingAttr extends scalatags.Text.GenericAttr[ThingId]
+class AsOIDAttr extends scalatags.Text.GenericAttr[AsOID]
 class OIDAttr extends scalatags.Text.GenericAttr[OID]
 
 /**
@@ -42,8 +51,11 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
   
   lazy val System = interface[querki.system.System]
   
+  type Tag = scalatags.Text.TypedTag[String]
+  
   import QuerkiML._
   implicit def tidAttr = new ThingAttr
+  implicit def asOIDAttr = new AsOIDAttr
   implicit def oidAttr = new OIDAttr
   
   var prefixMap = Map.empty[SpaceState, String]
@@ -56,17 +68,37 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
     val complete =
       querki(
         space(
-          stdAttrs(state)
+          stdAttrs(state),
+          name:=state.name,
+          allProperties
         )
       )
     
-    complete.toString()
+    val rawStr = """<?xml version="1.0" encoding="UTF-8"?>""" + complete.toString()
+    val xml = XML.load(new StringReader(rawStr))
+    new PrettyPrinter(80, 2).format(xml)
 //    ExportedContentImpl(complete.toString().getBytes, state.displayName, MIMEType.XML)
   }
   
-  def prefix(implicit state:SpaceState) = prefixMap(state)
+  def oneProp(prop:AnyProp)(implicit state:SpaceState):Tag = {
+    property(
+      stdAttrs(prop),
+      coll:=ref(prop.cType),
+      typ:=ref(prop.pType)
+    )
+  }
+  
+  def allProperties(implicit state:SpaceState):Seq[Tag] = {
+    state.spaceProps.values.toSeq.map { prop =>
+      oneProp(prop)
+    }
+  }
     
   def stdAttrs(t:Thing)(implicit state:SpaceState) = {
-    Seq(id := t.id, model := t.model)
+    Seq(id := t.id.toThingId, model := t.model)
+  }
+  
+  def ref(t:Thing)(implicit state:SpaceState) = {
+    t.toThingId
   }
 }

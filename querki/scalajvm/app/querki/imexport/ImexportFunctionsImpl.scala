@@ -15,7 +15,7 @@ class ImexportFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Aut
   
   def doRoute(req:Request):Future[String] = route[ImexportFunctions](this)(req)
   
-  def exportSpace:String = {
+  def exportSpace():String = {
     Imexport.exportSpace(rc)(state)
   }
 }

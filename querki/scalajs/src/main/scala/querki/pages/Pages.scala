@@ -11,6 +11,7 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   
   def implements = Set(classOf[Pages])
   
+  lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val PageManager = interface[querki.display.PageManager]
 
   // Factories for some pages with no obvious homes:
