@@ -6,17 +6,18 @@ import akka.util.Timeout
 
 import play.api.data._
 import play.api.data.Forms._
-import play.api.mvc.{Action, Call}
+import play.api.mvc.{Action, Call, Result}
 
 import upickle._
 import autowire._
 
-import models.{AsName, AsOID, Thing, ThingId}
+import models.{AsName, AsOID, MIMEType, Thing, ThingId}
 
 import querki.globals._
 import Implicits.execContext
 
 import querki.api.ThingFunctions
+import querki.imexport.ImexportFunctions
 import querki.pages.PageIDs._
 import querki.session.UserSessionMessages.{UserSessionClientRequest, UserSessionMsg}
 import querki.session.messages._
@@ -59,33 +60,40 @@ class ClientController extends ApplicationBase {
    * Allows purely server-side code to invoke Session functions, the same way the Client does.
    */
   class LocalClient(rc:PlayRequestContext) extends autowire.Client[String, upickle.Reader, upickle.Writer] {
-	override def doCall(req: Request): Future[String] = {
-	  askUserSpaceSession(rc, ClientRequest(req, rc)) {
-	    case ClientResponse(pickled) => Future.successful(pickled)
-	    case ClientError(msg) => Future.failed(new Exception(msg))
-	    case ThingError(pex, _) => Future.failed(pex)
-	  }
-	}
-	
-	def read[Result: upickle.Reader](p: String) = upickle.read[Result](p)
-	def write[Result: upickle.Writer](r: Result) = upickle.write(r)
+  	override def doCall(req: Request): Future[String] = {
+  	  askUserSpaceSession(rc, ClientRequest(req, rc)) {
+  	    case ClientResponse(pickled) => Future.successful(pickled)
+  	    case ClientError(msg) => Future.failed(new Exception(msg))
+  	    case ThingError(pex, _) => Future.failed(pex)
+  	  }
+  	}
+  	
+  	def read[Result: upickle.Reader](p: String) = upickle.read[Result](p)
+  	def write[Result: upickle.Writer](r: Result) = upickle.write(r)
   }
   
-  def space(ownerId:String, spaceIdStr:String) = withRouting(ownerId, spaceIdStr) { implicit rawRc =>
+  def withLocalClient(ownerId:String, spaceIdStr:String)(cb:(PlayRequestContext, LocalClient) => Future[Result]) = 
+    withRouting(ownerId, spaceIdStr) 
+  { implicit rawRc =>
     // Unlike the API calls, we have to assume we have a name-style ThingId here:
     SpaceOps.getSpaceId(rawRc.ownerId, spaceIdStr).flatMap { spaceId =>
       val rc = rawRc.copy(spaceIdOpt = Some(spaceId.toThingId))
       val client = new LocalClient(rc)
       
-      client[ThingFunctions].getRequestInfo().call().map { requestInfo =>
-        if (requestInfo.forbidden) {
-          unknownSpace(spaceIdStr)
-        } else {
-          Ok(views.html.client(rc, write(requestInfo)))
-        }
-      } recoverWith {
-        case pex:PublicException => doError(routes.Application.index, pex) 
+      cb(rc, client)
+    }
+  }
+  
+  def space(ownerId:String, spaceIdStr:String) = withLocalClient(ownerId, spaceIdStr) { (rc, client) =>
+    implicit val r = rc
+    client[ThingFunctions].getRequestInfo().call().map { requestInfo =>
+      if (requestInfo.forbidden) {
+        unknownSpace(spaceIdStr)
+      } else {
+        Ok(views.html.client(rc, write(requestInfo)))
       }
+    } recoverWith {
+      case pex:PublicException => doError(routes.Application.index, pex) 
     }
   }
   
@@ -153,6 +161,15 @@ class ClientController extends ApplicationBase {
         Ok(write(items))
       }
       case _ => BadRequest("Couldn't parse items.")
+    }
+  }
+  
+  def exportSpace(ownerId:String, spaceId:String) = withLocalClient(ownerId, spaceId) { (rc, client) =>
+    implicit val r = rc
+    client[ImexportFunctions].exportSpace().call() map { exported =>
+      Ok(exported).as(MIMEType.XML)
+    } recoverWith {
+      case pex:PublicException => doError(routes.Application.index, pex) 
     }
   }
 }

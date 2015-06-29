@@ -9,7 +9,6 @@ import querki.api._
 import querki.display.{ButtonGadget, QText}
 import querki.display.rx.GadgetRef
 import querki.globals._
-import querki.imexport.ImexportFunctions
 
 class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
   lazy val thingId = TID(params("thingId"))
@@ -35,13 +34,14 @@ class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Eco
         new QText(gutsRaw),
         if (DataAccess.request.isOwner) {
           div(
-            p("Press this button to export this *entire* Space as XML:"),
-            new ButtonGadget(ButtonGadget.Normal, "Export Space to XML")({ () =>
-              Client[ImexportFunctions].exportSpace().call().foreach { xml =>
-                exportedXML <= div(pre(xml))
-              }
-            }),
-            exportedXML <= div()
+            p("""Press this button to export this *entire* Space as XML. (NOTE: photographs are not exported.)
+              The exported XML will open in a new tab or window, which you can save if you want."""),
+            a(
+              cls:="btn btn-default",
+              target:="_blank",
+              href:="_export.xml",
+              "Export Space to XML"
+            )
           )
         },
         new ButtonGadget(ButtonGadget.Primary, "Done")({ () => Pages.showSpacePage(DataAccess.space.get) })

@@ -27,6 +27,8 @@ GET     /u/:userName/:spaceId/_getCollaborators @controllers.LoginController.get
 
 POST    /u/:userName/:spaceId/_photoUpload   @controllers.PhotoController.upload(userName, spaceId, thingId)
 
+GET     /u/:userName/:spaceId/_export.xml  @controllers.ClientController.exportSpace(userName, spaceId)
+
 # API CALLS
 # TODO: this should eventually replace the normal thing path, below:
 POST    /u/:userName/:spaceId/_apiRequest @controllers.ClientController.apiRequest(userName, spaceId)
