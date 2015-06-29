@@ -1,9 +1,5 @@
 package querki.imexport
 
-// For now, we're using this for pretty-printing:
-import scala.xml._
-import java.io.StringReader
-
 import scalatags.Text.short._
 import scalatags.generic
 import scalatags.text._
@@ -75,9 +71,7 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
       )
     
     val rawStr = """<?xml version="1.0" encoding="UTF-8"?>""" + complete.toString()
-    val xml = XML.load(new StringReader(rawStr))
-    new PrettyPrinter(80, 2).format(xml)
-//    ExportedContentImpl(complete.toString().getBytes, state.displayName, MIMEType.XML)
+    rawStr
   }
   
   def oneProp(prop:AnyProp)(implicit state:SpaceState):Tag = {
