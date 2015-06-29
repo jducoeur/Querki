@@ -40,6 +40,8 @@ private [imexport] object QuerkiML extends scalatags.generic.Util[Builder, Strin
   val models = "models".t
   val instances = "instances".t
   
+  val namespace = "xmlns".a
+  
   val id = "id".a
   val modelref = "model".a
   val name = "name".a
@@ -79,6 +81,9 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
   lazy val LinkType = Core.LinkType
   lazy val NameType = Core.NameType
   
+  lazy val SystemSpace = System.State
+  lazy val systemId = SystemSpace.id
+  
   implicit def PropNameOrdering = PropListManager.PropNameOrdering
   
   type Tag = scalatags.Text.TypedTag[String]
@@ -88,18 +93,26 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
   implicit def asOIDAttr = new AsOIDAttr
   implicit def oidAttr = new OIDAttr
   
-  var prefixMap = Map.empty[SpaceState, String]
+  final val standardSpaceNS = "xmlns:q=https://www.querki.net/"
+  
+  var prefixMap = Map.empty[OID, String]
   
   def exportSpace(state:SpaceState):String = {
     implicit val s = state
-    prefixMap += (System.State -> "ss")
-    prefixMap += (state -> "s1")
+    
+    prefixMap += (System.State.id -> "ss:")
+    prefixMap += (state.id -> "")
+    
+    val spaceNamespace = s"https://www.querki.net/u/${state.ownerHandle}/${tname(state)}"
     
     val (mods, insts) = state.allThings.partition(_.isModel)
       
     val complete =
       querki(
+        "xmlns:ss".a:=standardSpaceNS,
+        "xmlns:s1".a:=spaceNamespace,
         space(
+          namespace:=spaceNamespace,
           stdAttrs(state),
           name:=state.name,
           types(allTypes),
@@ -230,13 +243,17 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
     }
   }
   
+  def withNS(t:Thing)(rest: => String):String = {
+    prefixMap(t.spaceId) + rest
+  }
+  
   def tid(t:Thing) = id := t.id.toThingId
   
   def ref(t:Thing)(implicit state:SpaceState) = {
-    t.toThingId
+    withNS(t)(t.toThingId)
   }
   
   def tname(t:Thing)(implicit state:SpaceState) = {
-    t.linkName.map(canonicalize).getOrElse(QuerkiML.exportOID(t.id))
+    withNS(t)(t.linkName.map(canonicalize).getOrElse(QuerkiML.exportOID(t.id)))
   }
 }
