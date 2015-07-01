@@ -4,13 +4,10 @@ import scala.concurrent.{Future, Promise}
 import org.scalajs.dom
 import org.querki.jquery._
 import org.querki.jsext._
-
 import utest._
 import autowire._
-
 import querki.globals._
-
-import querki.api.{EditFunctions, EditFunctionsEmpty}
+import querki.editing.{EditFunctions, EditFunctionsEmpty}
 import EditFunctions._
 import querki.test._
 import querki.util.ScalatagUtils

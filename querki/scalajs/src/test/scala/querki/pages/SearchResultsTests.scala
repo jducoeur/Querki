@@ -14,9 +14,9 @@ import autowire._
 
 import querki.globals._
 
-import querki.api.SearchFunctions
-import SearchFunctions._
 import querki.data.{TID, ThingInfo}
+import querki.search.SearchFunctions
+import SearchFunctions._
 import querki.test._
 import querki.util.ScalatagUtils
 

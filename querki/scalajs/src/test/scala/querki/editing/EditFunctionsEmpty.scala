@@ -1,8 +1,7 @@
-package querki.api
+package querki.editing
 
 import scala.concurrent.Future
-
-import 	querki.data._
+import querki.data._
 
 class EditFunctionsEmpty extends EditFunctions {
   import EditFunctions._
