@@ -39,7 +39,7 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
   implicit def asOIDAttr = new AsOIDAttr
   implicit def oidAttr = new OIDAttr
   
-  final val standardSpaceNS = "xmlns:q=https://www.querki.net/"
+  final val standardSpaceNS = "https://www.querki.net/"
   
   var prefixMap = Map.empty[OID, String]
   
@@ -49,7 +49,7 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
     prefixMap += (System.State.id -> "ss:")
     prefixMap += (state.id -> "")
     
-    val spaceNamespace = s"https://www.querki.net/u/${state.ownerHandle}/${tname(state)}"
+    val spaceNamespace = s"https://www.querki.net/u/${state.ownerHandle}/${state.linkName.map(canonicalize).get}"
     
     val (mods, insts) = state.allThings.partition(_.isModel)
       

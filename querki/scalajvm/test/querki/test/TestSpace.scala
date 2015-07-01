@@ -198,7 +198,7 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
    */
   lazy val state:SpaceState = {
     val s = SpaceState(
-      toid(),    // This Space's OID
+      spaceId,    // This Space's OID
       app.id,    // This Space's Model
       sProps,    // This Space's own props
       owner.mainIdentity.id,   // This Space's Owner

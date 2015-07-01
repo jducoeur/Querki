@@ -94,6 +94,7 @@ lazy val sharedDependencies = Def.setting(Seq(
   "com.lihaoyi" %%% "scalarx" % "0.2.8",
   "com.lihaoyi" %%% "autowire" % "0.2.5",
   "com.lihaoyi" %%% "scalatags" % "0.5.2",
+  "com.lihaoyi" %%% "fastparse" % "0.2.1",
   "org.scalatest" %% "scalatest" % "2.2.4" % "test"
 ))
 
