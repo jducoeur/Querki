@@ -31,6 +31,12 @@ object XMLParser {
         case _ => None
       }.flatten
     }
+    def elements:Seq[XmlElement] = {
+      children.map {
+        case elem @ XmlElement(_, _, _) => Some(elem.asInstanceOf[XmlElement])
+        case _ => None
+      }.flatten
+    }
     
     def checkIs(name:String) = if (tagName.name != name) throw new Exception(s"Was expecting tag $name, found $tagName") 
   }
