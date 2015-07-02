@@ -7,13 +7,33 @@ import fastparse.all._
  * 
  * As of this writing, this is very first-draft, and makes no promises about being able to 
  * parse arbitrary XML.
+ * 
+ * Really, we're doing this mostly because I wanted to learn FastParse. If it proves
+ * insufficient, we may just switch to using scala.xml instead.
  */
 object XMLParser {
   case class XmlName(ns:Option[String], name:String)
   case class XmlAttr(name:XmlName, v:String)
   sealed trait XmlNode
   case class XmlText(s:String) extends XmlNode
-  case class XmlElement(tagName:XmlName, attrs:Seq[XmlAttr], children:Seq[XmlNode]) extends XmlNode
+  case class XmlElement(tagName:XmlName, attrs:Seq[XmlAttr], children:Seq[XmlNode]) extends XmlNode {
+    def attrOpt(name:String) = attrs.find(_.name.name == name)
+    def attr(name:String) = attrOpt(name).get
+    
+    def childOpt(name:String):Option[XmlElement] = children.find {
+      case XmlElement(cname, _, _) if (cname == name) => true
+      case _ => false
+    }.map(_.asInstanceOf[XmlElement])
+    def child(name:String) = childOpt(name).get
+    def childrenNamed(name:String):Seq[XmlElement] = {
+      children.map {
+        case elem @ XmlElement(cname, _, _) if (cname == name) => Some(elem.asInstanceOf[XmlElement])
+        case _ => None
+      }.flatten
+    }
+    
+    def checkIs(name:String) = if (tagName.name != name) throw new Exception(s"Was expecting tag $name, found $tagName") 
+  }
   
   val whitechar = P(CharIn(" \r\n\t"))
   val white = P(whitechar.rep(1))

@@ -32,8 +32,6 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
   
   implicit def PropNameOrdering = PropListManager.PropNameOrdering
   
-  type Tag = scalatags.Text.TypedTag[String]
-  
   import QuerkiML._
   implicit def tidAttr = new ThingAttr
   implicit def asOIDAttr = new AsOIDAttr
@@ -60,7 +58,6 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
         space(
           namespace:=spaceNamespace,
           stdAttrs(state),
-          name:=state.name,
           types(allTypes),
           spaceProps(allProperties),
           thingProps(state),
@@ -77,7 +74,10 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
     typ(
       tid(pt),
       state.anything(pt.basedOn).map { mod =>
-        modelref := tname(mod)
+        Seq(
+          modelref := tname(mod),
+          modelid := mod.id
+        )
       }
     )
   }
@@ -94,10 +94,9 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
   def oneProp(prop:AnyProp)(implicit state:SpaceState):Tag = {
     val propProps = prop.props - CollectionPropOID - TypePropOID
     property(
-      name:=canonicalize(prop.linkName.get),
       stdAttrs(prop),
-      coll:=ref(prop.cType),
-      ptyp:=ref(prop.pType),
+      coll:=tname(prop.cType),
+      ptyp:=tname(prop.pType),
       thingProps(prop, propProps)
     )
   }
@@ -127,8 +126,8 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
     Seq(
       tid(t),
       // We explicitly assume that everything has a model, since the only exception is UrThing:
-      modelref:=ref(t.getModelOpt.get)
-    )
+      modelref:=tname(t.getModelOpt.get)
+    ) ++ t.linkName.map(canonicalize).map(name:=_)
   }
   
   def thingProps(t:Thing)(implicit state:SpaceState):Tag = thingProps(t, t.props)
@@ -194,10 +193,6 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
   }
   
   def tid(t:Thing) = id := t.id.toThingId
-  
-  def ref(t:Thing)(implicit state:SpaceState) = {
-    withNS(t)(t.toThingId)
-  }
   
   def tname(t:Thing)(implicit state:SpaceState) = {
     withNS(t)(t.linkName.map(canonicalize).getOrElse(QuerkiML.exportOID(t.id)))

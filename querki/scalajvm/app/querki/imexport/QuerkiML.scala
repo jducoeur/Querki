@@ -23,6 +23,9 @@ private [imexport] object QuerkiML extends scalatags.generic.Util[Builder, Strin
     def a = str.attr
   }
   
+  type Tag = scalatags.Text.TypedTag[String]
+  type Attr = scalatags.Text.Attr
+  
   val querki = "querki".t
   val space = "space".t
   val typ = "type".t
@@ -39,11 +42,17 @@ private [imexport] object QuerkiML extends scalatags.generic.Util[Builder, Strin
   
   val id = "id".a
   val modelref = "model".a
+  val modelid = "modelid".a
   val name = "name".a
   val coll = "coll".a
   val ptyp = "pType".a
   
   def exportOID(oid:OID) = s"_${oid.toString}"
+  def importOID(str:String):OID = {
+    if (str(0) != '_')
+      throw new Exception(s"Expecting OID, got $str")
+    OID(str.drop(1))
+  }
 }
 
 class ThingAttr extends scalatags.Text.AttrValue[ThingId] {
@@ -60,4 +69,8 @@ class AsOIDAttr extends scalatags.Text.AttrValue[AsOID] {
     t.setAttr(a.name, QuerkiML.exportOID(v.oid))
   }
 }
-class OIDAttr extends scalatags.Text.GenericAttr[OID]
+class OIDAttr extends scalatags.Text.AttrValue[OID] {
+  def apply(t:Builder, a:Attr, v:OID) {
+    t.setAttr(a.name, QuerkiML.exportOID(v))
+  }  
+}
