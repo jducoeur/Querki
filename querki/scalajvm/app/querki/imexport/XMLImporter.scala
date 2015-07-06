@@ -9,8 +9,8 @@ import Thing._
 
 import querki.time.DateTime
 import querki.globals._
-import querki.types.ModelTypeDefiner
-import querki.values.{RequestContext, SpaceState}
+import querki.types.{ModelTypeBase, ModelTypeDefiner, SimplePropertyBundle}
+import querki.values.{ElemValue, QValue, RequestContext, SpaceState}
 
 /**
  * Reads in a QuerkiML file, and builds a Space from it.
@@ -19,15 +19,21 @@ import querki.values.{RequestContext, SpaceState}
  */
 private [imexport] class XMLImporter(rc:RequestContext)(implicit val ecology:Ecology) extends EcologyMember with ModelTypeDefiner {
   
+  lazy val Core = interface[querki.core.Core]
   lazy val System = interface[querki.system.System]
   
   lazy val SystemSpace = System.State
   lazy val systemId = SystemSpace.id
   
+  lazy val LinkType = Core.LinkType
+  lazy val NameType = Core.NameType
+  
   import QuerkiML._
   
   implicit class RichElement(elem:XmlElement) {
     def child(tag:QuerkiML.Tag):XmlElement = elem.child(tag.tag)
+    def childOpt(tag:QuerkiML.Tag):Option[XmlElement] = elem.childOpt(tag.tag)
+    def childrenNamed(tag:QuerkiML.Tag):Seq[XmlElement] = elem.childrenNamed(tag.tag)
     def addToSpace(state:SpaceState, builder: (SpaceState, XmlElement) => SpaceState):SpaceState = {
       (state /: elem.elements)(builder)
     }
@@ -49,6 +55,7 @@ private [imexport] class XMLImporter(rc:RequestContext)(implicit val ecology:Eco
     def get(implicit element:XmlElement):String = element.attr(attr.name).v
     def opt(implicit element:XmlElement):Option[String] = element.attrOpt(attr.name).map(_.v)
     def oid(implicit element:XmlElement):OID = importOID(get(element))
+    def oidPlus(implicit element:XmlElement):OID = oidAndName(get(element))
     def tid(implicit element:XmlElement):ThingId = importThingId(get(element))
     def prop(implicit element:XmlElement, state:SpaceState) = state.prop(tid).get
     def typ(implicit element:XmlElement, state:SpaceState) = state.typ(tid).get
@@ -56,12 +63,19 @@ private [imexport] class XMLImporter(rc:RequestContext)(implicit val ecology:Eco
   }
   
   implicit class RichSpace(state:SpaceState) {
-    def and(tag:QuerkiML.Tag, builder:(SpaceState, XmlElement) => SpaceState)(implicit node:XmlElement):SpaceState = {
+    def andChildrenOf(tag:QuerkiML.Tag, builder:(SpaceState, XmlElement) => SpaceState)(implicit node:XmlElement):SpaceState = {
       val section = node.child(tag)
       section.addToSpace(state, builder)
     }
   }
   
+  def oidAndName(str:String):OID = {
+    // The OID-and-Name format is "[name] oid"; we care about the oid for this purpose
+    val pieces = str.split(' ')
+    val oidStr = if (pieces.length > 1) pieces(1) else pieces(0)
+    importOID(oidStr)
+  }
+    
   def buildSpace(implicit node:XmlElement):SpaceState = {
     SpaceState(
       id.oid,
@@ -79,9 +93,42 @@ private [imexport] class XMLImporter(rc:RequestContext)(implicit val ecology:Eco
     )
   }
   
+  def buildValue(prop:AnyProp, elem:XmlElement)(implicit state:SpaceState):Option[ElemValue] = {
+    def textMap(f:String => ElemValue) = elem.textOpt.map(f)
+    
+    prop.pType match {
+      case LinkType => textMap(s => LinkType(oidAndName(s)))
+      
+      case mt:ModelTypeBase => {
+        elem.childOpt(props).map { bundleProps =>
+          val subVals = buildProps(state, elem)
+          val bundle = SimplePropertyBundle(subVals)
+          mt(bundle)
+        }
+      }
+      
+      case NameType => textMap(NameType(_))
+      
+      case _ => textMap(prop.pType.deserialize(_))
+    }
+  }
+  
+  def buildProps(implicit state:SpaceState, node:XmlElement):PropMap = {
+    val propSection = node.child(props)
+    val propVals = propSection.elements.map { propElem =>
+      val prop = state.prop(importThingId(propElem.tagName.name)).get
+      val rawElems = propElem.childrenNamed(elem)
+      val vs = rawElems.map(buildValue(prop, _)).flatten
+      val qv = prop.cType.makePropValue(vs, prop.pType)
+      (prop.id -> qv)
+    }
+    
+    Map(propVals:_*)
+  }
+  
   def buildType(state:SpaceState, node:XmlElement) = {
     implicit val n = node
-    val t = new ModelType(id.oid, modelid.oid, () => emptyProps)
+    val t = new ModelType(id.oid, modelref.oidPlus, () => emptyProps)
     state.copy(types = state.types + (t.id -> t))
   }
   
@@ -92,25 +139,58 @@ private [imexport] class XMLImporter(rc:RequestContext)(implicit val ecology:Eco
       Property(
         id.oid,
         state.id,
-        modelref.prop.id,
+        modelref.oidPlus,
         // HACK: same as in SpaceLoader, still don't know a good way to do this:
         ptyp.typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]],
         coll.coll,
-        () => emptyProps, // TODO: fill this in!
+        () => buildProps,
         DateTime.now
       )
     state.copy(spaceProps = state.spaceProps + (p.id -> p))
   }
+  
+  def buildModel(state:SpaceState, node:XmlElement):SpaceState = {
+    implicit val n = node
+    implicit val s = state
+    val model = 
+      ThingState(
+        id.oid,
+        state.id,
+        modelref.oidPlus,
+        () => buildProps,
+        DateTime.now
+      )
+    state.copy(things = state.things + (model.id -> model))
+  }
+  
+  def buildInstance(state:SpaceState, node:XmlElement) = {
+    implicit val n = node
+    implicit val s = state
+    val model = 
+      ThingState(
+        id.oid,
+        state.id,
+        state.anything(importOID(node.tagName.name)).get,
+        () => buildProps,
+        DateTime.now
+      )
+    state.copy(things = state.things + (model.id -> model))    
+  }
 
-  def readXML(xml:String) = {
+  def readXML(xml:String):SpaceState = {
     val root = XMLParser.xmlP.parse(xml).get.value
     querki(root) {
       implicit val spaceNode = root.child(space)
       val rawSpace = buildSpace(spaceNode)
       
-      val fullSpace = rawSpace.
-        and(types, buildType).
-        and(spaceProps, buildProperty)
+      val withSections = rawSpace.
+        andChildrenOf(types, buildType).
+        andChildrenOf(spaceProps, buildProperty).
+        andChildrenOf(models, buildModel).
+        andChildrenOf(instances, buildInstance)
+        
+      // Add the Space's own props
+      withSections.copy(pf = () => buildProps(withSections, spaceNode))
     }
   }
   

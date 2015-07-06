@@ -37,6 +37,12 @@ object XMLParser {
         case _ => None
       }.flatten
     }
+    def textOpt:Option[String] = {
+      children.find {
+        case XmlText(s) => true
+        case _ => false
+      }.map(_.asInstanceOf[XmlText].s)
+    }
     
     def checkIs(name:String) = if (tagName.name != name) throw new Exception(s"Was expecting tag $name, found $tagName") 
   }

@@ -42,7 +42,6 @@ private [imexport] object QuerkiML extends scalatags.generic.Util[Builder, Strin
   
   val id = "id".a
   val modelref = "model".a
-  val modelid = "modelid".a
   val name = "name".a
   val coll = "coll".a
   val ptyp = "pType".a

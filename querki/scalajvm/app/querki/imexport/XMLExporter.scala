@@ -72,13 +72,7 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
   
   def oneType(pt:ModelTypeBase)(implicit state:SpaceState) = {
     typ(
-      tid(pt),
-      state.anything(pt.basedOn).map { mod =>
-        Seq(
-          modelref := tname(mod),
-          modelid := mod.id
-        )
-      }
+      stdAttrs(pt)
     )
   }
   
@@ -126,7 +120,7 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
     Seq(
       tid(t),
       // We explicitly assume that everything has a model, since the only exception is UrThing:
-      modelref:=tname(t.getModelOpt.get)
+      modelref:=tnameAndId(t.getModelOpt.get)
     ) ++ t.linkName.map(canonicalize).map(name:=_)
   }
   
@@ -166,7 +160,7 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
             }
               yield thing
               
-            topt.map(tname(_))
+            topt.map(tnameAndId(_))
           }
           
           case mt:ModelTypeBase => {
@@ -194,7 +188,15 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
   
   def tid(t:Thing) = id := t.id.toThingId
   
+  def tnameBase(t:Thing)(implicit state:SpaceState) = {
+    t.linkName.map(tn => withNS(t)(canonicalize(tn)))
+  }
+  
+  def tnameAndId(t:Thing)(implicit state:SpaceState) = {
+    s"${tnameBase(t).getOrElse("")} ${QuerkiML.exportOID(t.id)}"
+  }
+  
   def tname(t:Thing)(implicit state:SpaceState) = {
-    withNS(t)(t.linkName.map(canonicalize).getOrElse(QuerkiML.exportOID(t.id)))
+    tnameBase(t).getOrElse(QuerkiML.exportOID(t.id))
   }
 }
