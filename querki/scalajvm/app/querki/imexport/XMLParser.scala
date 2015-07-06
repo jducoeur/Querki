@@ -21,13 +21,13 @@ object XMLParser {
     def attr(name:String) = attrOpt(name).get
     
     def childOpt(name:String):Option[XmlElement] = children.find {
-      case XmlElement(cname, _, _) if (cname == name) => true
+      case XmlElement(cname, _, _) if (cname.name == name) => true
       case _ => false
     }.map(_.asInstanceOf[XmlElement])
-    def child(name:String) = childOpt(name).get
+    def child(name:String) = childOpt(name).getOrElse(throw new Exception(s"Failed to find node $name under $tagName"))
     def childrenNamed(name:String):Seq[XmlElement] = {
       children.map {
-        case elem @ XmlElement(cname, _, _) if (cname == name) => Some(elem.asInstanceOf[XmlElement])
+        case elem @ XmlElement(cname, _, _) if (cname.name == name) => Some(elem.asInstanceOf[XmlElement])
         case _ => None
       }.flatten
     }

@@ -63,7 +63,8 @@ class XMLTests extends QuerkiTests {
       
       val exporter = new XMLExporter
       val xmlStr = exporter.exportSpace(spaceIn)
-      val result = checkParse(XMLParser.xmlP, xmlStr)
+      val importer = new XMLImporter(getRc(commonSpace))
+      val result = importer.readXML(xmlStr)
     }
   }
 }

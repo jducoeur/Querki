@@ -48,6 +48,11 @@ private [imexport] class XMLImporter(rc:RequestContext)(implicit val ecology:Eco
     }
   }
   
+  def nameWithoutSpace(str:String):String = {
+    XMLParser.xmlNameP.parse(str).get.value.name
+  }
+  def parseThingId(str:String):ThingId = importThingId(nameWithoutSpace(str))
+  
   implicit class RichAttr(attr:QuerkiML.Attr) {
     // TODO: for now, we're ignoring the namespace, which means we're not dealing with potential
     // override issues, where the Space and the App have Things of the same name. Once Apps are
@@ -56,9 +61,9 @@ private [imexport] class XMLImporter(rc:RequestContext)(implicit val ecology:Eco
     def opt(implicit element:XmlElement):Option[String] = element.attrOpt(attr.name).map(_.v)
     def oid(implicit element:XmlElement):OID = importOID(get(element))
     def oidPlus(implicit element:XmlElement):OID = oidAndName(get(element))
-    def tid(implicit element:XmlElement):ThingId = importThingId(get(element))
+    def tid(implicit element:XmlElement):ThingId = parseThingId(get(element))
     def prop(implicit element:XmlElement, state:SpaceState) = state.prop(tid).get
-    def typ(implicit element:XmlElement, state:SpaceState) = state.typ(tid).get
+    def typ(implicit element:XmlElement, state:SpaceState) = state.typ(tid).getOrElse(throw new Exception(s"Didn't find pType $tid, which I got from attribute $attr"))
     def coll(implicit element:XmlElement, state:SpaceState) = state.coll(tid).get
   }
   
@@ -66,6 +71,9 @@ private [imexport] class XMLImporter(rc:RequestContext)(implicit val ecology:Eco
     def andChildrenOf(tag:QuerkiML.Tag, builder:(SpaceState, XmlElement) => SpaceState)(implicit node:XmlElement):SpaceState = {
       val section = node.child(tag)
       section.addToSpace(state, builder)
+    }
+    def andProps(implicit node:XmlElement):SpaceState = {
+      state.copy(pf = () => buildProps(state, node))
     }
   }
   
@@ -170,7 +178,7 @@ private [imexport] class XMLImporter(rc:RequestContext)(implicit val ecology:Eco
       ThingState(
         id.oid,
         state.id,
-        state.anything(importOID(node.tagName.name)).get,
+        state.anything(parseThingId(node.tagName.name)).get,
         () => buildProps,
         DateTime.now
       )
@@ -183,14 +191,13 @@ private [imexport] class XMLImporter(rc:RequestContext)(implicit val ecology:Eco
       implicit val spaceNode = root.child(space)
       val rawSpace = buildSpace(spaceNode)
       
-      val withSections = rawSpace.
+      rawSpace.
         andChildrenOf(types, buildType).
         andChildrenOf(spaceProps, buildProperty).
+        // Need to get the Space's properties in here, or things tend to break later on:
+        andProps.
         andChildrenOf(models, buildModel).
         andChildrenOf(instances, buildInstance)
-        
-      // Add the Space's own props
-      withSections.copy(pf = () => buildProps(withSections, spaceNode))
     }
   }
   
