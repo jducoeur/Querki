@@ -3,9 +3,10 @@ package querki.imexport
 import fastparse.all._
 import Result._
 
-import querki.test._
+import models._
 
 import querki.ecology._
+import querki.test._
 
 /**
  * @author jducoeur
@@ -58,13 +59,27 @@ class XMLTests extends QuerkiTests {
   }
 
   "XML Imexport" should {
+    /**
+     * This tests that XML import works in its raw form, and produces a Space that matches the export. It
+     * does *not* test the actual DB-level Space creation, which wraps around this.
+     */
     "do a round trip" in {
-      val spaceIn = commonSpace.state
+      val theSpace = commonSpace
+      val stateIn = theSpace.state
       
       val exporter = new XMLExporter
-      val xmlStr = exporter.exportSpace(spaceIn)
-      val importer = new XMLImporter(getRc(commonSpace))
-      val result = importer.readXML(xmlStr)
+      val xmlStr = exporter.exportSpace(stateIn)
+      val importer = new XMLImporter(getRc(theSpace))
+      val stateOut = importer.readXML(xmlStr)
+      
+      def pqloaded(text:String) = {
+        val rc = getRcs(stateOut)(theSpace, BasicTestUser)
+        val context = stateOut.thisAsContext(rc, stateOut, ecology)
+        processQText(context, text)
+      }
+      
+      pqloaded("""[[My Instance -> My Optional Text]]""") should
+        equal ("""Hello world""")
     }
   }
 }
