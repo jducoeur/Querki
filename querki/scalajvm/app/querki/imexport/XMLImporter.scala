@@ -186,6 +186,12 @@ private [imexport] class XMLImporter(rc:RequestContext)(implicit val ecology:Eco
     state.copy(things = state.things + (model.id -> model))    
   }
 
+  /**
+   * Given a full XML export of a Space, this parses that and returns the resulting Space. It
+   * does not, in any way, affect the database, though: other code is responsible for actually
+   * creating the Space locally. Note that all OIDs in the returned Space should be considered
+   * scrap, and should be replaced when instantiating these objects.
+   */
   def readXML(xml:String):SpaceState = {
     val root = XMLParser.xmlP.parse(xml).get.value
     querki(root) {
