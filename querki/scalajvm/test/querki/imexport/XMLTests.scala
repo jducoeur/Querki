@@ -7,6 +7,7 @@ import models._
 
 import querki.ecology._
 import querki.test._
+import querki.types.ComplexSpace
 
 /**
  * @author jducoeur
@@ -64,7 +65,7 @@ class XMLTests extends QuerkiTests {
      * does *not* test the actual DB-level Space creation, which wraps around this.
      */
     "do a round trip" in {
-      val theSpace = commonSpace
+      val theSpace = new ComplexSpace
       val stateIn = theSpace.state
       
       val exporter = new XMLExporter

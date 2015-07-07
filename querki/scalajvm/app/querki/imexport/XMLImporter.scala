@@ -63,7 +63,7 @@ private [imexport] class XMLImporter(rc:RequestContext)(implicit val ecology:Eco
     def oidPlus(implicit element:XmlElement):OID = oidAndName(get(element))
     def tid(implicit element:XmlElement):ThingId = parseThingId(get(element))
     def prop(implicit element:XmlElement, state:SpaceState) = state.prop(tid).get
-    def typ(implicit element:XmlElement, state:SpaceState) = state.typ(tid).getOrElse(throw new Exception(s"Didn't find pType $tid, which I got from attribute $attr"))
+    def typ(implicit element:XmlElement, state:SpaceState) = state.typ(tid).getOrElse(throw new Exception(s"Didn't find pType $tid, which I got from attribute $attr on $element"))
     def coll(implicit element:XmlElement, state:SpaceState) = state.coll(tid).get
   }
   
@@ -124,7 +124,7 @@ private [imexport] class XMLImporter(rc:RequestContext)(implicit val ecology:Eco
   def buildProps(implicit state:SpaceState, node:XmlElement):PropMap = {
     val propSection = node.child(props)
     val propVals = propSection.elements.map { propElem =>
-      val prop = state.prop(importThingId(propElem.tagName.name)).get
+      val prop = state.prop(importThingId(propElem.tagName.name)).getOrElse(throw new Exception(s"Couldn't find property ${propElem.tagName.name}!"))
       val rawElems = propElem.childrenNamed(elem)
       val vs = rawElems.map(buildValue(prop, _)).flatten
       val qv = prop.cType.makePropValue(vs, prop.pType)
@@ -136,7 +136,8 @@ private [imexport] class XMLImporter(rc:RequestContext)(implicit val ecology:Eco
   
   def buildType(state:SpaceState, node:XmlElement) = {
     implicit val n = node
-    val t = new ModelType(id.oid, modelref.oidPlus, () => emptyProps)
+    implicit val s = state
+    val t = new ModelType(id.oid, modelref.oidPlus, () => buildProps)
     state.copy(types = state.types + (t.id -> t))
   }
   

@@ -11,6 +11,7 @@ import querki.core.NameUtils
 import querki.core.MOIDs._
 import querki.globals._
 import querki.types.ModelTypeBase
+import querki.types.MOIDs._
 import querki.values.QValue
 
 /**
@@ -71,15 +72,20 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
   }
   
   def oneType(pt:ModelTypeBase)(implicit state:SpaceState) = {
-    typ(
-      stdAttrs(pt)
-    )
+    state.anything(pt.basedOn).map { model =>
+      val typProps = pt.props - ModelForTypePropOID
+      typ(
+        tid(pt),
+        modelref:=tnameAndId(model),
+        thingProps(pt, typProps)
+      )
+    }
   }
   
   def allTypes(implicit state:SpaceState):Seq[Tag] = {
     state.types.values.toSeq.sortBy(_.linkName).map { pt =>
       pt match {
-        case mt:ModelTypeBase => Some(oneType(mt))
+        case mt:ModelTypeBase => oneType(mt)
         case _ => None
       }
     }.flatten
