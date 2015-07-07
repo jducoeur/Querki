@@ -45,6 +45,10 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
   lazy val Evolutions = interface[querki.evolutions.Evolutions]
   lazy val SystemInterface = interface[querki.system.System]
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
+  
+  type SpaceStatusCode = Int
+  final val StatusNormal:SpaceStatusCode = 0
+  final val StatusArchived:SpaceStatusCode = 1
 
   def receive = {
     case ListMySpaces(owner) => {
@@ -56,6 +60,7 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
               SELECT Spaces.id, Spaces.name, display, Identity.handle FROM Spaces
                 JOIN Identity ON userid={owner}
               WHERE owner = Identity.id
+                AND status = 0
               """).on("owner" -> owner.raw)()
           spaceStream.force.map { row =>
             val id = OID(row[Long]("id"))
@@ -158,7 +163,10 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
     case GetSpaceByName(ownerId:OID, name:String) => {
       val result = DB.withTransaction(dbName(System)) { implicit conn =>
         val rowOption = SQL("""
-            SELECT id from Spaces WHERE owner = {ownerId} AND name = {name}
+            SELECT id from Spaces 
+             WHERE owner = {ownerId} 
+               AND name = {name}
+               AND status = 0
             """).on("ownerId" -> ownerId.raw, "name" -> name)().headOption
         rowOption.map(row => OID(row[Long]("id")))
       }
@@ -170,7 +178,7 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
     
     case GetSpaceCount(requester) => {
       val result = DB.withTransaction(dbName(System)) { implicit conn =>
-        SQL("SELECT COUNT(*) AS c FROM Spaces")().head[Long]("c")
+        SQL("SELECT COUNT(*) AS c FROM Spaces WHERE status = 0")().head[Long]("c")
       }
       sender ! SpaceCount(result)
     }
