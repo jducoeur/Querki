@@ -12,6 +12,8 @@ import querki.globals._
  */
 case object KillMe
 
+case object Shutdown
+
 /**
  * Some standard boilerplate around the timeout-y bits of a ClusterSharding Entity. Entities
  * should usually mix this in -- it allows them to simply set a config flag for their timeout
@@ -41,6 +43,7 @@ trait ClusterTimeoutChild extends Actor {
     message match {
       case resp:ReceiveTimeout => context.parent ! Passivate(KillMe)
       case KillMe => context.stop(self)
+      case Shutdown => context.parent ! Passivate(KillMe)
       case other => super.unhandled(other)
     }
   }  

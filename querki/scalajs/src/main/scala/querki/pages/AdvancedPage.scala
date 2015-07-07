@@ -1,19 +1,49 @@
 package querki.pages
 
+import scala.util.{Failure, Success}
+
 import org.scalajs.dom
 
 import scalatags.JsDom.all._
 import autowire._
 
 import querki.api._
-import querki.display.{ButtonGadget, QText}
+import querki.data.SpaceInfo
+import querki.display.{ButtonGadget, Dialog, QText}
 import querki.display.rx.GadgetRef
 import querki.globals._
+import querki.security.SecurityFunctions
 
 class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
   lazy val thingId = TID(params("thingId"))
   
   lazy val Client = interface[querki.client.Client]
+  lazy val StatusLine = interface[querki.display.StatusLine]
+  
+  def archiveAfterConfirm(info:SpaceInfo) = {
+    val archiveDialog:Dialog = 
+      new Dialog("Confirm Archive", 200, 350,
+        p(b(s"Are you sure you want to archive the entire Space ${info.displayName}? It may be a number of months before you can retrieve it!")),
+        ("Archive" -> { dialog => 
+          // TODO: display a spinner
+          Client[SecurityFunctions].archiveThisSpace().call().onComplete { 
+            case Success(b) if (b == true) => {
+              // This Space has been archived, so we're no longer allowed to call it. Navigate to index, since that's
+              // pretty much the only thing we can do:
+              PageManager.showIndexPage()
+            }
+            case Failure(ex) => {
+              ex match {
+                case CanNotArchiveException() => StatusLine.showUntilChange("You are not allowed to archive this Space!")
+                case _ => StatusLine.showUntilChange(ex.toString())
+              }
+            }
+          }
+        }),
+        ("Cancel" -> { dialog => dialog.done() })
+      )
+    archiveDialog.show()
+  }
   
   val ql =
     s"""""### Advanced commands for ____
@@ -41,7 +71,14 @@ class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Eco
               target:="_blank",
               href:="_export.xml",
               "Export Space to XML"
-            )
+            ),
+            
+            p("""Press this button to Archive this Space. NOTE: there is currently no way to list or recover Archived
+              Spaces! Those capabilities are at least a few months away, so only Archive this Space if you are sure
+              you aren't going to need it any time soon!"""),
+            new ButtonGadget(ButtonGadget.Danger, "Archive this Space") ({ () =>
+              archiveAfterConfirm(DataAccess.space.get)
+            })
           )
         },
         new ButtonGadget(ButtonGadget.Primary, "Done")({ () => Pages.showSpacePage(DataAccess.space.get) })

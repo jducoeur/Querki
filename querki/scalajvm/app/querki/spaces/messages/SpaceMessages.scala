@@ -35,6 +35,9 @@ case class SpaceStatus(spaceId:OID, name:String, thingConvs:Int, nSessions:Int)
 // This responds eventually with a ThingFound:
 case class CreateSpace(requester:User, name:String) extends SpaceMgrMsg
 
+case class ArchiveSpace(spaceId:OID) extends SpaceMgrMsg
+case object Archived
+
 /**
  * The base class for message that get routed to a Space.
  * 

@@ -7,11 +7,13 @@ import scalatags.JsDom.all._
 import querki.globals._
 
 object ButtonGadget {
-  type ButtonKind = Int
+  type ButtonKind = String
   
-  val Normal:ButtonKind = 1
-  val Info:ButtonKind = 2
-  val Primary:ButtonKind = 3
+  val Normal:ButtonKind = "btn-default"
+  val Info:ButtonKind = "btn-info"
+  val Primary:ButtonKind = "btn-primary"
+  val Warning:ButtonKind = "btn-warning"
+  val Danger:ButtonKind = "btn-danger"
 }
 import ButtonGadget._
 
@@ -24,12 +26,7 @@ import ButtonGadget._
  */
 class ButtonGadget(kind:ButtonKind, mods:Modifier*)(onClick:() => Unit) extends Gadget[dom.HTMLAnchorElement] {
   def doRender() = {
-    val kindStr = kind match {
-      case Normal => "btn-default"
-      case Info => "btn-info"
-      case Primary => "btn-primary"
-    }
-    a(cls:=s"btn $kindStr", mods)
+    a(cls:=s"btn $kind", mods)
   }
   
   override def onCreate(e:dom.HTMLAnchorElement) = {

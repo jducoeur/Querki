@@ -98,6 +98,7 @@ class SpaceManager(val ecology:Ecology, val region:ActorRef) extends Actor with 
     }
     
     case req:GetSpaceByName => persister.forward(req)
+    case req:ArchiveSpace => persister.forward(req)
   }
   
   // Any checks we can make without needing to go to the DB should go here. Note that we

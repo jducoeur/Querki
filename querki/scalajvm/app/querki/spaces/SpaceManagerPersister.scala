@@ -182,5 +182,16 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
       }
       sender ! SpaceCount(result)
     }
+    
+    case ArchiveSpace(spaceId) => {
+      DB.withTransaction(dbName(System)) { implicit conn =>
+        SQL("""
+          UPDATE Spaces
+             SET status = 1
+           WHERE id = {spaceId}
+        """).on("spaceId" -> spaceId.raw).executeUpdate()
+      }
+      sender ! Archived
+    }
   }
 }

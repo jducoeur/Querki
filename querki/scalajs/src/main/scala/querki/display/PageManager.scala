@@ -226,4 +226,8 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     val document = window.document
     $("html, body").scrollTop(($(document).height()-$(window).height()).toInt);
   }
+  
+  def showIndexPage() = {
+    window.location.href = "/"
+  }
 }

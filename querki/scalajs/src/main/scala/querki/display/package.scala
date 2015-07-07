@@ -139,6 +139,13 @@ package object display {
      * afterPageLoads and nextChangeFuture events.
      */
     def onPageRendered(page:Page):Unit
+    
+    /**
+     * Navigate to the main Querki index page.
+     * 
+     * IMPORTANT: this will currently cause this client to be unloaded!
+     */
+    def showIndexPage():Unit
   }
   
   trait StatusLine extends EcologyInterface {

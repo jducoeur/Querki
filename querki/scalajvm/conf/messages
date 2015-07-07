@@ -30,6 +30,8 @@ Space.create.pendingUser=You are not allowed to create Spaces until you are upgr
 Space.createThing.nameExists=This Space already has a Thing with the name {0}
 Space.createThing.notAllowed=You are not allowed to create that
 
+Space.get.notFound=Space {0} was not found!
+
 Space.join.unknownError=Unknown error while trying to join space {0}
 
 Space.modifyThing.notAllowed=You are not allowed to modify that

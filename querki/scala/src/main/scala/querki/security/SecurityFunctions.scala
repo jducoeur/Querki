@@ -27,6 +27,17 @@ trait SecurityFunctions {
    * number of known Collaborators by Identity.
    */
   def invite(emails:Seq[String], collabs:Seq[TID]):Future[InviteResponse]
+  
+  /**
+   * Does exactly what it sounds like: it sets this Space to archived. The Space is no
+   * longer available after this, so the client should navigate away from it if it
+   * receives a true response.
+   * 
+   * This can only be run by the owner of the Space.
+   * 
+   * This never actually returns false; it will throw an Exception if it can't archive.
+   */
+  def archiveThisSpace():Future[Boolean]
 }
 
 case class PersonInfo(person:ThingInfo, roles:Seq[TID])

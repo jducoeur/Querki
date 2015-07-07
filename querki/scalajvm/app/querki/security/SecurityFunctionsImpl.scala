@@ -8,6 +8,7 @@ import querki.data._
 import querki.globals._
 import querki.identity.InvitationResult
 import querki.session.{AutowireApiImpl, AutowireParams}
+import querki.spaces.messages.{Archived, ArchiveSpace}
 
 import SecurityFunctions._
 
@@ -20,6 +21,7 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Aut
   lazy val Email = interface[querki.email.Email]
   lazy val Person = interface[querki.identity.Person]
   lazy val Roles = interface[Roles]
+  lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
   def doRoute(req:Request):Future[String] = route[SecurityFunctions](this)(req)
   
@@ -69,6 +71,22 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Aut
 	
     Person.inviteMembers(rc, inviteeEmails, collabs, state).map { case InvitationResult(invited, alreadyInvited) =>
       InviteResponse(invited, alreadyInvited)
+    }
+  }
+  
+  def archiveThisSpace():Future[Boolean] = {
+    if (!rc.isOwner && !rc.requesterOrAnon.isAdmin)
+      Future.failed(new CanNotArchiveException())
+    
+    requestFuture[Boolean] { implicit promise =>
+      SpaceOps.spaceManager.request(ArchiveSpace(state.id)) foreach {
+        case Archived => {
+          // Have the troupe self-destruct on the way out, since this Space is no longer valid:
+          spaceRouter ! querki.util.Shutdown
+          promise.success(true)
+        }
+        case _ => promise.failure(new CanNotArchiveException())
+      }
     }
   }
 }

@@ -17,6 +17,7 @@ import models.{AsName, AsOID, ThingId}
 import querki.core.NameUtils
 import querki.ecology._
 import querki.spaces.messages._
+import querki.util.PublicException
 
 object SpaceEcotMOIDs extends EcotIds(37) {}
 
@@ -61,7 +62,7 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps {
         ask(spaceManager, PersistMessages.GetSpaceByName(ownerId, canonName)).map {
           case SpaceId(spaceId) => spaceId
           // TODO: this should really be a PublicException, I think:
-          case err:ThingError => throw new Exception(s"Couldn't find space $spaceId")
+          case err:ThingError => throw new PublicException("Space.get.notFound", spaceId)
         }
       }
     }

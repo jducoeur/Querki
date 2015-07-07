@@ -173,17 +173,27 @@ class ApplicationBase extends Controller with EcologyMember {
     (ownerIdStr:String, spaceId:String)
     (f: (PlayRequestContext => Future[Result])):EssentialAction = 
   withUser(false) { originalRC =>
-    // Give the listeners a chance to chime in. Note that this is where things like invitation
-    // management come into play.
-    val rcWithPath = originalRC.copy(spaceIdOpt = Some(spaceId), reqOwnerHandle = Some(ownerIdStr))
-    val updatedRC = PageEventManager.requestReceived(rcWithPath)
-    if (updatedRC.redirectTo.isDefined) {
-      Future.successful(updatedRC.updateSession(Redirect(updatedRC.redirectTo.get)))      
-    } else for {
-      ownerId <- getOwnerIdentity(ownerIdStr)
-      rc = originalRC.copy(ownerId = ownerId, spaceIdOpt = Some(spaceId), reqOwnerHandle = Some(ownerIdStr))
-      result <- f(rc)
+    try {
+      // Give the listeners a chance to chime in. Note that this is where things like invitation
+      // management come into play.
+      val rcWithPath = originalRC.copy(spaceIdOpt = Some(spaceId), reqOwnerHandle = Some(ownerIdStr))
+      val updatedRC = PageEventManager.requestReceived(rcWithPath)
+      if (updatedRC.redirectTo.isDefined) {
+        Future.successful(updatedRC.updateSession(Redirect(updatedRC.redirectTo.get)))      
+      } else {
+        val fRes = for {
+          ownerId <- getOwnerIdentity(ownerIdStr)
+          rc = originalRC.copy(ownerId = ownerId, spaceIdOpt = Some(spaceId), reqOwnerHandle = Some(ownerIdStr))
+          result <- f(rc)
+        }
+          yield result
+          
+        fRes.recoverWith {
+          case pex:PublicException => doError(routes.Application.index, pex)(originalRC)
+        }
+      }
+    } catch {
+      case pex:PublicException => doError(routes.Application.index, pex)(originalRC)
     }
-      yield result
   }
 }
