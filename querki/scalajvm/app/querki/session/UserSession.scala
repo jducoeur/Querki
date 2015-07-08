@@ -24,7 +24,7 @@ import querki.values.RequestContext
 import messages.ClientRequest
 
 private [session] class UserSession(val ecology:Ecology) extends Actor with Stash
-  with Requester with EcologyMember with UserNotifications with ClusterTimeoutChild 
+  with Requester with EcologyMember with UserNotifications with ClusterTimeoutChild with ImplCacheProvider
 {
   import UserSessionMessages._
   

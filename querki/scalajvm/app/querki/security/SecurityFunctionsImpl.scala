@@ -41,7 +41,7 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Aut
   }
   
   def getRoles():Seq[ThingInfo] = {
-    val roles = Roles.allRoles(info.state)
+    val roles = Roles.allRoles(state)
     roles.map(ClientApi.thingInfo(_, rc))
   }
   

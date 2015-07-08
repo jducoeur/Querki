@@ -9,6 +9,11 @@ import querki.ecology._
 import querki.identity.{Identity, PublicIdentity, User}
 
 package object session {
+  
+  /**
+   * A basic cache that AutowireApiImpls can use if they need it.
+   */
+  type ImplCache = Map[String, Any]
 
   /**
    * Provides access to the UserSessions.

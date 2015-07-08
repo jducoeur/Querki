@@ -36,7 +36,7 @@ import querki.values.{QValue, RequestContext, SpaceState}
  * concerns.
  */
 private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:User, val spaceRouter:ActorRef, val persister:ActorRef)
-  extends Actor with Stash with Requester with EcologyMember with TimeoutChild
+  extends Actor with Stash with Requester with EcologyMember with TimeoutChild with ImplCacheProvider
   with autowire.Server[String, upickle.Reader, upickle.Writer]
 {
   implicit val ecology = e
@@ -299,7 +299,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
   def write[Result: Writer](r: Result) = upickle.write(r)
   def read[Result: Reader](p: String) = upickle.read[Result](p)
   
-  def mkParams(rc:RequestContext) = AutowireParams(user, state, rc, spaceRouter, this, sender)
+  def mkParams(rc:RequestContext) = AutowireParams(user, Some(state), rc, Some(spaceRouter), this, sender, this)
   
   def normalReceive:Receive = LoggingReceive (handleRequestResponse orElse {
     case CurrentState(s) => setRawState(s)

@@ -24,6 +24,13 @@ import querki.values.{RequestContext, SpaceState}
 import messages.SessionMessage
 
 /**
+ * Callers of AutowireApiImpls should mix this in.
+ */
+trait ImplCacheProvider {
+  lazy val implCache:ImplCache = Map.empty[String, Any]
+}
+
+/**
  * Passthrough parameters. The subclass of AutowireApiImpl should accept these and pass them into
  * AutowireApiImpl, but the subclass should note directly use these. Instead, use the accessors
  * built into AutowireApiImpl itself.
@@ -37,7 +44,7 @@ case class AutowireParams(
   /**
    * The current state of the Space, as seen by this User.
    */
-  state:SpaceState,
+  state:Option[SpaceState],
   
   /**
    * The RequestContext for this request.
@@ -47,7 +54,7 @@ case class AutowireParams(
   /**
    * The router to *this* Space, which we use to send messages to other members of the Troupe.
    */
-  spaceRouter:ActorRef,
+  spaceRouter:Option[ActorRef],
   
   /**
    * The actor we should use to send messages.
@@ -57,7 +64,12 @@ case class AutowireParams(
   /**
    * The sender who invoked this request.
    */
-  sender:ActorRef
+  sender:ActorRef,
+  
+  /**
+   * The provider of the ImplCache that AutowireImpls may use.
+   */
+  cacheProvider:ImplCacheProvider
 )
 
 /**
@@ -74,12 +86,13 @@ abstract class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends
   with autowire.Server[String, upickle.Reader, upickle.Writer]
 {
   def user = info.user
-  def state = info.state
+  def state = info.state.getOrElse(throw new Exception(s"Attempted to access state from non-Space API $this"))
   def rc = info.rc
   def self = info.actor.self
   def sender = info.sender
-  val spaceRouter = info.spaceRouter
-  val requester = info.actor
+  def spaceRouter = info.spaceRouter.getOrElse(throw new Exception(s"Attempted to access spaceRouter from non-Space API $this"))
+  def requester = info.actor
+  def implCache = info.cacheProvider.implCache
   
   /***************************************************
    * Wrapping code
