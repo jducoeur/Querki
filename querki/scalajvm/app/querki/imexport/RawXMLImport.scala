@@ -17,7 +17,7 @@ import querki.values.{ElemValue, QValue, RequestContext, SpaceState}
  * 
  * @author jducoeur
  */
-private [imexport] class XMLImporter(rc:RequestContext)(implicit val ecology:Ecology) extends EcologyMember with ModelTypeDefiner {
+private [imexport] class RawXMLImport(rc:RequestContext)(implicit val ecology:Ecology) extends EcologyMember with ModelTypeDefiner {
   
   lazy val Core = interface[querki.core.Core]
   lazy val System = interface[querki.system.System]
@@ -206,9 +206,5 @@ private [imexport] class XMLImporter(rc:RequestContext)(implicit val ecology:Eco
         andChildrenOf(models, buildModel).
         andChildrenOf(instances, buildInstance)
     }
-  }
-  
-  def createFromXML(xml:String) = {
-    
   }
 }

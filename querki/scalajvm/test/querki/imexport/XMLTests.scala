@@ -75,7 +75,7 @@ class XMLTests extends QuerkiTests {
       
       val exporter = new XMLExporter
       val xmlStr = exporter.exportSpace(stateIn)
-      val importer = new XMLImporter(getRc(theSpace))
+      val importer = new RawXMLImport(getRc(theSpace))
       val stateOut = importer.readXML(xmlStr)
       
       def pqloaded(text:String) = {
