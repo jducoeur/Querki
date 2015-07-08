@@ -15,6 +15,7 @@ import Implicits.execContext
 import querki.notifications._
 import querki.notifications.NotificationPersister._
 import messages.{ClientRequest, ClientResponse}
+import querki.values.RequestContext
 
 // TODO: this is still too incestuous with UserSession per se.
 class UserNotificationActor(userId:OID, val ecology:Ecology, userSession:ActorRef) extends Actor with Stash with Requester with
@@ -84,6 +85,8 @@ class UserNotificationActor(userId:OID, val ecology:Ecology, userSession:ActorRe
     case msg:UserSessionMsg => stash()    
   })
   
+  def mkParams(rc:RequestContext) = AutowireParams(rc.requesterOrAnon, None, rc, None, this, sender)
+  
   def mainReceive:Receive = LoggingReceive (handleRequestResponse orElse {
     
     case NewNotification(_, noteRaw) => {
@@ -104,12 +107,8 @@ class UserNotificationActor(userId:OID, val ecology:Ecology, userSession:ActorRe
     case UserSessionClientRequest(_, ClientRequest(req, rc)) => {
       req.path(2) match {
         case "NotificationFunctions" => {
-          // route() is asynchronous, so we need to store away the sender!
-          val senderSaved = sender
-          val handler = new NotificationFunctionsImpl(this, rc)(ecology)
-          route[NotificationFunctions](handler)(req).foreach { result =>
-            senderSaved ! ClientResponse(result)
-          }          
+          val handler = new NotificationFunctionsImpl(mkParams(rc))(ecology)
+          handler.handleRequest(req)
         }
       }
     }    

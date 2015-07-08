@@ -3,41 +3,51 @@ package querki.session
 import scala.concurrent.Future
 
 import querki.globals._
-import Implicits.execContext
-
 import querki.notifications._
 import querki.notifications.NotificationPersister._
 import querki.values.RequestContext
 
-class NotificationFunctionsImpl/*(info:AutowireParams)*/(notes:UserNotificationActor, rc:RequestContext)(implicit val ecology:Ecology)
-  extends /*AutowireApiImpl(info, e) with*/ NotificationFunctions with EcologyMember
+class NotificationFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
+  extends AutowireApiImpl(info, e) with NotificationFunctions
 {
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val Notifications = interface[querki.notifications.Notifications]
   
+  def doRoute(req:Request):Future[String] = route[NotificationFunctions](this)(req)
+  
+  // TODO: this is an ugly workaround for the fact that NotificationFunctionalImpl and UserNotificationActor needs to
+  // share a cache. What would be a better way to do this?
+  lazy val notes = requester.asInstanceOf[UserNotificationActor]
+  
   def getRecentNotifications():Future[Seq[NotificationInfo]] = {
     // TODO: update lastNoteChecked. We probably should be refactoring all that Notification stuff into here.
     val identityIds = notes.currentNotes.map(_.sender)
-    IdentityAccess.getIdentities(identityIds).map { identities =>
-      try {
-	      notes.currentNotes.map { note =>
-	        val sender = ClientApi.identityInfo(identities(note.sender))
-	        val rendered = Notifications.render(rc, note)
-	        NotificationInfo(
-	          note.id,
-	          sender,
-	          note.spaceId.map(_.toThingId.toString).getOrElse(""),
-	          note.thingId.map(_.toThingId.toString).getOrElse(""),
-	          // TODO: This should really be an implicit conversion:
-	          note.sentTime.getMillis,
-	          rendered,
-	          note.isRead,
-	          note.isDeleted
-	        )
-	      }
-      } catch {
-        case ex:Exception => { QLog.error("Exception in getRecentNotifications", ex); throw ex }
+    // This is a tad ornate, but necessary. getIdentities returns a Future, and we're then using it
+    // to manipulate notes -- that is, the Requester. So it is required that getIdentities() get looped
+    // back into the Requester's receive loop, and the result has to be re-Futurized.
+    // TBD: can we come up with a more elegant approach for this?
+    requestFuture[Seq[NotificationInfo]] { implicit promise =>
+      loopback(IdentityAccess.getIdentities(identityIds)) foreach { identities =>
+        try {
+  	      promise.success(notes.currentNotes.map { note =>
+  	        val sender = ClientApi.identityInfo(identities(note.sender))
+  	        val rendered = Notifications.render(rc, note)
+  	        NotificationInfo(
+  	          note.id,
+  	          sender,
+  	          note.spaceId.map(_.toThingId.toString).getOrElse(""),
+  	          note.thingId.map(_.toThingId.toString).getOrElse(""),
+  	          // TODO: This should really be an implicit conversion:
+  	          note.sentTime.getMillis,
+  	          rendered,
+  	          note.isRead,
+  	          note.isDeleted
+            )
+  	      })
+        } catch {
+          case ex:Exception => { QLog.error("Exception in getRecentNotifications", ex); throw ex }
+        }
       }
     }
   }
