@@ -24,13 +24,6 @@ import querki.values.{RequestContext, SpaceState}
 import messages.SessionMessage
 
 /**
- * Callers of AutowireApiImpls should mix this in.
- */
-trait ImplCacheProvider {
-  lazy val implCache:ImplCache = Map.empty[String, Any]
-}
-
-/**
  * Passthrough parameters. The subclass of AutowireApiImpl should accept these and pass them into
  * AutowireApiImpl, but the subclass should note directly use these. Instead, use the accessors
  * built into AutowireApiImpl itself.
@@ -64,12 +57,7 @@ case class AutowireParams(
   /**
    * The sender who invoked this request.
    */
-  sender:ActorRef,
-  
-  /**
-   * The provider of the ImplCache that AutowireImpls may use.
-   */
-  cacheProvider:ImplCacheProvider
+  sender:ActorRef
 )
 
 /**
@@ -92,7 +80,6 @@ abstract class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends
   def sender = info.sender
   def spaceRouter = info.spaceRouter.getOrElse(throw new Exception(s"Attempted to access spaceRouter from non-Space API $this"))
   def requester = info.actor
-  def implCache = info.cacheProvider.implCache
   
   /***************************************************
    * Wrapping code
