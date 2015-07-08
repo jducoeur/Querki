@@ -63,11 +63,6 @@ class SessionEcot(e:Ecology) extends QuerkiEcot(e) with Session with SessionHand
     fut.mapTo[UserSessionInfo]
   }
   
-  def getNotifications(user:User):Future[RecentNotifications] = {
-    val fut = sessionManager ? GetRecent(user.id)
-    fut.mapTo[RecentNotifications]
-  }
-  
   def getCollaborators(user:User, identity:Identity, term:String):Future[Collaborators] = {
     val fut = sessionManager ? GetCollaborators(user.id, identity.id, term)
     fut.mapTo[Collaborators]

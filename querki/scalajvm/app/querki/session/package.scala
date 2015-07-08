@@ -30,14 +30,6 @@ package object session {
     def getSessionInfo(user:User):Future[UserSessionInfo]
     
     /**
-     * Asynchronously fetches the notifications for this user, in reverse chronological order.
-     * 
-     * TODO: this is way too static. We *should* have a distinctly stream-oriented model for dealing
-     * with this.
-     */
-    def getNotifications(user:User):Future[UserSessionMessages.RecentNotifications]
-    
-    /**
      * Asynchronously fetch all of this Identity's Collaborators -- people they share Spaces with --  who fit the given search term.
      */
     def getCollaborators(user:User, identity:Identity, term:String):Future[UserSessionMessages.Collaborators]

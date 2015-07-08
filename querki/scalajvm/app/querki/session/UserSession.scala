@@ -96,13 +96,6 @@ object UserSessionMessages {
   case class NewNotification(userId:UserId, note:Notification) extends UserSessionMsg {
     def copyTo(userId:UserId) = copy(userId = userId)
   }
-  
-  /**
-   * Fetches the recent Notifications for this user.
-   */
-  case class GetRecent(userId:UserId) extends UserSessionMsg {
-    def copyTo(userId:UserId) = copy(userId = userId)
-  }
   case class RecentNotifications(notes:Seq[Notification])
   
   /**

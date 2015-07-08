@@ -78,12 +78,6 @@ trait UserNotifications extends autowire.Server[String, upickle.Reader, upickle.
       currentNotes = note +: currentNotes
     }
     
-    case GetRecent(_) => {
-      sender ! RecentNotifications(currentNotes)
-      lastNoteChecked = currentMaxNote
-      notePersister ! UpdateLastChecked(lastNoteChecked)
-    }
-    
     case UserSessionClientRequest(_, ClientRequest(req, rc)) => {
       req.path(2) match {
         case "NotificationFunctions" => {
@@ -99,8 +93,8 @@ trait UserNotifications extends autowire.Server[String, upickle.Reader, upickle.
   })
 }
 
-class NotificationFunctionsImpl(notes:UserNotifications, rc:RequestContext)(implicit val ecology:Ecology) 
-  extends NotificationFunctions with EcologyMember
+class NotificationFunctionsImpl/*(info:AutowireParams)*/(notes:UserNotifications, rc:RequestContext)(implicit val ecology:Ecology)
+  extends /*AutowireApiImpl(info, e) with*/ NotificationFunctions with EcologyMember
 {
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
