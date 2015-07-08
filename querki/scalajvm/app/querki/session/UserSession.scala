@@ -24,7 +24,7 @@ import querki.values.RequestContext
 import messages.ClientRequest
 
 private [session] class UserSession(val ecology:Ecology) extends Actor with Stash
-  with Requester with EcologyMember with UserNotifications with ClusterTimeoutChild with ImplCacheProvider
+  with Requester with EcologyMember with ClusterTimeoutChild with ImplCacheProvider
 {
   import UserSessionMessages._
   
@@ -36,9 +36,12 @@ private [session] class UserSession(val ecology:Ecology) extends Actor with Stas
   
   lazy val collaborators = context.actorOf(CollaboratorCache.actorProps(ecology, userId))
   
+  lazy val notifications = context.actorOf(UserNotifications.actorProps(userId, ecology, self))
+  
   override def preStart() = {
-    // TODO: this shouldn't be going through the NotificationPersister:
-    notePersister ! LoadInfo
+    // Kick the UserNotifications to life. That actually fires up fully first, and we finish
+    // getting this ready when it sends us the UserInfo:
+    notifications
     super.preStart()
   }
 
@@ -46,18 +49,13 @@ private [session] class UserSession(val ecology:Ecology) extends Actor with Stas
    * The initial receive just handles setup, and then switches to mainReceive once it is ready:
    */
   def receive = LoggingReceive (handleRequestResponse orElse {
+    // TODO: this gets sent from the UserNotifications Actor when it is ready. That is rather
+    // broken conceptually -- we should move towards something better decoupled.
     case UserInfo(id, version, lastChecked) => {
-      lastNoteChecked = lastChecked
-      
+      QLog.spew("UserSession got the UserInfo")
       // NOTE: this can take a long time! This is the point where we evolve the User to the
   	  // current version:
 	    UserEvolutions.checkUserEvolution(userId, version)
-	  
-	    // This will send InitComplete when it is done:
-	    initNotes()
-    }
-    
-    case InitComplete => {
       context.become(mainReceive)
       unstashAll()
     }
@@ -66,13 +64,15 @@ private [session] class UserSession(val ecology:Ecology) extends Actor with Stas
     case msg:UserSessionMsg => stash()
   })
   
-  def mainReceive:Receive = notificationMessageReceive orElse LoggingReceive (handleRequestResponse orElse {
-    case FetchSessionInfo(_) => {
-      // TODO: make this real
-      sender ! UserSessionInfo(numNewNotes)
-    }
+  def mainReceive:Receive = LoggingReceive (handleRequestResponse orElse {
+    case msg:FetchSessionInfo => notifications.forward(msg)
+    
+    case msg:NewNotification => notifications.forward(msg)
     
     case msg:GetCollaborators => collaborators.forward(msg)
+    
+    // TODO: this is wrong! It is just temporary:
+    case msg:UserSessionClientRequest => notifications.forward(msg)
   })
 }
 

@@ -124,11 +124,11 @@ class ClientController extends ApplicationBase {
   def userApiRequest = withUser(false) { implicit rc =>
     rc.requester match {
       case Some(requester) => {
-	    val request = unpickleRequest(rc)
-	    askUserSession(rc, UserSessionClientRequest(rc.requesterOrAnon.id, ClientRequest(request, rc))) {
-	      case ClientResponse(pickled) => Ok(pickled)
-	      case ClientError(msg) => BadRequest(msg)
-	    }        
+  	    val request = unpickleRequest(rc)
+  	    askUserSession(rc, UserSessionClientRequest(rc.requesterOrAnon.id, ClientRequest(request, rc))) {
+  	      case ClientResponse(pickled) => Ok(pickled)
+  	      case ClientError(msg) => BadRequest(msg)
+  	    }        
       }
       case None => BadRequest("Not logged in")
     }

@@ -18,16 +18,10 @@ import querki.values.RequestContext
 
 import messages.{ClientRequest, ClientResponse}
 
-// TODO: this is still much too incestuous with UserSession per se. Possibly we should pull most of the rest
-// of the guts of UserSession into here, and leave UserSession as a rump router? We should likely extract all
-// of the state into a single state class, which we could pass into NotificationFunctionsImpl instead of
-// a pointer to this.
-trait UserNotifications extends autowire.Server[String, upickle.Reader, upickle.Writer] with EcologyMember
-{ self:Actor with Stash with Requester =>
-  
-  def userId:OID
-  def ecology:Ecology
-  
+// TODO: this is still too incestuous with UserSession per se.
+class UserNotifications(userId:OID, val ecology:Ecology, userSession:ActorRef) extends Actor with Stash with Requester with
+  autowire.Server[String, upickle.Reader, upickle.Writer] with EcologyMember
+{
   import UserSessionMessages._
   
   lazy val PersistenceFactory = interface[querki.spaces.SpacePersistenceFactory]
@@ -58,16 +52,41 @@ trait UserNotifications extends autowire.Server[String, upickle.Reader, upickle.
   }
   def nextNoteId:Int = currentMaxNote + 1
   
-  def initNotes() = {
-    notePersister.requestFor[CurrentNotifications](Load) foreach { notes =>
-	  currentNotes = notes.notes.sortBy(_.id).reverse
-	    
-	  // Okay, we're ready to roll:
-	  self ! InitComplete
-	}
+  override def preStart() = {
+    // This will result in a UserInfo message
+    // TODO: this shouldn't be going through the NotificationPersister:
+    notePersister ! LoadInfo
+    super.preStart()
   }
   
-  def notificationMessageReceive:Receive = LoggingReceive (handleRequestResponse orElse {
+  def receive = LoggingReceive (handleRequestResponse orElse {
+    case msg @ UserInfo(id, version, lastChecked) => {
+      QLog.spew("NotificationFunctionsImpl got the UserInfo")
+      lastNoteChecked = lastChecked
+
+      // TODO: This the overly-coupled bit. Initializing the UserSession and Notifications
+      // should be separate, not the same message:
+      userSession.forward(msg)
+
+      // TODO: This is broken! This is loading all of the notifications before we
+      // start doing anything, which can slow down startup times significantly! We need
+      // to be able to show the UI, and then send the number of new notifications when
+      // we have it loaded:
+      notePersister.requestFor[CurrentNotifications](Load) foreach { notes =>
+        QLog.spew("NotificationFunctionsImpl got the CurrentNotifications")
+        currentNotes = notes.notes.sortBy(_.id).reverse
+          
+        // Okay, we're ready to roll:
+        context.become(mainReceive)
+        unstashAll()
+      }
+    }
+
+    // Hold everything else off until we've created them all:
+    case msg:UserSessionMsg => stash()    
+  })
+  
+  def mainReceive:Receive = LoggingReceive (handleRequestResponse orElse {
     
     case NewNotification(_, noteRaw) => {
       // We decide what the actual Notification Id is:
@@ -76,6 +95,12 @@ trait UserNotifications extends autowire.Server[String, upickle.Reader, upickle.
       notePersister ! NewNotification(userId, note)
       
       currentNotes = note +: currentNotes
+    }
+    
+    case FetchSessionInfo(_) => {
+      // TODO: make this real. This doesn't conceptually belong here, but until there is more
+      // than just the number of notes, we might as well put it here:
+      sender ! UserSessionInfo(numNewNotes)
     }
     
     case UserSessionClientRequest(_, ClientRequest(req, rc)) => {
@@ -91,6 +116,10 @@ trait UserNotifications extends autowire.Server[String, upickle.Reader, upickle.
       }
     }    
   })
+}
+
+object UserNotifications {
+  def actorProps(userId:OID, ecology:Ecology, userSession:ActorRef) = Props(classOf[UserNotifications], userId, ecology, userSession)
 }
 
 class NotificationFunctionsImpl/*(info:AutowireParams)*/(notes:UserNotifications, rc:RequestContext)(implicit val ecology:Ecology)
