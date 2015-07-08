@@ -52,7 +52,6 @@ private [session] class UserSession(val ecology:Ecology) extends Actor with Stas
     // TODO: this gets sent from the UserNotifications Actor when it is ready. That is rather
     // broken conceptually -- we should move towards something better decoupled.
     case UserInfo(id, version, lastChecked) => {
-      QLog.spew("UserSession got the UserInfo")
       // NOTE: this can take a long time! This is the point where we evolve the User to the
   	  // current version:
 	    UserEvolutions.checkUserEvolution(userId, version)

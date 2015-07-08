@@ -61,7 +61,6 @@ class UserNotificationActor(userId:OID, val ecology:Ecology, userSession:ActorRe
   
   def receive = LoggingReceive (handleRequestResponse orElse {
     case msg @ UserInfo(id, version, lastChecked) => {
-      QLog.spew("NotificationFunctionsImpl got the UserInfo")
       lastNoteChecked = lastChecked
 
       // TODO: This the overly-coupled bit. Initializing the UserSession and Notifications
@@ -73,7 +72,6 @@ class UserNotificationActor(userId:OID, val ecology:Ecology, userSession:ActorRe
       // to be able to show the UI, and then send the number of new notifications when
       // we have it loaded:
       notePersister.requestFor[CurrentNotifications](Load) foreach { notes =>
-        QLog.spew("NotificationFunctionsImpl got the CurrentNotifications")
         currentNotes = notes.notes.sortBy(_.id).reverse
           
         // Okay, we're ready to roll:
