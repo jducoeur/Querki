@@ -64,7 +64,7 @@ package object notifications {
   trait NotificationPersistence extends EcologyInterface {
     def noteTable(id:UserId):String
     def UserSQL(userId:UserId, query:String, version:Int = 0):SqlQuery
-    def loadUserInfo(userId:UserId):Option[UserInfo]
+    def loadUserInfo(userId:UserId):Option[UserNotificationInfo]
     def updateLastChecked(userId:UserId, lastChecked:Int):Unit
     def loadCurrent(userId:UserId):CurrentNotifications
     def createNotification(userId:UserId, note:Notification):Unit

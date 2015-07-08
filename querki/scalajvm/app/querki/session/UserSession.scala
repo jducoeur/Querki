@@ -15,7 +15,7 @@ import models.OID
 
 import querki.ecology._
 import querki.identity.{CollaboratorCache, IdentityId, PublicIdentity, UserId}
-import querki.notifications.{CurrentNotifications, EmptyNotificationId, LoadInfo, Notification, NotificationFunctions, UpdateLastChecked, UserInfo}
+import querki.notifications.{CurrentNotifications, EmptyNotificationId, LoadInfo, Notification, NotificationFunctions, UpdateLastChecked}
 import querki.notifications.NotificationPersister.Load
 import querki.time.DateTime
 import querki.util.ClusterTimeoutChild
@@ -29,6 +29,7 @@ private [session] class UserSession(val ecology:Ecology) extends Actor with Stas
   import UserSessionMessages._
   
   lazy val UserEvolutions = interface[querki.evolutions.UserEvolutions]
+  lazy val UserAccess = interface[querki.identity.UserAccess]
   
   def timeoutConfig:String = "querki.userSession.timeout"
   
@@ -39,9 +40,13 @@ private [session] class UserSession(val ecology:Ecology) extends Actor with Stas
   lazy val notifications = context.actorOf(UserNotificationActor.actorProps(userId, ecology, self))
   
   override def preStart() = {
-    // Kick the UserNotifications to life. That actually fires up fully first, and we finish
-    // getting this ready when it sends us the UserInfo:
+    // Kick the UserNotifications to life.
+    // TODO: this should go away, and the Notification should become its own thing:
     notifications
+    // Evolve the User if needed:
+    // TODO: in principle this shouldn't happen in preStart, but it does make the code a lot
+    // simpler:
+    UserAccess.getUserVersion(userId).map(UserEvolutions.checkUserEvolution(userId, _))
     super.preStart()
   }
 
@@ -49,21 +54,6 @@ private [session] class UserSession(val ecology:Ecology) extends Actor with Stas
    * The initial receive just handles setup, and then switches to mainReceive once it is ready:
    */
   def receive = LoggingReceive (handleRequestResponse orElse {
-    // TODO: this gets sent from the UserNotifications Actor when it is ready. That is rather
-    // broken conceptually -- we should move towards something better decoupled.
-    case UserInfo(id, version, lastChecked) => {
-      // NOTE: this can take a long time! This is the point where we evolve the User to the
-  	  // current version:
-	    UserEvolutions.checkUserEvolution(userId, version)
-      context.become(mainReceive)
-      unstashAll()
-    }
-
-    // Hold everything else off until we've created them all:
-    case msg:UserSessionMsg => stash()
-  })
-  
-  def mainReceive:Receive = LoggingReceive (handleRequestResponse orElse {
     case msg:FetchSessionInfo => notifications.forward(msg)
     
     case msg:NewNotification => notifications.forward(msg)

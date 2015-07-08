@@ -32,16 +32,15 @@ class NotificationPersistenceEcot(e:Ecology) extends QuerkiEcot(e) with Notifica
     SQL(replQuery)
   }
   
-  def loadUserInfo(userId:UserId):Option[UserInfo] = {
+  def loadUserInfo(userId:UserId):Option[UserNotificationInfo] = {
     DB.withConnection(dbName(System)) { implicit conn =>
       val userStream = SQL("""
-          SELECT userVersion, lastNoteChecked from User
+          SELECT lastNoteChecked from User
            WHERE id = {id} 
       """).on("id" -> userId.raw)()
       userStream.force.map { row =>
-        val version = row.int("userVersion")
         val lastNoteChecked = row.int("lastNoteChecked")
-        UserInfo(userId, version, lastNoteChecked)
+        UserNotificationInfo(userId, lastNoteChecked)
       }.headOption
     }
   }

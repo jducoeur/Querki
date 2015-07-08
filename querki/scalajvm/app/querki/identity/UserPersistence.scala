@@ -373,4 +373,14 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
       }
     }
   }
+  
+  def getUserVersion(userId:UserId):Option[Int] = {
+    DB.withConnection(dbName(System)) { implicit conn =>
+      val userStream = SQL("""
+          SELECT userVersion from User
+           WHERE id = {id} 
+      """).on("id" -> userId.raw)()
+      userStream.force.map (_.int("userVersion")).headOption
+    }    
+  }
 }

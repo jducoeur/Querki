@@ -13,12 +13,9 @@ case class NotifierId(ecotId:Short, notificationType:Short)
   
 /**
  * The basic information about a given User.
- * 
- * TODO: this is a bad smell. It is here because NotificationPersister is loading it. It probably
- * shouldn't be doing so.
  */
 case object LoadInfo
-case class UserInfo(userId:UserId, version:Int, lastNoteChecked:Int)
+case class UserNotificationInfo(userId:UserId, lastNoteChecked:Int)
 
 /**
  * Signal to update the last-checked Notification for this user.

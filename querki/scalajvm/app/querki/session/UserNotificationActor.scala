@@ -60,14 +60,10 @@ class UserNotificationActor(userId:OID, val ecology:Ecology, userSession:ActorRe
   }
   
   def receive = LoggingReceive (handleRequestResponse orElse {
-    case msg @ UserInfo(id, version, lastChecked) => {
+    case UserNotificationInfo(id, lastChecked) => {
       lastNoteChecked = lastChecked
 
-      // TODO: This the overly-coupled bit. Initializing the UserSession and Notifications
-      // should be separate, not the same message:
-      userSession.forward(msg)
-
-      // TODO: This is broken! This is loading all of the notifications before we
+      // TODO: This is bad! This is loading all of the notifications before we
       // start doing anything, which can slow down startup times significantly! We need
       // to be able to show the UI, and then send the number of new notifications when
       // we have it loaded:

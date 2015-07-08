@@ -208,5 +208,6 @@ package object identity {
     // TODO: any other entry points that change User state should be doing the same thing!
     def setTOSVersion(userId:OID, version:Int):Future[Option[User]]
     def getAcquaintanceIds(identityId:IdentityId):Seq[IdentityId]
+    def getUserVersion(userId:UserId):Option[Int]
   }
 }
