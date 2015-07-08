@@ -7,6 +7,10 @@ import querki.notifications._
 import querki.notifications.NotificationPersister._
 import querki.values.RequestContext
 
+/**
+ * Handler for the NotificationFunctions API. Note that this is *deeply* incestuous with UserNotificationActor,
+ * which is the Requester that runs it!
+ */
 class NotificationFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
   extends AutowireApiImpl(info, e) with NotificationFunctions
 {

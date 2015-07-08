@@ -72,7 +72,13 @@ private [session] class UserSession(val ecology:Ecology) extends Actor with Stas
     case msg:GetCollaborators => collaborators.forward(msg)
     
     // TODO: this is wrong! It is just temporary:
-    case msg:UserSessionClientRequest => notifications.forward(msg)
+    case msg @ UserSessionClientRequest(_, ClientRequest(req, rc)) => {
+      req.path(2) match {
+        case "NotificationFunctions" => notifications.forward(msg)
+        // TODO: handle stuff natively registered under UserSession:
+        case _ => ???
+      }
+    }  
   })
 }
 

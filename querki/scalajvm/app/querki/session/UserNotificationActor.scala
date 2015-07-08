@@ -24,6 +24,7 @@ class UserNotificationActor(userId:OID, val ecology:Ecology, userSession:ActorRe
   import UserSessionMessages._
   
   lazy val PersistenceFactory = interface[querki.spaces.SpacePersistenceFactory]
+  lazy val SessionInvocation = interface[SessionInvocation]
 
   lazy val notePersister = PersistenceFactory.getNotificationPersister(userId)
   
@@ -105,12 +106,8 @@ class UserNotificationActor(userId:OID, val ecology:Ecology, userSession:ActorRe
     }
     
     case UserSessionClientRequest(_, ClientRequest(req, rc)) => {
-      req.path(2) match {
-        case "NotificationFunctions" => {
-          val handler = new NotificationFunctionsImpl(mkParams(rc))(ecology)
-          handler.handleRequest(req)
-        }
-      }
+      // Note that, in theory, NotificationFunctions is the only thing that'll be routed here:
+      SessionInvocation.handleSessionRequest(req, mkParams(rc))
     }    
   })
 }
