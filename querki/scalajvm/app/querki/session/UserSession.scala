@@ -37,7 +37,7 @@ private [session] class UserSession(val ecology:Ecology) extends Actor with Stas
   
   lazy val collaborators = context.actorOf(CollaboratorCache.actorProps(ecology, userId))
   
-  lazy val notifications = context.actorOf(UserNotificationActor.actorProps(userId, ecology, self))
+  lazy val notifications = context.actorOf(UserNotificationActor.actorProps(userId, ecology))
   
   override def preStart() = {
     // Kick the UserNotifications to life.

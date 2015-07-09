@@ -18,7 +18,7 @@ import messages.{ClientRequest, ClientResponse}
 import querki.values.RequestContext
 
 // TODO: this is still too incestuous with UserSession per se.
-class UserNotificationActor(userId:OID, val ecology:Ecology, userSession:ActorRef) extends Actor with Stash with Requester with
+class UserNotificationActor(userId:OID, val ecology:Ecology) extends Actor with Stash with Requester with
   autowire.Server[String, upickle.Reader, upickle.Writer] with EcologyMember
 {
   import UserSessionMessages._
@@ -107,5 +107,5 @@ class UserNotificationActor(userId:OID, val ecology:Ecology, userSession:ActorRe
 }
 
 object UserNotificationActor {
-  def actorProps(userId:OID, ecology:Ecology, userSession:ActorRef) = Props(classOf[UserNotificationActor], userId, ecology, userSession)
+  def actorProps(userId:OID, ecology:Ecology) = Props(classOf[UserNotificationActor], userId, ecology)
 }
