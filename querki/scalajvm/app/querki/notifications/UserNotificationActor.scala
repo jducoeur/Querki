@@ -3,9 +3,6 @@ package querki.notifications
 import akka.actor._
 import akka.event.LoggingReceive
 
-import upickle._
-import autowire._
-
 import org.querki.requester._
 
 import models.OID
@@ -21,7 +18,7 @@ import querki.util.ClusterTimeoutChild
 import querki.values.RequestContext
 
 class UserNotificationActor(val ecology:Ecology) extends Actor with Stash with Requester with
-  autowire.Server[String, upickle.Reader, upickle.Writer] with EcologyMember with ClusterTimeoutChild
+  EcologyMember with ClusterTimeoutChild
 {  
   import UserNotificationActor._
   
@@ -33,10 +30,6 @@ class UserNotificationActor(val ecology:Ecology) extends Actor with Stash with R
   def timeoutConfig:String = "querki.userSession.timeout"
   
   lazy val notePersister = PersistenceFactory.getNotificationPersister(userId)
-  
-  // Autowire functions
-  def write[Result: Writer](r: Result) = upickle.write(r)
-  def read[Result: Reader](p: String) = upickle.read[Result](p)
   
   // This is kept in most-recent-first order:
   var currentNotes:Seq[Notification] = Seq.empty
