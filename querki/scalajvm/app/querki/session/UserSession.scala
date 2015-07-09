@@ -54,8 +54,6 @@ private [session] class UserSession(val ecology:Ecology) extends Actor with Stas
    * The initial receive just handles setup, and then switches to mainReceive once it is ready:
    */
   def receive = LoggingReceive (handleRequestResponse orElse {
-    case msg:FetchSessionInfo => notifications.forward(msg)
-    
     case msg:NewNotification => notifications.forward(msg)
     
     case msg:GetCollaborators => collaborators.forward(msg)
@@ -80,10 +78,6 @@ object UserSessionMessages {
   }
   
   case object InitComplete
-  
-  case class FetchSessionInfo(userId:UserId) extends UserSessionMsg {
-    def copyTo(userId:UserId) = copy(userId = userId)
-  }
   
   /**
    * Fire-and-forget message, telling this UserSession that they are receiving a new Notification.

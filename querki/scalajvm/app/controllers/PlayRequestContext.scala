@@ -65,11 +65,10 @@ case class PlayRequestContextFull[B](
     sessionUpdates:Seq[(String,String)] = Seq.empty,
     redirectTo:Option[Call] = None,
     spaceIdOpt:Option[String] = None,
-    reqOwnerHandle:Option[String] = None,
-    numNotifications:Int = 0) 
+    reqOwnerHandle:Option[String] = None) 
   extends RequestHeaderParser
 {
-  lazy val rc = RequestContext(requester, ownerId, numNotifications)
+  lazy val rc = RequestContext(requester, ownerId)
   def requesterOrAnon = rc.requesterOrAnon
   
   // NOTE: this may be wrong, but at the moment is the way the logic works

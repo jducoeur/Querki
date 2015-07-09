@@ -92,12 +92,6 @@ class UserNotificationActor(userId:OID, val ecology:Ecology) extends Actor with 
       currentNotes = note +: currentNotes
     }
     
-    case FetchSessionInfo(_) => {
-      // TODO: make this real. This doesn't conceptually belong here, but until there is more
-      // than just the number of notes, we might as well put it here:
-      sender ! UserSessionInfo(numNewNotes)
-    }
-    
     case UserSessionClientRequest(_, ClientRequest(req, rc)) => {
       // Note that, in theory, NotificationFunctions is the only thing that'll be routed here:
       SessionInvocation.handleSessionRequest(req, mkParams(rc))

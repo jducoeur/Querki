@@ -53,11 +53,6 @@ class SessionEcot(e:Ecology) extends QuerkiEcot(e) with Session with SessionHand
   
   implicit val timeout = Timeout(5 seconds)
   
-  def getSessionInfo(user:User):Future[UserSessionInfo] = {
-    val fut = sessionManager ? FetchSessionInfo(user.id)
-    fut.mapTo[UserSessionInfo]
-  }
-  
   def getCollaborators(user:User, identity:Identity, term:String):Future[Collaborators] = {
     val fut = sessionManager ? GetCollaborators(user.id, identity.id, term)
     fut.mapTo[Collaborators]

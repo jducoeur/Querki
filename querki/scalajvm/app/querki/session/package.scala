@@ -29,11 +29,6 @@ package object session {
     def sessionManager:ActorRef
     
     /**
-     * Asynchronously gets the current info to show this user.
-     */
-    def getSessionInfo(user:User):Future[UserSessionInfo]
-    
-    /**
      * Asynchronously fetch all of this Identity's Collaborators -- people they share Spaces with --  who fit the given search term.
      */
     def getCollaborators(user:User, identity:Identity, term:String):Future[UserSessionMessages.Collaborators]

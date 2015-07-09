@@ -118,14 +118,7 @@ class ApplicationBase extends Controller with EcologyMember {
     } else {
       // Iff requireLogin was false, we might not have a real user here, so massage it:
       val userParam = if (user == User.Anonymous) None else Some(user)
-      userParam match {
-        case Some(u) => {
-          UserSessionMgr.getSessionInfo(user) flatMap { info =>
-            f(PlayRequestContextFull(request, userParam, UnknownOID, numNotifications = info.numNewNotes))          
-          }
-        }
-        case None => f(PlayRequestContextFull(request, userParam, UnknownOID))
-      }
+      f(PlayRequestContextFull(request, userParam, UnknownOID))
     }
   }
   

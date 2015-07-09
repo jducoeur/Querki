@@ -25,8 +25,7 @@ import querki.ui.UIRenderer
  */
 case class RequestContext(
     val requester:Option[User], 
-    val ownerId:IdentityId, 
-    val numNotifications:Int = 0)
+    val ownerId:IdentityId)
 {
   def requesterOrAnon = requester getOrElse User.Anonymous
   def requesterOID = requester map (_.id) getOrElse UnknownOID  
