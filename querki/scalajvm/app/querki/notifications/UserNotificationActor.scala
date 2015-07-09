@@ -17,10 +17,11 @@ import querki.notifications.NotificationPersister._
 import querki.session.{AutowireParams, UserSessionInfo}
 import querki.session.UserSessionMessages._
 import querki.session.messages.ClientRequest
+import querki.util.ClusterTimeoutChild
 import querki.values.RequestContext
 
 class UserNotificationActor(val ecology:Ecology) extends Actor with Stash with Requester with
-  autowire.Server[String, upickle.Reader, upickle.Writer] with EcologyMember
+  autowire.Server[String, upickle.Reader, upickle.Writer] with EcologyMember with ClusterTimeoutChild
 {  
   import UserNotificationActor._
   
@@ -28,6 +29,8 @@ class UserNotificationActor(val ecology:Ecology) extends Actor with Stash with R
   lazy val SessionInvocation = interface[querki.session.SessionInvocation]
 
   lazy val userId = OID(self.path.name)
+  
+  def timeoutConfig:String = "querki.userSession.timeout"
   
   lazy val notePersister = PersistenceFactory.getNotificationPersister(userId)
   
