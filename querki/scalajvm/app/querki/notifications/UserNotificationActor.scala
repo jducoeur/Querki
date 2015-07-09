@@ -76,7 +76,7 @@ class UserNotificationActor(userId:OID, val ecology:Ecology) extends Actor with 
     }
 
     // Hold everything else off until we've created them all:
-    case msg:UserSessionMsg => stash()    
+    case _ => stash()    
   })
   
   def mkParams(rc:RequestContext) = AutowireParams(rc.requesterOrAnon, None, rc, None, this, sender)
@@ -92,7 +92,7 @@ class UserNotificationActor(userId:OID, val ecology:Ecology) extends Actor with 
       currentNotes = note +: currentNotes
     }
     
-    case UserSessionClientRequest(_, ClientRequest(req, rc)) => {
+    case ClientRequest(req, rc) => {
       // Note that, in theory, NotificationFunctions is the only thing that'll be routed here:
       SessionInvocation.handleSessionRequest(req, mkParams(rc))
     }    

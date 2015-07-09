@@ -59,7 +59,7 @@ private [session] class UserSession(val ecology:Ecology) extends Actor with Stas
     case msg:GetCollaborators => collaborators.forward(msg)
     
     // TODO: this is wrong! It is just temporary:
-    case msg @ UserSessionClientRequest(_, ClientRequest(req, rc)) => {
+    case msg @ ClientRequest(req, rc) => {
       req.path(2) match {
         case "NotificationFunctions" => notifications.forward(msg)
         // TODO: handle stuff natively registered under UserSession:
@@ -77,8 +77,6 @@ object UserSessionMessages {
     def copyTo(userId:UserId):UserSessionMsg
   }
   
-  case object InitComplete
-  
   /**
    * Fire-and-forget message, telling this UserSession that they are receiving a new Notification.
    */
@@ -94,13 +92,6 @@ object UserSessionMessages {
     def copyTo(userId:UserId) = copy(userId = userId)    
   }
   case class Collaborators(acs:Iterable[PublicIdentity])
-
-  /**
-   * An RPC request from the Client.
-   */
-  case class UserSessionClientRequest(userId:UserId, req:ClientRequest) extends UserSessionMsg {
-    def copyTo(userId:UserId) = copy(userId = userId)
-  }
 }
 
 object UserSession {

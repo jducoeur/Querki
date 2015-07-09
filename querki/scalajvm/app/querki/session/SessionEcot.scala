@@ -10,6 +10,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import querki.ecology._
 import querki.identity.{Identity, PublicIdentity, User}
+import messages._
 import querki.util.ActorHelpers._
 import UserSessionMessages._
 import querki.notifications.NotificationFunctionsImpl
@@ -27,10 +28,12 @@ class SessionEcot(e:Ecology) extends QuerkiEcot(e) with Session with SessionHand
   
   // These two functions tell ClusterSharding the ID and shard for a given UserSessionMsg.
   val idExtractor:ShardRegion.IdExtractor = {
+    case msg @ ClientRequest(req, rc) => (rc.requesterOrAnon.id.toString(), msg)
     case msg:UserSessionMsg => (msg.userId.toString(), msg) 
   }
   
   val shardResolver:ShardRegion.ShardResolver = msg => msg match {
+    case msg @ ClientRequest(req, rc) => (rc.requesterOrAnon.id.raw % 30).toString()
     case msg:UserSessionMsg => (msg.userId.raw % 30).toString()
   }
   

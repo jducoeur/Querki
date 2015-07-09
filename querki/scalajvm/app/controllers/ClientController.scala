@@ -19,7 +19,6 @@ import Implicits.execContext
 import querki.api.ThingFunctions
 import querki.imexport.ImexportFunctions
 import querki.pages.PageIDs._
-import querki.session.UserSessionMessages.{UserSessionClientRequest, UserSessionMsg}
 import querki.session.messages._
 import querki.spaces.messages.{SessionRequest, SpaceMgrMsg, ThingError}
 import querki.spaces.messages.SpaceError._
@@ -52,7 +51,7 @@ class ClientController extends ApplicationBase {
     SpaceOps.askSpace2(SessionRequest(rc.requesterOrAnon, spaceId, msg))(cb)
   }
   
-  def askUserSession[B](rc:PlayRequestContext, msg:UserSessionMsg)(cb: PartialFunction[Any, Future[B]]):Future[B] = {
+  def askUserSession[B](rc:PlayRequestContext, msg:ClientRequest)(cb: PartialFunction[Any, Future[B]]):Future[B] = {
     akka.pattern.ask(UserSessionMgr.sessionManager, msg)(Timeout(5 seconds)).flatMap(cb)
   }
 
@@ -125,7 +124,7 @@ class ClientController extends ApplicationBase {
     rc.requester match {
       case Some(requester) => {
   	    val request = unpickleRequest(rc)
-  	    askUserSession(rc, UserSessionClientRequest(rc.requesterOrAnon.id, ClientRequest(request, rc))) {
+  	    askUserSession(rc, ClientRequest(request, rc)) {
   	      case ClientResponse(pickled) => Ok(pickled)
   	      case ClientError(msg) => BadRequest(msg)
   	    }        

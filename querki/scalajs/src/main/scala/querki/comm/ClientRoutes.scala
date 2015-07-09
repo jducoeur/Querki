@@ -113,7 +113,7 @@ class PlayAjax(call:PlayCall) {
       promise.success(data)
     }
     deferred.fail { (jqXHR:JQueryXHR, textStatus:String, errorThrown:String) => 
-      println(s"Got AJAX error $errorThrown (${jqXHR.status}) with ${jqXHR.responseText}")
+      println(s"Got AJAX error $errorThrown (${jqXHR.status}) from ${data.map(pair => s"${pair._1}=${pair._2}").mkString("&")} with ${jqXHR.responseText}")
       promise.failure(PlayAjaxException(jqXHR, textStatus, errorThrown))
     }
     
