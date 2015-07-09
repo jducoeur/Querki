@@ -9,11 +9,15 @@ import querki.ecology._
 import querki.identity.{Identity, PublicIdentity, User}
 
 package object session {
-  
+
   /**
-   * A basic cache that AutowireApiImpls can use if they need it.
+   * Allows Actors to invoke Autowire Requests that come to them.
+   * 
+   * TODO: this should be renamed and moved, now that it is being used outside of just UserSpaceSession.
    */
-  type ImplCache = Map[String, Any]
+  trait SessionInvocation extends EcologyInterface {
+    def handleSessionRequest(req:autowire.Core.Request[String], params:AutowireParams):Unit
+  }
 
   /**
    * Provides access to the UserSessions.

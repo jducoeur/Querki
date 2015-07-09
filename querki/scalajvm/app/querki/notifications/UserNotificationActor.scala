@@ -1,4 +1,4 @@
-package querki.session
+package querki.notifications
 
 import akka.actor._
 import akka.event.LoggingReceive
@@ -12,19 +12,18 @@ import models.OID
 
 import querki.globals._
 import Implicits.execContext
-import querki.notifications._
 import querki.notifications.NotificationPersister._
-import messages.{ClientRequest, ClientResponse}
+import querki.session.{AutowireParams, UserSessionInfo}
+import querki.session.UserSessionMessages._
+import querki.session.messages.ClientRequest
 import querki.values.RequestContext
 
 // TODO: this is still too incestuous with UserSession per se.
 class UserNotificationActor(userId:OID, val ecology:Ecology) extends Actor with Stash with Requester with
   autowire.Server[String, upickle.Reader, upickle.Writer] with EcologyMember
-{
-  import UserSessionMessages._
-  
+{  
   lazy val PersistenceFactory = interface[querki.spaces.SpacePersistenceFactory]
-  lazy val SessionInvocation = interface[SessionInvocation]
+  lazy val SessionInvocation = interface[querki.session.SessionInvocation]
 
   lazy val notePersister = PersistenceFactory.getNotificationPersister(userId)
   

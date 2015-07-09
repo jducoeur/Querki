@@ -4,22 +4,17 @@ import scala.concurrent.duration._
 import scala.concurrent.Future
 import scala.reflect.ClassTag
 import java.lang.reflect.Constructor
-
 import akka.actor.{ActorRef, Props}
 import akka.contrib.pattern.{ClusterSharding, ShardRegion}
 import akka.pattern.ask
 import akka.util.Timeout
-
 import querki.ecology._
 import querki.identity.{Identity, PublicIdentity, User}
 import querki.util.ActorHelpers._
 import UserSessionMessages._
+import querki.notifications.NotificationFunctionsImpl
 
 private object MOIDs extends EcotIds(47)
-
-private [session] trait SessionInvocation extends EcologyInterface {
-  def handleSessionRequest(req:autowire.Core.Request[String], params:AutowireParams):Unit
-}
 
 class SessionEcot(e:Ecology) extends QuerkiEcot(e) with Session with SessionHandlerRegistry with SessionInvocation {
   val SystemManagement = initRequires[querki.system.SystemManagement]

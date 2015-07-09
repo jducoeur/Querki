@@ -15,7 +15,7 @@ import models.OID
 
 import querki.ecology._
 import querki.identity.{CollaboratorCache, IdentityId, PublicIdentity, UserId}
-import querki.notifications.{CurrentNotifications, EmptyNotificationId, LoadInfo, Notification, NotificationFunctions, UpdateLastChecked}
+import querki.notifications.{CurrentNotifications, EmptyNotificationId, LoadInfo, Notification, NotificationFunctions, UpdateLastChecked, UserNotificationActor}
 import querki.notifications.NotificationPersister.Load
 import querki.time.DateTime
 import querki.util.ClusterTimeoutChild

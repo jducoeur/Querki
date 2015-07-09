@@ -1,11 +1,10 @@
-package querki.session
+package querki.notifications
 
 import scala.concurrent.Future
-
 import querki.globals._
-import querki.notifications._
 import querki.notifications.NotificationPersister._
-import querki.values.RequestContext
+import querki.session.AutowireApiImpl
+import querki.session.AutowireParams
 
 /**
  * Handler for the NotificationFunctions API. Note that this is *deeply* incestuous with UserNotificationActor,
