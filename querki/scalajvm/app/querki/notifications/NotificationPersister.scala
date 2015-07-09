@@ -14,7 +14,6 @@ import models.OID
 
 import querki.ecology._
 import querki.identity.{Identity, UserId}
-import querki.session.UserSessionMessages
 import querki.time.DateTime
 import querki.values.QValue
 
@@ -43,7 +42,7 @@ class NotificationPersister(val userId:UserId, implicit val ecology:Ecology) ext
       sender ! current
     }
     
-    case UserSessionMessages.NewNotification(_, note) => {
+    case UserNotificationActor.NewNotification(_, note) => {
       NotificationPersistence.createNotification(userId, note)
     }
     

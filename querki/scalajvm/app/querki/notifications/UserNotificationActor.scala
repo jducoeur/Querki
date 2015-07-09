@@ -12,19 +12,23 @@ import models.OID
 
 import querki.globals._
 import Implicits.execContext
+import querki.identity.{UserRouteableMessage, UserId}
 import querki.notifications.NotificationPersister._
 import querki.session.{AutowireParams, UserSessionInfo}
 import querki.session.UserSessionMessages._
 import querki.session.messages.ClientRequest
 import querki.values.RequestContext
 
-// TODO: this is still too incestuous with UserSession per se.
-class UserNotificationActor(userId:OID, val ecology:Ecology) extends Actor with Stash with Requester with
+class UserNotificationActor(val ecology:Ecology) extends Actor with Stash with Requester with
   autowire.Server[String, upickle.Reader, upickle.Writer] with EcologyMember
 {  
+  import UserNotificationActor._
+  
   lazy val PersistenceFactory = interface[querki.spaces.SpacePersistenceFactory]
   lazy val SessionInvocation = interface[querki.session.SessionInvocation]
 
+  lazy val userId = OID(self.path.name)
+  
   lazy val notePersister = PersistenceFactory.getNotificationPersister(userId)
   
   // Autowire functions
@@ -100,5 +104,13 @@ class UserNotificationActor(userId:OID, val ecology:Ecology) extends Actor with 
 }
 
 object UserNotificationActor {
-  def actorProps(userId:OID, ecology:Ecology) = Props(classOf[UserNotificationActor], userId, ecology)
+  def actorProps(ecology:Ecology) = Props(classOf[UserNotificationActor], ecology)
+
+  /**
+   * Fire-and-forget message, telling this UserSession that they are receiving a new Notification.
+   */
+  case class NewNotification(userId:UserId, note:Notification) extends UserRouteableMessage {
+    def toUser(newUserId:UserId) = copy(userId = newUserId)
+  }
+  case class RecentNotifications(notes:Seq[Notification])
 }

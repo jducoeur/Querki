@@ -108,6 +108,16 @@ package object identity {
   }
   
   /**
+   * A UserRouteableMessage can be passed into IdentityAccess.routeToUsers, and will be sent to all of
+   * the specified Identities, by User. The key notion here is that it must provide a method that copies
+   * this message with the given UserId.
+   */
+  trait UserRouteableMessage {
+    def userId:UserId
+    def toUser(userId:UserId):UserRouteableMessage
+  }
+  
+  /**
    * Provides a cached front end to working with Identities. Note that this sits in front of an Actor, and
    * all calls are asynchronous!
    */
@@ -154,9 +164,9 @@ package object identity {
     private [identity] def getFullIdentities(ids:Seq[OID]):Future[Map[OID, FullIdentity]]
     
     /**
-     * Send the given message to the UserSessions for all the provided IDs.
+     * Send the given message to the given router for all the provided IDs.
      */
-    def routeToUsers(identityIds:Seq[OID], msg:UserSessionMsg):Unit
+    def routeToUsers(identityIds:Seq[OID], router:ActorRef, msg:UserRouteableMessage):Unit
     
     /**
      * Tells the system that, if this Identity is currently cached, we should clear that cache and reload it.

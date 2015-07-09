@@ -121,7 +121,7 @@ class ClientController extends ApplicationBase {
     rc.requester match {
       case Some(requester) => {
   	    val request = unpickleRequest(rc)
-  	    askUserSession(rc, ClientRequest(request, rc)) {
+  	    SessionInvocation.routeRequest(ClientRequest(request, rc)) {
   	      case ClientResponse(pickled) => Ok(pickled)
   	      case ClientError(msg) => BadRequest(msg)
   	    }        

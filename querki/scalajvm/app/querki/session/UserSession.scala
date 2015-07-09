@@ -15,8 +15,6 @@ import models.OID
 
 import querki.ecology._
 import querki.identity.{CollaboratorCache, IdentityId, PublicIdentity, UserId}
-import querki.notifications.{CurrentNotifications, EmptyNotificationId, LoadInfo, Notification, NotificationFunctions, UpdateLastChecked, UserNotificationActor}
-import querki.notifications.NotificationPersister.Load
 import querki.time.DateTime
 import querki.util.ClusterTimeoutChild
 import querki.values.RequestContext
@@ -37,12 +35,7 @@ private [session] class UserSession(val ecology:Ecology) extends Actor with Stas
   
   lazy val collaborators = context.actorOf(CollaboratorCache.actorProps(ecology, userId))
   
-  lazy val notifications = context.actorOf(UserNotificationActor.actorProps(userId, ecology))
-  
   override def preStart() = {
-    // Kick the UserNotifications to life.
-    // TODO: this should go away, and the Notification should become its own thing:
-    notifications
     // Evolve the User if needed:
     // TODO: in principle this shouldn't happen in preStart, but it does make the code a lot
     // simpler:
@@ -54,18 +47,7 @@ private [session] class UserSession(val ecology:Ecology) extends Actor with Stas
    * The initial receive just handles setup, and then switches to mainReceive once it is ready:
    */
   def receive = LoggingReceive (handleRequestResponse orElse {
-    case msg:NewNotification => notifications.forward(msg)
-    
     case msg:GetCollaborators => collaborators.forward(msg)
-    
-    // TODO: this is wrong! It is just temporary:
-    case msg @ ClientRequest(req, rc) => {
-      req.path(2) match {
-        case "NotificationFunctions" => notifications.forward(msg)
-        // TODO: handle stuff natively registered under UserSession:
-        case _ => ???
-      }
-    }  
   })
 }
 
@@ -76,14 +58,6 @@ object UserSessionMessages {
     // TODO: this kinda sucks. How can we restructure these to make it suck less?
     def copyTo(userId:UserId):UserSessionMsg
   }
-  
-  /**
-   * Fire-and-forget message, telling this UserSession that they are receiving a new Notification.
-   */
-  case class NewNotification(userId:UserId, note:Notification) extends UserSessionMsg {
-    def copyTo(userId:UserId) = copy(userId = userId)
-  }
-  case class RecentNotifications(notes:Seq[Notification])
   
   /**
    * Fetches the people who share Spaces with this Identity.

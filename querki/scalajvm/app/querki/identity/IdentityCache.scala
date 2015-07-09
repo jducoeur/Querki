@@ -9,6 +9,7 @@ import org.querki.requester.Requester
 import models.{OID}
 
 import querki.ecology._
+import querki.globals._
 import querki.session.UserSessionMessages.UserSessionMsg
 
 /**
@@ -56,9 +57,9 @@ private[identity] class IdentityCache(val ecology:Ecology) extends Actor with Re
       identities = identities - id
     }
     
-    case RouteToUser(id, msg) => {
+    case RouteToUser(id, router, msg) => {
       fetchAndThen(id) {
-        case IdentityFound(identity) => sessionManager.forward(msg.copyTo(identity.userId))
+        case IdentityFound(identity) => router.forward(msg.toUser(identity.userId))
         case IdentityNotFound => {}
       }
     }
@@ -103,5 +104,5 @@ object IdentityCacheMessages {
   /**
    * Sends the given msg to the UserSession behind the given identityIds.
    */
-  case class RouteToUser(id:OID, msg:UserSessionMsg) extends IdentityRequest
+  case class RouteToUser(id:OID, router:ActorRef, msg:UserRouteableMessage) extends IdentityRequest
 }

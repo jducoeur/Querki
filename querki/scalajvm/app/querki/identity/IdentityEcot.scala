@@ -132,8 +132,8 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
     identityCache ! InvalidateCacheForIdentity(id)
   }
   
-  def routeToUsers(identityIds:Seq[OID], msg:UserSessionMsg):Unit = {
-    identityIds.foreach(id => identityCache ! RouteToUser(id, msg))
+  def routeToUsers(identityIds:Seq[OID], router:ActorRef, msg:UserRouteableMessage):Unit = {
+    identityIds.foreach(id => identityCache ! RouteToUser(id, router, msg))
   }
   
   /**

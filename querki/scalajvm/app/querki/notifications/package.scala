@@ -1,6 +1,6 @@
 package querki
 
-import akka.actor.Props
+import akka.actor.{ActorRef, Props}
 
 import anorm.SqlQuery
 
@@ -45,6 +45,12 @@ package object notifications {
    * The API for sending Notifications of any sort.
    */
   trait Notifications extends EcologyInterface {
+    /**
+     * The master router for UserNotifications -- all messages destined for a UserNotificationActor
+     * should go through here.
+     */
+    def userNotifications:ActorRef
+    
     /**
      * Send this Notification to all of the specified Recipients. Fire and Forget!
      */
