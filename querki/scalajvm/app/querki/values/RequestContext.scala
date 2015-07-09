@@ -1,8 +1,6 @@
 package querki.values
 
-import models.OID
-import models.UnknownOID
-import models.Thing
+import models.{AsName, AsOID, OID, ThingId, UnknownOID}
 
 import querki.ecology._
 
@@ -24,8 +22,9 @@ import querki.ui.UIRenderer
  * @param requester The validated User who is asking for this page, if any.
  */
 case class RequestContext(
-    val requester:Option[User], 
-    val ownerId:IdentityId)
+    requester:Option[User], 
+    ownerId:IdentityId,
+    spaceIdStrOpt:Option[String] = None)
 {
   def requesterOrAnon = requester getOrElse User.Anonymous
   def requesterOID = requester map (_.id) getOrElse UnknownOID  
@@ -33,4 +32,11 @@ case class RequestContext(
   def ownerName(implicit state:SpaceState) = state.ownerName
   
   def isOwner = requesterOrAnon.hasIdentity(ownerId)
+  
+  lazy val spaceIdOpt = spaceIdStrOpt.filter(_.length() > 0).map { str =>
+    ThingId(str) match {
+      case AsOID(id) => id
+      case AsName(name) => throw new Exception(s"Trying to send message to Space, but only have Space name $name!")
+    }
+  }
 }

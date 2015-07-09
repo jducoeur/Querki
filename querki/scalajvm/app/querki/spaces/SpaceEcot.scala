@@ -16,6 +16,7 @@ import models.{AsName, AsOID, ThingId}
 
 import querki.core.NameUtils
 import querki.ecology._
+import querki.session.messages.ClientRequest
 import querki.spaces.messages._
 import querki.util.PublicException
 
@@ -36,10 +37,12 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps {
   // These two functions tell ClusterSharding the ID and shard for a given SpaceMessage. They are
   // then used to decide how to find/create the Space's Router (and thus, its troupe).
   val idExtractor:ShardRegion.IdExtractor = {
+    case msg @ ClientRequest(req, rc) => (rc.spaceIdOpt.get.toString(), msg) 
     case msg @ SpaceMessage(req, spaceId) => (spaceId.toString(), msg) 
   }
   
   val shardResolver:ShardRegion.ShardResolver = msg => msg match {
+    case ClientRequest(req, rc) => rc.spaceIdOpt.get.shard
     case msg @ SpaceMessage(req, spaceId) => spaceId.shard
   }
   

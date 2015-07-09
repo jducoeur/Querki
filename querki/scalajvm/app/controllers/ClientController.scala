@@ -27,6 +27,7 @@ import querki.util.PublicException
 class ClientController extends ApplicationBase {
   
   lazy val ClientApi = interface[querki.api.ClientApi]
+  lazy val SessionInvocation = interface[querki.session.SessionInvocation]
   lazy val Tags = interface[querki.tags.Tags]
   
   val requestForm = Form(
@@ -38,10 +39,6 @@ class ClientController extends ApplicationBase {
   
   /**
    * Send the given request to the UserSpaceSession, and do the given callback when it responds.
-   * 
-   * TODO: the client should be keeping track of the path to the UserSpaceSession somehow -- maybe in a cookie -- and
-   * we should be trying that direct path first, instead of routing everything through the SpaceManager every time.
-   * The more we can reduce the SpaceManager as a bottleneck, the better.
    */
   def askUserSpaceSession[B](rc:PlayRequestContext, msg:SessionMessage)(cb: PartialFunction[Any, Future[B]]):Future[B] = {
     val spaceId = ThingId(rc.spaceIdOpt.get) match {
@@ -60,8 +57,8 @@ class ClientController extends ApplicationBase {
    */
   class LocalClient(rc:PlayRequestContext) extends autowire.Client[String, upickle.Reader, upickle.Writer] {
   	override def doCall(req: Request): Future[String] = {
-  	  askUserSpaceSession(rc, ClientRequest(req, rc)) {
-  	    case ClientResponse(pickled) => Future.successful(pickled)
+      SessionInvocation.routeRequest(ClientRequest(req, rc)) {
+        case ClientResponse(pickled) => Future.successful(pickled)
   	    case ClientError(msg) => Future.failed(new Exception(msg))
   	    case ThingError(pex, _) => Future.failed(pex)
   	  }
@@ -111,7 +108,7 @@ class ClientController extends ApplicationBase {
   
   def apiRequest(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { implicit rc =>
     val request = unpickleRequest(rc)
-    askUserSpaceSession(rc, ClientRequest(request, rc)) {
+    SessionInvocation.routeRequest(ClientRequest(request, rc)) {
       case ClientResponse(pickled) => Ok(pickled)
       case ClientError(msg) => BadRequest(msg)
     }

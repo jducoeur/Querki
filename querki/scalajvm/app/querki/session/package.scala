@@ -16,6 +16,7 @@ package object session {
    * TODO: this should be renamed and moved, now that it is being used outside of just UserSpaceSession.
    */
   trait SessionInvocation extends EcologyInterface {
+    def routeRequest[R](req:messages.ClientRequest)(cb: PartialFunction[Any, Future[R]]):Future[R]
     def handleSessionRequest(req:autowire.Core.Request[String], params:AutowireParams):Unit
   }
 
@@ -41,7 +42,7 @@ package object session {
     /**
      * Registers the given IMPL as the implementation for the specified API. Should be called during postInit()!
      */
-    def registerUserSessionImplFor[API, IMPL <: API with AutowireApiImpl](implicit apiTag:ClassTag[API], implTag:ClassTag[IMPL])
+    def registerUserSessionImplFor[API, IMPL <: API with AutowireApiImpl](router:ActorRef)(implicit apiTag:ClassTag[API], implTag:ClassTag[IMPL])
   }
   
 }

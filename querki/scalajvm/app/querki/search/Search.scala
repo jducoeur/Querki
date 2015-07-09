@@ -14,9 +14,10 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search {
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val SessionHandlerRegistry = interface[querki.session.SessionHandlerRegistry]
+  lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
   override def postInit() = {
-    SessionHandlerRegistry.registerUserSessionImplFor[SearchFunctions, SearchFunctionsImpl]
+    SessionHandlerRegistry.registerUserSessionImplFor[SearchFunctions, SearchFunctionsImpl](SpaceOps.spaceRegion)
   }
   
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp

@@ -304,80 +304,79 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
   def normalReceive:Receive = LoggingReceive (handleRequestResponse orElse {
     case CurrentState(s) => setRawState(s)
     
+    case ClientRequest(req, rc) => {
+      def handleException(th:Throwable, s:ActorRef, rc:RequestContext) = {
+        th match {
+          case aex:querki.api.ApiException => {
+            // TODO: IMPORTANT: these two lines totally should not be necessary, but without
+            // them, the write() currently is failing, apparently because it is failing to grok
+            // that Edit/SecurityException are themselves traits.
+            // There might be a bug in upickle, possibly having to do with SI-7046:
+            //   https://issues.scala-lang.org/browse/SI-7046
+            // Investigate this further when I have a minute. Possibly something like this needs
+            // to be automated into the macro? Or possibly we have to tweak the way we're using
+            // knownDirectSubclasses in the macro...
+            val y = upickle.Writer.macroW[EditException]
+            val x = upickle.Writer.macroW[SecurityException]
+            s ! ClientError(write(aex))
+          }
+          case pex:PublicException => {
+            QLog.error(s"Replied with PublicException $th instead of ApiException when invoking $req")
+            s ! ClientError(pex.display(Some(rc)))
+          }
+          case ex:Exception => {
+            QLog.error(s"Got exception when invoking $req", ex)
+            s ! ClientError(UnexpectedPublicException.display(Some(rc)))                
+          }
+          case _ => {
+            QLog.error(s"Got exception when invoking $req: $th")
+            s ! ClientError(UnexpectedPublicException.display(Some(rc)))
+          }
+        }              
+      }
+      
+      try {
+        SessionInvocation.handleSessionRequest(req, mkParams(rc))
+      } catch {
+        // Note that this only catches synchronous exceptions; asynchronous ones get
+        // handled in AutowireApiImpl
+        case ex:Exception => handleException(ex, sender, rc)
+      }
+    }
+        
     case request @ SessionRequest(req, space, payload) => { 
       checkDisplayName(req, space)
-      payload match {
-        
-        case ClientRequest(req, rc) => {
-          def handleException(th:Throwable, s:ActorRef, rc:RequestContext) = {
-            th match {
-              case aex:querki.api.ApiException => {
-                // TODO: IMPORTANT: these two lines totally should not be necessary, but without
-                // them, the write() currently is failing, apparently because it is failing to grok
-                // that Edit/SecurityException are themselves traits.
-                // There might be a bug in upickle, possibly having to do with SI-7046:
-                //   https://issues.scala-lang.org/browse/SI-7046
-                // Investigate this further when I have a minute. Possibly something like this needs
-                // to be automated into the macro? Or possibly we have to tweak the way we're using
-                // knownDirectSubclasses in the macro...
-                val y = upickle.Writer.macroW[EditException]
-                val x = upickle.Writer.macroW[SecurityException]
-                s ! ClientError(write(aex))
-              }
-              case pex:PublicException => {
-                QLog.error(s"Replied with PublicException $th instead of ApiException when invoking $req")
-                s ! ClientError(pex.display(Some(rc)))
-              }
-              case ex:Exception => {
-                QLog.error(s"Got exception when invoking $req", ex)
-                s ! ClientError(UnexpectedPublicException.display(Some(rc)))                
-              }
-              case _ => {
-                QLog.error(s"Got exception when invoking $req: $th")
-                s ! ClientError(UnexpectedPublicException.display(Some(rc)))
-              }
-            }              
-          }
-          
-          try {
-            SessionInvocation.handleSessionRequest(req, mkParams(rc))
-          } catch {
-            // Note that this only catches synchronous exceptions; asynchronous ones get
-            // handled in AutowireApiImpl
-            case ex:Exception => handleException(ex, sender, rc)
-          }
-        }
-        
+      payload match {    
         case GetActiveSessions => QLog.error("UserSpaceSession received GetActiveSessions! WTF?")
         
-	    case GetThing(thingIdOpt) => {
-	      val thingId = thingIdOpt.flatMap(state.anything(_)).map(_.id).getOrElse(UnknownOID)
-	      if (thingIdOpt.isDefined) {
-	        val thingOpt = state.anything(thingIdOpt.get)
-	        if (thingOpt.isDefined) {
-	          sender ! ThingFound(thingOpt.get.id, state)
-	        } else {
-	          thingIdOpt.get match {
-	            // TODO: this potentially leaks information. It is frequently legal to see the Space if the name is unknown --
-	            // that is how tags work -- but we should think through how to keep that properly controlled.
-	            case AsName(name) => sender ! ThingError(new PublicException(UnknownName), Some(state))
-	            case AsOID(id) => sender ! ThingError(new PublicException(UnknownID))
-	          }
-	        }
-	      } else {
-	        // TODO: is this the most semantically appropriate response?
-	        sender ! ThingFound(UnknownOID, state)
-	      }    
-	    }
-	    
-	    case ChangeProps2(thingId, props) => {
-	      changeProps(request, thingId, props)
-	    }
-	    
-	    case MarcoPoloRequest(propId, q, rc) => {
-	      val response = new MarcoPoloImpl(mkParams(rc))(ecology).handleMarcoPoloRequest(propId, q)
-	      sender ! response
-	    }
+  	    case GetThing(thingIdOpt) => {
+  	      val thingId = thingIdOpt.flatMap(state.anything(_)).map(_.id).getOrElse(UnknownOID)
+  	      if (thingIdOpt.isDefined) {
+  	        val thingOpt = state.anything(thingIdOpt.get)
+  	        if (thingOpt.isDefined) {
+  	          sender ! ThingFound(thingOpt.get.id, state)
+  	        } else {
+  	          thingIdOpt.get match {
+  	            // TODO: this potentially leaks information. It is frequently legal to see the Space if the name is unknown --
+  	            // that is how tags work -- but we should think through how to keep that properly controlled.
+  	            case AsName(name) => sender ! ThingError(new PublicException(UnknownName), Some(state))
+  	            case AsOID(id) => sender ! ThingError(new PublicException(UnknownID))
+  	          }
+  	        }
+  	      } else {
+  	        // TODO: is this the most semantically appropriate response?
+  	        sender ! ThingFound(UnknownOID, state)
+  	      }    
+  	    }
+  	    
+  	    case ChangeProps2(thingId, props) => {
+  	      changeProps(request, thingId, props)
+  	    }
+  	    
+  	    case MarcoPoloRequest(propId, q, rc) => {
+  	      val response = new MarcoPoloImpl(mkParams(rc))(ecology).handleMarcoPoloRequest(propId, q)
+  	      sender ! response
+  	    }
       }
     }
   })
