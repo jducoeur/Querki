@@ -7,8 +7,10 @@ import querki.globals._
 import querki.notifications.NotificationPersister._
 
 /**
- * Handler for the NotificationFunctions API. Note that this is *deeply* incestuous with UserNotificationActor,
- * which is the Requester that runs it!
+ * Handler for the NotificationFunctions API. Note that this is incestuous with UserNotificationActor,
+ * which is the Requester that runs it -- they share the *same* copy of UserNotificationState. This is
+ * technically legal, since this runs in the Actor's receive loop, but it ain't pretty. It might be
+ * less scary to come up with an immutable way to deal with this.
  */
 class NotificationFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
   extends AutowireApiImpl(info, e) with NotificationFunctions
@@ -19,9 +21,7 @@ class NotificationFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
   
   def doRoute(req:Request):Future[String] = route[NotificationFunctions](this)(req)
   
-  // TODO: this is an ugly workaround for the fact that NotificationFunctionalImpl and UserNotificationActor needs to
-  // share a cache. What would be a better way to do this?
-  lazy val notes = requester.asInstanceOf[UserNotificationActor]
+  lazy val notes = info.payload.get.asInstanceOf[UserNotificationState]
   
   def getRecentNotifications():Future[Seq[NotificationInfo]] = {
     // TODO: update lastNoteChecked. We probably should be refactoring all that Notification stuff into here.
@@ -56,7 +56,9 @@ class NotificationFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
   }
   
   def numNewNotifications():Int = {
-    notes.numNewNotes
+    // TODO: once we have machinery to mark notes as Read, we should filter on that here:
+    val newNotes = notes.currentNotes.filter(note => (note.id > notes.lastNoteChecked)/* && !note.isRead*/)
+    newNotes.size
   }
   
   def readThrough(id:NotificationId):Unit = {
