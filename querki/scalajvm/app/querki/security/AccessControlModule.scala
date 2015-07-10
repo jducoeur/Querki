@@ -47,7 +47,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   lazy val hasPermissionProfile = Profiler.createHandle("AccessControl.hasPermission")
   
   override def postInit() = {
-    ApiRegistry.registerUserSessionImplFor[SecurityFunctions, SecurityFunctionsImpl](SpaceOps.spaceRegion)
+    ApiRegistry.registerApiImplFor[SecurityFunctions, SecurityFunctionsImpl](SpaceOps.spaceRegion)
   }
   
   // TBD: this checks whether this person is a Member based on the Person records in the Space. Should we use

@@ -39,7 +39,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
   }
   
   override def postInit() = {
-    ApiRegistry.registerUserSessionImplFor[CommonFunctions, CommonFunctionsImpl](anonHandler, false)
+    ApiRegistry.registerApiImplFor[CommonFunctions, CommonFunctionsImpl](anonHandler, false)
   }
 
   implicit def thing2TID(t:Thing) = TID(t.id.toThingId.toString)

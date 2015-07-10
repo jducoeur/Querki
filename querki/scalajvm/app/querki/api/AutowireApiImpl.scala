@@ -24,27 +24,26 @@ import querki.values.{RequestContext, SpaceState}
  * Passthrough parameters. The subclass of AutowireApiImpl should accept these and pass them into
  * AutowireApiImpl, but the subclass should note directly use these. Instead, use the accessors
  * built into AutowireApiImpl itself.
+ * 
+ * TODO: investigate how to make the payload more strongly-typed, with enforcement that the right
+ * API gets the right payload type, with a minimum of boilerplate. May require playing with Shapeless
+ * to get this right, I suspect.
  */
 case class AutowireParams(
-  /**
+ /**
    * The User who is making this request.
    */
   user:User,
   
   /**
-   * The current state of the Space, as seen by this User.
+   * The payload -- information particular to the invoking context.
    */
-  state:Option[SpaceState],
+  payload:Option[Any],
   
   /**
    * The RequestContext for this request.
    */
   rc:RequestContext,
-  
-  /**
-   * The router to *this* Space, which we use to send messages to other members of the Troupe.
-   */
-  spaceRouter:Option[ActorRef],
   
   /**
    * The actor we should use to send messages.
@@ -71,11 +70,9 @@ abstract class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends
   with autowire.Server[String, upickle.Reader, upickle.Writer]
 {
   def user = info.user
-  def state = info.state.getOrElse(throw new Exception(s"Attempted to access state from non-Space API $this"))
   def rc = info.rc
   def self = info.actor.self
   def sender = info.sender
-  def spaceRouter = info.spaceRouter.getOrElse(throw new Exception(s"Attempted to access spaceRouter from non-Space API $this"))
   def requester = info.actor
   
   /***************************************************
@@ -133,11 +130,15 @@ abstract class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends
       case Failure(ex) => { handleException(ex, req); completeCb(ex) }
     }
   }
-  
-  
-  /***************************************************
-   * Utilities for Impl classes
-   */
+}
+
+case class SpacePayload(state:SpaceState, spaceRouter:ActorRef)
+
+abstract class SpaceApiImpl(info:AutowireParams, e:Ecology) extends AutowireApiImpl(info, e) {
+  // HACK: this is the motivation for building the payload type into AutowireParams:
+  def payload = info.payload.get.asInstanceOf[SpacePayload]
+  def state = payload.state
+  def spaceRouter = payload.spaceRouter
   
   def withThing[R](thingId:TID)(f:Thing => R):R = {
     val oid = ThingId(thingId.underlying)
@@ -151,8 +152,8 @@ abstract class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends
    * 
    * TODO: can we refactor this out of the general AutowireApiImpl?
    */
-  def createSelfRequest(payload:SessionMessage):SessionRequest = {
-    SessionRequest(user, state.id, payload)
+  def createSelfRequest(msg:SessionMessage):SessionRequest = {
+    SessionRequest(user, state.id, msg)
   }
   
   implicit def thing2TID(t:Thing):TID = TID(t.id.toThingId)
@@ -160,4 +161,5 @@ abstract class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends
   implicit class TIDExt(tid:TID) {
     def toThingId = ThingId(tid.underlying)
   }
+
 }

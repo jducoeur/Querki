@@ -6,7 +6,7 @@ import akka.actor._
 import models.{DisplayPropVal, FieldIds, FormFieldInfo, IndexedOID, Kind, PType, Thing}
 import models.Thing.{emptyProps, PropMap}
 
-import querki.api.{AutowireApiImpl, AutowireParams}
+import querki.api.{SpaceApiImpl, AutowireParams}
 import querki.globals._
 import querki.data._
 import EditFunctions._
@@ -18,7 +18,7 @@ import models.OID.thing2OID
 import models.Thing.thing2Ops
 import models.ThingId.thingId2Str
 
-class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with EditFunctions {
+class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImpl(info, e) with EditFunctions {
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]

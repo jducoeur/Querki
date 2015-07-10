@@ -2,7 +2,7 @@ package querki.imexport
 
 import scala.concurrent.Future
 
-import querki.api.{AutowireApiImpl, AutowireParams}
+import querki.api.{SpaceApiImpl, AutowireParams}
 import querki.globals._
 
 /**
@@ -10,7 +10,7 @@ import querki.globals._
  * 
  * @author jducoeur
  */
-class ImexportFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with ImexportFunctions  {
+class ImexportFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImpl(info, e) with ImexportFunctions  {
   lazy val Imexport = interface[Imexport]
   
   def doRoute(req:Request):Future[String] = route[ImexportFunctions](this)(req)

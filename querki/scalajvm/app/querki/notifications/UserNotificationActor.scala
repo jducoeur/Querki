@@ -77,7 +77,7 @@ class UserNotificationActor(val ecology:Ecology) extends Actor with Stash with R
     case _ => stash()    
   })
   
-  def mkParams(rc:RequestContext) = AutowireParams(rc.requesterOrAnon, None, rc, None, this, sender)
+  def mkParams(rc:RequestContext) = AutowireParams(rc.requesterOrAnon, None, rc, this, sender)
   
   def mainReceive:Receive = LoggingReceive (handleRequestResponse orElse {
     

@@ -53,7 +53,7 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
   
   override def postInit() = {
     NotifierRegistry.register(SystemMessageNotifier)
-    ApiRegistry.registerUserSessionImplFor[AdminFunctions, AdminFunctionsImpl](SpaceOps.spaceRegion, true)
+    ApiRegistry.registerApiImplFor[AdminFunctions, AdminFunctionsImpl](SpaceOps.spaceRegion, true)
   }
   
   override def term() = {

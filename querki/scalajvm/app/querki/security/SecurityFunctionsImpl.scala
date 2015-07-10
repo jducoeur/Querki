@@ -11,7 +11,7 @@ import querki.spaces.messages.{Archived, ArchiveSpace}
 
 import SecurityFunctions._
 
-class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with SecurityFunctions {
+class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImpl(info, e) with SecurityFunctions {
   
   implicit val s = state
   

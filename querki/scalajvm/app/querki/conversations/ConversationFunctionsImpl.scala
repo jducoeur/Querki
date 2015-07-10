@@ -6,7 +6,7 @@ import akka.actor._
 
 import models.{UnknownOID, Wikitext}
 
-import querki.api.{AutowireApiImpl, AutowireParams}
+import querki.api.{SpaceApiImpl, AutowireParams}
 import querki.data.TID
 import querki.globals._
 import querki.identity.PublicIdentity
@@ -21,7 +21,7 @@ import messages._
  * 
  * Note that this trait is specifically design to be mixed into the UserSession.
  */
-class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with ConversationFunctions {
+class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImpl(info, e) with ConversationFunctions {
 
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val Conversations = interface[querki.conversations.Conversations]

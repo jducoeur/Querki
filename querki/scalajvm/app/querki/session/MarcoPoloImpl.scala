@@ -4,11 +4,11 @@ import scala.concurrent.Future
 
 import models.{OID, Thing, ThingId}
 
-import querki.api.{AutowireApiImpl, AutowireParams}
+import querki.api.{SpaceApiImpl, AutowireParams}
 import querki.globals._
 import querki.session.messages.{MarcoPoloItem, MarcoPoloResponse}
 
-class MarcoPoloImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) {
+class MarcoPoloImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImpl(info, e) {
   
   lazy val Core = interface[querki.core.Core]
   lazy val Links = interface[querki.links.Links]

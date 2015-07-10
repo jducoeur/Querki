@@ -62,7 +62,7 @@ class NotificationEcot(e:Ecology) extends QuerkiEcot(e) with NotifierRegistry wi
   }
   
   override def postInit() = {
-    ApiRegistry.registerUserSessionImplFor[NotificationFunctions, NotificationFunctionsImpl](userNotifications)    
+    ApiRegistry.registerApiImplFor[NotificationFunctions, NotificationFunctionsImpl](userNotifications)    
   }
 
   /***********************************************

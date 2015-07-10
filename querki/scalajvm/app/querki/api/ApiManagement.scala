@@ -30,7 +30,7 @@ class ApiManagement(e:Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiIn
   // NOTE: we explicitly presume that the function is simply named under the API class. Is this always true?
   def apiName(req:autowire.Core.Request[String]) = req.path.dropRight(1).mkString(".")
 
-  def registerUserSessionImplFor[API, IMPL <: API with AutowireApiImpl](router:ActorRef, requiresLogin:Boolean)(implicit apiTag:ClassTag[API], implTag:ClassTag[IMPL]) = {
+  def registerApiImplFor[API, IMPL <: API with AutowireApiImpl](router:ActorRef, requiresLogin:Boolean)(implicit apiTag:ClassTag[API], implTag:ClassTag[IMPL]) = {
     val api = apiTag.runtimeClass
     val apiName = api.getName
     val impl = implTag.runtimeClass

@@ -16,7 +16,7 @@ import models.Thing.PropMap
 
 import querki.globals._
 
-import querki.api.{AutowireParams, ClientError, ClientRequest, ClientResponse, EditException, SecurityException}
+import querki.api.{AutowireParams, ClientError, ClientRequest, ClientResponse, EditException, SecurityException, SpacePayload}
 import querki.identity.{Identity, User}
 import querki.session.messages._
 import querki.spaces.messages.{ChangeProps, CurrentState, SessionRequest, SpacePluginMsg, ThingError, ThingFound}
@@ -299,7 +299,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
   def write[Result: Writer](r: Result) = upickle.write(r)
   def read[Result: Reader](p: String) = upickle.read[Result](p)
   
-  def mkParams(rc:RequestContext) = AutowireParams(user, Some(state), rc, Some(spaceRouter), this, sender)
+  def mkParams(rc:RequestContext) = AutowireParams(user, Some(SpacePayload(state, spaceRouter)), rc, this, sender)
   
   def normalReceive:Receive = LoggingReceive (handleRequestResponse orElse {
     case CurrentState(s) => setRawState(s)

@@ -36,7 +36,7 @@ object AnonymousApiRouter {
 private [api] class AnonymousApiWorker(val ecology:Ecology) extends Actor with EcologyMember with Requester {
   lazy val ApiInvocation = interface[querki.api.ApiInvocation]
 
-  def mkParams(rc:RequestContext) = AutowireParams(rc.requesterOrAnon, None, rc, None, this, sender)
+  def mkParams(rc:RequestContext) = AutowireParams(rc.requesterOrAnon, None, rc, this, sender)
   
   def receive = LoggingReceive (handleRequestResponse orElse {
     case ClientRequest(req, rc) => {

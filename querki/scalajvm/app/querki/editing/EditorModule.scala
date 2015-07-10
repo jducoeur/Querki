@@ -40,7 +40,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   lazy val NameProp = Core.NameProp
   
   override def postInit() = {
-    ApiRegistry.registerUserSessionImplFor[EditFunctions, EditFunctionsImpl](SpaceOps.spaceRegion)
+    ApiRegistry.registerApiImplFor[EditFunctions, EditFunctionsImpl](SpaceOps.spaceRegion)
   }
   
   def getInstanceEditor(thing:PropertyBundle, context:QLContext, currentValue:Option[DisplayPropVal] = None):Wikitext = {

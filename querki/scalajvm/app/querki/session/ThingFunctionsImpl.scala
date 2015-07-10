@@ -8,13 +8,13 @@ import models.{Collection, DisplayText, Kind, PType, Thing, ThingId, Wikitext}
 
 import querki.globals._
 
-import querki.api.{AutowireApiImpl, AutowireParams, ThingFunctions}
+import querki.api.{SpaceApiImpl, AutowireParams, ThingFunctions}
 import querki.core.QLText
 import querki.data._
 import querki.pages.ThingPageDetails
 import querki.spaces.messages.{DeleteThing, ThingFound, ThingError}
 
-class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with ThingFunctions {
+class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImpl(info, e) with ThingFunctions {
   
   lazy val Basic = interface[querki.basic.Basic]
   lazy val ClientApi = interface[querki.api.ClientApi]

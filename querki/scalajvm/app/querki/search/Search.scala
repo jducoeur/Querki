@@ -18,7 +18,7 @@ class SearchEcot(e:Ecology) extends QuerkiEcot(e) with Search {
   
   override def postInit() = {
     // Search does not require login:
-    ApiRegistry.registerUserSessionImplFor[SearchFunctions, SearchFunctionsImpl](SpaceOps.spaceRegion, false)
+    ApiRegistry.registerApiImplFor[SearchFunctions, SearchFunctionsImpl](SpaceOps.spaceRegion, false)
   }
   
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
