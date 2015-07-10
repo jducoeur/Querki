@@ -19,16 +19,18 @@ import Implicits.execContext
 class ApiManagement(e:Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiInvocation {
   implicit val timeout = Timeout(5 seconds)
   
+  case class RouterInfo(router:ActorRef, requiresLogin:Boolean)
+  
   /**
    * Map from API classes to the constructors for their handlers.
    */
   var sessionHandlers = Map.empty[String, Constructor[AutowireApiImpl]]
-  var apiRouters = Map.empty[String, ActorRef]
+  var apiRouters = Map.empty[String, RouterInfo]
   
   // NOTE: we explicitly presume that the function is simply named under the API class. Is this always true?
   def apiName(req:autowire.Core.Request[String]) = req.path.dropRight(1).mkString(".")
 
-  def registerUserSessionImplFor[API, IMPL <: API with AutowireApiImpl](router:ActorRef)(implicit apiTag:ClassTag[API], implTag:ClassTag[IMPL]) = {
+  def registerUserSessionImplFor[API, IMPL <: API with AutowireApiImpl](router:ActorRef, requiresLogin:Boolean)(implicit apiTag:ClassTag[API], implTag:ClassTag[IMPL]) = {
     val api = apiTag.runtimeClass
     val apiName = api.getName
     val impl = implTag.runtimeClass
@@ -36,13 +38,18 @@ class ApiManagement(e:Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiIn
     // (Some odd erasure behavior?)
     val constr = impl.getConstructor(classOf[AutowireParams], classOf[Ecology]).asInstanceOf[Constructor[AutowireApiImpl]]
     sessionHandlers += (apiName -> constr)
-    apiRouters += (apiName -> router)
+    apiRouters += (apiName -> RouterInfo(router, requiresLogin))
+  }
+  
+  def requiresLogin(req:ClientRequest):Boolean = {
+    val name = apiName(req.req)
+    apiRouters.get(name).map(_.requiresLogin).getOrElse(throw new Exception("requiresLogin got unknown API $name"))
   }
   
   def routeRequest[R](req:ClientRequest)(cb: PartialFunction[Any, Future[R]]):Future[R] = {
     val name = apiName(req.req)
     apiRouters.get(name) match {
-      case Some(router) => akka.pattern.ask(router, req)(timeout).flatMap(cb)
+      case Some(router) => akka.pattern.ask(router.router, req)(timeout).flatMap(cb)
       case None => throw new Exception(s"handleSessionRequest got request for unknown API $name")
     }
   }

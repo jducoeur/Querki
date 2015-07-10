@@ -51,7 +51,8 @@ class SessionEcot(e:Ecology) extends QuerkiEcot(e) with Session {
   }
   
   override def postInit() = {
-    ApiRegistry.registerUserSessionImplFor[querki.api.ThingFunctions, ThingFunctionsImpl](SpaceOps.spaceRegion)
+    // This is the most important API for anonymous usage, so requiresLogin = false
+    ApiRegistry.registerUserSessionImplFor[querki.api.ThingFunctions, ThingFunctionsImpl](SpaceOps.spaceRegion, false)
   }
   
   /**************************************************

@@ -22,7 +22,8 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
   override def postInit() = {
-    ApiRegistry.registerUserSessionImplFor[ConversationFunctions, ConversationFunctionsImpl](SpaceOps.spaceRegion)
+    // Some entry points are legal without login:
+    ApiRegistry.registerUserSessionImplFor[ConversationFunctions, ConversationFunctionsImpl](SpaceOps.spaceRegion, false)
   }
   
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
