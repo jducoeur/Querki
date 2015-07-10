@@ -106,22 +106,23 @@ class ClientController extends ApplicationBase {
     )
   }
   
-  def apiRequest(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { implicit rc =>
+  def apiRequestBase(rc:PlayRequestContext):Future[Result] = {
     val request = ClientRequest(unpickleRequest(rc), rc)
     if (ApiInvocation.requiresLogin(request) && rc.requester.isEmpty)
       BadRequest("Not logged in")
     else ApiInvocation.routeRequest(request) {
       case ClientResponse(pickled) => Ok(pickled)
       case ClientError(msg) => BadRequest(msg)
-    }
+    }    
   }
   
-  def commonApiRequest = withUser(false) { implicit rc =>
-    val request = unpickleRequest(rc)
-    ClientApi.handleCommonFunction(rc, request).map { 
-      case ClientResponse(pickled) => Ok(pickled)
-      case ClientError(msg) => BadRequest(msg)
-    }
+  def apiRequest(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { rc =>
+    apiRequestBase(rc)
+  }
+  
+  // Entry point for the Client to use when it isn't under a Space, or is just starting up:
+  def rawApiRequest = withUser(false) { rc =>
+    apiRequestBase(rc)
   }
 
   /**

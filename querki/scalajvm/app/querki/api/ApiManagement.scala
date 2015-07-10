@@ -54,9 +54,9 @@ class ApiManagement(e:Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiIn
     }
   }
   
-  def handleSessionRequest(req:autowire.Core.Request[String], params:AutowireParams) = {
+  def handleSessionRequest(req:autowire.Core.Request[String], params:AutowireParams, completeCb: Any => Unit = { dummy => }) = {
     sessionHandlers.get(apiName(req)) match {
-      case Some(constr) => constr.newInstance(params, ecology).handleRequest(req)
+      case Some(constr) => constr.newInstance(params, ecology).handleRequest(req, completeCb)
       case None => throw new Exception(s"handleSessionRequest got request for unknown API ${apiName(req)}")
     }
   }  

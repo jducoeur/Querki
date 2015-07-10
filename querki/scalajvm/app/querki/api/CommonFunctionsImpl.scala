@@ -1,5 +1,7 @@
 package querki.api
 
+import scala.concurrent.Future
+
 import querki.globals._
 
 import querki.data.ThingInfo
@@ -21,8 +23,10 @@ class PassthroughHandler(val ecology:Ecology, rc:RequestContext) extends Ecology
   }
 }
 
-class CommonFunctionsImpl(val ecology:Ecology, rc:RequestContext) extends CommonFunctions with EcologyMember
+class CommonFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with CommonFunctions
 { 
+  def doRoute(req:Request):Future[String] = route[CommonFunctions](this)(req)
+
   def getStandardThings():Map[String, ThingInfo] = {
     val passthrough = new PassthroughHandler(ecology, rc)
     val translator = new StandardThings(passthrough)

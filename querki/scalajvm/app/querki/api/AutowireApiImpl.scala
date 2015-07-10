@@ -49,7 +49,7 @@ case class AutowireParams(
   /**
    * The actor we should use to send messages.
    */
-  actor:Actor with Stash with Requester,
+  actor:Actor with Requester,
   
   /**
    * The sender who invoked this request.
@@ -127,11 +127,11 @@ abstract class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends
    */
   def doRoute(req:Request):Future[String]
   
-  def handleRequest(req:Request) = {
+  def handleRequest(req:Request, completeCb: Any => Unit) = {
     doRoute(req).onComplete { 
-      case Success(result) => sender ! ClientResponse(result)
-      case Failure(ex) => handleException(ex, req)
-    }              
+      case Success(result) => { sender ! ClientResponse(result); completeCb(result) }
+      case Failure(ex) => { handleException(ex, req); completeCb(ex) }
+    }
   }
   
   

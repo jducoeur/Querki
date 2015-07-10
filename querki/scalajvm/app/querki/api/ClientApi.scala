@@ -2,6 +2,8 @@ package querki.api
 
 import scala.concurrent.Future
 
+import akka.actor._
+
 import upickle._
 import autowire._
 
@@ -12,6 +14,7 @@ import querki.globals.Implicits._
 
 import querki.core.NameUtils
 import querki.data._
+import querki.ecology._
 import querki.identity.{PublicIdentity, User}
 import querki.pages.PageDetails
 import querki.tags.IsTag
@@ -19,14 +22,25 @@ import querki.types.ModelTypeBase
 import querki.values.{QLRequestContext, RequestContext}
 
 class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
-  with autowire.Server[String, upickle.Reader, upickle.Writer]
 {
   
   lazy val AccessControl = interface[querki.security.AccessControl]
+  lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val DataModelAccess = interface[querki.datamodel.DataModelAccess]
   lazy val Editor = interface[querki.editing.Editor]
+  
+  var _anonHandler:Option[ActorRef] = None
+  lazy val anonHandler = _anonHandler.get
+
+  override def createActors(createActorCb:CreateActorFunc):Unit = {
+    _anonHandler = createActorCb(AnonymousApiRouter.actorProps(ecology), "AnonHandler")
+  }
+  
+  override def postInit() = {
+    ApiRegistry.registerUserSessionImplFor[CommonFunctions, CommonFunctionsImpl](anonHandler, false)
+  }
 
   implicit def thing2TID(t:Thing) = TID(t.id.toThingId.toString)
   implicit def OID2TID(oid:OID) = TID(oid.toThingId.toString)
@@ -133,14 +147,5 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
     }
       yield t.getPropOpt(prop).map(pv => oneProp(prop, pv.v))
     infoOpts.flatten.toSeq
-  }
-  
-  // Autowire functions
-  def write[Result: Writer](r: Result) = upickle.write(r)
-  def read[Result: Reader](p: String) = upickle.read[Result](p)
-  
-  def handleCommonFunction(rc:RequestContext, req:autowire.Core.Request[String]):Future[ClientAnswer] = {
-    val handler = new CommonFunctionsImpl(ecology, rc)
-    route[CommonFunctions](handler)(req).map(ClientResponse(_))
   }
 }

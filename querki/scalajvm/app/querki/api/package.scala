@@ -25,8 +25,6 @@ package object api {
     def propInfo(prop:AnyProp, rc:RequestContext)(implicit state:SpaceState):PropInfo
     
     def propValInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):Seq[PropValInfo]
-    
-    def handleCommonFunction(rc:RequestContext, req:autowire.Core.Request[String]):Future[ClientAnswer]
   }
   
   /**
@@ -67,7 +65,11 @@ package object api {
      * build an appropriate AutowireParams for this environment, then call this to invoke it. Note
      * that the Actor *must* provide a Requester for the handler's use -- typically this Actor should
      * simply be a Requester, but it can in principle be delegated.
+     * 
+     * Iff completeCb is specified, it will be called after the call is complete, with the success result or
+     * the thrown Exception. IMPORTANT: this is called in an
+     * arbitrary Future, and you should not count on it being synchronous with the calling Actor!
      */
-    def handleSessionRequest(req:autowire.Core.Request[String], params:AutowireParams):Unit
+    def handleSessionRequest(req:autowire.Core.Request[String], params:AutowireParams, completeCb: Any => Unit = { dummy => }):Unit
   }
 }

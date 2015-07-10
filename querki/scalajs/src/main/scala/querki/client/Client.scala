@@ -55,16 +55,16 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
   
   override def doCall(req: Request): Future[String] = {
     try {
-      req.path(2) match {
-        case "CommonFunctions" => {
-	        makeCall(req, controllers.ClientController.commonApiRequest())      
-        }
-        
-        case _ => {
-	        makeCall(req, controllers.ClientController.apiRequest(
-	          DataAccess.userName, 
-	          DataAccess.spaceId.underlying))
-        }
+      if (DataAccess.space.isEmpty) {
+        // We're not started, or not under the aegis of a Space, so there is no
+        // owner/space pair to use. Hopefully this request understands that.
+        // TODO: can we put something in the API definition to enforce this? That is,
+        // so that we can say "this request requires a Space"? Probably -- figure it out...
+        makeCall(req, controllers.ClientController.rawApiRequest())
+      } else {
+        makeCall(req, controllers.ClientController.apiRequest(
+          DataAccess.userName, 
+          DataAccess.spaceId.underlying))
       }
     } catch {
       // Note that we need to catch and report exceptions here; otherwise, they tend to get
