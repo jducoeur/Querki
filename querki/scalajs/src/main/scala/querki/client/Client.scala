@@ -55,24 +55,13 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
   
   override def doCall(req: Request): Future[String] = {
     try {
-      // TODO: handle HTTP errors from this apiRequest call. What should we do with them?
-      // Put a message in the Status area?
       req.path(2) match {
-        // TBD: this is kind of horrible -- somebody needs to know whether
-        // this particular interface is "space-based" or "user-based". We do that here
-        // because it affects the signature that we send. But it is fugly. Can we come
-        // up with a higher-level abstraction of the function trait, which we use to
-        // make this decision?
-        case "NotificationFunctions" => {
-	      makeCall(req, controllers.ClientController.userApiRequest())       
-        }
-        
         case "CommonFunctions" => {
-	      makeCall(req, controllers.ClientController.commonApiRequest())      
+	        makeCall(req, controllers.ClientController.commonApiRequest())      
         }
         
         case _ => {
-	      makeCall(req, controllers.ClientController.apiRequest(
+	        makeCall(req, controllers.ClientController.apiRequest(
 	          DataAccess.userName, 
 	          DataAccess.spaceId.underlying))
         }

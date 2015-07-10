@@ -113,22 +113,22 @@ class ClientController extends ApplicationBase {
       case ClientError(msg) => BadRequest(msg)
     }
   }
-  
-  // NOTE: this calls withUser(false) because we do *not* want the default behavior if this is
-  // an anonymous request -- that redirects to index, and (worse) sets the returnTo to here, which
-  // produces silly nonsense when you next log in. So we handle Anonymous requests ourselves here.
-  def userApiRequest = withUser(false) { implicit rc =>
-    rc.requester match {
-      case Some(requester) => {
-  	    val request = unpickleRequest(rc)
-  	    ApiInvocation.routeRequest(ClientRequest(request, rc)) {
-  	      case ClientResponse(pickled) => Ok(pickled)
-  	      case ClientError(msg) => BadRequest(msg)
-  	    }        
-      }
-      case None => BadRequest("Not logged in")
-    }
-  }
+//  
+//  // NOTE: this calls withUser(false) because we do *not* want the default behavior if this is
+//  // an anonymous request -- that redirects to index, and (worse) sets the returnTo to here, which
+//  // produces silly nonsense when you next log in. So we handle Anonymous requests ourselves here.
+//  def userApiRequest = withUser(false) { implicit rc =>
+//    rc.requester match {
+//      case Some(requester) => {
+//  	    val request = unpickleRequest(rc)
+//  	    ApiInvocation.routeRequest(ClientRequest(request, rc)) {
+//  	      case ClientResponse(pickled) => Ok(pickled)
+//  	      case ClientError(msg) => BadRequest(msg)
+//  	    }        
+//      }
+//      case None => BadRequest("Not logged in")
+//    }
+//  }
   
   def commonApiRequest = withUser(false) { implicit rc =>
     val request = unpickleRequest(rc)
