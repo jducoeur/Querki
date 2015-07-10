@@ -1,7 +1,7 @@
 package querki.imexport
 
+import querki.api.AutowireApiImpl
 import querki.globals._
-import querki.session.AutowireApiImpl
 import querki.values.RequestContext
 
 /**

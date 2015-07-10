@@ -16,7 +16,7 @@ import models.Thing.PropMap
 
 import querki.globals._
 
-import querki.api.{EditException, SecurityException}
+import querki.api.{AutowireParams, ClientError, ClientRequest, ClientResponse, EditException, SecurityException}
 import querki.identity.{Identity, User}
 import querki.session.messages._
 import querki.spaces.messages.{ChangeProps, CurrentState, SessionRequest, SpacePluginMsg, ThingError, ThingFound}
@@ -44,7 +44,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Person = interface[querki.identity.Person]
-  lazy val SessionInvocation = interface[SessionInvocation]
+  lazy val ApiInvocation = interface[querki.api.ApiInvocation]
   lazy val System = interface[querki.system.System]
   lazy val UserValues = interface[querki.uservalues.UserValues]
   
@@ -336,7 +336,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
       }
       
       try {
-        SessionInvocation.handleSessionRequest(req, mkParams(rc))
+        ApiInvocation.handleSessionRequest(req, mkParams(rc))
       } catch {
         // Note that this only catches synchronous exceptions; asynchronous ones get
         // handled in AutowireApiImpl

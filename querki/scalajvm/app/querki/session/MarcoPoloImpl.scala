@@ -4,8 +4,8 @@ import scala.concurrent.Future
 
 import models.{OID, Thing, ThingId}
 
+import querki.api.{AutowireApiImpl, AutowireParams}
 import querki.globals._
-
 import querki.session.messages.{MarcoPoloItem, MarcoPoloResponse}
 
 class MarcoPoloImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) {

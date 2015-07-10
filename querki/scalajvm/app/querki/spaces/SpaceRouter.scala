@@ -7,6 +7,7 @@ import org.querki.requester._
 
 import models.OID
 
+import querki.api.ClientRequest
 import querki.conversations.messages.{ActiveThings, GetActiveThings}
 import querki.ecology._
 import querki.photos.PhotoUploadActor

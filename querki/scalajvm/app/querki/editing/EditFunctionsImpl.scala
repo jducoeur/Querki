@@ -6,6 +6,7 @@ import akka.actor._
 import models.{DisplayPropVal, FieldIds, FormFieldInfo, IndexedOID, Kind, PType, Thing}
 import models.Thing.{emptyProps, PropMap}
 
+import querki.api.{AutowireApiImpl, AutowireParams}
 import querki.globals._
 import querki.data._
 import EditFunctions._
@@ -16,8 +17,6 @@ import querki.values.QLRequestContext
 import models.OID.thing2OID
 import models.Thing.thing2Ops
 import models.ThingId.thingId2Str
-import querki.session.AutowireApiImpl
-import querki.session.AutowireParams
 
 class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with EditFunctions {
   

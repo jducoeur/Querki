@@ -1,14 +1,15 @@
 package querki.admin
 
 import scala.concurrent.Future
+
 import models.{AsOID, ThingId}
-import querki.globals._
+
 import querki.api._
 import AdminFunctions._
 import querki.data.TID
+import querki.globals._
 import querki.identity.{User, UserLevel}
 import UserLevel._
-import querki.session.{AutowireApiImpl, AutowireParams}
 import querki.spaces.messages._
 
 class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with AdminFunctions {

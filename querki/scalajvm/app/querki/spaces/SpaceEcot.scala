@@ -8,15 +8,13 @@ import akka.contrib.pattern.{ClusterSharding, ShardRegion}
 import akka.pattern._
 import akka.util.Timeout
 
-// TODO: this is a very unfortunate layer break, but is needed to provide the execution context for
-// sending asks to the SpaceManager. Can/should we wrap it in something?
-import play.api.libs.concurrent.Execution.Implicits._
-
 import models.{AsName, AsOID, ThingId}
 
+import querki.api.ClientRequest
 import querki.core.NameUtils
 import querki.ecology._
-import querki.session.messages.ClientRequest
+import querki.globals._
+import Implicits._
 import querki.spaces.messages._
 import querki.util.PublicException
 

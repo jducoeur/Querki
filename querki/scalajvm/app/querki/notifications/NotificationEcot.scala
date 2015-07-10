@@ -9,10 +9,10 @@ import akka.util.Timeout
 
 import play.api.libs.concurrent.Execution.Implicits._
 
+import querki.api.ClientRequest
 import querki.ecology._
 import querki.globals._
 import querki.identity.{PublicIdentity, User, UserRouteableMessage}
-import querki.session.messages.ClientRequest
 import querki.values.{QLRequestContext, RequestContext, SpaceState}
 
 private object MOIDs extends EcotIds(48)
@@ -21,7 +21,7 @@ class NotificationEcot(e:Ecology) extends QuerkiEcot(e) with NotifierRegistry wi
   
   import NotificationActor._
   
-  lazy val SessionHandlerRegistry = interface[querki.session.SessionHandlerRegistry]
+  lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val System = interface[querki.system.System]
   lazy val SystemManagement = interface[querki.system.SystemManagement]
   
@@ -62,7 +62,7 @@ class NotificationEcot(e:Ecology) extends QuerkiEcot(e) with NotifierRegistry wi
   }
   
   override def postInit() = {
-    SessionHandlerRegistry.registerUserSessionImplFor[NotificationFunctions, NotificationFunctionsImpl](userNotifications)    
+    ApiRegistry.registerUserSessionImplFor[NotificationFunctions, NotificationFunctionsImpl](userNotifications)    
   }
 
   /***********************************************

@@ -1,9 +1,9 @@
 package querki.search
 
 import scala.concurrent.Future
+
+import querki.api.{AutowireApiImpl, AutowireParams}
 import querki.globals._
-import querki.session.AutowireApiImpl
-import querki.session.AutowireParams
 
 class SearchFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with SearchFunctions {
   

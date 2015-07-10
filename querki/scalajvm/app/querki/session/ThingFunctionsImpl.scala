@@ -8,7 +8,7 @@ import models.{Collection, DisplayText, Kind, PType, Thing, ThingId, Wikitext}
 
 import querki.globals._
 
-import querki.api.ThingFunctions
+import querki.api.{AutowireApiImpl, AutowireParams, ThingFunctions}
 import querki.core.QLText
 import querki.data._
 import querki.pages.ThingPageDetails

@@ -7,7 +7,6 @@ import querki.api._
 import querki.data._
 import querki.globals._
 import querki.identity.InvitationResult
-import querki.session.{AutowireApiImpl, AutowireParams}
 import querki.spaces.messages.{Archived, ArchiveSpace}
 
 import SecurityFunctions._

@@ -19,11 +19,11 @@ case class ExportedContentImpl(content:Array[Byte], name:String, mime:MIMEType.M
 class ImexportEcot(e:Ecology) extends QuerkiEcot(e) with Imexport {
   
   lazy val AccessControl = interface[querki.security.AccessControl]
-  lazy val SessionHandlerRegistry = interface[querki.session.SessionHandlerRegistry]
+  lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
   override def postInit() = {
-    SessionHandlerRegistry.registerUserSessionImplFor[ImexportFunctions, ImexportFunctionsImpl](SpaceOps.spaceRegion)
+    ApiRegistry.registerUserSessionImplFor[ImexportFunctions, ImexportFunctionsImpl](SpaceOps.spaceRegion)
   }
   
   lazy val csv = new CSVImexport

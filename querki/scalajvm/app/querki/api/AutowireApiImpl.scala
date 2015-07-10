@@ -1,4 +1,4 @@
-package querki.session
+package querki.api
 
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success}
@@ -12,16 +12,13 @@ import org.querki.requester._
 
 import models.{Thing, ThingId}
 
-import querki.api._
 import querki.data.TID
 import querki.globals._
 import querki.identity.User
-import querki.session.messages.{ClientError, ClientResponse}
+import querki.session.messages.SessionMessage
 import querki.spaces.messages.SessionRequest
 import querki.util.UnexpectedPublicException
 import querki.values.{RequestContext, SpaceState}
-
-import messages.SessionMessage
 
 /**
  * Passthrough parameters. The subclass of AutowireApiImpl should accept these and pass them into
@@ -151,6 +148,8 @@ abstract class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends
   
   /**
    * Constructs a request suitable for looping back to the UserSpaceSession.
+   * 
+   * TODO: can we refactor this out of the general AutowireApiImpl?
    */
   def createSelfRequest(payload:SessionMessage):SessionRequest = {
     SessionRequest(user, state.id, payload)

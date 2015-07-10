@@ -35,7 +35,7 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
   import MOIDs._
   
   lazy val NotifierRegistry = interface[querki.notifications.NotifierRegistry]
-  lazy val SessionHandlerRegistry = interface[querki.session.SessionHandlerRegistry]
+  lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
   /**
@@ -53,7 +53,7 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
   
   override def postInit() = {
     NotifierRegistry.register(SystemMessageNotifier)
-    SessionHandlerRegistry.registerUserSessionImplFor[AdminFunctions, AdminFunctionsImpl](SpaceOps.spaceRegion)
+    ApiRegistry.registerUserSessionImplFor[AdminFunctions, AdminFunctionsImpl](SpaceOps.spaceRegion)
   }
   
   override def term() = {

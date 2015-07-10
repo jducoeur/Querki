@@ -5,6 +5,7 @@ import akka.event.LoggingReceive
 
 import models.OID
 
+import querki.api.ClientRequest
 import querki.ecology._
 import querki.identity.User
 import querki.session.messages._

@@ -7,13 +7,11 @@ import org.querki.requester._
 
 import models.OID
 
+import querki.api.{AutowireParams, ClientRequest}
 import querki.globals._
 import Implicits.execContext
 import querki.identity.{UserRouteableMessage, UserId}
 import querki.notifications.NotificationPersister._
-import querki.session.{AutowireParams, UserSessionInfo}
-import querki.session.UserSessionMessages._
-import querki.session.messages.ClientRequest
 import querki.util.ClusterTimeoutChild
 import querki.values.RequestContext
 
@@ -23,7 +21,7 @@ class UserNotificationActor(val ecology:Ecology) extends Actor with Stash with R
   import UserNotificationActor._
   
   lazy val PersistenceFactory = interface[querki.spaces.SpacePersistenceFactory]
-  lazy val SessionInvocation = interface[querki.session.SessionInvocation]
+  lazy val ApiInvocation = interface[querki.api.ApiInvocation]
 
   lazy val userId = OID(self.path.name)
   
@@ -94,7 +92,7 @@ class UserNotificationActor(val ecology:Ecology) extends Actor with Stash with R
     
     case ClientRequest(req, rc) => {
       // Note that, in theory, NotificationFunctions is the only thing that'll be routed here:
-      SessionInvocation.handleSessionRequest(req, mkParams(rc))
+      ApiInvocation.handleSessionRequest(req, mkParams(rc))
     }    
   })
 }

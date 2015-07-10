@@ -6,12 +6,11 @@ import akka.actor._
 
 import models.{UnknownOID, Wikitext}
 
-import querki.globals._
-
+import querki.api.{AutowireApiImpl, AutowireParams}
 import querki.data.TID
+import querki.globals._
 import querki.identity.PublicIdentity
 import querki.identity.IdentityCacheMessages._
-import querki.session.{AutowireApiImpl, AutowireParams}
 import querki.spaces.messages.{ConversationRequest, ThingError}
 import querki.values.RequestContext
 

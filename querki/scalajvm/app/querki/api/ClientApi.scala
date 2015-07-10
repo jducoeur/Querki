@@ -14,7 +14,6 @@ import querki.core.NameUtils
 import querki.data._
 import querki.identity.{PublicIdentity, User}
 import querki.pages.PageDetails
-import querki.session.messages.{ClientAnswer, ClientResponse}
 import querki.tags.IsTag
 import querki.types.ModelTypeBase
 import querki.values.{QLRequestContext, RequestContext}
@@ -28,7 +27,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
   lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val DataModelAccess = interface[querki.datamodel.DataModelAccess]
   lazy val Editor = interface[querki.editing.Editor]
-  
+
   implicit def thing2TID(t:Thing) = TID(t.id.toThingId.toString)
   implicit def OID2TID(oid:OID) = TID(oid.toThingId.toString)
   

@@ -16,10 +16,10 @@ import models.{AsName, AsOID, MIMEType, Thing, ThingId}
 import querki.globals._
 import Implicits.execContext
 
-import querki.api.ThingFunctions
+import querki.api._
 import querki.imexport.ImexportFunctions
 import querki.pages.PageIDs._
-import querki.session.messages._
+import querki.session.messages.{MarcoPoloRequest, MarcoPoloResponse, SessionMessage}
 import querki.spaces.messages.{SessionRequest, SpaceMgrMsg, ThingError}
 import querki.spaces.messages.SpaceError._
 import querki.util.PublicException
@@ -27,7 +27,7 @@ import querki.util.PublicException
 class ClientController extends ApplicationBase {
   
   lazy val ClientApi = interface[querki.api.ClientApi]
-  lazy val SessionInvocation = interface[querki.session.SessionInvocation]
+  lazy val ApiInvocation = interface[querki.api.ApiInvocation]
   lazy val Tags = interface[querki.tags.Tags]
   
   val requestForm = Form(
@@ -57,7 +57,7 @@ class ClientController extends ApplicationBase {
    */
   class LocalClient(rc:PlayRequestContext) extends autowire.Client[String, upickle.Reader, upickle.Writer] {
   	override def doCall(req: Request): Future[String] = {
-      SessionInvocation.routeRequest(ClientRequest(req, rc)) {
+      ApiInvocation.routeRequest(ClientRequest(req, rc)) {
         case ClientResponse(pickled) => Future.successful(pickled)
   	    case ClientError(msg) => Future.failed(new Exception(msg))
   	    case ThingError(pex, _) => Future.failed(pex)
@@ -108,7 +108,7 @@ class ClientController extends ApplicationBase {
   
   def apiRequest(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { implicit rc =>
     val request = unpickleRequest(rc)
-    SessionInvocation.routeRequest(ClientRequest(request, rc)) {
+    ApiInvocation.routeRequest(ClientRequest(request, rc)) {
       case ClientResponse(pickled) => Ok(pickled)
       case ClientError(msg) => BadRequest(msg)
     }
@@ -121,7 +121,7 @@ class ClientController extends ApplicationBase {
     rc.requester match {
       case Some(requester) => {
   	    val request = unpickleRequest(rc)
-  	    SessionInvocation.routeRequest(ClientRequest(request, rc)) {
+  	    ApiInvocation.routeRequest(ClientRequest(request, rc)) {
   	      case ClientResponse(pickled) => Ok(pickled)
   	      case ClientError(msg) => BadRequest(msg)
   	    }        
