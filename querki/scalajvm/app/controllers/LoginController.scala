@@ -303,18 +303,18 @@ class LoginController extends ApplicationBase {
   }
   
   def doResetPassword(email:String, expiresMillis:Long, hash:String) = withUser(false) { rc =>
-    def showError() = doError(routes.LoginController.resetPassword(email, expiresMillis, hash), "Invalid password change")
+    def showError(msg:String) = doError(routes.LoginController.resetPassword(email, expiresMillis, hash), msg)
     if (!Encryption.authenticate(resetValidationStr(email, expiresMillis), hash))
-      showError()
+      showError("That reset-password link doesn't seem to have been legal -- please try again.")
     else {
       val expires = new DateTime(expiresMillis)
       if (expires.isBeforeNow())
-        showError()
+        showError("That reset-password link has expired. You must reset your password within 2 days of clicking on Forgot my Password.")
       else {
         implicit val request = rc.request
         val rawForm = passwordChangeForm.bindFromRequest
         rawForm.fold(
-          errorForm => showError(),
+          errorForm => showError("That wasn't a legal reset-password form???"),
           info => {
             if (info.newPassword == info.newPasswordAgain) {
               UserAccess.getUserByHandleOrEmail(email) match {
@@ -323,7 +323,7 @@ class LoginController extends ApplicationBase {
                   val newUser = UserAccess.changePassword(user, identity, info.newPassword)
                   Redirect(routes.Application.index).flashing("info" -> "Password changed")
                 }
-                case None => showError()
+                case None => showError(s"$email isn't a known Querki user! Please try the Forgot my Password link again.")
               }              
             } else {
               doError(routes.LoginController.resetPassword(email, expiresMillis, hash), "The passwords didn't match")
