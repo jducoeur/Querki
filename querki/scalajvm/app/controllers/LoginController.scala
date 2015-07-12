@@ -261,6 +261,7 @@ class LoginController extends ApplicationBase {
   }
   
   def resetValidationStr(email:String, expires:Long) = s"${email} ${expires}"
+  def isSecure = Config.getBoolean("session.secure", false)
   
   def doSendPasswordReset() = withUser(false) { rc =>
     implicit val request = rc.request
@@ -280,7 +281,7 @@ class LoginController extends ApplicationBase {
           hash = Encryption.calcHash(resetValidationStr(email, expires))
           subject = Wikitext("Reset your Querki password")
           body = Wikitext(s"""We received a request to reset the password for your account, ${user.mainIdentity.handle}.
-            |If you made this request, please [click here](${routes.LoginController.resetPassword(email, expires, hash).absoluteURL(false)(rc.request)}), which will take you to a page
+            |If you made this request, please [click here](${routes.LoginController.resetPassword(email, expires, hash).absoluteURL(isSecure)(rc.request)}), which will take you to a page
             |where you can enter a new password for your Querki account. This link will only be valid for the next two days, so please act
             |on it soon!
             |
