@@ -119,7 +119,7 @@ case class InviteRequest(rc:RequestContext, emails:Seq[querki.email.EmailAddress
   extends SpaceMembersBase
 case class InviteResult(msg:String)
 
-case class JoinRequest(rc:RequestContext) extends SpaceMembersBase
+case class JoinRequest(rc:RequestContext, personId:OID) extends SpaceMembersBase
 sealed trait JoinResult
 case object Joined extends JoinResult
 case class JoinFailed(ex:PublicException) extends JoinResult

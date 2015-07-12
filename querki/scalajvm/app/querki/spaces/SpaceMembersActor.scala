@@ -36,9 +36,9 @@ private [spaces] class SpaceMembersActor(e:Ecology, val spaceId:OID, val spaceRo
     
     case SpaceMembersMessage(_, _, msg) => msg match {
   	  // Someone is attempting to join this Space:
-  	  case JoinRequest(rc) => {
+  	  case JoinRequest(rc, personId) => {
         implicit val s = state
-  	    val result:Option[Future[JoinResult]] = Person.acceptInvitation(rc) {
+  	    val result:Option[Future[JoinResult]] = Person.acceptInvitation(rc, personId) {
   	      case ThingFound(id, state) => Future.successful(Joined) 
   	      case ThingError(error, stateOpt) => Future.successful(JoinFailed(error))
   	      case _ => Future.successful(JoinFailed(new PublicException("Space.join.unknownError", state.displayName)))

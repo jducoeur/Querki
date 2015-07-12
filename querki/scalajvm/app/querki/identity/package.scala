@@ -78,7 +78,7 @@ package object identity {
    
     def inviteMembers(rc:RequestContext, invitees:Seq[EmailAddress], collaboratorIds:Seq[OID], originalState:SpaceState):Future[InvitationResult]
     
-    def acceptInvitation[B](rc:RequestContext)(cb:querki.spaces.messages.ThingResponse => Future[B])(implicit state:SpaceState):Option[scala.concurrent.Future[B]]
+    def acceptInvitation[B](rc:RequestContext, personId:OID)(cb:querki.spaces.messages.ThingResponse => Future[B])(implicit state:SpaceState):Option[scala.concurrent.Future[B]]
     
     def getPersonIdentity(person:Thing)(implicit state:SpaceState):Option[OID]
     def hasPerson(user:User, personId:OID)(implicit state:SpaceState):Boolean

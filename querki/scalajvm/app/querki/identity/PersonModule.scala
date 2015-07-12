@@ -431,11 +431,8 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
    * 
    * TODO: this depends on Play, so it should be in controllers!
    */
-  def acceptInvitation[B](rcRaw:RequestContext)(cb:ThingResponse => Future[B])(implicit state:SpaceState):Option[Future[B]] = {
-    val rc = rcRaw.asInstanceOf[PlayRequestContext]
+  def acceptInvitation[B](rc:RequestContext, personId:OID)(cb:ThingResponse => Future[B])(implicit state:SpaceState):Option[Future[B]] = {
     for (
-      personIdStr <- rc.sessionCookie(personParam);
-      personId = OID(personIdStr);
       person <- state.anything(personId);
       user <- rc.requester;
       // TODO: currently, we're just taking the first identity, arbitrarily. But in the long run, I should be able

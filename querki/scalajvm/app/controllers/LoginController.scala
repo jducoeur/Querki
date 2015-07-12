@@ -212,10 +212,12 @@ class LoginController extends ApplicationBase {
   }
   
   def joinSpace(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { rc =>
-    askSpace(rc.ownerId, rc.spaceIdOpt.get)(SpaceMembersMessage(rc.requesterOrAnon, _, JoinRequest(rc))) {
-      case Joined => Redirect(routes.ClientController.space(ownerId, spaceId))
-      case JoinFailed(error) => doError(routes.Application.index, error)(rc)
-    }
+    rc.sessionCookie(querki.identity.personParam).map(OID(_)).map { personId => 
+      askSpace(rc.ownerId, rc.spaceIdOpt.get)(SpaceMembersMessage(rc.requesterOrAnon, _, JoinRequest(rc, personId))) {
+        case Joined => Redirect(routes.ClientController.space(ownerId, spaceId))
+        case JoinFailed(error) => doError(routes.Application.index, error)(rc)
+      }
+    }.getOrElse(doError(routes.Application.index, "You don't seem to be logged in."))
   }
 
   def userByName(userName:String) = withUser(true) { rc =>
