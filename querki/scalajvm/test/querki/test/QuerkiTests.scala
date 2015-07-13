@@ -1,5 +1,8 @@
 package querki.test
 
+import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.contrib.pattern.ShardRegion
+
 import org.scalatest.{WordSpec, BeforeAndAfterAll, Matchers}
 
 import models.{OID, Thing}
@@ -29,23 +32,30 @@ class QuerkiTests
   lazy val Optional = Core.Optional
   lazy val QList = Core.QList
   
+  class SystemEcotSemiStub(e:Ecology, aso:Option[ActorSystem]) extends querki.system.SystemEcot(e, aso) {
+    override def createShardRegion(name:String, props:Props, identityExtractor:ShardRegion.IdExtractor, identityResolver:ShardRegion.ShardResolver) = {
+      Some(ActorRef.noSender)
+    }
+  }
+  
   /**
    * This is the method to add the Ecots into the Ecology. By default, it creates the whole world, but
    * that is not required -- feel free to override this with a version that instantiates only some of them,
    * and stubs out others.
    */
   def createEcots(e:Ecology) = {
-    querki.system.SystemCreator.createTestableEcots(e, None)
+    querki.system.SystemCreator.createTestableEcots(e)
 
     // Testable stubs:
-    new UserAccessStub(e)
     new PublicUrlStub(e)
+    new SystemEcotSemiStub(e, None)
+    new UserAccessStub(e)
   }
   
   def createEcology() = {
     val e = new EcologyImpl
     createEcots(e)
-    val state = e.init(querki.system.InitialSystemState.create(e), { (props, name) => None })
+    val state = e.init(querki.system.InitialSystemState.create(e), { (props, name) => Some(ActorRef.noSender) })
     e.api[querki.system.SystemManagement].setState(state)
     ecology = e
   }

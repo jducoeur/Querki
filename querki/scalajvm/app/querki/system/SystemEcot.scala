@@ -1,6 +1,7 @@
 package querki.system
 
-import akka.actor.ActorSystem
+import akka.actor._
+import akka.contrib.pattern.{ClusterSharding, ShardRegion}
 
 import querki.ecology._
 import querki.values.SpaceState
@@ -30,6 +31,12 @@ trait SystemManagement extends EcologyInterface {
    * This will throw an exception if called when there is no ActorSystem, as in unit tests!
    */
   def actorSystem:ActorSystem
+  
+  /**
+   * As it says, this is a wrapper around the standard ShardRegion creation, pulled out to here so that
+   * it can be stubbed for unit testing.
+   */
+  def createShardRegion(name:String, props:Props, identityExtractor:ShardRegion.IdExtractor, identityResolver:ShardRegion.ShardResolver):Option[ActorRef]
 }
 
 object SystemMOIDs extends EcotIds(18)
@@ -74,4 +81,12 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem]) extends Quer
   def State = _state.getOrElse(throw new Exception("Attempting to access the System Space before init is complete!"))
   
   def actorSystem = actorSystemOpt.get
+  
+  def createShardRegion(name:String, props:Props, identityExtractor:ShardRegion.IdExtractor, identityResolver:ShardRegion.ShardResolver) = {
+    Some(ClusterSharding(actorSystem).start(
+        typeName = name, 
+        entryProps = Some(props), 
+        idExtractor = identityExtractor, 
+        shardResolver = identityResolver))
+  }
 }

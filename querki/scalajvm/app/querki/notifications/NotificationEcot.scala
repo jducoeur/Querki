@@ -54,11 +54,8 @@ class NotificationEcot(e:Ecology) extends QuerkiEcot(e) with NotifierRegistry wi
     //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
     _ref = createActorCb(Props(new NotificationActor(ecology)), "Notifications")
     
-    _userNotifications = Some(ClusterSharding(SystemManagement.actorSystem).start(
-        typeName = "UserNotifications", 
-        entryProps = Some(UserNotificationActor.actorProps(ecology)), 
-        idExtractor = idExtractor, 
-        shardResolver = shardResolver))
+    _userNotifications = SystemManagement.createShardRegion("UserNotifications", UserNotificationActor.actorProps(ecology), 
+        idExtractor, shardResolver)
   }
   
   override def postInit() = {

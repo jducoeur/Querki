@@ -371,10 +371,10 @@ class LoginController extends ApplicationBase {
         userOpt match {
           case Some(user) => {
             val redirectOpt = rc.sessionCookie(rc.returnToParam)
-		    redirectOpt match {
-		      case Some(redirect) => Redirect(redirect).withSession(user.toSession:_*)
-		      case None => Redirect(routes.Application.index).withSession(user.toSession:_*)
-		    }
+    		    redirectOpt match {
+    		      case Some(redirect) => Redirect(redirect).withSession(user.toSession:_*)
+    		      case None => Redirect(routes.Application.index).withSession(user.toSession:_*)
+    		    }
           }
           case None => doError(routes.Application.index, "Login failed. Please try again.")
         }
