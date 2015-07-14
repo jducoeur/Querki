@@ -43,7 +43,7 @@ case object Archived
  * 
  * TODO: owner is now vestigial -- remove it.
  */
-sealed class SpaceMessage(val requester:User, val spaceId:OID)
+sealed class SpaceMessage(val requester:User, val spaceId:OID) extends Serializable
 object SpaceMessage {
   def unapply(input:SpaceMessage) = Some((input.requester, input.spaceId))
 }
