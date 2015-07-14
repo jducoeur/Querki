@@ -27,7 +27,7 @@ import querki.db.ShardKind._
  * TODO: for Scala 2.11, change this to a Value Type (it is exactly the right use case for
  * those).
  */
-class OID(val raw:Long) {
+case class OID(val raw:Long) {
   override def toString = java.lang.Long.toString(raw, 36)
   def toThingId = AsOID(this)
   def id = this
@@ -48,7 +48,6 @@ class OID(val raw:Long) {
 }
 
 object OID {
-  def apply(raw:Long) = new OID(raw)
   def apply(name:String) = {
     // Cope with either ThingID style or raw OID:
     val n = name(0) match {
@@ -57,7 +56,7 @@ object OID {
     }
     new OID(java.lang.Long.parseLong(n, 36))
   }
-  def apply(shard:Int, index:Int) = new OID((shard.toLong << 32) + index)
+  def apply(shard:Int, index:Int):OID = OID((shard.toLong << 32) + index)
   
   // TODO: this really ought to be done as a stored procedure, but let's wait until
   // we're using MySQL before we bother trying that. For now, we'll just use a
