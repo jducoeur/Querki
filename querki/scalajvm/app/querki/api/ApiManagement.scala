@@ -17,7 +17,7 @@ import Implicits.execContext
  * @author jducoeur
  */
 class ApiManagement(e:Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiInvocation {
-  implicit val timeout = Timeout(5 seconds)
+  implicit val timeout = defaultTimeout
   
   case class RouterInfo(router:ActorRef, requiresLogin:Boolean)
   

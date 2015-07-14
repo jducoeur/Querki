@@ -21,6 +21,11 @@ querki {
     urlRoot : "PUBLIC URL OF THIS SITE"
   }
   
+  akka {
+    # The default timeout to use unless stated otherwise:
+    timeout : 30 seconds
+  }
+  
   session {
     # Time before a UserSpaceSession times out for inactivity
     timeout : 5 minutes

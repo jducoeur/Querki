@@ -33,6 +33,8 @@ package object globals {
     wrapper.get
   }  
   
+  def defaultTimeout = querki.util.ActorHelpers.timeout
+  
   /**
    * A quick-and-dirty temp wrapper to inject heavy spewage around some code while debugging.
    */

@@ -14,6 +14,7 @@ import play.api.mvc.{RequestHeader, Security}
 import models.{PropertyBundle, SimplePTypeBuilder, ThingState, Wikitext}
 
 import querki.ecology._
+import querki.globals._
 import querki.session.UserSessionMessages.UserSessionMsg
 import querki.util.ActorHelpers._
 import querki.values.{QLContext, SpaceState}
@@ -79,7 +80,7 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
         userExtractor, userResolver)
   }
   
-  implicit val cacheTimeout = Timeout(5 seconds)
+  implicit val cacheTimeout = defaultTimeout
 
   def getIdentity(id:OID):Future[Option[PublicIdentity]] = {
     val fut = identityCache ? GetIdentityRequest(id)

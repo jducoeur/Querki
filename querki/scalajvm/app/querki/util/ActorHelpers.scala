@@ -11,6 +11,9 @@ import akka.util.Timeout
  * Little utility helpers for Akka.
  */
 object ActorHelpers {
+  
+  def timeout = Timeout(Config.getDuration("querki.akka.timeout"))
+  
   /**
    * This is basically a pimped ActorRef with some additional utils.
    */
@@ -19,7 +22,7 @@ object ActorHelpers {
      * TODO: this really isn't correct. How can we pick up the implicit Timeout from the
      * caller?
      */
-    implicit val timeout = Timeout(5 seconds)
+    implicit val timeout = ActorHelpers.timeout
 
     /**
      * HACK: wrapper around ask, for code that is in the process of evolution.
