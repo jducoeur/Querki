@@ -12,7 +12,7 @@ import akka.util.Timeout
  */
 object ActorHelpers {
   
-  def timeout = Timeout(Config.getDuration("querki.akka.timeout"))
+  def timeout = Timeout(Config.getDuration("querki.akka.timeout", 5 seconds))
   
   /**
    * This is basically a pimped ActorRef with some additional utils.
