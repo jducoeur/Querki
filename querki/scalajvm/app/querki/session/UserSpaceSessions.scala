@@ -5,6 +5,7 @@ import akka.event.LoggingReceive
 
 import models.OID
 
+import querki.admin.{MonitorActor, SpaceMonitorEvent}
 import querki.api.ClientRequest
 import querki.ecology._
 import querki.identity.User
@@ -21,6 +22,12 @@ private [session] class UserSpaceSessions(val ecology:Ecology, val spaceId:OID, 
   val persister = SpacePersistenceFactory.getUserValuePersister(spaceId)
   
   var state:Option[SpaceState] = None
+
+  // For the moment, UserSpaceSessions is responsible for keeping the AdminMonitor apprised of the state
+  // of this Space:
+  lazy val monitor = context.actorOf(MonitorActor.actorProps(ecology))
+  def spaceName = state.map(_.displayName).getOrElse(spaceId.toThingId.toString())
+  override def childrenUpdated() = monitor ! SpaceMonitorEvent(spaceId, spaceName, nChildren)
   
   def createChild(key:User):ActorRef = {
     // Sessions need a special dispatcher so they can use Stash. (Seriously? Unfortunate leakage in the Akka API.)

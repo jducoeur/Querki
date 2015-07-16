@@ -40,9 +40,18 @@ trait AdminFunctions {
    * Change the given user to the given level. Note that only Superadmin can make an Admin, and nobody can make a Superadmin.
    */
   def changeUserLevel(id:TID, level:UserLevel):Future[AdminUserView]
+  
+  /**
+   * Get the current state of system monitoring. This is basically the very beginnings of the
+   * system dashboard.
+   */
+  def monitor():Future[MonitorCurrent]
 }
 
 object AdminFunctions {
   case class QuerkiStats(userCountsByLevel:Map[UserLevel, Int], nSpaces:Long)
   case class AdminUserView(userId:TID, mainHandle:String, email:String, level:UserLevel)
+  
+  case class RunningSpace(name:String, nUsers:Int)
+  case class MonitorCurrent(nUsersTotal:Int, spaces:Seq[RunningSpace])
 }

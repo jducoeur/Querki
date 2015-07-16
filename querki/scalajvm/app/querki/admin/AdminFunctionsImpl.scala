@@ -92,4 +92,6 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
     
     alterUserLevel(id, level)
   }
+  
+  def monitor():Future[MonitorCurrent] = ???
 }

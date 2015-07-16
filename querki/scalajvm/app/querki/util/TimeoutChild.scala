@@ -75,6 +75,8 @@ trait RoutingParent[K] extends Actor {
   
   def children = _children.values.map(_.ref)
   def child(id:K) = _children.get(id).map(_.ref)
+  def nChildren = _children.size
+  def childrenUpdated() = {}
   
   /**
    * Instances of RoutingParent must implement this. Given the child's key, create it.
@@ -92,6 +94,7 @@ trait RoutingParent[K] extends Actor {
     _children = _children + (key -> c)
     context.watch(c.ref)
     initChild(c.ref)
+    childrenUpdated()
     c    
   }
   
@@ -125,6 +128,7 @@ trait RoutingParent[K] extends Actor {
               // ... but more messages came in the meantime, so rebuild the child:
               child.buffer.foreach(msg => routeToChild(key, msg))
             }
+            childrenUpdated()
           }
           case None => // Not our problem
         }

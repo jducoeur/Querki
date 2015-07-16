@@ -26,6 +26,13 @@ querki {
     timeout : 30 seconds
   }
   
+  admin {
+    # The interval for sending heartbeats to the AdminMonitor
+    monitorHeartbeat : 1 minute
+    # How long to wait before concluding that a monitor is dead 
+    monitorTimeout : 3 minutes
+  }
+  
   session {
     # Time before a UserSpaceSession times out for inactivity
     timeout : 5 minutes

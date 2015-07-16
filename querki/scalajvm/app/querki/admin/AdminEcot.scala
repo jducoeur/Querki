@@ -3,7 +3,8 @@ package querki.admin
 import scala.concurrent.duration._
 import scala.concurrent.Future
 
-import akka.actor.{ActorRef, Props}
+import akka.actor._
+import akka.contrib.pattern._
 import akka.pattern._
 import akka.util.Timeout
 
@@ -44,11 +45,25 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
   var _ref:Option[ActorRef] = None
   lazy val adminActor = _ref.get
   
+  var _monitorManager:Option[ActorRef] = None
+  lazy val monitorManager = _monitorManager.get
+  var _monitorProxy:Option[ActorRef] = None
+  lazy val monitor = _monitorProxy.get
+  
   override def createActors(createActorCb:CreateActorFunc):Unit = {
-    // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)
-    // with "Props(classOf(Space), ...)". See:
-    //   http://doc.akka.io/docs/akka/2.2.3/scala/actors.html
-    _ref = createActorCb(Props(new AdminActor(ecology)), "Admin")
+    _ref = createActorCb(Props(classOf[AdminActor], ecology), "Admin")
+    
+    _monitorManager = createActorCb(ClusterSingletonManager.props(
+        AdminMonitor.actorProps(ecology),
+        "AdminMonitor",
+        PoisonPill,
+        None
+      ), 
+      "MonitorManager")
+    _monitorProxy = createActorCb(ClusterSingletonProxy.props(
+        "/user/MonitorManager/AdminMonitor",
+        None),
+      "MonitorProxy")
   }
   
   override def postInit() = {

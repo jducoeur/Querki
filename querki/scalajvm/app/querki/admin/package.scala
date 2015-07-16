@@ -2,6 +2,8 @@ package querki
 
 import scala.concurrent.Future
 
+import akka.actor.ActorRef
+
 import models.Wikitext
 
 import querki.ecology._
@@ -10,6 +12,11 @@ import querki.identity.{User, UserId}
 package object admin {
   
   trait AdminOps extends EcologyInterface {
+    /**
+     * The AdminMonitor. Various systems send MonitorEvents to this, to update the state of things.
+     */
+    def monitor:ActorRef
+    
     /**
      * Fetches the current list of Spaces that are live in the system, and a little info about them.
      */
