@@ -38,6 +38,7 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
   lazy val NotifierRegistry = interface[querki.notifications.NotifierRegistry]
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
+  lazy val SystemManagement = interface[querki.system.SystemManagement]
   
   /**
    * The one true handle to the Admin Actor, which deals with asynchronous communications with the other Actors.
@@ -61,14 +62,14 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
       ), 
       "MonitorManager")
     _monitorProxy = createActorCb(ClusterSingletonProxy.props(
-        "/user/MonitorManager/AdminMonitor",
+        "/user/querkiRoot/MonitorManager/AdminMonitor",
         None),
       "MonitorProxy")
   }
   
   override def postInit() = {
     NotifierRegistry.register(SystemMessageNotifier)
-    ApiRegistry.registerApiImplFor[AdminFunctions, AdminFunctionsImpl](SpaceOps.spaceRegion, true)
+    ApiRegistry.registerApiImplFor[AdminFunctions, AdminFunctionsImpl](monitor, true)
   }
   
   override def term() = {

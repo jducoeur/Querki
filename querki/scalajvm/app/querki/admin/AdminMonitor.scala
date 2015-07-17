@@ -4,8 +4,12 @@ import scala.concurrent.duration._
 
 import akka.actor._
 
+import org.querki.requester._
+
+import querki.api.{AutowireParams, ClientRequest}
 import querki.globals._
 import querki.time.DateTime
+import querki.values.RequestContext
 
 /**
  * Second draft of system monitoring.
@@ -21,9 +25,10 @@ import querki.time.DateTime
  * 
  * @author jducoeur
  */
-class AdminMonitor(val ecology:Ecology) extends Actor with EcologyMember {
+class AdminMonitor(val ecology:Ecology) extends Actor with Requester with EcologyMember {
   import AdminMonitor._
 
+  lazy val ApiInvocation = interface[querki.api.ApiInvocation]
   lazy val SystemManagement = interface[querki.system.SystemManagement]
   
   lazy val scheduler = SystemManagement.actorSystem.scheduler
@@ -49,9 +54,16 @@ class AdminMonitor(val ecology:Ecology) extends Actor with EcologyMember {
     }
   }
   
-  def receive = {
+  def mkParams(rc:RequestContext) = AutowireParams(rc.requesterOrAnon, None, rc, this, sender)
+  
+  def receive = handleRequestResponse orElse {
     case evt @ SpaceMonitorEvent(spaceId, _, _) => { spaces += (spaceId -> evt); watch(evt) }
     case evt @ UserMonitorEvent(userId) => { users += (userId -> evt); watch(evt) }
+    
+    case ClientRequest(req, rc) => {
+      // Note that, in theory, NotificationFunctions is the only thing that'll be routed here:
+      ApiInvocation.handleSessionRequest(req, mkParams(rc))
+    }    
     
     case Terminated(mon) => {
       watches.get(mon.path) match {
