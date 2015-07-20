@@ -1,6 +1,7 @@
 package querki.system
 
 import akka.actor._
+import akka.cluster.Cluster
 import akka.contrib.pattern.{ClusterSharding, ShardRegion}
 
 import querki.ecology._
@@ -31,6 +32,11 @@ trait SystemManagement extends EcologyInterface {
    * This will throw an exception if called when there is no ActorSystem, as in unit tests!
    */
   def actorSystem:ActorSystem
+  
+  /**
+   * The address of this Cluster. Mainly intended for monitoring.
+   */
+  def clusterAddress:String
   
   /**
    * As it says, this is a wrapper around the standard ShardRegion creation, pulled out to here so that
@@ -88,5 +94,10 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem]) extends Quer
         entryProps = Some(props), 
         idExtractor = identityExtractor, 
         shardResolver = identityResolver))
+  }
+  
+  def clusterAddress:String = {
+    val cluster = Cluster.get(actorSystem)
+    cluster.selfAddress.toString
   }
 }

@@ -18,6 +18,7 @@ private [session] class UserSpaceSessions(val ecology:Ecology, val spaceId:OID, 
   extends Actor with EcologyMember with RoutingParent[User]
 {
   lazy val SpacePersistenceFactory = interface[querki.spaces.SpacePersistenceFactory]
+  lazy val SystemManagement = interface[querki.system.SystemManagement]
   
   val persister = SpacePersistenceFactory.getUserValuePersister(spaceId)
   
@@ -27,7 +28,7 @@ private [session] class UserSpaceSessions(val ecology:Ecology, val spaceId:OID, 
   // of this Space:
   lazy val monitor = context.actorOf(MonitorActor.actorProps(ecology))
   override def childrenUpdated() = {
-    state.foreach(s => monitor ! SpaceMonitorEvent(spaceId, s.displayName, nChildren))
+    state.foreach(s => monitor ! SpaceMonitorEvent(spaceId, s.displayName, SystemManagement.clusterAddress, nChildren))
   }
   
   def createChild(key:User):ActorRef = {

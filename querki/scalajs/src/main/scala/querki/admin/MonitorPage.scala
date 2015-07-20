@@ -24,7 +24,7 @@ class MonitorPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
           for {
             space <- update.spaces
           }
-            yield p(b(space.name, ":"), space.nUsers)
+            yield p(b(space.name), " (on ", space.cluster, ")", ":", space.nUsers)
         )
     }
       yield PageContents("Currently Active", guts)

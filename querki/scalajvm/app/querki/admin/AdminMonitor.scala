@@ -59,7 +59,7 @@ class AdminMonitor(val ecology:Ecology) extends Actor with Requester with Monito
   def mkParams(rc:RequestContext) = AutowireParams(rc.requesterOrAnon, Some(this), rc, this, sender)
   
   def receive = handleRequestResponse orElse {
-    case evt @ SpaceMonitorEvent(spaceId, _, _) => { spaces += (spaceId -> evt); watch(evt) }
+    case evt @ SpaceMonitorEvent(spaceId, _, _, _) => { spaces += (spaceId -> evt); watch(evt) }
     
     case ClientRequest(req, rc) => {
       // Note that, in theory, NotificationFunctions is the only thing that'll be routed here:
@@ -68,7 +68,7 @@ class AdminMonitor(val ecology:Ecology) extends Actor with Requester with Monito
     
     case Terminated(mon) => {
       watches.get(mon.path) match {
-        case Some(SpaceMonitorEvent(spaceId, _, _)) => spaces -= spaceId
+        case Some(SpaceMonitorEvent(spaceId, _, _, _)) => spaces -= spaceId
         case None => QLog.error(s"AdminMonitor somehow got a Terminated message for unknown Monitor ${mon.path}!")
       }
     }
@@ -82,4 +82,4 @@ object AdminMonitor {
 sealed trait MonitorEvent {
   val sentTime = DateTime.now
 }
-case class SpaceMonitorEvent(spaceId:OID, name:String, nUsers:Int) extends MonitorEvent
+case class SpaceMonitorEvent(spaceId:OID, name:String, address:String, nUsers:Int) extends MonitorEvent
