@@ -26,8 +26,9 @@ private [session] class UserSpaceSessions(val ecology:Ecology, val spaceId:OID, 
   // For the moment, UserSpaceSessions is responsible for keeping the AdminMonitor apprised of the state
   // of this Space:
   lazy val monitor = context.actorOf(MonitorActor.actorProps(ecology))
-  def spaceName = state.map(_.displayName).getOrElse(spaceId.toThingId.toString())
-  override def childrenUpdated() = monitor ! SpaceMonitorEvent(spaceId, spaceName, nChildren)
+  override def childrenUpdated() = {
+    state.foreach(s => monitor ! SpaceMonitorEvent(spaceId, s.displayName, nChildren))
+  }
   
   def createChild(key:User):ActorRef = {
     // Sessions need a special dispatcher so they can use Stash. (Seriously? Unfortunate leakage in the Akka API.)
@@ -41,7 +42,9 @@ private [session] class UserSpaceSessions(val ecology:Ecology, val spaceId:OID, 
      * The Space has sent an updated State, so tell everyone about it.
      */
     case msg @ CurrentState(s) => {
+      val firstTime = state.isEmpty
       state = Some(s)
+      if (firstTime) childrenUpdated()
       children.foreach(session => session.forward(msg))
     }
     

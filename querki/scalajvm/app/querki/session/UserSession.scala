@@ -13,7 +13,6 @@ import Implicits.execContext
 
 import models.OID
 
-import querki.admin.{MonitorActor, UserMonitorEvent}
 import querki.ecology._
 import querki.identity.{CollaboratorCache, IdentityId, PublicIdentity, UserId}
 import querki.time.DateTime
@@ -34,14 +33,11 @@ private [session] class UserSession(val ecology:Ecology) extends Actor with Stas
   
   lazy val collaborators = context.actorOf(CollaboratorCache.actorProps(ecology, userId))
   
-  lazy val monitor = context.actorOf(MonitorActor.actorProps(ecology))
-  
   override def preStart() = {
     // Evolve the User if needed:
     // TODO: in principle this shouldn't happen in preStart, but it does make the code a lot
     // simpler:
     UserAccess.getUserVersion(userId).map(UserEvolutions.checkUserEvolution(userId, _))
-    monitor ! UserMonitorEvent(userId)
     super.preStart()
   }
 

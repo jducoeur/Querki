@@ -23,6 +23,8 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
   
   def doRoute(req:Request):Future[String] = route[AdminFunctions](this)(req)
   
+  lazy val monitorStats = info.payload.get.asInstanceOf[MonitorStats]
+  
   def statistics():Future[QuerkiStats] = {
     requestFuture[QuerkiStats] { implicit promise =>
       SpaceOps.spaceManager.request(GetSpaceCount(user)) foreach {
@@ -93,5 +95,8 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
     alterUserLevel(id, level)
   }
   
-  def monitor():Future[MonitorCurrent] = ???
+  def monitor():Future[MonitorCurrent] = {
+    val spaces = monitorStats.spaces.values.toSeq.map { evt => RunningSpace(evt.name, evt.nUsers) }
+    Future.successful(MonitorCurrent(spaces))
+  }
 }

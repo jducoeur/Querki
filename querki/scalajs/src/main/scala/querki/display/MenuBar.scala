@@ -164,7 +164,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
       Some(NavSection("Admin", Seq(
         NavLink("Querki Statistics", Admin.statisticsFactory.pageUrl()),
         NavLink("Manage Users", Admin.manageUsersFactory.pageUrl()),
-        NavLink("Show Space Status", controllers.AdminController.showSpaceStatus()),
+        NavLink("Show Space Status", Admin.monitorFactory.pageUrl()),
         NavLink("Send System Message", controllers.AdminController.sendSystemMessage())
       )))
     else

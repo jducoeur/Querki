@@ -53,5 +53,5 @@ object AdminFunctions {
   case class AdminUserView(userId:TID, mainHandle:String, email:String, level:UserLevel)
   
   case class RunningSpace(name:String, nUsers:Int)
-  case class MonitorCurrent(nUsersTotal:Int, spaces:Seq[RunningSpace])
+  case class MonitorCurrent(spaces:Seq[RunningSpace])
 }

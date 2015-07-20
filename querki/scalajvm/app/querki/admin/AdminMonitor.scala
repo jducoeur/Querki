@@ -11,6 +11,10 @@ import querki.globals._
 import querki.time.DateTime
 import querki.values.RequestContext
 
+trait MonitorStats {
+  def spaces:Map[OID, SpaceMonitorEvent]
+}
+
 /**
  * Second draft of system monitoring.
  * 
@@ -25,7 +29,7 @@ import querki.values.RequestContext
  * 
  * @author jducoeur
  */
-class AdminMonitor(val ecology:Ecology) extends Actor with Requester with EcologyMember {
+class AdminMonitor(val ecology:Ecology) extends Actor with Requester with MonitorStats with EcologyMember {
   import AdminMonitor._
 
   lazy val ApiInvocation = interface[querki.api.ApiInvocation]
@@ -36,14 +40,12 @@ class AdminMonitor(val ecology:Ecology) extends Actor with Requester with Ecolog
   lazy val monitorTimeout = Config.getDuration("querki.admin.monitorTimeout")
 
   var spaces = Map.empty[OID, SpaceMonitorEvent]
-  var users = Map.empty[OID, UserMonitorEvent]
   var watches = Map.empty[ActorPath, MonitorEvent]
   
   def cleanOldEvents() = {
     val now = DateTime.now
     val old = now.minus(monitorTimeout.toMillis)
     spaces = spaces.filter(_._2.sentTime.isBefore(old))
-    users = users.filter(_._2.sentTime.isBefore(old))
   }
   
   def watch(evt:MonitorEvent) = {
@@ -54,11 +56,10 @@ class AdminMonitor(val ecology:Ecology) extends Actor with Requester with Ecolog
     }
   }
   
-  def mkParams(rc:RequestContext) = AutowireParams(rc.requesterOrAnon, None, rc, this, sender)
+  def mkParams(rc:RequestContext) = AutowireParams(rc.requesterOrAnon, Some(this), rc, this, sender)
   
   def receive = handleRequestResponse orElse {
     case evt @ SpaceMonitorEvent(spaceId, _, _) => { spaces += (spaceId -> evt); watch(evt) }
-    case evt @ UserMonitorEvent(userId) => { users += (userId -> evt); watch(evt) }
     
     case ClientRequest(req, rc) => {
       // Note that, in theory, NotificationFunctions is the only thing that'll be routed here:
@@ -68,7 +69,6 @@ class AdminMonitor(val ecology:Ecology) extends Actor with Requester with Ecolog
     case Terminated(mon) => {
       watches.get(mon.path) match {
         case Some(SpaceMonitorEvent(spaceId, _, _)) => spaces -= spaceId
-        case Some(UserMonitorEvent(userId)) => users -= userId
         case None => QLog.error(s"AdminMonitor somehow got a Terminated message for unknown Monitor ${mon.path}!")
       }
     }
@@ -83,4 +83,3 @@ sealed trait MonitorEvent {
   val sentTime = DateTime.now
 }
 case class SpaceMonitorEvent(spaceId:OID, name:String, nUsers:Int) extends MonitorEvent
-case class UserMonitorEvent(userId:OID) extends MonitorEvent
