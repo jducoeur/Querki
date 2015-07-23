@@ -75,7 +75,7 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
   
   def archiveThisSpace():Future[Boolean] = {
     if (!rc.isOwner && !rc.requesterOrAnon.isAdmin)
-      Future.failed(new CanNotArchiveException())
+      throw new NotAllowedException()
     
     requestFuture[Boolean] { implicit promise =>
       SpaceOps.spaceManager.request(ArchiveSpace(state.id)) foreach {

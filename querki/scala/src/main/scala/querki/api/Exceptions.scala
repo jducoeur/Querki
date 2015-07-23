@@ -38,9 +38,18 @@ sealed trait SecurityException extends ApiException
  */
 case class MaxMembersPerSpaceException(curMax:Int) extends SecurityException
 /**
- * You are not allowed to archive this Space.
+ * Failed to archive this Space.
  */
 case class CanNotArchiveException() extends SecurityException
+/**
+ * You aren't allowed to do that.
+ */
+case class NotAllowedException() extends SecurityException {
+  // TODO: this is wrong -- we should be setting the message server-side, localized.
+  // How can we fill such things in, in the general case, for Exceptions that don't
+  // have specific client-side complicity?
+  override def toString() = "You aren't allowed to do that"
+}
 
 
 /**

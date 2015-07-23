@@ -109,7 +109,7 @@ class ClientController extends ApplicationBase {
   def apiRequestBase(rc:PlayRequestContext):Future[Result] = {
     val request = ClientRequest(unpickleRequest(rc), rc)
     if (ApiInvocation.requiresLogin(request) && rc.requester.isEmpty)
-      BadRequest("Not logged in")
+      BadRequest(write(new NotAllowedException()))
     else ApiInvocation.routeRequest(request) {
       case ClientResponse(pickled) => Ok(pickled)
       case ClientError(msg) => BadRequest(msg)
