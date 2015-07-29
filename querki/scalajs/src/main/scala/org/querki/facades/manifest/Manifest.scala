@@ -79,7 +79,7 @@ class ManifestCommands(manifest:ManifestFacade) {
   /**
    * Remove one or more list items, specifying either jQuery objects or a selector that matches list children.
    */
-  def manifestRemove(selector:ElementDesc) = manifest.manifestInternal("remove", toJsAny(selector))
+  def manifestRemove(selector:ElementDesc) = manifest.manifestInternal("remove", selector.asInstanceOf[js.Any])
   
   /**
    * Get an array of the current values.

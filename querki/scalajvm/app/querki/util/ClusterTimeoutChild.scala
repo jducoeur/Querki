@@ -39,7 +39,7 @@ trait ClusterTimeoutChild extends Actor {
     super.preStart()
   }
   
-  override def unhandled(message: Any): Unit = {
+  abstract override def unhandled(message: Any): Unit = {
     message match {
       case resp:ReceiveTimeout => context.parent ! Passivate(KillMe)
       case KillMe => context.stop(self)

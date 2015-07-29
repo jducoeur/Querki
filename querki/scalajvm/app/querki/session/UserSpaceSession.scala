@@ -301,7 +301,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
   
   def mkParams(rc:RequestContext) = AutowireParams(user, Some(SpacePayload(state, spaceRouter)), rc, this, sender)
   
-  def normalReceive:Receive = LoggingReceive (handleRequestResponse orElse {
+  def normalReceive:Receive = LoggingReceive {
     case CurrentState(s) => setRawState(s)
     
     case ClientRequest(req, rc) => {
@@ -379,7 +379,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
   	    }
       }
     }
-  })
+  }
 }
 
 object UserSpaceSession {

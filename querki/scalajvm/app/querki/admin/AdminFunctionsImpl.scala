@@ -26,25 +26,23 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
   lazy val monitorStats = info.payload.get.asInstanceOf[MonitorStats]
   
   def statistics():Future[QuerkiStats] = {
-    requestFuture[QuerkiStats] { implicit promise =>
-      SpaceOps.spaceManager.request(GetSpaceCount(user)) foreach {
-        case SpaceCount(nSpaces) => {
-          // Okay -- we now know the number of Spaces, so let's get the user totals next:
-        
-  	      // TODO: this call is heavier-weight than we need. Slim it to just getting counts from the DB
-  	      // TODO: this call really ought to return a Future, but we'll probably move to Slick streaming in
-    	    // due course
-  	      val allUsers = UserAccess.getAllForAdmin(info.user)
-  	    
-  	      val usersByLevel = allUsers.groupBy(_.level)
-  	      val userCountsByLevel = usersByLevel.map { pair =>
-  	        val (level, users) = pair
-  	        (level -> users.size)
-  	      }
-  	      promise.success(QuerkiStats(userCountsByLevel, nSpaces))        
-        }
-      }      
-    }
+    SpaceOps.spaceManager.request(GetSpaceCount(user)) map {
+      case SpaceCount(nSpaces) => {
+        // Okay -- we now know the number of Spaces, so let's get the user totals next:
+      
+	      // TODO: this call is heavier-weight than we need. Slim it to just getting counts from the DB
+	      // TODO: this call really ought to return a Future, but we'll probably move to Slick streaming in
+  	    // due course
+	      val allUsers = UserAccess.getAllForAdmin(info.user)
+	    
+	      val usersByLevel = allUsers.groupBy(_.level)
+	      val userCountsByLevel = usersByLevel.map { pair =>
+	        val (level, users) = pair
+	        (level -> users.size)
+	      }
+	      QuerkiStats(userCountsByLevel, nSpaces)        
+      }
+    }      
   }
   
   private def convertUser(user:User):AdminUserView = {

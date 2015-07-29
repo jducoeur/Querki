@@ -33,7 +33,7 @@ class CollaboratorCache(val ecology:Ecology, val userId:UserId) extends Actor wi
     requester ! UserSessionMessages.Collaborators(results)
   }
 
-  def receive = LoggingReceive (handleRequestResponse orElse {
+  def receive = LoggingReceive {
     case UserSessionMessages.GetCollaborators(_, identityId, term) => {
       _allCollaborators match {
         case Some(collabs) => {
@@ -74,7 +74,7 @@ class CollaboratorCache(val ecology:Ecology, val userId:UserId) extends Actor wi
     }
     
     case ClearCache => _allCollaborators = None
-  })
+  }
 }
 
 object CollaboratorCache {

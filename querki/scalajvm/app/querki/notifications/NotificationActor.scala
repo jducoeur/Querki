@@ -25,7 +25,7 @@ private[notifications] class NotificationActor(val ecology:Ecology) extends Acto
   
   lazy val userCache = IdentityAccess.userCache
   
-  def receive = handleRequestResponse orElse {
+  def receive = {
     case msg @ SendNotification(req, recipients, note) => {
       
       val identities = recipients match {

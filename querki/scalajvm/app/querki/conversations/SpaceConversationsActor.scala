@@ -63,7 +63,7 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
    */
   var nextId:CommentId = 1
   
-  def receive = LoggingReceive(handleRequestResponse orElse {
+  def receive = LoggingReceive {
     /**
      * This Actor can't become properly active until we receive the current state to work with:
      */
@@ -85,7 +85,7 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
         }        
       }
     }
-  })
+  }
   
   /**
    * Given a bunch of Comments, stitch them together into Conversations.
@@ -195,7 +195,7 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
     convs.copy(comments = pre ++ theOne ++ post)
   }
   
-  def normalReceive:Receive = LoggingReceive(handleRequestResponse orElse {
+  def normalReceive:Receive = LoggingReceive {
     /**
      * Update from the Space Actor that the state has been changed.
      */
@@ -328,5 +328,5 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
         }
       }
     }
-  })
+  }
 }

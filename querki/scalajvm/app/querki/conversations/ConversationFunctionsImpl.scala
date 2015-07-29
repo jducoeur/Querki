@@ -71,14 +71,12 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
 	    // the compiler...
 	    implicit val theRc = rc
 	    
-	    requestFuture[ConversationInfo] { implicit promise =>
-  	    for {
-	        ThingConversations(convs) <- spaceRouter.requestFor[ThingConversations](ConversationRequest(rc.requesterOrAnon, state.id, GetConversations(thing.id)))
-	        identities <- IdentityAccess.getIdentities(getIds(convs).toSeq) //IdentityAccess.identityCache.requestFor[IdentitiesFound](GetIdentities(getIds(convs).toSeq))
-          apiConvs = convs.map(toApi(_)(identities, theRc))
-	      }
-	        promise.success(ConversationInfo(canComment, canReadComments, apiConvs))
-	    }
+	    for {
+        ThingConversations(convs) <- spaceRouter.requestFor[ThingConversations](ConversationRequest(rc.requesterOrAnon, state.id, GetConversations(thing.id)))
+        identities <- IdentityAccess.getIdentities(getIds(convs).toSeq)
+        apiConvs = convs.map(toApi(_)(identities, theRc))
+      }
+        yield ConversationInfo(canComment, canReadComments, apiConvs)
 	  } else {
 	    // The requester can't read the comments, so don't bother collecting them:
 	    Future.successful(ConversationInfo(canComment, canReadComments, Seq.empty))
@@ -102,21 +100,17 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
     )
     
     val theRc = rc
-    requestFuture[ConvNode] { implicit promise =>
-      for {
-        AddedNode(parentId, node) <- spaceRouter.request(ConversationRequest(user, state.id, NewComment(comment)))
-        IdentityFound(identity) <- IdentityAccess.identityCache.request(GetIdentityRequest(authorId))
-      }
-        promise.success(toApi(node)(Map(authorId -> identity), theRc))
+    for {
+      AddedNode(parentId, node) <- spaceRouter.request(ConversationRequest(user, state.id, NewComment(comment)))
+      IdentityFound(identity) <- IdentityAccess.identityCache.request(GetIdentityRequest(authorId))
     }
+      yield toApi(node)(Map(authorId -> identity), theRc)
   }
   
   def deleteComment(thingId:TID, commentId:CommentId):Future[Unit] = withThing(thingId) { thing =>
-    requestFuture[Unit] { implicit promise =>
 	  spaceRouter.request(ConversationRequest(user, state.id, DeleteComment(thing.id, commentId))).map {
-	    case CommentDeleted => promise.success(())
+	    case CommentDeleted => ()
 	    case CommentNotDeleted => throw new Exception("Unable to delete comment")      
-	  }      
-    }
+	  }
   }
 }

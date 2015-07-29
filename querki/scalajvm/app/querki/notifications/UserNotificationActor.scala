@@ -60,6 +60,8 @@ class UserNotificationActor(val ecology:Ecology) extends Actor with Stash with R
     super.preStart()
   }
   
+  // Since this stashes everything, we need to handleRequestResponse *before* we get to
+  // stash:
   def receive = LoggingReceive (handleRequestResponse orElse {
     case UserNotificationInfo(id, lastChecked) => {
       shared.lastNoteChecked = lastChecked
@@ -83,7 +85,7 @@ class UserNotificationActor(val ecology:Ecology) extends Actor with Stash with R
   
   def mkParams(rc:RequestContext) = AutowireParams(rc.requesterOrAnon, Some(shared), rc, this, sender)
   
-  def mainReceive:Receive = LoggingReceive (handleRequestResponse orElse {
+  def mainReceive:Receive = LoggingReceive {
     
     case NewNotification(_, noteRaw) => {
       // We decide what the actual Notification Id is:
@@ -98,7 +100,7 @@ class UserNotificationActor(val ecology:Ecology) extends Actor with Stash with R
       // Note that, in theory, NotificationFunctions is the only thing that'll be routed here:
       ApiInvocation.handleSessionRequest(req, mkParams(rc))
     }    
-  })
+  }
 }
 
 object UserNotificationActor {

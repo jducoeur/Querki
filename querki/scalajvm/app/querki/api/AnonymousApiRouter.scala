@@ -38,10 +38,10 @@ private [api] class AnonymousApiWorker(val ecology:Ecology) extends Actor with E
 
   def mkParams(rc:RequestContext) = AutowireParams(rc.requesterOrAnon, None, rc, this, sender)
   
-  def receive = LoggingReceive (handleRequestResponse orElse {
+  def receive = LoggingReceive {
     case ClientRequest(req, rc) => {
       // Handle this request, then shut down when finished:
       ApiInvocation.handleSessionRequest(req, mkParams(rc), { dummy => context.stop(self) })
     }
-  })
+  }
 }

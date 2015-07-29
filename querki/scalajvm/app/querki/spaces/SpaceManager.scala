@@ -54,7 +54,7 @@ class SpaceManager(val ecology:Ecology, val region:ActorRef) extends Actor with 
    */
   lazy val persister = persistenceFactory.getSpaceManagerPersister
   
-  def receive = handleRequestResponse orElse {
+  def receive = {
     // This is entirely a DB operation, so just have the Persister deal with it:
     case req @ ListMySpaces(owner) => persister.forward(req)
     

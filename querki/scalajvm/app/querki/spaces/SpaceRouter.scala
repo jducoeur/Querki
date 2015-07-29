@@ -55,7 +55,7 @@ private[spaces] class SpaceRouter(val ecology:Ecology)
     super.preStart()
   }
   
-  def receive = LoggingReceive (handleRequestResponse orElse {
+  def receive = LoggingReceive {
     
     /**
      * The Space has sent an updated State, so tell everyone about it.
@@ -103,7 +103,7 @@ private[spaces] class SpaceRouter(val ecology:Ecology)
     case msg:CreateSpace => space.forward(msg)
     // FALLBACK -- NOTHING SHOULD GO BELOW HERE:
     case msg:SpaceMessage => space.forward(msg)
-  })
+  }
 }
 
 object SpaceRouter {

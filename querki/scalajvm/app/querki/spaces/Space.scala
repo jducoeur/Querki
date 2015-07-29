@@ -51,7 +51,7 @@ import PersistMessages._
  * to get the name. Note that this has *nothing* to do with the Space's Display Name, which
  * is user-defined. (And unique only to that user.)
  */
-private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, stateRouter:ActorRef, id:OID) 
+class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, stateRouter:ActorRef, id:OID) 
   extends Actor with Requester with EcologyMember with ModelTypeDefiner with SpaceAPI
 {
   
@@ -173,7 +173,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
   def loadSpace() = {
     // TEMP: just as a proof of concept. This is entirely wrong in the long run: we should be using
     // FSM and Requester instead of blocking here:
-    val persistFuture = persister ? Load
+    val persistFuture = persister.ask(Load)
     val result = Await.result(persistFuture, scala.concurrent.duration.Duration(5, "seconds"))
     result match {
       case Loaded(s) => {
@@ -366,7 +366,7 @@ private [spaces] class Space(val ecology:Ecology, persistenceFactory:SpacePersis
   }
   
   // If it isn't a message that we know how to handle, let the plugins take a crack at it:
-  def receive = LoggingReceive(handleRequestResponse orElse mainReceive orElse pluginReceive)
+  def receive = LoggingReceive (mainReceive orElse pluginReceive)
   
   def mainReceive:Receive = {
     case GetSpaceInfo(who, spaceId) => {

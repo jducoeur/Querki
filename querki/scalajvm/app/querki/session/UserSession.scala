@@ -44,9 +44,9 @@ private [session] class UserSession(val ecology:Ecology) extends Actor with Stas
   /**
    * The initial receive just handles setup, and then switches to mainReceive once it is ready:
    */
-  def receive = LoggingReceive (handleRequestResponse orElse {
+  def receive = LoggingReceive {
     case msg:GetCollaborators => collaborators.forward(msg)
-  })
+  }
 }
 
 object UserSessionMessages {

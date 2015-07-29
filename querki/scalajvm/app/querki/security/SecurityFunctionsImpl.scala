@@ -77,15 +77,13 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
     if (!rc.isOwner && !rc.requesterOrAnon.isAdmin)
       throw new NotAllowedException()
     
-    requestFuture[Boolean] { implicit promise =>
-      SpaceOps.spaceManager.request(ArchiveSpace(state.id)) foreach {
-        case Archived => {
-          // Have the troupe self-destruct on the way out, since this Space is no longer valid:
-          spaceRouter ! querki.util.Shutdown
-          promise.success(true)
-        }
-        case _ => promise.failure(new CanNotArchiveException())
+    SpaceOps.spaceManager.request(ArchiveSpace(state.id)) map {
+      case Archived => {
+        // Have the troupe self-destruct on the way out, since this Space is no longer valid:
+        spaceRouter ! querki.util.Shutdown
+        true
       }
+      case _ => throw new CanNotArchiveException()
     }
   }
 }

@@ -2,7 +2,6 @@ package querki.photos
 
 import akka.actor._
 import akka.event.LoggingReceive
-import akka.pattern.ask
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import javax.imageio.ImageIO
@@ -51,7 +50,7 @@ class PhotoUploadActor(val ecology:Ecology, state:SpaceState, router:ActorRef) e
   var _mimeType:Option[String] = None
   def mimeType = _mimeType.getOrElse(MIMEType.JPEG)
   
-  def receive = LoggingReceive (handleRequestResponse orElse {
+  def receive = LoggingReceive {
     
     case BeginProcessingPhoto(_, spaceId, tpe) => {
       _mimeType = tpe
@@ -185,7 +184,7 @@ class PhotoUploadActor(val ecology:Ecology, state:SpaceState, router:ActorRef) e
       }
       
       QLog.spew(s"About to actually update the Space -- the QValue is $qv")
-      loopback(router ? SessionRequest(rc.requesterOrAnon, state.id, ChangeProps2(thing.id.toThingId, Map((propId -> qv))))) foreach { response =>
+      router ? SessionRequest(rc.requesterOrAnon, state.id, ChangeProps2(thing.id.toThingId, Map((propId -> qv)))) foreach { response =>
         response match {
           case ThingFound(thingId, newState) => {
             // Okay, we're successful. Send the Wikitext for thumbnail of the new photo back to the Client:
@@ -208,7 +207,7 @@ class PhotoUploadActor(val ecology:Ecology, state:SpaceState, router:ActorRef) e
     case ImageComplete => {
       context.stop(self)
     }
-  })
+  }
 }
 
 object PhotoUploadActor {

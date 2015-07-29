@@ -48,7 +48,7 @@ private[identity] class IdentityCache(val ecology:Ecology) extends Actor with Re
     }
   }
   
-  def receive = handleRequestResponse orElse {
+  def receive = {
     case GetIdentityRequest(id) => {
       fetchAndThen(id) { resp => sender ! resp }
     }

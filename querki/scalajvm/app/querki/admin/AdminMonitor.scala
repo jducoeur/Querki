@@ -58,7 +58,7 @@ class AdminMonitor(val ecology:Ecology) extends Actor with Requester with Monito
   
   def mkParams(rc:RequestContext) = AutowireParams(rc.requesterOrAnon, Some(this), rc, this, sender)
   
-  def receive = handleRequestResponse orElse {
+  def receive = {
     case evt @ SpaceMonitorEvent(spaceId, _, _, _) => { spaces += (spaceId -> evt); watch(evt) }
     
     case ClientRequest(req, rc) => {

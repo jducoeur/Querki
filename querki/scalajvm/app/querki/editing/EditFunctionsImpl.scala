@@ -97,11 +97,9 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
   }
   
   def doChangeProps(thing:Thing, props:PropMap):Future[PropertyChangeResponse] = {
-    requestFuture[PropertyChangeResponse] { implicit promise =>
-      self.request(createSelfRequest(ChangeProps2(thing.toThingId, props))) foreach {
-        case ThingFound(_, _) => promise.success(PropertyChanged)
-        case ThingError(ex, _) => promise.failure(new querki.api.GeneralChangeFailure("Error during save"))
-      } 
+    self.request(createSelfRequest(ChangeProps2(thing.toThingId, props))) map {
+      case ThingFound(_, _) => PropertyChanged
+      case ThingError(ex, _) => throw new querki.api.GeneralChangeFailure("Error during save")
     }
   }
   
@@ -196,18 +194,16 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
       }
     }
     
-    requestFuture[ThingInfo] { promise =>
-      spaceRouter.request(CreateThing(user, state.id, model.kind, model.id, props)) foreach {
-        case ThingFound(thingId, newState) => {
-          newState.anything(thingId) match {
-            case Some(thing) => {
-	          promise.success(ClientApi.thingInfo(thing, rc))
-            }
-            case None => promise.failure(new Exception("INTERNAL ERROR: Space claimed to create a new Thing, but seems to have failed?!?"))
+    spaceRouter.request(CreateThing(user, state.id, model.kind, model.id, props)) map {
+      case ThingFound(thingId, newState) => {
+        newState.anything(thingId) match {
+          case Some(thing) => {
+            ClientApi.thingInfo(thing, rc)
           }
+          case None => throw new Exception("INTERNAL ERROR: Space claimed to create a new Thing, but seems to have failed?!?")
         }
-        case ThingError(error, stateOpt) => promise.failure(error)
       }
+      case ThingError(error, stateOpt) => throw error
     }
   }
   
@@ -348,23 +344,21 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     }
       yield Core.toProps((prop, newV))()  
 
-    requestFuture[PropEditInfo] { implicit promise =>
-      self.request(createSelfRequest(ChangeProps2(thing.toThingId, propsOpt.get))) foreach {
-        case ThingFound(id, newState) => {
-          val result = for {
-            newThing <- newState.anything(id)
-            prop <- newState.prop(propId)
-            pv <- newThing.getPropOpt(prop)
-            propVal = DisplayPropVal(Some(newThing), prop, Some(pv.v))
-          }
-            yield getOnePropEditor(newThing, prop, propVal)
-          
-          promise.success(result.get)
+    self.request(createSelfRequest(ChangeProps2(thing.toThingId, propsOpt.get))) map {
+      case ThingFound(id, newState) => {
+        val result = for {
+          newThing <- newState.anything(id)
+          prop <- newState.prop(propId)
+          pv <- newThing.getPropOpt(prop)
+          propVal = DisplayPropVal(Some(newThing), prop, Some(pv.v))
         }
-      
-        case ThingError(ex, _) => promise.failure(ex)
-      }        
-    }
+          yield getOnePropEditor(newThing, prop, propVal)
+        
+        result.get
+      }
+    
+      case ThingError(ex, _) => throw ex
+    }        
   }
   
   def removeProperty(thingId:TID, propIdStr:TID):Future[PropertyChangeResponse] = withThing(thingId) { thing =>
@@ -407,14 +401,12 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
         // is based on, and fails if the stamp is out of date.
         val spaceMsg = CreateThing(rc.requesterOrAnon, state.id, Kind.Type, Core.UrType, props)
         
-        requestFuture[TypeInfo] { implicit promise =>
-          spaceRouter.request(spaceMsg) foreach {
-            case ThingFound(typeId, newState) => {
-              val typ = newState.typ(typeId)
-              promise.success(toTypeInfo(typ))
-            }
-            case ThingError(error, stateOpt) => promise.failure(error)
-          }          
+        spaceRouter.request(spaceMsg) map {
+          case ThingFound(typeId, newState) => {
+            val typ = newState.typ(typeId)
+            toTypeInfo(typ)
+          }
+          case ThingError(error, stateOpt) => throw error
         }
       }
     }
@@ -427,17 +419,15 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
         // TODO: in principle, this should route through the UserSpaceSession. It doesn't matter yet, but is
         // likely to once we put Experiment Mode into place.
         val spaceMsg = ModifyThing(user, state.id, thing.id.toThingId, newModel.id, thing.props)
-        requestFuture[ThingInfo] { implicit promise =>
-          spaceRouter.request(spaceMsg) foreach {
-            case ThingFound(newThingId, newState) => {
-              newState.anything(newThingId) match {
-                case Some(newThing) => promise.success(ClientApi.thingInfo(newThing, rc))
-                case None => promise.failure(new Exception(s"Change Model somehow resulted in unknown Thing $newThingId!"))
-              }
+        spaceRouter.request(spaceMsg) map {
+          case ThingFound(newThingId, newState) => {
+            newState.anything(newThingId) match {
+              case Some(newThing) => ClientApi.thingInfo(newThing, rc)
+              case None => throw new Exception(s"Change Model somehow resulted in unknown Thing $newThingId!")
             }
-            case ThingError(error, stateOpt) => promise.failure(error)          
-          }          
-        }
+          }
+          case ThingError(error, stateOpt) => throw error
+        }          
       }
       case None => Future.failed(new Exception(s"Unknown model $newModelId!")) 
     }

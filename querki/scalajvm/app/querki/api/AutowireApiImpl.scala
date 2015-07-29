@@ -72,6 +72,7 @@ abstract class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends
   def user = info.user
   def rc = info.rc
   def self = info.actor.self
+  def context = info.actor.context
   def sender = info.sender
   def requester = info.actor
   
