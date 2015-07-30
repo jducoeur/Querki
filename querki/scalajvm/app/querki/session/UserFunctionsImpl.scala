@@ -4,9 +4,12 @@ import scala.concurrent.Future
 
 import autowire._
 
+import models.ThingId
+
 import querki.api.{AutowireApiImpl, AutowireParams}
 import querki.data.{TID, SpaceInfo}
 import querki.globals._
+import querki.identity.UserLevel
 import querki.spaces.messages._
 
 /**
@@ -19,6 +22,7 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   import UserFunctions._
   
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
+  lazy val UserAccess = interface[querki.identity.UserAccess]
   
   lazy val spaceManager = SpaceOps.spaceManager
   
@@ -32,5 +36,16 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     spaceManager.requestFor[MySpaces](ListMySpaces(user.id)) map { mySpaces =>
       AllSpaces(mySpaces.ownedByMe.map(spaceDetails2Info), mySpaces.memberOf.map(spaceDetails2Info))
     }
+  }
+  
+  def accountInfo():Future[AccountInfo] = {
+    // TODO: this is doing a direct DB access, which is by definition ugly.
+    val pairOpt = UserAccess.getIdentity(ThingId(user.mainIdentity.handle))
+    pairOpt match {
+      case Some((identity, level)) => {
+        Future.successful(AccountInfo(identity.handle, identity.name, identity.email.addr, level))
+      }
+      case None => throw new Exception(s"Somehow tried to get the accountInfo for unknown user ${user.mainIdentity.handle}!")
+    }    
   }
 }

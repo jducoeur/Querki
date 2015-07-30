@@ -77,6 +77,7 @@ package object pages {
     def sharingFactory:PageFactory
     def advancedFactory:ThingPageFactory
     def indexFactory:PageFactory
+    def accountFactory:PageFactory
     
     /**
      * Navigate to the given Space.

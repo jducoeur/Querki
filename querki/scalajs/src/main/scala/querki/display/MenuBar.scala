@@ -142,8 +142,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
     UserAccess.user match {
       case Some(user) => {
         NavSection("Logged in as " + truncateName(user.mainIdentity.name), Seq(
-          // TODO: make this a client page:
-          NavLink("Your Profile", controllers.LoginController.userByName(user.mainIdentity.handle)),
+          NavLink("Your Account", Pages.accountFactory.pageUrl()),
           NavLink("Log out", controllers.LoginController.logout())
         ))  
       }
