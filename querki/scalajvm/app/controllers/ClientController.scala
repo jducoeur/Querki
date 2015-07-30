@@ -80,6 +80,17 @@ class ClientController extends ApplicationBase {
     }
   }
   
+  def index = withUser(false) { rc =>
+    rc.requester match {
+      case Some(requester) => {
+        val requestInfo = ClientApi.rootRequestInfo(rc)
+        Ok(views.html.client(rc, write(requestInfo)))
+      }
+      // For the moment, in the not-logged-in case, we still show the old root page:
+      case _ => Ok(views.html.index(this, rc))
+    }
+  } 
+  
   def space(ownerId:String, spaceIdStr:String) = withLocalClient(ownerId, spaceIdStr) { (rc, client) =>
     implicit val r = rc
     client[ThingFunctions].getRequestInfo().call().map { requestInfo =>
@@ -89,7 +100,7 @@ class ClientController extends ApplicationBase {
         Ok(views.html.client(rc, write(requestInfo)))
       }
     } recoverWith {
-      case pex:PublicException => doError(routes.Application.index, pex) 
+      case pex:PublicException => doError(indexRoute, pex) 
     }
   }
   
@@ -152,7 +163,7 @@ class ClientController extends ApplicationBase {
     client[ImexportFunctions].exportSpace().call() map { exported =>
       Ok(exported).as(MIMEType.XML)
     } recoverWith {
-      case pex:PublicException => doError(routes.Application.index, pex) 
+      case pex:PublicException => doError(indexRoute, pex) 
     }
   }
 }

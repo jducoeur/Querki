@@ -3,7 +3,7 @@
 # ~~~~
 
 # Home page
-GET     /                           @controllers.Application.index
+GET     /                           @controllers.ClientController.index
 GET     /robots.txt					@controllers.Application.robots
 GET     /spaces                     @controllers.Application.spaces
 GET     /newSpace                   @controllers.Application.newSpace

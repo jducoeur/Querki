@@ -1,7 +1,6 @@
 package querki.data
 
 import querki.identity.UserLevel.UserLevel
-import querki.pages.PageDetails
 
 /**
  * The client-side version of the server's RequestContext. Contains all information from the RC that

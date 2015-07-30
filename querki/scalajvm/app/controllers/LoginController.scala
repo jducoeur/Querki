@@ -131,7 +131,7 @@ class LoginController extends ApplicationBase {
           }
         }
       }
-      case None => doError(routes.Application.index, "For now, you can only sign up for Querki through an invitation. Try again soon.")
+      case None => doError(indexRoute, "For now, you can only sign up for Querki through an invitation. Try again soon.")
     }
   }
   
@@ -203,7 +203,7 @@ class LoginController extends ApplicationBase {
 		          }
 		        }    	    
 	    	  }
-	    	  case None => doError(routes.Application.index, "For now, you can only sign up for Querki through an invitation. Try again soon.")
+	    	  case None => doError(indexRoute, "For now, you can only sign up for Querki through an invitation. Try again soon.")
 	    	}
           }
         }
@@ -215,9 +215,9 @@ class LoginController extends ApplicationBase {
     rc.sessionCookie(querki.identity.personParam).map(OID(_)).map { personId => 
       askSpace(rc.ownerId, rc.spaceIdOpt.get)(SpaceMembersMessage(rc.requesterOrAnon, _, JoinRequest(rc, personId))) {
         case Joined => Redirect(routes.ClientController.space(ownerId, spaceId))
-        case JoinFailed(error) => doError(routes.Application.index, error)(rc)
+        case JoinFailed(error) => doError(indexRoute, error)(rc)
       }
-    }.getOrElse(doError(routes.Application.index, "You don't seem to be logged in."))
+    }.getOrElse(doError(indexRoute, "You don't seem to be logged in."))
   }
 
   def userByName(userName:String) = withUser(true) { rc =>
@@ -227,7 +227,7 @@ class LoginController extends ApplicationBase {
         val initialPasswordForm = PasswordChangeInfo("", "", "")
         Ok(views.html.profile(this, rc, identity, level, passwordChangeForm.fill(initialPasswordForm)))
       }
-      case None => doError(routes.Application.index, "That isn't a legal path")
+      case None => doError(indexRoute, "That isn't a legal path")
     }
   }
   
@@ -291,7 +291,7 @@ class LoginController extends ApplicationBase {
           yield true
           
         successOpt match {
-          case Some(true) => doInfo(routes.Application.index, "Password update email has been sent")
+          case Some(true) => doInfo(indexRoute, "Password update email has been sent")
           case _ => showError
         }
       }
@@ -322,7 +322,7 @@ class LoginController extends ApplicationBase {
                 case Some(user) => {
                   val identity = user.loginIdentity.get
                   val newUser = UserAccess.changePassword(user, identity, info.newPassword)
-                  Redirect(routes.Application.index).flashing("info" -> "Password changed")
+                  Redirect(indexRoute).flashing("info" -> "Password changed")
                 }
                 case None => showError(s"$email isn't a known Querki user! Please try the Forgot my Password link again.")
               }              
@@ -360,12 +360,12 @@ class LoginController extends ApplicationBase {
   }
   
   // login now simply happens through the index page
-  def login = Redirect(routes.Application.index)
+  def login = Redirect(indexRoute)
   
   def dologin = Action.async { implicit request =>
     val rc = PlayRequestContextFull(request, None, UnknownOID)
     userForm.bindFromRequest.fold(
-      errors => doError(routes.Application.index, "I didn't understand that"),
+      errors => doError(indexRoute, "I didn't understand that"),
       form => {
         val userOpt = UserAccess.checkQuerkiLogin(form.name, form.password)
         userOpt match {
@@ -373,16 +373,16 @@ class LoginController extends ApplicationBase {
             val redirectOpt = rc.sessionCookie(rc.returnToParam)
     		    redirectOpt match {
     		      case Some(redirect) => Redirect(redirect).withSession(user.toSession:_*)
-    		      case None => Redirect(routes.Application.index).withSession(user.toSession:_*)
+    		      case None => Redirect(indexRoute).withSession(user.toSession:_*)
     		    }
           }
-          case None => doError(routes.Application.index, "Login failed. Please try again.")
+          case None => doError(indexRoute, "Login failed. Please try again.")
         }
       }
     )
   }
   
   def logout = Action {
-    Redirect(routes.Application.index).withNewSession
+    Redirect(indexRoute).withNewSession
   }
 }

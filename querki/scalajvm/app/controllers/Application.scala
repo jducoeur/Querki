@@ -67,7 +67,7 @@ disallow: /
       Ok(views.html.newSpace(this, rc))
     } else {
       // TODO: internationalize this error message
-      doError(routes.Application.index, "You aren't yet allowed to create Spaces")
+      doError(indexRoute, "You aren't yet allowed to create Spaces")
     }
   }
   

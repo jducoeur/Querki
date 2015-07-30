@@ -11,12 +11,12 @@ import querki.globals._
 
 import querki.data._
 import querki.identity.PublicIdentity
-import querki.pages.PageDetails
 import querki.values.RequestContext
 
 package object api {
   trait ClientApi extends EcologyInterface {
     def requestInfo(rc:RequestContext)(implicit state:SpaceState):RequestInfo
+    def rootRequestInfo(rc:RequestContext):RequestInfo
     
     def thingInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):ThingInfo
     

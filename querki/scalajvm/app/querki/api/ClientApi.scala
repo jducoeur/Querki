@@ -16,7 +16,6 @@ import querki.core.NameUtils
 import querki.data._
 import querki.ecology._
 import querki.identity.{PublicIdentity, User}
-import querki.pages.PageDetails
 import querki.tags.IsTag
 import querki.types.ModelTypeBase
 import querki.values.{QLRequestContext, RequestContext}
@@ -106,6 +105,15 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
       // Signal that this person doesn't have access to the Space:
       RequestInfo(None, None, false, rc.requesterOrAnon.level, true)
     }
+  }
+  
+  def rootRequestInfo(rc:RequestContext):RequestInfo = {
+    RequestInfo(
+      userInfo(rc.requester),
+      None,
+      false,
+      rc.requesterOrAnon.level
+    )
   }
   
   def propInfo(prop:AnyProp, rc:RequestContext)(implicit state:SpaceState):PropInfo = {

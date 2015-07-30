@@ -21,6 +21,11 @@ package object pages {
      * Returns the URL for this Page with these Params.
      */
     def pageUrl(params:(String, String)*):URL
+    
+    /**
+     * Actually navigate to this page.
+     */
+    def showPage(params:(String, String)*):Future[Page]
   }
   
   /**
@@ -71,6 +76,7 @@ package object pages {
     def createAndEditFactory:ThingPageFactory
     def sharingFactory:PageFactory
     def advancedFactory:ThingPageFactory
+    def indexFactory:PageFactory
     
     /**
      * Navigate to the given Space.

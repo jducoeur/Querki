@@ -33,6 +33,8 @@ class ApplicationBase extends Controller with EcologyMember {
   // TBD: this is kind of horrifyingly over-clever, but useful given how variable we are in having
   // immediate vs. future results. Is it a decent answer?
   implicit def result2Future(res:Result):Future[Result] = Future.successful(res)
+  
+  lazy val indexRoute = routes.ClientController.index
     
   /**
    * Standard error handler. Iff you get an error and the correct response is to redirect to
@@ -53,7 +55,7 @@ class ApplicationBase extends Controller with EcologyMember {
   def doError(redirectTo:Call, ex:PublicException)(implicit rc:PlayRequestContext):Future[Result] = doError(redirectTo, ex.display(rc.request))
   
   def unknownSpace(spaceId:String):Result = 
-    Redirect(routes.Application.index).flashing("error" -> s"Either $spaceId doesn't exist, or you don't have permission to read it.")
+    Redirect(indexRoute).flashing("error" -> s"Either $spaceId doesn't exist, or you don't have permission to read it.")
   
   def doInfo(redirectTo:Call, msg:String):Result = {
     Redirect(redirectTo).flashing("info" -> msg)
@@ -83,7 +85,7 @@ class ApplicationBase extends Controller with EcologyMember {
     // Send them over to the login page, but record that we want to return to this page
     // once they do log in:
     val rc = SimpleRequestHeaderParser(request, Seq.empty, true)
-    rc.updateSession(Redirect(routes.Application.index))
+    rc.updateSession(Redirect(indexRoute))
   }
 
   // Fetch the User from the session, or User.Anonymous if they're not found.
@@ -182,11 +184,11 @@ class ApplicationBase extends Controller with EcologyMember {
           yield result
           
         fRes.recoverWith {
-          case pex:PublicException => doError(routes.Application.index, pex)(originalRC)
+          case pex:PublicException => doError(indexRoute, pex)(originalRC)
         }
       }
     } catch {
-      case pex:PublicException => doError(routes.Application.index, pex)(originalRC)
+      case pex:PublicException => doError(indexRoute, pex)(originalRC)
     }
   }
 }

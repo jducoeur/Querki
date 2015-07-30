@@ -31,7 +31,7 @@ class AdminController extends ApplicationBase {
       if (rc.requesterOrAnon.isAdmin)
         f(rc)
       else
-        doError(routes.Application.index, "You must be an administrator to use this page")
+        doError(indexRoute, "You must be an administrator to use this page")
     }
   }
 
@@ -40,7 +40,7 @@ class AdminController extends ApplicationBase {
       if (rc.requesterOrAnon.level == UserLevel.SuperadminUser)
         f(rc)
       else
-        doError(routes.Application.index, "You must be the super-administrator to use this page")
+        doError(indexRoute, "You must be the super-administrator to use this page")
     }
   }
 
@@ -106,7 +106,7 @@ class AdminController extends ApplicationBase {
   
   def sendSystemMessage = withAdmin { rc =>
     // For now, we've just scragged this function. Rewrite it using the new UI:
-    Redirect(routes.Application.index).flashing("info" -> "System Message is disabled until I rewrite it")
+    Redirect(indexRoute).flashing("info" -> "System Message is disabled until I rewrite it")
 //    Ok(views.html.systemMessage(rc))
   }
   
@@ -123,7 +123,7 @@ class AdminController extends ApplicationBase {
       msg => {
         // TODO: parse the message, show it to the Admin, and get confirmation before sending
         AdminOps.sendSystemMessage(rc.requesterOrAnon, msg.header, msg.body)
-        Redirect(routes.Application.index).flashing("info" -> "System Message sent")
+        Redirect(indexRoute).flashing("info" -> "System Message sent")
       }
     )
   }

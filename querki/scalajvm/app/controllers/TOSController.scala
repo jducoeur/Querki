@@ -41,7 +41,7 @@ class TOSController extends ApplicationBase {
       // update properly:
       Tryer[Future[querki.identity.User], Future[Result]]
         { TOS.recordAccept(rc.requesterOrAnon, rawForm.data("version").toInt) }
-        { userFut => userFut.map { user => rc.returnToPreviousOr(routes.Application.index) } }
+        { userFut => userFut.map { user => rc.returnToPreviousOr(indexRoute) } }
         { ex => doError(routes.TOSController.showTOS, ex) }
     } else {
       doError(routes.TOSController.showTOS, "Please accept the terms and conditions")

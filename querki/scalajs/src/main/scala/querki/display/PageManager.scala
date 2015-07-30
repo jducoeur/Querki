@@ -165,9 +165,16 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   }
   
   def showRoot():Future[Page] = {
-    // TBD: in principle, this ought to be going through a factory for the Space Thing.
-    // But we don't actually *have* a factory for Thing pages. Should we?
-    showPage(DataAccess.space.get.urlName.underlying, Map.empty)
+    DataAccess.space match {
+      case Some(space) => {
+        // TBD: in principle, this ought to be going through a factory for the Space Thing.
+        // But we don't actually *have* a factory for Thing pages. Should we?
+        showPage(space.urlName.underlying, Map.empty)
+      }
+      case None => {
+        Pages.indexFactory.showPage()
+      }
+    }
   }
   
   def renderPage(pageName:String, paramMap:ParamMap):Future[Page] = {

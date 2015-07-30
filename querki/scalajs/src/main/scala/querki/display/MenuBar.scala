@@ -32,9 +32,6 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
   def spaceOpt = DataAccess.space
-  def space = spaceOpt.get
-  def ownerId = space.ownerHandle
-  def spaceId = space.urlName
   def thingOpt = DataAccess.mainThing
   
   val maxNameDisplay = 25
@@ -68,7 +65,6 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
 
   case object NavDivider extends Navigable
   
-//  def thing(thingName:String) = controllers.Application.thing(ownerId, spaceId, thingName)
   def thing(thingName:String) = thingUrl(TID(thingName))
   
   /**

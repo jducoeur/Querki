@@ -19,6 +19,8 @@ class PageFactoryBase(registeredName:String, const:ParamMap => Page)(implicit va
   }
   
   def pageUrl(params:(String, String)*):URL = PageManager.pageUrl(registeredName, Map(params:_*))  
+  
+  def showPage(params:(String, String)*):Future[Page] = PageManager.showPage(registeredName, Map(params:_*))
 }
 
 class ThingPageFactoryBase(registeredName:String, const:ParamMap => Page, paramName:String)(implicit e:Ecology) 
