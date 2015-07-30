@@ -76,7 +76,6 @@ private [imexport] class ImporterImpl { self:AutowireApiImpl =>
   type ExtId = OID
   type IntId = OID
   type IDMap = Map[ExtId, IntId]
-//  private var IDMap = Map.empty[ExtId, IntId]
   
   /**
    * Sort the Things so that Models come before their Instances.
