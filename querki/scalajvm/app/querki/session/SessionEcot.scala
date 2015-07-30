@@ -26,7 +26,7 @@ class SessionEcot(e:Ecology) extends QuerkiEcot(e) with Session {
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
 
   /**
-   * The one true handle to the Space Management system.
+   * The one true handle to UserSessions.
    */
   var _ref:Option[ActorRef] = None
   lazy val sessionManager = _ref.get
@@ -50,6 +50,8 @@ class SessionEcot(e:Ecology) extends QuerkiEcot(e) with Session {
   override def postInit() = {
     // This is the most important API for anonymous usage, so requiresLogin = false
     ApiRegistry.registerApiImplFor[querki.api.ThingFunctions, ThingFunctionsImpl](SpaceOps.spaceRegion, false)
+    // User Functions make no sense if you aren't logged in:
+    ApiRegistry.registerApiImplFor[UserFunctions, UserFunctionsImpl](sessionManager)
   }
   
   /**************************************************

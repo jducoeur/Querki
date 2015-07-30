@@ -13,17 +13,19 @@ import Implicits.execContext
 
 import models.OID
 
+import querki.api.{AutowireParams, ClientRequest}
 import querki.ecology._
 import querki.identity.{CollaboratorCache, IdentityId, PublicIdentity, UserId}
 import querki.time.DateTime
 import querki.util.ClusterTimeoutChild
 import querki.values.RequestContext
 
-private [session] class UserSession(val ecology:Ecology) extends Actor with Stash
+private [session] class UserSession(val ecology:Ecology) extends Actor
   with Requester with EcologyMember with ClusterTimeoutChild
 {
   import UserSessionMessages._
   
+  lazy val ApiInvocation = interface[querki.api.ApiInvocation]
   lazy val UserEvolutions = interface[querki.evolutions.UserEvolutions]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
@@ -40,12 +42,19 @@ private [session] class UserSession(val ecology:Ecology) extends Actor with Stas
     UserAccess.getUserVersion(userId).map(UserEvolutions.checkUserEvolution(userId, _))
     super.preStart()
   }
+  
+  def mkParams(rc:RequestContext) = AutowireParams(rc.requesterOrAnon, None, rc, this, sender)
 
   /**
    * The initial receive just handles setup, and then switches to mainReceive once it is ready:
    */
   def receive = LoggingReceive {
     case msg:GetCollaborators => collaborators.forward(msg)
+    
+    // We handle UserFunctions, maybe some other APIs down the road:
+    case ClientRequest(req, rc) => {
+      ApiInvocation.handleSessionRequest(req, mkParams(rc))
+    }    
   }
 }
 
