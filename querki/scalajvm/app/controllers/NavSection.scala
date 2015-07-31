@@ -24,7 +24,6 @@ object NavLink {
 case object NavDivider extends Navigable
 
 trait NavSectionMgr extends EcologyInterface {
-  def nav(rc:PlayRequestContext):NavSections
   def loginNav(rc:PlayRequestContext):NavSection
 }
 
@@ -34,15 +33,7 @@ trait NavSectionMgr extends EcologyInterface {
  * capabilities such as routes. So it lives here for the time being.
  */
 class NavSectionEcot(e:Ecology) extends QuerkiEcot(e) with NavSectionMgr {
-  
-  lazy val AccessControl = interface[querki.security.AccessControl]
-  lazy val PublicUrls = interface[querki.html.PublicUrls]
-  
-  object homeNav extends NavSections(Seq())
-  
   val maxNameDisplay = 25
-  
-  val emptyCall = Call("GET", "#")
     
   def truncateName(name:String) = {
     if (name.length < maxNameDisplay)
@@ -56,7 +47,6 @@ class NavSectionEcot(e:Ecology) extends QuerkiEcot(e) with NavSectionMgr {
   def loginNav(rc:PlayRequestContext) = {
     rc.requester map { user =>
       NavSection("Logged in as " + truncateName(user.name), Seq(
-        NavLink("Your Profile", routes.LoginController.userByName(user.mainIdentity.handle)),
         NavLink("Log out", routes.LoginController.logout)
       ))
     } getOrElse {
@@ -64,20 +54,5 @@ class NavSectionEcot(e:Ecology) extends QuerkiEcot(e) with NavSectionMgr {
         NavLink("Log in", routes.ClientController.index)
       ))
     }    
-  }
-      
-  def nav(rc:PlayRequestContext) = {
-    val adminSection =
-      if (rc.requesterOrAnon.isAdmin) {
-        Some(NavSection("Admin", Seq(
-          NavLink("Manage Users", routes.AdminController.manageUsers),
-          NavLink("Show Space Status", routes.AdminController.showSpaceStatus),
-          NavLink("Send System Message", routes.AdminController.sendSystemMessage)
-        )))
-      } else
-        None
-    
-    val sections = Seq(adminSection).flatten
-    NavSections(sections)
   }
 }

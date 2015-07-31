@@ -9,7 +9,6 @@
 
 @PageEventManager = @{ eco.interface[controllers.PageEventManager] }
 @NavSectionMgr = @{ eco.interface[controllers.NavSectionMgr] }
-@nav = @{ NavSectionMgr.nav(rc) }
 
 @formErrors = @{
   val formsWithErrors = forms.filter(_.hasErrors)
@@ -37,10 +36,6 @@
   }
 }
 
-@displayNavDivider = {
-  <li class="divider"></li>
-}
-
 @strippedTitle(title:String) = @{
   title.filter(c => c.isLetterOrDigit || c == ' ')
 }
@@ -65,7 +60,6 @@
       displayNavLink(display, url, idStr, enabled)
     }
     case NavSection(title, links) => displayNavSection(title, links)
-    case NavDivider => displayNavDivider
   }
 }
 
@@ -196,11 +190,6 @@
 	              <a class="navbar-brand" href="@routes.ClientController.index"><img src="@routes.Assets.at("images/Logo-menubar.png")"></a>
 	            </div>
                 <div class="navbar-collapse collapse">
-	                <ul class="nav navbar-nav">
-                      @for(section <- nav.sections) {
-                        @displayNavigable(section)
-                      }
-                    </ul>
                     <ul class="nav navbar-nav navbar-right">
                       @defining(NavSectionMgr.loginNav(rc)) { section =>
                         @displayNavigable(section)

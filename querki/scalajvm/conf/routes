@@ -5,9 +5,6 @@
 # Home page
 GET     /                           @controllers.ClientController.index
 GET     /robots.txt					@controllers.Application.robots
-GET     /spaces                     @controllers.Application.spaces
-GET     /newSpace                   @controllers.Application.newSpace
-POST    /doNewSpace                 @controllers.Application.doNewSpace
 
 GET     /help/                      @controllers.ClientController.space(userName = "systemUser", spaceId = "documentation")
 GET     /help/:thingId              @controllers.ClientController.thingRedirect(userName = "systemUser", spaceId = "documentation", thingId)
@@ -41,11 +38,6 @@ GET     /sendPasswordReset          @controllers.LoginController.sendPasswordRes
 POST    /sendPasswordReset          @controllers.LoginController.doSendPasswordReset
 GET     /resetPassword              @controllers.LoginController.resetPassword(email, expires:Long, hash)
 POST    /resetPassword              @controllers.LoginController.doResetPassword(email, expiresMillis:Long, hash)
-POST    /changeDisplayName          @controllers.LoginController.changeDisplayName(identityIdStr)
-
-# User Profile functions
-GET     /u/:userName                @controllers.LoginController.userByName(userName)
-POST    /u/:userName/_changePassword @controllers.LoginController.changePassword(userName)
 
 # Admin functionality
 GET     /admin/manageUsers          @controllers.AdminController.manageUsers

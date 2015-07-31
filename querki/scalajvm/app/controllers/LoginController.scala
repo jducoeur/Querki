@@ -219,42 +219,6 @@ class LoginController extends ApplicationBase {
       }
     }.getOrElse(doError(indexRoute, "You don't seem to be logged in."))
   }
-
-  def userByName(userName:String) = withUser(true) { rc =>
-    val pairOpt = UserAccess.getIdentity(ThingId(userName))
-    pairOpt match {
-      case Some((identity, level)) => {
-        val initialPasswordForm = PasswordChangeInfo("", "", "")
-        Ok(views.html.profile(this, rc, identity, level, passwordChangeForm.fill(initialPasswordForm)))
-      }
-      case None => doError(indexRoute, "That isn't a legal path")
-    }
-  }
-  
-  def changePassword(handle:String) = withUser(true) { rc =>
-    implicit val request = rc.request
-    val rawForm = passwordChangeForm.bindFromRequest
-    rawForm.fold(
-      errorForm => doError(routes.LoginController.userByName(handle), "That was not a legal password"),
-      info => {
-        val checkedLogin = UserAccess.checkQuerkiLogin(handle, info.password)
-        checkedLogin match {
-          case Some(user) => {
-            if (info.newPassword == info.newPasswordAgain) {
-              val identity = user.identityByHandle(handle).get
-              val newUser = UserAccess.changePassword(rc.requesterOrAnon, identity, info.newPassword)
-              Redirect(routes.LoginController.userByName(handle)).flashing("info" -> "Password changed")
-            } else {
-              doError(routes.LoginController.userByName(handle), "The passwords didn't match")
-            }
-          }
-          case _ => {
-            doError(routes.LoginController.userByName(handle), "The current password was incorrect. Please try again.")
-          }
-        }
-      }
-    )
-  }
   
   def sendPasswordReset() = withUser(false) { rc =>
     Ok(views.html.sendPasswordReset(this, rc))
@@ -331,31 +295,6 @@ class LoginController extends ApplicationBase {
             }
           }
         )
-      }
-    }
-  }
-  
-  def changeDisplayName(identityIdStr:String) = withUser(true) { rc =>
-    implicit val request = rc.request
-    val rawForm = displayNameChangeForm.bindFromRequest
-    // We show the same error in all cases, to avoid information leakage
-    def showError = {
-      doError(routes.LoginController.userByName(rc.requesterOrAnon.mainIdentity.handle), "That isn't a legal Display Name")
-    }
-    
-    val identityId = OID(identityIdStr)
-    rc.requesterOrAnon.identityById(identityId) match {
-      case None => showError
-      case Some(identity) => {
-	    rawForm.fold(
-	      errorForm => showError,
-	      name => {
-	        UserAccess.changeDisplayName(rc.requesterOrAnon, identity:Identity, name).map { newUser =>
-  	        Redirect(routes.LoginController.userByName(identity.handle)).
-	            flashing("info" -> s"Display Name changed to $name. This change will show up in your Spaces the next time you use them.")
-          }
-	      }
-	    )
       }
     }
   }

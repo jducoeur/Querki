@@ -34,17 +34,6 @@ class Application extends ApplicationBase {
   def scalaSharedFile(file: String) = Action {
     Ok.sendFile(new java.io.File(s"scala/$file"))
   }
-
-  def index = withUser(false) { rc =>
-    rc.requester match {
-      case Some(requester) => {
-	    askSpaceMgr[ListMySpacesResponse](ListMySpaces(requester.id)) { 
-	      case MySpaces(mySpaces, memberOf) => Ok(views.html.spaces(this, rc, mySpaces, memberOf))
-	    }        
-      }
-      case _ => Ok(views.html.index(this, rc))
-    }
- }    
   
   // TODO: in the long run, we will want spidering of the main system pages, and allow users to
   // choose to have their pages indexed. We're quite a ways from that, though.
@@ -54,42 +43,5 @@ class Application extends ApplicationBase {
 user-agent: *
 disallow: /
 """).as("text/plain")
-  }
-
-  def spaces = withUser(true) { rc => 
-    askSpaceMgr[ListMySpacesResponse](ListMySpaces(rc.requester.get.id)) { 
-      case MySpaces(mySpaces, memberOf) => Ok(views.html.spaces(this, rc, mySpaces, memberOf))
-    }
-  }
-
-  def newSpace = withUser(true) { implicit rc =>
-    if (rc.requesterOrAnon.canOwnSpaces) {
-      Ok(views.html.newSpace(this, rc))
-    } else {
-      // TODO: internationalize this error message
-      doError(indexRoute, "You aren't yet allowed to create Spaces")
-    }
-  }
-  
-  def doNewSpace = withUser(true) { implicit rc =>
-    implicit val request = rc.request
-    val requester = rc.requester.get
-    newSpaceForm.bindFromRequest.fold(
-      errors => doError(routes.Application.newSpace, "You have to specify a legal space name"),
-      name => {
-        TryTrans[Unit, Future[Result]] { Core.NameProp.validate(name, System.State) }.
-          onSucc { _ =>
-            SpaceOps.askSpaceManager2(CreateSpace(requester, name)) {
-              case SpaceInfo(spaceId, linkName, display, ownerHandle) => {
-                val tid = AsName(linkName)
-                Redirect(routes.ClientController.thingRedirect(requester.mainIdentity.handle, tid, tid))
-              }
-              case ThingError(ex, _) => doError(routes.Application.newSpace, ex)
-            }
-          }.
-          onFail { doError(routes.Application.newSpace, _) }.
-          result
-      }
-    )
   }
 }
