@@ -146,6 +146,13 @@ package object display {
      * IMPORTANT: this will currently cause this client to be unloaded!
      */
     def showIndexPage():Unit
+    
+    /**
+     * Navigates to the given URL.
+     * 
+     * IMPORTANT: this will currently cause this client to be unloaded!
+     */
+    def navigateTo(url:String):Unit
   }
   
   trait StatusLine extends EcologyInterface {

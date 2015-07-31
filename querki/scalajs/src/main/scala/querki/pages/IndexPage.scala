@@ -6,6 +6,8 @@ import autowire._
 
 import querki.globals._
 import querki.data.SpaceInfo
+import querki.display.ButtonGadget
+import querki.identity.UserLevel._
 import querki.session.UserFunctions
 import UserFunctions._
 
@@ -33,13 +35,21 @@ class IndexPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecolog
   
   def pageContent = for {
     allSpaces <- Client[UserFunctions].listSpaces().call()
+    canCreate = (DataAccess.request.userLevel >= PendingUser)
     guts =
       div(
         h1("Your Spaces"),
         div(cls:="row",
           spaceSection("Spaces You Own", allSpaces.mySpaces),
           spaceSection("Spaces You are a Member of", allSpaces.memberOf)
-        )
+        ),
+        p(new ButtonGadget(ButtonGadget.Normal, "Create a new Space", if (!canCreate) {disabled:=true})({ () =>
+          Pages.createSpaceFactory.showPage()
+        })),
+        if (!canCreate) {
+          p(cls:="_smallSubtitle", 
+            "As a new user, you are not yet allowed to create Spaces. Check back soon - you should be upgraded within a few days.")
+        }
       )
   }
     yield PageContents("Your Spaces", guts)

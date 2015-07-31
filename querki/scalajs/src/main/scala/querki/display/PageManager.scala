@@ -235,6 +235,10 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
   }
   
   def showIndexPage() = {
-    window.location.href = "/"
+    navigateTo("/")
+  }
+  
+  def navigateTo(url:String) = {
+    window.location.href = url
   }
 }

@@ -22,6 +22,7 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   lazy val advancedFactory = registerThingPageFactory("_advanced", { (params) => new AdvancedPage(params) }, "thingId")
   lazy val indexFactory = registerStandardFactory("_index", { (params) => new IndexPage(params) })
   lazy val accountFactory = registerStandardFactory("_account", { (params) => new AccountPage(params) })
+  lazy val createSpaceFactory = registerStandardFactory("_createSpace", { (params) => new CreateSpacePage(params) })
   
   override def postInit() = {
     exploreFactory
@@ -31,6 +32,7 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
     advancedFactory
     indexFactory
     accountFactory
+    createSpaceFactory
   }
   
   private var factories = Seq.empty[PageFactory]

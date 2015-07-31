@@ -34,6 +34,11 @@ trait UserFunctions {
    * Changes my display name, and returns an updated record for me.
    */
   def changeDisplayName(newDisplayName:String):Future[UserInfo]
+  
+  /**
+   * Creates a new Space with the given name, and returns its information.
+   */
+  def createSpace(name:String):Future[SpaceInfo]
 }
 
 object UserFunctions {

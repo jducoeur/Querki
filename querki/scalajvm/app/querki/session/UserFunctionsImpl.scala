@@ -23,7 +23,9 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   import UserFunctions._
   
   lazy val ClientApi = interface[querki.api.ClientApi]
+  lazy val Core = interface[querki.core.Core]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
+  lazy val System = interface[querki.system.System]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
   lazy val spaceManager = SpaceOps.spaceManager
@@ -75,6 +77,25 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
 
     UserAccess.changeDisplayName(user, user.mainIdentity, newDisplayName) map { newUser =>
       ClientApi.userInfo(Some(newUser)).get
+    }
+  }
+  
+  def createSpace(name:String):Future[SpaceInfo] = {
+    if (name.length() == 0)
+      throw new MiscException("Trying to create a Space with an empty name!")
+    
+    if (!user.canOwnSpaces)
+      throw new MiscException("You aren't allowed to create Spaces!")
+    
+    // This will throw an exception if the name isn't legal. The UI *should* be screening this,
+    // so just let the exception happen:
+    Core.NameProp.validate(name, System.State)
+    
+    SpaceOps.spaceManager ? CreateSpace(user, name) map {
+      case querki.spaces.messages.SpaceInfo(spaceId, linkName, display, ownerHandle) => {
+        SpaceInfo(TID(spaceId.toThingId), Some(linkName), display, "", ownerHandle)
+      }
+      case ThingError(ex, _) => throw ex
     }
   }
 }
