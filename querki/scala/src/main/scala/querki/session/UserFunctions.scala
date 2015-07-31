@@ -23,6 +23,12 @@ trait UserFunctions {
    * Fetch all of my account information, for the Account Page.
    */
   def accountInfo():Future[AccountInfo]
+  
+  /**
+   * Changes my password. Throws an exception if anything goes wrong. (But assumes that
+   * the UI is doing sensible sanity-checking first.)
+   */
+  def changePassword(oldPassword:String, newPassword:String):Future[Unit]
 }
 
 object UserFunctions {

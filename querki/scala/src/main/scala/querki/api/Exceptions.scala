@@ -14,6 +14,14 @@ package querki.api
  */
 sealed trait ApiException extends Exception
 
+/**
+ * An exception that is allowed to percolate through the API, but which doesn't carry any
+ * semantic weight. This should only be used for exceptions that aren't horrible and fatal,
+ * but which we don't expect to arise. (Generally cases where we expect the UI to prevent this
+ * situation from arising.)
+ */
+case class MiscException(msg:String) extends ApiException
+
 
 /**
  * Expected exceptions that can be returned from EditFunctions.
@@ -50,6 +58,10 @@ case class NotAllowedException() extends SecurityException {
   // have specific client-side complicity?
   override def toString() = "You aren't allowed to do that"
 }
+/**
+ * You didn't give your password correctly.
+ */
+case class BadPasswordException() extends SecurityException
 
 
 /**

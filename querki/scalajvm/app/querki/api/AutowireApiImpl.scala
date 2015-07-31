@@ -126,9 +126,13 @@ abstract class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends
   def doRoute(req:Request):Future[String]
   
   def handleRequest(req:Request, completeCb: Any => Unit) = {
-    doRoute(req).onComplete { 
-      case Success(result) => { sender ! ClientResponse(result); completeCb(result) }
-      case Failure(ex) => { handleException(ex, req); completeCb(ex) }
+    try {
+      doRoute(req).onComplete { 
+        case Success(result) => { sender ! ClientResponse(result); completeCb(result) }
+        case Failure(ex) => { handleException(ex, req); completeCb(ex) }
+      }
+    } catch {
+      case ex:Throwable => { handleException(ex, req); completeCb(ex) }
     }
   }
 }

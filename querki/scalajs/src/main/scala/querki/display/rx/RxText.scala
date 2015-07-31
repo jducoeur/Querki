@@ -13,7 +13,7 @@ import querki.display.Gadget
 /**
  * A reactive wrapper around a text input. It is considered to have a value only iff the field is non-empty.
  */
-class RxText(mods:Modifier*) extends Gadget[dom.HTMLInputElement] {
+class RxInput(inputType:String, mods:Modifier*) extends Gadget[dom.HTMLInputElement] {
   
   private def curValue =
     for {
@@ -24,18 +24,24 @@ class RxText(mods:Modifier*) extends Gadget[dom.HTMLInputElement] {
       yield v
   
   lazy val textOpt = Var[Option[String]](curValue)
+  lazy val text = Rx { textOpt().getOrElse("") }
   
-  def doRender() = input(tpe:="text", mods)
+  def doRender() = input(tpe:=inputType, mods)
   
   def setValue(v:String) = {
     $(elem).value(v)
     update()
   }
+      
+  def length = textOpt().map(_.length()).getOrElse(0)
   
   private def update() = { textOpt() = curValue }
   
   override def onCreate(e:dom.HTMLInputElement) = {
-    $(e).change({ e:dom.Element => update() })
+    // We use input instead of change, so that we fire on every keystroke:
+    $(e).on("input", { e:dom.Element => update() })
     update()
   }
 }
+
+class RxText(mods:Modifier*) extends RxInput("text", mods)

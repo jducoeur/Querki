@@ -1,5 +1,7 @@
 package querki.display
 
+import org.scalajs.dom
+
 import org.querki.jquery._
 
 /**

@@ -6,7 +6,7 @@ import autowire._
 
 import models.ThingId
 
-import querki.api.{AutowireApiImpl, AutowireParams}
+import querki.api.{AutowireApiImpl, AutowireParams, BadPasswordException, MiscException}
 import querki.data.{TID, SpaceInfo}
 import querki.globals._
 import querki.identity.UserLevel
@@ -46,6 +46,24 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
         Future.successful(AccountInfo(identity.handle, identity.name, identity.email.addr, level))
       }
       case None => throw new Exception(s"Somehow tried to get the accountInfo for unknown user ${user.mainIdentity.handle}!")
+    }    
+  }
+  
+  def changePassword(oldPassword:String, newPassword:String):Future[Unit] = {
+    // TODO: also currently icky and blocking:
+    if (newPassword.length() < 8)
+      throw new MiscException("New password is too short!")
+    
+    val handle = user.mainIdentity.handle
+    val checkedLogin = UserAccess.checkQuerkiLogin(handle, oldPassword)
+    checkedLogin match {
+      case Some(user) => {
+        val identity = user.identityByHandle(handle).get
+        val newUser = UserAccess.changePassword(rc.requesterOrAnon, identity, newPassword)
+        Future.successful(())
+      }
+      
+      case _ => throw new BadPasswordException()
     }    
   }
 }
