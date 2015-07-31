@@ -289,7 +289,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     checkQuerkiLogin(identity.handle, newPassword).getOrElse(throw new Exception("Unable to load newly-created Identity!"))
   }
   
-  def changeDisplayName(requester:User, identity:Identity, newDisplay:String):Try[User] = Try {
+  def changeDisplayName(requester:User, identity:Identity, newDisplay:String):Future[User] = {
     if (!requester.isAdmin && !requester.hasIdentity(identity.id))
       throw new Exception("Illegal attempt to change password!")
     
@@ -308,7 +308,8 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     // Tell the cache to reload at the next opportunity:
     IdentityAccess.invalidateCache(identity.id)
     
-    getUserForIdentity(identity.id).getOrElse(throw new Exception("Unable to reload user record!"))
+    val user = getUserForIdentity(identity.id).getOrElse(throw new Exception("Unable to reload user record!"))
+    updateUserCacheFor(Some(user)).map(_.get)
   }
   
   def addSpaceMembership(identityId:OID, spaceId:OID, membershipState:MembershipState):Boolean = {

@@ -350,9 +350,10 @@ class LoginController extends ApplicationBase {
 	    rawForm.fold(
 	      errorForm => showError,
 	      name => {
-	        val newUser = UserAccess.changeDisplayName(rc.requesterOrAnon, identity:Identity, name)
-	        Redirect(routes.LoginController.userByName(identity.handle)).
-	          flashing("info" -> s"Display Name changed to $name. This change will show up in your Spaces the next time you use them.")
+	        UserAccess.changeDisplayName(rc.requesterOrAnon, identity:Identity, name).map { newUser =>
+  	        Redirect(routes.LoginController.userByName(identity.handle)).
+	            flashing("info" -> s"Display Name changed to $name. This change will show up in your Spaces the next time you use them.")
+          }
 	      }
 	    )
       }

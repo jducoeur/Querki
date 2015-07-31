@@ -1,13 +1,14 @@
 package querki.session
 
 import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
 import autowire._
 
 import models.ThingId
 
 import querki.api.{AutowireApiImpl, AutowireParams, BadPasswordException, MiscException}
-import querki.data.{TID, SpaceInfo}
+import querki.data.{TID, SpaceInfo, UserInfo}
 import querki.globals._
 import querki.identity.UserLevel
 import querki.spaces.messages._
@@ -21,6 +22,7 @@ import querki.spaces.messages._
 class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with UserFunctions {
   import UserFunctions._
   
+  lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   
@@ -65,5 +67,14 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
       
       case _ => throw new BadPasswordException()
     }    
+  }
+  
+  def changeDisplayName(newDisplayName:String):Future[UserInfo] = {
+    if (newDisplayName.length() == 0)
+      throw new MiscException("Trying to set an empty Display Name!")
+
+    UserAccess.changeDisplayName(user, user.mainIdentity, newDisplayName) map { newUser =>
+      ClientApi.userInfo(Some(newUser)).get
+    }
   }
 }

@@ -2,7 +2,7 @@ package querki.session
 
 import scala.concurrent.Future
 
-import querki.data.SpaceInfo
+import querki.data.{SpaceInfo, UserInfo}
 import querki.identity.UserLevel
 
 /**
@@ -29,6 +29,11 @@ trait UserFunctions {
    * the UI is doing sensible sanity-checking first.)
    */
   def changePassword(oldPassword:String, newPassword:String):Future[Unit]
+  
+  /**
+   * Changes my display name, and returns an updated record for me.
+   */
+  def changeDisplayName(newDisplayName:String):Future[UserInfo]
 }
 
 object UserFunctions {

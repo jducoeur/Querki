@@ -10,7 +10,7 @@ import models.{Thing}
 import querki.globals._
 
 import querki.data._
-import querki.identity.PublicIdentity
+import querki.identity.{PublicIdentity, User}
 import querki.values.RequestContext
 
 package object api {
@@ -21,6 +21,8 @@ package object api {
     def thingInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):ThingInfo
     
     def identityInfo(identity:PublicIdentity):IdentityInfo
+    
+    def userInfo(uopt:Option[User]):Option[UserInfo]
     
     def propInfo(prop:AnyProp, rc:RequestContext)(implicit state:SpaceState):PropInfo
     

@@ -24,62 +24,20 @@ import UserFunctions._
 class AccountPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
   lazy val Client = interface[querki.client.Client]
   lazy val StatusLine = interface[querki.display.StatusLine]
+  lazy val UserAccess = interface[querki.identity.UserAccess]
 
-/*
-    <div class="row">
-      <h3>Basic Information</h3>
-      <p><b>Handle:</b> @identity.handle</p>
-      <p><b>Email:</b> @identity.email.addr</p>
-      <p><b>Status:</b> @UserLevel.levelName(level)</p>
-    
-      <h3>Change Your Password</h3>
-      
-      <p>Enter your old password, and then the new one. Passwords must be at least 8 characters long.</p>
-      
-      @form(routes.LoginController.changePassword(identity.handle)) {     
-        @inputPassword(
-            passwordChangeForm("password"), 
-            '_label -> "Your Current Password",
-            '_showConstraints -> false
-          )
-        
-          @inputPassword(
-            passwordChangeForm("newPassword"), 
-            '_label -> "New Password",
-            '_showConstraints -> false
-          )
-      
-          @inputPassword(
-            passwordChangeForm("newPasswordAgain"), 
-            '_label -> "New Password Again",
-            '_showConstraints -> false
-          )
-          
-          <input type="submit" value="Change Password" class="btn btn-primary">
-      }
-      
-      <h3>Change Your Display Name</h3>
-      
-      <p>Your Display Name is currently @identity.name. Use the form below if you would like to change it.</p>
-      
-      @form(routes.LoginController.changeDisplayName(identity.id.toString), 'class -> "form-inline") {
-        <input type="text" name="newName" id="newName" value="" placeholder="New Display Name">
-        <input type="submit" value="Change Display Name" class="btn btn-primary">
-      }
-      
-      </div>  
- */
-  
   val oldPassword = GadgetRef[RxInput]
   val newPassword = GadgetRef[RxInput]
   val newPasswordRepeat = GadgetRef[RxInput]
-  def passText(ref:GadgetRef[RxInput]) = Rx { ref.opt().map(input => input.text()).getOrElse("") }
+  def passText[T <: RxInput](ref:GadgetRef[T]) = Rx { ref.opt().map(input => input.text()).getOrElse("") }
   val passwordsFilled = 
     Rx { 
       passText(oldPassword)().length() > 0 &&
       passText(newPassword)().length() > 7 &&
       passText(newPassword)() == passText(newPasswordRepeat)()
     }
+  
+  val newDisplayName = GadgetRef[RxText]
 
   def pageContent = for {
     accountInfo <- Client[UserFunctions].accountInfo().call()
@@ -105,6 +63,18 @@ class AccountPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecol
                 case BadPasswordException() => StatusLine.showBriefly("You didn't give your password correctly. Please try again.")
                 case _ => StatusLine.showBriefly(ex.toString())
               }
+          }
+        }),
+        
+        h3("Change Your Display Name"),
+        p(s"Your Display Name is currently ${accountInfo.displayName}. Use the form below if you would like to change it."),
+        newDisplayName <= new RxText(placeholder:="New Display Name"),
+        "  ",
+        new ButtonGadget(ButtonGadget.Normal, "Change Display Name", disabled := Rx { passText(newDisplayName)().length() == 0 })({ () =>
+          val newName = passText(newDisplayName)()
+          Client[UserFunctions].changeDisplayName(newName).call() foreach { userInfo =>
+            UserAccess.setUser(Some(userInfo))
+            PageManager.reload().foreach { newPage => StatusLine.showBriefly(s"Name changed to $newName") }
           }
         })
       )
