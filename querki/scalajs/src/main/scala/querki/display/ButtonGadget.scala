@@ -33,5 +33,11 @@ class ButtonGadget(kind:ButtonKind, mods:Modifier*)(onClick:() => Unit) extends 
     $(elem).click({ evt:JQueryEventObject =>
       onClick()
     })
+    $(elem).keydown { (evt:JQueryEventObject) =>
+      if (evt.which == 13) {
+        onClick();
+        false
+      }  
+    }
   }
 }
