@@ -10,7 +10,6 @@ import akka.util.Timeout
 
 import upickle._
 
-import play.api.libs.iteratee._
 import play.api.mvc._
 
 import models.{OID, Wikitext}
@@ -20,35 +19,17 @@ import querki.photos.PhotoUploadMessages._
 import querki.spaces.messages.BeginProcessingPhoto
 import querki.util.QLog
 
-class PhotoController extends ApplicationBase {
-
-  /**
-   * This is the most subtle and important plumbing in the process of uploading Photos. This is a BodyParser,
-   * which means that it produces an Iteratee that accept Byte Arrays (chunks of photo), and returns a "body"
-   * that is actually a Future[ActorRef].
-   * 
-   * What happens in here is that it sends BeginProcessingPhoto to the specified Space. That causes a
-   * PhotoUploadActor to be created, and we get back an ActorRef to it. We then create a fancy Iteratee that
-   * keeps folding over the input chunks, producing a new Future each time. These Futures always contains the
-   * same thing -- the ActorRef -- but we don't get to the final one until we've processed all of the bytes.
-   */
-  def photoReceiver(ownerIdStr:String, spaceIdStr:String)(rh:RequestHeader):Iteratee[Array[Byte], Either[Result, Future[ActorRef]]] = {
-    implicit val timeout = Timeout(5 seconds)
-
-    val workerRefFuture:Future[ActorRef] = for {
-      ownerId <- getOwnerIdentity(ownerIdStr)
-      spaceId <- SpaceOps.getSpaceId(ownerId, spaceIdStr)
-      response <- (SpaceOps.spaceRegion ? BeginProcessingPhoto(querki.identity.User.Anonymous, spaceId, rh.contentType)).mapTo[ActorRef]
+class PhotoController extends ApplicationBase with StreamController {
+  def photoReceiver(ownerIdStr:String, spaceIdStr:String)(rh:RequestHeader) = {
+    def produceUploadLocation:Future[(ActorRef, Any)] = {
+      for {
+        ownerId <- getOwnerIdentity(ownerIdStr)
+        spaceId <- SpaceOps.getSpaceId(ownerId, spaceIdStr)
+      }
+        yield (SpaceOps.spaceRegion, BeginProcessingPhoto(querki.identity.User.Anonymous, spaceId, rh.contentType))
     }
-      yield response
-      
-    // Now, fold over all of the chunks, producing a new Future each time
-    // TODO: we ought to put a limit on the total number of bytes we are willing to send here, to avoid
-    // DOS attacks:
-    Iteratee.fold[Array[Byte], Future[ActorRef]](workerRefFuture) { (fut, bytes) => 
-      val newFut = fut.map { ref => ref ! PhotoChunk(bytes); ref }
-      newFut
-    } map (fut => Right(fut))
+    
+    uploadBodyChunks(produceUploadLocation)(rh)
   }
 
   def upload(ownerId:String, spaceId:String, thingIdStr:String) = 

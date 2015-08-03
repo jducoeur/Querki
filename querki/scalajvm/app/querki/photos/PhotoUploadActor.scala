@@ -23,12 +23,13 @@ import querki.core.QLText
 import querki.ecology._
 import querki.session.messages.ChangeProps2
 import querki.spaces.messages.{BeginProcessingPhoto, ImageComplete, SessionRequest, ThingError, ThingFound}
+import querki.streaming.UploadActor
 import querki.time.DateTime
 import querki.types.SimplePropertyBundle
 import querki.util.{Config, QLog}
 import querki.values.{ElemValue, QLContext, SpaceState}
 
-class PhotoUploadActor(val ecology:Ecology, state:SpaceState, router:ActorRef) extends Actor with Requester with EcologyMember {
+class PhotoUploadActor(val ecology:Ecology, state:SpaceState, router:ActorRef) extends Actor with Requester with UploadActor with EcologyMember {
   
   import PhotoUploadActor._
   import PhotoUploadMessages._
@@ -45,20 +46,13 @@ class PhotoUploadActor(val ecology:Ecology, state:SpaceState, router:ActorRef) e
     val bucket = get("bucket")
   }
   
-  var chunkBuffer:Vector[Byte] = Vector.empty
-  
   var _mimeType:Option[String] = None
   def mimeType = _mimeType.getOrElse(MIMEType.JPEG)
   
-  def receive = LoggingReceive {
+  def receive = LoggingReceive (handleChunks orElse {
     
     case BeginProcessingPhoto(_, spaceId, tpe) => {
       _mimeType = tpe
-    }
-    
-    case PhotoChunk(chunk) => {
-      chunkBuffer = chunkBuffer ++ chunk
-      QLog.spew(s"Actor got ${chunk.length} bytes")
     }
     
     case UploadDone(rc, propId, thingId) => {
@@ -207,7 +201,7 @@ class PhotoUploadActor(val ecology:Ecology, state:SpaceState, router:ActorRef) e
     case ImageComplete => {
       context.stop(self)
     }
-  }
+  })
 }
 
 object PhotoUploadActor {
