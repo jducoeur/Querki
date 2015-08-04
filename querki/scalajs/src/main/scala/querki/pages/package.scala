@@ -79,6 +79,7 @@ package object pages {
     def indexFactory:PageFactory
     def accountFactory:PageFactory
     def createSpaceFactory:PageFactory
+    def importSpaceFactory:PageFactory
     
     /**
      * Navigate to the given Space.

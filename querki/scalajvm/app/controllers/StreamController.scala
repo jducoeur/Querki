@@ -1,11 +1,8 @@
 package controllers
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 import akka.actor._
-import akka.pattern.ask
-import akka.util.Timeout
 
 import play.api.libs.iteratee._
 import play.api.mvc._
@@ -31,19 +28,13 @@ trait StreamController { self:ApplicationBase =>
    * which means that it produces an Iteratee that accept Byte Arrays (chunks of a file), and returns a "body"
    * that is actually a Future[ActorRef].
    * 
-   * What happens in here is that it sends the start message to the specified parent. That causes an
-   * UploadActor to be created, and we get back an ActorRef to it. We then create a fancy Iteratee that
+   * What happens in here is that it calls the given start function, which should return a pointer to an
+   * UploadActor. We then create a fancy Iteratee that
    * keeps folding over the input chunks, producing a new Future each time. These Futures always contains the
    * same thing -- the ActorRef -- but we don't get to the final one until we've processed all of the bytes.
    */
-  def uploadBodyChunks(startupFunc: => Future[(ActorRef, Any)])(rh:RequestHeader):Iteratee[Array[Byte], Either[Result, Future[ActorRef]]] = {
-    implicit val timeout = Timeout(5 seconds)
-
-    val workerRefFuture:Future[ActorRef] = for {
-      (uploadParent, startMsg) <- startupFunc
-      workerRef <- (uploadParent ? startMsg).mapTo[ActorRef]
-    }
-      yield workerRef
+  def uploadBodyChunks(startupFunc: => Future[ActorRef])(rh:RequestHeader):Iteratee[Array[Byte], Either[Result, Future[ActorRef]]] = {
+    val workerRefFuture:Future[ActorRef] = startupFunc
       
     // Now, fold over all of the chunks, producing a new Future each time
     // TODO: we ought to put a limit on the total number of bytes we are willing to send here, to avoid

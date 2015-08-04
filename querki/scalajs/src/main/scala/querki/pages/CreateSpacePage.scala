@@ -50,7 +50,7 @@ class CreateSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
       div(
         h1("Create a New Space"),
         form(
-          div(cls:="form-group col-md-10",
+          div(cls:="form-group col-md-12",
             div(cls:="input-group",
               spaceName <= new RxInput(Some(nameFilter _), "text", cls:="form-control", maxlength:=254, placeholder:="New Space Name", tabindex:=200),
               span(cls:="input-group-btn",
@@ -67,6 +67,13 @@ class CreateSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
               )
             )
           )
+        ),
+        hr(),
+        h3("Or..."),
+        p(
+          new ButtonGadget(ButtonGadget.Normal, "Import a Space from a file", tabindex:=300)({ () =>
+            Pages.importSpaceFactory.showPage()
+          })
         )
       )
       

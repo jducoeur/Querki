@@ -21,12 +21,14 @@ import querki.util.QLog
 
 class PhotoController extends ApplicationBase with StreamController {
   def photoReceiver(ownerIdStr:String, spaceIdStr:String)(rh:RequestHeader) = {
-    def produceUploadLocation:Future[(ActorRef, Any)] = {
+    implicit val timeout = Timeout(5 seconds)
+    def produceUploadLocation:Future[ActorRef] = {
       for {
         ownerId <- getOwnerIdentity(ownerIdStr)
         spaceId <- SpaceOps.getSpaceId(ownerId, spaceIdStr)
+        workerRef <- (SpaceOps.spaceRegion ? BeginProcessingPhoto(querki.identity.User.Anonymous, spaceId, rh.contentType)).mapTo[ActorRef]
       }
-        yield (SpaceOps.spaceRegion, BeginProcessingPhoto(querki.identity.User.Anonymous, spaceId, rh.contentType))
+        yield workerRef
     }
     
     uploadBodyChunks(produceUploadLocation)(rh)

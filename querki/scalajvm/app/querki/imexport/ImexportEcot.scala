@@ -20,10 +20,14 @@ class ImexportEcot(e:Ecology) extends QuerkiEcot(e) with Imexport {
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
+  lazy val Session = interface[querki.session.Session]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
   override def postInit() = {
+    // ImexportFunctions runs in the context of the UserSpaceSession:
     ApiRegistry.registerApiImplFor[ImexportFunctions, ImexportFunctionsImpl](SpaceOps.spaceRegion)
+    // ImportSpaceFunctions runs in the context of the UserSession:
+    ApiRegistry.registerApiImplFor[ImportSpaceFunctions, ImportSpaceFunctionsImpl](Session.sessionManager)
   }
   
   lazy val csv = new CSVImexport

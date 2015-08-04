@@ -144,6 +144,22 @@ class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {
     }
     this
   }
+  
+  /**
+   * Similar to whenSet(), but fires when the underlying Gadget actually gets *rendered*.
+   */
+  def whenRendered(f:G => Unit) = {
+    whenSet { g =>
+      if (g.elemOpt.isDefined)
+        f(g)
+      else {
+        Obs(g.elemOptRx) {
+          if (g.elemOpt.isDefined)
+            f(g)
+        }
+      }
+    }
+  }
 }
 
 /**
