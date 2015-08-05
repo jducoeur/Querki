@@ -19,8 +19,28 @@ import UploadMessages._
 class ImportSpaceActor(ecology:Ecology, importType:ImportDataType) extends Actor with Requester with UploadActor {
   def receive = handleChunks orElse {
     case UploadComplete(rc) => {
-      val xml = new String(chunkBuffer.toArray)
-      val rawState = new RawXMLImport(rc)(ecology).readXML(xml)
+      val rawState = importType match {
+        case ImportXML => {
+          QLog.spew("I've received the entire XML:")
+          val xml = new String(chunkBuffer.toArray)
+          QLog.spew(xml)
+          new RawXMLImport(rc)(ecology).readXML(xml)
+        }
+        
+        case ImportMySQL => {
+          QLog.error("ImportSpaceActor(ImportMySQL) is NYI!")
+          throw new Exception("ImportMySQL NYI!")
+        }
+        
+        case _ => {
+          QLog.error(s"ImportSpaceActor called with unknown ImportDataType $importType")
+          throw new Exception("Unknown ImportDataType!")
+        }
+      }
+      
+      QLog.spew(s"Built the SpaceState: $rawState")
+      sender ! "Done"
+      context.stop(self)
     }
   }
 }

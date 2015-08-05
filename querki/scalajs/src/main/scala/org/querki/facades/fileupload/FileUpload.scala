@@ -1,7 +1,8 @@
 package org.querki.facades.fileupload
 
 import scala.scalajs.js
-import org.querki.jquery.{JQueryEventObject, JQueryXHR}
+import org.scalajs.dom
+import org.querki.jquery._
 import org.querki.jsext._
 
 /**
@@ -88,6 +89,12 @@ class FileUploadOptionBuilder(val dict:OptMap) extends JSOptionBuilder[FileUploa
   // Callbacks
   //
   
+  /**
+   * Callback for the upload request queue. This is invoked as soon as the user chooses files,
+   * and allows you to manually control when the upload is started by calling data.submit().
+   */
+  def add(v:js.Function2[JQueryEventObject, FileUploadData, Any]) = jsOpt("add", v)
+  
   def done(v:js.Function2[JQueryEventObject, FileUploadResults, Any]) = jsOpt("done", v)
   
   /**
@@ -120,4 +127,13 @@ trait FileUploadResults extends js.Object {
   def result:Any = js.native
   def textStatus:String = js.native
   def jqXHR:JQueryXHR = js.native
+}
+
+/**
+ * TODO: again, based on extremely vague documentation.
+ */
+trait FileUploadData extends js.Object {
+  def files:dom.raw.FileList = js.native
+  def submit():JQueryDeferred = js.native
+  var url:String = js.native
 }

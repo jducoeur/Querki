@@ -2,11 +2,13 @@ package controllers
 
 import scala.concurrent.duration._
 import scala.concurrent.Future
+import akka.actor._
+import akka.pattern._
 import akka.util.Timeout
 
 import play.api.data._
 import play.api.data.Forms._
-import play.api.mvc.{Action, Call, Result}
+import play.api.mvc._
 
 import upickle._
 import autowire._
@@ -22,12 +24,14 @@ import querki.pages.PageIDs._
 import querki.session.messages.{MarcoPoloRequest, MarcoPoloResponse, SessionMessage}
 import querki.spaces.messages.{SessionRequest, SpaceMgrMsg, ThingError}
 import querki.spaces.messages.SpaceError._
+import querki.streaming.UploadMessages._
 import querki.util.PublicException
 
-class ClientController extends ApplicationBase {
+class ClientController extends ApplicationBase with StreamController {
   
-  lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val ApiInvocation = interface[querki.api.ApiInvocation]
+  lazy val ClientApi = interface[querki.api.ClientApi]
+  lazy val SystemManagement = interface[querki.system.SystemManagement]
   lazy val Tags = interface[querki.tags.Tags]
   
   val requestForm = Form(
@@ -135,6 +139,50 @@ class ClientController extends ApplicationBase {
   def rawApiRequest = withUser(false) { rc =>
     apiRequestBase(rc)
   }
+  
+  /**
+   * This isn't an entry point, it's the BodyParser for upload(). It expects to receive the path
+   * to an UploadActor; it finds that Actor, then sends it the chunks as they come in. 
+   */
+  private def uploadReceiver(targetActorPath:String)(rh:RequestHeader) = {
+    def produceUploadLocation:Future[ActorRef] = {
+      // Fairly short timeout for the identification procedure:
+      implicit val timeout = Timeout(5 seconds)
+      val selection = SystemManagement.actorSystem.actorSelection(targetActorPath)
+      for {
+        ActorIdentity(_, refOpt) <- selection ? Identify("dummy")
+      }
+        // TODO: return a decent error to the client if the Actor isn't found:
+        yield refOpt.get
+    }
+    
+    uploadBodyChunks(produceUploadLocation)(rh)
+  }
+
+  /**
+   * The generic upload() entry point. This expects that you have already called an API function that
+   * creates an UploadActor of the appropriate type, and returns its path. You then pass that path
+   * into here to upload the actual data, and the UploadActor should process the data once it receives
+   * the UploadComplete signal.
+   */
+  def upload(targetActorPath:String) = 
+    withUser(true, parser = BodyParser(uploadReceiver(targetActorPath) _)) 
+  { rc =>
+    for {
+      uploadRef <- rc.request.body.asInstanceOf[Future[ActorRef]]
+      // We ask the UploadActor how much time it's going to need to process this upload:
+      UploadTimeout(uploadDuration) <- uploadRef.ask(GetUploadTimeout)(5 seconds)
+      uploadTimeout = Timeout(uploadDuration)
+      result <- uploadRef.ask(UploadComplete(rc))(uploadTimeout)
+    }
+      yield {
+        result match {
+          case UploadProcessSuccessful(response) => Ok(response)
+          case UploadProcessFailed(ex) => BadRequest(ex)
+          case _ => { QLog.error(s"upload() entry point got unknown response $result"); InternalServerError("upload() got a bad response internally") }
+        }
+      }
+  }  
 
   /**
    * Serves out requests from MarcoPolo on the client side.

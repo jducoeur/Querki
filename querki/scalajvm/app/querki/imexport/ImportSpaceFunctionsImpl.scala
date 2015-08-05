@@ -22,27 +22,11 @@ class ImportSpaceFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends 
   // real work:
   def importFromXML():Future[String] = {
     val importActor = requester.context.actorOf(ImportSpaceActor.actorProps(ecology, ImportXML))
+    
+    // Now, return the fully-qualified path to that Actor:
     val path = importActor.path
-    val rootPath = RootActorPath(path.address)
-    val fromSerialization = Serialization.serializedActorPath(importActor)
     val system = requester.context.system
     val defaultAddress = system.asInstanceOf[ExtendedActorSystem].provider.getDefaultAddress
-    val fromExtended = path.toStringWithAddress(defaultAddress)
-    
-    val pathStr = fromExtended
-    val reconstructedPath = ActorPath.fromString(pathStr)
-    
-    QLog.spew(s"""toString = ${path.toString()}; 
-      fromSerialization = $fromSerialization;
-      fromExtended = $fromExtended;
-      reconstructed = $reconstructedPath""")
-      
-    implicit val timeout = Timeout(2 seconds)
-    
-    val selection = system.actorSelection(reconstructedPath)
-    loopback (selection ? Identify("dummy")) map { result =>
-      println(s"Identity returned $result")
-      fromSerialization
-    }
+    Future.successful(path.toStringWithAddress(defaultAddress))
   }
 }

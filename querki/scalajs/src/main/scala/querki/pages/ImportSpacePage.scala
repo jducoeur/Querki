@@ -6,8 +6,10 @@ import org.scalajs.dom
 import scalatags.JsDom.all._
 import autowire._
 
+import org.querki.facades.fileupload._
 import org.querki.jquery._
 
+import querki.comm._
 import querki.display.rx._
 import querki.imexport.ImportSpaceFunctions
 import querki.globals._
@@ -24,18 +26,21 @@ class ImportSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
   
   val fileInputElem = GadgetRef.of[dom.html.Input].
     whenRendered { inpGadget =>
-      $(inpGadget.elem).change({ evt:JQueryEventObject =>
-        val file = evt.target.files(0)
-        if (Pattern.matches("text/xml", file.`type`)) {
-          Client[ImportSpaceFunctions].importFromXML().call() foreach { path =>
-            println(s"The upload actor can be found at $path")
-          }
-  //        val reader = new dom.FileReader()
-  //        reader.onload = { uievt:dom.UIEvent => }
-        } else {
-          StatusLine.showBriefly(s"That is a ${file.`type`}. You can only upload images.")
-        }
-      })
+      $(inpGadget.elem).fileupload(FileUploadOptions
+        .add({ (e:JQueryEventObject, data:FileUploadData) =>
+          val file = data.files(0)
+          if (Pattern.matches("text/xml", file.`type`)) {
+            Client[ImportSpaceFunctions].importFromXML().call() foreach { path =>
+              data.url = controllers.ClientController.upload(path).url
+              val jqXHR = data.submit()
+            }
+          } else {
+            StatusLine.showBriefly(s"That is a ${file.`type`}. You can only upload images.")
+          }          
+        })
+        .multipart(false)
+        .maxFileSize(5000000) // 5 MB
+      )
     }
   
   def pageContent = {
