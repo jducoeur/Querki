@@ -17,7 +17,7 @@ import querki.values.RequestContext
  * 
  * @author jducoeur
  */
-class ImportSpaceActor(ecology:Ecology, importType:ImportDataType) extends Actor with Requester with UploadActor {
+class ImportSpaceActor(ecology:Ecology, importType:ImportDataType, name:String) extends Actor with Requester with UploadActor {
   def buildSpaceState(rc:RequestContext):SpaceState = {
     importType match {
       case ImportXML => {
@@ -48,7 +48,7 @@ class ImportSpaceActor(ecology:Ecology, importType:ImportDataType) extends Actor
 }
 
 object ImportSpaceActor {
-  def actorProps(ecology:Ecology, importType:ImportDataType) = Props(classOf[ImportSpaceActor], ecology, importType)
+  def actorProps(ecology:Ecology, importType:ImportDataType, name:String) = Props(classOf[ImportSpaceActor], ecology, importType, name)
 }
 
 sealed trait ImportDataType

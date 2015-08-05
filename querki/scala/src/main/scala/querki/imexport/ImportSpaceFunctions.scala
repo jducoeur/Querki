@@ -20,5 +20,5 @@ trait ImportSpaceFunctions {
    * 
    * Anyway who can create a Space is allowed to call this.
    */
-  def importFromXML():Future[String]
+  def importFromXML(name:String):Future[String]
 }

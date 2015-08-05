@@ -20,8 +20,8 @@ class ImportSpaceFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends 
   
   // This just kicks off the import process, by creating the Actor that will do all the
   // real work:
-  def importFromXML():Future[String] = {
-    val importActor = requester.context.actorOf(ImportSpaceActor.actorProps(ecology, ImportXML))
+  def importFromXML(name:String):Future[String] = {
+    val importActor = requester.context.actorOf(ImportSpaceActor.actorProps(ecology, ImportXML, name))
     
     // Now, return the fully-qualified path to that Actor:
     val path = importActor.path
