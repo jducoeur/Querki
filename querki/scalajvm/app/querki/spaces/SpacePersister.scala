@@ -184,8 +184,6 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
                "modelId" -> modelId.raw,
                "modified" -> modTime,
                "props" -> SpacePersistence.serializeProps(props, state)).executeUpdate()
-               
-        sender ! Changed(thingId, modTime)
       }
       
       spaceChangeOpt map { spaceChange =>
@@ -202,6 +200,8 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
                "displayName" -> spaceChange.newDisplay).executeUpdate()          
         }
       }
+               
+      sender ! Changed(thingId, modTime)
     }
     
     /***************************/

@@ -29,6 +29,7 @@ import querki.values.{ElemValue, RequestContext, QValue}
  */
 private [imexport] trait ImporterImpl { anActor:Actor with Requester with EcologyMember =>
   
+  lazy val Basic = interface[querki.basic.Basic]
   lazy val Core = interface[querki.core.Core]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val SpacePersistenceFactory = interface[querki.spaces.SpacePersistenceFactory]
@@ -208,7 +209,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
    * value, we need to dive into it and translate all of the nested values in there.
    */
   private def translateProps(t:Thing, idMap:IDMap)(implicit imp:SpaceState):Thing.PropMap = {
-    t.props filter { pair =>
+    val translated = t.props filter { pair =>
       val (propId, qv) = pair
       val isDeferred = deferredProperties.contains(propId)
       val deferredVals =
@@ -217,7 +218,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
         else
           Seq(DeferredPropertyValue(propId, t.id, qv))
       deferredPropertyValues += (propId -> deferredVals)
-      isDeferred
+      !isDeferred
     } map { pair =>
       val (propId, qv) = pair
       val realQv = imp.prop(propId) match {
@@ -235,8 +236,11 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
         case None => qv  // TODO: This is weird and buggy! What should we do with it?
       }
         
-      (idMap(propId), qv)
+      // Try translating, but it is very normal for the propId to be from System:
+      (idMap.get(propId).getOrElse(propId), qv)
     }
+    
+    translated
   }
   
   /**
@@ -245,7 +249,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
   private def setPropValues(user:User, actor:ActorRef, spaceId:OID, things:Seq[Thing], idMap:IDMap)(implicit imp:SpaceState):RequestM[Unit] = {
     things.headOption match {
       case Some(thing) => {
-        actor.request(ChangeProps(user, spaceId, idMap(thing.id), translateProps(thing, idMap))) flatMap {
+        actor.request(ChangeProps(user, spaceId, idMap(thing.id), translateProps(thing, idMap), true)) flatMap {
           case ThingFound(intId, state) => {
             // TODO: if this was the base of a Model Type, we need to recurse into deferredPropertyValues and
             // set those as well. We also need to clear deferredProperties for this.
@@ -261,9 +265,19 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
   }
   
   /**
+   * We specifically do *not* want to import the space's old Name or Display Name.
+   */
+  def filterSpaceProps(props:Thing.PropMap):Thing.PropMap = {
+    props filter { pair =>
+      val (propId, qv) = pair
+      propId != Core.NameProp.id && propId != Basic.DisplayNameProp.id
+    }
+  }
+  
+  /**
    * Step 5: set the properties on the Space itself.
    */
   private def setSpaceProps(user:User, actor:ActorRef, spaceId:OID, idMap:IDMap)(implicit imp:SpaceState):RequestM[Any] = {
-    actor.request(ChangeProps(user, spaceId, spaceId, translateProps(imp, idMap)))
+    actor.request(ChangeProps(user, spaceId, spaceId, filterSpaceProps(translateProps(imp, idMap)), true))
   }
 }

@@ -33,8 +33,12 @@ trait SpaceAPI {
    *    this can be omitted.
    * @param pf A Function that takes the previous state of the Thing, and returns the *complete* new
    *    PropMap for that Thing. (Not just the changes!)
+   * @param sync If true, this change will be made synchronously -- sender will not be informed of
+   *    the change until after it is persisted. This is mainly intended for cases where there is a real
+   *    chance that the Space Actor will go away before the change gets flushed, but this might become
+   *    the default.
    */
-  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap)):Unit
+  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap), sync:Boolean = false):Unit
 }
 
 /**

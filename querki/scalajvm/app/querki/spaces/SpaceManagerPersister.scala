@@ -104,7 +104,7 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
       DB.withTransaction(dbName(System)) { implicit conn =>
         val numWithName = SQL("""
           SELECT COUNT(*) AS c from Spaces 
-           WHERE owner = {owner} AND name = {name}
+           WHERE owner = {owner} AND name = {name} AND status = 0
           """).on("owner" -> owner.raw, "name" -> name).apply().headOption.get[Long]("c")
         if (numWithName > 0) {
           throw new PublicException("Space.create.alreadyExists", name)
@@ -113,7 +113,7 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
         if (userMaxSpaces < Int.MaxValue) {
           val sql = SQL("""
                 SELECT COUNT(*) AS count FROM Spaces
-                WHERE owner = {owner}
+                WHERE owner = {owner} AND status = 0
                 """).on("owner" -> owner.id.raw)
           val row = sql().headOption
           val numOwned = row.map(_.long("count")).getOrElse(throw new InternalException("Didn't get any rows back in canCreateSpaces!"))

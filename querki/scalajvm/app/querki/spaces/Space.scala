@@ -255,39 +255,58 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
     }    
   }
   
-  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap)) = {
-      val oldThingOpt = state.anything(thingId)
-      oldThingOpt map { oldThing =>
-        val thingId = oldThing.id
-        val rawNewProps = pf(oldThing)
-        val changedProps = changedProperties(oldThing.props, rawNewProps)
-        val newProps = SpaceChangeManager.thingChanges(ThingChangeRequest(state, modelIdOpt, Some(oldThing), rawNewProps, changedProps)).newProps
-        val canChangeTry = 
-          TryTrans[Unit, Boolean] { canChangeProperties(who, changedProps, Some(oldThing), newProps) }.
-            onSucc { _ => true }.
-            onFail { ex => sender ! ThingError(ex); false }.
-            result
-        if (!canEdit(who, thingId)) {
-          sender ! ThingError(new PublicException(ModifyNotAllowed))
-        } else if (!canChangeTry) {
-          // Error already sent
-        } else {
-          // TODO: compare properties, build a history record of the changes
-	      val modelId = modelIdOpt match {
-	        case Some(m) => m
-	        case None => oldThing.model
-	      }
-	        
-          implicit val e = ecology
-          val modTime = DateTime.now
-          // Make the change in-memory...
-	      // TODO: this needs a clause for each Kind you can get:
-          val spaceChangeOpt = oldThing match {
+  def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap), sync:Boolean) = {
+    val oldThingOpt = state.anything(thingId)
+    oldThingOpt map { oldThing =>
+      val thingId = oldThing.id
+      val rawNewProps = pf(oldThing)
+      val changedProps = changedProperties(oldThing.props, rawNewProps)
+      val newProps = SpaceChangeManager.thingChanges(ThingChangeRequest(state, modelIdOpt, Some(oldThing), rawNewProps, changedProps)).newProps
+      val canChangeTry = 
+        TryTrans[Unit, Boolean] { canChangeProperties(who, changedProps, Some(oldThing), newProps) }.
+          onSucc { _ => true }.
+          onFail { ex => sender ! ThingError(ex); false }.
+          result
+      if (!canEdit(who, thingId)) {
+        sender ! ThingError(new PublicException(ModifyNotAllowed))
+      } else if (!canChangeTry) {
+        // Error already sent
+      } else {
+        // TODO: compare properties, build a history record of the changes
+        val modelId = modelIdOpt match {
+          case Some(m) => m
+          case None => oldThing.model
+        }
+          
+        implicit val e = ecology
+        val modTime = DateTime.now
+        val rawNameOpt = Core.NameProp.firstOpt(newProps)
+        val newNameOpt = rawNameOpt.map(NameUtils.canonicalize(_))
+        val spaceChangeOpt = oldThing match {
+          case s:SpaceState => {
+            // We presume that Spaces have names:
+            val rawName = rawNameOpt.get
+            val newName = newNameOpt.get
+            val oldName = Core.NameProp.first(oldThing.props)
+            val oldDisplay = Basic.DisplayNameProp.firstOpt(oldThing.props) map (_.raw.toString) getOrElse rawName
+            val newDisplay = Basic.DisplayNameProp.firstOpt(newProps) map (_.raw.toString) getOrElse rawName
+            if (!NameUtils.equalNames(newName, oldName) || !(oldDisplay.contentEquals(newDisplay))) {
+              Some(SpaceChange(newName, newDisplay))
+            } else {
+              None
+            }             
+          }
+          case _ => None
+        }
+        
+        // This is lifted into a sub-function so that we can either call it immediately or after
+        // persistence, as requested:
+        def changeInMemory() = {
+          oldThing match {
             case t:ThingState => {
               val newThingState = t.copy(m = modelId, pf = () => newProps, mt = modTime)
               updateState(state.copy(things = state.things + (thingId -> newThingState))) 
               sender ! ThingFound(thingId, state)
-              None
             }
             case prop:Property[_,_] => {
               // If the Type has changed, alter the Property itself accordingly:
@@ -305,44 +324,35 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
               typeChange.finish(newProp, state, updateState)
               
               sender ! ThingFound(thingId, state)
-              
-              None
             }
             case s:SpaceState => {
               // TODO: handle changing the owner or apps of the Space. (Different messages?)
-              val rawName = Core.NameProp.first(newProps)
-              val newName = NameUtils.canonicalize(rawName)
-              val oldName = Core.NameProp.first(oldThing.props)
-              val oldDisplay = Basic.DisplayNameProp.firstOpt(oldThing.props) map (_.raw.toString) getOrElse rawName
-              val newDisplay = Basic.DisplayNameProp.firstOpt(newProps) map (_.raw.toString) getOrElse rawName
-              val spaceChange = if (!NameUtils.equalNames(newName, oldName) || !(oldDisplay.contentEquals(newDisplay))) {
-                Some(SpaceChange(newName, newDisplay))
-              } else {
-                None
-              }
-              
+              val newName = newNameOpt.get
               updateState(state.copy(m = modelId, pf = () => newProps, name = newName, mt = modTime))
               sender ! ThingFound(thingId, state)
-              
-              spaceChange
-            }
-	      }
-          
-          // ... and persist the change. Note that this is fire-and-forget, and happens after we respond to the caller!
-          persister.request(Change(state, thingId, modelId, modTime, newProps, spaceChangeOpt)).foreach {
-            case Changed(_, _) => {
-              // Do we do anything? This just signifies success
-            }
-            case err:Any => {
-              // TODO: this is one of those relatively rare situations where we potentially want to
-              // raise Big Red Flags -- serialization failure is Bad.
-              QLog.error(s"Attempt to serialize $thingId in space ${state.id} failed!!! New props were $newProps, and returned value was $err")
             }
           }
-	    }
-      } getOrElse {
-        sender ! ThingError(new PublicException(UnknownPath))
-      }    
+        }
+        
+        if (!sync)
+          changeInMemory()
+        
+        // ... and persist the change. Note that this is fire-and-forget, and happens after we respond to the caller!
+        persister.request(Change(state, thingId, modelId, modTime, newProps, spaceChangeOpt)).foreach {
+          case Changed(_, _) => {
+            if (sync)
+              changeInMemory()
+          }
+          case err:Any => {
+            // TODO: this is one of those relatively rare situations where we potentially want to
+            // raise Big Red Flags -- serialization failure is Bad.
+            QLog.error(s"Attempt to serialize $thingId in space ${state.id} failed!!! New props were $newProps, and returned value was $err")
+          }
+        }
+      }
+    } getOrElse {
+      sender ! ThingError(new PublicException(UnknownPath))
+    }    
   }
   
   def deleteThing(who:User, spaceThingId:ThingId, thingId:ThingId) = {
@@ -378,7 +388,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
       createSomething(spaceId, who, modelId, props, kind)
     }
     
-    case ChangeProps(who, spaceThingId, thingId, changedProps) => {
+    case ChangeProps(who, spaceThingId, thingId, changedProps, sync) => {
       modifyThing(who, thingId, None, { thing =>
         (thing.props /: changedProps) { (current, pair) =>
           val (propId, v) = pair
@@ -388,11 +398,11 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
           else
             current + pair
         }
-      })
+      }, sync)
     }
     
     case ModifyThing(who, spaceThingId, thingId, modelId, newProps) => {
-      modifyThing(who, thingId, Some(modelId), (_ => newProps))
+      modifyThing(who, thingId, Some(modelId), (_ => newProps), false)
     }
     
     case DeleteThing(who, spaceThingId, thingId) => {
