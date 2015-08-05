@@ -92,8 +92,8 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
     Core.NameProp.validate(name, System.State)
     
     SpaceOps.spaceManager ? CreateSpace(user, name) map {
-      case querki.spaces.messages.SpaceInfo(spaceId, linkName, display, ownerHandle) => {
-        SpaceInfo(TID(spaceId.toThingId), Some(linkName), display, "", ownerHandle)
+      case info:querki.spaces.messages.SpaceInfo => {
+        ClientApi.spaceInfo(info)
       }
       case ThingError(ex, _) => throw ex
     }

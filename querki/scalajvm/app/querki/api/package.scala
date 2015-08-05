@@ -20,6 +20,8 @@ package object api {
     
     def thingInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):ThingInfo
     
+    def spaceInfo(info:querki.spaces.messages.SpaceInfo):SpaceInfo
+    
     def identityInfo(identity:PublicIdentity):IdentityInfo
     
     def userInfo(uopt:Option[User]):Option[UserInfo]

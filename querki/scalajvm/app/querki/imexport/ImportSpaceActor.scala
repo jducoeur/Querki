@@ -2,6 +2,8 @@ package querki.imexport
 
 import akka.actor._
 
+import upickle._
+
 import org.querki.requester._
 
 import querki.globals._
@@ -17,7 +19,11 @@ import querki.values.RequestContext
  * 
  * @author jducoeur
  */
-class ImportSpaceActor(ecology:Ecology, importType:ImportDataType, name:String) extends Actor with Requester with UploadActor {
+class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:String) extends Actor with Requester 
+  with UploadActor with ImporterImpl with EcologyMember 
+{
+  lazy val ClientApi = interface[querki.api.ClientApi]
+  
   def buildSpaceState(rc:RequestContext):SpaceState = {
     importType match {
       case ImportXML => {
@@ -40,10 +46,18 @@ class ImportSpaceActor(ecology:Ecology, importType:ImportDataType, name:String) 
   }
   
   def processBuffer(rc:RequestContext) = {
+    if (rc.requester.isEmpty)
+      throw new Exception("Somehow got to ImportSpaceActor when not logged in!")
+    
     val rawState = buildSpaceState(rc)
     QLog.spew(s"Built the SpaceState: $rawState")
-    sender ! UploadProcessSuccessful("Done")
-    context.stop(self)
+    
+    loopback(createSpaceFromImported(rc.requesterOrAnon, name)(rawState)) foreach { spaceInfo =>
+      QLog.spew(s"Successfully constructed Space ${spaceInfo.display}")
+      val apiInfo = ClientApi.spaceInfo(spaceInfo)
+      sender ! UploadProcessSuccessful(write(apiInfo))
+      context.stop(self)
+    }
   }
 }
 

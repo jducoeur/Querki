@@ -4,6 +4,7 @@ import java.util.regex.Pattern
 
 import org.scalajs.dom
 import scalatags.JsDom.all._
+import upickle._
 import autowire._
 import rx._
 
@@ -11,6 +12,7 @@ import org.querki.facades.fileupload._
 import org.querki.jquery._
 
 import querki.comm._
+import querki.data.SpaceInfo
 import querki.display.rx._
 import querki.imexport.ImportSpaceFunctions
 import querki.globals._
@@ -36,7 +38,15 @@ class ImportSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
           if (Pattern.matches("text/xml", file.`type`)) {
             Client[ImportSpaceFunctions].importFromXML(spaceName.get.text()).call() foreach { path =>
               data.url = controllers.ClientController.upload(path).url
-              val jqXHR = data.submit()
+              val deferred = data.submit()
+              deferred.done { (data:String, textStatus:String, jqXHR:JQueryDeferred) => 
+                val space = read[SpaceInfo](data)
+                CreateSpacePage.navigateToSpace(space)
+              }
+              deferred.fail { (jqXHR:JQueryXHR, textStatus:String, errorThrown:String) =>
+                // TODO: this needs better error support:
+                println(s"ImportSpacePage got error $errorThrown")
+              }
             }
           } else {
             StatusLine.showBriefly(s"That is a ${file.`type`}. You can only upload images.")

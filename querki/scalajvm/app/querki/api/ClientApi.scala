@@ -80,6 +80,11 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
     }
   }
   
+  def spaceInfo(info:querki.spaces.messages.SpaceInfo):SpaceInfo = {
+    val querki.spaces.messages.SpaceInfo(spaceId, linkName, display, ownerHandle) = info
+    SpaceInfo(TID(spaceId.toThingId), Some(linkName), display, "", ownerHandle)
+  }
+  
   def identityInfo(identity:PublicIdentity):IdentityInfo = {
     IdentityInfo(AsOID(identity.id), identity.name, identity.handle)
   }

@@ -8,6 +8,7 @@ import rx._
 
 import org.querki.jquery._
 
+import querki.data.SpaceInfo
 import querki.display.ButtonGadget
 import querki.display.rx._
 import querki.globals._
@@ -37,9 +38,7 @@ class CreateSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
                 ({ () =>
                   val newName = spaceName.get.text()
                   Client[UserFunctions].createSpace(newName).call() foreach { space =>
-                    val spaceName = space.linkName.getOrElse(space.oid.underlying)
-                    val url = s"/u/${space.ownerHandle}/$spaceName/#$spaceName"
-                    PageManager.navigateTo(url)
+                    CreateSpacePage.navigateToSpace(space)
                   }
                 })
               )
@@ -56,5 +55,15 @@ class CreateSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
       )
       
     Future.successful(PageContents("Create a New Space", guts))
+  }
+}
+
+object CreateSpacePage {
+  def navigateToSpace(space:SpaceInfo)(implicit ecology:Ecology) = {
+    val PageManager = ecology.api[querki.display.PageManager]
+    
+    val spaceName = space.linkName.getOrElse(space.oid.underlying)
+    val url = s"/u/${space.ownerHandle}/$spaceName/#$spaceName"
+    PageManager.navigateTo(url)    
   }
 }
