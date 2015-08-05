@@ -27,7 +27,7 @@ import querki.streaming.UploadActor
 import querki.time.DateTime
 import querki.types.SimplePropertyBundle
 import querki.util.{Config, QLog}
-import querki.values.{ElemValue, QLContext, SpaceState}
+import querki.values.{ElemValue, QLContext, RequestContext, SpaceState}
 
 class PhotoUploadActor(val ecology:Ecology, state:SpaceState, router:ActorRef) extends Actor with Requester with UploadActor with EcologyMember {
   
@@ -49,7 +49,10 @@ class PhotoUploadActor(val ecology:Ecology, state:SpaceState, router:ActorRef) e
   var _mimeType:Option[String] = None
   def mimeType = _mimeType.getOrElse(MIMEType.JPEG)
   
-  def receive = LoggingReceive (handleChunks orElse {
+  // TODO: restructure this Actor to be more conventional
+  def processBuffer(rc:RequestContext):Unit = {}
+  
+  override def receive = LoggingReceive (handleChunks orElse {
     
     case BeginProcessingPhoto(_, spaceId, tpe) => {
       _mimeType = tpe
