@@ -24,11 +24,12 @@ import Thing.PropMap
 
 import querki.core.NameUtils
 import querki.ecology._
+import querki.globals._
 import querki.identity.User
 import querki.time.DateTime
 import querki.types.ModelTypeDefiner
 import querki.types.MOIDs.ModelForTypePropOID
-import querki.util._
+import querki.util.TryTrans
 import querki.values.SpaceState
 
 import messages._

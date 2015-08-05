@@ -27,7 +27,7 @@ import querki.values.{ElemValue, RequestContext, QValue}
  * 
  * @author jducoeur
  */
-private [imexport] trait ImporterImpl { self:Actor with Requester with EcologyMember =>
+private [imexport] trait ImporterImpl { anActor:Actor with Requester with EcologyMember =>
   
   lazy val Core = interface[querki.core.Core]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
@@ -56,7 +56,7 @@ private [imexport] trait ImporterImpl { self:Actor with Requester with EcologyMe
       // TODO: how can we intercept all failures, and make sure that this Actor gets shut down if
       // something goes wrong? Keep in mind that the process is wildly async, so we can't just do
       // try/catch.
-      spaceActor = context.actorOf(Space.actorProps(ecology, SpacePersistenceFactory, Actor.noSender, spaceId))
+      spaceActor = context.actorOf(Space.actorProps(ecology, SpacePersistenceFactory, self, spaceId))
       // Create all of the Models and Instances, so we have all their OIDs in the map.
       mapWithThings <- createThings(user, spaceActor, spaceId, imp.things.values.toSeq.sorted(new ModelOrdering(imp)), Map.empty)
       mapWithTypes <- createModelTypes(user, spaceActor, spaceId, imp.types.values.toSeq, mapWithThings)
@@ -91,6 +91,21 @@ private [imexport] trait ImporterImpl { self:Actor with Requester with EcologyMe
         x.id.raw.compare(y.id.raw)
     }
   }
+  
+  def model(t:Thing, idMap:IDMap)(implicit imp:SpaceState):OID = {
+    idMap.get(t.model) match {
+      case Some(m) => m
+      case None => {
+        val mOpt = for {
+          app <- imp.app
+          found <- app.anything(t.model)
+        }
+          yield found
+          
+        mOpt.getOrElse(throw new Exception(s"Couldn't find model ${t.model}"))
+      }
+    }
+  }
 
   /**
    * Step 1: create all of the Models and Instances, empty, so that we have their real OIDs.
@@ -98,7 +113,7 @@ private [imexport] trait ImporterImpl { self:Actor with Requester with EcologyMe
   private def createThings(user:User, actor:ActorRef, spaceId:OID, things:Seq[Thing], idMap:IDMap)(implicit imp:SpaceState):RequestM[IDMap] = {
     things.headOption match {
       case Some(thing) => {
-        actor.request(CreateThing(user, spaceId, Kind.Thing, idMap(thing.model), Thing.emptyProps)) flatMap {
+        actor.request(CreateThing(user, spaceId, Kind.Thing, model(thing, idMap), Thing.emptyProps)) flatMap {
           case ThingFound(intId, state) => {
             createThings(user, actor, spaceId, things.tail, idMap + (thing.id -> intId))
           }
