@@ -46,10 +46,9 @@ private [imexport] object QuerkiML extends scalatags.generic.Util[Builder, Strin
   val coll = "coll".a
   val ptyp = "pType".a
   
-  def exportOID(oid:OID) = s"_${oid.toString}"
-  def importOIDOpt(str:String):Option[OID] = if (str(0) == '_') Some(OID(str.drop(1))) else None
+  def exportOID(oid:OID) = s"_!${oid.toString}"
+  def importOIDOpt(str:String):Option[OID] = if (str.startsWith("_!")) Some(OID(str.drop(2))) else None
   def importOID(str:String):OID = importOIDOpt(str).getOrElse(throw new Exception(s"Expecting OID, got $str"))
-  def importThingId(str:String):ThingId = importOIDOpt(str).map(AsOID(_)).getOrElse(AsName(str))
 }
 
 class ThingAttr extends scalatags.Text.AttrValue[ThingId] {

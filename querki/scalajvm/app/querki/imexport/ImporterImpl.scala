@@ -1,5 +1,6 @@
 package querki.imexport
 
+import scala.annotation.tailrec
 import scala.concurrent.{Future, Promise}
 
 import akka.actor._
@@ -59,7 +60,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
       // try/catch.
       spaceActor = context.actorOf(Space.actorProps(ecology, SpacePersistenceFactory, self, spaceId))
       // Create all of the Models and Instances, so we have all their OIDs in the map.
-      mapWithThings <- createThings(user, spaceActor, spaceId, imp.things.values.toSeq.sorted(new ModelOrdering(imp)), Map.empty)
+      mapWithThings <- createThings(user, spaceActor, spaceId, sortThings(imp), Map.empty)
       mapWithTypes <- createModelTypes(user, spaceActor, spaceId, imp.types.values.toSeq, mapWithThings)
       mapWithProps <- createProperties(user, spaceActor, spaceId, imp.spaceProps.values.toSeq, mapWithTypes)
       dummy1 <- setPropValues(user, spaceActor, spaceId, imp.things.values.toSeq, mapWithProps)
@@ -75,23 +76,41 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
   type IntId = OID
   type IDMap = Map[ExtId, IntId]
   
-  /**
-   * Sort the Things so that Models come before their Instances.
-   * 
-   * This might belong somewhere more generally accessible.
+  /*****************************
+   * Topological Sort of the Model Hierarchy
    */
-  class ModelOrdering(space:SpaceState) extends scala.math.Ordering[Thing] {
-    implicit val s = space
-    
-    def compare(x:Thing, y:Thing):Int = {
-      if (x.isAncestor(y.id))
-        1
-      else if (y.isAncestor(x.id))
-        -1
-      else
-        x.id.raw.compare(y.id.raw)
+  
+  /**
+   * Generic topological sort algorithm.
+   */
+  def tsort[A](edges: Traversable[(A, A)]): Iterable[A] = {
+    @tailrec
+    def tsort(toPreds: Map[A, Set[A]], done: Iterable[A]): Iterable[A] = {
+        val (noPreds, hasPreds) = toPreds.partition { _._2.isEmpty }
+        if (noPreds.isEmpty) {
+            if (hasPreds.isEmpty) done else sys.error(hasPreds.toString)
+        } else {
+            val found = noPreds.map { _._1 }
+            tsort(hasPreds.mapValues { _ -- found }, done ++ found)    
+        }
     }
+
+    val toPred = edges.foldLeft(Map[A, Set[A]]()) { (acc, e) =>
+        acc + (e._1 -> acc.getOrElse(e._1, Set())) + (e._2 -> (acc.getOrElse(e._2, Set()) + e._1))
+    }
+    tsort(toPred, Seq())
   }
+  
+  def sortThings(space:SpaceState):Seq[Thing] = {
+    val allThings = space.things.values
+    val edges = allThings.map { thing => (thing.model, thing.id) }
+    val sortedOIDs = tsort(edges)
+    // Need to allow for the fact that the sortedOIDs contains models that weren't in the
+    // original list, because they are from the Apps:
+    sortedOIDs.map(space.things.get(_)).flatten.toSeq
+  }
+  
+  /***************************/
   
   def idMapOr(id:OID, idMap:IDMap)(implicit imp:SpaceState):OID = {
     idMap.get(id) match {
@@ -108,7 +127,14 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
     }
   }
   def model(t:Thing, idMap:IDMap)(implicit imp:SpaceState):OID = {
-    idMapOr(t.model, idMap)
+    try {
+      idMapOr(t.model, idMap)
+    } catch {
+      case ex:Exception => {
+        QLog.spewThing(t)
+        throw ex
+      } 
+    }
   }
 
   /**
@@ -119,6 +145,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
       case Some(thing) => {
         actor.request(CreateThing(user, spaceId, Kind.Thing, model(thing, idMap), Thing.emptyProps)) flatMap {
           case ThingFound(intId, state) => {
+            QLog.spew(s"Mapped ${thing.id} -> $intId")
             createThings(user, actor, spaceId, things.tail, idMap + (thing.id -> intId))
           }
           case ThingError(ex, _) => {

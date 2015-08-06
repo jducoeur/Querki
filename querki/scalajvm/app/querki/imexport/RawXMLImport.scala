@@ -47,11 +47,12 @@ private [imexport] class RawXMLImport(rc:RequestContext)(implicit val ecology:Ec
       builder
     }
   }
-  
+    
   def nameWithoutSpace(str:String):String = {
     XMLParser.xmlNameP.parse(str).get.value.name
   }
-  def parseThingId(str:String):ThingId = importThingId(nameWithoutSpace(str))
+  def importThingId(str:String):ThingId = importOIDOpt(str).map(AsOID(_)).getOrElse(AsName(nameWithoutSpace(str)))
+  def parseThingId(str:String):ThingId = importThingId(str)
   
   implicit class RichAttr(attr:QuerkiML.Attr) {
     // TODO: for now, we're ignoring the namespace, which means we're not dealing with potential

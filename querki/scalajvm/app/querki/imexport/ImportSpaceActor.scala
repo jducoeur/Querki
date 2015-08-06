@@ -61,7 +61,7 @@ class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:Stri
       }
       
       case Failure(ex) => {
-        QLog.warn(ex.toString())
+        QLog.error("Got an exception while trying to import a Space", ex)
         sender ! UploadProcessFailed(write(ex.toString()))
       }
     }
