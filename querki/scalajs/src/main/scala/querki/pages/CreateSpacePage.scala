@@ -2,6 +2,7 @@ package querki.pages
 
 import scala.concurrent.Future
 
+import org.scalajs.dom
 import scalatags.JsDom.all._
 import autowire._
 import rx._
@@ -22,6 +23,20 @@ class CreateSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
   lazy val Client = interface[querki.client.Client]
   
   val spaceName = GadgetRef[RxInput]
+    .whenSet { g => 
+      g.onEnter { text =>
+        if (text.length() > 0) {
+          createSpace()
+        }
+      }
+    }
+  
+  def createSpace():Unit = {
+    val newName = spaceName.get.text()
+    Client[UserFunctions].createSpace(newName).call() foreach { space =>
+      CreateSpacePage.navigateToSpace(space)
+    }    
+  }
     
   // Weird -- I think it's a page that we can create without going to the server!
   def pageContent = {
@@ -35,12 +50,7 @@ class CreateSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
               span(cls:="input-group-btn",
                 new ButtonGadget(ButtonGadget.Normal, "Create Space", tabindex:=210, 
                     disabled := Rx { spaceName.isEmpty || spaceName.get.text().length() == 0 })
-                ({ () =>
-                  val newName = spaceName.get.text()
-                  Client[UserFunctions].createSpace(newName).call() foreach { space =>
-                    CreateSpacePage.navigateToSpace(space)
-                  }
-                })
+                ({ () => createSpace()  })
               )
             )
           )

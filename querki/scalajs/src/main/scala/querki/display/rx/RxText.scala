@@ -42,21 +42,36 @@ class RxInput(charFilter:Option[JQueryEventObject => Boolean], inputType:String,
   override def onCreate(e:dom.HTMLInputElement) = {
     // If a charFilter was specified, run each keystroke past it as a legality check:
     $(e).keydown { evt:JQueryEventObject =>
-      charFilter match {
-        case Some(filter) => {
-          val allowed = filter(evt)
-          println(s"${evt.which.toChar} = $allowed")
-          if (!allowed)
-            evt.preventDefault()
-          allowed
+      val which = evt.which
+      val fOpt = enterFunc()
+      
+      if (which == 13 && fOpt.isDefined) {
+        // They hit Enter, and we are doing something special with Enter:
+        fOpt.get(text())
+        evt.preventDefault()
+        false
+      } else { 
+        // Is this character allowed?
+        charFilter match {
+          case Some(filter) => {
+            val allowed = filter(evt)
+            println(s"${which.toChar} = $allowed")
+            if (!allowed)
+              evt.preventDefault()
+            allowed
+          }
+          case None => true
         }
-        case None => true
       }
     }
     // We use input instead of change, so that we fire on every keystroke:
     $(e).on("input", { e:dom.Element => update() })
     update()
   }
+  
+  val enterFunc = Var[Option[String => Unit]](None)
+  
+  def onEnter(f:String => Unit) = enterFunc() = Some(f)
 }
 
 class RxText(mods:Modifier*) extends RxInput("text", mods)

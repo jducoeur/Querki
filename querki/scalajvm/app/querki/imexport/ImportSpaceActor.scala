@@ -1,5 +1,7 @@
 package querki.imexport
 
+import scala.util.{Failure, Success}
+
 import akka.actor._
 
 import upickle._
@@ -50,13 +52,18 @@ class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:Stri
       throw new Exception("Somehow got to ImportSpaceActor when not logged in!")
     
     val rawState = buildSpaceState(rc)
-    QLog.spew(s"Built the SpaceState: $rawState")
     
-    loopback(createSpaceFromImported(rc.requesterOrAnon, name)(rawState)) foreach { spaceInfo =>
-      QLog.spew(s"Successfully constructed Space ${spaceInfo.display}")
-      val apiInfo = ClientApi.spaceInfo(spaceInfo)
-      sender ! UploadProcessSuccessful(write(apiInfo))
-      context.stop(self)
+    loopback(createSpaceFromImported(rc.requesterOrAnon, name)(rawState)) onComplete { 
+      case Success(spaceInfo) => {
+        val apiInfo = ClientApi.spaceInfo(spaceInfo)
+        sender ! UploadProcessSuccessful(write(apiInfo))
+        context.stop(self)
+      }
+      
+      case Failure(ex) => {
+        QLog.warn(ex.toString())
+        sender ! UploadProcessFailed(write(ex.toString()))
+      }
     }
   }
 }

@@ -93,19 +93,22 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
     }
   }
   
-  def model(t:Thing, idMap:IDMap)(implicit imp:SpaceState):OID = {
-    idMap.get(t.model) match {
+  def idMapOr(id:OID, idMap:IDMap)(implicit imp:SpaceState):OID = {
+    idMap.get(id) match {
       case Some(m) => m
       case None => {
         val mOpt = for {
           app <- imp.app
-          found <- app.anything(t.model)
+          found <- app.anything(id)
         }
           yield found
           
-        mOpt.getOrElse(throw new Exception(s"Couldn't find model ${t.model}"))
+        mOpt.getOrElse(throw new Exception(s"Couldn't find model ${id}"))
       }
     }
+  }
+  def model(t:Thing, idMap:IDMap)(implicit imp:SpaceState):OID = {
+    idMapOr(t.model, idMap)
   }
 
   /**
@@ -227,7 +230,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
             case Some(linkProp) => {
               // This Property is made of Links, so we need to map all of them to the new values:
               val raw = qv.rawList(Core.LinkType)
-              val translatedLinks = raw.map { extId => ElemValue(idMap(extId), Core.LinkType) }
+              val translatedLinks = raw.map { extId => ElemValue(idMapOr(extId, idMap), Core.LinkType) }
               qv.cType.makePropValue(translatedLinks, Core.LinkType)
             }
             case None => qv
@@ -237,7 +240,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
       }
         
       // Try translating, but it is very normal for the propId to be from System:
-      (idMap.get(propId).getOrElse(propId), qv)
+      (idMapOr(propId, idMap), qv)
     }
     
     translated
