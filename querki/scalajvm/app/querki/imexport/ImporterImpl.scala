@@ -61,7 +61,9 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
       spaceActor = context.actorOf(Space.actorProps(ecology, SpacePersistenceFactory, self, spaceId))
       // Create all of the Models and Instances, so we have all their OIDs in the map.
       mapWithThings <- createThings(user, spaceActor, spaceId, sortThings(imp), Map.empty)
+      dummya = QLog.spew("About to create Model Types")
       mapWithTypes <- createModelTypes(user, spaceActor, spaceId, imp.types.values.toSeq, mapWithThings)
+      dummyb = QLog.spew("Done creating Model Types")
       mapWithProps <- createProperties(user, spaceActor, spaceId, imp.spaceProps.values.toSeq, mapWithTypes)
       dummy1 <- setPropValues(user, spaceActor, spaceId, imp.things.values.toSeq, mapWithProps)
       dummy2 <- setSpaceProps(user, spaceActor, spaceId, mapWithProps)
@@ -122,7 +124,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
         }
           yield found
           
-        mOpt.getOrElse(throw new Exception(s"Couldn't find model ${id}"))
+        mOpt.map(_.id).getOrElse(UnknownOID)
       }
     }
   }
@@ -145,7 +147,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
       case Some(thing) => {
         actor.request(CreateThing(user, spaceId, Kind.Thing, model(thing, idMap), Thing.emptyProps)) flatMap {
           case ThingFound(intId, state) => {
-            QLog.spew(s"Mapped ${thing.id} -> $intId")
+            QLog.spew(s"Mapped Thing ${thing.id} -> $intId")
             createThings(user, actor, spaceId, things.tail, idMap + (thing.id -> intId))
           }
           case ThingError(ex, _) => {
@@ -169,7 +171,8 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
             val props = mt.props + (Types.ModelForTypeProp(idMap(mt.basedOn)))
             actor.request(CreateThing(user, spaceId, Kind.Type, Core.UrType, props)) flatMap {
               case ThingFound(intId, state) => {
-                createThings(user, actor, spaceId, modelTypes.tail, idMap + (mt.id -> intId))
+                QLog.spew(s"Mapped Model Type ${pt.id} -> $intId")
+                createModelTypes(user, actor, spaceId, modelTypes.tail, idMap + (mt.id -> intId))
               }
               case ThingError(ex, _) => {
                 RequestM.failed(ex)
@@ -189,7 +192,10 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
   // These are the Properties whose values can not be set yet, indexed by the ID of their Model Type:
   // TODO: is this sufficient? What if this Property is based on a Model Type that is itself based on
   // three more Model Types?
-  private var deferredProperties = Map.empty[ExtId, Seq[ExtId]]
+  private var deferredPropertiesByModel = Map.empty[ExtId, Seq[ExtId]]
+  
+  // These are the Properties whose values can not be set yet, by PropertyId:
+  private var deferredProperties = Set.empty[ExtId]
   
   // These are the values waiting on deferred Properties:
   case class DeferredPropertyValue(propId:ExtId, thingId:ExtId, v:QValue) {
@@ -203,23 +209,28 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
   private def createProperties(user:User, actor:ActorRef, spaceId:OID, props:Seq[AnyProp], idMap:IDMap)(implicit imp:SpaceState):RequestM[IDMap] = {
     props.headOption match {
       case Some(prop) => {
+        QLog.spew(s"Creating Property ${prop.displayName}")
         // Take note of any Properties that can't be resolved yet:
         prop.pType match {
           case mt:ModelTypeBase => {
-            val propsForThisModel = deferredProperties.get(mt.basedOn) match {
+            QLog.spew(s"  Deferring property ${prop.displayName} (${prop.id}), which is based on ${mt.basedOn}")
+            val propsForThisModel = deferredPropertiesByModel.get(mt.basedOn) match {
               case Some(otherProps) => otherProps :+ prop.id
               case None => Seq(prop.id)
             }
-            deferredProperties += (mt.basedOn -> propsForThisModel)
+            deferredPropertiesByModel += (mt.basedOn -> propsForThisModel)
+            deferredProperties += prop.id
           }
           case _ => 
         }
         
         // Note that we are currently assuming you aren't defining meta-Properties that you are putting on
-        // your Properties.
+        // your Properties; if a Property depends on another local Property, we may have order problems.
         // TODO: cope with this edge case. In that case, we will need to add those in another pass, or something.
-        actor.request(CreateThing(user, spaceId, Kind.Property, querki.core.MOIDs.UrPropOID, prop.props)) flatMap {
+        // Regardless of this, we still need to call translateProps, to deal with Link meta-Properties.
+        actor.request(CreateThing(user, spaceId, Kind.Property, querki.core.MOIDs.UrPropOID, translateProps(prop, idMap))) flatMap {
           case ThingFound(intId, state) => {
+            QLog.spew(s"Mapped Property ${prop.id} -> $intId")
             createProperties(user, actor, spaceId, props.tail, idMap + (prop.id -> intId))
           }
           case ThingError(ex, _) => {
@@ -241,14 +252,16 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
   private def translateProps(t:Thing, idMap:IDMap)(implicit imp:SpaceState):Thing.PropMap = {
     val translated = t.props filter { pair =>
       val (propId, qv) = pair
-      val isDeferred = deferredProperties.contains(propId)
-      val deferredVals =
-        if (isDeferred)
-          deferredPropertyValues(propId) :+ DeferredPropertyValue(propId, t.id, qv)
-        else
-          Seq(DeferredPropertyValue(propId, t.id, qv))
-      deferredPropertyValues += (propId -> deferredVals)
-      !isDeferred
+      if (deferredProperties.contains(propId)) {
+        val deferredVals = deferredPropertyValues.get(propId) match {
+          case Some(vals) => vals :+ DeferredPropertyValue(propId, t.id, qv)
+          case None => Seq(DeferredPropertyValue(propId, t.id, qv))
+        }
+        deferredPropertyValues += (propId -> deferredVals)
+        QLog.spew(s"Deferring property $propId with value $qv")
+        false
+      } else
+        true
     } map { pair =>
       val (propId, qv) = pair
       val realQv = imp.prop(propId) match {
@@ -267,7 +280,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
       }
         
       // Try translating, but it is very normal for the propId to be from System:
-      (idMapOr(propId, idMap), qv)
+      (idMapOr(propId, idMap), realQv)
     }
     
     translated
@@ -279,6 +292,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
   private def setPropValues(user:User, actor:ActorRef, spaceId:OID, things:Seq[Thing], idMap:IDMap)(implicit imp:SpaceState):RequestM[Unit] = {
     things.headOption match {
       case Some(thing) => {
+        QLog.spew(s"Setting Property values on ${thing.displayName}")
         actor.request(ChangeProps(user, spaceId, idMap(thing.id), translateProps(thing, idMap), true)) flatMap {
           case ThingFound(intId, state) => {
             // TODO: if this was the base of a Model Type, we need to recurse into deferredPropertyValues and
