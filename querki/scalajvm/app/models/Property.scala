@@ -63,7 +63,7 @@ case class Property[VT, RT](
    * Convenience method to fetch the value of this property in this map.
    */
   def first(m:PropMap):VT = pType.get(cType.first(from(m)))
-  def firstOpt(m:PropMap):Option[VT] = fromOpt(m) map cType.first map pType.get
+  def firstOpt(m:PropMap):Option[VT] = fromOpt(m) flatMap cType.firstOpt map pType.get
 
   def apply(raws:RT*) = (this.id, QValue.make(cType, pType, raws:_*))
   def apply(qv:QValue) = (this.id, qv)
