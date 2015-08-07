@@ -148,7 +148,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
       }
       case None => {
         NavSection("Not logged in", Seq(
-          NavLink("Log in", controllers.Application.index())
+          NavLink("Log in", controllers.ClientController.index())
         ))
       }
     }

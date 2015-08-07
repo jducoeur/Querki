@@ -27,7 +27,7 @@ class Step4(implicit val ecology:Ecology) extends Step {
         |  PRIMARY KEY (id),
         |  INDEX comments_by_thingid (thingId),
         |  INDEX moderation_queue (needsModeration, createTime)
-        |);
+        |) DEFAULT CHARSET=utf8;
         |""".stripMargin).execute
   }
 }

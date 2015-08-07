@@ -138,6 +138,7 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
               kind int NOT NULL,
               props MEDIUMTEXT NOT NULL,
               PRIMARY KEY (id))
+              DEFAULT CHARSET=utf8
             """).executeUpdate()
       }
       DB.withTransaction(dbName(System)) { implicit conn =>

@@ -47,6 +47,34 @@ object XMLParser {
     def checkIs(name:String) = if (tagName.name != name) throw new Exception(s"Was expecting tag $name, found $tagName") 
   }
   
+  
+  /**
+   * Some common entities that tend to show up in named form.
+   * 
+   * TODO: we should flesh out this list.
+   */
+  val xmlEntities = Map[String, Char](
+    ("gt" -> '>'),
+    ("lt" -> '<'),
+      
+    ("apos" -> '\''),
+    ("quot" -> '"'),
+    ("amp" -> '&'),
+    ("tilde" -> '~'),
+    
+    // Fancy quotes, somewhat common in cut-and-paste:
+    ("ldquo" -> 147),
+    ("rdquo" -> 148),
+    ("bdquo" -> 132),
+    ("lsquo" -> 145),
+    ("rsquo" -> 146),
+    ("sbquo" -> 130),
+      
+    ("trade" -> 153),
+    ("reg" -> 174),
+    ("copy" -> 169)
+  )
+  
   val whitechar = P(CharIn(" \r\n\t"))
   val white = P(whitechar.rep(1))
   val optwhite = P(whitechar.rep)
@@ -58,6 +86,16 @@ object XMLParser {
     XmlName(nsopt, name)
   }
   
+  /**
+   * Parses a single Entity by name (eg, "&quot;"), and returns the character.
+   */
+  val xmlEntityNameP = P(StringIn(xmlEntities.keys.toSeq:_*).!).map(xmlEntities(_))
+  val xmlEntityNumP = P("#" ~ (CharIn('0' to '9')).rep(1).!).map(Integer.parseInt(_)).map(_.toChar)
+  val xmlEntityP = P("&" ~! (xmlEntityNameP | xmlEntityNumP) ~ ";")
+  val char:Parser[Char] = P(AnyChar.!).map(_.head)
+  val xmlTextChar:Parser[Char] = P((xmlEntityP | char))
+  val xmlTextP = P((!"<" ~ xmlTextChar).rep(1)).map(chars => XmlText(chars.mkString))
+  
   val xmlAttrP = P(xmlNameP ~ "=" ~ "\"" ~ (!"\"" ~ AnyChar).rep.! ~ "\"").map { strs =>
     val (name, v) = strs
     XmlAttr(name, v)
@@ -67,7 +105,6 @@ object XMLParser {
     XmlElement(name, attrs, Seq.empty)
   }
   val emptyXmlP = P(xmlHeadP ~ "/>")
-  val xmlTextP = P((!"<" ~ AnyChar).rep(1).!).map(XmlText(_))
   // NOTE: this clumsily throws an exception if there is a name mismatch, mainly because I'm concerned
   // about the performance implications of flatMap. This needs more examination:
   val xmlWithChildrenP = P(xmlHeadP ~ ">" ~! (xmlTextP | xmlElementP).rep ~ "</" ~ xmlNameP ~ ">").map { elems =>

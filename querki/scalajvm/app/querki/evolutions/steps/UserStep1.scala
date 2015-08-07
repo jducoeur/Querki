@@ -22,7 +22,7 @@ class UserStep1(implicit val ecology:Ecology) extends UserStep {
           isDeleted boolean NOT NULL,
           PRIMARY KEY (id),
           INDEX current_notes_idx (sentTime, isDeleted)
-        )
+        ) DEFAULT CHARSET=utf8
         """).execute()
   }
 }

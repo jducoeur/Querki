@@ -25,7 +25,7 @@ class UserAccessStub(e:Ecology) extends QuerkiEcot(e) with UserAccess with UserT
   // Stubs for functions we aren't using yet:
   def addSpaceMembership(identityId:OID, spaceId:OID, membershipState:MembershipState = MembershipState.member):Boolean = ???
   def changePassword(requester:User, identity:Identity, newPassword:String):Try[User] = ???
-  def changeDisplayName(requester:User, identity:Identity, newDisplay:String):Try[User] = ???
+  def changeDisplayName(requester:User, identity:Identity, newDisplay:String):Future[User] = ???
   def changeUserLevel(userId:OID, requester:User, level:UserLevel.UserLevel):Future[Option[User]] = ???
   def checkQuerkiLogin(login:String, passwordEntered:String):Option[User] = ???
   def createProvisional(info:SignupInfo):Try[User] = ???

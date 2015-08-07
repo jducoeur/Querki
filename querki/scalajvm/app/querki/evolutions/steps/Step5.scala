@@ -18,7 +18,7 @@ class Step5(implicit val ecology:Ecology) extends Step {
         |  propValue MEDIUMTEXT NOT NULL,
         |  modTime datetime NOT NULL,
         |  PRIMARY KEY (identityId, thingId, propertyId)
-        |);
+        |) DEFAULT CHARSET=utf8;
         |""".stripMargin).execute
   }
 }

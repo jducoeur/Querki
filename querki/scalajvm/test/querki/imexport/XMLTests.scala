@@ -26,6 +26,12 @@ class XMLTests extends QuerkiTests {
     result
   }
   
+  def checkResult[T](parser:Parser[T], str:String, result:T) = {
+    // Very ugly, but works around an annoying spurious warning caused by SI-4440:
+    val actual = checkParse(parser, str).asInstanceOf[Result.Success[T]].value 
+    actual should equal(result)
+  }
+  
   "XML Parser" should {
     "handle a plain name" in {
       checkParse(XMLParser.xmlNameP, "attrName")
@@ -57,6 +63,17 @@ class XMLTests extends QuerkiTests {
     
     "handle a single node with prelude" in {
       checkParse(XMLParser.xmlP, """<?xml version="1.0" encoding="UTF-8"?><querki xmlns:ss="https://www.querki.net/" xmlns:s1="https://www.querki.net/u/.3y283z1/test-space"></querki>""")
+    }
+    
+    "parse an entity" in {
+      checkResult(XMLParser.xmlEntityP, "&quot;", '\"')
+      checkResult(XMLParser.xmlTextChar, "&quot;", '\"')
+    }
+    
+    "handle various common entities in text" in {
+      checkResult(XMLParser.xmlTextP, 
+          """This is some &quot;text&quot;, where anything &lt; Success is going to be &gt; Failure.""",
+          XMLParser.XmlText("""This is some "text", where anything < Success is going to be > Failure."""))
     }
   }
 

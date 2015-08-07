@@ -20,7 +20,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     jdbc,
     anorm,
     // Add your project dependencies here,
-    "mysql" % "mysql-connector-java" % "5.1.23",
+    "mysql" % "mysql-connector-java" % "5.1.36",
     "javax.mail" % "javax.mail-api" % "1.5.0",
     "com.sun.mail" % "smtp" % "1.5.0",
     "com.sun.mail" % "mailapi" % "1.5.0",

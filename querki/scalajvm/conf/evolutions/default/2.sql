@@ -14,7 +14,7 @@ CREATE TABLE Identity (
     handle varchar(255) DEFAULT NULL,
     email varchar(255) DEFAULT NULL,
     PRIMARY KEY (id)
-);
+) DEFAULT CHARSET=utf8;
 
 
 # --- !Downs

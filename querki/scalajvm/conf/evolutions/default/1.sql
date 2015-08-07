@@ -10,7 +10,7 @@ CREATE TABLE User (
     id bigint NOT NULL,
     name varchar(255) NOT NULL,
     PRIMARY KEY (id)
-);
+) DEFAULT CHARSET=utf8;
 
 INSERT INTO User (id, name) VALUES (9, 'system');
 INSERT INTO User (id, name) VALUES (11, 'mark');
@@ -18,7 +18,7 @@ INSERT INTO User (id, name) VALUES (31, 'jducoeur');
 
 CREATE TABLE OIDNexter (
     nextId int NOT NULL
-);
+) DEFAULT CHARSET=utf8;
 
 INSERT INTO OIDNexter (nextId) VALUES (0);
 
@@ -30,7 +30,7 @@ CREATE TABLE Spaces (
     owner bigint NOT NULL,
     size int NOT NULL,
     PRIMARY KEY (id)
-);
+) DEFAULT CHARSET=utf8;
  
 # --- !Downs
  

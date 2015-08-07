@@ -29,4 +29,4 @@ CREATE TABLE SpaceMembership (
   lastAccess datetime DEFAULT NULL,
   nickname VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (identityId, spaceId)
-);
+) DEFAULT CHARSET=utf8;
