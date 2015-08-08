@@ -15,7 +15,7 @@ import querki.globals._
 import querki.identity.User
 import querki.spaces.{Space}
 import querki.spaces.messages._
-import querki.types.ModelTypeBase
+import querki.types._
 import querki.values.{ElemValue, RequestContext, QValue}
 
 /**
@@ -60,13 +60,13 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
       // try/catch.
       spaceActor = context.actorOf(Space.actorProps(ecology, SpacePersistenceFactory, self, spaceId))
       // Create all of the Models and Instances, so we have all their OIDs in the map.
-      mapWithThings <- createThings(user, spaceActor, spaceId, sortThings(imp), Map.empty)
+      pWithThings <- createThings(FoldParams(user, spaceActor, spaceId, Map.empty, None), sortThings(imp))
       dummya = QLog.spew("About to create Model Types")
-      mapWithTypes <- createModelTypes(user, spaceActor, spaceId, imp.types.values.toSeq, mapWithThings)
+      pWithTypes <- createModelTypes(pWithThings, imp.types.values.toSeq)
       dummyb = QLog.spew("Done creating Model Types")
-      mapWithProps <- createProperties(user, spaceActor, spaceId, imp.spaceProps.values.toSeq, mapWithTypes)
-      dummy1 <- setPropValues(user, spaceActor, spaceId, imp.things.values.toSeq, mapWithProps)
-      dummy2 <- setSpaceProps(user, spaceActor, spaceId, mapWithProps)
+      pWithProps <- createProperties(pWithTypes, imp.spaceProps.values.toSeq)
+      pWithValues <- setPropValues(pWithProps, imp.things.values.toSeq)
+      dummy2 <- setSpaceProps(pWithValues)
       // Finally, once it's all built, shut down this temp Actor and let the real systems take over:
       dummy3 = context.stop(spaceActor)
     }
@@ -138,41 +138,55 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
       } 
     }
   }
+  
+  case class FoldParams(user:User, actor:ActorRef, spaceId:OID, idMap:IDMap, realSpaceOpt:Option[SpaceState]) {
+    def +(mapping:(OID, OID)) = copy(idMap = idMap + mapping)
+    def +(space:SpaceState) = copy(realSpaceOpt = Some(space))
+    def +(found:ThingFound):FoldParams = {
+      val ThingFound(intId, state) = found
+      this + state
+    }
+    def +(extId:ExtId, found:ThingFound):FoldParams = {
+      val ThingFound(intId, state) = found
+      this + state + (extId -> intId)
+    }
+    def space = realSpaceOpt.get
+  }
 
   /**
    * Step 1: create all of the Models and Instances, empty, so that we have their real OIDs.
    */
-  private def createThings(user:User, actor:ActorRef, spaceId:OID, things:Seq[Thing], idMap:IDMap)(implicit imp:SpaceState):RequestM[IDMap] = {
+  private def createThings(p:FoldParams, things:Seq[Thing])(implicit imp:SpaceState):RequestM[FoldParams] = {
     things.headOption match {
       case Some(thing) => {
-        actor.request(CreateThing(user, spaceId, Kind.Thing, model(thing, idMap), Thing.emptyProps)) flatMap {
-          case ThingFound(intId, state) => {
+        p.actor.request(CreateThing(p.user, p.spaceId, Kind.Thing, model(thing, p.idMap), Thing.emptyProps)) flatMap {
+          case found @ ThingFound(intId, state) => {
             QLog.spew(s"Mapped Thing ${thing.id} -> $intId")
-            createThings(user, actor, spaceId, things.tail, idMap + (thing.id -> intId))
+            createThings(p + (thing.id, found), things.tail)
           }
           case ThingError(ex, _) => {
             RequestM.failed(ex)
           }
         }
       }
-      case None => RequestM.successful(idMap)
+      case None => RequestM.successful(p)
     }    
   }
   
   /**
    * Step 2: create all of the Model Types.
    */
-  private def createModelTypes(user:User, actor:ActorRef, spaceId:OID, modelTypes:Seq[PType[_]], idMap:IDMap)(implicit imp:SpaceState):RequestM[IDMap] = {
+  private def createModelTypes(p:FoldParams, modelTypes:Seq[PType[_]])(implicit imp:SpaceState):RequestM[FoldParams] = {
     modelTypes.headOption match {
       case Some(pt) => {
         pt match {
           case mt:ModelTypeBase => {
             // Translate the link to the underlying Model:
-            val props = mt.props + (Types.ModelForTypeProp(idMap(mt.basedOn)))
-            actor.request(CreateThing(user, spaceId, Kind.Type, Core.UrType, props)) flatMap {
-              case ThingFound(intId, state) => {
+            val props = mt.props + (Types.ModelForTypeProp(p.idMap(mt.basedOn)))
+            p.actor.request(CreateThing(p.user, p.spaceId, Kind.Type, Core.UrType, props)) flatMap {
+              case found @ ThingFound(intId, state) => {
                 QLog.spew(s"Mapped Model Type ${pt.id} -> $intId")
-                createModelTypes(user, actor, spaceId, modelTypes.tail, idMap + (mt.id -> intId))
+                createModelTypes(p + (mt.id, found), modelTypes.tail)
               }
               case ThingError(ex, _) => {
                 RequestM.failed(ex)
@@ -181,12 +195,12 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
           }
           case _ => {
             QLog.error(s"Somehow trying to import a non-Model Type: $pt")
-            createThings(user, actor, spaceId, modelTypes.tail, idMap)
+            createThings(p, modelTypes.tail)
           }
         }
       }
-      case None => RequestM.successful(idMap)
-    }     
+      case None => RequestM.successful(p)
+    }
   }
   
   // These are the Properties whose values can not be set yet, indexed by the ID of their Model Type:
@@ -206,7 +220,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
   /**
    * Step 3: create all of the Properties.
    */
-  private def createProperties(user:User, actor:ActorRef, spaceId:OID, props:Seq[AnyProp], idMap:IDMap)(implicit imp:SpaceState):RequestM[IDMap] = {
+  private def createProperties(p:FoldParams, props:Seq[AnyProp])(implicit imp:SpaceState):RequestM[FoldParams] = {
     props.headOption match {
       case Some(prop) => {
         QLog.spew(s"Creating Property ${prop.displayName}")
@@ -228,18 +242,64 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
         // your Properties; if a Property depends on another local Property, we may have order problems.
         // TODO: cope with this edge case. In that case, we will need to add those in another pass, or something.
         // Regardless of this, we still need to call translateProps, to deal with Link meta-Properties.
-        actor.request(CreateThing(user, spaceId, Kind.Property, querki.core.MOIDs.UrPropOID, translateProps(prop, idMap))) flatMap {
-          case ThingFound(intId, state) => {
+        p.actor.request(CreateThing(p.user, p.spaceId, Kind.Property, querki.core.MOIDs.UrPropOID, translateProps(prop, p))) flatMap {
+          case found @ ThingFound(intId, state) => {
             QLog.spew(s"Mapped Property ${prop.id} -> $intId")
-            createProperties(user, actor, spaceId, props.tail, idMap + (prop.id -> intId))
+            createProperties(p + (prop.id, found), props.tail)
           }
           case ThingError(ex, _) => {
             RequestM.failed(ex)
           }
         }         
       }
-      case None => RequestM.successful(idMap)
+      case None => RequestM.successful(p)
     }
+  }
+  
+  private def translateProp(pair:(OID, QValue), p:FoldParams)(implicit imp:SpaceState):(OID, QValue) = {
+    val (propId, qv) = pair
+    val realQv = imp.prop(propId) match {
+      case Some(prop) => {
+        prop.confirmType(Core.LinkType) match {
+          case Some(linkProp) => {
+            // This Property is made of Links, so we need to map all of them to the new values:
+            val raw = qv.rawList(Core.LinkType)
+            val translatedLinks = raw.map { extId => ElemValue(idMapOr(extId, p.idMap), Core.LinkType) }
+            qv.cType.makePropValue(translatedLinks, Core.LinkType)
+          }
+          case None => {
+            prop.pType match {
+              case mt:ModelTypeBase => {
+                if (deferredProperties.contains(propId)) {
+                  qv
+                } else {
+                  // Okay -- this Property is based on a Model Type value that has been resolved. 
+                  // We need to change the Type of each Element to the correct Type.
+                  // TODO: this can still fail on nested Model Types, because we're not necessarily
+                  // waiting long enough to resolve the inner Types!
+                  val realType = p.realSpaceOpt.get.typ(idMapOr(mt.id, p.idMap)).asInstanceOf[ModelTypeBase]
+                  val translatedModels = for {
+                    elem <- qv.cv
+                    bundle = mt.get(elem)
+                    transProps = bundle.props.map(translateProp(_, p))
+                    simpleBundle = SimplePropertyBundle(transProps)
+                    modelValue = realType(simpleBundle)
+                  }
+                    yield modelValue
+                  val result = qv.cType.makePropValue(translatedModels, realType)
+                  result
+                }
+              }
+              case _ => qv
+            }              
+          }
+        }
+      }
+      case None => qv  // Property not found! TODO: This is weird and buggy! What should we do with it?
+    }
+      
+    // Try translating, but it is very normal for the propId to be from System:
+    (idMapOr(propId, p.idMap), realQv)
   }
   
   /**
@@ -249,7 +309,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
    * TODO: this is not yet sufficient for dealing with Model Types. If it's a Model Type
    * value, we need to dive into it and translate all of the nested values in there.
    */
-  private def translateProps(t:Thing, idMap:IDMap)(implicit imp:SpaceState):Thing.PropMap = {
+  private def translateProps(t:Thing, p:FoldParams)(implicit imp:SpaceState):Thing.PropMap = {
     val translated = t.props filter { pair =>
       val (propId, qv) = pair
       if (deferredProperties.contains(propId)) {
@@ -263,48 +323,73 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
       } else
         true
     } map { pair =>
-      val (propId, qv) = pair
-      val realQv = imp.prop(propId) match {
-        case Some(prop) => {
-          prop.confirmType(Core.LinkType) match {
-            case Some(linkProp) => {
-              // This Property is made of Links, so we need to map all of them to the new values:
-              val raw = qv.rawList(Core.LinkType)
-              val translatedLinks = raw.map { extId => ElemValue(idMapOr(extId, idMap), Core.LinkType) }
-              qv.cType.makePropValue(translatedLinks, Core.LinkType)
-            }
-            case None => qv
-          }
-        }
-        case None => qv  // TODO: This is weird and buggy! What should we do with it?
-      }
-        
-      // Try translating, but it is very normal for the propId to be from System:
-      (idMapOr(propId, idMap), realQv)
+      translateProp(pair, p)
     }
     
     translated
   }
   
   /**
+   * Step 4a: when we resolve a Model that is the basis of a Property, we divert to here to
+   * resolve any deferred Property Values that might have been waiting on it.
+   */
+  private def fixDeferrals(p:FoldParams, deferrals:Seq[DeferredPropertyValue])(implicit imp:SpaceState):RequestM[FoldParams] = {
+    deferrals.headOption match {
+      case Some(deferral) => {
+        QLog.spew(s"Fixing deferral $deferral")
+        val DeferredPropertyValue(propId:ExtId, thingId:ExtId, v:QValue) = deferral
+        p.actor.request(ChangeProps(p.user, p.spaceId, p.idMap(thingId), Map((propId -> v)), true)) flatMap {
+          case found @ ThingFound(intId, state) => {
+            fixDeferrals(p + found, deferrals.tail)
+          }
+          case ThingError(ex, _) => RequestM.failed(ex)
+        }
+      }
+      
+      case None => RequestM.successful(p)
+    }
+  }
+  
+  /**
    * Step 4: Okay, everything is created; now fill in the values.
    */
-  private def setPropValues(user:User, actor:ActorRef, spaceId:OID, things:Seq[Thing], idMap:IDMap)(implicit imp:SpaceState):RequestM[Unit] = {
+  private def setPropValues(p:FoldParams, things:Seq[Thing])(implicit imp:SpaceState):RequestM[FoldParams] = {
     things.headOption match {
       case Some(thing) => {
         QLog.spew(s"Setting Property values on ${thing.displayName}")
-        actor.request(ChangeProps(user, spaceId, idMap(thing.id), translateProps(thing, idMap), true)) flatMap {
-          case ThingFound(intId, state) => {
-            // TODO: if this was the base of a Model Type, we need to recurse into deferredPropertyValues and
-            // set those as well. We also need to clear deferredProperties for this.
-            setPropValues(user, actor, spaceId, things.tail, idMap)
+        p.actor.request(ChangeProps(p.user, p.spaceId, p.idMap(thing.id), translateProps(thing, p), true)) flatMap {
+          case found @ ThingFound(intId, state) => {
+            if (deferredPropertiesByModel.contains(thing.id)) {
+              QLog.spew(s"${thing.displayName} is a Model with deferrals")
+              // This is apparently a Model for a Model Type. So now it's time to go deal with any
+              // Property Values that have been waiting on it, before we move on:
+              val props = deferredPropertiesByModel(thing.id)
+              val propVals = for {
+                propId <- props
+                propVals = deferredPropertyValues.get(propId).getOrElse(Seq.empty)
+                propVal <- propVals
+              }
+                yield propVal
+                
+              deferredPropertiesByModel -= thing.id
+              props.foreach { propId => 
+                deferredProperties -= propId
+                deferredPropertyValues -= propId
+              }
+              fixDeferrals(p, propVals) flatMap { dummy => 
+                setPropValues(p + found, things.tail)
+              }
+            } else {
+              // Ordinary Thing, so continue on...
+              setPropValues(p + found, things.tail)
+            }
           }
           case ThingError(ex, _) => {
             RequestM.failed(ex)
           }
         }
       }
-      case None => RequestM.successful(())
+      case None => RequestM.successful(p)
     }
   }
   
@@ -321,7 +406,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
   /**
    * Step 5: set the properties on the Space itself.
    */
-  private def setSpaceProps(user:User, actor:ActorRef, spaceId:OID, idMap:IDMap)(implicit imp:SpaceState):RequestM[Any] = {
-    actor.request(ChangeProps(user, spaceId, spaceId, filterSpaceProps(translateProps(imp, idMap)), true))
+  private def setSpaceProps(p:FoldParams)(implicit imp:SpaceState):RequestM[Any] = {
+    p.actor.request(ChangeProps(p.user, p.spaceId, p.spaceId, filterSpaceProps(translateProps(imp, p)), true))
   }
 }
