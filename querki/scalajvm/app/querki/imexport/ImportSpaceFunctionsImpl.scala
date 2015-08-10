@@ -16,17 +16,24 @@ import querki.globals._
  */
 class ImportSpaceFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends AutowireApiImpl(info, e) with ImportSpaceFunctions {
   
+  import ImportSpaceFunctions._
+  
   def doRoute(req:Request):Future[String] = route[ImportSpaceFunctions](this)(req)
   
   // This just kicks off the import process, by creating the Actor that will do all the
   // real work:
-  def importFromXML(name:String):Future[String] = {
-    val importActor = requester.context.actorOf(ImportSpaceActor.actorProps(ecology, ImportXML, name))
+  def importFromXML(name:String, size:Int):Future[String] = {
+    val importActor = requester.context.actorOf(ImportSpaceActor.actorProps(ecology, ImportXML, name, size))
     
     // Now, return the fully-qualified path to that Actor:
     val path = importActor.path
     val system = requester.context.system
     val defaultAddress = system.asInstanceOf[ExtendedActorSystem].provider.getDefaultAddress
     Future.successful(path.toStringWithAddress(defaultAddress))
+  }
+  
+  def getImportProgress(path:String):Future[ImportProgress] = {
+    val selection = context.system.actorSelection(path)
+    selection.requestFor[ImportProgress](ImportSpaceActor.GetProgress)
   }
 }

@@ -11,6 +11,8 @@ import scala.concurrent.Future
  * @author jducoeur
  */
 trait ImportSpaceFunctions {
+  import ImportSpaceFunctions._
+  
   /**
    * Begin the process of importing the given XML file.
    * 
@@ -20,5 +22,22 @@ trait ImportSpaceFunctions {
    * 
    * Anyway who can create a Space is allowed to call this.
    */
-  def importFromXML(name:String):Future[String]
+  def importFromXML(name:String, size:Int):Future[String]
+  
+  /**
+   * Fetch the current state of this import.
+   * 
+   * @param uploader The name of the uploader, as returned by importFromXML.
+   */
+  def getImportProgress(uploader:String):Future[ImportProgress]
+}
+
+object ImportSpaceFunctions {
+  /**
+   * How far this import has come.
+   * 
+   * @param msg A user-visible message describing the current operation.
+   * @param progress How far we are, in percent. (Approximate.)
+   */
+  case class ImportProgress(msg:String, progress:Int)
 }

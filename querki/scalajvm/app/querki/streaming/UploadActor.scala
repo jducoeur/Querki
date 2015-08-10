@@ -19,6 +19,8 @@ import querki.values.RequestContext
 trait UploadActor { self:Actor =>
   var chunkBuffer:Vector[Byte] = Vector.empty
   
+  var uploadComplete:Boolean = false
+  
   /**
    * This will be called once the upload is finished. The UploadActor must define this function,
    * which should take the chunkBuffer and do something with it.
@@ -51,6 +53,7 @@ trait UploadActor { self:Actor =>
     }
     
     case UploadComplete(rc) => {
+      uploadComplete = true
       processBuffer(rc)
     }
   }

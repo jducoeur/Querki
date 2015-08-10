@@ -9,6 +9,7 @@ import upickle._
 import org.querki.requester._
 
 import querki.globals._
+import ImportSpaceFunctions._
 import querki.streaming._
 import UploadMessages._
 import querki.values.RequestContext
@@ -21,9 +22,11 @@ import querki.values.RequestContext
  * 
  * @author jducoeur
  */
-class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:String) extends Actor with Requester 
-  with UploadActor with ImporterImpl with EcologyMember 
+class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:String, totalSize:Int) extends Actor with Requester 
+  with UploadActor with ImporterImpl with ImportProgressInternal with EcologyMember 
 {
+  import ImportSpaceActor._
+  
   lazy val ClientApi = interface[querki.api.ClientApi]
   
   def buildSpaceState(rc:RequestContext):SpaceState = {
@@ -45,6 +48,26 @@ class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:Stri
         throw new Exception("Unknown ImportDataType!")
       }
     }    
+  }
+  
+  override def receive = handleChunks orElse {
+    case GetProgress => {
+      // The client is asking for an update, so calculate where we are:
+      if (!uploadComplete) {
+        // We arbitrarily count the uploading as the first 20% of the total process:
+        val percent = ((chunkBuffer.size / totalSize) * 20).toInt
+        sender ! ImportProgress("Uploading...", percent)
+      } else {
+        // We're into processing.
+        val processPercent = 
+          if (thingOps == 0)
+            20
+          else
+            ((thingOps.toFloat / totalThingOps) * 80).toInt + 20
+            
+        sender ! ImportProgress(importMsg, processPercent)
+      }
+    }
   }
   
   def processBuffer(rc:RequestContext) = {
@@ -69,7 +92,9 @@ class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:Stri
 }
 
 object ImportSpaceActor {
-  def actorProps(ecology:Ecology, importType:ImportDataType, name:String) = Props(classOf[ImportSpaceActor], ecology, importType, name)
+  def actorProps(ecology:Ecology, importType:ImportDataType, name:String, size:Int) = Props(classOf[ImportSpaceActor], ecology, importType, name, size)
+  
+  case object GetProgress
 }
 
 sealed trait ImportDataType

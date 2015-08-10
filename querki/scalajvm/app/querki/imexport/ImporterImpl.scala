@@ -18,6 +18,15 @@ import querki.spaces.messages._
 import querki.types._
 import querki.values.{ElemValue, RequestContext, QValue}
 
+private [imexport] trait ImportProgressInternal {
+  var importMsg:String = "Uploading"
+  
+  // How many roundtrips do we expect to make to the DB?
+  var totalThingOps = 0
+  // How many roundtrips have we made so far?
+  var thingOps = 0
+}
+
 /**
  * This object is responsible for taking the XML representation of a Space and importing it into
  * the local Querki instance as a new Space.
@@ -28,7 +37,7 @@ import querki.values.{ElemValue, RequestContext, QValue}
  * 
  * @author jducoeur
  */
-private [imexport] trait ImporterImpl { anActor:Actor with Requester with EcologyMember =>
+private [imexport] trait ImporterImpl { anActor:Actor with Requester with ImportProgressInternal with EcologyMember =>
   
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Core = interface[querki.core.Core]
@@ -49,6 +58,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
     // for simplicity.
     // TODO: someday, once we have a proper websocket connection to the client, this should send
     // updates back up as these steps execute:
+    importMsg = "Creating new Space"
     for {
       // First, we create the new Space:
       info @ SpaceInfo(spaceId, canon, display, ownerHandle) <- SpaceOps.spaceManager.request(CreateSpace(user, name))
@@ -58,11 +68,23 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
       // TODO: how can we intercept all failures, and make sure that this Actor gets shut down if
       // something goes wrong? Keep in mind that the process is wildly async, so we can't just do
       // try/catch.
+      dummyMsg = importMsg = "Creating uploader"
       spaceActor = context.actorOf(Space.actorProps(ecology, SpacePersistenceFactory, self, spaceId))
       // Create all of the Models and Instances, so we have all their OIDs in the map.
-      pWithThings <- createThings(FoldParams(user, spaceActor, spaceId, Map.empty, None), sortThings(imp))
+      dummyMsg2 = {
+        importMsg = "Importing Things into the Space"
+        totalThingOps = (
+          (imp.things.size * 2) +
+          imp.types.size +
+          imp.spaceProps.size
+        )
+      }
+      pWithThings <- createThings(FoldParams(user, spaceActor, spaceId, Map.empty, None, this), sortThings(imp))
+      dummyMsg3 = importMsg = "Importing Types into the Space"
       pWithTypes <- createModelTypes(pWithThings, imp.types.values.toSeq)
+      dummyMsg4 = importMsg = "Importing Properties into the Space"
       pWithProps <- createProperties(pWithTypes, imp.spaceProps.values.toSeq)
+      dummyMsg5 = importMsg = "Importing Values into the Space"
       pWithValues <- setPropValues(pWithProps, imp.things.values.toSeq)
       dummy2 <- setSpaceProps(pWithValues)
       // Finally, once it's all built, shut down this temp Actor and let the real systems take over:
@@ -137,16 +159,21 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
     }
   }
   
-  case class FoldParams(user:User, actor:ActorRef, spaceId:OID, idMap:IDMap, realSpaceOpt:Option[SpaceState]) {
+  case class FoldParams(user:User, actor:ActorRef, spaceId:OID, idMap:IDMap, realSpaceOpt:Option[SpaceState], progress:ImportProgressInternal) {
+    def updateAnd(f: => FoldParams):FoldParams = {
+      progress.thingOps = progress.thingOps + 1
+      f
+    }
+    
     def +(mapping:(OID, OID)) = copy(idMap = idMap + mapping)
     def +(space:SpaceState) = copy(realSpaceOpt = Some(space))
     def +(found:ThingFound):FoldParams = {
       val ThingFound(intId, state) = found
-      this + state
+      updateAnd(this + state)
     }
     def +(extId:ExtId, found:ThingFound):FoldParams = {
       val ThingFound(intId, state) = found
-      this + state + (extId -> intId)
+      updateAnd(this + state + (extId -> intId))
     }
     def space = realSpaceOpt.get
   }

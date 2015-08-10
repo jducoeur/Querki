@@ -2,6 +2,7 @@ package querki.pages
 
 import java.util.regex.Pattern
 
+import scala.scalajs.js.timers._
 import org.scalajs.dom
 import scalatags.JsDom.all._
 import upickle._
@@ -31,6 +32,10 @@ class ImportSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
   val spaceName = GadgetRef[RxInput]
   val buttonSection = GadgetRef.of[dom.html.Div]
   val spinnerSection = GadgetRef.of[dom.html.Div]
+  val progressBar = GadgetRef.of[dom.html.Div]
+  val progressMsg = GadgetRef.of[dom.html.Paragraph]
+  
+  var progressTimer:Option[SetIntervalHandle] = None
   
   val fileInputElem = GadgetRef.of[dom.html.Input].
     whenRendered { inpGadget =>
@@ -38,16 +43,27 @@ class ImportSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
         .add({ (e:JQueryEventObject, data:FileUploadData) =>
           val file = data.files(0)
           if (Pattern.matches("text/xml", file.`type`)) {
-            Client[ImportSpaceFunctions].importFromXML(spaceName.get.text()).call() foreach { path =>
+            Client[ImportSpaceFunctions].importFromXML(spaceName.get.text(), file.size).call() foreach { path =>
               data.url = controllers.ClientController.upload(path).url
               val deferred = data.submit()
               buttonSection.jq.hide()
               spinnerSection.jq.show()
+              progressTimer = Some(setInterval(1000) {
+                Client[ImportSpaceFunctions].getImportProgress(path).call() foreach { progress =>
+                  progressMsg.jq.text(progress.msg)
+                  progressBar.jq.width(s"${progress.progress}%")
+                  progressBar.jq.text(s"${progress.progress}%")
+                }
+              })
               deferred.done { (data:String, textStatus:String, jqXHR:JQueryDeferred) => 
+                clearInterval(progressTimer.get)
+                progressTimer = None
                 val space = read[SpaceInfo](data)
                 CreateSpacePage.navigateToSpace(space)
               }
               deferred.fail { (jqXHR:JQueryXHR, textStatus:String, errorThrown:String) =>
+                clearInterval(progressTimer.get)
+                progressTimer = None
                 // TODO: this needs better error support:
                 println(s"ImportSpacePage got error $errorThrown")
               }
@@ -73,8 +89,12 @@ class ImportSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
             disabled := Rx { spaceName.isEmpty || spaceName.get.text().length() == 0 })
         ),
         spinnerSection <= div(display := "none",
-          i(cls:="fa fa-spinner fa-3x fa-pulse"),
-          p("Building Space from file. Please wait -- this may take a couple of minutes.")
+          div(cls:="progress",
+            progressBar <= div(cls:="progress-bar progress-bar-striped active", role:="progressbar", 
+              aria.valuenow:="0", aria.valuemin:="0", aria.valuemax:="100", style:="width: 0%"
+            )
+          ),
+          progressMsg <= p("Uploading...")
         )
       )
      
