@@ -61,9 +61,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
       spaceActor = context.actorOf(Space.actorProps(ecology, SpacePersistenceFactory, self, spaceId))
       // Create all of the Models and Instances, so we have all their OIDs in the map.
       pWithThings <- createThings(FoldParams(user, spaceActor, spaceId, Map.empty, None), sortThings(imp))
-      dummya = QLog.spew("About to create Model Types")
       pWithTypes <- createModelTypes(pWithThings, imp.types.values.toSeq)
-      dummyb = QLog.spew("Done creating Model Types")
       pWithProps <- createProperties(pWithTypes, imp.spaceProps.values.toSeq)
       pWithValues <- setPropValues(pWithProps, imp.things.values.toSeq)
       dummy2 <- setSpaceProps(pWithValues)
@@ -161,7 +159,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
       case Some(thing) => {
         p.actor.request(CreateThing(p.user, p.spaceId, Kind.Thing, model(thing, p.idMap), Thing.emptyProps)) flatMap {
           case found @ ThingFound(intId, state) => {
-            QLog.spew(s"Mapped Thing ${thing.id} -> $intId")
+            // QLog.spew(s"Mapped Thing ${thing.id} -> $intId")
             createThings(p + (thing.id, found), things.tail)
           }
           case ThingError(ex, _) => {
@@ -185,7 +183,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
             val props = mt.props + (Types.ModelForTypeProp(p.idMap(mt.basedOn)))
             p.actor.request(CreateThing(p.user, p.spaceId, Kind.Type, Core.UrType, props)) flatMap {
               case found @ ThingFound(intId, state) => {
-                QLog.spew(s"Mapped Model Type ${pt.id} -> $intId")
+                // QLog.spew(s"Mapped Model Type ${pt.id} -> $intId")
                 createModelTypes(p + (mt.id, found), modelTypes.tail)
               }
               case ThingError(ex, _) => {
@@ -223,11 +221,11 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
   private def createProperties(p:FoldParams, props:Seq[AnyProp])(implicit imp:SpaceState):RequestM[FoldParams] = {
     props.headOption match {
       case Some(prop) => {
-        QLog.spew(s"Creating Property ${prop.displayName}")
+        // QLog.spew(s"Creating Property ${prop.displayName}")
         // Take note of any Properties that can't be resolved yet:
         prop.pType match {
           case mt:ModelTypeBase if (p.idMap.contains(mt.basedOn)) => {
-            QLog.spew(s"  Deferring property ${prop.displayName} (${prop.id}), which is based on ${mt.basedOn}")
+            // QLog.spew(s"  Deferring property ${prop.displayName} (${prop.id}), which is based on ${mt.basedOn}")
             val propsForThisModel = deferredPropertiesByModel.get(mt.basedOn) match {
               case Some(otherProps) => otherProps :+ prop.id
               case None => Seq(prop.id)
@@ -244,7 +242,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
         // Regardless of this, we still need to call translateProps, to deal with Link meta-Properties.
         p.actor.request(CreateThing(p.user, p.spaceId, Kind.Property, querki.core.MOIDs.UrPropOID, translateProps(prop, p))) flatMap {
           case found @ ThingFound(intId, state) => {
-            QLog.spew(s"Mapped Property ${prop.id} -> $intId")
+            // QLog.spew(s"Mapped Property ${prop.id} -> $intId")
             createProperties(p + (prop.id, found), props.tail)
           }
           case ThingError(ex, _) => {
@@ -318,7 +316,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
           case None => Seq(DeferredPropertyValue(propId, t.id, qv))
         }
         deferredPropertyValues += (propId -> deferredVals)
-        QLog.spew(s"Deferring property $propId with value $qv")
+        // QLog.spew(s"Deferring property $propId with value $qv")
         false
       } else
         true
@@ -336,7 +334,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
   private def fixDeferrals(p:FoldParams, deferrals:Seq[DeferredPropertyValue])(implicit imp:SpaceState):RequestM[FoldParams] = {
     deferrals.headOption match {
       case Some(deferral) => {
-        QLog.spew(s"Fixing deferral $deferral")
+        // QLog.spew(s"Fixing deferral $deferral")
         val DeferredPropertyValue(propId:ExtId, thingId:ExtId, v:QValue) = deferral
         p.actor.request(ChangeProps(p.user, p.spaceId, p.idMap(thingId), Map((propId -> v)), true)) flatMap {
           case found @ ThingFound(intId, state) => {
@@ -356,11 +354,11 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
   private def setPropValues(p:FoldParams, things:Seq[Thing])(implicit imp:SpaceState):RequestM[FoldParams] = {
     things.headOption match {
       case Some(thing) => {
-        QLog.spew(s"Setting Property values on ${thing.displayName}")
+        // QLog.spew(s"Setting Property values on ${thing.displayName}")
         p.actor.request(ChangeProps(p.user, p.spaceId, p.idMap(thing.id), translateProps(thing, p), true)) flatMap {
           case found @ ThingFound(intId, state) => {
             if (deferredPropertiesByModel.contains(thing.id)) {
-              QLog.spew(s"${thing.displayName} is a Model with deferrals")
+              // QLog.spew(s"${thing.displayName} is a Model with deferrals")
               // This is apparently a Model for a Model Type. So now it's time to go deal with any
               // Property Values that have been waiting on it, before we move on:
               val props = deferredPropertiesByModel(thing.id)

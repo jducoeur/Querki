@@ -25,6 +25,13 @@ trait ManagedFrag[Output <: dom.Node] extends scalatags.jsdom.Frag {
   def elem = elemOpt.get
   
   /**
+   * Fetch a JQuery for the underlying Element of this Ref.
+   * 
+   * IMPORTANT: this will throw an Exception if the Ref isn't assigned, or the Gadget isn't rendered yet!
+   */
+  def jq = $(elem)
+  
+  /**
    * Slam the element for this Gadget. You should only call this iff the element was actually called from
    * an external mechanism (eg, via QText), and you're building this Gadget around that element.
    * 

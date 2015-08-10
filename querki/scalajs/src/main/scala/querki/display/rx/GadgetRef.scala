@@ -43,6 +43,9 @@ import querki.display.{Gadget, ManagedFrag, TypedGadget}
  * You don't usually create this by hand -- use the methods in the companion object to make
  * GadgetRef and GadgetElementRef.
  * 
+ * TODO: is there any way to make this sensitive to the actual element type of the Gadget, without
+ * forcing us to add another type parameter everywhere?
+ * 
  * @author jducoeur
  */
 class GadgetRef[G <: Gadget[_]] extends Gadget[Element] {

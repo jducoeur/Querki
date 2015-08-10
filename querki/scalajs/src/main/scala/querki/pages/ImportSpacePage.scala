@@ -29,6 +29,8 @@ class ImportSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
   lazy val StatusLine = interface[querki.display.StatusLine]
   
   val spaceName = GadgetRef[RxInput]
+  val buttonSection = GadgetRef.of[dom.html.Div]
+  val spinnerSection = GadgetRef.of[dom.html.Div]
   
   val fileInputElem = GadgetRef.of[dom.html.Input].
     whenRendered { inpGadget =>
@@ -39,6 +41,8 @@ class ImportSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
             Client[ImportSpaceFunctions].importFromXML(spaceName.get.text()).call() foreach { path =>
               data.url = controllers.ClientController.upload(path).url
               val deferred = data.submit()
+              buttonSection.jq.hide()
+              spinnerSection.jq.show()
               deferred.done { (data:String, textStatus:String, jqXHR:JQueryDeferred) => 
                 val space = read[SpaceInfo](data)
                 CreateSpacePage.navigateToSpace(space)
@@ -62,10 +66,16 @@ class ImportSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
       div(
         h1("Import a Space from a File"),
         p(spaceName <= new RxInput(Some(InputUtils.spaceNameFilter _), "text", cls:="form-control", placeholder:="Name of the new Space")),
-        p("To import an XML file that was exported from Querki, click here:"),
-        // TODO: make this into a pretty custom button:
-        fileInputElem <= input(/*cls:="_photoInputElem", */tpe:="file", accept:="text/xml",
-          disabled := Rx { spaceName.isEmpty || spaceName.get.text().length() == 0 })
+        buttonSection <= div(
+          p("To import an XML file that was exported from Querki, click here:"),
+          // TODO: make this into a pretty custom button:
+          fileInputElem <= input(/*cls:="_photoInputElem", */tpe:="file", accept:="text/xml",
+            disabled := Rx { spaceName.isEmpty || spaceName.get.text().length() == 0 })
+        ),
+        spinnerSection <= div(display := "none",
+          i(cls:="fa fa-spinner fa-3x fa-pulse"),
+          p("Building Space from file. Please wait -- this may take a couple of minutes.")
+        )
       )
      
     Future.successful(PageContents("Import a Space", guts))
