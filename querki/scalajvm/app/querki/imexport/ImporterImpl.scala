@@ -226,7 +226,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Ecolog
         QLog.spew(s"Creating Property ${prop.displayName}")
         // Take note of any Properties that can't be resolved yet:
         prop.pType match {
-          case mt:ModelTypeBase => {
+          case mt:ModelTypeBase if (p.idMap.contains(mt.basedOn)) => {
             QLog.spew(s"  Deferring property ${prop.displayName} (${prop.id}), which is based on ${mt.basedOn}")
             val propsForThisModel = deferredPropertiesByModel.get(mt.basedOn) match {
               case Some(otherProps) => otherProps :+ prop.id
