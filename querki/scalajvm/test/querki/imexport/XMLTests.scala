@@ -13,18 +13,8 @@ import querki.values.QValue
 /**
  * @author jducoeur
  */
-class XMLTests extends QuerkiTests {
+class XMLTests extends QuerkiTests with ParserTests {
   lazy val Imexport = interface[querki.imexport.Imexport]
-  
-  def checkParse[T](parser:Parser[T], str:String) = {
-    val result = parser.parse(str)
-    // Why not a match here? Because Scala produces a spurious warning about not being
-    // able to deal with the outer type at runtime. Don't know why -- the code works as
-    // intended -- but the warning is evil. So we'll fall back to a crude asInstanceOf
-    // instead:
-    if (result.isInstanceOf[Result.Failure]) fail(result.toString())
-    result
-  }
   
   def checkResult[T](parser:Parser[T], str:String, result:T) = {
     // Very ugly, but works around an annoying spurious warning caused by SI-4440:
