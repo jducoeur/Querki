@@ -1,7 +1,7 @@
 package querki.imexport
 
 import fastparse.all._
-import Result._
+import fastparse.core.Result._
 
 import querki.globals._
 import querki.time._
@@ -142,8 +142,8 @@ object MySQLParse {
   
   def apply(mySQL:String):Seq[Stmt] = {
     dumpfileP.parse(mySQL) match {
-      case Result.Success(stmts, _) => stmts
-      case Result.Failure(parser, index) => {
+      case Success(stmts, _) => stmts
+      case Failure(parser, index) => {
         val start = 
           if (index < 10)
             index

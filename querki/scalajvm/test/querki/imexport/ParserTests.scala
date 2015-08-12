@@ -1,7 +1,10 @@
 package querki.imexport
 
 import fastparse.all._
-import Result._
+// Note that we have to import Result directly from its package, not through all,
+// due to this Issue:
+//   https://github.com/lihaoyi/fastparse/issues/34
+import fastparse.core.Result._
 
 /**
  * @author jducoeur
@@ -11,10 +14,6 @@ trait ParserTests { myself:querki.test.QuerkiTests =>
   def checkParse[T](parser:Parser[T], str:String) = {
     val fullParser = P(parser ~ End)
     val result = fullParser.parse(str)
-    // Why not a match here? Because Scala produces a spurious warning about not being
-    // able to deal with the outer type at runtime. Don't know why -- the code works as
-    // intended -- but the warning is evil. So we'll fall back to a crude asInstanceOf
-    // instead:
     result match {
       case Success(stmts, _) => result
       case Failure(parser, index) => {
