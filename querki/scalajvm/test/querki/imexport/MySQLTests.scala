@@ -93,9 +93,9 @@ VALUES
     }
     
     "read in a full dumpfile" in {
-//      val statements = MySQLParse(sql)
-//      
-//      println(s"I found ${statements.size} statements")
+      val statements = MySQLParse(sql)
+      
+      println(s"I found ${statements.size} statements")
     }
   }
   

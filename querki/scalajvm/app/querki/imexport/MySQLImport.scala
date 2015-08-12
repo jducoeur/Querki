@@ -122,7 +122,7 @@ object MySQLParse {
   val dropStatementP = P("DROP TABLE IF EXISTS `" ~ identP ~ "`").map { ident => StmtDrop(TableName(ident)) }
   
   val columnsClauseP = P("(" ~ quotedIdentP.rep(1, sep=", ") ~ ")") map { _.map(ColumnName(_)) }
-  val quotedValueP = P("`" ~ AnyChar.rep.! ~ "`")
+  val quotedValueP = P("'" ~ ("\\'" | (!"'" ~ AnyChar)).rep.! ~ "'")
   val oneValueP = P(quotedValueP | (!("," | ")") ~ AnyChar).rep.!)
   val rowValuesP = P("(" ~ oneValueP.!.rep(sep="," ~! Pass) ~! ")").map(RawRow(_))
   val insertStatementP = P("INSERT INTO " ~ quotedIdentP ~ wP ~ columnsClauseP ~ wP ~ 
