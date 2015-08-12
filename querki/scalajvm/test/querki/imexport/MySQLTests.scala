@@ -9,6 +9,8 @@ import querki.test._
  * @author jducoeur
  */
 class MySQLTests extends QuerkiTests with ParserTests {
+  import MySQLParse._
+  import MySQLImport._
   
   "MySQLParse" should {
     "parse end of line" in {
@@ -30,12 +32,46 @@ class MySQLTests extends QuerkiTests with ParserTests {
       checkParse(MySQLParse.hashCommentP, """# ************************************************************
 """)
       checkParse(MySQLParse.hashCommentP, "# ************************************************************\r\n")
+      checkParse(MySQLParse.commentsP, """
+# ************************************************************
+# Sequel Pro SQL dump
+# Version 4096
+#
+""")
+    }
+    
+    "parse a quoted identifier" in {
+      checkParse(MySQLParse.quotedIdentP, "`id`")
+    }
+    
+    "parse a create statement" in {
+      checkParse(MySQLParse.createStatementP, """CREATE TABLE `case` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT
+)
+""")
+      checkParse(MySQLParse.statementP, """CREATE TABLE `case` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT
+);
+""")
     }
     
     "read in a bit of dumpfile" in {
       val statements = MySQLParse("""
 # ************************************************************
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+
+DROP TABLE IF EXISTS `case`;
+
+CREATE TABLE `case` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT
+);
 """)
+      assert(statements.size == 2)
+      statements.head match {
+        case StmtDrop(TableName(table)) => assert(table == "case")
+        case _ => fail("Didn't get the expected drop statement!")
+      }
     }
     
     "read in a full dumpfile" in {
@@ -47,9 +83,7 @@ class MySQLTests extends QuerkiTests with ParserTests {
   
   "MySQLImport" should {
     "successfully read in a complex DB" in {
-//      import MySQLParse._
-//      import MySQLImport._
-//      
+
 //      val statements = MySQLParse(sql)
 //    
 //      val importer = new MySQLImport(getRc(commonSpace))(ecology)

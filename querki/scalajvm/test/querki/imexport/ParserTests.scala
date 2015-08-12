@@ -15,8 +15,17 @@ trait ParserTests { myself:querki.test.QuerkiTests =>
     // able to deal with the outer type at runtime. Don't know why -- the code works as
     // intended -- but the warning is evil. So we'll fall back to a crude asInstanceOf
     // instead:
-    if (result.isInstanceOf[Result.Failure]) fail(s"Trying to parse '$str'\nGot: ${result.toString()}")
-    result
+    result match {
+      case Success(stmts, _) => result
+      case Failure(parser, index) => {
+        val start = 
+          if (index < 10)
+            index
+          else
+            index - 10
+        throw new Exception(s"Attempt to parse MySQL failed in $parser at $index:\n...${str.slice(start, index)}[${str.slice(index, index + 20)}]...")
+      }
+    }
   }
   
 }

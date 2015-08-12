@@ -1,6 +1,7 @@
 package querki.imexport
 
 import fastparse.all._
+import Result._
 
 import querki.globals._
 import querki.time._
@@ -58,7 +59,7 @@ object MySQLParse {
   // The various sorts of comments you can find in the dump. None of these product anything.
   // Note that, for the time being at least, we ignore the MySQL pragmas inside delim comments.
   val blankCommentP = P(CharsWhile(c => c != '\n' && c != 'r' && c.isWhitespace, 0) ~ nlP)
-  val hashCommentP = P("# " ~! (!nlP ~ AnyChar).rep ~ nlP)
+  val hashCommentP = P("#" ~! (!nlP ~ AnyChar).rep ~ nlP)
   val dashCommentP = P("-- " ~! (!nlP ~ AnyChar).rep ~ nlP)
   val delimCommentP = P("/*" ~! (!"*/" ~ AnyChar).rep ~ "*/" ~ ";".?)
   val commentP = P(blankCommentP | hashCommentP | dashCommentP | delimCommentP)
@@ -111,8 +112,8 @@ object MySQLParse {
       val (name, tpe, opts) = info
       ColumnInfo(ColumnName(name), tpe, opts)
     }
-  val createStatementP = P(quotedIdentP ~ wP ~ "(" ~ wP ~ columnDefP.rep(sep = "," ~  wP) 
-      ~ xrefP.rep(sep="," ~ wP) ~ wP ~ ")" ~ wP ~ tableOptsP) map
+  val createStatementP = P("CREATE TABLE " ~ quotedIdentP ~! wP ~ "(" ~! wP ~ columnDefP.rep(sep = "," ~! wP) 
+      ~ xrefP.rep(sep="," ~! wP) ~ wP ~ ")" ~ wOptP ~ tableOptsP) map
       { info =>
         val (name, cols, xrefs) = info
         StmtCreate(TableName(name), cols, xrefs)
@@ -135,14 +136,21 @@ object MySQLParse {
   val unlockStatementP = P("UNLOCK TABLES").map { dummy => StmtUnlock }
   
   val statementContentP:Parser[Stmt] = P(createStatementP | dropStatementP | insertStatementP | lockStatementP | unlockStatementP)
-  val statementP = P(statementContentP ~ ";")
+  val statementP = P(statementContentP ~ ";" ~! nlP.?)
   
   val dumpfileP = P(Start ~ commentsP ~! statementP.rep(sep=commentsP) ~ commentsP ~ End)
   
   def apply(mySQL:String):Seq[Stmt] = {
     dumpfileP.parse(mySQL) match {
       case Result.Success(stmts, _) => stmts
-      case Result.Failure(parser, index) => throw new Exception(s"Attempt to parse MySQL failed in $parser at $index")
+      case Result.Failure(parser, index) => {
+        val start = 
+          if (index < 10)
+            index
+          else
+            index - 10
+        throw new Exception(s"Attempt to parse MySQL failed in $parser at $index:\n...${mySQL.slice(start, index)}[${mySQL.slice(index, index + 20)}]...")
+      }
     }
   }
 }
