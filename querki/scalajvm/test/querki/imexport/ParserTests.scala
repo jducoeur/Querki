@@ -18,11 +18,11 @@ trait ParserTests { myself:querki.test.QuerkiTests =>
       case Success(stmts, _) => result
       case Failure(parser, index) => {
         val start = 
-          if (index < 10)
+          if (index < 20)
             index
           else
-            index - 10
-        throw new Exception(s"Attempt to parse MySQL failed in $parser at $index:\n...${str.slice(start, index)}[${str.slice(index, index + 20)}]...")
+            index - 20
+        fail(s"Attempt to parse MySQL failed in $parser at $index:\n...${str.slice(start, index)}[${str.slice(index, index + 20)}]...")
       }
     }
   }

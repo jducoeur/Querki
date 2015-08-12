@@ -55,7 +55,19 @@ class MySQLTests extends QuerkiTests with ParserTests {
 """)
     }
     
+    "parse an insert row" in {
+      checkParse(MySQLParse.rowValuesP, "(1,'Howard',207090,NULL,'N',15,5,4,NULL,0,0,1,132.5,230804720090,'2012-06-13','2012-07-13 10:28:37',NULL)")
+    }
+    
+    "parse an insert statement" in {
+      checkParse(MySQLParse.insertStatementP, """INSERT INTO `movement` (`id`, `brand`, `serial_no`, `size_mm`, `size`, `jewel_count`, `wind_type_id`, `set_type_id`, `escapement_type`, `dial_photo`, `mvmt_photo`, `source_id`, `price`, `lot_number`, `date_purchased`, `last_updated`, `notes`)
+VALUES
+  (1,'Howard',207090,NULL,'N',15,5,4,NULL,0,0,1,132.5,230804720090,'2012-06-13','2012-07-13 10:28:37',NULL),
+  (5,'US Watch Company',704765,NULL,'16',7,5,4,NULL,1,1,2,30.5,221046820677,'2012-06-19','2012-07-22 15:15:18',NULL)""")
+    }
+    
     "read in a bit of dumpfile" in {
+      // This is not intended to be a valid dumpfile -- it just exercises a bunch of syntax:
       val statements = MySQLParse("""
 # ************************************************************
 
@@ -67,8 +79,13 @@ CREATE TABLE `case` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`)
 );
+
+INSERT INTO `movement` (`id`, `brand`, `serial_no`, `size_mm`, `size`, `jewel_count`, `wind_type_id`, `set_type_id`, `escapement_type`, `dial_photo`, `mvmt_photo`, `source_id`, `price`, `lot_number`, `date_purchased`, `last_updated`, `notes`)
+VALUES
+  (1,'Howard',207090,NULL,'N',15,5,4,NULL,0,0,1,132.5,230804720090,'2012-06-13','2012-07-13 10:28:37',NULL),
+  (5,'US Watch Company',704765,NULL,'16',7,5,4,NULL,1,1,2,30.5,221046820677,'2012-06-19','2012-07-22 15:15:18',NULL);
 """)
-      assert(statements.size == 2)
+      assert(statements.size == 3)
       statements.head match {
         case StmtDrop(TableName(table)) => assert(table == "case")
         case _ => fail("Didn't get the expected drop statement!")
@@ -76,9 +93,9 @@ CREATE TABLE `case` (
     }
     
     "read in a full dumpfile" in {
-      val statements = MySQLParse(sql)
-      
-      println(s"I found ${statements.size} statements")
+//      val statements = MySQLParse(sql)
+//      
+//      println(s"I found ${statements.size} statements")
     }
   }
   

@@ -123,8 +123,8 @@ object MySQLParse {
   
   val columnsClauseP = P("(" ~ quotedIdentP.rep(1, sep=", ") ~ ")") map { _.map(ColumnName(_)) }
   val quotedValueP = P("`" ~ AnyChar.rep.! ~ "`")
-  val oneValueP = P(quotedValueP | (!"," ~ AnyChar).rep.!)
-  val rowValuesP = P("(" ~ oneValueP.!.rep(sep=",") ~ ")").map(RawRow(_))
+  val oneValueP = P(quotedValueP | (!("," | ")") ~ AnyChar).rep.!)
+  val rowValuesP = P("(" ~ oneValueP.!.rep(sep="," ~! Pass) ~! ")").map(RawRow(_))
   val insertStatementP = P("INSERT INTO " ~ quotedIdentP ~ wP ~ columnsClauseP ~ wP ~ 
       "VALUES" ~ wP ~ rowValuesP.rep(sep="," ~ wP)) map { content =>
         val (tblName, colNames, rows) = content
