@@ -88,14 +88,14 @@ object MySQLParse {
   val setNullP = P("SET NULL") map { dummy => SQLSetNull }
   val cascadeP = P("CASCADE") map { dummy => SQLCascade }
   val updateOptP:Parser[SQLUpdateOpt] = P(curTimestampP | setNullP | cascadeP)
-  val onUpdateP = P("ON UPDATE" ~ wP ~ updateOptP)
-  val onDeleteP = P("ON DELETE" ~ wP ~ updateOptP)
+  val onUpdateP = P("ON UPDATE" ~! wP ~ updateOptP)
+  val onDeleteP = P("ON DELETE" ~! wP ~ updateOptP)
   val columnOptP:Parser[SQLColumnOpt] = P(autoIncrementP | nullP | notNullP | defaultP | updateOptP)
   
   val primaryP = P("PRIMARY KEY (" ~ quotedIdentP ~ ")") map { ident => SQLPrimaryKey(ColumnName(ident)) }
   val keyP = P("KEY " ~ quotedIdentP ~ " (" ~ quotedIdentP ~ ")") map { idents => SQLKey }
   val constraintP = P("CONSTRAINT " ~ quotedIdentP ~ " FOREIGN KEY (" ~ quotedIdentP ~ 
-      ") REFERENCES " ~ quotedIdentP ~ " (" ~ quotedIdentP ~ ")" ~ onDeleteP.? ~ onUpdateP.?) map
+      ") REFERENCES " ~ quotedIdentP ~ " (" ~ quotedIdentP ~ ")" ~ wOptP ~ onDeleteP.? ~ wOptP ~ onUpdateP.?) map
       { constr =>
         val (dummy, localColumn, foreignTable, foreignColumn, onDelete, onUpdate) = constr
         SQLConstraint(ColumnName(localColumn), TableName(foreignTable), ColumnName(foreignColumn), onDelete, onUpdate)
