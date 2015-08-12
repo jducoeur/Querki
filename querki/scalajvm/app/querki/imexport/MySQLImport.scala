@@ -107,7 +107,7 @@ object MySQLParse {
   val charsetP = P("DEFAULT CHARSET=" ~ ("utf8" | "latin1"))
   val tableOptsP = P((engineP | charsetP).rep(sep=wP))
   
-  val columnDefP = P(quotedIdentP ~ wP ~ typeDefP ~ wP ~ columnOptP.rep(sep = wP)) map
+  val columnDefP = P(quotedIdentP ~ wP ~! typeDefP ~ wOptP ~ columnOptP.rep(sep = wP)) map
     { info =>
       val (name, tpe, opts) = info
       ColumnInfo(ColumnName(name), tpe, opts)
