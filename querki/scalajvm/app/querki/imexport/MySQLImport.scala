@@ -112,11 +112,11 @@ object MySQLParse {
       val (name, tpe, opts) = info
       ColumnInfo(ColumnName(name), tpe, opts)
     }
-  val createStatementP = P("CREATE TABLE " ~ quotedIdentP ~! wP ~ "(" ~! wP ~ columnDefP.rep(sep = "," ~! wP) 
-      ~ xrefP.rep(sep="," ~! wP) ~ wP ~ ")" ~ wOptP ~ tableOptsP) map
+  val createStatementP = P("CREATE TABLE " ~ quotedIdentP ~! wP ~ "(" ~! wP ~ columnDefP.rep(sep = "," ~ wP) 
+      ~ ("," ~ wP ~ xrefP.rep(sep="," ~! wP)).? ~ wP ~ ")" ~ wOptP ~ tableOptsP) map
       { info =>
         val (name, cols, xrefs) = info
-        StmtCreate(TableName(name), cols, xrefs)
+        StmtCreate(TableName(name), cols, xrefs.getOrElse(Seq.empty))
       }
   
   val dropStatementP = P("DROP TABLE IF EXISTS `" ~ identP ~ "`").map { ident => StmtDrop(TableName(ident)) }

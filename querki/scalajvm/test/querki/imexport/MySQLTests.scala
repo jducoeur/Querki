@@ -64,7 +64,8 @@ class MySQLTests extends QuerkiTests with ParserTests {
 DROP TABLE IF EXISTS `case`;
 
 CREATE TABLE `case` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`id`)
 );
 """)
       assert(statements.size == 2)
