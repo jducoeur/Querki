@@ -3,6 +3,7 @@ package querki.imexport
 import fastparse.all._
 import querki.ecology._
 import querki.test._
+import querki.time._
 
 /**
  * @author jducoeur
@@ -104,21 +105,35 @@ VALUES
     }
   }
   
+  implicit class RichTable(table:MySQLTable) {
+    def rows = table.data.get.rows
+    def rowOpt(id:Int):Option[MySQLRow] = rows.find(_.vs.head == IntVal(id))
+    
+    def columnIndex(colName:String):Int = 
+      table.data.get.columnOrder.indexWhere(_.v == colName)
+    
+    def cell(rowId:Int, colName:String):SQLVal = {
+      val r = rowOpt(rowId).get
+      r.vs(columnIndex(colName))
+    }
+  }
+  
   "MySQLImport" should {
     "successfully read in a complex DB" in {
-//      val statements = MySQLParse(sql)
-//    
-//      val importer = new MySQLImport(getRc(commonSpace))(ecology)
-//      val db = importer.processStmts(statements)
-//      
-//      println(s"Tables are ${db.tables.keys.mkString(", ")}")
-//      
-//      val movements = db.tables(TableName("movement"))
-//      val data = movements.data.get
-//      assert(data.rows.size == 17)
-//      val record17 = data.rows.find(_.vs.head == IntVal(17))
-//      assert(record17.isDefined)
-//      assert(record17.get.vs.tail.head == VarcharVal("Howard"))
+      val statements = MySQLParse(sql)
+    
+      val importer = new MySQLImport(getRc(commonSpace))(ecology)
+      val db = importer.processStmts(statements)
+
+      // Some spot-checks of the resulting Tables:
+      val movements = db.tables(TableName("movement"))
+      assert(movements.rows.size == 17)
+      val record17 = movements.rowOpt(17)
+      assert(record17.isDefined)
+      assert(record17.get.vs.tail.head == VarcharVal("Howard"))
+      assert(movements.cell(9, "brand") == VarcharVal("Waltham"))
+      assert(movements.cell(19, "size_mm") == NullVal)
+      assert(movements.cell(13, "date_purchased") == DateVal(new DateTime(2012, 8, 31, 0, 0)))
     }
   }
   
