@@ -11,11 +11,11 @@ import fastparse.core.Result._
  */
 trait ParserTests { myself:querki.test.QuerkiTests =>
   
-  def checkParse[T](parser:Parser[T], str:String) = {
+  def checkParse[T](parser:Parser[T], str:String):T = {
     val fullParser = P(parser ~ End)
     val result = fullParser.parse(str)
     result match {
-      case Success(stmts, _) => result
+      case Success(content, _) => content
       case Failure(parser, index) => {
         val start = 
           if (index < 20)

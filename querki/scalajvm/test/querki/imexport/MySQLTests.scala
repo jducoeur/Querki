@@ -1,7 +1,6 @@
 package querki.imexport
 
 import fastparse.all._
-
 import querki.ecology._
 import querki.test._
 
@@ -55,8 +54,14 @@ class MySQLTests extends QuerkiTests with ParserTests {
 """)
     }
     
-    "parse an insert row" in {
-      checkParse(MySQLParse.rowValuesP, "(1,'Howard',207090,NULL,'N',15,5,4,NULL,0,0,1,132.5,230804720090,'2012-06-13','2012-07-13 10:28:37',NULL)")
+    "parse a quoted value" in {
+      val s = checkParse(MySQLParse.oneValueP, "'2012-06-13'")
+      assert(s == "2012-06-13")
+    }
+    
+    "parse values in a simple insert row" in {
+      val row:RawRow = checkParse(MySQLParse.rowValuesP, "('2012-06-13','2012-07-13 10:28:37')")
+      assert(row.v(0) == "2012-06-13")
     }
     
     "parse an insert statement" in {
@@ -95,13 +100,12 @@ VALUES
     "read in a full dumpfile" in {
       val statements = MySQLParse(sql)
       
-      println(s"I found ${statements.size} statements")
+      assert(statements.size == 26)
     }
   }
   
   "MySQLImport" should {
     "successfully read in a complex DB" in {
-
 //      val statements = MySQLParse(sql)
 //    
 //      val importer = new MySQLImport(getRc(commonSpace))(ecology)
