@@ -14,13 +14,13 @@ object MySQLProcess {
   case class MySQLTable(name:TableName, columns:Map[ColumnName, MySQLColumn], primaryKey:Option[ColumnName], 
       constraints:Seq[SQLConstraint], data:Option[MySQLData] = None)
   case class MySQLRow(vs:Seq[SQLVal])
-  case class MySQLColumn(name:ColumnName, tpe:SQLType, clauses:Seq[SQLColumnOpt], 
+  case class MySQLColumn(col:ColumnInfo, 
       generateProp:Boolean = true, rawConstraint:Option[SQLConstraint] = None) 
   {
-    lazy val nullable = !clauses.contains(SQLNotNull)
-  }
-  object MySQLColumn {
-    def apply(col:ColumnInfo):MySQLColumn = MySQLColumn(col.name, col.tpe, col.clauses)
+    def clauses = col.clauses
+    def name = col.name
+    def tpe = col.tpe
+    lazy val nullable = !col.clauses.contains(SQLNotNull)
   }
   case class MySQLData(columnOrder:Seq[ColumnName], rows:Seq[MySQLRow])
   

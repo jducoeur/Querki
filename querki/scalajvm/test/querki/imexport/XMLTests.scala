@@ -17,8 +17,7 @@ class XMLTests extends QuerkiTests with ParserTests {
   lazy val Imexport = interface[querki.imexport.Imexport]
   
   def checkResult[T](parser:Parser[T], str:String, result:T) = {
-    // Very ugly, but works around an annoying spurious warning caused by SI-4440:
-    val actual = checkParse(parser, str).asInstanceOf[Result.Success[T]].value 
+    val actual = checkParse(parser, str)
     actual should equal(result)
   }
   

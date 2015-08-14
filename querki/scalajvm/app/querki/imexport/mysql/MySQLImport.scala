@@ -1,8 +1,10 @@
 package querki.imexport.mysql
 
-import models.OID
+import models._
+import Thing._
 
 import querki.globals._
+import querki.time._
 import querki.values.{RequestContext, SpaceState}
 
 /**
@@ -14,10 +16,11 @@ import querki.values.{RequestContext, SpaceState}
  * 
  * @author jducoeur
  */
-class MySQLImport(rc:RequestContext)(implicit val ecology:Ecology) extends EcologyMember {
+class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) extends EcologyMember {
   import MySQLParse._
   import MySQLProcess._
   
+  lazy val Core = interface[querki.core.Core]
   lazy val System = interface[querki.system.System]
   
   lazy val SystemSpace = System.State
@@ -27,7 +30,7 @@ class MySQLImport(rc:RequestContext)(implicit val ecology:Ecology) extends Ecolo
   // Mapping from MySQL Primary Key to Thing OID
   var idMap = Map.empty[SQLVal, OID]
   // Mapping from MySQL Column to Property
-  var colMap = Map.empty[ColumnName, AnyProp]
+  var colMap = Map.empty[ColumnInfo, AnyProp]
   
   /**
    *  Create an Import OID for a Thing that is based on a row in the MySQL. 
@@ -45,20 +48,23 @@ class MySQLImport(rc:RequestContext)(implicit val ecology:Ecology) extends Ecolo
   }
   
   /**
-   * Look at the primary key for this table, and see whether it belongs in the Space.
+   * Look at each column in this Table, and see whether it gets generated.
    */
-  def checkPrimaryKey(table:MySQLTable):MySQLTable = {
-    table.primaryKey match {
-      case Some(key) => {
-        val col = table.columns(key)
-        if (col.clauses.contains(SQLAutoIncrement)) {
-          // It's a standard auto-incrementing ID, which means it almost certainly
-          // contains no interesting semantic info. So omit it:
-          table.copy(columns = table.columns + (key -> col.copy(generateProp = false)))
-        } else
-          table
-      }
-      case _ => table
+  def checkPropGeneration(table:MySQLTable):MySQLTable = {
+    // Go through the columns and see if there are any to be omitted:
+    (table /: table.columns.values) { (tbl, col) =>
+      def columnOmitted() = tbl.copy(columns = table.columns + (col.name -> col.copy(generateProp = false)))
+      
+      if (tbl.primaryKey.isDefined && (col.name == tbl.primaryKey.get) && col.clauses.contains(SQLAutoIncrement)) {
+        // It's a standard auto-incrementing ID, which means it almost certainly
+        // contains no interesting semantic info. So omit it:
+        columnOmitted()
+      } else if (col.tpe == SQLTimestamp && col.clauses.contains(SQLOnUpdate(SQLCurrentTimestamp))) {
+        // This is an update timestamp, which is automatic in Querki; omit it
+        // TODO: we should import the existing values, and slam mod_time to match them
+        columnOmitted()
+      } else
+        tbl
     }
   }
   
@@ -75,33 +81,84 @@ class MySQLImport(rc:RequestContext)(implicit val ecology:Ecology) extends Ecolo
   def preprocessDB(db:MySQLDB):MySQLDB = {
     (db /: db.tables) { (dba, tablePair) =>
       val (name, table) = tablePair
-      val withFixedKey = checkPrimaryKey(table)
-      val withConstr = withConstraints(withFixedKey)
+      val withGeneration = checkPropGeneration(table)
+      val withConstr = withConstraints(withGeneration)
       db.copy(tables = db.tables + (name -> withConstr))
     }
   }
-//  
-//  def initialSpace:SpaceState = {
-//    SpaceState(
-//      createOID(),
-//      systemId,
-//      () => emptyProps,
-//      rc.requesterOrAnon.mainIdentity.id,
-//      name.get,
-//      DateTime.now,
-//      Some(SystemSpace),
-//      Map.empty,
-//      Map.empty,
-//      Map.empty,
-//      Map.empty,
-//      None
-//    )
-//  }
+  
+  def initialState:SpaceState = {
+    SpaceState(
+      createOID(),
+      systemId,
+      () => emptyProps,
+      rc.requesterOrAnon.mainIdentity.id,
+      name,
+      DateTime.now,
+      Some(SystemSpace),
+      Map.empty,
+      Map.empty,
+      Map.empty,
+      Map.empty,
+      None
+    )
+  }
+  
+  def buildProperty(col:MySQLColumn):Option[AnyProp] = {
+    if (!col.generateProp)
+      // We are intentionally not generating this column. This happens in cases like autoincremented IDs
+      // and update timestamps.
+      None
+    else {
+      // TODO: detect join tables, and build a List if found. But that'll require significant and fairly
+      // smart tweaking.
+      val collection = 
+        if (col.nullable)
+          Core.Optional
+        else
+          Core.ExactlyOne
+          
+      val pType = 
+        // As we add more SQLTypes, make sure this keeps up:
+        col.tpe match {
+          case SQLInt(size:Int) => 
+          case SQLUInt(size:Int) => 
+          case SQLBigInt(size:Int) => 
+          case SQLDouble => 
+          case SQLChar(size:Int) => 
+          case SQLVarchar(size:Int) => 
+          case SQLLongtext => 
+          case SQLDate => 
+          case SQLTimestamp => 
+          case _ => throw new Exception(s"Trying to build a Property for unknown SQLType ${col.tpe}")
+        }
+      ???
+    }
+  }
+  def buildProperties(db:MySQLDB, stateIn:SpaceState):SpaceState = {
+    (stateIn /: db.tables.values) { (tblState, table) => 
+      (tblState /: table.columns.values) { (colState, col) =>
+        colMap.get(col.col) match {
+          case Some(prop) => colState // Already created by another Table
+          case None => {
+            buildProperty(col) match {
+              case Some(prop) => {
+                colMap += (col.col -> prop)
+                colState.copy(spaceProps = colState.spaceProps + (prop.id -> prop))
+              }
+              case None => colState
+            }
+          }
+        }
+      }
+    }
+  }
   
   def buildSpaceState(initDB:MySQLDB):SpaceState = {
     val db = preprocessDB(initDB)
     
-//    val initState = 
+    val initState = initialState
+    val withProps = buildProperties(db, initState)
     
     ???
   }
