@@ -114,7 +114,7 @@ VALUES
     def columnIndex(colName:String):Int = 
       table.data.get.columnOrder.indexWhere(_.v == colName)
     
-    def cell(rowId:Int, colName:String):SQLVal = {
+    def cell(rowId:Int, colName:String):SQLVal[_] = {
       val r = rowOpt(rowId).get
       r.vs(columnIndex(colName))
     }

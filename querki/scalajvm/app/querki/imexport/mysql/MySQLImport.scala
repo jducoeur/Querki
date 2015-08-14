@@ -5,7 +5,7 @@ import Thing._
 
 import querki.globals._
 import querki.time._
-import querki.values.{RequestContext, SpaceState}
+import querki.values.{QValue, RequestContext, SpaceState}
 
 /**
  * Parses a MySQL dumpfile into an in-memory data structure.
@@ -20,7 +20,9 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
   import MySQLParse._
   import MySQLProcess._
   
+  lazy val Basic = interface[querki.basic.Basic]
   lazy val Core = interface[querki.core.Core]
+  lazy val Time = interface[querki.time.Time]
   lazy val System = interface[querki.system.System]
   
   lazy val SystemSpace = System.State
@@ -28,9 +30,14 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
   
   var _nextId = 1
   // Mapping from MySQL Primary Key to Thing OID
-  var idMap = Map.empty[SQLVal, OID]
+  var idMap = Map.empty[SQLVal[_], OID]
   // Mapping from MySQL Column to Property
   var colMap = Map.empty[ColumnInfo, AnyProp]
+  // Keep track of the Properties by simple names, so that we know to insert
+  // kickers when we need them
+  var propNames = Set.empty[String]
+  lazy val spaceId = createOID()
+  var modelMap = Map.empty[TableName, OID]
   
   /**
    *  Create an Import OID for a Thing that is based on a row in the MySQL. 
@@ -39,7 +46,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
    *  
    *  @param importedKey The primary key of the row in MySQL, if any.
    */
-  def createOID(importedKey:SQLVal = NullVal):OID = {
+  def createOID(importedKey:SQLVal[_] = NullVal):OID = {
     val oid = OID(1, _nextId)
     _nextId += 1
     if (importedKey != NullVal)
@@ -89,7 +96,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
   
   def initialState:SpaceState = {
     SpaceState(
-      createOID(),
+      spaceId,
       systemId,
       () => emptyProps,
       rc.requesterOrAnon.mainIdentity.id,
@@ -104,7 +111,24 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
     )
   }
   
-  def buildProperty(col:MySQLColumn):Option[AnyProp] = {
+  // Take a name in typical SQL "word_word_word" format, and change it to Querki's
+  // usual "Word Word Word" style
+  def fixName(rawName:String):String = {
+    val words:Array[String] = rawName.split("_").map(_.capitalize)
+    words.mkString
+  }
+  
+  def choosePropName(col:MySQLColumn, tbl:MySQLTable):String = {
+    val rawName = col.col.name.v
+    val name = 
+      if (propNames.contains(rawName))
+        s"${tbl.name.v} $rawName"
+      else
+        rawName
+    propNames += name
+    name
+  }
+  def buildProperty(col:MySQLColumn, tbl:MySQLTable):Option[AnyProp] = {
     if (!col.generateProp)
       // We are intentionally not generating this column. This happens in cases like autoincremented IDs
       // and update timestamps.
@@ -118,21 +142,45 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
         else
           Core.ExactlyOne
           
-      val pType = 
+      def charHeuristic(size:Int) = {
+        if (size < 80)
+          Core.TextType
+        else
+          Core.LargeTextType
+      }
+          
+      val pType:PType[_] with PTypeBuilder[_,_] = 
         // As we add more SQLTypes, make sure this keeps up:
         col.tpe match {
-          case SQLInt(size:Int) => 
-          case SQLUInt(size:Int) => 
-          case SQLBigInt(size:Int) => 
-          case SQLDouble => 
-          case SQLChar(size:Int) => 
-          case SQLVarchar(size:Int) => 
-          case SQLLongtext => 
-          case SQLDate => 
-          case SQLTimestamp => 
+          case SQLInt(size:Int) => Core.IntType
+          case SQLUInt(size:Int) => Core.IntType
+          case SQLBigInt(size:Int) => Core.LongType
+          case SQLDouble => Core.FloatType
+          case SQLChar(size:Int) => charHeuristic(size) 
+          case SQLVarchar(size:Int) => charHeuristic(size)
+          case SQLLongtext => Core.LargeTextType
+          case SQLDate => Time.QDateTime
+          case SQLTimestamp => Time.QDateTime
           case _ => throw new Exception(s"Trying to build a Property for unknown SQLType ${col.tpe}")
         }
-      ???
+      
+      // Properties are required to have unique names, at least for now, so we 
+      // use the table name as a kicker when we must:
+      val name = choosePropName(col, tbl)
+      val qName = fixName(name)
+      
+      val prop =
+        Property(
+          createOID(),
+          spaceId,
+          Core.UrProp.id,
+          pType.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]],
+          collection,
+          () => Map(Core.setName(qName)),
+          DateTime.now
+        )
+        
+      Some(prop)
     }
   }
   def buildProperties(db:MySQLDB, stateIn:SpaceState):SpaceState = {
@@ -141,7 +189,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
         colMap.get(col.col) match {
           case Some(prop) => colState // Already created by another Table
           case None => {
-            buildProperty(col) match {
+            buildProperty(col, table) match {
               case Some(prop) => {
                 colMap += (col.col -> prop)
                 colState.copy(spaceProps = colState.spaceProps + (prop.id -> prop))
@@ -154,11 +202,39 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
     }
   }
   
+  def buildQValue[RT](col:MySQLColumn, prop:Property[_,RT], sqlVal:SQLVal[_]):QValue = {
+    val v:RT = sqlVal.v.asInstanceOf[RT]
+    QValue.make(prop.cType, prop.pType, v)
+  }
+  
+  def buildModels(db:MySQLDB, stateIn:SpaceState):SpaceState = {
+    (stateIn /: db.tables.values) { (state, table) =>
+      val propPairs = table.columns.values.map { col =>
+        val prop = colMap(col.col)
+        val default:QValue = col.defaultOpt.map(v => buildQValue(col, prop, v)).getOrElse(prop.default(stateIn))
+        (prop.id, default)
+      }
+      
+      val oid = createOID()
+      modelMap += (table.name -> oid)
+      
+      val model = ThingState(
+        oid,
+        spaceId,
+        Basic.SimpleThing.id,
+        () => Map(propPairs.toSeq:_*)
+      )
+      
+      state.copy(things = state.things + (oid -> model))
+    }
+  }
+  
   def buildSpaceState(initDB:MySQLDB):SpaceState = {
     val db = preprocessDB(initDB)
     
     val initState = initialState
     val withProps = buildProperties(db, initState)
+    val withModels = buildModels(db, withProps)
     
     ???
   }

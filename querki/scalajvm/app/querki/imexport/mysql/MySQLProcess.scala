@@ -13,7 +13,7 @@ object MySQLProcess {
   case class MySQLDB(tables:Map[TableName, MySQLTable])
   case class MySQLTable(name:TableName, columns:Map[ColumnName, MySQLColumn], primaryKey:Option[ColumnName], 
       constraints:Seq[SQLConstraint], data:Option[MySQLData] = None)
-  case class MySQLRow(vs:Seq[SQLVal])
+  case class MySQLRow(vs:Seq[SQLVal[_]])
   case class MySQLColumn(col:ColumnInfo, 
       generateProp:Boolean = true, rawConstraint:Option[SQLConstraint] = None) 
   {
@@ -21,21 +21,28 @@ object MySQLProcess {
     def name = col.name
     def tpe = col.tpe
     lazy val nullable = !col.clauses.contains(SQLNotNull)
+    lazy val defaultOpt:Option[SQLVal[_]] = {
+      col.clauses.collectFirst { 
+        case SQLDefault(v) => processVal(this, v)  
+      }
+    }
   }
   case class MySQLData(columnOrder:Seq[ColumnName], rows:Seq[MySQLRow])
   
-  sealed trait SQLVal
-  case object NullVal extends SQLVal
-  case class BoolVal(v:Boolean) extends SQLVal
-  case class IntVal(v:Int) extends SQLVal
-  case class UIntVal(v:Int) extends SQLVal
-  case class BigIntVal(v:Long) extends SQLVal
-  case class DoubleVal(v:Double) extends SQLVal
-  case class CharVal(v:String) extends SQLVal
-  case class VarcharVal(v:String) extends SQLVal
-  case class LongtextVal(v:String) extends SQLVal
-  case class DateVal(v:DateTime) extends SQLVal
-  case class TimestampVal(v:DateTime) extends SQLVal
+  sealed trait SQLVal[T] {
+    def v:T
+  }
+  case object NullVal extends SQLVal[String] { val v = "NULL" }
+  case class BoolVal(v:Boolean) extends SQLVal[Boolean]
+  case class IntVal(v:Int) extends SQLVal[Int]
+  case class UIntVal(v:Int) extends SQLVal[Int]
+  case class BigIntVal(v:Long) extends SQLVal[Long]
+  case class DoubleVal(v:Double) extends SQLVal[Double]
+  case class CharVal(v:String) extends SQLVal[String]
+  case class VarcharVal(v:String) extends SQLVal[String]
+  case class LongtextVal(v:String) extends SQLVal[String]
+  case class DateVal(v:DateTime) extends SQLVal[DateTime]
+  case class TimestampVal(v:DateTime) extends SQLVal[DateTime]
   
   def processCreate(stmt:StmtCreate, db:MySQLDB):MySQLDB = {
     val StmtCreate(name, cols, xrefs) = stmt
@@ -50,7 +57,7 @@ object MySQLProcess {
   val dateFormat = DateTimeFormat.forPattern("yyyy-MM-dd")
   val timestampFormat = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
   
-  def processVal(col:MySQLColumn, v:String):SQLVal = {
+  def processVal(col:MySQLColumn, v:String):SQLVal[_] = {
     def parseInt(size:Int) = {
       if (size == 1)
         BoolVal(v == "1")
