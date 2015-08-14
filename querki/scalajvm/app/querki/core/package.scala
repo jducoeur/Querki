@@ -43,6 +43,7 @@ package object core {
     val UrTypeOID = moid(1)
     val ModelOnlyPropOID = moid(2)
     val LongTypeOID = moid(3)
+    val FloatTypeOID = moid(4)
   }
     
   /**
@@ -80,6 +81,8 @@ package object core {
     def NameType:PType[String] with PTypeBuilder[String,String]
     def IntType:PType[Int] with PTypeBuilder[Int,Int]
     def YesNoType:PType[Boolean] with PTypeBuilder[Boolean,Boolean]
+    def LongType:PType[Long] with PTypeBuilder[Long,Long]
+    def FloatType:PType[Double] with PTypeBuilder[Double,Double]
     
     def LinkFromThingBuilder:PTypeBuilderBase[OID, Thing]
     

@@ -154,21 +154,19 @@ trait NameTypeBasis { self:CoreEcot with NameUtils =>
 }
 
 trait IntTypeBasis { self:CoreEcot =>
-  import scala.math.Integral
-  import Integral.Implicits._
   import scala.math.Numeric._
   
   /**
-   * The Type for integers
+   * The base Type for numbers
    */
-  abstract class IntegralTypeBase[T : Integral](tid:OID, pf:PropFetcher) extends SystemType[T](tid, pf) with SimplePTypeBuilder[T]
+  abstract class NumericTypeBase[T : Numeric](tid:OID, pf:PropFetcher) extends SystemType[T](tid, pf) with SimplePTypeBuilder[T]
   {
     override val displayEmptyAsBlank:Boolean = true
     
     def fromStr(v:String):T 
     def doDefault(implicit state:SpaceState):T
     def toT(i:Int):T
-    lazy val integral = implicitly[Integral[T]]
+    lazy val numeric = implicitly[Numeric[T]]
     
     def doDeserialize(v:String)(implicit state:SpaceState):T = try {
       fromStr(v)
@@ -186,19 +184,19 @@ trait IntTypeBasis { self:CoreEcot =>
       for (
         minValPO <- prop.getPropOpt(Types.MinIntValueProp)(state);
         minVal <- minValPO.firstOpt;
-        if (integral.lt(doDeserialize(v), toT(minVal)))
+        if (numeric.lt(doDeserialize(v), toT(minVal)))
           )
         throw new PublicException("Types.Int.tooLow", prop.displayName, minVal)
       
       for (
         maxValPO <- prop.getPropOpt(Types.MaxIntValueProp)(state);
         maxVal <- maxValPO.firstOpt;
-        if (integral.lt(doDeserialize(v), toT(maxVal)))
+        if (numeric.lt(doDeserialize(v), toT(maxVal)))
           )
         throw new PublicException("Types.Int.tooHigh", prop.displayName, maxVal)
     }  
     
-   override def doComp(context:QLContext)(left:T, right:T):Boolean = { integral.lt(left, right) } 
+   override def doComp(context:QLContext)(left:T, right:T):Boolean = { numeric.lt(left, right) } 
     
    override def editorSpan(prop:Property[_,_]):Int = 1    
     /**
@@ -206,7 +204,7 @@ trait IntTypeBasis { self:CoreEcot =>
      */
   }
   
-  class IntTypeBase(tid:OID, pf:PropFetcher) extends IntegralTypeBase[Int](tid, pf) {
+  class IntTypeBase(tid:OID, pf:PropFetcher) extends NumericTypeBase[Int](tid, pf) {
     def fromStr(v:String) = v.toInt
     def doDefault(implicit state:SpaceState):Int = 0
     def toT(i:Int) = i
@@ -663,7 +661,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
             |a high priority yet.)""".stripMargin)
         ))
   
-  class LongType extends IntegralTypeBase[Long](LongTypeOID, 
+  class LongType extends NumericTypeBase[Long](LongTypeOID, 
       toProps(
         setName("Large Number Type"),
         Summary("A number that can potentially be extremely big"),
@@ -679,6 +677,29 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
     def fromStr(v:String) = v.toLong
     def doDefault(implicit state:SpaceState):Long = 0L
     def toT(i:Int) = i.toInt
+  }
+  
+  class FloatType extends NumericTypeBase[Double](FloatTypeOID, 
+      toProps(
+        setName("Floating Point Type"),
+        Summary("A number with a decimal point"),
+        Details("""Most numbers in Querki are integers, and you should use Whole Number Type for those.
+          |But sometimes, you need to describe something fractional, like 3.14159. For those, you use
+          |"floating point" -- a number with a decimal point, with as many digits of precision after the
+          |decimal point as you need.
+          |
+          |Technically, this is what is often called a "double" -- a 64-bit floating point number, with
+          |52 bits (about 16 decimal digits) in the mantissa and 11 bits for the exponent. This allows
+          |a good balance between pretty high precision and very large or small numbers.
+          |
+          |Note that floating-point numbers are subject to rounding errors. We will probably add special-purpose
+          |types for cases where this must not happen. (For example, Currency.) If you particularly
+          |need this, drop us a note!""".stripMargin)
+      )) 
+  {
+    def fromStr(v:String) = v.toDouble
+    def doDefault(implicit state:SpaceState):Double = 0
+    def toT(i:Int) = i.toDouble
   }
   
   /**
