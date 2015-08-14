@@ -112,6 +112,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
   lazy val NameType = new NameType
   lazy val IntType = new IntType
   lazy val YesNoType = new YesNoType
+  lazy val LongType = new LongType
   
   lazy val LinkFromThingBuilder = new PTypeBuilderBase[OID, Thing] {
     def pType = LinkType
@@ -128,7 +129,8 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
     LinkType,
     NameType,
     IntType,
-    YesNoType
+    YesNoType,
+    LongType
   )
   
   /***********************************************

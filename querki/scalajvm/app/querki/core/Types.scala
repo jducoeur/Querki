@@ -154,23 +154,30 @@ trait NameTypeBasis { self:CoreEcot with NameUtils =>
 }
 
 trait IntTypeBasis { self:CoreEcot =>
+  import scala.math.Integral
+  import Integral.Implicits._
+  import scala.math.Numeric._
+  
   /**
    * The Type for integers
    */
-  class IntTypeBase(tid:OID, pf:PropFetcher) extends SystemType[Int](tid, pf) with SimplePTypeBuilder[Int]
+  abstract class IntegralTypeBase[T : Integral](tid:OID, pf:PropFetcher) extends SystemType[T](tid, pf) with SimplePTypeBuilder[T]
   {
     override val displayEmptyAsBlank:Boolean = true
     
-    def doDeserialize(v:String)(implicit state:SpaceState) = try {
-      java.lang.Integer.parseInt(v)
+    def fromStr(v:String):T 
+    def doDefault(implicit state:SpaceState):T
+    def toT(i:Int):T
+    lazy val integral = implicitly[Integral[T]]
+    
+    def doDeserialize(v:String)(implicit state:SpaceState):T = try {
+      fromStr(v)
     } catch {
       case ex:java.lang.NumberFormatException => throw new PublicException("Types.Int.badFormat")
     }
     
-    def doSerialize(v:Int)(implicit state:SpaceState) = v.toString
-    def doWikify(context:QLContext)(v:Int, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = Wikitext(v.toString)
-
-    def doDefault(implicit state:SpaceState) = 0
+    def doSerialize(v:T)(implicit state:SpaceState) = v.toString
+    def doWikify(context:QLContext)(v:T, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = Wikitext(v.toString)
     
     override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = {
       implicit val s = state
@@ -179,24 +186,30 @@ trait IntTypeBasis { self:CoreEcot =>
       for (
         minValPO <- prop.getPropOpt(Types.MinIntValueProp)(state);
         minVal <- minValPO.firstOpt;
-        if (doDeserialize(v) < minVal)
+        if (integral.lt(doDeserialize(v), toT(minVal)))
           )
         throw new PublicException("Types.Int.tooLow", prop.displayName, minVal)
       
       for (
         maxValPO <- prop.getPropOpt(Types.MaxIntValueProp)(state);
         maxVal <- maxValPO.firstOpt;
-        if (doDeserialize(v) > maxVal)
+        if (integral.lt(doDeserialize(v), toT(maxVal)))
           )
         throw new PublicException("Types.Int.tooHigh", prop.displayName, maxVal)
     }  
     
-   override def doComp(context:QLContext)(left:Int, right:Int):Boolean = { left < right } 
+   override def doComp(context:QLContext)(left:T, right:T):Boolean = { integral.lt(left, right) } 
     
    override def editorSpan(prop:Property[_,_]):Int = 1    
     /**
      * TODO: eventually, we may want a more nuanced Int inputter. But this will do to start.
      */
+  }
+  
+  class IntTypeBase(tid:OID, pf:PropFetcher) extends IntegralTypeBase[Int](tid, pf) {
+    def fromStr(v:String) = v.toInt
+    def doDefault(implicit state:SpaceState):Int = 0
+    def toT(i:Int) = i
   }
 }
 
@@ -649,6 +662,24 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
             |negative numbers, please raise it as an issue. (It isn't hard to add, but hasn't come up as
             |a high priority yet.)""".stripMargin)
         ))
+  
+  class LongType extends IntegralTypeBase[Long](LongTypeOID, 
+      toProps(
+        setName("Large Number Type"),
+        Summary("A number that can potentially be extremely big"),
+        Details("""This is very similar to Whole Number Type, but can hold bigger numbers.
+          |Whole Number Type can handle numbers up to 2,147,483,647, which is plenty for most
+          |purposes. If you need more than that, use Large Number instead.
+          |
+          |(Technically, Large Number is what is called a "long integer", and can handle numbers
+          |up to 9,223,372,036,854,775,807. It is slightly slower than Whole Number Type, so Querki uses Whole Number
+          |for all of its built-in properties, but this slowdown shouldn't usually matter to you.)""".stripMargin)
+      )) 
+  {
+    def fromStr(v:String) = v.toLong
+    def doDefault(implicit state:SpaceState):Long = 0L
+    def toT(i:Int) = i.toInt
+  }
   
   /**
    * The YesNo Type -- or Boolean, as us geeks think of it

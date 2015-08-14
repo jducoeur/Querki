@@ -42,6 +42,7 @@ package object core {
     
     val UrTypeOID = moid(1)
     val ModelOnlyPropOID = moid(2)
+    val LongTypeOID = moid(3)
   }
     
   /**
