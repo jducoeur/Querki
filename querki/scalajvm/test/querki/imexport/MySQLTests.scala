@@ -1,5 +1,7 @@
 package querki.imexport
 
+import mysql._
+
 import fastparse.all._
 import querki.ecology._
 import querki.test._
@@ -10,7 +12,7 @@ import querki.time._
  */
 class MySQLTests extends QuerkiTests with ParserTests {
   import MySQLParse._
-  import MySQLImport._
+  import MySQLProcess._
   
   "MySQLParse" should {
     "parse end of line" in {
@@ -118,12 +120,11 @@ VALUES
     }
   }
   
-  "MySQLImport" should {
-    "successfully read in a complex DB" in {
+  "MySQLProcess" should {
+    "successfully build a complex DB" in {
       val statements = MySQLParse(sql)
     
-      val importer = new MySQLImport(getRc(commonSpace))(ecology)
-      val db = importer.processStmts(statements)
+      val db = MySQLProcess.processStmts(statements)
 
       // Some spot-checks of the resulting Tables:
       val movements = db.tables(TableName("movement"))
@@ -134,6 +135,7 @@ VALUES
       assert(movements.cell(9, "brand") == VarcharVal("Waltham"))
       assert(movements.cell(19, "size_mm") == NullVal)
       assert(movements.cell(13, "date_purchased") == DateVal(new DateTime(2012, 8, 31, 0, 0)))
+      assert(movements.primaryKey == Some(ColumnName("id")))
     }
   }
   

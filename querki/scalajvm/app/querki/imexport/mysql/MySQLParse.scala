@@ -1,4 +1,4 @@
-package querki.imexport
+package querki.imexport.mysql
 
 import fastparse.all._
 import fastparse.core.Result._
@@ -46,9 +46,7 @@ object MySQLParse {
   case class SQLConstraint(localCol:ColumnName, foreignTable:TableName, foreignCol:ColumnName, 
       update:Option[SQLUpdateOpt], delete:Option[SQLUpdateOpt]) extends SQLXref
   
-  case class ColumnInfo(name:ColumnName, tpe:SQLType, clauses:Seq[SQLColumnOpt]) {
-    lazy val nullable = !clauses.contains(SQLNotNull)
-  }
+  case class ColumnInfo(name:ColumnName, tpe:SQLType, clauses:Seq[SQLColumnOpt])
   
   val nlP = P("\r".? ~ "\n")
   val wP = P(CharsWhile(_.isWhitespace))
