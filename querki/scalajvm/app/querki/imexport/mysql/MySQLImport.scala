@@ -343,8 +343,18 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
     (stateIn /: pendingLinks.iterator) { (state, pending) =>
       val PendingLink(tId:OID, prop:Property[OID,Any], v:SQLVal[_]) = pending
       val tIn = state.thing(tId)
-      val linkId = idMap(v)
-      val t = tIn.copy(pf = () => tIn.props + prop(linkId))
+      val t =
+        if (v == NullVal) {
+          // Nulls are only legal for Optional Properties:
+          if (prop.cType != Core.Optional)
+            throw new Exception(s"Somehow got a NULL value for non-nullable Property $prop on Thing $tIn")
+          // Just leave it empty
+          // TODO: there's an implicit assumption here that Links default to NULL. That might be wrong.
+          tIn
+        } else {
+          val linkId = idMap(v)
+          tIn.copy(pf = () => tIn.props + prop(linkId))
+        }
       state.copy(things = state.things + (t.id -> t))
     }
   }

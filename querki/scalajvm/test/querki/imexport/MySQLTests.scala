@@ -160,8 +160,8 @@ CREATE TABLE `movement_set_type` (
     
     // This is the serious test -- do we get the right output?
     "produce a correct Space from a complex DB" in {
-//      val importer = new MySQLImport(SimpleTestRequestContext(BasicTestUser.mainIdentity.id), "Watches Space")(ecology)
-//      val state = importer.readDumpfile(sql)
+      val importer = new MySQLImport(SimpleTestRequestContext(BasicTestUser.mainIdentity.id), "Watches Space")(ecology)
+      val state = importer.readDumpfile(sql)
     }
   }
   
