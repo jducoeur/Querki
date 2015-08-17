@@ -376,11 +376,11 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
         Wikitext("We're sorry -- this thing is apparently more complex than Querki can currently cope with. Please contact Justin: this is a bug we need to fix.")
       }
       case error:Exception => {
-        QLog.error("Error during QL Processing: " + error, error)
+        QLog.error("Exception during QL Processing: " + error, error)
         Wikitext("We're sorry -- there was an error while trying to display this thing.")
       }
       case error:Throwable => {
-        QLog.error("Error during QL Processing: " + error, error)
+        QLog.error("Throwable during QL Processing: " + error, error)
         Wikitext("We're sorry -- there was a serious error while trying to display this thing.")
       }
     }

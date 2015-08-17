@@ -109,7 +109,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
     SpaceState(
       spaceId,
       systemId,
-      () => emptyProps,
+      () => Map(Core.NameProp(name)),
       rc.requesterOrAnon.mainIdentity.id,
       name,
       DateTime.now,

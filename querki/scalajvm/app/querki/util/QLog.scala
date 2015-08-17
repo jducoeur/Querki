@@ -21,8 +21,10 @@ object QLog {
   def error(message: => String, error: => Throwable) = {
     if (inPlay)
       Logger.error(message, error)
-    else
+    else {
       println(message + "\n" + error.toString())
+      error.printStackTrace()
+    }
   }
   def error(message: => String) = {
     if (inPlay)

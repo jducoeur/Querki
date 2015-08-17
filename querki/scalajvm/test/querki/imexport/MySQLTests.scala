@@ -174,8 +174,14 @@ CREATE TABLE `movement_set_type` (
       val importer = new MySQLImport(SimpleTestRequestContext(BasicTestUser.mainIdentity.id), "Watches Space")(ecology)
       val state = importer.readDumpfile(sql)
       
-      QLog.spew(s"The Models are:")
-      state.models.foreach(t => QLog.spewThing(t)(state))
+      def pqloaded(text:String) = {
+        val rc = getRcs(state)(commonSpace, BasicTestUser)
+        val context = state.thisAsContext(rc, state, ecology)
+        processQText(context, text)
+      }
+      
+      pqloaded("[[Movement Wind Type._instances -> _sort(Wind Type Name) -> Wind Type Name -> _commas]]") should
+        startWith("Key Back, Key Front")
     }
   }
   
