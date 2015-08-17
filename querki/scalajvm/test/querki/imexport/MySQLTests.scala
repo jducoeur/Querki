@@ -4,6 +4,7 @@ import mysql._
 
 import fastparse.all._
 
+import models._
 import models.Thing._
 
 import querki.ecology._
@@ -19,6 +20,8 @@ class MySQLTests extends QuerkiTests with ParserTests {
   import MySQLProcess._
   
   "MySQLParse" should {
+    lazy val Core = interface[querki.core.Core]
+    
     "parse end of line" in {
       checkParse(MySQLParse.nlP, "\n")
       checkParse(MySQLParse.nlP, "\r\n")
@@ -157,9 +160,13 @@ CREATE TABLE `movement` (
 
 CREATE TABLE `movement_set_type` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `source` varchar(64) DEFAULT NULL,
   PRIMARY KEY (`id`)
 );
-""")      
+""")
+
+      val mstModel = state.anythingByDisplayName("Movement Set Type").get
+      val sourceProp = state.prop(AsName("Source")).get.confirmType(Core.TextType).get
     }
     
     // This is the serious test -- do we get the right output?

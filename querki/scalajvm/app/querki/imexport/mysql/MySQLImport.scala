@@ -232,7 +232,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
     (stateIn /: db.tables.values) { (state, table) =>
       val propPairs = table.columns.values.map { col =>
         colMap.get(col.col).map { prop =>
-          val default:QValue = col.defaultOpt.map(v => buildQValue(col, prop, v)).getOrElse(prop.default(stateIn))
+          val default:QValue = col.defaultOpt.filter(_ != NullVal).map(v => buildQValue(col, prop, v)).getOrElse(prop.default(stateIn))
           (prop.id, default)
         }
       }.flatten.toSeq ++ Seq(

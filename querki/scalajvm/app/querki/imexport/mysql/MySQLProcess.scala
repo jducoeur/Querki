@@ -1,5 +1,6 @@
 package querki.imexport.mysql
 
+import querki.globals._
 import querki.time._
 
 /**
