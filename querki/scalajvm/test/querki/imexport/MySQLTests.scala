@@ -3,9 +3,13 @@ package querki.imexport
 import mysql._
 
 import fastparse.all._
+
+import models.Thing._
+
 import querki.ecology._
 import querki.test._
 import querki.time._
+import querki.util.QLog
 
 /**
  * @author jducoeur
@@ -162,6 +166,9 @@ CREATE TABLE `movement_set_type` (
     "produce a correct Space from a complex DB" in {
       val importer = new MySQLImport(SimpleTestRequestContext(BasicTestUser.mainIdentity.id), "Watches Space")(ecology)
       val state = importer.readDumpfile(sql)
+      
+      QLog.spew(s"The Models are:")
+      state.models.foreach(t => QLog.spewThing(t)(state))
     }
   }
   

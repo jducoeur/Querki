@@ -126,7 +126,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
   // usual "Word Word Word" style
   def fixName(rawName:String):String = {
     val words:Array[String] = rawName.split("_").map(_.capitalize)
-    words.mkString
+    words.mkString(" ")
   }
   
   def choosePropName(col:MySQLColumn, tbl:MySQLTable):String = {
@@ -235,7 +235,10 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
           val default:QValue = col.defaultOpt.map(v => buildQValue(col, prop, v)).getOrElse(prop.default(stateIn))
           (prop.id, default)
         }
-      }.flatten
+      }.flatten.toSeq ++ Seq(
+        Core.IsModelProp(true),
+        Basic.DisplayNameProp(fixName(table.name.v))
+      )
       
       val oid = createOID()
       modelMap += (table.name -> oid)
@@ -244,7 +247,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
         oid,
         spaceId,
         Basic.SimpleThing.id,
-        () => Map(propPairs.toSeq:_*)
+        () => Map(propPairs:_*)
       )
       
       state.copy(things = state.things + (oid -> model))
