@@ -78,8 +78,8 @@ class MySQLTests extends QuerkiTests with ParserTests {
     "parse an insert statement" in {
       checkParse(MySQLParse.insertStatementP, """INSERT INTO `movement` (`id`, `brand`, `serial_no`, `size_mm`, `size`, `jewel_count`, `wind_type_id`, `set_type_id`, `escapement_type`, `dial_photo`, `mvmt_photo`, `source_id`, `price`, `lot_number`, `date_purchased`, `last_updated`, `notes`)
 VALUES
-  (1,'Howard',207090,NULL,'N',15,5,4,NULL,0,0,1,132.5,230804720090,'2012-06-13','2012-07-13 10:28:37',NULL),
-  (5,'US Watch Company',704765,NULL,'16',7,5,4,NULL,1,1,2,30.5,221046820677,'2012-06-19','2012-07-22 15:15:18',NULL)""")
+  (1,'Howard',290,NULL,'N',15,5,4,NULL,0,0,1,132.5,90,'2011-06-16','2011-03-13 10:28:01',NULL),
+  (5,'US Watch Company',65,NULL,'16',7,5,4,NULL,1,1,2,30.5,27,'2011-06-12','2012-03-20 15:15:01',NULL)""")
     }
     
     "read in a bit of dumpfile" in {
@@ -99,8 +99,8 @@ CREATE TABLE `case` (
 
 INSERT INTO `movement` (`id`, `brand`, `serial_no`, `size_mm`, `size`, `jewel_count`, `wind_type_id`, `set_type_id`, `escapement_type`, `dial_photo`, `mvmt_photo`, `source_id`, `price`, `lot_number`, `date_purchased`, `last_updated`, `notes`)
 VALUES
-  (1,'Howard',207090,NULL,'N',15,5,4,NULL,0,0,1,132.5,230804720090,'2012-06-13','2012-07-13 10:28:37',NULL),
-  (5,'US Watch Company',704765,NULL,'16',7,5,4,NULL,1,1,2,30.5,221046820677,'2012-06-19','2012-07-22 15:15:18',NULL);
+  (1,'Howard',290,NULL,'N',15,5,4,NULL,0,0,1,132.5,90,'2011-06-16','2011-03-13 10:28:01',NULL),
+  (5,'US Watch Company',65,NULL,'16',7,5,4,NULL,1,1,2,30.5,27,'2011-06-12','2012-03-20 15:15:01',NULL);
 """)
       assert(statements.size == 3)
       statements.head match {
@@ -143,7 +143,7 @@ VALUES
       assert(record17.get.vs.tail.head == VarcharVal("Howard"))
       assert(movements.cell(9, "brand") == VarcharVal("Waltham"))
       assert(movements.cell(19, "size_mm") == NullVal)
-      assert(movements.cell(13, "date_purchased") == DateVal(new DateTime(2012, 8, 31, 0, 0)))
+      assert(movements.cell(13, "date_purchased") == DateVal(new DateTime(2012, 1, 1, 0, 0)))
       assert(movements.primaryKey == Some(ColumnName("id")))
     }
   }
@@ -289,23 +289,23 @@ LOCK TABLES `movement` WRITE;
 
 INSERT INTO `movement` (`id`, `brand`, `serial_no`, `size_mm`, `size`, `jewel_count`, `wind_type_id`, `set_type_id`, `escapement_type`, `dial_photo`, `mvmt_photo`, `source_id`, `price`, `lot_number`, `date_purchased`, `last_updated`, `notes`)
 VALUES
-  (1,'Howard',207090,NULL,'N',15,5,4,NULL,0,0,1,132.5,230804720090,'2012-06-13','2012-07-13 10:28:37',NULL),
-  (5,'US Watch Company',704765,NULL,'16',7,5,4,NULL,1,1,2,30.5,221046820677,'2012-06-19','2012-07-22 15:15:18',NULL),
-  (6,'Elgin',349332,NULL,'10',15,2,2,NULL,0,0,3,20,120925386729,'2012-07-02','2012-07-13 10:33:09',NULL),
-  (7,'Anonymous',200704,NULL,NULL,17,5,6,NULL,1,1,4,16.66,NULL,'2012-07-12','2012-07-22 15:18:11','Part of a lot of 6 movements at $100.  Probably German'),
-  (8,'Buren',NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,0,5,41.36,271017198543,NULL,'2012-07-25 23:41:06',NULL),
-  (9,'Waltham',1717552,NULL,NULL,11,5,4,NULL,0,0,6,20,221081703146,NULL,'2012-08-09 19:34:54','part of a lot of 2 movements @41.77'),
-  (10,'Waltham',14061271,NULL,'16',17,5,6,NULL,0,0,6,22,221081703146,NULL,'2012-08-09 19:37:24','part of a lot of 2 movements @41.77'),
-  (11,'Illinois',529474,NULL,'10',7,4,4,NULL,0,0,7,19.23,230837658142,'2012-08-20','2012-09-09 14:48:33','dial damaged'),
-  (12,'Elgin',1196771,NULL,'10',7,2,2,NULL,0,0,8,23.69,230836958312,'2012-08-17','2012-09-09 14:51:27','dial pins missing'),
-  (13,'Waltham',718154,NULL,'10',15,2,2,NULL,0,0,9,50,190718244014,'2012-08-31','2012-09-09 14:54:07',NULL),
-  (14,'Howard',NULL,79,NULL,13,1,NULL,NULL,0,0,10,85.95,251163813548,'2012-10-20','2012-10-27 22:49:59',NULL),
-  (15,'Movado',NULL,38,NULL,15,4,6,NULL,0,0,11,47.64,290786873599,'2012-10-29','2012-10-31 15:48:21','no case but spacer ring.  dial marked \"Rosenberg-Wallach, Lima Peru\"'),
-  (16,'Camden, London',72084,NULL,NULL,0,2,1,NULL,0,0,12,20.7,390544706934,'2013-02-15','2013-02-28 23:05:12',NULL),
-  (17,'Howard',52763,NULL,'L',13,4,2,NULL,0,0,13,420,390547328954,'2013-03-04','2013-03-22 11:48:06',NULL),
-  (18,'US Watch Company',18937,NULL,'16',15,NULL,NULL,NULL,0,0,14,10.38,350798748307,'2013-05-23','2013-05-31 18:53:37',NULL),
-  (19,'Philidephia',3226,NULL,NULL,NULL,NULL,NULL,NULL,0,0,15,96.88,261211089576,'2013-05-16','2013-05-31 18:53:25',NULL),
-  (20,'Illinois',437835,NULL,'8',NULL,NULL,NULL,NULL,0,0,16,10.5,161067941100,'2013-07-26','2013-07-26 19:22:46',NULL);
+  (1,'Howard',207090,NULL,'N',15,5,4,NULL,0,0,1,132.5,23720090,'2012-01-01','2012-07-13 10:28:37',NULL),
+  (5,'US Watch Company',704765,NULL,'16',7,5,4,NULL,1,1,2,30.5,2210420677,'2012-01-11','2012-07-22 15:15:18',NULL),
+  (6,'Elgin',349332,NULL,'10',15,2,2,NULL,0,0,3,20,20925386729,'2012-07-02','2012-01-11 10:33:09',NULL),
+  (7,'Anonymous',200704,NULL,NULL,17,5,6,NULL,1,1,4,16.66,NULL,'2012-07-12','2012-01-21 15:18:11','Part of a lot of 6 movements at $140.  Probably German'),
+  (8,'Buren',NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,0,5,41.36,2710171983,NULL,'2012-01-21 23:41:06',NULL),
+  (9,'Waltham',1717552,NULL,NULL,11,5,4,NULL,0,0,6,20,281703146,NULL,'2012-01-01 19:34:54','part of a lot of 2 movements @41.77'),
+  (10,'Waltham',14061271,NULL,'16',17,5,6,NULL,0,0,6,22,221703146,NULL,'2012-01-01 19:37:24','part of a lot of 2 movements @41.77'),
+  (11,'Illinois',529474,NULL,'10',7,4,4,NULL,0,0,7,19.23,837658142,'2012-01-21','2012-09-09 14:48:33','dial damaged'),
+  (12,'Elgin',1196771,NULL,'10',7,2,2,NULL,0,0,8,23.69,230836912,'2012-01-11','2012-09-09 14:51:27','dial pins missing'),
+  (13,'Waltham',718154,NULL,'10',15,2,2,NULL,0,0,9,50,1907244014,'2012-01-01','2012-09-09 14:54:07',NULL),
+  (14,'Howard',NULL,79,NULL,13,1,NULL,NULL,0,0,10,85.95,2163813548,'2012-01-01','2012-10-27 22:49:59',NULL),
+  (15,'Movado',NULL,38,NULL,15,4,6,NULL,0,0,11,47.64,2907868599,'2012-01-01','2012-10-31 15:48:21','no case but spacer ring.'),
+  (16,'Camden, London',72084,NULL,NULL,0,2,1,NULL,0,0,12,20.7,3944706934,'2013-01-01','2013-02-28 23:05:12',NULL),
+  (17,'Howard',52763,NULL,'L',13,4,2,NULL,0,0,13,420,3905473284,'2013-03-04','2013-01-01 11:48:06',NULL),
+  (18,'US Watch Company',18937,NULL,'16',15,NULL,NULL,NULL,0,0,14,10.38,3798748307,'2013-01-01','2013-05-31 18:53:37',NULL),
+  (19,'Philidephia',3226,NULL,NULL,NULL,NULL,NULL,NULL,0,0,15,96.88,2612189576,'2013-01-01','2013-05-31 18:53:25',NULL),
+  (20,'Illinois',437835,NULL,'8',NULL,NULL,NULL,NULL,0,0,16,10.5,1610941100,'2013-01-01','2013-07-26 19:22:46',NULL);
 
 /*!40000 ALTER TABLE `movement` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -356,22 +356,22 @@ LOCK TABLES `movement_source` WRITE;
 
 INSERT INTO `movement_source` (`id`, `source`)
 VALUES
-  (1,'eBay - smallsword'),
-  (2,'eBay - joynblues'),
-  (3,'eBay - billiegirl200'),
-  (4,'Brimfield - V B S'),
-  (5,'eBay - baldeagle'),
-  (6,'eBay - tictockjewelryshop'),
-  (7,'eBay - blacklightantiques2010'),
-  (8,'eBay - pocketwatchcanada'),
-  (9,'eBay - entichedemontres'),
-  (10,'eBay - here_now_great_buys'),
-  (11,'eBay - watchpartsrus'),
-  (12,'eBay - loriswatches2'),
-  (13,'eBay - oldetown'),
-  (14,'eBay - 5trappers'),
-  (15,'eBay - watchbill'),
-  (16,'eBay - watchout4now ');
+  (1,'eBay - ss'),
+  (2,'eBay - jb'),
+  (3,'eBay - bg2'),
+  (4,'Brimfield - v'),
+  (5,'eBay - be'),
+  (6,'eBay - ttj'),
+  (7,'eBay - bl'),
+  (8,'eBay - pw'),
+  (9,'eBay - ed'),
+  (10,'eBay - hn'),
+  (11,'eBay - wp'),
+  (12,'eBay - lw'),
+  (13,'eBay - ot'),
+  (14,'eBay - ft'),
+  (15,'eBay - wb'),
+  (16,'eBay - wo ');
 
 /*!40000 ALTER TABLE `movement_source` ENABLE KEYS */;
 UNLOCK TABLES;
