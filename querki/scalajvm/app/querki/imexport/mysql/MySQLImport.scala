@@ -159,9 +159,10 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
         else
           Core.LargeTextType
       }
-          
-      val pType:PType[_] with PTypeBuilder[_,_] = 
-        if (tbl.constraints.contains(col.col)) {
+      
+      val constraint = tbl.constraints.find(_.localCol == col.col.name)
+      val pType:PType[_] with PTypeBuilder[_,_] =
+        if (constraint.isDefined) {
           // If it's constrained, then we presume it's a Link:
           Core.LinkType
         } else {
@@ -230,10 +231,11 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
   def buildModels(db:MySQLDB, stateIn:SpaceState):SpaceState = {
     (stateIn /: db.tables.values) { (state, table) =>
       val propPairs = table.columns.values.map { col =>
-        val prop = colMap(col.col)
-        val default:QValue = col.defaultOpt.map(v => buildQValue(col, prop, v)).getOrElse(prop.default(stateIn))
-        (prop.id, default)
-      }
+        colMap.get(col.col).map { prop =>
+          val default:QValue = col.defaultOpt.map(v => buildQValue(col, prop, v)).getOrElse(prop.default(stateIn))
+          (prop.id, default)
+        }
+      }.flatten
       
       val oid = createOID()
       modelMap += (table.name -> oid)
@@ -265,7 +267,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
         }
         val prop = colMap(localCol.col)
         if (prop.pType != Core.LinkType) {
-          throw new Exception(s"Somehow wound up with constraint $constraint not pointing to a Link Property!")
+          throw new Exception(s"Somehow wound up with constraint $constraint not pointing to a Link Property! Col = $localCol; prop = $prop (${prop.cType} of ${prop.pType})")
         }
         // Okay -- we have a valid Constraint. Fill in the Link Model:
         val linkedModelId = modelMap(foreignTbl.name)
@@ -357,9 +359,8 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
     val withInstances = buildInstances(db, withConstraints)
     val withLinks = addLinks(db, withInstances)
     
-    ???
+    withLinks
   }
-
 
   /* ***************************************************************
    * 

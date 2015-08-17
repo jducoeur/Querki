@@ -48,7 +48,8 @@ class MySQLTests extends QuerkiTests with ParserTests {
     
     "parse a create statement" in {
       checkParse(MySQLParse.createStatementP, """CREATE TABLE `case` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `last_updated` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
 )
 """)
       checkParse(MySQLParse.statementP, """CREATE TABLE `case` (
@@ -85,6 +86,7 @@ DROP TABLE IF EXISTS `case`;
 
 CREATE TABLE `case` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `last_updated` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 );
 
@@ -136,6 +138,30 @@ VALUES
       assert(movements.cell(19, "size_mm") == NullVal)
       assert(movements.cell(13, "date_purchased") == DateVal(new DateTime(2012, 8, 31, 0, 0)))
       assert(movements.primaryKey == Some(ColumnName("id")))
+    }
+  }
+  
+  "MySQLImport" should {
+    // Stripped-down test, just to check that constraints become Links:
+    "construct a constraint correctly" in {
+      val importer = new MySQLImport(SimpleTestRequestContext(BasicTestUser.mainIdentity.id), "Watches Space")(ecology)
+      val state = importer.readDumpfile("""
+CREATE TABLE `movement` (
+  `set_type_id` int(11) unsigned DEFAULT NULL,
+  CONSTRAINT `movement_set_rel` FOREIGN KEY (`set_type_id`) REFERENCES `movement_set_type` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+CREATE TABLE `movement_set_type` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`id`)
+);
+""")      
+    }
+    
+    // This is the serious test -- do we get the right output?
+    "produce a correct Space from a complex DB" in {
+//      val importer = new MySQLImport(SimpleTestRequestContext(BasicTestUser.mainIdentity.id), "Watches Space")(ecology)
+//      val state = importer.readDumpfile(sql)
     }
   }
   
