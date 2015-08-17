@@ -86,7 +86,7 @@ object MySQLParse {
   val updateOptP:Parser[SQLUpdateOpt] = P(curTimestampP | setNullP | cascadeP)
   val onUpdateP = P("ON UPDATE" ~! wP ~ updateOptP)
   val onDeleteP = P("ON DELETE" ~! wP ~ updateOptP)
-  val columnOptP:Parser[SQLColumnOpt] = P(autoIncrementP | nullP | notNullP | defaultP | updateOptP)
+  val columnOptP:Parser[SQLColumnOpt] = P(autoIncrementP | nullP | notNullP | defaultP | onUpdateP | onDeleteP)
   
   val primaryP = P("PRIMARY KEY (" ~ quotedIdentP ~ ")") map { ident => SQLPrimaryKey(ColumnName(ident)) }
   val keyP = P("KEY " ~ quotedIdentP ~ " (" ~ quotedIdentP ~ ")") map { idents => SQLKey }
@@ -120,7 +120,7 @@ object MySQLParse {
   val columnsClauseP = P("(" ~ quotedIdentP.rep(1, sep=", ") ~ ")") map { _.map(ColumnName(_)) }
   val quotedContentP = P(("\\'" | (!"'" ~ AnyChar)).rep.!)
   val quotedValueP = P("'" ~! quotedContentP.! ~ "'")
-  val oneValueP = P(quotedValueP | (!("," | ")") ~ AnyChar).rep.!)
+  val oneValueP = P(quotedValueP | "NULL".! | (!("," | ")") ~ AnyChar).rep.!)
   val rowValuesP = P("(" ~ oneValueP.rep(sep="," ~! Pass) ~! ")").map(RawRow(_))
   val insertStatementP = P("INSERT INTO " ~ quotedIdentP ~ wP ~ columnsClauseP ~ wP ~ 
       "VALUES" ~ wP ~ rowValuesP.rep(sep="," ~ wP)) map { content =>
