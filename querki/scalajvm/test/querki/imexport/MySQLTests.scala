@@ -182,6 +182,10 @@ CREATE TABLE `movement_set_type` (
       
       pqloaded("[[Movement Wind Type._instances -> _sort(Wind Type Name) -> Wind Type Name -> _commas]]") should
         startWith("Key Back, Key Front")
+      
+      // There is only one Key Front watch, and it's a Howard:
+      pqloaded("""[[Movement._instances -> _filter(_equals(Wind Type Id -> Wind Type Name, ""Key Front"")) -> Brand]]""") should
+        equal("Howard")
     }
   }
   
