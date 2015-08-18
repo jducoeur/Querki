@@ -156,7 +156,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
           Core.ExactlyOne
           
       def charHeuristic(size:Int) = {
-        if (size < 80)
+        if (size < 128)
           Core.TextType
         else
           Core.LargeTextType
@@ -239,6 +239,57 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
     }
   }
   
+  /**
+   * See if we can make a heuristic guess at a name to show.
+   */
+  def buildComputedName(table:MySQLTable):Option[(OID, QValue)] = {
+    val textProps:Seq[(MySQLColumn, AnyProp)] = 
+      table.columns.values.toSeq
+      .map(col => (col, propsByTable.get(TableAndColumn(table.name, col.name))))
+      .filter(pair => pair._2.isDefined && pair._2.get.pType == Core.TextType)
+      .map(pair => (pair._1, pair._2.get))
+      
+    if (textProps.length == 1) {
+      val (col, prop) = textProps.head
+      
+      def computedName() = {
+        Some(Basic.ComputedNameProp(s"[[${prop.displayName}]]"))
+      }
+      
+      // Okay, there's only one Text property. Does each row have a unique value?
+      table.data match {
+        case Some(MySQLData(colOrder, rows)) => {
+          val index = colOrder.indexWhere { _ == col.name }
+          val result = ((Set.empty[String], true) /: rows) { (pair, row) =>
+            val (set, succ) = pair
+            if (succ) {
+              val v = row.vs(index).v.toString()
+              if (set.contains(v))
+                // Found a duplicate:
+                (set, false)
+              else
+                (set + v, true)
+            } else {
+              // We're already failed
+              pair
+            }
+          }
+          if (result._2)
+            computedName()
+          else
+            None
+        }
+        case None => {
+          // There isn't any data. Okay, we'll take a stab in the dark and say that
+          // this is intended to be a name column:
+          computedName()
+        }
+      }
+    } else {
+      None
+    }
+  }
+  
   def buildModels(db:MySQLDB, stateIn:SpaceState):SpaceState = {
     (stateIn /: db.tables.values) { (state, table) =>
       val mainPropPairs = table.columns.values.map { col =>
@@ -253,7 +304,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
         // way for the user to specify a Display Name field, we use Computed Name instead.
         Editor.InstanceProps(mainPropPairs.map(_._1):_*),
         Basic.DisplayNameProp(fixName(table.name.v))
-      )
+      ) ++ buildComputedName(table)
       
       val oid = createOID()
       modelMap += (table.name -> oid)
