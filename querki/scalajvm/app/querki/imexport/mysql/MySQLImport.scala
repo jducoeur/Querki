@@ -71,7 +71,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
   def checkPropGeneration(table:MySQLTable):MySQLTable = {
     // Go through the columns and see if there are any to be omitted:
     (table /: table.columns.values) { (tbl, col) =>
-      def columnOmitted() = tbl.copy(columns = table.columns + (col.name -> col.copy(generateProp = false)))
+      def columnOmitted() = tbl.copy(columns = tbl.columns + (col.name -> col.copy(generateProp = false)))
       
       if (tbl.primaryKey.isDefined && (col.name == tbl.primaryKey.get) && col.clauses.contains(SQLAutoIncrement)) {
         // It's a standard auto-incrementing ID, which means it almost certainly
@@ -301,18 +301,21 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
     if (cols.isEmpty)
       tIn
     else {
+      val col = cols.head
+      val v = vals.head
+      // First, record the ID cross-reference, if this is the primary key. We need to do this regardless
+      // of whether we're actually emitting the Property or not:
+      primaryOpt.foreach { primary =>
+        if (col.name == primary) {
+          // This is the primary key for this row, so add it to the mapping, so that we can use
+          // it for links later if needed:
+          idMap += (v -> tIn.id)
+        }
+      }
+      
       props.head match {
         case Some(prop) => {
           // Usual case: generate a value for this Property, if there is one:
-          val col = cols.head
-          val v = vals.head
-          primaryOpt.foreach { primary =>
-            if (col.name == primary) {
-              // This is the primary key for this row, so add it to the mapping, so that we can use
-              // it for links later if needed:
-              idMap += (v -> tIn.id)
-            }
-          }
           val t = prop.confirmType(Core.LinkType) match {
             // We don't want to deal with Links until all the Things are created:
             case Some(linkProp) => {
@@ -335,7 +338,6 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
           buildInstance(primaryOpt, tIn, cols.tail, props.tail, vals.tail)
         }
       }
-
     }
   }
   def buildInstances(db:MySQLDB, stateIn:SpaceState):SpaceState = {
