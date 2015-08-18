@@ -381,7 +381,8 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Import
   private def setPropValues(p:FoldParams, things:Seq[Thing])(implicit imp:SpaceState):RequestM[FoldParams] = {
     things.headOption match {
       case Some(thing) => {
-        // QLog.spew(s"Setting Property values on ${thing.displayName}")
+//        QLog.spew(s"Setting Property values on")
+//        QLog.spewThing(thing)(imp)
         p.actor.request(ChangeProps(p.user, p.spaceId, p.idMap(thing.id), translateProps(thing, p), true)) flatMap {
           case found @ ThingFound(intId, state) => {
             if (deferredPropertiesByModel.contains(thing.id)) {

@@ -4,6 +4,7 @@ import java.util.regex.Pattern
 
 import scala.scalajs.js.timers._
 import org.scalajs.dom
+import dom.raw.File
 import scalatags.JsDom.all._
 import upickle._
 import autowire._
@@ -37,13 +38,23 @@ class ImportSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
   
   var progressTimer:Option[SetIntervalHandle] = None
   
-  val fileInputElem = GadgetRef.of[dom.html.Input].
+  val xmlInputElem = 
+    createInputElem(
+      { file => Pattern.matches("text/xml", file.`type`)},
+      { file => Client[ImportSpaceFunctions].importFromXML(spaceName.get.text(), file.size).call() })
+      
+  val sqlInputElem =
+    createInputElem(
+      { file => true },
+      { file => Client[ImportSpaceFunctions].importFromMySQL(spaceName.get.text(), file.size).call() })
+    
+  def createInputElem(testFile:File => Boolean, fBeginUpload:File => Future[String]) = GadgetRef.of[dom.html.Input].
     whenRendered { inpGadget =>
       $(inpGadget.elem).fileupload(FileUploadOptions
         .add({ (e:JQueryEventObject, data:FileUploadData) =>
           val file = data.files(0)
-          if (Pattern.matches("text/xml", file.`type`)) {
-            Client[ImportSpaceFunctions].importFromXML(spaceName.get.text(), file.size).call() foreach { path =>
+          if (testFile(file)) {
+            fBeginUpload(file) foreach { path =>
               data.url = controllers.ClientController.upload(path).url
               val deferred = data.submit()
               buttonSection.jq.hide()
@@ -83,9 +94,14 @@ class ImportSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
         h1("Import a Space from a File"),
         p(spaceName <= new RxInput(Some(InputUtils.spaceNameFilter _), "text", cls:="form-control", placeholder:="Name of the new Space")),
         buttonSection <= div(
-          p("To import an XML file that was exported from Querki, click here:"),
+          p(b("To import an XML file that was exported from Querki"), ", click here:"),
           // TODO: make this into a pretty custom button:
-          fileInputElem <= input(/*cls:="_photoInputElem", */tpe:="file", accept:="text/xml",
+          xmlInputElem <= input(/*cls:="_photoInputElem", */tpe:="file", accept:="text/xml",
+            disabled := Rx { spaceName.isEmpty || spaceName.get.text().length() == 0 }),
+          br(),
+          p(b("To import a MySQL dump file"), ", click here:"),
+          // TODO: make this into a pretty custom button:
+          sqlInputElem <= input(/*cls:="_photoInputElem", */tpe:="file",
             disabled := Rx { spaceName.isEmpty || spaceName.get.text().length() == 0 })
         ),
         spinnerSection <= div(display := "none",

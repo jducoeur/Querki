@@ -22,8 +22,8 @@ class ImportSpaceFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends 
   
   // This just kicks off the import process, by creating the Actor that will do all the
   // real work:
-  def importFromXML(name:String, size:Int):Future[String] = {
-    val importActor = requester.context.actorOf(ImportSpaceActor.actorProps(ecology, ImportXML, name, size))
+  def importFromType(typ:ImportDataType, name:String, size:Int):Future[String] = {
+    val importActor = requester.context.actorOf(ImportSpaceActor.actorProps(ecology, typ, name, size))
     
     // Now, return the fully-qualified path to that Actor:
     val path = importActor.path
@@ -31,6 +31,10 @@ class ImportSpaceFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends 
     val defaultAddress = system.asInstanceOf[ExtendedActorSystem].provider.getDefaultAddress
     Future.successful(path.toStringWithAddress(defaultAddress))
   }
+  
+  def importFromXML(name:String, size:Int):Future[String] = importFromType(ImportXML, name, size)
+  
+  def importFromMySQL(name:String, size:Int):Future[String] = importFromType(ImportMySQL, name, size)
   
   def getImportProgress(path:String):Future[ImportProgress] = {
     val selection = context.system.actorSelection(path)

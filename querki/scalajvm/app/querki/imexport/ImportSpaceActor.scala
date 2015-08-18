@@ -14,6 +14,8 @@ import querki.streaming._
 import UploadMessages._
 import querki.values.RequestContext
 
+import mysql._
+
 /**
  * This does the actual heavy lifting of importing a data file from the client,
  * and building a Space from it.
@@ -39,8 +41,9 @@ class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:Stri
       }
       
       case ImportMySQL => {
-        QLog.error("ImportSpaceActor(ImportMySQL) is NYI!")
-        throw new Exception("ImportMySQL NYI!")
+        val sql = new String(chunkBuffer.toArray)
+        QLog.spew(sql)
+        new MySQLImport(rc, name)(ecology).readDumpfile(sql)
       }
       
       case _ => {

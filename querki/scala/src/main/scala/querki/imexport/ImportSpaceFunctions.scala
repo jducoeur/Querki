@@ -24,6 +24,8 @@ trait ImportSpaceFunctions {
    */
   def importFromXML(name:String, size:Int):Future[String]
   
+  def importFromMySQL(name:String, size:Int):Future[String]
+  
   /**
    * Fetch the current state of this import.
    * 

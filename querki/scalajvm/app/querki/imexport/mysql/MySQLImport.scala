@@ -161,6 +161,11 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
       }
       
       val constraint = tbl.constraints.find(_.localCol == col.col.name)
+      def intType(size:Int) =
+        if (size == 1)
+          Core.YesNoType
+        else
+          Core.IntType
       val pType:PType[_] with PTypeBuilder[_,_] =
         if (constraint.isDefined) {
           // If it's constrained, then we presume it's a Link:
@@ -168,8 +173,8 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
         } else {
           // As we add more SQLTypes, make sure this keeps up:
           col.tpe match {
-            case SQLInt(size:Int) => Core.IntType
-            case SQLUInt(size:Int) => Core.IntType
+            case SQLInt(size:Int) => intType(size)
+            case SQLUInt(size:Int) => intType(size)
             case SQLBigInt(size:Int) => Core.LongType
             case SQLDouble => Core.FloatType
             case SQLChar(size:Int) => charHeuristic(size) 
@@ -223,16 +228,20 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
     }
   }
   
-  def buildQValue[RT](col:MySQLColumn, prop:Property[_,RT], sqlVal:SQLVal[_]):QValue = {
-    val v:RT = sqlVal.v.asInstanceOf[RT]
-    QValue.make(prop.cType, prop.pType, v)
+  def buildQValue[RT](col:MySQLColumn, prop:Property[_,RT], sqlVal:SQLVal[_]):Option[QValue] = {
+    if (sqlVal == NullVal)
+      None
+    else {
+      val v:RT = sqlVal.v.asInstanceOf[RT]
+      Some(QValue.make(prop.cType, prop.pType, v))
+    }
   }
   
   def buildModels(db:MySQLDB, stateIn:SpaceState):SpaceState = {
     (stateIn /: db.tables.values) { (state, table) =>
       val propPairs = table.columns.values.map { col =>
         colMap.get(col.col).map { prop =>
-          val default:QValue = col.defaultOpt.filter(_ != NullVal).map(v => buildQValue(col, prop, v)).getOrElse(prop.default(stateIn))
+          val default:QValue = col.defaultOpt.filter(_ != NullVal).flatMap(v => buildQValue(col, prop, v)).getOrElse(prop.default(stateIn))
           (prop.id, default)
         }
       }.flatten.toSeq ++ Seq(
@@ -276,7 +285,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
         val linkedModelId = modelMap(foreignTbl.name)
         val linkPair = Links.LinkModelProp(linkedModelId)
         val tweakedProp = prop.copy(pf = () => prop.props + linkPair)
-        constState.copy(spaceProps = constState.spaceProps + (model.id -> tweakedProp))
+        constState.copy(spaceProps = constState.spaceProps + (prop.id -> tweakedProp))
       }
     }
   }
@@ -309,8 +318,10 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
         }
         case _ if (col.generateProp) => {
           // Ordinary column -- add this row's value to the Thing:
-          val qv = buildQValue(col, prop, v)
-          tIn.copy(pf = () => tIn.props + (prop.id -> qv))
+          buildQValue(col, prop, v) match {
+            case Some(qv) => tIn.copy(pf = () => tIn.props + (prop.id -> qv))
+            case None => tIn
+          }
         }
         case _ => tIn  // This Column doesn't generate a Property
       }
