@@ -33,8 +33,9 @@ object MySQLParse {
   case object SQLNotNull extends SQLColumnOpt
   case class SQLDefault(v:String) extends SQLColumnOpt
   case class SQLOnUpdate(v:SQLUpdateOpt) extends SQLColumnOpt
+  case class SQLOnDelete(v:SQLUpdateOpt) extends SQLColumnOpt
   
-  sealed trait SQLUpdateOpt extends SQLColumnOpt
+  sealed trait SQLUpdateOpt
   case object SQLCurrentTimestamp extends SQLUpdateOpt
   case object SQLSetNull extends SQLUpdateOpt
   case object SQLCascade extends SQLUpdateOpt
@@ -44,7 +45,7 @@ object MySQLParse {
   // We're not worrying about keys, at least for now
   case object SQLKey extends SQLXref
   case class SQLConstraint(localCol:ColumnName, foreignTable:TableName, foreignCol:ColumnName, 
-      update:Option[SQLUpdateOpt], delete:Option[SQLUpdateOpt]) extends SQLXref
+      update:Option[SQLOnUpdate], delete:Option[SQLOnDelete]) extends SQLXref
   
   case class ColumnInfo(name:ColumnName, tpe:SQLType, clauses:Seq[SQLColumnOpt])
   
@@ -84,8 +85,8 @@ object MySQLParse {
   val setNullP = P("SET NULL") map { dummy => SQLSetNull }
   val cascadeP = P("CASCADE") map { dummy => SQLCascade }
   val updateOptP:Parser[SQLUpdateOpt] = P(curTimestampP | setNullP | cascadeP)
-  val onUpdateP = P("ON UPDATE" ~! wP ~ updateOptP)
-  val onDeleteP = P("ON DELETE" ~! wP ~ updateOptP)
+  val onUpdateP = P("ON UPDATE" ~! wP ~ updateOptP) map { SQLOnUpdate(_) }
+  val onDeleteP = P("ON DELETE" ~! wP ~ updateOptP) map { SQLOnDelete(_) }
   val columnOptP:Parser[SQLColumnOpt] = P(autoIncrementP | nullP | notNullP | defaultP | onUpdateP | onDeleteP)
   
   val primaryP = P("PRIMARY KEY (" ~ quotedIdentP ~ ")") map { ident => SQLPrimaryKey(ColumnName(ident)) }
@@ -94,7 +95,7 @@ object MySQLParse {
       ") REFERENCES " ~ quotedIdentP ~ " (" ~ quotedIdentP ~ ")" ~ wOptP ~ onDeleteP.? ~ wOptP ~ onUpdateP.?) map
       { constr =>
         val (dummy, localColumn, foreignTable, foreignColumn, onDelete, onUpdate) = constr
-        SQLConstraint(ColumnName(localColumn), TableName(foreignTable), ColumnName(foreignColumn), onDelete, onUpdate)
+        SQLConstraint(ColumnName(localColumn), TableName(foreignTable), ColumnName(foreignColumn), onUpdate, onDelete)
       }
   val xrefP:Parser[SQLXref] = P(primaryP | keyP | constraintP)
   

@@ -97,11 +97,12 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
    * Do any heuristic pre-processing before we begin to build the Space.
    */
   def preprocessDB(db:MySQLDB):MySQLDB = {
-    (db /: db.tables) { (dba, tablePair) =>
+    val tables = db.tables
+    (db /: tables) { (dba, tablePair) =>
       val (name, table) = tablePair
       val withGeneration = checkPropGeneration(table)
       val withConstr = withConstraints(withGeneration)
-      db.copy(tables = db.tables + (name -> withConstr))
+      dba.copy(tables = dba.tables + (name -> withConstr))
     }
   }
   
@@ -140,11 +141,11 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
     name
   }
   def buildProperty(col:MySQLColumn, tbl:MySQLTable):Option[AnyProp] = {
-    if (!col.generateProp)
+    if (!col.generateProp) {
       // We are intentionally not generating this column. This happens in cases like autoincremented IDs
       // and update timestamps.
       None
-    else {
+    } else {
       // TODO: detect join tables, and build a List if found. But that'll require significant and fairly
       // smart tweaking.
       val collection = 
@@ -296,36 +297,45 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
    * Note that we explicitly assume that all three lists are the same length.
    */
   @tailrec
-  private def buildInstance(primaryOpt:Option[ColumnName], tIn:ThingState, cols:Seq[MySQLColumn], props:Seq[AnyProp], vals:Seq[SQLVal[_]]):ThingState = {
+  private def buildInstance(primaryOpt:Option[ColumnName], tIn:ThingState, cols:Seq[MySQLColumn], props:Seq[Option[AnyProp]], vals:Seq[SQLVal[_]]):ThingState = {
     if (cols.isEmpty)
       tIn
     else {
-      val prop = props.head
-      val col = cols.head
-      val v = vals.head
-      primaryOpt.foreach { primary =>
-        if (col.name == primary) {
-          // This is the primary key for this row, so add it to the mapping, so that we can use
-          // it for links later if needed:
-          idMap += (v -> tIn.id)
-        }
-      }
-      val t = prop.confirmType(Core.LinkType) match {
-        // We don't want to deal with Links until all the Things are created:
-        case Some(linkProp) => {
-          pendingLinks += (PendingLink(tIn.id, linkProp, v))
-          tIn
-        }
-        case _ if (col.generateProp) => {
-          // Ordinary column -- add this row's value to the Thing:
-          buildQValue(col, prop, v) match {
-            case Some(qv) => tIn.copy(pf = () => tIn.props + (prop.id -> qv))
-            case None => tIn
+      props.head match {
+        case Some(prop) => {
+          // Usual case: generate a value for this Property, if there is one:
+          val col = cols.head
+          val v = vals.head
+          primaryOpt.foreach { primary =>
+            if (col.name == primary) {
+              // This is the primary key for this row, so add it to the mapping, so that we can use
+              // it for links later if needed:
+              idMap += (v -> tIn.id)
+            }
           }
+          val t = prop.confirmType(Core.LinkType) match {
+            // We don't want to deal with Links until all the Things are created:
+            case Some(linkProp) => {
+              pendingLinks += (PendingLink(tIn.id, linkProp, v))
+              tIn
+            }
+            case _ if (col.generateProp) => {
+              // Ordinary column -- add this row's value to the Thing:
+              buildQValue(col, prop, v) match {
+                case Some(qv) => tIn.copy(pf = () => tIn.props + (prop.id -> qv))
+                case None => tIn
+              }
+            }
+            case _ => tIn  // This Column doesn't generate a Property
+          }
+          buildInstance(primaryOpt, t, cols.tail, props.tail, vals.tail)          
         }
-        case _ => tIn  // This Column doesn't generate a Property
+        case None => {
+          // There's no Property, which means we're omitting this column. Just keep going:
+          buildInstance(primaryOpt, tIn, cols.tail, props.tail, vals.tail)
+        }
       }
-      buildInstance(primaryOpt, t, cols.tail, props.tail, vals.tail)
+
     }
   }
   def buildInstances(db:MySQLDB, stateIn:SpaceState):SpaceState = {
@@ -333,7 +343,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
       val primary = table.primaryKey
       table.data match {
         case Some(data) => {
-          val props = data.columnOrder.map(colName => propsByTable(TableAndColumn(table.name, colName)))
+          val props = data.columnOrder.map(colName => propsByTable.get(TableAndColumn(table.name, colName)))
           val cols = data.columnOrder.map(table.columns(_))
           // There are rows in this table, which need to be turned into Things
           (tblState /: data.rows) { (rowState, row) =>
