@@ -3,6 +3,8 @@ package querki.imexport.mysql
 import fastparse.all._
 import fastparse.core.Result._
 
+import querki.globals._
+
 object MySQLParse {
   sealed trait Stmt
   case class StmtCreate(name:TableName, cols:Seq[ColumnInfo], xrefs:Seq[SQLXref]) extends Stmt
@@ -57,7 +59,7 @@ object MySQLParse {
   // Note that, for the time being at least, we ignore the MySQL pragmas inside delim comments.
   val blankCommentP = P(CharsWhile(c => c != '\n' && c != 'r' && c.isWhitespace, 0) ~ nlP)
   val hashCommentP = P("#" ~! (!nlP ~ AnyChar).rep ~ nlP)
-  val dashCommentP = P("-- " ~! (!nlP ~ AnyChar).rep ~ nlP)
+  val dashCommentP = P("--" ~! (!nlP ~ AnyChar).rep ~ nlP)
   val delimCommentP = P("/*" ~! (!"*/" ~ AnyChar).rep ~ "*/" ~ ";".?)
   val commentP = P(blankCommentP | hashCommentP | dashCommentP | delimCommentP)
   val commentsP = P(commentP.rep)
@@ -119,8 +121,8 @@ object MySQLParse {
   val dropStatementP = P("DROP TABLE IF EXISTS `" ~ identP ~ "`").map { ident => StmtDrop(TableName(ident)) }
   
   val columnsClauseP = P("(" ~ quotedIdentP.rep(1, sep=", ") ~ ")") map { _.map(ColumnName(_)) }
-  val quotedContentP = P(("\\'" | (!"'" ~ AnyChar)).rep.!)
-  val quotedValueP = P("'" ~! quotedContentP.! ~ "'")
+  val quotedContentP = P(("\\'" | (!"'" ~ AnyChar)).rep.!) map { content => content.replace("\\'", "'") }
+  val quotedValueP = P("'" ~! quotedContentP ~ "'")
   val oneValueP = P(quotedValueP | "NULL".! | (!("," | ")") ~ AnyChar).rep.!)
   val rowValuesP = P("(" ~ oneValueP.rep(sep="," ~! Pass) ~! ")").map(RawRow(_))
   val insertStatementP = P("INSERT INTO " ~ quotedIdentP ~ wP ~ columnsClauseP ~ wP ~ 

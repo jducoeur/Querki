@@ -341,7 +341,18 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
         // Okay -- we have a valid Constraint. Fill in the Link Model:
         val linkedModelId = modelMap(foreignTbl.name)
         val linkPair = Links.LinkModelProp(linkedModelId)
-        val tweakedProp = prop.copy(pf = () => prop.props + linkPair)
+        val fixedName = {
+          val propName = prop.linkName.get
+          if (propName.endsWith(" Id")) {
+            val candidate = propName.substring(0, propName.length - 3)
+            constState.anythingByName(candidate) match {
+              case Some(_) => propName   // Nope, it's taken
+              case None => candidate
+            }
+          } else
+            propName
+        }
+        val tweakedProp = prop.copy(pf = () => prop.props + linkPair + Core.setName(fixedName))
         constState.copy(spaceProps = constState.spaceProps + (prop.id -> tweakedProp))
       }
     }

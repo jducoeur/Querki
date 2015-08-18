@@ -49,6 +49,15 @@ class MySQLTests extends QuerkiTests with ParserTests {
 """)
     }
     
+    "parse a dash comment" in {
+      checkParse(MySQLParse.commentsP, """-- MySQL dump 10.13  Distrib 5.1.44, for Win64 (unknown)
+--
+-- Host: localhost    Database: comics_production
+-- ------------------------------------------------------
+-- Server version 5.1.44-community
+""")
+    }
+    
     "parse a quoted identifier" in {
       checkParse(MySQLParse.quotedIdentP, "`id`")
     }
@@ -107,6 +116,11 @@ VALUES
         case StmtDrop(TableName(table)) => assert(table == "case")
         case _ => fail("Didn't get the expected drop statement!")
       }
+    }
+    
+    "parse a quoted value properly" in {
+      val s = checkParse(MySQLParse.oneValueP, "'o\\'clock'")
+      assert(s == "o'clock")
     }
     
     "read in a full dumpfile" in {
@@ -184,7 +198,7 @@ CREATE TABLE `movement_set_type` (
         startWith("Key Back, Key Front")
       
       // There is only one Key Front watch, and it's a Howard:
-      pqloaded("""[[Movement._instances -> _filter(_equals(Wind Type Id -> Wind Type Name, ""Key Front"")) -> Brand]]""") should
+      pqloaded("""[[Movement._instances -> _filter(_equals(Wind Type -> Wind Type Name, ""Key Front"")) -> Brand]]""") should
         equal("Howard")
     }
   }
