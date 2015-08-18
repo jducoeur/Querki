@@ -24,6 +24,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
   
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Core = interface[querki.core.Core]
+  lazy val Editor = interface[querki.editing.Editor]
   lazy val Links = interface[querki.links.Links]
   lazy val Time = interface[querki.time.Time]
   lazy val System = interface[querki.system.System]
@@ -240,13 +241,17 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
   
   def buildModels(db:MySQLDB, stateIn:SpaceState):SpaceState = {
     (stateIn /: db.tables.values) { (state, table) =>
-      val propPairs = table.columns.values.map { col =>
+      val mainPropPairs = table.columns.values.map { col =>
         colMap.get(col.col).map { prop =>
           val default:QValue = col.defaultOpt.filter(_ != NullVal).flatMap(v => buildQValue(col, prop, v)).getOrElse(prop.default(stateIn))
           (prop.id, default)
         }
-      }.flatten.toSeq ++ Seq(
+      }.flatten.toSeq 
+      val propPairs = mainPropPairs ++ Seq(
         Core.IsModelProp(true),
+        // Note that the Instance Props intentionally doesn't include Display Name. Until we have an interactive
+        // way for the user to specify a Display Name field, we use Computed Name instead.
+        Editor.InstanceProps(mainPropPairs.map(_._1):_*),
         Basic.DisplayNameProp(fixName(table.name.v))
       )
       
