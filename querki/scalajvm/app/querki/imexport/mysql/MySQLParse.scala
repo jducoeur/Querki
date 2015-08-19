@@ -9,7 +9,7 @@ object MySQLParse {
   sealed trait Stmt
   case class StmtCreate(name:TableName, cols:Seq[ColumnInfo], xrefs:Seq[SQLXref]) extends Stmt
   case class StmtDrop(name:TableName) extends Stmt
-  case class StmtInsert(table:TableName, cols:Seq[ColumnName], rows:Seq[RawRow]) extends Stmt
+  case class StmtInsert(table:TableName, cols:Option[Seq[ColumnName]], rows:Seq[RawRow]) extends Stmt
   case class StmtLock(name:TableName) extends Stmt
   case object StmtUnlock extends Stmt
   
@@ -58,9 +58,9 @@ object MySQLParse {
   // The various sorts of comments you can find in the dump. None of these product anything.
   // Note that, for the time being at least, we ignore the MySQL pragmas inside delim comments.
   val blankCommentP = P(CharsWhile(c => c != '\n' && c != 'r' && c.isWhitespace, 0) ~ nlP)
-  val hashCommentP = P("#" ~! (!nlP ~ AnyChar).rep ~ nlP)
-  val dashCommentP = P("--" ~! (!nlP ~ AnyChar).rep ~ nlP)
-  val delimCommentP = P("/*" ~! (!"*/" ~ AnyChar).rep ~ "*/" ~ ";".?)
+  val hashCommentP = P("#" ~ (!nlP ~ AnyChar).rep ~ nlP)
+  val dashCommentP = P("--" ~ (!nlP ~ AnyChar).rep ~ nlP)
+  val delimCommentP = P("/*" ~ (!"*/" ~ AnyChar).rep ~ "*/" ~ ";".?)
   val commentP = P(blankCommentP | hashCommentP | dashCommentP | delimCommentP)
   val commentsP = P(commentP.rep)
   
@@ -104,7 +104,8 @@ object MySQLParse {
   // Note that, for the moment, we're just ignoring the tableOpts:
   val engineP = P("ENGINE=" ~ ("InnoDB" | "MyISAM"))
   val charsetP = P("DEFAULT CHARSET=" ~ ("utf8" | "latin1"))
-  val tableOptsP = P((engineP | charsetP).rep(sep=wP))
+  val currentIncrementP = P("AUTO_INCREMENT=" ~ CharsWhile(_.isDigit))
+  val tableOptsP = P((engineP | charsetP | currentIncrementP).rep(sep=wP))
   
   val columnDefP = P(quotedIdentP ~ wP ~! typeDefP ~ wOptP ~ columnOptP.rep(sep = wP)) map
     { info =>
@@ -125,8 +126,8 @@ object MySQLParse {
   val quotedValueP = P("'" ~! quotedContentP ~ "'")
   val oneValueP = P(quotedValueP | "NULL".! | (!("," | ")") ~ AnyChar).rep.!)
   val rowValuesP = P("(" ~ oneValueP.rep(sep="," ~! Pass) ~! ")").map(RawRow(_))
-  val insertStatementP = P("INSERT INTO " ~ quotedIdentP ~ wP ~ columnsClauseP ~ wP ~ 
-      "VALUES" ~ wP ~ rowValuesP.rep(sep="," ~ wP)) map { content =>
+  val insertStatementP = P("INSERT INTO " ~ quotedIdentP ~ wP ~ columnsClauseP.? ~ wOptP ~ 
+      "VALUES" ~ wP ~ rowValuesP.rep(sep="," ~ wOptP)) map { content =>
         val (tblName, colNames, rows) = content
         StmtInsert(TableName(tblName), colNames, rows)
       }

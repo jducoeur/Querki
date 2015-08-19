@@ -12,7 +12,7 @@ object MySQLProcess {
   import MySQLProcess._
   
   case class MySQLDB(tables:Map[TableName, MySQLTable])
-  case class MySQLTable(name:TableName, columns:Map[ColumnName, MySQLColumn], primaryKey:Option[ColumnName], 
+  case class MySQLTable(name:TableName, columns:Map[ColumnName, MySQLColumn], columnOrder:Seq[ColumnName], primaryKey:Option[ColumnName], 
       constraints:Seq[SQLConstraint], data:Option[MySQLData] = None)
   case class MySQLRow(vs:Seq[SQLVal[_]])
   case class MySQLColumn(col:ColumnInfo, 
@@ -48,9 +48,10 @@ object MySQLProcess {
   def processCreate(stmt:StmtCreate, db:MySQLDB):MySQLDB = {
     val StmtCreate(name, cols, xrefs) = stmt
     val colMap = Map(cols.map(MySQLColumn(_)).map(col => col.name -> col):_*)
+    val colNames = cols.map(_.name)
     val primary = xrefs.collectFirst { case SQLPrimaryKey(col) => col }
     val constraints = xrefs.collect { case con:SQLConstraint => con }
-    val table = MySQLTable(name, colMap, primary, constraints)
+    val table = MySQLTable(name, colMap, colNames, primary, constraints)
     
     db.copy(tables = db.tables + (name -> table))
   }
@@ -86,11 +87,14 @@ object MySQLProcess {
   }
   
   def processInsert(stmt:StmtInsert, db:MySQLDB):MySQLDB = {
-    val StmtInsert(tableName:TableName, colNames:Seq[ColumnName], rawRows:Seq[RawRow]) = stmt
+    val StmtInsert(tableName:TableName, colNamesOpt:Option[Seq[ColumnName]], rawRows:Seq[RawRow]) = stmt
     val table = db.tables(tableName)
-    val cols = colNames.map(colName => table.columns(colName))
+    val cols = colNamesOpt match {
+      case Some(colNames) => colNames.map(colName => table.columns(colName))
+      case None => table.columnOrder.map(colName => table.columns(colName))
+    }
     val rows = rawRows.map(processRow(cols, _))
-    val tableWithData = table.copy(data = Some(MySQLData(colNames, rows)))
+    val tableWithData = table.copy(data = Some(MySQLData(colNamesOpt.getOrElse(table.columnOrder), rows)))
     db.copy(tables = db.tables + (tableName -> tableWithData))
   }
   
