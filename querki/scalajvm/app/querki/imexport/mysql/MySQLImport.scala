@@ -34,7 +34,8 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
   
   var _nextId = 1
   // Mapping from MySQL Primary Key to Thing OID
-  var idMap = Map.empty[SQLVal[_], OID]
+  case class RowKey(table:TableName, id:SQLVal[_])
+  var idMap = Map.empty[RowKey, OID]
   // Mapping from MySQL Column to Property
   var colMap = Map.empty[ColumnInfo, AnyProp]
   // Keep track of the Properties by simple names, so that we know to insert
@@ -48,7 +49,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
   case class TableAndColumn(tbl:TableName, col:ColumnName)
   var propsByTable = Map.empty[TableAndColumn, AnyProp]
   // The Thing/Property pairs that are waiting for Links to be ready:
-  case class PendingLink(tId:OID, prop:Property[OID,_], v:SQLVal[_])
+  case class PendingLink(tId:OID, prop:Property[OID,_], key:RowKey)
   var pendingLinks = Set.empty[PendingLink]
   
   /**
@@ -58,11 +59,9 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
    *  
    *  @param importedKey The primary key of the row in MySQL, if any.
    */
-  def createOID(importedKey:SQLVal[_] = NullVal):OID = {
+  def createOID():OID = {
     val oid = OID(1, _nextId)
     _nextId += 1
-    if (importedKey != NullVal)
-      idMap += (importedKey -> oid)
     oid
   }
   
@@ -368,7 +367,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
    * Note that we explicitly assume that all three lists are the same length.
    */
   @tailrec
-  private def buildInstance(primaryOpt:Option[ColumnName], tIn:ThingState, cols:Seq[MySQLColumn], props:Seq[Option[AnyProp]], vals:Seq[SQLVal[_]]):ThingState = {
+  private def buildInstance(db:MySQLDB, table:MySQLTable, primaryOpt:Option[ColumnName], tIn:ThingState, cols:Seq[MySQLColumn], props:Seq[Option[AnyProp]], vals:Seq[SQLVal[_]]):ThingState = {
     if (cols.isEmpty)
       tIn
     else {
@@ -380,7 +379,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
         if (col.name == primary) {
           // This is the primary key for this row, so add it to the mapping, so that we can use
           // it for links later if needed:
-          idMap += (v -> tIn.id)
+          idMap += (RowKey(table.name, v) -> tIn.id)
         }
       }
       
@@ -390,7 +389,8 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
           val t = prop.confirmType(Core.LinkType) match {
             // We don't want to deal with Links until all the Things are created:
             case Some(linkProp) => {
-              pendingLinks += (PendingLink(tIn.id, linkProp, v))
+              val foreignTable = col.rawConstraint.map(constr => db.tables(constr.foreignTable).name).get
+              pendingLinks += (PendingLink(tIn.id, linkProp, RowKey(foreignTable, v)))
               tIn
             }
             case _ if (col.generateProp) => {
@@ -402,11 +402,11 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
             }
             case _ => tIn  // This Column doesn't generate a Property
           }
-          buildInstance(primaryOpt, t, cols.tail, props.tail, vals.tail)          
+          buildInstance(db, table, primaryOpt, t, cols.tail, props.tail, vals.tail)          
         }
         case None => {
           // There's no Property, which means we're omitting this column. Just keep going:
-          buildInstance(primaryOpt, tIn, cols.tail, props.tail, vals.tail)
+          buildInstance(db, table, primaryOpt, tIn, cols.tail, props.tail, vals.tail)
         }
       }
     }
@@ -427,7 +427,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
                 modelMap(table.name),
                 () => emptyProps
               )
-            val t = buildInstance(primary, tInit, cols, props, row.vs)
+            val t = buildInstance(db, table, primary, tInit, cols, props, row.vs)
             rowState.copy(things = rowState.things + (t.id -> t))
           }
         }
@@ -438,7 +438,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
   
   def addLinks(db:MySQLDB, stateIn:SpaceState):SpaceState = {
     (stateIn /: pendingLinks.iterator) { (state, pending) =>
-      val PendingLink(tId:OID, prop:Property[OID,Any], v:SQLVal[_]) = pending
+      val PendingLink(tId:OID, prop:Property[OID,Any], key @ RowKey(tableName, v)) = pending
       val tIn = state.thing(tId)
       val t =
         if (v == NullVal) {
@@ -449,7 +449,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
           // TODO: there's an implicit assumption here that Links default to NULL. That might be wrong.
           tIn
         } else {
-          val linkId = idMap(v)
+          val linkId = idMap(key)
           tIn.copy(pf = () => tIn.props + prop(linkId))
         }
       state.copy(things = state.things + (t.id -> t))
