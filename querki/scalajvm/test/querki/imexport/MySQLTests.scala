@@ -12,6 +12,17 @@ import querki.test._
 import querki.time._
 import querki.util.QLog
 
+class AdHocMySQLTests extends QuerkiTests with ParserTests {
+  import MySQLParse._
+  import MySQLProcess._
+  
+  "The MySQLParser" should {
+    "do an ad hoc test" in {
+      // Placeholder, when I need to do experiments
+    }
+  }
+}
+
 /**
  * @author jducoeur
  */
@@ -298,7 +309,7 @@ CREATE TABLE `movement` (
   KEY `set_type_id_idx` (`set_type_id`),
   KEY `movement_source_rel` (`source_id`),
   CONSTRAINT `movement_set_rel` FOREIGN KEY (`set_type_id`) REFERENCES `movement_set_type` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `movement_source_rel` FOREIGN KEY (`source_id`) REFERENCES `movement_source` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `movement_source_rel` FOREIGN KEY (`source_id`) REFERENCES `movement_source` (`id`),
   CONSTRAINT `movement_wind_rel` FOREIGN KEY (`wind_type_id`) REFERENCES `movement_wind_type` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

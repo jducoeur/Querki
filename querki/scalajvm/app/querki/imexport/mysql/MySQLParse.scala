@@ -112,7 +112,7 @@ object MySQLParse {
       ColumnInfo(ColumnName(name), tpe, opts)
     }
   val createStatementP = P("CREATE TABLE " ~ quotedIdentP ~! wP ~ "(" ~! wP ~ columnDefP.rep(sep = "," ~ wP) 
-      ~ ("," ~ wP ~ xrefP.rep(sep="," ~! wP)).? ~ wP ~ ")" ~ wOptP ~ tableOptsP) map
+      ~ ("," ~ wP ~ xrefP.rep(sep="," ~! wP)).? ~ wOptP ~ ")" ~ wOptP ~ tableOptsP) map
       { info =>
         val (name, cols, xrefs) = info
         StmtCreate(TableName(name), cols, xrefs.getOrElse(Seq.empty))
