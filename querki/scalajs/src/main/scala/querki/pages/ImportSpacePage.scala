@@ -47,6 +47,42 @@ class ImportSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
     createInputElem(
       { file => true },
       { file => Client[ImportSpaceFunctions].importFromMySQL(spaceName.get.text(), file.size).call() })
+      
+  def startProgressTimer(path:String) = {
+    def finished() = {
+      // We're done -- fire-and-forget call to the server to ack the completion:
+      Client[ImportSpaceFunctions].acknowledgeComplete(path).call()
+      clearInterval(progressTimer.get)
+      progressTimer = None      
+    }
+  
+    // Once a second, ping the uploader and see how it's coming:
+    progressTimer = Some(setInterval(1000) {
+      Client[ImportSpaceFunctions].getImportProgress(path).call() foreach { progress =>
+        progress.spaceInfo match {
+          case Some(space) => {
+            // Success -- we have a new Space
+            finished()
+            CreateSpacePage.navigateToSpace(space)              
+          }
+          
+          case None if (progress.failed) => {
+            // Failure!
+            // TODO: this needs better error support:
+            finished()
+            StatusLine.showUntilChange("Error during processing")
+          }
+          
+          case _ => {
+            // Normal progress:
+            progressMsg.jq.text(progress.msg)
+            progressBar.jq.width(s"${progress.progress}%")
+            progressBar.jq.text(s"${progress.progress}%")
+          }
+        }
+      }
+    })    
+  }
     
   def createInputElem(testFile:File => Boolean, fBeginUpload:File => Future[String]) = GadgetRef.of[dom.html.Input].
     whenRendered { inpGadget =>
@@ -59,24 +95,12 @@ class ImportSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
               val deferred = data.submit()
               buttonSection.jq.hide()
               spinnerSection.jq.show()
-              progressTimer = Some(setInterval(1000) {
-                Client[ImportSpaceFunctions].getImportProgress(path).call() foreach { progress =>
-                  progressMsg.jq.text(progress.msg)
-                  progressBar.jq.width(s"${progress.progress}%")
-                  progressBar.jq.text(s"${progress.progress}%")
-                }
-              })
-              deferred.done { (data:String, textStatus:String, jqXHR:JQueryDeferred) => 
-                clearInterval(progressTimer.get)
-                progressTimer = None
-                val space = read[SpaceInfo](data)
-                CreateSpacePage.navigateToSpace(space)
-              }
-              deferred.fail { (jqXHR:JQueryXHR, textStatus:String, errorThrown:String) =>
-                clearInterval(progressTimer.get)
-                progressTimer = None
-                // TODO: this needs better error support:
+              startProgressTimer(path)
+              // We no longer care about this; we're polling the state instead:
+              // deferred.done { (data:String, textStatus:String, jqXHR:JQueryDeferred) => }
+              deferred.fail { (jqXHR:JQueryXHR, textStatus:String, errorThrown:String) => 
                 println(s"ImportSpacePage got error $errorThrown")
+                StatusLine.showUntilChange(s"Error during uploading")
               }
             }
           } else {

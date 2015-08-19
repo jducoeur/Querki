@@ -171,6 +171,8 @@ class ClientController extends ApplicationBase with StreamController {
     for {
       uploadRef <- rc.request.body.asInstanceOf[Future[ActorRef]]
       // We ask the UploadActor how much time it's going to need to process this upload:
+      // TODO: this mechanism is now obsolete; the architecture is more interactive, and
+      // UploadComplete responds quickly:
       UploadTimeout(uploadDuration) <- uploadRef.ask(GetUploadTimeout)(5 seconds)
       uploadTimeout = Timeout(uploadDuration)
       result <- uploadRef.ask(UploadComplete(rc))(uploadTimeout)

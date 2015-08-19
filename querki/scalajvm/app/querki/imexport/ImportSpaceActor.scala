@@ -59,7 +59,7 @@ class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:Stri
       if (!uploadComplete) {
         // We arbitrarily count the uploading as the first 20% of the total process:
         val percent = ((chunkBuffer.size / totalSize) * 20).toInt
-        sender ! ImportProgress("Uploading...", percent)
+        sender ! ImportProgress("Uploading...", percent, spaceInfo, failed)
       } else {
         // We're into processing.
         val processPercent = 
@@ -68,9 +68,13 @@ class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:Stri
           else
             ((thingOps.toFloat / totalThingOps) * 80).toInt + 20
             
-        sender ! ImportProgress(importMsg, processPercent)
+        QLog.spew(s"Reporting progress -- we are at $thingOps of $totalThingOps")
+            
+        sender ! ImportProgress(importMsg, processPercent, spaceInfo, failed)
       }
     }
+    
+    case CompletionAcknowledged => context.stop(self)
   }
   
   def processBuffer(rc:RequestContext) = {
@@ -80,17 +84,19 @@ class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:Stri
     val rawState = buildSpaceState(rc)
     
     loopback(createSpaceFromImported(rc.requesterOrAnon, name)(rawState)) onComplete { 
-      case Success(spaceInfo) => {
-        val apiInfo = ClientApi.spaceInfo(spaceInfo)
-        sender ! UploadProcessSuccessful(write(apiInfo))
-        context.stop(self)
+      case Success(info) => {
+        // We don't actually do anything -- we wait for the client to request an update
+        // on the situation. So just note that we're done.
+        spaceInfo = Some(ClientApi.spaceInfo(info))
       }
       
       case Failure(ex) => {
-        QLog.error("Got an exception while trying to import a Space", ex)
-        sender ! UploadProcessFailed(write(ex.toString()))
+        failed = true
+        QLog.error("Failure while processing uploaded Space", ex)
       }
     }
+    
+    sender ! UploadProcessSuccessful("Processing in progress")
   }
 }
 
@@ -98,6 +104,8 @@ object ImportSpaceActor {
   def actorProps(ecology:Ecology, importType:ImportDataType, name:String, size:Int) = Props(classOf[ImportSpaceActor], ecology, importType, name, size)
   
   case object GetProgress
+  
+  case object CompletionAcknowledged
 }
 
 sealed trait ImportDataType

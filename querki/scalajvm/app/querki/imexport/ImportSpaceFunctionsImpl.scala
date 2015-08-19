@@ -40,4 +40,9 @@ class ImportSpaceFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends 
     val selection = context.system.actorSelection(path)
     selection.requestFor[ImportProgress](ImportSpaceActor.GetProgress)
   }
+  
+  def acknowledgeComplete(path:String):Unit = {
+    val selection = context.system.actorSelection(path)
+    selection ! ImportSpaceActor.CompletionAcknowledged
+  }
 }

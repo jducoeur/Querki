@@ -25,6 +25,12 @@ private [imexport] trait ImportProgressInternal {
   var totalThingOps = 0
   // How many roundtrips have we made so far?
   var thingOps = 0
+  
+  // Set when we are complete
+  var spaceInfo:Option[querki.data.SpaceInfo] = None
+  
+  // Set to true iff the upload process fails
+  var failed = false
 }
 
 /**
@@ -194,7 +200,7 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Import
           }
         }
       }
-      case None => RequestM.successful(p)
+      case None => { QLog.spew(s"Done creating the Things"); RequestM.successful(p) }
     }    
   }
   

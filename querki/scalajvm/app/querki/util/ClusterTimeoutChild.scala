@@ -42,7 +42,10 @@ trait ClusterTimeoutChild extends Actor {
   abstract override def unhandled(message: Any): Unit = {
     message match {
       case resp:ReceiveTimeout => context.parent ! Passivate(KillMe)
-      case KillMe => context.stop(self)
+      case KillMe => {
+        QLog.spew(s"Killing ClusterTimeoutChild ${self.path}")
+        context.stop(self)
+      }
       case Shutdown => context.parent ! Passivate(KillMe)
       case other => super.unhandled(other)
     }

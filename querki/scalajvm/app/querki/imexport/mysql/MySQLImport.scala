@@ -131,10 +131,14 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
     words.mkString(" ")
   }
   
+  /**
+   * We need to make sure we choose a name for this column's Property that isn't already in use,
+   * because duplicate Names are disallowed.
+   */
   def choosePropName(col:MySQLColumn, tbl:MySQLTable):String = {
     val rawName = col.col.name.v
     val name = 
-      if (propNames.contains(rawName))
+      if (propNames.contains(rawName) || SystemSpace.anythingByName(rawName).isDefined)
         s"${tbl.name.v} $rawName"
       else
         rawName
