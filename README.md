@@ -30,8 +30,4 @@ the [Querki Quickstart](http://www.querki.net/help/#Querki-Quickstart) or
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br /><span xmlns:dct="http://purl.org/dc/terms/" property="dct:title">Querki</span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://github.com/jducoeur/Querki" property="cc:attributionName" rel="cc:attributionURL">Querki Inc</a> is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
 
 Note that, while Querki itself is somewhat restricted, we are gradually lifting a few libraries out of it,
-and releasing those under the MIT license for general use. At the moment, those include:
-
-* **[jsext](https://github.com/jducoeur/jsext)**: utilities to make it easier to use Scala.js
-* **[jquery-facade](https://github.com/jducoeur/jquery-facade)**: a strongly-typed Scala.js facade for the
-popular jQuery library for JavaScript.
+and releasing those under the MIT license for general use. See [the list of Querki Open-Source Projects](https://www.querki.net/help/#Querki-Open-Source-Projects) in the Querki documentation.
