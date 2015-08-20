@@ -4,7 +4,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.6"
 lazy val akkaV = "2.3.11"
-lazy val appV = "1.1.9.1"
+lazy val appV = "1.2"
 
 lazy val sharedSrcDir = "scala"
 
@@ -32,7 +32,7 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.amazonaws" % "aws-java-sdk" % "1.8.4",
     "com.vmunier" %% "play-scalajs-scripts" % "0.2.2",
     "com.lihaoyi" %% "utest" % "0.3.1",
-    "org.querki" %% "requester" % "2.1-SNAPSHOT"
+    "org.querki" %% "requester" % "2.1"
   ),
   EclipseKeys.skipParents in ThisBuild := false).
   settings(sharedDirectorySettings: _*).
@@ -75,7 +75,7 @@ lazy val querkiClient = (project in file("scalajs")).settings(
     "org.scala-js" %%% "scala-parser-combinators" % "1.0.2",
     "org.scala-lang.modules" %% "scala-async" % "0.9.2",
     "org.querki" %%% "querki-jsext" % "0.5",
-    "org.querki" %%% "jquery-facade" % "0.8-SNAPSHOT",
+    "org.querki" %%% "jquery-facade" % "0.8",
     "org.querki" %%% "bootstrap-datepicker-facade" % "0.3",
     "io.github.widok" %%% "scala-js-momentjs" % "0.1.0"
   )).
