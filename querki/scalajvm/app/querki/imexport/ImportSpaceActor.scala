@@ -35,13 +35,13 @@ class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:Stri
     importType match {
       case ImportXML => {
         QLog.spew("I've received the entire XML:")
-        val xml = new String(chunkBuffer.toArray)
+        val xml = uploaded
         QLog.spew(xml)
         new RawXMLImport(rc)(ecology).readXML(xml)
       }
       
       case ImportMySQL => {
-        val sql = new String(chunkBuffer.toArray)
+        val sql = uploaded
         QLog.spew(sql)
         new MySQLImport(rc, name)(ecology).readDumpfile(sql)
       }
@@ -58,7 +58,7 @@ class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:Stri
       // The client is asking for an update, so calculate where we are:
       if (!uploadComplete) {
         // We arbitrarily count the uploading as the first 20% of the total process:
-        val percent = ((chunkBuffer.size / totalSize) * 20).toInt
+        val percent = ((uploaded.size / totalSize) * 20).toInt
         sender ! ImportProgress("Uploading...", percent, spaceInfo, failed)
       } else {
         // We're into processing.

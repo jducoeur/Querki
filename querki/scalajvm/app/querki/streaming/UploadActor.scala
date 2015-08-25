@@ -1,6 +1,10 @@
 package querki.streaming
 
+import java.io.{ByteArrayInputStream}
+import java.util.zip.GZIPInputStream
+
 import scala.concurrent.duration._
+import scala.io.Source
 
 import akka.actor._
 
@@ -17,9 +21,49 @@ import querki.values.RequestContext
  * @author jducoeur
  */
 trait UploadActor { self:Actor =>
+  /**
+   * The raw buffer, which is mutated as the stream uploads.
+   */
   var chunkBuffer:Vector[Byte] = Vector.empty
   
   var uploadComplete:Boolean = false
+
+  // The 16-bit header, which may indicate zippiness:
+  private lazy val magicHead = {
+    if (chunkBuffer.length < 2)
+      0
+    else
+      (chunkBuffer(0).toInt & 0xff | (chunkBuffer(1).toInt << 8) & 0xff00)
+  }
+  /**
+   * Returns true iff the chunkBuffer appears to be gzip'ped.
+   */
+  private lazy val isGZip = (GZIPInputStream.GZIP_MAGIC == magicHead)
+  
+  private lazy val baseStream = new ByteArrayInputStream(chunkBuffer.toArray)
+  
+  /**
+   * The uploaded data, as a stream.
+   * 
+   * Iff the uploaded data was GZip'ped, that will be handled under the hood.
+   * 
+   * For the time being, this should only be called once uploading is complete -- we don't
+   * support progressive loading yet.
+   */
+  lazy val uploadedStream = {
+    if (isGZip) {
+      new GZIPInputStream(baseStream)
+    } else {
+      baseStream
+    }
+  }
+  
+  /**
+   * The uploaded data, as a String. Unzipping will be handled quietly before we get to this point.
+   * 
+   * This is typically the easiest way to handle the input.
+   */
+  lazy val uploaded = Source.fromInputStream(uploadedStream).mkString
   
   /**
    * This will be called once the upload is finished. The UploadActor must define this function,
