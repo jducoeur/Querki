@@ -118,6 +118,7 @@ class ImportSpacePage(params:ParamMap)(implicit e:Ecology) extends Page(e) with 
         h1("Import a Space from a File"),
         p(spaceName <= new RxInput(Some(InputUtils.spaceNameFilter _), "text", cls:="form-control", placeholder:="Name of the new Space")),
         buttonSection <= div(
+          p("Choose the file to import. This may be compressed using gzip (a .gz file), or it can be uncompressed."),
           p(b("To import an XML file that was exported from Querki"), ", click here:"),
           // TODO: make this into a pretty custom button:
           xmlInputElem <= input(/*cls:="_photoInputElem", */tpe:="file", accept:="text/xml",
