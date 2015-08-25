@@ -185,7 +185,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
             case SQLChar(size:Int) => charHeuristic(size) 
             case SQLVarchar(size:Int) => charHeuristic(size)
             case SQLLongtext => Core.LargeTextType
-            case SQLDate => Time.QDateTime
+            case SQLDate => Time.QDate
             case SQLTimestamp => Time.QDateTime
             case _ => throw new Exception(s"Trying to build a Property for unknown SQLType ${col.tpe}")
           }

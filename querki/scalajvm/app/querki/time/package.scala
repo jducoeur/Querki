@@ -21,6 +21,7 @@ package object time extends Imports with Implicits {
   val epoch = new DateTime(0)
   
   trait Time extends EcologyInterface {
+    def QDate:PType[DateTime] with PTypeBuilder[DateTime, DateTime]
     def QDateTime:PType[DateTime] with PTypeBuilder[DateTime, DateTime]
   }
 }
