@@ -361,6 +361,12 @@ object DisplayThingTree extends ThingState(DisplayThingTreeOID, systemOID, RootO
       ApplyMethod("""""[[_if(_isModel, ""{{_modelInTree:"")]]____[[_if(_isModel, "" }}"")]]""" +
           """[[_if(_and(_isModel, _hasPermission(Who Can Create._self)), _createInstanceLink -> _iconButton(""plus"", ""Create an Instance""))]]
 {{indent:[[_children -> 
+  _filter(_isModel) ->
+  _sort -> 
+  _displayThingTree]]
+}}
+{{indent:[[_children ->
+  _filter(_not(_isModel)) -> 
   _sort -> 
   _displayThingTree]]
 }}
