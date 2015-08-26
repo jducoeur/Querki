@@ -573,8 +573,14 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
                 data.ql := s"_showSome(${start + len},$len,${rawMsg.reconstructString},${rawAll.reconstructString},${rawDisplay.reconstructString})")))
             ).toString
           }
+        complete = {
+          if (all.size == 0)
+            Wikitext("")
+          else
+            wiki + HtmlWikitext(nextButton)
+        }
       }
-        yield QL.WikitextValue(wiki + HtmlWikitext(nextButton))
+        yield QL.WikitextValue(complete)
     }
   }
   

@@ -365,10 +365,7 @@ object DisplayThingTree extends ThingState(DisplayThingTreeOID, systemOID, RootO
   _sort -> 
   _displayThingTree]]
 }}
-{{indent:[[_children ->
-  _filter(_not(_isModel)) -> 
-  _sort -> 
-  _displayThingTree]]
+{{indent:[[_showSome(0, 50, ""Show More"", _children -> _filter(_not(_isModel)) -> _sort, _displayThingTree)]]
 }}
 """"")))
 
