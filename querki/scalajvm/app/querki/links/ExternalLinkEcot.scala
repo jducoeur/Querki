@@ -119,7 +119,7 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
         urlStr <- inv.opt(pt.getURL(elemContext)(elemV))
         displayStr <- inv.opt(pt.getDisplay(elemContext)(elemV))
         paramNameElem <- inv.processParam(0, elemContext)
-	    paramName = paramNameElem.wikify(elemContext).raw.str
+	      paramName = paramNameElem.wikify(elemContext).raw.str
         valElem <- inv.processParam(1, elemContext)
         value = vToParam(valElem, elemContext)(inv.state)
       }

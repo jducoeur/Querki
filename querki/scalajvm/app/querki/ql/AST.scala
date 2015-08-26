@@ -39,6 +39,9 @@ private[ql] case class QLDisplayName(n:String) extends QLName(n) {
 private[ql] case class QLBinding(n:String) extends QLName(n) {
   def reconstructString = "$" + n
 }
+private[ql] case class QLThingId(n:String) extends QLName(n) {
+  def reconstructString = n
+}
 private[ql] sealed abstract class QLTextPart {
   def reconstructString:String
   

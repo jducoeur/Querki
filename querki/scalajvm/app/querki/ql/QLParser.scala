@@ -112,7 +112,8 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   def qlNumber[QLNumber] = "\\s*".r ~> "\\d+".r ^^ { intStr => QLNumber(java.lang.Integer.parseInt(intStr)) }
   def qlSafeName[QLSafeName] = name ^^ { QLSafeName(_) }
   def qlDisplayName[QLDisplayName] = "`" ~> "[^`]*".r <~ "`" ^^ { QLDisplayName(_) }
-  def qlName:Parser[QLName] = qlBinding | qlSafeName | qlDisplayName
+  def qlThingId[QLThingId] = "." ~> "\\w*".r ^^ { oid => QLThingId("." + oid) }
+  def qlName:Parser[QLName] = qlBinding | qlThingId | qlSafeName | qlDisplayName
   def qlCall:Parser[QLCall] = opt("\\*\\s*".r) ~ qlName ~ opt("." ~> name) ~ opt("\\(\\s*".r ~> (rep1sep(qlPhrase, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
     case collFlag ~ n ~ optMethod ~ optParams => QLCall(n, optMethod, optParams, collFlag) }
   // Note that the failure() here only works because we specifically disallow "]]" in a Text!
@@ -177,7 +178,14 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
           case ex:PublicException => (WarningValue(ex.display(context.requestOpt)), t)
           case error:Exception => QLog.error("Error during QL Processing", error); (WarningValue(UnexpectedPublicException.display(context.requestOpt)), t)
         }      
-      }  
+      }
+      
+      def handleThing(tOpt:Option[Thing]) = {
+        tOpt.map { t =>
+          val res = processThing(t)
+          context.nextFrom(res._1, res._2) 
+        }.getOrElse(context.next(Core.ExactlyOne(QL.UnknownNameType(call.name.name))))
+      }
       
       call.name match {
         case binding:QLBinding => { 
@@ -194,13 +202,13 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
             context.nextFrom(res._1, res._2) 
           }.getOrElse(resolvedBinding)
         }
+        case tid:QLThingId => {
+          val tOpt = context.state.anything(ThingId(tid.name))
+          handleThing(tOpt)
+        }
         case _ => {
           val tOpt = context.state.anythingByName(call.name.name)
-        
-          tOpt.map { t =>
-            val res = processThing(t)
-            context.nextFrom(res._1, res._2) 
-          }.getOrElse(context.next(Core.ExactlyOne(QL.UnknownNameType(call.name.name))))
+          handleThing(tOpt)
         }
       }
     }
