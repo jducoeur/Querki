@@ -229,6 +229,21 @@ class UITests extends QuerkiTests {
     }
   }
   
+  // === _showSome ===
+  "_showSome function" should {
+    "work normally" in {
+      class TSpace extends CommonSpace {
+        val numProp = new TestProperty(Core.IntType, QList, "Numbers")
+        
+        val myThing = new SimpleTestThing("Test Thing", numProp(0,1,2,3,4,5,6,7,8,9))        
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Test Thing -> _showSome(3,4,""More"",Numbers,_commas)]]""") should
+        include ("3, 4, 5, 6")
+    }
+  }
+  
   // === _tooltip ===
   "_tooltip method" should {
     "add a tooltip to a text block" in {

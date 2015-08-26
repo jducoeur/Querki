@@ -2,6 +2,8 @@ package querki.html
 
 import scala.xml.{Attribute, NodeSeq, Null, Text, Xhtml}
 
+import scalatags.Text.all.{id => idAttr, _}
+
 import models.{DisplayText, FieldIds, HtmlWikitext, OID, PropertyBundle, QWikitext, SimplePTypeBuilder, UnknownOID, Wikitext}
 
 import querki.core.URLableType
@@ -25,6 +27,7 @@ object UIMOIDs extends EcotIds(11) {
   val QLButtonOID = moid(5)
   val MixedButtonOID = moid(6)
   val CreateButtonOID = moid(7)
+  val ShowSomeOID = moid(8)
 }
 
 /**
@@ -520,6 +523,61 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	  }
 	}
   
+  // TODO: replace this with a QL function! It certainly requires basic math functions, but I'm
+  // not sure it needs much else...
+  lazy val ShowSomeFunction = new InternalMethod(ShowSomeOID,
+    toProps(
+      setName("_showSome"),
+      Summary("Show some of the contents at a time"),
+      SkillLevel(SkillLevelAdvanced),
+      Details("""THING -> _showSome(START, LEN, MSG, ALL, DISPLAY)
+        |
+        |This is a useful but complex function for dealing with long lists. Given the incoming THING,
+        |it runs the expression in ALL to compute a bunch of expressions. It produces a LIST of LEN of them
+        |with indexes starting at START, feeds that to DISPLAY, and produces the result of that. The whole
+        |thing will be finished with MSG; clicking on that produces the next LEN items.
+        |
+        |The division between ALL and DISPLAY is a bit subtle, and is mainly for efficiency. ALL should
+        |contain the code up until the order is clear -- typically until _sort. You *can* put everything
+        |into ALL, but it will run more slowly.
+        |
+        |In the long run, this should be replaced by a cleverer and more automatic mechanism. Also, this
+        |may be replaced by a QL function in due course. So consider this experimental; it may go away
+        |down the line.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QValue = {
+      for {
+        thing <- inv.contextFirstThing
+        start <- inv.processParamFirstAs(0, IntType)
+        len <- inv.processParamFirstAs(1, IntType)
+        msg <- inv.processParamFirstAs(2, ParsedTextType)
+        all <- inv.processParam(3)
+        done = (start + len >= all.size)
+        rawMsg <- inv.rawParam(2)
+        rawAll <- inv.rawParam(3)
+        rawDisplay <- inv.rawParam(4)
+        selectedElems = all.cType.makePropValue(all.cv.drop(start).take(len), all.pType)
+        result <- inv.processParam(4, inv.context.next(selectedElems))
+        wiki = result.wikify(inv.context)
+        nextButton =
+          if (done)
+            ""
+          else {
+            val nextDiv = s"_nextButton${(scala.math.random * 1000000).toInt.toString()}"
+            div(idAttr := nextDiv,
+              p(b(a(
+                cls := "_qlInvoke",
+                msg.raw.toString,
+                data.thingId := s"${thing.toThingId}",
+                data.target := nextDiv,
+                data.ql := s"_showSome(${start + len},$len,${rawMsg.reconstructString},${rawAll.reconstructString},${rawDisplay.reconstructString})")))
+            ).toString
+          }
+      }
+        yield QL.WikitextValue(wiki + HtmlWikitext(nextButton))
+    }
+  }
+  
   override lazy val props = Seq(
     classMethod,
     tooltipMethod,
@@ -534,6 +592,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     CreateInstanceLinkMethod,
     CreateButtonFunction,
     QLButton,
-    new MixedButtonMethod
+    new MixedButtonMethod,
+    ShowSomeFunction
   )
 }
