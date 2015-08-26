@@ -87,6 +87,12 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
   final def toUser(v:ElemValue)(implicit state:SpaceState):String = doToUser(get(v))
   
   /**
+   * Turns this value into a format appropriate for a URL parameter.
+   */
+  def doToUrlParam(v:VT)(implicit state:SpaceState):String = doToUser(v)
+  final def toUrlParam(v:ElemValue)(implicit state:SpaceState):String = doToUrlParam(get(v))
+  
+  /**
    * This compares two values. It is used to sort Collections. It should return true iff left is "less than" right.
    */
   def doComp(context:QLContext)(left:VT, right:VT):Boolean = {

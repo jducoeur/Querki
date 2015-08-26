@@ -127,15 +127,7 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
     }
     
     def vToParam(v:QValue, context:QLContext)(implicit state:SpaceState):String = {
-      // We really want to serialize the value, so that _asType() will work on the receiving end,
-      // but we can't reliably do so -- many types don't implement serialization.
-      // TBD: should there be an asURLParam method on PType? What's the right way to deal with this
-      // problem?
-      try {
-        v.pType.serialize(v.first)
-      } catch {
-        case ex:Exception => v.wikify(context).raw.str
-      }
+      v.pType.toUrlParam(v.first)
     }
     
     def appendParam(url:String, display:String, paramName:String, paramVal:String):SimplePropertyBundle = {
