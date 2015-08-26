@@ -211,7 +211,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     // Is this value bound in the request? (That is, is it a page param?)
     context.requestParams.get(binding.name) match {
       case Some(phrase) => processPhrase(phrase.ops, context, true)
-      case None => context.next(WarningValue(s"Found bound name ${binding.name}, but bindings aren't implemented yet"))
+      case None => context.next(WarningValue(s"Didn't find a value for ${binding.name}"))
     }
   }
   
