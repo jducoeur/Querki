@@ -116,7 +116,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
         |
         |#### Instances of ____
         |
-        |[[_instances -> _sort -> _bulleted]]""".stripMargin
+        |[[_showSome(0, 50, ""Show More"", _instances -> _sort, _bulleted)]]""".stripMargin
       } else
         text
     QL.process(QLText(fullText), thing.thisAsContext, None, Some(thing))
