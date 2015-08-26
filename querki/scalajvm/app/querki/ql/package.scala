@@ -309,6 +309,14 @@ package object ql {
      */
     def processMethod(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 
         lexicalThing:Option[PropertyBundle] = None, lexicalProp:Option[AnyProp] = None):QValue
+        
+    /**
+     * Just parses the given text, with no further processing.
+     * 
+     * This is semi-internal, and relates to the incestuous relationship between QLParser
+     * and QLContext.
+     */
+    def parseMethod(input:String, ci:QLContext):Option[QLPhrase]
     
     def UnknownNameType:PType[String] with PTypeBuilder[String,String]
     def ParsedTextType:PType[Wikitext] with PTypeBuilder[Wikitext,Wikitext]

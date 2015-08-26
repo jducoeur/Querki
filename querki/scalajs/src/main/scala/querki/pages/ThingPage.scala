@@ -34,9 +34,8 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
   override def refresh() = PageManager.reload()
   
   def pageContent = {
-    // NOTE: doing this with async/await seems to swallow exceptions in Autowire:
     for {
-      pageDetails:ThingPageDetails <- Client[ThingFunctions].getThingPage(name, propOpt).call()
+      pageDetails:ThingPageDetails <- Client[ThingFunctions].getThingPage(name, propOpt, params).call()
       rendered = pageDetails.rendered
       convPane = new ConversationPane(pageDetails.thingInfo, params.get("showComment"))
       dummy = {

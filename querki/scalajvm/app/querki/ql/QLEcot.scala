@@ -106,6 +106,12 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
     parserProcessMethodProfiler.profile { parser.processMethod.value }
   }
   
+  def parseMethod(input:String, ci:QLContext):Option[QLPhrase] =
+  {
+    val parser = parserCreateProfiler.profile { new QLParser(QLText(input), ci) }
+    parser.parsePhrase()
+  }
+  
   lazy val ExactlyOneCut = new ExactlyOneBase(UnknownOID) {
     override def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = new ExactlyOnePropValue(cv.toList, this, elemT) with CutProcessing
   }

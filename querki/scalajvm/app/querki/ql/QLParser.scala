@@ -207,10 +207,12 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   }
   
   private def processNormalBinding(binding:QLBinding, context:QLContext, isParam:Boolean, resolvingParser:QLParser):QLContext = {
-    // TODO: reintroduce a way to put a binding into the page URL and pass that through to here.
-    // We had such a mechanism, but it no longer works in the new client.
-    // TODO: deal with proper value bindings here, before the query string
-    context.next(WarningValue(s"Found bound name ${binding.name}, but bindings aren't implemented yet"))
+    // TODO: deal with proper value bindings here
+    // Is this value bound in the request? (That is, is it a page param?)
+    context.requestParams.get(binding.name) match {
+      case Some(phrase) => processPhrase(phrase.ops, context, true)
+      case None => context.next(WarningValue(s"Found bound name ${binding.name}, but bindings aren't implemented yet"))
+    }
   }
   
   private def processInternalBinding(binding:QLBinding, context:QLContext, isParam:Boolean, resolvingParser:QLParser):QLContext = {
@@ -383,6 +385,14 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
         QLog.error("Throwable during QL Processing: " + error, error)
         Wikitext("We're sorry -- there was a serious error while trying to display this thing.")
       }
+    }
+  }
+  
+  def parsePhrase():Option[QLPhrase] = {
+    val parseResult = parseAll(qlPhrase, input.text)
+    parseResult match {
+      case Success(result, _) => Some(result)
+      case _ => None
     }
   }
   

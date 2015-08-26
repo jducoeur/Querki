@@ -33,7 +33,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
     ClientApi.thingInfo(thing, rc)(state)
   }
 
-  def getThingPage(thingId:TID, renderPropIdOpt:Option[TID]):ThingPageDetails = withThing(thingId) { thing =>
+  def getThingPage(thingId:TID, renderPropIdOpt:Option[TID], requestParams:Map[String,String]):ThingPageDetails = withThing(thingId) { thing =>
     implicit val s = state
     
     val thingInfo = ClientApi.thingInfo(thing, rc)
@@ -55,7 +55,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
       state.prop(oid)
     }
 
-    val rendered = thing.render(rc, state, renderPropOpt)
+    val rendered = thing.render(rc, state, renderPropOpt, requestParams)
     
     val styleinfo = Stylesheets.stylesheetsFor(thing)
     

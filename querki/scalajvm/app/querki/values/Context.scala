@@ -5,16 +5,19 @@ import models._
 import querki.ecology._
 
 // TODO: this is a bad smell! Can we hide the parser better behind the Context?
-import querki.ql.{QLCall, QLParser}
+import querki.ql.{QLCall, QLPhrase, QLParser}
 import querki.util.DebugRenderable
 
 case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:Option[QLContext] = None, 
                      parser:Option[QLParser] = None, depth:Int = 0, useCollStack:Int = 0, propOpt:Option[Property[_,_]] = None,
                      currentValue:Option[DisplayPropVal] = None, 
-                     fromTransformOpt:Option[Thing] = None, withCallOpt:Option[QLCall] = None)(implicit val state:SpaceState, val ecology:Ecology)
+                     fromTransformOpt:Option[Thing] = None, withCallOpt:Option[QLCall] = None,
+                     requestParams:Map[String,QLPhrase] = Map.empty)
+                     (implicit val state:SpaceState, val ecology:Ecology)
   extends DebugRenderable with EcologyMember
 {
   lazy val Core = interface[querki.core.Core]
+  lazy val QL = interface[querki.ql.QL]
   
   def ExactlyOne = Core.ExactlyOne
   def Optional = Core.Optional
@@ -170,7 +173,25 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
    * nextFrom or withCall. That's convenient, but suspicious.
    */
   def withCall(call:QLCall, transform:Thing) = copy(depth = depth + 1, withCallOpt = Some(call), fromTransformOpt = Some(transform))
-
+  
+  /**
+   * Set the page parameters that have been passed in, if any.
+   */
+  def withParams(params:Map[String,String]) = {
+    if (params.isEmpty)
+      this
+    else {
+      val parsedParams:Map[String,QLPhrase] = params.map { pair =>
+        val (name, raw) = pair
+        val p = QL.parseMethod(raw, this)
+        (name, p)
+      }.collect {
+        case (name, Some(p)) => (name, p)
+      }
+      copy(requestParams = parsedParams) 
+    }
+  }
+  
   /**
    * asCollection means "right now, evaluate the very next operation as a collection."
    */
