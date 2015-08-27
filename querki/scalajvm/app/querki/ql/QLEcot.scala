@@ -161,6 +161,12 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
     def doDeserialize(v:String)(implicit state:SpaceState) = throw new Exception("Can't deserialize ParsedText!")
     def doSerialize(v:Wikitext)(implicit state:SpaceState) = throw new Exception("Can't serialize ParsedText!")
     def doWikify(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = v
+    override def doToUrlParam(v:Wikitext, raw:Boolean)(implicit state:SpaceState):String = {
+      if (raw)
+        s"${v.plaintext}"
+      else
+        s"""""${v.plaintext}"""""
+    }
   
     override def doComp(context:QLContext)(left:Wikitext, right:Wikitext):Boolean = { left.plaintext < right.plaintext }
     override def doMatches(left:Wikitext, right:Wikitext):Boolean = { left.plaintext == right.plaintext }

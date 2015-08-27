@@ -109,7 +109,15 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
     toProps(
       setName("_withParam"),
       Summary("Adds the specified query parameter to a Link or URL"),
-      Details("""    LINK or URL -> _withParam(PARAMNAME, VALUE) -> URL""".stripMargin)))
+      Details("""    LINK or URL -> _withParam(PARAMNAME, VALUE, RAW) -> URL
+        |
+        |By and large, the VALUE is translated in such a way that, if the LINK points to a Querki page,
+        |the page can use that parameter as $PARAMNAME in QL expressions.
+        |
+        |The RAW parameter is optional, and defaults to false. If you set it to true, this will omit
+        |quotes around the parameter if it is text. You should generally only do this if this is going to an external
+        |page; omitting the quotes when sending to a Querki page will usually result in the parameter not
+        |getting interpreted correctly.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QValue = {
       for {
@@ -121,13 +129,14 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
         paramNameElem <- inv.processParam(0, elemContext)
 	      paramName = paramNameElem.wikify(elemContext).raw.str
         valElem <- inv.processParam(1, elemContext)
-        value = vToParam(valElem, elemContext)(inv.state)
+        raw <- inv.processParamFirstOr(2, YesNoType, false, elemContext)
+        value = vToParam(valElem, elemContext, raw)(inv.state)
       }
         yield ExactlyOne(ExternalLinkType(appendParam(urlStr, displayStr, paramName, value)))
     }
     
-    def vToParam(v:QValue, context:QLContext)(implicit state:SpaceState):String = {
-      v.pType.toUrlParam(v.first)
+    def vToParam(v:QValue, context:QLContext, raw:Boolean)(implicit state:SpaceState):String = {
+      querki.util.SafeUrl(v.pType.toUrlParam(v.first, raw))
     }
     
     def appendParam(url:String, display:String, paramName:String, paramVal:String):SimplePropertyBundle = {

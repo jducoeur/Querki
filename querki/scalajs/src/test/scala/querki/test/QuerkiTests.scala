@@ -121,7 +121,7 @@ trait ThingPageTests extends QuerkiTests {
     val renderedGuts = pageContent.toString
     
     registerApiHandler[ThingFunctions]("getThingPage")(new ThingFunctionsEmpty with AutowireHandler {
-      override def getThingPage(thingId:TID, propIdOpt:Option[TID]):ThingPageDetails = {
+      override def getThingPage(thingId:TID, propIdOpt:Option[TID], requestParams:Map[String,String]):ThingPageDetails = {
         ThingPageDetails(
           thing1,
           Some(model1),

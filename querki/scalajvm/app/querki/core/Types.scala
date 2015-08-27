@@ -87,7 +87,12 @@ trait TextTypeBasis { self:CoreEcot =>
       
     def code(elem:ElemValue):String = get(elem).text
     
-    override def doToUrlParam(v:QLText)(implicit state:SpaceState):String = s"""""${querki.util.SafeUrl(v.text)}""""" 
+    override def doToUrlParam(v:QLText, raw:Boolean)(implicit state:SpaceState):String = {
+      if (raw)
+        s"""${querki.util.SafeUrl(v.text)}""" 
+      else
+        s"""""${querki.util.SafeUrl(v.text)}""""" 
+    }
   }
 }
   
@@ -641,7 +646,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
       }
     }
     
-    override def doToUrlParam(v:OID)(implicit state:SpaceState):String = v.toThingId
+    override def doToUrlParam(v:OID, raw:Boolean)(implicit state:SpaceState):String = v.toThingId
   }
   
   /**

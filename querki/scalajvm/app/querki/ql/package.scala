@@ -217,6 +217,13 @@ package object ql {
     def processParamFirstAs[VT](paramNum:Int, pt:PType[VT], processContext:QLContext = context):InvocationValue[VT]
     
     /**
+     * Variation of processParamFirstAs, which copes with optional parameters and lets you define a default.
+     * 
+     * TODO: this should eventually go away once we have proper signature definitions, and named parameters.
+     */
+    def processParamFirstOr[VT](paramNum:Int, pt:PType[VT], default:VT, processContext:QLContext = context):InvocationValue[VT]
+    
+    /**
      * This looks rather specialized, but isn't actually: it represents the non-terribly-unusual situation where
      * a function operates on a single value, and should either use the parameter if there is one, or the received
      * context if not.

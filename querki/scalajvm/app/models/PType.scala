@@ -89,8 +89,8 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
   /**
    * Turns this value into a format appropriate for a URL parameter.
    */
-  def doToUrlParam(v:VT)(implicit state:SpaceState):String = doToUser(v)
-  final def toUrlParam(v:ElemValue)(implicit state:SpaceState):String = doToUrlParam(get(v))
+  def doToUrlParam(v:VT, raw:Boolean)(implicit state:SpaceState):String = doToUser(v)
+  final def toUrlParam(v:ElemValue, raw:Boolean)(implicit state:SpaceState):String = doToUrlParam(get(v), raw)
   
   /**
    * This compares two values. It is used to sort Collections. It should return true iff left is "less than" right.
