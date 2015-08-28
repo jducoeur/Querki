@@ -30,14 +30,15 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.typesafe.akka" %% "akka-cluster" % akkaV,
     "org.imgscalr" % "imgscalr-lib" % "4.2",
     "com.amazonaws" % "aws-java-sdk" % "1.8.4",
-    "com.vmunier" %% "play-scalajs-scripts" % "0.2.2",
+    "com.vmunier" %% "play-scalajs-scripts" % "0.3.0",
     "com.lihaoyi" %% "utest" % "0.3.1",
     "org.querki" %% "requester" % "2.1"
   ),
   EclipseKeys.skipParents in ThisBuild := false).
-  settings(sharedDirectorySettings: _*).
+//  settings(sharedDirectorySettings: _*).
   enablePlugins(PlayScala).
-  aggregate(clients.map(projectToRef): _*)
+  aggregate(clients.map(projectToRef): _*).
+  dependsOn(querkiSharedJvm)
 
 lazy val querkiClient = (project in file("scalajs")).settings(
   scalaVersion := scalaV,
@@ -45,7 +46,7 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   persistLauncher := true,
   persistLauncher in Test := false,
   sourceMapsDirectories += file(sharedSrcDir),
-  unmanagedSourceDirectories in Compile := Seq((scalaSource in Compile).value),
+//  unmanagedSourceDirectories in Compile := Seq((scalaSource in Compile).value),
   
   jsDependencies += RuntimeDOM,
 //  postLinkJSEnv := PhantomJSEnv(autoExit = false).value,
@@ -79,15 +80,26 @@ lazy val querkiClient = (project in file("scalajs")).settings(
     "org.querki" %%% "bootstrap-datepicker-facade" % "0.3",
     "io.github.widok" %%% "scala-js-momentjs" % "0.1.0"
   )).
-  settings(sharedDirectorySettings: _*).
-  enablePlugins(ScalaJSPlugin, ScalaJSPlay)
+//  settings(sharedDirectorySettings: _*).
+  enablePlugins(ScalaJSPlugin, ScalaJSPlay).
+  dependsOn(querkiSharedJs)
 
-lazy val sharedDirectorySettings = Seq(
-  unmanagedSourceDirectories in Compile += new File((file(".") / sharedSrcDir / "src" / "main" / "scala").getCanonicalPath),
-  unmanagedSourceDirectories in Test += new File((file(".") / sharedSrcDir / "src" / "test" / "scala").getCanonicalPath),
-  unmanagedResourceDirectories in Compile += file(".") / sharedSrcDir / "src" / "main" / "resources",
-  unmanagedResourceDirectories in Test += file(".") / sharedSrcDir / "src" / "test" / "resources"
-)
+//lazy val sharedDirectorySettings = Seq(
+//  unmanagedSourceDirectories in Compile += new File((file(".") / sharedSrcDir / "src" / "main" / "scala").getCanonicalPath),
+//  unmanagedSourceDirectories in Test += new File((file(".") / sharedSrcDir / "src" / "test" / "scala").getCanonicalPath),
+//  unmanagedResourceDirectories in Compile += file(".") / sharedSrcDir / "src" / "main" / "resources",
+//  unmanagedResourceDirectories in Test += file(".") / sharedSrcDir / "src" / "test" / "resources"
+//)
+
+lazy val querkiShared = (crossProject.crossType(CrossType.Pure) in file("scala")).
+  settings(
+    scalaVersion := scalaV,
+    version := appV
+  ).
+  jsConfigure(_ enablePlugins ScalaJSPlay).
+  jsSettings(sourceMapsBase := baseDirectory.value / "..")
+lazy val querkiSharedJvm = querkiShared.jvm
+lazy val querkiSharedJs = querkiShared.js
 
 lazy val sharedDependencies = Def.setting(Seq(
   "com.lihaoyi" %%% "upickle" % "0.2.7",
@@ -99,5 +111,10 @@ lazy val sharedDependencies = Def.setting(Seq(
 ))
 
 onLoad in Global := (Command.process("project querkiServer", _: State)) compose (onLoad in Global).value
+
+// for Eclipse users
+EclipseKeys.skipParents in ThisBuild := false
+// Compile the project before generating Eclipse files, so that generated .scala or .class files for views and routes are present
+EclipseKeys.preTasks := Seq(compile in (querkiServer, Compile))
 
 fork in run := true
