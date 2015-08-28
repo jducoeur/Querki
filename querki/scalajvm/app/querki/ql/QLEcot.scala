@@ -12,7 +12,7 @@ import models.{PropertyBundle, PType, PTypeBuilder, SimplePTypeBuilder, Thing, U
 import querki.core.QLText
 import querki.tools.ProfileHandle
 import querki.util.QLog
-import querki.values.{CutProcessing, ElemValue, IsErrorType, QLContext, SpaceState}
+import querki.values.{CutProcessing, ElemValue, EmptyContext, IsErrorType, QLContext, SpaceState}
 
 object MOIDs extends EcotIds(24) {
   val SelfMethodOID = sysId(75)
@@ -106,9 +106,10 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
     parserProcessMethodProfiler.profile { parser.processMethod.value }
   }
   
-  def parseMethod(input:String, ci:QLContext):Option[QLPhrase] =
+  def parseMethod(input:String):Option[QLPhrase] =
   {
-    val parser = parserCreateProfiler.profile { new QLParser(QLText(input), ci) }
+    // Since we're just parsing, we shouldn't need a context:
+    val parser = parserCreateProfiler.profile { new QLParser(QLText(input), EmptyContext(ecology)) }
     parser.parsePhrase()
   }
   

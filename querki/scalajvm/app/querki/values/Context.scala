@@ -11,8 +11,7 @@ import querki.util.DebugRenderable
 case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:Option[QLContext] = None, 
                      parser:Option[QLParser] = None, depth:Int = 0, useCollStack:Int = 0, propOpt:Option[Property[_,_]] = None,
                      currentValue:Option[DisplayPropVal] = None, 
-                     fromTransformOpt:Option[Thing] = None, withCallOpt:Option[QLCall] = None,
-                     requestParams:Map[String,QLPhrase] = Map.empty)
+                     fromTransformOpt:Option[Thing] = None, withCallOpt:Option[QLCall] = None)
                      (implicit val state:SpaceState, val ecology:Ecology)
   extends DebugRenderable with EcologyMember
 {
@@ -175,22 +174,9 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
   def withCall(call:QLCall, transform:Thing) = copy(depth = depth + 1, withCallOpt = Some(call), fromTransformOpt = Some(transform))
   
   /**
-   * Set the page parameters that have been passed in, if any.
+   * Access to any page parameters from the metadata.
    */
-  def withParams(params:Map[String,String]) = {
-    if (params.isEmpty)
-      this
-    else {
-      val parsedParams:Map[String,QLPhrase] = params.map { pair =>
-        val (name, raw) = pair
-        val p = QL.parseMethod(raw, this)
-        (name, p)
-      }.collect {
-        case (name, Some(p)) => (name, p)
-      }
-      copy(requestParams = parsedParams) 
-    }
-  }
+  def requestParams = request.parsedParams
   
   /**
    * asCollection means "right now, evaluate the very next operation as a collection."

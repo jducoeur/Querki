@@ -226,11 +226,11 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     override def nameOrComputed(implicit rc:RequestContext, state:SpaceState) = DisplayText(name)
     override def unsafeNameOrComputed(implicit rc:RequestContext, state:SpaceState) = name
     
-    override def render(implicit rc:RequestContext, state:SpaceState, prop:Option[Property[_,_]] = None, requestParams:Map[String,String] = Map.empty):Wikitext = {
+    override def render(implicit rc:RequestContext, state:SpaceState, prop:Option[Property[_,_]] = None):Wikitext = {
       val model = pseudoModel
       val propAndValOpt = model.getPropOpt(ShowUnknownProp) orElse space.getPropOpt(ShowUnknownProp)
       val nameVal = ExactlyOne(PlainTextType(name))
-      val nameAsContext = QLContext(nameVal, Some(rc)).withParams(requestParams)
+      val nameAsContext = QLContext(nameVal, Some(rc))
       // TODO: the link below shouldn't be so hard-coded!
       propAndValOpt.map(pv => pv.render(nameAsContext)).getOrElse(Wikitext(name + " doesn't exist yet. [Click here to create it.](edit?thingId=" + SafeUrl(name) + ")"))    
     }

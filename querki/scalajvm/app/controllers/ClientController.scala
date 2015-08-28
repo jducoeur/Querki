@@ -34,11 +34,14 @@ class ClientController extends ApplicationBase with StreamController {
   lazy val SystemManagement = interface[querki.system.SystemManagement]
   lazy val Tags = interface[querki.tags.Tags]
   
+  case class ApiRequest(pickledRequest:String, pickledMetadata:String)
+  
   val requestForm = Form(
     mapping(
-      "pickledRequest" -> nonEmptyText
-    )((pickledRequest) => pickledRequest)
-     ((pickledRequest:String) => Some(pickledRequest))
+      "pickledRequest" -> nonEmptyText,
+      "pickledMetadata" -> nonEmptyText
+    )((pickledRequest, pickledMetadata) => ApiRequest(pickledRequest, pickledMetadata))
+     (apiRequest => Some((apiRequest.pickledRequest, apiRequest.pickledMetadata)))
   )  
   
   /**
@@ -113,16 +116,18 @@ class ClientController extends ApplicationBase with StreamController {
     Redirect(new Call(spaceCall.method, spaceCall.url + s"#$thingId"))
   }
   
-  def unpickleRequest(rc:PlayRequestContext):autowire.Core.Request[String] = {
+  def unpickleRequest(rc:PlayRequestContext):(autowire.Core.Request[String], RequestMetadata) = {
     implicit val request = rc.request
     requestForm.bindFromRequest.fold(
       errors => throw new Exception("API got badly-defined request!"),
-      pickledRequest => read[autowire.Core.Request[String]](pickledRequest)
+      apiRequest => (read[autowire.Core.Request[String]](apiRequest.pickledRequest), read[RequestMetadata](apiRequest.pickledMetadata))
     )
   }
   
-  def apiRequestBase(rc:PlayRequestContext):Future[Result] = {
-    val request = ClientRequest(unpickleRequest(rc), rc)
+  def apiRequestBase(prc:PlayRequestContext):Future[Result] = {
+    val (req, metadata) = unpickleRequest(prc)
+    val rc = prc.rc.copy(metadataOpt = Some(metadata))
+    val request = ClientRequest(req, rc)
     if (ApiInvocation.requiresLogin(request) && rc.requester.isEmpty)
       BadRequest(write(new NotAllowedException()))
     else ApiInvocation.routeRequest(request) {

@@ -323,7 +323,7 @@ package object ql {
      * This is semi-internal, and relates to the incestuous relationship between QLParser
      * and QLContext.
      */
-    def parseMethod(input:String, ci:QLContext):Option[QLPhrase]
+    def parseMethod(input:String):Option[QLPhrase]
     
     def UnknownNameType:PType[String] with PTypeBuilder[String,String]
     def ParsedTextType:PType[Wikitext] with PTypeBuilder[Wikitext,Wikitext]

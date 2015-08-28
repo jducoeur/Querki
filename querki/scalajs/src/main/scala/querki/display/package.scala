@@ -153,6 +153,13 @@ package object display {
      * IMPORTANT: this will currently cause this client to be unloaded!
      */
     def navigateTo(url:String):Unit
+    
+    /**
+     * The parameters to the current page.
+     * 
+     * We need to expose these so that they can be passed as metadata to the server.
+     */
+    def currentPageParams:ParamMap
   }
   
   trait StatusLine extends EcologyInterface {

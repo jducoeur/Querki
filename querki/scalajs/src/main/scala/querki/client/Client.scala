@@ -4,6 +4,7 @@ import scala.concurrent.Future
 
 import querki.globals._
 
+import querki.api.RequestMetadata
 import querki.comm._
 
 class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
@@ -12,6 +13,7 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val DataAccess = interface[querki.data.DataAccess]
+  lazy val PageManager = interface[querki.display.PageManager]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
   def interceptFailures(caller: => Future[String]):Future[String] = {
@@ -50,7 +52,8 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
   }
   
   def makeCall(req:Request, ajax:PlayAjax):Future[String] = {
-    interceptFailures(ajax.callAjax("pickledRequest" -> upickle.write(req)))
+    val metadata = RequestMetadata(PageManager.currentPageParams)
+    interceptFailures(ajax.callAjax("pickledRequest" -> upickle.write(req), "pickledMetadata" -> upickle.write(metadata)))
   }
   
   override def doCall(req: Request): Future[String] = {

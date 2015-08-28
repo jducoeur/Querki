@@ -18,7 +18,7 @@ trait ThingFunctions {
    * Note that, if the named Thing does not exist, that is *not* an error: this will interpret that
    * as a Tag instead.
    */
-  def getThingPage(thingId:TID, renderPropId:Option[TID], requestParams:Map[String,String]):ThingPageDetails
+  def getThingPage(thingId:TID, renderPropId:Option[TID]):ThingPageDetails
   
   /**
    * Fetch just the ThingInfo for the specified Thing.

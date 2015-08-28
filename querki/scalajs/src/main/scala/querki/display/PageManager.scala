@@ -177,8 +177,12 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     }
   }
   
+  var currentParams:ParamMap = Map.empty
+  def currentPageParams:ParamMap = currentParams
+  
   def renderPage(pageName:String, paramMap:ParamMap):Future[Page] = {
     try {
+      currentParams = paramMap
       val page = Pages.constructPage(pageName, paramMap)
       renderPage(page)
     } catch {

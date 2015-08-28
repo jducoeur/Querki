@@ -2,10 +2,10 @@ package querki.values
 
 import models.{AsName, AsOID, OID, ThingId, UnknownOID}
 
+import querki.api.RequestMetadata
 import querki.ecology._
-
 import querki.identity.{Identity, IdentityId, User}
-
+import querki.ql.QLPhrase
 import querki.ui.UIRenderer
 
 /**
@@ -24,7 +24,8 @@ import querki.ui.UIRenderer
 case class RequestContext(
     requester:Option[User], 
     ownerId:IdentityId,
-    spaceIdStrOpt:Option[String] = None)
+    spaceIdStrOpt:Option[String] = None,
+    metadataOpt:Option[RequestMetadata] = None)
 {
   def requesterOrAnon = requester getOrElse User.Anonymous
   def requesterOID = requester map (_.id) getOrElse UnknownOID  
@@ -37,6 +38,30 @@ case class RequestContext(
     ThingId(str) match {
       case AsOID(id) => id
       case AsName(name) => throw new Exception(s"Trying to send message to Space, but only have Space name $name!")
+    }
+  }
+  
+  def metadata = metadataOpt.get
+  
+  private var _parsedParams:Option[Map[String,QLPhrase]] = None
+  // TBD: this ugly routine exists for the sake of QLContext, so that we can have a lazily-
+  // calculated parse of the params that gets passed from context to context. It feels like
+  // we're doing this at the wrong level, but I'm having trouble figuring out a better
+  // place to do it.
+  def parsedParams(implicit ecology:Ecology):Map[String,QLPhrase] = {
+    _parsedParams match {
+      case Some(params) => params
+      case None => {
+        val QL = ecology.api[querki.ql.QL]
+        _parsedParams = Some(metadata.pageParams.map { pair =>
+          val (name, raw) = pair
+          val p = QL.parseMethod(raw)
+          (name, p)
+        }.collect {
+          case (name, Some(p)) => (name, p)
+        })
+        _parsedParams.get
+      }
     }
   }
 }

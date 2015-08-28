@@ -35,7 +35,7 @@ class ThingPage(name:TID, params:ParamMap)(implicit e:Ecology) extends Page(e) w
   
   def pageContent = {
     for {
-      pageDetails:ThingPageDetails <- Client[ThingFunctions].getThingPage(name, propOpt, params).call()
+      pageDetails:ThingPageDetails <- Client[ThingFunctions].getThingPage(name, propOpt).call()
       rendered = pageDetails.rendered
       convPane = new ConversationPane(pageDetails.thingInfo, params.get("showComment"))
       dummy = {

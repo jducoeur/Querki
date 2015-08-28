@@ -111,7 +111,7 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
    * If you specify a property, that property will be rendered with this Thing as a context;
    * otherwise, DisplayText will be rendered.
    */
-  def render(implicit request:RequestContext, state:SpaceState, prop:Option[Property[_,_]] = None, requestParams:Map[String,String] = Map.empty):Wikitext = 
+  def render(implicit request:RequestContext, state:SpaceState, prop:Option[Property[_,_]] = None):Wikitext = 
   {
     val actualProp = 
       if (ifSet(Core.IsModelProp))
@@ -122,7 +122,7 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
       pv <- getPropOpt(actualProp);
       if (!pv.isEmpty)
         )
-      yield pv.render(thing.thisAsContext.forProperty(pv.prop).withParams(requestParams), Some(thing))
+      yield pv.render(thing.thisAsContext.forProperty(pv.prop), Some(thing))
     
     renderedOpt.getOrElse(renderDefault)
   }
