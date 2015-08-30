@@ -4,7 +4,7 @@ import scala.concurrent.Future
 
 import querki.globals._
 
-import querki.api.RequestMetadata
+import querki.api._
 import querki.comm._
 
 class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
@@ -22,10 +22,12 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
       { ex =>
         ex match {
 	      case ex @ PlayAjaxException(jqXHR, textStatus, errorThrown) => {
-	        try {
-	          val aex = read[querki.api.ApiException](jqXHR.responseText)
-	          throw aex
-	        } catch {
+          try {
+            val y = upickle.Reader.macroR[EditException]
+            val x = upickle.Reader.macroR[SecurityException]
+            val aex = read[ApiException](jqXHR.responseText)
+            throw aex
+          } catch {
 	          // The normal case -- the server sent an ApiException, which we will propagate up
 	          // to the calling code:
 	          case aex:querki.api.ApiException => throw aex
