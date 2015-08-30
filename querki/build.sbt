@@ -108,7 +108,8 @@ lazy val querkiShared = (crossProject.crossType(CrossType.Full) in file("scala")
     sourceMapsBase := baseDirectory.value / "..",
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scala-parser-combinators" % "1.0.2"    
-    )
+    ),
+    EclipseKeys.useProjectId := true
   )
 lazy val querkiSharedJvm = querkiShared.jvm
 lazy val querkiSharedJs = querkiShared.js

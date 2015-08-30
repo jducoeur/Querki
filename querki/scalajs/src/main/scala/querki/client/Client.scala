@@ -23,8 +23,9 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
         ex match {
 	      case ex @ PlayAjaxException(jqXHR, textStatus, errorThrown) => {
           try {
-            val y = upickle.Reader.macroR[EditException]
-            val x = upickle.Reader.macroR[SecurityException]
+            val dummy1 = upickle.Reader.macroR[EditException]
+            val dummy2 = upickle.Reader.macroR[SecurityException]
+            val dummy3 = upickle.Reader.macroR[AdminException]
             val aex = read[ApiException](jqXHR.responseText)
             throw aex
           } catch {
