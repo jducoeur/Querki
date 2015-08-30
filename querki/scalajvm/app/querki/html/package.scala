@@ -1,8 +1,5 @@
 package querki
 
-// TODO: this is unfortunate abstraction leakage:
-//import play.twirl.api.Html
-
 import scala.xml.NodeSeq
 
 import play.api.data.Form
@@ -16,15 +13,6 @@ import querki.ui.UIRenderer
 import querki.values.{QLContext, QValue, RequestContext, SpaceState}
 
 package object html {
-  /**
-   * The Html type. Anything marked as Html is, by definition, safe to render directly
-   * with no escaping!
-   * 
-   * Note that the definition of this type is different between the client and server!
-   */
-//  type Html = play.twirl.api.Html
-//  def Html(str:String) = play.twirl.api.Html(str)
-  
   object RenderSpecialization extends Enumeration {
     type RenderSpecialization = Value
   
@@ -42,7 +30,7 @@ package object html {
     def propValFromUser(fieldIds:FieldIds, vs:List[String], context:QLContext):FormFieldInfo
     def renderPropertyInput(context:QLContext, prop:Property[_,_], 
         currentValue:DisplayPropVal, 
-        specialization:Set[RenderSpecialization.RenderSpecialization] = Set(RenderSpecialization.Unspecialized)):Html
+        specialization:Set[RenderSpecialization.RenderSpecialization] = Set(RenderSpecialization.Unspecialized)):QHtml
     def renderPropertyInputStr(context:QLContext, prop:Property[_,_], 
         currentValue:DisplayPropVal, 
         specialization:Set[RenderSpecialization.RenderSpecialization] = Set(RenderSpecialization.Unspecialized)):String
@@ -51,7 +39,7 @@ package object html {
   trait HtmlUI extends EcologyInterface {
     def PageHeaderProperty:Property[QLText,String]
     
-    def HtmlValue(html:Html):QValue
+    def HtmlValue(html:QHtml):QValue
     def HtmlValue(str:String):QValue
     def HtmlValue(xml:NodeSeq):QValue
     

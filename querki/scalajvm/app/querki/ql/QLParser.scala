@@ -8,6 +8,7 @@ import models._
 
 import querki.core.QLText
 import querki.ecology._
+import querki.html.QHtml
 import querki.util._
 import querki.values._
 
@@ -365,7 +366,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     }
     val escapedMsg = s"<b>Syntax error in $propStr line ${pos.line}:</b> " + scala.xml.Utility.escape(msg)
     val escapedError = scala.xml.Utility.escape(pos.longString)
-    HtmlWikitext(play.twirl.api.Html(
+    HtmlWikitext(QHtml(
         "<p>" + escapedMsg + ":<p>\n" +
         "<pre>" + escapedError + "</pre>\n"))
   }

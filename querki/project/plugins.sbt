@@ -26,4 +26,4 @@ addSbtPlugin("com.orrsella" % "sbt-stats" % "1.0.5")
 addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.5.0")
 
 // For the JVM side of the shared code:
-addSbtPlugin("com.typesafe.sbt" % "sbt-twirl" % "1.1.1")
+addSbtPlugin("com.typesafe.sbt" % "sbt-twirl" % "1.0.4")

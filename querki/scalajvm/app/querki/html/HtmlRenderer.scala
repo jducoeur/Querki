@@ -52,9 +52,9 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     Xhtml.toXhtml(xml3).replace("\'", "&#39;").replace("\"", "\'").replace("&quot;", "\"")    
   }
   
-  def renderPropertyInput(context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization] = Set(Unspecialized)):Html = {
+  def renderPropertyInput(context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization] = Set(Unspecialized)):QHtml = {
 	val xmlFixedQuotes =  renderPropertyInputStr(context, prop, currentValue, specialization)
-    Html(xmlFixedQuotes)
+    QHtml(xmlFixedQuotes)
   }
   
   // TODO: refactor this with Collection.fromUser():

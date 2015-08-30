@@ -1,11 +1,9 @@
 package querki.conversations
 
-// TODO: this is a bad smell:
-import play.twirl.api.Html
-
 import models.{HtmlWikitext, PType, Wikitext}
 
 import querki.ecology._
+import querki.html.QHtml
 import querki.identity.User
 import querki.notifications._
 import querki.uservalues.PersistMessages.OneUserValue
@@ -162,7 +160,7 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
       bodyQV <- payload.get(CommentBodyOID)
       body = bodyQV.wikify(context)
     }
-      yield RenderedNotification(HtmlWikitext(Html(header)), body)
+      yield RenderedNotification(HtmlWikitext(QHtml(header)), body)
         
     resultOpt.getOrElse {
       QLog.error("CommentNotifier got badly-formed Notification: " + note)

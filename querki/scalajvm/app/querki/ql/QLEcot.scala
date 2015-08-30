@@ -1,8 +1,5 @@
 package querki.ql
 
-// TODO: this is an abstraction break!!! It should be replaced by use of Scala's XHtml instead.
-import play.twirl.api.Html
-
 import querki.globals._
 
 import querki.ecology._
@@ -10,6 +7,7 @@ import querki.ecology._
 import models.{PropertyBundle, PType, PTypeBuilder, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
 
 import querki.core.QLText
+import querki.html.QHtml
 import querki.tools.ProfileHandle
 import querki.util.QLog
 import querki.values.{CutProcessing, ElemValue, EmptyContext, IsErrorType, QLContext, SpaceState}
@@ -222,7 +220,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
 	{
 	  def encodeString(str:String):QValue = {
 	    val escaped = scala.xml.Utility.escape(str)
-	    HtmlUI.HtmlValue(Html("<pre>" + escaped + "</pre>"))    
+	    HtmlUI.HtmlValue(QHtml("<pre>" + escaped + "</pre>"))    
 	  }
 	  
 	  def encode(propVal:QValue, pType:PType[_]):QValue = {

@@ -64,11 +64,11 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     def doDefault(implicit state:SpaceState) = Wikitext("")
   }
 
-  def HtmlValue(html:Html):QValue = ExactlyOne(RawHtmlType(HtmlWikitext(html)))
-  def HtmlValue(str:String):QValue = HtmlValue(Html(str))
+  def HtmlValue(html:QHtml):QValue = ExactlyOne(RawHtmlType(HtmlWikitext(html)))
+  def HtmlValue(str:String):QValue = HtmlValue(QHtml(str))
   def HtmlValue(xml:NodeSeq):QValue = HtmlValue(Xhtml.toXhtml(xml))
   
-  def toWikitext(xml:NodeSeq):Wikitext = HtmlWikitext(Html(Xhtml.toXhtml(xml)))
+  def toWikitext(xml:NodeSeq):Wikitext = HtmlWikitext(QHtml(Xhtml.toXhtml(xml)))
 
   /***********************************************
    * PROPERTIES
@@ -105,7 +105,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         val paramText = parsedParamOpt.get.raw.toString
         val nodes = XmlHelpers.toNodes(content)
         val newXml = nodes.flatMap(node => doTransform(node, paramText, context, params))
-        val newHtml = Html(Xhtml.toXhtml(newXml))
+        val newHtml = QHtml(Xhtml.toXhtml(newXml))
         HtmlWikitext(newHtml)        
       }
       
@@ -274,7 +274,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	        urlOpt match {
 	          case Some(url) => {
 	            val paramTexts = params.map(phrase => context.parser.get.processPhrase(phrase.ops, context).value.wikify(context))
-	            HtmlValue(Html(generateButton(url, paramTexts).toString))            
+	            HtmlValue(QHtml(generateButton(url, paramTexts).toString))            
 	          }
 	          // Nothing incoming, so cut.
 	          // TODO: there is probably a general pattern to pull out here, of "cut processing if the input is empty"
