@@ -91,13 +91,25 @@ lazy val querkiClient = (project in file("scalajs")).settings(
 //  unmanagedResourceDirectories in Test += file(".") / sharedSrcDir / "src" / "test" / "resources"
 //)
 
-lazy val querkiShared = (crossProject.crossType(CrossType.Pure) in file("scala")).
+lazy val querkiShared = (crossProject.crossType(CrossType.Full) in file("scala")).
   settings(
     scalaVersion := scalaV,
     version := appV
   ).
+  // Needed for Twirl's Html class. Note that we must *not* use PlayScala here -- it mucks up CrossProject:
+  jvmConfigure(_ enablePlugins SbtTwirl).
+  jvmSettings(
+    libraryDependencies ++= Seq(
+      "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.4"
+    )
+  ).
   jsConfigure(_ enablePlugins ScalaJSPlay).
-  jsSettings(sourceMapsBase := baseDirectory.value / "..")
+  jsSettings(
+    sourceMapsBase := baseDirectory.value / "..",
+    libraryDependencies ++= Seq(
+      "org.scala-js" %%% "scala-parser-combinators" % "1.0.2"    
+    )
+  )
 lazy val querkiSharedJvm = querkiShared.jvm
 lazy val querkiSharedJs = querkiShared.js
 

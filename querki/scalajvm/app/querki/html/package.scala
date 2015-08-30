@@ -1,7 +1,7 @@
 package querki
 
 // TODO: this is unfortunate abstraction leakage:
-import play.twirl.api.Html
+//import play.twirl.api.Html
 
 import scala.xml.NodeSeq
 
@@ -22,8 +22,8 @@ package object html {
    * 
    * Note that the definition of this type is different between the client and server!
    */
-  type Html = play.twirl.api.Html
-  def Html(str:String) = play.twirl.api.Html(str)
+//  type Html = play.twirl.api.Html
+//  def Html(str:String) = play.twirl.api.Html(str)
   
   object RenderSpecialization extends Enumeration {
     type RenderSpecialization = Value

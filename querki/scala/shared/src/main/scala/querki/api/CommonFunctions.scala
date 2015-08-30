@@ -13,6 +13,10 @@ trait CommonFunctions {
   def getStandardThings():Map[String, ThingInfo]
 }
 
+trait PassthroughHandlerBase {
+  def pass(name:String):ThingInfo
+}
+
 /**
  * This is tricky magic. PassthroughHandler is defined completely differently on the Server
  * and Client, so that the Server mashalls and the Client unmarshalls from the same calls.
@@ -20,12 +24,12 @@ trait CommonFunctions {
  * IMPORTANT: this uses Names to find these values! This is more fragile than I like, but is
  * the tradeoff I'm making for the time being.
  */
-class StandardThings(h:PassthroughHandler) {
+class StandardThings(h:PassthroughHandlerBase) {
   object core {
     val exactlyOneColl = h.pass("Exactly One")
-	val optionalColl = h.pass("Optional")
-	val listColl = h.pass("List")
-	val setColl = h.pass("Set")
+  	val optionalColl = h.pass("Optional")
+  	val listColl = h.pass("List")
+  	val setColl = h.pass("Set")
   
     val urProp = h.pass("Property")
     val nameProp = h.pass("Name")
@@ -37,8 +41,8 @@ class StandardThings(h:PassthroughHandler) {
   object basic {
     val simpleThing = h.pass("Simple-Thing")
     val displayNameProp = h.pass("Display Name")
-	val defaultView = h.pass("Default View")
-	val printView = h.pass("Print View")
+  	val defaultView = h.pass("Default View")
+  	val printView = h.pass("Print View")
   }
   
   object conventions {
@@ -57,8 +61,8 @@ class StandardThings(h:PassthroughHandler) {
   
   object types {
     val deriveNameProp = h.pass("_deriveName")
-	val deriveAlways = h.pass("Always Derive Name")
-	val deriveNever = h.pass("Never Derive Name")
+  	val deriveAlways = h.pass("Always Derive Name")
+  	val deriveNever = h.pass("Never Derive Name")
   }
   
   // This is necessary in order to force the objects to come into being. Each of the

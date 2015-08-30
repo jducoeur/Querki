@@ -3,7 +3,7 @@ package models
 import language.implicitConversions
 
 import querki.qtext.{MainDecorator, Transformer}
-import querki.html.Html
+import querki.html.QHtml
 import querki.util.DebugRenderable
 
 case class DisplayText(val str:String) {
@@ -11,7 +11,7 @@ case class DisplayText(val str:String) {
   
   def +(other:DisplayText) = new DisplayText(str + other.str)
   // Since a DisplayText is already HTML-neutered, it is safe to encode as HTML:
-  def html = Html(str)
+  def html = QHtml(str)
   def htmlWikitext = HtmlWikitext(html)
 }
 object DisplayText {
@@ -135,7 +135,7 @@ case class HtmlWikitextImpl(str:String) extends Wikitext {
 }
 object HtmlWikitext {
   def apply(html:String) = HtmlWikitextImpl(html)
-  def apply(html:Html) = HtmlWikitextImpl(html.toString)
+  def apply(html:QHtml) = HtmlWikitextImpl(html.toString)
 }
 
 /**

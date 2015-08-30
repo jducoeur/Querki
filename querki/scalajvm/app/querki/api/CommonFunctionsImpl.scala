@@ -7,7 +7,7 @@ import querki.globals._
 import querki.data.ThingInfo
 import querki.values.RequestContext
 
-class PassthroughHandler(val ecology:Ecology, rc:RequestContext) extends EcologyMember {
+class PassthroughHandler(val ecology:Ecology, rc:RequestContext) extends PassthroughHandlerBase with EcologyMember {
   val ClientApi = interface[ClientApi]
   val System = interface[querki.system.System]
   
@@ -15,10 +15,16 @@ class PassthroughHandler(val ecology:Ecology, rc:RequestContext) extends Ecology
   
   var contents = Map.empty[String, ThingInfo]
   
-  def pass(name:String) = {
+  def pass(name:String):ThingInfo = {
     state.anythingByName(name) match {
-      case Some(t) => contents += (name -> ClientApi.thingInfo(t, rc))
-      case None => QLog.error(s"Attempting to send unknown Standard Thing $name")
+      case Some(t) => {
+        val ti = ClientApi.thingInfo(t, rc)
+        contents += (name -> ti)
+        ti
+      }
+      case None => {
+        throw new Exception(s"Attempting to send unknown Standard Thing $name")
+      }
     }
   }
 }
