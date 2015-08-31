@@ -2,7 +2,7 @@ import sbt.Project.projectToRef
 
 lazy val clients = Seq(querkiClient)
 
-lazy val scalaV = "2.11.6"
+lazy val scalaV = "2.11.7"
 lazy val akkaV = "2.3.11"
 lazy val appV = "1.2.1"
 
@@ -35,7 +35,6 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "org.querki" %% "requester" % "2.1"
   ),
   EclipseKeys.skipParents in ThisBuild := false).
-//  settings(sharedDirectorySettings: _*).
   enablePlugins(PlayScala).
   aggregate(clients.map(projectToRef): _*).
   dependsOn(querkiSharedJvm)
@@ -46,7 +45,6 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   persistLauncher := true,
   persistLauncher in Test := false,
   sourceMapsDirectories += file(sharedSrcDir),
-//  unmanagedSourceDirectories in Compile := Seq((scalaSource in Compile).value),
   
   jsDependencies += RuntimeDOM,
 //  postLinkJSEnv := PhantomJSEnv(autoExit = false).value,
@@ -80,16 +78,8 @@ lazy val querkiClient = (project in file("scalajs")).settings(
     "org.querki" %%% "bootstrap-datepicker-facade" % "0.3",
     "io.github.widok" %%% "scala-js-momentjs" % "0.1.0"
   )).
-//  settings(sharedDirectorySettings: _*).
   enablePlugins(ScalaJSPlugin, ScalaJSPlay).
   dependsOn(querkiSharedJs)
-
-//lazy val sharedDirectorySettings = Seq(
-//  unmanagedSourceDirectories in Compile += new File((file(".") / sharedSrcDir / "src" / "main" / "scala").getCanonicalPath),
-//  unmanagedSourceDirectories in Test += new File((file(".") / sharedSrcDir / "src" / "test" / "scala").getCanonicalPath),
-//  unmanagedResourceDirectories in Compile += file(".") / sharedSrcDir / "src" / "main" / "resources",
-//  unmanagedResourceDirectories in Test += file(".") / sharedSrcDir / "src" / "test" / "resources"
-//)
 
 lazy val querkiShared = (crossProject.crossType(CrossType.Full) in file("scala")).
   settings(
