@@ -97,13 +97,15 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     }
   }
   
-  def isDeletable(t:Thing)(implicit state:SpaceState):Boolean = {
+  def isDeletable(t:Thing, allowIfProp:Boolean = false)(implicit state:SpaceState):Boolean = {
     t match {
       case thing:ThingState => true
       case prop:Property[_,_] => {
-        // You are allowed to delete a Property *if* nothing is using it any more:
-        val thingsWithProp = state.allThings.filter(_.props.contains(prop.id))
-        thingsWithProp.isEmpty
+        allowIfProp || {
+          // You are allowed to delete a Property *if* nothing is using it any more:
+          val thingsWithProp = state.allThings.filter(_.props.contains(prop.id))
+          thingsWithProp.isEmpty
+        }
       }
       case _ => false
     }

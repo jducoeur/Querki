@@ -6,7 +6,7 @@ import akka.actor._
 import models.{DisplayPropVal, FieldIds, FormFieldInfo, IndexedOID, Kind, PType, Thing}
 import models.Thing.{emptyProps, PropMap}
 
-import querki.api.{SpaceApiImpl, AutowireParams}
+import querki.api.{SpaceApiImpl, AutowireParams, OperationHandle}
 import querki.globals._
 import querki.data._
 import EditFunctions._
@@ -441,5 +441,17 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     model.getPropOpt(Tags.ShowUnknownProp).orElse(state.getPropOpt(Tags.ShowUnknownProp)).
           map(_.v.firstAs(Core.LargeTextType).get.text).
           getOrElse(querki.tags.defaultDisplayText)
+  }
+  
+  def getPropertyUsage(propTid:TID):PropUsage = withProp(propTid) { prop =>
+    implicit val s = state
+    val propId = prop.id
+    val uses = state.everythingLocal.filter(_.props.contains(propId))
+    val (models, instances) = uses.partition(_.isModel)
+    PropUsage(models.size, instances.size)
+  }
+  
+  def removePropertyFromAll(propId:TID):OperationHandle = {
+    ???
   }
 }

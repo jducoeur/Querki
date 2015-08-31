@@ -13,6 +13,13 @@ trait CommonFunctions {
   def getStandardThings():Map[String, ThingInfo]
 }
 
+/**
+ * The handle that API entry points can return for long-running operations. The client must then
+ * call CommonFunctions.checkProgress() using that handle periodically.
+ */
+sealed trait OperationHandle
+case class ActorOperationHandle(path:String) extends OperationHandle
+
 trait PassthroughHandlerBase {
   def pass(name:String):ThingInfo
 }
