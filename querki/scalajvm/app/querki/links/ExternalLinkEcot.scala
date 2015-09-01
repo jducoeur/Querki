@@ -66,7 +66,7 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
         yield text.text      
     }
     
-    override def doWikify(context:QLContext)(bundle:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
+    override def doWikify(context:QLContext)(bundle:ModeledPropertyBundle, displayRawOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
       implicit val s = context.state
       
       val urlOpt = for {
@@ -75,13 +75,15 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
       }
         yield url.url
         
-      val displayOpt = for {
+      val displayNameOpt = for {
         pv <- bundle.getPropOpt(Basic.DisplayNameProp)
         text <- pv.firstOpt
       }
-        yield text.text      
+        yield text.text
+        
+      val displayOpt = displayRawOpt.map(_.raw.toString())
 
-      displayOpt.orElse(urlOpt).map(display => Wikitext("[" + display + "](" + urlOpt.getOrElse("#") + ")")).getOrElse(Wikitext.empty)
+      displayOpt.orElse(displayNameOpt).orElse(urlOpt).map(display => Wikitext("[" + display + "](" + urlOpt.getOrElse("#") + ")")).getOrElse(Wikitext.empty)
     }
   }
   
