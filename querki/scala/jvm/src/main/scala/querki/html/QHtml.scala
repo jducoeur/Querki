@@ -11,5 +11,5 @@ import play.twirl.api.Html
  */
 class QHtml(str:String) extends play.twirl.api.Html(str)
 object QHtml {
-  def apply(str:String):QHtml = QHtml(str)
+  def apply(str:String):QHtml = new QHtml(str)
 }

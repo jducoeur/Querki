@@ -6,7 +6,7 @@ import akka.actor._
 import models.{DisplayPropVal, FieldIds, FormFieldInfo, IndexedOID, Kind, PType, Thing}
 import models.Thing.{emptyProps, PropMap}
 
-import querki.api.{SpaceApiImpl, AutowireParams, OperationHandle}
+import querki.api.{SpaceApiImpl, AutowireParams, OperationHandle, ProgressActor}
 import querki.globals._
 import querki.data._
 import EditFunctions._
@@ -451,7 +451,8 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     PropUsage(models.size, instances.size)
   }
   
-  def removePropertyFromAll(propId:TID):OperationHandle = {
-    ???
+  def removePropertyFromAll(propTid:TID):OperationHandle = withProp(propTid) { prop =>
+    // All the work gets done by the child Actor:
+    ProgressActor.createProgressActor(requester, RemovePropertyActor.props(user, prop.id, ecology, state, spaceRouter))
   }
 }
