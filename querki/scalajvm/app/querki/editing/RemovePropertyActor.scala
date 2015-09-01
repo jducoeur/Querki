@@ -22,9 +22,13 @@ import querki.spaces.messages._
 class RemovePropertyActor(requester:User, propId:OID, val ecology:Ecology, state:SpaceState, router:ActorRef) 
   extends Actor with Requester with ProgressActor with EcologyMember
 {
+  lazy val Core = interface[querki.core.Core]
   lazy val DataModelAccess = interface[querki.datamodel.DataModelAccess]
+  lazy val Editor = interface[Editor]
   
   lazy val deleted = DataModelAccess.DeletedValue
+  lazy val InstanceProps = Editor.InstanceProps
+  lazy val LinkType = Core.LinkType
 
   implicit val s = state
   implicit val e = ecology
@@ -69,7 +73,17 @@ class RemovePropertyActor(requester:User, propId:OID, val ecology:Ecology, state
     things.headOption match {
       case Some(thing) => {
         phaseDescription = s"Removing $propName from ${thing.displayName}"
-        router.request(ChangeProps(requester, state.id, thing.id, Map((propId -> deleted)), true)) flatMap {
+        // Filter this Property out of InstanceProps if necessary:
+        val instancePropsMap:PropMap =
+          InstanceProps.fromOpt(thing.props) match {
+            case Some(qv) => {
+              // There are InstanceProps, so filter out this Property:
+              val instanceProps = qv.filter(LinkType, { link:OID => link != propId })
+              Map(InstanceProps(instanceProps))
+            } 
+            case None => Map.empty
+          }
+        router.request(ChangeProps(requester, state.id, thing.id, instancePropsMap ++ Map((propId -> deleted)), true)) flatMap {
           case ThingFound(tid, newState) => {
             nDone = nDone + 1
             removeFrom(things.tail)
