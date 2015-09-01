@@ -5,6 +5,8 @@ import scalatags.JsDom.all._
 import rx._
 import autowire._
 
+import models.Kind
+
 import querki.globals._
 
 import querki.api.ThingFunctions
@@ -23,22 +25,58 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val Editing = interface[querki.editing.Editing]
   lazy val Pages = interface[querki.pages.Pages]
+  lazy val ProgressDialog = interface[querki.display.ProgressDialog]
+  lazy val StatusLine = interface[querki.display.StatusLine]
   
   def deleteAfterConfirm(thing:ThingInfo) = {
-    val deleteDialog:Dialog = 
-      new Dialog("Confirm Delete", 200, 350,
-        p(b(s"Are you sure you want to delete ${thing.displayName}? There is currently no way to get it back!")),
-        ("Delete" -> { dialog => 
-          println(s"I'm about to delete ${thing.displayName}");
-          // TODO: display a spinner
+    if (thing.kind == Kind.Property) {
+      Client[EditFunctions].getPropertyUsage(thing.oid).call() foreach { usage =>
+        // We require pretty dire confirmation if the Property is used anywhere.
+        // TODO: we might soften this for Models, but for now we're going to be hardcore.
+        if (usage.nModels > 0 || usage.nInstances > 0) {
+          val deleteDialog:Dialog = 
+            new Dialog("Confirm Delete", 350, 350,
+              p(b(s"""Property ${thing.displayName} is currently being used by ${usage.nModels} Models and 
+                      |${usage.nInstances} Instances. If you delete it, it will be removed from all of those,
+                      |and the values of ${thing.displayName} will be dropped. You can lose data this way!""".stripMargin)),
+              (s"Remove all values, then delete ${thing.displayName}" -> { dialog => 
+                println(s"I'm about to delete ${thing.displayName}");
+                // TODO: display a spinner
+                Client[EditFunctions].removePropertyFromAll(thing.oid).call().foreach { handle =>
+                  dialog.done()
+                  ProgressDialog.showDialog(
+                    s"deleting ${thing.displayName}", 
+                    handle, 
+                    Pages.showSpacePage(DataAccess.space.get).flashing(false, s"${thing.displayName} deleted."), 
+                    StatusLine.showBriefly(s"Error while deleting ${thing.displayName}"))
+                }
+              }),
+              ("Cancel" -> { dialog => dialog.done() })
+            )
+          deleteDialog.show()
+        } else {
+          // The Property isn't in use, so just let it go:
           Client[ThingFunctions].deleteThing(thing.oid).call().foreach { dummy =>
-            dialog.done()
             Pages.showSpacePage(DataAccess.space.get).flashing(false, s"${thing.displayName} deleted.")
-          }
-        }),
-        ("Cancel" -> { dialog => dialog.done() })
-      )
-    deleteDialog.show()
+          }          
+        }
+      }
+    } else {
+      val deleteDialog:Dialog = 
+        new Dialog("Confirm Delete", 200, 350,
+          p(b(s"Are you sure you want to delete ${thing.displayName}? There is currently no way to get it back!")),
+          ("Delete" -> { dialog => 
+            println(s"I'm about to delete ${thing.displayName}");
+            // TODO: display a spinner
+            Client[ThingFunctions].deleteThing(thing.oid).call().foreach { dummy =>
+              dialog.done()
+              Pages.showSpacePage(DataAccess.space.get).flashing(false, s"${thing.displayName} deleted.")
+            }
+          }),
+          ("Cancel" -> { dialog => dialog.done() })
+        )
+      deleteDialog.show()
+    }
   }
   
   private def modelSelectionForm(formTitle:String, prompt:String, selectButton:String, onSelect:TID => Unit) {

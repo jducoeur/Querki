@@ -1,5 +1,7 @@
 package querki.api
 
+import scala.concurrent.Future
+
 import querki.data.ThingInfo
 
 trait CommonFunctions {
@@ -11,7 +13,30 @@ trait CommonFunctions {
    * gets serialized as a Map for going across the wire.
    */
   def getStandardThings():Map[String, ThingInfo]
+  
+  /**
+   * Check on the progress of a long-running Operation.
+   * 
+   * Some functions return an OperationHandle. In those cases, the Client should periodically call
+   * getProgress() to see how it's coming. When OperationProgress returns with complete set to true,
+   * the Client must call acknowledgeComplete() to say that it knows everything has finished properly.
+   */
+  def getProgress(handle:OperationHandle):Future[OperationProgress]
+  
+  def acknowledgeComplete(handle:OperationHandle):Unit
 }
+
+/**
+ * The handle that API entry points can return for long-running operations. The client must then
+ * call CommonFunctions.checkProgress() using that handle periodically.
+ */
+sealed trait OperationHandle
+case class ActorOperationHandle(path:String) extends OperationHandle
+
+/**
+ * A description of the current state of a long-running operation.
+ */
+case class OperationProgress(msg:String, percent:Int, complete:Boolean, failed:Boolean)
 
 trait PassthroughHandlerBase {
   def pass(name:String):ThingInfo

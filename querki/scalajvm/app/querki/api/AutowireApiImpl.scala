@@ -152,6 +152,12 @@ abstract class SpaceApiImpl(info:AutowireParams, e:Ecology) extends AutowireApiI
     f(thing)
   }
   
+  def withProp[R](propId:TID)(f:AnyProp => R):R = {
+    val oid = ThingId(propId.underlying)
+    val prop = state.prop(oid).get
+    f(prop)
+  }
+  
   /**
    * Constructs a request suitable for looping back to the UserSpaceSession.
    * 

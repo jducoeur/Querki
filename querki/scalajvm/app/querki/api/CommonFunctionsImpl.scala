@@ -39,4 +39,24 @@ class CommonFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autow
     val toucher = translator.touchEverything()
     passthrough.contents
   }
+  
+  def getProgress(handle:OperationHandle):Future[OperationProgress] = {
+    handle match {
+      case ActorOperationHandle(path) => {
+        val selection = context.system.actorSelection(path)
+        selection.requestFor[OperationProgress](ProgressActor.GetProgress)
+      }
+      case _ => throw new Exception(s"Received unknown OperationHandle $handle")
+    }
+  }
+  
+  def acknowledgeComplete(handle:OperationHandle):Unit = {
+    handle match {
+      case ActorOperationHandle(path) => {
+        val selection = context.system.actorSelection(path)
+        selection ! ProgressActor.CompletionAcknowledged
+      }
+      case _ => throw new Exception(s"Received unknown OperationHandle $handle")
+    }    
+  }
 }

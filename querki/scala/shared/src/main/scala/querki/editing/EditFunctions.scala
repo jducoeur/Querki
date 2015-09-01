@@ -1,12 +1,11 @@
 package querki.editing
 
 import scala.concurrent.Future
+
 import models.Wikitext
+
+import querki.api.OperationHandle
 import querki.data._
-import EditFunctions.FullEditInfo
-import EditFunctions.PropEditInfo
-import EditFunctions.PropertyChange
-import EditFunctions.PropertyChangeResponse
 
 trait EditFunctions {
   import EditFunctions._
@@ -55,6 +54,22 @@ trait EditFunctions {
    * Fetch the Large Text value used to reify Tags for this Model.
    */
   def getUndefinedTagView(modelId:TID):String
+  
+  /**
+   * Fetch the number of uses of this Property in this Space.
+   * 
+   * TODO: this is necessarily local to the Space. How do we handle it when
+   * editing an App?
+   */
+  def getPropertyUsage(propId:TID):PropUsage
+  
+  /**
+   * LONG RUNNING PROCESS: remove the specified Property from all Things in this Space.
+   * 
+   * This is a big and dangerous change, so the Client should confirm it with the user
+   * before invoking this call.
+   */
+  def removePropertyFromAll(propId:TID):OperationHandle
 }
 
 object EditFunctions {
@@ -85,12 +100,14 @@ object EditFunctions {
   
   case class PropEditInfo(
     propInfo:PropInfo,
-	path:String,
-	prompt:Option[Wikitext],
+	  path:String,
+	  prompt:Option[Wikitext],
     tooltip:Option[Wikitext],
-	inheritedFrom:Option[String],
-	canEditProperty:Boolean,
-	// This is the raw HTML for the Editor
-	editor:String
+	  inheritedFrom:Option[String],
+	  canEditProperty:Boolean,
+	  // This is the raw HTML for the Editor
+	  editor:String
   )
+  
+  case class PropUsage(nModels:Int, nInstances:Int)
 }

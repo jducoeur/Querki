@@ -160,6 +160,10 @@ trait QValue {
     check(vt)
   }
   
+  def filter[VT](elemT:PType[VT], f:VT => Boolean):QValue = {
+    cType.makePropValue(cv.filter { elem => f(elem.get(elemT)) }, elemT)
+  }
+  
   def indexOf(toCheck:ElemValue):Option[Int] = {
     val pt = toCheck.pType
     if (pt != pType) {

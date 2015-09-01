@@ -15,6 +15,6 @@ package object datamodel {
      */
     def DeletedValue:QValue
     
-    def isDeletable(t:Thing)(implicit state:SpaceState):Boolean
+    def isDeletable(t:Thing, allowIfProp:Boolean = false)(implicit state:SpaceState):Boolean
   }
 }

@@ -6,6 +6,7 @@ import org.scalajs.dom
 
 import querki.globals._
 
+import querki.api.OperationHandle
 import querki.comm.URL
 import querki.pages.{Page, ParamMap}
 import querki.util.Notifier
@@ -177,5 +178,9 @@ package object display {
      * Hide the status line.
      */
     def clear():Unit
+  }
+  
+  trait ProgressDialog extends EcologyInterface {
+    def showDialog(processName:String, operation:OperationHandle, onSuccess: => Unit, onFailure: => Unit):Unit
   }
 }

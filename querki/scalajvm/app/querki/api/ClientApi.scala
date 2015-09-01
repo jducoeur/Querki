@@ -61,7 +61,8 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
         t.kind,
         isModel,
         editable,
-        editable && DataModelAccess.isDeletable(t),
+        // We allow deleting Properties at this level:
+        editable && DataModelAccess.isDeletable(t, allowIfProp = true),
         isModel && AccessControl.canCreate(state, user, t),
         t.isInstanceOf[IsTag],
         importedFrom)
