@@ -1,6 +1,8 @@
 package querki.editing
 
 import scala.concurrent.Future
+
+import querki.api.OperationHandle
 import querki.data._
 
 class EditFunctionsEmpty extends EditFunctions {
@@ -15,4 +17,6 @@ class EditFunctionsEmpty extends EditFunctions {
   def getModelType(modelId:TID):Future[TypeInfo] = ???
   def changeModel(thingId:TID, newModel:TID):Future[ThingInfo] = ???
   def getUndefinedTagView(modelId:TID):String = ???
+  def getPropertyUsage(propId:TID):PropUsage = ???
+  def removePropertyFromAll(propId:TID):OperationHandle = ???
 }

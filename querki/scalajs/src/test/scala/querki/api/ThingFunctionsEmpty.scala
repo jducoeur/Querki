@@ -9,7 +9,7 @@ import querki.pages.ThingPageDetails
 
 class ThingFunctionsEmpty extends ThingFunctions {
   def getRequestInfo():RequestInfo = ???
-  def getThingPage(thingId:TID, propIdOpt:Option[TID], params:Map[String,String]):ThingPageDetails = ???
+  def getThingPage(thingId:TID, propIdOpt:Option[TID]):ThingPageDetails = ???
   def getThingInfo(thingId:TID):ThingInfo = ???
   def evaluateQL(thingId:TID, ql:String):Wikitext = ???
   def getProperties(thingId:TID):Seq[PropValInfo] = ???

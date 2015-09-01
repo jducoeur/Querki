@@ -1,5 +1,7 @@
 package querki.api
 
+import scala.concurrent.Future
+
 import models.Kind
 
 import querki.data.{ThingInfo, TID}
@@ -39,4 +41,7 @@ class CommonFunctionsEmpty extends CommonFunctions {
     tpair("Always Derive Name"),
     tpair("Never Derive Name")
   )
+  
+  def getProgress(handle:OperationHandle):Future[OperationProgress] = ???  
+  def acknowledgeComplete(handle:OperationHandle):Unit = ???
 }
