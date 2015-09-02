@@ -157,22 +157,4 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
   def qlApplyTop(inv:Invocation, transformThing:Thing):QLContext = {
     inv.context.nextFrom(qlApply(inv), transformThing)
   }
-  
-  class BogusFunction extends QLFunction {
-    def qlApplyTop(inv:Invocation, transformThing:Thing):QLContext = {
-      inv.context.nextFrom(QL.WarningValue("It does not make sense to put this after a dot."), transformThing)
-    }
-  }
-
-  /**
-   * This is specifically for the right-hand side of a dot in QL processing. This counts
-   * as partial application, and should return a function that will handle the rest of the
-   * function.
-   * 
-   * Partial application is nonsensical for most Things; it is mainly intended for methods
-   * on properties.
-   */
-  def partiallyApply(context:QLContext):QLFunction = {
-    new BogusFunction
-  }
 }

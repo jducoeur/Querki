@@ -12,13 +12,6 @@ import querki.html.QHtml
 import querki.util._
 import querki.values._
 
-// TODO: Does this do anything useful any more? I don't think it actually does...
-class PartiallyAppliedFunction(partialContext:QLContext, action:(Invocation, Thing) => QLContext) extends QLFunction {
-  def qlApplyTop(inv:Invocation, transformThing:Thing):QLContext = {
-    action(inv, transformThing)
-  }
-}
-
 /**
  * This is created by and obtained from the QLEcot:
  */
@@ -165,8 +158,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
             case Some(method) => {
               val definingContext = context.next(Core.ExactlyOne(Core.LinkType(t.id)))
               qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
-                val partialFunction = method.partiallyApply(definingContext)
-                partialFunction.qlApplyTop(InvocationImpl(t, contextWithCall, Some(definingContext), params), method)
+                method.qlApplyTop(InvocationImpl(t, contextWithCall, Some(definingContext), params), method)
               }
             }
             case None => {

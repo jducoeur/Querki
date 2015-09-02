@@ -111,7 +111,6 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
         |_createInstanceLink or _createButton instead, most of the time.""".stripMargin)))
   {
     override def qlApplyTop(inv:Invocation, transformThing:Thing):QLContext = {
-      QLog.spew(s"In _createHere...")
       // Need to shortcut with some mutation, since we don't have a good way to get this
       // side-effect out:
       var newState:Option[SpaceState] = None
@@ -127,8 +126,6 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
         }
       }
         yield ExactlyOne(LinkType(newThingId))
-        
-      QLog.spew(s"Got a value: $v")
         
       inv.context.nextFrom(v, transformThing).withState(newState.get)
     }
