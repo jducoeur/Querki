@@ -8,7 +8,8 @@ import akka.contrib.pattern.{ClusterSharding, ShardRegion}
 import akka.pattern._
 import akka.util.Timeout
 
-import models.{AsName, AsOID, ThingId}
+import models._
+import Thing._
 
 import querki.api.ClientRequest
 import querki.core.NameUtils
@@ -17,10 +18,16 @@ import querki.globals._
 import Implicits._
 import querki.spaces.messages._
 import querki.util.PublicException
+import querki.util.ActorHelpers._
+import querki.values.QLContext
 
-object SpaceEcotMOIDs extends EcotIds(37) {}
+object SpaceEcotMOIDs extends EcotIds(37) {
+  val CreateHereOID = moid(1)
+}
 
-class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps {
+class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.MethodDefs {
+  
+  import SpaceEcotMOIDs._
   
   val SystemManagement = initRequires[querki.system.SystemManagement]
   
@@ -82,4 +89,63 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps {
   def askSpace2[B](msg:SpaceMessage)(cb: PartialFunction[Any, Future[B]]):Future[B] = {
     akka.pattern.ask(spaceRegion, msg).flatMap(cb)
   }
+
+  /***********************************************
+   * FUNCTIONS
+   ***********************************************/
+  
+  // TODO: this function needs to be rewritten as asynchonrous; at the moment, it does an evil
+  // blocking function!
+  lazy val CreateHere = new InternalMethod(CreateHereOID,
+    toProps(
+      setName("_createHere"),
+      Summary("Create a nw Thing as part of displaying this expression"),
+      Details("""    MODEL -> LINK PROPERTY._createHere -> THING
+        |
+        |This allows you to create a new Thing, right here on the page, as part of 
+        |displaying. It is useful to put inside of a _QLButton, so that you can create something
+        |and edit it, on the press of a button, without changing pages.
+        |
+        |IMPORTANT: at the moment, this function is very costly, for purely internal
+        |reasons. Please do not use it too often, or it will drag the system down. Use
+        |_createInstanceLink or _createButton instead, most of the time.""".stripMargin)))
+  {
+    override def qlApplyTop(inv:Invocation, transformThing:Thing):QLContext = {
+      QLog.spew(s"In _createHere...")
+      // Need to shortcut with some mutation, since we don't have a good way to get this
+      // side-effect out:
+      var newState:Option[SpaceState] = None
+      val v:QValue = for {
+        model <- inv.contextFirstThing
+        msg = CreateThing(inv.context.request.requesterOrAnon, inv.context.state, Kind.Thing, model.id, getInitialProps(inv))
+        // TODO: EEEEVIL! Blocking calls are always bad:
+        newThingId = spaceRegion.askBlocking(msg) { 
+          case ThingFound(id, s) => {
+            newState = Some(s)
+            id
+          }
+        }
+      }
+        yield ExactlyOne(LinkType(newThingId))
+        
+      QLog.spew(s"Got a value: $v")
+        
+      inv.context.nextFrom(v, transformThing).withState(newState.get)
+    }
+    
+    def getInitialProps(inv:Invocation):PropMap = {
+      val linkBack = for {
+        definingContext <- inv.definingContext
+        linkProp = inv.definingContextAsPropertyOf(LinkType).get.head
+        lexicalThing <- inv.lexicalThing match { case Some(t:Thing) => Some(t); case _ => None }
+       }
+        yield Map(linkProp(ExactlyOne(LinkType(lexicalThing))))
+        
+      linkBack.getOrElse(emptyProps)
+    }
+  }
+  
+  override lazy val props = Seq(
+    CreateHere
+  )
 }

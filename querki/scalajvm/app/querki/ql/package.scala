@@ -26,7 +26,7 @@ package object ql {
    * when a method returns a partially-applied function.
    */
   trait QLFunction {
-    def qlApply(inv:Invocation):QValue
+    def qlApplyTop(inv:Invocation, transformThing:Thing):QLContext
   }
   
   /**

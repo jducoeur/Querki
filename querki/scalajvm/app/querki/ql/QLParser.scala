@@ -12,9 +12,10 @@ import querki.html.QHtml
 import querki.util._
 import querki.values._
 
-class PartiallyAppliedFunction(partialContext:QLContext, action:(Invocation) => QValue) extends QLFunction {
-  def qlApply(inv:Invocation):QValue = {
-    action(inv)
+// TODO: Does this do anything useful any more? I don't think it actually does...
+class PartiallyAppliedFunction(partialContext:QLContext, action:(Invocation, Thing) => QLContext) extends QLFunction {
+  def qlApplyTop(inv:Invocation, transformThing:Thing):QLContext = {
+    action(inv, transformThing)
   }
 }
 
@@ -154,7 +155,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   private def processCall(call:QLCall, context:QLContext, isParam:Boolean):QLContext = {
     logContext("processCall " + call, context) {
       
-      def processThing(t:Thing):(QValue, Thing) = qlProfilers.processThing.profile {
+      def processThing(t:Thing):QLContext = qlProfilers.processThing.profile {
         // If there are parameters to the call, they are a collection of phrases.
         val params = call.params
         val methodOpt = call.methodName.flatMap(context.state.anythingByName(_))
@@ -165,26 +166,25 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
               val definingContext = context.next(Core.ExactlyOne(Core.LinkType(t.id)))
               qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
                 val partialFunction = method.partiallyApply(definingContext)
-                (partialFunction.qlApply(InvocationImpl(t, contextWithCall, Some(definingContext), params)), method)
+                partialFunction.qlApplyTop(InvocationImpl(t, contextWithCall, Some(definingContext), params), method)
               }
             }
             case None => {
               qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
                 val inv = InvocationImpl(t, contextWithCall, None, params)
-                (t.qlApply(inv), t)
+                t.qlApplyTop(inv, t)
               }
             }
           }
         } catch {
-          case ex:PublicException => (WarningValue(ex.display(context.requestOpt)), t)
-          case error:Exception => QLog.error("Error during QL Processing", error); (WarningValue(UnexpectedPublicException.display(context.requestOpt)), t)
+          case ex:PublicException => context.nextFrom(WarningValue(ex.display(context.requestOpt)), t)
+          case error:Exception => QLog.error("Error during QL Processing", error); context.nextFrom(WarningValue(UnexpectedPublicException.display(context.requestOpt)), t)
         }      
       }
       
       def handleThing(tOpt:Option[Thing]) = {
         tOpt.map { t =>
-          val res = processThing(t)
-          context.nextFrom(res._1, res._2) 
+          processThing(t)
         }.getOrElse(context.next(Core.ExactlyOne(QL.UnknownNameType(call.name.name))))
       }
       
@@ -199,8 +199,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
             yield thing
           
           tOpt.map { t =>
-            val res = processThing(t)
-            context.nextFrom(res._1, res._2) 
+            processThing(t)
           }.getOrElse(resolvedBinding)
         }
         case tid:QLThingId => {

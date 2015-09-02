@@ -207,6 +207,8 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
   
   def forProperty(prop:Property[_,_]) = copy(parentOpt = Some(this), depth = depth + 1, propOpt = Some(prop))
   
+  def withState(newState:SpaceState) = copy()(newState, ecology)
+  
   /**
    * The Text Property that we are currently processing. Mainly used for error reporting, currently.
    */

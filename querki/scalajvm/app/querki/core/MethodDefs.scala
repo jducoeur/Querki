@@ -23,8 +23,8 @@ trait MethodDefs { self:QuerkiEcot =>
   {
     // Okay, this is a bit horrible, bouncing back and forth to the Thing like this. But
     // it allows us to declare InternalMethods (which don't need to be serialized) concisely.
-    override def qlApply(inv:Invocation):QValue = {
-      method.qlApply(inv)
+    override def qlApplyTop(inv:Invocation, transformThing:Thing):QLContext = {
+      method.qlApplyTop(inv, transformThing)
     }
   }
   
@@ -41,6 +41,14 @@ trait MethodDefs { self:QuerkiEcot =>
     def qlApply(inv:Invocation):QValue = {
       // By default, we just pass the incoming context right through:
       inv.context.value
+    }
+    
+    /**
+     * Alternately, Methods may override this if they want more control of the resulting
+     * QLContext.
+     */
+    def qlApplyTop(inv:Invocation, transformThing:Thing):QLContext = {
+      inv.context.nextFrom(qlApply(inv), transformThing)
     }
     
     override def thingOps(e:Ecology):ThingOps = new MethodThingOps(this)

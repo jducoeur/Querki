@@ -132,6 +132,9 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
    * Subclasses are allowed to override it as make sense.
    * 
    * This basic version returns a Link to this thing.
+   * 
+   * Callers should generally prefer qlApplyTop instead, since that allows somewhat more
+   * powerful operations.
    */
   def qlApply(inv:Invocation):QValue = {
     val context = inv.context
@@ -147,9 +150,17 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
     }
   }
   
+  /**
+   * The wrapper around qlApply(), which is actually called from the outside. Specific Things may
+   * override this if they need to return a QLContext instead of simply a QValue.
+   */
+  def qlApplyTop(inv:Invocation, transformThing:Thing):QLContext = {
+    inv.context.nextFrom(qlApply(inv), transformThing)
+  }
+  
   class BogusFunction extends QLFunction {
-    def qlApply(inv:Invocation):QValue = {
-      QL.WarningValue("It does not make sense to put this after a dot.")
+    def qlApplyTop(inv:Invocation, transformThing:Thing):QLContext = {
+      inv.context.nextFrom(QL.WarningValue("It does not make sense to put this after a dot."), transformThing)
     }
   }
 

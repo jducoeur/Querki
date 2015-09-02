@@ -146,8 +146,8 @@ class PropertyThingOps[VT,RT](prop:Property[VT,RT])(implicit e:Ecology) extends 
   }  
   
   override def partiallyApply(leftContext:QLContext):QLFunction = {
-    def handleRemainder(inv:Invocation):QValue = {
-      qlApply(inv)
+//    def handleRemainder(inv:Invocation, transformThing:Thing):QLContext = {
+//      qlApplyTop(inv, transformThing)
 //      // Note that partial application ignores the incoming context if the type isn't doing anything clever. By
 //      // and large, this syntax mainly exists for QL properties:
 //      //
@@ -157,8 +157,8 @@ class PropertyThingOps[VT,RT](prop:Property[VT,RT])(implicit e:Ecology) extends 
 //      pType.qlApplyFromProp(leftContext, inv.context, this, inv.paramsOpt).getOrElse(applyToIncomingThing(leftContext) { (t, context) =>
 //        t.getPropVal(this)(context.state)
 //      })
-    }
-    new PartiallyAppliedFunction(leftContext, handleRemainder)
+//    }
+    new PartiallyAppliedFunction(leftContext, qlApplyTop)
   }
   
 }

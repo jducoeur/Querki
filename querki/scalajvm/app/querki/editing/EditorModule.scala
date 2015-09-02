@@ -277,7 +277,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       for (
         prop <- inv.definingContextAsProperty
       )
-        yield prop.qlApply(inv)    
+        yield prop.qlApply(inv)
     }  
   }
   
