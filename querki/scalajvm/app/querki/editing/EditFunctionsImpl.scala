@@ -194,7 +194,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
       }
     }
     
-    spaceRouter.request(CreateThing(user, state.id, model.kind, model.id, props)) map {
+    spaceRouter.request(CreateThing(user, state.id, model.kind, model.id, props)) flatMap {
       case ThingFound(thingId, newState) => {
         newState.anything(thingId) match {
           case Some(thing) => {
@@ -419,7 +419,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
         // TODO: in principle, this should route through the UserSpaceSession. It doesn't matter yet, but is
         // likely to once we put Experiment Mode into place.
         val spaceMsg = ModifyThing(user, state.id, thing.id.toThingId, newModel.id, thing.props)
-        spaceRouter.request(spaceMsg) map {
+        spaceRouter.request(spaceMsg) flatMap {
           case ThingFound(newThingId, newState) => {
             newState.anything(newThingId) match {
               case Some(newThing) => ClientApi.thingInfo(newThing, rc)

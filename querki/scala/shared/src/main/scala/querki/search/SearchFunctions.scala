@@ -1,5 +1,7 @@
 package querki.search
 
+import scala.concurrent.Future
+
 import querki.data.ThingInfo
 
 trait SearchFunctions {
@@ -7,7 +9,7 @@ trait SearchFunctions {
   /**
    * Search for all occurrences of the given string.
    */
-  def search(q:String):Option[SearchResults]
+  def search(q:String):Future[Option[SearchResults]]
 }
 
 object SearchFunctions {

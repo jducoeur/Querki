@@ -14,20 +14,25 @@ class SearchFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Space
   
   def doRoute(req:Request):Future[String] = route[SearchFunctions](this)(req)
   
-  def search(q:String):Option[SearchResults] = {
+  def search(q:String):Future[Option[SearchResults]] = {
     implicit val s = state
     val rawResultsOpt = Search.search(q)
-    rawResultsOpt.map { rawResults =>
-      val transformed = rawResults.results.map { result =>
-        SearchResult(
-          ClientApi.thingInfo(result.thing, rc),
-          result.prop.displayName,
-          result.score,
-          result.text,
-          result.positions
-        )
+    rawResultsOpt match { 
+      case Some(rawResults) => {
+        val transformedFuts = rawResults.results.map { result =>
+          ClientApi.thingInfo(result.thing, rc) map { tInfo =>
+            SearchResult(
+              tInfo,
+              result.prop.displayName,
+              result.score,
+              result.text,
+              result.positions
+            )
+          }
+        }
+        Future.sequence(transformedFuts) map { transformed => Some(SearchResults(q, transformed)) }
       }
-      SearchResults(q, transformed)
+      case None => Future.successful(None)
     }
   }
 }

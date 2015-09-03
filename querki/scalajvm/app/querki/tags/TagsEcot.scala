@@ -1,5 +1,6 @@
 package querki.tags
 
+import scala.concurrent.Future
 import scala.xml.NodeSeq
 
 import querki.ecology._
@@ -223,8 +224,8 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     def name = tag.name
     def pseudoModel = preferredModelForTag(space, name)
     
-    override def nameOrComputed(implicit rc:RequestContext, state:SpaceState) = DisplayText(name)
-    override def unsafeNameOrComputed(implicit rc:RequestContext, state:SpaceState) = name
+    override def nameOrComputed(implicit rc:RequestContext, state:SpaceState) = Future.successful(DisplayText(name))
+    override def unsafeNameOrComputed(implicit rc:RequestContext, state:SpaceState) = Future.successful(name)
     
     override def render(implicit rc:RequestContext, state:SpaceState, prop:Option[Property[_,_]] = None):Wikitext = {
       val model = pseudoModel

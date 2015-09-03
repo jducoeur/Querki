@@ -3,6 +3,7 @@ package querki.collections
 import models._
 import Thing._
 import querki.ecology._
+import querki.globals._
 import querki.ql.{QLParser, QLPhrase}
 import querki.values._
 
@@ -351,6 +352,8 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	     * which is the final fallback for sorting.
 	     */
 	    def computeSortTerms(t:Thing):SortTerms = {
+        // TODO:
+        val name = awaitHack(t.unsafeNameOrComputed)
 	      paramsOpt match {
 	        case Some(params) => {
 	          val terms = for {
@@ -377,10 +380,10 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	            // is the real element, which is likely to be of the underlying PType, without any _desc wrapper
 	            yield tResultOpt.map(tResult => RealSortTerm(tResult, tCalc.pType)).getOrElse(EmptySortTerm)
 	            
-	          SortTerms(t, terms, t.unsafeNameOrComputed)
+	          SortTerms(t, terms, name)
 	        }
 	        // The simple case: there are no sort parameters, so we're just sorting on displayName.
-	        case None => SortTerms(t, Seq.empty, t.unsafeNameOrComputed)
+	        case None => SortTerms(t, Seq.empty, name)
 	      }
 	    }
 	    

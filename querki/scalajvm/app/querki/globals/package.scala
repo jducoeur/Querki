@@ -51,6 +51,27 @@ package object globals {
   
   def spew(msg:String) = QLog.spew(msg)
   
+  /**
+   * Marker for places we are cheating and waiting. ALL USES OF THIS ARE BY DEFINITION BUGS TO BE FIXED.
+   */
+  def awaitHack[T](awaitable:scala.concurrent.Awaitable[T]):T = {
+    import scala.concurrent._
+    import scala.concurrent.duration._
+    
+    Await.result(awaitable, 1 minute)
+  }
+  
+  /**
+   * Marker for code that is *deliberately* Awaiting. THIS MUST ONLY BE USED WHEN WE ARE CONFIDENT THAT THE
+   * CODE IS ESSENTIALLY SYNCHRONOUS.
+   */
+  def awaitIntentionally[T](awaitable:scala.concurrent.Awaitable[T]):T = {
+    import scala.concurrent._
+    import scala.concurrent.duration._
+    
+    Await.result(awaitable, 10 milliseconds)
+  }
+  
   object Implicits {
     implicit lazy val execContext = scala.concurrent.ExecutionContext.Implicits.global
   }

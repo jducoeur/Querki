@@ -39,18 +39,22 @@ class SecurityFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Spa
     SpaceSecurityInfo(Email.from, currentDefault.id)
   }
   
-  def getRoles():Seq[ThingInfo] = {
+  def getRoles():Future[Seq[ThingInfo]] = {
     val roles = Roles.allRoles(state)
-    roles.map(ClientApi.thingInfo(_, rc))
+    Future.sequence(roles.map(ClientApi.thingInfo(_, rc)))
   }
   
-  def getMembers():(Seq[PersonInfo], Seq[PersonInfo]) = {
+  def getMembers():Future[(Seq[PersonInfo], Seq[PersonInfo])] = {
     
-    def toPersonInfo(person:Thing):PersonInfo = {
-      PersonInfo(ClientApi.thingInfo(person, rc), AccessControl.personRoles(person).map(role => oid2tid(role.id)))
+    def toPersonInfo(person:Thing):Future[PersonInfo] = {
+      ClientApi.thingInfo(person, rc).map(PersonInfo(_, AccessControl.personRoles(person).map(role => oid2tid(role.id))))
     }
     
-    (Person.members(state).toSeq.map(toPersonInfo(_)), Person.invitees(state).toSeq.map(toPersonInfo(_)))
+    for {
+      members <- Future.sequence(Person.members(state).toSeq.map(toPersonInfo(_)))
+      invitees <- Future.sequence(Person.invitees(state).toSeq.map(toPersonInfo(_)))
+    }
+      yield (members, invitees)
   }
   
   lazy val maxMembers = Config.getInt("querki.public.maxMembersPerSpace", 100)

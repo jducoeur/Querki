@@ -44,7 +44,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
   implicit def thing2TID(t:Thing) = TID(t.id.toThingId.toString)
   implicit def OID2TID(oid:OID) = TID(oid.toThingId.toString)
   
-  def thingInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):ThingInfo = {
+  def thingInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):Future[ThingInfo] = {
       val user = rc.requesterOrAnon
       val editable = AccessControl.canEdit(state, user, t.id)
       val isModel = t.isModel
@@ -53,19 +53,21 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
           None
         else
           spaceInfo(state.getApp(t.spaceId), rc)
-      ThingInfo(
-        t, 
-        t.linkName, 
-        t.unsafeNameOrComputed(rc, state),
-        t.model,
-        t.kind,
-        isModel,
-        editable,
-        // We allow deleting Properties at this level:
-        editable && DataModelAccess.isDeletable(t, allowIfProp = true),
-        isModel && AccessControl.canCreate(state, user, t),
-        t.isInstanceOf[IsTag],
-        importedFrom)
+      t.unsafeNameOrComputed(rc, state) map { name =>
+        ThingInfo(
+          t, 
+          t.linkName, 
+          name,
+          t.model,
+          t.kind,
+          isModel,
+          editable,
+          // We allow deleting Properties at this level:
+          editable && DataModelAccess.isDeletable(t, allowIfProp = true),
+          isModel && AccessControl.canCreate(state, user, t),
+          t.isInstanceOf[IsTag],
+          importedFrom)
+      }
   }
   
   def spaceInfo(topt:Option[SpaceState], rc:RequestContext):Option[SpaceInfo] = {

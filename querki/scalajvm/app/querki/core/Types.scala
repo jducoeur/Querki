@@ -6,7 +6,7 @@ import models.{DelegatingType, DisplayPropVal, Kind, OID, Property, PropertyBund
 import models.Thing.PropFetcher
 
 import querki.ecology._
-
+import querki.globals._
 import querki.ql.QLPhrase
 import querki.util.{PublicException, QLog}
 import querki.values.{ElemValue, QLContext, QValue, RequestContext, SpaceState}
@@ -572,7 +572,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
       val target = follow(context)(v)
       val text = target match {
         case Some(t) => {
-          val display = displayOpt.getOrElse(context.requestOpt.map(t.nameOrComputed(_, context.state)).getOrElse(t.displayNameText).htmlWikitext)
+          val display = displayOpt.getOrElse(context.requestOpt.map { rc:RequestContext => awaitHack(t.nameOrComputed(rc, context.state)) }.getOrElse(t.displayNameText).htmlWikitext)
           makeWikiLink(context, t, display)
         }
         case None => Wikitext("Bad Link: Thing " + v.toString + " not found")

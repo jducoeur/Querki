@@ -15,12 +15,12 @@ trait SecurityFunctions {
   /**
    * Fetch all of the Roles known to this Space, in their "usual" display order.
    */
-  def getRoles():Seq[ThingInfo]
+  def getRoles():Future[Seq[ThingInfo]]
   
   /**
    * Fetch all of the members and invitees of this Space.
    */
-  def getMembers():(Seq[PersonInfo], Seq[PersonInfo])
+  def getMembers():Future[(Seq[PersonInfo], Seq[PersonInfo])]
   
   /**
    * Invite people to join this Space. This may be any number of invitees by email address and any

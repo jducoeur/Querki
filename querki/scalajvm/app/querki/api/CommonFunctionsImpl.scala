@@ -18,7 +18,9 @@ class PassthroughHandler(val ecology:Ecology, rc:RequestContext) extends Passthr
   def pass(name:String):ThingInfo = {
     state.anythingByName(name) match {
       case Some(t) => {
-        val ti = ClientApi.thingInfo(t, rc)
+        // Technically, thingInfo() is async, but we expect it to be essentially synchronous in this case.
+        // This is a bit of a bad smell, but essential to the way PassthroughHandler works.
+        val ti = awaitIntentionally(ClientApi.thingInfo(t, rc))
         contents += (name -> ti)
         ti
       }

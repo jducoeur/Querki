@@ -18,12 +18,12 @@ trait ThingFunctions {
    * Note that, if the named Thing does not exist, that is *not* an error: this will interpret that
    * as a Tag instead.
    */
-  def getThingPage(thingId:TID, renderPropId:Option[TID]):ThingPageDetails
+  def getThingPage(thingId:TID, renderPropId:Option[TID]):Future[ThingPageDetails]
   
   /**
    * Fetch just the ThingInfo for the specified Thing.
    */
-  def getThingInfo(thingId:TID):ThingInfo
+  def getThingInfo(thingId:TID):Future[ThingInfo]
   
   /**
    * Evaluate the given QL in the context of the specified Thing, and return the resulting Wikitext.
@@ -48,7 +48,7 @@ trait ThingFunctions {
   /**
    * Fetch all of the Types, Collections and Models available for creating Properties in this Space.
    */
-  def getAllTypes():AllTypeInfo
+  def getAllTypes():Future[AllTypeInfo]
   
   /**
    * Delete the specified Thing.

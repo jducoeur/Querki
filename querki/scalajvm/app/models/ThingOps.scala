@@ -1,5 +1,7 @@
 package models
 
+import scala.concurrent.Future
+
 import querki.globals._
 import querki.ql.{Invocation, QLFunction}
 import querki.values.{PropAndVal, QLContext, QValue, RequestContext}
@@ -32,42 +34,42 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
       dispOpt
   }
   
-  def nameOrComputed(implicit request:RequestContext, state:SpaceState):DisplayText = {
+  def nameOrComputed(implicit request:RequestContext, state:SpaceState):Future[DisplayText] = {
     val localName = fullLookupDisplayName
-    def fallback() = DisplayText(id.toThingId.toString)
+    def fallback() = Future.successful(DisplayText(id.toThingId.toString))
     if (localName.isEmpty) {
       val computed = for {
         pv <- getPropOpt(Basic.ComputedNameProp)
         v <- pv.firstOpt
       }
-        yield QL.process(v, thisAsContext).raw
+        yield Future.successful(QL.process(v, thisAsContext).raw)
       computed.getOrElse(fallback())
     } else {
       val rendered = localName.get.renderPlain.raw
       if (rendered.length() > 0)
-        rendered
+        Future.successful(rendered)
       else
         fallback()
     }    
   }
   
-  def unsafeNameOrComputed(implicit rc:RequestContext, state:SpaceState):String = {
+  def unsafeNameOrComputed(implicit rc:RequestContext, state:SpaceState):Future[String] = {
     val localName = fullLookupDisplayName
-    def fallback() = id.toThingId.toString
+    def fallback() = Future.successful(id.toThingId.toString)
     if (localName.isEmpty) {
       val computed = for {
         pv <- getPropOpt(Basic.ComputedNameProp)
         v <- pv.firstOpt
       }
-        yield QL.process(v, thisAsContext).plaintext
+        yield Future.successful(QL.process(v, thisAsContext).plaintext)
       computed.getOrElse(fallback())
     } else {
       val rendered = localName.get.renderPlain.plaintext
       if (rendered.length() > 0)
-        rendered
+        Future.successful(rendered)
       else
         fallback()
-    }    
+    }
   }
   
   /**

@@ -29,16 +29,15 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
   
   def getRequestInfo():RequestInfo = ClientApi.requestInfo(rc)(state)
   
-  def getThingInfo(thingId:TID) = withThing(thingId) { thing =>
+  def getThingInfo(thingId:TID):Future[ThingInfo] = withThing(thingId) { thing =>
     ClientApi.thingInfo(thing, rc)(state)
   }
 
-  def getThingPage(thingId:TID, renderPropIdOpt:Option[TID]):ThingPageDetails = withThing(thingId) { thing =>
+  def getThingPage(thingId:TID, renderPropIdOpt:Option[TID]):Future[ThingPageDetails] = withThing(thingId) { thing =>
     implicit val s = state
     
-    val thingInfo = ClientApi.thingInfo(thing, rc)
     // Note that both the root Thing and (more importantly) TagThings won't have a Model:
-    val modelInfo = for {
+    val modelInfoOptFut = for {
       model <- thing.getModelOpt
     } 
       yield ClientApi.thingInfo(model, rc)
@@ -59,7 +58,11 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
     
     val styleinfo = Stylesheets.stylesheetsFor(thing)
     
-    ThingPageDetails(thingInfo, modelInfo, customHeaderOpt, rendered, styleinfo.sheets, styleinfo.headers)
+    for {
+      thingInfo <- ClientApi.thingInfo(thing, rc)
+      modelInfo <- modelInfoOptFut.map(_.map(Some(_))).getOrElse(Future.successful(None))
+    }
+      yield ThingPageDetails(thingInfo, modelInfo, customHeaderOpt, rendered, styleinfo.sheets, styleinfo.headers)
   }
   
   def evaluateQL(thingId:TID, ql:String):Wikitext = withThing(thingId) { thing =>
@@ -115,7 +118,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
     getPropsForSpace(state)
   }
   
-  def getAllTypes():AllTypeInfo = {
+  def getAllTypes():Future[AllTypeInfo] = {
     implicit val s = state
       
     val spaceTypes = state.allTypes.values.
@@ -126,12 +129,14 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
     def toCollectionInfo(coll:Collection) = CollectionInfo(coll, coll.linkName, coll.displayName)
     
     // TODO: separate the Types by SkillLevel:
-    AllTypeInfo(
-      Seq(Core.ExactlyOne, Core.Optional, Core.QList, Core.QSet).map(toCollectionInfo(_)),
-      Seq.empty,
-      spaceTypes.map(typ => TypeInfo(typ, typ.linkName, typ.displayName)).toSeq,
-      state.allModels.filter(_.hasProp(Editor.InstanceProps)(state)).map(ClientApi.thingInfo(_, rc)).toSeq
-    )
+    Future.sequence(state.allModels.filter(_.hasProp(Editor.InstanceProps)(state)).map(ClientApi.thingInfo(_, rc)).toSeq) map { modelInfo =>
+      AllTypeInfo(
+        Seq(Core.ExactlyOne, Core.Optional, Core.QList, Core.QSet).map(toCollectionInfo(_)),
+        Seq.empty,
+        spaceTypes.map(typ => TypeInfo(typ, typ.linkName, typ.displayName)).toSeq,
+        modelInfo
+      )
+    }
   }
   
   def deleteThing(thingId:TID):Future[Unit] = withThing(thingId) { thing =>

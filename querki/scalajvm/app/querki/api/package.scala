@@ -18,7 +18,7 @@ package object api {
     def requestInfo(rc:RequestContext)(implicit state:SpaceState):RequestInfo
     def rootRequestInfo(rc:RequestContext):RequestInfo
     
-    def thingInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):ThingInfo
+    def thingInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):Future[ThingInfo]
     
     def spaceInfo(info:querki.spaces.messages.SpaceInfo):SpaceInfo
     
