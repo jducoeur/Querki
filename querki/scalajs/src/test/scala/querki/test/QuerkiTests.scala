@@ -121,15 +121,15 @@ trait ThingPageTests extends QuerkiTests {
     val renderedGuts = pageContent.toString
     
     registerApiHandler[ThingFunctions]("getThingPage")(new ThingFunctionsEmpty with AutowireHandler {
-      override def getThingPage(thingId:TID, propIdOpt:Option[TID]):ThingPageDetails = {
-        ThingPageDetails(
+      override def getThingPage(thingId:TID, propIdOpt:Option[TID]):Future[ThingPageDetails] = {
+        Future.successful(ThingPageDetails(
           thing1,
           Some(model1),
           None,
           Wikitext(renderedGuts),
           Seq.empty,
           Seq.empty
-        )
+        ))
       }
     
       def handle(request:Core.Request[String]):Future[String] = route[ThingFunctions](this)(request)

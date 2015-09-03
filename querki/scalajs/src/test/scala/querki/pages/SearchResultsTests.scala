@@ -51,15 +51,15 @@ object SearchResultsTests extends ThingPageTests {
         val query2 = "floobity"
       
         registerApiHandler[SearchFunctions]("search")(new SearchFunctions with AutowireHandler {
-          def search(q:String):Option[SearchResults] = {
-            if (q == query1) {
+          def search(q:String):Future[Option[SearchResults]] = {
+            Future.successful(if (q == query1) {
               Some(SearchResults(q, Seq(result3, result1, result2)))
             } else if (q == query2) {
               None
             } else {
               assert(q != s"Error: SearchResultsTests got unexpected query $q")
               None
-            }
+            })
           }
     
           def handle(request:Core.Request[String]):Future[String] = route[SearchFunctions](this)(request)
