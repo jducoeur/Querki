@@ -1,5 +1,7 @@
 package querki.notifications
 
+import scala.concurrent.Future
+
 import models.{OID, Wikitext}
 
 import querki.identity.{IdentityId, UserId, UserLevel}
@@ -39,12 +41,12 @@ trait Notifier {
   /**
    * Takes a bunch of unread Notifications, and returns a summary of them.
    */
-  def summarizeNew(context:QLContext, notes:Seq[Notification]):SummarizedNotifications
+  def summarizeNew(context:QLContext, notes:Seq[Notification]):Future[SummarizedNotifications]
   
   /**
    * Says how to display this Notification.
    */
-  def render(context:QLContext, note:Notification):RenderedNotification
+  def render(context:QLContext, note:Notification):Future[RenderedNotification]
 }
 
 /**

@@ -1,5 +1,7 @@
 package querki
 
+import scala.concurrent.Future
+
 import akka.actor.{ActorRef, Props}
 
 import anorm.SqlQuery
@@ -59,7 +61,7 @@ package object notifications {
     /**
      * Figures out how to display the given Notification.
      */
-    def render(rc:RequestContext, note:Notification):RenderedNotification
+    def render(rc:RequestContext, note:Notification):Future[RenderedNotification]
   }
   
   /**

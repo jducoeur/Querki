@@ -30,23 +30,25 @@ class NotificationFunctionsImpl(info:AutowireParams)(implicit e:Ecology)
     // to manipulate notes -- that is, the Requester. So it is required that getIdentities() get looped
     // back into the Requester's receive loop, and the result has to be re-Futurized.
     // TBD: can we come up with a more elegant approach for this?
-    loopback(IdentityAccess.getIdentities(identityIds)) map { identities =>
+    loopback(IdentityAccess.getIdentities(identityIds)) flatMap { identities =>
       try {
-	      notes.currentNotes.map { note =>
+	      val noteFuts = notes.currentNotes.map { note =>
 	        val sender = ClientApi.identityInfo(identities(note.sender))
-	        val rendered = Notifications.render(rc, note)
-	        NotificationInfo(
-	          note.id,
-	          sender,
-	          note.spaceId.map(_.toThingId.toString).getOrElse(""),
-	          note.thingId.map(_.toThingId.toString).getOrElse(""),
-	          // TODO: This should really be an implicit conversion:
-	          note.sentTime.getMillis,
-	          rendered,
-	          note.isRead,
-	          note.isDeleted
-          )
+	        Notifications.render(rc, note) map { rendered =>
+            NotificationInfo(
+              note.id,
+              sender,
+              note.spaceId.map(_.toThingId.toString).getOrElse(""),
+              note.thingId.map(_.toThingId.toString).getOrElse(""),
+              // TODO: This should really be an implicit conversion:
+              note.sentTime.getMillis,
+              rendered,
+              note.isRead,
+              note.isDeleted
+            )            
+          }
 	      }
+        Future.sequence(noteFuts)
       } catch {
         case ex:Exception => { QLog.error("Exception in getRecentNotifications", ex); throw ex }
       }

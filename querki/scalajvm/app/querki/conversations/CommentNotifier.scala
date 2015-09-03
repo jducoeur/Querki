@@ -1,5 +1,8 @@
 package querki.conversations
 
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import models.{HtmlWikitext, PType, Wikitext}
 
 import querki.ecology._
@@ -50,13 +53,14 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
   // TODO: we're not summarizing on the first pass, but should be doing so:
   def summarizeAt:SummarizeAt.SummarizeAt = SummarizeAt.None
   
-  def summarizeNew(context:QLContext, notes:Seq[Notification]):SummarizedNotifications = {
+  def summarizeNew(context:QLContext, notes:Seq[Notification]):Future[SummarizedNotifications] = {
     if (notes.length != 1)
       throw new Exception("CommentNotifier.summarizeNew current expects exactly one notification at a time!")
       
     val note = notes.head
-    val rendered = render(context, note)
-    SummarizedNotifications(rendered.headline, rendered.content, notes)
+    render(context, note) map { rendered =>
+      SummarizedNotifications(rendered.headline, rendered.content, notes)      
+    }
   }
     
   def notifyComment(req:User, comment:Comment, commentNotifyPrefs:Seq[OneUserValue])(implicit state:SpaceState) = {
@@ -151,7 +155,7 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
              """<i class="glyphicon glyphicon-share-alt"></i></a>"""
   }
     
-  def render(context:QLContext, note:Notification):RenderedNotification = {
+  def render(context:QLContext, note:Notification):Future[RenderedNotification] = {
     val payload = note.payload
     val resultOpt = for {
       thingName <- payload.getProp(CommentThingName, PlainTextType)
@@ -162,10 +166,10 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
     }
       yield RenderedNotification(HtmlWikitext(QHtml(header)), body)
         
-    resultOpt.getOrElse {
+    Future.successful(resultOpt.getOrElse {
       QLog.error("CommentNotifier got badly-formed Notification: " + note)
       RenderedNotification(Wikitext("INTERNAL ERROR"), Wikitext("We're sorry, but this message seems to have gotten messed up"))
-    }
+    })
   }
   
   /***********************************************

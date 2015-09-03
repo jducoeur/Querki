@@ -101,28 +101,38 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
     // System Messages don't get summarized -- they are infrequent and important:
     def summarizeAt:SummarizeAt.SummarizeAt = SummarizeAt.None
   
-    def summarizeNew(context:QLContext, notes:Seq[Notification]):SummarizedNotifications = {
+    def summarizeNew(context:QLContext, notes:Seq[Notification]):Future[SummarizedNotifications] = {
       if (notes.length != 1)
         throw new Exception("SystemMessageNotifier.summarizeNew expects exactly one notification at a time!")
       
       val note = notes.head
-      val rendered = render(context, note)
-      SummarizedNotifications(rendered.headline, rendered.content, notes)
+      render(context, note) map { rendered =>
+        SummarizedNotifications(rendered.headline, rendered.content, notes)        
+      }
     }
     
-    def render(context:QLContext, note:Notification):RenderedNotification = {
+    def render(context:QLContext, note:Notification):Future[RenderedNotification] = {
       val payload = note.payload
-      val resultOpt = for {
+      val futuresOpt = for {
         headerQV <- payload.get(HeaderOID)
         headerQL <- headerQV.firstAs(LargeTextType)
-        header = QL.process(headerQL, context)
+        header = Future.successful(QL.process(headerQL, context))
         bodyQV <- payload.get(BodyOID)
         bodyQL <- bodyQV.firstAs(TextType)
-        body = QL.process(bodyQL, context)
+        body = Future.successful(QL.process(bodyQL, context))
       }
-        yield RenderedNotification(header, body)
+        yield (header, body)
         
-      resultOpt.getOrElse(throw new Exception("SystemMessageNotifier received badly-formed Notification?"))
+      futuresOpt match {
+        case Some((headerFut, bodyFut)) => {
+          for {
+            header <- headerFut
+            body <- bodyFut
+          }
+            yield RenderedNotification(header, body)
+        }
+        case None => throw new Exception("SystemMessageNotifier received badly-formed Notification?")
+      }
     }
   }
     
