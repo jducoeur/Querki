@@ -143,9 +143,9 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     // name-based.
     def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = nameToLink(context)(v)
     
-    override def renderProperty(prop:Property[_,_])(implicit request:RequestContext, state:SpaceState):Option[Wikitext] = {
-      Some(QL.process(querki.core.QLText("""These tags are currently being used:
-[[_tagsForProperty -> _sort -> _bulleted]]"""), prop.thisAsContext))
+    override def renderProperty(prop:Property[_,_])(implicit request:RequestContext, state:SpaceState):Option[Future[Wikitext]] = {
+      Some(Future.successful(QL.process(querki.core.QLText("""These tags are currently being used:
+        |[[_tagsForProperty -> _sort -> _bulleted]]""".stripMargin), prop.thisAsContext)))
     }
   }
 
@@ -187,9 +187,9 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
       Wikitext("[") + display + Wikitext(s"](${SafeUrl(v.text)})") 
     }
     
-    override def renderProperty(prop:Property[_,_])(implicit request:RequestContext, state:SpaceState):Option[Wikitext] = {
-      Some(QL.process(QLText("""These tags are currently being used:
-[[_tagsForProperty -> _sort -> _bulleted]]"""), prop.thisAsContext))
+    override def renderProperty(prop:Property[_,_])(implicit request:RequestContext, state:SpaceState):Option[Future[Wikitext]] = {
+      Some(Future.successful(QL.process(QLText("""These tags are currently being used:
+        |[[_tagsForProperty -> _sort -> _bulleted]]""".stripMargin), prop.thisAsContext)))
     }
   }
 
@@ -227,13 +227,13 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     override def nameOrComputed(implicit rc:RequestContext, state:SpaceState) = Future.successful(DisplayText(name))
     override def unsafeNameOrComputed(implicit rc:RequestContext, state:SpaceState) = Future.successful(name)
     
-    override def render(implicit rc:RequestContext, state:SpaceState, prop:Option[Property[_,_]] = None):Wikitext = {
+    override def render(implicit rc:RequestContext, state:SpaceState, prop:Option[Property[_,_]] = None):Future[Wikitext] = {
       val model = pseudoModel
       val propAndValOpt = model.getPropOpt(ShowUnknownProp) orElse space.getPropOpt(ShowUnknownProp)
       val nameVal = ExactlyOne(PlainTextType(name))
       val nameAsContext = QLContext(nameVal, Some(rc))
       // TODO: the link below shouldn't be so hard-coded!
-      propAndValOpt.map(pv => pv.render(nameAsContext)).getOrElse(Wikitext(name + " doesn't exist yet. [Click here to create it.](edit?thingId=" + SafeUrl(name) + ")"))    
+      Future.successful(propAndValOpt.map(pv => pv.render(nameAsContext)).getOrElse(Wikitext(name + " doesn't exist yet. [Click here to create it.](edit?thingId=" + SafeUrl(name) + ")")))
     }
   }
   

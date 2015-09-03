@@ -54,11 +54,10 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
       state.prop(oid)
     }
 
-    val rendered = thing.render(rc, state, renderPropOpt)
-    
     val styleinfo = Stylesheets.stylesheetsFor(thing)
     
     for {
+      rendered <- thing.render(rc, state, renderPropOpt)
       thingInfo <- ClientApi.thingInfo(thing, rc)
       modelInfo <- modelInfoOptFut.map(_.map(Some(_))).getOrElse(Future.successful(None))
     }

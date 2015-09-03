@@ -1,5 +1,7 @@
 package querki
 
+import scala.concurrent.Future
+
 import models.{Thing, Wikitext}
 
 import querki.ecology._
@@ -17,6 +19,6 @@ package object ui {
    * instead, you access the appropriate Renderer via the RequestContext.
    */
   trait UIRenderer {
-    def renderThingDefault(thing:Thing)(implicit rc:RequestContext, state:SpaceState):Wikitext    
+    def renderThingDefault(thing:Thing)(implicit rc:RequestContext, state:SpaceState):Future[Wikitext]    
   }
 }

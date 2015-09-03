@@ -93,7 +93,7 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
     ifSet(Core.IsModelProp)
   }
   
-  def renderProps(implicit request:RequestContext, state:SpaceState):Wikitext = {
+  def renderProps(implicit request:RequestContext, state:SpaceState):Future[Wikitext] = {
     Renderer.renderThingDefault(thing)
   }
   
@@ -102,7 +102,7 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
    * 
    * This mainly exists so that the different Kinds can override it and do their own thing.
    */
-  def renderDefault(implicit request:RequestContext, state:SpaceState):Wikitext = {
+  def renderDefault(implicit request:RequestContext, state:SpaceState):Future[Wikitext] = {
     renderProps
   }
   
@@ -113,7 +113,7 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
    * If you specify a property, that property will be rendered with this Thing as a context;
    * otherwise, DisplayText will be rendered.
    */
-  def render(implicit request:RequestContext, state:SpaceState, prop:Option[Property[_,_]] = None):Wikitext = 
+  def render(implicit request:RequestContext, state:SpaceState, prop:Option[Property[_,_]] = None):Future[Wikitext] = 
   {
     val actualProp = 
       if (ifSet(Core.IsModelProp))
@@ -124,7 +124,7 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
       pv <- getPropOpt(actualProp);
       if (!pv.isEmpty)
         )
-      yield pv.render(thing.thisAsContext.forProperty(pv.prop), Some(thing))
+      yield Future.successful(pv.render(thing.thisAsContext.forProperty(pv.prop), Some(thing)))
     
     renderedOpt.getOrElse(renderDefault)
   }

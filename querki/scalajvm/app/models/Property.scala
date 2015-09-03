@@ -2,6 +2,8 @@ package models
 
 import language.existentials
 
+import scala.concurrent.Future
+
 import Thing._
 
 import querki.core.MOIDs._
@@ -124,7 +126,7 @@ class PropertyThingOps[VT,RT](prop:Property[VT,RT])(implicit e:Ecology) extends 
   /**
    * This renders the Property itself, if it has no DisplayText defined.
    */
-  override def renderDefault(implicit request:RequestContext, state:SpaceState):Wikitext = {
+  override def renderDefault(implicit request:RequestContext, state:SpaceState):Future[Wikitext] = {
     val fromType = pType.renderProperty(prop)
     fromType.getOrElse(renderProps)
   }

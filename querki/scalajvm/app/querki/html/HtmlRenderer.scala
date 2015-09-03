@@ -1,5 +1,6 @@
 package querki.html
 
+import scala.concurrent.Future
 import scala.xml.{Attribute, NodeSeq, Null, Text, Xhtml}
 
 import play.api.Logger
@@ -101,7 +102,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   
   // TODO: I don't love having this renderer level dependent on QL. Think about whether this is the right place
   // for this code.
-  def renderThingDefault(thing:Thing)(implicit rc:RequestContext, state:SpaceState):Wikitext = {
+  def renderThingDefault(thing:Thing)(implicit rc:RequestContext, state:SpaceState):Future[Wikitext] = {
     val text = """
         |<dl>
         |[[_foreachProperty -> 
@@ -119,7 +120,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
         |[[_showSome(0, 50, ""Show More"", _instances -> _sort, _bulleted)]]""".stripMargin
       } else
         text
-    QL.process(QLText(fullText), thing.thisAsContext, None, Some(thing))
+    Future.successful(QL.process(QLText(fullText), thing.thisAsContext, None, Some(thing)))
   }
   
   /*********************************

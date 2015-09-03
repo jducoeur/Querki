@@ -1,5 +1,6 @@
 package models
 
+import scala.concurrent.Future
 import scala.xml.NodeSeq
 
 import Thing.{PropFetcher, emptyProps}
@@ -173,7 +174,7 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
   /**
    * Types can override this to provide default renderings when you look at a Property of this Type.
    */
-  def renderProperty(prop:Property[_,_])(implicit request:RequestContext, state:SpaceState):Option[Wikitext] = None
+  def renderProperty(prop:Property[_,_])(implicit request:RequestContext, state:SpaceState):Option[Future[Wikitext]] = None
   
   /**
    * The PType-math version of ==; this is here so that specific PTypes can override it.
