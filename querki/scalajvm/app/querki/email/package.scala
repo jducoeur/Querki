@@ -1,5 +1,7 @@
 package querki
 
+import scala.concurrent.Future
+
 import models.Property
 
 // For the HACKs below:
@@ -57,7 +59,7 @@ package object email {
      */
     def sendSystemEmail(recipient:Identity, subject:Wikitext, body:Wikitext):Try[Unit]
     
-    def sendToPeople(context:QLContext, people:Seq[Thing], subjectQL:QLText, bodyQL:QLText)(implicit state:SpaceState):Seq[OID]
+    def sendToPeople(context:QLContext, people:Seq[Thing], subjectQL:QLText, bodyQL:QLText)(implicit state:SpaceState):Future[Seq[OID]]
     
     def EmailAddressProp:Property[EmailAddress,String]
   }

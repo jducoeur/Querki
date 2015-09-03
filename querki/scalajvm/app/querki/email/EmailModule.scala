@@ -3,6 +3,7 @@ package querki.email.impl
 import querki.email._
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util._
 
 import javax.activation.DataHandler
@@ -108,11 +109,6 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
    * PROPERTIES
    ***********************************************/
   
-  // The actual definition of this method is down below
-  lazy val sendEmail = new SingleThingMethod(EmailSendOID, "Send Email", "Send this email message",
-      """Invoke this method to actually send this email.
-      |It will return a List of the Persons who the email was sent to this time.""".stripMargin, sendEmailIfAllowed)
-  
   lazy val showSendEmail = new SystemProperty(EmailShowSendOID, TextType, ExactlyOne,
       toProps(
         setName("Email Results"),
@@ -206,8 +202,6 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
     
     emailBody,
     
-    sendEmail,
-    
     showSendEmail,
     
     sentToProp,
@@ -227,7 +221,6 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
         emailTo(),
         emailSubject(""),
         emailBody(),
-        sendEmail(),
         recipientsProp("Email To"),
         showSendEmail("""Email successfully sent to:
 [[Send Email -> ""* ____ - [[Email Address]]""]]
@@ -254,19 +247,14 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
    ***********************************************/
     
   lazy val AccessControl = interface[querki.security.AccessControl]
-  def sendEmailIfAllowed(t:Thing, context:QLContext) = {
-    if (AccessControl.canEdit(context.state, context.request.requesterOrAnon, t.id))
-      doSendEmail(t, context)
-    else
-      Basic.TextValue("You aren't allowed to send that email")
-  }
   
-  def sendToPeople(context:QLContext, people:Seq[Thing], subjectQL:QLText, bodyQL:QLText)(implicit state:SpaceState):Seq[OID] = {
+  def sendToPeople(context:QLContext, people:Seq[Thing], subjectQL:QLText, bodyQL:QLText)(implicit state:SpaceState):Future[Seq[OID]] = {
     val session = createSession()
     
-    people.flatMap { person =>
+    val oidOptFuts = people map { person =>
       sendToPerson(context, person, session, subjectQL, bodyQL, from)
     }
+    Future.sequence(oidOptFuts) map (_.flatten)
   }
   
   /**
@@ -312,11 +300,11 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
 	Transport.send(msg)
   }
 	
-  def sendToPerson(context:QLContext, person:Thing, session:Session, subjectQL:QLText, bodyQL:QLText, from:String)(implicit state:SpaceState):Option[OID] = {
+  def sendToPerson(context:QLContext, person:Thing, session:Session, subjectQL:QLText, bodyQL:QLText, from:String)(implicit state:SpaceState):Future[Option[OID]] = {
     val name = person.displayName
     val addrList = person.getProp(EmailAddressProp)
     if (addrList.isEmpty)
-      None
+      Future.successful(None)
     else {
       val addr = addrList.first
 	      	    
@@ -328,75 +316,22 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
       // Once that is done, restore the incoming context as the parent of this one.
       val personContext = QLContext(ExactlyOne(ElemValue(person.id, LinkType)), context.requestOpt, None) //Some(context))
     
-      val subject = QL.process(subjectQL, personContext.forProperty(emailSubject))
-      val body = QL.process(bodyQL, personContext.forProperty(emailBody))
+      for {
+        subject <- Future.successful(QL.process(subjectQL, personContext.forProperty(emailSubject)))
+        body <- Future.successful(QL.process(bodyQL, personContext.forProperty(emailBody)))
       
-      // Note that emails are sent with the ReplyTo set to whoever asked for this email to be generated.
-      // You are responsible for your own emails.
-      // TODO: This will need to get more intelligent about the identity to use for the ReplyTo: it should
-      // use the requester's Identity that is being used for *this* Space. Right now, we're potentially
-      // leaking the wrong email address. But it'll do to start.
-      val result = sendInternal(session, from, addr, name, context.request.requesterOrAnon.mainIdentity, subject, body)
-      result match {
-        case Success(_) => Some(person.id)
-        case Failure(ex) => Logger.error("Got an error while sending email ", ex); None 
-      }
-    }
-  }
-  
-  def doSendEmail(t:Thing, context:QLContext) = {
-    implicit val state = context.state
-    val recipientsIndirect = t.getProp(recipientsProp)
-    val previouslySentToOpt = t.getPropOpt(sentToProp)
-    
-    // Get the actual list of recipients:
-    val recipients = QL.processMethod(recipientsIndirect.first, t.thisAsContext(context.request, state, ecology).forProperty(recipientsProp))
-    if (recipients.pType != LinkType) {
-      QL.ErrorValue("The Recipient property of an Email Message must return a collection of Links; instead, it produced " + recipients.pType.displayName)
-    } else {
-        val subjectQL = t.getProp(emailSubject).first
-        val bodyQL = t.getProp(emailBody).first		      
-	    
-	    // Construct the email:
-	    val props = System.getProperties()
-	    props.setProperty("mail.host", smtpHost)
-	    props.setProperty("mail.user", "querki")
-	    props.setProperty("mail.transport.protocol", "smtp")
-	    props.setProperty("mail.from", from)
-	    props.setProperty("mail.debug", "true")
-	    
-	    val session = Session.getInstance(props, null)
-	
-	    session.setDebug(debug)
+        // Note that emails are sent with the ReplyTo set to whoever asked for this email to be generated.
+        // You are responsible for your own emails.
+        // TODO: This will need to get more intelligent about the identity to use for the ReplyTo: it should
+        // use the requester's Identity that is being used for *this* Space. Right now, we're potentially
+        // leaking the wrong email address. But it'll do to start.
+        result = sendInternal(session, from, addr, name, context.request.requesterOrAnon.mainIdentity, subject, body)
 
-	    val sentTo = recipients.flatMap(LinkType) { personOID =>
-	      if (previouslySentToOpt.isDefined && previouslySentToOpt.get.contains(personOID))
-	        None
-	      else {
-	        val thing = state.anything(personOID)
-	        thing match {
-	          case Some(person) => sendToPerson(context, person, session, subjectQL, bodyQL, from)
-	          case None => None  // TODO: some kind of error here?
-	        }
-	      }
-	    }
-	    val resultingList = QList.makePropValue(sentTo.map(ElemValue(_, LinkType)).toList, LinkType)
-	    
-	    val req = context.request
-	    val fullSentTo = previouslySentToOpt match {
-	      case Some(previouslySentTo) => previouslySentTo ++ sentTo
-	      case None => resultingList
-	    } 
-	    val changeRequest = ChangeProps(req.requester.get, state.id, t.toThingId, toProps(SentToOID -> fullSentTo)())
-	    SpaceOps.askSpace(changeRequest) { resp:ThingResponse =>
-	      resp match {
-	        case ThingFound(id, state) => Logger.info("Noted email recipients"); Future.successful {}
-	        // TODO: what should we do in case of failure?
-	        case ThingError(error, stateOpt) => Logger.error("Unable to record email recipients: " + error.msgName); Future.successful {}
-	      }
-	    }
-	    
-	    resultingList
+      }
+        yield result match {
+          case Success(_) => Some(person.id)
+          case Failure(ex) => Logger.error("Got an error while sending email ", ex); None 
+        }
     }
   }
 }
