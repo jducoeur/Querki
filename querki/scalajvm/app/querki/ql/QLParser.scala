@@ -138,7 +138,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
 	        Iterable.empty
 	      else
   	        context.map { elemContext =>
-	          QL.ParsedTextType(processParseTree(text.contents, elemContext))
+	          QL.ParsedTextType(awaitHack(processParseTree(text.contents, elemContext)))
 	        }
 	    // TBD: the asInstanceOf here is surprising -- I would have expected transformed to come out
 	    // as the right type simply by type signature. Can we get rid of it?
@@ -321,26 +321,26 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
    * Types, but it is always *syntactically* legal, and is provided as a tool for any Type that
    * wants to avail itself of this notion.
    */
-  private def linkToWikitext(contents:ParsedQLText, context:QLContext):Wikitext = {
-    logContext("linkToWikitext " + contents, context) {
-      val guts = contents.parts.length match {
-        // Just four underscores, which means we don't do anything special for the display:
-        case 0 => None
-        // There is content, so pass that down as the display:
-        case _ => Some(processParseTree(contents, context))
-      }
-      qlProfilers.wikify.profile { awaitHack(context.value.wikify(context, guts)) }
+  private def linkToWikitext(contents:ParsedQLText, context:QLContext):Future[Wikitext] = {
+    contents.parts.length match {
+      // Just four underscores, which means we don't do anything special for the display:
+      case 0 => context.value.wikify(context, None)
+      // There is content, so pass that down as the display:
+      case _ => processParseTree(contents, context).flatMap(guts => context.value.wikify(context, Some(guts)))
     }
   }
   
-  private def processParseTree(parseTree:ParsedQLText, context:QLContext):Wikitext = {
-    (Wikitext("") /: parseTree.parts) { (soFar, nextPart) =>
-      soFar + (nextPart match {
-        case UnQLText(t) => Wikitext(t)
-        case QLExp(phrases) => contextsToWikitext(processPhrases(phrases, context))
+  private def processParseTree(parseTree:ParsedQLText, context:QLContext):Future[Wikitext] = {
+    // Note that the parts at this level are independent -- the context doesn't carry over -- which
+    // makes this relatively easy. We just compute each piece, and then fold them together:
+    val futures = parseTree.parts.map { part =>
+      part match {
+        case UnQLText(t) => Future.successful(Wikitext(t))
+        case QLExp(phrases) => Future.successful(contextsToWikitext(processPhrases(phrases, context)))
         case QLLink(l) => linkToWikitext(l, context)
-      })
+      }          
     }
+    Future.fold(futures)(Wikitext(""))(_ + _)
   }
   
   def parse = parseAll(qlText, input.text)
@@ -370,7 +370,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     try {
       val parseResult = parse
       parseResult match {
-        case Success(result, _) => Future.successful(processParseTree(result, initialContext))
+        case Success(result, _) => processParseTree(result, initialContext)
         case Failure(msg, next) => { renderError(msg, next) }
         // TODO: we should probably do something more serious in case of Error:
         case Error(msg, next) => { QLog.error("Couldn't parse qlText: " + msg); renderError(msg, next) }
