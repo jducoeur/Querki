@@ -2,6 +2,7 @@ package querki.ql
 
 import language.existentials
 
+import scala.annotation.tailrec
 import scala.util.parsing.combinator._
 
 import models._
@@ -146,45 +147,42 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     }
   }
   
-  private def processCall(call:QLCall, context:QLContext, isParam:Boolean):QLContext = {
-    logContext("processCall " + call, context) {
-      
-      def processThing(t:Thing):QLContext = qlProfilers.processThing.profile {
-        // If there are parameters to the call, they are a collection of phrases.
-        val params = call.params
-        val methodOpt = call.methodName.flatMap(context.state.anythingByName(_))
-        val contextWithCall = context.withCall(call, t)
-        try {
-          methodOpt match {
-            case Some(method) => {
-              val definingContext = context.next(Core.ExactlyOne(Core.LinkType(t.id)))
-              qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
-                method.qlApplyTop(InvocationImpl(t, contextWithCall, Some(definingContext), params), method)
-              }
-            }
-            case None => {
-              qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
-                val inv = InvocationImpl(t, contextWithCall, None, params)
-                t.qlApplyTop(inv, t)
-              }
+  private def processCall(call:QLCall, context:QLContext, isParam:Boolean):Future[QLContext] = {
+    def processThing(t:Thing):QLContext = qlProfilers.processThing.profile {
+      // If there are parameters to the call, they are a collection of phrases.
+      val params = call.params
+      val methodOpt = call.methodName.flatMap(context.state.anythingByName(_))
+      val contextWithCall = context.withCall(call, t)
+      try {
+        methodOpt match {
+          case Some(method) => {
+            val definingContext = context.next(Core.ExactlyOne(Core.LinkType(t.id)))
+            qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
+              method.qlApplyTop(InvocationImpl(t, contextWithCall, Some(definingContext), params), method)
             }
           }
-        } catch {
-          case ex:PublicException => context.nextFrom(WarningValue(ex.display(context.requestOpt)), t)
-          case error:Exception => QLog.error("Error during QL Processing", error); context.nextFrom(WarningValue(UnexpectedPublicException.display(context.requestOpt)), t)
-        }      
-      }
-      
-      def handleThing(tOpt:Option[Thing]) = {
-        tOpt.map { t =>
-          processThing(t)
-        }.getOrElse(context.next(Core.ExactlyOne(QL.UnknownNameType(call.name.name))))
-      }
-      
-      call.name match {
-        case binding:QLBinding => { 
-          val resolvedBinding = processBinding(binding, context, isParam)
-        
+          case None => {
+            qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
+              val inv = InvocationImpl(t, contextWithCall, None, params)
+              t.qlApplyTop(inv, t)
+            }
+          }
+        }
+      } catch {
+        case ex:PublicException => context.nextFrom(WarningValue(ex.display(context.requestOpt)), t)
+        case error:Exception => QLog.error("Error during QL Processing", error); context.nextFrom(WarningValue(UnexpectedPublicException.display(context.requestOpt)), t)
+      }      
+    }
+    
+    def handleThing(tOpt:Option[Thing]) = {
+      Future.successful(tOpt.map { t =>
+        processThing(t)
+      }.getOrElse(context.next(Core.ExactlyOne(QL.UnknownNameType(call.name.name)))))
+    }
+    
+    call.name match {
+      case binding:QLBinding => { 
+        processBinding(binding, context, isParam).map { resolvedBinding =>  
           val tOpt = for {
             oid <- resolvedBinding.value.firstAs(Core.LinkType)
             thing <- context.state.anything(oid)
@@ -195,30 +193,34 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
             processThing(t)
           }.getOrElse(resolvedBinding)
         }
-        case tid:QLThingId => {
-          val tOpt = context.state.anything(ThingId(tid.name))
-          handleThing(tOpt)
-        }
-        case _ => {
-          val tOpt = context.state.anythingByName(call.name.name)
-          handleThing(tOpt)
-        }
+      }
+      case tid:QLThingId => {
+        val tOpt = context.state.anything(ThingId(tid.name))
+        handleThing(tOpt)
+      }
+      case _ => {
+        val tOpt = context.state.anythingByName(call.name.name)
+        handleThing(tOpt)
       }
     }
   }
   
-  private def processNormalBinding(binding:QLBinding, context:QLContext, isParam:Boolean, resolvingParser:QLParser):QLContext = {
+  def warningFut(context:QLContext, msg:String):Future[QLContext] = {
+    Future.successful(context.next(WarningValue(msg)))
+  }
+  
+  private def processNormalBinding(binding:QLBinding, context:QLContext, isParam:Boolean, resolvingParser:QLParser):Future[QLContext] = {
     // TODO: deal with proper value bindings here
     // Is this value bound in the request? (That is, is it a page param?)
     context.requestParams.get(binding.name) match {
       case Some(phrase) => processPhrase(phrase.ops, context, true)
-      case None => context.next(WarningValue(s"Didn't find a value for ${binding.name}"))
+      case None => warningFut(context, s"Didn't find a value for ${binding.name}")
     }
   }
   
-  private def processInternalBinding(binding:QLBinding, context:QLContext, isParam:Boolean, resolvingParser:QLParser):QLContext = {
+  private def processInternalBinding(binding:QLBinding, context:QLContext, isParam:Boolean, resolvingParser:QLParser):Future[QLContext] = {
     if (binding.name == "_context") {
-      resolvingParser.initialContext
+      Future.successful(resolvingParser.initialContext)
     } else {
       try {
         val rawParamNum = Integer.parseInt(binding.name.substring(1))
@@ -229,33 +231,30 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
             )
           yield processPhrase(phrase.ops, context, true)
         
-        resultOpt.getOrElse(context.next(WarningValue("No parameters passed in")))
+        resultOpt.getOrElse(warningFut(context,"No parameters passed in"))
       } catch {
-        case ex:NumberFormatException => context.next(WarningValue("$" + binding.name + " is not a valid bound name"))
-        case ex:IndexOutOfBoundsException => context.next(WarningValue("Not enough parameters passed in"))
+        case ex:NumberFormatException => warningFut(context, "$" + binding.name + " is not a valid bound name")
+        case ex:IndexOutOfBoundsException => warningFut(context, "Not enough parameters passed in")
       }
     }
   }
   
-  private def processBinding(binding:QLBinding, context:QLContext, isParam:Boolean):QLContext = {
-    logContext("processBinding " + binding, context) {
-      
-      // What is this? The thing is, bindings are complicated. Iff we are in a subparser, *and* we are resolving
-      // the parameters from that subparser, then we need to be resolving the bindings against the *parent*, not
-      // against this parser. That is, "myMethod($_1)"'s parameter is parameter 1 from the *caller*. Our normal
-      // resolution would be against the *callee*.
-      val resolvingParser = {
-        if (invOpt.isDefined && isParam)
-          invOpt.flatMap(_.context.parser).get
-        else
-          this
-      }
-    
-      if (binding.name.startsWith("_"))
-        processInternalBinding(binding, context, isParam, resolvingParser)
+  private def processBinding(binding:QLBinding, context:QLContext, isParam:Boolean):Future[QLContext] = {
+    // What is this? The thing is, bindings are complicated. Iff we are in a subparser, *and* we are resolving
+    // the parameters from that subparser, then we need to be resolving the bindings against the *parent*, not
+    // against this parser. That is, "myMethod($_1)"'s parameter is parameter 1 from the *caller*. Our normal
+    // resolution would be against the *callee*.
+    val resolvingParser = {
+      if (invOpt.isDefined && isParam)
+        invOpt.flatMap(_.context.parser).get
       else
-        processNormalBinding(binding, context, isParam, resolvingParser)
+        this
     }
+  
+    if (binding.name.startsWith("_"))
+      processInternalBinding(binding, context, isParam, resolvingParser)
+    else
+      processNormalBinding(binding, context, isParam, resolvingParser)
   }
   
   private def processNumber(num:QLNumber, context:QLContext):QLContext = {
@@ -264,46 +263,43 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     }
   }
   
-  private def processStage(stage:QLStage, contextIn:QLContext, isParam:Boolean):QLContext = {
+  private def processStage(stage:QLStage, contextIn:QLContext, isParam:Boolean):Future[QLContext] = {
     val context = 
       if (contextIn.depth > contextIn.maxDepth)
-        contextIn.next(WarningValue("Too many levels of calls -- you can only have up to " + contextIn.maxDepth + " calls in a phrase."));
+        contextIn.next(WarningValue("Too many levels of calls -- you can only have up to " + contextIn.maxDepth + " calls in a phrase."))
       else if (stage.useCollection) 
         contextIn.asCollection
       else if (stage.clearUseCollection)
         contextIn.clearAsCollection
       else 
         contextIn
-    logContext("processStage " + stage, context) {
-	    stage match {
-	      case name:QLCall => qlProfilers.processCall.profile { processCall(name, context, isParam) }
-	      case subText:QLTextStage => qlProfilers.processTextStage.profile { processTextStage(subText, context) }
-	      case num:QLNumber => qlProfilers.processNumber.profile { processNumber(num, context) }
-//        case QLPlainTextStage(text) => context.next(TextValue(text))
-	    }
+    stage match {
+      case name:QLCall => processCall(name, context, isParam)
+      case subText:QLTextStage => Future.successful(processTextStage(subText, context))
+      case num:QLNumber => Future.successful(processNumber(num, context))
     }
   }
   
-  private[ql] def processPhrase(ops:Seq[QLStage], startContext:QLContext, isParam:Boolean):QLContext = {
-    logContext("processPhrase " + ops + "; isParam=" + isParam, startContext) {
-	    (startContext /: ops) { (context, stage) => 
-	      if (context.isCut)
-	        // Setting the "cut" flag means that we're just stopping processing here. Usually
-	        // used for warnings:
-	        context
-	      else
-	        processStage(stage, context, isParam) 
-	    }
+  private def processPhrase(ops:Seq[QLStage], context:QLContext, isParam:Boolean):Future[QLContext] = {
+    if (context.isCut)
+      // Setting the "cut" flag means that we're just stopping processing here. Usually
+      // used for warnings:
+      Future.successful(context)
+    else {
+      if (ops.isEmpty)
+        Future.successful(context)
+      else
+        processStage(ops.head, context, isParam) flatMap { next => processPhrase(ops.tail, next, isParam) }
     }
   }
   // This is the entry point that is currently visible to the outside. We believe this is only used for
   // dealing with parameters.
   def processPhrase(ops:Seq[QLStage], startContext:QLContext):Future[QLContext] = {
-    Future.successful(processPhrase(ops, startContext, false))
+    processPhrase(ops, startContext, false)
   }
   
   private def processPhrases(phrases:Seq[QLPhrase], context:QLContext):Seq[Future[QLContext]] = {
-    phrases map (phrase => Future.successful(processPhrase(phrase.ops, context, false)))
+    phrases map (phrase => processPhrase(phrase.ops, context, false))
   }
 
   def contextsToWikitext(contexts:Seq[Future[QLContext]], insertNewlines:Boolean = false):Future[Wikitext] = {
@@ -405,7 +401,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   private[ql] def processMethod:Future[QLContext] = {
     val parseResult = qlProfilers.parseMethod.profile { parseAll(qlPhrase, input.text) }
     parseResult match {
-      case Success(result, _) => qlProfilers.processMethod.profile { Future.successful(processPhrase(result.ops, initialContext, false)) }
+      case Success(result, _) => qlProfilers.processMethod.profile { processPhrase(result.ops, initialContext, false) }
       case Failure(msg, next) => { renderError(msg, next).map(err => initialContext.next(QL.WikitextValue(err))) }
       case Error(msg, next) => { renderError(msg, next).map(err => initialContext.next(QL.WikitextValue(err))) }
     }
