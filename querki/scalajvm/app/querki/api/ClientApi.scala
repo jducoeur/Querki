@@ -1,7 +1,5 @@
 package querki.api
 
-import scala.concurrent.Future
-
 import akka.actor._
 
 import upickle._
@@ -10,7 +8,6 @@ import autowire._
 import models.{AsOID, HtmlWikitext}
 
 import querki.globals._
-import querki.globals.Implicits._
 
 import querki.core.NameUtils
 import querki.data._
@@ -143,18 +140,23 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
       typeId)
   }
   
-  def propValInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):Seq[PropValInfo] = {
-     def oneProp(prop:AnyProp, v:QValue):PropValInfo = {
-      val prompt = prop.getPropOpt(Editor.PromptProp).map(_.renderPlain)
+  def propValInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):Future[Seq[PropValInfo]] = {
+    def oneProp(prop:AnyProp, v:QValue):Future[PropValInfo] = {
+      val prompt = futOpt(prop.getPropOpt(Editor.PromptProp).map(_.renderPlain))
       val renderedV =
         if (v.pType.isInstanceOf[querki.core.IsTextType]) {
-          HtmlWikitext(s"<pre><code>${v.cv.map(v.pType.toUser(_)).mkString("\n")}</code></pre>")
+          Future.successful(HtmlWikitext(s"<pre><code>${v.cv.map(v.pType.toUser(_)).mkString("\n")}</code></pre>"))
         } else {
           v.wikify(QLRequestContext(rc))
       }
-      val tooltip = prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc, state, ecology)))
+      val tooltip = futOpt(prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc, state, ecology))))
           
-      PropValInfo(propInfo(prop, rc), prompt, renderedV, tooltip)
+      for {
+        p <- prompt
+        r <- renderedV
+        t <- tooltip
+      }
+        yield PropValInfo(propInfo(prop, rc), p, r, t)
     }
     
     val infoOpts = for {
@@ -162,6 +164,6 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
       if (!prop.ifSet(Core.InternalProp))
     }
       yield t.getPropOpt(prop).map(pv => oneProp(prop, pv.v))
-    infoOpts.flatten.toSeq
+    Future.sequence(infoOpts.flatten.toSeq)
   }
 }

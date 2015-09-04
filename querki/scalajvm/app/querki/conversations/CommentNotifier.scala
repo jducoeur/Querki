@@ -1,11 +1,9 @@
 package querki.conversations
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
-
 import models.{HtmlWikitext, PType, Wikitext}
 
 import querki.ecology._
+import querki.globals._
 import querki.html.QHtml
 import querki.identity.User
 import querki.notifications._
@@ -164,12 +162,12 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
       bodyQV <- payload.get(CommentBodyOID)
       body = bodyQV.wikify(context)
     }
-      yield RenderedNotification(HtmlWikitext(QHtml(header)), body)
+      yield body.map(RenderedNotification(HtmlWikitext(QHtml(header)), _))
         
-    Future.successful(resultOpt.getOrElse {
+    resultOpt.getOrElse {
       QLog.error("CommentNotifier got badly-formed Notification: " + note)
-      RenderedNotification(Wikitext("INTERNAL ERROR"), Wikitext("We're sorry, but this message seems to have gotten messed up"))
-    })
+      Future.successful(RenderedNotification(Wikitext("INTERNAL ERROR"), Wikitext("We're sorry, but this message seems to have gotten messed up")))
+    }
   }
   
   /***********************************************

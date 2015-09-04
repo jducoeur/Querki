@@ -1,6 +1,6 @@
 package querki.api
 
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{Promise}
 import scala.util.{Failure, Success}
 import akka.actor._
 import upickle._
@@ -113,8 +113,6 @@ abstract class AutowireApiImpl(info:AutowireParams, val ecology:Ecology) extends
       }
     }              
   }
-  
-  implicit val routeExec = Implicits.execContext
 
   /**
    * Concrete implementation classes must define this. It's a bit boilerplatey, but necessary to make

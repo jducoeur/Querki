@@ -5,7 +5,6 @@ import scala.concurrent.duration._
 import akka.actor._
 
 import querki.globals._
-import Implicits._
 
 /**
  * A simple little Actor that you can hook into a parent in order to send monitor messages,

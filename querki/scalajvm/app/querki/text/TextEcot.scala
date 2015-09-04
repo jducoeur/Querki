@@ -103,7 +103,7 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	        case Some(param) => {
 	          val collContext = context.asCollection
 	          val paramVal = context.parser.get.processPhrase(param.ops, collContext).value
-	          val renderedParam = paramVal.pType.wikify(context)(paramVal.first)
+	          val renderedParam = awaitHack(paramVal.pType.wikify(context)(paramVal.first))
 	          renderedParam
 	        }
 	        case _ => Wikitext.empty
@@ -111,7 +111,7 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	    }
 	
 	    val elemT = context.value.pType
-	    val renderedList = context.value.cv.map{elem => elemT.wikify(context)(elem)}
+	    val renderedList = awaitHack(Future.sequence(context.value.cv.map{elem => elemT.wikify(context)(elem)}))
 	    val result =
 	      if (renderedList.isEmpty) {
 	        Wikitext.empty

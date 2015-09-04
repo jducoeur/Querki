@@ -1,5 +1,7 @@
 package querki.spaces
 
+import scala.concurrent.Future
+
 import anorm.{Success=>AnormSuccess,_}
 
 import models.{OID, PropertyBundle, PType, SimplePTypeBuilder, UnknownOID, Wikitext}
@@ -135,7 +137,8 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = v
     def doSerialize(v:String)(implicit state:SpaceState) = v
-    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = Wikitext("Unresolved property value!")
+    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = 
+      Future.successful(Wikitext("Unresolved property value!"))
   
     def doDefault(implicit state:SpaceState) = ""
   }

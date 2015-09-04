@@ -1,5 +1,7 @@
 package querki.basic
 
+import scala.concurrent.Future
+
 import querki.ecology._
 
 import models.{OID, Property, PropertyBundle, PTypeBuilder, Wikitext}
@@ -26,7 +28,8 @@ trait PlainTextBaseType { self:QuerkiEcot with TextTypeBasis =>
 
     // TODO: in most cases, this should render as a link, the same was Tag Set does. But that breaks
     // Display Name. Hmm. Should we special case Display Name?
-    def doWikify(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = Wikitext(v.text)
+    def doWikify(context:QLContext)(v:PlainText, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = 
+      Future.successful(Wikitext(v.text))
     
     override def doComp(context:QLContext)(left:PlainText, right:PlainText):Boolean = { left.text < right.text } 
       

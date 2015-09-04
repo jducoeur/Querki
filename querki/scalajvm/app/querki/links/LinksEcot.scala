@@ -1,5 +1,7 @@
 package querki.links
 
+import scala.concurrent.Future
+
 import models.{Kind, PropertyBundle, PTypeBuilder, Wikitext}
 
 import querki.core.URLableType
@@ -41,7 +43,7 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
     def doSerialize(v:QURL)(implicit state:SpaceState) = v.url
     def doWikify(context:QLContext)(v:QURL, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
       val display = displayOpt.getOrElse(Wikitext(v.url))
-      Wikitext("[") + display + Wikitext("](" + v.url + ")")
+      Future.successful(Wikitext("[") + display + Wikitext("](" + v.url + ")"))
     }
   
     def getURL(context:QLContext)(elem:ElemValue):Option[String] = {

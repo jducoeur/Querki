@@ -9,7 +9,6 @@ import com.github.nscala_time.time.Imports._
 import org.querki.requester._
 
 import querki.globals._
-import Implicits.execContext
 
 import models.OID
 

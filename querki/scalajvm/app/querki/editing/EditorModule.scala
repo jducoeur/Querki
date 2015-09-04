@@ -7,12 +7,11 @@ import Thing._
 
 import querki.core.{LinkCandidateProvider, QLText}
 
-import querki.html.RenderSpecialization._
-
 import querki.ecology._
+import querki.globals._
+import querki.html.RenderSpecialization._
 import querki.identity.User
 import querki.ql.{QLCall, QLPhrase}
-
 import querki.types._
 import querki.util._
 import querki.values._
@@ -371,9 +370,9 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	        val control = context.parser.get.processPhrase(params(1).ops, context).value
 	        QL.WikitextValue(
 	          Wikitext("\n{{form-horizontal:\n{{control-group:\n{{control-label:\n") +
-	          label.wikify(context) +
+	          awaitHack(label.wikify(context)) +
 	          Wikitext("\n}}\n{{controls:\n") +
-	          control.wikify(context) +
+	          awaitHack(control.wikify(context)) +
 	          Wikitext("\n}}\n}}\n}}\n"))
 	      }
 	      case _ => QL.WarningValue("_formLine requires two parameters")

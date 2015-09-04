@@ -1,7 +1,6 @@
 package controllers
 
 import scala.concurrent.duration._
-import scala.concurrent.Future
 import akka.actor._
 import akka.pattern._
 import akka.util.Timeout
@@ -16,7 +15,6 @@ import autowire._
 import models.{AsName, AsOID, MIMEType, Thing, ThingId}
 
 import querki.globals._
-import Implicits.execContext
 
 import querki.api._
 import querki.imexport.ImexportFunctions

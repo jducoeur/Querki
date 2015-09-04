@@ -1,6 +1,5 @@
 package querki.tags
 
-import scala.concurrent.Future
 import scala.xml.NodeSeq
 
 import querki.ecology._
@@ -141,7 +140,8 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     // TODO: this should probably get refactored with LinkType? They're different ways of
     // expressing the same concepts; it's just that Links are OID-based, whereas Names/Tags are
     // name-based.
-    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = nameToLink(context)(v)
+    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = 
+      Future.successful(nameToLink(context)(v))
     
     override def renderProperty(prop:Property[_,_])(implicit request:RequestContext, state:SpaceState):Option[Future[Wikitext]] = {
       Some(Future.successful(QL.process(querki.core.QLText("""These tags are currently being used:
@@ -184,7 +184,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
       val display = displayOpt.getOrElse(Wikitext(v.text))
       // NOTE: yes, there is danger of Javascript injection here. We deal with that at the QText layer,
       // since that danger is there in ordinary QText as well.
-      Wikitext("[") + display + Wikitext(s"](${SafeUrl(v.text)})") 
+      Future.successful(Wikitext("[") + display + Wikitext(s"](${SafeUrl(v.text)})")) 
     }
     
     override def renderProperty(prop:Property[_,_])(implicit request:RequestContext, state:SpaceState):Option[Future[Wikitext]] = {
@@ -233,7 +233,8 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
       val nameVal = ExactlyOne(PlainTextType(name))
       val nameAsContext = QLContext(nameVal, Some(rc))
       // TODO: the link below shouldn't be so hard-coded!
-      Future.successful(propAndValOpt.map(pv => pv.render(nameAsContext)).getOrElse(Wikitext(name + " doesn't exist yet. [Click here to create it.](edit?thingId=" + SafeUrl(name) + ")")))
+      propAndValOpt.map(pv => pv.render(nameAsContext)).
+        getOrElse(Future.successful(Wikitext(name + " doesn't exist yet. [Click here to create it.](edit?thingId=" + SafeUrl(name) + ")")))
     }
   }
   

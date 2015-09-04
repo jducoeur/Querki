@@ -1,5 +1,7 @@
 package querki.types
 
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits._
 import scala.xml.NodeSeq
 
 import models.{DisplayPropVal, OID, Property, PropertyBundle, PropertyBundleOps, PType, PTypeBuilder, Thing, Wikitext}
@@ -136,16 +138,23 @@ trait ModelTypeDefiner { self:EcologyMember =>
         (propId, state.anything(propId), propVal)
       }
       val sortedInfos = propInfo.toSeq.sortBy(_._2.map(_.displayName).getOrElse(""))
-      (Wikitext.empty /: propInfo) { (current, pair) =>
+      val result = (Future.successful(Wikitext.empty) /: propInfo) { (current, pair) =>
         val (propId, propOpt, propVal) = pair
         val propText = propOpt match {
           case Some(prop) => {
-            Wikitext(": " + prop.displayName + " : ") + propVal.wikify(context, displayOpt, lexicalThing)
+            propVal.wikify(context, displayOpt, lexicalThing) map { Wikitext(": " + prop.displayName + " : ") + _ } 
           }
-          case None => Wikitext("Unknown property " + propId)
+          case None => Future.successful(Wikitext("Unknown property " + propId))
         }
-        current.+(propText, true)
+        
+        // Okay, we now have an incoming Future and a newly-created one. FlatMap them to get the result:
+        for {
+          c <- current
+          p <- propText
+        }
+          yield c.+(p, true)
       }
+      result
     }
     
     def doDefault(implicit state:SpaceState) = { 

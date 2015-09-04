@@ -1,6 +1,6 @@
 package querki.session
 
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.Promise
 
 import akka.actor._
 
@@ -42,7 +42,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
     } 
       yield ClientApi.thingInfo(model, rc)
     
-    val customHeaderOpt = for {
+    val customHeaderPropOpt = for {
       pv <- thing.getPropOpt(HtmlUI.PageHeaderProperty)
       if (!thing.isModel)
     }
@@ -60,31 +60,32 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
       rendered <- thing.render(rc, state, renderPropOpt)
       thingInfo <- ClientApi.thingInfo(thing, rc)
       modelInfo <- modelInfoOptFut.map(_.map(Some(_))).getOrElse(Future.successful(None))
+      customHeaderOpt <- futOpt(customHeaderPropOpt)
     }
       yield ThingPageDetails(thingInfo, modelInfo, customHeaderOpt, rendered, styleinfo.sheets, styleinfo.headers)
   }
   
-  def evaluateQL(thingId:TID, ql:String):Wikitext = withThing(thingId) { thing =>
+  def evaluateQL(thingId:TID, ql:String):Future[Wikitext] = withThing(thingId) { thing =>
     implicit val r = rc
     implicit val s = state
     val context = thing.thisAsContext(rc, state, ecology)
     QL.processMethod(QLText(ql), context, None, Some(thing)).wikify(context)
   }
   
-  def getProperties(thingId:TID):Seq[PropValInfo] = withThing(thingId) { thing =>
+  def getProperties(thingId:TID):Future[Seq[PropValInfo]] = withThing(thingId) { thing =>
     ClientApi.propValInfo(thing, rc)(state)
   }
   
-  def getPropertyDisplay(thingId:TID, propIdStr:TID):Option[Wikitext] = withThing(thingId) { thing =>
+  def getPropertyDisplay(thingId:TID, propIdStr:TID):Future[Option[Wikitext]] = withThing(thingId) { thing =>
     implicit val s = state
     implicit val r = rc
     val propId = propIdStr.toThingId
-    for {
+    futOpt(for {
       prop <- state.prop(propId)
       pv <- thing.getPropOpt(prop)
       if (!pv.isEmpty)
     }
-      yield pv.render(thing.thisAsContext(rc, state, ecology).forProperty(pv.prop), Some(thing))
+      yield pv.render(thing.thisAsContext(rc, state, ecology).forProperty(pv.prop), Some(thing)))
   }
   
   def getAllProperties():SpaceProps = {

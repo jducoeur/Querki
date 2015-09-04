@@ -1,5 +1,7 @@
 package querki.css
 
+import scala.concurrent.Future
+
 // TODO: these are all abstraction breaks!
 import controllers.{HtmlEvent, PageEventManager, QuerkiTemplate}
 
@@ -94,7 +96,8 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) with Stylesheets {
     
     def doDeserialize(v:String)(implicit state:SpaceState) = v
     def doSerialize(v:String)(implicit state:SpaceState) = v
-    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = Wikitext(v)
+    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = 
+      Future.successful(Wikitext(v))
 
     def doDefault(implicit state:SpaceState) = ""
     

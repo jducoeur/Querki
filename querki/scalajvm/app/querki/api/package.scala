@@ -28,7 +28,7 @@ package object api {
     
     def propInfo(prop:AnyProp, rc:RequestContext)(implicit state:SpaceState):PropInfo
     
-    def propValInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):Seq[PropValInfo]
+    def propValInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):Future[Seq[PropValInfo]]
   }
   
   /**

@@ -1,14 +1,11 @@
 package controllers
 
-import scala.concurrent.Future
-
 import akka.actor._
 
 import play.api.libs.iteratee._
 import play.api.mvc._
 
 import querki.globals._
-import Implicits._
 import querki.streaming._
 import UploadMessages._
 

@@ -51,6 +51,10 @@ package object globals {
   
   def spew(msg:String) = QLog.spew(msg)
   
+  type Future[T] = scala.concurrent.Future[T]
+  val Future = scala.concurrent.Future
+  implicit lazy val execContext = scala.concurrent.ExecutionContext.Implicits.global
+  
   /**
    * Marker for places we are cheating and waiting. ALL USES OF THIS ARE BY DEFINITION BUGS TO BE FIXED.
    */
@@ -72,7 +76,15 @@ package object globals {
     Await.result(awaitable, 10 milliseconds)
   }
   
-  object Implicits {
-    implicit lazy val execContext = scala.concurrent.ExecutionContext.Implicits.global
+  /**
+   * This is basically a variant of Future.sequence that works with Option. I am deeply surprised that
+   * Future.sequence *doesn't* do so, but it appears not to.
+   */
+  def futOpt[T](optFut:Option[Future[T]]):Future[Option[T]] = {
+    optFut match {
+      case Some(fut) => fut map { Some(_) }
+      case None => Future.successful(None)
+    }
   }
+  
 }

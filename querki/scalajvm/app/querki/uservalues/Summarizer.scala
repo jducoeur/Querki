@@ -1,5 +1,6 @@
 package querki.uservalues
 
+import scala.concurrent.Future
 import scala.reflect.runtime.universe._
 import scala.xml.NodeSeq
 
@@ -7,6 +8,7 @@ import models.{DisplayPropVal, OID, Property, PropertyBundle, PType, PTypeBuilde
 
 import querki.core.TypeUtils.DiscreteType
 import querki.ecology._
+import querki.globals._
 import querki.types.{ModelTypeBase, PropPath}
 import querki.uservalues.PersistMessages.OneUserValue
 import querki.util.QLog
@@ -277,10 +279,10 @@ trait SummarizerDefs { self:QuerkiEcot =>
 	
 	// Split out so that subclasses can override this:
 	def wikifyKey(context:QLContext, fromProp:Option[Property[_,_]], key:UVT):Wikitext = {
-	  userType.doWikify(context)(key)
+	  awaitHack(userType.doWikify(context)(key))
 	} 
 	  
-	def doWikify(context:QLContext)(v:DiscreteSummary[UVT], displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = {
+	def doWikify(context:QLContext)(v:DiscreteSummary[UVT], displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
 	  implicit val s = context.state
 	  val fromPropOpt = context.state.prop(v.propId)
 	  // Iff this is coming from a DiscreteType, with a well-defined range, use that range to determine
@@ -298,13 +300,13 @@ trait SummarizerDefs { self:QuerkiEcot =>
 	    case _ => v.content.toSeq
 	  }
 	  
-	  (Wikitext("""
+	  Future.successful((Wikitext("""
 	              |!+noLines
 	              |<dl class="histogram">""".stripMargin) /: pairs) 
 	  { (curText, pair) =>
 	    val (key, num) = pair
 	    curText + Wikitext("<dt>") + wikifyKey(context, fromPropOpt, key) + Wikitext("</dt><dd>" + num.toString + "</dd>\n")
-	  } + Wikitext("</dl>\n!-noLines\n")
+	  } + Wikitext("</dl>\n!-noLines\n"))
 	}
 	  
 	def doDefault(implicit state:SpaceState):DiscreteSummary[UVT] = DiscreteSummary(UnknownOID, Map())

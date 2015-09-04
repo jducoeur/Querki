@@ -54,7 +54,7 @@ trait TextTypeBasis { self:CoreEcot =>
     def doDeserialize(v:String)(implicit state:SpaceState) = QLText(v)
     def doSerialize(v:QLText)(implicit state:SpaceState) = v.text
     def doWikify(context:QLContext)(v:QLText, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
-      QL.process(v, context, lexicalThing = lexicalThing)
+      Future.successful(QL.process(v, context, lexicalThing = lexicalThing))
     }
     def doDefault(implicit state:SpaceState) = QLText("")
     def wrap(raw:String):valType = QLText(raw)
@@ -182,7 +182,8 @@ trait IntTypeBasis { self:CoreEcot =>
     }
     
     def doSerialize(v:T)(implicit state:SpaceState) = v.toString
-    def doWikify(context:QLContext)(v:T, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = Wikitext(v.toString)
+    def doWikify(context:QLContext)(v:T, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = 
+      Future.successful(Wikitext(v.toString))
     
     override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = {
       implicit val s = state
@@ -406,7 +407,8 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
     def doDeserialize(v:String)(implicit state:SpaceState) = boom
     def doSerialize(v:String)(implicit state:SpaceState) = boom
 
-    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = Wikitext("Internal Method")
+    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = 
+      Future.successful(Wikitext("Internal Method"))
     
     def doDefault(implicit state:SpaceState) = ""
     override def wrap(raw:String):valType = boom 
@@ -441,7 +443,8 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
   {
     override def editorSpan(prop:Property[_,_]):Int = 3
     
-    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = Wikitext(toDisplay(v))    
+    def doWikify(context:QLContext)(v:String, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = 
+      Future.successful(Wikitext(toDisplay(v)))    
   }
 
   /**
@@ -570,14 +573,18 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
 
     def doWikify(context:QLContext)(v:OID, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
       val target = follow(context)(v)
-      val text = target match {
+      target match {
         case Some(t) => {
-          val display = displayOpt.getOrElse(context.requestOpt.map { rc:RequestContext => awaitHack(t.nameOrComputed(rc, context.state)) }.getOrElse(t.displayNameText).htmlWikitext)
-          makeWikiLink(context, t, display)
+          val displayFut = displayOpt match {
+            case Some(display) => Future.successful(display)
+            case None => {
+              t.nameOrComputed(context.request, context.state).map(_.htmlWikitext)
+            }
+          }
+          displayFut.map(makeWikiLink(context, t, _))
         }
-        case None => Wikitext("Bad Link: Thing " + v.toString + " not found")
+        case None => Future.successful(Wikitext("Bad Link: Thing " + v.toString + " not found"))
       }
-      text
     }
     override def doDebugRender(context:QLContext)(v:OID) = {
       val target = follow(context)(v)
@@ -768,7 +775,8 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
       }
     }
     def doSerialize(v:Boolean)(implicit state:SpaceState) = v.toString
-    def doWikify(context:QLContext)(v:Boolean, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = Wikitext(v.toString())
+    def doWikify(context:QLContext)(v:Boolean, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = 
+      Future.successful(Wikitext(v.toString()))
     
     def doDefault(implicit state:SpaceState) = false
     

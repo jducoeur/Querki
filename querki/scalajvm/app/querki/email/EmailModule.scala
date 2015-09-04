@@ -95,7 +95,8 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
     def doDeserialize(v:String)(implicit state:SpaceState) = EmailAddress(v)
     def doSerialize(v:EmailAddress)(implicit state:SpaceState) = v.addr
     // TODO: in the long run, this probably should render as a clickable URL?
-    def doWikify(context:QLContext)(v:EmailAddress, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = Wikitext(v.addr)
+    def doWikify(context:QLContext)(v:EmailAddress, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = 
+      Future.successful(Wikitext(v.addr))
     
     def doDefault(implicit state:SpaceState) = EmailAddress("")
     def wrap(raw:String):valType = EmailAddress(raw)

@@ -1,7 +1,6 @@
 package querki.session
 
 import scala.concurrent.duration._
-import scala.concurrent.Future
 
 import akka.actor.{ActorRef, Props}
 import akka.contrib.pattern.{ClusterSharding, ShardRegion}
@@ -11,7 +10,6 @@ import akka.util.Timeout
 import querki.api.ClientRequest
 import querki.ecology._
 import querki.globals._
-import Implicits.execContext
 import querki.identity.{Identity, PublicIdentity, User}
 import messages._
 import UserSessionMessages._

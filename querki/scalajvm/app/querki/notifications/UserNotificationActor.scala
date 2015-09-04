@@ -9,7 +9,6 @@ import models.OID
 
 import querki.api.{AutowireParams, ClientRequest}
 import querki.globals._
-import Implicits.execContext
 import querki.identity.{UserRouteableMessage, UserId}
 import querki.notifications.NotificationPersister._
 import querki.util.ClusterTimeoutChild

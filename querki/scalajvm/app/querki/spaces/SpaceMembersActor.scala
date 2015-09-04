@@ -1,13 +1,10 @@
 package querki.spaces
 
-import scala.concurrent.Future
-
 import akka.actor._
 import akka.event.LoggingReceive
 import akka.pattern.pipe
 
 import querki.globals._
-import Implicits.execContext
 
 import querki.spaces.messages._
 

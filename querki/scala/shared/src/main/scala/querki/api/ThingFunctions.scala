@@ -28,17 +28,17 @@ trait ThingFunctions {
   /**
    * Evaluate the given QL in the context of the specified Thing, and return the resulting Wikitext.
    */
-  def evaluateQL(thingId:TID, ql:String):Wikitext
+  def evaluateQL(thingId:TID, ql:String):Future[Wikitext]
   
   /**
    * Fetch the raw values of the Properties on this Thing.
    */
-  def getProperties(thingId:TID):Seq[PropValInfo]
+  def getProperties(thingId:TID):Future[Seq[PropValInfo]]
   
   /**
    * Fetches the rendered value of the specified Property of this Thing.
    */
-  def getPropertyDisplay(thingId:TID, propId:TID):Option[Wikitext]
+  def getPropertyDisplay(thingId:TID, propId:TID):Future[Option[Wikitext]]
   
   /**
    * Fetch all of the Properties available to this Space.

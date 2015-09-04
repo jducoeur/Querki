@@ -47,13 +47,13 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * Takes a value of this type, and turns it into displayable form. Querki
    * equivalent to toString.
    */
-  def doWikify(context:QLContext)(v:VT, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext
+  def doWikify(context:QLContext)(v:VT, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext]
   /**
    * Take a value of this type and turn it into a Wikitext. Formerly called "render", but that conflicts
    * in weird signature ways with Thing.render. (It appears that you can't have multiple overloads with
    * default values, even if the previous parameters differentiate between the overloads.)
    */
-  final def wikify(context:QLContext)(v:ElemValue, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = 
+  final def wikify(context:QLContext)(v:ElemValue, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = 
     doWikify(context)(get(v), displayOpt, lexicalThing)
     
   /**
@@ -66,7 +66,7 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * better to *always* put a wrapper around Lists and Sets? That would break a thousand unit tests, and we would
    * need to figure out whether that wrapper is a div or span, but it seems conceptually plausible.
    */
-  def fullWikify(context:QLContext, qv:QValue, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Option[Wikitext] = None
+  def fullWikify(context:QLContext, qv:QValue, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Option[Future[Wikitext]] = None
   
   /**
    * Takes a value of this type, and renders it for showing in debug messages.

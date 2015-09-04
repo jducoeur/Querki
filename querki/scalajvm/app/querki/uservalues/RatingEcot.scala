@@ -1,5 +1,7 @@
 package querki.uservalues
 
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.xml.NodeSeq
 
 import models.{DisplayPropVal, Kind, PropertyBundle, PType, SimplePTypeBuilder, ThingState, Wikitext}
@@ -100,7 +102,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with Ratings with IntTypeBasis
     // Do we need to change this Type to include the PropId? Is that even feasible?
     override def doWikify(context:QLContext)(v:Int, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
       implicit val state = context.state
-      Wikitext(s"""<div class='_rating' data-rating='$v' data-readonly='true'></div>""".stripMargin)
+      Future.successful(Wikitext(s"""<div class='_rating' data-rating='$v' data-readonly='true'></div>""".stripMargin))
     }
   }
   
@@ -112,15 +114,18 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with Ratings with IntTypeBasis
   {
     override def doWikify(context:QLContext)(bundle:ModeledPropertyBundle, displayOpt:Option[Wikitext], lexicalThing:Option[PropertyBundle] = None) = {
       implicit val state = context.state
-      val result = for {
+      
+      val renderedOpt = for {
         ratingPV <- bundle.getPropOpt(RatingProperty)
-        ratingRendered = ratingPV.v.wikify(context, displayOpt, lexicalThing)
         commentsPV <- bundle.getPropOpt(ReviewCommentsProperty)
-        commentsRendered = commentsPV.v.wikify(context, displayOpt, lexicalThing)
       }
-        yield ratingRendered + Wikitext(" -- ") + commentsRendered
+        yield for {
+          ratingRendered <- ratingPV.v.wikify(context, displayOpt, lexicalThing)
+          commentsRendered <- commentsPV.v.wikify(context, displayOpt, lexicalThing)        
+        }
+          yield ratingRendered + Wikitext(" -- ") + commentsRendered
         
-      result.getOrElse(Wikitext.empty)
+      renderedOpt.getOrElse(Future.successful(Wikitext.empty))
     }
   }
   
@@ -137,7 +142,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with Ratings with IntTypeBasis
   {
     def doWikify(context:QLContext)(v:RatingAverage, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
       implicit val state = context.state
-      state.prop(v.propId) match {
+      Future.successful(state.prop(v.propId) match {
         case Some(prop) => {
           val labels = getLabels(prop).map(HtmlEscape.escapeQuotes(_))
           Wikitext(s"""<div class='_rating' data-rating='${"%.2f" format v.avg}' data-labels='${labels.mkString(",")}' data-readonly='true'></div> 
@@ -148,7 +153,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with Ratings with IntTypeBasis
           Wikitext(s"""<div class='_rating' data-rating='${"%.2f" format v.avg}' data-readonly='true'></div>
           |<span class="_ratingAvg">${"%.2f" format v.avg} (${v.n})</span>""".stripMargin)
         }
-      }
+      })
     }
     
     // None of these should be possible, so for now I'm not going to worry about them:

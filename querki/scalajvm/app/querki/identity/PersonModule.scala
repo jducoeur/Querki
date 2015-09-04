@@ -4,10 +4,7 @@ package querki.identity
 import akka.pattern._
 import akka.util.Timeout
 
-import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global 
-import scala.concurrent.Future
 
 import models._
 

@@ -3,7 +3,6 @@ package querki.api
 import java.lang.reflect.Constructor
 
 import scala.concurrent.duration._
-import scala.concurrent.Future
 import scala.reflect.ClassTag
 
 import akka.actor.ActorRef
@@ -11,7 +10,6 @@ import akka.util.Timeout
 
 import querki.ecology._
 import querki.globals._
-import Implicits.execContext
 
 /**
  * @author jducoeur

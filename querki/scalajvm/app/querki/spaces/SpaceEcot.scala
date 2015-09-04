@@ -1,7 +1,6 @@
 package querki.spaces
 
 import scala.concurrent.duration._
-import scala.concurrent.Future
 
 import akka.actor.{ActorRef, Props}
 import akka.contrib.pattern.{ClusterSharding, ShardRegion}
@@ -15,7 +14,6 @@ import querki.api.ClientRequest
 import querki.core.NameUtils
 import querki.ecology._
 import querki.globals._
-import Implicits._
 import querki.spaces.messages._
 import querki.util.PublicException
 import querki.util.ActorHelpers._

@@ -1,7 +1,5 @@
 package models
 
-import scala.concurrent.Future
-
 import querki.globals._
 import querki.ql.{Invocation, QLFunction}
 import querki.values.{PropAndVal, QLContext, QValue, RequestContext}
@@ -36,39 +34,43 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
   
   def nameOrComputed(implicit request:RequestContext, state:SpaceState):Future[DisplayText] = {
     val localName = fullLookupDisplayName
-    def fallback() = Future.successful(DisplayText(id.toThingId.toString))
+    def fallback() = DisplayText(id.toThingId.toString)
     if (localName.isEmpty) {
       val computed = for {
         pv <- getPropOpt(Basic.ComputedNameProp)
         v <- pv.firstOpt
       }
         yield Future.successful(QL.process(v, thisAsContext).raw)
-      computed.getOrElse(fallback())
+      computed.getOrElse(Future.successful(fallback()))
     } else {
-      val rendered = localName.get.renderPlain.raw
-      if (rendered.length() > 0)
-        Future.successful(rendered)
-      else
-        fallback()
+      localName.get.renderPlain.map { rend =>
+        val rendered = rend.raw
+        if (rendered.length() > 0)
+          rendered
+        else
+          fallback()
+      }
     }    
   }
   
   def unsafeNameOrComputed(implicit rc:RequestContext, state:SpaceState):Future[String] = {
     val localName = fullLookupDisplayName
-    def fallback() = Future.successful(id.toThingId.toString)
+    def fallback() = id.toThingId.toString
     if (localName.isEmpty) {
       val computed = for {
         pv <- getPropOpt(Basic.ComputedNameProp)
         v <- pv.firstOpt
       }
         yield Future.successful(QL.process(v, thisAsContext).plaintext)
-      computed.getOrElse(fallback())
+      computed.getOrElse(Future.successful(fallback()))
     } else {
-      val rendered = localName.get.renderPlain.plaintext
-      if (rendered.length() > 0)
-        Future.successful(rendered)
-      else
-        fallback()
+      localName.get.renderPlain.map { rend =>
+        val rendered = rend.plaintext
+        if (rendered.length() > 0)
+          rendered
+        else
+          fallback()
+      }
     }
   }
   
@@ -124,7 +126,7 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
       pv <- getPropOpt(actualProp);
       if (!pv.isEmpty)
         )
-      yield Future.successful(pv.render(thing.thisAsContext.forProperty(pv.prop), Some(thing)))
+      yield pv.render(thing.thisAsContext.forProperty(pv.prop), Some(thing))
     
     renderedOpt.getOrElse(renderDefault)
   }

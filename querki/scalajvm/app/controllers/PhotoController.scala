@@ -1,8 +1,6 @@
 package controllers
 
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 import akka.actor.ActorRef
 import akka.pattern.ask

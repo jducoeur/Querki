@@ -8,8 +8,9 @@ import models._
 
 import querki.core.QLText
 import querki.ecology._
+import querki.globals._
 import querki.html.QHtml
-import querki.util._
+import querki.util.{DebugRenderable, UnexpectedPublicException}
 import querki.values._
 
 /**
@@ -307,7 +308,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
 
   def contextsToWikitext(contexts:Seq[QLContext], insertNewlines:Boolean = false):Wikitext = {
     qlProfilers.wikify.profile {
-      (Wikitext("") /: contexts) { (soFar, context) => soFar.+(context.value.wikify(context.parent), insertNewlines) }
+      (Wikitext("") /: contexts) { (soFar, context) => soFar.+(awaitHack(context.value.wikify(context.parent)), insertNewlines) }
     }
   }
   
@@ -328,7 +329,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
         // There is content, so pass that down as the display:
         case _ => Some(processParseTree(contents, context))
       }
-      qlProfilers.wikify.profile { context.value.wikify(context, guts) }
+      qlProfilers.wikify.profile { awaitHack(context.value.wikify(context, guts)) }
     }
   }
   

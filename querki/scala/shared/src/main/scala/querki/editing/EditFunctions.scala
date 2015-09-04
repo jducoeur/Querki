@@ -23,12 +23,12 @@ trait EditFunctions {
    * Fetch the Editor for the specified Property on this Thing. The Property does not have to
    * be defined on the Thing yet.
    */
-  def getOnePropertyEditor(thingId:TID, propId:TID):PropEditInfo
+  def getOnePropertyEditor(thingId:TID, propId:TID):Future[PropEditInfo]
   
   /**
    * Fetch the Editors and ancillary information about this Thing.
    */
-  def getPropertyEditors(thingId:TID):FullEditInfo
+  def getPropertyEditors(thingId:TID):Future[FullEditInfo]
   
   /**
    * Add this Property to this Thing, and return the Editor for it.

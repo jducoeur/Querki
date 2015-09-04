@@ -1,9 +1,5 @@
 package querki.identity
 
-import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits._
-import scala.concurrent.{Await, Future}
-
 import akka.actor.{ActorRef, Props}
 import akka.contrib.pattern.{ClusterSharding, ShardRegion}
 import akka.pattern.ask
@@ -187,7 +183,7 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
     with SimplePTypeBuilder[PublicIdentity]
   {
     def doWikify(context:QLContext)(v:PublicIdentity, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
-      Wikitext(s"[${v.name}](_displayIdentity?identity=${v.id})")
+      Future.successful(Wikitext(s"[${v.name}](_displayIdentity?identity=${v.id})"))
     }
     
     override def doComp(context:QLContext)(left:PublicIdentity, right:PublicIdentity):Boolean = {
@@ -223,7 +219,7 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
       for {
         link <- inv.contextAllAs(Core.LinkType)
         // EEEEVIL!
-        identity <- inv.opt(Await.result(getIdentity(link), (5 seconds)))
+        identity <- inv.opt(awaitHack(getIdentity(link)))
       }
         yield ExactlyOne(IdentityType(identity))
     }    

@@ -1,8 +1,11 @@
 package querki.links
 
+import scala.concurrent.Future
+
 import models.{PropertyBundle, ThingState, Wikitext}
 
 import querki.core.URLableType
+import querki.globals._
 import querki.ecology._
 import querki.types.{ModeledPropertyBundle, SimplePropertyBundle}
 import querki.util.QLog
@@ -83,7 +86,7 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
         
       val displayOpt = displayRawOpt.map(_.raw.toString())
 
-      displayOpt.orElse(displayNameOpt).orElse(urlOpt).map(display => Wikitext("[" + display + "](" + urlOpt.getOrElse("#") + ")")).getOrElse(Wikitext.empty)
+      Future.successful(displayOpt.orElse(displayNameOpt).orElse(urlOpt).map(display => Wikitext("[" + display + "](" + urlOpt.getOrElse("#") + ")")).getOrElse(Wikitext.empty))
     }
   }
   
@@ -129,7 +132,7 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
         urlStr <- inv.opt(pt.getURL(elemContext)(elemV))
         displayStr <- inv.opt(pt.getDisplay(elemContext)(elemV))
         paramNameElem <- inv.processParam(0, elemContext)
-	      paramName = paramNameElem.wikify(elemContext).raw.str
+	      paramName = awaitHack(paramNameElem.wikify(elemContext)).raw.str
         valElem <- inv.processParam(1, elemContext)
         raw <- inv.processParamFirstOr(2, YesNoType, false, elemContext)
         value = vToParam(valElem, elemContext, raw)(inv.state)

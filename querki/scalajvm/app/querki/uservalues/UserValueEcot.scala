@@ -199,18 +199,20 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
       implicit val state = context.state
       val result = for {
         identityPV <- bundle.getPropOpt(UVUserProp)
-        identityRendered = identityPV.v.wikify(context, displayOpt, lexicalThing)
         thingPV <- bundle.getPropOpt(UVThingProp)
-        thingRendered = thingPV.v.wikify(context, displayOpt, lexicalThing)
         propPV <- bundle.getPropOpt(UVPropProp)
-        propRendered = propPV.v.wikify(context, displayOpt, lexicalThing)
         valPV <- bundle.getPropOpt(UVValProp)
-        valRendered = valPV.v.wikify(context, displayOpt, lexicalThing)
       }
-        yield identityRendered + Wikitext(" -- ") + thingRendered + Wikitext(":") + propRendered +
-          Wikitext.nl + Wikitext.nl + valRendered + Wikitext.nl + Wikitext.nl
+        yield for {
+          identityRendered <- identityPV.v.wikify(context, displayOpt, lexicalThing)
+          thingRendered <- thingPV.v.wikify(context, displayOpt, lexicalThing)
+          propRendered <- propPV.v.wikify(context, displayOpt, lexicalThing)
+          valRendered <- valPV.v.wikify(context, displayOpt, lexicalThing)
+        }
+          yield identityRendered + Wikitext(" -- ") + thingRendered + Wikitext(":") + propRendered +
+            Wikitext.nl + Wikitext.nl + valRendered + Wikitext.nl + Wikitext.nl
           
-      result.getOrElse(Wikitext.empty)
+      result.getOrElse(Future.successful(Wikitext.empty))
     }
   }
   

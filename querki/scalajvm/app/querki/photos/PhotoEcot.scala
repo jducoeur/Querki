@@ -2,6 +2,7 @@ package querki.photos
 
 import scala.concurrent.duration._
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.xml.NodeSeq
 
@@ -245,7 +246,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
       Basic.ExplicitProp(true),
       Summary("A single Photograph in Querki"))) with FullInputRendering
   {
-    override def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = {
+    override def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
       implicit val s = context.state
       val result = for {
         filename <- v.getFirstOpt(ImageFilenameProp)
@@ -259,19 +260,18 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
       }
         yield Wikitext(s"\n{{item:\n") + image + caption + Wikitext("\n}}") 
         
-      result.getOrElse(Wikitext(""))
+      Future.successful(result.getOrElse(Wikitext("")))
     }
     
     /**
      * We wrap List or Sets of Photos up specially, so that the Client can render them nicely.
      */
-    override def fullWikify(context:QLContext, qv:QValue, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Option[Wikitext] = {
+    override def fullWikify(context:QLContext, qv:QValue, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Option[Future[Wikitext]] = {
       qv.cType match {
         case QList | QSet => {
-          Some(
-            Wikitext("{{_photoList:\n") +
-              qv.cType.doWikify(context)(qv.cv, this, displayOpt, lexicalThing) +
-            Wikitext("\n}}"))
+          Some(qv.cType.doWikify(context)(qv.cv, this, displayOpt, lexicalThing) map { guts =>
+            Wikitext("{{_photoList:\n") + guts + Wikitext("\n}}")
+          })
         }
         case _ => None
       }
@@ -342,8 +342,8 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
    * image. This is what comes out of the _thumbnail function.
    */
   lazy val ThumbnailType = new DelegatingType(PhotoType) {
-    override def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = {
-      thumbnailText(context, v).map(HtmlWikitext(_)).getOrElse(Wikitext(""))
+    override def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
+      Future.successful(thumbnailText(context, v).map(HtmlWikitext(_)).getOrElse(Wikitext("")))
     }
   }
   
@@ -352,7 +352,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
    * the target for thumbnails.
    */
   lazy val TargetType = new DelegatingType(PhotoType) {
-    override def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = {
+    override def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
       implicit val s = context.state
       val fromProp = fromPropStr(context)
       val result = for {
@@ -362,7 +362,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
       }
         yield HtmlWikitext(s"""<img class="_photoTarget img-responsive" src="$bucketUrl/${filename.raw}" alt="${filename.raw}" $fromProp/>""")
         
-      result.getOrElse(Wikitext(""))
+      Future.successful(result.getOrElse(Wikitext("")))
     }    
   }
   

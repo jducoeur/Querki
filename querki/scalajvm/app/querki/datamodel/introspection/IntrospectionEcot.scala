@@ -1,5 +1,8 @@
 package querki.datamodel.introspection
 
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import models.{DisplayPropVal, HtmlWikitext, PropertyBundle, SimplePTypeBuilder, UnknownOID, Wikitext}
 
 import querki.ecology._
@@ -38,11 +41,13 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
     
     def doWikify(context:QLContext)(v:DisplayPropVal, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = { 
       val propName = v.prop.displayName
-      val vDisplay = v.effectiveV match {
+      val vDisplayFut = v.effectiveV match {
         case Some(v) => v.wikify(context, displayOpt, lexicalThing) 
-        case None => Wikitext.empty
+        case None => Future.successful(Wikitext.empty)
       }
-      Wikitext(s": $propName : ") + vDisplay + (if (v.isInherited) Wikitext(" (inherited)") else Wikitext.empty)
+      vDisplayFut map { vDisplay =>
+        Wikitext(s": $propName : ") + vDisplay + (if (v.isInherited) Wikitext(" (inherited)") else Wikitext.empty)
+      }
     }
     
     // We sort these by Property Name, for lack of a better idea:

@@ -1,6 +1,5 @@
 package querki.editing
 
-import scala.concurrent.Future
 import akka.actor._
 
 import models.{DisplayPropVal, FieldIds, FormFieldInfo, IndexedOID, Kind, PType, Thing}
@@ -207,22 +206,26 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     }
   }
   
-  private def getOnePropEditor(thing:Thing, prop:AnyProp, propVal:DisplayPropVal):PropEditInfo = {
+  private def getOnePropEditor(thing:Thing, prop:AnyProp, propVal:DisplayPropVal):Future[PropEditInfo] = {
     implicit val s = state
     val context = thing.thisAsContext(rc, state, ecology)
     val rendered = HtmlRenderer.renderPropertyInputStr(context, prop, propVal)
-    PropEditInfo(
+    for {
+      prompt <- futOpt(prop.getPropOpt(Editor.PromptProp).filter(!_.isEmpty).map(_.renderPlain))
+      summary <- futOpt(prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc, state, ecology))))
+    }
+    yield PropEditInfo(
       ClientApi.propInfo(prop, rc),
       propVal.inputControlId,
-      prop.getPropOpt(Editor.PromptProp).filter(!_.isEmpty).map(_.renderPlain),
-      prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc, state, ecology))),
+      prompt,
+      summary,
       propVal.inheritedFrom.map(_.displayName),
       AccessControl.canEdit(state, user, prop),
       rendered
       )
   }
   
-  def getOnePropertyEditor(thingId:TID, propId:TID):PropEditInfo = withThing(thingId) { thing =>
+  def getOnePropertyEditor(thingId:TID, propId:TID):Future[PropEditInfo] = withThing(thingId) { thing =>
     implicit val s = state
     val result = for {
       prop <- state.prop(propId.toThingId)
@@ -236,7 +239,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     result.get
   }
   
-  def getPropertyEditors(thingId:TID):FullEditInfo = withThing(thingId) { thing =>
+  def getPropertyEditors(thingId:TID):Future[FullEditInfo] = withThing(thingId) { thing =>
     // Properties are very different from ordinary Things:
     thing match {
       case prop:AnyProp => getPropPropertyEditors(prop)
@@ -271,10 +274,11 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
       else
         Editor.filteredPropIds
     val filteredPropList = propList.filterNot(pair => filtered.contains(pair._1.id))
-    val propInfos = filteredPropList.map { entry =>
+    val propInfoFuts = filteredPropList.map { entry =>
       val (prop, propVal) = entry
       getOnePropEditor(thing, prop, propVal)
     }
+    val propInfos = Future.sequence(propInfoFuts)
     
     val instanceProps:Option[Seq[TID]] = for {
       instancePropsPair <- propList.find(_._1.id == querki.editing.MOIDs.InstanceEditPropsOID)
@@ -285,14 +289,14 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
       
     val instancePropsPath = new FieldIds(Some(thing), Editor.InstanceProps).inputControlId
     
-    FullEditInfo(instanceProps.getOrElse(Seq.empty), instancePropsPath, deriveName, propInfos)
+    propInfos.map(pi => FullEditInfo(instanceProps.getOrElse(Seq.empty), instancePropsPath, deriveName, pi))
   }
   
   // TBD: this is pretty incestuous with the PropertyEditor in the client -- the list of available
   // props is defined here, in order. Not sure that's appropriate. Think about it...
   // TODO: someday, we should figure out what it means for a Property to have a Model. For now,
   // we're assuming that just doesn't happen.
-  private def getPropPropertyEditors(prop:AnyProp):FullEditInfo = {
+  private def getPropPropertyEditors(prop:AnyProp):Future[FullEditInfo] = {
     implicit val s = state
     def onePropPair(propId:OID):(AnyProp, DisplayPropVal) = {
       val v = prop.props.get(propId)
@@ -330,9 +334,9 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     val metaProps = metaPropIds.map(onePropPair(_))
     val allProps = specialProps ++ (existingProps ++ metaProps).sortBy(_._2.prop.displayName)
     
-    val allEditors = allProps.map(entry => getOnePropEditor(prop, entry._1, entry._2))
+    val allEditors = Future.sequence(allProps.map(entry => getOnePropEditor(prop, entry._1, entry._2)))
     // The Instance Property fields are meaningless for a Property:
-    FullEditInfo(Seq.empty, "", false, allEditors)
+    allEditors.map(FullEditInfo(Seq.empty, "", false, _))
   }
   
   def addPropertyAndGetEditor(thingId:TID, propIdStr:TID):Future[PropEditInfo] = withThing(thingId) { thing =>
@@ -344,7 +348,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     }
       yield Core.toProps((prop, newV))()  
 
-    self.request(createSelfRequest(ChangeProps2(thing.toThingId, propsOpt.get))) map {
+    self.request(createSelfRequest(ChangeProps2(thing.toThingId, propsOpt.get))) flatMap {
       case ThingFound(id, newState) => {
         val result = for {
           newThing <- newState.anything(id)

@@ -1,5 +1,6 @@
 package querki.time
 
+import scala.concurrent.Future
 import scala.xml.NodeSeq
 
 import com.github.nscala_time.time.Imports._
@@ -57,7 +58,7 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
         case Some(displayText) => DateTimeFormat.forPattern(displayText.plaintext)
         case None => defaultRenderFormat
       }
-      Wikitext(formatter.print(v))
+      Future.successful(Wikitext(formatter.print(v)))
     }
 
     /**
@@ -123,7 +124,7 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
         case Some(displayText) => DateTimeFormat.forPattern(displayText.plaintext)
         case None => defaultRenderFormat
       }
-      Wikitext(formatter.print(v))
+      Future.successful(Wikitext(formatter.print(v)))
     }
     
     override def doComp(context:QLContext)(left:DateTime, right:DateTime):Boolean = { left < right } 

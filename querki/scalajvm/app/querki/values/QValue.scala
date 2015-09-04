@@ -1,5 +1,7 @@
 package querki.values
 
+import scala.concurrent.Future
+
 import models._
 
 // TODO: both of these should get evolved away!
@@ -47,7 +49,7 @@ trait QValue {
     else
       first.getOpt(elemT)
   }
-  def wikify(context:QLContext, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Wikitext = 
+  def wikify(context:QLContext, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = 
     pType.fullWikify(context, this, displayOpt, lexicalThing).getOrElse(
       cType.doWikify(context)(cv, pType, displayOpt, lexicalThing))
   

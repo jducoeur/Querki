@@ -8,6 +8,7 @@ import models.{DisplayText, FieldIds, HtmlWikitext, OID, PropertyBundle, QWikite
 
 import querki.core.URLableType
 import querki.ecology._
+import querki.globals._
 import querki.ql.{InvocationValue, QLPhrase, Signature, RequiredParam}
 import querki.util._
 import querki.values._
@@ -59,7 +60,8 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = throw new Exception("Can't deserialize ParsedText!")
     def doSerialize(v:Wikitext)(implicit state:SpaceState) = throw new Exception("Can't serialize ParsedText!")
-    def doWikify(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = v
+    def doWikify(context:QLContext)(v:Wikitext, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = 
+      Future.successful(v)
     
     def doDefault(implicit state:SpaceState) = Wikitext("")
   }
@@ -273,7 +275,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	        
 	        urlOpt match {
 	          case Some(url) => {
-	            val paramTexts = params.map(phrase => context.parser.get.processPhrase(phrase.ops, context).value.wikify(context))
+	            val paramTexts = awaitHack(Future.sequence(params.map(phrase => context.parser.get.processPhrase(phrase.ops, context).value.wikify(context))))
 	            HtmlValue(QHtml(generateButton(url, paramTexts).toString))            
 	          }
 	          // Nothing incoming, so cut.
@@ -357,15 +359,15 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	  lazy val sig = Signature(ParsedTextType, RequiredParam("label"))
 	  
 	  override def qlApply(inv:Invocation):QValue = {
-	    for (
-	      pt <- inv.contextTypeAs[URLableType];
-	      elemContext <- inv.contextElements;
-	      elemV <- inv.opt(elemContext.value.firstOpt);
-	      url <- inv.opt(pt.getURL(elemContext)(elemV));
-	      paramVal <- inv.processParam(0, elemContext);
-	      label = paramVal.wikify(elemContext);
+	    for {
+	      pt <- inv.contextTypeAs[URLableType]
+	      elemContext <- inv.contextElements
+	      elemV <- inv.opt(elemContext.value.firstOpt)
+	      url <- inv.opt(pt.getURL(elemContext)(elemV))
+	      paramVal <- inv.processParam(0, elemContext)
+	      label = awaitHack(paramVal.wikify(elemContext))
 	      wikitext = QWikitext("[") + label + QWikitext(s"]($url)")
-	    )
+      }
 	      yield QValue.make(ExactlyOne, ParsedTextType, wikitext)
 	  }
 	}
@@ -558,7 +560,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         rawDisplay <- inv.rawParam(4)
         selectedElems = all.cType.makePropValue(all.cv.drop(start).take(len), all.pType)
         result <- inv.processParam(4, inv.context.next(selectedElems))
-        wiki = result.wikify(inv.context)
+        wiki = awaitHack(result.wikify(inv.context))
         nextButton =
           if (done)
             ""
