@@ -316,7 +316,11 @@ trait LinkUtils { self:CoreEcot =>
           // Note: the unsafeDisplayNames below are because Scala's XML interpolator appears to be doing the
           // name sanitizing for us:
           candidates map { candidate:Thing =>
-            val name = context.requestOpt.map(candidate.unsafeNameOrComputed(_, state)).getOrElse(candidate.unsafeDisplayName)
+            // TODO: in principle, the awaitHack below is evil -- the candidate's name *could* conceivably contain
+            // async stuff. In practice, that is rare-to-nonexistent, and if we let the Future escape here we're going
+            // to have to Future-ize the entire renderInputXml stack. We should do that in due course, but I'm not
+            // biting it off today. (jducoeur 9/4/15)
+            val name = context.requestOpt.map(req => awaitHack(candidate.unsafeNameOrComputed(req, state))).getOrElse(candidate.unsafeDisplayName)
             if(candidate.id == v.elem) {
               <option value={candidate.id.toString} selected="selected">{name}</option>        
             } else {
