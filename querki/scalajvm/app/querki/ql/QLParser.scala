@@ -129,22 +129,23 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
    * ParsedTextType. So far, you can't *do* anything with that afterwards other than
    * render it, which just returns the already-computed Wikitext.
    */
-  private def processTextStage(text:QLTextStage, context:QLContext):QLContext = {
-    logContext("processTextStage " + text, context) {
-	    val ct = context.value.cType
-	    // For each element of the incoming context, recurse in and process the embedded Text
-	    // in that context. Iff the context is empty, though, just produce an empty result.
-	    val transformed =
-	      if (context.isEmpty)
-	        Iterable.empty
-	      else
-  	        context.map { elemContext =>
-	          QL.ParsedTextType(awaitHack(processParseTree(text.contents, elemContext)))
-	        }
-	    // TBD: the asInstanceOf here is surprising -- I would have expected transformed to come out
-	    // as the right type simply by type signature. Can we get rid of it?
-	    context.next(ct.makePropValue(transformed.asInstanceOf[ct.implType], QL.ParsedTextType))
-    }
+  private def processTextStage(text:QLTextStage, context:QLContext):Future[QLContext] = {
+    val ct = context.value.cType
+    // For each element of the incoming context, recurse in and process the embedded Text
+    // in that context. Iff the context is empty, though, just produce an empty result.
+    val transformedFuts =
+      if (context.isEmpty)
+        Iterable.empty
+      else
+        context.map { elemContext =>
+          processParseTree(text.contents, elemContext).map(QL.ParsedTextType(_))
+        }
+    
+    val transformedFut = Future.sequence(transformedFuts)
+    
+    // TBD: the asInstanceOf here is surprising -- I would have expected transformed to come out
+    // as the right type simply by type signature. Can we get rid of it?
+    transformedFut.map(transformed => context.next(ct.makePropValue(transformed.asInstanceOf[ct.implType], QL.ParsedTextType)))
   }
   
   private def processCall(call:QLCall, context:QLContext, isParam:Boolean):Future[QLContext] = {
@@ -275,7 +276,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
         contextIn
     stage match {
       case name:QLCall => processCall(name, context, isParam)
-      case subText:QLTextStage => Future.successful(processTextStage(subText, context))
+      case subText:QLTextStage => processTextStage(subText, context)
       case num:QLNumber => Future.successful(processNumber(num, context))
     }
   }
