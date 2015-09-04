@@ -3,6 +3,7 @@ package querki.logic
 import models.{OID, PType, ThingOps, ThingState}
 
 import querki.ecology._
+import querki.globals._
 import querki.ql.{InvocationValue, QLPhrase}
 import querki.util.{PublicException, QLog}
 import querki.values._
@@ -53,7 +54,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	          current match {
 	            case Some(result) => Some(result)
 	            case None => {
-	              val oneResult = context.parser.get.processPhrase(phrase.ops, context)
+	              val oneResult = awaitHack(context.parser.get.processPhrase(phrase.ops, context))
 	              if (oneResult.value.isEmpty)
 	                None
 	              else
@@ -88,7 +89,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	    
 	    val inVal = paramsOpt match {
 	      case Some(params) if (params.length == 1) => {
-	        context.parser.get.processPhrase(params(0).ops, context).value
+	        awaitHack(context.parser.get.processPhrase(params(0).ops, context)).value
 	      }
 	      case _ => context.value
 	    }
@@ -119,15 +120,15 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	      case Some(params) if (params.length > 1) => {
 	        val predicatePhrase = params(0)
 	        val ifCase = params(1)
-	        val predResult = context.parser.get.processPhrase(predicatePhrase.ops, context)
+	        val predResult = awaitHack(context.parser.get.processPhrase(predicatePhrase.ops, context))
 	        predResult.value.firstAs(QL.ErrorTextType) match {
 	          case Some(errMsg) => predResult.value
 	          case None => {
 		        if (toBoolean(predResult.value)) {
-		          context.parser.get.processPhrase(ifCase.ops, context).value
+		          awaitHack(context.parser.get.processPhrase(ifCase.ops, context)).value
 		        } else if (params.length > 2) {
 		          val elseCase = params(2)
-		          context.parser.get.processPhrase(elseCase.ops, context).value
+		          awaitHack(context.parser.get.processPhrase(elseCase.ops, context)).value
 		        } else {
 		          // TODO: the type here is chosen arbitrarily, but it *should* be the same type as the ifCase.
 		          EmptyValue(Core.UnknownType)

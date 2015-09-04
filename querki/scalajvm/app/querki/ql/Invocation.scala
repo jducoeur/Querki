@@ -7,6 +7,7 @@ import querki.values.SpaceState
 import models.{AsOID, Collection, Property, PropertyBundle, PType, Thing, ThingId}
 
 import querki.ecology._
+import querki.globals._
 import querki.types.ModelTypeBase
 import querki.util._
 import querki.values.{QLContext, QValue, SpaceState}
@@ -374,7 +375,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
   def processParam(paramNum:Int, processContext:QLContext = context):InvocationValue[QValue] = {
     paramsOpt match {
       case Some(params) if (params.length >= (paramNum + 1)) => {
-        val processed = context.parser.get.processPhrase(params(paramNum).ops, processContext).value
+        val processed = awaitHack(context.parser.get.processPhrase(params(paramNum).ops, processContext)).value
         processed.firstAs(QL.ErrorTextType) match {
           // If there was an error, keep the error, and stop processing:
           case Some(errorText) => InvocationValueImpl(this, None, Some(new PublicException("General.public", errorText))) 
@@ -388,7 +389,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
   def processParamFirstAs[VT](paramNum:Int, pt:PType[VT], processContext:QLContext = context):InvocationValue[VT] = {
     paramsOpt match {
       case Some(params) if (params.length >= (paramNum + 1)) => {
-        val processed = context.parser.get.processPhrase(params(paramNum).ops, processContext).value
+        val processed = awaitHack(context.parser.get.processPhrase(params(paramNum).ops, processContext)).value
         processed.firstAs(QL.ErrorTextType) match {
           case Some(errorText) => InvocationValueImpl(this, None, Some(new PublicException("General.public", errorText)))
           case None => {

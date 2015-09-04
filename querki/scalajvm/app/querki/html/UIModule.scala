@@ -101,7 +101,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       val params = paramsOpt.get
 
       def processHtml(content:DisplayText):Wikitext = {
-        val parsedParamOpt = context.parser.get.processPhrase(params(0).ops, context).value.firstTyped(ParsedTextType)
+        val parsedParamOpt = awaitHack(context.parser.get.processPhrase(params(0).ops, context)).value.firstTyped(ParsedTextType)
         if (parsedParamOpt.isEmpty) 
           throw new PublicException("UI.transform.classRequired", name)
         val paramText = parsedParamOpt.get.raw.toString
@@ -176,7 +176,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       if (params.length < 2)
         throw new PublicException("UI.transform.dataRequired")
       
-      val dataBlock = context.parser.get.processPhrase(params(1).ops, context).value.firstTyped(ParsedTextType).
+      val dataBlock = awaitHack(context.parser.get.processPhrase(params(1).ops, context)).value.firstTyped(ParsedTextType).
         getOrElse(throw new PublicException("UI.transform.dataRequired")).raw
       
       XmlHelpers.mapElems(nodes)(_ % Attribute(s"data-$paramText", Text(dataBlock), Null))
@@ -238,21 +238,14 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       val wikitext = if (context.isEmpty) {
         parser.contextsToWikitext(emptyOpt.map(empty => Seq(parser.processPhrase(empty.ops, context.root))).getOrElse(Seq.empty))
       } else {
-        val processedHeader = parser.contextsToWikitext(Seq(parser.processPhrase(header.ops, context.forceAsCollection)))
-        val processedDetails = detailsOpt.map(details => Seq(parser.processPhrase(details.ops, context)))
-        // TODO: why are we transforming this to Wikitext this early? Is there any reason to? Shouldn't we just turn all
-        // of this into a new List Context and pass it on through? Conceptually that would be more correct. The only problem
-        // is that the Header and Details potentially produce different Types, so they might not fit neatly into a single List.
-        // Which implies, of course, that what we *should* be producing here is a Tuple of (Header, List[Details]). Hmm --
-        // let's revisit this once we have Tuples implemented.
-        processedDetails match {
-          // Note that there is automatically a newline inserted between the Header and Details. Most of the time, this
-          // produces exactly the right result:
-          case Some(details) => processedHeader + parser.contextsToWikitext(details, true)
-          case None => processedHeader
+        for {
+          processedHeader <- parser.contextsToWikitext(Seq(parser.processPhrase(header.ops, context.forceAsCollection)))
+          processedDetails = detailsOpt.map(details => Seq(parser.processPhrase(details.ops, context)))
+          detailContents <- processedDetails.map(parser.contextsToWikitext(_, true)).getOrElse(Future.successful(Wikitext("")))
         }
+          yield processedHeader + detailContents
       }
-      QL.WikitextValue(wikitext)
+      QL.WikitextValue(awaitHack(wikitext))
     }
   }
 
@@ -275,7 +268,11 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	        
 	        urlOpt match {
 	          case Some(url) => {
-	            val paramTexts = awaitHack(Future.sequence(params.map(phrase => context.parser.get.processPhrase(phrase.ops, context).value.wikify(context))))
+	            val paramTexts = 
+                awaitHack(
+                  Future.sequence(
+                    params.map(phrase => 
+                      context.parser.get.processPhrase(phrase.ops, context).flatMap(_.value.wikify(context)))))
 	            HtmlValue(QHtml(generateButton(url, paramTexts).toString))            
 	          }
 	          // Nothing incoming, so cut.

@@ -54,7 +54,7 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	      phrase = chooseParam(params);
 	      parser <- context.parser
 	    )
-	      yield parser.processPhrase(phrase.ops, context.asCollection).value
+	      yield awaitHack(parser.processPhrase(phrase.ops, context.asCollection)).value
 	      
 	    result.getOrElse(QL.WarningValue("_pluralize requires exactly two parameters"))
 	  }
@@ -102,7 +102,7 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	      paramOpt match {
 	        case Some(param) => {
 	          val collContext = context.asCollection
-	          val paramVal = context.parser.get.processPhrase(param.ops, collContext).value
+	          val paramVal = awaitHack(context.parser.get.processPhrase(param.ops, collContext)).value
 	          val renderedParam = awaitHack(paramVal.pType.wikify(context)(paramVal.first))
 	          renderedParam
 	        }

@@ -298,18 +298,20 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   }
   // This is the entry point that is currently visible to the outside. We believe this is only used for
   // dealing with parameters.
-  def processPhrase(ops:Seq[QLStage], startContext:QLContext):QLContext = {
-    processPhrase(ops, startContext, false)
+  def processPhrase(ops:Seq[QLStage], startContext:QLContext):Future[QLContext] = {
+    Future.successful(processPhrase(ops, startContext, false))
   }
   
-  private def processPhrases(phrases:Seq[QLPhrase], context:QLContext):Seq[QLContext] = {
-    phrases map (phrase => processPhrase(phrase.ops, context, false))
+  private def processPhrases(phrases:Seq[QLPhrase], context:QLContext):Seq[Future[QLContext]] = {
+    phrases map (phrase => Future.successful(processPhrase(phrase.ops, context, false)))
   }
 
-  def contextsToWikitext(contexts:Seq[QLContext], insertNewlines:Boolean = false):Wikitext = {
-    qlProfilers.wikify.profile {
-      (Wikitext("") /: contexts) { (soFar, context) => soFar.+(awaitHack(context.value.wikify(context.parent)), insertNewlines) }
-    }
+  def contextsToWikitext(contexts:Seq[Future[QLContext]], insertNewlines:Boolean = false):Future[Wikitext] = {
+    // Each of the received contexts gets treated separately.
+    // TODO: this will almost certainly change once we introduce local bindings! At that point, the
+    // phrases in a given expression need to be closely linked!
+    val wikified = contexts.map { _.flatMap( context => context.value.wikify(context.parent)) }
+    Future.fold(wikified)(Wikitext(""))(_.+(_, insertNewlines))
   }
   
   /**
@@ -336,7 +338,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     val futures = parseTree.parts.map { part =>
       part match {
         case UnQLText(t) => Future.successful(Wikitext(t))
-        case QLExp(phrases) => Future.successful(contextsToWikitext(processPhrases(phrases, context)))
+        case QLExp(phrases) => contextsToWikitext(processPhrases(phrases, context))
         case QLLink(l) => linkToWikitext(l, context)
       }          
     }

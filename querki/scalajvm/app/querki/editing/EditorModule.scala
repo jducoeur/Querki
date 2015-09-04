@@ -298,7 +298,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
         // This user isn't allowed to edit, so display the fallback
         paramsOpt match {
           case Some(params) if (params.length > 0) => {
-            context.parser.get.processPhrase(params(0).ops, context).value
+            awaitHack(context.parser.get.processPhrase(params(0).ops, context)).value
           }
           case _ => QL.WarningValue("_editOrElse requires a parameter")
         }
@@ -366,8 +366,8 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	    inv.paramsOpt match {
 	      case Some(params) if (params.length == 2) => {
 	        val context = inv.definingContext.get
-	        val label = context.parser.get.processPhrase(params(0).ops, context).value
-	        val control = context.parser.get.processPhrase(params(1).ops, context).value
+	        val label = awaitHack(context.parser.get.processPhrase(params(0).ops, context)).value
+	        val control = awaitHack(context.parser.get.processPhrase(params(1).ops, context)).value
 	        QL.WikitextValue(
 	          Wikitext("\n{{form-horizontal:\n{{control-group:\n{{control-label:\n") +
 	          awaitHack(label.wikify(context)) +

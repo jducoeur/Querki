@@ -224,7 +224,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    // as a Context, and then just using the QValue. Bleah.
 	    // TODO: this needs a major rewrite, to stop using so many QL internals!
 	    def tryElem(parser:QLParser, phrase:QLPhrase)(elem:QLContext):Option[ElemValue] = {
-	      val passesYesNo = parser.processPhrase(phrase.ops, elem).value
+	      val passesYesNo = awaitHack(parser.processPhrase(phrase.ops, elem)).value
 	      for (
 	        bool <- passesYesNo.firstAs(YesNoType) if (bool);
 	        theElem <- elem.value.firstOpt
@@ -359,7 +359,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          val terms = for {
 	            param <- params
 	            // This may return a wrapped Delegating Type. (Eg, DescendingType.)
-	            tCalc = context.parser.get.processPhrase(param.ops, context.next(ExactlyOne(LinkType(t)))).value
+	            tCalc = awaitHack(context.parser.get.processPhrase(param.ops, context.next(ExactlyOne(LinkType(t))))).value
 	            tRawResultOpt = tCalc.firstOpt
 	            // Note that tResultOpt will be None iff the processing came up empty, or as UnknownOID. (The latter
 	            // is very common iff the sort expression including a Property not defined on the received Bundle.)
@@ -428,7 +428,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    
 	    paramsOpt match {
 	      case Some(params) => {
-	        val innerRes = context.parser.get.processPhrase(params(0).ops, context).value;
+	        val innerRes = awaitHack(context.parser.get.processPhrase(params(0).ops, context)).value;
 	        innerRes.cType.makePropValue(innerRes.cv, new DescendingType(innerRes.pType))
 	      }
 	      case None => QL.WarningValue("_desc is meaningless without a parameter")
@@ -485,7 +485,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
       paramsOpt match {
         case Some(params) if (params.length > 0) => {
           val thing = context.value.first
-          val list = context.parser.get.processPhrase(params(0).ops, context).value
+          val list = awaitHack(context.parser.get.processPhrase(params(0).ops, context)).value
           val index = list.indexOf(thing)
           index match {
             case Some(i) => {
@@ -517,7 +517,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
       paramsOpt match {
         case Some(params) if (params.length > 0) => {
           val thing = context.value.first
-          val list = context.parser.get.processPhrase(params(0).ops, context).value
+          val list = awaitHack(context.parser.get.processPhrase(params(0).ops, context)).value
           val index = list.indexOf(thing)
           index match {
             case Some(i) => {
