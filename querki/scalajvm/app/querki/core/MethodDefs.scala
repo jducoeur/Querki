@@ -3,7 +3,7 @@ package querki.core
 import models.{PropertyThingOps, ThingOps}
 
 import querki.ecology._
-
+import querki.globals._
 import querki.util.QLog
 import querki.values.QLContext
 
@@ -21,7 +21,7 @@ trait MethodDefs { self:QuerkiEcot =>
   {
     // Okay, this is a bit horrible, bouncing back and forth to the Thing like this. But
     // it allows us to declare InternalMethods (which don't need to be serialized) concisely.
-    override def qlApplyTop(inv:Invocation, transformThing:Thing):QLContext = {
+    override def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
       method.qlApplyTop(inv, transformThing)
     }
   }
@@ -45,8 +45,8 @@ trait MethodDefs { self:QuerkiEcot =>
      * Alternately, Methods may override this if they want more control of the resulting
      * QLContext.
      */
-    def qlApplyTop(inv:Invocation, transformThing:Thing):QLContext = {
-      inv.context.nextFrom(qlApply(inv), transformThing)
+    def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
+      Future.successful(inv.context.nextFrom(qlApply(inv), transformThing))
     }
     
     override def thingOps(e:Ecology):ThingOps = new MethodThingOps(this)

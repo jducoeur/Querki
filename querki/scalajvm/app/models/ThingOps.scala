@@ -156,9 +156,10 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
   
   /**
    * The wrapper around qlApply(), which is actually called from the outside. Specific Things may
-   * override this if they need to return a QLContext instead of simply a QValue.
+   * override this if they need to return a QLContext instead of simply a QValue, or want to do
+   * something async. Basically, this is the full-control version.
    */
-  def qlApplyTop(inv:Invocation, transformThing:Thing):QLContext = {
-    inv.context.nextFrom(qlApply(inv), transformThing)
+  def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
+    Future.successful(inv.context.nextFrom(qlApply(inv), transformThing))
   }
 }

@@ -108,24 +108,23 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
         |reasons. Please do not use it too often, or it will drag the system down. Use
         |_createInstanceLink or _createButton instead, most of the time.""".stripMargin)))
   {
-    override def qlApplyTop(inv:Invocation, transformThing:Thing):QLContext = {
+    override def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
       // Need to shortcut with some mutation, since we don't have a good way to get this
       // side-effect out:
       var newState:Option[SpaceState] = None
-      val v:QValue = for {
+      val vFut:Future[QValue] = for {
         model <- inv.contextFirstThing
         msg = CreateThing(inv.context.request.requesterOrAnon, inv.context.state, Kind.Thing, model.id, getInitialProps(inv))
-        // TODO: EEEEVIL! Blocking calls are always bad:
-        newThingId = spaceRegion.askBlocking(msg) { 
+        newThingIdFut = spaceRegion ? msg map { 
           case ThingFound(id, s) => {
             newState = Some(s)
             id
           }
         }
       }
-        yield ExactlyOne(LinkType(newThingId))
+        yield newThingIdFut.map(newThingId => ExactlyOne(LinkType(newThingId)))
         
-      inv.context.nextFrom(v, transformThing).withState(newState.get)
+      vFut.map(v => inv.context.nextFrom(v, transformThing).withState(newState.get))
     }
     
     def getInitialProps(inv:Invocation):PropMap = {

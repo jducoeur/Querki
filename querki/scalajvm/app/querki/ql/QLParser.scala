@@ -149,7 +149,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   }
   
   private def processCall(call:QLCall, context:QLContext, isParam:Boolean):Future[QLContext] = {
-    def processThing(t:Thing):QLContext = qlProfilers.processThing.profile {
+    def processThing(t:Thing):Future[QLContext] = qlProfilers.processThing.profile {
       // If there are parameters to the call, they are a collection of phrases.
       val params = call.params
       val methodOpt = call.methodName.flatMap(context.state.anythingByName(_))
@@ -170,20 +170,20 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
           }
         }
       } catch {
-        case ex:PublicException => context.nextFrom(WarningValue(ex.display(context.requestOpt)), t)
-        case error:Exception => QLog.error("Error during QL Processing", error); context.nextFrom(WarningValue(UnexpectedPublicException.display(context.requestOpt)), t)
+        case ex:PublicException => warningFut(context, ex.display(context.requestOpt))
+        case error:Exception => QLog.error("Error during QL Processing", error); warningFut(context, UnexpectedPublicException.display(context.requestOpt))
       }      
     }
     
     def handleThing(tOpt:Option[Thing]) = {
-      Future.successful(tOpt.map { t =>
+      tOpt.map { t =>
         processThing(t)
-      }.getOrElse(context.next(Core.ExactlyOne(QL.UnknownNameType(call.name.name)))))
+      }.getOrElse(Future.successful(context.next(Core.ExactlyOne(QL.UnknownNameType(call.name.name)))))
     }
     
     call.name match {
       case binding:QLBinding => { 
-        processBinding(binding, context, isParam).map { resolvedBinding =>  
+        processBinding(binding, context, isParam).flatMap { resolvedBinding =>  
           val tOpt = for {
             oid <- resolvedBinding.value.firstAs(Core.LinkType)
             thing <- context.state.anything(oid)
@@ -192,7 +192,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
           
           tOpt.map { t =>
             processThing(t)
-          }.getOrElse(resolvedBinding)
+          }.getOrElse(Future.successful(resolvedBinding))
         }
       }
       case tid:QLThingId => {
