@@ -120,7 +120,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
         |[[_showSome(0, 50, ""Show More"", _instances -> _sort, _bulleted)]]""".stripMargin
       } else
         text
-    Future.successful(QL.process(QLText(fullText), thing.thisAsContext, None, Some(thing)))
+    QL.process(QLText(fullText), thing.thisAsContext, None, Some(thing))
   }
   
   /*********************************

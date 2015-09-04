@@ -7,6 +7,7 @@ import models._
 import querki.conventions._
 import querki.core._
 import querki.ecology._
+import querki.globals._
 import querki.ql.QLPhrase
 import querki.types._
 import querki.values.{ElemValue, QLContext, RequestContext, SpaceState}
@@ -107,7 +108,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
         textPV <- inv.iter(bundle.getPropOpt(prop)(inv.state))
         text <- inv.iter(textPV.v.rawList(this))
       }
-        yield QL.processMethod(text, inv.context.forProperty(prop), Some(inv), Some(bundle), Some(prop))
+        yield awaitHack(QL.processMethod(text, inv.context.forProperty(prop), Some(inv), Some(bundle), Some(prop)))
         
       Some(qv)
     }

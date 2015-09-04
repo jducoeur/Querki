@@ -309,7 +309,7 @@ package object ql {
      * that, uses the given context and params to process it, and returns the resulting Wikitext.
      */
     def process(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 
-        lexicalThing:Option[PropertyBundle] = None, lexicalProp:Option[AnyProp] = None):Wikitext
+        lexicalThing:Option[PropertyBundle] = None, lexicalProp:Option[AnyProp] = None):Future[Wikitext]
     
     /**
      * Process a QL Function into a QValue.
@@ -318,7 +318,7 @@ package object ql {
      * uses the given context and params to process it, and returns the resulting QValue.
      */
     def processMethod(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 
-        lexicalThing:Option[PropertyBundle] = None, lexicalProp:Option[AnyProp] = None):QValue
+        lexicalThing:Option[PropertyBundle] = None, lexicalProp:Option[AnyProp] = None):Future[QValue]
         
     /**
      * Just parses the given text, with no further processing.

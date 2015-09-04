@@ -54,7 +54,7 @@ trait TextTypeBasis { self:CoreEcot =>
     def doDeserialize(v:String)(implicit state:SpaceState) = QLText(v)
     def doSerialize(v:QLText)(implicit state:SpaceState) = v.text
     def doWikify(context:QLContext)(v:QLText, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
-      Future.successful(QL.process(v, context, lexicalThing = lexicalThing))
+      QL.process(v, context, lexicalThing = lexicalThing)
     }
     def doDefault(implicit state:SpaceState) = QLText("")
     def wrap(raw:String):valType = QLText(raw)
@@ -80,7 +80,7 @@ trait TextTypeBasis { self:CoreEcot =>
         qlText <- inv.iter(pv.v.rawList(this))
       }
         // ... and process that element through QL.
-        yield Core.ExactlyOne(QL.ParsedTextType(QL.process(qlText, elemContext, Some(inv), Some(bundle), Some(prop))))
+        yield Core.ExactlyOne(QL.ParsedTextType(awaitHack(QL.process(qlText, elemContext, Some(inv), Some(bundle), Some(prop)))))
         
       Some(result)
     }

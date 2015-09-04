@@ -318,8 +318,8 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
       val personContext = QLContext(ExactlyOne(ElemValue(person.id, LinkType)), context.requestOpt, None) //Some(context))
     
       for {
-        subject <- Future.successful(QL.process(subjectQL, personContext.forProperty(emailSubject)))
-        body <- Future.successful(QL.process(bodyQL, personContext.forProperty(emailBody)))
+        subject <- QL.process(subjectQL, personContext.forProperty(emailSubject))
+        body <- QL.process(bodyQL, personContext.forProperty(emailBody))
       
         // Note that emails are sent with the ReplyTo set to whoever asked for this email to be generated.
         // You are responsible for your own emails.

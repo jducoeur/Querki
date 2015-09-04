@@ -40,7 +40,7 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
         pv <- getPropOpt(Basic.ComputedNameProp)
         v <- pv.firstOpt
       }
-        yield Future.successful(QL.process(v, thisAsContext).raw)
+        yield QL.process(v, thisAsContext).map(_.raw)
       computed.getOrElse(Future.successful(fallback()))
     } else {
       localName.get.renderPlain.map { rend =>
@@ -61,7 +61,7 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
         pv <- getPropOpt(Basic.ComputedNameProp)
         v <- pv.firstOpt
       }
-        yield Future.successful(QL.process(v, thisAsContext).plaintext)
+        yield QL.process(v, thisAsContext).map(_.plaintext)
       computed.getOrElse(Future.successful(fallback()))
     } else {
       localName.get.renderPlain.map { rend =>
@@ -148,7 +148,7 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
     applyOpt match {
       case Some(apply) => {
         val qlText = apply.first
-        QL.processMethod(qlText, context.forProperty(apply.prop), Some(inv), Some(thing))
+        awaitHack(QL.processMethod(qlText, context.forProperty(apply.prop), Some(inv), Some(thing)))
       }
       case None => Core.ExactlyOne(Core.LinkType(thing.id))
     }

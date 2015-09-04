@@ -350,7 +350,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   }
   
   // TODO: this really shouldn't be showing raw HTML. Redo this properly as Wikitext:
-  def renderError(msg:String, reader:scala.util.parsing.input.Reader[_]):Wikitext = {
+  def renderError(msg:String, reader:scala.util.parsing.input.Reader[_]):Future[Wikitext] = {
     val pos = reader.pos
     val propStr = initialContext.getProp match {
       case Some(prop) => " " + prop.displayName + ", "
@@ -358,16 +358,19 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     }
     val escapedMsg = s"<b>Syntax error in $propStr line ${pos.line}:</b> " + scala.xml.Utility.escape(msg)
     val escapedError = scala.xml.Utility.escape(pos.longString)
-    HtmlWikitext(QHtml(
+    Future.successful(HtmlWikitext(QHtml(
         "<p>" + escapedMsg + ":<p>\n" +
-        "<pre>" + escapedError + "</pre>\n"))
+        "<pre>" + escapedError + "</pre>\n")))
   }
   
-  def process:Wikitext = {
+  def wikiFut(str:String):Future[Wikitext] =
+    Future.successful(Wikitext(str))
+  
+  def process:Future[Wikitext] = {
     try {
       val parseResult = parse
       parseResult match {
-        case Success(result, _) => processParseTree(result, initialContext)
+        case Success(result, _) => Future.successful(processParseTree(result, initialContext))
         case Failure(msg, next) => { renderError(msg, next) }
         // TODO: we should probably do something more serious in case of Error:
         case Error(msg, next) => { QLog.error("Couldn't parse qlText: " + msg); renderError(msg, next) }
@@ -376,15 +379,15 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
       case overflow:java.lang.StackOverflowError => {
         QLog.error("Stack overflow error while trying to parse this QLText:\n" + input.text)
         overflow.printStackTrace()
-        Wikitext("We're sorry -- this thing is apparently more complex than Querki can currently cope with. Please contact Justin: this is a bug we need to fix.")
+        wikiFut("We're sorry -- this thing is apparently more complex than Querki can currently cope with. Please contact Justin: this is a bug we need to fix.")
       }
       case error:Exception => {
         QLog.error("Exception during QL Processing: " + error, error)
-        Wikitext("We're sorry -- there was an error while trying to display this thing.")
+        wikiFut("We're sorry -- there was an error while trying to display this thing.")
       }
       case error:Throwable => {
         QLog.error("Throwable during QL Processing: " + error, error)
-        Wikitext("We're sorry -- there was a serious error while trying to display this thing.")
+        wikiFut("We're sorry -- there was a serious error while trying to display this thing.")
       }
     }
   }
@@ -397,12 +400,12 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     }
   }
   
-  private[ql] def processMethod:QLContext = {
+  private[ql] def processMethod:Future[QLContext] = {
     val parseResult = qlProfilers.parseMethod.profile { parseAll(qlPhrase, input.text) }
     parseResult match {
-      case Success(result, _) => qlProfilers.processMethod.profile { processPhrase(result.ops, initialContext, false) }
-      case Failure(msg, next) => { initialContext.next(QL.WikitextValue(renderError(msg, next))) }
-      case Error(msg, next) => { initialContext.next(QL.WikitextValue(renderError(msg, next))) }
+      case Success(result, _) => qlProfilers.processMethod.profile { Future.successful(processPhrase(result.ops, initialContext, false)) }
+      case Failure(msg, next) => { renderError(msg, next).map(err => initialContext.next(QL.WikitextValue(err))) }
+      case Error(msg, next) => { renderError(msg, next).map(err => initialContext.next(QL.WikitextValue(err))) }
     }
   }
 }

@@ -69,7 +69,7 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
     implicit val r = rc
     implicit val s = state
     val context = thing.thisAsContext(rc, state, ecology)
-    QL.processMethod(QLText(ql), context, None, Some(thing)).wikify(context)
+    QL.processMethod(QLText(ql), context, None, Some(thing)).flatMap(_.wikify(context))
   }
   
   def getProperties(thingId:TID):Future[Seq[PropValInfo]] = withThing(thingId) { thing =>

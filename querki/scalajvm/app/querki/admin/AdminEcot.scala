@@ -116,10 +116,10 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
       val futuresOpt = for {
         headerQV <- payload.get(HeaderOID)
         headerQL <- headerQV.firstAs(LargeTextType)
-        header = Future.successful(QL.process(headerQL, context))
+        header = QL.process(headerQL, context)
         bodyQV <- payload.get(BodyOID)
         bodyQL <- bodyQV.firstAs(TextType)
-        body = Future.successful(QL.process(bodyQL, context))
+        body = QL.process(bodyQL, context)
       }
         yield (header, body)
         

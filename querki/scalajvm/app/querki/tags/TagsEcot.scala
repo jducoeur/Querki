@@ -144,8 +144,8 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
       Future.successful(nameToLink(context)(v))
     
     override def renderProperty(prop:Property[_,_])(implicit request:RequestContext, state:SpaceState):Option[Future[Wikitext]] = {
-      Some(Future.successful(QL.process(querki.core.QLText("""These tags are currently being used:
-        |[[_tagsForProperty -> _sort -> _bulleted]]""".stripMargin), prop.thisAsContext)))
+      Some(QL.process(querki.core.QLText("""These tags are currently being used:
+        |[[_tagsForProperty -> _sort -> _bulleted]]""".stripMargin), prop.thisAsContext))
     }
   }
 
@@ -188,8 +188,8 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     }
     
     override def renderProperty(prop:Property[_,_])(implicit request:RequestContext, state:SpaceState):Option[Future[Wikitext]] = {
-      Some(Future.successful(QL.process(QLText("""These tags are currently being used:
-        |[[_tagsForProperty -> _sort -> _bulleted]]""".stripMargin), prop.thisAsContext)))
+      Some(QL.process(QLText("""These tags are currently being used:
+        |[[_tagsForProperty -> _sort -> _bulleted]]""".stripMargin), prop.thisAsContext))
     }
   }
 

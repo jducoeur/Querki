@@ -194,7 +194,7 @@ trait ThingEditor { self:EditorModule =>
     def instanceEditorForThing(thing:PropertyBundle, thingContext:QLContext, inv:Option[Invocation]):Future[Wikitext] = {
       implicit val state = thingContext.state
       val editText = editorLayoutForThing(thing, state)
-      Future.successful(QL.process(editText, thingContext, inv))
+      QL.process(editText, thingContext, inv)
     }
     
     def createInstanceButton(model:Thing, context:QLContext):Wikitext = {
