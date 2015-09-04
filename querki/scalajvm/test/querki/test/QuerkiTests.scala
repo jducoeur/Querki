@@ -10,7 +10,7 @@ import models.{OID, Thing}
 import querki.core.QLText
 
 import querki.ecology._
-
+import querki.globals._
 import querki.identity.User
 
 import querki.values.{QLContext, RequestContext, SpaceState}
@@ -144,7 +144,7 @@ class QuerkiTests
   def linkText(t:Thing):String = {
     // This is a bit convoluted, but is what we actually display in the link text. Indeed, it's
     // arguably insufficient -- we should probably be factoring nameOrComputed into here.
-    val display = t.fullLookupDisplayName.get.renderPlain.raw
+    val display = awaitIntentionally(t.fullLookupDisplayName.get.renderPlain).raw
     val name = t.canonicalName.map(querki.core.NameUtils.toUrl(_)).getOrElse(display)
     "[" + display + "](" + name + ")"     
   }

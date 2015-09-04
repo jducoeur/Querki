@@ -11,9 +11,9 @@ class ThingFunctionsEmpty extends ThingFunctions {
   def getRequestInfo():RequestInfo = ???
   def getThingPage(thingId:TID, propIdOpt:Option[TID]):Future[ThingPageDetails] = ???
   def getThingInfo(thingId:TID):Future[ThingInfo] = ???
-  def evaluateQL(thingId:TID, ql:String):Wikitext = ???
-  def getProperties(thingId:TID):Seq[PropValInfo] = ???
-  def getPropertyDisplay(thingId:TID, propId:TID):Option[Wikitext] = ???
+  def evaluateQL(thingId:TID, ql:String):Future[Wikitext] = ???
+  def getProperties(thingId:TID):Future[Seq[PropValInfo]] = ???
+  def getPropertyDisplay(thingId:TID, propId:TID):Future[Option[Wikitext]] = ???
   def getAllProperties():SpaceProps = ???
   def getAllTypes():Future[AllTypeInfo] = ???
   def deleteThing(thingId:TID):Future[Unit] = ???

@@ -10,8 +10,8 @@ class EditFunctionsEmpty extends EditFunctions {
   
   def alterProperty(thingId:TID, change:PropertyChange):Future[PropertyChangeResponse] = ???
   def create(modelId:TID, initialProps:Seq[PropertyChange]):Future[ThingInfo] = ???
-  def getOnePropertyEditor(thingId:TID, propId:TID):PropEditInfo = ???
-  def getPropertyEditors(thingId:TID):FullEditInfo = ???
+  def getOnePropertyEditor(thingId:TID, propId:TID):Future[PropEditInfo] = ???
+  def getPropertyEditors(thingId:TID):Future[FullEditInfo] = ???
   def addPropertyAndGetEditor(thingId:TID, propId:TID):Future[PropEditInfo] = ???
   def removeProperty(thingId:TID, propId:TID):Future[PropertyChangeResponse] = ???
   def getModelType(modelId:TID):Future[TypeInfo] = ???

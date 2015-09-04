@@ -1,5 +1,7 @@
 package querki.test
 
+import querki.globals._
+
 class TypeTests extends QuerkiTests {
   lazy val TextType = Core.TextType
   
@@ -17,7 +19,7 @@ class TypeTests extends QuerkiTests {
         propAndVal <- space.myThing.getPropOpt(space.textSetProp);
         qv = propAndVal.v;
         context = thingAsContext[TSpace](space, (_.myThing));
-        wikified = qv.wikify(context, None)
+        wikified = awaitIntentionally(qv.wikify(context, None))
       )
         println(wikified.display)
       
