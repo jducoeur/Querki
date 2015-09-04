@@ -1,13 +1,12 @@
 package querki.types
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits._
 import scala.xml.NodeSeq
 
 import models.{DisplayPropVal, OID, Property, PropertyBundle, PropertyBundleOps, PType, PTypeBuilder, Thing, Wikitext}
 import models.Thing.{PropMap, emptyProps}
 
 import querki.ecology._
+import querki.globals._
 import querki.util.{QLog, XmlHelpers}
 import querki.values.{ElemValue, PropAndVal, QLContext, QValue, RequestContext, SpaceState}
 
@@ -173,7 +172,7 @@ trait ModelTypeDefiner { self:EcologyMember =>
     
     override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
       val bundle = get(v)
-      val wikitext = Editor.getInstanceEditor(bundle, context, Some(currentValue))
+      val wikitext = awaitHack(Editor.getInstanceEditor(bundle, context, Some(currentValue)))
       XmlHelpers.toNodes(wikitext.display)
     }
   }

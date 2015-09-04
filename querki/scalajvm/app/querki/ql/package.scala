@@ -37,6 +37,9 @@ package object ql {
     ecology.api[querki.ql.QL].inv2QValueImpl(inv)
   }
   
+  implicit def inv2QValueFut(inv:InvocationValue[Future[QValue]])(implicit ecology:Ecology):Future[QValue] = {
+    ecology.api[querki.ql.QL].inv2QValueFutImpl(inv)
+  }
   
   trait WithFilter[T] {
     def map[R](mf:T => R):InvocationValue[R]
@@ -297,7 +300,7 @@ package object ql {
      * Internal method, usually invoked implicitly by inv2QValue.
      */
     def inv2QValueImpl(inv:InvocationValue[QValue]):QValue
-
+    def inv2QValueFutImpl(inv:InvocationValue[Future[QValue]]):Future[QValue]
     
     /**
      * The primary entry point for processing a body of QLText into Wikitext.

@@ -1,7 +1,5 @@
 package querki.ql
 
-import scala.concurrent.Future
-
 import querki.globals._
 
 import querki.ecology._
@@ -43,52 +41,60 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
    * PUBLIC API
    ***********************************************/
   
-  def inv2QValueImpl(inv:InvocationValue[QValue]):QValue = {
-    inv.getError.getOrElse {
-      val qvs = inv.get
-      // This code originally lived in QLContext.collect(). It is still kind of iffy, but is
-      // conceptually Iterable[QValue].flatten:
-      val pt = {
-        if (qvs.isEmpty)
-          inv.getReturnType match {
-            // This means that the calling code called Invocation.returnsType:
-            case Some(ipt) => ipt
-            // TODO: we might want to turn this into a logged warning. It can cause problems downstream if,
-            // eg, you feed the results into _sort:
-            case None => Core.UnknownType
-          }
-        else
-          qvs.find(qv => qv.pType != Core.UnknownType).map(_.pType).getOrElse(inv.getReturnType.getOrElse(Core.UnknownType))
-      }
-      val ct = {
-        if (inv.preferredColl.isDefined)
-          inv.preferredColl.get
-        else if (qvs.isEmpty)
+  def inv2QValueFutImpl(inv:InvocationValue[Future[QValue]]):Future[QValue] = {
+    val fut = Future.sequence(inv.get)
+    fut.map(qvs => qvUnpack(inv, qvs))
+  }
+  
+  def qvUnpack(inv:InvocationValue[_], qvs:Iterable[QValue]):QValue = {
+    // This code originally lived in QLContext.collect(). It is still kind of iffy, but is
+    // conceptually Iterable[QValue].flatten:
+    val pt = {
+      if (qvs.isEmpty)
+        inv.getReturnType match {
+          // This means that the calling code called Invocation.returnsType:
+          case Some(ipt) => ipt
+          // TODO: we might want to turn this into a logged warning. It can cause problems downstream if,
+          // eg, you feed the results into _sort:
+          case None => Core.UnknownType
+        }
+      else
+        qvs.find(qv => qv.pType != Core.UnknownType).map(_.pType).getOrElse(inv.getReturnType.getOrElse(Core.UnknownType))
+    }
+    val ct = {
+      if (inv.preferredColl.isDefined)
+        inv.preferredColl.get
+      else if (qvs.isEmpty)
+        Core.Optional
+      else
+        qvs.head.cType
+    }
+    val raw = qvs.flatten(_.cv)
+    // Rationalize the Collection. If the Collection we got from the invocation works with the number of
+    // elements, keep it; otherwise, slam it to something sensible.
+    // TODO: this mechanism needs to be generalized.
+    val newCT = 
+      if (raw.isEmpty) {
+        if (ct == Core.ExactlyOne)
           Core.Optional
         else
-          qvs.head.cType
-      }
-      val raw = qvs.flatten(_.cv)
-      // Rationalize the Collection. If the Collection we got from the invocation works with the number of
-      // elements, keep it; otherwise, slam it to something sensible.
-      // TODO: this mechanism needs to be generalized.
-      val newCT = 
-        if (raw.isEmpty) {
-          if (ct == Core.ExactlyOne)
-            Core.Optional
-          else
-            ct
-        } else if (raw.size == 1)
-          // Any Collection can have one element:
           ct
-        else {
-          // There are two or more elements:
-          if (ct == Core.ExactlyOne || ct == Core.Optional)
-            Core.QList
-          else
-            ct
-        }
-      newCT.makePropValue(raw, pt)
+      } else if (raw.size == 1)
+        // Any Collection can have one element:
+        ct
+      else {
+        // There are two or more elements:
+        if (ct == Core.ExactlyOne || ct == Core.Optional)
+          Core.QList
+        else
+          ct
+      }
+    newCT.makePropValue(raw, pt)    
+  }
+  
+  def inv2QValueImpl(inv:InvocationValue[QValue]):QValue = {
+    inv.getError.getOrElse {
+      qvUnpack(inv, inv.get)
     }
   }
   

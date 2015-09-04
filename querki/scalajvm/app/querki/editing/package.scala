@@ -5,6 +5,7 @@ import models.{DisplayPropVal, OID, Property, PropertyBundle, Thing, Wikitext}
 import querki.basic.PlainText
 import querki.core.QLText
 import querki.ecology._
+import querki.globals._
 import querki.values.{QLContext, SpaceState}
 
 package object editing {
@@ -28,7 +29,7 @@ package object editing {
      * This fetches the wikitext UI for editing the given Thing. Assumes that the caller has already validated
      * that the request comes from someone who can edit this Thing.
      */
-    def getInstanceEditor(thing:PropertyBundle, context:QLContext, currentValue:Option[DisplayPropVal] = None):Wikitext
+    def getInstanceEditor(thing:PropertyBundle, context:QLContext, currentValue:Option[DisplayPropVal] = None):Future[Wikitext]
     
     def InstanceProps:Property[OID,OID]
     def PromptProp:Property[PlainText,String]

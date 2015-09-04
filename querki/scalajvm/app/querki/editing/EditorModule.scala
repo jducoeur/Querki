@@ -42,7 +42,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
     ApiRegistry.registerApiImplFor[EditFunctions, EditFunctionsImpl](SpaceOps.spaceRegion)
   }
   
-  def getInstanceEditor(thing:PropertyBundle, context:QLContext, currentValue:Option[DisplayPropVal] = None):Wikitext = {
+  def getInstanceEditor(thing:PropertyBundle, context:QLContext, currentValue:Option[DisplayPropVal] = None):Future[Wikitext] = {
     instanceEditorForThing(thing, context.next(thing.thisAsQValue).copy(currentValue = currentValue)(context.state, ecology), None)
   }
   
@@ -173,7 +173,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       val partialContextOpt = inv.definingContext
       val params = inv.paramsOpt
       
-      def editThing(thing:Thing, context:QLContext)(implicit state:SpaceState):QValue = {
+      def editThing(thing:Thing, context:QLContext)(implicit state:SpaceState):Future[QValue] = {
         if (thing.ifSet(Core.IsModelProp)) {
           val allInstances = state.descendants(thing.id, false, true).toSeq.sortBy(_.displayName)
           for {
@@ -182,11 +182,11 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
             pageSize <- inv.processParamFirstAs(1, IntType)
             startAt = pageSize * page
             instance <- inv.iter(allInstances.drop(startAt).take(pageSize))
-            wikitext = instanceEditorForThing(instance, instance.thisAsContext(context.request, state, ecology), Some(inv))
+            wikitextFut = instanceEditorForThing(instance, instance.thisAsContext(context.request, state, ecology), Some(inv))
           }
-            yield ExactlyOne(QL.ParsedTextType(wikitext))
+            yield wikitextFut.map(wikitext => ExactlyOne(QL.ParsedTextType(wikitext)))
         } else {
-          QL.WikitextValue(instanceEditorForThing(thing, context, Some(inv)))
+          instanceEditorForThing(thing, context, Some(inv)).map(QL.WikitextValue)
         }
       }
       
@@ -205,7 +205,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
           for {
             thing <- inv.contextAllThings
           }
-            yield editThing(thing, inv.context)(inv.state)
+            yield awaitHack(editThing(thing, inv.context)(inv.state))
         }
       } 
     }
