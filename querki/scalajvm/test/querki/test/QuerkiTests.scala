@@ -106,8 +106,11 @@ class QuerkiTests
   def commonState = commonSpace.state
   
   def processQText(context:QLContext, text:String, lexicalOpt:Option[Thing] = None):String = {
+    import scala.concurrent._
+    import scala.concurrent.duration._
+    
     val qt = QLText(text)
-    val wikitext = QL.process(qt, context, None, lexicalOpt)
+    val wikitext = Await.result(QL.process(qt, context, None, lexicalOpt), 1 second)
     wikitext.plaintext.stripReturns
   }
   
