@@ -296,7 +296,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
    ******************************************/
   
   class BooleanThingOps(v:BooleanValue) extends ThingOps(v) {
-    override def qlApply(inv:Invocation):QValue = v.v    
+    override def qlApply(inv:Invocation):Future[QValue] = Future.successful(v.v)    
   }
   class BooleanValue(tid:OID, elem:ElemValue, pf:PropFetcher) extends ThingState(tid, systemOID, RootOID, pf)
   {

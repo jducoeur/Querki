@@ -132,7 +132,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       partialContext:QLContext, prop:Property[_,_],
       params:Option[Seq[QLPhrase]]):Set[RenderSpecialization] = Set(FromEditFunction)
   
-    def cantEditFallback(inv:Invocation):QValue
+    def cantEditFallback(inv:Invocation):Future[QValue]
     
     def canEdit(context:QLContext, requester:User, thing:PropertyBundle, prop:Property[_,_]):Boolean = {
       thing match {
@@ -164,7 +164,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	          specialization(elemContext, mainThing, definingContext, prop, params))
 	      HtmlUI.HtmlValue(inputControl)    
         }
-        case _ => cantEditFallback(inv)
+        case _ => awaitHack(cantEditFallback(inv))
       }
     }
   
@@ -270,7 +270,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       AppliesToKindProp(Kind.Property)
     )) 
   {
-    def cantEditFallback(inv:Invocation):QValue = {
+    def cantEditFallback(inv:Invocation):Future[QValue] = {
       // This user isn't allowed to edit, so simply render the property in its default form.
       // For more control, user _editOrElse instead.
       for (
@@ -291,17 +291,17 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       AppliesToKindProp(Kind.Property)
     )) 
   {
-    def cantEditFallback(inv:Invocation):QValue = {
+    def cantEditFallback(inv:Invocation):Future[QValue] = {
       val context = inv.context
       val paramsOpt = inv.paramsOpt
       
-        // This user isn't allowed to edit, so display the fallback
-        paramsOpt match {
-          case Some(params) if (params.length > 0) => {
-            awaitHack(context.parser.get.processPhrase(params(0).ops, context)).value
-          }
-          case _ => QL.WarningValue("_editOrElse requires a parameter")
+      // This user isn't allowed to edit, so display the fallback
+      paramsOpt match {
+        case Some(params) if (params.length > 0) => {
+          context.parser.get.processPhrase(params(0).ops, context).map(_.value)
         }
+        case _ => Future.successful(QL.WarningValue("_editOrElse requires a parameter"))
+      }
     }  
   }
 
@@ -323,7 +323,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
     )) 
   {
     // TODO: this is stolen directly from _edit, and should probably be refactored:
-    def cantEditFallback(inv:Invocation):QValue = {
+    def cantEditFallback(inv:Invocation):Future[QValue] = {
       // This user isn't allowed to edit, so simply render the property in its default form.
       // For more control, user _editOrElse instead.
       for (

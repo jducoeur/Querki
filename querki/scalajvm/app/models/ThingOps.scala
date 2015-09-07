@@ -139,8 +139,11 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
    * 
    * Callers should generally prefer qlApplyTop instead, since that allows somewhat more
    * powerful operations.
+   * 
+   * Note that this returns a Future of a value, since that is the general case. InternalMethod
+   * allows you to provide either a raw value or a Future, depending on which overload you use.
    */
-  def qlApply(inv:Invocation):QValue = {
+  def qlApply(inv:Invocation):Future[QValue] = {
     val context = inv.context
     val paramsOpt = inv.paramsOpt
     
@@ -148,9 +151,9 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
     applyOpt match {
       case Some(apply) => {
         val qlText = apply.first
-        awaitHack(QL.processMethod(qlText, context.forProperty(apply.prop), Some(inv), Some(thing)))
+        QL.processMethod(qlText, context.forProperty(apply.prop), Some(inv), Some(thing))
       }
-      case None => Core.ExactlyOne(Core.LinkType(thing.id))
+      case None => Future.successful(Core.ExactlyOne(Core.LinkType(thing.id)))
     }
   }
   
@@ -160,6 +163,6 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
    * something async. Basically, this is the full-control version.
    */
   def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
-    Future.successful(inv.context.nextFrom(qlApply(inv), transformThing))
+    qlApply(inv).map(inv.context.nextFrom(_, transformThing))
   }
 }

@@ -34,7 +34,9 @@ trait MethodDefs { self:QuerkiEcot =>
     extends SystemProperty[String,String](tid, Core.InternalMethodType, QUnit, () => (p() + (querki.datamodel.MOIDs.IsFunctionOID  -> ExactlyOne(YesNoType(true)))))
   {
     /**
-     * Methods should override this to implement their own functionality.
+     * Methods should override this to implement their own functionality, if they just
+     * need to return a plain QValue. Note that this will get wrapped by Future.successful()
+     * before being passed up the line.
      */
     def qlApply(inv:Invocation):QValue = {
       // By default, we just pass the incoming context right through:
@@ -42,11 +44,19 @@ trait MethodDefs { self:QuerkiEcot =>
     }
     
     /**
-     * Alternately, Methods may override this if they want more control of the resulting
+     * Concrete methods should override this if they need to return a Future instead of
+     * a raw QValue.
+     */
+    def qlApplyFut(inv:Invocation):Future[QValue] = {
+      Future.successful(qlApply(inv))
+    }
+    
+    /**
+     * Methods may override this if they want full control of the resulting
      * QLContext.
      */
     def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
-      Future.successful(inv.context.nextFrom(qlApply(inv), transformThing))
+      qlApplyFut(inv).map(next => inv.context.nextFrom(next, transformThing))
     }
     
     override def thingOps(e:Ecology):ThingOps = new MethodThingOps(this)

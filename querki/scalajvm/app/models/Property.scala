@@ -138,12 +138,12 @@ class PropertyThingOps[VT,RT](prop:Property[VT,RT])(implicit e:Ecology) extends 
    * TODO: if this Property isn't defined on the target Thing or its ancestors, this should return None.
    * So technically, this should be returning Optional. Note that PType.qlApply() already does this.
    */
-  override def qlApply(inv:Invocation):QValue = {
+  override def qlApply(inv:Invocation):Future[QValue] = {
     // Give the Type first dibs at handling the call; otherwise, return the value of this property
     // on the incoming thing.
-    pType.qlApplyFromProp(inv, prop).getOrElse(
+    Future.successful((pType.qlApplyFromProp(inv, prop).getOrElse(
       prop.applyToIncomingProps(inv) { (t, innerContext) =>
         t.getPropVal(prop)(innerContext.state)
-      })
+      })))
   }  
 }
