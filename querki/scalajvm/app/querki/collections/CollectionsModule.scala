@@ -422,16 +422,17 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |what they would normally have. It is usually used inside of _sort, to reverse the sort order, which
 	          |is normally in ascending order.""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QValue = {
+	  override def qlApplyFut(inv:Invocation):Future[QValue] = {
 	    val context = inv.context
 	    val paramsOpt = inv.paramsOpt
 	    
 	    paramsOpt match {
 	      case Some(params) => {
-	        val innerRes = awaitHack(context.parser.get.processPhrase(params(0).ops, context)).value;
-	        innerRes.cType.makePropValue(innerRes.cv, new DescendingType(innerRes.pType))
+	        val innerResFut = context.parser.get.processPhrase(params(0).ops, context).map(_.value)
+	        innerResFut.map(innerRes =>
+            innerRes.cType.makePropValue(innerRes.cv, new DescendingType(innerRes.pType)))
 	      }
-	      case None => QL.WarningValue("_desc is meaningless without a parameter")
+	      case None => QL.WarningFut("_desc is meaningless without a parameter")
 	    }
 	  }
 	}
@@ -478,26 +479,27 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
         		|Given a THING, and a LIST that contains that THING, this returns the *previous* THING to that
         		|in the LIST. It returns None iff the THING is not in the LIST, or if it is the beginning of the LIST.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApplyFut(inv:Invocation):Future[QValue] = {
       val context = inv.context
       val paramsOpt = inv.paramsOpt
       
       paramsOpt match {
         case Some(params) if (params.length > 0) => {
           val thing = context.value.first
-          val list = awaitHack(context.parser.get.processPhrase(params(0).ops, context)).value
-          val index = list.indexOf(thing)
-          index match {
-            case Some(i) => {
-              if (i == 0)
-                EmptyValue(thing.pType)
-              else
-                ExactlyOne(list.elemAt(i - 1))
+          context.parser.get.processPhrase(params(0).ops, context).map(_.value).map { list =>
+            val index = list.indexOf(thing)
+            index match {
+              case Some(i) => {
+                if (i == 0)
+                  EmptyValue(thing.pType)
+                else
+                  ExactlyOne(list.elemAt(i - 1))
+              }
+              case None => EmptyValue(thing.pType)
             }
-            case None => EmptyValue(thing.pType)
           }
         }
-        case _ => QL.WarningValue("_prevInList requires a List parameter")
+        case _ => QL.WarningFut("_prevInList requires a List parameter")
       }
     }
   }
@@ -510,26 +512,27 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
         		|Given a THING, and a LIST that contains that THING, this returns the *next* THING to that
         		|in the LIST. It returns None iff the THING is not in the LIST, or if it is the end of the LIST.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApplyFut(inv:Invocation):Future[QValue] = {
       val context = inv.context
       val paramsOpt = inv.paramsOpt
       
       paramsOpt match {
         case Some(params) if (params.length > 0) => {
           val thing = context.value.first
-          val list = awaitHack(context.parser.get.processPhrase(params(0).ops, context)).value
-          val index = list.indexOf(thing)
-          index match {
-            case Some(i) => {
-              if (i == (list.size - 1))
-                EmptyValue(thing.pType)
-              else
-                ExactlyOne(list.elemAt(i + 1))
+          context.parser.get.processPhrase(params(0).ops, context).map(_.value).map { list =>
+            val index = list.indexOf(thing)
+            index match {
+              case Some(i) => {
+                if (i == (list.size - 1))
+                  EmptyValue(thing.pType)
+                else
+                  ExactlyOne(list.elemAt(i + 1))
+              }
+              case None => EmptyValue(thing.pType)
             }
-            case None => EmptyValue(thing.pType)
           }
         }
-        case _ => QL.WarningValue("_nextInList requires a List parameter")
+        case _ => QL.WarningFut("_nextInList requires a List parameter")
       }
     }
   }

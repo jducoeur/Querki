@@ -13,7 +13,7 @@ import querki.ecology._
 import querki.globals._
 import querki.session.UserSessionMessages.UserSessionMsg
 import querki.util.ActorHelpers._
-import querki.values.{QLContext, SpaceState}
+import querki.values.{EmptyValue, QLContext, SpaceState}
 import querki.util.QLog
 
 import IdentityCacheMessages._
@@ -215,13 +215,17 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
       Summary("Given a Link to an Identity, this fetches that Identity"),
       Details("This function is currently a bit problematic. Please don't over-use it. Eventually it will be less dangerous.")))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApplyFut(inv:Invocation):Future[QValue] = {
       for {
         link <- inv.contextAllAs(Core.LinkType)
-        // EEEEVIL!
-        identity <- inv.opt(awaitHack(getIdentity(link)))
       }
-        yield ExactlyOne(IdentityType(identity))
+        yield for {
+          identityOpt <- getIdentity(link)
+        }
+          yield identityOpt match {
+            case Some(identity) => ExactlyOne(IdentityType(identity))
+            case None => EmptyValue(IdentityType)
+          }
     }    
   }
   

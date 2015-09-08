@@ -336,6 +336,8 @@ package object ql {
     def ErrorValue(msg:String):QValue
     def WikitextValue(wikitext:Wikitext):QValue
     
+    def WarningFut(msg:String):Future[QValue] = Future.successful(WarningValue(msg))
+    
     def EmptyListCut():QValue
   }
 

@@ -255,7 +255,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	  
 	  def numParams:Int
 	  
-	  override def qlApply(inv:Invocation):QValue = {
+	  override def qlApplyFut(inv:Invocation):Future[QValue] = {
 	    val context = inv.context
 	    val paramsOpt = inv.paramsOpt
 	    
@@ -268,19 +268,19 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	        
 	        urlOpt match {
 	          case Some(url) => {
-	            val paramTexts = 
-                awaitHack(
-                  Future.sequence(
-                    params.map(phrase => 
-                      context.parser.get.processPhrase(phrase.ops, context).flatMap(_.value.wikify(context)))))
-	            HtmlValue(QHtml(generateButton(url, paramTexts).toString))            
+              Future.sequence(
+                params.map(phrase => 
+                  context.parser.get.processPhrase(phrase.ops, context).flatMap(_.value.wikify(context))))
+              .map { paramTexts =>
+	              HtmlValue(QHtml(generateButton(url, paramTexts).toString))
+              }
 	          }
 	          // Nothing incoming, so cut.
 	          // TODO: there is probably a general pattern to pull out here, of "cut processing if the input is empty"
-	          case None => EmptyValue(RawHtmlType)
+	          case None => Future.successful(EmptyValue(RawHtmlType))
 	        }
 	      }
-	      case None => QL.WarningValue(displayName + " requires " + numParams + " parameters.")
+	      case None => QL.WarningFut(displayName + " requires " + numParams + " parameters.")
 	    }
 	  }
 	}
@@ -355,17 +355,17 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	{
 	  lazy val sig = Signature(ParsedTextType, RequiredParam("label"))
 	  
-	  override def qlApply(inv:Invocation):QValue = {
+	  override def qlApplyFut(inv:Invocation):Future[QValue] = {
 	    for {
 	      pt <- inv.contextTypeAs[URLableType]
 	      elemContext <- inv.contextElements
 	      elemV <- inv.opt(elemContext.value.firstOpt)
 	      url <- inv.opt(pt.getURL(elemContext)(elemV))
 	      paramVal <- inv.processParam(0, elemContext)
-	      label = awaitHack(paramVal.wikify(elemContext))
-	      wikitext = QWikitext("[") + label + QWikitext(s"]($url)")
+	      labelFut = paramVal.wikify(elemContext)
+	      wikitextFut = labelFut.map(label => QWikitext("[") + label + QWikitext(s"]($url)"))
       }
-	      yield QValue.make(ExactlyOne, ParsedTextType, wikitext)
+	      yield wikitextFut.map(wikitext => QValue.make(ExactlyOne, ParsedTextType, wikitext))
 	  }
 	}
 		
@@ -544,7 +544,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         |may be replaced by a QL function in due course. So consider this experimental; it may go away
         |down the line.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApplyFut(inv:Invocation):Future[QValue] = {
       for {
         thing <- inv.contextFirstThing
         start <- inv.processParamFirstAs(0, IntType)
@@ -557,7 +557,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         rawDisplay <- inv.rawParam(4)
         selectedElems = all.cType.makePropValue(all.cv.drop(start).take(len), all.pType)
         result <- inv.processParam(4, inv.context.next(selectedElems))
-        wiki = awaitHack(result.wikify(inv.context))
+        wikiFut = result.wikify(inv.context)
         nextButton =
           if (done)
             ""
@@ -572,14 +572,14 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
                 data.ql := s"_showSome(${start + len},$len,${rawMsg.reconstructString},${rawAll.reconstructString},${rawDisplay.reconstructString})")))
             ).toString
           }
-        complete = {
+        completeFut = wikiFut.map { wiki =>
           if (all.size == 0)
             Wikitext("")
           else
             wiki + HtmlWikitext(nextButton)
         }
       }
-        yield QL.WikitextValue(complete)
+        yield completeFut.map(QL.WikitextValue(_))
     }
   }
   

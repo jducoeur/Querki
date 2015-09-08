@@ -362,20 +362,24 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	          |
 	          |This is mainly for input forms, and is pretty persnickety at this point. It is not recommend for general use yet.""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QValue = {
+	  override def qlApplyFut(inv:Invocation):Future[QValue] = {
 	    inv.paramsOpt match {
 	      case Some(params) if (params.length == 2) => {
 	        val context = inv.definingContext.get
-	        val label = awaitHack(context.parser.get.processPhrase(params(0).ops, context)).value
-	        val control = awaitHack(context.parser.get.processPhrase(params(1).ops, context)).value
-	        QL.WikitextValue(
-	          Wikitext("\n{{form-horizontal:\n{{control-group:\n{{control-label:\n") +
-	          awaitHack(label.wikify(context)) +
-	          Wikitext("\n}}\n{{controls:\n") +
-	          awaitHack(control.wikify(context)) +
-	          Wikitext("\n}}\n}}\n}}\n"))
+          for {
+            label <- context.parser.get.processPhrase(params(0).ops, context).map(_.value)
+            labelWiki <- label.wikify(context)
+            control <- context.parser.get.processPhrase(params(1).ops, context).map(_.value)
+            controlWiki <- control.wikify(context)
+          }
+	          yield QL.WikitextValue(
+  	          Wikitext("\n{{form-horizontal:\n{{control-group:\n{{control-label:\n") +
+  	          labelWiki +
+  	          Wikitext("\n}}\n{{controls:\n") +
+  	          controlWiki +
+  	          Wikitext("\n}}\n}}\n}}\n"))
 	      }
-	      case _ => QL.WarningValue("_formLine requires two parameters")
+	      case _ => QL.WarningFut("_formLine requires two parameters")
 	    }
 	  }
 	}

@@ -172,7 +172,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
       }
     }
   }
-  
+
   def iter[T](it:Iterable[T], errOpt:Option[PublicException] = None):InvocationValue[T] = {
     InvocationValueImpl(this, it, errOpt)
   }
