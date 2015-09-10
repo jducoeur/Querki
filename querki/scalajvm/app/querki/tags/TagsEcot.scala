@@ -353,18 +353,18 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
           |NOTE: _tagRefs and _refs are closely related concepts. They currently work differently, but we might
           |at some point combine them for simplicity.""".stripMargin)))
   { 
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       implicit val s = inv.state
       for {
         dummy <- inv.preferCollection(QSet)
         nameableType <- inv.contextTypeAs[NameableType]
-        definingProp = inv.definingContextAsPropertyOf(NewTagSetType).get
+        definingProp <- inv.definingContextAsOptionalPropertyOf(NewTagSetType)
         tagProps =
-          if (definingProp.isEmpty)
+          definingProp match {
+            case Some(p) => Iterable(p)
             // There was no property specified, so use all Tag Properties
-            inv.state.propList.filter(prop => prop.pType == TagSetType || prop.pType == NewTagSetType)
-          else
-            definingProp
+            case None => inv.state.propList.filter(prop => prop.pType == TagSetType || prop.pType == NewTagSetType)
+          }
         prop <- inv.iter(tagProps)
         refMap = cachedTagRefsFor(prop)
         tagElem <- inv.contextElements
@@ -400,7 +400,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
           |    \[[Wine Color._self -> _tagsForProperty -> \""* \____: \[[_tagRefs -> _commas\]]\""\]]
           |In general, you only want to receive the Property like this if you are passing it into a Function.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         (shouldBeProp, _) <- inv.preferDefiningContext.bundlesAndContextsForProp(this)
       }
@@ -433,7 +433,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
           |Like most Querki Functions, this works equally well with a List of Tags, a Set of Tags,
           |or a single passed-in Tag.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         tag <- inv.contextAllAs(NewTagSetType)
         thing <- inv.opt(inv.state.anythingByName(tag.text))

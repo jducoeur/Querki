@@ -23,11 +23,11 @@ case class Signature(returnPt:PType[_], required:RequiredParam*) {
  * Extra information that can get picked up and carried along with the InvocationValue. Pulled out to here,
  * to keep it from clogging up the logic of the main InvocationValueImpl.
  */
-private[ql] case class IVMetadata(
+private [ql] case class IVMetadata(
     // Allows the Function to declare which PType it expects to return. This allows us to preserve type safety
     // even when we return QNone.
     returnType:Option[PType[_]] = None,
-    preferredColl:Option[Collection] = None) 
+    preferredColl:Option[Collection] = None)
 {
   /**
    * This method is the heart of IVMetadata, allowing us to combine metadatas in flatMap(). The copy
@@ -40,65 +40,62 @@ private[ql] case class IVMetadata(
   }
 }
 
-private[ql] case class InvocationValueImpl[T](inv:Invocation, vs:Iterable[T], errOpt:Option[PublicException] = None, metadata:IVMetadata = IVMetadata())(implicit val ecology:Ecology) 
+private[ql] case class IVData[T](
+    vs:Iterable[T],
+    metadata:IVMetadata = IVMetadata()) 
+
+private[ql] case class InvocationValueImpl[T](inv:Invocation, fut:Future[IVData[T]])(implicit val ecology:Ecology) 
   extends InvocationValue[T] with EcologyMember
 { self =>
   lazy val QL = interface[QL]
   
   def map[R](f:T => R):InvocationValue[R] = {
-    errOpt match {
-      // If there has already been an error, just propagate that:
-      case Some(err) => InvocationValueImpl[R](inv, None, errOpt, metadata)
-      // Otherwise, actually call f:
-      case None => {
-        val maps = vs.map(v => f(v))
-        InvocationValueImpl(inv, maps, None, metadata)
-      }
-    }
+    val maps = fut.map(data => IVData(data.vs.map(v => f(v)), data.metadata))
+    InvocationValueImpl(inv, maps)
   }
   
   def flatMap[R](f:T => InvocationValue[R]):InvocationValue[R] = {
-    errOpt match {
-      // If there has already been an error, just propagate that:
-      case Some(err) => InvocationValueImpl[R](inv, None, errOpt, metadata)
-      // Otherwise, actually call f:
-      case None => {
-        // This gets a little complex, so that we can preserve interim errors:
-        (InvocationValueImpl(inv, Seq.empty[R], None) /: vs) { (current, v) =>
-          current.errOpt match {
-            case Some(err) => InvocationValueImpl[R](inv, None, current.errOpt, metadata)
-            case None => {
-              // HACK: is there a really good way of avoiding this cheat without polluting the public API of
-              // InvocationValue with the errOpt?
-              val result = f(v).asInstanceOf[InvocationValueImpl[R]]
-              result.errOpt match {
-                case Some(err) => result
-                case None => InvocationValueImpl(inv, current.vs ++: result.vs, None, metadata + result.metadata)
-              }
-            }
-          }
-        }
+    val results = fut.flatMap { data =>
+      val subs = data.vs.map(f(_)).map(_.asInstanceOf[InvocationValueImpl[R]])
+      val subFuts = subs.map(_.fut)
+      Future.sequence(subFuts) map { subDatas =>
+        val resultVs = subDatas.map(_.vs).flatten
+        val resultMetas = (IVMetadata() /: subDatas.map(_.metadata)) (_ + _)
+        IVData(resultVs, resultMetas)
       }
     }
+    
+    InvocationValueImpl(inv, results)
   }
 
   /**
    * Our implementation of withFilter, for "if" statements in for comprehensions.
    */
   class WithFilterImpl(f:T => Boolean) extends WithFilter[T] {
-    def map[R](mf:T => R):InvocationValue[R] = new InvocationValueImpl(inv, self.vs.filter(f), errOpt, metadata).map(mf)
-    def flatMap[R](mf:T => InvocationValue[R]):InvocationValue[R] = new InvocationValueImpl(inv, self.vs.filter(f), errOpt, metadata).flatMap(mf)
+    def map[R](mf:T => R):InvocationValue[R] = 
+      new InvocationValueImpl(inv, self.fut.map(data => IVData(data.vs.filter(f), data.metadata))).map(mf)
+    def flatMap[R](mf:T => InvocationValue[R]):InvocationValue[R] = 
+      new InvocationValueImpl(inv, self.fut.map(data => IVData(data.vs.filter(f), data.metadata))).flatMap(mf)
     def withFilter(g:T => Boolean):WithFilter[T] = new WithFilterImpl((x => f(x) && g(x)))
   }
   def withFilter(f:T => Boolean):WithFilter[T] = new WithFilterImpl(f)
     
-  def get:Iterable[T] = vs
-  def getError:Option[QValue] = errOpt.map { ex =>
-    val msg = ex.display(Some(inv.context.request))
-    QL.WarningValue(msg) 
-  }
-  def getReturnType:Option[PType[_]] = metadata.returnType
-  def preferredColl:Option[Collection] = metadata.preferredColl
+  def get:Future[Iterable[T]] = fut.map(_.vs)
+//  def getError:Future[Option[QValue]] = errOpt.map { ex =>
+//    val msg = ex.display(Some(inv.context.request))
+//    QL.WarningValue(msg) 
+//  }
+//  def getReturnType:Option[PType[_]] = metadata.returnType
+//  def preferredColl:Option[Collection] = metadata.preferredColl
+}
+
+object InvocationValueImpl {
+  def apply[T](ex:PublicException)(implicit inv:Invocation, ecology:Ecology):InvocationValueImpl[T] = 
+    InvocationValueImpl[T](inv, Future.failed(ex))
+  def apply[T](vs:Iterable[T])(implicit inv:Invocation, ecology:Ecology):InvocationValueImpl[T] = 
+    InvocationValueImpl[T](inv, Future.successful(IVData(vs)))
+  def apply(meta:IVMetadata)(implicit inv:Invocation, ecology:Ecology):InvocationValueImpl[Boolean] =
+    InvocationValueImpl(inv, Future.successful(IVData(Some(true), meta)))
 }
 
 private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext, val definingContext:Option[QLContext], paramsOpt:Option[Seq[QLPhrase]], sig:Option[Signature] = None)(implicit val ecology:Ecology) 
@@ -111,21 +108,23 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
   lazy val displayName = invokedOn.displayName
   lazy val LinkType = Core.LinkType
   
-  def error[VT](name:String, params:String*) = InvocationValueImpl[VT](this, None, Some(PublicException(name, params:_*)))
+  implicit val inv = this
+  
+  def error[VT](name:String, params:String*) = InvocationValueImpl[VT](PublicException(name, params:_*))
   
   def test(predicate: => Boolean, errorName:String, params: => Seq[Any]):InvocationValue[Boolean] = {
     if (predicate)
-      InvocationValueImpl(this, Some(true), None)
+      InvocationValueImpl(Some(true))
     else
-      InvocationValueImpl(this, None, Some(PublicException(errorName, params:_*)))
+      InvocationValueImpl(PublicException(errorName, params:_*))
   }
   
   def returnsType(pt:PType[_]):InvocationValue[Boolean] = {
-    InvocationValueImpl(this, Some(true), None, IVMetadata(returnType = Some(pt)))
+    InvocationValueImpl(IVMetadata(returnType = Some(pt)))
   }
   
   def preferCollection(coll:Collection):InvocationValue[Boolean] = {
-    InvocationValueImpl(this, Some(true), None, IVMetadata(preferredColl = Some(coll)))
+    InvocationValueImpl(IVMetadata(preferredColl = Some(coll)))
   }
   
   def preferDefiningContext:Invocation = {
@@ -138,48 +137,55 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
   def contextTypeAs[T : ClassTag]:InvocationValue[T] = {
     val clazz = implicitly[ClassTag[T]].runtimeClass
     if (clazz.isInstance(context.value.pType))
-      InvocationValueImpl(this, Some(context.value.pType.asInstanceOf[T]), None)
+      InvocationValueImpl(Some(context.value.pType.asInstanceOf[T]))
     else
       error("Func.wrongType", displayName)
   }
   
   def contextElements:InvocationValue[QLContext] = {
     if (context.useCollection) {
-      InvocationValueImpl(this, Some(context), None)
+      InvocationValueImpl(Some(context))
     } else {
       val contexts = context.value.cv.map(elem => context.next(Core.ExactlyOne(elem)))
-      InvocationValueImpl(this, contexts, None)
+      InvocationValueImpl(contexts)
     }
   }
   
   def contextValue:InvocationValue[QValue] = {
-    InvocationValueImpl(this, Some(context.value), None)
+    InvocationValueImpl(Some(context.value))
   }
   
   def wrap[T](v:T):InvocationValue[T] = {
-    InvocationValueImpl(this, Some(v), None)
+    InvocationValueImpl(Some(v))
+  }
+  
+  def fut[T](fut:Future[T]):InvocationValue[T] = {
+    InvocationValueImpl(this, fut.map(t => IVData(Some(t))))
   }
   
   def opt[T](opt:Option[T], errOpt:Option[PublicException] = None):InvocationValue[T] = {
     opt match {
-      case Some(v) => InvocationValueImpl(this, Some(v), None)
+      case Some(v) => InvocationValueImpl(Some(v))
       case None => {
         errOpt match {
-          case Some(err) => InvocationValueImpl(this, None, Some(err))
+          case Some(err) => InvocationValueImpl(err)
           // No error specified if this isn't true, so we're simply passing Empty along:
-          case None => InvocationValueImpl(this, None, None)
+          case None => InvocationValueImpl(None)
         }
       }
     }
   }
 
   def iter[T](it:Iterable[T], errOpt:Option[PublicException] = None):InvocationValue[T] = {
-    InvocationValueImpl(this, it, errOpt)
+    errOpt match {
+      case Some(ex) => InvocationValueImpl(ex)
+      case None => InvocationValueImpl(it)
+    }
   }
   
   def contextFirstAs[VT](pt:PType[VT]):InvocationValue[VT] = {
     context.value.firstAs(pt) match {
-      case Some(v) => InvocationValueImpl(this, Some(v), None)
+      case Some(v) => InvocationValueImpl(Some(v))
       case None => error("Func.notThing", displayName)
     }
   }
@@ -189,14 +195,14 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
       error("Func.notThing", displayName)
     else {
       val vs = context.value.flatMap(pt)(Some(_))
-      InvocationValueImpl(this, vs, None)
+      InvocationValueImpl(vs)
     }
   }
   
   def contextFirstThing:InvocationValue[Thing] = {
     contextFirstAs(Core.LinkType).flatMap { oid =>
       state.anything(oid) match {
-        case Some(thing) => InvocationValueImpl(this, Some(thing), None)
+        case Some(thing) => InvocationValueImpl(Some(thing))
         case None => error("Func.unknownThing", displayName)
       }
     }
@@ -209,7 +215,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
       val ids = context.value.flatMap(Core.LinkType)(Some(_))
       val thingsOpt = ids.map(state.anything(_))
       if (thingsOpt.forall(_.isDefined))
-        InvocationValueImpl(this, thingsOpt.flatten, None)
+        InvocationValueImpl(thingsOpt.flatten)
       else
         error("Func.unknownThing", displayName)
     }    
@@ -220,13 +226,13 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
       val ids = context.value.flatMap(Core.LinkType)(Some(_))
       val thingsOpt = ids.map(state.anything(_))
       if (thingsOpt.forall(_.isDefined))
-        InvocationValueImpl(this, thingsOpt.flatten, None)
+        InvocationValueImpl(thingsOpt.flatten)
       else
         error("Func.unknownThing", displayName)      
     } else context.value.pType match {
       case mt:ModelTypeBase => {
         val bundles = context.value.flatMap(mt)(Some(_))
-        InvocationValueImpl(this, bundles, None)
+        InvocationValueImpl(bundles)
       }
       case _ => error("Func.notThing", displayName)
     } 
@@ -237,13 +243,13 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
       val ids = context.value.flatMap(Core.LinkType)(Some(_))
       val thingsOpt = ids.map(state.anything(_))
       if (thingsOpt.forall(_.isDefined))
-        InvocationValueImpl(this, thingsOpt.flatten.map(t => (t, context.next(Core.ExactlyOne(Core.LinkType(t))))), None)
+        InvocationValueImpl(thingsOpt.flatten.map(t => (t, context.next(Core.ExactlyOne(Core.LinkType(t))))))
       else
         error("Func.unknownThing", displayName)      
     } else context.value.pType match {
       case mt:ModelTypeBase => {
         val pairs = context.value.cv.map(elem => (elem.get(mt), context.next(Core.ExactlyOne(elem))))
-        InvocationValueImpl(this, pairs, None)
+        InvocationValueImpl(pairs)
       }
       case _ => error("Func.notThing", displayName)
     } 
@@ -274,14 +280,14 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
         val things = thingsOpt.flatten
         val pairs = things.map(t => (t, context.next(Core.ExactlyOne(Core.LinkType(t)))))
         if (things.exists(_.hasProp(prop)))
-          Some(InvocationValueImpl(this, pairs, None))
+          Some(InvocationValueImpl(pairs))
         else
           None
       } else current.value.pType match {
         case mt:ModelTypeBase => {
           val pairs = current.value.cv.map(elem => (elem.get(mt), context.next(Core.ExactlyOne(elem))))
           if (pairs.exists(_._1.hasProp(prop)))
-            Some(InvocationValueImpl(this, pairs, None))
+            Some(InvocationValueImpl(pairs))
           else
             None
         }
@@ -295,7 +301,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
     def walkNonThingContexts(previous:QLContext):InvocationValue[(PropertyBundle, QLContext)] = {
       if (previous.parentOpt.isEmpty || previous.value.matchesType(LinkType))
         // Either we hit the end of the chain, or we hit a Link -- either way, time to stop:
-        InvocationValueImpl(this, None, None, IVMetadata(returnType = Some(LinkType)))
+        InvocationValueImpl(this, Future.successful(IVData(None, IVMetadata(returnType = Some(LinkType)))))
       else {
         // Keep walking back up the chain, to see if we find something:
         val current = previous.parent
@@ -313,7 +319,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
         id <- dc.value.firstAs(Core.LinkType)
         thing <- state.anything(id)
       }
-        yield InvocationValueImpl(this, wrapContexts(thing), None)
+        yield InvocationValueImpl(wrapContexts(thing))
         
       result.getOrElse(error("Func.notThing", displayName))
     } else {
@@ -324,7 +330,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
           // Nope. Does the lexical context?
           withLexicalContext match {
             // IMPORTANT SUBTLETY: note that we're passing through the *bundle* of the lexical context, but the actual contexts are the received context!
-            case Some(bundle) if (bundle.hasProp(prop)) => InvocationValueImpl(this, wrapContexts(bundle), None)
+            case Some(bundle) if (bundle.hasProp(prop)) => InvocationValueImpl(wrapContexts(bundle))
             case _ => {
               // If this bundle isn't a Thing, walk up the context chain.
               walkNonThingContexts(context)
@@ -344,10 +350,10 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
           val ids:Iterable[ThingId] = defining.value.flatMap(Core.LinkType)(oid => Some(AsOID(oid)))
           val propOpts:Iterable[Option[Property[_,_]]] = ids.map(state.prop(_))
           if (propOpts.forall(_.isDefined)) {
-            InvocationValueImpl(this, propOpts.flatten, None)
+            InvocationValueImpl(propOpts.flatten)
           } else
             error("Func.notProp", displayName)
-    }          
+        }          
       }
       case None => error("Func.missingDefiningContext", displayName)
     }    
@@ -362,12 +368,30 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
           val ids:Iterable[ThingId] = defining.value.flatMap(Core.LinkType)(oid => Some(AsOID(oid)))
           val propOpts:Iterable[Option[Property[VT,_]]] = ids.map(state.prop(_).flatMap(prop => prop.confirmType(targetType)))
           if (propOpts.forall(_.isDefined)) {
-            InvocationValueImpl(this, propOpts.flatten, None)
+            InvocationValueImpl(propOpts.flatten)
           } else
             error("Func.notProp", displayName)
     }          
       }
       case None => error("Func.missingDefiningContext", displayName)
+    }  
+  }
+  
+  def definingContextAsOptionalPropertyOf[VT](targetType:PType[VT]):InvocationValue[Option[Property[VT,_]]] = {
+    definingContext match {
+      case Some(defining) => {
+        if (!defining.value.matchesType(Core.LinkType))
+          error("Func.notThing", displayName)
+        else {
+          val ids:Iterable[ThingId] = defining.value.flatMap(Core.LinkType)(oid => Some(AsOID(oid)))
+          val propOpts:Iterable[Option[Property[VT,_]]] = ids.map(state.prop(_).flatMap(prop => prop.confirmType(targetType)))
+          if (propOpts.forall(_.isDefined)) {
+            InvocationValueImpl(propOpts)
+          } else
+            error("Func.notProp", displayName)
+        }          
+      }
+      case None => InvocationValueImpl(Some(None))
     }  
   }
   
@@ -378,8 +402,8 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
         val processed = awaitHack(context.parser.get.processPhrase(params(paramNum).ops, processContext)).value
         processed.firstAs(QL.ErrorTextType) match {
           // If there was an error, keep the error, and stop processing:
-          case Some(errorText) => InvocationValueImpl(this, None, Some(new PublicException("General.public", errorText))) 
-          case None => InvocationValueImpl(this, Some(processed), None)
+          case Some(errorText) => InvocationValueImpl(new PublicException("General.public", errorText))
+          case None => InvocationValueImpl(Some(processed))
         }
       }
       case _ => error("Func.missingParam", displayName)
@@ -391,12 +415,12 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
       case Some(params) if (params.length >= (paramNum + 1)) => {
         val processed = awaitHack(context.parser.get.processPhrase(params(paramNum).ops, processContext)).value
         processed.firstAs(QL.ErrorTextType) match {
-          case Some(errorText) => InvocationValueImpl(this, None, Some(new PublicException("General.public", errorText)))
+          case Some(errorText) => InvocationValueImpl(new PublicException("General.public", errorText))
           case None => {
-	        processed.firstAs(pt) match {
-	          case Some(v) => InvocationValueImpl(this, Some(v), None)
-	          case None => error("Func.paramNotThing", displayName, paramNum.toString)
-	        }
+  	        processed.firstAs(pt) match {
+  	          case Some(v) => InvocationValueImpl(Some(v))
+  	          case None => error("Func.paramNotThing", displayName, paramNum.toString)
+  	        }
           }
         }
       }
@@ -417,7 +441,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
   
   def processParamNofM(paramNum:Int, expectedParams:Int, processContext:QLContext = context):InvocationValue[QValue] = {
     if (numParams < (expectedParams - 1))
-      InvocationValueImpl(this, None, Some(new PublicException("Func.insufficientParams", displayName, (expectedParams - 1))))
+      InvocationValueImpl(new PublicException("Func.insufficientParams", displayName, (expectedParams - 1)))
     else {
       if (numParams >= expectedParams)
         processParam(paramNum, processContext)
@@ -430,7 +454,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
   
   def rawParam(paramNum:Int):InvocationValue[QLPhrase] = {
     paramsOpt match {
-      case Some(params) if (params.length >= (paramNum - 1)) => InvocationValueImpl(this, Some(params(paramNum)), None)
+      case Some(params) if (params.length >= (paramNum - 1)) => InvocationValueImpl(Some(params(paramNum)))
       case _ => error("Func.missingParam", displayName)
     }
   }

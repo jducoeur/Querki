@@ -8,7 +8,7 @@ import querki.core.QLText
 import querki.ecology._
 
 import querki.util.PublicException
-import querki.values.{ElemValue, EmptyValue, QLContext, QValue, SpaceState}
+import querki.values.{ElemValue, EmptyValue, QFut, QLContext, QValue, SpaceState}
 
 package object ql {
 
@@ -33,12 +33,8 @@ package object ql {
    * This quietly transforms a returned InvocationValue[QValue] into a QValue, and will typically be
    * invoked at the end of the function.
    */
-  implicit def inv2QValue(inv:InvocationValue[QValue])(implicit ecology:Ecology):QValue = {
+  implicit def inv2QValue(inv:InvocationValue[QValue])(implicit ecology:Ecology):QFut = {
     ecology.api[querki.ql.QL].inv2QValueImpl(inv)
-  }
-  
-  implicit def inv2QValueFut(inv:InvocationValue[Future[QValue]])(implicit ecology:Ecology):Future[QValue] = {
-    ecology.api[querki.ql.QL].inv2QValueFutImpl(inv)
   }
   
   trait WithFilter[T] {
@@ -51,16 +47,18 @@ package object ql {
    * The InvocationValue Monad, which is how we query Invocations inside of a for.
    */
   trait InvocationValue[T] {
+    def inv:Invocation
+    
     def map[R](f:T => R):InvocationValue[R]
     def flatMap[R](f:T => InvocationValue[R]):InvocationValue[R]
     def withFilter(f:T => Boolean):WithFilter[T]
     
     // Access to the results of the computation. Most calling code should ignore this, and allow
     // inv2QValue to tie it all back together again.
-    def get:Iterable[T]
-    def getError:Option[QValue]
-    def getReturnType:Option[PType[_]]
-    def preferredColl:Option[Collection]
+    def get:Future[Iterable[T]]
+//    def getError:Future[Option[QValue]]
+//    def getReturnType:Option[PType[_]]
+//    def preferredColl:Option[Collection]
   }
   
   /**
@@ -82,6 +80,11 @@ package object ql {
      * Turns an arbitrary value into an InvocationValue, for use in a for comprehension.
      */
     def wrap[T](v:T):InvocationValue[T]
+    
+    /**
+     * Wraps a Future into Invocation-speak.
+     */
+    def fut[T](fut:Future[T]):InvocationValue[T]
     
     /**
      * Turns an Option value into an InvocationValue, so they can be used in a for comprehension together.
@@ -209,6 +212,8 @@ package object ql {
      */
     def definingContextAsPropertyOf[VT](targetType:PType[VT]):InvocationValue[Property[VT,_]]
     
+    def definingContextAsOptionalPropertyOf[VT](targetType:PType[VT]):InvocationValue[Option[Property[VT,_]]]
+    
     /**
      * Process and return the specific parameter, assuming nothing about the results.
      */
@@ -299,8 +304,7 @@ package object ql {
     /**
      * Internal method, usually invoked implicitly by inv2QValue.
      */
-    def inv2QValueImpl(inv:InvocationValue[QValue]):QValue
-    def inv2QValueFutImpl(inv:InvocationValue[Future[QValue]]):Future[QValue]
+    def inv2QValueImpl(inv:InvocationValue[QValue]):QFut
     
     /**
      * The primary entry point for processing a body of QLText into Wikitext.

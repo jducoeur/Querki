@@ -222,7 +222,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with Ratings with IntTypeBasis
           |This Function will eventually be broadened, to let you calculate averages of Lists and Sets of numbers more
           |generally. If you need that, please speak up, and we'll prioritize it.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         summary <- inv.contextAllAs(RatingSummarizer)
         (avg, n) = calcAverage(summary.content.toSeq)

@@ -17,6 +17,8 @@ trait MethodDefs { self:QuerkiEcot =>
   
   lazy val QUnit = Core.QUnit
   
+  type QFut = querki.values.QFut
+  
   class MethodThingOps(method:InternalMethod) extends PropertyThingOps(method) 
   {
     // Okay, this is a bit horrible, bouncing back and forth to the Thing like this. But
@@ -38,17 +40,9 @@ trait MethodDefs { self:QuerkiEcot =>
      * need to return a plain QValue. Note that this will get wrapped by Future.successful()
      * before being passed up the line.
      */
-    def qlApply(inv:Invocation):QValue = {
+    def qlApply(inv:Invocation):QFut = {
       // By default, we just pass the incoming context right through:
-      inv.context.value
-    }
-    
-    /**
-     * Concrete methods should override this if they need to return a Future instead of
-     * a raw QValue.
-     */
-    def qlApplyFut(inv:Invocation):Future[QValue] = {
-      Future.successful(qlApply(inv))
+      Future.successful(inv.context.value)
     }
     
     /**
@@ -56,7 +50,7 @@ trait MethodDefs { self:QuerkiEcot =>
      * QLContext.
      */
     def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
-      qlApplyFut(inv).map(next => inv.context.nextFrom(next, transformThing))
+      qlApply(inv).map(next => inv.context.nextFrom(next, transformThing))
     }
     
     override def thingOps(e:Ecology):ThingOps = new MethodThingOps(this)
@@ -77,7 +71,7 @@ trait MethodDefs { self:QuerkiEcot =>
       Details(details)
     ))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         thing <- inv.contextFirstThing
       }

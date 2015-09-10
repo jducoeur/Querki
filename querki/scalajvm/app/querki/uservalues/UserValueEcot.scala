@@ -241,7 +241,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
       Summary("Fetch all of the User Values for this Property on this Thing, for all Users"),
       Details("""    THING -> PROP._userValues -> USER VALUES""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         // First, figure out the Thing and Prop we're working with:
         thingId <- inv.contextAllAs(LinkType)
@@ -273,7 +273,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
           |Note that, for the moment, this fetches all of the User Values for *all* Properties. We will
           |probably add a Property-specific variant eventually, but this seems more generally useful.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         identity <- inv.contextAllAs(IdentityType)
         msg = UserValuePersistRequest(
@@ -302,7 +302,7 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
       Details("""This function is expensive, and should not be called unless you have reason to believe that
           |something has gotten out of sync. It is usually invoked from a button on the Property's own page.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       // Make sure that the parameters are valid...
       val prepInv:InvocationValue[(Property[_,_], OID)] = for {
         prop <- inv.preferDefiningContext.definingContextAsProperty
@@ -312,40 +312,42 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
       }
         yield (prop, summaryPropId)
       
-      prepInv.get.headOption match {
-        case Some((prop, summaryId)) => {
-          // ... go fetch the actual User Values for this Property...
-          val msg = UserValuePersistRequest(
-                  inv.context.request.requesterOrAnon, inv.state.id, 
-                  LoadAllPropValues(prop, inv.state))
-          // IMPORTANT: note that this wanders off into asynchrony. It is *not* fundamentally evil, since we don't
-          // block on the response, but we don't actually give the user any interesting feedback.
-          // TODO: once QL has the ability to cope with asynchronous functions, this should become one.
-          val fut = SpaceOps.askSpace2(msg) {
-            case ValuesForUser(values) => {
-              // ... and tell the SpaceManager to recompute the Summaries. (Note that the handler for this is above.)
-	          val msg = SpacePluginMsg(inv.context.request.requesterOrAnon, inv.state.id, RecalculateSummaries(prop, summaryId, values))
-	          // End of the line -- just fire and forget at this point:
-	          SpaceOps.spaceManager ! msg
-	          Future.successful {}
+      prepInv.get.map { pi =>
+        pi.headOption match {
+          case Some((prop, summaryId)) => {
+            // ... go fetch the actual User Values for this Property...
+            val msg = UserValuePersistRequest(
+                    inv.context.request.requesterOrAnon, inv.state.id, 
+                    LoadAllPropValues(prop, inv.state))
+            // IMPORTANT: note that this wanders off into asynchrony. It is *not* fundamentally evil, since we don't
+            // block on the response, but we don't actually give the user any interesting feedback.
+            // TODO: once QL has the ability to cope with asynchronous functions, this should become one.
+            val fut = SpaceOps.askSpace2(msg) {
+              case ValuesForUser(values) => {
+                // ... and tell the SpaceManager to recompute the Summaries. (Note that the handler for this is above.)
+    	          val msg = SpacePluginMsg(inv.context.request.requesterOrAnon, inv.state.id, RecalculateSummaries(prop, summaryId, values))
+    	          // End of the line -- just fire and forget at this point:
+    	          SpaceOps.spaceManager ! msg
+    	          Future.successful {}
+              }
+              case other => QLog.error(s"LoadAllPropValues for ${prop.displayName} in Space ${inv.state} got response $other"); Future.successful {}
             }
-            case other => QLog.error(s"LoadAllPropValues for ${prop.displayName} in Space ${inv.state} got response $other"); Future.successful {}
+            // Force the Future to evaluate once it is ready:
+            fut.onComplete(t => {})
+            
+            Html.HtmlValue(s"""<div class="alert">
+              |<button type="button" class="close" data-dismiss="alert">&times;</button>
+              |Rebuilding User Value Summaries for ${prop.displayName}. This should be ready in a moment.
+              |</div>""".stripMargin) 
           }
-          // Force the Future to evaluate once it is ready:
-          fut.onComplete(t => {})
-          
-          Html.HtmlValue(s"""<div class="alert">
-            |<button type="button" class="close" data-dismiss="alert">&times;</button>
-            |Rebuilding User Value Summaries for ${prop.displayName}. This should be ready in a moment.
-            |</div>""".stripMargin) 
-        }
-        case None => {
-          // Huh -- how did we get here? The button to invoke _updatePropSummaries is displayed in CoreEcot, and isn't
-          // supposed to display unless this Property has a Summary Link:
-          Html.HtmlValue(s"""<div class="alert">
-            |<button type="button" class="close" data-dismiss="alert">&times;</button>
-            |ERROR: That Property doesn't have a Summary Link defined!
-            |</div>""".stripMargin)          
+          case None => {
+            // Huh -- how did we get here? The button to invoke _updatePropSummaries is displayed in CoreEcot, and isn't
+            // supposed to display unless this Property has a Summary Link:
+            Html.HtmlValue(s"""<div class="alert">
+              |<button type="button" class="close" data-dismiss="alert">&times;</button>
+              |ERROR: That Property doesn't have a Summary Link defined!
+              |</div>""".stripMargin)          
+          }
         }
       }
     }

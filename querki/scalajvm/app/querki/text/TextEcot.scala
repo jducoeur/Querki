@@ -36,7 +36,7 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	          |Note that this behaviour is pretty English-specific. We expect that other variations will
 	          |be needed for other languages in the long run.""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QValue = {
+	  override def qlApply(inv:Invocation):QFut = {
 	    val context = inv.context
 	    val paramsOpt = inv.paramsOpt
 	    
@@ -54,9 +54,9 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	      phrase = chooseParam(params);
 	      parser <- context.parser
 	    )
-	      yield awaitHack(parser.processPhrase(phrase.ops, context.asCollection)).value
+	      yield parser.processPhrase(phrase.ops, context.asCollection).map(_.value)
 	      
-	    result.getOrElse(QL.WarningValue("_pluralize requires exactly two parameters"))
+	    result.getOrElse(QL.WarningFut("_pluralize requires exactly two parameters"))
 	  }
 	}
 	
@@ -88,7 +88,7 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	          |be rendered into their default forms before getting combined. But at the end of _join, what you get back is
 	          |one big block of QText. You can't do any further processing on the elements after this.""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QValue = {
+	  override def qlApply(inv:Invocation):QFut = {
 	    val context = inv.context
 	    val paramsOpt = inv.paramsOpt
 	    
@@ -98,15 +98,17 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	      case Some(params) if (params.length > 2) => (Some(params(0)), Some(params(1)), Some(params(2)))
 	      case _ => (None, None, None)
 	    }
-	    def renderParam(paramOpt:Option[QLPhrase]):Wikitext = {
+	    def renderParam(paramOpt:Option[QLPhrase]):Future[Wikitext] = {
 	      paramOpt match {
 	        case Some(param) => {
 	          val collContext = context.asCollection
-	          val paramVal = awaitHack(context.parser.get.processPhrase(param.ops, collContext)).value
-	          val renderedParam = awaitHack(paramVal.pType.wikify(context)(paramVal.first))
-	          renderedParam
+            for {
+	            paramVal <- context.parser.get.processPhrase(param.ops, collContext).map(_.value)
+	            renderedParam <- paramVal.pType.wikify(context)(paramVal.first)
+            }
+	            yield renderedParam
 	        }
-	        case _ => Wikitext.empty
+	        case _ => Future.successful(Wikitext.empty)
 	      }
 	    }
 	
@@ -119,7 +121,7 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	        val sep = renderParam(sepPhrase)
 	        renderParam(openPhrase) + (renderedList.head /: renderedList.tail) ((total, next) => total + sep + next) + renderParam(closePhrase)
 	      }
-	    QL.WikitextValue(result)
+	    QL.WikitextFut(result)
 	  }
 	}
 	
@@ -141,7 +143,7 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	          |
 	          |This will probably get moved to a text-manipulation Mixin at some time down the road.""".stripMargin)))
   {
-	override def qlApply(inv:Invocation):QValue = {
+	override def qlApply(inv:Invocation):QFut = {
 	  for {
 	    lexicalProp <- inv.opt(inv.context.parser.flatMap(_.lexicalProp))
 	    call <- inv.opt(findCall(inv, lexicalProp))

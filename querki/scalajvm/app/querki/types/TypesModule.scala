@@ -206,7 +206,7 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
             |
             |This function is quite advanced, and doesn't do much hand-holding yet.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         prop <- inv.definingContextAsProperty
         v <- inv.processParam(0)

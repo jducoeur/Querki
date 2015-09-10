@@ -41,17 +41,15 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
    * PUBLIC API
    ***********************************************/
   
-  def inv2QValueFutImpl(inv:InvocationValue[Future[QValue]]):Future[QValue] = {
-    val fut = Future.sequence(inv.get)
-    fut.map(qvs => qvUnpack(inv, qvs))
-  }
-  
-  def qvUnpack(inv:InvocationValue[_], qvs:Iterable[QValue]):QValue = {
+  def qvUnpack(data:IVData[QValue]):QValue = {
+    val qvs = data.vs
+    val returnType = data.metadata.returnType
+    val preferredColl = data.metadata.preferredColl
     // This code originally lived in QLContext.collect(). It is still kind of iffy, but is
     // conceptually Iterable[QValue].flatten:
     val pt = {
       if (qvs.isEmpty)
-        inv.getReturnType match {
+        returnType match {
           // This means that the calling code called Invocation.returnsType:
           case Some(ipt) => ipt
           // TODO: we might want to turn this into a logged warning. It can cause problems downstream if,
@@ -59,11 +57,11 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
           case None => Core.UnknownType
         }
       else
-        qvs.find(qv => qv.pType != Core.UnknownType).map(_.pType).getOrElse(inv.getReturnType.getOrElse(Core.UnknownType))
+        qvs.find(qv => qv.pType != Core.UnknownType).map(_.pType).getOrElse(returnType.getOrElse(Core.UnknownType))
     }
     val ct = {
-      if (inv.preferredColl.isDefined)
-        inv.preferredColl.get
+      if (preferredColl.isDefined)
+        preferredColl.get
       else if (qvs.isEmpty)
         Core.Optional
       else
@@ -92,10 +90,16 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
     newCT.makePropValue(raw, pt)    
   }
   
-  def inv2QValueImpl(inv:InvocationValue[QValue]):QValue = {
-    inv.getError.getOrElse {
-      qvUnpack(inv, inv.get)
+  def inv2QValueImpl(invRaw:InvocationValue[QValue]):QFut = {
+    val inv = invRaw.asInstanceOf[InvocationValueImpl[QValue]]
+    val recovered:Future[IVData[QValue]] = inv.fut.recoverWith {
+      case ex:PublicException => {
+        val msg = ex.display(Some(inv.inv.context.request))
+        Future.successful(IVData(Some(QL.WarningValue(msg))))
+      }
     }
+    
+    recovered.map(data => qvUnpack(data))
   }
   
   def process(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 
@@ -202,8 +206,8 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
 	          |Link to that Thing. It is never necessary for ordinary Things, but frequently useful when \_apply
 	          |has been defined on it.""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QValue = {
-	    inv.definingContext.get.value
+	  override def qlApply(inv:Invocation):QFut = {
+	    Future.successful(inv.definingContext.get.value)
 	  }
 	}
 	
@@ -227,14 +231,14 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
 	          |_code is, frankly, a bit persnickety at this point, and not always easy to use for complicated examples. It should be
 	          |considered a work in progress.""".stripMargin)))
 	{
-	  def encodeString(str:String):QValue = {
+	  def encodeString(str:String):QFut = {
 	    val escaped = scala.xml.Utility.escape(str)
-	    HtmlUI.HtmlValue(QHtml("<pre>" + escaped + "</pre>"))    
+	    Future.successful(HtmlUI.HtmlValue(QHtml("<pre>" + escaped + "</pre>")))    
 	  }
 	  
-	  def encode(propVal:QValue, pType:PType[_]):QValue = {
+	  def encode(propVal:QValue, pType:PType[_]):QFut = {
 	    if (propVal.isEmpty)
-	      WarningValue("_code got an empty input")
+	      WarningFut("_code got an empty input")
 	    else {
 	      pType match {
 	        case codeType:CodeType => {
@@ -244,12 +248,12 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
 	        case ParsedTextType => {
 	          encodeString(propVal.firstTyped(ParsedTextType).map(_.plaintext).getOrElse(""))
 	        }
-	        case _ => WarningValue("_code doesn't work with type " + pType.displayName)
+	        case _ => WarningFut("_code doesn't work with type " + pType.displayName)
 	      }
 	    }
 	  }
 	  
-	  def encodeThingAndProp(thing:Thing, prop:Thing)(implicit space:SpaceState):Option[QValue] = {
+	  def encodeThingAndProp(thing:Thing, prop:Thing)(implicit space:SpaceState):Option[QFut] = {
 	    val propAndValOpt = thing.getPropOpt(prop.id)
 	    propAndValOpt.map { propAndVal => 
 	      encode(propAndVal.v, propAndVal.prop.pType)
@@ -258,7 +262,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
 	  
 	  // TODO: this is horrible. Surely we can turn this into something cleaner with better use of the functional
 	  // tools in the Scala toolbelt.
-	  override def qlApply(inv:Invocation):QValue = {
+	  override def qlApply(inv:Invocation):QFut = {
 	    val partialContext = inv.preferDefiningContext.context
 	    implicit val space = partialContext.state
 	    inv.paramsOpt match {
@@ -291,8 +295,9 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
 	                  case Some(propThing) => {
 	                    for {
 	                      thing <- inv.contextAllThings
+                        res <- inv.fut(encodeThingAndProp(thing, propThing).getOrElse(encodeString(phrase.reconstructString)))
 	                    }
-	                      yield encodeThingAndProp(thing, propThing).getOrElse(encodeString(phrase.reconstructString))
+	                      yield res
 	                  }
 	                  case None => encodeString(phrase.reconstructString)
 	                }
