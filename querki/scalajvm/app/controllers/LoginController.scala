@@ -314,6 +314,7 @@ class LoginController extends ApplicationBase {
           case Some(user) => {
             QLog.spew("Login succeeded; sending cookie")
             val redirectOpt = rc.sessionCookie(rc.returnToParam)
+            QLog.spew(s"RedirectOpt = $redirectOpt; user.toSession = ${user.toSession}")
     		    redirectOpt match {
     		      case Some(redirect) => { QLog.spew("Got redirect"); Redirect(redirect).withSession(user.toSession:_*) }
     		      case None => { QLog.spew("No redirect -- sending to index"); Redirect(indexRoute).withSession(user.toSession:_*) }
