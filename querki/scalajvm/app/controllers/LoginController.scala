@@ -303,24 +303,20 @@ class LoginController extends ApplicationBase {
   def login = Redirect(indexRoute)
   
   def dologin = Action.async { implicit request =>
-    QLog.spew("Got a login request")
     val rc = PlayRequestContextFull(request, None, UnknownOID)
     userForm.bindFromRequest.fold(
-      errors => spewing("Login request didn't parse") { doError(indexRoute, "I didn't understand that") },
+      errors => doError(indexRoute, "I didn't understand that"),
       form => {
-        QLog.spew(s"Checking login for ${form.name}")
         val userOpt = UserAccess.checkQuerkiLogin(form.name, form.password)
         userOpt match {
           case Some(user) => {
-            QLog.spew("Login succeeded; sending cookie")
             val redirectOpt = rc.sessionCookie(rc.returnToParam)
-            QLog.spew(s"RedirectOpt = $redirectOpt; user.toSession = ${user.toSession}")
     		    redirectOpt match {
-    		      case Some(redirect) => { QLog.spew("Got redirect"); Redirect(redirect).withSession(user.toSession:_*) }
-    		      case None => { QLog.spew("No redirect -- sending to index"); Redirect(indexRoute).withSession(user.toSession:_*) }
+    		      case Some(redirect) => Redirect(redirect).withSession(user.toSession:_*)
+    		      case None => Redirect(indexRoute).withSession(user.toSession:_*)
     		    }
           }
-          case None => spewing("LOGIN FAILED!") { doError(indexRoute, "Login failed. Please try again.") }
+          case None => doError(indexRoute, "Login failed. Please try again.")
         }
       }
     )

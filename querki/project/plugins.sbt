@@ -11,7 +11,7 @@ resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repos
 resolvers += "bintray/non" at "http://dl.bintray.com/non/maven"
 
 // Use the Play sbt plugin for Play projects
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.3.9")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.3.10")
 
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.4")
 addSbtPlugin("com.vmunier" % "sbt-play-scalajs" % "0.2.6")
