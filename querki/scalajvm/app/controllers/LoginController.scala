@@ -1,6 +1,6 @@
 package controllers
 
-import scala.concurrent.ExecutionContext.Implicits.global 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util._
 
@@ -14,10 +14,10 @@ import models._
 
 import querki.ecology._
 import querki.email.EmailAddress
+import querki.globals._
 import querki.identity._
 import querki.spaces.messages._
 import querki.time.DateTime
-import querki.util._
 import querki.values.QLRequestContext
 
 case class PasswordChangeInfo(password:String, newPassword:String, newPasswordAgain:String)
@@ -303,20 +303,23 @@ class LoginController extends ApplicationBase {
   def login = Redirect(indexRoute)
   
   def dologin = Action.async { implicit request =>
+    QLog.spew("Got a login request")
     val rc = PlayRequestContextFull(request, None, UnknownOID)
     userForm.bindFromRequest.fold(
-      errors => doError(indexRoute, "I didn't understand that"),
+      errors => spewing("Login request didn't parse") { doError(indexRoute, "I didn't understand that") },
       form => {
+        QLog.spew(s"Checking login for ${form.name}")
         val userOpt = UserAccess.checkQuerkiLogin(form.name, form.password)
         userOpt match {
           case Some(user) => {
+            QLog.spew("Login succeeded; sending cookie")
             val redirectOpt = rc.sessionCookie(rc.returnToParam)
     		    redirectOpt match {
-    		      case Some(redirect) => Redirect(redirect).withSession(user.toSession:_*)
-    		      case None => Redirect(indexRoute).withSession(user.toSession:_*)
+    		      case Some(redirect) => { QLog.spew("Got redirect"); Redirect(redirect).withSession(user.toSession:_*) }
+    		      case None => { QLog.spew("No redirect -- sending to index"); Redirect(indexRoute).withSession(user.toSession:_*) }
     		    }
           }
-          case None => doError(indexRoute, "Login failed. Please try again.")
+          case None => spewing("LOGIN FAILED!") { doError(indexRoute, "Login failed. Please try again.") }
         }
       }
     )
