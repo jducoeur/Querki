@@ -56,9 +56,6 @@ package object ql {
     // Access to the results of the computation. Most calling code should ignore this, and allow
     // inv2QValue to tie it all back together again.
     def get:Future[Iterable[T]]
-//    def getError:Future[Option[QValue]]
-//    def getReturnType:Option[PType[_]]
-//    def preferredColl:Option[Collection]
   }
   
   /**

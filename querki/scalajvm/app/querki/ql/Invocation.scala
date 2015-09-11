@@ -60,7 +60,7 @@ private[ql] case class InvocationValueImpl[T](inv:Invocation, fut:Future[IVData[
       val subFuts = subs.map(_.fut)
       Future.sequence(subFuts) map { subDatas =>
         val resultVs = subDatas.map(_.vs).flatten
-        val resultMetas = (IVMetadata() /: subDatas.map(_.metadata)) (_ + _)
+        val resultMetas = (data.metadata /: subDatas.map(_.metadata)) (_ + _)
         IVData(resultVs, resultMetas)
       }
     }
@@ -81,12 +81,6 @@ private[ql] case class InvocationValueImpl[T](inv:Invocation, fut:Future[IVData[
   def withFilter(f:T => Boolean):WithFilter[T] = new WithFilterImpl(f)
     
   def get:Future[Iterable[T]] = fut.map(_.vs)
-//  def getError:Future[Option[QValue]] = errOpt.map { ex =>
-//    val msg = ex.display(Some(inv.context.request))
-//    QL.WarningValue(msg) 
-//  }
-//  def getReturnType:Option[PType[_]] = metadata.returnType
-//  def preferredColl:Option[Collection] = metadata.preferredColl
 }
 
 object InvocationValueImpl {
