@@ -504,7 +504,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	      ql = HtmlEscape.escapeQuotes(qlRaw.reconstructString)
         target <- inv.processParamFirstOr(2, ParsedTextType, Wikitext(""))
 	      (targetName, targetDiv) =
-          if (target.internal.length() == 0) {
+          if (target.plaintext.length() == 0) {
             val name = "target-" + scala.util.Random.nextInt.toString 
             (name, s"""<div id="$name"></div>""")
           } else {
