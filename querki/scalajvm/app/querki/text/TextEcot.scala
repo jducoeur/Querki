@@ -104,7 +104,7 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	          val collContext = context.asCollection
             for {
 	            paramVal <- context.parser.get.processPhrase(param.ops, collContext).map(_.value)
-	            renderedParam <- paramVal.pType.wikify(context)(paramVal.first)
+	            renderedParam <- paramVal.firstOpt.map(elem => paramVal.pType.wikify(context)(elem)).getOrElse(Future.successful(Wikitext.empty))
             }
 	            yield renderedParam
 	        }
