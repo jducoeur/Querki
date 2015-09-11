@@ -169,7 +169,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
 	          |to load. It is usually appropriate to show the thumbnail when you are listing a bunch of photos,
 	          |instead of each full-sized one.""".stripMargin)))
   {
-	override def qlApply(inv:Invocation):QValue = {
+	override def qlApply(inv:Invocation):QFut = {
 	  for {
 	    dummy <- inv.returnsType(PhotoType)
 	    bundle <- inv.contextAllBundles
@@ -198,7 +198,7 @@ class PhotoEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Ecol
           |
           |It is legal, but usually pointless, to use this function with Exactly One or Optional Photo.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         dummy <- inv.returnsType(PhotoType)
         // Note that we intentionally only use the first one, but we need to guard against the received value

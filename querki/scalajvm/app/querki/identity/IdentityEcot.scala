@@ -215,17 +215,15 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
       Summary("Given a Link to an Identity, this fetches that Identity"),
       Details("This function is currently a bit problematic. Please don't over-use it. Eventually it will be less dangerous.")))
   {
-    override def qlApplyFut(inv:Invocation):Future[QValue] = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         link <- inv.contextAllAs(Core.LinkType)
+        identityOpt <- inv.fut(getIdentity(link))
       }
-        yield for {
-          identityOpt <- getIdentity(link)
+        yield identityOpt match {
+          case Some(identity) => ExactlyOne(IdentityType(identity))
+          case None => EmptyValue(IdentityType)
         }
-          yield identityOpt match {
-            case Some(identity) => ExactlyOne(IdentityType(identity))
-            case None => EmptyValue(IdentityType)
-          }
     }    
   }
   

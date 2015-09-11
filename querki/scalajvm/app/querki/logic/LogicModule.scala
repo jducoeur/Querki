@@ -44,31 +44,22 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	          |_or takes any number of parameters. It runs through each of them, applying the incoming context.
 	          |It produces the first one that returns a non-empty result, or None iff all of them come out empty.""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QValue = {
+	  override def qlApply(inv:Invocation):QFut = {
 	    val context = inv.context
 	    val paramsOpt = inv.paramsOpt
 	    
 	    paramsOpt match {
 	      case Some(params) => {
-	        val result = (Option.empty[QValue] /: params) { (current, phrase) =>
-	          current match {
-	            case Some(result) => Some(result)
-	            case None => {
-	              val oneResult = awaitHack(context.parser.get.processPhrase(phrase.ops, context))
-	              if (oneResult.value.isEmpty)
-	                None
-	              else
-	                Some(oneResult.value)  
-	            }
-	          }
-	        }
+          val resultFut = Future.sequence(params.map(phrase => context.parser.get.processPhrase(phrase.ops, context)))
+	        val result = resultFut.map(_.find(oneResult => !(oneResult.value.isEmpty)).map(_.value))
+
 	        // If we got nothing out, then produce an empty list of the incoming type
 	        // TBD: this really isn't the correct type to produce -- ideally, the type should
 	        // be the one that would be output by the various parameter phrases. How can we
 	        // suss that?
-	        result.getOrElse(EmptyValue(context.value.pType))
+	        result.map(_.getOrElse(EmptyValue(context.value.pType)))
 	      }
-	      case None => QL.WarningValue("_firstNonEmpty() is meaningless if you don't give it any parameters")
+	      case None => QL.WarningFut("_firstNonEmpty() is meaningless if you don't give it any parameters")
 	    }
 	  }
 	}
@@ -83,17 +74,17 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	          |
 	          |_not takes the parameter if one is given, or the received value if not. It returns True iff that it False, and False if it is anything else""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QValue = {
+	  override def qlApply(inv:Invocation):QFut = {
 	    val context = inv.context
 	    val paramsOpt = inv.paramsOpt
 	    
 	    val inVal = paramsOpt match {
 	      case Some(params) if (params.length == 1) => {
-	        awaitHack(context.parser.get.processPhrase(params(0).ops, context)).value
+	        context.parser.get.processPhrase(params(0).ops, context).map(_.value)
 	      }
-	      case _ => context.value
+	      case _ => Future.successful(context.value)
 	    }
-	    !toBoolean(inVal)
+	    inVal.map(v => !toBoolean(v))
 	  }
 	}
 	
@@ -112,32 +103,20 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	          |though, note that IFCLAUSE and ELSECLAUSE are *inside* the parentheses, rather than after them as most languages
 	          |have it.""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QValue = {
-	    val context = inv.context
-	    val paramsOpt = inv.paramsOpt
-	    
-	    paramsOpt match {
-	      case Some(params) if (params.length > 1) => {
-	        val predicatePhrase = params(0)
-	        val ifCase = params(1)
-	        val predResult = awaitHack(context.parser.get.processPhrase(predicatePhrase.ops, context))
-	        predResult.value.firstAs(QL.ErrorTextType) match {
-	          case Some(errMsg) => predResult.value
-	          case None => {
-		        if (toBoolean(predResult.value)) {
-		          awaitHack(context.parser.get.processPhrase(ifCase.ops, context)).value
-		        } else if (params.length > 2) {
-		          val elseCase = params(2)
-		          awaitHack(context.parser.get.processPhrase(elseCase.ops, context)).value
-		        } else {
-		          // TODO: the type here is chosen arbitrarily, but it *should* be the same type as the ifCase.
-		          EmptyValue(Core.UnknownType)
-		        }
-	          }
-	        }
-	      }
-	      case _ => QL.WarningValue("_if requires at least two parameters.")
-	    }
+	  override def qlApply(inv:Invocation):QFut = {
+      for {
+        predicate <- inv.processParamFirstAs(0, YesNoType)
+        result <-
+          if (predicate)
+            inv.processParam(1)
+          else if (inv.numParams > 2)
+            // There's an else clause
+            inv.processParam(2)
+          else
+            // No else clause
+            inv.wrap(Core.QNone)
+      }
+        yield result
 	  }
 	}
 	
@@ -169,12 +148,12 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
   /**
    * The general pattern for binary operators.
    */
-  def binaryComparer(inv:Invocation)(comparer:(PType[_], ElemValue, ElemValue) => Boolean):QValue = {
-	for {
-	  first <- inv.processParamNofM(0, 2)
-	  second <- inv.processParamNofM(1, 2)
-	}
-	  yield boolean2YesNoQValue(compareValues(first, second)(comparer))    
+  def binaryComparer(inv:Invocation)(comparer:(PType[_], ElemValue, ElemValue) => Boolean):QFut = {
+  	for {
+  	  first <- inv.processParamNofM(0, 2)
+  	  second <- inv.processParamNofM(1, 2)
+  	}
+  	  yield boolean2YesNoQValue(compareValues(first, second)(comparer))    
   }
 	
   lazy val EqualsMethod = new InternalMethod(EqualsMethodOID,
@@ -189,9 +168,9 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	        |    VALUE -> _equals(EXP) -> YES OR NO
 	        |This receives a VALUE, and tells you whether it matches the given EXP.""".stripMargin)))
   {  
-	override def qlApply(inv:Invocation):QValue = {
-	  binaryComparer(inv)( (pt, elem1, elem2) => pt.matches(elem1, elem2) )
-	}
+  	override def qlApply(inv:Invocation):QFut = {
+  	  binaryComparer(inv)( (pt, elem1, elem2) => pt.matches(elem1, elem2) )
+  	}
   }
 	
   lazy val LessThanMethod = new InternalMethod(LessThanMethodOID,
@@ -206,9 +185,9 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	        |    VALUE -> _lessThan(EXP) -> YES OR NO
 	        |This receives a VALUE, and tells you whether it is less than the given EXP.""".stripMargin)))
   {  
-	override def qlApply(inv:Invocation):QValue = {
-	  binaryComparer(inv)( (pt, elem1, elem2) => pt.comp(inv.context)(elem1, elem2) )
-	}
+  	override def qlApply(inv:Invocation):QFut = {
+  	  binaryComparer(inv)( (pt, elem1, elem2) => pt.comp(inv.context)(elem1, elem2) )
+  	}
   }
 	
   lazy val GreaterThanMethod = new InternalMethod(GreaterThanMethodOID,
@@ -223,13 +202,13 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	        |    VALUE -> _greaterThan(EXP) -> YES OR NO
 	        |This receives a VALUE, and tells you whether it is greater than the given EXP.""".stripMargin)))
   {  
-	override def qlApply(inv:Invocation):QValue = {
-	  binaryComparer(inv) { (pt, elem1, elem2) =>
-	    // This one's slightly complex. pt.comp() returns false iff the second value is greater than *or* equal to
-	    // the first. So we need to also do an equality comparison.
-	    !pt.comp(inv.context)(elem1, elem2) && !pt.matches(elem1, elem2) 
-	  }
-	}
+  	override def qlApply(inv:Invocation):QFut = {
+  	  binaryComparer(inv) { (pt, elem1, elem2) =>
+  	    // This one's slightly complex. pt.comp() returns false iff the second value is greater than *or* equal to
+  	    // the first. So we need to also do an equality comparison.
+  	    !pt.comp(inv.context)(elem1, elem2) && !pt.matches(elem1, elem2) 
+  	  }
+  	}
   }
   
   /**
@@ -258,10 +237,10 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
             |_or takes one or more parameters, and produces true if and only if at least one of those parameters
             |is true.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       val results = computeBooleans(inv)
         
-      results.get.exists(v => v)
+      results.get.map(_.exists(v => v))
     }
   }
 	
@@ -273,10 +252,10 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
             |_and takes one or more parameters, and produces true if and only if all of those parameters
             |are true.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       val results = computeBooleans(inv)
         
-      !results.get.exists(v => !v)
+      results.get.map(r => !(r.exists(v => !v)))
     }
   }
 	
@@ -296,7 +275,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
    ******************************************/
   
   class BooleanThingOps(v:BooleanValue) extends ThingOps(v) {
-    override def qlApply(inv:Invocation):Future[QValue] = Future.successful(v.v)    
+    override def qlApply(inv:Invocation):QFut = Future.successful(v.v)    
   }
   class BooleanValue(tid:OID, elem:ElemValue, pf:PropFetcher) extends ThingState(tid, systemOID, RootOID, pf)
   {

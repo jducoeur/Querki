@@ -112,30 +112,31 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
       // Need to shortcut with some mutation, since we don't have a good way to get this
       // side-effect out:
       var newState:Option[SpaceState] = None
-      val vFut:Future[QValue] = for {
+      val vFut:QFut = for {
         model <- inv.contextFirstThing
-        msg = CreateThing(inv.context.request.requesterOrAnon, inv.context.state, Kind.Thing, model.id, getInitialProps(inv))
-        newThingIdFut = spaceRegion ? msg map { 
+        initialProps <- inv.fut(getInitialProps(inv))
+        msg = CreateThing(inv.context.request.requesterOrAnon, inv.context.state, Kind.Thing, model.id, initialProps)
+        newThingId <- inv.fut(spaceRegion ? msg map { 
           case ThingFound(id, s) => {
             newState = Some(s)
             id
           }
-        }
+        })
       }
-        yield newThingIdFut.map(newThingId => ExactlyOne(LinkType(newThingId)))
+        yield ExactlyOne(LinkType(newThingId))
         
       vFut.map(v => inv.context.nextFrom(v, transformThing).withState(newState.get))
     }
     
-    def getInitialProps(inv:Invocation):PropMap = {
+    def getInitialProps(inv:Invocation):Future[PropMap] = {
       val linkBack = for {
-        definingContext <- inv.definingContext
-        linkProp = inv.definingContextAsPropertyOf(LinkType).get.head
-        lexicalThing <- inv.lexicalThing match { case Some(t:Thing) => Some(t); case _ => None }
+        linkPropOpt <- inv.definingContextAsOptionalPropertyOf(LinkType)
+        linkProp <- inv.opt(linkPropOpt)
+        lexicalThing <- inv.opt(inv.lexicalThing match { case Some(t:Thing) => Some(t); case _ => None })
        }
         yield Map(linkProp(ExactlyOne(LinkType(lexicalThing))))
         
-      linkBack.getOrElse(emptyProps)
+      linkBack.get.map(_.headOption.getOrElse(emptyProps))
     }
   }
   

@@ -1,7 +1,9 @@
 package querki.datamodel
 
-import querki.ecology._
 import models.{Kind, PType}
+
+import querki.ecology._
+import querki.globals._
 import querki.ql.{QLCall, QLPhrase}
 import querki.spaces.ThingChangeRequest
 import querki.util.{Contributor, PublicException, Publisher}
@@ -168,7 +170,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |
           |If you have sub-Models under *Model* (that add more Properties, for example), this will include those as well.""".stripMargin)))
   {
-    override def qlApply(invIn:Invocation):QValue = {
+    override def qlApply(invIn:Invocation):QFut = {
       val inv = invIn.preferDefiningContext
       for (
         thing <- inv.contextAllThings
@@ -197,7 +199,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |
           |Note that this always returns a List, since any number of Things could be pointing to this.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         dummy <- inv.preferCollection(QList)
         prop <- inv.definingContextAsPropertyOf(LinkType)
@@ -277,7 +279,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |You typically use _isDefined with a Tag Property. It is simply a way to ask "is there actually something
           |with this name?", so that you can handle it differently depending on whether there is or not.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         dummy <- inv.returnsType(YesNoType)
         elem <- inv.contextElements
@@ -335,13 +337,13 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |    ... -> _if(_equals(_kind, _kind(Property)), ...)
           |""".stripMargin)))
   { 
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       inv.paramsOpt match {
         // First version of this function: if there is a parameter, it should be the name of a Kind:
         case Some(params) => {
           val param = params(0);
           val QLCall(kindName, _, _, _) = param.ops(0)
-          Kind.fromName(kindName.name).map(kind => ExactlyOne(IntType(kind))).getOrElse(QL.WarningValue("Unknown Kind: " + kindName))
+          Future.successful(Kind.fromName(kindName.name).map(kind => ExactlyOne(IntType(kind))).getOrElse(QL.WarningValue("Unknown Kind: " + kindName)))
         }
       
         // Second version: return the Kind of the received value:
@@ -371,7 +373,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     |inside _if(). For instance, to check whether a Property is of Text Type:
     |    MyProp.Property Type -> _if(_is(Text Type), ...)""".stripMargin)))
   { 
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for 
       (
         receivedId <- inv.contextAllAs(LinkType);
@@ -417,7 +419,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     |Note that you must specify _self on the Property's name -- the parameter is the Property itself,
     |not its value on this Thing.""".stripMargin)))
   { 
-	override def qlApply(inv:Invocation):QValue = {
+	override def qlApply(inv:Invocation):QFut = {
 	  for (
 	    thing <- inv.contextAllThings;
 	    propOid <- inv.processParamFirstAs(0, LinkType)
@@ -444,7 +446,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
       Details("""This will not work for every possible conversion -- at the moment, it depends on whether
           |the two types serialize in compatible ways. But it works in many cases.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       implicit val s = inv.state
       for {
         newTypeId <- inv.processParamFirstAs(0, LinkType)
@@ -463,7 +465,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
       setName("_model"),
       Summary("Produces the Model of the received Thing")))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         thing <- inv.contextAllThings
       }

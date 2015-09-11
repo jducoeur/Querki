@@ -103,7 +103,7 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
           |the Value of that Property in this Thing or Model Value. You can access those parts using the _prop and _val
           |functions.""".stripMargin)))
   {
-    override def qlApply(invIn:Invocation):QValue = {
+    override def qlApply(invIn:Invocation):QFut = {
       val inv = invIn.preferDefiningContext
       implicit val state = inv.state
       for {
@@ -120,7 +120,7 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
         setName("_val"),
         Summary("Fetch the Value part, inside of _foreachProperty")))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         dpv <- inv.contextAllAs(PropAndValType)
       }
@@ -145,7 +145,7 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
             |processed if it contained any QL, feeding it into _rawVal turns it into simple text,
             |which is rendered completely plain.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         oneContext <- inv.contextElements
         v = oneContext.value
@@ -173,7 +173,7 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
         setName("_prop"),
         Summary("Fetch the current Property, inside of _foreachProperty")))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         dpv <- inv.contextAllAs(PropAndValType)
       }
@@ -188,7 +188,7 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
         Details("""Keep in mind that this returns the *immediate* container of the Property, though. If you have a
             |complex nested Model, this might not return the value you expect.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         dpv <- inv.contextAllAs(PropAndValType)
       }
@@ -208,7 +208,7 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
         setName("_isInherited"),
         Summary("Says whether the current Property's value is locally defined or was inherited from the Model, inside of _foreachProperty")))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         dpv <- inv.contextAllAs(PropAndValType)
       }

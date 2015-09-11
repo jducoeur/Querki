@@ -8,7 +8,7 @@ import models.Wikitext
 
 import querki.core.QLText
 import querki.ql.{QLCall, QLPhrase}
-import querki.values.{QLContext}
+import querki.values.{QFut, QLContext}
 
 object MOIDs extends EcotIds(23) {
   val PluralizeOID = sysId(54)
@@ -113,15 +113,19 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	    }
 	
 	    val elemT = context.value.pType
-	    val renderedList = awaitHack(Future.sequence(context.value.cv.map{elem => elemT.wikify(context)(elem)}))
-	    val result =
-	      if (renderedList.isEmpty) {
-	        Wikitext.empty
-	      } else {
-	        val sep = renderParam(sepPhrase)
-	        renderParam(openPhrase) + (renderedList.head /: renderedList.tail) ((total, next) => total + sep + next) + renderParam(closePhrase)
-	      }
-	    QL.WikitextFut(result)
+      for {
+        renderedList <- Future.sequence(context.value.cv.map{elem => elemT.wikify(context)(elem)})   
+        sep <- renderParam(sepPhrase)
+        open <- renderParam(openPhrase)
+        close <- renderParam(closePhrase)
+        result =
+          if (renderedList.isEmpty) {
+            Wikitext.empty
+          } else {
+            open + (renderedList.head /: renderedList.tail) ((total, next) => total + sep + next) + close
+          }
+      }
+	      yield QL.WikitextValue(result)
 	  }
 	}
 	

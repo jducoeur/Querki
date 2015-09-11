@@ -89,7 +89,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     // Actual Modifier classes should implement this, which does the heart of the work
     def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLPhrase]):NodeSeq
     
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       val context = inv.context
       val paramsOpt = inv.paramsOpt
       
@@ -99,33 +99,31 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       if (paramsOpt.isEmpty)
         throw new PublicException("UI.transform.classRequired", name)
       val params = paramsOpt.get
-
-      def processHtml(content:DisplayText):Wikitext = {
-        val parsedParamOpt = awaitHack(context.parser.get.processPhrase(params(0).ops, context)).value.firstTyped(ParsedTextType)
-        if (parsedParamOpt.isEmpty) 
-          throw new PublicException("UI.transform.classRequired", name)
-        val paramText = parsedParamOpt.get.raw.toString
-        val nodes = XmlHelpers.toNodes(content)
-        val newXml = nodes.flatMap(node => doTransform(node, paramText, context, params))
-        val newHtml = QHtml(Xhtml.toXhtml(newXml))
-        HtmlWikitext(newHtml)        
-      }
       
-      try {
-	      v.pType match {
-	        case RawHtmlType => {
-		      v.map(RawHtmlType, RawHtmlType) { wikitext => processHtml(wikitext.display) }          
-	        }
-	        
-	        case ParsedTextType => {
-		      v.map(ParsedTextType, RawHtmlType) { wikitext => processHtml(wikitext.span) }          
-	        }
-	      }
-      } catch {
-        case ex:org.xml.sax.SAXParseException => {
-          throw new PublicException("UI.transform.notWellFormed", name)
+      def contentToUse:InvocationValue[DisplayText] = {
+        v.pType match {
+          case RawHtmlType => 
+            for {
+              wikitext <- inv.contextAllAs(RawHtmlType)
+            }
+              yield wikitext.display
+          case ParsedTextType =>
+            for {
+              wikitext <- inv.contextAllAs(ParsedTextType)
+            }
+              yield wikitext.span
         }
       }
+      
+      for {
+        parsedParam <- inv.processParamFirstAs(0, ParsedTextType)
+        paramText = parsedParam.raw.toString
+        content <- contentToUse
+        nodes = XmlHelpers.toNodes(content)
+        newXml = nodes.flatMap(node => doTransform(node, paramText, context, params))
+        newHtml = QHtml(Xhtml.toXhtml(newXml))
+      }
+        yield QL.WikitextValue(HtmlWikitext(newHtml))
     }
   }
   
@@ -218,7 +216,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           |HEADER and DETAILS will run together, since QText joins ordinary text lines together.""".stripMargin)
     )) 
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       val context = inv.context
       val paramsOpt = inv.paramsOpt
     
@@ -229,13 +227,13 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           val empty = if (params.length > 2) Some(params(2)) else None
           buildSection(context, header, details, empty)
         }
-        case _ => QL.ErrorValue("_section requires at least one parameter")
+        case _ => Future.successful(QL.ErrorValue("_section requires at least one parameter"))
       }
     }
   
-    def buildSection(context:QLContext, header:QLPhrase, detailsOpt:Option[QLPhrase], emptyOpt:Option[QLPhrase]):QValue = {
+    def buildSection(context:QLContext, header:QLPhrase, detailsOpt:Option[QLPhrase], emptyOpt:Option[QLPhrase]):QFut = {
       val parser = context.parser.get
-      val wikitext = if (context.isEmpty) {
+      val wikitextFut = if (context.isEmpty) {
         parser.contextsToWikitext(emptyOpt.map(empty => Seq(parser.processPhrase(empty.ops, context.root))).getOrElse(Seq.empty))
       } else {
         for {
@@ -245,7 +243,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         }
           yield processedHeader + detailContents
       }
-      QL.WikitextValue(awaitHack(wikitext))
+      wikitextFut.map(wikitext => QL.WikitextValue(wikitext))
     }
   }
 
@@ -255,7 +253,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	  
 	  def numParams:Int
 	  
-	  override def qlApplyFut(inv:Invocation):Future[QValue] = {
+	  override def qlApply(inv:Invocation):QFut = {
 	    val context = inv.context
 	    val paramsOpt = inv.paramsOpt
 	    
@@ -355,17 +353,17 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	{
 	  lazy val sig = Signature(ParsedTextType, RequiredParam("label"))
 	  
-	  override def qlApplyFut(inv:Invocation):Future[QValue] = {
+	  override def qlApply(inv:Invocation):QFut = {
 	    for {
 	      pt <- inv.contextTypeAs[URLableType]
 	      elemContext <- inv.contextElements
 	      elemV <- inv.opt(elemContext.value.firstOpt)
 	      url <- inv.opt(pt.getURL(elemContext)(elemV))
 	      paramVal <- inv.processParam(0, elemContext)
-	      labelFut = paramVal.wikify(elemContext)
-	      wikitextFut = labelFut.map(label => QWikitext("[") + label + QWikitext(s"]($url)"))
+	      label <- inv.fut(paramVal.wikify(elemContext))
+	      wikitext = QWikitext("[") + label + QWikitext(s"]($url)")
       }
-	      yield wikitextFut.map(wikitext => QValue.make(ExactlyOne, ParsedTextType, wikitext))
+	      yield QValue.make(ExactlyOne, ParsedTextType, wikitext)
 	  }
 	}
 		
@@ -386,7 +384,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	          |This will work for any Property Type, even Types that don't really make sense as Views, so use with a bit
 	          |of care!""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QValue = {
+	  override def qlApply(inv:Invocation):QFut = {
 	    for (
 	      thing <- inv.contextAllThings;
 	      prop <- inv.definingContextAsProperty
@@ -413,7 +411,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           }
             yield s"&${fieldId.inputControlId}=$backLinkSafe"
             
-          invStr.get.headOption.getOrElse("")
+          invStr.get.map(_.headOption.getOrElse(""))
         }
         case _ => ""
       }
@@ -440,7 +438,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         |should point back to *this* Thing -- the one where you have the button -- through the specified Link Property.
         |This is very useful for creating "child" Thing easily.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         url <- getCreateInstanceUrl(inv)
       }
@@ -464,7 +462,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           |Querki should set LINK PROPERTY on the newly-created Thing, pointing back to the Thing that it showing the
           |button.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         url <- getCreateInstanceUrl(inv)
         labelWikitext <- inv.processParamFirstAs(0, QL.ParsedTextType)
@@ -497,28 +495,23 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           |In the long run, we will probably add better ways to handle user interaction. But this one is
           |relatively quick and easy for a few situations.""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QValue = {
+	  override def qlApply(inv:Invocation):QFut = {
 	    for {
 	      thing <- inv.contextFirstThing
 	      labelWiki <- inv.processParamFirstAs(0, ParsedTextType)
 	      label = HtmlEscape.escapeQuotes(labelWiki.raw.str.trim)
 	      qlRaw <- inv.rawParam(1)
 	      ql = HtmlEscape.escapeQuotes(qlRaw.reconstructString)
-	      targetOptWiki = {
-	        if (inv.numParams > 2)
-	          inv.processParamFirstAs(2, ParsedTextType).get.headOption
-	        else
-	          None
-	      }
-	      targetName = targetOptWiki.map(_.raw.str.trim).getOrElse("target-" + scala.util.Random.nextInt.toString)
-	      targetDiv = {
-	        if (targetOptWiki.isEmpty)
-	          s"""<div id="$targetName"></div>"""
-	        else
-	          ""
-	      }
+        target <- inv.processParamFirstOr(2, ParsedTextType, Wikitext(""))
+	      (targetName, targetDiv) =
+          if (target.internal.length() == 0) {
+            val name = "target-" + scala.util.Random.nextInt.toString 
+            (name, s"""<div id="$name"></div>""")
+          } else {
+            (target.raw.str.trim, "")
+          }
 	    }
-  	      yield HtmlValue(s"""<input type="button" value="$label" class="btn btn-primary _qlInvoke" data-thingid="${thing.toThingId}" data-target="$targetName" data-ql="$ql" href="#"></input>$targetDiv""")
+  	    yield HtmlValue(s"""<input type="button" value="$label" class="btn btn-primary _qlInvoke" data-thingid="${thing.toThingId}" data-target="$targetName" data-ql="$ql" href="#"></input>$targetDiv""")
 	  }
 	}
   
@@ -544,7 +537,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         |may be replaced by a QL function in due course. So consider this experimental; it may go away
         |down the line.""".stripMargin)))
   {
-    override def qlApplyFut(inv:Invocation):Future[QValue] = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         thing <- inv.contextFirstThing
         start <- inv.processParamFirstAs(0, IntType)
@@ -557,7 +550,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         rawDisplay <- inv.rawParam(4)
         selectedElems = all.cType.makePropValue(all.cv.drop(start).take(len), all.pType)
         result <- inv.processParam(4, inv.context.next(selectedElems))
-        wikiFut = result.wikify(inv.context)
+        wiki <- inv.fut(result.wikify(inv.context))
         nextButton =
           if (done)
             ""
@@ -572,14 +565,13 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
                 data.ql := s"_showSome(${start + len},$len,${rawMsg.reconstructString},${rawAll.reconstructString},${rawDisplay.reconstructString})")))
             ).toString
           }
-        completeFut = wikiFut.map { wiki =>
+        complete =
           if (all.size == 0)
             Wikitext("")
           else
             wiki + HtmlWikitext(nextButton)
-        }
       }
-        yield completeFut.map(QL.WikitextValue(_))
+        yield QL.WikitextValue(complete)
     }
   }
   

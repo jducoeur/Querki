@@ -9,7 +9,7 @@ import querki.ecology._
 import querki.globals._
 import querki.ql.QLPhrase
 import querki.util.{PublicException, QLog}
-import querki.values.{ElemValue, QLContext, QValue, RequestContext, SpaceState}
+import querki.values.{ElemValue, QLContext, QFut, QValue, RequestContext, SpaceState}
 
 import MOIDs._
 
@@ -63,7 +63,7 @@ trait TextTypeBasis { self:CoreEcot =>
 
     override def qlApplyFromProp(inv:Invocation, prop:Property[QLText,_]):Option[QValue] = {
       implicit val s = inv.state
-      val result:QValue = for {
+      val result:QFut = for {
         // Declare the expected return type, which can be important if the results are empty and get
         // fed into, eg, _sort.
         // TODO: this should become a more general concept! We should be declaring this transform at
@@ -78,11 +78,12 @@ trait TextTypeBasis { self:CoreEcot =>
         dummy2 <- inv.preferCollection(pv.v.cType)
         // ... get each element in the Property (which can be multi-valued -- for example, a List of Text)...
         qlText <- inv.iter(pv.v.rawList(this))
+        processed <- inv.fut(QL.process(qlText, elemContext, Some(inv), Some(bundle), Some(prop)))
       }
         // ... and process that element through QL.
-        yield Core.ExactlyOne(QL.ParsedTextType(awaitHack(QL.process(qlText, elemContext, Some(inv), Some(bundle), Some(prop)))))
+        yield Core.ExactlyOne(QL.ParsedTextType(processed))
         
-      Some(result)
+      Some(awaitHack(result))
     }
       
     def code(elem:ElemValue):String = get(elem).text

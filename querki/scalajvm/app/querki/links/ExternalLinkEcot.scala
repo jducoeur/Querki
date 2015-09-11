@@ -124,7 +124,7 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
         |page; omitting the quotes when sending to a Querki page will usually result in the parameter not
         |getting interpreted correctly.""".stripMargin)))
   {
-    override def qlApplyFut(inv:Invocation):Future[QValue] = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         pt <- inv.contextTypeAs[URLableType]
         elemContext <- inv.contextElements
@@ -132,13 +132,12 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
         urlStr <- inv.opt(pt.getURL(elemContext)(elemV))
         displayStr <- inv.opt(pt.getDisplay(elemContext)(elemV))
         paramNameElem <- inv.processParam(0, elemContext)
-	      paramNameFut = paramNameElem.wikify(elemContext).map(_.raw.str)
+	      paramName <- inv.fut(paramNameElem.wikify(elemContext).map(_.raw.str))
         valElem <- inv.processParam(1, elemContext)
         raw <- inv.processParamFirstOr(2, YesNoType, false, elemContext)
         value = vToParam(valElem, elemContext, raw)(inv.state)
       }
-        yield paramNameFut.map(paramName =>
-            ExactlyOne(ExternalLinkType(appendParam(urlStr, displayStr, paramName, value))))
+        yield ExactlyOne(ExternalLinkType(appendParam(urlStr, displayStr, paramName, value)))
     }
     
     def vToParam(v:QValue, context:QLContext, raw:Boolean)(implicit state:SpaceState):String = {
@@ -177,7 +176,7 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
           |in your QText, and that translates as "display the received context". If you've passed in a Thing (which
           |you most often do), that will display as an HTML link to that Thing, showing its Display Name.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         t <- inv.contextAllThings
       }

@@ -3,6 +3,7 @@ package querki.collections
 import models.ThingState
 
 import querki.ecology._
+import querki.globals._
 import querki.types.{ModelTypeDefiner, SimplePropertyBundle}
 
 object GroupingMOIDs extends EcotIds(36) {
@@ -103,7 +104,7 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
             |In the future, this will probably be enhanced to work with a List of any Type. Please speak up if that
             |would be especially helpful for you.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       val keyThingsWrapped = for {
         elemContext <- inv.contextElements
         // TODO: this should really not be imposing a Type on the elements -- we should just take the
@@ -113,7 +114,6 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
       }
         yield (key, thing)
         
-      val keyThingPairs = keyThingsWrapped.get.toSeq
       
       def sortFunc(left:(QValue, OID), right:(QValue, OID)):Boolean = {
         val pt = left._1.pType
@@ -125,32 +125,32 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
             yield pt.comp(inv.context)(leftVal, rightVal)
 
         sortResult.getOrElse(false)
-	  }
-      
-      val sortedPairs = keyThingPairs.sortWith(sortFunc)
-      
-      val rawGroupings = (Seq.empty[(QValue, Seq[OID])] /: sortedPairs) { (seqs, pair) =>
-        val (key, id) = pair
-        if (seqs.isEmpty)
-          Seq((key, Seq(id)))
-        else {
-          val current = seqs.last
-          val (curKey, curIds) = current
-          if (curKey.pType.matches(curKey.first, key.first))
-            seqs.dropRight(1) :+ (curKey, curIds :+ id)
-          else
-            seqs :+ (key, Seq(id))
+	    }
+        
+      for {
+        keyThingPairs <- keyThingsWrapped.get.map(_.toSeq)
+        sortedPairs = keyThingPairs.sortWith(sortFunc)
+        rawGroupings = (Seq.empty[(QValue, Seq[OID])] /: sortedPairs) { (seqs, pair) =>
+          val (key, id) = pair
+          if (seqs.isEmpty)
+            Seq((key, Seq(id)))
+          else {
+            val current = seqs.last
+            val (curKey, curIds) = current
+            if (curKey.pType.matches(curKey.first, key.first))
+              seqs.dropRight(1) :+ (curKey, curIds :+ id)
+            else
+              seqs :+ (key, Seq(id))
+          }
         }
-      }
-      
-      val groupings = rawGroupings.map { raw =>
-        val (key, ids) = raw
-        groupType(SimplePropertyBundle(
-            groupKeyProperty(key),
-            groupMembersProperty(ids:_*)))
-      }
-      
-      QList.makePropValue(groupings, groupType)
+        groupings = rawGroupings.map { raw =>
+          val (key, ids) = raw
+          groupType(SimplePropertyBundle(
+              groupKeyProperty(key),
+              groupMembersProperty(ids:_*)))
+        }
+      }      
+        yield QList.makePropValue(groupings, groupType)
     }
   }
 

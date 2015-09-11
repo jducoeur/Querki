@@ -178,13 +178,13 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
             |NOTE: the high concept of _me is important, and will be continuing, but the details are likely to evolve a great
             |deal, to make it more usable. So don't get too invested in the current behaviour.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       val context = inv.context
       
       val userOpt = context.request.requester
       implicit val state = context.state
       val personOpt = userOpt.flatMap(localPerson(_))
-      personOpt.map(person => Links.LinkValue(person)).getOrElse(QL.WarningValue("You are not a member of this Space"))
+      Future.successful(personOpt.map(person => Links.LinkValue(person)).getOrElse(QL.WarningValue("You are not a member of this Space")))
     }
   }
   
@@ -198,7 +198,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
       setName("_personIdentity"),
       Summary("Given a Person (such as a Member), this produces the Identity corresponding to that Person")))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       implicit val s = inv.state
       for {
         person <- inv.contextAllThings
@@ -237,7 +237,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
         Details("""This is intended for internal use only. It is used to generate
             |the link that is sent to invitees to your Space""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       val mainContext = inv.context
       implicit val state = inv.state
       
@@ -265,7 +265,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
         }
         yield HtmlUI.HtmlValue(s"""<b><a href="$url">Click here</a></b> to accept the invitation.""")
         
-      inviteOpt.getOrElse(QL.WarningValue("This appears to be an incorrect use of _spaceInvitation."))
+      Future.successful(inviteOpt.getOrElse(QL.WarningValue("This appears to be an incorrect use of _spaceInvitation.")))
     }
   }
   

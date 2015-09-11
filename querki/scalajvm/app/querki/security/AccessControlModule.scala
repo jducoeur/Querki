@@ -6,6 +6,7 @@ import querki.util._
 import querki.values._
 
 import querki.ecology._
+import querki.globals._
 import querki.identity.{Identity, User}
 
 import play.api.Logger
@@ -458,9 +459,9 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
           |
           |This is typically used in _filter or _if.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       implicit val s = inv.state
-      val resultInv = for {
+      val resultInv:QFut = for {
         dummy <- inv.returnsType(YesNoType)
         thing <- inv.contextAllThings
         permId <- inv.processParamFirstAs(0, LinkType)
@@ -470,10 +471,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
       }
         yield ExactlyOne(hasPermission(prop, inv.state, who.id, thing))
         
-      if (resultInv.get.isEmpty)
-        ExactlyOne(False)
-      else
-        resultInv        
+      resultInv.map(result => if (result.isEmpty) ExactlyOne(False) else result)    
     }
   }
 

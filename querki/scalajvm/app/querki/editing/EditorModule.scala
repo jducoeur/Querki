@@ -168,12 +168,12 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       }
     }
   
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       val mainContext = inv.context
       val partialContextOpt = inv.definingContext
       val params = inv.paramsOpt
       
-      def editThing(thing:Thing, context:QLContext)(implicit state:SpaceState):Future[QValue] = {
+      def editThing(thing:Thing, context:QLContext)(implicit state:SpaceState):QFut = {
         if (thing.ifSet(Core.IsModelProp)) {
           val allInstances = state.descendants(thing.id, false, true).toSeq.sortBy(_.displayName)
           for {
@@ -182,9 +182,9 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
             pageSize <- inv.processParamFirstAs(1, IntType)
             startAt = pageSize * page
             instance <- inv.iter(allInstances.drop(startAt).take(pageSize))
-            wikitextFut = instanceEditorForThing(instance, instance.thisAsContext(context.request, state, ecology), Some(inv))
+            wikitext <- inv.fut(instanceEditorForThing(instance, instance.thisAsContext(context.request, state, ecology), Some(inv)))
           }
-            yield wikitextFut.map(wikitext => ExactlyOne(QL.ParsedTextType(wikitext)))
+            yield ExactlyOne(QL.ParsedTextType(wikitext))
         } else {
           instanceEditorForThing(thing, context, Some(inv)).map(QL.WikitextValue)
         }
@@ -270,13 +270,14 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       AppliesToKindProp(Kind.Property)
     )) 
   {
-    def cantEditFallback(inv:Invocation):Future[QValue] = {
+    def cantEditFallback(inv:Invocation):QFut = {
       // This user isn't allowed to edit, so simply render the property in its default form.
       // For more control, user _editOrElse instead.
-      for (
+      for {
         prop <- inv.definingContextAsProperty
-      )
-        yield prop.qlApply(inv)
+        result <- inv.fut(prop.qlApply(inv))
+      }
+        yield result
     }  
   }
   
@@ -323,13 +324,14 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
     )) 
   {
     // TODO: this is stolen directly from _edit, and should probably be refactored:
-    def cantEditFallback(inv:Invocation):Future[QValue] = {
+    def cantEditFallback(inv:Invocation):QFut = {
       // This user isn't allowed to edit, so simply render the property in its default form.
       // For more control, user _editOrElse instead.
-      for (
+      for {
         prop <- inv.definingContextAsProperty
-      )
-        yield prop.qlApply(inv)    
+        result <- inv.fut(prop.qlApply(inv))
+      }
+        yield result
     }  
     
     override def specialization(mainContext:QLContext, mainThing:PropertyBundle, 
@@ -362,7 +364,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	          |
 	          |This is mainly for input forms, and is pretty persnickety at this point. It is not recommend for general use yet.""".stripMargin)))
 	{
-	  override def qlApplyFut(inv:Invocation):Future[QValue] = {
+	  override def qlApply(inv:Invocation):QFut = {
 	    inv.paramsOpt match {
 	      case Some(params) if (params.length == 2) => {
 	        val context = inv.definingContext.get

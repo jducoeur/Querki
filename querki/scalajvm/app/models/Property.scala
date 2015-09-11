@@ -8,6 +8,7 @@ import Thing._
 
 import querki.core.MOIDs._
 import querki.ecology._
+import querki.globals._
 import querki.ql.Invocation
 import querki.time.DateTime
 import querki.types.Types
@@ -110,10 +111,10 @@ case class Property[VT, RT](
   def deserialize(str:String)(implicit state:SpaceState):QValue = cType.deserialize(str, pType)
   
   def applyToIncomingProps(inv:Invocation)(action:(PropertyBundle, QLContext) => QValue):QValue = {
-    for {
+    awaitHack(for {
       (bundle, elemContext) <- inv.bundlesAndContextsForProp(this)
     }
-      yield action(bundle, elemContext)
+      yield action(bundle, elemContext))
   }
   
   override def thingOps(ecology:Ecology):ThingOps = new PropertyThingOps(this)(ecology)

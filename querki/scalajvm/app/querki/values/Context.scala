@@ -98,6 +98,9 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
    * TODO: this is fundamentally suspicious. What if ct is ExactlyOne, and cb returns None? We'll
    * wind up with an empty ExactlyOne, which violates the invariants. See collect, below, for a
    * more sensible approach.
+   * 
+   * TODO: with the extremely rare exception of cases where we genuinely care about the useCollection
+   * flag, this is now obviated by the various functions in Invocation. Can we get rid of it?
    */
   def flatMapAsContext[T <: ElemValue](cb:QLContext => Option[T], resultType:PType[_]):QLContext = {
     val ct = value.cType

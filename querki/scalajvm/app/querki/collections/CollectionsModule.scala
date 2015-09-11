@@ -48,7 +48,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |
 	          |If LIST is empty, this produces None. If LIST has elements, this produces Optional(first element).""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QValue = {
+	  override def qlApply(inv:Invocation):QFut = {
 	    val context = inv.context
 	    
 	    val sourceColl = context.value
@@ -57,7 +57,8 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	        Core.emptyOpt(sourceColl.pType)
 	      else
 	        Optional(sourceColl.cv.head)
-	    result
+          
+	    Future.successful(result)
 	  }
 	}
 	
@@ -72,16 +73,18 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |_rest currently isn't useful very often. As the QL language gets more powerful, it will
 	          |become a useful tool, although mainly for fairly advanced programmers.""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QValue = {
+	  override def qlApply(inv:Invocation):QFut = {
 	    val context = inv.context
 	    
 	    val sourceColl = context.value
-	    if (sourceColl.isEmpty)
+	    val result = if (sourceColl.isEmpty)
 	      // Cut processing at this point:
 	      // TODO: can/should we preserve the source PType?
 	      QL.EmptyListCut()
 	    else
 	      QList.makePropValue(sourceColl.cv.tail.toList, context.value.pType)
+        
+      Future.successful(result)
 	  }
 	}
 	
@@ -95,7 +98,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |
 	          |Note that _first is roughly the same as _take(1).""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QValue = {
+	  override def qlApply(inv:Invocation):QFut = {
 	    for {
 	      n <- inv.processParamFirstAs(0, IntType)
 	      qv <- inv.contextValue
@@ -114,7 +117,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |
 	          |Note that _rest is roughly the same as _drop(1).""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QValue = {
+	  override def qlApply(inv:Invocation):QFut = {
 	    for {
 	      n <- inv.processParamFirstAs(0, IntType)
 	      qv <- inv.contextValue
@@ -123,18 +126,15 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	  }
 	}
 
-	def isEmpty(inv:Invocation):Boolean = {
-      val result = for (
-	    thing <- inv.contextAllThings;
-	    prop <- inv.definingContextAsProperty;
+	def isEmpty(inv:Invocation):Future[Boolean] = {
+    val result = for {
+	    thing <- inv.contextAllThings
+	    prop <- inv.definingContextAsProperty
 	    propAndVal <- inv.opt(thing.localProp(prop))
-	  )
+    }
 	    yield propAndVal.isEmpty
-	      
-	  if (result.get.isEmpty)
-	    true
-	  else
-	    result.get.head	  
+      
+    result.get.map(r => r.isEmpty || r.head)
 	}
 	
 	/**
@@ -162,9 +162,9 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |This is usually used on a List, Set or Optional, but you *can* use it on an ExactlyOne value. (In which
 	          |case it will always produce True.)""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QValue = {
+	  override def qlApply(inv:Invocation):QFut = {
 	    if (inv.definingContext.isDefined)
-	      boolean2YesNoQValue(!isEmpty(inv))
+	      isEmpty(inv).map(v => boolean2YesNoQValue(!v))
 	    else 
 	      for {
 	        v <- inv.firstParamOrContextValue
@@ -191,9 +191,9 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |This is usually used on a List, Set or Optional, but you *can* use it on an ExactlyOne value. (In which
 	          |case it will always produce False.)""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QValue = {
+	  override def qlApply(inv:Invocation):QFut = {
 	    if (inv.definingContext.isDefined)
-	      boolean2YesNoQValue(isEmpty(inv))
+	      isEmpty(inv).map(v => boolean2YesNoQValue(v))
 	    else
 	      for {
 	        v <- inv.firstParamOrContextValue
@@ -211,38 +211,19 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |
 	          |The FILTER should take a Thing, and produce a YesNo that says whether to include this Thing.
 	          |That gets applied to each element of RECEIVED; if FILTER returns Yes, then it is included, otherwise not.
-	    	  |
+	    	    |
 	          |This is one of the most commonly-useful functions in Querki. It is how you usually say, "I only want *some*
 	          |of the elements in this List or Set".""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QValue = {
-	    val context = inv.context
-	    val paramsOpt = inv.paramsOpt
-	    
-	    // TODO: this is currently convoluted and hard to understand -- we're dissecting the list using
-	    // flatMapAsContext(); yielding an Option saying whether to keep each one; stitching it back together
-	    // as a Context, and then just using the QValue. Bleah.
-	    // TODO: this needs a major rewrite, to stop using so many QL internals!
-	    def tryElem(parser:QLParser, phrase:QLPhrase)(elem:QLContext):Option[ElemValue] = {
-	      val passesYesNo = awaitHack(parser.processPhrase(phrase.ops, elem)).value
-	      for (
-	        bool <- passesYesNo.firstAs(YesNoType) if (bool);
-	        theElem <- elem.value.firstOpt
-	      ) yield theElem
-	    }
-	    
-	    val result = for
-	    (
-	      params <- paramsOpt if params.length == 1;
-	      phrase = params(0);
-	      parser <- context.parser
-	    )
-	      yield context.flatMapAsContext(tryElem(parser, phrase), context.value.pType).value
-	      
-	    result.getOrElse(QL.WarningValue("_filter requires exactly one parameter"))
+	  override def qlApply(inv:Invocation):QFut = {
+      for {
+        elemContext <- inv.contextElements
+        passes <- inv.processParamFirstAs(0, YesNoType, elemContext)
+        if (passes)
+      }
+        yield elemContext.value
 	  }
 	}
-	
 	
 	lazy val SortMethod = new InternalMethod(SortMethodOID,
 	    toProps(
@@ -288,7 +269,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	  case class RealSortTerm(elem:ElemValue, compType:PType[_]) extends SortTerm
 	  case class SortTerms(t:Thing, terms:Seq[SortTerm], displayName:String)
 	  
-	  override def qlApply(inv:Invocation):QValue = {
+	  override def qlApply(inv:Invocation):QFut = {
 	    val context = inv.context
 	    val paramsOpt = inv.paramsOpt
 	    
@@ -351,39 +332,47 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	     * For a given Thing, compute its sort terms based on the parameters. The last element of the tuple is the display name,
 	     * which is the final fallback for sorting.
 	     */
-	    def computeSortTerms(t:Thing):SortTerms = {
-        // TODO:
-        val name = awaitHack(t.unsafeNameOrComputed)
+	    def computeSortTerms(t:Thing):Future[SortTerms] = {
+        val nameFut = t.unsafeNameOrComputed
 	      paramsOpt match {
 	        case Some(params) => {
-	          val terms = for {
+	          val termFuts:Seq[Future[SortTerm]] = for {
+              // For each param...
 	            param <- params
-	            // This may return a wrapped Delegating Type. (Eg, DescendingType.)
-	            tCalc = awaitHack(context.parser.get.processPhrase(param.ops, context.next(ExactlyOne(LinkType(t))))).value
-	            tRawResultOpt = tCalc.firstOpt
-	            // Note that tResultOpt will be None iff the processing came up empty, or as UnknownOID. (The latter
-	            // is very common iff the sort expression including a Property not defined on the received Bundle.)
-	            tResultOpt = {
-	              tRawResultOpt match {
-	                case None => None
-	                case Some(result) => {
-	                  result.getOpt(LinkType) match {
-	                    // This is the heart of this big clause: translate UnknownOID to EmptySortTerm
-	                    case Some(oid) => if (oid == UnknownOID) None else Some(result)
-	                    case None => Some(result)
-	                  }
-	                }
-	              }
-	            }
 	          }
-	            // IMPORTANT: tResult is the ElemValue, and its pType may *not* be the same as tCalc! The ElemValue
-	            // is the real element, which is likely to be of the underlying PType, without any _desc wrapper
-	            yield tResultOpt.map(tResult => RealSortTerm(tResult, tCalc.pType)).getOrElse(EmptySortTerm)
-	            
-	          SortTerms(t, terms, name)
+              yield for {
+                // Do some calculations and get a Future...
+                // This may return a wrapped Delegating Type. (Eg, DescendingType.)
+                tCalc <- context.parser.get.processPhrase(param.ops, context.next(ExactlyOne(LinkType(t)))).map(_.value)
+                tRawResultOpt = tCalc.firstOpt
+                // Note that tResultOpt will be None iff the processing came up empty, or as UnknownOID. (The latter
+                // is very common iff the sort expression including a Property not defined on the received Bundle.)
+                tResultOpt = {
+                  tRawResultOpt match {
+                    case None => None
+                    case Some(result) => {
+                      result.getOpt(LinkType) match {
+                        // This is the heart of this big clause: translate UnknownOID to EmptySortTerm
+                        case Some(oid) => if (oid == UnknownOID) None else Some(result)
+                        case None => Some(result)
+                      }
+                    }
+                  }
+                }                
+              }
+  	            // IMPORTANT: tResult is the ElemValue, and its pType may *not* be the same as tCalc! The ElemValue
+  	            // is the real element, which is likely to be of the underlying PType, without any _desc wrapper
+  	            yield tResultOpt.map(tResult => RealSortTerm(tResult, tCalc.pType)).getOrElse(EmptySortTerm)
+	          
+            // Finally, compose the Futures together:
+            for {
+              terms <- Future.sequence(termFuts)
+              name <- nameFut
+            }
+  	          yield SortTerms(t, terms, name)
 	        }
 	        // The simple case: there are no sort parameters, so we're just sorting on displayName.
-	        case None => SortTerms(t, Seq.empty, name)
+	        case None => nameFut.map(SortTerms(t, Seq.empty, _))
 	      }
 	    }
 	    
@@ -392,13 +381,14 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    pType match {
 	      case LinkType => {
 	        val asThings = start.map(elemV => context.state.anything(LinkType.get(elemV))).flatten
-	        val terms = asThings.map(computeSortTerms)
-	        val sortedOIDs = terms.sortWith(thingSortFunc).map(_.t.id)
-	        Core.listFrom(sortedOIDs, LinkType)
+	        Future.sequence(asThings.map(computeSortTerms)).map { terms =>
+            val sortedOIDs = terms.sortWith(thingSortFunc).map(_.t.id)
+            Core.listFrom(sortedOIDs, LinkType)            
+          }
 	      }
 	      case _ => {
 	        val sorted = start.sortWith(pType.comp(context))
-	        QList.makePropValue(sorted, pType)
+	        Future.successful(QList.makePropValue(sorted, pType))
 	      }
 	    }
 	  }
@@ -422,7 +412,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |what they would normally have. It is usually used inside of _sort, to reverse the sort order, which
 	          |is normally in ascending order.""".stripMargin)))
 	{
-	  override def qlApplyFut(inv:Invocation):Future[QValue] = {
+	  override def qlApply(inv:Invocation):QFut = {
 	    val context = inv.context
 	    val paramsOpt = inv.paramsOpt
 	    
@@ -445,8 +435,8 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |This is pretty much as simple as it sounds. It is most often used in the header of a _section, like this:
 	          |    \[[My List -> _section(\""Items: (\[[_count\]])\"", _commas)\]]""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QValue = {
-	    ExactlyOne(IntType(inv.context.value.cv.size))
+	  override def qlApply(inv:Invocation):QFut = {
+	    Future.successful(ExactlyOne(IntType(inv.context.value.cv.size)))
 	  }
 	}
 	
@@ -466,8 +456,8 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |You can't _reverse a Set itself (Sets have their own intrinsic order), but _sort always
 	          |produces a List.""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QValue = {
-	    QList.makePropValue(inv.context.value.cv.toSeq.reverse.toList, inv.context.value.pType)
+	  override def qlApply(inv:Invocation):QFut = {
+	    Future.successful(QList.makePropValue(inv.context.value.cv.toSeq.reverse.toList, inv.context.value.pType))
 	  }
 	}
   
@@ -479,7 +469,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
         		|Given a THING, and a LIST that contains that THING, this returns the *previous* THING to that
         		|in the LIST. It returns None iff the THING is not in the LIST, or if it is the beginning of the LIST.""".stripMargin)))
   {
-    override def qlApplyFut(inv:Invocation):Future[QValue] = {
+    override def qlApply(inv:Invocation):QFut = {
       val context = inv.context
       val paramsOpt = inv.paramsOpt
       
@@ -512,7 +502,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
         		|Given a THING, and a LIST that contains that THING, this returns the *next* THING to that
         		|in the LIST. It returns None iff the THING is not in the LIST, or if it is the end of the LIST.""".stripMargin)))
   {
-    override def qlApplyFut(inv:Invocation):Future[QValue] = {
+    override def qlApply(inv:Invocation):QFut = {
       val context = inv.context
       val paramsOpt = inv.paramsOpt
       
@@ -545,7 +535,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
         		|Otherwise known as "map" in many programming languages, this lets you take an expression or function
                 |that operates on a single element, and apply it to each element in the received collection.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       for {
         elemContext <- inv.contextElements
         elemResult <- inv.processParam(0, elemContext)
@@ -562,18 +552,20 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
             |This checks each value in the received LIST; if any of them are _equal to the given VALUE,
             |this produces True.""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
-	  val results:QValue = for {
+    override def qlApply(inv:Invocation):QFut = {
+	  val results:QFut = for {
 	    compareTo <- inv.processParam(0)
 	    elem <- inv.contextElements
 	    elemV = elem.value
 	  }
 	    yield boolean2YesNoQValue(Logic.compareValues(elemV, compareTo)( (pt, elem1, elem2) => pt.matches(elem1, elem2) ))
 	    
-	  if (results.rawList(YesNoType).contains(true)) 
-	    boolean2YesNoQValue(true)
-	  else 
-	    boolean2YesNoQValue(false)
+    results.map { r =>
+  	  if (r.rawList(YesNoType).contains(true)) 
+  	    boolean2YesNoQValue(true)
+  	  else 
+  	    boolean2YesNoQValue(false)
+      }
     }
   }
 
@@ -588,16 +580,16 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
           |\[[My Thing -> _concat(Primary Sources, Secondary Sources) -> _bulleted\]]
           |```""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
-      val firstParam = inv.processParam(0)
-      val targetType = firstParam.pType
-	  for {
-	    n <- inv.iter(0 to (inv.numParams-1))
-	    paramVals <- inv.processParam(n)
-	    typeCheck <- inv.test(paramVals.pType == targetType, "Collections.concat.mismatchedTypes", { Seq(targetType.displayName, paramVals.pType.displayName) })
-	  }
-	    yield paramVals
-	}
+    override def qlApply(inv:Invocation):QFut = {
+  	  for {
+        firstParam <- inv.processParam(0)
+        targetType = firstParam.pType
+  	    n <- inv.iter(0 to (inv.numParams-1))
+  	    paramVals <- inv.processParam(n)
+  	    typeCheck <- inv.test(paramVals.pType == targetType, "Collections.concat.mismatchedTypes", { Seq(targetType.displayName, paramVals.pType.displayName) })
+  	  }
+  	    yield paramVals
+  	}
   }
   
   lazy val RandomMethod = new InternalMethod(RandomOID,
@@ -613,7 +605,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
           |\[[Recipes._instances -> _random\]]
           |```""".stripMargin)))
   {
-    override def qlApply(inv:Invocation):QValue = {
+    override def qlApply(inv:Invocation):QFut = {
       import scala.math._
       for {
         v <- inv.contextValue
