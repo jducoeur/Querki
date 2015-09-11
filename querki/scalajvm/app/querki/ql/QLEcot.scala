@@ -9,7 +9,7 @@ import models.{PropertyBundle, PType, PTypeBuilder, SimplePTypeBuilder, Thing, U
 import querki.core.QLText
 import querki.html.QHtml
 import querki.tools.ProfileHandle
-import querki.util.QLog
+import querki.util.{QLog, UnexpectedPublicException}
 import querki.values.{CutProcessing, ElemValue, EmptyContext, IsErrorType, QLContext, SpaceState}
 
 object MOIDs extends EcotIds(24) {
@@ -92,14 +92,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
   
   def inv2QValueImpl(invRaw:InvocationValue[QValue]):QFut = {
     val inv = invRaw.asInstanceOf[InvocationValueImpl[QValue]]
-    val recovered:Future[IVData[QValue]] = inv.fut.recoverWith {
-      case ex:PublicException => {
-        val msg = ex.display(Some(inv.inv.context.request))
-        Future.successful(IVData(Some(QL.WarningValue(msg))))
-      }
-    }
-    
-    recovered.map(data => qvUnpack(data))
+    inv.fut.map(data => qvUnpack(data))
   }
   
   def process(input:QLText, ci:QLContext, invOpt:Option[Invocation] = None, 

@@ -121,9 +121,9 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	}
 	
   def compareValues(firstIn:QValue, secondIn:QValue)(comparer:(PType[_], ElemValue, ElemValue) => Boolean):Boolean = {
-	var first = firstIn
-	var second = secondIn
-	  
+  	var first = firstIn
+	  var second = secondIn
+    
     // TODO: conceptually, this is probably common code for any time where we care about multiple
     // values being the same Type. Not sure where it belongs, though.
     if (first.pType.realType != second.pType.realType) {
@@ -153,7 +153,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
   	  first <- inv.processParamNofM(0, 2)
   	  second <- inv.processParamNofM(1, 2)
   	}
-  	  yield boolean2YesNoQValue(compareValues(first, second)(comparer))    
+  	  yield boolean2YesNoQValue(compareValues(first, second)(comparer))
   }
 	
   lazy val EqualsMethod = new InternalMethod(EqualsMethodOID,

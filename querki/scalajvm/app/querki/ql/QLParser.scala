@@ -154,25 +154,20 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
       val params = call.params
       val methodOpt = call.methodName.flatMap(context.state.anythingByName(_))
       val contextWithCall = context.withCall(call, t)
-      try {
-        methodOpt match {
-          case Some(method) => {
-            val definingContext = context.next(Core.ExactlyOne(Core.LinkType(t.id)))
-            qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
-              method.qlApplyTop(InvocationImpl(t, contextWithCall, Some(definingContext), params), method)
-            }
-          }
-          case None => {
-            qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
-              val inv = InvocationImpl(t, contextWithCall, None, params)
-              t.qlApplyTop(inv, t)
-            }
+      methodOpt match {
+        case Some(method) => {
+          val definingContext = context.next(Core.ExactlyOne(Core.LinkType(t.id)))
+          qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
+            method.qlApplyTop(InvocationImpl(t, contextWithCall, Some(definingContext), params), method)
           }
         }
-      } catch {
-        case ex:PublicException => warningFut(context, ex.display(context.requestOpt))
-        case error:Exception => QLog.error("Error during QL Processing", error); warningFut(context, UnexpectedPublicException.display(context.requestOpt))
-      }      
+        case None => {
+          qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
+            val inv = InvocationImpl(t, contextWithCall, None, params)
+            t.qlApplyTop(inv, t)
+          }
+        }
+      }
     }
     
     def handleThing(tOpt:Option[Thing]) = {
@@ -369,7 +364,12 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     try {
       val parseResult = parse
       parseResult match {
-        case Success(result, _) => processParseTree(result, initialContext)
+        case Success(result, _) => {
+          processParseTree(result, initialContext)
+            .recoverWith {
+              case ex:PublicException => WarningValue(ex.display(initialContext.requestOpt)).wikify(initialContext)
+            }
+        }
         case Failure(msg, next) => { renderError(msg, next) }
         // TODO: we should probably do something more serious in case of Error:
         case Error(msg, next) => { QLog.error("Couldn't parse qlText: " + msg); renderError(msg, next) }
@@ -402,7 +402,13 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   private[ql] def processMethod:Future[QLContext] = {
     val parseResult = qlProfilers.parseMethod.profile { parseAll(qlPhrase, input.text) }
     parseResult match {
-      case Success(result, _) => qlProfilers.processMethod.profile { processPhrase(result.ops, initialContext, false) }
+      case Success(result, _) => 
+        qlProfilers.processMethod.profile { 
+          processPhrase(result.ops, initialContext, false) 
+          .recoverWith {
+            case ex:PublicException => warningFut(initialContext, ex.display(initialContext.requestOpt))
+          }
+        }
       case Failure(msg, next) => { renderError(msg, next).map(err => initialContext.next(QL.WikitextValue(err))) }
       case Error(msg, next) => { renderError(msg, next).map(err => initialContext.next(QL.WikitextValue(err))) }
     }
