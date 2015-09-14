@@ -1,16 +1,18 @@
 package querki.uservalues
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
 import akka.actor.Actor.Receive
 import akka.actor.Props
 import akka.event.LoggingReceive
+import akka.pattern._
+import akka.util.Timeout
 
 import models.{Kind, PropertyBundle, PType, ThingState, Wikitext}
 import models.Thing.PropMap
 
 import querki.ecology._
+import querki.globals._
 import querki.identity.SystemUser
 import querki.ql.InvocationValue
 import querki.spaces.{CacheUpdate, SpaceAPI, SpacePlugin, SpacePluginProvider, ThingChangeRequest}
@@ -303,53 +305,27 @@ class UserValueEcot(e:Ecology) extends QuerkiEcot(e) with UserValues with SpaceP
           |something has gotten out of sync. It is usually invoked from a button on the Property's own page.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
-      // Make sure that the parameters are valid...
-      val prepInv:InvocationValue[(Property[_,_], OID)] = for {
+      implicit val timeout = Timeout(10 seconds)
+      
+      for {
         prop <- inv.preferDefiningContext.definingContextAsProperty
         // Make sure the specified Property *has* a summary:
         summaryPropPV <- inv.opt(prop.getPropOpt(SummaryLink)(inv.state))
         summaryPropId <- inv.opt(summaryPropPV.firstOpt)        
+        // ... go fetch the actual User Values for this Property...
+        userValueRequest = UserValuePersistRequest(
+                inv.context.request.requesterOrAnon, inv.state.id, 
+                LoadAllPropValues(prop, inv.state))
+        ValuesForUser(values) <- inv.fut(SpaceOps.spaceRegion ? userValueRequest)
+        // ... and tell the SpaceManager to recompute the Summaries. (Note that the handler for this is above.)
+        recalcRequest = SpacePluginMsg(inv.context.request.requesterOrAnon, inv.state.id, RecalculateSummaries(prop, summaryPropId, values))
+        // End of the line -- just fire and forget at this point:
+        dummy = SpaceOps.spaceRegion ! recalcRequest
       }
-        yield (prop, summaryPropId)
-      
-      prepInv.get.map { pi =>
-        pi.headOption match {
-          case Some((prop, summaryId)) => {
-            // ... go fetch the actual User Values for this Property...
-            val msg = UserValuePersistRequest(
-                    inv.context.request.requesterOrAnon, inv.state.id, 
-                    LoadAllPropValues(prop, inv.state))
-            // IMPORTANT: note that this wanders off into asynchrony. It is *not* fundamentally evil, since we don't
-            // block on the response, but we don't actually give the user any interesting feedback.
-            // TODO: once QL has the ability to cope with asynchronous functions, this should become one.
-            val fut = SpaceOps.askSpace2(msg) {
-              case ValuesForUser(values) => {
-                // ... and tell the SpaceManager to recompute the Summaries. (Note that the handler for this is above.)
-    	          val msg = SpacePluginMsg(inv.context.request.requesterOrAnon, inv.state.id, RecalculateSummaries(prop, summaryId, values))
-    	          // End of the line -- just fire and forget at this point:
-    	          SpaceOps.spaceManager ! msg
-    	          Future.successful {}
-              }
-              case other => QLog.error(s"LoadAllPropValues for ${prop.displayName} in Space ${inv.state} got response $other"); Future.successful {}
-            }
-            // Force the Future to evaluate once it is ready:
-            fut.onComplete(t => {})
-            
-            Html.HtmlValue(s"""<div class="alert">
+        yield Html.HtmlValue(s"""<div class="alert">
               |<button type="button" class="close" data-dismiss="alert">&times;</button>
               |Rebuilding User Value Summaries for ${prop.displayName}. This should be ready in a moment.
-              |</div>""".stripMargin) 
-          }
-          case None => {
-            // Huh -- how did we get here? The button to invoke _updatePropSummaries is displayed in CoreEcot, and isn't
-            // supposed to display unless this Property has a Summary Link:
-            Html.HtmlValue(s"""<div class="alert">
-              |<button type="button" class="close" data-dismiss="alert">&times;</button>
-              |ERROR: That Property doesn't have a Summary Link defined!
-              |</div>""".stripMargin)          
-          }
-        }
-      }
+              |</div>""".stripMargin)
     }
   }
     
