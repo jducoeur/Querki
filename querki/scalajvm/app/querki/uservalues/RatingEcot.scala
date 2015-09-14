@@ -167,22 +167,22 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with Ratings with IntTypeBasis
       setName("Rating Summarizer"),
       Summary("Given a User Value Property made of numbers (such as Ratings), this provides functions such as _average.")))
   {
-	override def wikifyKey(context:QLContext, fromProp:Option[Property[_,_]], key:Int):Wikitext = {
-	  implicit val state = context.state
-	  fromProp match {
-	    case Some(prop) => {
-	      val labels = getLabels(prop)
-	      val label = try {
-	        // The Star ratings run from 1-n, so we need to adjust for the 0-based labels list:
-	        labels(key - 1)
-	      } catch {
-	        case ex:IndexOutOfBoundsException => key.toString
-	      }
-	      Wikitext(label)
-	    }
-	    case None => super.wikifyKey(context, fromProp, key)
-	  }
-	}     
+  	override def wikifyKey(context:QLContext, fromProp:Option[Property[_,_]], key:Int):Future[Wikitext] = {
+  	  implicit val state = context.state
+  	  fromProp match {
+  	    case Some(prop) => {
+  	      val labels = getLabels(prop)
+  	      val label = try {
+  	        // The Star ratings run from 1-n, so we need to adjust for the 0-based labels list:
+  	        labels(key - 1)
+  	      } catch {
+  	        case ex:IndexOutOfBoundsException => key.toString
+  	      }
+  	      Future.successful(Wikitext(label))
+  	    }
+  	    case None => super.wikifyKey(context, fromProp, key)
+  	  }
+  	}     
   }
 
   override lazy val types = Seq(

@@ -278,8 +278,8 @@ trait SummarizerDefs { self:QuerkiEcot =>
 	}
 	
 	// Split out so that subclasses can override this:
-	def wikifyKey(context:QLContext, fromProp:Option[Property[_,_]], key:UVT):Wikitext = {
-	  awaitHack(userType.doWikify(context)(key))
+	def wikifyKey(context:QLContext, fromProp:Option[Property[_,_]], key:UVT):Future[Wikitext] = {
+	  userType.doWikify(context)(key)
 	} 
 	  
 	def doWikify(context:QLContext)(v:DiscreteSummary[UVT], displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
@@ -299,14 +299,21 @@ trait SummarizerDefs { self:QuerkiEcot =>
 	    case Some(keys:Seq[UVT]) => keys.map(key => (key, v.content.get(key).getOrElse(0))).reverse
 	    case _ => v.content.toSeq
 	  }
-	  
-	  Future.successful((Wikitext("""
-	              |!+noLines
-	              |<dl class="histogram">""".stripMargin) /: pairs) 
-	  { (curText, pair) =>
-	    val (key, num) = pair
-	    curText + Wikitext("<dt>") + wikifyKey(context, fromPropOpt, key) + Wikitext("</dt><dd>" + num.toString + "</dd>\n")
-	  } + Wikitext("</dl>\n!-noLines\n"))
+    
+    val keyFuts = pairs.map { pair =>
+      val (key, num) = pair
+      wikifyKey(context, fromPropOpt, key).map { wikid =>
+        Wikitext("<dt>") + wikid + Wikitext("</dt><dd>" + num.toString + "</dd>\n")
+      }
+    }
+    
+    Future.sequence(keyFuts).map { guts =>
+      (Wikitext("""
+                |!+noLines
+                |<dl class="histogram">""".stripMargin) /: guts) 
+      { (curText, gut) => curText + gut } + 
+      Wikitext("</dl>\n!-noLines\n")
+    }
 	}
 	  
 	def doDefault(implicit state:SpaceState):DiscreteSummary[UVT] = DiscreteSummary(UnknownOID, Map())
