@@ -162,7 +162,7 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * If this isn't partially applied, the incomingContext is used for both. See Property for the main
    * usage of this.
    */
-  def qlApplyFromProp(inv:Invocation, prop:Property[VT,_]):Option[QValue] = None
+  def qlApplyFromProp(inv:Invocation, prop:Property[VT,_]):Option[QFut] = None
   
   /**
    * Iff defined, this Type must *always* be used with the specified Collection.

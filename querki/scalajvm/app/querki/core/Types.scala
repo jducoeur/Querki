@@ -61,7 +61,7 @@ trait TextTypeBasis { self:CoreEcot =>
     
     override def validate(v:String, prop:Property[_,_], state:SpaceState):Unit = validateText(v, prop, state)
 
-    override def qlApplyFromProp(inv:Invocation, prop:Property[QLText,_]):Option[QValue] = {
+    override def qlApplyFromProp(inv:Invocation, prop:Property[QLText,_]):Option[QFut] = {
       implicit val s = inv.state
       val result:QFut = for {
         // Declare the expected return type, which can be important if the results are empty and get
@@ -83,7 +83,7 @@ trait TextTypeBasis { self:CoreEcot =>
         // ... and process that element through QL.
         yield Core.ExactlyOne(QL.ParsedTextType(processed))
         
-      Some(awaitHack(result))
+      Some(result)
     }
       
     def code(elem:ElemValue):String = get(elem).text

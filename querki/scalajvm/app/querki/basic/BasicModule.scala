@@ -102,7 +102,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
     // TBD: in principle, we really want this to return a *context*, not a *value*. This is a special
     // case of a growing concern: that we could be losing information by returning QValue from
     // qlApply, and should actually be returning a full successor Context.
-    override def qlApplyFromProp(inv:Invocation, prop:Property[QLText,_]):Option[QValue] = {
+    override def qlApplyFromProp(inv:Invocation, prop:Property[QLText,_]):Option[QFut] = {
       val qv:QFut = for {
         (bundle, elemContext) <- inv.bundlesAndContextsForProp(prop)
         textPV <- inv.iter(bundle.getPropOpt(prop)(inv.state))
@@ -111,7 +111,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
       }
         yield result
         
-      Some(awaitHack(qv))
+      Some(qv)
     }
   }
   

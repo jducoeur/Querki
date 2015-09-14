@@ -110,11 +110,11 @@ case class Property[VT, RT](
   def serialize(v:QValue)(implicit state:SpaceState):String = validatingQValue(v){ v.serialize(pType) }
   def deserialize(str:String)(implicit state:SpaceState):QValue = cType.deserialize(str, pType)
   
-  def applyToIncomingProps(inv:Invocation)(action:(PropertyBundle, QLContext) => QValue):QValue = {
-    awaitHack(for {
+  def applyToIncomingProps(inv:Invocation)(action:(PropertyBundle, QLContext) => QValue):QFut = {
+    for {
       (bundle, elemContext) <- inv.bundlesAndContextsForProp(this)
     }
-      yield action(bundle, elemContext))
+      yield action(bundle, elemContext)
   }
   
   override def thingOps(ecology:Ecology):ThingOps = new PropertyThingOps(this)(ecology)
@@ -139,12 +139,12 @@ class PropertyThingOps[VT,RT](prop:Property[VT,RT])(implicit e:Ecology) extends 
    * TODO: if this Property isn't defined on the target Thing or its ancestors, this should return None.
    * So technically, this should be returning Optional. Note that PType.qlApply() already does this.
    */
-  override def qlApply(inv:Invocation):Future[QValue] = {
+  override def qlApply(inv:Invocation):QFut = {
     // Give the Type first dibs at handling the call; otherwise, return the value of this property
     // on the incoming thing.
-    Future.successful((pType.qlApplyFromProp(inv, prop).getOrElse(
+    (pType.qlApplyFromProp(inv, prop).getOrElse(
       prop.applyToIncomingProps(inv) { (t, innerContext) =>
         t.getPropVal(prop)(innerContext.state)
-      })))
+      }))
   }  
 }
