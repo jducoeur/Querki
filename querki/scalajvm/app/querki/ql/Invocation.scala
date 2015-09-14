@@ -393,12 +393,15 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
   def processParam(paramNum:Int, processContext:QLContext = context):InvocationValue[QValue] = {
     paramsOpt match {
       case Some(params) if (params.length >= (paramNum + 1)) => {
-        val processed = awaitHack(context.parser.get.processPhrase(params(paramNum).ops, processContext)).value
-        processed.firstAs(QL.ErrorTextType) match {
-          // If there was an error, keep the error, and stop processing:
-          case Some(errorText) => InvocationValueImpl(new PublicException("General.public", errorText))
-          case None => InvocationValueImpl(Some(processed))
+        val resultFut = context.parser.get.processPhrase(params(paramNum).ops, processContext).flatMap { raw =>
+          val processed = raw.value
+          processed.firstAs(QL.ErrorTextType) match {
+            // If there was an error, keep the error, and stop processing:
+            case Some(errorText) => Future.failed(new PublicException("General.public", errorText))
+            case None => Future.successful(Some(processed))
+          }
         }
+        InvocationValueImpl(inv, resultFut.map(IVData(_)))
       }
       case _ => error("Func.missingParam", displayName)
     }    
