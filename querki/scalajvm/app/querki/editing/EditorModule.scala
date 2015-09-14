@@ -151,20 +151,20 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   
     def applyToPropAndThing(inv:Invocation, elemContext:QLContext, mainThing:PropertyBundle, 
       definingContext:QLContext, prop:Property[_,_],
-      params:Option[Seq[QLPhrase]]):QValue =
+      params:Option[Seq[QLPhrase]]):QFut =
     {
       elemContext.request.requester match {
         case Some(requester) if (canEdit(elemContext, requester, mainThing, prop)) => {
           val currentValue = mainThing.getDisplayPropVal(prop)(elemContext.state).copy(cont = elemContext.currentValue)
-	      // TODO: conceptually, this is a bit off -- the rendering style shouldn't be hard-coded here. We
+	        // TODO: conceptually, this is a bit off -- the rendering style shouldn't be hard-coded here. We
   	      // probably need to have the Context contain the desire to render in HTML, and delegate to the
-	      // HTML renderer indirectly. In other words, the Context should know the renderer to use, and pass
-	      // that into here:
-	      val inputControl = HtmlRenderer.renderPropertyInput(elemContext, prop, currentValue, 
-	          specialization(elemContext, mainThing, definingContext, prop, params))
-	      HtmlUI.HtmlValue(inputControl)    
+  	      // HTML renderer indirectly. In other words, the Context should know the renderer to use, and pass
+  	      // that into here:
+  	      val inputControl = HtmlRenderer.renderPropertyInput(elemContext, prop, currentValue, 
+  	          specialization(elemContext, mainThing, definingContext, prop, params))
+  	      Future.successful(HtmlUI.HtmlValue(inputControl))    
         }
-        case _ => awaitHack(cantEditFallback(inv))
+        case _ => cantEditFallback(inv)
       }
     }
   
@@ -196,16 +196,18 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
           for {
             prop <- inv.definingContextAsProperty
             (bundle, elemContext) <- inv.contextBundlesAndContexts
+            result <- inv.fut(applyToPropAndThing(inv, elemContext, bundle, definingContext, prop, params))
           }
-            yield applyToPropAndThing(inv, elemContext, bundle, definingContext, prop, params)
+            yield result 
         }
         
         case None => {
           // [[THINGS -> _edit]] -- there is no PROP specified
           for {
             thing <- inv.contextAllThings
+            result <- inv.fut(editThing(thing, inv.context)(inv.state))
           }
-            yield awaitHack(editThing(thing, inv.context)(inv.state))
+            yield result
         }
       } 
     }
