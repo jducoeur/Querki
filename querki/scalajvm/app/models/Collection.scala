@@ -73,8 +73,8 @@ abstract class Collection(i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, 
    * TODO: this is an abstraction break, and really belongs in some side tree that maps Collections
    * to HTML representations. But that's for another day.
    */
-  def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):NodeSeq
-  def renderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):NodeSeq = {
+  def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):Future[NodeSeq]
+  def renderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):Future[NodeSeq] = {
     doRenderInput(prop, context, currentValue, elemT)
   }
 

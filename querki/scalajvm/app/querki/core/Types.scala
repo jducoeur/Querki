@@ -299,29 +299,25 @@ trait LinkUtils { self:CoreEcot =>
     
     filteredAsModel.filterNot(_.ifSet(InternalProp))
   }    
-  
-    def renderInputXmlGuts(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue, allowEmpty:Boolean):NodeSeq = {
-      <select class="_linkSelect"> 
-      {
-      val state = context.state
-      val Links = interface[querki.links.Links]
-      // Give the Property a chance to chime in on which candidates belong here:
-      val candidates = prop match {
-        case f:LinkCandidateProvider => f.getLinkCandidates(state, currentValue)
-        case _ => linkCandidates(state, Links, prop)
-      }
-      val realOptions =
-        if (candidates.isEmpty) {
-          Seq(<option value={UnknownOID.toString}><i>None defined</i></option>)
-        } else {
-          // Note: the unsafeDisplayNames below are because Scala's XML interpolator appears to be doing the
-          // name sanitizing for us:
-          candidates map { candidate:Thing =>
-            // TODO: in principle, the awaitHack below is evil -- the candidate's name *could* conceivably contain
-            // async stuff. In practice, that is rare-to-nonexistent, and if we let the Future escape here we're going
-            // to have to Future-ize the entire renderInputXml stack. We should do that in due course, but I'm not
-            // biting it off today. (jducoeur 9/4/15)
-            val name = context.requestOpt.map(req => awaitHack(candidate.unsafeNameOrComputed(req, state))).getOrElse(candidate.unsafeDisplayName)
+
+  def renderInputXmlGuts(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue, allowEmpty:Boolean):Future[NodeSeq] = {
+    val state = context.state
+    val Links = interface[querki.links.Links]
+    // Give the Property a chance to chime in on which candidates belong here:
+    val candidates = prop match {
+      case f:LinkCandidateProvider => f.getLinkCandidates(state, currentValue)
+      case _ => linkCandidates(state, Links, prop)
+    }
+    val realOptionsFut:Future[Seq[NodeSeq]] =
+      if (candidates.isEmpty) {
+        Future.successful(Seq(<option value={UnknownOID.toString}><i>None defined</i></option>))
+      } else {
+        // Note: the unsafeDisplayNames below are because Scala's XML interpolator appears to be doing the
+        // name sanitizing for us:
+        val optFuts:Seq[Future[NodeSeq]] = candidates map { candidate:Thing =>
+          context.requestOpt.map(req => candidate.unsafeNameOrComputed(req, state)).
+            getOrElse(Future.successful(candidate.unsafeDisplayName)).
+            map { name =>
             if(candidate.id == v.elem) {
               <option value={candidate.id.toString} selected="selected">{name}</option>        
             } else {
@@ -329,13 +325,18 @@ trait LinkUtils { self:CoreEcot =>
             }
           }
         }
-      val withOpt =
+        Future.sequence(optFuts)
+      }
+    val linkModel = prop.getPropOpt(Links.LinkModelProp)(state)
+    
+    for {
+      realOptions <- realOptionsFut
+      withOpt =
         if (allowEmpty)
           <option value={UnknownOID.id.toString}>Nothing selected</option> +: realOptions
         else
           realOptions
-      val linkModel = prop.getPropOpt(Links.LinkModelProp)(state)
-      linkModel match {
+      fullContents = linkModel match {
         case Some(propAndVal) if (!propAndVal.isEmpty) => {
           val model = state.anything(propAndVal.first).get
           if (model.ifSet(Links.NoCreateThroughLinkProp)(state))
@@ -345,9 +346,10 @@ trait LinkUtils { self:CoreEcot =>
         }
         case _ => withOpt
       }
-      } </select>
     }
-  
+      yield
+        <select class="_linkSelect">fullContents</select>
+  }  
 }
 
 trait CoreExtra {
@@ -366,7 +368,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
     def doSerialize(v:Unit)(implicit state:SpaceState) = throw new Exception("Trying to use UnknownType!")
     def doWikify(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = throw new Exception("Trying to use UnknownType!")
   
-    def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = 
+    def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):Future[NodeSeq] = 
       throw new Exception("Trying to use UnknownType!")
 
     def doDefault(implicit state:SpaceState) = throw new Exception("Trying to use UnknownType!")
@@ -394,7 +396,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
     def doSerialize(v:Unit)(implicit state:SpaceState) = throw new Exception("Trying to use UrType!")
     def doWikify(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = throw new Exception("Trying to use UrType!")
   
-    def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = 
+    def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):Future[NodeSeq] = 
       throw new Exception("Trying to use UrType!")
 
     def doDefault(implicit state:SpaceState) = throw new Exception("Trying to use UrType!")    
@@ -536,8 +538,8 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
   {
     override def editorSpan(prop:Property[_,_]):Int = 12
     
-    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq =
-      renderLargeText(prop, context, currentValue, v, this)
+    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):Future[NodeSeq] =
+      Future.successful(renderLargeText(prop, context, currentValue, v, this))
   }
     
   /**
@@ -647,7 +649,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
 
     def doDefault(implicit state:SpaceState) = UnknownOID
     
-    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
+    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):Future[NodeSeq] = {
       renderInputXmlGuts(prop, context, currentValue, v, false)
     }
     
@@ -785,11 +787,11 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
     
     def doDefault(implicit state:SpaceState) = false
     
-    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
-      if (get(v))
+    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):Future[NodeSeq] = {
+      Future.successful(if (get(v))
         <input type="checkbox" checked="checked" />
       else
-        <input type="checkbox"/>
+        <input type="checkbox"/>)
     }
   }
 }

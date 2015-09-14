@@ -160,9 +160,11 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   	      // probably need to have the Context contain the desire to render in HTML, and delegate to the
   	      // HTML renderer indirectly. In other words, the Context should know the renderer to use, and pass
   	      // that into here:
-  	      val inputControl = HtmlRenderer.renderPropertyInput(elemContext, prop, currentValue, 
+          for {
+  	        inputControl <- HtmlRenderer.renderPropertyInput(elemContext, prop, currentValue, 
   	          specialization(elemContext, mainThing, definingContext, prop, params))
-  	      Future.successful(HtmlUI.HtmlValue(inputControl))    
+          }
+  	        yield HtmlUI.HtmlValue(inputControl)    
         }
         case _ => cantEditFallback(inv)
       }

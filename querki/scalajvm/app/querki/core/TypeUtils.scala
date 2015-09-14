@@ -6,6 +6,7 @@ import models.{DisplayPropVal, OID, Property, PType}
 import models.Thing.PropFetcher
 
 import querki.ecology._
+import querki.globals._
 import querki.values.{ElemValue, QLContext, SpaceState}
 
 object TypeUtils {
@@ -42,7 +43,7 @@ object TypeUtils {
     lazy val Types = interface[querki.types.Types]
     private lazy val Core = interface[querki.core.Core]
     
-    def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
+    def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):Future[NodeSeq] = {
       // TBD: this is smelly -- the fact that we need to know here how to render Optional is a nasty abstraction
       // break. But in general, rendering probably doesn't belong here: ultimately, rendering depends on the
       // Collection/Type matrix, and there doesn't seem to be a nice clean division of responsibilities...
@@ -52,7 +53,7 @@ object TypeUtils {
           )
         yield renderBlank(prop, context, currentValue, this)
       
-      renderedBlank.getOrElse(renderText(prop, context, currentValue, v, this))
+      Future.successful(renderedBlank.getOrElse(renderText(prop, context, currentValue, v, this)))
     }
   
     // Iff a Type wants to render QNone as blank text instead of the default value, set this to true

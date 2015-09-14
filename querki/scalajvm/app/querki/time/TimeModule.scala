@@ -1,6 +1,5 @@
 package querki.time
 
-import scala.concurrent.Future
 import scala.xml.NodeSeq
 
 import com.github.nscala_time.time.Imports._
@@ -8,6 +7,7 @@ import com.github.nscala_time.time.Imports._
 import models._
 
 import querki.ecology._
+import querki.globals._
 import querki.values.{ElemValue, QLContext, SpaceState}
 
 /**
@@ -65,7 +65,7 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
      * TODO: as usual, this is too incestuous with the actual implementation on the client side. We should be sending
      * more abstract information here, and having the client actually render the datepicker.
      */
-    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
+    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):Future[NodeSeq] = {
       val date = get(v)
       val str =
         if (date == epoch) {
@@ -80,7 +80,7 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
             doToUser(DateTime.now)(context.state)
         } else
           toUser(v)(context.state)
-      <input type="text" class="_dateInput" value={str}/>
+      fut(<input type="text" class="_dateInput" value={str}/>)
     }
     
     override def doComp(context:QLContext)(left:DateTime, right:DateTime):Boolean = { left < right } 

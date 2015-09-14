@@ -1,7 +1,5 @@
 package querki.uservalues
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.xml.NodeSeq
 
 import models.{DisplayPropVal, Kind, PropertyBundle, PType, SimplePTypeBuilder, ThingState, Wikitext}
@@ -9,6 +7,7 @@ import models.{DisplayPropVal, Kind, PropertyBundle, PType, SimplePTypeBuilder, 
 import querki.core.IntTypeBasis
 import querki.core.TypeUtils.DiscreteType
 import querki.ecology._
+import querki.globals._
 import querki.types.{ModeledPropertyBundle, ModelTypeDefiner}
 import querki.util.{HtmlEscape, QLog}
 import querki.values.{ElemValue, QLContext, RequestContext, SpaceState}
@@ -71,13 +70,13 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with Ratings with IntTypeBasis
     toProps(
       setName("Rating Type"))) with DiscreteType[Int]
   {
-    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
+    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):Future[NodeSeq] = {
       implicit val s = context.state
       // Note that we are intentionally demanding a result here. If it's not defined, we expect to get LabelsProp's default.
       // So we don't expect this to ever be empty:
       val labels = getLabels(prop)
       
-      if (prop.ifSet(RatingShowTargetProperty)) {
+      fut(if (prop.ifSet(RatingShowTargetProperty)) {
         val targetId = "target" + currentValue.suffix
         // HACK: the _ratingTargetWrapper is there because *both* of the top-level nodes will get their ids set by HtmlRenderer. Do we
         // have any good way of preventing it from doing so to the _ratingTarget?
@@ -85,7 +84,7 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with Ratings with IntTypeBasis
         <div class='_ratingTargetWrapper'><div id={targetId} class='_ratingTarget'></div></div>
         
       } else
-        <div class='_rating' data-rating={get(v).toString} data-labels={labels.mkString(",")}></div>
+        <div class='_rating' data-rating={get(v).toString} data-labels={labels.mkString(",")}></div>)
     }
     
     /**

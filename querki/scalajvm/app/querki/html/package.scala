@@ -4,11 +4,11 @@ import scala.xml.NodeSeq
 
 import play.api.data.Form
 
-import querki.ecology._
-
 import models.{DisplayPropVal, FieldIds, FormFieldInfo, OID, Property, Thing, ThingId, Wikitext}
 
 import querki.core.QLText
+import querki.ecology._
+import querki.globals._
 import querki.ui.UIRenderer
 import querki.values.{QLContext, QValue, RequestContext, SpaceState}
 
@@ -30,10 +30,10 @@ package object html {
     def propValFromUser(fieldIds:FieldIds, vs:List[String], context:QLContext):FormFieldInfo
     def renderPropertyInput(context:QLContext, prop:Property[_,_], 
         currentValue:DisplayPropVal, 
-        specialization:Set[RenderSpecialization.RenderSpecialization] = Set(RenderSpecialization.Unspecialized)):QHtml
+        specialization:Set[RenderSpecialization.RenderSpecialization] = Set(RenderSpecialization.Unspecialized)):Future[QHtml]
     def renderPropertyInputStr(context:QLContext, prop:Property[_,_], 
         currentValue:DisplayPropVal, 
-        specialization:Set[RenderSpecialization.RenderSpecialization] = Set(RenderSpecialization.Unspecialized)):String
+        specialization:Set[RenderSpecialization.RenderSpecialization] = Set(RenderSpecialization.Unspecialized)):Future[String]
   }
   
   trait HtmlUI extends EcologyInterface {

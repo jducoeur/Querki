@@ -87,4 +87,8 @@ package object globals {
     }
   }
   
+  /**
+   * Alias for Future.successful, simply to save typing, since we now use it a *lot*.
+   */
+  def fut[T] = Future.successful[T] _
 }

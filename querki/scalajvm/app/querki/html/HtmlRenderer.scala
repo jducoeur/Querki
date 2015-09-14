@@ -1,6 +1,5 @@
 package querki.html
 
-import scala.concurrent.Future
 import scala.xml.{Attribute, NodeSeq, Null, Text, Xhtml}
 
 import play.api.Logger
@@ -10,7 +9,7 @@ import models._
 
 import querki.core.QLText
 import querki.ecology._
-
+import querki.globals._
 import querki.util.XmlHelpers
 import querki.values._
 
@@ -41,21 +40,29 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
    * PUBLIC API
    *********************************/
   
-  def renderPropertyInputStr(context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization] = Set(Unspecialized)):String = {
+  def renderPropertyInputStr(context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal, 
+      specialization:Set[RenderSpecialization] = Set(Unspecialized)):Future[String] = 
+  {
     val state = context.state
     val cType = prop.cType
     val pType = prop.pType
-    val rendered = doRender(cType, pType, context, prop, currentValue, specialization)
-    val xml3 = addEditorAttributes(rendered, currentValue, prop, currentValue.inputControlId)
-    // TODO: this is *very* suspicious, but we need to find a solution. RenderTagSet is trying to pass JSON structures in the
-    // value field, but for that to be JSON-legal, the attributes need to be single-quoted, and the strings in them double-quoted.
-    // That isn't the way things come out here, so we're kludging, but I worry about potential security holes...
-    Xhtml.toXhtml(xml3).replace("\'", "&#39;").replace("\"", "\'").replace("&quot;", "\"")    
+    for {
+      rendered <- doRender(cType, pType, context, prop, currentValue, specialization)
+      xml3 = addEditorAttributes(rendered, currentValue, prop, currentValue.inputControlId)
+    }
+      // TODO: this is *very* suspicious, but we need to find a solution. RenderTagSet is trying to pass JSON structures in the
+      // value field, but for that to be JSON-legal, the attributes need to be single-quoted, and the strings in them double-quoted.
+      // That isn't the way things come out here, so we're kludging, but I worry about potential security holes...
+      yield Xhtml.toXhtml(xml3).replace("\'", "&#39;").replace("\"", "\'").replace("&quot;", "\"")    
   }
   
-  def renderPropertyInput(context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization] = Set(Unspecialized)):QHtml = {
-	val xmlFixedQuotes =  renderPropertyInputStr(context, prop, currentValue, specialization)
-    QHtml(xmlFixedQuotes)
+  def renderPropertyInput(context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal, 
+      specialization:Set[RenderSpecialization] = Set(Unspecialized)):Future[QHtml] = 
+  {
+    for {
+  	  xmlFixedQuotes <- renderPropertyInputStr(context, prop, currentValue, specialization)
+    }
+      yield QHtml(xmlFixedQuotes)
   }
   
   // TODO: refactor this with Collection.fromUser():
@@ -164,26 +171,31 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     }
   }
   
-  def doRender(cType:Collection, pType:PType[_], context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):NodeSeq = {
-    renderSpecialized(cType, pType, context, prop, currentValue, specialization).getOrElse(cType.renderInput(prop, context, currentValue, pType))
+  def doRender(cType:Collection, pType:PType[_], context:QLContext, prop:Property[_,_], 
+      currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):Future[NodeSeq] = 
+  {
+    renderSpecialized(cType, pType, context, prop, currentValue, specialization)
+      .getOrElse(cType.renderInput(prop, context, currentValue, pType))
   }
   
-  def renderSpecialized(cType:Collection, pType:PType[_], context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):Option[NodeSeq] = {
+  def renderSpecialized(cType:Collection, pType:PType[_], context:QLContext, prop:Property[_,_], 
+      currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):Option[Future[NodeSeq]] = 
+  {
     // TODO: make this more data-driven. There should be a table of these.
     implicit val state = context.state
     pType match {
       // If the Type wants to own the rendering, on its head be it:
-      case renderingType:FullInputRendering => Some(renderingType.renderInputFull(prop, context, currentValue))
+      case renderingType:FullInputRendering => Some(fut(renderingType.renderInputFull(prop, context, currentValue)))
       case _ => {
 	    if (cType == Optional && pType == YesNoType)
-	      Some(renderOptYesNo(state, prop, currentValue))
+	      Some(fut(renderOptYesNo(state, prop, currentValue)))
 	    else if (cType == Optional && pType == LinkType)
 	      Some(renderOptLink(context, prop, currentValue))
 	    else if (Tags.isTaggableProperty(prop)) {
 	      if (specialization.contains(PickList))
-	        Some(renderPickList(state, prop, currentValue, specialization))
+	        Some(fut(renderPickList(state, prop, currentValue, specialization)))
 	      else
-	        Some(renderTagSet(state, prop, currentValue))
+	        Some(fut(renderTagSet(state, prop, currentValue)))
 	    } else
 	      None
       }
@@ -228,7 +240,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       </span>
   }
   
-  def renderOptLink(context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal):NodeSeq = {
+  def renderOptLink(context:QLContext, prop:Property[_,_], currentValue:DisplayPropVal):Future[NodeSeq] = {
     implicit val s = context.state
     val pType = LinkType
     val pair = currentValue.effectiveV.map(propVal => if (propVal.cv.isEmpty) (false, pType.default) else (true, propVal.first)).getOrElse((false, pType.default))

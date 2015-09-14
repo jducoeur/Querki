@@ -136,8 +136,8 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s
    * side classes for each PType, which describe how to render them in particular circumstances. But
    * we'll get to that...
    */
-  def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq
-  def renderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
+  def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):Future[NodeSeq]
+  def renderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):Future[NodeSeq] = {
     renderInputXml(prop, context, currentValue, v)
   }
   
@@ -228,7 +228,7 @@ class DelegatingType[VT](resolver: => PType[VT]) extends PType[VT](UnknownOID, U
   
   override def doMatches(left:VT, right:VT) = realType.doMatches(left, right)
   
-  def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = 
+  def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):Future[NodeSeq] = 
     realType.renderInputXml(prop, context, currentValue, v)
 
   def doDefault(implicit state:SpaceState) = realType.doDefault

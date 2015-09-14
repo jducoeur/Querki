@@ -209,20 +209,20 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
   private def getOnePropEditor(thing:Thing, prop:AnyProp, propVal:DisplayPropVal):Future[PropEditInfo] = {
     implicit val s = state
     val context = thing.thisAsContext(rc, state, ecology)
-    val rendered = HtmlRenderer.renderPropertyInputStr(context, prop, propVal)
     for {
+      rendered <- HtmlRenderer.renderPropertyInputStr(context, prop, propVal)
       prompt <- futOpt(prop.getPropOpt(Editor.PromptProp).filter(!_.isEmpty).map(_.renderPlain))
       summary <- futOpt(prop.getPropOpt(Conventions.PropSummary).map(_.render(prop.thisAsContext(rc, state, ecology))))
     }
-    yield PropEditInfo(
-      ClientApi.propInfo(prop, rc),
-      propVal.inputControlId,
-      prompt,
-      summary,
-      propVal.inheritedFrom.map(_.displayName),
-      AccessControl.canEdit(state, user, prop),
-      rendered
-      )
+      yield PropEditInfo(
+        ClientApi.propInfo(prop, rc),
+        propVal.inputControlId,
+        prompt,
+        summary,
+        propVal.inheritedFrom.map(_.displayName),
+        AccessControl.canEdit(state, user, prop),
+        rendered
+        )
   }
   
   def getOnePropertyEditor(thingId:TID, propId:TID):Future[PropEditInfo] = withThing(thingId) { thing =>

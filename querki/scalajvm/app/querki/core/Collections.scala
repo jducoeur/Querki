@@ -1,8 +1,6 @@
 package querki.core
 
 import language.existentials
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.xml.{Attribute, NodeSeq, Null, Text}
 
 import play.api.Logger
@@ -13,7 +11,8 @@ import play.api.data.Form
 import models._
 
 import querki.ecology._
-import querki.util._
+import querki.globals._
+import querki.util.{TryTrans, XmlHelpers}
 import querki.values._
 
 import MOIDs._
@@ -113,7 +112,7 @@ trait CollectionBase { self:CoreEcot =>
     }
     def wrap(elem:ElemValue):implType = List(elem)
     
-    def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):NodeSeq = {
+    def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):Future[NodeSeq] = {
       implicit val s = context.state
       val v = currentValue.effectiveV.flatMap(_.firstOpt).getOrElse(elemT.default)
       elemT.renderInput(prop, context, currentValue, v)
@@ -168,36 +167,42 @@ trait CollectionBase { self:CoreEcot =>
     // TODO: the stuff created here overlaps badly with the Javascript code in editThing.scala.html.
     // Rationalize the two, to eliminate all the duplication. In theory, the concept and structure
     // belongs here, and the details belong there.
-    def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):NodeSeq = {
+    def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):Future[NodeSeq] = {
       implicit val state = context.state
       val HtmlRenderer = interface[querki.html.HtmlRenderer]
-      val defaulted = HtmlRenderer.addClasses(elemT.renderInput(prop, context, currentValue.copy(i = Some(-1)), elemT.default), "inputTemplate list-input-element")
-      val inputTemplate = XmlHelpers.mapElems(defaulted) ( _ %      
-    		  Attribute("data-basename", Text(currentValue.collectionControlId + "-item"),
-    		  Null))
-      val addButtonId = currentValue.collectionControlId + "-addButton"
-      <div class="coll-list-input" data-delegate-disable-to={addButtonId}>
-        <ul id={currentValue.collectionControlId} class="sortableList">{
+      for {
+        defaultElem <- elemT.renderInput(prop, context, currentValue.copy(i = Some(-1)), elemT.default)
+        defaulted = HtmlRenderer.addClasses(defaultElem, "inputTemplate list-input-element")
+        inputTemplate = XmlHelpers.mapElems(defaulted) ( _ %      
+          Attribute("data-basename", Text(currentValue.collectionControlId + "-item"),
+          Null))
+        addButtonId = currentValue.collectionControlId + "-addButton"
+        gutsses =
           currentValue.effectiveV.map { v =>
             val cv = v.cv
             cv.zipWithIndex.map { pair =>
               val (elemV, i) = pair
               val elemCurrentValue = currentValue.copy(i = Some(i))
-              val simplyRendered = elemT.renderInput(prop, context, elemCurrentValue, elemV)
-              val withClasses = HtmlRenderer.addClasses(simplyRendered, "list-input-element")
-              val itemRendered:NodeSeq = XmlHelpers.mapElems(withClasses) { elem =>
-                elem %
-              	  Attribute("id", Text(currentValue.collectionControlId + "-item[" + i + "]"), 
-              	  Attribute("name", Text(currentValue.collectionControlId + "-item[" + i + "]"), Null))
+              elemT.renderInput(prop, context, elemCurrentValue, elemV).map { simplyRendered =>
+                val withClasses = HtmlRenderer.addClasses(simplyRendered, "list-input-element")
+                val itemRendered:NodeSeq = XmlHelpers.mapElems(withClasses) { elem =>
+                  elem %
+                    Attribute("id", Text(currentValue.collectionControlId + "-item[" + i + "]"), 
+                    Attribute("name", Text(currentValue.collectionControlId + "-item[" + i + "]"), Null))
+                }
+                <li><span class="glyphicon glyphicon-move"></span>{itemRendered}<button class="delete-item-button btn-xs">&nbsp;</button></li>                
               }
-              <li><span class="glyphicon glyphicon-move"></span>{itemRendered}<button class="delete-item-button btn-xs">&nbsp;</button></li>
             }
-          }.getOrElse(NodeSeq.Empty)
-        }</ul>
-        <button class="add-item-button btn-xs" id={addButtonId} data-size={currentValue.collectionControlId + "-size"}>&nbsp;</button>
-        <input type="hidden" id={currentValue.collectionControlId + "-size"} value={currentValue.v.map(_.cv.size).getOrElse(0).toString}/>
-        {inputTemplate}
-      </div>
+          }.getOrElse(Seq(fut(NodeSeq.Empty)))
+        guts <- Future.sequence(gutsses)
+      }
+      yield 
+        <div class="coll-list-input" data-delegate-disable-to={addButtonId}>
+          <ul id={currentValue.collectionControlId} class="sortableList">guts</ul>
+          <button class="add-item-button btn-xs" id={addButtonId} data-size={currentValue.collectionControlId + "-size"}>&nbsp;</button>
+          <input type="hidden" id={currentValue.collectionControlId + "-size"} value={currentValue.v.map(_.cv.size).getOrElse(0).toString}/>
+          {inputTemplate}
+        </div>
     }
     
     import play.api.data.Form
@@ -267,7 +272,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
         setInternal
         ))
   {
-	type implType = List[ElemValue]
+	  type implType = List[ElemValue]
 	
     def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = 
       throw new Error("Trying to deserialize root collection!")
@@ -277,16 +282,16 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
       throw new Error("Trying to render root collection!")
     def doDefault(elemT:pType)(implicit state:SpaceState):implType = 
       throw new Error("Trying to default root collection!")    
-	def wrap(elem:ElemValue):implType =
-	  throw new Error("Trying to wrap root collection!")    
-	def makePropValue(cv:Iterable[ElemValue], pType:PType[_]):QValue =
-	  throw new Error("Trying to makePropValue root collection!")    
-    def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):NodeSeq =
-	  throw new Error("Trying to render input on root collection!")
-	def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo =
-	  throw new Error("Trying to fromUser on root collection!")
-	def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = ???
-	def fromUser(info:FieldIds, vs:List[String], state:SpaceState):FormFieldInfo = ???
+  	def wrap(elem:ElemValue):implType =
+  	  throw new Error("Trying to wrap root collection!")    
+  	def makePropValue(cv:Iterable[ElemValue], pType:PType[_]):QValue =
+  	  throw new Error("Trying to makePropValue root collection!")    
+    def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):Future[NodeSeq] =
+  	  throw new Error("Trying to render input on root collection!")
+  	def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo =
+  	  throw new Error("Trying to fromUser on root collection!")
+  	def append(v:implType, elem:ElemValue):(QValue,Option[ElemValue]) = ???
+  	def fromUser(info:FieldIds, vs:List[String], state:SpaceState):FormFieldInfo = ???
   }
   
   class ExactlyOne(implicit e:Ecology) extends ExactlyOneBase(ExactlyOneOID)
@@ -328,7 +333,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
     def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = {
       v match {
         case List(elem) => elemT.wikify(context)(elem, displayOpt, lexicalThing)
-        case Nil => Future.successful(Wikitext(""))
+        case Nil => fut(Wikitext(""))
       }
     }
     
@@ -338,7 +343,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
     def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = OptionalPropValue(cv.toList, this, elemT)    
     private case class OptionalPropValue(cv:implType, cType:Optional, pType:PType[_]) extends QValue
     
-    def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):NodeSeq = {
+    def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):Future[NodeSeq] = {
       implicit val state = context.state
       // TODO: what should we do here? Has custom rendering become unnecessary here? Does the appearance of the
       // trash button eliminate the need for anything fancy for Optional properties?
@@ -425,7 +430,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
     def doSerialize(v:implType, elemT:pType)(implicit state:SpaceState):String = ""
     
     def doWikify(context:QLContext)(v:implType, elemT:pType, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None):Future[Wikitext] = 
-      Future.successful(Wikitext(""))
+      fut(Wikitext(""))
     
     def doDefault(elemT:pType)(implicit state:SpaceState):implType = Nil
     
@@ -433,8 +438,8 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
     def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = UnitPropValue(cv.toList, this, elemT)    
     private case class UnitPropValue(cv:implType, cType:QUnit, pType:PType[_]) extends QValue
     
-    def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):NodeSeq = {
-      <i>Defined</i>
+    def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):Future[NodeSeq] = {
+      fut(<i>Defined</i>)
     }
 
     def fromUser(on:Option[Thing], form:Form[_], prop:Property[_,_], elemT:pType, containers:Option[FieldIds], state:SpaceState):FormFieldInfo =
@@ -468,7 +473,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
     def wrap(elem:ElemValue):implType = List(elem)
     def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = bootPropValue(cv.toList, this, elemT)
     
-    def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):NodeSeq = {
+    def doRenderInput(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, elemT:PType[_]):Future[NodeSeq] = {
       implicit val s = context.state
       val v = currentValue.v.map(_.first).getOrElse(elemT.default)
       elemT.renderInput(prop, context, currentValue, v)

@@ -170,10 +170,11 @@ trait ModelTypeDefiner { self:EcologyMember =>
       ModeledPropertyBundle(this, basedOn, raw.props)
     }
     
-    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):NodeSeq = {
+    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):Future[NodeSeq] = {
       val bundle = get(v)
-      val wikitext = awaitHack(Editor.getInstanceEditor(bundle, context, Some(currentValue)))
-      XmlHelpers.toNodes(wikitext.display)
+      Editor.getInstanceEditor(bundle, context, Some(currentValue)).map { wikitext =>
+        XmlHelpers.toNodes(wikitext.display)
+      }
     }
   }
   
