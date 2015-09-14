@@ -318,15 +318,16 @@ trait LinkUtils { self:CoreEcot =>
           context.requestOpt.map(req => candidate.unsafeNameOrComputed(req, state)).
             getOrElse(Future.successful(candidate.unsafeDisplayName)).
             map { name =>
-            if(candidate.id == v.elem) {
-              <option value={candidate.id.toString} selected="selected">{name}</option>        
-            } else {
-              <option value={candidate.id.toString}>{name}</option>
+              if(candidate.id == v.elem) {
+                <option value={candidate.id.toString} selected="selected">{name}</option>        
+              } else {
+                <option value={candidate.id.toString}>{name}</option>
+              }
             }
-          }
         }
         Future.sequence(optFuts)
       }
+    
     val linkModel = prop.getPropOpt(Links.LinkModelProp)(state)
     
     for {
@@ -348,7 +349,7 @@ trait LinkUtils { self:CoreEcot =>
       }
     }
       yield
-        <select class="_linkSelect">fullContents</select>
+        <select class="_linkSelect">{fullContents}</select>
   }  
 }
 

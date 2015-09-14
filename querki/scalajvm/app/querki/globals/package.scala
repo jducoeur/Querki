@@ -49,6 +49,17 @@ package object globals {
     }
   }
   
+  def spewingFut[T](msg:String)(f: => Future[T]):Future[T] = {
+    QLog.spew(s"Will be trying $msg")
+    f.onSuccess {
+      case result => QLog.spew(s"  $msg succeeded, produces $result")
+    }
+    f.onFailure {
+      case th:Throwable => QLog.error(s"  $msg failed", th)
+    }
+    f
+  }
+  
   def spew(msg:String) = QLog.spew(msg)
   
   type Future[T] = scala.concurrent.Future[T]
