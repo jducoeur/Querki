@@ -122,6 +122,10 @@ class CollectionsTests extends QuerkiTests {
       
       pql("""[[Wrapper -> My List of Links -> _filter(_equals(Single Link, Link Target))]]""") should
         equal (listOfLinkText(s.pointer1, s.pointer3))
+      
+      // Confirm that a single output comes out correctly:
+      pql("""[[Wrapper -> My List of Links -> _filter(_equals(Single Link, Sandbox))]]""") should
+        equal (listOfLinkText(s.pointer2))
     }
   }
   

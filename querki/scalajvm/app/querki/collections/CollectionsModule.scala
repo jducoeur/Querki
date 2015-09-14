@@ -217,6 +217,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	{
 	  override def qlApply(inv:Invocation):QFut = {
       for {
+        dummy <- inv.preferCollection(QList)
         elemContext <- inv.contextElements
         passes <- inv.processParamFirstAs(0, YesNoType, elemContext)
         if (passes)
