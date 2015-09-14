@@ -110,15 +110,18 @@ class CollectionsTests extends QuerkiTests {
   // === _filter ===
   "_filter" should {
     "work with _equals" in {
-      class testSpace extends CommonSpace {
+      class TSpace extends CommonSpace {
         val linkTarget = new SimpleTestThing("Link Target")
         val pointer1 = new SimpleTestThing("Pointer 1", singleLinkProp(linkTarget))
         val pointer2 = new SimpleTestThing("Pointer 2", singleLinkProp(sandbox))
-        val wrapper = new SimpleTestThing("Wrapper", listLinksProp(pointer1, pointer2))
+        val pointer3 = new SimpleTestThing("Pointer 3", singleLinkProp(linkTarget))
+        val pointer4 = new SimpleTestThing("Pointer 4", singleLinkProp(trivialThing))
+        val wrapper = new SimpleTestThing("Wrapper", listLinksProp(pointer1, pointer2, pointer3, pointer4))
       }
+      implicit val s = new TSpace 
       
-      processQText(thingAsContext[testSpace](new testSpace, _.wrapper), """[[My List of Links -> _filter(_equals(Single Link, Link Target))]]""") should
-        equal ("\n[Pointer 1](Pointer-1)")      
+      pql("""[[Wrapper -> My List of Links -> _filter(_equals(Single Link, Link Target))]]""") should
+        equal (listOfLinkText(s.pointer1, s.pointer3))
     }
   }
   
