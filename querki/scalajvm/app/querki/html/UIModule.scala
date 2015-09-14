@@ -87,7 +87,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       Details(details))) 
   {
     // Actual Modifier classes should implement this, which does the heart of the work
-    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLPhrase]):NodeSeq
+    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLPhrase]):Future[NodeSeq]
     
     override def qlApply(inv:Invocation):QFut = {
       val context = inv.context
@@ -120,7 +120,8 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         paramText = parsedParam.raw.toString
         content <- contentToUse
         nodes = XmlHelpers.toNodes(content)
-        newXml = nodes.flatMap(node => doTransform(node, paramText, context, params))
+        newXmlFuts = nodes.map(node => doTransform(node, paramText, context, params))
+        newXml <- inv.fut(Future.sequence(newXmlFuts).map(_.flatten))
         newHtml = QHtml(Xhtml.toXhtml(newXml))
       }
         yield QL.WikitextValue(HtmlWikitext(newHtml))
@@ -144,7 +145,8 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
             |This will create a paragraph for "hello world" as usual, but will attach "myClass" as a class on that
             |paragraph. (This is less often necessary, but occasionally helpful.)""".stripMargin)
   {
-    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLPhrase]):NodeSeq = HtmlRenderer.addClasses(nodes, paramText)
+    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLPhrase]):Future[NodeSeq] = 
+      Future.successful(HtmlRenderer.addClasses(nodes, paramText))
   }
   
   lazy val tooltipMethod = new HtmlModifier(TooltipMethodOID, "_tooltip",
@@ -157,9 +159,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       |In the long run, you will be able to describe a tooltip without using a QL expression, but
       |for now, this is the way to do it.""".stripMargin)
   {
-    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLPhrase]):NodeSeq = {
+    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLPhrase]):Future[NodeSeq] = {
       val withClass = HtmlRenderer.addClasses(nodes, "_withTooltip")      
-      XmlHelpers.mapElems(withClass)(_ % Attribute("title", Text(paramText), Null))
+      Future.successful(XmlHelpers.mapElems(withClass)(_ % Attribute("title", Text(paramText), Null)))
     }
   }
   
@@ -170,14 +172,15 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       |[[_code(""[[""Hello world"" -> _data(""foo"", ""something"")]]"")]]
       |will add a "data-foo" attribute to the block containing Hello world.""".stripMargin)
   {
-    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLPhrase]):NodeSeq = {
+    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLPhrase]):Future[NodeSeq] = {
       if (params.length < 2)
         throw new PublicException("UI.transform.dataRequired")
       
-      val dataBlock = awaitHack(context.parser.get.processPhrase(params(1).ops, context)).value.firstTyped(ParsedTextType).
-        getOrElse(throw new PublicException("UI.transform.dataRequired")).raw
-      
-      XmlHelpers.mapElems(nodes)(_ % Attribute(s"data-$paramText", Text(dataBlock), Null))
+      for {
+        processed <- context.parser.get.processPhrase(params(1).ops, context)
+        dataBlock = processed.value.firstTyped(ParsedTextType).getOrElse(throw new PublicException("UI.transform.dataRequired")).raw
+      }
+        yield XmlHelpers.mapElems(nodes)(_ % Attribute(s"data-$paramText", Text(dataBlock), Null))
     }
   }
   
