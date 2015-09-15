@@ -27,3 +27,6 @@ addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "3.0.0")
 
 // For the JVM side of the shared code:
 addSbtPlugin("com.typesafe.sbt" % "sbt-twirl" % "1.0.4")
+
+// So that the Play application can access the version and build date:
+addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.5.0")

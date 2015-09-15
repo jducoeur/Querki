@@ -34,8 +34,10 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.lihaoyi" %% "utest" % "0.3.1",
     "org.querki" %% "requester" % "2.1"
   ),
+  buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
+  buildInfoPackage := "querki",
   EclipseKeys.skipParents in ThisBuild := false).
-  enablePlugins(PlayScala).
+  enablePlugins(PlayScala, BuildInfoPlugin).
   aggregate(clients.map(projectToRef): _*).
   dependsOn(querkiSharedJvm)
 

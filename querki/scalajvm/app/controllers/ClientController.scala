@@ -123,6 +123,10 @@ class ClientController extends ApplicationBase with StreamController {
   }
   
   def apiRequestBase(prc:PlayRequestContext):Future[Result] = {
+    
+    // TODO: make this real
+    QLog.spew(s"The version is ${querki.BuildInfo.version}")
+    
     val (req, metadata) = unpickleRequest(prc)
     val rc = prc.rc.copy(metadataOpt = Some(metadata))
     val request = ClientRequest(req, rc)
