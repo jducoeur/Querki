@@ -122,20 +122,31 @@ class ClientController extends ApplicationBase with StreamController {
     )
   }
   
+  // NOTE: this generates a spurious error in Eclipse, because it's generated code.
+  // Theoretically, we could get rid of this error as described in:
+  //   https://github.com/sbt/sbt-buildinfo
+  // But in practice that seems to screw up the client/server shared code.
+  // TODO: figure out a way to suppress this error.
+  def querkiVersion:String = querki.BuildInfo.version
+  
   def apiRequestBase(prc:PlayRequestContext):Future[Result] = {
-    
-    // TODO: make this real
-    QLog.spew(s"The version is ${querki.BuildInfo.version}")
-    
     val (req, metadata) = unpickleRequest(prc)
-    val rc = prc.rc.copy(metadataOpt = Some(metadata))
-    val request = ClientRequest(req, rc)
-    if (ApiInvocation.requiresLogin(request) && rc.requester.isEmpty)
-      BadRequest(write(new NotAllowedException()))
-    else ApiInvocation.routeRequest(request) {
-      case ClientResponse(pickled) => Ok(pickled)
-      case ClientError(msg) => BadRequest(msg)
-    }    
+    if (metadata.version != querkiVersion) {
+      // Signal to the Client that it needs to reload
+      // TODO: this will need to become more forgiving once this path is really being used as an
+      // API. Maybe an additional Metadata flag saying whether being slightly out of date is okay?
+      // Maybe a more sophisticated mechanism for tracking when the protocol has changed, and how?
+      PreconditionFailed
+    } else {
+      val rc = prc.rc.copy(metadataOpt = Some(metadata))
+      val request = ClientRequest(req, rc)
+      if (ApiInvocation.requiresLogin(request) && rc.requester.isEmpty)
+        BadRequest(write(new NotAllowedException()))
+      else ApiInvocation.routeRequest(request) {
+        case ClientResponse(pickled) => Ok(pickled)
+        case ClientError(msg) => BadRequest(msg)
+      }
+    }
   }
   
   def apiRequest(ownerId:String, spaceId:String) = withRouting(ownerId, spaceId) { rc =>

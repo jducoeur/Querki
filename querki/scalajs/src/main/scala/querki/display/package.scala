@@ -121,6 +121,13 @@ package object display {
     def reload():Future[Page]
     
     /**
+     * Completely reloads the Client, with the current URL. This should only be used in
+     * relatively extreme situations, such as when we know the Client is out of date against
+     * the Server.
+     */
+    def fullReload():Unit
+    
+    /**
      * Listen to this publication point if you want to be notified *before* each Page load.
      */
     def beforePageLoads:Notifier[Page]

@@ -29,6 +29,13 @@ class ClientDataEcot(e:Ecology) extends ClientEcot(e) with DataAccess with DataS
   val standardThingPromise = Promise[StandardThings]
   def standardThings:Future[StandardThings] = standardThingPromise.future
   
+  // NOTE: this generates a spurious error in Eclipse, because it's generated code.
+  // Theoretically, we could get rid of this error as described in:
+  //   https://github.com/sbt/sbt-buildinfo
+  // But in practice that seems to screw up the client/server shared code.
+  // TODO: figure out a way to suppress this error.
+  def querkiVersion:String = querki.BuildInfo.version
+  
   override def postInit() = {
     Client[CommonFunctions].getStandardThings().call().foreach { thingMap =>
       val handler = new PassthroughHandler(thingMap)

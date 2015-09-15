@@ -11,6 +11,7 @@ import querki.comm._
 class StandardFooter(implicit val ecology:Ecology) extends Gadget[dom.HTMLElement] with EcologyMember {
 
   lazy val controllers = interface[querki.comm.ApiComm].controllers
+  lazy val DataAccess = interface[querki.data.DataAccess]
   
   def doRender() =
     footer(cls:="_mainFooter _noPrint",
@@ -18,6 +19,8 @@ class StandardFooter(implicit val ecology:Ecology) extends Gadget[dom.HTMLElemen
       "Querki ", raw("&copy;"), " Querki Inc 2013-2015 | ",
       a(href:=controllers.ClientController.space("systemUser", "documentation").url, "Help", tabindex:=30000),
       " | ",
-      a(href:=controllers.TOSController.showTOS().url, "Terms of Service", tabindex:=30010)
+      a(href:=controllers.TOSController.showTOS().url, "Terms of Service", tabindex:=30010),
+      " | ",
+      "v", DataAccess.querkiVersion
     )
 }

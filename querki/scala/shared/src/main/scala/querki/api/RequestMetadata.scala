@@ -5,4 +5,4 @@ package querki.api
  * 
  * @param pageParams A map of the URL parameters, which may be used by QL under some circumstances.
  */
-case class RequestMetadata(pageParams:Map[String,String])
+case class RequestMetadata(version:String, pageParams:Map[String,String])

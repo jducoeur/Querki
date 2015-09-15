@@ -22,6 +22,14 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
       { ex =>
         ex match {
 	      case ex @ PlayAjaxException(jqXHR, textStatus, errorThrown) => {
+          if (jqXHR.status == 412) {
+            // The server sent a PreconditionFailed, which is the signal that the Client
+            // is out of date and the protocols may be inconsistent. So force a hard refresh.
+            // IMPORTANT: I suspect this doesn't return anything; we're tearing down the world
+            // and starting again.
+            PageManager.fullReload()
+          }
+          
           try {
             val dummy1 = upickle.Reader.macroR[EditException]
             val dummy2 = upickle.Reader.macroR[SecurityException]
@@ -55,7 +63,7 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
   }
   
   def makeCall(req:Request, ajax:PlayAjax):Future[String] = {
-    val metadata = RequestMetadata(PageManager.currentPageParams)
+    val metadata = RequestMetadata(DataAccess.querkiVersion, PageManager.currentPageParams)
     interceptFailures(ajax.callAjax("pickledRequest" -> upickle.write(req), "pickledMetadata" -> upickle.write(metadata)))
   }
   

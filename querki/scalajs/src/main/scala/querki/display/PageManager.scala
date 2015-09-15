@@ -93,6 +93,10 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
     fut
   }
   
+  def fullReload():Unit = {
+    window.location.reload(true)
+  }
+  
   /**
    * Based on the hash part of the current location, load the appropriate page.
    */

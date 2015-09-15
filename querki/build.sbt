@@ -4,7 +4,7 @@ lazy val clients = Seq(querkiClient)
 
 lazy val scalaV = "2.11.7"
 lazy val akkaV = "2.3.11"
-lazy val appV = "1.2.2.3"
+lazy val appV = "1.2.2.3b"
 
 lazy val sharedSrcDir = "scala"
 
@@ -70,6 +70,9 @@ lazy val querkiClient = (project in file("scalajs")).settings(
   jsDependencies += ProvidedJS / "jquery.fileupload-process.js" minified "jquery.fileupload-process.min.js" dependsOn "jquery.fileupload.js",
   jsDependencies += ProvidedJS / "jquery.fileupload-image.js" minified "jquery.fileupload-image.min.js" dependsOn "jquery.fileupload.js",
   
+  buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
+  buildInfoPackage := "querki",
+  
   libraryDependencies ++= sharedDependencies.value ++ Seq(
     "org.scala-js" %%% "scalajs-dom" % "0.8.0",
     "com.lihaoyi" %%% "utest" % "0.3.1",
@@ -80,7 +83,7 @@ lazy val querkiClient = (project in file("scalajs")).settings(
     "org.querki" %%% "bootstrap-datepicker-facade" % "0.3",
     "io.github.widok" %%% "scala-js-momentjs" % "0.1.0"
   )).
-  enablePlugins(ScalaJSPlugin, ScalaJSPlay).
+  enablePlugins(ScalaJSPlugin, ScalaJSPlay, BuildInfoPlugin).
   dependsOn(querkiSharedJs)
 
 lazy val querkiShared = (crossProject.crossType(CrossType.Full) in file("scala")).

@@ -77,6 +77,11 @@ package object data {
      * successfully, so only use it after system startup!
      */
     def std = standardThings.value.get.get
+    
+    /**
+     * The version of this client. Used to sanity-check whether we've gotten out of sync with the server.
+     */
+    def querkiVersion:String
   }
   
   /**
