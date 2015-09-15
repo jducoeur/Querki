@@ -1,7 +1,5 @@
 package controllers
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.util._
 
 import play.api.data._
