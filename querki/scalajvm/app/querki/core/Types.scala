@@ -200,7 +200,7 @@ trait IntTypeBasis { self:CoreEcot =>
       for (
         maxValPO <- prop.getPropOpt(Types.MaxIntValueProp)(state);
         maxVal <- maxValPO.firstOpt;
-        if (numeric.lt(doDeserialize(v), toT(maxVal)))
+        if (numeric.gt(doDeserialize(v), toT(maxVal)))
           )
         throw new PublicException("Types.Int.tooHigh", prop.displayName, maxVal)
     }  
