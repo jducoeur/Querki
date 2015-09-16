@@ -134,13 +134,13 @@ trait ModelTypeDefiner { self:EcologyMember =>
     def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext], lexicalThing:Option[PropertyBundle] = None) = {
       implicit val state = context.state
       v.getPropOpt(Basic.DisplayTextProp) match {
-        case Some(defaultViewPV) => {
+        case Some(defaultViewPV) if (!(defaultViewPV.isEmpty)) => {
           // The Type's Model has a Default View, so use that:
           val defaultView = defaultViewPV.first
           QL.process(defaultView, v.thisAsContext(context.request, state, ecology))
         }
         
-        case None => {
+        case _ => {
           // There's no Default View, so simply render this as key/value pairs
           
           // Introduce a bit of indirection, so we can sort the properties by display name:

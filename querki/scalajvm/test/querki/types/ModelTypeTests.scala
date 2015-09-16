@@ -108,7 +108,6 @@ class ModelTypeTests extends QuerkiTests {
       implicit val user = space.owner
       
       val result = pql("""[[Top Level Thing -> _edit]]""")
-      println("----> " + result)
     }
   }
   
