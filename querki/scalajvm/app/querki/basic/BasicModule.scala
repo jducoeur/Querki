@@ -217,7 +217,10 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
         Details("""Default View is one of the most important Properties in Querki,
         		|and nearly every Thing has one. The Default View describes how this Thing will usually show up when you
         		|look at it as a web page. It can say almost anything you like, but usually consists of a mix of
-        		|text and QL expressions. (Where a "QL Expression" is anything inside double-square-brackets.)""".stripMargin)
+        		|text and QL expressions. (Where a "QL Expression" is anything inside double-square-brackets.)
+            |
+            |If you define the Default View on a Model, and then use that Model for creating a Property, the
+            |Default View says how to display values of that Property.""".stripMargin)
         ))
   
   lazy val ModelViewProp = new SystemProperty(ModelViewOID, LargeTextType, Optional,
