@@ -118,7 +118,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
             |The contents are up to you, but it should usually contain _edit functions for each Property you
             |want to be editable.""".stripMargin)))
   
-  lazy val editWidthProp = new SystemProperty(EditWidthPropOID, IntType, ExactlyOne,
+  lazy val EditWidthProp = new SystemProperty(EditWidthPropOID, IntType, ExactlyOne,
       toProps(
         setName("Edit Width"),
         Types.MinIntValueProp(1),
@@ -398,7 +398,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
     editMethod,
     editOrElseMethod,
     editAsPicklistMethod,
-    editWidthProp,
+    EditWidthProp,
     FormLineMethod
   )
 }

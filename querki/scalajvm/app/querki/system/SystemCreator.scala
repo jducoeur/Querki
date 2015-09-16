@@ -95,6 +95,7 @@ object SystemCreator {
     new querki.api.ClientApiEcot(ecology)                          // 54
     new querki.tools.ProfilerEcot(ecology)                         // 55
     new querki.api.ApiManagement(ecology)                          // 56
+    new querki.time.DurationEcot(ecology)                          // 57
   }
   
   def createAllEcots(ecology:Ecology, actorSystem:Option[ActorSystem]):Ecology = {

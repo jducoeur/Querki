@@ -34,6 +34,7 @@ package object editing {
     def InstanceProps:Property[OID,OID]
     def PromptProp:Property[PlainText,String]
     def InstanceEditViewProp:Property[QLText,String]
+    def EditWidthProp:Property[Int,Int]
     
     /**
      * Given a Model, this returns the expected Properties to show/use for Instances of this Model.

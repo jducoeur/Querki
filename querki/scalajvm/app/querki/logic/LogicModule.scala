@@ -20,6 +20,8 @@ object MOIDs extends EcotIds(9) {
   val AndMethodOID = moid(4)
   val LessThanMethodOID = moid(5)
   val GreaterThanMethodOID = moid(6)
+  
+  val AddMethodOID = moid(7)
 }
 
 /**
@@ -258,6 +260,23 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
       results.get.map(r => !(r.exists(v => !v)))
     }
   }
+  
+  lazy val PlusMethod = new InternalMethod(AddMethodOID,
+      toProps(
+        setName("_plus"),
+        Summary("Add two values together"),
+        Details("""    VALUE -> _plus(OTHER) -> RESULT
+          |This pretty much does what you would expect. However, note that it is only implemented for one
+          |or two Types yet. If you have a case where you expect and need _add to work, please drop us a note!""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        typ <- inv.contextTypeAs[AddableType]
+        result <- inv.fut(typ.qlApplyAdd(inv))
+      }
+        yield result
+    }
+  }
 	
   override lazy val props = Seq(
     new FirstNonEmptyMethod,
@@ -267,7 +286,8 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
     LessThanMethod,
     GreaterThanMethod,
     OrMethod,
-    AndMethod
+    AndMethod,
+    PlusMethod
   )
 
   /******************************************

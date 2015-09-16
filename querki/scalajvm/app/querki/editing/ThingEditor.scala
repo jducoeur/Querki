@@ -21,7 +21,7 @@ trait ThingEditor { self:EditorModule =>
      * 
      * This is gradually going to want to get *much* more sophisticated. But it's a start.
      */
-    def editorSpan(prop:Property[_,_])(implicit state:SpaceState):Int = prop.getPropOpt(editWidthProp).flatMap(_.firstOpt).getOrElse(prop.pType.editorSpan(prop)) 
+    def editorSpan(prop:Property[_,_])(implicit state:SpaceState):Int = prop.getPropOpt(EditWidthProp).flatMap(_.firstOpt).getOrElse(prop.pType.editorSpan(prop)) 
     
     trait LayoutElement {
       def span:Int

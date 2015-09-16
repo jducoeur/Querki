@@ -5,6 +5,8 @@ import models.{PType, PTypeBuilder}
 import com.github.nscala_time.time._
 
 import querki.ecology._
+import querki.globals._
+import querki.types.{ModeledPropertyBundle, SimplePropertyBundle}
 
 /**
  * At least for the time being, querki.time is mostly nscala-time with some tweaks.
@@ -23,5 +25,11 @@ package object time extends Imports with Implicits {
   trait Time extends EcologyInterface {
     def QDate:PType[DateTime] with PTypeBuilder[DateTime, DateTime]
     def QDateTime:PType[DateTime] with PTypeBuilder[DateTime, DateTime]
+  }
+  
+  trait QDuration extends EcologyInterface {
+    def toPeriod(duration:ModeledPropertyBundle, state:SpaceState):Period
+    
+    def DurationType:PType[ModeledPropertyBundle] with PTypeBuilder[ModeledPropertyBundle, SimplePropertyBundle]
   }
 }
