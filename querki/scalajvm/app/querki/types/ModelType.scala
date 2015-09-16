@@ -90,9 +90,11 @@ trait ModelTypeDefiner { self:EcologyMember =>
   {
     override lazy val props:PropMap = propFetcher() + 
 		  (ModelForTypePropOID -> Core.ExactlyOne(Core.LinkType(basedOn)))
-    
-    lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
+
+    lazy val Basic = interface[querki.basic.Basic]
     lazy val Editor = interface[querki.editing.Editor]
+    lazy val QL = interface[querki.ql.QL]
+    lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
     
     override def editorSpan(prop:Property[_,_]):Int = 12
     
@@ -131,29 +133,41 @@ trait ModelTypeDefiner { self:EcologyMember =>
      */
     def doWikify(context:QLContext)(v:ModeledPropertyBundle, displayOpt:Option[Wikitext], lexicalThing:Option[PropertyBundle] = None) = {
       implicit val state = context.state
-      // Introduce a bit of indirection, so we can sort the properties by display name:
-      val propInfo = relevantProps(v).map { pair =>
-        val (propId, propVal) = pair
-        (propId, state.anything(propId), propVal)
-      }
-      val sortedInfos = propInfo.toSeq.sortBy(_._2.map(_.displayName).getOrElse(""))
-      val result = (Future.successful(Wikitext.empty) /: propInfo) { (current, pair) =>
-        val (propId, propOpt, propVal) = pair
-        val propText = propOpt match {
-          case Some(prop) => {
-            propVal.wikify(context, displayOpt, lexicalThing) map { Wikitext(": " + prop.displayName + " : ") + _ } 
-          }
-          case None => Future.successful(Wikitext("Unknown property " + propId))
+      v.getPropOpt(Basic.DisplayTextProp) match {
+        case Some(defaultViewPV) => {
+          // The Type's Model has a Default View, so use that:
+          val defaultView = defaultViewPV.first
+          QL.process(defaultView, v.thisAsContext(context.request, state, ecology))
         }
         
-        // Okay, we now have an incoming Future and a newly-created one. FlatMap them to get the result:
-        for {
-          c <- current
-          p <- propText
+        case None => {
+          // There's no Default View, so simply render this as key/value pairs
+          
+          // Introduce a bit of indirection, so we can sort the properties by display name:
+          val propInfo = relevantProps(v).map { pair =>
+            val (propId, propVal) = pair
+            (propId, state.anything(propId), propVal)
+          }
+          val sortedInfos = propInfo.toSeq.sortBy(_._2.map(_.displayName).getOrElse(""))
+          val result = (Future.successful(Wikitext.empty) /: propInfo) { (current, pair) =>
+            val (propId, propOpt, propVal) = pair
+            val propText = propOpt match {
+              case Some(prop) => {
+                propVal.wikify(context, displayOpt, lexicalThing) map { Wikitext(": " + prop.displayName + " : ") + _ } 
+              }
+              case None => Future.successful(Wikitext("Unknown property " + propId))
+            }
+            
+            // Okay, we now have an incoming Future and a newly-created one. FlatMap them to get the result:
+            for {
+              c <- current
+              p <- propText
+            }
+              yield c.+(p, true)
+          }
+          result
         }
-          yield c.+(p, true)
       }
-      result
     }
     
     def doDefault(implicit state:SpaceState) = { 

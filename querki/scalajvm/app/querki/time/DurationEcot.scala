@@ -87,7 +87,8 @@ class DurationEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Q
       setInternal,
       durationQuantityProp(1),
       durationKindProp(durationYears),
-      Editor.InstanceProps(durationQuantityProp, durationKindProp)))
+      Editor.InstanceProps(durationQuantityProp, durationKindProp),
+      Basic.DisplayTextProp("[[_durationQuantityProp]] [[_durationKindProp -> Display Name]]")))
       
   lazy val DurationType = new ModelType(DurationTypeOID, durationModel, 
     toProps(
