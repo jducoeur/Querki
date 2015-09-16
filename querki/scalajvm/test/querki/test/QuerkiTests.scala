@@ -80,6 +80,12 @@ class QuerkiTests
     val context = state.thisAsContext(rc, state, ecology)
     processQText(context, text)
   }
+  def pqlt[S <: CommonSpace](t:Thing, text:String)(implicit space:S, requester:User = BasicTestUser):String = {
+    implicit val state = space.state
+    implicit val rc = getRcs(state)
+    val context = t.thisAsContext
+    processQText(context, text)
+  }
 
   implicit class testableString(str:String) {
     // Multi-line test strings should use this, to deal with Unix vs. Windows problems:

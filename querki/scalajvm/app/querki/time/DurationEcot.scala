@@ -41,14 +41,14 @@ class DurationEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Q
   val Links = initRequires[querki.links.Links]
   
   def toPeriod(duration:ModeledPropertyBundle, state:SpaceState):Period = {
-    val durationKind:OID = duration.getPropOpt(durationKindProp)(state).getOrElse(throw new Exception("Expected a Duration, but didn't get one!")).first
-    val durationQuantity = duration.getPropOpt(durationQuantityProp)(state).getOrElse(throw new Exception("Expected a Duration, but didn't get one!")).first
+    val durationKind:OID = duration.getPropOpt(DurationKindProp)(state).getOrElse(throw new Exception("Expected a Duration, but didn't get one!")).first
+    val durationQuantity = duration.getPropOpt(DurationQuantityProp)(state).getOrElse(throw new Exception("Expected a Duration, but didn't get one!")).first
     
     durationKind match {
-      case durationYears.id => Period.years(durationQuantity)
-      case durationMonths.id => Period.months(durationQuantity)
-      case durationWeeks.id => Period.weeks(durationQuantity)
-      case durationDays.id => Period.days(durationQuantity)
+      case DurationYears.id => Period.years(durationQuantity)
+      case DurationMonths.id => Period.months(durationQuantity)
+      case DurationWeeks.id => Period.weeks(durationQuantity)
+      case DurationDays.id => Period.days(durationQuantity)
     }
   }
   
@@ -58,16 +58,16 @@ class DurationEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Q
       Links.NoCreateThroughLinkProp(true),
       Links.ChoiceOrderProp(DurationYearsOID, DurationMonthsOID, DurationWeeksOID, DurationDaysOID),
       setInternal))
-  lazy val durationYears = ThingState(DurationYearsOID, systemOID, durationKindModel, 
+  lazy val DurationYears = ThingState(DurationYearsOID, systemOID, durationKindModel, 
       toProps(setName("_durationYears"), Basic.DisplayNameProp("years")))
-  lazy val durationMonths = ThingState(DurationMonthsOID, systemOID, durationKindModel, 
+  lazy val DurationMonths = ThingState(DurationMonthsOID, systemOID, durationKindModel, 
       toProps(setName("_durationMonths"), Basic.DisplayNameProp("months")))
-  lazy val durationWeeks = ThingState(DurationWeeksOID, systemOID, durationKindModel, 
+  lazy val DurationWeeks = ThingState(DurationWeeksOID, systemOID, durationKindModel, 
       toProps(setName("_durationWeeks"), Basic.DisplayNameProp("weeks")))
-  lazy val durationDays = ThingState(DurationDaysOID, systemOID, durationKindModel, 
+  lazy val DurationDays = ThingState(DurationDaysOID, systemOID, durationKindModel, 
       toProps(setName("_durationDays"), Basic.DisplayNameProp("days")))
       
-  lazy val durationKindProp = new SystemProperty(DurationKindPropOID, LinkType, ExactlyOne,
+  lazy val DurationKindProp = new SystemProperty(DurationKindPropOID, LinkType, ExactlyOne,
     toProps(
       setName("_durationKindProp"),
       Editor.PromptProp("Kind"),
@@ -75,7 +75,7 @@ class DurationEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Q
       Links.LinkModelProp(durationKindModel),
       Editor.EditWidthProp(2)))
   
-  lazy val durationQuantityProp = new SystemProperty(DurationQuantityPropOID, IntType, ExactlyOne,
+  lazy val DurationQuantityProp = new SystemProperty(DurationQuantityPropOID, IntType, ExactlyOne,
     toProps(
       setName("_durationQuantityProp"),
       Editor.PromptProp("Quantity"),
@@ -85,9 +85,9 @@ class DurationEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Q
     toProps(
       setName("_durationModel"),
       setInternal,
-      durationQuantityProp(1),
-      durationKindProp(durationYears),
-      Editor.InstanceProps(durationQuantityProp, durationKindProp),
+      DurationQuantityProp(1),
+      DurationKindProp(DurationYears),
+      Editor.InstanceProps(DurationQuantityProp, DurationKindProp),
       Basic.DisplayTextProp("[[_durationQuantityProp]] [[_durationKindProp -> Display Name]]")))
       
   lazy val DurationType = new ModelType(DurationTypeOID, durationModel, 
@@ -101,7 +101,7 @@ class DurationEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Q
         |most cases, though, you should just use the built-in Duration Property, which is good enough
         |for most purposes.""".stripMargin)))
   
-  lazy val durationProp = new SystemProperty(DurationPropOID, DurationType, ExactlyOne,
+  lazy val DurationProp = new SystemProperty(DurationPropOID, DurationType, ExactlyOne,
     toProps(
       setName("Duration"),
       SkillLevel(SkillLevelAdvanced),
@@ -115,18 +115,18 @@ class DurationEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Q
   override lazy val things =
     Seq(
       durationKindModel,
-      durationYears,
-      durationMonths,
-      durationWeeks,
-      durationDays,
+      DurationYears,
+      DurationMonths,
+      DurationWeeks,
+      DurationDays,
       durationModel
     )
     
   override lazy val props =
     Seq(
-      durationKindProp,
-      durationQuantityProp,
-      durationProp
+      DurationKindProp,
+      DurationQuantityProp,
+      DurationProp
     )
     
   override lazy val types =

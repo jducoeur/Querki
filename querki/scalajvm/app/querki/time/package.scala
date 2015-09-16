@@ -1,6 +1,6 @@
 package querki
 
-import models.{PType, PTypeBuilder}
+import models.{Property, PType, PTypeBuilder, Thing}
 
 import com.github.nscala_time.time._
 
@@ -31,5 +31,14 @@ package object time extends Imports with Implicits {
     def toPeriod(duration:ModeledPropertyBundle, state:SpaceState):Period
     
     def DurationType:PType[ModeledPropertyBundle] with PTypeBuilder[ModeledPropertyBundle, SimplePropertyBundle]
+    
+    def DurationKindProp:Property[OID,OID]
+    def DurationQuantityProp:Property[Int,Int]
+    def DurationProp:Property[ModeledPropertyBundle, SimplePropertyBundle]
+    
+    def DurationYears:Thing
+    def DurationMonths:Thing
+    def DurationWeeks:Thing
+    def DurationDays:Thing
   }
 }
