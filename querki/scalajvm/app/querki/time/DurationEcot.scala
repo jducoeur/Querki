@@ -94,6 +94,8 @@ class DurationEcot(e:Ecology) extends QuerkiEcot(e) with ModelTypeDefiner with Q
     toProps(
       setName("Duration Type"),
       SkillLevel(SkillLevelAdvanced),
+      // List this Type even though it's based on a Model:
+      Basic.ExplicitProp(true),
       Summary("Represents a length of time"),
       Details("""This type is available in case you want to build your own Duration properties. In
         |most cases, though, you should just use the built-in Duration Property, which is good enough
