@@ -182,9 +182,20 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
         yield ExactlyOne(IntType(year))
     }
   }
+  
+  lazy val todayFunction = new InternalMethod(TodayFunctionOID,
+    toProps(
+      setName("_today"),
+      Summary("Produces today's Date")))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      Future.successful(ExactlyOne(QDate(DateTime.now)))
+    }    
+  }
 
   override lazy val props = Seq(
     modTimeMethod,
-    yearMethod
+    yearMethod,
+    todayFunction
   )
 }
