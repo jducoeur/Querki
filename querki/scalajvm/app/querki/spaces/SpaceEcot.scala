@@ -102,11 +102,7 @@ class SpaceEcot(e:Ecology) extends QuerkiEcot(e) with SpaceOps with querki.core.
         |
         |This allows you to create a new Thing, right here on the page, as part of 
         |displaying. It is useful to put inside of a _QLButton, so that you can create something
-        |and edit it, on the press of a button, without changing pages.
-        |
-        |IMPORTANT: at the moment, this function is very costly, for purely internal
-        |reasons. Please do not use it too often, or it will drag the system down. Use
-        |_createInstanceLink or _createButton instead, most of the time.""".stripMargin)))
+        |and edit it, on the press of a button, without changing pages.""".stripMargin)))
   {
     override def qlApplyTop(inv:Invocation, transformThing:Thing):Future[QLContext] = {
       // Need to shortcut with some mutation, since we don't have a good way to get this

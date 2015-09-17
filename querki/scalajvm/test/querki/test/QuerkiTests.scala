@@ -84,7 +84,7 @@ class QuerkiTests
     implicit val state = space.state
     implicit val rc = getRcs(state)
     val context = t.thisAsContext
-    processQText(context, text)
+    processQText(context, text, Some(t))
   }
 
   implicit class testableString(str:String) {

@@ -9,7 +9,7 @@ import models.{AsOID, Collection, Property, PropertyBundle, PType, Thing, ThingI
 import querki.ecology._
 import querki.globals._
 import querki.types.ModelTypeBase
-import querki.util._
+import querki.util.PublicException
 import querki.values.{QLContext, QValue, SpaceState}
 
 sealed trait SigParam
@@ -293,10 +293,10 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
     // we run out of Contexts. Note that we start with the one that was *already* tried, because we need to
     // inject lexical checking into this pathway:
     def walkNonThingContexts(previous:QLContext):InvocationValue[(PropertyBundle, QLContext)] = {
-      if (previous.parentOpt.isEmpty || previous.value.matchesType(LinkType))
+      if (previous.parentOpt.isEmpty || previous.value.matchesType(LinkType)) {
         // Either we hit the end of the chain, or we hit a Link -- either way, time to stop:
         InvocationValueImpl(this, Future.successful(IVData(None, IVMetadata(returnType = Some(LinkType)))))
-      else {
+      } else {
         // Keep walking back up the chain, to see if we find something:
         val current = previous.parent
         withCurrentContext(current) match {
@@ -326,8 +326,15 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
             // IMPORTANT SUBTLETY: note that we're passing through the *bundle* of the lexical context, but the actual contexts are the received context!
             case Some(bundle) if (bundle.hasProp(prop)) => InvocationValueImpl(wrapContexts(bundle))
             case _ => {
-              // If this bundle isn't a Thing, walk up the context chain.
-              walkNonThingContexts(context)
+              context.value.pType match {
+                case mt:ModelTypeBase => {
+                  // If this bundle is a Model Value, walk up the context chain.
+                  walkNonThingContexts(context)
+                }
+                case _ => {
+                  InvocationValueImpl(this, Future.successful(IVData(None, IVMetadata(returnType = Some(LinkType)))))                
+                }
+              }
             }
           }          
         }

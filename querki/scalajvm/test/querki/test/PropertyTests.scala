@@ -78,7 +78,7 @@ class PropertyTests extends QuerkiTests {
       }
       implicit val s = new TSpace
       
-      pql("[[Other -> My Number -> Caller.My Text Prop]]") should equal ("The number is 42")
+      pql("[[Other -> Caller.My Text Prop]]") should equal ("The number is 42")
     }
   }
 }

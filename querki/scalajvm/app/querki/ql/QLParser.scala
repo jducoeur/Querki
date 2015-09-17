@@ -52,36 +52,43 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   lazy val PlainTextType = Basic.PlainTextType
   
   def WarningValue = QL.WarningValue _
-  
+
+  // *****************************************
+  //
+  // Context Logging
+  //
   // Crude but useful debugging of the process tree. Could stand to be beefed up when I have time
-  // Note that this is fundamentally not threadsafe, because of logDepth!
-  // Note that the indentation doesn't work across multiple QLParsers!
-  // TODO: we could make indentation work across parsers (and fix thread-safety) if we stuffed the indentation level into the
-  // Context, and had logContext actually transform the context. This may imply that we want to make
-  // this mechanism more broadly available -- possibly even a method on the context itself...
-  // TODO: this mechanism can, and probably should, be removed from here and moved into QLog. Context has
-  // become central enough to the system that making it more globally visible would be a win. If we remove
-  // the constraint that RT must derive from DebugRenderable (make that optional and test with isInstanceOf),
-  // then this could be used everywhere, to very good effect. It would become an enormously powerful (if
-  // nearly overwhelming) spew for tracking the passage of a parse through the system.
-  var logDepth = 0
-  def indent = "  " * logDepth
+  //
+  
+  // A unique ID that we attach to each Stage, for understanding what's going on:
+  val stageId = new java.util.concurrent.atomic.AtomicInteger()
   // Turn this to true to produce voluminous output from the QL processing pipeline
   val doLogContext = Config.getBoolean("querki.test.logContexts", false)
-  def logContext[RT <: DebugRenderable](msg:String, context:QLContext)(processor: => RT):RT = {
+  def logStage(stage:QLStage, context:QLContext)(processor: => Future[QLContext]):Future[QLContext] = {
     if (doLogContext) {
-      QLog.info(indent + msg + ": " + context.debugRender + " =")
-      QLog.info(indent + "{")
-      logDepth = logDepth + 1
-    }
-    val result = processor
-    if (doLogContext) {
-      logDepth = logDepth - 1
-      
-      QLog.info(indent + "} = " + result.debugRender)
-    }
-    result
+      try {
+        val sid = stageId.getAndIncrement
+        val indent = "  " * context.depth
+        QLog.info(s"$indent$sid: [[${stage.reconstructString}]] on ${context.debugRender}")
+        val result = processor
+        result.onComplete {
+          case scala.util.Success(result) => 
+            QLog.info(s"$indent$sid = ${result.debugRender}")
+          case scala.util.Failure(ex) =>
+            QLog.error(s"$indent$sid returned Failure!", ex)
+        }
+        result
+      } catch {
+        case th:Throwable => { 
+          QLog.error(s"Exception while processing stage ${stage.reconstructString} with context ${context.debugRender}", th)
+          throw th
+        }
+      }
+    } else
+      processor
   }
+  
+  // *****************************************
   
   // Note that we allow *one* slash in a name, but not pairs:
   val name = """[a-zA-Z_]([\w-_ ]|/?!/)*[\w]""".r
@@ -254,25 +261,25 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   }
   
   private def processNumber(num:QLNumber, context:QLContext):QLContext = {
-    logContext("processNumber " + num.n, context) {
-      context.next(Core.ExactlyOne(Core.IntType(num.n)))
-    }
+    context.next(Core.ExactlyOne(Core.IntType(num.n)))
   }
   
   private def processStage(stage:QLStage, contextIn:QLContext, isParam:Boolean):Future[QLContext] = {
-    val context = 
-      if (contextIn.depth > contextIn.maxDepth)
-        contextIn.next(WarningValue("Too many levels of calls -- you can only have up to " + contextIn.maxDepth + " calls in a phrase."))
-      else if (stage.useCollection) 
-        contextIn.asCollection
-      else if (stage.clearUseCollection)
-        contextIn.clearAsCollection
-      else 
-        contextIn
-    stage match {
-      case name:QLCall => processCall(name, context, isParam)
-      case subText:QLTextStage => processTextStage(subText, context)
-      case num:QLNumber => Future.successful(processNumber(num, context))
+    logStage(stage, contextIn) {
+      val context = 
+        if (contextIn.depth > contextIn.maxDepth)
+          contextIn.next(WarningValue("Too many levels of calls -- you can only have up to " + contextIn.maxDepth + " calls in a phrase."))
+        else if (stage.useCollection) 
+          contextIn.asCollection
+        else if (stage.clearUseCollection)
+          contextIn.clearAsCollection
+        else 
+          contextIn
+      stage match {
+        case name:QLCall => processCall(name, context, isParam)
+        case subText:QLTextStage => processTextStage(subText, context)
+        case num:QLNumber => Future.successful(processNumber(num, context))
+      }
     }
   }
   
