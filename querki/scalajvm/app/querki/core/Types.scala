@@ -2,11 +2,12 @@ package querki.core
 
 import scala.xml.NodeSeq
 
-import models.{DelegatingType, DisplayPropVal, Kind, OID, Property, PropertyBundle, PType, PTypeBuilder, PTypeBuilderBase, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
+import models.{Collection, DelegatingType, DisplayPropVal, Kind, OID, Property, PropertyBundle, PType, PTypeBuilder, PTypeBuilderBase, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
 import models.Thing.PropFetcher
 
 import querki.ecology._
 import querki.globals._
+import querki.logic.AddableType
 import querki.ql.QLPhrase
 import querki.util.{PublicException, QLog}
 import querki.values.{ElemValue, QLContext, QFut, QValue, RequestContext, SpaceState}
@@ -164,10 +165,13 @@ trait NameTypeBasis { self:CoreEcot with NameUtils =>
 trait IntTypeBasis { self:CoreEcot =>
   import scala.math.Numeric._
   
+  def ExactlyOne:Collection
+  
   /**
    * The base Type for numbers
    */
   abstract class NumericTypeBase[T : Numeric](tid:OID, pf:PropFetcher) extends SystemType[T](tid, pf) with SimplePTypeBuilder[T]
+    with AddableType
   {
     override val displayEmptyAsBlank:Boolean = true
     
@@ -211,6 +215,18 @@ trait IntTypeBasis { self:CoreEcot =>
     /**
      * TODO: eventually, we may want a more nuanced Int inputter. But this will do to start.
      */
+ 
+    /**
+     * _plus is defined for all Numeric types.
+     */
+    def qlApplyAdd(inv:Invocation):QFut = {
+      for {
+        n <- inv.contextAllAs(this)
+        m <- inv.processParamFirstAs(0, this)
+        result = numeric.plus(n, m)
+      }
+        yield ExactlyOne(this(result))
+    }
   }
   
   class IntTypeBase(tid:OID, pf:PropFetcher) extends NumericTypeBase[Int](tid, pf) {

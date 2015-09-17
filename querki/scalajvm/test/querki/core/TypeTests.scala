@@ -39,5 +39,22 @@ class TypeTests extends QuerkiTests {
       validateError("", "Types.Int.empty")
       validateError("floob", "Types.Int.badFormat")
     }
+    
+    "be addable" in {
+      class TSpace extends CommonSpace {
+        val numProp = new TestProperty(Core.IntType, ExactlyOne, "Int Prop")
+        val floatProp = new TestProperty(Core.FloatType, ExactlyOne, "Float Prop")
+        val floatProp2 = new TestProperty(Core.FloatType, ExactlyOne, "Another Float Prop")
+        
+        val testThing = new SimpleTestThing("My Thing",
+          numProp(39),
+          floatProp(92.9),
+          floatProp2(3.1))
+      }
+      implicit val s = new TSpace
+      
+      pql("[[My Thing -> Int Prop -> _plus(14)]]") should equal ("53")
+      pql("[[My Thing -> Float Prop -> _plus(My Thing -> Another Float Prop)]]") should equal ("96.0")
+    }
   }
 }
