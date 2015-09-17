@@ -167,8 +167,24 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
       """THING -> _modTime -> Date and Time
       |This method can receive any Thing; it produces the Date and Time when that Thing was last changed.""",
       {(t:Thing, _:QLContext) => ExactlyOne(QDateTime(t.modTime)) })
+  
+  lazy val yearMethod = new InternalMethod(YearMethodOID, 
+    toProps(
+      setName("_year"),
+      Summary("Gets the year from a Date"),
+      Details("""    DATE -> _year -> WHOLE NUMBER""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        date <- inv.contextAllAs(QDate)
+        year = date.year.get
+      }
+        yield ExactlyOne(IntType(year))
+    }
+  }
 
   override lazy val props = Seq(
-    modTimeMethod
+    modTimeMethod,
+    yearMethod
   )
 }
