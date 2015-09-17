@@ -168,20 +168,24 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
       |This method can receive any Thing; it produces the Date and Time when that Thing was last changed.""",
       {(t:Thing, _:QLContext) => ExactlyOne(QDateTime(t.modTime)) })
   
-  lazy val yearMethod = new InternalMethod(YearMethodOID, 
+  class DateExtractMethod(oid:OID, name:String, docName:String, f:DateTime => org.joda.time.DateTime.Property) extends InternalMethod(oid, 
     toProps(
-      setName("_year"),
-      Summary("Gets the year from a Date"),
-      Details("""    DATE -> _year -> WHOLE NUMBER""".stripMargin)))
+      setName(name),
+      Summary(s"Gets the $docName from a Date"),
+      Details(s"""    DATE -> $name -> WHOLE NUMBER""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
         date <- inv.contextAllAs(QDate)
-        year = date.year.get
+        result = f(date).get
       }
-        yield ExactlyOne(IntType(year))
+        yield ExactlyOne(IntType(result))
     }
   }
+  
+  lazy val yearMethod = new DateExtractMethod(YearMethodOID, "_year", "year", date => date.year)
+  lazy val monthMethod = new DateExtractMethod(MonthMethodOID, "_month", "month", date => date.month)
+  lazy val dayMethod = new DateExtractMethod(DayMethodOID, "_dayOfMonth", "day of the month", date => date.dayOfMonth)
   
   lazy val todayFunction = new InternalMethod(TodayFunctionOID,
     toProps(
@@ -196,6 +200,8 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
   override lazy val props = Seq(
     modTimeMethod,
     yearMethod,
+    monthMethod,
+    dayMethod,
     todayFunction
   )
 }

@@ -56,10 +56,12 @@ class DateTimeTests extends QuerkiTests {
       val thing5 = new TestThing("Thing 5", theModel, dateProp(new DateTime(2013, 3, 16, 10, 30)))
     }
     
-    "show the year correctly" in {
+    "extract the elements of the Date" in {
       implicit val s = new TSpace
       
       pql("[[Thing 1 -> Date Prop -> _year]]") should equal ("2013")
+      pql("[[Thing 1 -> Date Prop -> _month]]") should equal ("3")
+      pql("[[Thing 1 -> Date Prop -> _dayOfMonth]]") should equal ("15")
     }
   }
 }
