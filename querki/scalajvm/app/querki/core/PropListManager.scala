@@ -125,7 +125,14 @@ class PropListManagerEcot(e:Ecology) extends QuerkiEcot(e) with PropListManager 
   // TODO: this overlaps horribly with code in EditorModel. This determines the Properties in the Advanced Editor; that has the ones
   // in the Instance Editor. Merge them together!
   def prepPropList(propList:PropList, thingOpt:Option[PropertyBundle], model:Thing, state:SpaceState, forceName:Boolean = false):Seq[(Property[_,_], DisplayPropVal)] = {
-    val propsToEdit = model.getPropOpt(Editor.InstanceProps)(state).map(_.rawList)
+    val isModel = thingOpt.flatMap(_.asThing).map(_.isModel(state)).getOrElse(false)
+    val propsToEdit =
+      if (isModel)
+        // If it's a sub-Model, we want to list all of the Properties, as normal:
+        None
+      else
+        // Not a Model, so fetch the InstanceProps iff they are defined:
+        model.getPropOpt(Editor.InstanceProps)(state).map(_.rawList)
     propsToEdit match {
       // If the model specifies which properties we actually want to edit, then use just those, in that order:
       case Some(editList) => {

@@ -78,21 +78,11 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	      Links.LinkAllowAppsProp(true),
 	      Links.LinkKindProp(Kind.Property),
 	      Summary("Which Properties are relevant for Instances of this Model?"),
-	      Details("""It is very common to define a bunch of Properties on a Model that you really don't
-	          |ever intend to change on the Instances. (In particular, you very often will define the Display
-	          |Text on the Model, not on the Instances.) This results in your Instance Editor being cluttered
-	          |with lots of Properties that you never, ever use.
-	          |
-	          |So this Property is a quick-and-easy way to lay out your Instance Editor. It is a List of
-	          |Properties that you can define however you like. When you create or edit an Instance of this
-	          |Model, it will display exactly those Properties, in that order, which usually makes it
-	          |easier for you to write your Instances.
-	          |
-	          |ADVANCED: if you want to use a Model as a Type, you must set its Instance Properties.
-	          |
-	          |BUG NOTE: this doesn't immediately register when you've added a Property to the Model, so it
-	          |doesn't list the newly-added Property. For now, after you add a Property, save the Model and then
-	          |edit it again -- the Property should now show up for you to use.""".stripMargin))) with LinkCandidateProvider
+	      Details("""This Property defines which of the Properties on this Model will show in
+          |the editor for its Instances, and in what order.
+          |
+          |You usually should not need to set this manually; it is changed by dragging-and-dropping
+          |Properties in the Model Editor.""".stripMargin))) with LinkCandidateProvider
 	{
 	  def getLinkCandidates(state:SpaceState, currentValue:DisplayPropVal):Seq[Thing] = {
 	    currentValue.on match {
