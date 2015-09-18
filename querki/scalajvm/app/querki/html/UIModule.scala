@@ -29,6 +29,7 @@ object UIMOIDs extends EcotIds(11) {
   val MixedButtonOID = moid(6)
   val CreateButtonOID = moid(7)
   val ShowSomeOID = moid(8)
+  val QLLinkOID = moid(9)
 }
 
 /**
@@ -475,8 +476,34 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         yield QL.WikitextValue(toWikitext(xml))
     }
   }
+  
+  abstract class ClickableQLBase(oid:OID, pf:PropFetcher) extends InternalMethod(oid, pf)
+  {
+    def buildHtml(label:String, core:String):String
+    
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        thing <- inv.contextFirstThing
+        labelWiki <- inv.processParamFirstAs(0, ParsedTextType)
+        label = HtmlEscape.escapeQuotes(labelWiki.raw.str.trim)
+        qlRaw <- inv.rawParam(1)
+        ql = HtmlEscape.escapeQuotes(qlRaw.reconstructString)
+        target <- inv.processParamFirstOr(2, ParsedTextType, Wikitext(""))
+        (targetName, targetDiv) =
+          if (target.plaintext.length() == 0) {
+            val name = "target-" + scala.util.Random.nextInt.toString 
+            (name, s"""<div id="$name"></div>""")
+          } else {
+            (target.raw.str.trim, "")
+          }
+      }
+        yield 
+          HtmlValue(
+            buildHtml(label, s"""data-thingid="${thing.toThingId}" data-target="$targetName" data-ql="$ql" href="#" """) + targetDiv)
+    }
+  }
 
-  lazy val QLButton = new InternalMethod(QLButtonOID,
+  lazy val QLButton = new ClickableQLBase(QLButtonOID,
     toProps(
       setName("_QLButton"),
       Summary("Shows a button that, when pressed, executes some QL and can show the result"),
@@ -493,30 +520,36 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           |As an example of how to use this, say you have a complex Model Property that you want to make
           |editable on the Thing's page, but you only want to show it when needed. You can say:
           |
-          |    \[[_QLButton(\""Edit My Model Property\"", My Model Property._edit)\]]
-          |
-          |In the long run, we will probably add better ways to handle user interaction. But this one is
-          |relatively quick and easy for a few situations.""".stripMargin)))
+          |    \[[_QLButton(\""Edit My Model Property\"", My Model Property._edit)\]]""".stripMargin)))
 	{
-	  override def qlApply(inv:Invocation):QFut = {
-	    for {
-	      thing <- inv.contextFirstThing
-	      labelWiki <- inv.processParamFirstAs(0, ParsedTextType)
-	      label = HtmlEscape.escapeQuotes(labelWiki.raw.str.trim)
-	      qlRaw <- inv.rawParam(1)
-	      ql = HtmlEscape.escapeQuotes(qlRaw.reconstructString)
-        target <- inv.processParamFirstOr(2, ParsedTextType, Wikitext(""))
-	      (targetName, targetDiv) =
-          if (target.plaintext.length() == 0) {
-            val name = "target-" + scala.util.Random.nextInt.toString 
-            (name, s"""<div id="$name"></div>""")
-          } else {
-            (target.raw.str.trim, "")
-          }
-	    }
-  	    yield HtmlValue(s"""<input type="button" value="$label" class="btn btn-primary _qlInvoke" data-thingid="${thing.toThingId}" data-target="$targetName" data-ql="$ql" href="#"></input>$targetDiv""")
-	  }
+    def buildHtml(label:String, core:String):String = {
+      s"""<input type="button" value="$label" class="btn btn-primary _qlInvoke" $core></input>"""
+    }
 	}
+
+  lazy val QLLink = new ClickableQLBase(QLLinkOID,
+    toProps(
+      setName("_QLLink"),
+      Summary("Shows a link that, when clicked, executes some QL and can show the result"),
+      SkillLevel(SkillLevelAdvanced),
+      Details("""    THING -> _QLLink(LABEL, QL, TARGET)
+          |
+          |This function is unusual, in that it is a way to do something only if the user clicks a link.
+          |It displays a link with the given LABEL; if the user clicks that, it evaluates the given QL
+          |(using the received THING as its context).
+          |
+          |If a TARGET is specified, that should be the id of a div or span to put the results into; if it
+          |is not given, the results will be displayed below the link.
+          |
+          |As an example of how to use this, say you have a complex Model Property that you want to make
+          |editable on the Thing's page, but you only want to show it when needed. You can say:
+          |
+          |    \[[_QLLink(\""Edit My Model Property\"", My Model Property._edit)\]]""".stripMargin)))
+  {
+    def buildHtml(label:String, core:String):String = {
+      s"""<a class="_qlInvoke" $core>$label</a>"""
+    }
+  }
   
   // TODO: replace this with a QL function! It certainly requires basic math functions, but I'm
   // not sure it needs much else...
@@ -592,6 +625,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     CreateInstanceLinkMethod,
     CreateButtonFunction,
     QLButton,
+    QLLink,
     new MixedButtonMethod,
     ShowSomeFunction
   )
