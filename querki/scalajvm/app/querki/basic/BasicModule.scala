@@ -107,7 +107,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis
         (bundle, elemContext) <- inv.bundlesAndContextsForProp(prop)
         textPV <- inv.iter(bundle.getPropOpt(prop)(inv.state))
         text <- inv.iter(textPV.v.rawList(this))
-        result <- inv.fut(QL.processMethod(text, inv.context.forProperty(prop), Some(inv), Some(bundle), Some(prop)))
+        result <- inv.fut(QL.processMethod(text, elemContext.forProperty(prop), Some(inv), Some(bundle), Some(prop)))
       }
         yield result
         
