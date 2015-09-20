@@ -83,7 +83,7 @@ class DataModelTests extends QuerkiTests {
     
     "error if the parameter isn't a Thing" in {
       processQText(commonThingAsContext(_.instance), """[[_hasProperty(My Optional Text)]]""") should 
-        equal (expectedWarning("Func.paramNotThing"))      
+        equal (expectedWarning("Func.paramWrongType"))      
     }
     
     "process a List of Things, saying whether they all have the Property" in {
