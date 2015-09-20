@@ -133,7 +133,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
     if (clazz.isInstance(context.value.pType))
       InvocationValueImpl(Some(context.value.pType.asInstanceOf[T]))
     else
-      error("Func.wrongType", displayName)
+      error("Func.wrongType", displayName, context.value.pType.displayName)
   }
   
   def contextElements:InvocationValue[QLContext] = {
@@ -414,16 +414,19 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
     }    
   }
   
-  def processParamFirstAs[VT](paramNum:Int, pt:PType[VT], processContext:QLContext = context):InvocationValue[VT] = {
+  private def processParamFirstGuts[VT](paramNum:Int, pt:PType[VT], processContext:QLContext = context)(onEmpty: => Future[Iterable[VT]]):InvocationValue[VT] = 
+  {
     paramsOpt match {
       case Some(params) if (params.length >= (paramNum + 1)) => {
         val resultFut:Future[Iterable[VT]] = context.parser.get.processPhrase(params(paramNum).ops, processContext).flatMap { raw =>
           val processed = raw.value
-          processed.firstAs(QL.ErrorTextType) match {
+          if (processed.isEmpty)
+            onEmpty
+          else processed.firstAs(QL.ErrorTextType) match {
             case Some(errorText) => Future.failed(new PublicException("General.public", errorText))
             case None => processed.firstAs(pt) match {
               case Some(v) => Future.successful(Some(v))
-              case None => Future.failed(PublicException("Func.paramNotThing", displayName, paramNum.toString))
+              case None => Future.failed(PublicException("Func.paramWrongType", displayName, paramNum.toString, pt.displayName, processed.pType.displayName))                
             }
           }
         }
@@ -433,9 +436,19 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
     }
   }
   
+  def processParamFirstAs[VT](paramNum:Int, pt:PType[VT], processContext:QLContext = context):InvocationValue[VT] = {
+    processParamFirstGuts(paramNum, pt, processContext) { 
+      Future.failed(PublicException("Func.emptyParamValue", displayName))
+    }
+  }
+  
   def processParamFirstOr[VT](paramNum:Int, pt:PType[VT], default:VT, processContext:QLContext = context):InvocationValue[VT] = {
     paramsOpt match {
-      case Some(params) if (params.length >= (paramNum + 1)) => processParamFirstAs(paramNum, pt, processContext)
+      case Some(params) if (params.length >= (paramNum + 1)) => 
+        processParamFirstGuts(paramNum, pt, processContext) {
+          // Iff the result of the param was empty, return the default
+          Future(Some(default))
+        }
       case _ => wrap(default)
     }
   }

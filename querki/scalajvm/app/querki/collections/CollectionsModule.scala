@@ -211,6 +211,9 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |
 	          |The FILTER should take a Thing, and produce a YesNo that says whether to include this Thing.
 	          |That gets applied to each element of RECEIVED; if FILTER returns Yes, then it is included, otherwise not.
+            |
+            |IMPORTANT: if the FILTER's result is empty for one of the Things, it is considered to be No -- the Thing
+            |will be left out of the results.
 	    	    |
 	          |This is one of the most commonly-useful functions in Querki. It is how you usually say, "I only want *some*
 	          |of the elements in this List or Set".""".stripMargin)))
@@ -219,7 +222,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
       for {
         dummy <- inv.preferCollection(QList)
         elemContext <- inv.contextElements
-        passes <- inv.processParamFirstAs(0, YesNoType, elemContext)
+        passes <- inv.processParamFirstOr(0, YesNoType, false, elemContext)
         if (passes)
       }
         yield elemContext.value

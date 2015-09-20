@@ -224,6 +224,10 @@ package object ql {
     /**
      * Variation of processParamFirstAs, which copes with optional parameters and lets you define a default.
      * 
+     * IMPORTANT: if the actual parameter results in an empty value, the default is returned. That is, an empty
+     * evaluation of the parameter is considered to be equivalent to the parameter not being specified in the
+     * first place. This is crucial so that _filter() works with expressions that are sometimes empty. 
+     * 
      * TODO: this should eventually go away once we have proper signature definitions, and named parameters.
      */
     def processParamFirstOr[VT](paramNum:Int, pt:PType[VT], default:VT, processContext:QLContext = context):InvocationValue[VT]
