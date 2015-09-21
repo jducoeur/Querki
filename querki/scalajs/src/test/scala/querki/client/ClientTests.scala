@@ -47,7 +47,7 @@ object ClientTests extends QuerkiTests {
           
       async {
         val result = await(Client[ClientTestTrait].getMsg("hi there").call())
-	    assert(result == "ClientTestImpl got the message hi there")
+	      assert(result == "ClientTestImpl got the message hi there")
       }
     }
     

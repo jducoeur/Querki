@@ -139,6 +139,7 @@ trait StandardTestEntryPoints extends TestClientRouter {
       }      
     }
     controllers.ClientController.apiRequest = { ajaxApiEntryPoint("apiRequest", apiHandler) _ }
+    controllers.ClientController.rawApiRequest = { ajaxApiEntryPoint("rawApiRequest", apiHandler) _ }
     controllers.ClientController.commonApiRequest = { ajaxCommonEntryPoint("commonApiRequest", apiHandler) _ }
     controllers.ClientController.userApiRequest = { ajaxCommonEntryPoint("userApiRequest", apiHandler) _ }
     
