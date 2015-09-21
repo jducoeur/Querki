@@ -103,8 +103,8 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     val moveHandle = span(cls:="glyphicon glyphicon-move col-md-1 text-right").render
     // ... the wrapper for the guts...
     val content = span(cls:="col-md-10").render
-    // ... and the delete button:
-    val deleteButton = button(cls:="delete-item-button btn-xs").render
+    // ... and the delete button. Note that you intentionally can not tab to it:
+    val deleteButton = button(cls:="delete-item-button btn-xs", tabindex:="-1").render
     val deleteSpan = span(cls:="col-md-1").render
     $(deleteSpan).append(deleteButton)
     // Add those to the LI:
