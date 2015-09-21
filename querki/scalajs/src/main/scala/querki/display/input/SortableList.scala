@@ -82,9 +82,8 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
   }
   
   def handleDeleteListItem(evt:JQueryEventObject) = {
-    val targetLi = $(evt.currentTarget).parent()
-    // TODO: $.get should return UndefOr[dom.Element], shouldn't it?
-    val i = index(targetLi.get(0).asInstanceOf[dom.Element])
+    val targetLi = $(evt.currentTarget).parent().parent()
+    val i = index(targetLi.get(0).get)
     targetLi.remove()
     numberItems()
     saveChange({ path => DeleteListItem(path, i) })
