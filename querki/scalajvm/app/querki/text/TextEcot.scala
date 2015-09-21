@@ -15,6 +15,7 @@ object MOIDs extends EcotIds(23) {
   val JoinMethodOID = sysId(65)
   
   val MatchCaseOID = moid(1)
+  val SubstringOID = moid(2)
 }
 
 class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
@@ -128,6 +129,47 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	      yield QL.WikitextValue(result)
 	  }
 	}
+  
+  lazy val SubstringMethod = new InternalMethod(SubstringOID,
+    toProps(
+      setName("_substring"),
+      SkillLevel(SkillLevelAdvanced),
+      Summary("Extracts part of a Text or Large Text"),
+      Details("""    TEXT -> _substring(START, END) -> SUBTEXT
+        |
+        |Given a value, this treats it as text, and extracts the portion of it beginning at
+        |character START, and running through END - 1.
+        |
+        |If you omit the END parameter, it will take everything through the end of the string.
+        |
+        |The parameters are zero-indexed; that is, the first character is 0, the second 1, etc. 
+        |
+        |This function is designed to deliberately ape the substring methods familiar from languages like
+        |Java and JavaScript, and is mainly aimed at programmers. However, it is more forgiving than Java of indexes that
+        |are out of bounds -- in particular, if END is beyond the end of the string, it will return the value
+        |through the end of the string, and if START is beyond the end of the string, it will always return
+        |the empty string.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        start <- inv.processParamFirstAs(0, IntType)
+        end <- inv.processParamFirstOr(1, IntType, Int.MaxValue)
+        elemContext <- inv.contextElements
+        qv = elemContext.value
+        wikitext <- inv.fut(qv.wikify(elemContext))
+        raw = wikitext.raw.toString()
+        len = raw.length()
+        finalStart = Math.min(start, len)
+        finalEnd = Math.min(end, len)
+        substr =
+          if (end == Int.MaxValue)
+            raw.substring(finalStart)
+          else
+            raw.substring(finalStart, finalEnd)
+      }
+        yield ExactlyOne(TextType(substr))
+    }
+  }
 	
   lazy val MatchCaseMethod = new InternalMethod(MatchCaseOID,
 	    toProps(
@@ -147,52 +189,53 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	          |
 	          |This will probably get moved to a text-manipulation Mixin at some time down the road.""".stripMargin)))
   {
-	override def qlApply(inv:Invocation):QFut = {
-	  for {
-	    lexicalProp <- inv.opt(inv.context.parser.flatMap(_.lexicalProp))
-	    call <- inv.opt(findCall(inv, lexicalProp))
-	    text <- inv.contextAllAs(QL.ParsedTextType)
-	    adjusted = adjustCase(text, call)
-	  }
-	    yield ExactlyOne(QL.ParsedTextType(Wikitext(adjusted)))
-	}
-	
-	private def findCall(inv:Invocation, thing:Thing):Option[QLCall] = {
-	  def findRec(context:QLContext):Option[QLCall] = {
-	    val result = for {
-	      // fromTransformOpt indicates the actual Thing being called inside each QLCall:
-	      transformer <- context.fromTransformOpt
-	      if (transformer.id == thing.id)
-	      call <- context.withCallOpt
-	    }
-	      yield call
-	      
-	    result.orElse(context.parentOpt.flatMap(findRec(_)))
-	  }
-	  
-	  findRec(inv.context)
-	}
-	
-	private def adjustCase(text:Wikitext, call:QLCall):String = {
-	  val charToMatch = call.name.name(0)
-	  val actualText = text.plaintext
-	  val charToAdjust = actualText(0)
-	  val adjusted = 
-	    if (charToMatch.isUpper)
-	      charToAdjust.toUpper
-	    else if (charToMatch.isLower)
-	      charToAdjust.toLower
-	    else
-	      // Odd...
-	      charToAdjust
-	  
-	  adjusted + actualText.substring(1)
-	}
+  	override def qlApply(inv:Invocation):QFut = {
+  	  for {
+  	    lexicalProp <- inv.opt(inv.context.parser.flatMap(_.lexicalProp))
+  	    call <- inv.opt(findCall(inv, lexicalProp))
+  	    text <- inv.contextAllAs(QL.ParsedTextType)
+  	    adjusted = adjustCase(text, call)
+  	  }
+  	    yield ExactlyOne(QL.ParsedTextType(Wikitext(adjusted)))
+  	}
+  	
+  	private def findCall(inv:Invocation, thing:Thing):Option[QLCall] = {
+  	  def findRec(context:QLContext):Option[QLCall] = {
+  	    val result = for {
+  	      // fromTransformOpt indicates the actual Thing being called inside each QLCall:
+  	      transformer <- context.fromTransformOpt
+  	      if (transformer.id == thing.id)
+  	      call <- context.withCallOpt
+  	    }
+  	      yield call
+  	      
+  	    result.orElse(context.parentOpt.flatMap(findRec(_)))
+  	  }
+  	  
+  	  findRec(inv.context)
+  	}
+  	
+  	private def adjustCase(text:Wikitext, call:QLCall):String = {
+  	  val charToMatch = call.name.name(0)
+  	  val actualText = text.plaintext
+  	  val charToAdjust = actualText(0)
+  	  val adjusted = 
+  	    if (charToMatch.isUpper)
+  	      charToAdjust.toUpper
+  	    else if (charToMatch.isLower)
+  	      charToAdjust.toLower
+  	    else
+  	      // Odd...
+  	      charToAdjust
+  	  
+  	  adjusted + actualText.substring(1)
+  	}
   }
   
   override lazy val props = Seq(
     PluralizeMethod,
     JoinMethod,
-    MatchCaseMethod
+    MatchCaseMethod,
+    SubstringMethod
   )
 }
