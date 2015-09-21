@@ -1,7 +1,5 @@
 package querki.identity
 
-import scala.concurrent.ExecutionContext.Implicits._
-import scala.concurrent.Future
 import scala.util.Try
 
 import anorm._
@@ -16,7 +14,7 @@ import querki.core.NameUtils
 import querki.db.ShardKind._
 import querki.ecology._
 import querki.email.EmailAddress
-import querki.util._
+import querki.globals._
 import querki.util.SqlHelpers._
 
 import UserLevel._
@@ -199,7 +197,7 @@ class UserPersistence(e:Ecology) extends QuerkiEcot(e) with UserAccess {
     loadByEmail(
       email, 
       Some({ user:User => 
-        val identityOpt = user.identityBy(_.email.addr == email.addr)
+        val identityOpt = user.identityBy(_.email.addr.toLowerCase() == email.addr.toLowerCase())
         identityOpt.map(identity => Encryption.authenticate(passwordEntered, identity.auth)).getOrElse(false) 
       })
     )
