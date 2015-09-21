@@ -89,17 +89,39 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     numberItems()
     saveChange({ path => DeleteListItem(path, i) })
   }
+  
+  /**
+   * Given an li with the real content in it, wraps it with listiness.
+   */
+  def fixupLI(li:dom.HTMLLIElement) = {
+    val liq = $(li)
+    // Mark the LI as a Bootstrap row:
+    liq.addClass("row")
+    // Pull out the guts, because we'll be reparenting them:
+    val guts = $(li).children().first()
+    guts.detach()
+    // Add the three elements of the row: the move handle...
+    val moveHandle = span(cls:="glyphicon glyphicon-move col-md-1 text-right").render
+    // ... the wrapper for the guts...
+    val content = span(cls:="col-md-10").render
+    // ... and the delete button:
+    val deleteButton = button(cls:="delete-item-button btn-xs").render
+    val deleteSpan = span(cls:="col-md-1").render
+    $(deleteSpan).append(deleteButton)
+    // Add those to the LI:
+    liq.append(moveHandle, content, deleteSpan)
+    // Reparent the guts:
+    $(content).append(guts)
+    // And prep the button:
+    setupDeleteButton(deleteButton)
+  }
     
   def handleAddListItem(evt:JQueryEventObject) = {
     // Don't pick up existing data, especially existing Gadget links:
     val newItem = template.clone(false)
     newItem.removeClass("inputTemplate")
-    val delButton = button(cls:="delete-item-button btn-xs").render
-    setupDeleteButton(delButton)
-    // TODO: what about replaceIndexes()? Don't we need to do that every time we renumber?
-    // TODO: the fact that we are creating this here, but the originals in the server, shows how
-    // broken the factoring is. *ALL* of this sort of stuff belongs here.
-    val newLiElem = li(span(cls:="glyphicon glyphicon-move"), newItem.get(0).asInstanceOf[dom.Element], delButton).render
+    val newLiElem = li(newItem.get(0).get).render
+    fixupLI(newLiElem)
     $(elem).append(newLiElem)
   	numberItems()
     // Do our best to set focus to the first relevant field of the new element:
@@ -126,6 +148,8 @@ class SortableListGadget(implicit e:Ecology) extends InputGadget[dom.HTMLUListEl
     $(elem).parent().find(".delete-item-button").each({ (buttonElem:dom.Element) => 
       setupDeleteButton(buttonElem)
     }:js.ThisFunction0[dom.Element, Any])
+    
+    $(elem).find(".list-input-item").foreach { liElem => fixupLI(liElem.asInstanceOf[dom.HTMLLIElement])}
     
     // Take the template out of the DOM, so that it doesn't get in the way. We mostly use it to clone
     // new elements:

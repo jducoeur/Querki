@@ -190,11 +190,7 @@ trait CollectionBase { self:CoreEcot =>
                     Attribute("id", Text(currentValue.collectionControlId + "-item[" + i + "]"), 
                     Attribute("name", Text(currentValue.collectionControlId + "-item[" + i + "]"), Null))
                 }
-                <li class="row">
-                  <span class="glyphicon glyphicon-move col-md-1 text-right"></span>
-                  <span class="col-md-10">{itemRendered}</span>
-                  <span class="col-md-1"><button class="delete-item-button btn-xs">&nbsp;</button></span>
-                </li>                
+                <li class="list-input-item">{itemRendered}</li>                
               }
             }
           }.getOrElse(Seq(fut(NodeSeq.Empty)))
