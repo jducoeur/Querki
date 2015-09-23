@@ -60,10 +60,10 @@ class QuerkiTests
     ecology = e
   }
   
-  def getRcs[S <: CommonSpace](state:SpaceState)(implicit space:S, requester:User = BasicTestUser):RequestContext = {
+  def getRcs[S <: TestSpace](state:SpaceState)(implicit space:S, requester:User = BasicTestUser):RequestContext = {
     SimpleTestRequestContext(space.owner.mainIdentity.id)
   }
-  def getRc[S <: CommonSpace](implicit space:S, requester:User = BasicTestUser):RequestContext = {
+  def getRc[S <: TestSpace](implicit space:S, requester:User = BasicTestUser):RequestContext = {
     getRcs(space.state)
   }
   
@@ -72,15 +72,15 @@ class QuerkiTests
    * descendant for this to work, but it's very boilerplate-light. Note that this supplies the Space itself
    * as the context, so you will usually need to specify explicit context at the beginning of the QL expression.
    */
-  def pql[S <: CommonSpace](text:String)(implicit space:S, requester:User = BasicTestUser):String = {
+  def pql[S <: TestSpace](text:String)(implicit space:S, requester:User = BasicTestUser):String = {
     pqls(text, space.state)
   }
-  def pqls[S <: CommonSpace](text:String, state:SpaceState)(implicit space:S, requester:User = BasicTestUser):String = {
+  def pqls[S <: TestSpace](text:String, state:SpaceState)(implicit space:S, requester:User = BasicTestUser):String = {
     val rc = getRcs(state)
     val context = state.thisAsContext(rc, state, ecology)
     processQText(context, text)
   }
-  def pqlt[S <: CommonSpace](t:Thing, text:String)(implicit space:S, requester:User = BasicTestUser):String = {
+  def pqlt[S <: TestSpace](t:Thing, text:String)(implicit space:S, requester:User = BasicTestUser):String = {
     implicit val state = space.state
     implicit val rc = getRcs(state)
     val context = t.thisAsContext

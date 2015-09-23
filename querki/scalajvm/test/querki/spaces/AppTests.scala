@@ -27,22 +27,27 @@ class AppTests extends QuerkiTests {
   
     val highest = new TestApp {
       val highestThing = new SimpleTestThing("Highest Thing")
+      
+      val myNumProp = new TestProperty(Core.IntType, QList, "My Nums")
     }
     
     val mid1 = new TestApp {
       override val apps = Seq(highest)
       
       val duplicateThing = new SimpleTestThing("Duplicate Thing")
+      val plusOne = new SimpleTestThing("Plus One", Basic.ApplyMethod("_plus(1)"))
     }
     
     val mid2 = new TestApp {
       val mySimplePage = new SimpleTestThing("Simple Page")
+      val firstTwo = new SimpleTestThing("First Two", Basic.ApplyMethod("_take(2)"))
     }
     
     val mid3 = new TestApp {
       override val apps = Seq(highest)
       
       val duplicateThing = new SimpleTestThing("Duplicate Thing")
+      val numThing = new SimpleTestThing("Num Thing", highest.myNumProp(4, 6, 8))
     }
     
     val main = new TestApp {
@@ -81,6 +86,13 @@ class AppTests extends QuerkiTests {
     "override in order" in {
       new WorldTest {
         testName("Duplicate Thing", mid1.duplicateThing)
+      }
+    }
+    
+    "combine elements from various apps" in {
+      new WorldTest {
+        pql("[[Num Thing -> My Nums -> Plus One -> First Two -> _commas]]") should
+          equal("5, 7")
       }
     }
   }

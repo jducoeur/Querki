@@ -21,11 +21,6 @@ class CommonSpace(implicit ecologyIn:Ecology) extends TestSpace {
   lazy val Links = interface[querki.links.Links]
   lazy val Tags = interface[querki.tags.Tags]
   
-  lazy val ExactlyOne = Core.ExactlyOne
-  lazy val Optional = Core.Optional
-  lazy val QList = Core.QList
-  lazy val QSet = Core.QSet
-  
   lazy val ExternalLinkType = Links.URLType
   lazy val TextType = Core.TextType
   lazy val LinkType = Core.LinkType

@@ -58,6 +58,11 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
   lazy val SpaceChangeManager = interface[querki.spaces.SpaceChangeManager]
   lazy val System = interface[querki.system.System]
 
+  lazy val ExactlyOne = Core.ExactlyOne
+  lazy val Optional = Core.Optional
+  lazy val QList = Core.QList
+  lazy val QSet = Core.QSet
+  
   // ================================
   //
   // COMMON TEST CLASSES
