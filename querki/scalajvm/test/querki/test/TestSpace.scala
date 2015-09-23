@@ -140,10 +140,10 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
   def toid():OID = world.nextOID()
   
   /**
-   * This Space's App. Defaults to the System Space; override this if you
-   * want something different.
+   * This Space's Apps, if any. Note that you specify the App's TestSpace; the state will be
+   * automatically used.
    */
-  lazy val apps:Seq[SpaceState] = Seq.empty
+  def apps:Seq[TestSpace] = Seq.empty
   
   def userAs(name:String, handle:String, level:UserLevel):User = 
     FullUser(
@@ -204,7 +204,7 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
       owner.mainIdentity.id,   // This Space's Owner
       spaceName, // This Space's Name
       querki.time.epoch, // This Space's last-modified time
-      apps, // This Space's Apps, if any
+      apps.map(_.state), // This Space's Apps, if any
       Some(System.State),
       OIDMap(types:_*),
       OIDMap(props:_*),
