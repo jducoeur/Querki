@@ -22,7 +22,7 @@ class MarcoPoloImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImp
     implicit val s = state
     val lowerQ = q.toLowerCase()
     val propOpt = propIdOpt.flatMap(state.prop(_))
-    val things = getLinksFromSpace(state, propOpt, lowerQ)
+    val things = state.accumulateAll[Seq[MarcoPoloItem]](getLinksFromSpace(_, propOpt, lowerQ), (x, y) => x ++ y) 
     val allItems:Seq[MarcoPoloItem] = propOpt match {
       case Some(prop) => {
         if (prop.pType == Core.LinkType) {
@@ -57,27 +57,20 @@ class MarcoPoloImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImp
   private def getLinksFromSpace(spaceIn:SpaceState, propOpt:Option[AnyProp], lowerQ:String):Seq[MarcoPoloItem] = {
     implicit val space = spaceIn
     
-    val things = {
-      val allThings = space.allThings.toSeq
-    
-      // Filter the options if there is a valid Link Model:
-      val thingsFiltered = {
-        val filteredOpt = for {
-          prop <- propOpt
-          linkModelProp <- prop.getPropOpt(Links.LinkModelProp);
-          targetModel <- linkModelProp.firstOpt
-        }
-          yield allThings.filter(_.isAncestor(targetModel))
-          
-        filteredOpt.getOrElse(allThings)
+    val allThings = space.allThings.toSeq
+  
+    // Filter the options if there is a valid Link Model:
+    val thingsFiltered = {
+      val filteredOpt = for {
+        prop <- propOpt
+        linkModelProp <- prop.getPropOpt(Links.LinkModelProp);
+        targetModel <- linkModelProp.firstOpt
       }
-    
-      thingsFiltered.map(t => MarcoPoloItem(t.displayName, t.id.toThingId)).filter(_.display.toLowerCase().contains(lowerQ))
+        yield allThings.filter(_.isAncestor(targetModel))
+        
+      filteredOpt.getOrElse(allThings)
     }
-    
-    space.app match {
-      case Some(app) => things ++ getLinksFromSpace(app, propOpt, lowerQ)
-      case None => things
-    }
+  
+    thingsFiltered.map(t => MarcoPoloItem(t.displayName, t.id.toThingId)).filter(_.display.toLowerCase().contains(lowerQ))
   }
 }

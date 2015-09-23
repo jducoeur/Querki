@@ -93,6 +93,7 @@ private [imexport] class RawXMLImport(rc:RequestContext)(implicit val ecology:Ec
       rc.requesterOrAnon.mainIdentity.id,
       name.get,
       DateTime.now,
+      Seq.empty,
       Some(SystemSpace),
       Map.empty,
       Map.empty,

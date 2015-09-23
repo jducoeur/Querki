@@ -2,7 +2,7 @@ package querki.values
 
 import language.existentials
 
-import models.{Collection, Property, PType, Thing, ThingState}
+import models.{AnyProp, Collection, Property, PType, Thing, ThingState}
 import models.{Kind}
 import models.{AsName, AsOID, OID, ThingId}
 
@@ -35,8 +35,6 @@ case class StateCacheKey(ecotId:Short, id:String)
  * A SpaceState is a Space at a specific point in time. Operations are usually performed
  * on a SpaceState, to keep them consistent. Changes are sent to the Space, which generates
  * a new SpaceState from them.
- * 
- * TODO: implement Space inheritance -- that is, Apps.
  */
 case class SpaceState(
     s:OID, 
@@ -45,8 +43,10 @@ case class SpaceState(
     owner:OID,
     name:String,
     mt:DateTime,
-    // TODO: in principle, this is a List[SpaceState] -- there can be multiple ancestors:
-    app:Option[SpaceState],
+    // Any Apps that this inherits from. These will be searched in-order, depth-first:
+    apps:Seq[SpaceState],
+    // The System State, which should be given unless this *is* the System State:
+    system:Option[SpaceState],
     types:Map[OID, PType[_]],
     spaceProps:Map[OID, Property[_,_]],
     things:Map[OID, ThingState],
@@ -58,6 +58,83 @@ case class SpaceState(
   override def toString = s"SpaceState '$toThingId' (${id.toThingId})"
   
   // *******************************************
+  //
+  // App-navigation functions
+  //
+  // These are general functions for "do something to this Space and all its Apps". They should, in
+  // general, be used instead of working with apps from outside this SpaceState.
+  //
+  
+  /**
+   * The core function for looking something up in this Space. This tries
+   * the given function in this Space, then recursively on all of the Apps.
+   * (In-order, depth-first.) If none of that works, it tries the System Space.
+   */
+  def walkTree[R](f:(SpaceState) => Option[R]):Option[R] = {
+    walkTreeRec(f).orElse(system.flatMap(f(_)))
+  }
+  
+  /**
+   * Look something up *only* in the Apps, not in this Space. This will include
+   * System. You should usually use walkTree() instead.
+   */
+  def walkApps[R](f:(SpaceState) => Option[R]):Option[R] = {
+    walkAppsRec(f).orElse(system.flatMap(f(_)))    
+  }
+  
+  private def walkTreeRec[R](f: (SpaceState) => Option[R]):Option[R] = {
+    f(this) match {
+      case Some(result) => Some(result)
+      case _ => walkAppsRec(f)
+    }
+  }
+  
+  private def walkAppsRec[R](f: (SpaceState) => Option[R]):Option[R] = {
+    // Run through the apps, depth-first, looking for the result:
+    (Option.empty[R] /: apps) { (cur, app) =>
+      cur.orElse(app.walkTreeRec(f))
+    }    
+  }
+  
+  /**
+   * Collect values from this Space and all of its Apps, including System.
+   * 
+   * This runs f on this State, then the Apps in-order, depth-first, and finally System.
+   * 
+   * NOTE: in a perfect world, we would simply be able to assume that accum is ++ and do
+   * that. But I'm having trouble getting the types to line up right for that.
+   * 
+   * @tparam R An accumulation of values. Typically a collection, but doesn't have to be.
+   * @param f A function that takes a SpaceState and produces an R result.
+   * @param accum A fold function that takes two R's and flattens them into one.
+   * 
+   * @returns The accumulated values from all of the SpaceStates.
+   */
+  def accumulateAll[R](f:SpaceState => R, accum:(R, R) => R):R = 
+  {
+    val fromTree = accumulateAllRec(f, accum)
+    system match {
+      case Some(s) => accum(fromTree, f(s))
+      case _ => fromTree
+    }
+  }
+  
+  private def accumulateAllRec[R](f:SpaceState => R, accum:(R, R) => R):R = 
+  {
+    (f(this) /: apps) { (cur, app) =>
+      val rest = app.accumulateAllRec(f, accum)
+      accum(cur, rest)
+    }
+  }
+  
+  /**
+   * A version of accumulateAll(), specialized for Maps.
+   */
+  def accumulateMaps[K,V](f:SpaceState => Map[K,V]):Map[K,V] = {
+    accumulateAll(f, { (x:Map[K,V], y:Map[K,V]) => x ++ y })
+  }
+  
+  // *******************************************
   
   // Walks up the App tree, looking for the specified Thing of the implied type:
   // IMPORTANT: note that the OID and ThingId versions of these methods are inconsistent in their
@@ -66,24 +143,24 @@ case class SpaceState(
   // is tending to produce pretty damned cryptic exceptions. Instead, just make the higher levels cope
   // with the Nones.
   def resolve[T <: Thing](tid:OID)(lookup: (SpaceState) => Map[OID, T]):T = {
-    lookup(this).get(tid).getOrElse(
-          app.map(_.resolve(tid)(lookup)).getOrElse(throw new Exception("Couldn't find " + tid)))
+    resolveOpt(tid)(lookup).getOrElse(throw new Exception("Couldn't find " + tid))
   }
-  // TODO: this is what we should be using instead of the old resolve()..
   def resolveOpt[T <: Thing](tid:OID)(lookup: (SpaceState) => Map[OID, T]):Option[T] = {
-    lookup(this).get(tid).orElse(
-          app.flatMap(_.resolveOpt(tid)(lookup)))
+    walkTree { state => lookup(state).get(tid) }
   }
+
   def typ(ptr:OID) = resolve(ptr) (_.types)
   def prop(ptr:OID) = resolveOpt(ptr) (_.spaceProps)
   def thing(ptr:OID) = resolve(ptr) (_.things)
   def coll(ptr:OID) = resolve(ptr) (_.colls)
   
   def resolve[T <: Thing](tid:ThingId)(lookup: (SpaceState) => Map[OID, T]):Option[T] = {
-    val map = lookup(this)
-    tid match {
-      case AsOID(id) => map.get(id).orElse(app.flatMap(_.resolve(tid)(lookup)))
-      case AsName(name) => thingWithName(name, map).orElse(app.flatMap(_.resolve(tid)(lookup)))
+    walkTree { state =>
+      val map = lookup(state)
+      tid match {
+        case AsOID(id) => map.get(id)
+        case AsName(name) => thingWithName(name, map)
+      }      
     }
   }
   def typ(ptr:ThingId) = resolve(ptr) (_.types)
@@ -92,12 +169,13 @@ case class SpaceState(
   def coll(ptr:ThingId) = resolve(ptr) (_.colls)
   
   def anything(oid:OID):Option[Thing] = {
-    things.get(oid).orElse(
-      spaceProps.get(oid).orElse(
-        types.get(oid).orElse(
-          colls.get(oid).orElse(
-            selfByOID(oid).orElse(
-              app.flatMap(_.anything(oid)))))))
+    walkTree { state =>
+      state.things.get(oid).orElse(
+        state.spaceProps.get(oid).orElse(
+          state.types.get(oid).orElse(
+            state.colls.get(oid).orElse(
+              state.selfByOID(oid)))))
+    }
   }
   
   private def thingWithName[T <: Thing](name:String, things:Map[OID, T]):Option[T] = {
@@ -121,12 +199,13 @@ case class SpaceState(
   }
   
   def anythingByDisplayName(rawName:String):Option[Thing] = {
-    val name = rawName.toLowerCase()
-    thingWithDisplayName(name, things).orElse(
-      thingWithDisplayName(name, spaceProps).orElse(
-        thingWithDisplayName(name, types).orElse(
-          thingWithDisplayName(name, colls).orElse(
-            app.flatMap(_.anythingByDisplayName(rawName))))))
+    walkTree { state =>
+      val name = rawName.toLowerCase()
+      thingWithDisplayName(name, state.things).orElse(
+        thingWithDisplayName(name, state.spaceProps).orElse(
+          thingWithDisplayName(name, state.types).orElse(
+            thingWithDisplayName(name, state.colls))))
+    }
   }
   
   /**
@@ -153,8 +232,10 @@ case class SpaceState(
   }
   
   def anythingByName(rawName:String):Option[Thing] = {
-    val name = NameUtils.canonicalize(rawName)
-    byCanonicalName.get(name).orElse(app.flatMap(_.anythingByName(rawName))).orElse(anythingByDisplayName(rawName))
+    walkTree { state =>
+      val name = NameUtils.canonicalize(rawName)
+      state.byCanonicalName.get(name)
+    }.orElse(anythingByDisplayName(rawName))
   }
   
   def anything(thingId:ThingId):Option[Thing] = {
@@ -187,9 +268,8 @@ case class SpaceState(
   def everythingLocal:Iterable[Thing] = things.values ++ spaceProps.values ++ types.values ++ colls.values
   
   def propList:Iterable[Property[_,_]] = spaceProps.values
-  def allProps:Map[OID, Property[_,_]] = if (app.isEmpty) spaceProps else spaceProps ++ app.get.allProps
-  
-  def allTypes:Map[OID, PType[_]] = if (app.isEmpty) types else types ++ app.get.types
+  def allProps:Map[OID, Property[_,_]] = accumulateMaps(_.spaceProps)   
+  def allTypes:Map[OID, PType[_]] = accumulateMaps(_.types)
   
   def root(t:Thing):OID = {
     val modelId = t.model
@@ -216,10 +296,12 @@ case class SpaceState(
   }
   
   def getApp(appId:OID):Option[SpaceState] = {
-    if (appId == id)
-      Some(this)
-    else
-      app.flatMap(_.getApp(appId))
+    walkTree { state =>
+      if (appId == state.id)
+        Some(state)
+      else
+        None
+    }
   }
   
   /***************************************
@@ -252,7 +334,6 @@ case class SpaceState(
 class SpaceStateOps(implicit state:SpaceState, val ecology:Ecology) extends EcologyMember {
   def Core = interface[querki.core.Core]
   
-  def app = state.app
   def things = state.things
 
   def models:Iterable[ThingState] = {
@@ -260,13 +341,8 @@ class SpaceStateOps(implicit state:SpaceState, val ecology:Ecology) extends Ecol
     things.values.filter(_.first(Core.IsModelProp))    
   }
   def allModels:Iterable[ThingState] = {
-    val myModels = models
-    if (app.isEmpty) {
-      myModels
-    } else {
-      myModels ++ app.get.allModels
-    }
-  }  
+    state.accumulateAll(_.models, { (x:Iterable[ThingState], y:Iterable[ThingState]) => x ++ y })
+  }
     
   def descendantsTyped[T <: Thing](root:OID, includeModels:Boolean, includeInstances:Boolean, map:Map[OID, T]):Iterable[Thing] = {
     map.values.filter(_.isAncestor(root)(state))

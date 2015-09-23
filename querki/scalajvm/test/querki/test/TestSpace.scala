@@ -143,7 +143,7 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
    * This Space's App. Defaults to the System Space; override this if you
    * want something different.
    */
-  lazy val app:SpaceState = System.State
+  lazy val apps:Seq[SpaceState] = Seq.empty
   
   def userAs(name:String, handle:String, level:UserLevel):User = 
     FullUser(
@@ -199,12 +199,13 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
   lazy val state:SpaceState = {
     val s = SpaceState(
       spaceId,    // This Space's OID
-      app.id,    // This Space's Model
+      System.State.id, // This Space's Model
       sProps,    // This Space's own props
       owner.mainIdentity.id,   // This Space's Owner
       spaceName, // This Space's Name
       querki.time.epoch, // This Space's last-modified time
-      Some(app), // This Space's App
+      apps, // This Space's Apps, if any
+      Some(System.State),
       OIDMap(types:_*),
       OIDMap(props:_*),
       OIDMap(things:_*),

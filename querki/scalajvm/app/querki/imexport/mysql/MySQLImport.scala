@@ -114,6 +114,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
       rc.requesterOrAnon.mainIdentity.id,
       name,
       DateTime.now,
+      Seq.empty,
       Some(SystemSpace),
       Map.empty,
       Map.empty,

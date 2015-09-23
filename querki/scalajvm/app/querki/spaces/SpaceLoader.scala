@@ -63,6 +63,7 @@ trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
              owner,
              name,
              modTime,
+             Seq.empty,
              Some(SystemInterface.State),
              // TODO: dynamic PTypes
              Map.empty[OID, PType[_]],
@@ -90,6 +91,7 @@ trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
             owner,
             name,
             epoch,
+            Seq.empty,
             Some(SystemInterface.State),
             Map.empty[OID, PType[_]],
             Map.empty[OID, Property[_,_]],

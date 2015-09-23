@@ -250,11 +250,10 @@ trait LinkUtils { self:CoreEcot =>
   def linkCandidates(state:SpaceState, Links:querki.links.Links, prop:Property[_,_]):Seq[Thing] = {
     implicit val s = state
     
-    val locals = linkCandidatesLocal(state, Links, prop)
-    if (state.app.isDefined && prop.hasProp(Links.LinkAllowAppsProp) && prop.first(Links.LinkAllowAppsProp))
-      locals ++: linkCandidates(state.app.get, Links, prop)
+    if (prop.hasProp(Links.LinkAllowAppsProp) && prop.first(Links.LinkAllowAppsProp))
+      state.accumulateAll[Seq[Thing]](linkCandidatesLocal(_, Links, prop), { (x, y) => x ++ y })
     else
-      locals
+      linkCandidatesLocal(state, Links, prop)
   }
 
   /**
