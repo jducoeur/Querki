@@ -1,6 +1,7 @@
 package querki.spaces
 
 import models.Thing
+import Thing._
 
 import querki.globals._
 import querki.test._
@@ -27,6 +28,8 @@ class AppTests extends QuerkiTests {
   
     val highest = new TestApp {
       val highestThing = new SimpleTestThing("Highest Thing")
+      
+      val rootModel = new SimpleTestThing("My Root Model", Core.IsModelProp(true))
       
       val myNumProp = new TestProperty(Core.IntType, QList, "My Nums")
     }
@@ -93,6 +96,16 @@ class AppTests extends QuerkiTests {
       new WorldTest {
         pql("[[Num Thing -> My Nums -> Plus One -> First Two -> _commas]]") should
           equal("5, 7")
+      }
+    }
+    
+    // This is indirectly testing SpaceState.accumulateAll, checking that it doesn't accumulate duplicates.
+    // In the initial naive implementation, it fails because there are two routes to highest:
+    "not have duplicates" in {
+      new WorldTest {
+        val allModels = s.state.allModels
+        val targetModel = allModels.filter(_.id == highest.rootModel.id)
+        assert(targetModel.size == 1)
       }
     }
   }

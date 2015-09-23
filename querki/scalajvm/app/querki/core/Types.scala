@@ -250,16 +250,19 @@ trait LinkUtils { self:CoreEcot =>
   def linkCandidates(state:SpaceState, Links:querki.links.Links, prop:Property[_,_]):Seq[Thing] = {
     implicit val s = state
     
-    if (prop.hasProp(Links.LinkAllowAppsProp) && prop.first(Links.LinkAllowAppsProp))
-      state.accumulateAll[Seq[Thing]](linkCandidatesLocal(_, Links, prop), { (x, y) => x ++ y })
+    val links = if (prop.hasProp(Links.LinkAllowAppsProp) && prop.first(Links.LinkAllowAppsProp))
+      // Make sure to de-duplicate entries, which is why we use Set here:
+      state.accumulateAll[Set[Thing]](linkCandidatesLocal(_, Links, prop), { (x, y) => x ++ y })
     else
       linkCandidatesLocal(state, Links, prop)
+      
+    links.toSeq.sortBy(_.displayName)
   }
 
   /**
    * This enumerates all of the plausible candidates for the given property within this Space.
    */
-  def linkCandidatesLocal(state:SpaceState, Links:querki.links.Links, prop:Property[_,_]):Seq[Thing] = {
+  def linkCandidatesLocal(state:SpaceState, Links:querki.links.Links, prop:Property[_,_]):Set[Thing] = {
     implicit val s = state
     
     // First, filter the candidates based on LinkKind:
@@ -298,12 +301,12 @@ trait LinkUtils { self:CoreEcot =>
           }
             yield instanceIds.map(state.anything(_)).flatten
           
-          explicitChoices.getOrElse(allCandidates filter (_.isAncestor(modelId)) sortBy (_.displayName))
+          explicitChoices.getOrElse(allCandidates filter (_.isAncestor(modelId)))
         }
-        case None => allCandidates sortBy (_.displayName)
+        case None => allCandidates
       }
     } else {
-      allCandidates sortBy (_.displayName)
+      allCandidates
     }
     
     val filteredAsModel = if (prop.ifSet(Links.LinkToModelsOnlyProp)) {
@@ -312,7 +315,7 @@ trait LinkUtils { self:CoreEcot =>
       filteredByModel
     }
     
-    filteredAsModel.filterNot(_.ifSet(InternalProp))
+    filteredAsModel.filterNot(_.ifSet(InternalProp)).toSet
   }    
 
   def renderInputXmlGuts(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue, allowEmpty:Boolean):Future[NodeSeq] = {

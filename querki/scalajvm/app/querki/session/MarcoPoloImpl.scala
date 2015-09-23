@@ -22,8 +22,8 @@ class MarcoPoloImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImp
     implicit val s = state
     val lowerQ = q.toLowerCase()
     val propOpt = propIdOpt.flatMap(state.prop(_))
-    val things = state.accumulateAll[Seq[MarcoPoloItem]](getLinksFromSpace(_, propOpt, lowerQ), (x, y) => x ++ y) 
-    val allItems:Seq[MarcoPoloItem] = propOpt match {
+    val things = state.accumulateAll[Set[MarcoPoloItem]](getLinksFromSpace(_, propOpt, lowerQ), (x, y) => x ++ y)
+    val allItems:Set[MarcoPoloItem] = propOpt match {
       case Some(prop) => {
         if (prop.pType == Core.LinkType) {
           things
@@ -32,7 +32,7 @@ class MarcoPoloImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImp
           val tags = 
             Tags.fetchTags(state, prop).
               filter(_.toLowerCase().contains(lowerQ)).
-              toList
+              toSet
           // Since it's a Tag Property, we don't want the OIDs
           val thingNames = things.map(_.display)
           // Strip out duplicates:
@@ -44,7 +44,7 @@ class MarcoPoloImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImp
       // Tags depend on the prop.
       case _ => things
     }
-    val itemsSorted = allItems.sortBy(_.display)
+    val itemsSorted = allItems.toSeq.sortBy(_.display)
     
     MarcoPoloResponse(itemsSorted)
   }
@@ -54,7 +54,7 @@ class MarcoPoloImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImp
    * 
    * This takes the SpaceState as a parameter, so that it can recurse up the App tree.
    */
-  private def getLinksFromSpace(spaceIn:SpaceState, propOpt:Option[AnyProp], lowerQ:String):Seq[MarcoPoloItem] = {
+  private def getLinksFromSpace(spaceIn:SpaceState, propOpt:Option[AnyProp], lowerQ:String):Set[MarcoPoloItem] = {
     implicit val space = spaceIn
     
     val allThings = space.allThings.toSeq
@@ -71,6 +71,6 @@ class MarcoPoloImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImp
       filteredOpt.getOrElse(allThings)
     }
   
-    thingsFiltered.map(t => MarcoPoloItem(t.displayName, t.id.toThingId)).filter(_.display.toLowerCase().contains(lowerQ))
+    thingsFiltered.map(t => MarcoPoloItem(t.displayName, t.id.toThingId)).filter(_.display.toLowerCase().contains(lowerQ)).toSet
   }
 }

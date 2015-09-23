@@ -104,6 +104,10 @@ case class SpaceState(
    * NOTE: in a perfect world, we would simply be able to assume that accum is ++ and do
    * that. But I'm having trouble getting the types to line up right for that.
    * 
+   * IMPORTANT: this can result in duplication! It is essential that your implementation of
+   * accum do any necessary de-duplication! It is often best to use this with Set or Map, which
+   * do automatic de-duplication.
+   * 
    * @tparam R An accumulation of values. Typically a collection, but doesn't have to be.
    * @param f A function that takes a SpaceState and produces an R result.
    * @param accum A fold function that takes two R's and flattens them into one.
@@ -131,6 +135,7 @@ case class SpaceState(
    * A version of accumulateAll(), specialized for Maps.
    */
   def accumulateMaps[K,V](f:SpaceState => Map[K,V]):Map[K,V] = {
+    // Note that, by the nature of Map, ++ automatically de-duplicates:
     accumulateAll(f, { (x:Map[K,V], y:Map[K,V]) => x ++ y })
   }
   
@@ -341,7 +346,7 @@ class SpaceStateOps(implicit state:SpaceState, val ecology:Ecology) extends Ecol
     things.values.filter(_.first(Core.IsModelProp))    
   }
   def allModels:Iterable[ThingState] = {
-    state.accumulateAll(_.models, { (x:Iterable[ThingState], y:Iterable[ThingState]) => x ++ y })
+    state.accumulateAll(_.models, { (x:Iterable[ThingState], y:Iterable[ThingState]) => x.toSet ++ y.toSet })
   }
     
   def descendantsTyped[T <: Thing](root:OID, includeModels:Boolean, includeInstances:Boolean, map:Map[OID, T]):Iterable[Thing] = {
