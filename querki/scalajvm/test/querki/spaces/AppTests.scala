@@ -1,5 +1,7 @@
 package querki.spaces
 
+import models.Thing
+
 import querki.globals._
 import querki.test._
 
@@ -12,55 +14,73 @@ class AppTests extends QuerkiTests {
   def getEcology = ecology
   
   /**
-   * The world that underlies all of these Spaces.
+   * A wrapper that describes our standard complex App-based test world. Test code usually
+   * extends this class, and puts the test code in the extension.
    */
-  implicit val testWorld = new TestWorld
+  class WorldTest extends TestWorld {
+    val theWorld = this
+    
+    trait TestApp extends TestSpace {
+      val world = theWorld
+      def ecology = getEcology
+    }
   
-  trait TestApp extends TestSpace {
-    val world = testWorld
-    def ecology = getEcology
-  }
-  
-  class HighestApp extends TestApp {
-    val highestThing = new SimpleTestThing("Highest Thing")
-  }
-  
-  class Middle1(override val apps:TestSpace*) extends TestApp {
-  }
-  
-  class Middle2(override val apps:TestSpace*) extends TestApp {
-  }
-  
-  class Middle3(override val apps:TestSpace*) extends TestApp {
-  }
-  
-  class TSpace(override val apps:TestSpace*) extends TestApp {
-  }
-  
-  class WithSpaces {
-    val highest = new HighestApp
-    val mid1 = new Middle1(highest)
-    val mid2 = new Middle2()
-    val mid3 = new Middle3(highest)
-    val main = new TSpace(mid1, mid2, mid3)
+    val highest = new TestApp {
+      val highestThing = new SimpleTestThing("Highest Thing")
+    }
+    
+    val mid1 = new TestApp {
+      override val apps = Seq(highest)
+      
+      val duplicateThing = new SimpleTestThing("Duplicate Thing")
+    }
+    
+    val mid2 = new TestApp {
+      val mySimplePage = new SimpleTestThing("Simple Page")
+    }
+    
+    val mid3 = new TestApp {
+      override val apps = Seq(highest)
+      
+      val duplicateThing = new SimpleTestThing("Duplicate Thing")
+    }
+    
+    val main = new TestApp {
+      override val apps = Seq(mid1, mid2, mid3)
+    }
     
     implicit val s = main
+    
+    // Check that the specified name resolves to the specified Thing
+    def testName(name:String, expected:Thing) = {
+      val tOpt = s.state.anythingByName(name)
+      assert(tOpt.isDefined)
+      assert(tOpt.get.id == expected.id)      
+    }
   }
   
   "A space with complex apps" should {
     "fetch from System if not otherwise defined" in {
-      new WithSpaces {
-        val tOpt = s.state.anythingByName("Simple Thing")
-        assert(tOpt.isDefined)
-        assert(tOpt.get.id == Basic.SimpleThing.id)
+      new WorldTest {
+        testName("Simple Thing", Basic.SimpleThing)
       }
     }
     
     "fetch from the Highest App" in {
-      new WithSpaces {
-        val tOpt = s.state.anythingByName("Highest Thing")
-        assert(tOpt.isDefined)
-        assert(tOpt.get.id == highest.highestThing.id)
+      new WorldTest {
+        testName("Highest Thing", highest.highestThing)
+      }
+    }
+    
+    "override System" in {
+      new WorldTest {
+        testName("Simple-Page", mid2.mySimplePage)
+      }
+    }
+    
+    "override in order" in {
+      new WorldTest {
+        testName("Duplicate Thing", mid1.duplicateThing)
       }
     }
   }
