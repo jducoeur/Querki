@@ -106,11 +106,15 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
     
     /***************************/
     
+    case Evolve => {
+      // NOTE: this can take a long time! This is the point where we evolve the Space to the
+      // current version:
+      Evolutions.checkEvolution(id, version)
+      
+      sender ! Evolved
+    }
+    
     case Load => {
-	    // NOTE: this can take a long time! This is the point where we evolve the Space to the
-	    // current version:
-	    Evolutions.checkEvolution(id, version)
-	    
 	    // TODO: we need to walk up the tree and load any ancestor Apps before we prep this Space
 	    DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
 	      // The stream of all of the Things in this Space:

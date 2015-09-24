@@ -21,6 +21,17 @@ private [spaces] object PersistMessages {
   //
   
   /**
+   * Request from the Space to the Persister, to do any necessary pre-load evolution of the Space's
+   * structure.
+   */
+  case object Evolve
+  
+  /**
+   * Response to Evolve, saying that it is complete.
+   */
+  case object Evolved
+  
+  /**
    * Request from the Space to the Persister, send when the Space is booted. Persister should
    * respond with Loaded.
    */

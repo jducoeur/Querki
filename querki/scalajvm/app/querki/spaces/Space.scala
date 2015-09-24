@@ -174,6 +174,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
   def loadSpace() = {
     // TEMP: just as a proof of concept. This is entirely wrong in the long run: we should be using
     // FSM and Requester instead of blocking here:
+    val evolved = Await.result(persister.ask(Evolve), scala.concurrent.duration.Duration(5, "seconds"))
     val persistFuture = persister.ask(Load)
     val result = Await.result(persistFuture, scala.concurrent.duration.Duration(5, "seconds"))
     result match {
