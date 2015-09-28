@@ -208,39 +208,39 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       } 
     }
   }
+  
+  /**
+   * This is a place to stick weird, special filters.
+   */
+  def specialModelFilter(model:PropertyBundle, prop:Property[_,_])(implicit state:SpaceState):Boolean = {
+    // We display Default View iff it is defined locally on this Thing, or it is *not*
+    // defined for the Model.
+    // TBD: this is kind of a weird hack. Is it peculiar to Default View, or is there
+    // a general concept here?
+    if (prop == DisplayTextProp) {
+      !model.localProp(DisplayTextProp).isDefined
+    } else
+      true
+  }
+  
+  /**
+   * TODO: unify this with the similar function in ThingEditor. This one is Model-oriented, though, where that is
+   * Instance-oriented.
+   */
+  def instancePropsForModel(model:PropertyBundle, state:SpaceState):Seq[Property[_,_]] = {
+    implicit val s = state
     
-    /**
-     * This is a place to stick weird, special filters.
-     */
-    def specialModelFilter(model:PropertyBundle, prop:Property[_,_])(implicit state:SpaceState):Boolean = {
-      // We display Default View iff it is defined locally on this Thing, or it is *not*
-      // defined for the Model.
-      // TBD: this is kind of a weird hack. Is it peculiar to Default View, or is there
-      // a general concept here?
-      if (prop == DisplayTextProp) {
-        !model.localProp(DisplayTextProp).isDefined
-      } else
-        true
-    }
+    def fromIds(propIds:Iterable[OID]):Iterable[Property[_,_]] = propIds.map(state.prop(_)).flatten
     
-    /**
-     * TODO: unify this with the similar function in ThingEditor. This one is Model-oriented, though, where that is
-     * Instance-oriented.
-     */
-    def instancePropsForModel(model:PropertyBundle, state:SpaceState):Seq[Property[_,_]] = {
-      implicit val s = state
-      
-      def fromIds(propIds:Iterable[OID]):Iterable[Property[_,_]] = propIds.map(state.prop(_)).flatten
-      
-      val propsOpt = 
-        for {
-          propsToEdit <- model.getPropOpt(InstanceProps)
-          propIds = propsToEdit.v.rawList(LinkType)
-        }
-          yield fromIds(propIds)
-          
-      propsOpt.map(_.toSeq).getOrElse(fromIds(model.props.keys).filter(specialModelFilter(model, _)).toSeq.sortBy(_.displayName))
-    }
+    val propsOpt = 
+      for {
+        propsToEdit <- model.getPropOpt(InstanceProps)
+        propIds = propsToEdit.v.rawList(LinkType)
+      }
+        yield fromIds(propIds)
+        
+    propsOpt.map(_.toSeq).getOrElse(fromIds(model.props.keys).filter(specialModelFilter(model, _)).toSeq.sortBy(_.displayName))
+  }
     
   lazy val editMethod = new EditMethodBase(EditMethodOID, 
     toProps(

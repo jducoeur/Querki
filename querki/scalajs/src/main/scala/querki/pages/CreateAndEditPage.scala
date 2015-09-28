@@ -13,6 +13,14 @@ import querki.display.input.InputGadget
 import querki.editing.EditFunctions
 import EditFunctions.{ChangePropertyValue, PropertyChange}
 
+object EditQL {
+  def apply() = """""[[_edit]]
+                    |
+                    |[[_oidLink -> _mixedButton(""share-alt"", ""Done"")]]
+                    |
+                    |""""".stripMargin
+}
+
 class CreateAndEditPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
 
   lazy val Client = interface[querki.client.Client]
@@ -35,7 +43,7 @@ class CreateAndEditPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       DataSetting.setModel(Some(modelInfo))
       thingInfoOpt = Some(thingInfo)
     }
-    editor <- Client[ThingFunctions].evaluateQL(thingInfo.oid, "_edit").call()
+    editor <- Client[ThingFunctions].evaluateQL(thingInfo.oid, EditQL()).call()
     guts = div(new QText(editor))
   }
     yield PageContents(s"Create a ${modelInfo.displayName}", guts)
