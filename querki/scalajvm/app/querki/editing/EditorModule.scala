@@ -114,7 +114,11 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
         Types.MinIntValueProp(1),
         Types.MaxIntValueProp(12),
         Summary("Lets you control how wide a Property's edit control is, in the Edit View"),
-        Details("""This is width in Bootstrap span terms -- a number from 1 (narrow) to 12 (full width).""".stripMargin)))
+        Details("""This is width in Bootstrap span terms -- a number from 1 (narrow) to 12 (full width).
+          |
+          |You do not have to set this -- if you leave it alone, each Type has a default width. But you will
+          |sometimes find that you prefer to have your Edit controls narrower then the default, in order to
+          |get a good-looking Editor for a Model. Set this to a number between 1 and 12 to do that.""".stripMargin)))
 
   abstract class EditMethodBase(id:OID, pf:PropFetcher) extends InternalMethod(id, pf)
   {

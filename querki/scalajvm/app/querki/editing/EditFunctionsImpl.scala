@@ -323,7 +323,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
       toSet
     
     // We *always* show Editors for Summary and Details -- they are recommended:
-    val specialPropIds = Seq(Core.NameProp, Conventions.PropSummary, Conventions.PropDetails).map(_.id)
+    val specialPropIds = Seq(Core.NameProp, Conventions.PropSummary, Conventions.PropDetails, Editor.EditWidthProp).map(_.id)
     val invariantPropIds = Seq(Core.TypeProp, Core.CollectionProp).map(_.id)
     val existingPropIds = ((prop.props.keys.toSet -- specialPropIds) -- invariantPropIds).toSeq
     val metaPropIds = (allMetapropsForTypeIds -- existingPropIds).toSeq
