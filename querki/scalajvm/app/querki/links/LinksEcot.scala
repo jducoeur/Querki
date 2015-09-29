@@ -2,9 +2,9 @@ package querki.links
 
 import scala.concurrent.Future
 
-import models.{Kind, PropertyBundle, PTypeBuilder, Wikitext}
+import models.{DisplayPropVal, Kind, PropertyBundle, PTypeBuilder, Wikitext}
 
-import querki.core.URLableType
+import querki.core.{LinkCandidateProvider, URLableType}
 import querki.ecology._
 import querki.values.{ElemValue, QLContext, SpaceState}
 
@@ -159,6 +159,19 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
     toProps(
       setName("Choice Order"),
       Summary("If this is set on a Choice Model, it declares the order in which the options should be listed.")))
+    with LinkCandidateProvider
+  {
+    def getLinkCandidates(state:SpaceState, currentValue:DisplayPropVal):Seq[Thing] = {
+      val resultOpt = for {
+        bundle <- currentValue.on
+        model <- bundle.asThing
+        if (model.isModel(state))
+      }
+        yield state.descendants(model.id, false, true)
+        
+      resultOpt.map(_.toSeq).getOrElse(Seq.empty)
+    }
+  }
 
   override lazy val props = Seq(
     LinkKindProp,
