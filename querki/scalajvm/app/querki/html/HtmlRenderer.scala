@@ -193,9 +193,9 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
 	      Some(renderOptLink(context, prop, currentValue))
 	    else if (Tags.isTaggableProperty(prop)) {
 	      if (specialization.contains(PickList))
-	        Some(fut(renderPickList(state, prop, currentValue, specialization)))
+	        Some(renderPickList(state, context.request, prop, currentValue, specialization))
 	      else
-	        Some(fut(renderTagSet(state, prop, currentValue)))
+	        Some(renderTagSet(state, context.request, prop, currentValue))
 	    } else
 	      None
       }
@@ -250,51 +250,55 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     renderInputXmlGuts(prop, context, currentValue, ElemValue(v, LinkType), true)
   }
   
-  def getTagSetNames(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):Option[Iterable[(String,String)]] = {
+  def getTagSetNames(state:SpaceState, rc:RequestContext, prop:Property[_,_], currentValue:DisplayPropVal):Future[Seq[(String,String)]] = {
     val currentV = currentValue.effectiveV
     val pt = prop.pType
     
-    def getKeyAndVal(elem:ElemValue):(String, String) = {
+    def getKeyAndVal(elem:ElemValue):Future[(String, String)] = {
       pt match {
         case linkType:querki.core.TypeCreation#LinkType => {
           val oid = linkType.get(elem)
           // TODO: cheating! This should go through LinkType.follow, but we don't have a Context yet:
-          val tOpt = state.anything(oid)
-          val name = tOpt.map(_.displayName).getOrElse(oid.toThingId.toString)
-          (oid.toString, name)
+          state.anything(oid) match {
+            case Some(t) => t.nameOrComputed(rc, state) map ((oid.toString, _))
+            case None => Future.successful((oid.toString, "Unknown"))
+          }
         }
         case nameType:querki.core.IsNameType => {
           val name = nameType.get(elem)
-          (name, name)          
+          Future.successful((name, name))          
         }
         case NewTagSetType => {
           val name = NewTagSetType.get(elem).text
-          (name, name)                    
+          Future.successful((name, name))                    
         }
         case _ => throw new Exception("renderTagSet got unexpected type " + pt)
       }
     }
-    currentV.map(_.cv.map(getKeyAndVal(_)))    
+    currentV.map { realV =>
+      val futs = realV.cv.toSeq.map(getKeyAndVal(_))
+      Future.sequence(futs)
+    }.getOrElse(Future.successful(Seq.empty))
   }
   
   def JSONescape(str:String):String = {
     str.replace("\\", "\\\\").replace("\"", "\\\"")
   }
   
-  def renderTagSet(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal):NodeSeq = {
-    val rawList = getTagSetNames(state, prop, currentValue)
-    
-    // We treat names/tags and links a bit differently, although they look similar on the surface:
-    val isNameType = prop.pType == Tags.TagSetType || prop.pType == NewTagSetType
-    val current = "[" + rawList.map(_.map(keyVal => "{\"display\":\"" + JSONescape(keyVal._2) + "\", \"id\":\"" + JSONescape(keyVal._1) + "\"}").mkString(", ")).getOrElse("") + "]"
-    <input class="_tagSetInput" data-isNames={isNameType.toString} type="text" data-current={current}></input>
+  def renderTagSet(state:SpaceState, rc:RequestContext, prop:Property[_,_], currentValue:DisplayPropVal):Future[NodeSeq] = {
+    getTagSetNames(state, rc, prop, currentValue) map { rawList =>
+      // We treat names/tags and links a bit differently, although they look similar on the surface:
+      val isNameType = prop.pType == Tags.TagSetType || prop.pType == NewTagSetType
+      val current = "[" + rawList.map(keyVal => "{\"display\":\"" + JSONescape(keyVal._2) + "\", \"id\":\"" + JSONescape(keyVal._1) + "\"}").mkString(", ") + "]"
+      <input class="_tagSetInput" data-isNames={isNameType.toString} type="text" data-current={current}></input>
+    }
   }
   
   /**
    * This is an alternate renderer for Tag/List Sets. It displays a list of *all* of the candidate Things
    * (defined by the Link Model), and lets you choose them by checkboxes. A primitive first cut, but useful.
    */
-  def renderPickList(state:SpaceState, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):NodeSeq = {
+  def renderPickList(state:SpaceState, rc:RequestContext, prop:Property[_,_], currentValue:DisplayPropVal, specialization:Set[RenderSpecialization]):Future[NodeSeq] = {
     implicit val s = state
     val instancesOpt = for (
         propAndVal <- prop.getPropOpt(Links.LinkModelProp);
@@ -305,62 +309,61 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     instancesOpt match {
       case Some((modelOID, allInstances)) => {
         val sortedInstances = allInstances.toSeq.sortBy(_.displayName).zipWithIndex
-        val rawList = getTagSetNames(state, prop, currentValue)
-        val currentMap = rawList.map(_.toMap)
-        val isNameType = prop.pType.isInstanceOf[querki.core.IsNameType]
-        
-        val listName = currentValue.inputControlId + "_values"
-        
-        def isListed(item:Thing):Boolean = {
-          currentMap match {
-            case Some(map) => {
+        getTagSetNames(state, rc, prop, currentValue) map { rawList =>
+          val currentMap = rawList.toMap
+          val isNameType = prop.pType.isInstanceOf[querki.core.IsNameType]
+          
+          val listName = currentValue.inputControlId + "_values"
+          
+          def isListed(item:Thing):Boolean = {
+            if (currentMap.isEmpty)
+              false
+            else
               if (isNameType) {
                 val name = for (
                     propAndVal <- item.getPropOpt(Core.NameProp);
                     name <- propAndVal.firstOpt
                       )
                   yield name
-                name.map(map.contains(_)).getOrElse(false)
+                name.map(currentMap.contains(_)).getOrElse(false)
               } else {
-                map.contains(item.id.toString)
+                currentMap.contains(item.id.toString)
               }
-            }
-            case None => false
           }
-        }
-    
-        // TODO: this should really all be generated client-side once everyone's on the new Client; we
-        // should just send a fairly abstract ul with the data:
-        val deleteableClass =
-          if (isNameType)
-            ""
-          else
-            " _deleteable"
-        <form class={s"_pickList$deleteableClass"}><ul class="_listContent"> {
-          sortedInstances.map { pair =>
-            val (instance, index) = pair
-            <li>{
-            if (isListed(instance))
-              Seq(<input class="_pickOption" name={s"$listName[$index]"} value={instance.id.toThingId.toString} type="checkbox" checked="checked"></input>, 
-                  Text(" "),
-                  <div class="_pickName">{instance.displayName}</div>)
+      
+          // TODO: this should really all be generated client-side once everyone's on the new Client; we
+          // should just send a fairly abstract ul with the data:
+          val deleteableClass =
+            if (isNameType)
+              ""
             else
-              Seq(<input class="_pickOption" name={s"$listName[$index]"} value={instance.id.toThingId.toString} type="checkbox"></input>, 
-                  Text(" "),
-                  <div class="_pickName">{instance.displayName}</div>)
-            }</li>
-          }
-        } </ul> {
-          if (specialization.contains(WithAdd)) {
-            <div class="input-append _quickCreator">
+              " _deleteable"
+          <form class={s"_pickList$deleteableClass"}><ul class="_listContent"> {
+            sortedInstances.map { pair =>
+              val (instance, index) = pair
+              <li>{
+              if (isListed(instance))
+                Seq(<input class="_pickOption" name={s"$listName[$index]"} value={instance.id.toThingId.toString} type="checkbox" checked="checked"></input>, 
+                    Text(" "),
+                    <div class="_pickName">{instance.displayName}</div>)
+              else
+                Seq(<input class="_pickOption" name={s"$listName[$index]"} value={instance.id.toThingId.toString} type="checkbox"></input>, 
+                    Text(" "),
+                    <div class="_pickName">{instance.displayName}</div>)
+              }</li>
+            }
+          } </ul> {
+            if (specialization.contains(WithAdd)) {
+              <div class="input-append _quickCreator">
               <input type="text" class="_quickCreateProp" placeholder="New Item Name" data-model={modelOID.toThingId.toString} data-propid={querki.basic.MOIDs.DisplayNameOID.toThingId.toString} data-addtolist="true"></input>
               <button type="button" class="btn _quickCreate">Add</button>
             </div>
-          }
-        } </form>
+            }
+          } </form>
+        }
       }
       // TODO: we need a better way to specify this warning
-      case None => <p class="warning">Can't display a Pick List for a Set that doesn't have a Link Model!</p>
+      case None => Future.successful(<p class="warning">Can't display a Pick List for a Set that doesn't have a Link Model!</p>)
     }
   }
   
