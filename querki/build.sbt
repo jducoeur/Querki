@@ -32,7 +32,9 @@ lazy val querkiServer = (project in file("scalajvm")).settings(
     "com.amazonaws" % "aws-java-sdk" % "1.8.4",
     "com.vmunier" %% "play-scalajs-scripts" % "0.2.2",
     "com.lihaoyi" %% "utest" % "0.3.1",
-    "org.querki" %% "requester" % "2.1"
+    "org.querki" %% "requester" % "2.1",
+    "com.okumin" %% "akka-persistence-sql-async" % "0.2.1",
+    "com.github.mauricio" %% "mysql-async" % "0.2.16"
   ),
   buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion),
   buildInfoPackage := "querki",
