@@ -86,6 +86,12 @@ querki {
     shardRelookupTimeout : 10 minutes
     # How often should the QuerkiNodeCoordinator save a snapshot:
     snapshotInterval : 100
+    # The number of OIDs to reserve at a time. This is a serious tuning parameter. Higher
+    # means better latency for OID allocation requests, at the cost of more gaps in the
+    # OID namespace.
+    allocBlockSize : 10
+    # How often to snapshot the state of each OIDAllocator, in blocks.
+    allocSnapshotInterval : 10
   }
 }
 

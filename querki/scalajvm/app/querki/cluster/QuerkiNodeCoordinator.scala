@@ -12,6 +12,25 @@ import akka.util.Timeout
 import querki.globals._
 
 /**
+ * The central gatekeeper for Querki's "shards".
+ * 
+ * Each node in Querki is a single "shard", in the sense that it owns a chunk of the global
+ * OID namespace. Those shards are represented by QuerkiNodeManager. This is the central
+ * coordinator for all of them, responsible for assigning shards to nodes. It is a Cluster
+ * Singleton -- there should be exactly one of these running at any given time. (Modulo
+ * occasional downtime when the Coordinator has to move.) It is *extremely* low-traffic,
+ * since each node should contact it only at startup time.
+ * 
+ * This is a PersistentActor -- the shard assignments are maintained persistently, even
+ * across restarts. It is intentionally conservative about deciding that a node is dead.
+ * The operating theory is that we can afford to let the shard namespace be slightly sparse:
+ * it is much, much better to let a shard ID go unused for a little while than wind up with
+ * two nodes thinking they have the same shard.
+ * 
+ * TODO: this currently uses its own timeouts to decide when a node is dead. That may be
+ * wrong -- I suspect we should instead be using the Cluster system itself to make that decision,
+ * and we should be listening to its Down notifications.
+ * 
  * @author jducoeur
  */
 class QuerkiNodeCoordinator extends PersistentActor {
