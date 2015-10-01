@@ -80,6 +80,13 @@ querki {
     bucket : "S3 BUCKET"
     bucketUrl : "BASE URL, NO TRAILING SLASH"
   }
+    
+  cluster {
+    # How long we allow for re-finding a Shard before we decide it is dead:
+    shardRelookupTimeout : 10 minutes
+    # How often should the QuerkiNodeCoordinator save a snapshot:
+    snapshotInterval : 100
+  }
 }
 
 session {
