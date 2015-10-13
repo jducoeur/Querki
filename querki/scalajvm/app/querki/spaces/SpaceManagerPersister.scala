@@ -10,6 +10,8 @@ import play.api.Play.current
 
 import com.github.nscala_time.time.Imports._
 
+import org.querki.requester._
+
 import messages._
 
 import models.{AsName, OID}
@@ -18,6 +20,7 @@ import models.{Kind, Thing}
 import querki.db.ShardKind
 import ShardKind._
 
+import querki.cluster.OIDAllocator._
 import querki.ecology._
 import querki.identity.MembershipState
 import querki.util._
@@ -38,11 +41,12 @@ import PersistMessages._
  * 
  * TODO: this should take the Ecology as a parameter, instead of accessing it statically.
  */
-private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor with EcologyMember {
+private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor with Requester with EcologyMember {
   
   lazy val Core = interface[querki.core.Core]
   lazy val DisplayNameProp = interface[querki.basic.Basic].DisplayNameProp
   lazy val Evolutions = interface[querki.evolutions.Evolutions]
+  lazy val QuerkiCluster = interface[querki.cluster.QuerkiCluster]
   lazy val SystemInterface = interface[querki.system.System]
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   
@@ -100,66 +104,68 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
     
     // =========================================
     
-    case CreateSpacePersist(owner, userMaxSpaces, name, display) => Tryer {
-      DB.withTransaction(dbName(System)) { implicit conn =>
-        val numWithName = SQL("""
-          SELECT COUNT(*) AS c from Spaces 
-           WHERE owner = {owner} AND name = {name} AND status = 0
-          """).on("owner" -> owner.raw, "name" -> name).apply().headOption.get[Long]("c")
-        if (numWithName > 0) {
-          throw new PublicException("Space.create.alreadyExists", name)
+    case CreateSpacePersist(owner, userMaxSpaces, name, display) => {
+      try {
+        DB.withTransaction(dbName(System)) { implicit conn =>
+          val numWithName = SQL("""
+            SELECT COUNT(*) AS c from Spaces 
+             WHERE owner = {owner} AND name = {name} AND status = 0
+            """).on("owner" -> owner.raw, "name" -> name).apply().headOption.get[Long]("c")
+          if (numWithName > 0) {
+            throw new PublicException("Space.create.alreadyExists", name)
+          }
+        
+          if (userMaxSpaces < Int.MaxValue) {
+            val sql = SQL("""
+                  SELECT COUNT(*) AS count FROM Spaces
+                  WHERE owner = {owner} AND status = 0
+                  """).on("owner" -> owner.id.raw)
+            val row = sql().headOption
+            val numOwned = row.map(_.long("count")).getOrElse(throw new InternalException("Didn't get any rows back in canCreateSpaces!"))
+            if (numOwned >= userMaxSpaces)
+              throw new PublicException("Space.create.maxSpaces", userMaxSpaces)
+          }
         }
-      
-        if (userMaxSpaces < Int.MaxValue) {
-          val sql = SQL("""
-                SELECT COUNT(*) AS count FROM Spaces
-                WHERE owner = {owner} AND status = 0
-                """).on("owner" -> owner.id.raw)
-          val row = sql().headOption
-          val numOwned = row.map(_.long("count")).getOrElse(throw new InternalException("Didn't get any rows back in canCreateSpaces!"))
-          if (numOwned >= userMaxSpaces)
-            throw new PublicException("Space.create.maxSpaces", userMaxSpaces)
-        }
+        
+        QuerkiCluster.oidAllocator.request(NextOID) map { case NewOID(spaceId) =>        
+          // NOTE: we have to do this as several separate Transactions, because part goes into the User DB and
+          // part into System. That's unfortunate, but kind of a consequence of the architecture.
+          // TODO: disturbingly, we don't seem to be rolling back these transactions if we get, say, an exception
+          // thrown during this code! WTF?!? Dig into this more carefully: we have deeper problems if we can't count
+          // upon reliable rollback. Yes, each of these is a separate transaction, but I've seen instances where one
+          // of the updates in the first transaction block failed, and the table was nonetheless created.
+          DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+            SpacePersistence.SpaceSQL(spaceId, """
+                CREATE TABLE {tname} (
+                  id bigint NOT NULL,
+                  model bigint NOT NULL,
+                  kind int NOT NULL,
+                  props MEDIUMTEXT NOT NULL,
+                  PRIMARY KEY (id))
+                  DEFAULT CHARSET=utf8
+                """).executeUpdate()
+          }
+          DB.withTransaction(dbName(System)) { implicit conn =>
+            SQL("""
+                INSERT INTO Spaces
+                (id, shard, name, display, owner, size) VALUES
+                ({sid}, {shard}, {name}, {display}, {ownerId}, 0)
+                """).on("sid" -> spaceId.raw, "shard" -> 1.toString, "name" -> name,
+                        "display" -> display, "ownerId" -> owner.raw).executeUpdate()
+          }
+          DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+            // We need to evolve the Space before we try to create anything in it:
+            Evolutions.checkEvolution(spaceId, 1)
+            val initProps = Core.toProps(Core.setName(name), DisplayNameProp(display))()
+            SpacePersistence.createThingInSql(spaceId, spaceId, SystemIds.systemOID, Kind.Space, initProps, DateTime.now, SystemInterface.State)        
+          }
+          
+          sender ! Changed(spaceId, DateTime.now)
+        } 
+      } catch {
+        case ex:PublicException => sender ! ThingError(ex)
       }
-    
-      val spaceId = OID.next(ShardKind.User)
-    
-      // NOTE: we have to do this as several separate Transactions, because part goes into the User DB and
-      // part into System. That's unfortunate, but kind of a consequence of the architecture.
-      // TODO: disturbingly, we don't seem to be rolling back these transactions if we get, say, an exception
-      // thrown during this code! WTF?!? Dig into this more carefully: we have deeper problems if we can't count
-      // upon reliable rollback. Yes, each of these is a separate transaction, but I've seen instances where one
-      // of the updates in the first transaction block failed, and the table was nonetheless created.
-      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
-        SpacePersistence.SpaceSQL(spaceId, """
-            CREATE TABLE {tname} (
-              id bigint NOT NULL,
-              model bigint NOT NULL,
-              kind int NOT NULL,
-              props MEDIUMTEXT NOT NULL,
-              PRIMARY KEY (id))
-              DEFAULT CHARSET=utf8
-            """).executeUpdate()
-      }
-      DB.withTransaction(dbName(System)) { implicit conn =>
-        SQL("""
-            INSERT INTO Spaces
-            (id, shard, name, display, owner, size) VALUES
-            ({sid}, {shard}, {name}, {display}, {ownerId}, 0)
-            """).on("sid" -> spaceId.raw, "shard" -> 1.toString, "name" -> name,
-                    "display" -> display, "ownerId" -> owner.raw).executeUpdate()
-      }
-      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
-        // We need to evolve the Space before we try to create anything in it:
-        Evolutions.checkEvolution(spaceId, 1)
-        val initProps = Core.toProps(Core.setName(name), DisplayNameProp(display))()
-        SpacePersistence.createThingInSql(spaceId, spaceId, SystemIds.systemOID, Kind.Space, initProps, DateTime.now, SystemInterface.State)        
-      }
-      
-      Changed(spaceId, DateTime.now)      
-    } 
-    { sender ! _ }
-    { sender ! ThingError(_) }
+    }
     
     case GetSpaceByName(ownerId:OID, name:String) => {
       val result = DB.withTransaction(dbName(System)) { implicit conn =>

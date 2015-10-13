@@ -25,7 +25,9 @@ class ClusterEcot(e:Ecology) extends QuerkiEcot(e) with ClusterPrivate with Quer
   
   private final val singletonName = "querkiNodeSingleton"
   private final val coordinatorName = "querkiNodeCoordinator"
-  private final val coordinatorPath = s"/user/$singletonName/$coordinatorName"
+  // TODO: that "querkiRoot" in there is sort of secret knowledge about the environment. That's a
+  // bad smell. We should probably be getting this path's root from somewhere.
+  private final val coordinatorPath = s"/user/querkiRoot/$singletonName/$coordinatorName"
   
   var _nodeCoordinator:Option[ActorRef] = None
   def nodeCoordinator = _nodeCoordinator.get

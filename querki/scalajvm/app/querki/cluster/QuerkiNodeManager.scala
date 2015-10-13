@@ -1,6 +1,11 @@
 package querki.cluster
 
+import scala.util.{Failure, Success}
+
 import akka.actor._
+import akka.pattern.AskTimeoutException
+
+import org.querki.requester._
 
 import querki.globals._
 
@@ -13,7 +18,7 @@ import querki.globals._
  * 
  * @author jducoeur
  */
-class QuerkiNodeManager(val ecology:Ecology) extends Actor with Stash with EcologyMember {
+class QuerkiNodeManager(val ecology:Ecology) extends Actor with Stash with Requester with EcologyMember {
   
   import QuerkiNodeCoordinator._
   
@@ -25,17 +30,38 @@ class QuerkiNodeManager(val ecology:Ecology) extends Actor with Stash with Ecolo
   var _allocator:Option[ActorRef] = None
   def allocator = _allocator.get
   
-  override def preStart() = {
-    ClusterPrivate.nodeCoordinator ! AssignShard()
+  def requestShardId():Unit = {
+    val reqM = ClusterPrivate.nodeCoordinator.request(AssignShard()) onComplete
+    {
+      case Success(ShardAssignment(id)) => {
+        _shardId = Some(id)
+        _allocator = Some(context.actorOf(OIDAllocator.actorProps(shardId), "OIDAllocator"))
+        unstashAll()        
+      }
+
+      case Failure(ex:AskTimeoutException) => {
+        // For the time being, we're being very simplistic and retrying endlessly. This is mainly
+        // because I don't have a better solution yet -- if this has *really* broken down, it's a fatal
+        // system panic. Hopefully the Coordinator will come back.
+        //
+        // Note that this timeout is downright normal when we're starting up the seed node. The
+        // QuerkiNodeManager tends to ask for its shard before the Coordinator singleton has been
+        // fully created, and the ClusterSingleton mechanism appears to just drop the request on the floor.
+        QLog.warn(s"QuerkiNodeManager: AssignShard timed out; trying again")
+        requestShardId()
+      }
+      
+      case other => {
+        QLog.error(s"QuerkiNodeManager got unexpected response $other from AssignShard!")
+      }
+    }
   }
   
-  def receive = {
-    case ShardAssignment(id) => {
-      _shardId = Some(id)
-      _allocator = Some(context.actorOf(OIDAllocator.actorProps(shardId), "OIDAllocator"))
-      unstashAll()
-    }
-    
+  override def preStart() = {
+    requestShardId()
+  }
+  
+  def receive = handleRequestResponse orElse {
     case OIDAllocator.NextOID => {
       _allocator match {
         case Some(alloc) => alloc.forward(OIDAllocator.NextOID)
@@ -53,6 +79,7 @@ class QuerkiNodeManager(val ecology:Ecology) extends Actor with Stash with Ecolo
         allocator ! OIDAllocator.Shutdown
         _allocator = None
         _shardId = None
+        requestShardId()
       }
     }
   }

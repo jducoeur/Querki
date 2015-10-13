@@ -3,6 +3,7 @@ package querki.cluster
 import scala.util.{Failure, Success}
 
 import akka.actor._
+import akka.event.LoggingReceive
 import akka.pattern._
 import akka.persistence._
 
@@ -140,7 +141,7 @@ class QuerkiNodeCoordinator extends PersistentActor {
     }
   }
   
-  val receiveCommand:Receive = {
+  val receiveCommand:Receive = LoggingReceive {
     case AssignShard() => {
       context.watch(sender)
       makeAssignment()
@@ -151,7 +152,6 @@ class QuerkiNodeCoordinator extends PersistentActor {
       persist(ShardUnavailable(shardId)) { msg =>
         fullShards += shardId
       }
-      makeAssignment()
     }
     
     case Terminated(nodeRef) => {
