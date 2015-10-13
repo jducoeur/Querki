@@ -57,11 +57,10 @@ object OID {
     new OID(java.lang.Long.parseLong(n, 36))
   }
   def apply(shard:Int, index:Int):OID = OID((shard.toLong << 32) + index)
-  
-  // TODO: this really ought to be done as a stored procedure, but let's wait until
-  // we're using MySQL before we bother trying that. For now, we'll just use a
-  // transaction -- inefficient, but it'll work.
-  // TODO: eventually, this needs to become shard-smart. But that's a ways off yet.
+
+  // TBD: at this point, this is only being used for generating Users and Identities;
+  // everything else is going through OIDAllocator. We might leave things like this,
+  // with System objects working in the older style, but consider cleaning it up.
   def next(kind:ShardKind) = {
     DB.withTransaction(dbName(kind)) { implicit conn =>
       val nextQuery = SQL("""
