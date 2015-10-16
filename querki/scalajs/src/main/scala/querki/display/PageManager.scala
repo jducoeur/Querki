@@ -129,7 +129,7 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
 	            val key = decode(pairArray(0))
 	            val v =
 	              if (pairArray.length == 1)
-	                "true"
+	                ""
 	              else
 	                decode(pairArray(1))
 	            (key, v)
