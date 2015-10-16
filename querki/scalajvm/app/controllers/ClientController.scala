@@ -144,7 +144,8 @@ class ClientController extends ApplicationBase with StreamController {
         BadRequest(write(new NotAllowedException()))
       else ApiInvocation.routeRequest(request) {
         case ClientResponse(pickled) => {
-          val response = ResponseWrapper(pickled)
+          val userInfo = ClientApi.userInfo(prc.requester)
+          val response = ResponseWrapper(userInfo, pickled)
           Ok(write(response))
         }
         case ClientError(msg) => BadRequest(msg)

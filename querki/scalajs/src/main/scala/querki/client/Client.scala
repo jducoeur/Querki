@@ -15,11 +15,13 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val PageManager = interface[querki.display.PageManager]
   lazy val StatusLine = interface[querki.display.StatusLine]
+  lazy val UserAccess = interface[querki.identity.UserAccess]
   
   def interceptFailures(caller: => Future[String]):Future[String] = {
     caller.transform(
       { response =>
         val wrapped = read[ResponseWrapper](response)
+        UserAccess.setUser(wrapped.currentUser)
         wrapped.payload 
       },
       { ex =>
