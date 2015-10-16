@@ -18,7 +18,10 @@ class ClientImpl(e:Ecology) extends ClientEcot(e) with Client {
   
   def interceptFailures(caller: => Future[String]):Future[String] = {
     caller.transform(
-      { result => result },
+      { response =>
+        val wrapped = read[ResponseWrapper](response)
+        wrapped.payload 
+      },
       { ex =>
         ex match {
 	      case ex @ PlayAjaxException(jqXHR, textStatus, errorThrown) => {

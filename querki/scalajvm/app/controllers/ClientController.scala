@@ -143,7 +143,10 @@ class ClientController extends ApplicationBase with StreamController {
       if (ApiInvocation.requiresLogin(request) && rc.requester.isEmpty)
         BadRequest(write(new NotAllowedException()))
       else ApiInvocation.routeRequest(request) {
-        case ClientResponse(pickled) => Ok(pickled)
+        case ClientResponse(pickled) => {
+          val response = ResponseWrapper(pickled)
+          Ok(write(response))
+        }
         case ClientError(msg) => BadRequest(msg)
       }
     }
