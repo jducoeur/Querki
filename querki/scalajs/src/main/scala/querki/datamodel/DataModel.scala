@@ -62,20 +62,42 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
         }
       }
     } else {
-      val deleteDialog:Dialog = 
-        new Dialog("Confirm Delete", 200, 350,
-          p(b(s"Are you sure you want to delete ${thing.displayName}? There is currently no way to get it back!")),
-          ("Delete" -> { dialog => 
-            println(s"I'm about to delete ${thing.displayName}");
-            // TODO: display a spinner
-            Client[ThingFunctions].deleteThing(thing.oid).call().foreach { dummy =>
-              dialog.done()
-              Pages.showSpacePage(DataAccess.space.get).flashing(false, s"${thing.displayName} deleted.")
-            }
-          }),
-          ("Cancel" -> { dialog => dialog.done() })
-        )
-      deleteDialog.show()
+      val fut = {
+        if (thing.isModel) {
+          Client[ThingFunctions].getNumInstances(thing).call() map { nInstances =>
+            if (nInstances == 0)
+              (s"Are you sure you want to delete ${thing.displayName}? There is currently no way to get it back!", 0)
+            else
+              (s"""There are currently $nInstances instances of ${thing.displayName}. If you delete it, they will be
+                |left orphaned, and may no longer work right! You will not be able to undo this! Are you sure you
+                |want to delete ${thing.displayName}?""".stripMargin, nInstances)
+          }
+        } else {
+          Future.successful((s"Are you sure you want to delete ${thing.displayName}? There is currently no way to get it back!", 0))
+        }
+      }
+      fut foreach { contents =>
+        val (msg, nInstances) = contents
+        val deleteDialog:Dialog = 
+          new Dialog("Confirm Delete", 300, 350,
+            p(b(msg)),
+            ("Delete" -> { dialog => 
+              println(s"I'm about to delete ${thing.displayName}");
+              // TODO: display a spinner
+              Client[ThingFunctions].deleteThing(thing.oid).call().foreach { dummy =>
+                dialog.done()
+                val recoverMsg =
+                  if (nInstances > 0)
+                    "You can find the ophaned Instanced by going to Actions -> Advanced..."
+                  else
+                    ""
+                Pages.showSpacePage(DataAccess.space.get).flashing(false, s"${thing.displayName} deleted. $recoverMsg")
+              }
+            }),
+            ("Cancel" -> { dialog => dialog.done() })
+          )
+        deleteDialog.show()
+      }
     }
   }
   
