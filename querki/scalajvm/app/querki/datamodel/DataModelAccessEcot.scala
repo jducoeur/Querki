@@ -32,6 +32,7 @@ object MOIDs extends EcotIds(21) {
   val AllTypesMethodOID = moid(4)
   val AsTypeMethodOID = moid(5)
   val ModelFunctionOID = moid(6)
+  val OrphanedInstancesOID = moid(7)
 }
 
 
@@ -472,6 +473,24 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
         yield ExactlyOne(LinkType(thing.model))
     }
   }
+  
+  lazy val OrphanedInstancesFunction = new InternalMethod(OrphanedInstancesOID,
+    toProps(
+      setName("_orphanedInstances"),
+      SkillLevel(SkillLevelAdvanced),
+      Summary("Lists all of the Instances in this Space (if any) whose Models have been deleted"),
+      Details("""The results of this are available from the Advanced page, so you probably will never
+        |need to use this function manually.""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      implicit val s = inv.state
+      for {
+        t <- inv.iter(s.allThings)
+        if (t.hasModel && s.anything(t.model).isEmpty)
+      }
+        yield ExactlyOne(LinkType(t))
+    }
+  }
 
   override lazy val props = Seq(
     CopyIntoInstances,
@@ -494,6 +513,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     HasPropertyMethod,
     AllThingsMethod,
     AsTypeMethod,
-    ModelFunction
+    ModelFunction,
+    OrphanedInstancesFunction
   )
 }
