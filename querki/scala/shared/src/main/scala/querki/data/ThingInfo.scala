@@ -10,7 +10,7 @@ import querki.core.NameUtils
  * over the place. Note that this is an AnyVal, so should not incur overhead.
  */
 case class TID(val underlying:String) extends AnyVal {
-
+  def isEmpty:Boolean = underlying.length() == 0
 }
 
 trait BasicThingInfo {
@@ -19,8 +19,8 @@ trait BasicThingInfo {
   def displayName:String
   
   def urlName = linkName match {
-    case Some(name) => TID(NameUtils.toUrl(name))
-    case None => oid
+    case Some(name) if (name.length() > 0) => TID(NameUtils.toUrl(name))
+    case _ => oid
   }
 }
 

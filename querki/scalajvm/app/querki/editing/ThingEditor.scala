@@ -53,13 +53,6 @@ trait ThingEditor { self:EditorModule =>
       |""".stripMargin
     }
     
-    private case class EditorLinkButtonLayout() extends LayoutElement {
-      def span = 12
-      def layout = s"""{{col-md-2:
-      |[[_oidLink -> _mixedButton(""share-alt"", ""Done"")]]
-      |}}""".stripMargin
-    }
-    
     private case class EditorRowLayout(props:Seq[LayoutElement]) {
       def span = (0 /: props) { (sum, propLayout) => sum + propLayout.span }
       def layout = s"""{{row:
@@ -176,11 +169,7 @@ trait ThingEditor { self:EditorModule =>
         // Generate the View based on the Thing:
         case None => {
           val layoutPieces = propsToEditForThing(thing, state).map(EditorPropLayout(_))
-          val layoutRows = thing match {
-            // Only add the Done button if this is an actual Thing to link to:
-            case t:Thing => splitRows(layoutPieces) :+ EditorRowLayout(Seq(EditorLinkButtonLayout()))
-            case _ => splitRows(layoutPieces)
-          }
+          val layoutRows = splitRows(layoutPieces)
           val propsLayout = s"""[[""{{_instanceEditor:
               |${ if (thing.isThing) thingButtons else "" }
               |${layoutRows.map(_.layout).mkString}

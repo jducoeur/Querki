@@ -7,12 +7,15 @@ import anorm.{Success=>AnormSuccess,_}
 import play.api.db._
 import play.api.Play.current
 
+import org.querki.requester._
+
 import models.{OID, UnknownOID}
 import models.{Collection, Property, PType, PTypeBuilder, SimplePTypeBuilder, Kind, Thing, ThingState, Wikitext}
 import models.Kind._
 import models.MIMEType.MIMEType
 import models.Thing.PropMap
 
+import querki.cluster.OIDAllocator._
 import querki.ecology._
 import querki.time._
 import querki.time.TimeAnorm._
@@ -52,14 +55,17 @@ import PersistMessages._
  * manages the whole hive of Actors for this Space. (That might be the better architecture,
  * now that I think of it.)
  */
-private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) extends Actor with EcologyMember with SpaceLoader with ModelTypeDefiner {
+private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) extends Actor with EcologyMember 
+  with Requester with SpaceLoader with ModelTypeDefiner 
+{
   
-  lazy val SystemInterface = interface[querki.system.System]
   lazy val Core = interface[querki.core.Core]
-  lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   lazy val Evolutions = interface[querki.evolutions.Evolutions]
-  lazy val UserAccess = interface[querki.identity.UserAccess]
+  lazy val QuerkiCluster = interface[querki.cluster.QuerkiCluster]
+  lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
+  lazy val SystemInterface = interface[querki.system.System]
   lazy val Types = interface[querki.types.Types]
+  lazy val UserAccess = interface[querki.identity.UserAccess]
 
   // The OID of the Space, based on the sid
   def oid = Space.oid _
@@ -211,11 +217,11 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
     /***************************/
     
     case Create(state:SpaceState, modelId:OID, kind:Kind, props:PropMap, modTime:DateTime) => {
-      DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
-        val thingId = OID.next(ShardKind.User)
-        // TODO: add a history record
-        SpacePersistence.createThingInSql(thingId, id, modelId, kind, props, modTime, state)
-        
+      QuerkiCluster.oidAllocator.request(NextOID) map { case NewOID(thingId) =>
+        DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+          // TODO: add a history record
+          SpacePersistence.createThingInSql(thingId, id, modelId, kind, props, modTime, state)
+        }          
         sender ! Changed(thingId, modTime)
       }
     }

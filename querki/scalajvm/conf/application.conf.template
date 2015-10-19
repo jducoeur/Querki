@@ -80,6 +80,19 @@ querki {
     bucket : "S3 BUCKET"
     bucketUrl : "BASE URL, NO TRAILING SLASH"
   }
+    
+  cluster {
+    # How long we allow for re-finding a Shard before we decide it is dead:
+    shardRelookupTimeout : 10 minutes
+    # How often should the QuerkiNodeCoordinator save a snapshot:
+    snapshotInterval : 100
+    # The number of OIDs to reserve at a time. This is a serious tuning parameter. Higher
+    # means better latency for OID allocation requests, at the cost of more gaps in the
+    # OID namespace.
+    allocBlockSize : 10
+    # How often to snapshot the state of each OIDAllocator, in blocks.
+    allocSnapshotInterval : 10
+  }
 }
 
 session {
@@ -144,8 +157,25 @@ akka {
 #      }
 #    }
   }
+  
+  persistence {
+    journal.plugin = "akka-persistence-sql-async.journal"
+    snapshot-store.plugin = "akka-persistence-sql-async.snapshot-store"
+  }
 }
 
+akka-persistence-sql-async {
+  journal.class = "akka.persistence.journal.sqlasync.MySQLAsyncWriteJournal"
+  snapshot-store.class = "akka.persistence.snapshot.sqlasync.MySQLSnapshotStore"
+
+  user = DB LOGIN
+  password = DB PASSWORD
+  url = "jdbc:mysql://localhost/DATABASE NAME HERE"
+  max-pool-size = 4 # total connection count
+  wait-queue-capacity = 10000 # If query cannot be executed soon, it wait in the queue and will be executed later.
+  journal-table-name = "persist_journal"
+  snapshot-table-name = "persist_snapshot"
+}
 
 # Secret key
 # ~~~~~

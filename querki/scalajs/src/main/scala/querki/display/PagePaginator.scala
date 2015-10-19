@@ -35,8 +35,8 @@ class PagePaginator(nElements:Int, urlConstr:ParamMap => URL, params:ParamMap)(i
       val rightPage = Math.min(currentPage + 3, totalPages) + 1
       val range = leftPage until rightPage
 
-      div(cls:="pagination pagination-centered",
-        ul(
+      div(
+        ul(cls:="pagination pagination-centered",
           li(a(href:=pageUrl(1), raw("&laquo;"))),
           
           if (currentPage == 1)

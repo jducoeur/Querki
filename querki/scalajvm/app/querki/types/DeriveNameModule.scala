@@ -88,7 +88,8 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with Nam
 	        yield name.text;
 	      
 	      newDisplayNameOpt match {
-	        case Some(displayName) => {
+          // Only bother if we can get a non-empty Link Name out of this:
+	        case Some(displayName) if (makeLegal(displayName).length > 0) => {
 	          val flag = deriveFlag(evt)
 	          flag match {
 	            case DeriveInitiallyOID => {
@@ -108,7 +109,7 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with Nam
 	        }
 	        
 	        // If there's no Display Name, don't do anything
-	        case None => evtWithExistingName
+	        case _ => evtWithExistingName
 	      }          
         }
       }

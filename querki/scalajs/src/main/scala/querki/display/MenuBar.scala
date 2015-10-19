@@ -270,9 +270,12 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
                 
               ul(cls:="nav navbar-nav navbar-right", displayNavigable(loginSection)),
                 
-              form(cls:="navbar-form navbar-right", role:="search",
-                div(cls:="form-group",
-                  new SearchGadget())),
+              // Search only makes sense in the context of a Space, at least for now:
+              if (DataAccess.space.isDefined) {
+                form(cls:="navbar-form navbar-right", role:="search",
+                  div(cls:="form-group",
+                    new SearchGadget()))
+              },
                   
               if (UserAccess.user.isDefined) {
                 ul(cls:="nav navbar-nav navbar-right",

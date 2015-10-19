@@ -50,6 +50,14 @@ class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Eco
         |
         |**[Export all Instances of [[Name]] as a CSV file](_exportModel?modelId=[[_oid]]&format=1)**
         |
+        |[[_orphanedInstances -> _section(""### Orphaned Instances"", 
+        |""These Instances belong to missing Models; we recommend going into each one, opening Advanced Edit from the
+        |Actions menu, and changing their Model.
+        |
+        |[[_bulleted]]
+        |
+        |------"")]]
+        |
         |[[_if(_hasPermission(Can Read Comments._self), 
         |  ""**Send me a Message whenever someone comments in this Space:** [[_space -> _getCommentNotifications._edit]]
         |("Maybe" means the default: Yes if you are the owner of this space, No otherwise.)

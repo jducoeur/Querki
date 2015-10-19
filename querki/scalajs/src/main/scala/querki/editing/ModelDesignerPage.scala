@@ -112,9 +112,19 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   }
   val instancePropSection = new PropSectionHolder
   val modelPropSection = new PropSectionHolder
+  
+  def checkParams:Option[Future[PageContents]] = {
+    println(s"The modelId is '${modelId.underlying}' -- isEmpty is ${modelId.isEmpty}")
+    if (modelId.isEmpty) {
+      val guts =
+        div(p("The URL of this page is missing its modelId. This may indicate a Querki bug; please report it. Sorry about that."))
+      Some(Future.successful(PageContents("ModelId missing!", guts)))
+    } else
+      None
+  }
 
   def pageContent = {
-    for {
+    checkParams getOrElse (for {
       model <- DataAccess.getThing(modelId)
       modelModel <- DataAccess.getThing(model.modelOid)
       fullEditInfo <- Client[EditFunctions].getPropertyEditors(modelId).call()
@@ -170,5 +180,6 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
         )
     }
       yield PageContents(pageTitle, guts)
+    )
   }
 }

@@ -374,8 +374,10 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
   	    }
   	    
   	    case MarcoPoloRequest(propId, q, rc) => {
-  	      val response = new MarcoPoloImpl(mkParams(rc))(ecology).handleMarcoPoloRequest(propId, q)
-  	      sender ! response
+          val savedSender = sender
+  	      new MarcoPoloImpl(mkParams(rc))(ecology).handleMarcoPoloRequest(propId, q) map { response =>
+    	      savedSender ! response
+          }
   	    }
       }
     }

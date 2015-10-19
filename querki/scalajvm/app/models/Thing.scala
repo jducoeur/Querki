@@ -131,13 +131,10 @@ abstract class Thing(
    * DEPRECATED: use getModelOpt instead! It is not only more correct, it's likely to be faster!
    */
   def getModel(implicit state:SpaceState):Thing = { 
-    state.anything(model).getOrElse{
-      try {
-        // TODO: make this work again!
-        throw new Exception("Trying to get unknown Model " + model + " for "/* + displayName*/)
-      } catch {
-        case error:Exception => QLog.error("Unable to find Model", error); throw error
-      }
+    state.anything(model).getOrElse {
+      // This is unfortunate, but when it happens, we have to recover somehow, so we fall
+      // back on the most primitive possibility:
+      state.anything(querki.basic.MOIDs.SimpleThingOID).get
     }
   }
   def getModelOpt(implicit state:SpaceState):Option[Thing] = {

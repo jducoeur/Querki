@@ -114,7 +114,11 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
         Types.MinIntValueProp(1),
         Types.MaxIntValueProp(12),
         Summary("Lets you control how wide a Property's edit control is, in the Edit View"),
-        Details("""This is width in Bootstrap span terms -- a number from 1 (narrow) to 12 (full width).""".stripMargin)))
+        Details("""This is width in Bootstrap span terms -- a number from 1 (narrow) to 12 (full width).
+          |
+          |You do not have to set this -- if you leave it alone, each Type has a default width. But you will
+          |sometimes find that you prefer to have your Edit controls narrower then the default, in order to
+          |get a good-looking Editor for a Model. Set this to a number between 1 and 12 to do that.""".stripMargin)))
 
   abstract class EditMethodBase(id:OID, pf:PropFetcher) extends InternalMethod(id, pf)
   {
@@ -204,39 +208,39 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       } 
     }
   }
+  
+  /**
+   * This is a place to stick weird, special filters.
+   */
+  def specialModelFilter(model:PropertyBundle, prop:Property[_,_])(implicit state:SpaceState):Boolean = {
+    // We display Default View iff it is defined locally on this Thing, or it is *not*
+    // defined for the Model.
+    // TBD: this is kind of a weird hack. Is it peculiar to Default View, or is there
+    // a general concept here?
+    if (prop == DisplayTextProp) {
+      !model.localProp(DisplayTextProp).isDefined
+    } else
+      true
+  }
+  
+  /**
+   * TODO: unify this with the similar function in ThingEditor. This one is Model-oriented, though, where that is
+   * Instance-oriented.
+   */
+  def instancePropsForModel(model:PropertyBundle, state:SpaceState):Seq[Property[_,_]] = {
+    implicit val s = state
     
-    /**
-     * This is a place to stick weird, special filters.
-     */
-    def specialModelFilter(model:PropertyBundle, prop:Property[_,_])(implicit state:SpaceState):Boolean = {
-      // We display Default View iff it is defined locally on this Thing, or it is *not*
-      // defined for the Model.
-      // TBD: this is kind of a weird hack. Is it peculiar to Default View, or is there
-      // a general concept here?
-      if (prop == DisplayTextProp) {
-        !model.localProp(DisplayTextProp).isDefined
-      } else
-        true
-    }
+    def fromIds(propIds:Iterable[OID]):Iterable[Property[_,_]] = propIds.map(state.prop(_)).flatten
     
-    /**
-     * TODO: unify this with the similar function in ThingEditor. This one is Model-oriented, though, where that is
-     * Instance-oriented.
-     */
-    def instancePropsForModel(model:PropertyBundle, state:SpaceState):Seq[Property[_,_]] = {
-      implicit val s = state
-      
-      def fromIds(propIds:Iterable[OID]):Iterable[Property[_,_]] = propIds.map(state.prop(_)).flatten
-      
-      val propsOpt = 
-        for {
-          propsToEdit <- model.getPropOpt(InstanceProps)
-          propIds = propsToEdit.v.rawList(LinkType)
-        }
-          yield fromIds(propIds)
-          
-      propsOpt.map(_.toSeq).getOrElse(fromIds(model.props.keys).filter(specialModelFilter(model, _)).toSeq.sortBy(_.displayName))
-    }
+    val propsOpt = 
+      for {
+        propsToEdit <- model.getPropOpt(InstanceProps)
+        propIds = propsToEdit.v.rawList(LinkType)
+      }
+        yield fromIds(propIds)
+        
+    propsOpt.map(_.toSeq).getOrElse(fromIds(model.props.keys).filter(specialModelFilter(model, _)).toSeq.sortBy(_.displayName))
+  }
     
   lazy val editMethod = new EditMethodBase(EditMethodOID, 
     toProps(

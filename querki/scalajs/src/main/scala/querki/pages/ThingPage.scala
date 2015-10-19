@@ -79,7 +79,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
                   title:=s"Edit $thingName",
                   data("thingid"):=thing,
                   data("target"):="_topEdit",
-                  data("ql"):="_edit",
+                  data("ql"):=EditQL(),
                   href:=page.thingUrl(thing))
     )
   
