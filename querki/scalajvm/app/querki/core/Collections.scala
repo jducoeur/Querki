@@ -457,7 +457,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
    * nothing that *uses* it can be serialized, so it is strictly for system objects. It basically exists so that
    * we can get the real Collections booted up.
    */
-  class bootCollection extends SingleElementBase(UnknownOID, () => models.Thing.emptyProps) {
+  class bootCollection extends SingleElementBase(UnknownOID, models.Thing.emptyProps) {
     type implType = List[ElemValue]
 
     def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = List(elemT.deserialize(ser))

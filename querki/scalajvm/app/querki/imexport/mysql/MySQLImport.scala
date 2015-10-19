@@ -110,7 +110,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
     SpaceState(
       spaceId,
       systemId,
-      () => Map(Core.NameProp(name)),
+      Map(Core.NameProp(name)),
       rc.requesterOrAnon.mainIdentity.id,
       name,
       DateTime.now,
@@ -204,7 +204,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
           Core.UrProp.id,
           pType.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]],
           collection,
-          () => Map(Core.setName(qName)),
+          Map(Core.setName(qName)),
           DateTime.now
         )
         
@@ -317,7 +317,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
         oid,
         spaceId,
         Basic.SimpleThing.id,
-        () => Map(propPairs:_*)
+        Map(propPairs:_*)
       )
       
       state.copy(things = state.things + (oid -> model))
@@ -356,7 +356,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
           } else
             propName
         }
-        val tweakedProp = prop.copy(pf = () => prop.props + linkPair + Core.setName(fixedName))
+        val tweakedProp = prop.copy(pf = prop.props + linkPair + Core.setName(fixedName))
         constState.copy(spaceProps = constState.spaceProps + (prop.id -> tweakedProp))
       }
     }
@@ -397,7 +397,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
             case _ if (col.generateProp) => {
               // Ordinary column -- add this row's value to the Thing:
               buildQValue(col, prop, v) match {
-                case Some(qv) => tIn.copy(pf = () => tIn.props + (prop.id -> qv))
+                case Some(qv) => tIn.copy(pf = tIn.props + (prop.id -> qv))
                 case None => tIn
               }
             }
@@ -426,7 +426,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
                 createOID(),
                 spaceId,
                 modelMap(table.name),
-                () => emptyProps
+                emptyProps
               )
             val t = buildInstance(db, table, primary, tInit, cols, props, row.vs)
             rowState.copy(things = rowState.things + (t.id -> t))
@@ -451,7 +451,7 @@ class MySQLImport(rc:RequestContext, name:String)(implicit val ecology:Ecology) 
           tIn
         } else {
           val linkId = idMap(key)
-          tIn.copy(pf = () => tIn.props + prop(linkId))
+          tIn.copy(pf = tIn.props + prop(linkId))
         }
       state.copy(things = state.things + (t.id -> t))
     }

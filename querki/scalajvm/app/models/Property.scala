@@ -41,7 +41,7 @@ case class Property[VT, RT](
   def defaultPair(implicit state:SpaceState):PropAndVal[VT] = PropAndVal(this, default)
   def pair(v:QValue) = PropAndVal(this, v)
 
-  lazy val rawProps = propFetcher()
+  lazy val rawProps = propFetcher
   override lazy val props:PropMap = rawProps + 
 		  (CollectionPropOID -> Core.ExactlyOne(Core.LinkType(cType))) +
 		  (TypePropOID -> Core.ExactlyOne(Core.LinkType(pType)))

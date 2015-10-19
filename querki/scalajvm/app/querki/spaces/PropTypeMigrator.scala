@@ -22,11 +22,11 @@ case class TypeChangeInfo(typeChanged:Boolean, newType:PType[Any] with PTypeBuil
         val newV = newProp.deserialize(serialized)(state)
         val usingProps = usingThing.props + (prop.id -> newV)
         usingThing match {
-          case t:ThingState => state.copy(things = state.things + (usingThingId -> t.copy(pf = () => usingProps)))
+          case t:ThingState => state.copy(things = state.things + (usingThingId -> t.copy(pf = usingProps)))
           case p:Property[_,_] => {
-            state.copy(spaceProps = state.spaceProps + (usingThingId -> p.copy(pf = () => usingProps)))
+            state.copy(spaceProps = state.spaceProps + (usingThingId -> p.copy(pf = usingProps)))
           }
-          case s:SpaceState => state.copy(pf = () => usingProps)
+          case s:SpaceState => state.copy(pf = usingProps)
         }
       }
       

@@ -165,7 +165,7 @@ class ModelTypeTests extends QuerkiTests {
       // Space.scala, but we're not ready for that yet.)
       val originalThing:ThingState = space.metaThing
       val newProps = space.metaThing.props + (result.propId -> result.value.get)
-      val rebuiltThing = originalThing.copy(pf = () => newProps)
+      val rebuiltThing = originalThing.copy(pf = newProps)
       val newState = state.copy(things = state.things + (rebuiltThing.id -> rebuiltThing))
       
       val rebuiltResult = pqls("""[[Top Level Thing -> Meta Property]]""", newState)

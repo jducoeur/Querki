@@ -120,7 +120,7 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
     // non-capturing".
     val propStrs = stripExt.split("""(?<=[^\\]);""")
     val propPairs = propStrs.filter(_.trim.length() > 0).map(deserializeProp(_))
-    toProps(propPairs:_*)()
+    toProps(propPairs:_*)
   }
 
   object UnresolvedProp extends ExactlyOneBase(UnknownOID) {

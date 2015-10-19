@@ -137,7 +137,7 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
   }
     
   def createMsg(from:PublicIdentity, header:String, body:String):Notification = {
-    val payload = toProps(SystemMsgHeader(header), SystemMsgBody(body))()
+    val payload = toProps(SystemMsgHeader(header), SystemMsgBody(body))
     Notification(
       EmptyNotificationId,
       from.id, 

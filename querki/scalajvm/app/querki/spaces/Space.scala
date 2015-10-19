@@ -160,7 +160,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
           Core.toProps(
             Core.setName(identity.handle),
             Basic.DisplayNameProp(identity.name),
-            Person.IdentityLink(identity.id))(),
+            Person.IdentityLink(identity.id)),
           Kind.Thing)
       }
     }
@@ -202,7 +202,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
           implicit val e = ecology
           kind match {
             case Kind.Thing => {
-              val thing = ThingState(thingId, spaceId, modelId, () => props, modTime, kind)
+              val thing = ThingState(thingId, spaceId, modelId, props, modTime, kind)
               updateState(state.copy(things = state.things + (thingId -> thing)))
             }
             case Kind.Property => {
@@ -210,7 +210,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
               val coll = state.coll(Core.CollectionProp.first(props))
               val boundTyp = typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]]
               val boundColl = coll.asInstanceOf[Collection]
-              val thing = Property(thingId, spaceId, modelId, boundTyp, boundColl, () => props, modTime)
+              val thing = Property(thingId, spaceId, modelId, boundTyp, boundColl, props, modTime)
               updateState(state.copy(spaceProps = state.spaceProps + (thingId -> thing)))          
             }
             case Kind.Type => {
@@ -218,7 +218,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
                 basedOnVal <- props.get(ModelForTypePropOID);
                 basedOn <- basedOnVal.firstAs(Core.LinkType)
                   )
-                yield new ModelType(thingId, basedOn, () => props)
+                yield new ModelType(thingId, basedOn, props)
               
               typOpt match {
                 case Some(typ) => updateState(state.copy(types = state.types + (thingId -> typ)))
@@ -283,7 +283,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
         def changeInMemory() = {
           oldThing match {
             case t:ThingState => {
-              val newThingState = t.copy(m = modelId, pf = () => newProps, mt = modTime)
+              val newThingState = t.copy(m = modelId, pf = newProps, mt = modTime)
               updateState(state.copy(things = state.things + (thingId -> newThingState))) 
               sender ! ThingFound(thingId, state)
             }
@@ -293,9 +293,9 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
               
               val newProp = {
                 if (typeChange.typeChanged)
-                  prop.copy(pType = typeChange.newType, m = modelId, pf = () => newProps, mt = modTime)
+                  prop.copy(pType = typeChange.newType, m = modelId, pf = newProps, mt = modTime)
                 else
-                  prop.copy(m = modelId, pf = () => newProps, mt = modTime)
+                  prop.copy(m = modelId, pf = newProps, mt = modTime)
               }
               
               updateState(state.copy(spaceProps = state.spaceProps + (thingId -> newProp)))
@@ -307,7 +307,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
             case s:SpaceState => {
               // TODO: handle changing the owner or apps of the Space. (Different messages?)
               val newName = newNameOpt.get
-              updateState(state.copy(m = modelId, pf = () => newProps, name = newName, mt = modTime))
+              updateState(state.copy(m = modelId, pf = newProps, name = newName, mt = modTime))
               sender ! ThingFound(thingId, state)
             }
           }

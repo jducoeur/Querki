@@ -11,7 +11,8 @@ import querki.values._
 
 object Thing {
   type PropMap = Map[OID, QValue]
-  type PropFetcher = () => PropMap
+  // TODO: this type is really obsolete. Kill it.
+  type PropFetcher = PropMap
   
   def emptyProps = Map.empty[OID, QValue]
   
@@ -39,7 +40,8 @@ abstract class Thing(
     val propFetcher: PropFetcher,
     val modTime:DateTime) extends PropertyBundle
 {
-  lazy val props:PropMap = propFetcher()
+  // TODO: this is redundant with propFetcher. Merge.
+  lazy val props:PropMap = propFetcher
   
   /**
    * USE WITH EXTREME CAUTION: this function is for use *only* in the core classes. Its purpose is to allow

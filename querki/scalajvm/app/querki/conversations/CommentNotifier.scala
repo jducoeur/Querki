@@ -81,7 +81,7 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
         CommentBody(bodyOpt.get.text),
         CommentId(comment.id),
         CommentSpaceOwner(state.owner)
-      )()
+      )
     // IMPORTANT TODO: we're currently generating notifications as already Read, because there is no way for the
     // user to mark them as Read yet. Once we have the needed UI, change the parameter below.
     val note = Notification(

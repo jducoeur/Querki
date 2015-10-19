@@ -57,7 +57,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
    * 
    * Note that this doesn't get registered in System, since it doesn't exist from the User's perspective.
    */
-  lazy val RawHtmlType = new SystemType[Wikitext](UnknownOID, () => models.Thing.emptyProps) with SimplePTypeBuilder[Wikitext]
+  lazy val RawHtmlType = new SystemType[Wikitext](UnknownOID, models.Thing.emptyProps) with SimplePTypeBuilder[Wikitext]
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = throw new Exception("Can't deserialize ParsedText!")
     def doSerialize(v:Wikitext)(implicit state:SpaceState) = throw new Exception("Can't serialize ParsedText!")

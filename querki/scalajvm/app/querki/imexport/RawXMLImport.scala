@@ -74,7 +74,7 @@ private [imexport] class RawXMLImport(rc:RequestContext)(implicit val ecology:Ec
       section.addToSpace(state, builder)
     }
     def andProps(implicit node:XmlElement):SpaceState = {
-      state.copy(pf = () => buildProps(state, node))
+      state.copy(pf = buildProps(state, node))
     }
   }
   
@@ -89,7 +89,7 @@ private [imexport] class RawXMLImport(rc:RequestContext)(implicit val ecology:Ec
     SpaceState(
       id.oid,
       systemId,
-      () => emptyProps,
+      emptyProps,
       rc.requesterOrAnon.mainIdentity.id,
       name.get,
       DateTime.now,
@@ -139,7 +139,7 @@ private [imexport] class RawXMLImport(rc:RequestContext)(implicit val ecology:Ec
   def buildType(state:SpaceState, node:XmlElement) = {
     implicit val n = node
     implicit val s = state
-    val t = new ModelType(id.oid, modelref.oidPlus, () => buildProps)
+    val t = new ModelType(id.oid, modelref.oidPlus, buildProps)
     state.copy(types = state.types + (t.id -> t))
   }
   
@@ -154,7 +154,7 @@ private [imexport] class RawXMLImport(rc:RequestContext)(implicit val ecology:Ec
         // HACK: same as in SpaceLoader, still don't know a good way to do this:
         ptyp.typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]],
         coll.coll,
-        () => buildProps,
+        buildProps,
         DateTime.now
       )
     state.copy(spaceProps = state.spaceProps + (p.id -> p))
@@ -168,7 +168,7 @@ private [imexport] class RawXMLImport(rc:RequestContext)(implicit val ecology:Ec
         id.oid,
         state.id,
         modelref.oidPlus,
-        () => buildProps,
+        buildProps,
         DateTime.now
       )
     state.copy(things = state.things + (model.id -> model))
@@ -182,7 +182,7 @@ private [imexport] class RawXMLImport(rc:RequestContext)(implicit val ecology:Ec
         id.oid,
         state.id,
         state.anything(parseThingId(node.tagName.name)).get,
-        () => buildProps,
+        buildProps,
         DateTime.now
       )
     state.copy(things = state.things + (model.id -> model))    

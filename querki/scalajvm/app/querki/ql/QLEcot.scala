@@ -120,7 +120,7 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
     override def makePropValue(cv:Iterable[ElemValue], elemT:PType[_]):QValue = new ExactlyOnePropValue(cv.toList, this, elemT) with CutProcessing
   }
   
-  lazy val EmptyListCutColl = new QListBase(UnknownOID, () => Thing.emptyProps) {
+  lazy val EmptyListCutColl = new QListBase(UnknownOID, Thing.emptyProps) {
     def apply() = new QListPropValue(List.empty, this, Core.UnknownType) with CutProcessing  
   }
   def EmptyListCut() = EmptyListCutColl()

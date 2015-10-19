@@ -68,7 +68,7 @@ abstract class CoreEcot(ecologyIn:Ecology) extends EcotImpl {
   // Utility functions for constructing Things:
   def setName(str:String):(OID,QValue)
   
-  def toProps(pairs:(OID,QValue)*):models.Thing.PropFetcher = () => {
+  def toProps(pairs:(OID,QValue)*):models.Thing.PropFetcher = {
     (Map.empty[OID, QValue] /: pairs) { (m:Map[OID, QValue], pair:(OID, QValue)) =>
       m + (pair._1 -> pair._2)
     }

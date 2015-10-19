@@ -94,7 +94,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
         authorId,
         None,
         Core.toProps(
-          Conversations.CommentText(text))(),
+          Conversations.CommentText(text)),
         responseTo,
         true     // TODO: primaryResponse
     )
