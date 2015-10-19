@@ -26,7 +26,7 @@ case class Property[VT, RT](
     m:OID, 
     val pType:PType[VT] with PTypeBuilder[VT, RT], 
     val cType:Collection, 
-    pf:PropFetcher,
+    pf:PropMap,
     mt:DateTime)(implicit val ecology:Ecology) 
   extends Thing(i, s, m, Kind.Property, pf, mt)
 {
@@ -41,7 +41,7 @@ case class Property[VT, RT](
   def defaultPair(implicit state:SpaceState):PropAndVal[VT] = PropAndVal(this, default)
   def pair(v:QValue) = PropAndVal(this, v)
 
-  lazy val rawProps = propFetcher
+  lazy val rawProps = propMap
   override lazy val props:PropMap = rawProps + 
 		  (CollectionPropOID -> Core.ExactlyOne(Core.LinkType(cType))) +
 		  (TypePropOID -> Core.ExactlyOne(Core.LinkType(pType)))

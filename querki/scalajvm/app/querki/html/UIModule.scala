@@ -5,6 +5,7 @@ import scala.xml.{Attribute, NodeSeq, Null, Text, Xhtml}
 import scalatags.Text.all.{id => idAttr, _}
 
 import models.{DisplayText, FieldIds, HtmlWikitext, OID, PropertyBundle, QWikitext, SimplePTypeBuilder, UnknownOID, Wikitext}
+import models.Thing.PropMap
 
 import querki.core.URLableType
 import querki.ecology._
@@ -251,7 +252,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     }
   }
 
-	abstract class ButtonBase(tid:OID, pf:PropFetcher) extends InternalMethod(tid, pf)
+	abstract class ButtonBase(tid:OID, pf:PropMap) extends InternalMethod(tid, pf)
 	{
 	  def generateButton(url:String, params:Seq[Wikitext]):scala.xml.Elem
 	  
@@ -477,7 +478,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     }
   }
   
-  abstract class ClickableQLBase(oid:OID, pf:PropFetcher) extends InternalMethod(oid, pf)
+  abstract class ClickableQLBase(oid:OID, pf:PropMap) extends InternalMethod(oid, pf)
   {
     def buildHtml(label:String, core:String):String
     

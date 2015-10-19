@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import models.{IndexedOID, OID, OIDMap}
 import models.{Collection, Property, PType, PTypeBuilder, Thing, ThingState}
-import models.Thing.PropFetcher
+import models.Thing.PropMap
 
 import querki.core.MOIDs._
 import querki.ecology._
@@ -79,7 +79,7 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
   def registerType(pt:PType[_]) = { types = types :+ pt }
   
   def registerProp(p:Property[_,_]) = { props = props :+ p }
-  class TestPropertyBase[VT, RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
+  class TestPropertyBase[VT, RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropMap) 
     extends Property[VT, RT](pid, spaceId, UrPropOID, t, c, p, querki.time.epoch)
   {
     lazy val iid:IndexedOID = IndexedOID(id)
@@ -179,7 +179,7 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
    */
   def otherSpaceProps:Seq[(OID, QValue)] = Seq.empty
   
-  lazy val sProps:PropFetcher =
+  lazy val sProps:PropMap =
     Core.toProps(
       (otherSpaceProps :+ Core.setName(spaceName)):_*
     )

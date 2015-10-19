@@ -8,7 +8,7 @@ import models.{AsName, AsOID, OID, ThingId}
 
 import com.github.nscala_time.time.Imports._
 
-import Thing.PropFetcher
+import Thing.PropMap
 
 import querki.core.NameUtils
 import querki.ecology._
@@ -39,7 +39,7 @@ case class StateCacheKey(ecotId:Short, id:String)
 case class SpaceState(
     s:OID, 
     m:OID,
-    pf:PropFetcher,
+    pf:PropMap,
     owner:OID,
     name:String,
     mt:DateTime,

@@ -11,8 +11,6 @@ import querki.values._
 
 object Thing {
   type PropMap = Map[OID, QValue]
-  // TODO: this type is really obsolete. Kill it.
-  type PropFetcher = PropMap
   
   def emptyProps = Map.empty[OID, QValue]
   
@@ -37,11 +35,15 @@ abstract class Thing(
     val spaceId:OID, 
     val model:OID, 
     val kind:Kind.Kind,
-    val propFetcher: PropFetcher,
+    val propMap: PropMap,
     val modTime:DateTime) extends PropertyBundle
 {
-  // TODO: this is redundant with propFetcher. Merge.
-  lazy val props:PropMap = propFetcher
+  /**
+   * The Properties on this Thing.
+   * 
+   * Yes, this is a redundant definition for the base Thing. But it is overridden in some subclasses.
+   */
+  lazy val props = propMap
   
   /**
    * USE WITH EXTREME CAUTION: this function is for use *only* in the core classes. Its purpose is to allow
@@ -307,5 +309,5 @@ abstract class Thing(
  * 
  * Note that Models are basically just ordinary Things.
  */
-case class ThingState(i:OID, s:OID, m:OID, pf: PropFetcher, mt:DateTime = querki.time.epoch, k:Kind.Kind = Kind.Thing)
+case class ThingState(i:OID, s:OID, m:OID, pf: PropMap, mt:DateTime = querki.time.epoch, k:Kind.Kind = Kind.Thing)
   extends Thing(i, s, m, k, pf, mt) {}

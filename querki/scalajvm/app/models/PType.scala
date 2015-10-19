@@ -3,7 +3,7 @@ package models
 import scala.concurrent.Future
 import scala.xml.NodeSeq
 
-import Thing.{PropFetcher, emptyProps}
+import Thing.{PropMap, emptyProps}
 
 import querki.ecology.Ecology
 import querki.ql.Invocation
@@ -16,7 +16,7 @@ import querki.values._
  * this is specifically so that we can potentially add user-defined Types down
  * the road.
  */
-abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropFetcher) extends Thing(i, s, m, Kind.Type, pf, querki.time.epoch) {
+abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropMap) extends Thing(i, s, m, Kind.Type, pf, querki.time.epoch) {
   
   type valType = VT
 

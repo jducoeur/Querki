@@ -25,9 +25,9 @@ import MOIDs._
 trait CollectionBase { self:CoreEcot =>
   def UnknownType:PType[Unit]
   
-  abstract class SystemCollection(cid:OID, pf:PropFetcher)(implicit e:Ecology) extends Collection(cid, systemOID, UrCollectionOID, pf)
+  abstract class SystemCollection(cid:OID, pf:PropMap)(implicit e:Ecology) extends Collection(cid, systemOID, UrCollectionOID, pf)
 
-  abstract private[core] class SingleElementBase(cid:OID, pf:PropFetcher)(implicit e:Ecology) extends SystemCollection(cid, pf)(e)
+  abstract private[core] class SingleElementBase(cid:OID, pf:PropMap)(implicit e:Ecology) extends SystemCollection(cid, pf)(e)
   {
     // TODO: this really doesn't belong here. We need to tease the HTTP/HTML specific
     // stuff out from the core concepts.
@@ -127,7 +127,7 @@ trait CollectionBase { self:CoreEcot =>
     }
   }
   
-  abstract class QListBase(cid:OID, pf:PropFetcher) extends SystemCollection(cid, pf) 
+  abstract class QListBase(cid:OID, pf:PropMap) extends SystemCollection(cid, pf) 
   {
     type implType = List[ElemValue]
     

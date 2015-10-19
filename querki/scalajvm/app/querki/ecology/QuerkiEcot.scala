@@ -19,7 +19,7 @@ abstract class CoreEcot(ecologyIn:Ecology) extends EcotImpl {
   type SystemType[T] = querki.core.TypeUtils.SystemType[T]
   type OID = models.OID
   type Property[VT, RT] = models.Property[VT,RT]
-  type PropFetcher = models.Thing.PropFetcher
+  type PropMap = models.Thing.PropMap
   type QValue = querki.values.QValue
   type Thing = models.Thing
   type ThingState = models.ThingState
@@ -68,14 +68,14 @@ abstract class CoreEcot(ecologyIn:Ecology) extends EcotImpl {
   // Utility functions for constructing Things:
   def setName(str:String):(OID,QValue)
   
-  def toProps(pairs:(OID,QValue)*):models.Thing.PropFetcher = {
+  def toProps(pairs:(OID,QValue)*):PropMap = {
     (Map.empty[OID, QValue] /: pairs) { (m:Map[OID, QValue], pair:(OID, QValue)) =>
       m + (pair._1 -> pair._2)
     }
   }
   
   // The standard convenience sugar for defining a Property in an Ecot:
-  class SystemProperty[VT, RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:models.Thing.PropFetcher) 
+  class SystemProperty[VT, RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropMap) 
     extends Property[VT, RT](pid, systemOID, querki.core.MOIDs.UrPropOID, t, c, p, querki.time.epoch)
 }
 
