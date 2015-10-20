@@ -17,6 +17,7 @@ import querki.security.SecurityFunctions
 class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
   lazy val thingId = TID(params("thingId"))
   
+  lazy val Apps = interface[querki.apps.Apps]
   lazy val Client = interface[querki.client.Client]
   lazy val StatusLine = interface[querki.display.StatusLine]
   
@@ -86,7 +87,11 @@ class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Eco
               you aren't going to need it any time soon!"""),
             new ButtonGadget(ButtonGadget.Danger, "Archive this Space") ({ () =>
               archiveAfterConfirm(DataAccess.space.get)
-            })
+            }),
+            
+            hr,
+            
+            p(a(href:=Apps.appMgmtFactory.pageUrl(), "Manage the Apps for this Space"))
           )
         },
         new ButtonGadget(ButtonGadget.Primary, "Done")({ () => Pages.showSpacePage(DataAccess.space.get) })

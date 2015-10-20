@@ -22,6 +22,8 @@ package object api {
     
     def spaceInfo(info:querki.spaces.messages.SpaceInfo):SpaceInfo
     
+    def spaceInfo(state:SpaceState):SpaceInfo
+    
     def identityInfo(identity:PublicIdentity):IdentityInfo
     
     def userInfo(uopt:Option[User]):Option[UserInfo]
