@@ -19,4 +19,8 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     }
       yield ClientApi.spaceInfo(app)
   }
+  
+  def addApp(appId:String):Future[SpaceInfo] = {
+    ???
+  }
 }

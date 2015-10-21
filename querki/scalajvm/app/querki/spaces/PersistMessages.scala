@@ -35,7 +35,7 @@ private [spaces] object PersistMessages {
    * Request from the Space to the Persister, send when the Space is booted. Persister should
    * respond with Loaded.
    */
-  case object Load
+  case class Load(apps:Seq[SpaceState])
   
   /**
    * Response sent when the Persister successfully has loaded the Space.

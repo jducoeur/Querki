@@ -32,7 +32,7 @@ trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
   def name:String
   def owner:OID
   
-  def doLoad(loader:ThingStreamLoader):SpaceState = {
+  def doLoad(loader:ThingStreamLoader, apps:Seq[SpaceState]):SpaceState = {
       
       // Start off using the App to boot this Space. Then we add each aspect as we read it in.
       // This works decently for now, but will fall afoul when we try to have local meta-Properties;
@@ -63,7 +63,7 @@ trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
              owner,
              name,
              modTime,
-             Seq.empty,
+             apps,
              Some(SystemInterface.State),
              // TODO: dynamic PTypes
              Map.empty[OID, PType[_]],
@@ -91,7 +91,7 @@ trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
             owner,
             name,
             epoch,
-            Seq.empty,
+            apps,
             Some(SystemInterface.State),
             Map.empty[OID, PType[_]],
             Map.empty[OID, Property[_,_]],

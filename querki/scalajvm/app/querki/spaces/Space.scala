@@ -367,7 +367,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
         evolved <- persister ? Evolve
         dummy1 = if (evolved != Evolved) throw new Exception(s"Space $id failed Evolution!")
         // TODO: loading Apps goes here
-        Loaded(s) <- persister ? Load
+        Loaded(s) <- persister ? Load(Seq.empty)
       }
       {
         updateState(s)

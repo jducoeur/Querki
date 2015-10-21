@@ -120,7 +120,7 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
       sender ! Evolved
     }
     
-    case Load => {
+    case Load(apps) => {
 	    // TODO: we need to walk up the tree and load any ancestor Apps before we prep this Space
 	    DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
 	      // The stream of all of the Things in this Space:
@@ -162,7 +162,7 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
 		      }
 	      }
 
-	      val state = doLoad(loader)
+	      val state = doLoad(loader, apps)
 	      sender ! Loaded(state)
 	    }
     }
