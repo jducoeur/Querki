@@ -41,6 +41,14 @@ trait SpaceAPI extends Actor with Requester {
    *    the default.
    */
   def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap), sync:Boolean = false):Unit
+  
+  /**
+   * Tells the Space that something has changed in a very serious way, and the Space should reload
+   * itself from scratch.
+   * 
+   * This is an extreme and expensive function, and should only be used under relatively extreme circumstances.
+   */
+  def reloadSpace():Unit
 }
 
 /**

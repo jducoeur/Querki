@@ -18,6 +18,11 @@ private [apps] trait AppsPersistence extends EcologyInterface {
    * LONG RUNNING -- this does a DB transaction, so do not use it casually!
    */
   def lookupApps(space:OID):Seq[OID]
+  
+  /**
+   * Adds the specified App, to the end of the given Space's App chain.
+   */
+  def addApp(spaceId:OID, appId:OID):Unit
 }
 
 /**
@@ -25,15 +30,40 @@ private [apps] trait AppsPersistence extends EcologyInterface {
  * 
  * @author jducoeur
  */
-class AppsPersistenceEcot(e:Ecology) extends QuerkiEcot(e) {
+class AppsPersistenceEcot(e:Ecology) extends QuerkiEcot(e) with AppsPersistence {
   def lookupApps(space:OID):Seq[OID] = {
-    DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+    DB.withTransaction(dbName(ShardKind.System)) { implicit conn =>
       val appRows = SQL("""
         SELECT * FROM Apps
          WHERE space_id = {spaceId}
       ORDER BY position""").on("spaceId" -> space.raw)()
       appRows map { row =>
         OID(row[Long]("app_id"))
+      }
+    }
+  }
+  
+  def addApp(spaceId:OID, appId:OID):Unit = {
+    DB.withTransaction(dbName(ShardKind.System)) { implicit conn =>
+      val appRows = SQL("""
+        SELECT * FROM Apps
+         WHERE space_id = {spaceId}
+      ORDER BY position""").on("spaceId" -> spaceId.raw)()
+      val appIds = appRows map { row =>
+        OID(row[Long]("app_id"))
+      }
+      // Sanity-check that this App isn't already in the list
+      if (!appIds.contains(appId)) {
+        val nApps = appIds.length
+        SQL("""
+          INSERT INTO Apps
+          (space_id,  app_id, app_version, position) VALUES
+          ({spaceId}, {appId}, 0,          {position})
+          """).on(
+            "spaceId" -> spaceId.raw,
+            "appId" -> appId.raw,
+            "position" -> (nApps + 1)
+          ).executeUpdate()
       }
     }
   }

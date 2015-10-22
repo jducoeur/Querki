@@ -20,7 +20,8 @@ trait AppsFunctions {
   /**
    * Add the specified App to this Space, as a mix-in.
    * 
-   * Responds with the info about the new App.
+   * Responds with info about the newly-added Space, but it is recommended
+   * that the UI reload, since things may have changed a lot.
    * 
    * This API is highly experimental, and very likely to change.
    */

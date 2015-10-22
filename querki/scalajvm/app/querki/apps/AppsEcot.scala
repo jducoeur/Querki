@@ -15,8 +15,12 @@ import querki.util.{Contributor, Publisher}
 
 object MOIDs extends EcotIds(59) {
   val CanBeAppOID = moid(1)
+  val CanManipulateAppsOID = moid(2)
 }
 
+/**
+ * Private interface for use within the Apps subsystem.
+ */
 private [apps] trait AppsInternal extends EcologyInterface {
   def CanUseAsAppProp:Property[OID, OID]
 }
@@ -24,7 +28,7 @@ private [apps] trait AppsInternal extends EcologyInterface {
 /**
  * @author jducoeur
  */
-class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with AppsInternal {
+class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Apps with AppsInternal {
   import MOIDs._
   
   val AccessControl = initRequires[querki.security.AccessControl]
@@ -37,6 +41,7 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
   override def postInit() = {
     // Some entry points are legal without login:
     ApiRegistry.registerApiImplFor[AppsFunctions, AppsFunctionsImpl](SpaceOps.spaceRegion, false)
+    SpaceChangeManager.appLoader += new AppLoading
   }
   
   /**
@@ -73,7 +78,14 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
       Seq(AccessControl.OwnerTag),
       true)
   
+  lazy val CanManipulateAppsPerm = AccessControl.definePermission(CanManipulateAppsOID, 
+      "Can Manipulate Apps",
+      "These people are allowed to add or remove Apps from this Space",
+      Seq(AccessControl.OwnerTag),
+      true)
+  
   override lazy val props = Seq(
-    CanUseAsAppProp
+    CanUseAsAppProp,
+    CanManipulateAppsPerm
   )
 }

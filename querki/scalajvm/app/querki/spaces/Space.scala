@@ -384,6 +384,16 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
     // Hold everything else off until we're done loading:
     case _ => stash()
   })
+
+  /**
+   * Clean everything out and reload the Space. This should only be called when something's seriously changed.
+   */
+  def reloadSpace() = {
+    _currentState = None
+    persister ! Clear
+    context.become(bootReceive)
+    self ! BootSpace
+  }
   
   // If it isn't a message that we know how to handle, let the plugins take a crack at it:
   def normalReceive = LoggingReceive (mainReceive orElse pluginReceive)

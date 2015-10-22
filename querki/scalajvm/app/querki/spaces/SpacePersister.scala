@@ -124,6 +124,10 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
       sender ! SpaceOwner(owner)
     }
     
+    case Clear => {
+      _currentSpaceInfo = None
+    }
+    
     case Load(apps) => {
 	    // TODO: we need to walk up the tree and load any ancestor Apps before we prep this Space
 	    DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>

@@ -40,6 +40,11 @@ private [spaces] object PersistMessages {
   case class SpaceOwner(ownerIdentity:OID)
   
   /**
+   * Tells the Persister to clear out any cache it is maintaining. Usually comes before a fresh Load.
+   */
+  case object Clear
+  
+  /**
    * Request from the Space to the Persister, send when the Space is booted. Persister should
    * respond with Loaded.
    */

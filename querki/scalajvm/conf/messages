@@ -3,7 +3,9 @@ General.public={0}
 
 Api.edit.noChange=Unable to change property -- sorry!
 
+Apps.notAllowed=You aren't allowed to manipulate the Apps of this Space.
 Apps.notAnApp=You aren't allowed to use that as an App.
+Apps.notASpace=That isn't a valid Space Id.
 
 Collections.concat.mismatchedTypes=The parameters of _concat() must all be the same type; this contains both {0} and {1}
 
