@@ -42,6 +42,7 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
     // Some entry points are legal without login:
     ApiRegistry.registerApiImplFor[AppsFunctions, AppsFunctionsImpl](SpaceOps.spaceRegion, false)
     SpaceChangeManager.appLoader += new AppLoading
+    SpaceChangeManager.registerPluginProvider(this)
   }
   
   /**
@@ -60,7 +61,7 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
       implicit val timeout = Timeout(1 minute)
       val futs = for {
         appId <- appOIDs
-        askFut = (SpaceOps.spaceRegion ? SpacePluginMsg(User.Anonymous, spaceId, FetchAppState(ownerIdentity))).mapTo[CurrentState]
+        askFut = (SpaceOps.spaceRegion ? SpacePluginMsg(User.Anonymous, appId, FetchAppState(ownerIdentity))).mapTo[CurrentState]
       }
         yield askFut map (_.state)
         

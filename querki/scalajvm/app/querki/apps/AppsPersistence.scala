@@ -39,7 +39,7 @@ class AppsPersistenceEcot(e:Ecology) extends QuerkiEcot(e) with AppsPersistence 
       ORDER BY position""").on("spaceId" -> space.raw)()
       appRows map { row =>
         OID(row[Long]("app_id"))
-      }
+      } force
     }
   }
   

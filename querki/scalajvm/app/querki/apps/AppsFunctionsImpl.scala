@@ -6,7 +6,6 @@ import querki.api.{AutowireParams, SpaceApiImpl}
 import querki.data.SpaceInfo
 import querki.globals._
 import querki.spaces.messages._
-import querki.util._
 
 /**
  * @author jducoeur
@@ -33,7 +32,7 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     
     ThingId(appIdStr) match {
       case AsOID(appId) => {
-        (spaceRouter ? SpacePluginMsg(user, state, AddApp(appId))) map {
+        (spaceRouter ? SpacePluginMsg(user, state.id, AddApp(appId))) map {
           case ThingFound(_, appState) => ClientApi.spaceInfo(appState)
           case ThingError(ex, _) => throw ex
         }
