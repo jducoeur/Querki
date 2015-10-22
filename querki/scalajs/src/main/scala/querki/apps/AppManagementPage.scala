@@ -7,7 +7,7 @@ import rx._
 import querki.display.ButtonGadget
 import querki.display.rx._
 import querki.globals._
-import querki.pages.{Page, PageContents, ParamMap}
+import querki.pages.{IndexPage, Page, PageContents, ParamMap}
 
 /**
  * @author jducoeur
@@ -29,9 +29,8 @@ class AppManagementPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
             " This feature is highly experimental, and not yet intended for general use!"),
             
           h3("Current Apps"),
-          for (app <- apps) {
-            p(app.displayName)
-          },
+          for (app <- apps)
+            yield p(b(IndexPage.spaceLink(app))),
           
           h3("Add an App"),
           p("Specify the OID of the App here, and press the button"),

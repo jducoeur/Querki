@@ -19,8 +19,7 @@ class IndexPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecolog
   lazy val Client = interface[querki.client.Client]
   
   def showSpace(space:SpaceInfo) = {
-    val spaceName = space.linkName.getOrElse(space.oid.underlying)
-    li(a(href:=s"/u/${space.ownerHandle}/$spaceName/#$spaceName", space.displayName))
+    li(IndexPage.spaceLink(space))
   }
     
   def spaceSection(title:String, section:Seq[SpaceInfo]) = {
@@ -53,4 +52,11 @@ class IndexPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecolog
       )
   }
     yield PageContents("Your Spaces", guts)
+}
+
+object IndexPage {
+  def spaceLink(space:SpaceInfo) = {
+    val spaceName = space.linkName.getOrElse(space.oid.underlying)
+    a(href:=s"/u/${space.ownerHandle}/$spaceName/#$spaceName", space.displayName)    
+  }
 }
