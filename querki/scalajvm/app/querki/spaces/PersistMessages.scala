@@ -7,6 +7,7 @@ import models.Kind.Kind
 import models.MIMEType.MIMEType
 import models.Thing.PropMap
 
+import querki.identity.User
 import querki.values.SpaceState
 
 /**
@@ -30,6 +31,13 @@ private [spaces] object PersistMessages {
    * Response to Evolve, saying that it is complete.
    */
   case object Evolved
+  
+  /**
+   * Fetch the owning User of this Space.
+   */
+  case object GetOwner
+  
+  case class SpaceOwner(ownerIdentity:OID)
   
   /**
    * Request from the Space to the Persister, send when the Space is booted. Persister should

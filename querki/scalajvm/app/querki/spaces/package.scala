@@ -12,7 +12,7 @@ import models.Thing.PropMap
 import querki.ecology._
 import querki.spaces.messages.{SpaceMessage, SpaceMgrMsg}
 import querki.time.DateTime
-import querki.util.Sequencer
+import querki.util.{Aggregator, Sequencer}
 import querki.values.{QValue, SpaceState, StateCacheKey}
 
 package object spaces {
@@ -106,6 +106,11 @@ package object spaces {
      * on the SpaceState. Do *not* over-use it, but sometimes it's just the thing.
      */
     def updateStateCache:Sequencer[CacheUpdate]
+    
+    /**
+     * Signal to load the Apps for this Space. Really only expects to have one implementation.
+     */
+    def appLoader:Aggregator[AppLoadInfo, Future[Seq[SpaceState]]]
     
     /**
      * Allows other Ecots to plug their own code into Space processing.

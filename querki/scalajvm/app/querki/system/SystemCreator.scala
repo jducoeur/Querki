@@ -19,6 +19,7 @@ object SystemCreator {
   def createDBEcots(ecology:Ecology) = {
     new querki.identity.UserPersistence(ecology)                   // 30    
     new querki.spaces.DBSpacePersistenceFactory(ecology)           // 38
+    new querki.apps.AppsPersistenceEcot(ecology)                   // 60
   }
   
   /**
@@ -98,6 +99,7 @@ object SystemCreator {
     new querki.time.DurationEcot(ecology)                          // 57
     new querki.cluster.ClusterEcot(ecology)                        // 58
     new querki.apps.AppsEcot(ecology)                              // 59
+                                     // 60
   }
   
   def createAllEcots(ecology:Ecology, actorSystem:Option[ActorSystem]):Ecology = {

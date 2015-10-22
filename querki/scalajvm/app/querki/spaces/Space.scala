@@ -51,7 +51,6 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
   extends Actor with Stash with Requester with EcologyMember with ModelTypeDefiner with SpaceAPI
 {
   import Space._
-  import context._
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
@@ -366,8 +365,11 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
       for {
         evolved <- persister ? Evolve
         dummy1 = if (evolved != Evolved) throw new Exception(s"Space $id failed Evolution!")
-        // TODO: loading Apps goes here
-        Loaded(s) <- persister ? Load(Seq.empty)
+        // Need to fetch the Owner, so we can tell the App Loader about them:
+        SpaceOwner(owner) <- persister ? GetOwner
+        // Load the apps before we load this Space itself:
+        apps <- Future.sequence(SpaceChangeManager.appLoader.collect(AppLoadInfo(owner, id))).map(_.flatten)
+        Loaded(s) <- persister ? Load(apps)
       }
       {
         updateState(s)
@@ -375,7 +377,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
         // Okay, we're up and running. Tell any listeners about the current state:
         stateRouter ! CurrentState(state)
         unstashAll()
-        become(normalReceive)
+        context.become(normalReceive)
       }
     }
       

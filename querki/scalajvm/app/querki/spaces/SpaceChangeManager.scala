@@ -1,13 +1,18 @@
 package querki.spaces
 
+import scala.concurrent.Future
+
 import models.{OID, Thing}
 import models.Thing.PropMap
 
 import querki.ecology._
+import querki.identity.User
 import querki.util._
 import querki.values._
 
 object SpaceChangeMOIDs extends EcotIds(32)
+
+case class AppLoadInfo(ownerIdentity:OID, spaceId:OID)
 
 /**
  * This is a general mechanism for allowing Modules to listen in on changes before they take effect.
@@ -24,6 +29,15 @@ class SpaceChangeManagerEcot(e:Ecology) extends QuerkiEcot(e) with SpaceChangeMa
   
   val updateStateCache = new CacheUpdater
   class CacheUpdater extends Sequencer[CacheUpdate]
+  
+  /**
+   * Called just before Load, to fetch the Apps.
+   * 
+   * This is a slight abuse of the publication mechanism, but it's the existing way to decouple this
+   * functionality from Space itself.
+   */
+  val appLoader = new AppLoader
+  class AppLoader extends Aggregator[AppLoadInfo, Future[Seq[SpaceState]]]
   
   var spacePluginProviders:Seq[SpacePluginProvider] = Seq.empty
   

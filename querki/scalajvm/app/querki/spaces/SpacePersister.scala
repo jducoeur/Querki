@@ -23,7 +23,7 @@ import querki.time.TimeAnorm._
 import querki.db.ShardKind
 import ShardKind._
 import querki.evolutions.Evolutions
-import querki.identity.User
+import querki.identity.{SystemUser, User}
 import querki.types.ModelTypeDefiner
 import querki.values.{ElemValue, QLContext, QValue, SpaceState}
 import querki.util._
@@ -118,6 +118,10 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
       Evolutions.checkEvolution(id, version)
       
       sender ! Evolved
+    }
+    
+    case GetOwner => {
+      sender ! SpaceOwner(owner)
     }
     
     case Load(apps) => {
