@@ -38,6 +38,9 @@ trait Decorator {
     /** Used to print out strong text (default: <strong>...</strong>
      */
     def decorateStrong(text:String):String = "<strong>" + text + "</strong>"
+    /** Used to print out strikethrough text
+     */
+    def decorateStrike(text:String):String = "<strike>" + text + "</strike>"
     /** Used to print link elements (default: <a href...)
      */
     def javascriptNeutralized(url:String):String = {
