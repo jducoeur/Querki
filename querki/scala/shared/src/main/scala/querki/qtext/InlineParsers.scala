@@ -347,7 +347,7 @@ trait InlineParsers extends BaseParsers {
             span("__", ctx.addTag("strong")) ^^ { deco.decorateStrong(_) }
         }
     
-    /** Either an emphasis or a strong text wrapped in asterisks.
+    /** Double-dash means strikethrough.
      */
     def spanStrike  (ctx:InlineContext):Parser[String] =
         if (ctx.tags.contains("strike")) {

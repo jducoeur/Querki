@@ -37,6 +37,10 @@ class InlineParsersTest extends FlatSpec with Matchers with InlineParsers with I
         ("**bold**",        "<strong>bold</strong>"),
         ("**bold * bold**", "<strong>bold * bold</strong>"),
         ("__bold__",        "<strong>bold</strong>"))
+        
+    val strikeTests = List(
+        ("--strike--",  "<strike>strike</strike>"),
+        ("-- strike--", "-- strike--"))
 
     val codeTests = List(
         ("`code`",          "<code>code</code>"),
@@ -139,7 +143,7 @@ class InlineParsersTest extends FlatSpec with Matchers with InlineParsers with I
 
 
     val allInlineTests = italicTests ++ boldTests ++ codeTests ++ linkTests ++ /* fastLinkTests ++*/ imageTests ++ brTests ++
-                         /*xmlStartTagTests ++ xmlEndTagTests ++ xmlInlineTests ++*/ dummyTests
+                         strikeTests ++ /*xmlStartTagTests ++ xmlEndTagTests ++ xmlInlineTests ++*/ dummyTests
 
     it should "create italic text" in {
         runSucceedingParsingTests(emAsterisk(new InlineContext())|emUnderscore(new InlineContext()) , italicTests)

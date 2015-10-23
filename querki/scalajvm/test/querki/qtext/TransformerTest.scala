@@ -300,7 +300,8 @@ paragraph"""
         apply("A Header\n-\n")             should equal ("<h2>A Header</h2>\n")
         apply("  A Header \n--------\n")   should equal ("<h2>A Header</h2>\n")
         apply("  A Header \n---  \n")      should equal ("<h2>A Header</h2>\n")
-        apply("  --A Header-- \n------\n") should equal ("<h2>--A Header--</h2>\n")
+        // NOTE: this header style is no longer supported, since it conflicts with strikethrough:
+//        apply("  --A Header-- \n------\n") should equal ("<h2>--A Header--</h2>\n")
     }
 
 //
