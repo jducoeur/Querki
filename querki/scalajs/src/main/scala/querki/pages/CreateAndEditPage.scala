@@ -55,22 +55,14 @@ class CreateAndEditPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       ChangePropertyValue(path, List(v))
     }.toSeq
     
-    // If we're reifying a Tag, we have to fetch the initial value of the Default View
-    // *if* the Model doesn't define one.
-    // TODO: this coupling bites. Is there a better place to put this logic?
+    // If we're reifying a Tag, say that we're doing so:
     val withReify = 
       if (reifyTag) {
-        for {
-          modelDefaultView <- Client[ThingFunctions].getPropertyDisplay(modelId, std.basic.defaultView).call()
-  	      tagView <- Client[EditFunctions].getUndefinedTagView(modelId).call()
-        }
-        yield {
-          changes ++ (if (modelDefaultView.isEmpty) Seq(ChangePropertyValue(Editing.propPath(std.basic.defaultView), List(tagView))) else Seq.empty)
-        }
+        changes :+ ChangePropertyValue(Editing.propPath(std.tags.isReifiedTag), List("true"))
       } else {
-        Future.successful(changes)
+        changes
       }
-    withReify
+    Future.successful(withReify)
   }
     
   /**

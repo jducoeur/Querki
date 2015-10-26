@@ -111,6 +111,8 @@ trait ThingEditor { self:EditorModule =>
       } else if (prop.id == querki.core.MOIDs.IsModelOID || prop.id == querki.types.DeriveNameMOIDs.DeriveNameOID) {
         // These are implicit properties, and we don't show them in the editor explicitly any more:
         false
+      } else if (prop.ifSet(Core.InternalProp)) {
+        false
       } else
         true
     }
@@ -152,7 +154,7 @@ trait ThingEditor { self:EditorModule =>
         propIds = propsToEdit.v.rawList(LinkType) ++ propsNotInModel(thing, propsToEdit.rawList, state)
         props = propIds.map(state.prop(_)).flatten
       }
-        yield props
+        yield props.filter(specialFilter(thing,_))
 
       // Note that the toList here implicitly sorts the PropList, more or less by display name:
       result.getOrElse(PropListMgr.from(thing, false).toList.map(_._1).filter(specialFilter(thing, _)))

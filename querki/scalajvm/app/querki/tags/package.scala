@@ -21,6 +21,7 @@ package object tags {
     val NewTagSetOID = sysId(102)
     
     val ResolveTagsOID = moid(1)
+    val IsReifiedTagOID = moid(2)
   }
   
   // HACK: this is a marker trait so that we can treat Tags a bit differently in thing.scala.html.
@@ -32,6 +33,7 @@ package object tags {
     def NewTagSetType:PType[PlainText] with PTypeBuilder[PlainText, String]
     
     def ShowUnknownProp:Property[QLText,String]
+    def IsReifiedTagProp:Property[Boolean,Boolean]
     
     def getTag(name:String, state:SpaceState):Thing
     def fetchTags(space:SpaceState, propIn:Property[_,_]):Set[String]
@@ -40,5 +42,6 @@ package object tags {
      * Returns true iff this Property is "taggable" -- that is, Manifest can treat it like a tag.
      */
     def isTaggableProperty(prop:AnyProp)(implicit state:SpaceState):Boolean
+    def getUndefinedTagView(modelId:OID)(implicit state:SpaceState):QLText
   }
 }

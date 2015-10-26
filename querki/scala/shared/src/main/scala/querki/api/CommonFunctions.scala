@@ -84,6 +84,10 @@ class StandardThings(h:PassthroughHandlerBase) {
     val personRolesProp = h.pass("Person Roles")
   }
   
+  object tags {
+    val isReifiedTag = h.pass("_Is Reified Tag")
+  }
+  
   object types {
     val deriveNameProp = h.pass("_deriveName")
   	val deriveAlways = h.pass("Always Derive Name")
@@ -93,6 +97,6 @@ class StandardThings(h:PassthroughHandlerBase) {
   // This is necessary in order to force the objects to come into being. Each of the
   // above objects must be named here:
   def touchEverything() = {
-    Seq(core, basic, conventions, editing, security, types)
+    Seq(core, basic, conventions, editing, security, tags, types)
   }
 }

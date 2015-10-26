@@ -295,6 +295,16 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     val pType = prop.pType
     (cType == QSet && (pType == Core.NameType || pType == TagSetType || pType == LinkType || pType == NewTagSetType))
   }
+  
+  def getUndefinedTagView(modelId:OID)(implicit state:SpaceState):QLText = {
+    val modelUndefOpt = state.anything(modelId) flatMap { model =>
+      model.getPropOpt(ShowUnknownProp)
+    }
+    
+    val undef = (modelUndefOpt orElse state.getPropOpt(ShowUnknownProp)) flatMap (_.firstOpt)
+    
+    undef.getOrElse(QLText(querki.tags.defaultDisplayText))
+  }
 
   lazy val ShowUnknownProp = new SystemProperty(ShowUnknownOID, LargeTextType, ExactlyOne,
     toProps(
@@ -315,6 +325,14 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
           |There is a simple default value that is defined on every Space by default. But you should feel free
           |to override that to do something more interesting, especially if you are doing interesting things
           |with Tags in your Space.""".stripMargin)))
+  
+  lazy val IsReifiedTagProp = new SystemProperty(IsReifiedTagOID, YesNoType, Optional,
+    toProps(
+      setName("_Is Reified Tag"),
+      Core.InternalProp(true),
+      Summary("Set automatically when you turn a Tag into a real Thing"),
+      Details("""You should usually not need to worry about this. This Property mainly controls the way the
+        |reified tag displays, if its Model doesn't have a Default View.""".stripMargin)))
 
   
   /***********************************************
@@ -444,6 +462,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
 
   override lazy val props = Seq(
     ShowUnknownProp,
+    IsReifiedTagProp,
     TagRefsMethod,
     TagsForPropertyMethod,
     resolveTagsMethod

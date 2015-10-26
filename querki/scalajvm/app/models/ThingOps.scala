@@ -10,6 +10,7 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
   def Basic = interface[querki.basic.Basic]
   def QL = interface[querki.ql.QL]
   def Renderer = interface[querki.html.HtmlRenderer]
+  def Tags = interface[querki.tags.Tags]
   
   def ApplyMethod = Basic.ApplyMethod
   def DisplayNameProp = Basic.DisplayNameProp
@@ -122,13 +123,18 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
         prop.getOrElse(Basic.ModelViewProp)
       else
         prop.getOrElse(Basic.DisplayTextProp)
-    val renderedOpt = for (
-      pv <- getPropOpt(actualProp);
-      if (!pv.isEmpty)
-        )
-      yield pv.render(thing.thisAsContext.forProperty(pv.prop), Some(thing))
-    
-    renderedOpt.getOrElse(renderDefault)
+        
+    getPropOpt(actualProp) match {
+      // Usual case: there is a Model/Default View to use:
+      case Some(pv) if (!pv.isEmpty) => pv.render(thing.thisAsContext.forProperty(pv.prop), Some(thing))
+      // Otherwise, if this *was* a Tag, treat it as one:
+      case _ if (ifSet(Tags.IsReifiedTagProp)) => {
+        val tagView = Tags.getUndefinedTagView(model)
+        QL.process(tagView, thing.thisAsContext)
+      }
+      // Otherwise, fall back to the default:
+      case _ => renderDefault
+    }
   }
   
   /**

@@ -273,7 +273,10 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
         Editor.filteredPropIds + Core.NameProp.id
       else
         Editor.filteredPropIds
-    val filteredPropList = propList.filterNot(pair => filtered.contains(pair._1.id))
+    val filteredPropList = 
+      propList
+      .filterNot(pair => filtered.contains(pair._1.id))
+      .filterNot(pair => pair._1.ifSet(Core.InternalProp))
     val propInfoFuts = filteredPropList.map { entry =>
       val (prop, propVal) = entry
       getOnePropEditor(thing, prop, propVal)
@@ -437,14 +440,9 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     }
   }
   
+  // TODO: is this entry point needed any more?
   def getUndefinedTagView(modelId:TID):String = withThing(modelId) { model =>
-    implicit val s = state
-    // First, we look at whether the Model defines the TagView, then we try the Space, and only
-    // then do we fall back to the default.
-    // TBD: is the fallback needed? Can this ever *not* be set on the Space?
-    model.getPropOpt(Tags.ShowUnknownProp).orElse(state.getPropOpt(Tags.ShowUnknownProp)).
-          map(_.v.firstAs(Core.LargeTextType).get.text).
-          getOrElse(querki.tags.defaultDisplayText)
+    Tags.getUndefinedTagView(model.id)(state).text
   }
   
   def getPropertyUsage(propTid:TID):PropUsage = withProp(propTid) { prop =>
