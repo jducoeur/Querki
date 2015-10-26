@@ -307,7 +307,7 @@ trait LineParsers extends InlineParsers {
      * Matches the beginning of a style-class marker. Might wind up as a div or span, depending on whether
      * there is anything else on the line.
      */
-    val classDivStart:Parser[ClassDivStartLine] = """ {0,3}\{\{ *""".r ~ rep1sep("""[\w\-]+""".r, " +".r) ~ """ *:""".r ^^ {
+    val classDivStart:Parser[ClassDivStartLine] = """ {0,3}\{\{ *""".r ~ rep1sep("""[\w\-]+""".r, " +".r) ~ """ *: *""".r ^^ {
       case intro ~ classNameList ~ colon => {
         val classNames = classNameList.mkString(" ")
         val prefix = intro + classNames + colon

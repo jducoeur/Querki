@@ -187,6 +187,17 @@ this is some styled text
 </div>
 """.stripReturns
           )
+      
+      // Bug .3y2869e: note that this has a space after the colon:
+      apply("""{{ myClass : 
+this is some styled text
+}}"""
+          ) should equal (
+"""<div class="myClass">
+<p>this is some styled text</p>
+</div>
+""".stripReturns
+          )
     }
         
     it should "handle nested class divs" in {
