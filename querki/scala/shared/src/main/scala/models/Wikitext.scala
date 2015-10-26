@@ -27,6 +27,7 @@ sealed trait Wikitext extends DebugRenderable {
   def transformDisplay = transform(new QuerkiTransformer) _
   def transformRaw = transform(new RawTransformer) _
   def transformSpan = transform(new SpanTransformer) _
+  def transformStrip = transform(new StripTransformer) _
   
   def display:DisplayText
   
@@ -41,6 +42,11 @@ sealed trait Wikitext extends DebugRenderable {
    * but don't want block structure.
    */
   def span:DisplayText
+  
+  /**
+   * Produces a no-markup version, for cases where you really want just plain text output.
+   */
+  def strip:DisplayText
   
   /**
    * This should only be used internally, never to display to the user!
@@ -89,6 +95,7 @@ case class QWikitext(wiki:String) extends Wikitext {
   def display = DisplayText(transformDisplay(internal))
   def raw = DisplayText(transformRaw(internal))
   def span = DisplayText(transformSpan(internal))
+  def strip = DisplayText(transformStrip(internal))
   
   /**
    * This should only be used internally, never to display to the user!
@@ -127,6 +134,7 @@ case class HtmlWikitextImpl(str:String) extends Wikitext {
   def display = DisplayText(str)
   def raw = DisplayText(str)
   def span = DisplayText(str)
+  def strip = DisplayText(str)
   def internal = str
   def plaintext = str
   val keepRaw = true
@@ -205,6 +213,7 @@ case class CompositeWikitext(contents:Vector[Wikitext]) extends Wikitext {
   def display = DisplayText(process(transformDisplay))
   def raw = DisplayText(process(transformRaw))
   def span = DisplayText(process(transformSpan))
+  def strip = DisplayText(process(transformStrip))
   def plaintext = process(str => str)
   def internal = throw new Exception("Nothing should be calling CompositeWikitext.internal!")
   
@@ -244,4 +253,14 @@ class SpanTransformer extends Transformer with MainDecorator {
     override def allowVerbatimXml():Boolean = true
     override def decorateParagraphOpen():String = "<span>"
     override def decorateParagraphClose():String = "</span>"    
+}
+
+// TODO: in principle, this should override pretty much every decorator with a stripped version.
+// In practice, we mostly case about decorateLink, which has been a problem.
+class StripTransformer extends Transformer with MainDecorator {
+    override def deco() = this
+    override def allowVerbatimXml():Boolean = true
+    override def decorateParagraphOpen():String = ""
+    override def decorateParagraphClose():String = ""
+    override def decorateLink(text:String, url:String, title:Option[String]):String = text
 }

@@ -40,7 +40,7 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
         pv <- getPropOpt(Basic.ComputedNameProp)
         v <- pv.firstOpt
       }
-        yield QL.process(v, thisAsContext).map(_.raw)
+        yield QL.process(v, thisAsContext).map(_.strip)
       computed.getOrElse(Future.successful(fallback()))
     } else {
       localName.get.renderPlain.map { rend =>
