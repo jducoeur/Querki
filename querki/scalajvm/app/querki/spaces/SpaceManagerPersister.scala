@@ -156,7 +156,7 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
           DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
             // We need to evolve the Space before we try to create anything in it:
             Evolutions.checkEvolution(spaceId, 1)
-            val initProps = Core.toProps(Core.setName(name), DisplayNameProp(display))()
+            val initProps = Core.toProps(Core.setName(name), DisplayNameProp(display))
             SpacePersistence.createThingInSql(spaceId, spaceId, SystemIds.systemOID, Kind.Space, initProps, DateTime.now, SystemInterface.State)        
           }
           

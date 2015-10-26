@@ -89,8 +89,10 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
   }
   
   def getAllProperties():SpaceProps = {
-    // We dive recursively up the app tree to construct the SpaceProps:
-    def getPropsForSpace(space:SpaceState):SpaceProps = {
+    // We dive recursively up the app tree to construct the SpaceProps
+    // TODO: this is irritatingly hard-coded, and redundant with the general functions in SystemState.
+    // Can we make this less dependent on that?
+    def getPropsForSpace(space:SpaceState, withSystem:Boolean):SpaceProps = {
       implicit val s = space
       
       // We want a given Prop iff it is the right Kind, and is neither Internal nor SystemOnly:
@@ -111,11 +113,11 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
         space.displayName,
         filterProps(SkillLevel.standardProps),
         filterProps(SkillLevel.advancedProps),
-        space.app.map(app => Seq(getPropsForSpace(app))).getOrElse(Seq.empty)
+        space.apps.map(getPropsForSpace(_, false)) ++ (if (withSystem) Seq(getPropsForSpace(space.system.get, false)) else Seq.empty)
       )
     }
     
-    getPropsForSpace(state)
+    getPropsForSpace(state, true)
   }
   
   def getAllTypes():Future[AllTypeInfo] = {

@@ -32,8 +32,8 @@ trait MethodDefs { self:QuerkiEcot =>
    * Internal methods -- functions defined in-code that can be assigned as properties -- should
    * inherit from this.
    */
-  class InternalMethod(tid:OID, p:PropFetcher)
-    extends SystemProperty[String,String](tid, Core.InternalMethodType, QUnit, () => (p() + (querki.datamodel.MOIDs.IsFunctionOID  -> ExactlyOne(YesNoType(true)))))
+  class InternalMethod(tid:OID, p:PropMap)
+    extends SystemProperty[String,String](tid, Core.InternalMethodType, QUnit, (p + (querki.datamodel.MOIDs.IsFunctionOID  -> ExactlyOne(YesNoType(true)))))
   {
     /**
      * Methods should override this to implement their own functionality, if they just

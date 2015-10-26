@@ -1,6 +1,8 @@
 package querki.spaces
 
-import akka.actor.Actor.Receive
+import akka.actor._
+
+import org.querki.requester._
 
 import models.{OID, Thing, ThingId}
 import models.Thing.PropMap
@@ -14,7 +16,7 @@ import querki.values.SpaceState
  * IMPORTANT: this must NEVER be used outside of a SpacePlugin, when that Plugin has been properly
  * invoked by the Space itself! Anything else is incredibly dangerous!
  */
-trait SpaceAPI {
+trait SpaceAPI extends Actor with Requester {
   /**
    * Accessor to the current state of this Space. Note that you cannot modify the state directly --
    * you must do so through modifyThing.
@@ -39,6 +41,14 @@ trait SpaceAPI {
    *    the default.
    */
   def modifyThing(who:User, thingId:ThingId, modelIdOpt:Option[OID], pf:(Thing => PropMap), sync:Boolean = false):Unit
+  
+  /**
+   * Tells the Space that something has changed in a very serious way, and the Space should reload
+   * itself from scratch.
+   * 
+   * This is an extreme and expensive function, and should only be used under relatively extreme circumstances.
+   */
+  def reloadSpace():Unit
 }
 
 /**
@@ -66,7 +76,12 @@ abstract class SpacePlugin(val space:SpaceAPI) {
    * This will be plugged into the Space's receive pipeline, and offered messages that are not otherwise
    * dealt with.
    */
-  def receive:Receive
+  def receive:Actor.Receive
+  
+  /**
+   * The current sender. Valid during receive(), as usual.
+   */
+  def sender = space.context.sender
 }
 
 /**

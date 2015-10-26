@@ -122,7 +122,7 @@ trait InlineParsers extends BaseParsers {
     //TODO:better handling of "  \n" here. Stopping at every space costs us 20% time!
     /** Chars that may indicate the start of a special Markdown inline sequence.
      */
-    val specialInlineChars = Set(' ', '`', '<', '[', '*', '_', '!', '{', '}')
+    val specialInlineChars = Set(' ', '`', '<', '[', '*', '_', '!', '{', '}', '-')
     /** Chars that may indicate the start of a special markdown inline sequence or the end of a link text.
      *  
      *  NOTE: this is a significant change from Actuarius, which is over-conservative about legal characters.
@@ -147,6 +147,7 @@ trait InlineParsers extends BaseParsers {
                 case '_' => spanUnderscore(ctx)(in)
                 case '!' => img(ctx)(in)
                 case '{' => classSpan(ctx)(in)
+                case '-' => spanStrike(ctx)(in)
                 case _   => Failure("Lookahead does not start inline element.", in)
             }
         }
@@ -344,6 +345,15 @@ trait InlineParsers extends BaseParsers {
             failure("Cannot nest strong text.")
         } else {
             span("__", ctx.addTag("strong")) ^^ { deco.decorateStrong(_) }
+        }
+    
+    /** Double-dash means strikethrough.
+     */
+    def spanStrike  (ctx:InlineContext):Parser[String] =
+        if (ctx.tags.contains("strike")) {
+            failure("Cannot nest strike text.")
+        } else {
+            span("--", ctx.addTag("strike")) ^^ { deco.decorateStrike(_) }
         }
     
     /**

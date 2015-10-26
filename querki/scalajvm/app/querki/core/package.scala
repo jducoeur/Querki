@@ -93,7 +93,7 @@ package object core {
     
     // Ecots have these built-in, but non-Ecots can use this:
     def setName(str:String):(OID,QValue)
-    def toProps(pairs:(OID,QValue)*):models.Thing.PropFetcher
+    def toProps(pairs:(OID,QValue)*):models.Thing.PropMap
     
     def NotInheritedProp:Property[Boolean,Boolean]
     def UrProp:Property[QLText, String]

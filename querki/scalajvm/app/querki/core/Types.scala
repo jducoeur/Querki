@@ -3,7 +3,7 @@ package querki.core
 import scala.xml.NodeSeq
 
 import models.{Collection, DelegatingType, DisplayPropVal, Kind, OID, Property, PropertyBundle, PType, PTypeBuilder, PTypeBuilderBase, SimplePTypeBuilder, Thing, UnknownOID, Wikitext}
-import models.Thing.PropFetcher
+import models.Thing.PropMap
 
 import querki.ecology._
 import querki.globals._
@@ -47,7 +47,7 @@ trait TextTypeBasis { self:CoreEcot =>
     }  
   }
   
-  abstract class TextTypeBase(oid:OID, pf:PropFetcher) extends SystemType[QLText](oid, pf
+  abstract class TextTypeBase(oid:OID, pf:PropMap) extends SystemType[QLText](oid, pf
       ) with PTypeBuilder[QLText,String] with querki.ql.CodeType with IsTextType with TextTypeUtils
   {
     private lazy val Core = interface[querki.core.Core]
@@ -115,7 +115,7 @@ trait NameTypeBasis { self:CoreEcot with NameUtils =>
   /**
    * The Type for Display Names -- similar to Text, but not identical
    */
-  abstract class NameTypeBase(tid:OID, pf:PropFetcher) extends SystemType[String](tid, pf) 
+  abstract class NameTypeBase(tid:OID, pf:PropMap) extends SystemType[String](tid, pf) 
     with SimplePTypeBuilder[String] with NameableType with IsNameType
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = toDisplay(v)
@@ -170,7 +170,7 @@ trait IntTypeBasis { self:CoreEcot =>
   /**
    * The base Type for numbers
    */
-  abstract class NumericTypeBase[T : Numeric](tid:OID, pf:PropFetcher) extends SystemType[T](tid, pf) with SimplePTypeBuilder[T]
+  abstract class NumericTypeBase[T : Numeric](tid:OID, pf:PropMap) extends SystemType[T](tid, pf) with SimplePTypeBuilder[T]
     with AddableType
   {
     override val displayEmptyAsBlank:Boolean = true
@@ -229,7 +229,7 @@ trait IntTypeBasis { self:CoreEcot =>
     }
   }
   
-  class IntTypeBase(tid:OID, pf:PropFetcher) extends NumericTypeBase[Int](tid, pf) {
+  class IntTypeBase(tid:OID, pf:PropMap) extends NumericTypeBase[Int](tid, pf) {
     def fromStr(v:String) = v.toInt
     def doDefault(implicit state:SpaceState):Int = 0
     def toT(i:Int) = i
@@ -250,17 +250,19 @@ trait LinkUtils { self:CoreEcot =>
   def linkCandidates(state:SpaceState, Links:querki.links.Links, prop:Property[_,_]):Seq[Thing] = {
     implicit val s = state
     
-    val locals = linkCandidatesLocal(state, Links, prop)
-    if (state.app.isDefined && prop.hasProp(Links.LinkAllowAppsProp) && prop.first(Links.LinkAllowAppsProp))
-      locals ++: linkCandidates(state.app.get, Links, prop)
+    val links = if (prop.hasProp(Links.LinkAllowAppsProp) && prop.first(Links.LinkAllowAppsProp))
+      // Make sure to de-duplicate entries, which is why we use Set here:
+      state.accumulateAll[Set[Thing]](linkCandidatesLocal(_, Links, prop), { (x, y) => x ++ y })
     else
-      locals
+      linkCandidatesLocal(state, Links, prop)
+      
+    links.toSeq.sortBy(_.displayName)
   }
 
   /**
    * This enumerates all of the plausible candidates for the given property within this Space.
    */
-  def linkCandidatesLocal(state:SpaceState, Links:querki.links.Links, prop:Property[_,_]):Seq[Thing] = {
+  def linkCandidatesLocal(state:SpaceState, Links:querki.links.Links, prop:Property[_,_]):Set[Thing] = {
     implicit val s = state
     
     // First, filter the candidates based on LinkKind:
@@ -299,12 +301,12 @@ trait LinkUtils { self:CoreEcot =>
           }
             yield instanceIds.map(state.anything(_)).flatten
           
-          explicitChoices.getOrElse(allCandidates filter (_.isAncestor(modelId)) sortBy (_.displayName))
+          explicitChoices.getOrElse(allCandidates filter (_.isAncestor(modelId)))
         }
-        case None => allCandidates sortBy (_.displayName)
+        case None => allCandidates
       }
     } else {
-      allCandidates sortBy (_.displayName)
+      allCandidates
     }
     
     val filteredAsModel = if (prop.ifSet(Links.LinkToModelsOnlyProp)) {
@@ -313,7 +315,7 @@ trait LinkUtils { self:CoreEcot =>
       filteredByModel
     }
     
-    filteredAsModel.filterNot(_.ifSet(InternalProp))
+    filteredAsModel.filterNot(_.ifSet(InternalProp)).toSet
   }    
 
   def renderInputXmlGuts(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue, allowEmpty:Boolean):Future[NodeSeq] = {

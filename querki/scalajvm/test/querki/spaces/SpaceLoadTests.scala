@@ -68,7 +68,7 @@ class SpaceLoadTests extends QuerkiTests {
       
     userTesting.prepSpace(space)
     db.storeSpace(space.state)
-    loader.doLoad(db)
+    loader.doLoad(db, Seq.empty)
   }
   
   "SpacePersister" should {

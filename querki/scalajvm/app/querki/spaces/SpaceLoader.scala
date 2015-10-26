@@ -32,7 +32,7 @@ trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
   def name:String
   def owner:OID
   
-  def doLoad(loader:ThingStreamLoader):SpaceState = {
+  def doLoad(loader:ThingStreamLoader, apps:Seq[SpaceState]):SpaceState = {
       
       // Start off using the App to boot this Space. Then we add each aspect as we read it in.
       // This works decently for now, but will fall afoul when we try to have local meta-Properties;
@@ -59,10 +59,11 @@ trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
         new SpaceState(
              thingId,
              modelId,
-             () => propMap,
+             propMap,
              owner,
              name,
              modTime,
+             apps,
              Some(SystemInterface.State),
              // TODO: dynamic PTypes
              Map.empty[OID, PType[_]],
@@ -90,6 +91,7 @@ trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
             owner,
             name,
             epoch,
+            apps,
             Some(SystemInterface.State),
             Map.empty[OID, PType[_]],
             Map.empty[OID, Property[_,_]],
@@ -108,7 +110,7 @@ trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
         // TODO: ModelType should take modTime, like all other dynamically-created Things:
         // TODO: do a second pass over types later -- they take Properties, so they *could* have locally-created
         // Properties, which will show up as UnresolvedPropValue for now:
-        new ModelType(thingId, basedOn, () => propMap)
+        new ModelType(thingId, basedOn, propMap)
       }
       curState = curState.copy(types = types)
       
@@ -122,12 +124,12 @@ trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
         // TODO: this feels wrong. coll.implType should be good enough, since it is viewable
         // as Iterable[ElemValue] by definition, but I can't figure out how to make that work.
         val boundColl = coll.asInstanceOf[Collection]
-        new Property(thingId, id, modelId, boundTyp, boundColl, () => propMap, modTime)
+        new Property(thingId, id, modelId, boundTyp, boundColl, propMap, modTime)
       }
       curState = curState.copy(spaceProps = loadedProps)
       
       val things = getThings(Kind.Thing) { (thingId, modelId, propMap, modTime) =>
-        new ThingState(thingId, id, modelId, () => propMap, modTime)        
+        new ThingState(thingId, id, modelId, propMap, modTime)        
       }
       
       val allThings = things
@@ -152,11 +154,11 @@ trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
         copier(thing, fixedProps)
       }
 
-      curState = secondPassProps(curState)((state, props) => state.copy(pf = () => props))
+      curState = secondPassProps(curState)((state, props) => state.copy(pf = props))
       
       val fixedAllProps = curState.spaceProps.map{ propPair =>
         val (id, prop) = propPair
-        (id, secondPassProps(prop)((p, metaProps) => p.copy(pf = () => metaProps)))
+        (id, secondPassProps(prop)((p, metaProps) => p.copy(pf = metaProps)))
       }.toSeq
       curState = curState.copy(spaceProps = Map(fixedAllProps:_*))
       

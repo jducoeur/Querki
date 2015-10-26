@@ -5,6 +5,7 @@ import scala.concurrent.Future
 import querki.ecology._
 
 import models.{OID, Property, PropertyBundle, PTypeBuilder, Wikitext}
+import models.Thing.PropMap
 
 import querki.core.{IsTextType, NameableType, TextTypeBasis}
 
@@ -14,7 +15,7 @@ import querki.values.{ElemValue, QLContext, SpaceState}
 import MOIDs._
 
 trait PlainTextBaseType { self:QuerkiEcot with TextTypeBasis =>
-  abstract class PlainTextType(tid:OID, pf:PropFetcher) extends SystemType[PlainText](tid, pf) 
+  abstract class PlainTextType(tid:OID, pf:PropMap) extends SystemType[PlainText](tid, pf) 
     with PTypeBuilder[PlainText,String] with IsTextType with NameableType with TextTypeUtils
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = PlainText(v)

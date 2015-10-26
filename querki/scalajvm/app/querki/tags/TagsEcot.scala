@@ -203,7 +203,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
    * exists to support the display of the Undefined Tag View.
    */
   case class TagThing(nameIn:String, space:SpaceState)
-    extends Thing(UnknownOID, space.id, preferredModelForTag(space, SafeUrl.decode(nameIn)), Kind.Thing, () => Thing.emptyProps, querki.time.epoch)
+    extends Thing(UnknownOID, space.id, preferredModelForTag(space, SafeUrl.decode(nameIn)), Kind.Thing, Thing.emptyProps, querki.time.epoch)
     with IsTag
   {
     // Undo the effects of SafeUrl.

@@ -7,6 +7,7 @@ import models.Kind.Kind
 import models.MIMEType.MIMEType
 import models.Thing.PropMap
 
+import querki.identity.User
 import querki.values.SpaceState
 
 /**
@@ -21,10 +22,33 @@ private [spaces] object PersistMessages {
   //
   
   /**
+   * Request from the Space to the Persister, to do any necessary pre-load evolution of the Space's
+   * structure.
+   */
+  case object Evolve
+  
+  /**
+   * Response to Evolve, saying that it is complete.
+   */
+  case object Evolved
+  
+  /**
+   * Fetch the owning User of this Space.
+   */
+  case object GetOwner
+  
+  case class SpaceOwner(ownerIdentity:OID)
+  
+  /**
+   * Tells the Persister to clear out any cache it is maintaining. Usually comes before a fresh Load.
+   */
+  case object Clear
+  
+  /**
    * Request from the Space to the Persister, send when the Space is booted. Persister should
    * respond with Loaded.
    */
-  case object Load
+  case class Load(apps:Seq[SpaceState])
   
   /**
    * Response sent when the Persister successfully has loaded the Space.

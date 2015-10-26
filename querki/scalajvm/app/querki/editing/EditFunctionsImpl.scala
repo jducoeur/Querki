@@ -71,7 +71,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
 	    
 	  val FormFieldInfo(prop, value, _, _, _, _) = result
 	  // Note that value can be empty if it fails validation!!!
-	  value.map(v => Core.toProps((prop, v))())
+	  value.map(v => Core.toProps((prop, v)))
     }
   }
   
@@ -92,7 +92,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
       newList = removed.patch(to, List(elem), 0)
       newV = v.cType.makePropValue(newList, v.pType)
     }
-      yield Core.toProps((prop, newV))()
+      yield Core.toProps((prop, newV))
   }
   
   def doChangeProps(thing:Thing, props:PropMap):Future[PropertyChangeResponse] = {
@@ -127,7 +127,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
           newList = list :+ newElem
           newV = v.cType.makePropValue(newList, pt)
         }
-          yield Core.toProps((prop, newV))()        
+          yield Core.toProps((prop, newV))      
       }
       
       case DeleteListItem(path, index) => {
@@ -141,7 +141,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
 	      newList = list.patch(index, List(), 1)
 	      newV = v.cType.makePropValue(newList, v.pType)
 	    }
-	      yield Core.toProps((prop, newV))()        
+	      yield Core.toProps((prop, newV))
       }
       
       case AddToSet(path, value) => {
@@ -156,7 +156,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
           newList = list :+ newElem
           newV = v.cType.makePropValue(newList, pt)
         }
-          yield Core.toProps((prop, newV))()
+          yield Core.toProps((prop, newV))
       }
       
       case RemoveFromSet(path, value) => {
@@ -171,7 +171,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
           newList = list.filterNot(pt.matches(_, deadElem))
           newV = v.cType.makePropValue(newList, pt)
         }
-          yield Core.toProps((prop, newV))()
+          yield Core.toProps((prop, newV))
       }
     }
     
@@ -346,7 +346,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
       prop <- state.prop(propId)
       newV = prop.default
     }
-      yield Core.toProps((prop, newV))()  
+      yield Core.toProps((prop, newV))
 
     self.request(createSelfRequest(ChangeProps2(thing.toThingId, propsOpt.get))) flatMap {
       case ThingFound(id, newState) => {
@@ -372,7 +372,7 @@ class EditFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
       prop <- state.prop(propId)
       newV = DataModel.DeletedValue
     }
-      yield Core.toProps((prop, newV))()  
+      yield Core.toProps((prop, newV))
 
     propsOpt match {
       case Some(props) => doChangeProps(thing, props)

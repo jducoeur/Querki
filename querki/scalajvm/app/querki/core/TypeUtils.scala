@@ -3,7 +3,7 @@ package querki.core
 import scala.xml.NodeSeq
 
 import models.{DisplayPropVal, OID, Property, PType}
-import models.Thing.PropFetcher
+import models.Thing.PropMap
 
 import querki.ecology._
 import querki.globals._
@@ -36,7 +36,7 @@ object TypeUtils {
     }
   }
 
-  abstract class SystemType[T](tid:OID, pf:PropFetcher)(implicit val ecology:Ecology) 
+  abstract class SystemType[T](tid:OID, pf:PropMap)(implicit val ecology:Ecology) 
     extends PType[T](tid, SystemIds.systemOID, MOIDs.UrTypeOID, pf) with EcologyMember with CommonInputRenderers
   {
     // Types is where the various validators and such live:

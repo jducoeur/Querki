@@ -45,6 +45,7 @@ object QuerkiClient extends JSApp with EcologyMember {
    */
   def createCommonEcots(ecology:Ecology) = {
     new querki.admin.AdminEcot(ecology)
+    new querki.apps.AppsEcot(ecology)
     new querki.client.ClientImpl(ecology)
     new querki.data.ClientDataEcot(ecology)
     new querki.datamodel.DataModelEcot(ecology)

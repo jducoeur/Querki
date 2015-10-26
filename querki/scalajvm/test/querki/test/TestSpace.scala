@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import models.{IndexedOID, OID, OIDMap}
 import models.{Collection, Property, PType, PTypeBuilder, Thing, ThingState}
-import models.Thing.PropFetcher
+import models.Thing.PropMap
 
 import querki.core.MOIDs._
 import querki.ecology._
@@ -58,6 +58,11 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
   lazy val SpaceChangeManager = interface[querki.spaces.SpaceChangeManager]
   lazy val System = interface[querki.system.System]
 
+  lazy val ExactlyOne = Core.ExactlyOne
+  lazy val Optional = Core.Optional
+  lazy val QList = Core.QList
+  lazy val QSet = Core.QSet
+  
   // ================================
   //
   // COMMON TEST CLASSES
@@ -74,7 +79,7 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
   def registerType(pt:PType[_]) = { types = types :+ pt }
   
   def registerProp(p:Property[_,_]) = { props = props :+ p }
-  class TestPropertyBase[VT, RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropFetcher) 
+  class TestPropertyBase[VT, RT](pid:OID, t:PType[VT] with PTypeBuilder[VT, RT], c:Collection, p:PropMap) 
     extends Property[VT, RT](pid, spaceId, UrPropOID, t, c, p, querki.time.epoch)
   {
     lazy val iid:IndexedOID = IndexedOID(id)
@@ -140,10 +145,10 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
   def toid():OID = world.nextOID()
   
   /**
-   * This Space's App. Defaults to the System Space; override this if you
-   * want something different.
+   * This Space's Apps, if any. Note that you specify the App's TestSpace; the state will be
+   * automatically used.
    */
-  lazy val app:SpaceState = System.State
+  def apps:Seq[TestSpace] = Seq.empty
   
   def userAs(name:String, handle:String, level:UserLevel):User = 
     FullUser(
@@ -174,7 +179,7 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
    */
   def otherSpaceProps:Seq[(OID, QValue)] = Seq.empty
   
-  lazy val sProps:PropFetcher =
+  lazy val sProps:PropMap =
     Core.toProps(
       (otherSpaceProps :+ Core.setName(spaceName)):_*
     )
@@ -199,12 +204,13 @@ trait TestSpace extends EcologyMember with ModelTypeDefiner {
   lazy val state:SpaceState = {
     val s = SpaceState(
       spaceId,    // This Space's OID
-      app.id,    // This Space's Model
+      System.State.id, // This Space's Model
       sProps,    // This Space's own props
       owner.mainIdentity.id,   // This Space's Owner
       spaceName, // This Space's Name
       querki.time.epoch, // This Space's last-modified time
-      Some(app), // This Space's App
+      apps.map(_.state), // This Space's Apps, if any
+      Some(System.State),
       OIDMap(types:_*),
       OIDMap(props:_*),
       OIDMap(things:_*),

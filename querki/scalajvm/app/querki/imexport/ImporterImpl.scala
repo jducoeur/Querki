@@ -144,12 +144,11 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Import
     idMap.get(id) match {
       case Some(m) => m
       case None => {
-        val mOpt = for {
-          app <- imp.app
-          found <- app.anything(id)
+        // The value wasn't found in the mapped IDs. Does it exist in the Apps? (Which are real Spaces with real IDs.)
+        val mOpt = imp.walkApps { app => 
+          app.anything(id)
         }
-          yield found
-          
+         
         mOpt.map(_.id).getOrElse(UnknownOID)
       }
     }

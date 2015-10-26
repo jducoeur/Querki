@@ -25,9 +25,9 @@ import MOIDs._
 trait CollectionBase { self:CoreEcot =>
   def UnknownType:PType[Unit]
   
-  abstract class SystemCollection(cid:OID, pf:PropFetcher)(implicit e:Ecology) extends Collection(cid, systemOID, UrCollectionOID, pf)
+  abstract class SystemCollection(cid:OID, pf:PropMap)(implicit e:Ecology) extends Collection(cid, systemOID, UrCollectionOID, pf)
 
-  abstract private[core] class SingleElementBase(cid:OID, pf:PropFetcher)(implicit e:Ecology) extends SystemCollection(cid, pf)(e)
+  abstract private[core] class SingleElementBase(cid:OID, pf:PropMap)(implicit e:Ecology) extends SystemCollection(cid, pf)(e)
   {
     // TODO: this really doesn't belong here. We need to tease the HTTP/HTML specific
     // stuff out from the core concepts.
@@ -127,7 +127,7 @@ trait CollectionBase { self:CoreEcot =>
     }
   }
   
-  abstract class QListBase(cid:OID, pf:PropFetcher) extends SystemCollection(cid, pf) 
+  abstract class QListBase(cid:OID, pf:PropMap) extends SystemCollection(cid, pf) 
   {
     type implType = List[ElemValue]
     
@@ -457,7 +457,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
    * nothing that *uses* it can be serialized, so it is strictly for system objects. It basically exists so that
    * we can get the real Collections booted up.
    */
-  class bootCollection extends SingleElementBase(UnknownOID, () => models.Thing.emptyProps) {
+  class bootCollection extends SingleElementBase(UnknownOID, models.Thing.emptyProps) {
     type implType = List[ElemValue]
 
     def doDeserialize(ser:String, elemT:pType)(implicit state:SpaceState):implType = List(elemT.deserialize(ser))

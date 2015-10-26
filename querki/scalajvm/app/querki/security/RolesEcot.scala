@@ -22,6 +22,7 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
   import RolesMOIDs._
   
   val AccessControl = initRequires[AccessControl]
+  val Apps = initRequires[querki.apps.Apps]
   val Conversations = initRequires[querki.conversations.Conversations]
   val UserValues = initRequires[querki.uservalues.UserValues]
   
@@ -74,14 +75,11 @@ class RolesEcot(e:Ecology) extends QuerkiEcot(e) with Roles {
         |will be added in the not-too-distant future.""".stripMargin,
       editorPerms)
       
-  lazy val managerPerms = Seq() ++ editorPerms
+  lazy val managerPerms = Seq(Apps.CanManipulateAppsPerm) ++ editorPerms
   lazy val ManagerRole =
     defineRole(ManagerOID, "Manager Role",
       """Manager -- can do everything an Editor can, plus almost everything the Owner of the Space can do. You should only make
-        |someone a Manager if you trust them completely, because they can do anything to the Space except to give it away or delete it.
-        |
-        |As of this writing, the Manager role doesn't actually do anything, since its permissions don't exist yet. But they
-        |are coming in the not-too-distant future. Speak up if you specifically need them.""".stripMargin,
+        |someone a Manager if you trust them completely, because they can do anything to the Space except to give it away or delete it.""".stripMargin,
       managerPerms)
       
   override lazy val things = Seq(

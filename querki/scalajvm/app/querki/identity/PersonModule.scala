@@ -359,7 +359,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
 	            EmailAddressProp(invitee.email.addr),
 	            DisplayNameProp(invitee.display),
 	            AccessControl.PersonRolesProp(inviteeRole),
-	            AccessControl.CanReadProp(AccessControl.OwnerTag))()
+	            AccessControl.CanReadProp(AccessControl.OwnerTag))
 	        val msg = CreateThing(rc.requester.get, state.id, Kind.Thing, PersonOID, propMap)
 	        val nextFuture = SpaceOps.spaceRegion ? msg
           // TODO: this code is fundamentally suspicious. It *probably* doesn't actually send SpaceState
@@ -439,7 +439,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
       changeRequest = ChangeProps(SystemUser, state.id, person.toThingId, 
           toProps(
             IdentityLink(identity.id),
-            DisplayNameProp(identity.name))())
+            DisplayNameProp(identity.name)))
     )
       yield SpaceOps.askSpace[ThingResponse, B](changeRequest)(cb)
   }

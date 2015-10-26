@@ -67,17 +67,19 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
       }
   }
   
+  def spaceInfo(state:SpaceState):SpaceInfo = {
+    SpaceInfo(
+      state, 
+      // TODO: NameUtils.toUrl() is inconsistent with SafeUrl: they handle spaces differently.
+      // We need to fix this inconsistency!
+      state.linkName.map(NameUtils.toUrl(_)), 
+      state.unsafeDisplayName,
+      state.owner.toThingId.toString,
+      state.ownerHandle)    
+  }
+  
   def spaceInfo(topt:Option[SpaceState], rc:RequestContext):Option[SpaceInfo] = {
-    topt.map { t => 
-      SpaceInfo(
-        t, 
-        // TODO: NameUtils.toUrl() is inconsistent with SafeUrl: they handle spaces differently.
-        // We need to fix this inconsistency!
-        t.linkName.map(NameUtils.toUrl(_)), 
-        t.unsafeDisplayName,
-        t.owner.toThingId.toString,
-        t.ownerHandle)
-    }
+    topt.map { t => spaceInfo(t) }
   }
   
   def spaceInfo(info:querki.spaces.messages.SpaceInfo):SpaceInfo = {

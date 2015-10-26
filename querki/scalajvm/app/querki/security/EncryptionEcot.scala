@@ -30,6 +30,7 @@ class EncryptionEcot(e:Ecology) extends QuerkiEcot(e) with Encryption {
   lazy val iterations = Config.getInt("querki.security.hashIterations", 20000)
   
   def doCalcHash(salt:Array[Byte], original:String):EncryptedHash = {
+    // TODO: we should likely switch to scrypt here:
     // The 160 here matches the SHA-1 algorithm we're using:
     val keySpec = new PBEKeySpec(original.toCharArray, salt, iterations, 160)
     val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1")

@@ -1,15 +1,10 @@
 package querki.spaces
 
 import scala.concurrent.duration._
-import scala.concurrent.Future
 import scala.util._
-
-// TODO: kill this!
-import scala.concurrent.Await
 
 import akka.actor._
 import akka.event.LoggingReceive
-import akka.pattern.ask
 import akka.util.Timeout
 
 import org.querki.requester._
@@ -53,10 +48,9 @@ import PersistMessages._
  * is user-defined. (And unique only to that user.)
  */
 class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, stateRouter:ActorRef, id:OID) 
-  extends Actor with Requester with EcologyMember with ModelTypeDefiner with SpaceAPI
+  extends Actor with Stash with Requester with EcologyMember with ModelTypeDefiner with SpaceAPI
 {
-  
-  import context._
+  import Space._
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Basic = interface[querki.basic.Basic]
@@ -165,30 +159,14 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
           Core.toProps(
             Core.setName(identity.handle),
             Basic.DisplayNameProp(identity.name),
-            Person.IdentityLink(identity.id))(),
+            Person.IdentityLink(identity.id)),
           Kind.Thing)
       }
     }
   }
   
-  def loadSpace() = {
-    // TEMP: just as a proof of concept. This is entirely wrong in the long run: we should be using
-    // FSM and Requester instead of blocking here:
-    val persistFuture = persister.ask(Load)
-    val result = Await.result(persistFuture, scala.concurrent.duration.Duration(5, "seconds"))
-    result match {
-      case Loaded(s) => {
-        updateState(s)
-        checkOwnerIsMember()
-        // Okay, we're up and running. Tell any listeners about the current state:
-        stateRouter ! CurrentState(state)
-      }
-      case _ => QLog.error("Got an error!")
-    }
-  }
-  
   override def preStart() = {
-    loadSpace()
+    self ! BootSpace
   } 
   
   def checkSpaceId(thingId:ThingId):OID = {
@@ -223,7 +201,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
           implicit val e = ecology
           kind match {
             case Kind.Thing => {
-              val thing = ThingState(thingId, spaceId, modelId, () => props, modTime, kind)
+              val thing = ThingState(thingId, spaceId, modelId, props, modTime, kind)
               updateState(state.copy(things = state.things + (thingId -> thing)))
             }
             case Kind.Property => {
@@ -231,7 +209,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
               val coll = state.coll(Core.CollectionProp.first(props))
               val boundTyp = typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]]
               val boundColl = coll.asInstanceOf[Collection]
-              val thing = Property(thingId, spaceId, modelId, boundTyp, boundColl, () => props, modTime)
+              val thing = Property(thingId, spaceId, modelId, boundTyp, boundColl, props, modTime)
               updateState(state.copy(spaceProps = state.spaceProps + (thingId -> thing)))          
             }
             case Kind.Type => {
@@ -239,7 +217,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
                 basedOnVal <- props.get(ModelForTypePropOID);
                 basedOn <- basedOnVal.firstAs(Core.LinkType)
                   )
-                yield new ModelType(thingId, basedOn, () => props)
+                yield new ModelType(thingId, basedOn, props)
               
               typOpt match {
                 case Some(typ) => updateState(state.copy(types = state.types + (thingId -> typ)))
@@ -304,7 +282,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
         def changeInMemory() = {
           oldThing match {
             case t:ThingState => {
-              val newThingState = t.copy(m = modelId, pf = () => newProps, mt = modTime)
+              val newThingState = t.copy(m = modelId, pf = newProps, mt = modTime)
               updateState(state.copy(things = state.things + (thingId -> newThingState))) 
               sender ! ThingFound(thingId, state)
             }
@@ -314,9 +292,9 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
               
               val newProp = {
                 if (typeChange.typeChanged)
-                  prop.copy(pType = typeChange.newType, m = modelId, pf = () => newProps, mt = modTime)
+                  prop.copy(pType = typeChange.newType, m = modelId, pf = newProps, mt = modTime)
                 else
-                  prop.copy(m = modelId, pf = () => newProps, mt = modTime)
+                  prop.copy(m = modelId, pf = newProps, mt = modTime)
               }
               
               updateState(state.copy(spaceProps = state.spaceProps + (thingId -> newProp)))
@@ -328,7 +306,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
             case s:SpaceState => {
               // TODO: handle changing the owner or apps of the Space. (Different messages?)
               val newName = newNameOpt.get
-              updateState(state.copy(m = modelId, pf = () => newProps, name = newName, mt = modTime))
+              updateState(state.copy(m = modelId, pf = newProps, name = newName, mt = modTime))
               sender ! ThingFound(thingId, state)
             }
           }
@@ -376,8 +354,49 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
     }
   }
   
+  // Start off in the Boot state. Conceptually, Space is an FSM, but such a simple one that it's easier
+  // to just manage it by hand.
+  def receive = bootReceive
+
+  // Note that bootReceive needs to explicitly handleRequestResponse, or else the responses will get trapped
+  // by the stash() below:
+  def bootReceive = LoggingReceive (handleRequestResponse orElse {
+    case BootSpace => {
+      for {
+        evolved <- persister ? Evolve
+        dummy1 = if (evolved != Evolved) throw new Exception(s"Space $id failed Evolution!")
+        // Need to fetch the Owner, so we can tell the App Loader about them:
+        SpaceOwner(owner) <- persister ? GetOwner
+        // Load the apps before we load this Space itself:
+        apps <- Future.sequence(SpaceChangeManager.appLoader.collect(AppLoadInfo(owner, id))).map(_.flatten)
+        Loaded(s) <- persister ? Load(apps)
+      }
+      {
+        updateState(s)
+        checkOwnerIsMember()
+        // Okay, we're up and running. Tell any listeners about the current state:
+        stateRouter ! CurrentState(state)
+        unstashAll()
+        context.become(normalReceive)
+      }
+    }
+      
+    // Hold everything else off until we're done loading:
+    case _ => stash()
+  })
+
+  /**
+   * Clean everything out and reload the Space. This should only be called when something's seriously changed.
+   */
+  def reloadSpace() = {
+    _currentState = None
+    persister ! Clear
+    context.become(bootReceive)
+    self ! BootSpace
+  }
+  
   // If it isn't a message that we know how to handle, let the plugins take a crack at it:
-  def receive = LoggingReceive (mainReceive orElse pluginReceive)
+  def normalReceive = LoggingReceive (mainReceive orElse pluginReceive)
   
   def mainReceive:Receive = {
     case GetSpaceInfo(who, spaceId) => {
@@ -412,6 +431,9 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
 }
 
 object Space {
+  // The object that the Space sends to itself to launch the startup process:
+  case object BootSpace
+  
   // The OID of the Space, based on the sid
   def oid(sid:String) = OID(sid)
   

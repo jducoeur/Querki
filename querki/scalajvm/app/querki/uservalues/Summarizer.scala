@@ -53,7 +53,7 @@ trait SummarizerDefs { self:QuerkiEcot =>
    * Note that this does *not* derive from SystemType, mainly because I want there to be a common Model
    * for Summarizers.
    */
-  abstract class SummarizerBase[UVT,VT](tid:OID, pf:PropFetcher)
+  abstract class SummarizerBase[UVT,VT](tid:OID, pf:PropMap)
     extends PType[VT](tid, SystemIds.systemOID, MOIDs.SummarizerBaseOID, pf) with Summarizer[UVT,VT]
     with SimplePTypeBuilder[VT]
   {
@@ -161,7 +161,7 @@ trait SummarizerDefs { self:QuerkiEcot =>
    * 
    * The userType is the PType we are actually summarizing values of. We mostly need it for serialization.
    */
-  class DiscreteSummarizer[UVT](tid:OID, userType:PType[UVT], p:PropFetcher) extends SummarizerBase[UVT,DiscreteSummary[UVT]](tid, p) {
+  class DiscreteSummarizer[UVT](tid:OID, userType:PType[UVT], p:PropMap) extends SummarizerBase[UVT,DiscreteSummary[UVT]](tid, p) {
 	def doAddToSummary(tid:OID, fromProp:Property[_,_], prop:Property[DiscreteSummary[UVT],_], previous:Option[UVT], current:Option[UVT])(implicit state:SpaceState):DiscreteSummary[UVT] = {
 	  state.anything(tid) match {
 	    case Some(thing) => {

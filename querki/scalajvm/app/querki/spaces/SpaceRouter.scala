@@ -10,6 +10,7 @@ import models.OID
 import querki.api.ClientRequest
 import querki.conversations.messages.{ActiveThings, GetActiveThings}
 import querki.ecology._
+import querki.globals._
 import querki.photos.PhotoUploadActor
 import querki.session.UserSpaceSessions
 import querki.session.messages._

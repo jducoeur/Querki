@@ -120,7 +120,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
           |sometimes find that you prefer to have your Edit controls narrower then the default, in order to
           |get a good-looking Editor for a Model. Set this to a number between 1 and 12 to do that.""".stripMargin)))
 
-  abstract class EditMethodBase(id:OID, pf:PropFetcher) extends InternalMethod(id, pf)
+  abstract class EditMethodBase(id:OID, pf:PropMap) extends InternalMethod(id, pf)
   {
     def specialization(mainContext:QLContext, mainThing:PropertyBundle, 
       partialContext:QLContext, prop:Property[_,_],

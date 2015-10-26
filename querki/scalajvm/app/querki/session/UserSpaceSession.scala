@@ -99,7 +99,7 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
               if (AccessControl.canRead(rs, user, thingId) || isReadException(thingId)(rs)) {
                 // Remove any SystemHidden Properties from this Thing, if there are any:
                 if (hiddenOIDs.exists(thing.props.contains(_))) {
-                  val newThing = thing.copy(pf = { () => (thing.props -- hiddenOIDs) })
+                  val newThing = thing.copy(pf = { (thing.props -- hiddenOIDs) })
                   curState.copy(things = (curState.things + (newThing.id -> newThing)))
                 } else
                   curState
@@ -110,11 +110,11 @@ private [session] class UserSpaceSession(e:Ecology, val spaceId:OID, val user:Us
         (safeState /: userValues) { (curState, uv) =>
           if (uv.thingId == curState.id) {
             // We're enhancing the Space itself:
-            curState.copy(pf = () => (curState.props + (uv.propId -> uv.v)))
+            curState.copy(pf = (curState.props + (uv.propId -> uv.v)))
           }
           else curState.anything(uv.thingId) match {
             case Some(thing:ThingState) => {
-              val newThing = thing.copy(pf = () => thing.props + (uv.propId -> uv.v))
+              val newThing = thing.copy(pf = thing.props + (uv.propId -> uv.v))
               curState.copy(things = curState.things + (newThing.id -> newThing))
             }
             // Yes, this looks like an error, but it isn't: it means that there was a UserValue

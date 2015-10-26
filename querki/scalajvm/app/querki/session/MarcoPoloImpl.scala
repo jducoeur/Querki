@@ -2,7 +2,7 @@ package querki.session
 
 import scala.concurrent.Future
 
-import models.{OID, Thing, ThingId}
+import models._
 
 import querki.api.{SpaceApiImpl, AutowireParams}
 import querki.globals._
@@ -22,10 +22,10 @@ class MarcoPoloImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImp
     implicit val s = state
     val lowerQ = q.toLowerCase()
     val propOpt = propIdOpt.flatMap(state.prop(_))
-    val candidateFuts = getLinksFromSpace(state, propOpt, lowerQ)
-    val finishedFut = Future.sequence(candidateFuts)
-    finishedFut.onFailure { case th:Throwable => QLog.error(s"MarcoPolo failed to look up the string $q", th)}
-    finishedFut map { thingOpts =>
+    val thingFuts = state.accumulateAll[Seq[Future[Option[MarcoPoloItem]]]](getLinksFromSpace(_, propOpt, lowerQ), (x, y) => x ++ y)
+    val futSeq = Future.sequence(thingFuts)
+    futSeq.onFailure { case th:Throwable => QLog.error(s"MarcoPolo failed to look up the string $q", th)}
+    futSeq map { thingOpts =>
       val things = thingOpts.flatten
       val allItems:Seq[MarcoPoloItem] = propOpt match {
         case Some(prop) => {
@@ -63,34 +63,27 @@ class MarcoPoloImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImp
     implicit val space = spaceIn
     implicit val r = rc
     
-    val things = {
-      val allThings = space.allThings.toSeq
-    
-      // Filter the options if there is a valid Link Model:
-      val thingsFiltered = {
-        val filteredOpt = for {
-          prop <- propOpt
-          linkModelProp <- prop.getPropOpt(Links.LinkModelProp);
-          targetModel <- linkModelProp.firstOpt
-        }
-          yield allThings.filter(_.isAncestor(targetModel))
-          
-        filteredOpt.getOrElse(allThings)
+    val allThings = space.allThings.toSeq
+  
+    // Filter the options if there is a valid Link Model:
+    val thingsFiltered = {
+      val filteredOpt = for {
+        prop <- propOpt
+        linkModelProp <- prop.getPropOpt(Links.LinkModelProp);
+        targetModel <- linkModelProp.firstOpt
       }
-    
-      thingsFiltered.map { t =>
-        t.nameOrComputed.map { name => 
-          if (name.toLowerCase().contains(lowerQ))
-            Some(MarcoPoloItem(name, t.id.toThingId))
-          else
-            None
-        }
-      }
+        yield allThings.filter(_.isAncestor(targetModel))
+        
+      filteredOpt.getOrElse(allThings)
     }
     
-    space.app match {
-      case Some(app) => things ++ getLinksFromSpace(app, propOpt, lowerQ)
-      case None => things
+    thingsFiltered.map { t =>
+      t.nameOrComputed.map { name => 
+        if (name.toLowerCase().contains(lowerQ))
+          Some(MarcoPoloItem(name, t.id.toThingId))
+        else
+          None
+      }
     }
   }
 }
