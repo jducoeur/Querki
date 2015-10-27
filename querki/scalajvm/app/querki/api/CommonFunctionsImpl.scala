@@ -13,16 +13,18 @@ class PassthroughHandler(val ecology:Ecology, rc:RequestContext) extends Passthr
   
   implicit val state = System.State
   
-  var contents = Map.empty[String, ThingInfo]
+  var contents = Seq.empty[Future[(String, ThingInfo)]]
   
   def pass(name:String):ThingInfo = {
     state.anythingByName(name) match {
       case Some(t) => {
         // Technically, thingInfo() is async, but we expect it to be essentially synchronous in this case.
         // This is a bit of a bad smell, but essential to the way PassthroughHandler works.
-        val ti = awaitIntentionally(ClientApi.thingInfo(t, rc))
-        contents += (name -> ti)
-        ti
+        val tiFut = ClientApi.thingInfo(t, rc) map { (name -> _) }
+        contents :+= tiFut
+        // Okay, yes, this is kind of evil. But on this side we don't actually care about the returned
+        // value, just what gets stuffed into contents, and this lets the common signature be what we want.
+        null
       }
       case None => {
         throw new Exception(s"Attempting to send unknown Standard Thing $name")
@@ -35,11 +37,13 @@ class CommonFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autow
 { 
   def doRoute(req:Request):Future[String] = route[CommonFunctions](this)(req)
 
-  def getStandardThings():Map[String, ThingInfo] = {
+  def getStandardThings():Future[Map[String, ThingInfo]] = {
     val passthrough = new PassthroughHandler(ecology, rc)
     val translator = new StandardThings(passthrough)
     val toucher = translator.touchEverything()
-    passthrough.contents
+    Future.sequence(passthrough.contents) map { seq =>
+      seq.toMap
+    }
   }
   
   def getProgress(handle:OperationHandle):Future[OperationProgress] = {

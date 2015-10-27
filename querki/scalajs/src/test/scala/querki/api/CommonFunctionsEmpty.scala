@@ -17,7 +17,7 @@ class CommonFunctionsEmpty extends CommonFunctions {
   def tpair(name:String) = name -> ti(name)
   def ppair(name:String) = name -> tip(name)
   
-  def getStandardThings():Map[String, ThingInfo] = Map(
+  def getStandardThings():Future[Map[String, ThingInfo]] = Future.successful(Map(
     tpair("Property"),
     ppair("Name"),
     ppair("Property Collection"),
@@ -40,7 +40,7 @@ class CommonFunctionsEmpty extends CommonFunctions {
     ppair("_deriveName"),
     tpair("Always Derive Name"),
     tpair("Never Derive Name")
-  )
+  ))
   
   def getProgress(handle:OperationHandle):Future[OperationProgress] = ???  
   def acknowledgeComplete(handle:OperationHandle):Unit = ???

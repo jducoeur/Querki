@@ -12,7 +12,7 @@ trait CommonFunctions {
    * Note that, on the Client, this is actually exposed as the StandardThings structure. But that
    * gets serialized as a Map for going across the wire.
    */
-  def getStandardThings():Map[String, ThingInfo]
+  def getStandardThings():Future[Map[String, ThingInfo]]
   
   /**
    * Check on the progress of a long-running Operation.
