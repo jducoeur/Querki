@@ -12,7 +12,7 @@ import Thing.PropMap
 
 import querki.core.NameUtils
 import querki.ecology._
-
+import querki.globals._
 import querki.identity.User
 
 import querki.util._
@@ -332,6 +332,16 @@ case class SpaceState(
    */
   private lazy val dynCache = scala.collection.concurrent.TrieMap.empty[StateCacheKey, Any]
   def fetchOrCreateCache(key:StateCacheKey, creator: => Any):Any = dynCache.getOrElseUpdate(key, creator)
+  
+  def mapsize[T <: Thing](map:Map[OID, T]):Int = {
+    map.values.map { v => 8 + v.memsize }.sum
+  }
+  /**
+   * The total approximate size of this Space. See Thing.memsize for more info.
+   */
+  lazy val spaceSize:Int = {
+    memsize + mapsize(things) + mapsize(spaceProps) + mapsize(types)
+  }
   
   def spaceStateOps(implicit e:Ecology) = new SpaceStateOps()(this, e)
 }

@@ -196,6 +196,8 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
     def doDeserialize(v:String)(implicit state:SpaceState) = ???
     def doSerialize(v:PublicIdentity)(implicit state:SpaceState) = ???
     def doDefault(implicit state:SpaceState) = ???
+    
+    def doComputeMemSize(v:PublicIdentity):Int = 0
   }
   
   override lazy val types = Seq(

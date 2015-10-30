@@ -159,6 +159,8 @@ class RatingEcot(e:Ecology) extends QuerkiEcot(e) with Ratings with IntTypeBasis
     def doDeserialize(v:String)(implicit state:SpaceState) = ???
     def doSerialize(v:RatingAverage)(implicit state:SpaceState) = ???
     def doDefault(implicit state:SpaceState) = ???
+    
+    def doComputeMemSize(v:RatingAverage):Int = 20
   }
   
   lazy val RatingSummarizer = new DiscreteSummarizer(RatingSummarizerOID, RatingType,

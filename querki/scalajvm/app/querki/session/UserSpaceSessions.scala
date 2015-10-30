@@ -28,7 +28,7 @@ private [session] class UserSpaceSessions(val ecology:Ecology, val spaceId:OID, 
   // of this Space:
   lazy val monitor = context.actorOf(MonitorActor.actorProps(ecology))
   override def childrenUpdated() = {
-    state.foreach(s => monitor ! SpaceMonitorEvent(spaceId, s.displayName, SystemManagement.clusterAddress, nChildren))
+    state.foreach(s => monitor ! SpaceMonitorEvent(spaceId, s.displayName, SystemManagement.clusterAddress, nChildren, s.spaceSize))
   }
   
   def createChild(key:User):ActorRef = {

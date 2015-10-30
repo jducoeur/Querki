@@ -193,6 +193,15 @@ trait QValue {
     cType.append(cv, elem)
   }
   
+  /**
+   * The approximate size in memory of this value. See comments on Thing.qsize for more details.
+   */
+  lazy val memsize:Int = {
+    // Note that we are intentionally not worrying about the overhead of the Collection, in the
+    // interest of low-balling the estimate a bit.
+    elems.map { pType.computeMemSize(_) }.sum
+  }
+  
   override def toString = {
     cType.displayName + " " + pType.displayName + ": " + cv
   }

@@ -56,6 +56,9 @@ class IntrospectionEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
     }
     
     def doDefault(implicit state:SpaceState) = ???  
+    
+    // Not a user-created value, so...
+    def doComputeMemSize(v:DisplayPropVal):Int = 0
   }
   
   /***********************************************

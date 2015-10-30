@@ -94,7 +94,9 @@ class AdminFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowi
   }
   
   def monitor():Future[MonitorCurrent] = {
-    val spaces = monitorStats.spaces.values.toSeq.map { evt => RunningSpace(evt.name, evt.address, evt.nUsers) }
+    val spaces = monitorStats.spaces.values.toSeq.map { evt => 
+      RunningSpace(evt.name, evt.address, evt.nUsers, evt.size) 
+    }
     Future.successful(MonitorCurrent(spaces))
   }
 }

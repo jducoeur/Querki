@@ -190,6 +190,14 @@ trait ModelTypeDefiner { self:EcologyMember =>
         XmlHelpers.toNodes(wikitext.display)
       }
     }
+    
+    def doComputeMemSize(v:ModeledPropertyBundle):Int = {
+      // Essentially recapitulate Thing.memsize, without the overhead of an actual Thing:
+      v.props.map { pair =>
+        val (k, v) = pair
+        8 + v.memsize
+      }.sum
+    }
   }
   
 }

@@ -34,6 +34,7 @@ class AppsSpacePlugin(spaceIn:SpaceAPI, implicit val ecology:Ecology) extends Sp
    * handlers particular to Apps.
    */
   def receive:Actor.Receive = {
+    // Another Space is trying to fetch this one's State, as an App: 
     case SpacePluginMsg(req, _, FetchAppState(ownerIdentity)) => {
       // Check that the owner of the *requesting* Space is allowed to do this in the first place:
       if (AccessControl.hasPermission(Internal.CanUseAsAppProp, space.state, ownerIdentity, space.state)) {

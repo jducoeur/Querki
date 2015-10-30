@@ -141,6 +141,8 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
       Future.successful(Wikitext("Unresolved property value!"))
   
     def doDefault(implicit state:SpaceState) = ""
+    // Transient, so we don't care:
+    def doComputeMemSize(v:String):Int = 0
   }
 
 }

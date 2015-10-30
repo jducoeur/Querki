@@ -66,6 +66,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       Future.successful(v)
     
     def doDefault(implicit state:SpaceState) = Wikitext("")
+    
+    // Transient values, so we don't care:
+    def doComputeMemSize(v:Wikitext):Int = 0
   }
 
   def HtmlValue(html:QHtml):QValue = ExactlyOne(RawHtmlType(HtmlWikitext(html)))

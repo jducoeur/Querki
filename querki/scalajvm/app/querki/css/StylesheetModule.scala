@@ -105,6 +105,8 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) with Stylesheets {
       fut(renderLargeText(prop, context, currentValue, v, this))
       
     def code(elem:ElemValue):String = get(elem)
+    
+    def doComputeMemSize(v:String):Int = v.length
   }
   lazy val CSSTextType = new CSSTextType(CSSTextOID)  
   override lazy val types = Seq(CSSTextType)

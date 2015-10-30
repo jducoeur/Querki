@@ -40,5 +40,7 @@ trait PlainTextBaseType { self:QuerkiEcot with TextTypeBasis =>
   
     def doDefault(implicit state:SpaceState) = PlainText("")
     override def wrap(raw:String):valType = PlainText(raw)
+    
+    def doComputeMemSize(v:PlainText):Int = v.raw.length
   }
 }
