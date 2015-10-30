@@ -10,6 +10,7 @@ import org.querki.requester._
 import querki.globals._
 import querki.identity.User
 import querki.spaces.messages._
+import querki.util.QuerkiActor
 
 /**
  * The manager for loading a Space's Apps. For the time being, this is a (somewhat complex) one-shot worker.
@@ -19,7 +20,7 @@ import querki.spaces.messages._
  * 
  * @author jducoeur
  */
-private [apps] class AppLoadingActor(val ecology:Ecology, spaceId:OID, ownerIdentity:OID) extends Actor with Requester with EcologyMember {
+private [apps] class AppLoadingActor(ecology:Ecology, spaceId:OID, ownerIdentity:OID) extends QuerkiActor(ecology) {
   import AppLoadingActor._
   
   lazy val AppsPersistence = interface[AppsPersistence]
@@ -32,7 +33,7 @@ private [apps] class AppLoadingActor(val ecology:Ecology, spaceId:OID, ownerIden
     } map (_.result())
   }
   
-  def receive = {
+  def doReceive = {
     case FetchApps => {
       val appOIDs = AppsPersistence.lookupApps(spaceId)
       
@@ -68,12 +69,12 @@ private [apps] object AppLoadingActor {
 /**
  * Worker that fetches the State of a specific App.
  */
-private [apps] class AppLoader(val ecology:Ecology, appId:OID, ownerIdentity:OID) extends Actor with Requester with EcologyMember {
+private [apps] class AppLoader(ecology:Ecology, appId:OID, ownerIdentity:OID) extends QuerkiActor(ecology) {
   import AppLoader._
   
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
-  def receive = {
+  def doReceive = {
     case FetchApp => {
       for {
         CurrentState(state) <- SpaceOps.spaceRegion ? SpacePluginMsg(User.Anonymous, appId, FetchAppState(ownerIdentity))
