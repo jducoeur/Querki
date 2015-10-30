@@ -1,7 +1,6 @@
 package querki.conversations
 
 import akka.actor._
-import akka.event.LoggingReceive
 
 import models.OID
 
@@ -14,7 +13,7 @@ import querki.spaces.SpacePersistenceFactory
 import querki.spaces.messages._
 import querki.time.{DateTime, DateTimeOrdering}
 import querki.uservalues.PersistMessages._
-import querki.util.PublicException
+import querki.util.{PublicException, QuerkiBootableActor}
 import querki.values.SpaceState
 
 import PersistMessages._
@@ -32,8 +31,8 @@ import PersistMessages._
  * happens. We should receive a Command, validate that Command, and then persist an Event that makes the actual change
  * to the state.
  */
-private [conversations] class SpaceConversationsActor(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, val spaceId:OID, val space:ActorRef)
-  extends Actor with Requester with EcologyMember with Stash
+private [conversations] class SpaceConversationsActor(ecology:Ecology, persistenceFactory:SpacePersistenceFactory, val spaceId:OID, val space:ActorRef)
+  extends QuerkiBootableActor(ecology)
 {
   import context._
   
@@ -65,7 +64,7 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
    */
   var nextId:CommentId = 1
   
-  def receive = LoggingReceive (handleRequestResponse orElse {
+  def bootReceive = {
     /**
      * This Actor can't become properly active until we receive the current state to work with:
      */
@@ -83,14 +82,11 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
         {
           nextId = n + 1
           commentNotifyPrefs = prefs
-          unstashAll()
-          become(normalReceive)
-        }        
+          doneBooting()
+        }
       }
     }
-    
-    case _ => stash()
-  })
+  }
   
   /**
    * Given a bunch of Comments, stitch them together into Conversations.
@@ -200,7 +196,7 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
     convs.copy(comments = pre ++ theOne ++ post)
   }
   
-  def normalReceive:Receive = LoggingReceive {
+  def doReceive:Receive = {
     /**
      * Update from the Space Actor that the state has been changed.
      */
