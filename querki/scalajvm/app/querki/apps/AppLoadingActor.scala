@@ -17,17 +17,14 @@ import querki.spaces.messages._
  * This will probably get largely obviated by Akka Streams, but if not, think about switching it to Typed Akka
  * down the road.
  * 
- * TODO: there seems to be an abstraction of a Requester Worker fighting to break out here: a concise way to create
- * a Requester Actor that performs some async tasks, returns a value, and then stops.
- * 
  * @author jducoeur
  */
 private [apps] class AppLoadingActor(val ecology:Ecology, spaceId:OID, ownerIdentity:OID) extends Actor with Requester with EcologyMember {
   import AppLoadingActor._
   
   lazy val AppsPersistence = interface[AppsPersistence]
-  lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
+  // TODO: move this to Requester:
   // Adapted from the similar function in Future:
   def sequenceReqs[A, M[X] <: TraversableOnce[X]](seq: M[RequestM[A]])(implicit cbf: scala.collection.generic.CanBuildFrom[M[RequestM[A]], A, M[A]]): RequestM[M[A]] = {
     seq.foldLeft(RequestM.successful(cbf(seq))) {
@@ -46,7 +43,8 @@ private [apps] class AppLoadingActor(val ecology:Ecology, spaceId:OID, ownerIden
       val theSender = sender
       val reqs = for {
         appId <- appOIDs
-        req = SpaceOps.spaceRegion.requestFor[CurrentState](SpacePluginMsg(User.Anonymous, appId, FetchAppState(ownerIdentity)))
+        loader = context.actorOf(AppLoader.props(ecology, appId, ownerIdentity))
+        req = loader.requestFor[CurrentState](AppLoader.FetchApp)
       }
         yield req
         
