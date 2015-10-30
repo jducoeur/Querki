@@ -32,6 +32,8 @@ class ClientController extends ApplicationBase with StreamController {
   lazy val SystemManagement = interface[querki.system.SystemManagement]
   lazy val Tags = interface[querki.tags.Tags]
   
+  def apiTrace = ApiInvocation.apiTrace _
+  
   case class ApiRequest(pickledRequest:String, pickledMetadata:String)
   
   val requestForm = Form(
@@ -132,23 +134,29 @@ class ClientController extends ApplicationBase with StreamController {
   def apiRequestBase(prc:PlayRequestContext):Future[Result] = {
     val (req, metadata) = unpickleRequest(prc)
     if (metadata.version != querkiVersion) {
+      apiTrace(s"apiRequest call to ${req.path}, but version is old")
       // Signal to the Client that it needs to reload
       // TODO: this will need to become more forgiving once this path is really being used as an
       // API. Maybe an additional Metadata flag saying whether being slightly out of date is okay?
       // Maybe a more sophisticated mechanism for tracking when the protocol has changed, and how?
       PreconditionFailed
     } else {
+      apiTrace(s"apiRequest call to ${req.path}")
       val rc = prc.rc.copy(metadataOpt = Some(metadata))
       val request = ClientRequest(req, rc)
       if (ApiInvocation.requiresLogin(request) && rc.requester.isEmpty)
         BadRequest(write(new NotAllowedException()))
       else ApiInvocation.routeRequest(request) {
         case ClientResponse(pickled) => {
+          apiTrace(s"    Call to ${req.path} resulted in $pickled")
           val userInfo = ClientApi.userInfo(prc.requester)
           val response = ResponseWrapper(userInfo, pickled)
           Ok(write(response))
         }
-        case ClientError(msg) => BadRequest(msg)
+        case ClientError(msg) => {
+          apiTrace(s"    Call to ${req.path} resulted in error $msg")
+          BadRequest(msg)
+        }
       }
     }
   }

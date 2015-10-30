@@ -3,6 +3,7 @@ package querki.conversations
 import akka.actor.{ActorRef, Props}
 
 import querki.ecology._
+import querki.globals._
 import querki.identity.User
 import querki.spaces.SpacePersistenceFactory
 import querki.values.SpaceState
@@ -24,6 +25,12 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
   override def postInit() = {
     // Some entry points are legal without login:
     ApiRegistry.registerApiImplFor[ConversationFunctions, ConversationFunctionsImpl](SpaceOps.spaceRegion, false)
+  }
+  
+  lazy val traceConv = Config.getBoolean("querki.test.traceConversations", false)
+  def convTrace(msg: => String):Unit = {
+    if (traceConv)
+      QLog.spew(msg)
   }
   
   // TODO: the following Props signature is now deprecated, and should be replaced (in Akka 2.2)

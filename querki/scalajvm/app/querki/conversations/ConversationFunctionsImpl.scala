@@ -29,6 +29,8 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val Person = interface[querki.identity.Person]
   
+  def convTrace = Conversations.convTrace _
+  
   def doRoute(req:Request):Future[String] = route[ConversationFunctions](this)(req)
   
   def getIds(node:ConversationNode):Set[OID] = {
@@ -84,6 +86,8 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
   }
 
   def addComment(thingId:TID, text:String, responseTo:Option[CommentId]):Future[ConvNode] = withThing(thingId) { thing =>
+    convTrace(s"    Trying to add comment $text")
+    
     implicit val s = state
     val authorId = localIdentity.map(_.id).getOrElse(UnknownOID)
     
@@ -99,10 +103,14 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
         true     // TODO: primaryResponse
     )
     
+    convTrace(s"    About to actually add the node")
+    
     val theRc = rc
     for {
       AddedNode(parentId, node) <- spaceRouter.request(ConversationRequest(user, state.id, NewComment(comment)))
+      dummy1 = convTrace(s"    Have added the node for the new comment")
       IdentityFound(identity) <- IdentityAccess.identityCache.request(GetIdentityRequest(authorId))
+      dummy2 = convTrace(s"    Have found the Identity of the comment's author")
     }
       yield toApi(node)(Map(authorId -> identity), theRc)
   }
