@@ -8,9 +8,7 @@ import models.{Property}
 
 import querki.ecology._
 import querki.globals._
-import querki.identity.User
 import querki.spaces._
-import querki.spaces.messages._
 import querki.util.{Contributor, Publisher}
 
 object MOIDs extends EcotIds(59) {
@@ -34,7 +32,6 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
   val AccessControl = initRequires[querki.security.AccessControl]
   
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
-  lazy val AppsPersistence = interface[AppsPersistence]
   lazy val SpaceChangeManager = interface[querki.spaces.SpaceChangeManager]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
@@ -52,20 +49,16 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
   
   class AppLoading extends Contributor[AppLoadInfo, Future[Seq[SpaceState]]] {
     def notify(evt:AppLoadInfo, sender:Publisher[AppLoadInfo, Future[Seq[SpaceState]]]):Future[Seq[SpaceState]] = {
-      // TODO: this is a slow operation, and should be split out to a worker Actor,
-      // running on the DB thread dispatcher:
-      val AppLoadInfo(ownerIdentity, spaceId) = evt
-      val appOIDs = AppsPersistence.lookupApps(spaceId)
+      import AppLoadingActor._
+      
+      val AppLoadInfo(ownerIdentity, spaceId, space) = evt
       // TODO: this is arbitrary. Probably make it configurable? Keep in mind that this may kick
       // off recursive loads.
       implicit val timeout = Timeout(1 minute)
-      val futs = for {
-        appId <- appOIDs
-        askFut = (SpaceOps.spaceRegion ? SpacePluginMsg(User.Anonymous, appId, FetchAppState(ownerIdentity))).mapTo[CurrentState]
-      }
-        yield askFut map (_.state)
-        
-      Future.sequence(futs)
+      
+      // We do the actual work in a separate Actor:
+      val loader = space.context.actorOf(AppLoadingActor.props(ecology, spaceId, ownerIdentity))
+      (loader ? FetchApps).mapTo[AppStates] map { _.states }
     }
   }
     

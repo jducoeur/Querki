@@ -368,7 +368,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
         // Need to fetch the Owner, so we can tell the App Loader about them:
         SpaceOwner(owner) <- persister ? GetOwner
         // Load the apps before we load this Space itself:
-        apps <- Future.sequence(SpaceChangeManager.appLoader.collect(AppLoadInfo(owner, id))).map(_.flatten)
+        apps <- Future.sequence(SpaceChangeManager.appLoader.collect(AppLoadInfo(owner, id, this))).map(_.flatten)
         Loaded(s) <- persister ? Load(apps)
       }
       {
