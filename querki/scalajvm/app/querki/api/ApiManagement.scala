@@ -20,6 +20,13 @@ class ApiManagement(e:Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiIn
   case class RouterInfo(router:ActorRef, requiresLogin:Boolean)
   
   /**
+   * Turn this config flag on to trace the path of API calls through some of the system.
+   * 
+   * WARNING: this produces *voluminous* output. It should never be turned on in production!
+   */
+  lazy val traceApi = Config.getBoolean("querki.test.traceApiCalls", false)
+  
+  /**
    * Map from API classes to the constructors for their handlers.
    */
   var sessionHandlers = Map.empty[String, Constructor[AutowireApiImpl]]
@@ -47,15 +54,26 @@ class ApiManagement(e:Ecology) extends QuerkiEcot(e) with ApiRegistry with ApiIn
   def routeRequest[R](req:ClientRequest)(cb: PartialFunction[Any, Future[R]]):Future[R] = {
     val name = apiName(req.req)
     apiRouters.get(name) match {
-      case Some(router) => akka.pattern.ask(router.router, req)(timeout).flatMap(cb)
+      case Some(router) => {
+        apiTrace(s"  Sending call to ${req.req.path} to $router")
+        akka.pattern.ask(router.router, req)(timeout).flatMap(cb)
+      }
       case None => throw new Exception(s"handleSessionRequest got request for unknown API $name")
     }
   }
   
   def handleSessionRequest(req:autowire.Core.Request[String], params:AutowireParams, completeCb: Any => Unit = { dummy => }) = {
     sessionHandlers.get(apiName(req)) match {
-      case Some(constr) => constr.newInstance(params, ecology).handleRequest(req, completeCb)
+      case Some(constr) => {
+        apiTrace(s"  Handling request for ${req.path}")
+        constr.newInstance(params, ecology).handleRequest(req, completeCb)
+      }
       case None => throw new Exception(s"handleSessionRequest got request for unknown API ${apiName(req)}")
     }
-  }  
+  }
+  
+  def apiTrace(msg: => String):Unit = {
+    if (traceApi)
+      QLog.spew(msg)
+  }
 }

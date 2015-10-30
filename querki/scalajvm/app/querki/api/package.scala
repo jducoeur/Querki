@@ -58,6 +58,11 @@ package object api {
    */
   trait ApiInvocation extends EcologyInterface {
     /**
+     * Spews the given message if API tracing is turned on. Does not evaluate msg otherwise. (Yay, call-by-name!)
+     */
+    def apiTrace(msg: => String):Unit
+    
+    /**
      * This is mainly for the edge of the system, to check whether a given request is legal for Anonymous use.
      */
     def requiresLogin(req:ClientRequest):Boolean

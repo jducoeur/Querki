@@ -33,12 +33,14 @@ import PersistMessages._
  * to the state.
  */
 private [conversations] class SpaceConversationsActor(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, val spaceId:OID, val space:ActorRef)
-  extends Actor with Requester with EcologyMember
+  extends Actor with Requester with EcologyMember with Stash
 {
   import context._
   
   lazy val ConvEcot = interface[Conversations]
   lazy val NotifyComments = interface[NotifyComments]
+  
+  def convTrace = ConvEcot.convTrace _
   
   lazy val persister = persistenceFactory.getConversationPersister(spaceId)
   
@@ -63,7 +65,7 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
    */
   var nextId:CommentId = 1
   
-  def receive = LoggingReceive {
+  def receive = LoggingReceive (handleRequestResponse orElse {
     /**
      * This Actor can't become properly active until we receive the current state to work with:
      */
@@ -81,11 +83,14 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
         {
           nextId = n + 1
           commentNotifyPrefs = prefs
+          unstashAll()
           become(normalReceive)
         }        
       }
     }
-  }
+    
+    case _ => stash()
+  })
   
   /**
    * Given a bunch of Comments, stitch them together into Conversations.
@@ -211,14 +216,14 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
 	     * Requester is fetching the current Conversations for this Thing.
 	     */
         case GetConversations(thingId) => {
-	      if (!ConvEcot.canReadComments(req, thingId, state)) {
-	        // You aren't allowed to read the Conversations about a Thing unless you are allowed to read the Thing:
-	        sender ! ThingError(new PublicException(SpaceError.UnknownID))
-	      } else {
-	        // TODO: if the requester is not a Moderator, strip out needsModeration comments.
-	        // TODO: strip out isDeleted comments.
-	        withConversations(thingId) { convs => sender ! convs }
-	      }           
+  	      if (!ConvEcot.canReadComments(req, thingId, state)) {
+  	        // You aren't allowed to read the Conversations about a Thing unless you are allowed to read the Thing:
+  	        sender ! ThingError(new PublicException(SpaceError.UnknownID))
+  	      } else {
+  	        // TODO: if the requester is not a Moderator, strip out needsModeration comments.
+  	        // TODO: strip out isDeleted comments.
+  	        withConversations(thingId) { convs => sender ! convs }
+  	      }           
         }
         
         /**
@@ -229,76 +234,79 @@ private [conversations] class SpaceConversationsActor(val ecology:Ecology, persi
          * we can use to detect duplication. See http://www-db.cs.wisc.edu/cidr/cidr2007/papers/cidr07p15.pdf
          */
         case NewComment(commentIn) => {
+          convTrace(s"    Conv Actor got a NewComment for $commentIn")
           val comment = commentIn.copy(id = nextId, createTime = DateTime.now)
           nextId += 1
           val thingId:OID = comment.thingId
-	      if (!ConvEcot.canWriteComments(comment.authorId, thingId, state)) {
-	        // TODO: if Moderation is enabled for comments on this Thing, add it with needsModeration turned on, and
-	        // send a Notification to the moderator(s), instead of rejecting it outright like this:
-	        sender ! ThingError(new PublicException(SpaceError.ModifyNotAllowed))
-	      } else {
-	        // Fetch the Conversations for this Thing. Note that the innards here may be async!
-	        withConversations(thingId) { convs =>
-	          // Insert the comment into the Conversations list in the appropriate place. This
-	          // may involve tweaking the comment a bit in case of race conditions.
-	          val (parent, node) = comment.responseTo.flatMap(convs.findNode(_)) match {
-	            
-	            // The comment is being inserted into an existing Conversation
-	            case Some(rawParentNode) => {
-	              // Find the actual parent node to insert this under, and amend the comment if
-	              // necessary:
-	              val commentWithCorrectedParent = {
-	                if (!comment.primaryResponse || rawParentNode.responses.isEmpty)
-	                  // Either way, this comment is simply being inserted directly under the parent. This
-	                  // is the common case:
-	                  comment
-	                else {
-	                  // Race condition: there is already a "primary" response, and this is also trying to
-	                  // be one. This can happen if multiple people both reply directly to the comment, and
-	                  // don't see each other's new comment. Tack this new one onto the
-	                  // end of the conversation instead. We find that by recursing down the primary
-	                  // responses:
-	                  def currentConvEnd(parentNode:ConversationNode):ConversationNode = {
-	                    parentNode.responses.find(_.comment.primaryResponse) match {
-	                      case Some(primaryChild) => currentConvEnd(primaryChild)
-	                      case None => parentNode
-	                    }
-	                  }
-	                  comment.copy(responseTo = Some(currentConvEnd(rawParentNode).comment.id))
-	                }
-	              }
-
-	              // Okay, now we know what the correct parent is, so modify the tree to insert it:
-	              val node = ConversationNode(commentWithCorrectedParent)
-	              var pNode:Option[ConversationNode] = None
-	              val newConvs = replaceNode(commentWithCorrectedParent.responseTo.get, convs) { parentNode =>
-	                pNode = Some(parentNode)
-	                parentNode.copy(responses = parentNode.responses :+ node)
-	              }
-	              loadedConversations += (thingId -> newConvs)
-	              (pNode, node)
-	            }
-	            
-	            // The comment is starting a new Conversation
-	            case None => {
-	              val node = ConversationNode(comment)
-	              loadedConversations += (thingId -> convs.copy(comments = convs.comments :+ node))
-	              (None, node)
-	            }
-	          }
-	          
-	          // Okay, we have now placed the comment in the tree. Persist it. This is simply
-	          // fire-and-forget:
-	          persister ! AddComment(node.comment, state)
-	          
-	          // Send the ack of the newly-created comment, saying where to place it:
-	          sender ! AddedNode(parent.map(_.comment.id), node)
-	          
-	          // Finally, send out Notifications -- fire-and-forget, will get there eventually:
-	          NotifyComments.notifyComment(req, comment, commentNotifyPrefs)(state)
-	        }
-	      }
-	    }
+  	      if (!ConvEcot.canWriteComments(comment.authorId, thingId, state)) {
+  	        // TODO: if Moderation is enabled for comments on this Thing, add it with needsModeration turned on, and
+  	        // send a Notification to the moderator(s), instead of rejecting it outright like this:
+  	        sender ! ThingError(new PublicException(SpaceError.ModifyNotAllowed))
+  	      } else {
+            convTrace(s"    Fetching the conversations, to add the comment")
+  	        // Fetch the Conversations for this Thing. Note that the innards here may be async!
+  	        withConversations(thingId) { convs =>
+              convTrace(s"    Have the conversations")
+  	          // Insert the comment into the Conversations list in the appropriate place. This
+  	          // may involve tweaking the comment a bit in case of race conditions.
+  	          val (parent, node) = comment.responseTo.flatMap(convs.findNode(_)) match {
+  	            
+  	            // The comment is being inserted into an existing Conversation
+  	            case Some(rawParentNode) => {
+  	              // Find the actual parent node to insert this under, and amend the comment if
+  	              // necessary:
+  	              val commentWithCorrectedParent = {
+  	                if (!comment.primaryResponse || rawParentNode.responses.isEmpty)
+  	                  // Either way, this comment is simply being inserted directly under the parent. This
+  	                  // is the common case:
+  	                  comment
+  	                else {
+  	                  // Race condition: there is already a "primary" response, and this is also trying to
+  	                  // be one. This can happen if multiple people both reply directly to the comment, and
+  	                  // don't see each other's new comment. Tack this new one onto the
+  	                  // end of the conversation instead. We find that by recursing down the primary
+  	                  // responses:
+  	                  def currentConvEnd(parentNode:ConversationNode):ConversationNode = {
+  	                    parentNode.responses.find(_.comment.primaryResponse) match {
+  	                      case Some(primaryChild) => currentConvEnd(primaryChild)
+  	                      case None => parentNode
+  	                    }
+  	                  }
+  	                  comment.copy(responseTo = Some(currentConvEnd(rawParentNode).comment.id))
+  	                }
+  	              }
+  
+  	              // Okay, now we know what the correct parent is, so modify the tree to insert it:
+  	              val node = ConversationNode(commentWithCorrectedParent)
+  	              var pNode:Option[ConversationNode] = None
+  	              val newConvs = replaceNode(commentWithCorrectedParent.responseTo.get, convs) { parentNode =>
+  	                pNode = Some(parentNode)
+  	                parentNode.copy(responses = parentNode.responses :+ node)
+  	              }
+  	              loadedConversations += (thingId -> newConvs)
+  	              (pNode, node)
+  	            }
+  	            
+  	            // The comment is starting a new Conversation
+  	            case None => {
+  	              val node = ConversationNode(comment)
+  	              loadedConversations += (thingId -> convs.copy(comments = convs.comments :+ node))
+  	              (None, node)
+  	            }
+  	          }
+  	          
+  	          // Okay, we have now placed the comment in the tree. Persist it. This is simply
+  	          // fire-and-forget:
+  	          persister ! AddComment(node.comment, state)
+  	          
+  	          // Send the ack of the newly-created comment, saying where to place it:
+  	          sender ! AddedNode(parent.map(_.comment.id), node)
+  	          
+  	          // Finally, send out Notifications -- fire-and-forget, will get there eventually:
+  	          NotifyComments.notifyComment(req, comment, commentNotifyPrefs)(state)
+  	        }
+  	      }
+  	    }
         
         case DeleteComment(thingId, commentId) => {
           withConversations(thingId) { convs =>

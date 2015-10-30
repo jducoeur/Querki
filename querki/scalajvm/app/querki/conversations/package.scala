@@ -21,6 +21,8 @@ package object conversations {
    */
   trait Conversations extends EcologyInterface {
     
+    def convTrace(msg: => String):Unit
+    
     /**
      * The actual text body of a Comment.
      */
