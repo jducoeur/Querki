@@ -34,6 +34,12 @@ class AppsSpacePlugin(spaceIn:SpaceAPI, implicit val ecology:Ecology) extends Sp
    * handlers particular to Apps.
    */
   def receive:Actor.Receive = {
+    // Another Space is asking whether it may use this one as an App:
+    case SpacePluginMsg(req, _, RequestApp(ownerIdentity)) => {
+      // It is allowed if the owning Identity of the requesting Space has permission:
+      sender ! AppRequestResponse(AccessControl.hasPermission(Internal.CanUseAsAppProp, space.state, ownerIdentity, space.state))
+    }
+    
     // Another Space is trying to fetch this one's State, as an App: 
     case SpacePluginMsg(req, _, FetchAppState(ownerIdentity)) => {
       // Check that the owner of the *requesting* Space is allowed to do this in the first place:
@@ -51,27 +57,38 @@ class AppsSpacePlugin(spaceIn:SpaceAPI, implicit val ecology:Ecology) extends Sp
     // TBD: investigate the possible race condition, where a second AddApp request comes in while the first
     // one is processing.
     case SpacePluginMsg(req, _, AddApp(appId)) => {
-      // Belt-and-suspenders security check that the current user is allowed to do this:
+      // Belt-and-suspenders security check that the current user is allowed to do this. In theory, this
+      // can only fail if something has changed significantly:
       if (!AccessControl.hasPermission(Apps.CanManipulateAppsPerm, space.state, req, space.state))
         throw new PublicException("Apps.notAllowed")
       
       // Okay -- is the specified Space willing to be used as an App?
-      (SpaceOps.spaceRegion ? SpacePluginMsg(req, appId, FetchAppState(space.state.ownerIdentity.get.id))) map {
-        case CurrentState(appState) => {
+      (SpaceOps.spaceRegion ? SpacePluginMsg(req, appId, RequestApp(space.state.ownerIdentity.get.id))) map {
+        case AppRequestResponse(true) => {
           // The App has accepted, so make the actual DB change.
           // IMPORTANT: this is a slow operation! Should it be done here, or split into a separate worker?
           AppsPersistence.addApp(space.state, appId)
+          // Tell the client that we're set:
+          sender ! ThingFound(appId, spaceIn.state)
           // Tell the Space to reload itself, since the world has now changed significantly. This leaves the
           // Actor structure in place, but begins the process of reloading all the data.
           space.reloadSpace()
-          // Okay, we're done:
-          sender ! ThingFound(appId, appState)
         }
-        case err:ThingError => sender ! err 
+        case _ => sender ! ThingError(new PublicException("Apps.notAnApp"))
       } 
     }
   }
 }
+
+/**
+ * Check to see if this App will allow that Identity to use it.
+ */
+private [apps] case class RequestApp(ownerIdentity:OID)
+
+/**
+ * Response to RequestApp.
+ */
+private [apps] case class AppRequestResponse(allowed:Boolean)
 
 /**
  * Sent from the Space to the App, to get its State. For now, this simply results in

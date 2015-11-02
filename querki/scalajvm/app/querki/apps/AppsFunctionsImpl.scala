@@ -26,14 +26,14 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
       yield ClientApi.spaceInfo(app)
   }
   
-  def addApp(appIdStr:String):Future[SpaceInfo] = {
+  def addApp(appIdStr:String):Future[Unit] = {
     if (!AccessControl.hasPermission(Apps.CanManipulateAppsPerm, state, user, state))
       throw new PublicException("Apps.notAllowed")
     
     ThingId(appIdStr) match {
       case AsOID(appId) => {
         (spaceRouter ? SpacePluginMsg(user, state.id, AddApp(appId))) map {
-          case ThingFound(_, appState) => ClientApi.spaceInfo(appState)
+          case ThingFound(_, _) => ()
           case ThingError(ex, _) => throw ex
         }
       }
