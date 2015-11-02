@@ -52,6 +52,11 @@ querki {
     timeout : 15 minutes
   }
   
+  apps {
+    # The size of each chunk being sent from an App to its child Spaces
+    chunksize : 10000
+  }
+  
   mail {
     smtpHost : SMTP HOST
     from : EMAIL ADDRESS TO SEND FROM

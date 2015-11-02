@@ -7,6 +7,8 @@ import akka.util.Timeout
 
 import org.querki.requester._
 
+import models.{Property, ThingState}
+
 import querki.globals._
 import querki.identity.User
 import querki.spaces.messages._
@@ -71,18 +73,48 @@ private [apps] object AppLoadingActor {
  */
 private [apps] class AppLoader(ecology:Ecology, appId:OID, ownerIdentity:OID) extends QuerkiActor(ecology) {
   import AppLoader._
+  import AppSender._
   
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
   // Probably ought to be configurable?
   val retries = 3
   
+  def loadChunksRec(appSender:ActorRef, curState:SpaceState, isComplete:Boolean, nextSeq:Int):RequestM[SpaceState] = {
+    if (isComplete)
+      RequestM.successful(curState)
+    else {
+      appSender.requestFor[AppChunk](RequestChunk(nextSeq), retries) flatMap { chunk =>
+        val state = (curState /: chunk.elems) { (s, t) =>
+          t match {
+            case p:Property[_,_] => s.copy(spaceProps = s.spaceProps + (t.id -> p))
+            case ts:ThingState => s.copy(things = s.things + (ts.id -> ts))
+            case _ => throw new Exception(s"AppLoader somehow got unexpected Thing $t")
+          }
+        }
+        
+        loadChunksRec(appSender, state, chunk.complete, nextSeq + 1)
+      }
+    }
+  }
+  
+  def loadChunks(appSender:ActorRef):RequestM[SpaceState] = {
+    val firstChunkReq = appSender.requestFor[AppChunk](RequestChunk(0), retries)
+    firstChunkReq flatMap { stateChunk =>
+      // Yes, we're assuming the first chunk is the SpaceState. For now, that's part of the protocol:
+      val initState = stateChunk.elems.head.asInstanceOf[SpaceState]
+      loadChunksRec(appSender, initState, stateChunk.complete, 1)
+    }
+  }
+  
   def doReceive = {
     case FetchApp => {
       for {
-        CurrentState(state) <- SpaceOps.spaceRegion.request(SpacePluginMsg(User.Anonymous, appId, FetchAppState(ownerIdentity)), retries)
+        AppStreamReady(appSender) <- SpaceOps.spaceRegion.request(SpacePluginMsg(User.Anonymous, appId, FetchAppState(ownerIdentity)), retries)
+        state <- loadChunks(appSender)
       }
       {
+        appSender ! StreamComplete
         sender ! CurrentState(state)
         context.stop(self)
       }
