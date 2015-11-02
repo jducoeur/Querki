@@ -261,14 +261,14 @@ case class SpaceState(
   }
   
   /**
-   * Returns all of the conventional Things.
-   * 
-   * This is used mainly by _refs() so far.
-   * 
-   * TBD: this currently does not return Props, Types or Collections; it also does not search up the
-   * App tree. Should it?
+   * Returns all of the conventional Things in this Space.
    */
-  def allThings:Iterable[Thing] = things.values
+  def localThings:Iterable[Thing] = things.values 
+    
+  /**
+   * Returns all of the conventional Things in this Space *and* its Apps.
+   */
+  def allThings = accumulateAll[Set[Thing]]((_.things.values.toSet), (_ ++ _))
   
   def everythingLocal:Iterable[Thing] = things.values ++ spaceProps.values ++ types.values ++ colls.values
   
