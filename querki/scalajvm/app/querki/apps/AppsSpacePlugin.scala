@@ -41,7 +41,8 @@ class AppsSpacePlugin(spaceIn:SpaceAPI, implicit val ecology:Ecology) extends Sp
         // TODO: this must become a chunked streaming protocol, with back-pressure and
         // exactly-once semantics! Note that Akka Streaming is not yet good enough to handle
         // this, since it doesn't yet work remotely.
-        sender ! CurrentState(space.state)        
+        val appSender = requester.context.actorOf(AppSender.props(ecology, sender, space.state))
+        appSender ! AppSender.Send
       } else {
         sender ! ThingError(new PublicException("Apps.notAnApp"))
       }

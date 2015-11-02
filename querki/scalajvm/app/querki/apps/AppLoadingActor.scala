@@ -74,10 +74,13 @@ private [apps] class AppLoader(ecology:Ecology, appId:OID, ownerIdentity:OID) ex
   
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
+  // Probably ought to be configurable?
+  val retries = 3
+  
   def doReceive = {
     case FetchApp => {
       for {
-        CurrentState(state) <- SpaceOps.spaceRegion ? SpacePluginMsg(User.Anonymous, appId, FetchAppState(ownerIdentity))
+        CurrentState(state) <- SpaceOps.spaceRegion.request(SpacePluginMsg(User.Anonymous, appId, FetchAppState(ownerIdentity)), retries)
       }
       {
         sender ! CurrentState(state)
