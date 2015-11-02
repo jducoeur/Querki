@@ -11,6 +11,7 @@ import models.{Property, ThingState}
 
 import querki.globals._
 import querki.identity.User
+import querki.spaces.CacheUpdate
 import querki.spaces.messages._
 import querki.util.QuerkiActor
 
@@ -75,6 +76,7 @@ private [apps] class AppLoader(ecology:Ecology, appId:OID, ownerIdentity:OID) ex
   import AppLoader._
   import AppSender._
   
+  lazy val SpaceChangeManager = interface[querki.spaces.SpaceChangeManager]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
   // Probably ought to be configurable?
@@ -114,8 +116,10 @@ private [apps] class AppLoader(ecology:Ecology, appId:OID, ownerIdentity:OID) ex
         state <- loadChunks(appSender)
       }
       {
+        // Populate all of the caches for this App:
+        val CacheUpdate(_, _, withCache) = SpaceChangeManager.updateStateCache(CacheUpdate(None, None, state))
         appSender ! StreamComplete
-        sender ! CurrentState(state)
+        sender ! CurrentState(withCache)
         context.stop(self)
       }
     }
