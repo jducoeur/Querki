@@ -169,14 +169,17 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |    MODEL -> _instances -> LIST OF INSTANCES
           |That is, it receives a *Model*, and produces the Instances that come from that Model.
           |
-          |If you have sub-Models under *Model* (that add more Properties, for example), this will include those as well.""".stripMargin)))
+          |If you have sub-Models under *Model* (that add more Properties, for example), this will include those as well.
+          |
+          |This will include Instances found in Apps, if there are any. (There usually aren't, but it's sometimes
+          |relevant.)""".stripMargin)))
   {
     override def qlApply(invIn:Invocation):QFut = {
       val inv = invIn.preferDefiningContext
       for (
         thing <- inv.contextAllThings
       )
-        yield Core.listFrom(inv.state.descendants(thing.id, false, true).map(_.id), LinkType)
+        yield Core.listFrom(inv.state.descendants(thing.id, false, true, true).map(_.id), LinkType)
     }
   }
   

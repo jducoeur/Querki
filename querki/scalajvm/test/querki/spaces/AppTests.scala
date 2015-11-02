@@ -32,6 +32,8 @@ class AppTests extends QuerkiTests {
       val rootModel = new SimpleTestThing("My Root Model", Core.IsModelProp(true))
       
       val myNumProp = new TestProperty(Core.IntType, QList, "My Nums")
+      
+      val highestInstance = new TestThing("Highest Instance", rootModel)
     }
     
     val mid1 = new TestApp {
@@ -44,6 +46,8 @@ class AppTests extends QuerkiTests {
     val mid2 = new TestApp {
       val mySimplePage = new SimpleTestThing("Simple Page")
       val firstTwo = new SimpleTestThing("First Two", Basic.ApplyMethod("_take(2)"))
+      
+      val mid2Instance = new TestThing("Mid2 Instance", highest.rootModel)
     }
     
     val mid3 = new TestApp {
@@ -55,6 +59,8 @@ class AppTests extends QuerkiTests {
     
     val main = new TestApp {
       override val apps = Seq(mid1, mid2, mid3)
+      
+      val mainInstance = new TestThing("Main Instance", highest.rootModel)
     }
     
     implicit val s = main
@@ -106,6 +112,15 @@ class AppTests extends QuerkiTests {
         val allModels = s.state.allModels
         val targetModel = allModels.filter(_.id == highest.rootModel.id)
         assert(targetModel.size == 1)
+      }
+    }
+  }
+  
+  "_instances" should {
+    "includes Instances from both Apps and children" in {
+      new WorldTest {
+        pql("[[My Root Model._instances -> _sort]]") should
+          equal(listOfLinkText(highest.highestInstance, main.mainInstance, mid2.mid2Instance))
       }
     }
   }

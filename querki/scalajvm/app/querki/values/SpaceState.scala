@@ -359,18 +359,26 @@ class SpaceStateOps(implicit state:SpaceState, val ecology:Ecology) extends Ecol
     state.accumulateAll(_.models, { (x:Iterable[ThingState], y:Iterable[ThingState]) => x.toSet ++ y.toSet })
   }
     
-  def descendantsTyped[T <: Thing](root:OID, includeModels:Boolean, includeInstances:Boolean, map:Map[OID, T]):Iterable[Thing] = {
+  def descendantsTyped[T <: Thing](
+      root:OID, includeModels:Boolean, includeInstances:Boolean, mapFunc:SpaceState => Map[OID, T], includeApps:Boolean):Iterable[Thing] = 
+  {
+    val map =
+      if (includeApps)
+        state.accumulateMaps(mapFunc)
+      else
+        mapFunc(state)
+        
     map.values.filter(_.isAncestor(root)(state))
   }
   
   // TODO: this is pretty inefficient -- it is going to fully walk the tree for every object, with
   // a lot of redundancy and no sensible snipping. We can probably do a lot to optimize it.
-  def descendants(root:OID, includeModels:Boolean, includeInstances:Boolean):Iterable[Thing] = {
+  def descendants(root:OID, includeModels:Boolean, includeInstances:Boolean, includeApps:Boolean = false):Iterable[Thing] = {
     val candidates = 
-      descendantsTyped(root, includeModels, includeInstances, state.types) ++
-      descendantsTyped(root, includeModels, includeInstances, state.spaceProps) ++
-      descendantsTyped(root, includeModels, includeInstances, things) ++
-      descendantsTyped(root, includeModels, includeInstances, state.colls)
+      descendantsTyped(root, includeModels, includeInstances, _.types, includeApps) ++
+      descendantsTyped(root, includeModels, includeInstances, _.spaceProps, includeApps) ++
+      descendantsTyped(root, includeModels, includeInstances, _.things, includeApps) ++
+      descendantsTyped(root, includeModels, includeInstances, _.colls, includeApps)
       
     val stripModels =
       if (includeModels)
