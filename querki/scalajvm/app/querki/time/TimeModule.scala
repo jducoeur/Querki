@@ -91,6 +91,8 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
     override def doMatches(left:DateTime, right:DateTime):Boolean = { left.getMillis == right.getMillis }
     def doDefault(implicit state:SpaceState) = epoch
     
+    def doComputeMemSize(v:DateTime):Int = 8
+    
     /**
      * You can add a Duration to a Date, and get another Date.
      */
@@ -150,6 +152,7 @@ class TimeModule(e:Ecology) extends QuerkiEcot(e) with Time with querki.core.Met
     override def doComp(context:QLContext)(left:DateTime, right:DateTime):Boolean = { left < right } 
     override def doMatches(left:DateTime, right:DateTime):Boolean = { left.getMillis == right.getMillis }
     def doDefault(implicit state:SpaceState) = epoch
+    def doComputeMemSize(v:DateTime):Int = 8
   }
   lazy val QDateTime = new QDateTime(DateTimeTypeOID)
   

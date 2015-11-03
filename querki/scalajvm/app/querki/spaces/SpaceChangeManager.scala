@@ -2,6 +2,8 @@ package querki.spaces
 
 import scala.concurrent.Future
 
+import akka.actor.Actor
+
 import models.{OID, Thing}
 import models.Thing.PropMap
 
@@ -12,7 +14,7 @@ import querki.values._
 
 object SpaceChangeMOIDs extends EcotIds(32)
 
-case class AppLoadInfo(ownerIdentity:OID, spaceId:OID)
+case class AppLoadInfo(ownerIdentity:OID, spaceId:OID, space:Actor)
 
 /**
  * This is a general mechanism for allowing Modules to listen in on changes before they take effect.

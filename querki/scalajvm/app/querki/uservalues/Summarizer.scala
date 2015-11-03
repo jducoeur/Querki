@@ -57,6 +57,9 @@ trait SummarizerDefs { self:QuerkiEcot =>
     extends PType[VT](tid, SystemIds.systemOID, MOIDs.SummarizerBaseOID, pf) with Summarizer[UVT,VT]
     with SimplePTypeBuilder[VT]
   {
+    // Just don't care here:
+    def doComputeMemSize(v:VT):Int = 0
+    
     // HACK: so far, I haven't come up with a compile-time way to deal with this, so we need to do the typechecking at runtime.
     // The problem is that fromProp *might* be of UVT, but it might also be a ModelType.
     // TODO: this really ought to be typechecking that elem *is* a UVT, but erasure makes that hard. How do we do this? So far,

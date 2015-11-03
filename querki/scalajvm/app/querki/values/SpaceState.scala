@@ -12,7 +12,7 @@ import Thing.PropMap
 
 import querki.core.NameUtils
 import querki.ecology._
-
+import querki.globals._
 import querki.identity.User
 
 import querki.util._
@@ -261,14 +261,14 @@ case class SpaceState(
   }
   
   /**
-   * Returns all of the conventional Things.
-   * 
-   * This is used mainly by _refs() so far.
-   * 
-   * TBD: this currently does not return Props, Types or Collections; it also does not search up the
-   * App tree. Should it?
+   * Returns all of the conventional Things in this Space.
    */
-  def allThings:Iterable[Thing] = things.values
+  def localThings:Iterable[Thing] = things.values 
+    
+  /**
+   * Returns all of the conventional Things in this Space *and* its Apps.
+   */
+  def allThings = accumulateAll[Set[Thing]]((_.things.values.toSet), (_ ++ _))
   
   def everythingLocal:Iterable[Thing] = things.values ++ spaceProps.values ++ types.values ++ colls.values
   
@@ -333,6 +333,16 @@ case class SpaceState(
   private lazy val dynCache = scala.collection.concurrent.TrieMap.empty[StateCacheKey, Any]
   def fetchOrCreateCache(key:StateCacheKey, creator: => Any):Any = dynCache.getOrElseUpdate(key, creator)
   
+  def mapsize[T <: Thing](map:Map[OID, T]):Int = {
+    map.values.map { v => 8 + v.memsize }.sum
+  }
+  /**
+   * The total approximate size of this Space. See Thing.memsize for more info.
+   */
+  lazy val spaceSize:Int = {
+    memsize + mapsize(things) + mapsize(spaceProps) + mapsize(types)
+  }
+  
   def spaceStateOps(implicit e:Ecology) = new SpaceStateOps()(this, e)
 }
 
@@ -349,18 +359,26 @@ class SpaceStateOps(implicit state:SpaceState, val ecology:Ecology) extends Ecol
     state.accumulateAll(_.models, { (x:Iterable[ThingState], y:Iterable[ThingState]) => x.toSet ++ y.toSet })
   }
     
-  def descendantsTyped[T <: Thing](root:OID, includeModels:Boolean, includeInstances:Boolean, map:Map[OID, T]):Iterable[Thing] = {
+  def descendantsTyped[T <: Thing](
+      root:OID, includeModels:Boolean, includeInstances:Boolean, mapFunc:SpaceState => Map[OID, T], includeApps:Boolean):Iterable[Thing] = 
+  {
+    val map =
+      if (includeApps)
+        state.accumulateMaps(mapFunc)
+      else
+        mapFunc(state)
+        
     map.values.filter(_.isAncestor(root)(state))
   }
   
   // TODO: this is pretty inefficient -- it is going to fully walk the tree for every object, with
   // a lot of redundancy and no sensible snipping. We can probably do a lot to optimize it.
-  def descendants(root:OID, includeModels:Boolean, includeInstances:Boolean):Iterable[Thing] = {
+  def descendants(root:OID, includeModels:Boolean, includeInstances:Boolean, includeApps:Boolean = false):Iterable[Thing] = {
     val candidates = 
-      descendantsTyped(root, includeModels, includeInstances, state.types) ++
-      descendantsTyped(root, includeModels, includeInstances, state.spaceProps) ++
-      descendantsTyped(root, includeModels, includeInstances, things) ++
-      descendantsTyped(root, includeModels, includeInstances, state.colls)
+      descendantsTyped(root, includeModels, includeInstances, _.types, includeApps) ++
+      descendantsTyped(root, includeModels, includeInstances, _.spaceProps, includeApps) ++
+      descendantsTyped(root, includeModels, includeInstances, _.things, includeApps) ++
+      descendantsTyped(root, includeModels, includeInstances, _.colls, includeApps)
       
     val stripModels =
       if (includeModels)

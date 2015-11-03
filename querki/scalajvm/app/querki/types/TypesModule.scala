@@ -47,6 +47,8 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
       v.wikify(context, displayOpt, lexicalThing)
     
     def doDefault(implicit state:SpaceState) = { throw new Exception("WrappedValueType does not implement doDefault") }
+    
+    def doComputeMemSize(v:QValue):Int = v.memsize
   }
   lazy val WrappedValueType = new WrappedValueType(WrappedValueTypeOID)
   

@@ -179,6 +179,8 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
   
     def doDefault(implicit state:SpaceState) = Wikitext("")
     def wrap(raw:String):valType = Wikitext(raw)
+    // This is a transient PType, so we don't care:
+    def doComputeMemSize(v:Wikitext):Int = 0
   }
   
   /***********************************************

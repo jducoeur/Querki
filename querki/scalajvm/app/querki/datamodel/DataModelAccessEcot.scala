@@ -106,7 +106,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
       case prop:Property[_,_] => {
         allowIfProp || {
           // You are allowed to delete a Property *if* nothing is using it any more:
-          val thingsWithProp = state.allThings.filter(_.props.contains(prop.id))
+          val thingsWithProp = state.localThings.filter(_.props.contains(prop.id))
           thingsWithProp.isEmpty
         }
       }
@@ -169,14 +169,17 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |    MODEL -> _instances -> LIST OF INSTANCES
           |That is, it receives a *Model*, and produces the Instances that come from that Model.
           |
-          |If you have sub-Models under *Model* (that add more Properties, for example), this will include those as well.""".stripMargin)))
+          |If you have sub-Models under *Model* (that add more Properties, for example), this will include those as well.
+          |
+          |This will include Instances found in Apps, if there are any. (There usually aren't, but it's sometimes
+          |relevant.)""".stripMargin)))
   {
     override def qlApply(invIn:Invocation):QFut = {
       val inv = invIn.preferDefiningContext
       for (
         thing <- inv.contextAllThings
       )
-        yield Core.listFrom(inv.state.descendants(thing.id, false, true).map(_.id), LinkType)
+        yield Core.listFrom(inv.state.descendants(thing.id, false, true, true).map(_.id), LinkType)
     }
   }
   
@@ -232,7 +235,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   { (thing, context) => 
     implicit val state = context.state
     val thingRoots:Iterable[OID] = {
-      ((Set.empty[OID] /: state.allThings) ((set, t) => set + state.root(t))).
+      ((Set.empty[OID] /: state.localThings) ((set, t) => set + state.root(t))).
         filterNot(oid => state.anything(oid).map(_.ifSet(Core.InternalProp)).getOrElse(false))
     }
     
@@ -434,7 +437,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
 	    """    SPACE -> _allThings -> LIST OF THINGS""".stripMargin,
 	{ (thing, context) =>
 	  thing match {
-	    case s:SpaceState => Core.listFrom(s.allThings.map(_.id), LinkType)
+	    case s:SpaceState => Core.listFrom(s.localThings.map(_.id), LinkType)
 	    case _ => QL.WarningValue("_allThings can only be used on a Space")
 	  }
 	})
@@ -485,7 +488,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     override def qlApply(inv:Invocation):QFut = {
       implicit val s = inv.state
       for {
-        t <- inv.iter(s.allThings)
+        t <- inv.iter(s.localThings)
         if (t.hasModel && s.anything(t.model).isEmpty)
       }
         yield ExactlyOne(LinkType(t))

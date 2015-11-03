@@ -95,6 +95,8 @@ trait TextTypeBasis { self:CoreEcot =>
       else
         s"""""${querki.util.SafeUrl(v.text)}""""" 
     }
+    
+    def doComputeMemSize(v:QLText):Int = v.text.length
   }
 }
   
@@ -159,6 +161,8 @@ trait NameTypeBasis { self:CoreEcot with NameUtils =>
         case _ => throw new Exception(s"Can not coerce NameTypeBase to ${other.displayName}")
       }
     }
+    
+    def doComputeMemSize(v:String):Int = v.length
   }  
 }
 
@@ -233,6 +237,7 @@ trait IntTypeBasis { self:CoreEcot =>
     def fromStr(v:String) = v.toInt
     def doDefault(implicit state:SpaceState):Int = 0
     def toT(i:Int) = i
+    def doComputeMemSize(v:Int):Int = 4
   }
 }
 
@@ -391,6 +396,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
       throw new Exception("Trying to use UnknownType!")
 
     def doDefault(implicit state:SpaceState) = throw new Exception("Trying to use UnknownType!")
+    def doComputeMemSize(v:Unit):Int = 0
   }
   
   /**
@@ -419,6 +425,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
       throw new Exception("Trying to use UrType!")
 
     def doDefault(implicit state:SpaceState) = throw new Exception("Trying to use UrType!")    
+    def doComputeMemSize(v:Unit):Int = 0
   }
   
   class InternalMethodType extends SystemType[String](InternalMethodOID,
@@ -438,6 +445,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
     
     def doDefault(implicit state:SpaceState) = ""
     override def wrap(raw:String):valType = boom 
+    def doComputeMemSize(v:String):Int = 0
   }
   
   class NameType extends NameTypeBase(NameTypeOID, 
@@ -680,6 +688,8 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
     }
     
     override def doToUrlParam(v:OID, raw:Boolean)(implicit state:SpaceState):String = v.toThingId
+    
+    def doComputeMemSize(v:OID):Int = 8
   }
   
   /**
@@ -719,6 +729,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
     def fromStr(v:String) = v.toLong
     def doDefault(implicit state:SpaceState):Long = 0L
     def toT(i:Int) = i.toInt
+    def doComputeMemSize(v:Long):Int = 8 
   }
   
   class FloatType extends NumericTypeBase[Double](FloatTypeOID, 
@@ -742,6 +753,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
     def fromStr(v:String) = v.toDouble
     def doDefault(implicit state:SpaceState):Double = 0
     def toT(i:Int) = i.toDouble
+    def doComputeMemSize(v:Double):Int = 8
   }
   
   /**
@@ -812,5 +824,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
       else
         <input type="checkbox"/>)
     }
+    
+    def doComputeMemSize(v:Boolean):Int = 1
   }
 }

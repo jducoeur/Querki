@@ -102,6 +102,8 @@ class EmailModule(e:Ecology) extends QuerkiEcot(e) with Email with querki.core.M
     def wrap(raw:String):valType = EmailAddress(raw)
     
     override def doMatches(left:EmailAddress, right:EmailAddress):Boolean = left.addr.equalsIgnoreCase(right.addr)
+    
+    def doComputeMemSize(v:EmailAddress):Int = v.addr.length
   }
   lazy val EmailAddressType = new EmailAddressType(EmailTypeOID)
   override lazy val types = Seq(EmailAddressType)

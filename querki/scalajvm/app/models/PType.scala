@@ -208,6 +208,12 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropMap) extends Thing(i, s, m,
    * previously checked canCoerceTo!
    */
   def coerceTo(other:PType[_], elem:ElemValue):ElemValue = throw new Exception(s"PType $displayName can not be coerced to ${other.displayName}!")
+  
+  /**
+   * Given an element, how much space does it take in memory?
+   */
+  final def computeMemSize(elem:ElemValue):Int = doComputeMemSize(get(elem))
+  def doComputeMemSize(v:VT):Int  
 }
 
 /**
@@ -235,6 +241,8 @@ class DelegatingType[VT](resolver: => PType[VT]) extends PType[VT](UnknownOID, U
   
   override def canCoerceTo(other:PType[_]):Boolean = realType.canCoerceTo(other)
   override def coerceTo(other:PType[_], elem:ElemValue):ElemValue = realType.coerceTo(other, elem)
+  
+  def doComputeMemSize(v:VT):Int = realType.doComputeMemSize(v)
   
   override def toString = super.toString + ": " + realType.toString()
 }

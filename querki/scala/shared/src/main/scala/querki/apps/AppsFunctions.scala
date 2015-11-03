@@ -20,10 +20,9 @@ trait AppsFunctions {
   /**
    * Add the specified App to this Space, as a mix-in.
    * 
-   * Responds with info about the newly-added Space, but it is recommended
-   * that the UI reload, since things may have changed a lot.
+   * It is recommended that the UI reload when this responds, since things may have changed a lot.
    * 
    * This API is highly experimental, and very likely to change.
    */
-  def addApp(appId:String):Future[SpaceInfo]
+  def addApp(appId:String):Future[Unit]
 }

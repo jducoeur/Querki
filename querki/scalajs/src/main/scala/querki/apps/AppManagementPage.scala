@@ -38,7 +38,8 @@ class AppManagementPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
           " ", 
           new ButtonGadget(ButtonGadget.Warning, "Add App", disabled := Rx { appInput.map(_.length == 0).getOrElse(true) }) ({ () =>
             Client[AppsFunctions].addApp(appInput.get.text()).call() foreach { success =>
-              // Do something if this succeeded
+              // Things may have changed a *lot*, so do a complete reload:
+              PageManager.fullReload()
             }
           })
         )

@@ -50,7 +50,7 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
     
     val spaceNamespace = s"https://www.querki.net/u/${state.ownerHandle}/${state.linkName.map(canonicalize).get}"
     
-    val (mods, insts) = state.allThings.partition(_.isModel)
+    val (mods, insts) = state.localThings.partition(_.isModel)
       
     val complete =
       querki(

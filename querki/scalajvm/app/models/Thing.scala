@@ -4,6 +4,7 @@ import scala.annotation.tailrec
 
 import querki.basic.PlainText
 import querki.ecology._
+import querki.globals._
 import querki.ql.{Invocation, QLFunction, QLPhrase}
 import querki.time.DateTime
 import querki.util.QLog
@@ -297,6 +298,29 @@ abstract class Thing(
   }
   private def getUntypedPropOptRec(prop:Property[_, _])(implicit state:SpaceState):Option[PropAndVal[_]] = {
     localProp(prop).orElse(getModelOpt.flatMap(_.getUntypedPropOptRec(prop)))
+  }
+  
+  /**
+   * The approximate size of this Thing in memory.
+   * 
+   * Note that we're not worrying about making this precise -- we just want a decent ballpark for working
+   * with. This should err on the low side: we don't ever want to be charging for more memory than is
+   * actually being used. And we mainly care about relative sizes, more than to-the-byte exactness.
+   */
+  lazy val memsize:Int = {
+    // The standard vals of every Thing:
+    //   id: 8
+    //   spaceId: 8
+    //   modelId: 8
+    //   kind: 4
+    //   timestamp: 8
+    36 +
+    // Plus the sizes of the Property Map:
+    props.map { pair =>
+      val (k, v) = pair
+      // 8 for the OID of the Prop:
+      8 + v.memsize
+    }.sum
   }
   
   def thingOps(e:Ecology) = new ThingOps(this)(e)
