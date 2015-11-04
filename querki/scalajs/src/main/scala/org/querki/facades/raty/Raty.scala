@@ -5,6 +5,7 @@ import org.scalajs.dom
 import org.querki.jquery._
 import org.querki.jsext._
 
+@js.native
 trait RatyFacade extends js.Object {
   /**
    * Interpret this JQuery element (which should point to a div) as a Raty.
@@ -12,6 +13,7 @@ trait RatyFacade extends js.Object {
   def raty(opts:RatyOptions):Any = js.native
 }
 
+@js.native
 trait RatyOptions extends js.Object
 /**
  * The Options that can be passed into the raty constructor. All comments are copied

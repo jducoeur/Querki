@@ -24,6 +24,7 @@ import querki.pages.Page
 // Necessary DOM enhancement -- the scala-js-dom doesn't realize that EventTarget can have
 // a "files" member, but it does in the case of a file input field
 // TODO: submit this as a PR to scala-js-dom:
+@js.native
 trait FileTarget extends js.Object {
   def files:dom.raw.FileList = js.native
 }

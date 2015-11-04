@@ -16,10 +16,12 @@ import org.querki.jsext._
  * 
  * TODO: add Events and Methods
  */
+@js.native
 trait MarcoPoloFacade extends js.Object {
   def marcoPolo(config:MarcoPoloOptions):JQuery = js.native
 }
 
+@js.native
 trait MarcoPoloOptions extends js.Object 
 object MarcoPoloOptions extends MarcoPoloOptionBuilder(noOpts)
 class MarcoPoloOptionBuilder(val dict:OptMap) extends JSOptionBuilder[MarcoPoloOptions, MarcoPoloOptionBuilder](new MarcoPoloOptionBuilder(_)) {

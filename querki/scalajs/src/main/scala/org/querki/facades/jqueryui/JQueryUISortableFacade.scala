@@ -7,6 +7,7 @@ import org.scalajs.dom
 import org.querki.jquery._
 import org.querki.jsext._
 
+@js.native
 trait JQueryUISortableFacade extends js.Object {
   def sortable(options:SortableOptions):JQuery = js.native
   
@@ -21,6 +22,7 @@ trait JQueryUISortableFacade extends js.Object {
  * 
  * TODO: this is currently a partial API, missing most of the Events.
  */
+@js.native
 trait SortableOptions extends js.Object
 object SortableOptions extends SortableOptionBuilder(noOpts)
 class SortableOptionBuilder(val dict:OptMap) extends JSOptionBuilder[SortableOptions, SortableOptionBuilder](new SortableOptionBuilder(_)) {
@@ -243,6 +245,7 @@ class SortableOptionBuilder(val dict:OptMap) extends JSOptionBuilder[SortableOpt
   def zIndex(v:Int) = jsOpt("zIndex", v)
 }
 
+@js.native
 trait SortPosition extends js.Object {
   def top:Int = js.native
   def left:Int = js.native
@@ -255,6 +258,7 @@ trait SortPosition extends js.Object {
  * they are all always set, but I am suspicious of whether that is actually true, so I'm playing
  * it safe. This needs further examination.
  */
+@js.native
 trait SortChangeUI extends js.Object {
   /**
    * The jQuery object representing the helper being sorted.

@@ -15,10 +15,12 @@ import org.querki.jsext._
  * This is currently a very partial facade. At some point, though, we may want to OSS
  * it and encourage others to help fill it in.
  */
+@js.native
 trait FileUpload extends js.Object {
   def fileupload(options:FileUploadOptions):Any = js.native
 }
 
+@js.native
 trait FileUploadOptions extends js.Object
 
 /**
@@ -115,6 +117,7 @@ class FileUploadOptionBuilder(val dict:OptMap) extends JSOptionBuilder[FileUploa
 
 object FileUploadOptions extends FileUploadOptionBuilder(noOpts)
 
+@js.native
 trait FileUploadProgress extends js.Object {
   def loaded:Int = js.native
   def total:Int = js.native
@@ -123,6 +126,7 @@ trait FileUploadProgress extends js.Object {
 /**
  * TODO: is this signature correct? The documentation of the result from done() is vague.
  */
+@js.native
 trait FileUploadResults extends js.Object {
   def result:Any = js.native
   def textStatus:String = js.native
@@ -132,6 +136,7 @@ trait FileUploadResults extends js.Object {
 /**
  * TODO: again, based on extremely vague documentation.
  */
+@js.native
 trait FileUploadData extends js.Object {
   def files:dom.raw.FileList = js.native
   def submit():JQueryDeferred = js.native

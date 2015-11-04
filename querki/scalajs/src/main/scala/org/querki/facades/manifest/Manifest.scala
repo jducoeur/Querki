@@ -17,6 +17,7 @@ import org.querki.jsext._
  *     
  * Note that Manifest depends on MarcoPolo.
  */
+@js.native
 trait ManifestFacade extends js.Object {
   def manifest(config:ManifestOptions):JQuery = js.native
   
@@ -87,6 +88,7 @@ class ManifestCommands(manifest:ManifestFacade) {
   def manifestValues():Seq[String] = manifest.manifestInternal("values").asInstanceOf[js.Array[String]].toSeq
 }
 
+@js.native
 trait ManifestOptions extends js.Object 
 object ManifestOptions extends ManifestOptionBuilder(noOpts)
 class ManifestOptionBuilder(val dict:OptMap) extends JSOptionBuilder[ManifestOptions, ManifestOptionBuilder](new ManifestOptionBuilder(_)) {

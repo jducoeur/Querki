@@ -13,6 +13,7 @@ import org.querki.jsext._
  * 
  *     http://api.jqueryui.com/dialog/
  */
+@js.native
 trait JQueryUIDialogFacade extends js.Object {
   /**
    * Defines this jQuery object as a Dialog, with the given options, and enables the
@@ -28,6 +29,7 @@ trait JQueryUIDialogFacade extends js.Object {
   def dialog(cmd:String):Any = js.native
 }
 
+@js.native
 trait DialogOptions extends js.Object 
 object DialogOptions extends DialogOptionBuilder(noOpts)
 class DialogOptionBuilder(val dict:OptMap) extends JSOptionBuilder[DialogOptions, DialogOptionBuilder](new DialogOptionBuilder(_)) {

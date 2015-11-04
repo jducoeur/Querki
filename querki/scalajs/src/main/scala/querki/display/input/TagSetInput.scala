@@ -12,6 +12,7 @@ import querki.globals._
 
 import querki.comm._
 
+@js.native
 trait ManifestItem extends js.Object {
   def display:String = js.native
   def id:String = js.native

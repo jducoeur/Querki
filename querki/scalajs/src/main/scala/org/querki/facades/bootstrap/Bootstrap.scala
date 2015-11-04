@@ -13,6 +13,7 @@ import org.querki.jquery._
  * TODO: after Querki gets upgraded to Bootstrap 3, begin to evolve this into a proper open-source
  * facade, and encourage folks to help fill it in.
  */
+@js.native
 trait BootstrapFacade extends js.Object {
   def modal(cmd:ModalCommand.ModalCommand):Any = js.native
   
@@ -62,8 +63,8 @@ object PopoverCommand {
   val destroy = "destroy"
 }
 
+@js.native
 trait PopoverOptions extends js.Object 
-
 class PopoverOptionBuilder(val dict:OptMap) extends JSOptionBuilder[PopoverOptions, PopoverOptionBuilder](new PopoverOptionBuilder(_)) {
   def animation(v:Boolean) = jsOpt("animation", v)
   def html(v:Boolean) = jsOpt("html", v)
@@ -80,6 +81,7 @@ class PopoverOptionBuilder(val dict:OptMap) extends JSOptionBuilder[PopoverOptio
 }
 object PopoverOptions extends PopoverOptionBuilder(noOpts)
 
+@js.native
 trait PopoverDelay extends js.Object
 class PopoverDelayBuilder(val dict:OptMap) extends JSOptionBuilder[PopoverDelay, PopoverDelayBuilder](new PopoverDelayBuilder(_)) {
   def show(v:Int) = jsOpt("show", v)
