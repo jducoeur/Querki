@@ -12,13 +12,6 @@ import querki.types.ModelTypeBase
 import querki.util.PublicException
 import querki.values.{QLContext, QValue, SpaceState}
 
-sealed trait SigParam
-case class RequiredParam(name:String, pts:PType[_]*) extends SigParam
-
-case class Signature(returnPt:PType[_], required:RequiredParam*) {
-  def numRequiredParams = required.length
-}
-
 /**
  * Extra information that can get picked up and carried along with the InvocationValue. Pulled out to here,
  * to keep it from clogging up the logic of the main InvocationValueImpl.
@@ -92,7 +85,7 @@ object InvocationValueImpl {
     InvocationValueImpl(inv, Future.successful(IVData(Some(true), meta)))
 }
 
-private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext, val definingContext:Option[QLContext], paramsOpt:Option[Seq[QLPhrase]], sig:Option[Signature] = None)(implicit val ecology:Ecology) 
+private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext, val definingContext:Option[QLContext], paramsOpt:Option[Seq[QLPhrase]])(implicit val ecology:Ecology) 
   extends Invocation with EcologyMember
 {
   lazy val QL = interface[querki.ql.QL]

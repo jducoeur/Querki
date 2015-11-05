@@ -10,7 +10,7 @@ import models.Thing.PropMap
 import querki.core.URLableType
 import querki.ecology._
 import querki.globals._
-import querki.ql.{InvocationValue, QLPhrase, Signature, RequiredParam}
+import querki.ql.{InvocationValue, QLPhrase}
 import querki.util._
 import querki.values._
 
@@ -359,8 +359,6 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	          |The default behaviour of a Link, if you don't do anything with it, is effectively
 	          |"_showLink(Default View)".""".stripMargin)))
 	{
-	  lazy val sig = Signature(ParsedTextType, RequiredParam("label"))
-	  
 	  override def qlApply(inv:Invocation):QFut = {
 	    for {
 	      pt <- inv.contextTypeAs[URLableType]
