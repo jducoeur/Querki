@@ -11,7 +11,7 @@ import querki.ecology._
 import querki.globals._
 import querki.html.RenderSpecialization._
 import querki.identity.User
-import querki.ql.{QLCall, QLPhrase}
+import querki.ql.{QLCall, QLParam, QLPhrase}
 import querki.types._
 import querki.util._
 import querki.values._
@@ -124,7 +124,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   {
     def specialization(mainContext:QLContext, mainThing:PropertyBundle, 
       partialContext:QLContext, prop:Property[_,_],
-      params:Option[Seq[QLPhrase]]):Set[RenderSpecialization] = Set(FromEditFunction)
+      params:Option[Seq[QLParam]]):Set[RenderSpecialization] = Set(FromEditFunction)
   
     def cantEditFallback(inv:Invocation):Future[QValue]
     
@@ -145,7 +145,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   
     def applyToPropAndThing(inv:Invocation, elemContext:QLContext, mainThing:PropertyBundle, 
       definingContext:QLContext, prop:Property[_,_],
-      params:Option[Seq[QLPhrase]]):QFut =
+      params:Option[Seq[QLParam]]):QFut =
     {
       elemContext.request.requester match {
         case Some(requester) if (canEdit(elemContext, requester, mainThing, prop)) => {
@@ -297,7 +297,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       // This user isn't allowed to edit, so display the fallback
       paramsOpt match {
         case Some(params) if (params.length > 0) => {
-          context.parser.get.processPhrase(params(0).ops, context).map(_.value)
+          context.parser.get.processPhrase(params(0).phrase.ops, context).map(_.value)
         }
         case _ => Future.successful(QL.WarningValue("_editOrElse requires a parameter"))
       }
@@ -334,7 +334,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
     
     override def specialization(mainContext:QLContext, mainThing:PropertyBundle, 
       partialContext:QLContext, prop:Property[_,_],
-      paramsOpt:Option[Seq[QLPhrase]]):Set[RenderSpecialization] = 
+      paramsOpt:Option[Seq[QLParam]]):Set[RenderSpecialization] = 
     {
       // This is basically saying "if there is one parameter, and it is the token 'withAdd'"
       // TODO: all of this should go behind a better-built parameter wrapper.
@@ -367,9 +367,9 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
 	      case Some(params) if (params.length == 2) => {
 	        val context = inv.definingContext.get
           for {
-            label <- context.parser.get.processPhrase(params(0).ops, context).map(_.value)
+            label <- context.parser.get.processPhrase(params(0).phrase.ops, context).map(_.value)
             labelWiki <- label.wikify(context)
-            control <- context.parser.get.processPhrase(params(1).ops, context).map(_.value)
+            control <- context.parser.get.processPhrase(params(1).phrase.ops, context).map(_.value)
             controlWiki <- control.wikify(context)
           }
 	          yield QL.WikitextValue(

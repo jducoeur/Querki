@@ -346,7 +346,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
         // First version of this function: if there is a parameter, it should be the name of a Kind:
         case Some(params) => {
           val param = params(0);
-          val QLCall(kindName, _, _, _) = param.ops(0)
+          val QLCall(kindName, _, _, _) = param.phrase.ops(0)
           Future.successful(Kind.fromName(kindName.name).map(kind => ExactlyOne(IntType(kind))).getOrElse(QL.WarningValue("Unknown Kind: " + kindName)))
         }
       

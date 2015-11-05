@@ -100,6 +100,7 @@ object SystemCreator {
     new querki.cluster.ClusterEcot(ecology)                        // 58
     new querki.apps.AppsEcot(ecology)                              // 59
                                      // 60
+    new querki.ql.SignatureEcot(ecology)                           // 61
   }
   
   def createAllEcots(ecology:Ecology, actorSystem:Option[ActorSystem]):Ecology = {

@@ -22,6 +22,8 @@ Func.missingDefiningContext={0} must be used with a dot
 Func.notProp={0} can only be used on Properties
 Func.unknownPropOID=Encountered unknown Property {0}; did you delete it?
 Func.emptyParamValue={0} expects a value in its parameter, but it is empty
+Func.unknownParamName=Hit a reference to parameter {0}, which isn't listed in the parameters of {1}
+Func.missingNamedParam={0} missing required parameter {1}
 
 Imexport.exportNotAllowed=You aren't allowed to read {0}, so you can't export its instances.
 Imexport.ownerOnly=Only the owner of the Space is allowed to export it.

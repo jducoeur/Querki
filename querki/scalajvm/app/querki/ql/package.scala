@@ -6,7 +6,6 @@ import models.{Collection, Property, PropertyBundle, PType, PTypeBuilder, Thing,
 
 import querki.core.QLText
 import querki.ecology._
-
 import querki.util.PublicException
 import querki.values.{ElemValue, EmptyValue, QFut, QLContext, QValue, SpaceState}
 
@@ -298,7 +297,7 @@ package object ql {
     /**
      * The parameter list for this invocation, iff there was one.
      */
-    def paramsOpt:Option[Seq[QLPhrase]]
+    def paramsOpt:Option[Seq[QLParam]]
   }
   
   trait QL extends EcologyInterface {        
@@ -346,4 +345,17 @@ package object ql {
     def EmptyListCut():QValue
   }
 
+  /**
+   * The various bits and pieces involved in defining formal function signatures.
+   */
+  trait Signature extends EcologyInterface {
+    /**
+     * The main point of Signature: lets you define the signature -- that is, the expected parameters -- of an InternalMethod.
+     * Actually generates a SignatureProp entry, but you usually don't need to worry about that.
+     * 
+     * In theory, every InternalMethod should use Signature. In practice, we're not going to be hard-assed about
+     * that yet, but new ones should use it.
+     */
+    def apply(reqs:Seq[(String, PType[_], String)], opts:Seq[(String, PType[_], QValue, String)]):(OID, QValue)
+  }
 }

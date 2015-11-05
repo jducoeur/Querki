@@ -10,7 +10,7 @@ import models.Thing.PropMap
 import querki.core.URLableType
 import querki.ecology._
 import querki.globals._
-import querki.ql.{InvocationValue, QLPhrase}
+import querki.ql.{InvocationValue, QLParam, QLPhrase}
 import querki.util._
 import querki.values._
 
@@ -92,7 +92,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       Details(details))) 
   {
     // Actual Modifier classes should implement this, which does the heart of the work
-    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLPhrase]):Future[NodeSeq]
+    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLParam]):Future[NodeSeq]
     
     override def qlApply(inv:Invocation):QFut = {
       val context = inv.context
@@ -150,7 +150,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
             |This will create a paragraph for "hello world" as usual, but will attach "myClass" as a class on that
             |paragraph. (This is less often necessary, but occasionally helpful.)""".stripMargin)
   {
-    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLPhrase]):Future[NodeSeq] = 
+    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLParam]):Future[NodeSeq] = 
       Future.successful(HtmlRenderer.addClasses(nodes, paramText))
   }
   
@@ -164,7 +164,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       |In the long run, you will be able to describe a tooltip without using a QL expression, but
       |for now, this is the way to do it.""".stripMargin)
   {
-    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLPhrase]):Future[NodeSeq] = {
+    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLParam]):Future[NodeSeq] = {
       val withClass = HtmlRenderer.addClasses(nodes, "_withTooltip")      
       Future.successful(XmlHelpers.mapElems(withClass)(_ % Attribute("title", Text(paramText), Null)))
     }
@@ -177,7 +177,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       |[[_code(""[[""Hello world"" -> _data(""foo"", ""something"")]]"")]]
       |will add a "data-foo" attribute to the block containing Hello world.""".stripMargin)
   {
-    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLPhrase]):Future[NodeSeq] = {
+    def doTransform(nodes:NodeSeq, paramText:String, context:QLContext, params:Seq[QLParam]):Future[NodeSeq] = {
       if (params.length < 2)
         throw new PublicException("UI.transform.dataRequired")
       
@@ -230,9 +230,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     
       paramsOpt match {
         case Some(params) if (params.length > 0) => {
-          val header = params(0)
-          val details = if (params.length > 1) Some(params(1)) else None
-          val empty = if (params.length > 2) Some(params(2)) else None
+          val header = params(0).phrase
+          val details = if (params.length > 1) Some(params(1).phrase) else None
+          val empty = if (params.length > 2) Some(params(2).phrase) else None
           buildSection(context, header, details, empty)
         }
         case _ => Future.successful(QL.ErrorValue("_section requires at least one parameter"))
@@ -275,8 +275,8 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 	        urlOpt match {
 	          case Some(url) => {
               Future.sequence(
-                params.map(phrase => 
-                  context.parser.get.processPhrase(phrase.ops, context).flatMap(_.value.wikify(context))))
+                params.map(param => 
+                  context.parser.get.processPhrase(param.phrase.ops, context).flatMap(_.value.wikify(context))))
               .map { paramTexts =>
 	              HtmlValue(QHtml(generateButton(url, paramTexts).toString))
               }

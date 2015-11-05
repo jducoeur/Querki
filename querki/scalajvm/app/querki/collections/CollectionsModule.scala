@@ -347,7 +347,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
               yield for {
                 // Do some calculations and get a Future...
                 // This may return a wrapped Delegating Type. (Eg, DescendingType.)
-                tCalc <- context.parser.get.processPhrase(param.ops, context.next(ExactlyOne(LinkType(t)))).map(_.value)
+                tCalc <- context.parser.get.processPhrase(param.phrase.ops, context.next(ExactlyOne(LinkType(t)))).map(_.value)
                 tRawResultOpt = tCalc.firstOpt
                 // Note that tResultOpt will be None iff the processing came up empty, or as UnknownOID. (The latter
                 // is very common iff the sort expression including a Property not defined on the received Bundle.)
@@ -422,7 +422,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    
 	    paramsOpt match {
 	      case Some(params) => {
-	        val innerResFut = context.parser.get.processPhrase(params(0).ops, context).map(_.value)
+	        val innerResFut = context.parser.get.processPhrase(params(0).phrase.ops, context).map(_.value)
 	        innerResFut.map(innerRes =>
             innerRes.cType.makePropValue(innerRes.cv, new DescendingType(innerRes.pType)))
 	      }
@@ -480,7 +480,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
       paramsOpt match {
         case Some(params) if (params.length > 0) => {
           val thing = context.value.first
-          context.parser.get.processPhrase(params(0).ops, context).map(_.value).map { list =>
+          context.parser.get.processPhrase(params(0).phrase.ops, context).map(_.value).map { list =>
             val index = list.indexOf(thing)
             index match {
               case Some(i) => {
@@ -513,7 +513,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
       paramsOpt match {
         case Some(params) if (params.length > 0) => {
           val thing = context.value.first
-          context.parser.get.processPhrase(params(0).ops, context).map(_.value).map { list =>
+          context.parser.get.processPhrase(params(0).phrase.ops, context).map(_.value).map { list =>
             val index = list.indexOf(thing)
             index match {
               case Some(i) => {

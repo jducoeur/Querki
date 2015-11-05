@@ -19,7 +19,12 @@ case class QLPhrase(ops:Seq[QLStage]) {
   def reconstructString = ops.map(_.reconstructString).mkString(" -> ")
 }
 
-case class QLCall(name:QLName, methodName:Option[String], params:Option[Seq[QLPhrase]], collFlag:Option[String]) extends QLStage(collFlag) {
+case class QLParam(name:Option[String], phrase:QLPhrase) {
+  def reconstructString = s"${name.map(_ + " = ")}${phrase.reconstructString}"
+  def ops = phrase.ops
+}
+
+case class QLCall(name:QLName, methodName:Option[String], params:Option[Seq[QLParam]], collFlag:Option[String]) extends QLStage(collFlag) {
   def reconstructString = collFlag.getOrElse("") +
     name.reconstructString +
     methodName.map(str => "." + str).getOrElse("") +

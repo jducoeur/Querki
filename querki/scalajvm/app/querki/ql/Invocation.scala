@@ -85,17 +85,26 @@ object InvocationValueImpl {
     InvocationValueImpl(inv, Future.successful(IVData(Some(true), meta)))
 }
 
-private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext, val definingContext:Option[QLContext], paramsOpt:Option[Seq[QLPhrase]])(implicit val ecology:Ecology) 
+private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing, 
+    receivedContext:QLContext, val definingContext:Option[QLContext], 
+    paramsOpt:Option[Seq[QLParam]])
+  (implicit val ecology:Ecology) 
   extends Invocation with EcologyMember
 {
   lazy val QL = interface[querki.ql.QL]
   lazy val Core = interface[querki.core.Core]
+  lazy val SignatureInternal = interface[SignatureInternal]
   lazy val Types = interface[querki.types.Types]
   
   lazy val displayName = invokedOn.displayName
   lazy val LinkType = Core.LinkType
   
   implicit val inv = this
+  
+  /**
+   * The signature for this function, which we use to extract specific params.
+   */
+  lazy val sig = SignatureInternal.getSignature(method, state, paramsOpt)
   
   def error[VT](name:String, params:String*) = InvocationValueImpl[VT](PublicException(name, params:_*))
   
@@ -393,7 +402,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
   def processParam(paramNum:Int, processContext:QLContext = context):InvocationValue[QValue] = {
     paramsOpt match {
       case Some(params) if (params.length >= (paramNum + 1)) => {
-        val resultFut = context.parser.get.processPhrase(params(paramNum).ops, processContext).flatMap { raw =>
+        val resultFut = context.parser.get.processPhrase(params(paramNum).phrase.ops, processContext).flatMap { raw =>
           val processed = raw.value
           processed.firstAs(QL.ErrorTextType) match {
             // If there was an error, keep the error, and stop processing:
@@ -411,7 +420,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
   {
     paramsOpt match {
       case Some(params) if (params.length >= (paramNum + 1)) => {
-        val resultFut:Future[Iterable[VT]] = context.parser.get.processPhrase(params(paramNum).ops, processContext).flatMap { raw =>
+        val resultFut:Future[Iterable[VT]] = context.parser.get.processPhrase(params(paramNum).phrase.ops, processContext).flatMap { raw =>
           val processed = raw.value
           if (processed.isEmpty)
             onEmpty
@@ -465,7 +474,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, receivedContext:QLContext
   
   def rawParam(paramNum:Int):InvocationValue[QLPhrase] = {
     paramsOpt match {
-      case Some(params) if (params.length >= (paramNum - 1)) => InvocationValueImpl(Some(params(paramNum)))
+      case Some(params) if (params.length >= (paramNum - 1)) => InvocationValueImpl(Some(params(paramNum).phrase))
       case _ => error("Func.missingParam", displayName)
     }
   }

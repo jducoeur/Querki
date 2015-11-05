@@ -118,13 +118,14 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
   def qlDisplayName[QLDisplayName] = "`" ~> "[^`]*".r <~ "`" ^^ { QLDisplayName(_) }
   def qlThingId[QLThingId] = "." ~> "\\w*".r ^^ { oid => QLThingId("." + oid) }
   def qlName:Parser[QLName] = qlBinding | qlThingId | qlSafeName | qlDisplayName
-  def qlCall:Parser[QLCall] = opt("\\*\\s*".r) ~ qlName ~ opt("." ~> name) ~ opt("\\(\\s*".r ~> (rep1sep(qlPhrase, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
+  def qlCall:Parser[QLCall] = opt("\\*\\s*".r) ~ qlName ~ opt("." ~> name) ~ opt("\\(\\s*".r ~> (rep1sep(qlParam, "\\s*,\\s*".r) <~ "\\s*\\)".r)) ^^ { 
     case collFlag ~ n ~ optMethod ~ optParams => QLCall(n, optMethod, optParams, collFlag) }
   // Note that the failure() here only works because we specifically disallow "]]" in a Text!
   def qlTextStage:Parser[QLTextStage] = (opt("\\*\\s*".r) <~ "\"\"") ~ qlText <~ ("\"\"" | failure("Reached the end of the QL expression, but missing the closing \"\" for a Text expression in it") ) ^^ {
     case collFlag ~ text => QLTextStage(text, collFlag) }
   def qlBinding:Parser[QLBinding] = "\\s*\\$".r ~> name ^^ { QLBinding(_) } 
   def qlStage:Parser[QLStage] = qlNumber | qlCall | qlTextStage
+  def qlParam:Parser[QLParam] = opt(name <~ "\\s*=\\s*") ~ qlPhrase ^^ { case nameOpt ~ phrase => QLParam(nameOpt, phrase) }
   def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, qlSpace ~ "->".r ~ qlSpace) ^^ { QLPhrase(_) }
   def qlExp:Parser[QLExp] = opt(qlSpace) ~> repsep(qlPhrase, "\\s*\\r?\\n|\\s*;\\s*".r) <~ opt(qlSpace) ^^ { QLExp(_) }
   def qlLink:Parser[QLLink] = qlText ^^ { QLLink(_) }
@@ -165,12 +166,12 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
         case Some(method) => {
           val definingContext = context.next(Core.ExactlyOne(Core.LinkType(t.id)))
           qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
-            method.qlApplyTop(InvocationImpl(t, contextWithCall, Some(definingContext), params), method)
+            method.qlApplyTop(InvocationImpl(t, method, contextWithCall, Some(definingContext), params), method)
           }
         }
         case None => {
           qlProfilers.processCallDetail.profileAs(" " + call.name.name) {
-            val inv = InvocationImpl(t, contextWithCall, None, params)
+            val inv = InvocationImpl(t, t, contextWithCall, None, params)
             t.qlApplyTop(inv, t)
           }
         }
@@ -230,9 +231,9 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
         val paramNum = rawParamNum - 1
         val resultOpt = for (
           params <- resolvingParser.paramsOpt;
-          phrase = params(paramNum)
+          param = params(paramNum)
             )
-          yield processPhrase(phrase.ops, context, true)
+          yield processPhrase(param.phrase.ops, context, true)
         
         resultOpt.getOrElse(warningFut(context,"No parameters passed in"))
       } catch {

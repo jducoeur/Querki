@@ -52,7 +52,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	    
 	    paramsOpt match {
 	      case Some(params) => {
-          val resultFut = Future.sequence(params.map(phrase => context.parser.get.processPhrase(phrase.ops, context)))
+          val resultFut = Future.sequence(params.map(param => context.parser.get.processPhrase(param.phrase.ops, context)))
 	        val result = resultFut.map(_.find(oneResult => !(oneResult.value.isEmpty)).map(_.value))
 
 	        // If we got nothing out, then produce an empty list of the incoming type
@@ -82,7 +82,7 @@ class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.c
 	    
 	    val inVal = paramsOpt match {
 	      case Some(params) if (params.length == 1) => {
-	        context.parser.get.processPhrase(params(0).ops, context).map(_.value)
+	        context.parser.get.processPhrase(params(0).phrase.ops, context).map(_.value)
 	      }
 	      case _ => Future.successful(context.value)
 	    }

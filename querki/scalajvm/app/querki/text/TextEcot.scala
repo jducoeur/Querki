@@ -7,7 +7,7 @@ import querki.ecology._
 import models.Wikitext
 
 import querki.core.QLText
-import querki.ql.{QLCall, QLPhrase}
+import querki.ql.{QLCall, QLParam, QLPhrase}
 import querki.values.{QFut, QLContext}
 
 object MOIDs extends EcotIds(23) {
@@ -41,12 +41,12 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	    val context = inv.context
 	    val paramsOpt = inv.paramsOpt
 	    
-	    def chooseParam(params:Seq[QLPhrase]):QLPhrase = {
+	    def chooseParam(params:Seq[QLParam]):QLPhrase = {
 	      val received = context.value
 	      if (received.isEmpty || received.size > 1)
-	        params(1)
+	        params(1).phrase
 	      else
-	        params(0)
+	        params(0).phrase
 	    }
 	    
 	    val result = for
@@ -99,7 +99,7 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
 	      case Some(params) if (params.length > 2) => (Some(params(0)), Some(params(1)), Some(params(2)))
 	      case _ => (None, None, None)
 	    }
-	    def renderParam(paramOpt:Option[QLPhrase]):Future[Wikitext] = {
+	    def renderParam(paramOpt:Option[QLParam]):Future[Wikitext] = {
 	      paramOpt match {
 	        case Some(param) => {
 	          val collContext = context.asCollection
