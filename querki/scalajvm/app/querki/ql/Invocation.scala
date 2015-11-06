@@ -398,7 +398,37 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
     }  
   }
   
-  // TODO: merge these two functions. They're mostly alike...
+  def process(name:String, processContext:QLContext = context):InvocationValue[QValue] = {
+    val resultFut = sig.getParam(name).process(context.parser.get, context).flatMap { raw =>
+      val processed = raw.value
+      processed.firstAs(QL.ErrorTextType) match {
+        // If there was an error, keep the error, and stop processing:
+        case Some(errorText) => Future.failed(new PublicException("General.public", errorText))
+        case None => Future.successful(Some(processed))
+      }
+    }
+    InvocationValueImpl(inv, resultFut.map(IVData(_)))
+  }
+  
+  def processAs[VT](name:String, pt:PType[VT], processContext:QLContext = context):InvocationValue[VT] = {
+    val resultFut = sig.getParam(name).process(context.parser.get, context).flatMap { raw =>
+      val processed = raw.value
+      processed.firstAs(QL.ErrorTextType) match {
+        // If there was an error, keep the error, and stop processing:
+        case Some(errorText) => Future.failed(new PublicException("General.public", errorText))
+        case None => {
+          try {
+            Future.successful(processed.rawList(pt))
+          } catch {
+            case ex:Exception => Future.failed(PublicException("Func.paramWrongType", displayName, name, pt.displayName, processed.pType.displayName))  
+          }
+        }
+      }
+    }
+    InvocationValueImpl(inv, resultFut.map(IVData(_)))
+  }
+  
+  // TODO: The next several functions are deprecated, and should be phased out in favor of the above version:
   def processParam(paramNum:Int, processContext:QLContext = context):InvocationValue[QValue] = {
     paramsOpt match {
       case Some(params) if (params.length >= (paramNum + 1)) => {

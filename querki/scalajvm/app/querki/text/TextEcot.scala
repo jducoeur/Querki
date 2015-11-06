@@ -20,6 +20,8 @@ object MOIDs extends EcotIds(23) {
 
 class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   import MOIDs._
+  
+  val Signature = initRequires[querki.ql.Signature]
 
   /***********************************************
    * FUNCTIONS
@@ -134,6 +136,10 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
     toProps(
       setName("_substring"),
       SkillLevel(SkillLevelAdvanced),
+      Signature(
+        Seq(("start", IntType, "The zero-based index of the beginning of the substring")),
+        Seq(("end", IntType, ExactlyOne(IntType(Int.MaxValue)), "The zero-based index of the end of the substring"))
+      ),
       Summary("Extracts part of a Text or Large Text"),
       Details("""    TEXT -> _substring(START, END) -> SUBTEXT
         |
@@ -152,8 +158,8 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
-        start <- inv.processParamFirstAs(0, IntType)
-        end <- inv.processParamFirstOr(1, IntType, Int.MaxValue)
+        start <- inv.processAs("start", IntType)
+        end <- inv.processAs("end", IntType)
         elemContext <- inv.contextElements
         qv = elemContext.value
         wikitext <- inv.fut(qv.wikify(elemContext))

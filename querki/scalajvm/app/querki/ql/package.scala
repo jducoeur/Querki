@@ -213,14 +213,30 @@ package object ql {
     /**
      * Process and return the specific parameter, assuming nothing about the results.
      */
+    def process(name:String, processContext:QLContext = context):InvocationValue[QValue]
+    
+    /**
+     * Get the specified parameter's values, which should be of the given Type.
+     */
+    def processAs[VT](name:String, pt:PType[VT], processContext:QLContext = context):InvocationValue[VT]
+    
+    /**
+     * DEPRECATED
+     * 
+     * Process and return the specific parameter, assuming nothing about the results.
+     */
     def processParam(paramNum:Int, processContext:QLContext = context):InvocationValue[QValue]
 
     /**
+     * DEPRECATED
+     * 
      * Get the specified parameter's first value, which should be of the given Type.
      */
     def processParamFirstAs[VT](paramNum:Int, pt:PType[VT], processContext:QLContext = context):InvocationValue[VT]
     
     /**
+     * DEPRECATED
+     * 
      * Variation of processParamFirstAs, which copes with optional parameters and lets you define a default.
      * 
      * IMPORTANT: if the actual parameter results in an empty value, the default is returned. That is, an empty

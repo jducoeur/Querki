@@ -4,8 +4,8 @@ import models._
 
 import querki.ecology._
 import querki.globals._
-import querki.types.{ModelTypeDefiner, SimplePropertyBundle}
-import querki.values.QValue
+import querki.types.{ModeledPropertyBundle, ModelTypeDefiner, SimplePropertyBundle}
+import querki.values.{QLContext, QValue}
 
 object SignatureMOIDs extends EcotIds(61) {
   val SignatureModelOID = moid(1)
@@ -17,7 +17,9 @@ object SignatureMOIDs extends EcotIds(61) {
   val SignaturePropOID = moid(7)
 }
 
-private [ql] case class ParamResult(param:Option[QLPhrase], default:Option[QValue])
+private [ql] trait ParamResult {
+  def process(parser:QLParser, context:QLContext):Future[QLContext]
+}
 
 /**
  * What a signature looks like to InvocationImpl. Hides the grungy details.
@@ -80,6 +82,24 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
   case class SignatureMapImpl(t:Thing, state:SpaceState, paramsOpt:Option[Seq[QLParam]]) extends SignatureMap {
     implicit val s = state
     
+    case class ParamResultImpl(phraseOpt:Option[QLPhrase], formal:ModeledPropertyBundle) extends ParamResult {
+      def name = formal.getProp(Core.NameProp).first
+      
+      def default = {
+        formal.getPropOpt(Types.DefaultValueProp).map(_.v) match {
+          case Some(defa) => defa
+          case None => throw new PublicException("Func.missingNamedParam", t.displayName, name)
+        }
+      }
+      
+      def process(parser:QLParser, context:QLContext):Future[QLContext] = {
+        phraseOpt match {
+          case Some(phrase) => parser.processPhrase(phrase.ops, context)
+          case _ => Future.successful(context.next(default))
+        }
+      }
+    }
+  
     lazy val sigOpt = t.getPropOpt(SignatureProp)
     // The formal parameters of this function, required then optional
     // TODO: investigate pre-building this, at least for InternalMethods, and storing it as a separate
@@ -105,20 +125,22 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
             bundle.getPropOpt(Core.NameProp).flatMap(_.firstOpt).map(_ == name).getOrElse(false)
           }
           val (formal, index) = formalOpt.getOrElse(notFound)
-          def returnDefault = {
-            formal.getPropOpt(Types.DefaultValueProp).flatMap(_.firstOpt) match {
-              case Some(default) => ParamResult(None, Some(default))
-              case None => throw new PublicException("Func.missingNamedParam", t.displayName, name)
-            }
-          }
+          lazy val returnDefault = ParamResultImpl(None, formal)
           
           paramsOpt match {
             case Some(params) => {
-              // TODO: first see if there is a named actual parameter
-              if (params.length >= (index + 1))
-                ParamResult(Some(params(index).phrase), None)
-              else
-                returnDefault
+              // First see if there is a named actual parameter...
+              params.find(_.name.map(_.toLowerCase == name).getOrElse(false)) match {
+                case Some(named) => ParamResultImpl(Some(named.phrase), formal)
+                case _ => {
+                  // ... otherwise, find it positionally...
+                  if (params.length >= (index + 1))
+                    ParamResultImpl(Some(params(index).phrase), formal)
+                  // ... and if that fails, use the default, assuming there is one:
+                  else
+                    returnDefault
+                }
+              }
             }
             // There are no actual parameters, so let's see if we can at least find a default:
             case _ => returnDefault
