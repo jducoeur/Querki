@@ -15,6 +15,8 @@ object SignatureMOIDs extends EcotIds(61) {
   val ParamModelOID = moid(5)
   val ParamTypeOID = moid(6)
   val SignaturePropOID = moid(7)
+  val SignatureDisplayOID = moid(8)
+  val ParamsDisplayOID = moid(9)
 }
 
 private [ql] trait ParamResult {
@@ -47,6 +49,7 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
   import SignatureMOIDs._
   
   val Conventions = initRequires[querki.conventions.Conventions]
+  val Basic = initRequires[querki.basic.Basic]
   val Types = initRequires[querki.types.Types]
   
   def apply(reqs:Seq[(String, PType[_], String)], opts:Seq[(String, PType[_], QValue, String)]):(OID, QValue) = {
@@ -153,7 +156,7 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
   }
   
   /***********************************************
-   * MODELS
+   * MODELS and THINGS
    ***********************************************/
   
   /**
@@ -179,9 +182,24 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
       ReqParams(),
       OptParams()))
       
+  lazy val SignatureDisplay = ThingState(SignatureDisplayOID, systemOID, RootOID,
+    toProps(
+      setName("_Display Function Signature"),
+      Basic.ApplyMethod(
+          """""[[Name]][[_Function Signature -> ""([[_concat(_Required Parameters, _Optional Parameters) -> Name -> _join("", "")]])""]]""""")))
+          
+  lazy val ParamsDisplay = ThingState(ParamsDisplayOID, systemOID, RootOID,
+    toProps(
+      setName("_Display Function Parameters"),
+      Basic.ApplyMethod(
+          """""[[_Function Signature -> _concat(_Required Parameters, _Optional Parameters) ->
+            |    "": [[Name]] : [[Summary]]""]]""""".stripMargin)))
+      
   override lazy val things = Seq(
     ParameterModel,
-    SignatureModel
+    SignatureModel,
+    SignatureDisplay,
+    ParamsDisplay
   )
   
   /***********************************************

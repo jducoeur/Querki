@@ -158,8 +158,15 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
         (conventions.MOIDs.PropSummaryOID -> Optional.QNone),
         (querki.basic.MOIDs.DisplayTextOID -> Optional(LargeTextType("""[[Summary -> ""**____** -- ""]]
             |[[_if(Property Type -> _is(Internal Method Type), 
-            |  ""**METHOD**"",
+            |  ""**Function**"",
             |  ""Collection: [[Property Collection]] Type: [[Property Type]]"")]]
+            |  
+            |[[_if(Property Type -> _is(Internal Method Type), 
+            |""{{well well-sm:
+            |**[[_Display Function Signature]]**
+            |
+            |[[_Display Function Parameters]]
+            |}}"")]]
             |
             |[[Details]]
             |
@@ -168,13 +175,14 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core
             |
             |[[_QLButton(""Recalculate Summaries"", _updatePropSumaries, ""_recalcResult"")]]<div id="_recalcResult"></div>"")]]
             |
-            |#### Things that use ____
+            |[[_if(_not(Property Type -> _is(Internal Method Type)), 
+            |""#### Things that use ____
             |
             |[[_currentSpace ->
             |  _allThings ->
             |  _filter(_hasProperty($_context._self)) ->
             |  _sort ->
-            |  _bulleted]]
+            |  _bulleted]]"")]]
             |""".stripMargin)))
         ), querki.time.epoch)
 
