@@ -138,13 +138,12 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
       SkillLevel(SkillLevelAdvanced),
       Signature(
         Seq(("start", IntType, "The zero-based index of the beginning of the substring")),
-        Seq(("end", IntType, ExactlyOne(IntType(Int.MaxValue)), "The zero-based index of the end of the substring"))
+        Seq(("end", IntType, ExactlyOne(IntType(Int.MaxValue)), 
+               "The zero-based index of the end of the substring -- if omitted, takes the rest of the string"))
       ),
       Summary("Extracts part of a Text or Large Text"),
       Details("""Given a value, this treats it as text, and extracts the portion of it beginning at
         |character **start**, and running through **end** - 1.
-        |
-        |If you omit the **end** parameter, it will take everything through the end of the string.
         |
         |The parameters are zero-indexed; that is, the first character is 0, the second 1, etc. 
         |

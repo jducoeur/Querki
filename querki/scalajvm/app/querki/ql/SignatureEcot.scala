@@ -193,7 +193,7 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
       setName("_Display Function Parameters"),
       Basic.ApplyMethod(
           """""[[_Function Signature -> _concat(_Required Parameters, _Optional Parameters) ->
-            |    "": [[Name]] : [[Summary]]""]]""""".stripMargin)))
+            |    "": [[Name]][[_if(_not(_isEmpty(Default Value)), "" (optional)"")]] : [[Summary]]""]]""""".stripMargin)))
       
   override lazy val things = Seq(
     ParameterModel,
