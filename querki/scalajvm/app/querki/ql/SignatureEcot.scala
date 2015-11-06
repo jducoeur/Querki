@@ -17,6 +17,8 @@ object SignatureMOIDs extends EcotIds(61) {
   val SignaturePropOID = moid(7)
   val SignatureDisplayOID = moid(8)
   val ParamsDisplayOID = moid(9)
+  val ExpectedTypesOID = moid(10)
+  val ReturnTypeOID = moid(11)
 }
 
 private [ql] trait ParamResult {
@@ -52,9 +54,15 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
   val Basic = initRequires[querki.basic.Basic]
   val Types = initRequires[querki.types.Types]
   
-  def apply(reqs:Seq[(String, PType[_], String)], opts:Seq[(String, PType[_], QValue, String)]):(OID, QValue) = {
+  def apply(
+      expected:Seq[PType[_]], 
+      reqs:Seq[(String, PType[_], String)], 
+      opts:Seq[(String, PType[_], QValue, String)], 
+      returns:Option[PType[_]]):(OID, QValue) = 
+  {
     SignatureProp(
       SimplePropertyBundle(
+        ExpectedTypesProp(expected.map(_.id):_*),
         ReqParams(
           reqs.map { param =>
             val (name, tpe, summary) = param
@@ -75,7 +83,8 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
               Conventions.PropSummary(summary)
             )
           }:_*
-        )
+        ),
+        ReturnTypeProp(returns.map(_.id).toSeq:_*)
       )
     )
   }
@@ -179,14 +188,22 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
     toProps(
       setName("_Function Signature Model"),
       setInternal,
+      ExpectedTypesProp(),
       ReqParams(),
-      OptParams()))
+      OptParams(),
+      ReturnTypeProp()))
       
   lazy val SignatureDisplay = ThingState(SignatureDisplayOID, systemOID, RootOID,
     toProps(
       setName("_Display Function Signature"),
       Basic.ApplyMethod(
-          """""[[Name]][[_Function Signature -> ""([[_concat(_Required Parameters, _Optional Parameters) -> Name -> _join("", "")]])""]]""""")))
+          """""[[_Function Signature -> _if(_isNonEmpty(_Function Context Types,
+              |      ""[[_Function Context Types -> Name -> _join("" *or* "")]] -> ""
+              |     ))]][[Name]][[
+              |  _Function Signature -> ""([[_concat(_Required Parameters, _Optional Parameters) -> Name -> _join("", "")]])""
+              |                 ]][[
+              |  _Function Signature -> _if(_isNonEmpty(_Function Return Type),
+              |      "" -> [[_Function Return Type -> Name]]"")]]""""".stripMargin)))
           
   lazy val ParamsDisplay = ThingState(ParamsDisplayOID, systemOID, RootOID,
     toProps(
@@ -242,9 +259,21 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
       // although maybe only through a custom Gadget.
       setInternal))
   
+  lazy val ExpectedTypesProp = new SystemProperty(ExpectedTypesOID, LinkType, QList,
+    toProps(
+      setName("_Function Context Types"),
+      setInternal))
+  
+  lazy val ReturnTypeProp = new SystemProperty(ReturnTypeOID, LinkType, Optional,
+    toProps(
+      setName("_Function Return Type"),
+      setInternal))
+  
   override lazy val props = Seq(
     OptParams,
     ReqParams,
-    SignatureProp
+    SignatureProp,
+    ExpectedTypesProp,
+    ReturnTypeProp
   )
 }
