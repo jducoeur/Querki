@@ -20,11 +20,17 @@ class QLTests extends QuerkiTests {
   }
   
   "named parameters" should {
-    "work as expected" in {
+    "work without spaces" in {
       implicit val s = commonSpace
       
       pql("""[[""FooBar"" -> _substring(end=4, start=1)]]""") should
         equal("ooB")
     }
-  }
+    
+    "work with spaces" in {
+      implicit val s = commonSpace
+      
+      pql("""[[""FooBar"" -> _substring(end = 4, start = 1)]]""") should
+        equal("ooB")
+    }  }
 }
