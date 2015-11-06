@@ -13,7 +13,7 @@ import querki.values._
 
 import querki.types._
 
-class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefiner with EcologyMember with querki.core.MethodDefs {
+class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefiner with EcologyMember {
   import MOIDs._
     
   /******************************************
@@ -197,27 +197,35 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
    * FUNCTIONS
    ***********************************************/
   
-  lazy val WithPropertyFunction = new InternalMethod(WithPropertyOID, 
-      toProps(
-        setName("_withProperty"),
-        SkillLevel(SkillLevelAdvanced),
-        Summary("Add a Property to a Model Value"),
-        Details("""    MODEL VALUE -> PROP._withProperty(VALUE) -> MODEL VALUE
-            |This allows you to add another Property to a complex Value as you are working with it.
-            |This is just for rendering -- the added value does not get saved anywhere.
-            |
-            |This function is quite advanced, and doesn't do much hand-holding yet.""".stripMargin)))
-  {
-    override def qlApply(inv:Invocation):QFut = {
-      for {
-        prop <- inv.definingContextAsProperty
-        v <- inv.processParam(0)
-        bundle <- inv.contextAllBundles
-        if (!bundle.isThing)
-        modeled = bundle.asInstanceOf[ModeledPropertyBundle]
+  // WTF? This is a private sub-Ecot (one of the secret little tricks of the Ecology system), which we are
+  // breaking out of TypesModule itself so that TypesModule doesn't have to depend on MethodDefs. (Which
+  // causes a dependency loop with Signature.)
+  object TypeFunctions extends QuerkiEcot(e) with querki.core.MethodDefs {
+  
+    lazy val WithPropertyFunction = new InternalMethod(WithPropertyOID, 
+        toProps(
+          setName("_withProperty"),
+          SkillLevel(SkillLevelAdvanced),
+          Summary("Add a Property to a Model Value"),
+          Details("""    MODEL VALUE -> PROP._withProperty(VALUE) -> MODEL VALUE
+              |This allows you to add another Property to a complex Value as you are working with it.
+              |This is just for rendering -- the added value does not get saved anywhere.
+              |
+              |This function is quite advanced, and doesn't do much hand-holding yet.""".stripMargin)))
+    {
+      override def qlApply(inv:Invocation):QFut = {
+        for {
+          prop <- inv.definingContextAsProperty
+          v <- inv.processParam(0)
+          bundle <- inv.contextAllBundles
+          if (!bundle.isThing)
+          modeled = bundle.asInstanceOf[ModeledPropertyBundle]
+        }
+          yield ExactlyOne(modeled.modelType(SimplePropertyBundle(modeled.props + (prop.id -> v))))
       }
-        yield ExactlyOne(modeled.modelType(SimplePropertyBundle(modeled.props + (prop.id -> v))))
     }
+    
+    override lazy val props = Seq(WithPropertyFunction)
   }
 
   override lazy val props = Seq(
@@ -229,8 +237,6 @@ class TypesModule(e:Ecology) extends QuerkiEcot(e) with Types with ModelTypeDefi
     MaxIntValueProp,
     
     DefaultValueProp,
-    AppliesToTypesProp,
-    
-    WithPropertyFunction
+    AppliesToTypesProp
   )
 }
