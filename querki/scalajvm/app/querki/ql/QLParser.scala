@@ -125,7 +125,7 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     case collFlag ~ text => QLTextStage(text, collFlag) }
   def qlBinding:Parser[QLBinding] = "\\s*\\$".r ~> name ^^ { QLBinding(_) } 
   def qlStage:Parser[QLStage] = qlNumber | qlCall | qlTextStage
-  def qlParam:Parser[QLParam] = opt(name <~ "\\s*=\\s*") ~ qlPhrase ^^ { case nameOpt ~ phrase => QLParam(nameOpt, phrase) }
+  def qlParam:Parser[QLParam] = opt(name <~ "=") ~ qlPhrase ^^ { case nameOpt ~ phrase => QLParam(nameOpt, phrase) }
   def qlPhrase:Parser[QLPhrase] = rep1sep(qlStage, qlSpace ~ "->".r ~ qlSpace) ^^ { QLPhrase(_) }
   def qlExp:Parser[QLExp] = opt(qlSpace) ~> repsep(qlPhrase, "\\s*\\r?\\n|\\s*;\\s*".r) <~ opt(qlSpace) ^^ { QLExp(_) }
   def qlLink:Parser[QLLink] = qlText ^^ { QLLink(_) }
