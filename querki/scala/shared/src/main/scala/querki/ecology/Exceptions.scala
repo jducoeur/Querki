@@ -10,6 +10,9 @@ class AlreadyRegisteredInterfaceException[ST, ET <: EcotBase[ST, ET]](interfaceC
 class InitMissingInterfaceException[ST, ET <: EcotBase[ST, ET]](missing:Class[_], usedBy:ET) 
   extends Exception(s"Initialization failed! Expected interface ${missing.getSimpleName()}, used by ${usedBy.fullName}, appears to be unimplemented.")
 
-class InitDependencyLoopException[ST, ET <: EcotBase[ST, ET]](remaining:Set[ET])
+class InitDependencyLoopException[ST, ET <: EcotBase[ST, ET]](remaining:Set[ET], registered:Set[Class[_]])
   extends Exception(s"Initialization failed! There appears to be a dependency loop! Remaining Ecots:\n    " +
-      remaining.map(_.fullName).mkString("\n    "))
+      remaining.map { ecot =>
+        s"""    ${ecot.fullName}
+           |      ${ecot.dependsUpon.filterNot(registered.contains(_)).map(_.getSimpleName).mkString(", ")}""".stripMargin
+      }.mkString("\n"))

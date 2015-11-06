@@ -346,7 +346,7 @@ class EcologyImplBase[ST, ET <: EcotBase[ST, ET]] extends EcologyBase[ST, ET] wi
             }
           }
           
-          throw new InitDependencyLoopException[ST, ET](remaining)
+          throw new InitDependencyLoopException[ST, ET](remaining, _initializedInterfaces.keySet)
         }
       }
     }
