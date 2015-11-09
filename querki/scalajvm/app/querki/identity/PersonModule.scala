@@ -74,6 +74,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   lazy val HtmlUI = interface[querki.html.HtmlUI]
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val Profiler = interface[querki.tools.Profiler]
+  lazy val QL = interface[querki.ql.QL]
   lazy val Roles = interface[querki.security.Roles]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]

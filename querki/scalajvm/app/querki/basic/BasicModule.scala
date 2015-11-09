@@ -12,10 +12,11 @@ import querki.ql.QLPhrase
 import querki.types._
 import querki.values.{ElemValue, QFut, QLContext, RequestContext, SpaceState}
 
-class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with TextTypeBasis with PlainTextBaseType {
+class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with TextTypeBasis with PlainTextBaseType {
   import MOIDs._
   
   val DeriveName = initRequires[querki.types.DeriveName]
+  lazy val QL = interface[querki.ql.QL]
   val Types = initRequires[querki.types.Types]
   
   lazy val IsModelProp = Core.IsModelProp

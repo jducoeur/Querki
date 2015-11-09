@@ -7,13 +7,14 @@ import querki.ecology._
 
 import querki.values.{ElemValue, PropAndVal, QLContext, QValue, SpaceState}
 
-class CoreModule(e:Ecology) extends CoreEcot(e) with Core
+class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
   with CollectionBase with CollectionCreation with CoreExtra
   with TextTypeBasis with IntTypeBasis with LinkUtils with NameUtils with NameTypeBasis with TypeCreation
 {
   import MOIDs._
   
   lazy val Links = interface[querki.links.Links]
+  lazy val QL = interface[querki.ql.QL]
   
   def LinkKindProp(kind:Kind.Kind) = (querki.links.PublicMOIDs.LinkKindOID -> ExactlyOne(IntType(kind)))
   def LinkAllowAppsProp(b:Boolean) = (querki.links.PublicMOIDs.LinkAllowAppsOID -> ExactlyOne(YesNoType(b)))

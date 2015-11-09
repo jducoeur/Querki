@@ -35,8 +35,9 @@ class AdminEcot(e:Ecology) extends QuerkiEcot(e) with EcologyMember with AdminOp
   import AdminActor._
   import MOIDs._
   
-  lazy val NotifierRegistry = interface[querki.notifications.NotifierRegistry]
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
+  lazy val NotifierRegistry = interface[querki.notifications.NotifierRegistry]
+  lazy val QL = interface[querki.ql.QL]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val SystemManagement = interface[querki.system.SystemManagement]
   

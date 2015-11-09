@@ -47,6 +47,7 @@ object MOIDs extends EcotIds(21) {
 class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess with querki.logic.YesNoUtils with querki.core.MethodDefs {
   import MOIDs._
   
+  lazy val QL = interface[querki.ql.QL]
   val SpaceChangeManager = initRequires[querki.spaces.SpaceChangeManager]
   
   override def init = {

@@ -33,6 +33,8 @@ object MOIDs extends EcotIds(9) {
  */
 class LogicModule(e:Ecology) extends QuerkiEcot(e) with YesNoUtils with querki.core.MethodDefs with Logic {
   import MOIDs._
+  
+  lazy val QL = interface[querki.ql.QL]
 
   /******************************************
    * FUNCTIONS

@@ -3,6 +3,7 @@ package querki.html
 import scala.xml.{Attribute, NodeSeq, Null, Text, Xhtml}
 
 import scalatags.Text.all.{id => idAttr, _}
+import scalatags.Text.TypedTag
 
 import models.{DisplayText, FieldIds, HtmlWikitext, OID, PropertyBundle, QWikitext, SimplePTypeBuilder, UnknownOID, Wikitext}
 import models.Thing.PropMap
@@ -44,8 +45,9 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   lazy val Basic = interface[querki.basic.Basic]
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
   lazy val Links = interface[querki.links.Links]
-  lazy val Logic = interface[querki.logic.Logic]
+  val Logic = initRequires[querki.logic.Logic]
   lazy val PublicUrls = interface[PublicUrls]
+  val QL = initRequires[querki.ql.QL]
   lazy val Tags = interface[querki.tags.Tags]
   
   lazy val ExternalLinkType = Links.URLType
@@ -77,6 +79,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   def HtmlValue(html:QHtml):QValue = ExactlyOne(RawHtmlType(HtmlWikitext(html)))
   def HtmlValue(str:String):QValue = HtmlValue(QHtml(str))
   def HtmlValue(xml:NodeSeq):QValue = HtmlValue(Xhtml.toXhtml(xml))
+  def HtmlValue(tag:TypedTag[_]):QValue = ExactlyOne(RawHtmlType(HtmlWikitext(tag.toString)))
   
   def toWikitext(xml:NodeSeq):Wikitext = HtmlWikitext(QHtml(Xhtml.toXhtml(xml)))
 
@@ -559,6 +562,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   lazy val QLTree = new InternalMethod(QLTreeOID,
     toProps(
       setName("_QLTree"),
+      SkillLevel(SkillLevelAdvanced),
       Signature(
         expected = Seq(),
         reqs = Seq(
@@ -569,16 +573,27 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           ("icon", TextType, Core.QNone, "The icon to display for this node."),
           ("opened", YesNoType, ExactlyOne(Logic.False), "If set to True, this node will open automatically.")
         ),
-        returns = None
+        returns = Some(RawHtmlType)
       ),
       Summary("Display a tree node, which will invoke the specified QL code to get its children")))
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
-        text <- inv.processAs("text", TextType)
+        text <- inv.processAs("text", ParsedTextType)
+        phraseOpt <- inv.rawParam("ql")
+        qlOpt = phraseOpt.map(phrase => HtmlEscape.escapeQuotes(phrase.reconstructString))
+        iconOpt <- inv.processAsOpt("icon", ParsedTextType)
+        opened <- inv.processAs("opened", YesNoType)
       }
-        // TODO:
-        yield ExactlyOne(TextType(""))
+        yield 
+          HtmlValue(
+            span(
+              qlOpt.map(ql => data.ql := ql),
+              iconOpt.map(icon => data.icon := icon.raw.toString),
+              data.opened := opened,
+              raw(text.raw)
+            )
+          )
     }
   }
   
@@ -657,6 +672,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     CreateButtonFunction,
     QLButton,
     QLLink,
+    QLTree,
     new MixedButtonMethod,
     ShowSomeFunction
   )

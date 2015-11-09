@@ -21,7 +21,7 @@ private [ql] trait QLInternals extends EcologyInterface {
   def qlProfilers:QLProfilers
 }
 
-class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
+class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals with querki.core.WithQL
   with querki.core.CollectionBase
   with querki.core.MethodDefs with querki.core.TextTypeBasis with querki.core.NameUtils with querki.core.NameTypeBasis 
 {
@@ -36,6 +36,8 @@ class QLEcot(e:Ecology) extends QuerkiEcot(e) with QL with QLInternals
   
   // This is provided as a service for the QLParsers:
   lazy val qlProfilers = new QLProfilers
+  
+  def QL = this
   
   /***********************************************
    * PUBLIC API

@@ -410,7 +410,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
     InvocationValueImpl(inv, resultFut.map(IVData(_)))
   }
   
-  def processAs[VT](name:String, pt:PType[VT], processContext:QLContext = context):InvocationValue[VT] = {
+  private def processAsBase[VT](name:String, typeName: => String, ret:QValue => Seq[VT], processContext:QLContext = context):InvocationValue[VT] = {
     val resultFut = sig.getParam(name).process(context.parser.get, context).flatMap { raw =>
       val processed = raw.value
       processed.firstAs(QL.ErrorTextType) match {
@@ -418,14 +418,26 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
         case Some(errorText) => Future.failed(new PublicException("General.public", errorText))
         case None => {
           try {
-            Future.successful(processed.rawList(pt))
+            Future.successful(ret(processed))
           } catch {
-            case ex:Exception => Future.failed(PublicException("Func.paramWrongType", displayName, name, pt.displayName, processed.pType.displayName))  
+            case ex:Exception => Future.failed(PublicException("Func.paramWrongType", displayName, name, typeName, processed.pType.displayName))  
           }
         }
       }
     }
     InvocationValueImpl(inv, resultFut.map(IVData(_)))
+  }
+  
+  def processAs[VT](name:String, pt:PType[VT], processContext:QLContext = context):InvocationValue[VT] = {
+    processAsBase(name, pt.displayName, (_.rawList(pt)), processContext)
+  }
+  
+  def processAsOpt[VT](name:String, pt:PType[VT], processContext:QLContext = context):InvocationValue[Option[VT]] = {
+    processAsBase(name, pt.displayName, (qv => Some(qv.firstAs(pt)).toSeq), processContext)
+  }
+  
+  def rawParam(name:String):InvocationValue[Option[QLPhrase]] = {
+    InvocationValueImpl(inv, Future.successful(IVData(Some(sig.getParam(name).phrase))))
   }
   
   // TODO: The next several functions are deprecated, and should be phased out in favor of the above version:

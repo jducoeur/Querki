@@ -30,6 +30,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   lazy val HtmlUI = interface[querki.html.HtmlUI]
   lazy val DeriveName = interface[querki.types.DeriveName]
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
+  lazy val QL = interface[querki.ql.QL]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   lazy val UserValues = interface[querki.uservalues.UserValues]
   

@@ -17,13 +17,16 @@ import querki.values._
 /**
  * TODO: this should probably absorb more of the concept of "tags", maybe even including the Types.
  */
-class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.MethodDefs with NameUtils with NameTypeBasis with TextTypeBasis with PlainTextBaseType {
+class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.MethodDefs 
+  with querki.core.WithQL with NameUtils with NameTypeBasis with TextTypeBasis with PlainTextBaseType 
+{
   import MOIDs._
   
   val Links = initRequires[querki.links.Links]
   val Basic = initRequires[querki.basic.Basic]
   
   lazy val PropPaths = interface[querki.types.PropPaths]
+  lazy val QL = interface[querki.ql.QL]
   
   lazy val PlainTextType = Basic.PlainTextType
   lazy val NameType = Core.NameType

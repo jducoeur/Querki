@@ -32,6 +32,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   import MOIDs._
 
   lazy val Logic = interface[querki.logic.Logic]
+  lazy val QL = interface[querki.ql.QL]
   
   /***********************************************
    * FUNCTIONS

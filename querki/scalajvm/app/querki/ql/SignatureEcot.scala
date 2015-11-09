@@ -23,6 +23,7 @@ object SignatureMOIDs extends EcotIds(61) {
 
 private [ql] trait ParamResult {
   def process(parser:QLParser, context:QLContext):Future[QLContext]
+  def phrase:Option[QLPhrase]
 }
 
 /**
@@ -96,6 +97,7 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
     
     case class ParamResultImpl(phraseOpt:Option[QLPhrase], formal:ModeledPropertyBundle) extends ParamResult {
       def name = formal.getProp(Core.NameProp).first
+      def phrase = phraseOpt
       
       def default = {
         formal.getPropOpt(Types.DefaultValueProp).map(_.v) match {

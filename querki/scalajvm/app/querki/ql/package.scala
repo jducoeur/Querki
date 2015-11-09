@@ -221,6 +221,19 @@ package object ql {
     def processAs[VT](name:String, pt:PType[VT], processContext:QLContext = context):InvocationValue[VT]
     
     /**
+     * Given the named parameter, which should be optional and have a default of Core.QNone, returns
+     * an option of the actual value. This is how you typicall deal with an optional parameter where
+     * the "empty" behavior is different from the "full", so you don't just want to set a default.
+     */
+    def processAsOpt[VT](name:String, pt:PType[VT], processContext:QLContext = context):InvocationValue[Option[VT]]
+    
+    /**
+     * Returns the numbered parameter if it exists, in raw parse-tree form. You only use this for "meta" functions that
+     * are operating at the syntactic level, which aren't simply processing the parameter as usual.
+     */
+    def rawParam(name:String):InvocationValue[Option[QLPhrase]]
+    
+    /**
      * DEPRECATED
      * 
      * Process and return the specific parameter, assuming nothing about the results.
@@ -267,6 +280,8 @@ package object ql {
     def processParamNofM(paramNum:Int, expectedParams:Int, processContext:QLContext = context):InvocationValue[QValue]
     
     /**
+     * DEPRECATED
+     * 
      * Returns the numbered parameter if it exists, in raw parse-tree form. You only use this for "meta" functions that
      * are operating at the syntactic level, which aren't simply processing the parameter as usual.
      */

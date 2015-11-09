@@ -18,6 +18,10 @@ import MOIDs._
  * Trivial marker trait, that simply identifies the "Text Types" that are similarly serializable.
  */
 trait IsTextType
+
+trait WithQL {
+  def QL:querki.ql.QL
+}
   
 /**
  * Represents a Type that you can turn into a URL.
@@ -35,7 +39,7 @@ trait LinkCandidateProvider {
   def getLinkCandidates(state:SpaceState, currentValue:DisplayPropVal):Seq[Thing]
 }
 
-trait TextTypeBasis { self:CoreEcot =>
+trait TextTypeBasis { self:CoreEcot with WithQL =>
   trait TextTypeUtils { self:SystemType[_] =>
     def validateText(v:String, prop:Property[_,_], state:SpaceState):Unit = {
       for (
@@ -113,7 +117,7 @@ trait NameableType {
 // Marker trait for NameTypeBase and everything that descends from it:
 trait IsNameType extends PType[String] 
 
-trait NameTypeBasis { self:CoreEcot with NameUtils =>  
+trait NameTypeBasis { self:CoreEcot with NameUtils with WithQL =>  
   /**
    * The Type for Display Names -- similar to Text, but not identical
    */
