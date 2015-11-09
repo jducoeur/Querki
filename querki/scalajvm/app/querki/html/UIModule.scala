@@ -12,7 +12,7 @@ import querki.core.URLableType
 import querki.ecology._
 import querki.globals._
 import querki.ql.{InvocationValue, QLParam, QLPhrase}
-import querki.util._
+import querki.util.{HtmlEscape, SafeUrl, XmlHelpers}
 import querki.values._
 
 object UIMOIDs extends EcotIds(11) {
@@ -564,7 +564,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       setName("_QLTree"),
       SkillLevel(SkillLevelAdvanced),
       Signature(
-        expected = Seq(),
+        expected = Seq(LinkType),
         reqs = Seq(
           ("text", TextType, "The text to display for this node.")
         ),
@@ -579,6 +579,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
+        thing <- inv.contextFirstThing
         text <- inv.processAs("text", ParsedTextType)
         phraseOpt <- inv.rawParam("ql")
         qlOpt = phraseOpt.map(phrase => HtmlEscape.escapeQuotes(phrase.reconstructString))
@@ -589,10 +590,11 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           HtmlValue(
             span(
               cls:="_qlTree",
-              qlOpt.map(ql => data.ql := ql),
               iconOpt.map(icon => data.icon := icon.raw.toString),
               data.opened := opened,
-              raw(text.raw)
+              data.thingid := thing.toThingId.toString,
+              raw(text.raw),
+              qlOpt.map(ql => span(cls:="_treeQL", raw(ql), display:="none"))
             )
           )
     }

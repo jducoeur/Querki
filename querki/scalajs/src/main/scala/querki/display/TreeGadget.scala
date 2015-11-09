@@ -1,13 +1,15 @@
 package querki.display
 
 import scala.scalajs.js
+import js.JSConverters._
 import org.scalajs.dom
-
 import scalatags.JsDom.all._
+import autowire._
 
 import org.querki.jquery._
 import org.querki.facades.jstree._
 
+import querki.api.ThingFunctions
 import querki.globals._
 
 /**
@@ -26,11 +28,17 @@ class TreeGadget(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
   }
 }
 
+case class NodeData(ql:Option[String], thingId:TID)
+
 class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
+  
+  lazy val Client = interface[querki.client.Client]
+  
   def doRender() = ???
   
   def dissectSpan(e:dom.Element):JsTreeNode = {
     val span = $(e)
+    // There is clearly a higher-level combinator fighting to break out here, probably in JSOptionBuilder:
     val withText = JsTreeNode.text(span.html())
     val withOpened = 
       if (span.data("opened").get.asInstanceOf[Boolean])
@@ -38,8 +46,15 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
       else
         withText
     val withIcon = span.data("icon").map { icon => withOpened.icon(icon.asInstanceOf[String]) }.getOrElse(withOpened)
-    val withQL = span.data("ql").map { ql => withIcon.children(true).data(ql) }.getOrElse(withIcon)
-    withQL
+    val tid = span.tidString("thingid")
+    val qlNode = span.find("._treeQL") 
+    val withData = 
+      qlNode.mapElems(qle => $(qle).text).headOption match {
+        case Some(ql) => withIcon.children(true).data(NodeData(Some(ql), tid))
+        case None => withIcon.data(NodeData(None, tid))
+      }
+    qlNode.remove()
+    withData
   }
   
   def hook() = {
@@ -55,12 +70,22 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
           if (asNode.id == "#") {
             cb(js.Array(node))
           } else {
-            println(s"It's a child node")
-            // Invoke the QL
+            val nodeData = asNode.data.asInstanceOf[NodeData]
+            nodeData.ql match {
+              case Some(ql) => {
+                Client[ThingFunctions].evaluateQL(nodeData.thingId, ql).call().foreach { result =>
+                  val rendered = span(raw(result.raw)).render
+                  val childNodes = $(rendered).find("._qlTree").mapElems(dissectSpan)
+                  cb(childNodes.toJSArray)
+                }
+              }
+              case _ => cb(js.Array())
+            }
+
           }
         }).
-        themes(JsTreeTheme
-          )//dots(false))
+        themes(JsTreeTheme.
+          dots(false))
       )
     )
     $(elem).remove()

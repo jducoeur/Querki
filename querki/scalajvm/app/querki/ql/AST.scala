@@ -20,7 +20,7 @@ case class QLPhrase(ops:Seq[QLStage]) {
 }
 
 case class QLParam(name:Option[String], phrase:QLPhrase) {
-  def reconstructString = s"${name.map(_ + " = ")}${phrase.reconstructString}"
+  def reconstructString = s"${name.map(_ + " = ").getOrElse("")}${phrase.reconstructString}"
   def ops = phrase.ops
 }
 
