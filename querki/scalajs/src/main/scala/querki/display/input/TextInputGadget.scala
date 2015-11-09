@@ -24,6 +24,7 @@ class TextInputGadget(classes:Seq[String], mods:Modifier*)(implicit e:Ecology) e
     
 }
 
+@js.native
 trait AutosizeFacade extends JQuery {
   def autosize():JQuery = js.native
 }
@@ -32,6 +33,7 @@ object AutosizeFacade {
 }
 import AutosizeFacade._
 
+@js.native
 trait JQueryEventEnhanced extends js.Object {
   // This should be a standard part of JQueryEventObject, IMO:
   def ctrlKey:UndefOr[Boolean] = js.native
