@@ -588,6 +588,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         yield 
           HtmlValue(
             span(
+              cls:="_qlTree",
               qlOpt.map(ql => data.ql := ql),
               iconOpt.map(icon => data.icon := icon.raw.toString),
               data.opened := opened,
