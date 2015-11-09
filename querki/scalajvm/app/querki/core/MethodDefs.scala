@@ -14,6 +14,7 @@ trait MethodDefs { self:QuerkiEcot =>
   
   // Since Methods usually declare Summaries, we need to depend on Conventions:
   val Conventions = initRequires[querki.conventions.Conventions]
+  val Signature = initRequires[querki.ql.Signature]
   
   lazy val QUnit = Core.QUnit
   

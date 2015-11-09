@@ -102,7 +102,8 @@ case class SpaceState(
    * This runs f on this State, then the Apps in-order, depth-first, and finally System.
    * 
    * NOTE: in a perfect world, we would simply be able to assume that accum is ++ and do
-   * that. But I'm having trouble getting the types to line up right for that.
+   * that. But I'm having trouble getting the types to line up right for that. I suspect
+   * that the answer has something to do with Cats.Foldable.
    * 
    * IMPORTANT: this can result in duplication! It is essential that your implementation of
    * accum do any necessary de-duplication! It is often best to use this with Set or Map, which

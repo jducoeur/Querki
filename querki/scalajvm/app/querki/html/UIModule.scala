@@ -31,6 +31,7 @@ object UIMOIDs extends EcotIds(11) {
   val CreateButtonOID = moid(7)
   val ShowSomeOID = moid(8)
   val QLLinkOID = moid(9)
+  val QLTreeOID = moid(10)
 }
 
 /**
@@ -40,8 +41,10 @@ object UIMOIDs extends EcotIds(11) {
 class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.MethodDefs {
   import UIMOIDs._
 
+  lazy val Basic = interface[querki.basic.Basic]
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
   lazy val Links = interface[querki.links.Links]
+  lazy val Logic = interface[querki.logic.Logic]
   lazy val PublicUrls = interface[PublicUrls]
   lazy val Tags = interface[querki.tags.Tags]
   
@@ -550,6 +553,32 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   {
     def buildHtml(label:String, core:String):String = {
       s"""<a class="_qlInvoke" $core>$label</a>"""
+    }
+  }
+  
+  lazy val QLTree = new InternalMethod(QLTreeOID,
+    toProps(
+      setName("_QLTree"),
+      Signature(
+        expected = Seq(),
+        reqs = Seq(
+          ("text", TextType, "The text to display for this node.")
+        ),
+        opts = Seq(
+          ("ql", Basic.QLType, Core.QNone, "A QL expression that produces the children of this node, which should be more _QLTrees. If empty, this node is a leaf."),
+          ("icon", TextType, Core.QNone, "The icon to display for this node."),
+          ("opened", YesNoType, ExactlyOne(Logic.False), "If set to True, this node will open automatically.")
+        ),
+        returns = None
+      ),
+      Summary("Display a tree node, which will invoke the specified QL code to get its children")))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        text <- inv.processAs("text", TextType)
+      }
+        // TODO:
+        yield ExactlyOne(TextType(""))
     }
   }
   

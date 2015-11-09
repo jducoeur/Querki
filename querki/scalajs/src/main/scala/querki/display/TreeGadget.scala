@@ -1,5 +1,6 @@
 package querki.display
 
+import scala.scalajs.js
 import org.scalajs.dom
 
 import org.querki.jquery._
@@ -15,9 +16,10 @@ class TreeGadget(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
   
   def hook() = {
     $(elem).jsTree(JsTreeOptions.
-        core(JsTreeCore.
-          themes(JsTreeTheme.dots(false))
+      core(JsTreeCore.
+        themes(JsTreeTheme.
+          dots(false)
         )
-      )
+      ))
   }
 }
