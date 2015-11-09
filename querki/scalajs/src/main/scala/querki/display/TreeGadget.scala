@@ -31,14 +31,14 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
   
   def dissectSpan(e:dom.Element):JsTreeNode = {
     val span = $(e)
-    val withText = JsTreeNode.text(span.html())
+    val withText = JsTreeNode.text(span.html()).id("1")
     val withOpened = 
       if (span.data("opened").get.asInstanceOf[Boolean])
         withText.state(NodeState.Opened)
       else
         withText
     val withIcon = span.data("icon").map { icon => withOpened.icon(icon.asInstanceOf[String]) }.getOrElse(withOpened)
-    // TODO: store the QL
+    val withQL = span.data("ql").map { ql => withIcon.children(true).data(ql) }.getOrElse(withIcon)
     withIcon
   }
   
@@ -48,7 +48,17 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
     $(tree).insertBefore(elem)
     $(tree).jsTree(JsTreeOptions.
       core(JsTreeCore.
-        data(Seq(node)).
+        // We are turning off workers, because they are causing weird crashes, I think:
+        worker(false).
+        data({ (nodeIn:js.Object, cb:js.Function1[js.Array[JsTreeNode], Any]) =>
+          val asNode = nodeIn.asInstanceOf[JsTreeNode]
+          if (asNode.id == "#") {
+            cb(js.Array(node))
+          } else {
+            println(s"It's a child node")
+            // Invoke the QL
+          }
+        }).
         themes(JsTreeTheme.
           dots(false))
       )
