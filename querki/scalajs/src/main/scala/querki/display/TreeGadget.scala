@@ -31,7 +31,7 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
   
   def dissectSpan(e:dom.Element):JsTreeNode = {
     val span = $(e)
-    val withText = JsTreeNode.text(span.html()).id("1")
+    val withText = JsTreeNode.text(span.html())
     val withOpened = 
       if (span.data("opened").get.asInstanceOf[Boolean])
         withText.state(NodeState.Opened)
@@ -39,7 +39,7 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
         withText
     val withIcon = span.data("icon").map { icon => withOpened.icon(icon.asInstanceOf[String]) }.getOrElse(withOpened)
     val withQL = span.data("ql").map { ql => withIcon.children(true).data(ql) }.getOrElse(withIcon)
-    withIcon
+    withQL
   }
   
   def hook() = {
@@ -59,8 +59,8 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
             // Invoke the QL
           }
         }).
-        themes(JsTreeTheme.
-          dots(false))
+        themes(JsTreeTheme
+          )//dots(false))
       )
     )
     $(elem).remove()
