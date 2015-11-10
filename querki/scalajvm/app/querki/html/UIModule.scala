@@ -580,13 +580,14 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
-        thing <- inv.contextFirstThing
-        text <- inv.processAs("text", ParsedTextType)
+        (bundle, elem) <- inv.contextBundlesAndContexts
+        thing <- inv.opt(bundle.asThing)
+        text <- inv.processAs("text", ParsedTextType, elem)
         phraseOpt <- inv.rawParam("ql")
         qlOpt = phraseOpt.map(phrase => HtmlEscape.escapeQuotes(phrase.reconstructString))
-        iconOpt <- inv.processAsOpt("icon", ParsedTextType)
-        showIconOpt <- inv.processAsOpt("showIcon", YesNoType)
-        opened <- inv.processAs("opened", YesNoType)
+        iconOpt <- inv.processAsOpt("icon", ParsedTextType, elem)
+        showIconOpt <- inv.processAsOpt("showIcon", YesNoType, elem)
+        opened <- inv.processAs("opened", YesNoType, elem)
       }
         yield 
           HtmlValue(

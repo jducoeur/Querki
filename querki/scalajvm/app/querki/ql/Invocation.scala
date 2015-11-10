@@ -399,7 +399,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
   }
   
   def process(name:String, processContext:QLContext = context):InvocationValue[QValue] = {
-    val resultFut = sig.getParam(name).process(context.parser.get, context).flatMap { raw =>
+    val resultFut = sig.getParam(name).process(context.parser.get, processContext).flatMap { raw =>
       val processed = raw.value
       processed.firstAs(QL.ErrorTextType) match {
         // If there was an error, keep the error, and stop processing:
@@ -411,7 +411,7 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
   }
   
   private def processAsBase[VT](name:String, typeName: => String, ret:QValue => Seq[VT], processContext:QLContext = context):InvocationValue[VT] = {
-    val resultFut = sig.getParam(name).process(context.parser.get, context).flatMap { raw =>
+    val resultFut = sig.getParam(name).process(context.parser.get, processContext).flatMap { raw =>
       val processed = raw.value
       processed.firstAs(QL.ErrorTextType) match {
         // If there was an error, keep the error, and stop processing:
