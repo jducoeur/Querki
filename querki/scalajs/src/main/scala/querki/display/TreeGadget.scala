@@ -45,7 +45,9 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
         withText.state(NodeState.Opened)
       else
         withText
-    val withIcon = span.data("icon").map { icon => withOpened.icon(icon.asInstanceOf[String]) }.getOrElse(withOpened)
+    val withIcon = 
+      span.data("icon").map { icon => withOpened.icon(icon.asInstanceOf[String]) }.getOrElse(
+      span.data("showicon").map { showIcon => withOpened.icon(showIcon.asInstanceOf[Boolean]) }.getOrElse(withOpened))
     val tid = span.tidString("thingid")
     val qlNode = span.find("._treeQL") 
     val withData = 
@@ -59,6 +61,7 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
   
   def hook() = {
     val node = dissectSpan(elem)
+//    spew("The node gets built as", node)
     val tree = div(cls:="_qlTreeRoot").render
     $(tree).insertBefore(elem)
     $(tree).jsTree(JsTreeOptions.

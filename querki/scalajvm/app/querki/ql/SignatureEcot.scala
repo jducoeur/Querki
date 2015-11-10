@@ -136,7 +136,7 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
         case Some(indexed) => {
           val formalOpt = indexed.find { pair =>
             val (bundle, i) = pair
-            bundle.getPropOpt(Core.NameProp).flatMap(_.firstOpt).map(_ == name).getOrElse(false)
+            bundle.getPropOpt(Core.NameProp).flatMap(_.firstOpt).map(_.toLowerCase == name).getOrElse(false)
           }
           val (formal, index) = formalOpt.getOrElse(notFound)
           lazy val returnDefault = ParamResultImpl(None, formal)

@@ -571,6 +571,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         opts = Seq(
           ("ql", Basic.QLType, Core.QNone, "A QL expression that produces the children of this node, which should be more _QLTrees. If empty, this node is a leaf."),
           ("icon", TextType, Core.QNone, "The icon to display for this node."),
+          ("showIcon", YesNoType, Core.QNone, "If set to False, don't show any icon for this node."),
           ("opened", YesNoType, ExactlyOne(Logic.False), "If set to True, this node will open automatically.")
         ),
         returns = Some(RawHtmlType)
@@ -584,12 +585,14 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         phraseOpt <- inv.rawParam("ql")
         qlOpt = phraseOpt.map(phrase => HtmlEscape.escapeQuotes(phrase.reconstructString))
         iconOpt <- inv.processAsOpt("icon", ParsedTextType)
+        showIconOpt <- inv.processAsOpt("showIcon", YesNoType)
         opened <- inv.processAs("opened", YesNoType)
       }
         yield 
           HtmlValue(
             span(
               cls:="_qlTree",
+              showIconOpt.map(showIcon => data.showicon := false),
               iconOpt.map(icon => data.icon := icon.raw.toString),
               data.opened := opened,
               data.thingid := thing.toThingId.toString,

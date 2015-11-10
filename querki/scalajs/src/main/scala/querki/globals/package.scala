@@ -70,4 +70,6 @@ package object globals {
     }
   }
   def spew(msg:String) = println(msg)
+  def spew(msg:String, obj:js.Object) = println(msg + "\n" + sobj(obj))
+  def sobj(obj:js.Object) = js.JSON.stringify(obj)
 }
