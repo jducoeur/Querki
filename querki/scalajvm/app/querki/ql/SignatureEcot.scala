@@ -19,6 +19,9 @@ object SignatureMOIDs extends EcotIds(61) {
   val ParamsDisplayOID = moid(9)
   val ExpectedTypesOID = moid(10)
   val ReturnTypeOID = moid(11)
+  val ExpectedModelOID = moid(12)
+  val ExpectedTypeOID = moid(14)
+  val ExpectedPropOID = moid(15)
 }
 
 private [ql] trait ParamResult {
@@ -56,14 +59,19 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
   val Types = initRequires[querki.types.Types]
   
   def apply(
-      expected:Seq[PType[_]], 
+      expected:(Seq[PType[_]], String), 
       reqs:Seq[(String, PType[_], String)], 
       opts:Seq[(String, PType[_], QValue, String)], 
       returns:Option[PType[_]]):(OID, QValue) = 
   {
     SignatureProp(
       SimplePropertyBundle(
-        ExpectedTypesProp(expected.map(_.id):_*),
+        ExpectedProp(
+          SimplePropertyBundle(
+            ExpectedTypesProp(expected._1.map(_.id):_*),
+            Conventions.PropSummary(expected._2)
+          )
+        ),
         ReqParams(
           reqs.map { param =>
             val (name, tpe, summary) = param
@@ -186,11 +194,18 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
       Types.DefaultValueProp(),
       Conventions.PropSummary()))
       
+  lazy val ExpectedModel = ThingState(ExpectedModelOID, systemOID, RootOID,
+    toProps(
+      setName("_Expected Context Model"),
+      setInternal,
+      ExpectedTypesProp(),
+      Conventions.PropSummary()))
+      
   lazy val SignatureModel = ThingState(SignatureModelOID, systemOID, RootOID,
     toProps(
       setName("_Function Signature Model"),
       setInternal,
-      ExpectedTypesProp(),
+      ExpectedProp(),
       ReqParams(),
       OptParams(),
       ReturnTypeProp()))
@@ -199,9 +214,9 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
     toProps(
       setName("_Display Function Signature"),
       Basic.ApplyMethod(
-          """""[[_Function Signature -> _if(_isNonEmpty(_Function Context Types,
+          """""[[_Function Signature -> _Expected Context -> _if(_isNonEmpty(_Function Context Types),
               |      ""[[_Function Context Types -> Name -> _join("" *or* "")]] -> ""
-              |     ))]][[Name]][[
+              |     )]][[Name]][[
               |  _Function Signature -> ""([[_concat(_Required Parameters, _Optional Parameters) -> Name -> _join("", "")]])""
               |                 ]][[
               |  _Function Signature -> _if(_isNonEmpty(_Function Return Type),
@@ -211,20 +226,24 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
     toProps(
       setName("_Display Function Parameters"),
       Basic.ApplyMethod(
-          """""[[_Function Signature -> _concat(_Required Parameters, _Optional Parameters) ->
-            |    "": [[Name]][[_if(_not(_isEmpty(Default Value)), "" (optional)"")]] : [[Summary]]""]]""""".stripMargin)))
+          """""[[_Function Signature -> _Expected Context -> "": Receives [[_if(_isNonEmpty(_Function Context Types),
+              |      "" -- [[_Function Context Types -> Name -> _join("" *or* "")]]""
+              |     )]] : [[Summary]] ""]]
+            |[[_Function Signature -> _concat(_Required Parameters, _Optional Parameters) ->
+            |    "": [[Name]][[_if(_hasProperty(Default Value._self), "" (optional)"")]] : [[Summary]]""]]""""".stripMargin)))
       
   override lazy val things = Seq(
     ParameterModel,
     SignatureModel,
     SignatureDisplay,
-    ParamsDisplay
+    ParamsDisplay,
+    ExpectedModel
   )
   
   /***********************************************
    * TYPES
    ***********************************************/
-
+  
   lazy val ParameterType = new ModelType(ParamTypeOID, ParamModelOID, 
     toProps(
       setName("_Function Parameter Type"),
@@ -235,9 +254,15 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
       setName("_Function Signature Type"),
       setInternal))
   
+  lazy val ExpectedType = new ModelType(ExpectedTypeOID, ExpectedModelOID,
+    toProps(
+      setName("_Expected Context Type"),
+      setInternal))
+  
   override lazy val types = Seq(
     ParameterType,
-    SignatureType
+    SignatureType,
+    ExpectedType
   )
   
   /***********************************************
@@ -266,6 +291,11 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
       setName("_Function Context Types"),
       setInternal))
   
+  lazy val ExpectedProp = new SystemProperty(ExpectedPropOID, ExpectedType, ExactlyOne,
+    toProps(
+      setName("_Expected Context"),
+      setInternal))
+  
   lazy val ReturnTypeProp = new SystemProperty(ReturnTypeOID, LinkType, Optional,
     toProps(
       setName("_Function Return Type"),
@@ -276,6 +306,7 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
     ReqParams,
     SignatureProp,
     ExpectedTypesProp,
-    ReturnTypeProp
+    ReturnTypeProp,
+    ExpectedProp
   )
 }

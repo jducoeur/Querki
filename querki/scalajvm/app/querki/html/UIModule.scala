@@ -559,23 +559,23 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     }
   }
   
-  lazy val QLTree = new InternalMethod(QLTreeOID,
+  lazy val ThingTree = new InternalMethod(QLTreeOID,
     toProps(
-      setName("_QLTree"),
+      setName("_thingTree"),
       SkillLevel(SkillLevelAdvanced),
       Signature(
-        expected = Seq(LinkType),
+        expected = (Seq(LinkType), "One or more Things to display as equal nodes in a tree"),
         reqs = Seq(
           ("text", TextType, "The text to display for this node.")
         ),
         opts = Seq(
           ("icon", TextType, Core.QNone, "The icon to display for this node."),
           ("id", TextType, Core.QNone, "The jsTree id to use for this node."),
-          ("ql", Basic.QLType, Core.QNone, "A QL expression that produces the children of this node, which should be more _QLTrees. If empty, this node is a leaf."),
+          ("children", Basic.QLType, Core.QNone, "A QL expression that produces the children of this node, which should be more _QLTrees. If empty, this node is a leaf."),
           ("showIcon", YesNoType, Core.QNone, "If set to False, don't show any icon for this node."),
           ("opened", YesNoType, ExactlyOne(Logic.False), "If set to True, this node will open automatically.")
         ),
-        returns = Some(RawHtmlType)
+        returns = None
       ),
       Summary("Display a tree node, which will invoke the specified QL code to get its children")))
   {
@@ -584,7 +584,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         (bundle, elem) <- inv.contextBundlesAndContexts
         thing <- inv.opt(bundle.asThing)
         text <- inv.processAs("text", ParsedTextType, elem)
-        phraseOpt <- inv.rawParam("ql")
+        phraseOpt <- inv.rawParam("children")
         qlOpt = phraseOpt.map(phrase => HtmlEscape.escapeQuotes(phrase.reconstructString))
         iconOpt <- inv.processAsOpt("icon", ParsedTextType, elem)
         showIconOpt <- inv.processAsOpt("showIcon", YesNoType, elem)
@@ -682,7 +682,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     CreateButtonFunction,
     QLButton,
     QLLink,
-    QLTree,
+    ThingTree,
     new MixedButtonMethod,
     ShowSomeFunction
   )

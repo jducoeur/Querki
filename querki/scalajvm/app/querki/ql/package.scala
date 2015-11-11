@@ -387,11 +387,12 @@ package object ql {
      * In theory, every InternalMethod should use Signature. In practice, we're not going to be hard-assed about
      * that yet, but new ones should use it.
      * 
-     * @param expected The PTypes that this Function accepts. If empty, it accepts *all* PTypes.
+     * @param expected Description of what is expected, and the PTypes that this Function accepts. If empty, it accepts *all* PTypes.
+     *   If the context is ignored, should say that.
      * @param reqs The required parameters for this Function, in order.
      * @param opts The optional parameters for this Function, in order.
      * @param returns The PType returned by this Function, if predictable.
      */
-    def apply(expected:Seq[PType[_]], reqs:Seq[(String, PType[_], String)], opts:Seq[(String, PType[_], QValue, String)], returns:Option[PType[_]]):(OID, QValue)
+    def apply(expected:(Seq[PType[_]], String), reqs:Seq[(String, PType[_], String)], opts:Seq[(String, PType[_], QValue, String)], returns:Option[PType[_]]):(OID, QValue)
   }
 }

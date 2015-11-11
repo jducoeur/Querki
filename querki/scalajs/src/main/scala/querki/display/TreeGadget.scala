@@ -102,6 +102,9 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
           dots(false))
       )
     )
+    .on("select_node.jstree", { (selected:dom.Element, evt:JQueryEventObject, data:Any) =>
+      spew("The node is ", data.asInstanceOf[js.Dynamic].node.asInstanceOf[JsTreeNode])
+    })
     $(elem).remove()
     setElem(tree)
   }
