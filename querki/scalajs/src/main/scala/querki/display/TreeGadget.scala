@@ -100,7 +100,8 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
           }
         }).
         themes(JsTreeTheme.
-          dots(false))
+          dots(false).
+          responsive(true))
       )
     )
     .on("select_node.jstree", { (selected:dom.Element, evt:JQueryEventObject, data:Any) =>
