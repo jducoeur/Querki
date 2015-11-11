@@ -33,6 +33,7 @@ case class NodeData(ql:Option[String], thingId:TID)
 class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
 
   lazy val Client = interface[querki.client.Client]
+  lazy val PageManager = interface[querki.display.PageManager]
   
   def doRender() = ???
   
@@ -103,7 +104,9 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
       )
     )
     .on("select_node.jstree", { (selected:dom.Element, evt:JQueryEventObject, data:Any) =>
-      spew("The node is ", data.asInstanceOf[js.Dynamic].node.asInstanceOf[JsTreeNode])
+      val selectedNode = data.asInstanceOf[js.Dynamic].node.asInstanceOf[JsTreeNode]
+      val tid = selectedNode.data.asInstanceOf[NodeData].thingId
+      PageManager.showPage(tid.underlying, Map.empty)
     })
     $(elem).remove()
     setElem(tree)
