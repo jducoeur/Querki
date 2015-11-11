@@ -425,10 +425,10 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
     |not its value on this Thing.""".stripMargin)))
   { 
 	override def qlApply(inv:Invocation):QFut = {
-	  for (
-	    thing <- inv.contextAllThings;
+	  for {
+	    thing <- inv.contextAllBundles
 	    propOid <- inv.processParamFirstAs(0, LinkType)
-	      )
+    }
 	    yield ExactlyOne(thing.props.contains(propOid))
 	}
   }
