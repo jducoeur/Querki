@@ -565,15 +565,14 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       SkillLevel(SkillLevelAdvanced),
       Signature(
         expected = (Seq(LinkType), "One or more Things to display as equal nodes in a tree"),
-        reqs = Seq(
-          ("text", TextType, "The text to display for this node.")
-        ),
+        reqs = Seq(),
         opts = Seq(
-          ("icon", TextType, Core.QNone, "The icon to display for this node."),
-          ("id", TextType, Core.QNone, "The jsTree id to use for this node."),
+          ("text", TextType, Core.QNone, "The text to display for this node. If omitted, will be shown as a link to this Thing as usual."),
           ("children", Basic.QLType, Core.QNone, "A QL expression that produces the children of this node, which should be more _QLTrees. If empty, this node is a leaf."),
+          ("id", TextType, Core.QNone, "The jsTree id to use for this node."),
           ("showIcon", YesNoType, Core.QNone, "If set to False, don't show any icon for this node."),
-          ("opened", YesNoType, ExactlyOne(Logic.False), "If set to True, this node will open automatically.")
+          ("icon", TextType, Core.QNone, "The icon to display for this node."),
+          ("opened", YesNoType, ExactlyOne(Logic.False), "If set to True, children of this node will be displayed immediately.")
         ),
         returns = None
       ),
@@ -583,7 +582,8 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       for {
         (bundle, elem) <- inv.contextBundlesAndContexts
         thing <- inv.opt(bundle.asThing)
-        text <- inv.processAs("text", ParsedTextType, elem)
+        textOpt <- inv.processAsOpt("text", ParsedTextType, elem)
+        text <- inv.fut(textOpt.map(Future.successful(_)).getOrElse(elem.value.wikify(elem)))
         phraseOpt <- inv.rawParam("children")
         qlOpt = phraseOpt.map(phrase => HtmlEscape.escapeQuotes(phrase.reconstructString))
         iconOpt <- inv.processAsOpt("icon", ParsedTextType, elem)
