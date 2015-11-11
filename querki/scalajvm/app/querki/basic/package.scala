@@ -35,6 +35,8 @@ package object basic {
     val SystemHiddenPropOID = moid(4)
     val PrintViewOID = moid(5)
     val ComputedNameOID = moid(6)
+    val NewAllThingsOID = moid(7)
+    val ShowModelTreeOID = moid(8)
   }
   
   /**

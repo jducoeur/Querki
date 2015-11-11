@@ -377,14 +377,30 @@ object DisplayThingTree extends ThingState(DisplayThingTreeOID, systemOID, RootO
 
 object AllThings extends ThingState(AllThingsOID, systemOID, RootOID,
     toProps(
-      setName("All Things"),
-      DisplayTextProp("[[All Things]]"),
+      setName("Old All Things"),
+      DisplayTextProp("[[Old All Things]]"),
       ApplyMethod("""""{{_thingTree:
 [[_currentSpace ->
   _externalRoots ->
   _sort ->
   _displayThingTree]]
 }}""""")))
+  
+object NewAllThings extends ThingState(NewAllThingsOID, systemOID, RootOID,
+  toProps(
+    setName("All Things"),
+    DisplayTextProp("[[All Things]]"),
+    ApplyMethod("""_currentSpace -> _externalRoots -> _sort -> _showModelTree""".stripMargin)))
+  
+object ShowModelTree extends ThingState(ShowModelTreeOID, systemOID, RootOID,
+  toProps(
+    setName("_showModelTree"),
+    ApplyMethod("""_thingTree(""{{_modelInTree:____}}"", 
+                  |opened=_is(Simple Thing), 
+                  |id=""node-[[_oid]]"", 
+                  |children=""[[
+                  |_children -> _filter(_isModel) -> _sort -> _showModelTree]][[
+                  |_children -> _filter(_not(_isModel)) -> _sort -> _thingTree]]"")""".stripMargin)))
 
 object AllProps extends ThingState(AllPropsThingOID, systemOID, RootOID,
     toProps(
@@ -404,6 +420,8 @@ object AllProps extends ThingState(AllPropsThingOID, systemOID, RootOID,
     Commas,
     DisplayThingTree,
     AllThings,
-    AllProps
+    AllProps,
+    NewAllThings,
+    ShowModelTree
   )
 }
