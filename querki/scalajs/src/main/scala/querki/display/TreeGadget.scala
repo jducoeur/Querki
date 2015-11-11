@@ -31,30 +31,41 @@ class TreeGadget(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
 case class NodeData(ql:Option[String], thingId:TID)
 
 class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
-  
+
   lazy val Client = interface[querki.client.Client]
   
   def doRender() = ???
   
   def dissectSpan(e:dom.Element):JsTreeNode = {
     val span = $(e)
+
+    // This mechanism might yet break out to be something more general, but its
+    // relationship to the span makes that tricker. In the long run, we might be looking
+    // instead at some data-binding mechanism between the span and the JsTreeNodeBuilder?
+    implicit class JsTreeNodeExt(node:JsTreeNodeBuilder) {
+      def ifdata(name:String)(func:(JsTreeNodeBuilder, js.Any) => JsTreeNodeBuilder):JsTreeNodeBuilder = {
+        span.data(name).map { data => func(node, data) }.getOrElse(node)
+      }
+    }
+    
     val tid = span.tidString("thingid")
-    // There is clearly a higher-level combinator fighting to break out here, probably in JSOptionBuilder:
-    val withText = JsTreeNode.text(span.html())
-    val withId = span.data("id").map { id => withText.id(id.asInstanceOf[String]) }.getOrElse(withText)
-    val withOpened = 
-      if (span.data("opened").get.asInstanceOf[Boolean])
-        withId.state(NodeState.Opened)
-      else
-        withId
-    val withIcon = 
-      span.data("icon").map { icon => withOpened.icon(icon.asInstanceOf[String]) }.getOrElse(
-      span.data("showicon").map { showIcon => withOpened.icon(showIcon.asInstanceOf[Boolean]) }.getOrElse(withOpened))
+    
+    val node = JsTreeNode.text(span.html())
+      .ifdata("id") { (node, id) => node.id(id.asInstanceOf[String]) }
+      .ifdata("opened") { (node, opened) => 
+        if (opened.asInstanceOf[Boolean]) 
+          node.state(NodeState.Opened)
+        else
+          node
+      }
+      .ifdata("icon") { (node, icon) => node.icon(icon.asInstanceOf[String]) }
+      .ifdata("showicon") { (node, showIcon) => node.icon(showIcon.asInstanceOf[Boolean]) }
+      
     val qlNode = span.find("._treeQL") 
     val withData = 
       qlNode.mapElems(qle => $(qle).text).headOption match {
-        case Some(ql) => withIcon.children(true).data(NodeData(Some(ql), tid))
-        case None => withIcon.data(NodeData(None, tid))
+        case Some(ql) => node.children(true).data(NodeData(Some(ql), tid))
+        case None => node.data(NodeData(None, tid))
       }
     qlNode.remove()
     withData
