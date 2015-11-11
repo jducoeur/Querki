@@ -22,6 +22,7 @@ case class QLPhrase(ops:Seq[QLStage]) {
 case class QLParam(name:Option[String], phrase:QLPhrase) {
   def reconstructString = s"${name.map(_ + " = ").getOrElse("")}${phrase.reconstructString}"
   def ops = phrase.ops
+  def isNamed = name.isDefined
 }
 
 case class QLCall(name:QLName, methodName:Option[String], params:Option[Seq[QLParam]], collFlag:Option[String]) extends QLStage(collFlag) {

@@ -155,9 +155,10 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
               params.find(_.name.map(_.toLowerCase == name).getOrElse(false)) match {
                 case Some(named) => ParamResultImpl(Some(named.phrase), formal)
                 case _ => {
-                  // ... otherwise, find it positionally...
-                  if (params.length >= (index + 1))
-                    ParamResultImpl(Some(params(index).phrase), formal)
+                  // ... otherwise, find it positionally, removing the named parameters:
+                  val plainParams = params.takeWhile { !_.isNamed }
+                  if (plainParams.length >= (index + 1))
+                    ParamResultImpl(Some(plainParams(index).phrase), formal)
                   // ... and if that fails, use the default, assuming there is one:
                   else
                     returnDefault
