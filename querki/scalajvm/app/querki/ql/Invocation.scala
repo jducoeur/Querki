@@ -205,9 +205,11 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
   }
   
   def contextAllThings:InvocationValue[Thing] = {
-    if (!context.value.matchesType(Core.LinkType))
+    if (context.value.matchesType(Core.UnknownType)) {
+      InvocationValueImpl(None)
+    } else if (!context.value.matchesType(Core.LinkType)) {
       error("Func.notThing", displayName)
-    else {
+    } else {
       val ids = context.value.flatMap(Core.LinkType)(Some(_))
       val thingsOpt = ids.map(state.anything(_))
       if (thingsOpt.forall(_.isDefined))
@@ -225,6 +227,8 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
         InvocationValueImpl(thingsOpt.flatten)
       else
         error("Func.unknownThing", displayName)      
+    } else if (context.value.matchesType(Core.UnknownType)) {
+      InvocationValueImpl(None)
     } else context.value.pType match {
       case mt:ModelTypeBase => {
         val bundles = context.value.flatMap(mt)(Some(_))
@@ -241,7 +245,9 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
       if (thingsOpt.forall(_.isDefined))
         InvocationValueImpl(thingsOpt.flatten.map(t => (t, context.next(Core.ExactlyOne(Core.LinkType(t))))))
       else
-        error("Func.unknownThing", displayName)      
+        error("Func.unknownThing", displayName)  
+    } else if (context.value.matchesType(Core.UnknownType)) {
+      InvocationValueImpl(None)
     } else context.value.pType match {
       case mt:ModelTypeBase => {
         val pairs = context.value.cv.map(elem => (elem.get(mt), context.next(Core.ExactlyOne(elem))))

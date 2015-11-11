@@ -61,6 +61,7 @@ Types.Name.tooLong=Names should not be excessively long
 Types.Name.badChars=Names may only contain letters, digits, and spaces
 Types.Text.tooShort={0} must be at least {1} characters long, not counting spaces at the beginning and end
 
+UI.adjustTree.badInput=Not a legal value for the children parameter!
 UI.transform.htmlRequired=The {0} function only works with raw HTML values (such as those produced by _edit) or Text blocks
 UI.transform.classRequired=The {0} function requires one Text parameter: _class(""myParam"")
 UI.transform.notWellFormed=The text received by {0} was not well-formed XML. For the time being, {0} can only cope with a single HTML element, not multiple paragraphs.
