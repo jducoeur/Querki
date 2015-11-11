@@ -52,6 +52,7 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
     val tid = span.tidString("thingid")
     
     val node = JsTreeNode.text(span.html())
+      .icon(false)
       .ifdata("id") { (node, id) => node.id(id.asInstanceOf[String]) }
       .ifdata("opened") { (node, opened) => 
         if (opened.asInstanceOf[Boolean]) 
@@ -60,7 +61,6 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
           node
       }
       .ifdata("icon") { (node, icon) => node.icon(icon.asInstanceOf[String]) }
-      .ifdata("showicon") { (node, showIcon) => node.icon(showIcon.asInstanceOf[Boolean]) }
       
     val qlNode = span.find("._treeQL") 
     val withData = 
