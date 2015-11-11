@@ -40,12 +40,13 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
     val span = $(e)
     val tid = span.tidString("thingid")
     // There is clearly a higher-level combinator fighting to break out here, probably in JSOptionBuilder:
-    val withText = JsTreeNode.text(span.html()).id(s"node-${tid.underlying}")
+    val withText = JsTreeNode.text(span.html())
+    val withId = span.data("id").map { id => withText.id(id.asInstanceOf[String]) }.getOrElse(withText)
     val withOpened = 
       if (span.data("opened").get.asInstanceOf[Boolean])
-        withText.state(NodeState.Opened)
+        withId.state(NodeState.Opened)
       else
-        withText
+        withId
     val withIcon = 
       span.data("icon").map { icon => withOpened.icon(icon.asInstanceOf[String]) }.getOrElse(
       span.data("showicon").map { showIcon => withOpened.icon(showIcon.asInstanceOf[Boolean]) }.getOrElse(withOpened))
