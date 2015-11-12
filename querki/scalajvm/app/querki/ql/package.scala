@@ -234,6 +234,11 @@ package object ql {
     def rawParam(name:String):InvocationValue[Option[QLPhrase]]
     
     /**
+     * Similar to rawParam(), but produces an error if the parameter is not found.
+     */
+    def rawRequiredParam(name:String):InvocationValue[QLPhrase]
+    
+    /**
      * DEPRECATED
      * 
      * Process and return the specific parameter, assuming nothing about the results.

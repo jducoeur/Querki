@@ -491,18 +491,21 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     
     override def qlApply(inv:Invocation):QFut = {
       for {
+        // TODO: this should work with AllThings; however, that will require also getting the Thing
+        // context and passing it down.
         thing <- inv.contextFirstThing
-        labelWiki <- inv.processParamFirstAs(0, ParsedTextType)
+        labelWiki <- inv.processAs("label", ParsedTextType)
         label = HtmlEscape.escapeQuotes(labelWiki.raw.str.trim)
-        qlRaw <- inv.rawParam(1)
+        qlRaw <- inv.rawRequiredParam("ql")
         ql = HtmlEscape.escapeQuotes(qlRaw.reconstructString)
-        target <- inv.processParamFirstOr(2, ParsedTextType, Wikitext(""))
+        targetOpt <- inv.processAsOpt("target", ParsedTextType)
         (targetName, targetDiv) =
-          if (target.plaintext.length() == 0) {
-            val name = "target-" + scala.util.Random.nextInt.toString 
-            (name, s"""<div id="$name"></div>""")
-          } else {
-            (target.raw.str.trim, "")
+          targetOpt match {
+            case Some(target) => (target.raw.str.trim, "")
+            case None => {
+              val name = "target-" + scala.util.Random.nextInt.toString 
+              (name, s"""<div id="$name"></div>""")
+            }
           }
       }
         yield 
@@ -514,16 +517,23 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   lazy val QLButton = new ClickableQLBase(QLButtonOID,
     toProps(
       setName("_QLButton"),
+      Signature(
+        expected = (Seq(LinkType), "The Thing that will be passed to the QL."),
+        reqs = Seq(
+          ("label", ParsedTextType, "The text to display on the button."),
+          ("ql", Basic.QLType, "The QL to execute when the button is pressed.")
+        ),
+        opts = Seq(
+          ("target", ParsedTextType, Core.QNone, """The id of a div or span to put the results into; if it
+                |is not given, the results will be displayed below the button.""".stripMargin)
+        ),
+        returns = None
+      ),
       Summary("Shows a button that, when pressed, executes some QL and can show the result"),
       SkillLevel(SkillLevelAdvanced),
-      Details("""    THING -> _QLButton(LABEL, QL, TARGET)
-          |
-          |This function is unusual, in that it is a way to do something only if the user presses a button.
-          |It displays a button with the given LABEL; if the user presses that, it evaluates the given QL
-          |(using the received THING as its context). 
-          |
-          |If a TARGET is specified, that should be the id of a div or span to put the results into; if it
-          |is not given, the results will be displayed below the button.
+      Details("""This function is unusual, in that it is a way to do something only if the user presses a button.
+          |It displays a button with the given **label**; if the user presses that, it evaluates the given **ql**
+          |(using the received Thing as its context).
           |
           |As an example of how to use this, say you have a complex Model Property that you want to make
           |editable on the Thing's page, but you only want to show it when needed. You can say:
@@ -538,16 +548,23 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   lazy val QLLink = new ClickableQLBase(QLLinkOID,
     toProps(
       setName("_QLLink"),
+      Signature(
+        expected = (Seq(LinkType), "The Thing that will be passed to the QL."),
+        reqs = Seq(
+          ("label", ParsedTextType, "The text to display on the button."),
+          ("ql", Basic.QLType, "The QL to execute when the button is pressed.")
+        ),
+        opts = Seq(
+          ("target", ParsedTextType, Core.QNone, """The id of a div or span to put the results into; if it
+                |is not given, the results will be displayed below the button.""".stripMargin)
+        ),
+        returns = None
+      ),
       Summary("Shows a link that, when clicked, executes some QL and can show the result"),
       SkillLevel(SkillLevelAdvanced),
-      Details("""    THING -> _QLLink(LABEL, QL, TARGET)
-          |
-          |This function is unusual, in that it is a way to do something only if the user clicks a link.
-          |It displays a link with the given LABEL; if the user clicks that, it evaluates the given QL
-          |(using the received THING as its context).
-          |
-          |If a TARGET is specified, that should be the id of a div or span to put the results into; if it
-          |is not given, the results will be displayed below the link.
+      Details("""This function is unusual, in that it is a way to do something only if the user clicks a link.
+          |It displays a link with the given **label**; if the user clicks that, it evaluates the given **ql**
+          |(using the received Thing as its context).
           |
           |As an example of how to use this, say you have a complex Model Property that you want to make
           |editable on the Thing's page, but you only want to show it when needed. You can say:

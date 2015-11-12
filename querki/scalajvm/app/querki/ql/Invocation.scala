@@ -446,6 +446,13 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
     InvocationValueImpl(inv, Future.successful(IVData(Some(sig.getParam(name).phrase))))
   }
   
+  def rawRequiredParam(name:String):InvocationValue[QLPhrase] = {
+    sig.getParam(name).phrase match {
+      case Some(phrase) => InvocationValueImpl(inv, Future.successful(IVData(Some(phrase))))
+      case None => error("Func.missingNamedParam", displayName, name)
+    }
+  }
+  
   // TODO: The next several functions are deprecated, and should be phased out in favor of the above version:
   def processParam(paramNum:Int, processContext:QLContext = context):InvocationValue[QValue] = {
     paramsOpt match {
