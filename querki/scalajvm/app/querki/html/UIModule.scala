@@ -507,10 +507,11 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
               (name, s"""<div id="$name"></div>""")
             }
           }
+        append <- inv.processAs("append", YesNoType)
       }
         yield 
           HtmlValue(
-            buildHtml(label, s"""data-thingid="${thing.toThingId}" data-target="$targetName" data-ql="$ql" href="#" """) + targetDiv)
+            buildHtml(label, s"""data-thingid="${thing.toThingId}" data-target="$targetName" data-ql="$ql" data-append="$append" href="#" """) + targetDiv)
     }
   }
 
@@ -525,7 +526,10 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         ),
         opts = Seq(
           ("target", ParsedTextType, Core.QNone, """The id of a div or span to put the results into; if it
-                |is not given, the results will be displayed below the button.""".stripMargin)
+                |is not given, the results will be displayed below the button.""".stripMargin),
+          ("append", YesNoType, ExactlyOne(YesNoType(false)), """If set to true, pressing the button again runs
+                |the QL again, and appends the result to the target div. Otherwise, pressing the button again
+                |closes the div.""".stripMargin)
         ),
         returns = None
       ),
@@ -556,7 +560,10 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         ),
         opts = Seq(
           ("target", ParsedTextType, Core.QNone, """The id of a div or span to put the results into; if it
-                |is not given, the results will be displayed below the button.""".stripMargin)
+                |is not given, the results will be displayed below the button.""".stripMargin),
+          ("append", YesNoType, ExactlyOne(YesNoType(false)), """If set to true, clicking the link again runs
+                |the QL again, and appends the result to the target div. Otherwise, clicking the link again
+                |closes the div.""".stripMargin)
         ),
         returns = None
       ),
