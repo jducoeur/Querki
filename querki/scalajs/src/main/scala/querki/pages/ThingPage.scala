@@ -87,7 +87,7 @@ class StandardThingHeader(thing:ThingInfo, page:Page)(implicit val ecology:Ecolo
     div(cls:="page-header",
         
       h1(cls:="_defaultTitle", 
-        thingName, " ",
+        raw(thingName), " ",
         if (thing.isModel) {
           MSeq(
             if (thing.isEditable) {

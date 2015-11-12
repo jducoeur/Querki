@@ -16,6 +16,8 @@ case class TID(val underlying:String) extends AnyVal {
 trait BasicThingInfo {
   def oid:TID
   def linkName:Option[String]
+  // This is the pre-neutered display name for this Thing. It should be rendered raw, without
+  // further XML escaping:
   def displayName:String
   
   def urlName = linkName match {
