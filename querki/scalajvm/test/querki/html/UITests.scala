@@ -168,7 +168,14 @@ class UITests extends QuerkiTests {
       implicit val s = commonSpace
       
       pql("""[[My Instance -> _QLButton(""Label"", My Optional Text, ""myTarget"")]]""") should
-        equal ("""<input type="button" value="Label" class="btn btn-primary _qlInvoke" data-thingid="My-Instance" data-target="myTarget" data-ql="My Optional Text" href="#" ></input>""")
+        equal ("""<input type="button" value="Label" class="btn btn-primary _qlInvoke" data-thingid="My-Instance" data-target="myTarget" data-ql="My Optional Text" data-append="false" href="#" ></input>""")
+    }
+    
+    "use append properly" in {
+      implicit val s = commonSpace
+      
+      pql("""[[My Instance -> _QLButton(""Label"", My Optional Text, ""myTarget"", append=True)]]""") should
+        equal ("""<input type="button" value="Label" class="btn btn-primary _qlInvoke" data-thingid="My-Instance" data-target="myTarget" data-ql="My Optional Text" data-append="true" href="#" ></input>""")
     }
   }
   
