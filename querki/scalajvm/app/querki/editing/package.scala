@@ -22,6 +22,7 @@ package object editing {
     val EditAsPickListOID = moid(1)
     val InstanceEditViewOID = moid(2)
     val EditWidthPropOID = moid(3)
+    val NotEditableOID = moid(4)
   }
 
   trait Editor extends EcologyInterface {
@@ -35,6 +36,7 @@ package object editing {
     def PromptProp:Property[PlainText,String]
     def InstanceEditViewProp:Property[QLText,String]
     def EditWidthProp:Property[Int,Int]
+    def NotEditableProp:Property[Boolean,Boolean]
     
     /**
      * Given a Model, this returns the expected Properties to show/use for Instances of this Model.

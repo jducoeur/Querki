@@ -120,6 +120,12 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
           |You do not have to set this -- if you leave it alone, each Type has a default width. But you will
           |sometimes find that you prefer to have your Edit controls narrower then the default, in order to
           |get a good-looking Editor for a Model. Set this to a number between 1 and 12 to do that.""".stripMargin)))
+  
+  lazy val NotEditableProp = new SystemProperty(NotEditableOID, YesNoType, ExactlyOne,
+    toProps(
+      setName("_Not Editable Property"),
+      setInternal,
+      Summary("Set on a Property that should not show up in the Editor.")))
 
   abstract class EditMethodBase(id:OID, pf:PropMap) extends InternalMethod(id, pf)
   {
@@ -394,6 +400,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
     editOrElseMethod,
     editAsPicklistMethod,
     EditWidthProp,
-    FormLineMethod
+    FormLineMethod,
+    NotEditableProp
   )
 }

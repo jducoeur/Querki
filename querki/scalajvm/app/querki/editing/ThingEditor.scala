@@ -111,7 +111,7 @@ trait ThingEditor { self:EditorModule =>
       } else if (prop.id == querki.core.MOIDs.IsModelOID || prop.id == querki.types.DeriveNameMOIDs.DeriveNameOID) {
         // These are implicit properties, and we don't show them in the editor explicitly any more:
         false
-      } else if (prop.ifSet(Core.InternalProp)) {
+      } else if (prop.ifSet(NotEditableProp)) {
         false
       } else
         true

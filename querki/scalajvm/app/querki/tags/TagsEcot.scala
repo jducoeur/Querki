@@ -24,6 +24,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   
   val Links = initRequires[querki.links.Links]
   val Basic = initRequires[querki.basic.Basic]
+  val Editor = initRequires[querki.editing.Editor]
   
   lazy val PropPaths = interface[querki.types.PropPaths]
   lazy val QL = interface[querki.ql.QL]
@@ -333,6 +334,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
     toProps(
       setName("_Is Reified Tag"),
       Core.InternalProp(true),
+      Editor.NotEditableProp(true),
       Summary("Set automatically when you turn a Tag into a real Thing"),
       Details("""You should usually not need to worry about this. This Property mainly controls the way the
         |reified tag displays, if its Model doesn't have a Default View.""".stripMargin)))
