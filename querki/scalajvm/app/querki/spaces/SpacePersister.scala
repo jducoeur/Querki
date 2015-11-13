@@ -20,7 +20,7 @@ import querki.ecology._
 import querki.time._
 import querki.time.TimeAnorm._
 
-import querki.db.ShardKind
+import querki.db._
 import ShardKind._
 import querki.evolutions.Evolutions
 import querki.identity.{SystemUser, User}
@@ -225,8 +225,11 @@ private [spaces] class SpacePersister(val id:OID, implicit val ecology:Ecology) 
     /***************************/
     
     case Create(state:SpaceState, modelId:OID, kind:Kind, props:PropMap, modTime:DateTime) => {
-      QuerkiCluster.oidAllocator.request(NextOID) map { case NewOID(thingId) =>
-        DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+      // Going back to the old way of doing things, until Akka Persistence is more reliable:
+//      QuerkiCluster.oidAllocator.request(NextOID) map { case NewOID(thingId) =>
+      {
+        val thingId = OID.next(ShardKind.User)
+        QDB(ShardKind.User) { implicit conn =>
           // TODO: add a history record
           SpacePersistence.createThingInSql(thingId, id, modelId, kind, props, modTime, state)
         }          

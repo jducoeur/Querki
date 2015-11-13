@@ -127,7 +127,11 @@ private [spaces] class SpaceManagerPersister(val ecology:Ecology) extends Actor 
           }
         }
         
-        QuerkiCluster.oidAllocator.request(NextOID) map { case NewOID(spaceId) =>        
+        // Going back to the old way of doing things until we have a more reliable Akka Persistence
+        // implementation:
+//        QuerkiCluster.oidAllocator.request(NextOID) map { case NewOID(spaceId) =>
+        {
+          val spaceId = OID.next(ShardKind.User)
           // NOTE: we have to do this as several separate Transactions, because part goes into the User DB and
           // part into System. That's unfortunate, but kind of a consequence of the architecture.
           // TODO: disturbingly, we don't seem to be rolling back these transactions if we get, say, an exception
