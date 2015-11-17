@@ -155,4 +155,15 @@ class ThingFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceA
     // TODO: once we are caching the hierarchy tree, this can become more efficient:
     state.descendants(model.id, false, true).size
   }
+  
+  def getChildren(modelId:TID, includeModels:Boolean, includeInstances:Boolean):Future[Seq[ThingInfo]] = withThing(modelId) { model =>
+    implicit val s = state
+    val result = state.children(model) filter { t =>
+      if (t.isModel)
+        includeModels
+      else
+        includeInstances
+    } map (ClientApi.thingInfo(_,rc))
+    Future.sequence(result.toSeq)
+  }
 }

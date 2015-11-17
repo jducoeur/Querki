@@ -14,6 +14,7 @@ import querki.pages.{IndexPage, Page, PageContents, ParamMap}
  */
 class AppManagementPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember {
   
+  lazy val Apps = interface[Apps]
   lazy val Client = interface[querki.client.Client]
   
   val appInput = GadgetRef[RxText]
@@ -27,6 +28,9 @@ class AppManagementPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
           p("This page lets you add Apps to your Space. ", 
             b("Important:"), 
             " This feature is highly experimental, and not yet intended for general use!"),
+            
+          h3("Extract an App"),
+          a(href:=Apps.extractAppFactory.pageUrl(), "Extract a new App from this Space"),
             
           h3("Current Apps"),
           for (app <- apps)

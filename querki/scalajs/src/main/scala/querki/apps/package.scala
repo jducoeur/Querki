@@ -9,5 +9,6 @@ import querki.pages.PageFactory
 package object apps {
   trait Apps extends EcologyInterface {
     def appMgmtFactory:PageFactory
+    def extractAppFactory:PageFactory
   }
 }

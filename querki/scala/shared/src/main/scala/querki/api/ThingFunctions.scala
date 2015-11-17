@@ -59,4 +59,9 @@ trait ThingFunctions {
    * Returns the number of Instances there are for this Model.
    */
   def getNumInstances(modelId:TID):Int
+  
+  /**
+   * Returns the *immediate* children of the specified Model.
+   */
+  def getChildren(modelId:TID, includeModels:Boolean, includeInstances:Boolean):Future[Seq[ThingInfo]]
 }

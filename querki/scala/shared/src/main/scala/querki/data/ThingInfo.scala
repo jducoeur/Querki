@@ -24,6 +24,8 @@ trait BasicThingInfo {
     case Some(name) if (name.length() > 0) => TID(NameUtils.toUrl(name))
     case _ => oid
   }
+  
+  def is(other:BasicThingInfo) = oid == other.oid
 }
 
 /**
