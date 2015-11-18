@@ -32,3 +32,21 @@ class ThingPageFactoryBase(registeredName:String, const:ParamMap => Page, paramN
   
   def showPage(tid:TID):Future[Page] = PageManager.showPage(registeredName, Map(paramName -> tid.underlying))
 }
+
+class RawThingPageFactory(implicit val ecology:Ecology) extends ThingPageFactory with EcologyMember {
+  lazy val PageManager = interface[querki.display.PageManager]
+  
+  // This factory doesn't get registered the same way, and doesn't get invoked like these.
+  // TODO: the implication is that the ThingPageFactory interface shouldn't derive from PageFactory?
+  def constructPageOpt(pageName:String, params:ParamMap):Option[Page] = ???
+  def pageUrl(params:(String, String)*):URL = ???
+  def showPage(params:(String, String)*):Future[Page] = ???
+  
+  def pageUrl(thing:BasicThingInfo, addlParams:(String, String)*):URL = {
+    PageManager.pageUrl(thing.urlName.underlying, Map(addlParams:_*))
+  }
+  
+  def showPage(thing:BasicThingInfo):Future[Page] = showPage(thing.urlName)
+  
+  def showPage(tid:TID):Future[Page] = PageManager.showPage(tid.underlying, Map.empty)
+}

@@ -13,7 +13,7 @@ import org.querki.facades.jstree._
 
 import querki.api.ThingFunctions
 import querki.data.{ThingInfo}
-import querki.display.Gadget
+import querki.display.{ButtonGadget, Gadget}
 import querki.globals._
 import querki.pages.{IndexPage, Page, PageContents, ParamMap}
 
@@ -33,7 +33,18 @@ class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
       guts = 
         div(
           h1("Extract an App"),
-          new ExtractTree(models, pages)
+          p("In the list below, select the Models and Instances to lift into the new App."),
+          p("""Initially, all Models and all Pages (Things based on Simple Thing) are selected. That is often just what you want,
+              |but you can uncheck anything you don't want to have in the new App. You can also open a Model and add some or all of
+              |its Instances. In general, you want to includes all Things that are part of the structure of this App, but not
+              |the ones that are part of the data of this Space.""".stripMargin),
+          p("Any local Properties that are used by these Models and Pages will automatically be lifted into the App"),
+          new ExtractTree(models, pages),
+          p("When you have selected the elements you would like to bring into the App, press this button."),
+          new ButtonGadget(ButtonGadget.Warning, "Extract App from this Space")({ () =>
+//            Client[AppsFunctions].extractApp()
+          }),
+          new ButtonGadget(ButtonGadget.Normal, "Cancel")({() => Pages.showSpacePage(DataAccess.space.get)})
         )
     }
       yield PageContents("Extract App", guts)

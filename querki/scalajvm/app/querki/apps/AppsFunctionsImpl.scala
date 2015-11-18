@@ -3,7 +3,7 @@ package querki.apps
 import models.{AsOID, ThingId}
 
 import querki.api.{AutowireParams, SpaceApiImpl}
-import querki.data.SpaceInfo
+import querki.data.{SpaceInfo, TID}
 import querki.globals._
 import querki.spaces.messages._
 
@@ -39,5 +39,9 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
       }
       case _ => throw new PublicException("Apps.notASpace")
     }
+  }
+  
+  def extractApp(elements:Seq[TID]):Future[Unit] = {
+    ???
   }
 }

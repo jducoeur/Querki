@@ -2,6 +2,7 @@ package querki.pages
 
 import querki.globals._
 
+import querki.comm.URL
 import querki.data.SpaceInfo
 import querki.search.SearchResultsPage
 
@@ -25,6 +26,8 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   lazy val createSpaceFactory = registerStandardFactory("_createSpace", { (params) => new CreateSpacePage(params) })
   lazy val importSpaceFactory = registerStandardFactory("_importSpace", { (params) => new ImportSpacePage(params) })
   
+  lazy val thingPageFactory = new RawThingPageFactory
+  
   override def postInit() = {
     exploreFactory
     viewFactory
@@ -35,6 +38,7 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
     accountFactory
     createSpaceFactory
     importSpaceFactory
+    thingPageFactory
   }
   
   private var factories = Seq.empty[PageFactory]
@@ -53,7 +57,8 @@ class PagesEcot(e:Ecology) extends ClientEcot(e) with Pages {
   }  
   
   // TODO: this doesn't yet work correctly to navigate cross-Spaces:
-  def showSpacePage(space:SpaceInfo) = PageManager.showPage(s"${space.urlName.underlying}", Map.empty)
+  def showSpacePage(space:SpaceInfo) = thingPageFactory.showPage(space)  
+  def spaceUrl(space:SpaceInfo):URL = thingPageFactory.pageUrl(space)
   
   /**
    * Construct the correct Page, based on the passed-in page name.

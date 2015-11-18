@@ -80,6 +80,12 @@ package object pages {
     def accountFactory:PageFactory
     def createSpaceFactory:PageFactory
     def importSpaceFactory:PageFactory
+    def thingPageFactory:ThingPageFactory
+    
+    /**
+     * The URL of the given Space.
+     */
+    def spaceUrl(space:SpaceInfo):URL
     
     /**
      * Navigate to the given Space.
