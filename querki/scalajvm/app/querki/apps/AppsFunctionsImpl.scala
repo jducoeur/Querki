@@ -42,6 +42,16 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
   }
   
   def extractApp(elements:Seq[TID]):Future[Unit] = {
-    ???
+    // TEMP:
+    QLog.spew("In extractApp:")
+    elements foreach { elementId =>
+      state.anything(ThingId(elementId.underlying)) match {
+        case Some(element) => QLog.spewThing(element)(state)
+        case _ => QLog.error(s"Unknown TID $elementId!")
+      }
+    }
+    
+    // TODO: return a progress connection
+    Future.successful(())
   }
 }

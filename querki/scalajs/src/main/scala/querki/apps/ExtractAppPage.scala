@@ -14,6 +14,7 @@ import org.querki.facades.jstree._
 import querki.api.ThingFunctions
 import querki.data.{ThingInfo}
 import querki.display.{ButtonGadget, Gadget}
+import querki.display.rx._
 import querki.globals._
 import querki.pages.{IndexPage, Page, PageContents, ParamMap}
 
@@ -23,6 +24,8 @@ import querki.pages.{IndexPage, Page, PageContents, ParamMap}
 class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
   
   lazy val Client = interface[querki.client.Client]
+  
+  val extractTree = GadgetRef[ExtractTree]
   
   def pageContent = {
     for {
@@ -39,10 +42,14 @@ class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
               |its Instances. In general, you want to includes all Things that are part of the structure of this App, but not
               |the ones that are part of the data of this Space.""".stripMargin),
           p("Any local Properties that are used by these Models and Pages will automatically be lifted into the App"),
-          new ExtractTree(models, pages),
+          extractTree <= new ExtractTree(models, pages),
           p("When you have selected the elements you would like to bring into the App, press this button."),
           new ButtonGadget(ButtonGadget.Warning, "Extract App from this Space")({ () =>
-//            Client[AppsFunctions].extractApp()
+            val jq = $(extractTree.get.elem)
+            val selectedIds = jq.getSelectedIds.map(TID(_))
+            Client[AppsFunctions].extractApp(selectedIds).call() foreach { result =>
+              // TODO -- this should deal with the progress bar
+            }
           }),
           new ButtonGadget(ButtonGadget.Normal, "Cancel")({() => Pages.showSpacePage(DataAccess.space.get)})
         )
