@@ -96,14 +96,13 @@ class ExtractTree(models:Seq[ThingInfo], pages:Seq[ThingInfo])(implicit val ecol
   
   override def onCreate(e:dom.html.Div) = {
     $(e).jsTree(JsTreeOptions
-      .plugins(Seq(JsTreePlugins.Checkbox))
+      .plugins(JsTreePlugins.Checkbox)
       .core(JsTreeCore
         .worker(false)
         .themes(JsTreeTheme
           .dots(false)
           .responsive(true))
-        .data({ (nodeIn:js.Object, cb:js.Function1[js.Array[JsTreeNode], Any]) =>
-          val asNode = nodeIn.asInstanceOf[JsTreeNode]
+        .data({ (asNode:JsTreeNode, cb:js.Function1[js.Array[JsTreeNode], Any]) =>
           val id = asNode.id.get
           if (id == "#") {
             cb(initNodes.toJSArray)

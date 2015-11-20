@@ -80,8 +80,7 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
       core(JsTreeCore.
         // We are turning off workers, because they are causing weird crashes, I think:
         worker(false).
-        data({ (nodeIn:js.Object, cb:js.Function1[js.Array[JsTreeNode], Any]) =>
-          val asNode = nodeIn.asInstanceOf[JsTreeNode]
+        data({ (asNode:JsTreeNode, cb:js.Function1[js.Array[JsTreeNode], Any]) =>
           if (asNode.id == "#") {
             cb(js.Array(node))
           } else {
@@ -104,11 +103,10 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
           responsive(true))
       )
     )
-    .on("select_node.jstree", { (selected:dom.Element, evt:JQueryEventObject, data:Any) =>
-      val selectedNode = data.asInstanceOf[js.Dynamic].node.asInstanceOf[JsTreeNode]
+    .onSelectNode { selectedNode:JsTreeNode =>
       val tid = selectedNode.data.asInstanceOf[NodeData].thingId
-      PageManager.showPage(tid.underlying, Map.empty)
-    })
+      PageManager.showPage(tid.underlying, Map.empty)      
+    }
     $(elem).remove()
     setElem(tree)
   }
