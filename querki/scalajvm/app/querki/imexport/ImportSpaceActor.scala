@@ -10,6 +10,7 @@ import org.querki.requester._
 
 import querki.globals._
 import ImportSpaceFunctions._
+import querki.spaces.SpaceBuilder
 import querki.streaming._
 import UploadMessages._
 import querki.values.RequestContext
@@ -25,7 +26,7 @@ import mysql._
  * @author jducoeur
  */
 class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:String, totalSize:Int) extends Actor with Requester 
-  with UploadActor with ImporterImpl with ImportProgressInternal with EcologyMember 
+  with UploadActor with SpaceBuilder with EcologyMember 
 {
   import ImportSpaceActor._
   
@@ -77,13 +78,37 @@ class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:Stri
     case CompletionAcknowledged => context.stop(self)
   }
   
+  var importMsg:String = "Uploading"
+  
+  // How many roundtrips do we expect to make to the DB?
+  var totalThingOps = 0
+  // How many roundtrips have we made so far?
+  var thingOps = 0
+  
+  // Set when we are complete
+  var spaceInfo:Option[querki.data.SpaceInfo] = None
+  
+  // Set to true iff the upload process fails
+  var failed = false
+  
+  // Needed for buildSpace:
+  def setMsg(msg:String):Unit = importMsg = msg
+  def setTotalThingOps(n:Int) = totalThingOps = n 
+  def incThingOps():Unit = thingOps = thingOps + 1
+  def createMsg:String = "Creating new Space"
+  def buildingMsg:String = "Creating uploader"
+  def thingsMsg:String = "Importing Things into the Space"
+  def typesMsg:String = "Importing Types into the Space"
+  def propsMsg:String = "Importing Properties into the Space"
+  def valuesMsg:String = "Importing Values into the Space"
+  
   def processBuffer(rc:RequestContext) = {
     if (rc.requester.isEmpty)
       throw new Exception("Somehow got to ImportSpaceActor when not logged in!")
     
     val rawState = buildSpaceState(rc)
     
-    loopback(createSpaceFromImported(rc.requesterOrAnon, name)(rawState)) onComplete { 
+    loopback(buildSpace(rc.requesterOrAnon, name)(rawState)) onComplete { 
       case Success(info) => {
         // We don't actually do anything -- we wait for the client to request an update
         // on the situation. So just note that we're done.
