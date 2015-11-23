@@ -62,8 +62,6 @@ private [imexport] trait ImporterImpl { anActor:Actor with Requester with Import
     // Note that this whole process is a really huge RequestM composition, and it isn't as pure
     // functional as it might look -- there are a bunch of side-effecting data structures involved,
     // for simplicity.
-    // TODO: someday, once we have a proper websocket connection to the client, this should send
-    // updates back up as these steps execute:
     importMsg = "Creating new Space"
     for {
       // First, we create the new Space:

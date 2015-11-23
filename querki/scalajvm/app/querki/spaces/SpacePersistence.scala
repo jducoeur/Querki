@@ -26,6 +26,8 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
   def convTable(id:OID) = "c" + sid(id)
   // The name of the Space's User Values Table
   def userValuesTable(id:OID) = "uv" + sid(id)
+  // The name for a pre-extraction backup
+  def preExtractBackup(id:OID) = thingTable(id) + "_preExtract" + DateTime.now.getMillis
 
 
   // TODO: this escape/unescape is certainly too simplistic to cope with recursive types.
@@ -51,7 +53,8 @@ class SpacePersistenceEcot(e:Ecology) extends QuerkiEcot(e) with SpacePersistenc
     		replace("{tname}", thingTable(spaceId)).
     		replace("{bname}", backupTable(spaceId, version)).
     		replace("{cname}", convTable(spaceId)).
-    		replace("{uvname}", userValuesTable(spaceId))
+    		replace("{uvname}", userValuesTable(spaceId)).
+        replace("{exname}", preExtractBackup(spaceId))
     SQL(replQuery)
   }
     

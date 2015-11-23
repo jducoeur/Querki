@@ -47,7 +47,7 @@ class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
           new ButtonGadget(ButtonGadget.Warning, "Extract App from this Space")({ () =>
             val jq = $(extractTree.get.elem)
             val selectedIds = jq.getSelectedIds.map(TID(_))
-            Client[AppsFunctions].extractApp(selectedIds).call() foreach { result =>
+            Client[AppsFunctions].extractApp(selectedIds).call() foreach { progressMonitor =>
               // TODO -- this should deal with the progress bar
             }
           }),
