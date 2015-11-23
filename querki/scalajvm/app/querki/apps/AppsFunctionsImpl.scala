@@ -1,15 +1,11 @@
 package querki.apps
 
-import akka.actor.ExtendedActorSystem
-
 import models.{AsOID, ThingId}
 
-import querki.api.{AutowireParams, SpaceApiImpl}
+import querki.api.{AutowireParams, OperationHandle, ProgressActor, SpaceApiImpl}
 import querki.data.{SpaceInfo, TID}
 import querki.globals._
 import querki.spaces.messages._
-
-import AppsFunctions._
 
 /**
  * @author jducoeur
@@ -45,7 +41,7 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     }
   }
   
-  def extractApp(elements:Seq[TID]):Future[String] = {
+  def extractApp(elements:Seq[TID]):OperationHandle = {
     if (!AccessControl.hasPermission(Apps.CanManipulateAppsPerm, state, user, state))
       throw new PublicException("Apps.notAllowed")
     
@@ -53,23 +49,6 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     // troupe! This is necessary because it will reboot the troupe a couple of times in the course
     // of extraction. (We don't put it under the user's context, because we'd like to start on the
     // same node as the Space, to avoid having to send the State across the wire.)
-    val importActor = requester.context.system.actorOf(ExtractAppActor.props(ecology, elements, state))
-    
-    // Now, return the fully-qualified path to that Actor:
-    val path = importActor.path
-    val system = requester.context.system
-    val defaultAddress = system.asInstanceOf[ExtendedActorSystem].provider.getDefaultAddress
-    Future.successful(path.toStringWithAddress(defaultAddress))
-  }
-  
-  def getProgress(path:String):Future[Unit] = {
-    val selection = context.system.actorSelection(path)
-    selection.requestFor[ExtractAppProgress](ExtractAppActor.GetProgress)
-    ???
-  }
-  
-  def acknowledgeComplete(path:String):Unit = {
-    val selection = context.system.actorSelection(path)
-    selection ! ExtractAppActor.CompletionAcknowledged
+    ProgressActor.createProgressActor(requester, ExtractAppActor.props(ecology, elements, state), true)
   }
 }

@@ -23,7 +23,10 @@ import querki.pages.{IndexPage, Page, PageContents, ParamMap}
  */
 class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with EcologyMember  {
   
+  lazy val Apps = interface[Apps]
   lazy val Client = interface[querki.client.Client]
+  lazy val ProgressDialog = interface[querki.display.ProgressDialog]
+  lazy val StatusLine = interface[querki.display.StatusLine]
   
   val extractTree = GadgetRef[ExtractTree]
   
@@ -47,8 +50,12 @@ class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
           new ButtonGadget(ButtonGadget.Warning, "Extract App from this Space")({ () =>
             val jq = $(extractTree.get.elem)
             val selectedIds = jq.getSelectedIds.map(TID(_))
-            Client[AppsFunctions].extractApp(selectedIds).call() foreach { progressMonitor =>
-              // TODO -- this should deal with the progress bar
+            Client[AppsFunctions].extractApp(selectedIds).call() foreach { handle =>
+              ProgressDialog.showDialog(
+                s"extracting App", 
+                handle, 
+                Apps.appMgmtFactory.showPage(), 
+                StatusLine.showBriefly(s"Error while extracting an App!"))              
             }
           }),
           new ButtonGadget(ButtonGadget.Normal, "Cancel")({() => Pages.showSpacePage(DataAccess.space.get)})

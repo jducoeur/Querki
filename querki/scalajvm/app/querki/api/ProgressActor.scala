@@ -73,9 +73,16 @@ object ProgressActor {
   
   /**
    * Create a long-running child Actor, and return an OperationHandle pointing to it.
+   * 
+   * @param atRoot Iff set to true, this operation will be run at the ActorSystem level. Do this
+   * only when the operation doesn't fit into the requester's scope!
    */
-  def createProgressActor(requester:Actor, props:Props):OperationHandle = {
-    val importActor = requester.context.actorOf(props)
+  def createProgressActor(requester:Actor, props:Props, atRoot:Boolean = false):OperationHandle = {
+    val importActor =
+      if (atRoot)
+        requester.context.system.actorOf(props)
+      else
+        requester.context.actorOf(props)
     
     importActor ! Start
     
