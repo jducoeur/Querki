@@ -57,6 +57,6 @@ class IndexPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Ecolog
 object IndexPage {
   def spaceLink(space:SpaceInfo) = {
     val spaceName = space.linkName.getOrElse(space.oid.underlying)
-    a(href:=s"/u/${space.ownerHandle}/$spaceName/#$spaceName", space.displayName)    
+    a(href:=s"/u/${space.ownerHandle}/$spaceName/#!$spaceName", space.displayName)    
   }
 }

@@ -110,7 +110,13 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
       InputGadgets.afterAllSaved.flatMap { dummy =>
         _currentHash = fullHash
 	    // Slice off the hash itself:
-	    val hash = fullHash.substring(1)
+      // We now prefer the Google-favored style, where the AJAX hash begins with "!", but we
+      // still cope with the original format without that.
+	    val hash = 
+        if (fullHash.startsWith("#!"))
+          fullHash.substring(2)
+        else
+          fullHash.substring(1)
 	    val hashParts = hash.split("\\?")
 	    if (hashParts.length == 0)
 	      // There is a hash, but nothing else, so it's presumptively root:
@@ -159,7 +165,7 @@ class PageManagerEcot(e:Ecology) extends ClientEcot(e) with PageManager {
         ""
       else
         "?" + paramMap.map(pair => s"${encode(pair._1)}=${encode(pair._2)}").mkString("&")
-    s"#$pageName$paramStr"    
+    s"#!$pageName$paramStr"    
   }
   
   def showPage(pageName:String, paramMap:ParamMap):Future[Page] = {

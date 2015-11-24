@@ -140,7 +140,7 @@ trait ThingPageTests extends QuerkiTests {
     val window = pageBody.ownerDocument.asInstanceOf[html.Document].defaultView
 //    val window = pageBody.ownerDocument.defaultView
     
-    window.location.hash = "#" + pageName
+    window.location.hash = "#!" + pageName
     // This will cause the page to render, based on the current hash:
     // This triggers an exception if something went wrong during page rendering:
     PageManager.setRoot(window, pageBody).withTimeout("Page failed to render")

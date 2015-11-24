@@ -21,7 +21,7 @@ class PublicUrlDefinitions(e:Ecology) extends QuerkiEcot(e) with PublicUrls {
     // TODO: this code arguably belongs in ClientController somehow, but I'd prefer to not
     // force a pointless redirect:
     val spaceCall = routes.ClientController.space(rc.ownerHandle, state.toThingId)
-    val call = new Call(spaceCall.method, spaceCall.url + s"#_createAndEdit?model=$modelId")
+    val call = new Call(spaceCall.method, spaceCall.url + s"#!_createAndEdit?model=$modelId")
     call.url
   }
 }

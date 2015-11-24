@@ -16,7 +16,7 @@ object MainDecorator {
       urlIn
     } else {
       // Relative URL, so hashify it:
-      "#" + urlIn
+      "#!" + urlIn
     }    
   }
 }

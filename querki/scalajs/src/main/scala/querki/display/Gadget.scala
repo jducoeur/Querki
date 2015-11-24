@@ -115,7 +115,7 @@ trait QuerkiUIUtils extends ScalatagUtils {
    */
   def iconButton(iconName:String, addlCls:Seq[String] = Seq.empty) = querkiButton(icon(iconName), addlCls)
   
-  def thingUrl(name:TID) = s"#${name.underlying}"
+  def thingUrl(name:TID) = s"#!${name.underlying}"
   
   /**
    * A standard link to a Thing, if you're not trying to do anything odd with it.

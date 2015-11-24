@@ -73,7 +73,7 @@ object CreateSpacePage {
     val PageManager = ecology.api[querki.display.PageManager]
     
     val spaceName = space.linkName.getOrElse(space.oid.underlying)
-    val url = s"/u/${space.ownerHandle}/$spaceName/#$spaceName"
+    val url = s"/u/${space.ownerHandle}/$spaceName/#!$spaceName"
     PageManager.navigateTo(url)    
   }
 }

@@ -104,6 +104,8 @@ class ClientController extends ApplicationBase with StreamController {
       if (requestInfo.forbidden) {
         unknownSpace(spaceIdStr)
       } else {
+        // TEMP:
+        QLog.spew(s"Request for space; full uri is ${rc.request.uri}")
         Ok(views.html.client(rc, write(requestInfo)))
       }
     } recoverWith {
@@ -113,7 +115,7 @@ class ClientController extends ApplicationBase with StreamController {
   
   def thingRedirect(ownerId:String, spaceId:String, thingId:String) = Action {
     val spaceCall = routes.ClientController.space(ownerId, spaceId) 
-    Redirect(new Call(spaceCall.method, spaceCall.url + s"#$thingId"))
+    Redirect(new Call(spaceCall.method, spaceCall.url + s"#!$thingId"))
   }
   
   def unpickleRequest(rc:PlayRequestContext):(autowire.Core.Request[String], RequestMetadata) = {
