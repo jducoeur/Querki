@@ -10,6 +10,7 @@ import querki.api.ProgressActor
 import querki.data.TID
 import querki.globals._
 import querki.identity.User
+import querki.spaces.SpaceBuilder
 import querki.time.DateTime
 import querki.types.ModelTypeBase
 import querki.util.QuerkiActor
@@ -24,9 +25,8 @@ import querki.values.SpaceState
  * @author jducoeur
  */
 private [apps] class ExtractAppActor(val ecology:Ecology, elements:Seq[TID], name:String, owner:User, state:SpaceState) 
-  extends Actor with Requester with EcologyMember with ProgressActor 
+  extends Actor with Requester with EcologyMember with ProgressActor with SpaceBuilder
 {
-  lazy val Core = interface[querki.core.Core]
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   lazy val System = interface[querki.system.System]
   
@@ -38,7 +38,6 @@ private [apps] class ExtractAppActor(val ecology:Ecology, elements:Seq[TID], nam
   
   // The Things that need to be Extracted. Note that typeModels is a subset of models.
   case class Extractees(state:SpaceState, typeModels:Set[OID])
-  var _extractees:Option[Extractees] = None
   
   override def receive = handleRequestResponse orElse handleProgress
 
@@ -60,8 +59,18 @@ private [apps] class ExtractAppActor(val ecology:Ecology, elements:Seq[TID], nam
     phaseDescription = "Backing up the Space"
     backupSpace()
     phaseDescription = "Figuring out everything to extract"
-    _extractees = Some(computeExtractees())
+    val extractees = computeExtractees()
+    
+    // phaseDescription will be updated as buildSpace works:
+    val appInfo = buildSpace(owner, name)(extractees.state)
+    
+    phaseDescription = "Pointing the Space to the App"
   }
+  
+  ///////////////////////////////
+  //
+  // Step 1: Backup
+  //
   
   import querki.db._
   /**
@@ -80,6 +89,11 @@ private [apps] class ExtractAppActor(val ecology:Ecology, elements:Seq[TID], nam
           """).executeUpdate      
     }
   }
+  
+  ///////////////////////////////
+  //
+  // Step 2: Compute the Extractees
+  //
   
   /**
    * Creates the complete Extractees structure, with all the stuff we expect to pull out.
@@ -173,6 +187,27 @@ private [apps] class ExtractAppActor(val ecology:Ecology, elements:Seq[TID], nam
         in
     }
   }
+  
+  ////////////////////////////////
+  //
+  // Step 3: Actually create the App
+  //
+  // All the actual work is done in SpaceBuilder's buildSpace(); these are its requirements:
+  //
+  
+  var totalThingOps:Int = 0
+  var thingOps:Int = 0
+  
+  def setMsg(msg:String):Unit = phaseDescription = msg
+  def setTotalThingOps(n:Int) = totalThingOps = n 
+  def incThingOps():Unit = thingOps = thingOps + 1
+  def createMsg:String = "Creating the App"
+  def buildingMsg:String = "Preparing to extract to the App"
+  def thingsMsg:String = "Copying Things into the App"
+  def typesMsg:String = "Copying Types into the App"
+  def propsMsg:String = "Copying Properties into the App"
+  def valuesMsg:String = "Copying Values into the App"
+
 }
 
 object ExtractAppActor {
