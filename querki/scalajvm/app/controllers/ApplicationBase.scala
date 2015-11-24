@@ -5,6 +5,7 @@ import play.api.mvc._
 
 import models._
 
+import querki.api._
 import querki.ecology._
 import querki.globals._
 import querki.identity._
@@ -19,6 +20,7 @@ class ApplicationBase extends Controller with EcologyMember {
   implicit var ecology:Ecology = null
   
   lazy val AccessControl = interface[querki.security.AccessControl]
+  lazy val ApiInvocation = interface[querki.api.ApiInvocation]
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val UserAccess = interface[querki.identity.UserAccess]
   lazy val PageEventManager = interface[controllers.PageEventManager]
@@ -186,6 +188,34 @@ class ApplicationBase extends Controller with EcologyMember {
       }
     } catch {
       case pex:PublicException => doError(indexRoute, pex)(originalRC)
+    }
+  }
+
+  /**
+   * Allows purely server-side code to invoke Session functions, the same way the Client does.
+   */
+  class LocalClient(rc:PlayRequestContext) extends autowire.Client[String, upickle.Reader, upickle.Writer] {
+    override def doCall(req: Request): Future[String] = {
+      ApiInvocation.routeRequest(ClientRequest(req, rc)) {
+        case ClientResponse(pickled) => Future.successful(pickled)
+        case ClientError(msg) => Future.failed(new Exception(msg))
+        case ThingError(pex, _) => Future.failed(pex)
+      }
+    }
+    
+    def read[Result: upickle.Reader](p: String) = upickle.read[Result](p)
+    def write[Result: upickle.Writer](r: Result) = upickle.write(r)
+  }
+  
+  def withLocalClient(ownerId:String, spaceIdStr:String)(cb:(PlayRequestContext, LocalClient) => Future[Result]) = 
+    withRouting(ownerId, spaceIdStr) 
+  { implicit rawRc =>
+    // Unlike the API calls, we have to assume we have a name-style ThingId here:
+    SpaceOps.getSpaceId(rawRc.ownerId, spaceIdStr).flatMap { spaceId =>
+      val rc = rawRc.copy(spaceIdOpt = Some(spaceId.toThingId))
+      val client = new LocalClient(rc)
+      
+      cb(rc, client)
     }
   }
 }

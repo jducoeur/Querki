@@ -15,6 +15,9 @@ POST    /TOS                        @controllers.TOSController.handleTOS
 # The old way to address a Space, now replaced by the new client:
 GET     /u/:userName/:spaceId/      @controllers.ClientController.space(userName, spaceId)
 
+# The "raw" version of a page, mainly intended for crawlers that can't cope with the client:
+GET     /raw/:userName/:spaceId/:thingId @controllers.RawController.thing(userName, spaceId, thingId)
+
 # Note that these are still direct pages, not through the Client:
 GET     /u/:userName/:spaceId/_handleInvite @controllers.LoginController.handleInvite(userName, spaceId)
 POST    /u/:userName/:spaceId/_handleInvite @controllers.LoginController.signup(userName, spaceId)

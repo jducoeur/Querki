@@ -27,7 +27,6 @@ import querki.util.PublicException
 
 class ClientController extends ApplicationBase with StreamController {
   
-  lazy val ApiInvocation = interface[querki.api.ApiInvocation]
   lazy val ClientApi = interface[querki.api.ClientApi]
   lazy val SystemManagement = interface[querki.system.SystemManagement]
   lazy val Tags = interface[querki.tags.Tags]
@@ -57,34 +56,6 @@ class ClientController extends ApplicationBase with StreamController {
   
   def askUserSession[B](rc:PlayRequestContext, msg:ClientRequest)(cb: PartialFunction[Any, Future[B]]):Future[B] = {
     akka.pattern.ask(UserSessionMgr.sessionManager, msg)(Timeout(5 seconds)).flatMap(cb)
-  }
-
-  /**
-   * Allows purely server-side code to invoke Session functions, the same way the Client does.
-   */
-  class LocalClient(rc:PlayRequestContext) extends autowire.Client[String, upickle.Reader, upickle.Writer] {
-  	override def doCall(req: Request): Future[String] = {
-      ApiInvocation.routeRequest(ClientRequest(req, rc)) {
-        case ClientResponse(pickled) => Future.successful(pickled)
-  	    case ClientError(msg) => Future.failed(new Exception(msg))
-  	    case ThingError(pex, _) => Future.failed(pex)
-  	  }
-  	}
-  	
-  	def read[Result: upickle.Reader](p: String) = upickle.read[Result](p)
-  	def write[Result: upickle.Writer](r: Result) = upickle.write(r)
-  }
-  
-  def withLocalClient(ownerId:String, spaceIdStr:String)(cb:(PlayRequestContext, LocalClient) => Future[Result]) = 
-    withRouting(ownerId, spaceIdStr) 
-  { implicit rawRc =>
-    // Unlike the API calls, we have to assume we have a name-style ThingId here:
-    SpaceOps.getSpaceId(rawRc.ownerId, spaceIdStr).flatMap { spaceId =>
-      val rc = rawRc.copy(spaceIdOpt = Some(spaceId.toThingId))
-      val client = new LocalClient(rc)
-      
-      cb(rc, client)
-    }
   }
   
   def index = withUser(false) { rc =>

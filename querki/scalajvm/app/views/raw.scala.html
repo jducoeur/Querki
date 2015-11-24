@@ -1,0 +1,63 @@
+@* raw Template File *@
+@(title:String, guts:String)
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>@title</title>
+    
+    <link rel="stylesheet" href="@routes.Assets.at("stylesheets/bootstrap.css")">
+    <!-- This padding is needed for the top navbar. Bootstrap doc says to put it between the main and responsive CSS: -->
+    <style>
+      body {
+        padding-top: 40px;
+      }
+    </style>
+    <link rel="stylesheet" href="@routes.Assets.at("stylesheets/bootstrap-theme.css")">
+    <link rel="stylesheet" href="@routes.Assets.at("stylesheets/main.css")">
+    
+	<style>
+		#querkiBar { margin: 0 0 0 0; }
+		
+		.navbar .brand {
+		  padding-top: 5px;
+		  padding-bottom: 5px;
+		}
+		
+		body {
+		  margin: 0;
+		}
+		
+		.guts {
+		  margin: 8px;
+		}
+ 	</style>
+    
+    <meta property="og:title" content="@title"/>
+    <meta property="og:site_name" content="Querki"/>
+  </head>
+  
+  <body>
+    <!-- Bootstrap menus -->
+    <div class="container">
+      <div class="navbar navbar-default navbar-fixed-top _noPrint" role="navigation">
+        <div class="container">
+          <div class="navbar-header">
+            <a class="navbar-brand" href="@routes.ClientController.index"><img src="@routes.Assets.at("images/Logo-menubar.png")"></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+	<div class="guts container-fluid">
+      <div class="row">
+        <div class="querki-content col-md-12">
+          <h1>@title</h1>
+        
+          @play.twirl.api.Html(guts)
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
