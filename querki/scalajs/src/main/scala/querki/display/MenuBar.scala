@@ -208,8 +208,8 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
     li(cls:="dropdown",
       // The clickable drop-down head of the menu
       a(cls:="dropdown-toggle",
-        data("target"):=s"#!$legalTitle",
-        href:=s"#!$legalTitle",
+        data("target"):=s"#$legalTitle",
+        href:=s"#$legalTitle",
         data("toggle"):="dropdown",
         role:="button",
         title + " ",

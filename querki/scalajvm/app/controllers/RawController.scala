@@ -5,6 +5,8 @@ import autowire._
 
 import models._
 
+import play.api.mvc.Call
+
 import querki.api._
 import querki.data._
 import querki.globals._
@@ -25,8 +27,10 @@ class RawController extends ApplicationBase {
         val thingId = ThingId(thingIdStr)
         client[ThingFunctions].getThingPage(TID(thingId.toString()), None).call().map { thingPageDetails =>
           val title = thingPageDetails.thingInfo.displayName
+          val canonical = new Call(rc.request.method, rc.request.uri).absoluteURL(false)(rc.request)
+          val desc = thingPageDetails.rendered.plaintext
           val guts = thingPageDetails.rendered.display.toString
-          Ok(views.html.raw(title, guts))
+          Ok(views.html.raw(title, canonical, desc, guts))
         }
       }
     } recoverWith {

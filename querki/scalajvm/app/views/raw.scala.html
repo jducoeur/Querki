@@ -1,5 +1,5 @@
 @* raw Template File *@
-@(title:String, guts:String)
+@(title:String, canonical:String, desc:String, guts:String)
 
 <!DOCTYPE html>
 
@@ -34,7 +34,9 @@
 		}
  	</style>
     
+    <meta property="og:url", content="@canonical"/>
     <meta property="og:title" content="@title"/>
+    <meta property="og:description" content="@desc"/>
     <meta property="og:site_name" content="Querki"/>
   </head>
   

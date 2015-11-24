@@ -75,9 +75,12 @@ class ClientController extends ApplicationBase with StreamController {
       if (requestInfo.forbidden) {
         unknownSpace(spaceIdStr)
       } else {
-        // TEMP:
-        QLog.spew(s"Request for space; full uri is ${rc.request.uri}")
-        Ok(views.html.client(rc, write(requestInfo)))
+        if (rc.request.queryString.contains("_escaped_fragment_")) {
+          val thingIdStr = rc.request.queryString("_escaped_fragment_").head
+          Redirect(routes.RawController.thing(ownerId, spaceIdStr, thingIdStr))
+        } else {
+          Ok(views.html.client(rc, write(requestInfo)))
+        }
       }
     } recoverWith {
       case pex:PublicException => doError(indexRoute, pex) 
