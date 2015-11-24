@@ -41,7 +41,7 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     }
   }
   
-  def extractApp(elements:Seq[TID]):OperationHandle = {
+  def extractApp(elements:Seq[TID], name:String):OperationHandle = {
     if (!AccessControl.hasPermission(Apps.CanManipulateAppsPerm, state, user, state))
       throw new PublicException("Apps.notAllowed")
     
@@ -49,6 +49,6 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     // troupe! This is necessary because it will reboot the troupe a couple of times in the course
     // of extraction. (We don't put it under the user's context, because we'd like to start on the
     // same node as the Space, to avoid having to send the State across the wire.)
-    ProgressActor.createProgressActor(requester, ExtractAppActor.props(ecology, elements, state), true)
+    ProgressActor.createProgressActor(requester, ExtractAppActor.props(ecology, elements, name, user, state), true)
   }
 }

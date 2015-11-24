@@ -29,6 +29,8 @@ class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
   lazy val StatusLine = interface[querki.display.StatusLine]
   
   val extractTree = GadgetRef[ExtractTree]
+  val appNameInput = GadgetRef[RxText]
+  val appNameEmpty = Rx { appNameInput.flatMap(_.textOpt()).map { _.isEmpty }.getOrElse(true) }
   
   def pageContent = {
     for {
@@ -46,11 +48,14 @@ class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
               |the ones that are part of the data of this Space.""".stripMargin),
           p("Any local Properties that are used by these Models and Pages will automatically be lifted into the App"),
           extractTree <= new ExtractTree(models, pages),
+          p("What should the new App be named?"),
+          appNameInput <= new RxText(),
           p("When you have selected the elements you would like to bring into the App, press this button."),
-          new ButtonGadget(ButtonGadget.Warning, "Extract App from this Space")({ () =>
+          new ButtonGadget(ButtonGadget.Warning, "Extract App from this Space", disabled := appNameEmpty)
+          ({ () =>
             val jq = $(extractTree.get.elem)
             val selectedIds = jq.getSelectedIds.map(TID(_))
-            Client[AppsFunctions].extractApp(selectedIds).call() foreach { handle =>
+            Client[AppsFunctions].extractApp(selectedIds, appNameInput.get.text()).call() foreach { handle =>
               ProgressDialog.showDialog(
                 s"extracting App", 
                 handle, 

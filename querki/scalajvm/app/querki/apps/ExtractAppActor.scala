@@ -176,5 +176,5 @@ private [apps] class ExtractAppActor(val ecology:Ecology, elements:Seq[TID], nam
 }
 
 object ExtractAppActor {
-  def props(e:Ecology, elements:Seq[TID], state:SpaceState) = Props(classOf[ExtractAppActor], e, elements, state) 
+  def props(e:Ecology, elements:Seq[TID], name:String, owner:User, state:SpaceState) = Props(classOf[ExtractAppActor], e, elements, name, owner, state) 
 }

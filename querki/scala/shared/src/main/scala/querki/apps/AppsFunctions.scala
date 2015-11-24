@@ -32,5 +32,5 @@ trait AppsFunctions {
    * 
    * Returns the path to an operation handle, which should be fed to getProgress() for regular updates.
    */
-  def extractApp(elements:Seq[TID]):OperationHandle
+  def extractApp(elements:Seq[TID], name:String):OperationHandle
 }
