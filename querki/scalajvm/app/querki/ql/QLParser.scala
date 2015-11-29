@@ -187,15 +187,19 @@ class QLParser(val input:QLText, ci:QLContext, invOpt:Option[Invocation] = None,
     call.name match {
       case binding:QLBinding => { 
         processBinding(binding, context, isParam).flatMap { resolvedBinding =>  
-          val tOpt = for {
-            oid <- resolvedBinding.value.firstAs(Core.LinkType)
-            thing <- context.state.anything(oid)
+          if (resolvedBinding.value.matchesType(Core.LinkType)) {
+            val resultFuts = for {
+              oid <- resolvedBinding.value.rawList(Core.LinkType)
+              thing <- context.state.anything(oid)
+              fut = processThing(thing)
+            }
+              yield fut
+              
+            val resultFut = Future.sequence(resultFuts)
+            resultFut.map(results => context.concat(results))
+          } else {
+            Future.successful(resolvedBinding)
           }
-            yield thing
-          
-          tOpt.map { t =>
-            processThing(t)
-          }.getOrElse(Future.successful(resolvedBinding))
         }
       }
       case tid:QLThingId => {

@@ -47,6 +47,23 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
       case None => this
     }
   }
+
+  /**
+   * Take a bunch of result contexts, concatenate them, and return them as the "next".
+   */
+  def concat(contexts:Iterable[QLContext]):QLContext = {
+    contexts.headOption match {
+      case Some(headContext) => {
+        val resultType = headContext.value.pType
+        val results = contexts.map(_.value.cv).flatten
+        val coll = chooseCollection(results)
+        next(coll.makePropValue(results, resultType))
+      }
+      // TODO: This isn't right: we really want the pType of what these would have contained. So this
+      // function may not be at quite the right level?
+      case _ => next(Core.emptyOpt(value.pType))
+    }    
+  }
   
   /**
    * Maps the given function to each element in this context.
@@ -69,15 +86,11 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
   /**
    * Maps the given function to each element in this context, and flattens the result.
    * 
-   * TODO: this isn't quite right, monadically speaking -- it's shouldn't assume Option. At some
-   * point when I can think it through better, make the signatures here more correct. But Option is
-   * the case I usually care about.
-   * 
    * IMPORTANT: if the useCollection flag is set for this context, then this calls the function only once,
    * with the collection context, *not* with each element! In other words, the definition of "map" depends
    * on the useCollection flag!
    */
-  def flatMap[T](cb:QLContext => Option[T]) = {
+  def mapOpt[T](cb:QLContext => Option[T]) = {
     if (useCollection) {
       val ret = cb(this)
       ret match {
@@ -105,7 +118,7 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
   def flatMapAsContext[T <: ElemValue](cb:QLContext => Option[T], resultType:PType[_]):QLContext = {
     val ct = value.cType
     // TODO: this is an unfortunate cast. It's correct, but ick. Can we eliminate it?
-    val raw = flatMap(cb).asInstanceOf[ct.implType]
+    val raw = mapOpt(cb).asInstanceOf[ct.implType]
     val propVal = ct.makePropValue(raw, resultType)
     next(propVal)
   }
@@ -132,25 +145,28 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
           case _ => throw new Exception("Context.collect expected type " + pt + " but got " + raw.head.pType)
         }
       } else {
-        val newCT = 
-          // HACK: How should this work correctly? There seems to be a general concept trying to break out.
-          // In general, collect (and many of these operations) are very monadically evil, but
-          // we've consciously decided to live with that.
-          value.cType match {
-            case t:querki.core.CollectionCreation#ExactlyOne => {
-              if (raw.isEmpty)
-                Optional 
-              else if (raw.size == 1)
-                ExactlyOne
-              else
-                QList
-            }
-            case t:querki.core.CollectionCreation#Optional => if (raw.size > 1) QList else Optional
-            case _ => value.cType
-          }
+        val newCT = chooseCollection(raw)
         newCT.makePropValue(raw, pt)
       }
     }
+  }
+  
+  def chooseCollection(raw:Iterable[ElemValue]):Collection = {
+    // HACK: How should this work correctly? There seems to be a general concept trying to break out.
+    // In general, collect (and many of these operations) are very monadically evil, but
+    // we've consciously decided to live with that.
+    value.cType match {
+      case t:querki.core.CollectionCreation#ExactlyOne => {
+        if (raw.isEmpty)
+          Optional 
+        else if (raw.size == 1)
+          ExactlyOne
+        else
+          QList
+      }
+      case t:querki.core.CollectionCreation#Optional => if (raw.size > 1) QList else Optional
+      case _ => value.cType
+    }    
   }
   
   override def toString = "Context(" + value + ")@" + this.hashCode()
