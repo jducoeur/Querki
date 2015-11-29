@@ -104,14 +104,31 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
     // case of a growing concern: that we could be losing information by returning QValue from
     // qlApply, and should actually be returning a full successor Context.
     override def qlApplyFromProp(inv:Invocation, prop:Property[QLText,_]):Option[QFut] = {
-      val qv:QFut = for {
-        (bundle, elemContext) <- inv.bundlesAndContextsForProp(prop)
-        textPV <- inv.iter(bundle.getPropOpt(prop)(inv.state))
-        text <- inv.iter(textPV.v.rawList(this))
-        result <- inv.fut(QL.processMethod(text, elemContext.forProperty(prop), Some(inv), Some(bundle), Some(prop)))
+      implicit val s = inv.state
+      implicit val rc = inv.context.request
+      // We have two very different code paths here. That's odd, but seems correct. If we're getting the function
+      // *lexically*, then we want to feed *the entire value* into that function, so that it can handle it as a List.
+      // But if we're getting the function from the values themselves, then we need to apply it to them individually.
+      val useLexical = inv.lexicalThing.map(_.hasProp(prop)).getOrElse(false)
+      
+      val qv:QFut = if (useLexical) {
+        val lt = inv.lexicalThing.get
+        for {
+          textPV <- inv.iter(lt.getPropOpt(prop))
+          text <- inv.iter(textPV.v.rawList(this))
+          result <- inv.fut(QL.processMethod(text, inv.context.forProperty(prop), Some(inv), Some(lt), Some(prop)))          
+        }
+          yield result
+      } else {
+        for {
+          (bundle, elemContext) <- inv.bundlesAndContextsForProp(prop)
+          textPV <- inv.iter(bundle.getPropOpt(prop))
+          text <- inv.iter(textPV.v.rawList(this))
+          result <- inv.fut(QL.processMethod(text, elemContext.forProperty(prop), Some(inv), Some(bundle), Some(prop)))
+        }
+          yield result    
       }
-        yield result
-        
+      
       Some(qv)
     }
   }
