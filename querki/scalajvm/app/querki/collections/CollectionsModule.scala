@@ -272,7 +272,16 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	  sealed trait SortTerm
 	  case object EmptySortTerm extends SortTerm
 	  case class RealSortTerm(elem:ElemValue, compType:PType[_]) extends SortTerm
-	  case class SortTerms(t:Thing, terms:Seq[SortTerm], displayName:String)
+	  case class SortTerms(t:Thing, terms:Seq[SortTerm])(implicit s:SpaceState, rc:RequestContext) {
+      // TODO: HORRIBLE HACK!
+      // This is a compromise, and should be a temporary one. The issue is that we don't want to calculate the
+      // displayName unless we must, because Computed Name can take a long time. But Seq.sortWith() is synchronous:
+      // it doesn't allow the sort function to be Future[Boolean]. So for the moment, we're allowing ourselves to
+      // compute it lazily, blocking.
+      // The correct solution here is probably to write a Future-friendly version of sortWith(), where each computation
+      // returns Future[Boolean] and it composes the result. That's a project, though, so I'm not dealing with it yet.
+      lazy val displayName = awaitHack(t.unsafeNameOrComputed)
+    }
 	  
 	  override def qlApply(inv:Invocation):QFut = {
 	    val context = inv.context
@@ -315,12 +324,12 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	                    // could wind up producing different types from the same test expression.
 	                    // TBD: in the long run, we might wind up with "subtype" relationships, in which case this test
 	                    // will need to become more sophisticated:
-			            if (leftElem.pType.realType == rightElem.pType.realType && !compType.matches(leftElem, rightElem))
-			              // They're the same type, and don't match, so let's compare:
-			              Some(compType.comp(context)(leftElem, rightElem))
-			            else
-			              // Either they're not matching types, or they're identical, so move along:
-			              None
+    			            if (leftElem.pType.realType == rightElem.pType.realType && !compType.matches(leftElem, rightElem))
+    			              // They're the same type, and don't match, so let's compare:
+    			              Some(compType.comp(context)(leftElem, rightElem))
+    			            else
+    			              // Either they're not matching types, or they're identical, so move along:
+    			              None
 	                  }
 	                }
 	              }
@@ -338,7 +347,6 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	     * which is the final fallback for sorting.
 	     */
 	    def computeSortTerms(t:Thing):Future[SortTerms] = {
-        val nameFut = t.unsafeNameOrComputed
 	      paramsOpt match {
 	        case Some(params) => {
 	          val termFuts:Seq[Future[SortTerm]] = for {
@@ -372,12 +380,11 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
             // Finally, compose the Futures together:
             for {
               terms <- Future.sequence(termFuts)
-              name <- nameFut
             }
-  	          yield SortTerms(t, terms, name)
+  	          yield SortTerms(t, terms)
 	        }
 	        // The simple case: there are no sort parameters, so we're just sorting on displayName.
-	        case None => nameFut.map(SortTerms(t, Seq.empty, _))
+	        case None => Future.successful(SortTerms(t, Seq.empty))
 	      }
 	    }
 	    
