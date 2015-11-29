@@ -21,6 +21,8 @@ import querki.values.{ElemValue, RequestContext, QValue}
  */
 trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
   
+  import SpaceBuilder._
+  
   // The concrete implementation must implement these:
   def setMsg(msg:String):Unit
   def setTotalThingOps(n:Int)
@@ -45,7 +47,7 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
    * actually build up a real Space from that. The returned Future will complete once the new
    * Space is fully constructed and persisted.
    */
-  def buildSpace(user:User, name:String)(implicit imp:SpaceState):Future[SpaceInfo] = {
+  def buildSpace(user:User, name:String)(implicit imp:SpaceState):Future[NewSpaceInfo] = {
     // Note that this whole process is a really huge RequestM composition, and it isn't as pure
     // functional as it might look -- there are a bunch of side-effecting data structures involved,
     // for simplicity.
@@ -81,13 +83,8 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
       // Finally, once it's all built, shut down this temp Actor and let the real systems take over:
       dummy3 = context.stop(spaceActor)
     }
-      yield info
+      yield NewSpaceInfo(info, pWithValues.idMap)
   }
-  
-  // While we're doing the import, we need to map from "temporary" OIDs to real ones
-  type ExtId = OID
-  type IntId = OID
-  type IDMap = Map[ExtId, IntId]
   
   /*****************************
    * Topological Sort of the Model Hierarchy
@@ -426,4 +423,17 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
     p.actor.request(ChangeProps(p.user, p.spaceId, p.spaceId, filterSpaceProps(translateProps(imp, p)), true))
   }
   
+}
+
+object SpaceBuilder {
+  // Types used by SpaceBuilder and NewSpaceInfo. These represent the "external" (original) and
+  // "internal" (newly constructed) OIDs in the new Space:
+  type ExtId = OID
+  type IntId = OID
+  type IDMap = Map[ExtId, IntId]
+  
+  /**
+   * The results of constructing a new Space using SpaceBuilder.
+   */
+  case class NewSpaceInfo(info:SpaceInfo, mapping:IDMap)
 }

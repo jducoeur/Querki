@@ -45,10 +45,11 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
     if (!AccessControl.hasPermission(Apps.CanManipulateAppsPerm, state, user, state))
       throw new PublicException("Apps.notAllowed")
     
-    // IMPORTANT: the ExtractAppActor is created at the top level, *not* as part of the current
-    // troupe! This is necessary because it will reboot the troupe a couple of times in the course
-    // of extraction. (We don't put it under the user's context, because we'd like to start on the
-    // same node as the Space, to avoid having to send the State across the wire.)
-    ProgressActor.createProgressActor(requester, ExtractAppActor.props(ecology, elements, name, user, state), true)
+    // TBD: for now, we're creating the extraction Actor here, within the Space's troupe. I *think* this
+    // works, because Space.reload() leaves the Actor hierarchy in place and just reloads the data. This
+    // needs sanity-checking, though, and we should keep an eye on whether it remains true once we move
+    // to the Akka Persistence mechanism. If it doesn't work, then switch the last parameter here to "true",
+    // to make the extraction Actor top-level.
+    ProgressActor.createProgressActor(requester, ExtractAppActor.props(ecology, elements, name, user, state, spaceRouter), false)
   }
 }

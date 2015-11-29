@@ -112,7 +112,7 @@ class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:Stri
       case Success(info) => {
         // We don't actually do anything -- we wait for the client to request an update
         // on the situation. So just note that we're done.
-        spaceInfo = Some(ClientApi.spaceInfo(info))
+        spaceInfo = Some(ClientApi.spaceInfo(info.info))
       }
       
       case Failure(ex) => {

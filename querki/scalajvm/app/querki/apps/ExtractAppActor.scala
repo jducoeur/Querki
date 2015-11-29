@@ -11,8 +11,7 @@ import querki.data.TID
 import querki.globals._
 import querki.identity.User
 import querki.spaces.SpaceBuilder
-import querki.time.DateTime
-import querki.types.ModelTypeBase
+import querki.spaces.messages._
 import querki.util.QuerkiActor
 import querki.values.SpaceState
 
@@ -24,8 +23,8 @@ import querki.values.SpaceState
  * 
  * @author jducoeur
  */
-private [apps] class ExtractAppActor(val ecology:Ecology, elements:Seq[TID], name:String, owner:User, state:SpaceState) 
-  extends Actor with Requester with EcologyMember with ProgressActor with SpaceBuilder
+private [apps] class ExtractAppActor(val ecology:Ecology, val elements:Seq[TID], val name:String, val owner:User, val state:SpaceState, val router:ActorRef) 
+  extends Actor with Requester with EcologyMember with ProgressActor with SpaceBuilder with ExtracteeComputer
 {
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   lazy val System = interface[querki.system.System]
@@ -34,10 +33,7 @@ private [apps] class ExtractAppActor(val ecology:Ecology, elements:Seq[TID], nam
   lazy val systemId = SystemSpace.id
   
   implicit val s = state
-  implicit val ec = ecology
-  
-  // The Things that need to be Extracted. Note that typeModels is a subset of models.
-  case class Extractees(state:SpaceState, typeModels:Set[OID])
+  implicit val ec = ecology  
   
   override def receive = handleRequestResponse orElse handleProgress
 
@@ -45,6 +41,11 @@ private [apps] class ExtractAppActor(val ecology:Ecology, elements:Seq[TID], nam
     // TODO
     20
   }
+  
+  def withMsg[R](msg:String, f: => R):R = {
+    setMsg(msg)
+    f
+  } 
   
   def doWork():Unit = {
     // TEMP:
@@ -56,15 +57,18 @@ private [apps] class ExtractAppActor(val ecology:Ecology, elements:Seq[TID], nam
       }
     }
     
-    phaseDescription = "Backing up the Space"
-    backupSpace()
-    phaseDescription = "Figuring out everything to extract"
-    val extractees = computeExtractees()
+    withMsg("Backing up the Space", backupSpace())
     
-    // phaseDescription will be updated as buildSpace works:
-    val appInfo = buildSpace(owner, name)(extractees.state)
+    val extractees = withMsg("Figuring out everything to extract", computeExtractees())
     
-    phaseDescription = "Pointing the Space to the App"
+    for {
+      // This builds a new Space with new OIDs, based on the partial SpaceState in the Extractees:
+      newSpaceInfo <- loopback(buildSpace(owner, name)(extractees.state))
+      // This will return once the reload process has *started*. It may take a while before the Space is
+      // fully reloaded, but it should stash until then:
+      ThingFound(_, _) <- withMsg("Reloading Space with new App", router ? SpacePluginMsg(owner, state.id, AddApp(newSpaceInfo.info.id)))
+    }
+      ()
   }
   
   ///////////////////////////////
@@ -90,104 +94,6 @@ private [apps] class ExtractAppActor(val ecology:Ecology, elements:Seq[TID], nam
     }
   }
   
-  ///////////////////////////////
-  //
-  // Step 2: Compute the Extractees
-  //
-  
-  /**
-   * Creates the complete Extractees structure, with all the stuff we expect to pull out.
-   * 
-   * Note that this explicitly assumes there are no loops involved in the Model Types. That's a
-   * fair assumption -- a lot of things will break if there are -- but do we need to sanity-check
-   * for that?
-   */
-  def computeExtractees():Extractees = {
-    val oids = elements
-      .map(tid => ThingId(tid.underlying))
-      .collect { case AsOID(oid) => oid }
-    
-    val init = Extractees(SpaceState(
-      OID(1, 1),
-      systemId,
-      Map(Core.NameProp(name)),
-      owner.mainIdentity.id,
-      name,
-      DateTime.now,
-      Seq.empty,
-      Some(SystemSpace),
-      Map.empty,
-      Map.empty,
-      Map.empty,
-      Map.empty,
-      None
-    ), Set.empty)
-    
-    (init /: oids) { (ext, elemId) => addThingToExtract(elemId, ext) }
-  }
-  
-  def addThingToExtract(id:OID, in:Extractees):Extractees = {
-    if (in.state.things.contains(id))
-      // Already done
-      in
-    else {
-      state.thing(AsOID(id)) match {
-        case Some(t) => {
-          if (t.spaceId == state.id) {
-            // Add all the props to the list...
-            val withProps = (in /: t.props.keys) { (ext, propId) => addPropToExtract(propId, ext) }
-            // ... and this thing:
-            in.copy(state = in.state.copy(things = in.state.things + (id -> t)))
-          } else
-            // Not local, so don't extract it
-            in
-        }
-        // Hmm. This is conceptually an error, but it *can* happen, so we just have to give up here:
-        case None => in
-      }
-    }
-  }
-  
-  def addPropToExtract(id:OID, in:Extractees):Extractees = {
-    if (in.state.spaceProps.contains(id))
-      in
-    else {
-      state.prop(AsOID(id)) match {
-        case Some(p) => {
-          if (p.spaceId == state.id) {
-            // Add meta-props, if any...
-            val withProps = (in /: p.props.keys) { (ext, propId) => addPropToExtract(propId, ext) }
-            // ... the Type...
-            val withType = addTypeToExtract(p.pType, withProps)
-            // ... and this Prop itself:
-            withType.copy(state = in.state.copy(spaceProps = withType.state.spaceProps + (id -> p)))
-          } else
-            in
-        }
-        case None => in
-      }
-    }
-  }
-  
-  def addTypeToExtract(pt:PType[_], in:Extractees):Extractees = {
-    if (in.state.types.contains(pt.id))
-      in
-    else {
-      if (pt.spaceId == state.id) {
-        // If this is a model type, we need to dive in and add that:
-        pt match {
-          case mt:ModelTypeBase => {
-            // We specifically note that this is a Model Type, because those do *not* get shadow copies
-            // in the new Space:
-            val withMT = in.copy(typeModels = in.typeModels + mt.basedOn)
-            addThingToExtract(mt.basedOn, withMT)
-          }
-        }
-      } else
-        in
-    }
-  }
-  
   ////////////////////////////////
   //
   // Step 3: Actually create the App
@@ -208,8 +114,17 @@ private [apps] class ExtractAppActor(val ecology:Ecology, elements:Seq[TID], nam
   def propsMsg:String = "Copying Properties into the App"
   def valuesMsg:String = "Copying Values into the App"
 
+  ///////////////////////////////
+  //
+  // Step 4: Hollow out the Space
+  //
+  // Now that we have an App, we need to remove the redundant bits from the Space, so that it is just
+  // using the App's copy. By and large, the extracted elements in the Space wind up as shadows of the
+  // versions in the App. We retain these shadows so that we can make local customizations in the Space.
+  //
 }
 
 object ExtractAppActor {
-  def props(e:Ecology, elements:Seq[TID], name:String, owner:User, state:SpaceState) = Props(classOf[ExtractAppActor], e, elements, name, owner, state) 
+  def props(e:Ecology, elements:Seq[TID], name:String, owner:User, state:SpaceState, router:ActorRef) = 
+    Props(classOf[ExtractAppActor], e, elements, name, owner, state, router) 
 }
