@@ -141,7 +141,7 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
     }
     
     def vToParam(v:QValue, context:QLContext, raw:Boolean)(implicit state:SpaceState):String = {
-      querki.util.SafeUrl(v.pType.toUrlParam(v.first, raw))
+      v.firstOpt.map(first => querki.util.SafeUrl(v.pType.toUrlParam(first, raw))).getOrElse("")
     }
     
     def appendParam(url:String, display:String, paramName:String, paramVal:String):SimplePropertyBundle = {
