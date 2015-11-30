@@ -24,7 +24,7 @@ import querki.values.SpaceState
  * @author jducoeur
  */
 private [apps] class ExtractAppActor(val ecology:Ecology, val elements:Seq[TID], val name:String, val owner:User, val state:SpaceState, val router:ActorRef) 
-  extends Actor with Requester with EcologyMember with ProgressActor with SpaceBuilder with ExtracteeComputer
+  extends Actor with Requester with EcologyMember with ProgressActor with SpaceBuilder with ExtracteeComputer with Hollower
 {
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   lazy val System = interface[querki.system.System]
@@ -38,8 +38,26 @@ private [apps] class ExtractAppActor(val ecology:Ecology, val elements:Seq[TID],
   override def receive = handleRequestResponse orElse handleProgress
 
   def calcProgress():Int = {
-    // TODO
-    20
+    currentState.soFar
+  }
+  
+  trait ProcessState {
+    def soFar:Int
+  }
+  class PSC(val soFar:Int) extends ProcessState
+  case object BackingUp extends PSC(10)
+  case object ComputingExtractees extends PSC(20)
+  case object BuildingSpace extends ProcessState {
+    def soFar = 20 + (30 * spaceBuilderPct).toInt
+  }
+  case object Reloading extends PSC(60)
+  // TODO: this should become more nuanced, like BuildingSpace:
+  case object Hollowing extends PSC(90)
+  case object Finished extends PSC(100)
+  
+  var currentState:ProcessState = BackingUp
+  def setState(state:ProcessState) = {
+    currentState = state
   }
   
   def withMsg[R](msg:String, f: => R):R = {
@@ -59,18 +77,23 @@ private [apps] class ExtractAppActor(val ecology:Ecology, val elements:Seq[TID],
     
     withMsg("Backing up the Space", backupSpace())
     
+    setState(ComputingExtractees)
+    
     val extractees = withMsg("Figuring out everything to extract", computeExtractees())
     
-    QLog.spew(s"The extractee Properties are ${extractees.state.spaceProps.keys}")
+    setState(BuildingSpace)
     
     for {
       // This builds a new Space with new OIDs, based on the partial SpaceState in the Extractees:
       newSpaceInfo <- loopback(buildSpace(owner, name)(extractees.state))
+      dummy1 = setState(Reloading)
       // This will return once the reload process has *started*. It may take a while before the Space is
       // fully reloaded, but it should stash until then:
       ThingFound(_, _) <- withMsg("Reloading Space with new App", router ? SpacePluginMsg(owner, state.id, AddApp(newSpaceInfo.info.id)))
+      dummy2 = setState(Hollowing)
+      dummy <- hollowSpace(extractees, newSpaceInfo)
     }
-      ()
+      setState(Finished)
   }
   
   ///////////////////////////////
@@ -105,6 +128,13 @@ private [apps] class ExtractAppActor(val ecology:Ecology, val elements:Seq[TID],
   
   var totalThingOps:Int = 0
   var thingOps:Int = 0
+  
+  def spaceBuilderPct = {
+    if (totalThingOps == 0)
+      0
+    else
+      (thingOps.toFloat / totalThingOps.toFloat)
+  }
   
   def setMsg(msg:String):Unit = phaseDescription = msg
   def setTotalThingOps(n:Int) = totalThingOps = n 

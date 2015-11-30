@@ -41,7 +41,7 @@ private [apps] trait Hollower { self:Actor with Requester with EcologyMember =>
   }
   
   def Core:querki.core.Core
-  lazy val Types = interface[querki.types.Types]
+  def Types:querki.types.Types
   
   def setMsg(msg:String):Unit
   def withMsg[R](msg:String, f: => R):R
