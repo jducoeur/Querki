@@ -48,18 +48,20 @@ private [apps] class ExtractAppActor(val ecology:Ecology, val elements:Seq[TID],
   } 
   
   def doWork():Unit = {
-    // TEMP:
-    QLog.spew("In ExtractAppActor:")
-    elements foreach { elementId =>
-      state.anything(ThingId(elementId.underlying)) match {
-        case Some(element) => QLog.spewThing(element)(state)
-        case _ => QLog.error(s"Unknown TID $elementId!")
-      }
-    }
+//    // TEMP:
+//    QLog.spew("In ExtractAppActor:")
+//    elements foreach { elementId =>
+//      state.anything(ThingId(elementId.underlying)) match {
+//        case Some(element) => QLog.spewThing(element)(state)
+//        case _ => QLog.error(s"Unknown TID $elementId!")
+//      }
+//    }
     
     withMsg("Backing up the Space", backupSpace())
     
     val extractees = withMsg("Figuring out everything to extract", computeExtractees())
+    
+    QLog.spew(s"The extractee Properties are ${extractees.state.spaceProps.keys}")
     
     for {
       // This builds a new Space with new OIDs, based on the partial SpaceState in the Extractees:

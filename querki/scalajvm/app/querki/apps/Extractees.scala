@@ -69,7 +69,7 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
             // Add all the props to the list...
             val withProps = (in /: t.props.keys) { (ext, propId) => addPropToExtract(propId, ext) }
             // ... and this thing:
-            in.copy(state = in.state.copy(things = in.state.things + (id -> t)))
+            withProps.copy(state = withProps.state.copy(things = withProps.state.things + (id -> t)))
           } else
             // Not local, so don't extract it
             in
@@ -92,7 +92,7 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
             // ... the Type...
             val withType = addTypeToExtract(p.pType, withProps)
             // ... and this Prop itself:
-            withType.copy(state = in.state.copy(spaceProps = withType.state.spaceProps + (id -> p)))
+            withType.copy(state = withType.state.copy(spaceProps = withType.state.spaceProps + (id -> p)))
           } else
             in
         }
@@ -114,6 +114,7 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
             val withMT = in.copy(typeModels = in.typeModels + mt.basedOn)
             addThingToExtract(mt.basedOn, withMT)
           }
+          case _ => in
         }
       } else
         in
