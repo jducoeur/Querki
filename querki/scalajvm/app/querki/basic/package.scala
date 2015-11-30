@@ -1,12 +1,14 @@
 package querki
 
-import models.{Property, PType, PTypeBuilder, Thing}
+import scala.concurrent.Future
+
+import models.{Property, PType, PTypeBuilder, Thing, ThingOps, Wikitext}
 
 import querki.ecology._
 
 import querki.core.QLText
 
-import querki.values.QValue
+import querki.values.{QValue, RequestContext, SpaceState}
 
 /**
  * This Module contains "Basic" Querki -- some Properties and such that aren't core (not central to the
@@ -53,6 +55,9 @@ package object basic {
   }
   
   trait Basic extends EcologyInterface {  
+    
+    def nameOrComputedCore(tops:ThingOps)(implicit request:RequestContext, state:SpaceState):Future[Wikitext]
+    
     def PlainTextType:PType[PlainText] with PTypeBuilder[PlainText, String]
     def QLType:PType[QLText] with PTypeBuilder[QLText,String]
     

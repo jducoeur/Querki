@@ -332,7 +332,7 @@ case class SpaceState(
    * only use it when there is a high likelihood of a common speedup. 
    */
   private lazy val dynCache = scala.collection.concurrent.TrieMap.empty[StateCacheKey, Any]
-  def fetchOrCreateCache(key:StateCacheKey, creator: => Any):Any = dynCache.getOrElseUpdate(key, creator)
+  def fetchOrCreateCache[T](key:StateCacheKey, creator: => T):T = dynCache.getOrElseUpdate(key, creator).asInstanceOf[T]
   
   def mapsize[T <: Thing](map:Map[OID, T]):Int = {
     map.values.map { v => 8 + v.memsize }.sum

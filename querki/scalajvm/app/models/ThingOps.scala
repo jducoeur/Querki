@@ -34,45 +34,11 @@ class ThingOps(thing:Thing)(implicit e:Ecology) extends PropertyBundleOps(thing)
   }
   
   def nameOrComputed(implicit request:RequestContext, state:SpaceState):Future[DisplayText] = {
-    val localName = fullLookupDisplayName
-    def fallback() = DisplayText(id.toThingId.toString)
-    if (localName.isEmpty) {
-      val computed = for {
-        pv <- getPropOpt(Basic.ComputedNameProp)
-        v <- pv.firstOpt
-      }
-        yield QL.process(v, thisAsContext).map(_.strip)
-      computed.getOrElse(Future.successful(fallback()))
-    } else {
-      localName.get.renderPlain.map { rend =>
-        val rendered = rend.raw
-        if (rendered.length() > 0)
-          rendered
-        else
-          fallback()
-      }
-    }    
+    Basic.nameOrComputedCore(this).map(_.strip)
   }
   
   def unsafeNameOrComputed(implicit rc:RequestContext, state:SpaceState):Future[String] = {
-    val localName = fullLookupDisplayName
-    def fallback() = id.toThingId.toString
-    if (localName.isEmpty) {
-      val computed = for {
-        pv <- getPropOpt(Basic.ComputedNameProp)
-        v <- pv.firstOpt
-      }
-        yield QL.process(v, thisAsContext).map(_.plaintext)
-      computed.getOrElse(Future.successful(fallback()))
-    } else {
-      localName.get.renderPlain.map { rend =>
-        val rendered = rend.plaintext
-        if (rendered.length() > 0)
-          rendered
-        else
-          fallback()
-      }
-    }
+    Basic.nameOrComputedCore(this).map(_.plaintext)
   }
   
   /**

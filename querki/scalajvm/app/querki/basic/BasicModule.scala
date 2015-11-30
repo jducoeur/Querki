@@ -10,7 +10,7 @@ import querki.ecology._
 import querki.globals._
 import querki.ql.QLPhrase
 import querki.types._
-import querki.values.{ElemValue, QFut, QLContext, RequestContext, SpaceState}
+import querki.values.{ElemValue, QFut, QLContext, RequestContext, SpaceState, StateCacheKey}
 
 class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with TextTypeBasis with PlainTextBaseType {
   import MOIDs._
@@ -20,6 +20,46 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
   val Types = initRequires[querki.types.Types]
   
   lazy val IsModelProp = Core.IsModelProp
+  
+  /***********************************************
+   * API
+   ***********************************************/
+  
+  lazy val nameCacheKey = StateCacheKey(ecotId, "displayNameCache")
+  type NameCacheT = scala.collection.concurrent.TrieMap[OID, Future[Wikitext]]
+  def nameCache(implicit state:SpaceState) =
+    state.fetchOrCreateCache(nameCacheKey, { scala.collection.concurrent.TrieMap.empty[OID, Future[Wikitext]] })
+  
+  /**
+   * The increasingly-complex but terribly-important function that figures out the proper name for a Thing.
+   * 
+   * This has been pulled out to Basic so that we can use the State's dynamic cache; that belongs in an Ecot.
+   * 
+   * As always, we don't use the dynamic cache lightly. We use it here because few operations get hit as
+   * often as nameOrComputed, and it can be *very* expensive if Computed Name is being used.
+   */
+  def nameOrComputedCore(tops:ThingOps)(implicit request:RequestContext, state:SpaceState):Future[Wikitext] = {
+    nameCache.getOrElseUpdate(tops.id, {
+      val localName = tops.fullLookupDisplayName
+      def fallback() = Wikitext(tops.id.toThingId.toString)
+      if (localName.isEmpty) {
+        val computed = for {
+          pv <- tops.getPropOpt(ComputedNameProp)
+          v <- pv.firstOpt
+        }
+          yield QL.process(v, tops.thisAsContext)
+        computed.getOrElse(Future.successful(fallback()))
+      } else {
+        localName.get.renderPlain.map { rend =>
+          val rendered = rend
+          if (rendered.plaintext.length() > 0)
+            rendered
+          else
+            fallback()
+        }
+      }
+    })
+  }
   
   /***********************************************
    * TYPES
