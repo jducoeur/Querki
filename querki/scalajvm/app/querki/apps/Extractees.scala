@@ -9,7 +9,7 @@ import querki.time.DateTime
 import querki.types.ModelTypeBase
 import querki.values.SpaceState
 
-private [apps] case class Extractees(state:SpaceState, typeModels:Set[OID])
+private [apps] case class Extractees(state:SpaceState, typeModels:Set[OID], extractState:Boolean)
 
 /**
  * The part of ExtractAppActor that computes what we're actually extracting from this Space.
@@ -38,24 +38,48 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
     val oids = elements
       .map(tid => ThingId(tid.underlying))
       .collect { case AsOID(oid) => oid }
+      .toSet
     
-    val init = Extractees(SpaceState(
-      OID(1, 1),
-      systemId,
-      Map(Core.NameProp(name)),
-      owner.mainIdentity.id,
-      name,
-      DateTime.now,
-      Seq.empty,
-      Some(SystemSpace),
-      Map.empty,
-      Map.empty,
-      Map.empty,
-      Map.empty,
-      None
-    ), Set.empty)
+    val (things, extractState) =
+      if (oids.contains(state.id)) {
+        (oids - state.id, true)
+      } else {
+        (oids, false)
+      }
     
-    (init /: oids) { (ext, elemId) => addThingToExtract(elemId, ext) }
+    val initState = 
+      SpaceState(
+        if (extractState) state.id else OID(1, 1),
+        systemId,
+        Map(Core.NameProp(name)),
+        owner.mainIdentity.id,
+        name,
+        DateTime.now,
+        Seq.empty,
+        Some(SystemSpace),
+        Map.empty,
+        Map.empty,
+        Map.empty,
+        Map.empty,
+        None            
+      )
+      
+    val init = Extractees(initState, Set.empty, extractState)
+    val withRoot = extractStateRoot(init)
+    (withRoot /: oids) { (ext, elemId) => addThingToExtract(elemId, ext) }
+  }
+  
+  def extractStateRoot(in:Extractees):Extractees = {
+    if (in.extractState) {
+      // If the Space depends on local Properties, make sure to include those, too:
+      val withProps = (in /: state.props.keys) { (ext, propId) => addPropToExtract(propId, ext) }
+      val s = withProps.state
+      // Actually copy in the Space's Properties, *except* for the Name.
+      // TODO: this will eventually need to also copy in the Model and the Apps, to be able to do
+      // multi-level Apps. (And enhance the SpaceBuilder accordingly.) One step at a time, though.
+      withProps.copy(state = s.copy(pf = (state.pf - Core.NameProp.id)))
+    } else
+      in
   }
   
   def addThingToExtract(id:OID, in:Extractees):Extractees = {

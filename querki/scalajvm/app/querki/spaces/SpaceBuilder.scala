@@ -72,7 +72,8 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
           imp.spaceProps.size
         )
       }
-      pWithThings <- createThings(FoldParams(user, spaceActor, spaceId, Map.empty, None), sortThings(imp))
+      initfp = FoldParams(user, spaceActor, spaceId, Map.empty, None) + (imp.id -> spaceId)
+      pWithThings <- createThings(initfp, sortThings(imp))
       dummyMsg3 = setMsg(typesMsg)
       pWithTypes <- createModelTypes(pWithThings, imp.types.values.toSeq)
       dummyMsg4 = setMsg(propsMsg)

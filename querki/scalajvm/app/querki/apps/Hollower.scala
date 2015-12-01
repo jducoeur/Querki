@@ -64,14 +64,8 @@ private [apps] trait Hollower { self:Actor with Requester with EcologyMember =>
     withMsg("Removing extracted Instances", deleteInstances(instances)) andThen 
       withMsg("Adjusting Models", hollowThings(models, idMap, {(tpe, idMap) => Map.empty})) andThen
       withMsg("Adjusting Types", hollowThings(extractees.state.types.values, idMap, mapTypeModel)) andThen
-      withMsg("Adjusting Properties", hollowThings(extractees.state.spaceProps.values, idMap, mapPropType))
-//    for {
-//      dummy <- deleteInstances(instances)
-//      dummy2 <- hollowThings(models, idMap, {(tpe, idMap) => Map.empty})
-//      dummy3 <- hollowThings(extractees.state.types.values, idMap, mapTypeModel)
-//      dummy4 <- hollowThings(extractees.state.spaceProps.values, idMap, mapPropType)
-//    }
-//      yield ()
+      withMsg("Adjusting Properties", hollowThings(extractees.state.spaceProps.values, idMap, mapPropType)) andThen
+      hollowSpace(extractees, idMap)
   }
   
   /**
@@ -136,6 +130,14 @@ private [apps] trait Hollower { self:Actor with Requester with EcologyMember =>
       }
       case None => RequestM.successful(())
     }
+  }
+  
+  def hollowSpace(extractees:Extractees, idMap:IDMap):RequestM[Unit] = {
+    // Extracting the Space itself is optional; did we do so?
+    if (extractees.extractState) {
+      withMsg("Adjusting Space", hollowThings(Seq(state), idMap, {(tpe, idMap) => Map.empty}))
+    } else
+      RequestM.successful(())
   }
   
   /**

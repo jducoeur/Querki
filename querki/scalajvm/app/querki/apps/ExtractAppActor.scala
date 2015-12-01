@@ -136,7 +136,10 @@ private [apps] class ExtractAppActor(val ecology:Ecology, val elements:Seq[TID],
       (thingOps.toFloat / totalThingOps.toFloat)
   }
   
-  def setMsg(msg:String):Unit = phaseDescription = msg
+  def setMsg(msg:String):Unit = {
+    phaseDescription = msg
+//    QLog.spew(msg)
+  }
   def setTotalThingOps(n:Int) = totalThingOps = n 
   def incThingOps():Unit = thingOps = thingOps + 1
   def createMsg:String = "Creating the App"

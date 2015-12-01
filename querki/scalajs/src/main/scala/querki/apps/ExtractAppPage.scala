@@ -73,6 +73,18 @@ class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
 class ExtractTree(models:Seq[ThingInfo], pages:Seq[ThingInfo])(implicit val ecology:Ecology) extends Gadget[dom.html.Div] with EcologyMember {
   
   lazy val Client = interface[querki.client.Client]
+  lazy val DataAccess = interface[querki.data.DataAccess]
+  
+  val space = DataAccess.space.get
+  val spaceNode =
+    JsTreeNode
+      .text(s"<b><i>Space Root:</i> ${space.displayName}</b>")
+      .icon(false)
+      .children(false)
+      .id(space.oid.underlying)
+      // By default, the Space Root is selected:
+      .state(NodeState.Selected)
+      :JsTreeNode
   
   // TODO: put child Models underneath their parents. Models should always be opened, with an
   // "Instances" node beneath them that fetches their Instances.
@@ -98,7 +110,7 @@ class ExtractTree(models:Seq[ThingInfo], pages:Seq[ThingInfo])(implicit val ecol
       :JsTreeNode
   }
   
-  val initNodes = (modelNodes ++ pageNodes) 
+  val initNodes = (spaceNode +: (modelNodes ++ pageNodes)) 
 
   def doRender() = {
     div(
