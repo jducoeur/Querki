@@ -18,4 +18,5 @@ class ThingFunctionsEmpty extends ThingFunctions {
   def getAllTypes():Future[AllTypeInfo] = ???
   def deleteThing(thingId:TID):Future[Unit] = ???
   def getNumInstances(modelId:TID):Int = ???
+  def getChildren(modelId:TID, includeModels:Boolean, includeInstances:Boolean):Future[Seq[ThingInfo]] = ???
 }
