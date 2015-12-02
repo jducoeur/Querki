@@ -51,7 +51,7 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
     
     val tid = span.tidString("thingid")
     
-    val node = JsTreeNode.text(span.html())
+    val node = JsTreeNode.text(s"""<span class="_suppressTreeSelect">${span.html()}</span>""")
       .icon(false)
       .ifdata("id") { (node, id) => node.id(id.asInstanceOf[String]) }
       .ifdata("opened") { (node, opened) => 
@@ -91,15 +91,15 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
                   val rendered = span(raw(result.raw)).render
                   val childNodes = $(rendered).find("._qlTree").mapElems(dissectSpan)
                   cb(childNodes.toJSArray)
-                  
-                  // HACK: we're hooking fairly nastily into the "+" buttons in the Thing Tree. There's probably
-                  // a general mechanism here, but it needs some thought. We're basically working around the
-                  // selection mechanism that's built so deeply into jsTree, by cancelling the click before it
-                  // can get to jsTree itself. Ugly, but it seems to work, knock on wood.
-                  val createButtons = $(tree).find("._modelInTree ._createButton")
-                  createButtons.click({ (link:dom.Element, evt:JQueryEventObject) => 
+
+                  // This is working around jsTree's dogged and extremely annoying interpreting of 
+                  // click as select, which is rarely what we want. So every time we add nodes, we do 
+                  // this suppression step. Note that this class is added in dissectSpan() above.
+                  val suppressedClick = $(tree).find("._suppressTreeSelect")
+                  suppressedClick.click({ (link:dom.Element, evt:JQueryEventObject) => 
                     evt.stopPropagation()
                   })
+                  suppressedClick.removeClass("_suppressTreeSelect")
                 }
               }
               case _ => cb(js.Array())
@@ -112,10 +112,6 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
           responsive(true))
       )
     )
-    .onSelectNode { selectedNode:JsTreeNode =>
-      val tid = selectedNode.data.asInstanceOf[NodeData].thingId
-      PageManager.showPage(tid.underlying, Map.empty)      
-    }
     $(elem).remove()
     setElem(tree)
   }
