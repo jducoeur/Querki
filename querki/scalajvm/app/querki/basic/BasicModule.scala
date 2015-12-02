@@ -452,7 +452,7 @@ object NewAllThings extends ThingState(NewAllThingsOID, systemOID, RootOID,
 object ShowModelTree extends ThingState(ShowModelTreeOID, systemOID, RootOID,
   toProps(
     setName("_showModelTree"),
-    ApplyMethod("""_thingTree(""{{_modelInTree:____}}"", 
+    ApplyMethod("""_thingTree(""{{_modelInTree:____ [[_if(_and(_isModel, _hasPermission(Who Can Create._self)), ""{{_createButton: [[_createInstanceLink -> _iconButton(""plus"", ""Create an Instance"")]]}}"")]]}}"", 
                   |opened=_is(Simple Thing), 
                   |id=""node-[[_oid]]"", 
                   |children=""[[

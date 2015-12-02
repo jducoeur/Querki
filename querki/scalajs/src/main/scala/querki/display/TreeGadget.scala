@@ -91,6 +91,15 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
                   val rendered = span(raw(result.raw)).render
                   val childNodes = $(rendered).find("._qlTree").mapElems(dissectSpan)
                   cb(childNodes.toJSArray)
+                  
+                  // HACK: we're hooking fairly nastily into the "+" buttons in the Thing Tree. There's probably
+                  // a general mechanism here, but it needs some thought. We're basically working around the
+                  // selection mechanism that's built so deeply into jsTree, by cancelling the click before it
+                  // can get to jsTree itself. Ugly, but it seems to work, knock on wood.
+                  val createButtons = $(tree).find("._modelInTree ._createButton")
+                  createButtons.click({ (link:dom.Element, evt:JQueryEventObject) => 
+                    evt.stopPropagation()
+                  })
                 }
               }
               case _ => cb(js.Array())
