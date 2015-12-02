@@ -75,6 +75,18 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
   def hook() = {
     val node = dissectSpan(elem)
     val tree = div(cls:="_qlTreeRoot").render
+    
+    def hookClick() = {
+      // This is working around jsTree's dogged and extremely annoying interpreting of 
+      // click as select, which is rarely what we want. So every time we add nodes, we do 
+      // this suppression step. Note that this class is added in dissectSpan() above.
+      val suppressedClick = $(tree).find("._suppressTreeSelect")
+      suppressedClick.click({ (link:dom.Element, evt:JQueryEventObject) => 
+        evt.stopPropagation()
+      })
+      suppressedClick.removeClass("_suppressTreeSelect")      
+    }
+    
     $(tree).insertBefore(elem)
     $(tree).jsTree(JsTreeOptions.
       core(JsTreeCore.
@@ -104,16 +116,10 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
       )
     )
     .on("after_open.jstree", { (opened:dom.Element, evt:JQueryEventObject) =>
-      // This is working around jsTree's dogged and extremely annoying interpreting of 
-      // click as select, which is rarely what we want. So every time we add nodes, we do 
-      // this suppression step. Note that this class is added in dissectSpan() above.
-      val suppressedClick = $(tree).find("._suppressTreeSelect")
-      suppressedClick.click({ (link:dom.Element, evt:JQueryEventObject) => 
-        evt.stopPropagation()
-      })
-      suppressedClick.removeClass("_suppressTreeSelect")      
+      hookClick()
     })
     $(elem).remove()
     setElem(tree)
+    hookClick()
   }
 }
