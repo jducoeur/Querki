@@ -279,7 +279,7 @@ class AccessControlModule(e:Ecology) extends QuerkiEcot(e) with AccessControl wi
   // SecurityPrincipal and PersonModel used to live in PersonModule. They were moved in order to avoid
   // order-of-initialization conflicts.
   
-  lazy val SecurityPrincipal = ThingState(querki.identity.MOIDs.SecurityPrincipalOID, systemOID, querki.basic.MOIDs.SimpleThingOID,
+  lazy val SecurityPrincipal = ThingState(querki.identity.MOIDs.SecurityPrincipalOID, systemOID, RootOID,
       toProps(
         setName("Security Principal"),
         Summary("""For internal use -- this the concept of a Thing that can be given permissions.""")))

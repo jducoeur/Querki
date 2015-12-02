@@ -94,7 +94,7 @@ class SkillLevelModule(e:Ecology) extends QuerkiEcot(e) with SkillLevel with Con
    * THINGS
    ***********************************************/
   
-  lazy val skillLevelModel = ThingState(SkillLevelOID, systemOID, querki.basic.MOIDs.SimpleThingOID,
+  lazy val skillLevelModel = ThingState(SkillLevelOID, systemOID, RootOID,
       toProps(
         setName("User Level"),
         Summary("""This Model's Instances are the possible User Levels.""")))

@@ -300,6 +300,13 @@ case class SpaceState(
     val tid = t.id
     things.values.filter(_.model == tid)
   }
+
+  /**
+   * Returns all of the immediate children of this Thing from *any* Space.
+   */
+  def allChildren(t:Thing):Iterable[Thing] = {
+    accumulateAll(_.children(t), { (x:Iterable[Thing], y:Iterable[Thing]) => x.toSet ++ y.toSet })
+  }
   
   def getApp(appId:OID):Option[SpaceState] = {
     walkTree { state =>

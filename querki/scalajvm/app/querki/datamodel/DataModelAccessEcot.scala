@@ -270,7 +270,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   class ChildrenMethod extends SingleThingMethod(ChildrenMethodOID, "_children", "This produces the immediate children of the received Model.",
     """    MODEL -> _children -> LIST OF CHILDREN
     |This produces all of the Things that list MODEL as their Model. It includes both other Models, and Instances.""".stripMargin,
-  { (thing, context) => Core.listFrom(context.state.children(thing).map(_.id), LinkType) })
+  { (thing, context) => Core.listFrom(context.state.allChildren(thing).map(_.id), LinkType) })
 
   class IsModelMethod extends SingleThingMethod(IsModelMethodOID, "_isModel", "This produces Yes if the received Thing is a Model.",
     """    THING -> _isModel -> Yes or No""".stripMargin,
