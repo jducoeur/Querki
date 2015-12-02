@@ -89,13 +89,20 @@ class ExtractTree(models:Seq[ThingInfo], pages:Seq[ThingInfo])(implicit val ecol
   // TODO: put child Models underneath their parents. Models should always be opened, with an
   // "Instances" node beneath them that fetches their Instances.
   val modelNodes = models.map { model =>
+    val selected:Seq[NodeState] =
+      if (model.importedFrom.isDefined) 
+        Seq.empty
+      else 
+        Seq(NodeState.Selected) 
+        
     JsTreeNode
       .text(s"<b>${model.displayName}</b>")
       .icon(false)
       .children(true)
       .id(model.oid.underlying)
-      // By default, all Models are selected:
-      .state(NodeState.Selected)
+      // All *local* models should be selected. We only include non-local ones so they can be
+      // opened and their Instances exported:
+      .state(selected:_*)
       :JsTreeNode
   }
   
