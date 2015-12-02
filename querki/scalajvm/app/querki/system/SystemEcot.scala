@@ -51,6 +51,52 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem]) extends Quer
   
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Tags = interface[querki.tags.Tags]
+            
+  val defaultSpaceRootView = """{{well well-sm _root-well:
+    |{{row:
+    |{{col-md-3:
+    |### Pages [[Simple Thing -> _if(_hasPermission(Who Can Create._self), _createInstanceLink -> _iconButton(""plus"", ""Write a Page""))]]
+    |}}
+    |
+    |{{col-md-9:
+    |[[Simple Thing -> _children -> _filter(_not(_isModel)) -> _sort -> ""
+    |#### ____""]]
+    |}}
+    |}}
+    |}}
+    |
+    |
+    |{{well well-sm _root-well:
+    |{{row:
+    |{{col-md-3:
+    |### Things
+    |}}
+    |
+    |{{col-md-9:
+    |[[_currentSpace -> _allThings -> _filter(_isModel) -> _sort -> _showModelTree]]
+    |}}
+    |}}
+    |}}
+    |
+    |
+    |[[Tag Type -> 
+    |  _propsOfType ->
+    |  _sort ->
+    |*""{{well well-sm _root-well:
+    |{{row:
+    |{{col-md-3:
+    |### Tags
+    |}}
+    |
+    |{{col-md-9:
+    |[[_foreach(""**____**: [[_tagsForProperty -> _sort -> _join("", "")]]
+    |"")]]
+    |}}
+    |}}
+    |}}
+    |""
+    |]]
+    """.stripMargin
   
   // This is called when the world finishes up:
   def setState(stateIn:SpaceState) = {
@@ -58,27 +104,7 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem]) extends Quer
     val state = stateIn.copy(pf = 
       toProps(
         setName("System"),
-        Basic.DisplayTextProp("""### Things in [[Display Name]]
-            |[[All Things]]
-            |
-            |[[Tag Type -> 
-            |_propsOfType ->
-            |_sort ->
-            |_section(
-            |""### Tags"", 
-            |""**____**: [[_tagsForProperty -> _sort -> _join("", "")]]
-            |"")]]
-            |
-            |[[Old Tag Set Type -> 
-            |_propsOfType ->
-            |_sort ->
-            |_section(
-            |""### Tags"", 
-            |""**____**: [[_tagsForProperty -> _sort -> _join("", "")]]
-            |"")]]
-            |
-            |[[How It Works -> _if(_isDefined, ""**____**"")]]
-            |""".stripMargin),
+        Basic.DisplayTextProp(defaultSpaceRootView),
         Tags.ShowUnknownProp(querki.tags.defaultDisplayText)))
     _state = Some(state)
   }

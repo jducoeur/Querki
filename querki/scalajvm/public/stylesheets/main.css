@@ -588,3 +588,10 @@ body {
 .datepicker table {
   background-color: #ffffff;
 }
+
+/****************************
+ * The sections of the default Space Root view
+ */
+._root-well h3 {
+  margin-top: 0;
+}
