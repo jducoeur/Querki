@@ -98,7 +98,7 @@ private [apps] class ExtractAppActor(val ecology:Ecology, val elements:Seq[TID],
   
   ///////////////////////////////
   //
-  // Step 1: Backup
+  // Backup
   //
   
   import querki.db._
@@ -121,7 +121,7 @@ private [apps] class ExtractAppActor(val ecology:Ecology, val elements:Seq[TID],
   
   ////////////////////////////////
   //
-  // Step 3: Actually create the App
+  // Actually create the App
   //
   // All the actual work is done in SpaceBuilder's buildSpace(); these are its requirements:
   //
@@ -148,15 +148,6 @@ private [apps] class ExtractAppActor(val ecology:Ecology, val elements:Seq[TID],
   def typesMsg:String = "Copying Types into the App"
   def propsMsg:String = "Copying Properties into the App"
   def valuesMsg:String = "Copying Values into the App"
-
-  ///////////////////////////////
-  //
-  // Step 4: Hollow out the Space
-  //
-  // Now that we have an App, we need to remove the redundant bits from the Space, so that it is just
-  // using the App's copy. By and large, the extracted elements in the Space wind up as shadows of the
-  // versions in the App. We retain these shadows so that we can make local customizations in the Space.
-  //
 }
 
 object ExtractAppActor {

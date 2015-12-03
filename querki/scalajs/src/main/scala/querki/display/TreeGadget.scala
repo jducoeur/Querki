@@ -34,11 +34,19 @@ class QLTree(implicit e:Ecology) extends HookedGadget[dom.html.Div](e) {
 
   lazy val Client = interface[querki.client.Client]
   lazy val PageManager = interface[querki.display.PageManager]
+  lazy val QTextUtils = interface[querki.qtext.QTextUtils]
   
   def doRender() = ???
   
   def dissectSpan(e:dom.Element):JsTreeNode = {
     val span = $(e)
+    
+    // Adjust the URLs of any links we find:
+    span.find("a").foreach { linkElem =>
+      $(linkElem).attr("href") foreach { originalHref =>
+        $(linkElem).attr("href", QTextUtils.adjustUrl(originalHref))
+      }
+    }
 
     // This mechanism might yet break out to be something more general, but its
     // relationship to the span makes that tricker. In the long run, we might be looking
