@@ -18,16 +18,9 @@ object MOIDs extends EcotIds(59) {
 }
 
 /**
- * Private interface for use within the Apps subsystem.
- */
-private [apps] trait AppsInternal extends EcologyInterface {
-  def CanUseAsAppProp:Property[OID, OID]
-}
-
-/**
  * @author jducoeur
  */
-class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Apps with AppsInternal {
+class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Apps {
   import MOIDs._
   
   val AccessControl = initRequires[querki.security.AccessControl]
@@ -67,7 +60,7 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
    * PROPERTIES
    ***********************************************/
   
-  lazy val CanUseAsAppProp = AccessControl.definePermission(CanBeAppOID, 
+  lazy val CanUseAsAppPerm = AccessControl.definePermission(CanBeAppOID, 
       "Can Use as an App",
       "These people are allowed to use this Space as an App. **Use with caution! These people will be able to see everything in this Space!**",
       Seq(AccessControl.OwnerTag),
@@ -86,7 +79,7 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
       Summary("Set to true by the system if this Thing is a shadow for a parent in an App.")))
   
   override lazy val props = Seq(
-    CanUseAsAppProp,
+    CanUseAsAppPerm,
     CanManipulateAppsPerm,
     ShadowFlag
   )

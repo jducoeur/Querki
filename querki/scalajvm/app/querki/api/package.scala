@@ -22,7 +22,7 @@ package object api {
     
     def spaceInfo(info:querki.spaces.messages.SpaceInfo):SpaceInfo
     
-    def spaceInfo(state:SpaceState):SpaceInfo
+    def spaceInfo(state:SpaceState, user:User):SpaceInfo
     
     def identityInfo(identity:PublicIdentity):IdentityInfo
     

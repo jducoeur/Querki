@@ -22,6 +22,7 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
+  lazy val Apps = interface[querki.apps.Apps]
   lazy val Basic = interface[querki.basic.Basic]
   lazy val Conventions = interface[querki.conventions.Conventions]
   lazy val DataModelAccess = interface[querki.datamodel.DataModelAccess]
@@ -67,7 +68,25 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
       }
   }
   
-  def spaceInfo(state:SpaceState):SpaceInfo = {
+  case class PermSet(thingId:OID, state:SpaceState, user:User, perms:Set[TID]) {
+    def +(prop:Property[OID,_]):PermSet = {
+      if (AccessControl.hasPermission(prop, state, user, thingId))
+        copy(perms = perms + prop.id)
+      else
+        this
+    }
+  }
+  object PermSet {
+    def apply(tid:OID, state:SpaceState, user:User):PermSet = PermSet(tid, state, user, Set.empty)
+  }
+  implicit def perms2Set(permSet:PermSet):Set[TID] = permSet.perms
+  
+  def spaceInfo(state:SpaceState, user:User):SpaceInfo = {
+    val perms = 
+      PermSet(state, state, user) + 
+        Apps.CanManipulateAppsPerm +
+        Apps.CanUseAsAppPerm
+    
     SpaceInfo(
       state, 
       // TODO: NameUtils.toUrl() is inconsistent with SafeUrl: they handle spaces differently.
@@ -75,16 +94,19 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
       state.linkName.map(NameUtils.toUrl(_)), 
       state.unsafeDisplayName,
       state.owner.toThingId.toString,
-      state.ownerHandle)    
+      state.ownerHandle,
+      state.apps.map(spaceInfo(_, user)),
+      perms)
   }
   
   def spaceInfo(topt:Option[SpaceState], rc:RequestContext):Option[SpaceInfo] = {
-    topt.map { t => spaceInfo(t) }
+    topt.map { t => spaceInfo(t, rc.requesterOrAnon) }
   }
   
   def spaceInfo(info:querki.spaces.messages.SpaceInfo):SpaceInfo = {
     val querki.spaces.messages.SpaceInfo(spaceId, linkName, display, ownerHandle) = info
-    SpaceInfo(TID(spaceId.toThingId), Some(linkName), display, "", ownerHandle)
+    // TODO: we should probably add the Apps to the internal SpaceInfo, to get them here?
+    SpaceInfo(TID(spaceId.toThingId), Some(linkName), display, "", ownerHandle, Seq.empty, Set.empty)
   }
   
   def identityInfo(identity:PublicIdentity):IdentityInfo = {

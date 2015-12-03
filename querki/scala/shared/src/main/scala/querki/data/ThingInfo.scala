@@ -39,6 +39,7 @@ case class ThingInfo(
   modelOid:TID,
   kind:Kind.Kind,
   isModel:Boolean,
+  // TODO: these should be rewritten as a permissions set, as in SpaceInfo:
   isEditable:Boolean,
   isDeleteable:Boolean,
   isInstantiatable:Boolean,
@@ -50,7 +51,9 @@ case class SpaceInfo(
   linkName:Option[String], 
   displayName:String,
   ownerId:String,
-  ownerHandle:String) extends BasicThingInfo
+  ownerHandle:String,
+  apps:Seq[SpaceInfo],
+  permissions:Set[TID]) extends BasicThingInfo
 
 case class PropInfo(
   oid:TID,

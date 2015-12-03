@@ -14,17 +14,9 @@ class AppsFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceAp
   
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Apps = interface[Apps]
-  lazy val AppsInternal = interface[AppsInternal]
   lazy val ClientApi = interface[querki.api.ClientApi]
   
   def doRoute(req:Request):Future[String] = route[AppsFunctions](this)(req)
-  
-  def getApps():Seq[SpaceInfo] = {
-    for {
-      app <- state.apps
-    }
-      yield ClientApi.spaceInfo(app)
-  }
   
   def addApp(appIdStr:String):Future[Unit] = {
     if (!AccessControl.hasPermission(Apps.CanManipulateAppsPerm, state, user, state))

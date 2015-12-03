@@ -23,6 +23,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
   
   lazy val controllers = interface[querki.comm.ApiComm].controllers
   lazy val Admin = interface[querki.admin.Admin]
+  lazy val Apps = interface[querki.apps.Apps]
   lazy val DataAccess = interface[querki.data.DataAccess]
   lazy val DataModel = interface[querki.datamodel.DataModel]
   lazy val Editing = interface[querki.editing.Editing]
@@ -75,7 +76,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
    * lines of the old Server-side NavSection?
    */
   def sections:Seq[Navigable] = {
-    Seq(thingLink, actionSection, adminSection).flatten
+    Seq(thingLink, actionSection, appsSection, adminSection).flatten
   }
   
   def thingLink = {
@@ -137,6 +138,23 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
     val allLinks = alwaysLinks ++ allSpaceLinks.getOrElse(Seq.empty)
     Some(NavSection("Actions", allLinks))
   }
+  
+  // Apps are a non-sequiteur if we're not in the context of a Space and fully running
+  // TBD: this whole section arguably belongs in the Apps Ecot. Should we make this pluggable?
+  def appsSection = 
+    for {
+      space <- spaceOpt
+      stdTry <- DataAccess.standardThings.value
+      std <- stdTry.toOption
+    }
+      yield 
+      {
+        NavSection("Apps", Seq(
+          NavLink("Get this App", enabled = space.permissions.contains(std.apps.canUseAsAppPerm)),
+          NavLink("Manage Apps", Apps.appMgmtFactory.pageUrl(), enabled = space.permissions.contains(std.apps.canManipulateAppsPerm)),
+          NavLink("Extract an App", Apps.extractAppFactory.pageUrl(), enabled = space.permissions.contains(std.apps.canManipulateAppsPerm))
+        ))
+      }
   
   def loginSection = {
     UserAccess.user match {

@@ -24,7 +24,6 @@ class AppsSpacePlugin(spaceIn:SpaceAPI, implicit val ecology:Ecology) extends Sp
   lazy val AccessControl = interface[querki.security.AccessControl]
   lazy val Apps = interface[Apps]
   lazy val AppsPersistence = interface[AppsPersistence]
-  lazy val Internal = interface[AppsInternal]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
   def requester = spaceIn
@@ -37,13 +36,13 @@ class AppsSpacePlugin(spaceIn:SpaceAPI, implicit val ecology:Ecology) extends Sp
     // Another Space is asking whether it may use this one as an App:
     case SpacePluginMsg(req, _, RequestApp(ownerIdentity)) => {
       // It is allowed if the owning Identity of the requesting Space has permission:
-      sender ! AppRequestResponse(AccessControl.hasPermission(Internal.CanUseAsAppProp, space.state, ownerIdentity, space.state))
+      sender ! AppRequestResponse(AccessControl.hasPermission(Apps.CanUseAsAppPerm, space.state, ownerIdentity, space.state))
     }
     
     // Another Space is trying to fetch this one's State, as an App: 
     case SpacePluginMsg(req, _, FetchAppState(ownerIdentity)) => {
       // Check that the owner of the *requesting* Space is allowed to do this in the first place:
-      if (AccessControl.hasPermission(Internal.CanUseAsAppProp, space.state, ownerIdentity, space.state)) {
+      if (AccessControl.hasPermission(Apps.CanUseAsAppPerm, space.state, ownerIdentity, space.state)) {
         // TODO: this must become a chunked streaming protocol, with back-pressure and
         // exactly-once semantics! Note that Akka Streaming is not yet good enough to handle
         // this, since it doesn't yet work remotely.

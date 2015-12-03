@@ -50,6 +50,7 @@ trait PassthroughHandlerBase {
  * the tradeoff I'm making for the time being.
  */
 class StandardThings(h:PassthroughHandlerBase) {
+  
   object core {
     val exactlyOneColl = h.pass("Exactly One")
   	val optionalColl = h.pass("Optional")
@@ -61,6 +62,11 @@ class StandardThings(h:PassthroughHandlerBase) {
     val collectionProp = h.pass("Property Collection")
     val typeProp = h.pass("Property Type")
     val isModelProp = h.pass("Is a Model")
+  }
+  
+  object apps {
+    val canUseAsAppPerm = h.pass("Can Use as an App")
+    val canManipulateAppsPerm = h.pass("Can Manipulate Apps")
   }
   
   object basic {
@@ -97,6 +103,6 @@ class StandardThings(h:PassthroughHandlerBase) {
   // This is necessary in order to force the objects to come into being. Each of the
   // above objects must be named here:
   def touchEverything() = {
-    Seq(core, basic, conventions, editing, security, tags, types)
+    Seq(apps, core, basic, conventions, editing, security, tags, types)
   }
 }

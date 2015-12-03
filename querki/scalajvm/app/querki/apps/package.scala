@@ -9,6 +9,7 @@ import querki.globals._
  */
 package object apps {
   trait Apps extends EcologyInterface {
+    def CanUseAsAppPerm:Property[OID,OID]
     def CanManipulateAppsPerm:Property[OID,OID]
     def ShadowFlag:Property[Boolean, Boolean]
   }

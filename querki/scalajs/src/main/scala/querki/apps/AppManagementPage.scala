@@ -20,17 +20,14 @@ class AppManagementPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   val appInput = GadgetRef[RxText]
   
   def pageContent = {
-    for {
-      apps <- Client[AppsFunctions].getApps().call()
-      guts =
+    val content = DataAccess.space match {
+      case Some(space) => {
+        val apps = space.apps
         div(
           h1("App Management"),
           p("This page lets you add Apps to your Space. ", 
             b("Important:"), 
             " This feature is highly experimental, and not yet intended for general use!"),
-            
-          h3("Extract an App"),
-          a(href:=Apps.extractAppFactory.pageUrl(), "Extract a new App from this Space"),
             
           h3("Current Apps"),
           for (app <- apps)
@@ -47,7 +44,11 @@ class AppManagementPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
             }
           })
         )
+      }
+      case None => {
+        div(h1("ERROR: this page should not be available outside of a Space"))
+      }
     }
-      yield PageContents("App Management", guts)
+    Future.successful(PageContents("App Management", content))
   }
 }

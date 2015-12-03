@@ -87,11 +87,7 @@ class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Eco
               you aren't going to need it any time soon!"""),
             new ButtonGadget(ButtonGadget.Danger, "Archive this Space") ({ () =>
               archiveAfterConfirm(DataAccess.space.get)
-            }),
-            
-            hr,
-            
-            p(a(href:=Apps.appMgmtFactory.pageUrl(), "Manage the Apps for this Space"))
+            })
           )
         },
         new ButtonGadget(ButtonGadget.Primary, "Done")({ () => Pages.showSpacePage(DataAccess.space.get) })

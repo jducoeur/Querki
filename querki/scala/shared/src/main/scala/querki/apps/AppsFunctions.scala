@@ -12,13 +12,6 @@ import querki.data._
  */
 trait AppsFunctions {
   /**
-   * Fetch the *immediate* parents of this Space.
-   * 
-   * This does not work recursively, at least yet. (That may change.)
-   */
-  def getApps():Seq[SpaceInfo]
-  
-  /**
    * Add the specified App to this Space, as a mix-in.
    * 
    * It is recommended that the UI reload when this responds, since things may have changed a lot.

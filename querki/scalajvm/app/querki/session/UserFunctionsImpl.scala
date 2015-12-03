@@ -33,7 +33,8 @@ class UserFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends Autowir
   def doRoute(req:Request):Future[String] = route[UserFunctions](this)(req)
   
   implicit def spaceDetails2Info(details:SpaceDetails):SpaceInfo = {
-    SpaceInfo(TID(details.id.toThingId), Some(details.handle), details.display, "", details.ownerHandle)
+    // TODO: this should probably include the Apps:
+    SpaceInfo(TID(details.id.toThingId), Some(details.handle), details.display, "", details.ownerHandle, Seq.empty, Set.empty)
   }
   
   def listSpaces():Future[AllSpaces] = {
