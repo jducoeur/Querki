@@ -124,6 +124,12 @@ trait ThingEditor { self:EditorModule =>
         querki.core.MOIDs.IsModelOID,
         querki.types.DeriveNameMOIDs.DeriveNameOID
       )
+      
+    
+    // Given a List of Properties, which may exist in an App, translate any of those to local Shadows.
+    def translatePropertiesToShadows(propIds:List[OID], state:SpaceState):List[OID] = {
+      propIds.map { propId => state.shadowMap.get(propId).getOrElse(propId) }
+    }
         
     // This returns only the properties that are defined on this Thing and are not in the Instance Properties:
     def propsNotInModel(thing:PropertyBundle, instanceProps:List[OID], state:SpaceState):Iterable[OID] = {
@@ -137,27 +143,11 @@ trait ThingEditor { self:EditorModule =>
           yield deriveLink == DeriveName.DeriveAlways.id
       val deriveName = deriveNameOpt.getOrElse(false)
       
-      // InstanceProps is a bit subtle: if the Model was defined in an App, it points to the *App's* version
-      // of the Property, but the Instance probably has the Space's *shadow* of that Property. So we need to
-      // check for duplication.
-      // There may be a more-general concept fighting to break out here; we'll see.
-      // TODO: in principle, this should be recursive, in case the App has super-Apps. That's likely an edge
-      // case, but it'll probably happen.
-      def isShadowOfInstanceProp(propOpt:Option[AnyProp]):Boolean = {
-        propOpt.map { prop =>
-          if (prop.ifSet(Apps.ShadowFlag)) {
-            instanceProps.contains(prop.model)
-          } else
-            false
-        }.getOrElse(false)
-      }
-        
       for {
         propId <- thing.props.keys
         if (propId != Core.NameProp.id || !deriveName)
         if (!filteredPropIds.contains(propId))
         if (!instanceProps.contains(propId))
-        if (!isShadowOfInstanceProp(state.prop(propId)))
       }
         yield propId
     }
@@ -166,8 +156,9 @@ trait ThingEditor { self:EditorModule =>
       implicit val s = state
       val result = for {
         propsToEdit <- thing.getPropOpt(InstanceProps)
+        translated = translatePropertiesToShadows(propsToEdit.v.rawList(LinkType), state)
         // If we are using the InstanceProps, then also add in the instance-local properties:
-        propIds = propsToEdit.v.rawList(LinkType) ++ propsNotInModel(thing, propsToEdit.rawList, state)
+        propIds = translated ++ propsNotInModel(thing, translated, state)
         props = propIds.map(state.prop(_)).flatten
       }
         yield props.filter(specialFilter(thing,_))

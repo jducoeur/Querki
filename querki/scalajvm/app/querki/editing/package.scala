@@ -55,6 +55,9 @@ package object editing {
      */
     def propsNotInModel(thing:PropertyBundle, instanceProps:List[OID], state:SpaceState):Iterable[OID]
     
+    // Given a List of Properties, which may exist in an App, translate any of those to local Shadows.
+    def translatePropertiesToShadows(propIds:List[OID], state:SpaceState):List[OID]
+    
     /**
      * The OIDs of Properties that should *not* be sent explicitly as part of the Editor, because they are
      * handled specially.

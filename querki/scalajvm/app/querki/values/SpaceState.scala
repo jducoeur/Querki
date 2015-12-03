@@ -351,6 +351,18 @@ case class SpaceState(
     memsize + mapsize(things) + mapsize(spaceProps) + mapsize(types)
   }
   
+  /**
+   * This is a map from Things in Apps to their Shadows in this Space, so we can look that up
+   * efficiently.
+   */
+  lazy val shadowMap:Map[OID,OID] = {
+    // HACK: this is assuming that, if ShadowFlag is present, it is true
+    val shadows = everythingLocal.filter { t => t.props.contains(querki.apps.MOIDs.ShadowFlagOID) }
+    shadows.map { shadow =>
+      (shadow.model -> shadow.id)
+    }.toMap
+  }
+  
   def spaceStateOps(implicit e:Ecology) = new SpaceStateOps()(this, e)
 }
 

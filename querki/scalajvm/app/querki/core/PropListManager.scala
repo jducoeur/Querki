@@ -133,9 +133,11 @@ class PropListManagerEcot(e:Ecology) extends QuerkiEcot(e) with PropListManager 
       else
         // Not a Model, so fetch the InstanceProps iff they are defined:
         model.getPropOpt(Editor.InstanceProps)(state).map(_.rawList)
+        
     propsToEdit match {
       // If the model specifies which properties we actually want to edit, then use just those, in that order:
-      case Some(editList) => {
+      case Some(rawEditList) => {
+        val editList = Editor.translatePropertiesToShadows(rawEditList, state)
         val fullEditList = thingOpt match {
           case Some(thing) => 
             editList ++ 
