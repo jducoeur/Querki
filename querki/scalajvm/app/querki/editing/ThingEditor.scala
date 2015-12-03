@@ -136,12 +136,28 @@ trait ThingEditor { self:EditorModule =>
         }
           yield deriveLink == DeriveName.DeriveAlways.id
       val deriveName = deriveNameOpt.getOrElse(false)
+      
+      // InstanceProps is a bit subtle: if the Model was defined in an App, it points to the *App's* version
+      // of the Property, but the Instance probably has the Space's *shadow* of that Property. So we need to
+      // check for duplication.
+      // There may be a more-general concept fighting to break out here; we'll see.
+      // TODO: in principle, this should be recursive, in case the App has super-Apps. That's likely an edge
+      // case, but it'll probably happen.
+      def isShadowOfInstanceProp(propOpt:Option[AnyProp]):Boolean = {
+        propOpt.map { prop =>
+          if (prop.ifSet(Apps.ShadowFlag)) {
+            instanceProps.contains(prop.model)
+          } else
+            false
+        }.getOrElse(false)
+      }
         
       for {
         propId <- thing.props.keys
         if (propId != Core.NameProp.id || !deriveName)
         if (!filteredPropIds.contains(propId))
         if (!instanceProps.contains(propId))
+        if (!isShadowOfInstanceProp(state.prop(propId)))
       }
         yield propId
     }

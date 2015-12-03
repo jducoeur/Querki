@@ -24,6 +24,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
   val Links = initRequires[querki.links.Links]
   
   lazy val AccessControl = interface[querki.security.AccessControl]
+  lazy val Apps = interface[querki.apps.Apps]
   lazy val SkillLevel = interface[querki.identity.skilllevel.SkillLevel]
   lazy val PropListMgr = interface[querki.core.PropListManager]
   lazy val HtmlRenderer = interface[querki.html.HtmlRenderer]
