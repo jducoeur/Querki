@@ -17,7 +17,7 @@ import ShardKind._
  */
 object QDB {
   def apply[A](db:ShardKind.ShardKind)(trans:Connection => A):A = {
-    DB.withTransaction(dbName(ShardKind.User)) { implicit conn =>
+    DB.withTransaction(dbName(db)) { implicit conn =>
       try {
         trans(conn)
       } catch {
