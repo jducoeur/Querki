@@ -40,6 +40,7 @@ private [apps] trait Hollower { self:Actor with Requester with EcologyMember =>
     def andThen(fNext: => RequestM[Unit]):RequestM[Unit] = req flatMap { dummy => fNext }
   }
   
+  def Apps:querki.apps.Apps
   def Core:querki.core.Core
   def Types:querki.types.Types
   
@@ -87,7 +88,9 @@ private [apps] trait Hollower { self:Actor with Requester with EcologyMember =>
       .toSet
   
   def hollowThing(thing:Thing):PropMap = {
-    thing.props.filterKeys(uninheritedProps.contains(_))
+    // Remove all props on this Thing *except* the ones that are unique to it, and mark it as
+    // a Shadow:
+    thing.props.filterKeys(uninheritedProps.contains(_)) + Apps.ShadowFlag(true)
   }
       
   def mapTypeModel(tpe:Thing, idMap:IDMap):PropMap = {

@@ -14,6 +14,7 @@ import querki.util.{Contributor, Publisher}
 object MOIDs extends EcotIds(59) {
   val CanBeAppOID = moid(1)
   val CanManipulateAppsOID = moid(2)
+  val ShadowFlagOID = moid(3)
 }
 
 /**
@@ -77,9 +78,16 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
       "These people are allowed to add or remove Apps from this Space",
       Seq(AccessControl.OwnerTag),
       true)
+      
+  lazy val ShadowFlag = new SystemProperty(ShadowFlagOID, YesNoType, ExactlyOne,
+    toProps(
+      setName("_isShadow"),
+      setInternal,
+      Summary("Set to true by the system if this Thing is a shadow for a parent in an App.")))
   
   override lazy val props = Seq(
     CanUseAsAppProp,
-    CanManipulateAppsPerm
+    CanManipulateAppsPerm,
+    ShadowFlag
   )
 }

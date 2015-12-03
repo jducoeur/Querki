@@ -26,6 +26,7 @@ import querki.values.SpaceState
 private [apps] class ExtractAppActor(val ecology:Ecology, val elements:Seq[TID], val name:String, val owner:User, val state:SpaceState, val router:ActorRef) 
   extends Actor with Requester with EcologyMember with ProgressActor with SpaceBuilder with ExtracteeComputer with Hollower
 {
+  lazy val Apps = interface[Apps]
   lazy val SpacePersistence = interface[querki.spaces.SpacePersistence]
   lazy val System = interface[querki.system.System]
   
