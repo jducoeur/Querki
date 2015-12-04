@@ -84,7 +84,7 @@ lazy val querkiClient = (project in file("scalajs")).settings(
     "org.querki" %%% "jquery-facade" % "0.10",
     "org.querki" %%% "bootstrap-datepicker-facade" % "0.5",
     "io.github.widok" %%% "scala-js-momentjs" % "0.1.0",
-    "org.querki" %%% "jstree-facade" % "0.2-SNAPSHOT"
+    "org.querki" %%% "jstree-facade" % "0.2"
   )).
   enablePlugins(ScalaJSPlugin, ScalaJSPlay, BuildInfoPlugin).
   dependsOn(querkiSharedJs)
