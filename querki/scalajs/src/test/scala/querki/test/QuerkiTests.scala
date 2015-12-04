@@ -60,7 +60,7 @@ trait QuerkiTests extends TestSuite with EcologyMember with querki.client.Standa
   /**
    * The default SpaceInfo. Tests may override this if necessary.
    */
-  def spaceInfo = SpaceInfo(TID(".spaceOid"), Some("Test-Space"), "Test Space", ".testUser1", "testUser1")
+  def spaceInfo = SpaceInfo(TID(".spaceOid"), Some("Test-Space"), "Test Space", ".testUser1", "testUser1", Seq.empty, Set.empty)
   
   /**
    * A very simple base Thing.
