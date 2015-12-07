@@ -39,6 +39,7 @@ package object basic {
     val ComputedNameOID = moid(6)
     val NewAllThingsOID = moid(7)
     val ShowModelTreeOID = moid(8)
+    val KilledThingOID = moid(9)
   }
   
   /**

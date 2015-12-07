@@ -311,6 +311,12 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
           |Deprecated. If you see somewhere that a Deprecated Thing is visible and shouldn't be, please log a bug
           |report about it.""".stripMargin)))
   
+  lazy val KilledThing = new SystemProperty(KilledThingOID, YesNoType, ExactlyOne,
+    toProps(
+      setName("_Killed Thing"),
+      setInternal,
+      Summary("The next step after Deprecated -- marks something that is considered formally dead.")))
+  
   lazy val ExplicitProp = new SystemProperty(ExplicitPropOID, YesNoType, ExactlyOne,
       toProps(
         setName("_explicitlyShown"),
@@ -378,7 +384,8 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
     SystemOnlyProp,
     ModelViewProp,
     SystemHiddenProp,
-    PrintViewProp
+    PrintViewProp,
+    KilledThing
   )
   
   /***********************************************
@@ -397,7 +404,8 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
     toProps(
       setName("Simple-Page"),
       IsModelProp(true),
-      DeprecatedProp(true)))
+      DeprecatedProp(true),
+      KilledThing(true)))
 
 object Bulleted extends ThingState(BulletedOID, systemOID, RootOID,
     toProps(
@@ -456,7 +464,7 @@ object ShowModelTree extends ThingState(ShowModelTreeOID, systemOID, RootOID,
                   |opened=_is(Simple Thing), 
                   |id=""node-[[_oid]]"", 
                   |children=""[[
-                  |_children -> _filter(_isModel) -> _sort -> _showModelTree]][[
+                  |_children -> _filter(_isModel) -> _filter(_not(_Killed Thing)) -> _sort -> _showModelTree]][[
                   |_children -> _filter(_not(_isModel)) -> _sort -> _thingTree]]"")""".stripMargin)))
 
 object AllProps extends ThingState(AllPropsThingOID, systemOID, RootOID,
