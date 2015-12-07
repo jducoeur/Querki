@@ -55,12 +55,14 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem]) extends Quer
   val defaultSpaceRootView = """{{well well-sm _root-well:
     |{{row:
     |{{col-md-3:
-    |### Pages [[Simple Thing -> _if(_hasPermission(Who Can Create._self), _createInstanceLink -> _iconButton(""plus"", ""Write a Page""))]]
+    |### Pages
     |}}
     |
     |{{col-md-9:
     |[[Simple Thing -> _children -> _filter(_not(_isModel)) -> _sort -> ""
     |#### ____""]]
+    |
+    |[[Simple Thing -> _if(_hasPermission(Who Can Create._self), _createButton(""Write a Page""))]]
     |}}
     |}}
     |}}
@@ -74,6 +76,8 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem]) extends Quer
     |
     |{{col-md-9:
     |[[_currentSpace -> _allThings -> _filter(_isModel) -> _sort -> _showModelTree]]
+    |
+    |[[_menuButton(""designAModel"", ""Design a New Model"", class=""btn-xs btn-primary"")]]
     |}}
     |}}
     |}}

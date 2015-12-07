@@ -33,6 +33,7 @@ object UIMOIDs extends EcotIds(11) {
   val ShowSomeOID = moid(8)
   val QLLinkOID = moid(9)
   val QLTreeOID = moid(10)
+  val MenuButtonOID = moid(11)
 }
 
 /**
@@ -628,6 +629,47 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     }
   }
   
+  lazy val MenuButton = new InternalMethod(MenuButtonOID,
+    toProps(
+      setName("_menuButton"),
+      SkillLevel(SkillLevelAdvanced),
+      Summary("Use this to define a button that, when pressed, will mimic the effect of the specified menu item"),
+      Signature(
+        expected = (Seq.empty, "Can be anything"),
+        reqs = Seq(
+          ("id", TextType, "The HTML id of the menu item to invoke"),
+          ("label", TextType, "What to show on the button")
+        ),
+        opts = Seq(
+          ("class", TextType, Core.QNone, "Additional space-separated Bootstrap classes to use for displaying this button")
+        ),
+        returns = None
+      ),
+      Details("""Sometimes, you want to be able to create a button that mimics the effect of a menu item. This
+        |function allows you to do that.
+        |
+        |For example, the "Design a New Model" button on the default Space page looks like this:
+        |```
+        |_menuButton(""designAModel"", ""Design a New Model"", class=""btn-xs btn-primary"")
+        |```
+        |""".stripMargin)))
+  {
+    override def qlApply(inv:Invocation):QFut = {
+      for {
+        id <- inv.processAs("id", ParsedTextType)
+        label <- inv.processAs("label", ParsedTextType)
+        classesOpt <- inv.processAsOpt("class", ParsedTextType)
+        classes = "_menuButton btn" +
+          classesOpt.map(_.strip.toString).map(" " + _).getOrElse("")
+      }
+        yield HtmlValue(
+          button(
+            cls:=classes,
+            data.menuid := id.strip.toString(),
+            label.strip.toString()))
+    }
+  }
+  
   // TODO: replace this with a QL function! It certainly requires basic math functions, but I'm
   // not sure it needs much else...
   lazy val ShowSomeFunction = new InternalMethod(ShowSomeOID,
@@ -705,6 +747,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     QLLink,
     ThingTree,
     new MixedButtonMethod,
-    ShowSomeFunction
+    ShowSomeFunction,
+    MenuButton
   )
 }

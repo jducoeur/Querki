@@ -95,7 +95,7 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
     spaceOpt.map { space =>
       Seq(
         NavDivider,
-        NavLink("Design a Model", onClick = Some({ () => DataModel.designAModel() })),
+        NavLink("Design a Model", id = Some("designAModel"), onClick = Some({ () => DataModel.designAModel() })),
         NavLink("Create any Thing", onClick = Some({ () => DataModel.createAThing() })),
         NavLink("Show all Things", thing("All-Things")),
         NavLink("Show all Properties", thing("All-Properties")),
@@ -244,13 +244,8 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
 
   def displayNavigable(section:Navigable) = {
     section match {
-      case NavLink(display, url, id, enabled, onClick) => {
-        val idStr = id match {
-          case Some(i) => " id=" + i
-          case None => ""
-        }
-        displayNavLink(display, url, idStr, enabled, onClick)
-      }
+      case NavLink(display, url, id, enabled, onClick) => 
+        displayNavLink(display, url, id.getOrElse(""), enabled, onClick)
       case NavSection(title, links) => displayNavSection(title, links)
       case NavDivider => displayNavDivider
     }
