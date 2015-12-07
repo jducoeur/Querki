@@ -393,11 +393,20 @@ package object ql {
      * that yet, but new ones should use it.
      * 
      * @param expected Description of what is expected, and the PTypes that this Function accepts. If empty, it accepts *all* PTypes.
-     *   If the context is ignored, should say that.
+     *   If the received context is ignored, this should be set to None.
      * @param reqs The required parameters for this Function, in order.
      * @param opts The optional parameters for this Function, in order.
      * @param returns The PType returned by this Function, if predictable.
+     * @param defining Iff this function uses the defining context, info about that. The first field should be true iff the
+     *   defining context is *required*; the second is the expected types; the third is documentation. Iff this function does
+     *   not use the defining context, leave this as None.
      */
-    def apply(expected:(Seq[PType[_]], String), reqs:Seq[(String, PType[_], String)], opts:Seq[(String, PType[_], QValue, String)], returns:Option[PType[_]]):(OID, QValue)
+    def apply(
+      expected:Option[(Seq[PType[_]], String)], 
+      reqs:Seq[(String, PType[_], String)], 
+      opts:Seq[(String, PType[_], QValue, String)], 
+      returns:Option[PType[_]],
+      defining:Option[(Boolean, Seq[PType[_]], String)] = None
+    ):(OID, QValue)
   }
 }

@@ -137,7 +137,7 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
       setName("_substring"),
       SkillLevel(SkillLevelAdvanced),
       Signature(
-        expected = (Seq(), "Anything -- each received item will be rendered as text, and then the substring taken from that."),
+        expected = Some((Seq(), "Anything -- each received item will be rendered as text, and then the substring taken from that.")),
         reqs = Seq(("start", IntType, "The zero-based index of the beginning of the substring")),
         opts = Seq(
             ("end", IntType, ExactlyOne(IntType(Int.MaxValue)), 

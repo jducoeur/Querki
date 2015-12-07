@@ -463,17 +463,19 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     toProps(
       setName("_createButton"),
       Summary("Becomes a Create button for the received Model"),
-      Details("""    MODEL -> LINK PROPERTY._createButton(LABEL)
-          |
-          |This displays a button, with the given LABEL, if the user is allowed to create Instances of that Model.
+      Signature(
+        expected = Some((Seq(LinkType), "The Model to instantiate")),
+        reqs = Seq(("label", TextType, "The text to show on the button")),
+        opts = Seq(("classes", TextType, Core.QNone, "Additional display classes to apply to the button")),
+        returns = None,
+        defining = Some(false, Seq(LinkType), "A Property -- if given, that Property on the new Instance will point back to here")
+      ),
+      Details("""This displays a button, with the given LABEL, if the user is allowed to create Instances of that Model.
           |
           |This button is essentially a shortcut for:
-          |
-          |    MODEL -> LINK PROPERTY._createInstanceLink -> _linkButton(LABEL)
-          |
-          |As with [[_createInstanceLink._self]], the LINK PROPERTY is optional. If you give one, it says that
-          |Querki should set LINK PROPERTY on the newly-created Thing, pointing back to the Thing that it showing the
-          |button.""".stripMargin)))
+          |```
+          |MODEL -> LINK PROPERTY._createInstanceLink -> _linkButton(LABEL)
+          |```""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
@@ -520,7 +522,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     toProps(
       setName("_QLButton"),
       Signature(
-        expected = (Seq(LinkType), "The Thing that will be passed to the QL."),
+        expected = Some((Seq(LinkType), "The Thing that will be passed to the QL.")),
         reqs = Seq(
           ("label", ParsedTextType, "The text to display on the button."),
           ("ql", Basic.QLType, "The QL to execute when the button is pressed.")
@@ -554,7 +556,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
     toProps(
       setName("_QLLink"),
       Signature(
-        expected = (Seq(LinkType), "The Thing that will be passed to the QL."),
+        expected = Some((Seq(LinkType), "The Thing that will be passed to the QL.")),
         reqs = Seq(
           ("label", ParsedTextType, "The text to display on the button."),
           ("ql", Basic.QLType, "The QL to execute when the button is pressed.")
@@ -589,7 +591,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       setName("_thingTree"),
       SkillLevel(SkillLevelAdvanced),
       Signature(
-        expected = (Seq(LinkType), "One or more Things to display as equal nodes in a tree"),
+        expected = Some((Seq(LinkType), "One or more Things to display as equal nodes in a tree")),
         reqs = Seq(),
         opts = Seq(
           ("text", TextType, Core.QNone, "The text to display for this node. If omitted, will be shown as a link to this Thing as usual."),
@@ -635,7 +637,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       SkillLevel(SkillLevelAdvanced),
       Summary("Use this to define a button that, when pressed, will mimic the effect of the specified menu item"),
       Signature(
-        expected = (Seq.empty, "Can be anything"),
+        expected = None,
         reqs = Seq(
           ("id", TextType, "The HTML id of the menu item to invoke"),
           ("label", TextType, "What to show on the button")
@@ -650,7 +652,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         |
         |For example, the "Design a New Model" button on the default Space page looks like this:
         |```
-        |_menuButton(""designAModel"", ""Design a New Model"", class=""btn-xs btn-primary"")
+        |_menuButton(\""designAModel\"", \""Design a New Model\"", class=\""btn-xs btn-primary\"")
         |```
         |""".stripMargin)))
   {
