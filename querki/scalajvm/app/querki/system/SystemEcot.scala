@@ -62,7 +62,7 @@ class SystemEcot(e:Ecology, val actorSystemOpt:Option[ActorSystem]) extends Quer
     |[[Simple Thing -> _children -> _filter(_not(_isModel)) -> _sort -> ""
     |#### ____""]]
     |
-    |[[Simple Thing -> _if(_hasPermission(Who Can Create._self), _createButton(""Write a Page""))]]
+    |[[Simple Thing -> _if(_hasPermission(Who Can Create._self), _createButton(""Write a Page"", classes=""btn-xs btn-primary""))]]
     |}}
     |}}
     |}}

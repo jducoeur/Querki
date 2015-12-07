@@ -256,10 +256,10 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
       Basic.ApplyMethod(
           """""[[_Function Signature -> _Expected Context -> _if(_Context Is Required, "": Receives [[_if(_isNonEmpty(_Function Context Types),
             |      "" -- [[_Function Context Types -> Name -> _join("" *or* "")]]""
-            |     )]] : [[Summary]] "")]]
-            |[[_Function Signature -> _Defining Context -> 
-            |      "": Defining Context [[_if(_not(_Context Is Required), "" (optional)"")]] : [[Summary]]""]]
-            |[[_Function Signature -> _concat(_Required Parameters, _Optional Parameters) ->
+            |     )]] : [[Summary]] "")]][[
+            |    _Function Signature -> _Defining Context -> ""
+            |      : Defining Context [[_if(_not(_Context Is Required), "" (optional)"")]] : [[Summary]]""]][[
+            |    _Function Signature -> _concat(_Required Parameters, _Optional Parameters) ->
             |    "": [[Name]][[_if(_hasProperty(Default Value._self), "" (optional)"")]] : [[Summary]]""]]""""".stripMargin)))
       
   override lazy val things = Seq(

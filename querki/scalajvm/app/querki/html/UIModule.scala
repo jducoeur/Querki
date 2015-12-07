@@ -466,25 +466,39 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       Signature(
         expected = Some((Seq(LinkType), "The Model to instantiate")),
         reqs = Seq(("label", TextType, "The text to show on the button")),
-        opts = Seq(("classes", TextType, Core.QNone, "Additional display classes to apply to the button")),
+        opts = Seq(("classes", TextType, Core.QNone, "Display classes to apply to the button. If not specified, btn-default will be used.")),
         returns = None,
         defining = Some(false, Seq(LinkType), "A Property -- if given, that Property on the new Instance will point back to here")
       ),
-      Details("""This displays a button, with the given LABEL, if the user is allowed to create Instances of that Model.
+      Details("""This displays a button, with the given **label**, if the user is allowed to create Instances of that Model.
           |
-          |This button is essentially a shortcut for:
+          |For example, say we have Models named Bookcase and Book. Book has a My Bookcase property, that points to the case it
+          |is on. I want a button to show on Bookcase that creates a new Book on that case, and I want it to show using the "primary"
+          |style (green). I would add a button to Bookcase, that looks like this:
           |```
-          |MODEL -> LINK PROPERTY._createInstanceLink -> _linkButton(LABEL)
-          |```""".stripMargin)))
+          |\[[Book -> My Bookcase._createButton(\""Add a Book to this case\"", classes=\""btn-primary\"")\]]
+          |```
+          |Because I give My Bookcase as the Defining Context, Querki uses that property to point from the new Book back
+          |to the Bookcase that created it.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
         url <- getCreateInstanceUrl(inv)
-        labelWikitext <- inv.processParamFirstAs(0, QL.ParsedTextType)
+        labelWikitext <- inv.processAs("label", ParsedTextType)
         label = labelWikitext.raw.str
-        xml = <a class="btn btn-default" href={url}>{label}</a>
+        classesWikiOpt <- inv.processAsOpt("classes", ParsedTextType)
+        allClasses =
+          "btn" +
+          classesWikiOpt.map(_.raw.str).map(" " + _).getOrElse("btn-default")
       }
-        yield QL.WikitextValue(toWikitext(xml))
+        yield 
+          HtmlValue(
+            a(
+              cls := allClasses,
+              href := url,
+              label
+            )
+          )
     }
   }
   
