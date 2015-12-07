@@ -76,6 +76,10 @@ class StandardThings(h:PassthroughHandlerBase) {
   	val printView = h.pass("Print View")
   }
   
+  object css {
+    val stylesheet = h.pass("Stylesheet")
+  }
+  
   object conventions {
     val detailsProp = h.pass("Details")
     val summaryProp = h.pass("Summary")  
@@ -103,6 +107,6 @@ class StandardThings(h:PassthroughHandlerBase) {
   // This is necessary in order to force the objects to come into being. Each of the
   // above objects must be named here:
   def touchEverything() = {
-    Seq(apps, core, basic, conventions, editing, security, tags, types)
+    Seq(apps, core, css, basic, conventions, editing, security, tags, types)
   }
 }

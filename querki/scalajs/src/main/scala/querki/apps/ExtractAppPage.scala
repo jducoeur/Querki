@@ -75,6 +75,15 @@ class ExtractTree(models:Seq[ThingInfo], pages:Seq[ThingInfo])(implicit val ecol
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
   
+  // This deals with the special case of System models which, if there are any local instances, we should
+  // extract them by default.
+  def extractJustInstances(tid:TID):Boolean = {
+    if (tid == DataAccess.std.css.stylesheet.oid)
+      true
+    else
+      false
+  }
+  
   val space = DataAccess.space.get
   val spaceNode =
     JsTreeNode
@@ -89,20 +98,27 @@ class ExtractTree(models:Seq[ThingInfo], pages:Seq[ThingInfo])(implicit val ecol
   // TODO: put child Models underneath their parents. Models should always be opened, with an
   // "Instances" node beneath them that fetches their Instances.
   val modelNodes = models.map { model =>
+    // All *local* models should be selected. We only include non-local ones so they can be
+    // opened and their Instances exported:
     val selected:Seq[NodeState] =
       if (model.importedFrom.isDefined) 
         Seq.empty
       else 
-        Seq(NodeState.Selected) 
+        Seq(NodeState.Selected)
+        
+    val opened = selected ++ {
+      if (extractJustInstances(model.oid))
+        Seq(NodeState.Opened)
+      else
+        Seq.empty
+    }
         
     JsTreeNode
       .text(s"<b>${model.displayName}</b>")
       .icon(false)
       .children(true)
       .id(model.oid.underlying)
-      // All *local* models should be selected. We only include non-local ones so they can be
-      // opened and their Instances exported:
-      .state(selected:_*)
+      .state(opened:_*)
       :JsTreeNode
   }
   
@@ -141,11 +157,17 @@ class ExtractTree(models:Seq[ThingInfo], pages:Seq[ThingInfo])(implicit val ecol
             val tid = TID(id)
             Client[ThingFunctions].getChildren(tid, false, true).call() foreach { result =>
               val instanceNodes = result map { instanceInfo =>
+                val instanceState = 
+                  if (extractJustInstances(tid) && instanceInfo.importedFrom.isEmpty)
+                    Seq(NodeState.Selected)
+                  else
+                    Seq.empty
                 JsTreeNode
                   .text(s"${instanceInfo.displayName}")
                   .icon(false)
                   .children(false)
                   .id(instanceInfo.oid.underlying)
+                  .state(instanceState:_*)
                   :JsTreeNode
               }
               cb(instanceNodes.toJSArray)
