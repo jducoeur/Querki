@@ -35,9 +35,9 @@ class ImportSpaceActor(val ecology:Ecology, importType:ImportDataType, name:Stri
   def buildSpaceState(rc:RequestContext):SpaceState = {
     importType match {
       case ImportXML => {
-        QLog.spew("I've received the entire XML:")
+//        QLog.spew("I've received the entire XML:")
         val xml = uploaded
-        QLog.spew(xml)
+//        QLog.spew(xml)
         new RawXMLImport(rc)(ecology).readXML(xml)
       }
       
