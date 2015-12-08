@@ -322,16 +322,25 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
    * TODO: this is not yet sufficient for dealing with Model Types. If it's a Model Type
    * value, we need to dive into it and translate all of the nested values in there.
    */
-  private def translateProps(t:Thing, p:FoldParams)(implicit imp:SpaceState):Thing.PropMap = {
-    val translated = t.props filter { pair =>
+  private def translateProps(pb:PropertyBundle, p:FoldParams)(implicit imp:SpaceState):Thing.PropMap = {
+    val translated = pb.props filter { pair =>
       val (propId, qv) = pair
       if (deferredProperties.contains(propId)) {
-        val deferredVals = deferredPropertyValues.get(propId) match {
-          case Some(vals) => vals :+ DeferredPropertyValue(propId, t.id, qv)
-          case None => Seq(DeferredPropertyValue(propId, t.id, qv))
+        pb match {
+          case t:Thing => {
+            val deferredVals = deferredPropertyValues.get(propId) match {
+              case Some(vals) => vals :+ DeferredPropertyValue(propId, t.id, qv)
+              case None => Seq(DeferredPropertyValue(propId, t.id, qv))
+            }
+            deferredPropertyValues += (propId -> deferredVals)
+//            QLog.spew(s"Deferring property $propId with value $qv")
+          }
+          case _ => {
+            // TODO: we need to handle this situation. We need enough information to be able to
+            // defer this value and fix it up later:
+            QLog.warn(s"Found deferred property $propId in non-Thing $pb; dropping it on the floor!")
+          }
         }
-        deferredPropertyValues += (propId -> deferredVals)
-        // QLog.spew(s"Deferring property $propId with value $qv")
         false
       } else
         true
@@ -349,9 +358,32 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
   private def fixDeferrals(p:FoldParams, deferrals:Seq[DeferredPropertyValue])(implicit imp:SpaceState):RequestM[FoldParams] = {
     deferrals.headOption match {
       case Some(deferral) => {
-        // QLog.spew(s"Fixing deferral $deferral")
+//        QLog.spew(s"Fixing deferral $deferral")
+
+        // Okay, we've got a deferral of a Model Value. We need to dig into it, rewriting the ID
+        // of the Property, the ID of the Type, and all of the Property IDs *inside* the value.
+        // TODO: this needs to become more sophisticated -- we need to be able to defer full paths
+        // into nested structures:
         val DeferredPropertyValue(propId:ExtId, thingId:ExtId, v:QValue) = deferral
-        p.actor.request(ChangeProps(p.user, p.spaceId, p.idMap(thingId), Map((propId -> v)), true)) flatMap {
+        val intPID = p.idMap(propId)
+        // The original Property:
+        val extProp = imp.prop(propId).get
+        // The original Model Type, that we found earlier for this Property:
+        val extType = extProp.pType.asInstanceOf[ModelTypeBase]
+        // The original Model Values:
+        val extVals = v.rawList(extType)
+        // The new Model Type:
+        // This is rather suspicious, although it probably works:
+        val intType = p.space.typ(p.idMap(extType.id)).asInstanceOf[ModelTypeBase]
+        // The new Model Values:
+        val intVals = extVals map { extVal =>
+          val intVal = translateProps(extVal, p)
+          intType(vals2Bundle(intVal.toSeq:_*))
+        }
+        // The composed new QValue with the new Model Values:
+        val intV = v.cType.makePropValue(intVals, intType)
+        
+        p.actor.request(ChangeProps(p.user, p.spaceId, p.idMap(thingId), Map((intPID -> intV)), true)) flatMap {
           case found @ ThingFound(intId, state) => {
             fixDeferrals(p + found, deferrals.tail)
           }
@@ -374,7 +406,7 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
         p.actor.request(ChangeProps(p.user, p.spaceId, p.idMap(thing.id), translateProps(thing, p), true)) flatMap {
           case found @ ThingFound(intId, state) => {
             if (deferredPropertiesByModel.contains(thing.id)) {
-              // QLog.spew(s"${thing.displayName} is a Model with deferrals")
+//              QLog.spew(s"${thing.displayName} is a Model with deferrals")
               // This is apparently a Model for a Model Type. So now it's time to go deal with any
               // Property Values that have been waiting on it, before we move on:
               val props = deferredPropertiesByModel(thing.id)
