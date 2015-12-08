@@ -86,11 +86,15 @@ private [apps] trait Hollower { self:Actor with Requester with EcologyMember =>
       }
       .keys
       .toSet
+      
+  lazy val propsToRetain:Set[OID] = Set(
+    Types.ModelForTypeProp.id
+  )
   
   def hollowThing(thing:Thing):PropMap = {
     // Remove all props on this Thing *except* the ones that are unique to it, and mark it as
     // a Shadow:
-    thing.props.filterKeys(uninheritedProps.contains(_)) + Apps.ShadowFlag(true)
+    thing.props.filterKeys(pid => uninheritedProps.contains(pid) || propsToRetain.contains(pid)) + Apps.ShadowFlag(true)
   }
 
   def noAddl(t:Thing, idMap:IDMap):PropMap = Map.empty
