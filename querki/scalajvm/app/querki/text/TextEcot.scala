@@ -142,7 +142,7 @@ class TextEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs {
         opts = Seq(
             ("end", IntType, ExactlyOne(IntType(Int.MaxValue)), 
                 "The zero-based index of the end of the substring -- if omitted, takes the rest of the string")),
-        returns = Some(TextType)
+        returns = (TextType, "The specified chunk out of the received text")
       ),
       Summary("Extracts part of a Text or Large Text"),
       Details("""Given some text, this extracts the portion of it beginning at

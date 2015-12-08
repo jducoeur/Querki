@@ -16,6 +16,8 @@ trait MethodDefs { self:QuerkiEcot =>
   val Conventions = initRequires[querki.conventions.Conventions]
   val Signature = initRequires[querki.ql.Signature]
   
+  lazy val AnyType = Signature.AnyType
+  
   lazy val QUnit = Core.QUnit
   
   type QFut = querki.values.QFut

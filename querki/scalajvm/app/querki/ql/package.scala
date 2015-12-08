@@ -386,6 +386,12 @@ package object ql {
    */
   trait Signature extends EcologyInterface {
     /**
+     * A marker that should only be used in Signatures, which means "any Type can go here". If used in
+     * returns, means "the same Type that was received".
+     */
+    def AnyType:PType[Unit]
+    
+    /**
      * The main point of Signature: lets you define the signature -- that is, the expected parameters -- of an InternalMethod.
      * Actually generates a SignatureProp entry, but you usually don't need to worry about that.
      * 
@@ -396,7 +402,8 @@ package object ql {
      *   If the received context is ignored, this should be set to None.
      * @param reqs The required parameters for this Function, in order.
      * @param opts The optional parameters for this Function, in order.
-     * @param returns The PType returned by this Function, if predictable.
+     * @param returns The PType returned by this Function, and documentation about what is produced. If the returned PType
+     *   is the same as what was received, use AnyType.
      * @param defining Iff this function uses the defining context, info about that. The first field should be true iff the
      *   defining context is *required*; the second is the expected types; the third is documentation. Iff this function does
      *   not use the defining context, leave this as None.
@@ -405,7 +412,7 @@ package object ql {
       expected:Option[(Seq[PType[_]], String)], 
       reqs:Seq[(String, PType[_], String)], 
       opts:Seq[(String, PType[_], QValue, String)], 
-      returns:Option[PType[_]],
+      returns:(PType[_], String),
       defining:Option[(Boolean, Seq[PType[_]], String)] = None
     ):(OID, QValue)
   }

@@ -23,7 +23,8 @@ object SignatureMOIDs extends EcotIds(61) {
   val ExpectedTypeOID = moid(14)
   val ExpectedPropOID = moid(15)
   val ContextIsRequiredOID = moid(16)
-  def DefiningPropOID = moid(17)
+  val DefiningPropOID = moid(17)
+  val AnyTypeOID = moid(18)
 }
 
 private [ql] trait ParamResult {
@@ -64,7 +65,7 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
       expectedOpt:Option[(Seq[PType[_]], String)], 
       reqs:Seq[(String, PType[_], String)], 
       opts:Seq[(String, PType[_], QValue, String)], 
-      returns:Option[PType[_]],
+      returns:(PType[_], String),
       definingOpt:Option[(Boolean, Seq[PType[_]], String)]):(OID, QValue) = 
   {
     val (expected, expPt, expText) =
@@ -83,6 +84,7 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
       }
       case None => DefiningProp()
     }
+    val (retType, retText) = returns
     SignatureProp(
       SimplePropertyBundle(
         ExpectedProp(
@@ -113,7 +115,13 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
             )
           }:_*
         ),
-        ReturnTypeProp(returns.map(_.id).toSeq:_*),
+        ReturnTypeProp(
+          SimplePropertyBundle(
+            ContextIsRequired(true),
+            ExpectedTypesProp(retType.id),
+            Conventions.PropSummary(retText)
+          )
+        ),
         definingClause
       )
     )
@@ -247,8 +255,8 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
               |  ]][[Name]][[
               |  _Function Signature -> ""([[_concat(_Required Parameters, _Optional Parameters) -> Name -> _join("", "")]])""
               |                 ]][[
-              |  _Function Signature -> _if(_isNonEmpty(_Function Return Type),
-              |      "" -> [[_Function Return Type -> Name]]"")]]""""".stripMargin)))
+              |  _Function Signature -> _Function Return Type -> _Function Context Types -> _first -> 
+              |      "" -> [[Name]]""]]""""".stripMargin)))
           
   lazy val ParamsDisplay = ThingState(ParamsDisplayOID, systemOID, RootOID,
     toProps(
@@ -260,7 +268,9 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
             |    _Function Signature -> _Defining Context -> ""
             |      : Defining Context [[_if(_not(_Context Is Required), "" (optional)"")]] : [[Summary]]""]][[
             |    _Function Signature -> _concat(_Required Parameters, _Optional Parameters) ->
-            |    "": [[Name]][[_if(_hasProperty(Default Value._self), "" (optional)"")]] : [[Summary]]""]]""""".stripMargin)))
+            |    "": [[Name]][[_if(_hasProperty(Default Value._self), "" (optional)"")]] : [[Summary]]""]][[
+            |    _Function Signature -> _Function Return Type -> "" 
+            |      : Produces : [[Summary]]""]]""""".stripMargin)))
       
   override lazy val things = Seq(
     ParameterModel,
@@ -289,10 +299,24 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
       setName("_Expected Context Type"),
       setInternal))
   
+  lazy val AnyType = new PType[Unit](AnyTypeOID, UnknownOID, UnknownOID, 
+    toProps(
+      setName("The same Type"),
+      setInternal)) 
+  {
+    def doDeserialize(v:String)(implicit state:SpaceState) = ???
+    def doSerialize(v:Unit)(implicit state:SpaceState) = ???
+    def doWikify(context:QLContext)(v:Unit, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = ???
+    def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:querki.values.ElemValue):Future[scala.xml.NodeSeq] = ???
+    def doDefault(implicit state:SpaceState) = ???
+    def doComputeMemSize(v:Unit):Int = ???
+  }
+  
   override lazy val types = Seq(
     ParameterType,
     SignatureType,
-    ExpectedType
+    ExpectedType,
+    AnyType
   )
   
   /***********************************************
@@ -326,7 +350,7 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
       setName("_Expected Context"),
       setInternal))
   
-  lazy val ReturnTypeProp = new SystemProperty(ReturnTypeOID, LinkType, Optional,
+  lazy val ReturnTypeProp = new SystemProperty(ReturnTypeOID, ExpectedType, Optional,
     toProps(
       setName("_Function Return Type"),
       setInternal))

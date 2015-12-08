@@ -42,12 +42,15 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    toProps(
 	      setName("_first"),
 	      Summary("""Grabs just the first thing from the received context."""),
-	      Details("""    LIST -> _first -> OPTIONAL
-	          |Often you have a List, and you just want the first item in the List. (Especially when you
+        Signature(
+          expected = Some(Seq(AnyType), "A List of anything"),
+          reqs = Seq.empty,
+          opts = Seq.empty,
+          returns = (AnyType, "The first element in the received list, or None if it was empty.")
+        ),
+	      Details("""Often you have a List, and you just want the first item in the List. (Especially when you
 	          |expect the list to only have one element in it.) Use _first to turn that List into an
-	          |Optional instead.
-	          |
-	          |If LIST is empty, this produces None. If LIST has elements, this produces Optional(first element).""".stripMargin)))
+	          |Optional instead.""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QFut = {
 	    val context = inv.context
@@ -67,12 +70,14 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    toProps(
 	      setName("_rest"),
 	      Summary("""Produces everything but the first thing from the received context."""),
-	      Details("""    LIST -> _rest -> LIST
-	          |Often you have a List, and you want to slice off the first item (using _first). You then use _rest
-	          |to handle everything else.
-	          |
-	          |_rest currently isn't useful very often. As the QL language gets more powerful, it will
-	          |become a useful tool, although mainly for fairly advanced programmers.""".stripMargin)))
+        Signature(
+          expected = Some(Seq.empty, "A List of anything"),
+          reqs = Seq.empty,
+          opts = Seq.empty,
+          returns = (AnyType, "The List of everything except the first element, or None if the received List had fewer than two elements in it.")
+        ),
+        Details("""Often you have a List, and you want to slice off the first item (using _first). You then use _rest
+	          |to handle everything else.""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QFut = {
 	    val context = inv.context
@@ -93,15 +98,22 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    toProps(
 	      setName("_take"),
 	      Summary("""Produces the first N values from the received context."""),
-	      Details("""    LIST -> _take(N) -> LIST
-	          |Sometimes you want just the first few elements of a List. _take does that -- think of
+        Signature(
+          expected = Some(Seq.empty, "A List of anything"),
+          reqs = Seq(
+            ("howMany", IntType, "The number of elements to take from the beginning of the List")
+          ),
+          opts = Seq.empty,
+          returns = (AnyType, "The first *howMany* elements, if the received List had that many, or the full received List if not.")
+        ),
+	      Details("""Sometimes you want just the first few elements of a List. _take does that -- think of
 	          |it as taking the beginning of the List, and leaving the rest behind.
 	          |
-	          |Note that _first is roughly the same as _take(1).""".stripMargin)))
+	          |Note that `_first` is basically the same as `_take(1)`.""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QFut = {
 	    for {
-	      n <- inv.processParamFirstAs(0, IntType)
+	      n <- inv.processAs("howMany", IntType)
 	      qv <- inv.contextValue
 	    }
 	      yield QList.makePropValue(qv.cv.take(n), inv.context.value.pType)
@@ -112,15 +124,22 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    toProps(
 	      setName("_drop"),
 	      Summary("""Produces all but the first N values from the received context."""),
-	      Details("""    LIST -> _drop(N) -> LIST
-	          |_drop is the inverse of _take -- it drops the first N values, and produces what's left,
+        Signature(
+          expected = Some(Seq.empty, "A List of anything"),
+          reqs = Seq(
+            ("howMany", IntType, "The number of elements to drop from the beginning of the List")
+          ),
+          opts = Seq.empty,
+          returns = (AnyType, "The rest of the List after dropping the first *howMany* elements")
+        ),
+        Details("""_drop is the inverse of _take -- it drops the first *howMany*, and produces what's left,
 	          |if anything.
 	          |
 	          |Note that _rest is roughly the same as _drop(1).""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QFut = {
 	    for {
-	      n <- inv.processParamFirstAs(0, IntType)
+	      n <- inv.processAs("howMany", IntType)
 	      qv <- inv.contextValue
 	    }
 	      yield QList.makePropValue(qv.cv.drop(n), inv.context.value.pType)
@@ -149,19 +168,34 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    toProps(
 	      setName("_isNonEmpty"),
 	      Summary("Tests whether the provided value is non-empty"),
-	      Details("""    THING -> PROP._isNonEmpty
-	          |or
-	          |    RECEIVED -> _isNonEmpty
-	          |or
-	          |    RECEIVED -> _isNonEmpty(PARAM)
-	          |The first form produces true iff PROP is defined on THING, and this instance contains at least one element.
-	          |
-	          |The second form produces true iff RECEIVED contains at least one element.
-	          |
-	          |The third form runs the PARAM on the RECEIVED value, and produces true iff the result contains at least one element.
-	          |
-	          |This is usually used on a List, Set or Optional, but you *can* use it on an ExactlyOne value. (In which
-	          |case it will always produce True.)""".stripMargin)))
+        Signature(
+          expected = Some(Seq.empty, "A Thing, or a List"),
+          reqs = Seq.empty,
+          opts = Seq(
+            ("exp", IntType, Core.QNone, "An expression to apply to the received value")
+          ),
+          returns = (YesNoType, "Yes if the list has anything in it; No if it is empty"),
+          defining = Some(false, Seq(LinkType), "The Property to check whether its value is empty")
+        ),
+        Details("""There are several different versions of _isNonEmpty, depending on what you want to test:
+            |```
+            |Thing -> Property._isNonEmpty
+            |```
+            |Given a *Thing*, this checks whether it has *Property* and its value is not empty.
+            |```
+	          |List -> _isNonEmpty
+            |```
+            |Given a received List of any sort, this checks whether that List is not empty.
+	          |```
+	          |Anything -> _isNonEmpty(exp)
+            |```
+            |This is the most general form -- it applies *exp* to the received value, and checks whether
+            |the result is empty. For example, if you have a Bookcase, and want to check whether any of the
+            |Books on it were about Politics, it might look like:
+            |```
+            |My Bookcase -> _isNonEmpty(Books -> _filter(Topic -> _is(Politics)))
+            |```
+            |""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QFut = {
 	    if (inv.definingContext.isDefined)

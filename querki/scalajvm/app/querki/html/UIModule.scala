@@ -61,10 +61,11 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
 
   /**
    * This is a fake PType, so that code can inject HTML into the pipeline.
-   * 
-   * Note that this doesn't get registered in System, since it doesn't exist from the User's perspective.
    */
-  lazy val RawHtmlType = new SystemType[Wikitext](UnknownOID, models.Thing.emptyProps) with SimplePTypeBuilder[Wikitext]
+  lazy val RawHtmlType = new SystemType[Wikitext](UnknownOID, 
+    toProps(
+      setName("Page contents"),
+      setInternal)) with SimplePTypeBuilder[Wikitext]
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = throw new Exception("Can't deserialize ParsedText!")
     def doSerialize(v:Wikitext)(implicit state:SpaceState) = throw new Exception("Can't serialize ParsedText!")
@@ -83,6 +84,10 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
   def HtmlValue(tag:TypedTag[_]):QValue = ExactlyOne(RawHtmlType(HtmlWikitext(tag.toString)))
   
   def toWikitext(xml:NodeSeq):Wikitext = HtmlWikitext(QHtml(Xhtml.toXhtml(xml)))
+  
+  override lazy val types = Seq(
+    RawHtmlType
+  )
 
   /***********************************************
    * PROPERTIES
@@ -467,7 +472,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         expected = Some((Seq(LinkType), "The Model to instantiate")),
         reqs = Seq(("label", TextType, "The text to show on the button")),
         opts = Seq(("classes", TextType, Core.QNone, "Display classes to apply to the button. If not specified, btn-default will be used.")),
-        returns = None,
+        returns = (RawHtmlType, "The actual button on the page"),
         defining = Some(false, Seq(LinkType), "A Property -- if given, that Property on the new Instance will point back to here")
       ),
       Details("""This displays a button, with the given **label**, if the user is allowed to create Instances of that Model.
@@ -548,7 +553,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
                 |the QL again, and appends the result to the target div. Otherwise, pressing the button again
                 |closes the div.""".stripMargin)
         ),
-        returns = None
+        returns = (RawHtmlType, "The button")
       ),
       Summary("Shows a button that, when pressed, executes some QL and can show the result"),
       SkillLevel(SkillLevelAdvanced),
@@ -582,7 +587,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
                 |the QL again, and appends the result to the target div. Otherwise, clicking the link again
                 |closes the div.""".stripMargin)
         ),
-        returns = None
+        returns = (RawHtmlType, "The link, ready for the page")
       ),
       Summary("Shows a link that, when clicked, executes some QL and can show the result"),
       SkillLevel(SkillLevelAdvanced),
@@ -614,7 +619,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
           ("icon", TextType, Core.QNone, "The icon to display for this node. If not specified, no icon will be shown."),
           ("opened", YesNoType, ExactlyOne(Logic.False), "If set to True, children of this node will be displayed immediately.")
         ),
-        returns = None
+        returns = (RawHtmlType, "The tree, or a child node under a higher-level tree")
       ),
       Summary("Display a tree node, which will invoke the specified QL code to get its children")))
   {
@@ -659,7 +664,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         opts = Seq(
           ("class", TextType, Core.QNone, "Additional space-separated Bootstrap classes to use for displaying this button")
         ),
-        returns = None
+        returns = (RawHtmlType, "The button")
       ),
       Details("""Sometimes, you want to be able to create a button that mimics the effect of a menu item. This
         |function allows you to do that.
