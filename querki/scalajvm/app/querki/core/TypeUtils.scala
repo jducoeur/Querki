@@ -10,7 +10,7 @@ import querki.globals._
 import querki.values.{ElemValue, QLContext, SpaceState}
 
 object TypeUtils {
-  trait CommonInputRenderers { self:SystemType[_] with EcologyMember =>
+  trait CommonInputRenderers { self:SystemTypeBase[_] with EcologyMember =>
     private lazy val Core = interface[querki.core.Core]
     
     def renderAnyText(prop:Property[_, _], context:QLContext, currentValue:DisplayPropVal, v:ElemValue, elemT:PType[_])(doRender: (String) => NodeSeq):NodeSeq = {
@@ -36,8 +36,8 @@ object TypeUtils {
     }
   }
 
-  abstract class SystemType[T](tid:OID, pf:PropMap)(implicit val ecology:Ecology) 
-    extends PType[T](tid, SystemIds.systemOID, MOIDs.UrTypeOID, pf) with EcologyMember with CommonInputRenderers
+  abstract class SystemTypeBase[T](tid:OID, spaceId:OID, modelId:OID, pf:PropMap)(implicit val ecology:Ecology) 
+    extends PType[T](tid, spaceId, modelId, pf) with EcologyMember with CommonInputRenderers
   {
     // Types is where the various validators and such live:
     lazy val Types = interface[querki.types.Types]
@@ -59,6 +59,8 @@ object TypeUtils {
     // Iff a Type wants to render QNone as blank text instead of the default value, set this to true
     val displayEmptyAsBlank:Boolean = false
   }
+  abstract class SystemType[T](tid:OID, pf:PropMap)(implicit e:Ecology) 
+    extends SystemTypeBase[T](tid, SystemIds.systemOID, MOIDs.UrTypeOID, pf)
   
   /**
    * Optional side-trait that a Type can implement to advertise that it only allows specific discrete values.

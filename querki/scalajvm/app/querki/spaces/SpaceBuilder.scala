@@ -236,7 +236,8 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
   private def createProperties(p:FoldParams, props:Seq[AnyProp])(implicit imp:SpaceState):RequestM[FoldParams] = {
     props.headOption match {
       case Some(prop) => {
-        // QLog.spew(s"Creating Property ${prop.displayName}")
+        //QLog.spew(s"Creating Property ${prop.displayName}")
+        //QLog.spewThing(prop)
         // Take note of any Properties that can't be resolved yet:
         prop.pType match {
           case mt:ModelTypeBase if (p.idMap.contains(mt.basedOn)) => {
@@ -278,6 +279,7 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
             // This Property is made of Links, so we need to map all of them to the new values:
             val raw = qv.rawList(Core.LinkType)
             val translatedLinks = raw.map { extId => ElemValue(idMapOr(extId, p.idMap), Core.LinkType) }
+            //QLog.spew(s"Translated $raw to $translatedLinks")
             qv.cType.makePropValue(translatedLinks, Core.LinkType)
           }
           case None => {

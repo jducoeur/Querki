@@ -110,7 +110,7 @@ trait SpaceLoader { self:EcologyMember with querki.types.ModelTypeDefiner =>
         // TODO: ModelType should take modTime, like all other dynamically-created Things:
         // TODO: do a second pass over types later -- they take Properties, so they *could* have locally-created
         // Properties, which will show up as UnresolvedPropValue for now:
-        new ModelType(thingId, basedOn, propMap)
+        new ModelType(thingId, id, querki.core.MOIDs.UrTypeOID, basedOn, propMap)
       }
       curState = curState.copy(types = types)
       

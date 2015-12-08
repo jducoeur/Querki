@@ -63,9 +63,9 @@ private [apps] trait Hollower { self:Actor with Requester with EcologyMember =>
     val (models, instances) = extractees.state.things.values.partition(_.isModel)
     
     withMsg("Removing extracted Instances", deleteInstances(instances)) andThen 
-      withMsg("Adjusting Models", hollowThings(models, idMap, {(tpe, idMap) => Map.empty})) andThen
-      withMsg("Adjusting Types", hollowThings(extractees.state.types.values, idMap, mapTypeModel)) andThen
-      withMsg("Adjusting Properties", hollowThings(extractees.state.spaceProps.values, idMap, mapPropType)) andThen
+      withMsg("Adjusting Models", hollowThings(models, idMap, noAddl)) andThen
+      withMsg("Adjusting Types", hollowThings(extractees.state.types.values, idMap, noAddl)) andThen
+      withMsg("Adjusting Properties", hollowThings(extractees.state.spaceProps.values, idMap, noAddl)) andThen
       hollowSpace(extractees, idMap)
   }
   
@@ -92,30 +92,8 @@ private [apps] trait Hollower { self:Actor with Requester with EcologyMember =>
     // a Shadow:
     thing.props.filterKeys(uninheritedProps.contains(_)) + Apps.ShadowFlag(true)
   }
-      
-  def mapTypeModel(tpe:Thing, idMap:IDMap):PropMap = {
-    implicit val s = state
-    val resultOpt = for {
-      oldModelPV <- tpe.getPropOpt(Types.ModelForTypeProp)
-      oldModelId <- oldModelPV.firstOpt
-      newModelId <- idMap.get(oldModelId)
-    }
-      yield Map(Types.ModelForTypeProp(newModelId))
-      
-    resultOpt.getOrElse(Map.empty)
-  }
-  
-  def mapPropType(prop:Thing, idMap:IDMap):PropMap = {
-    implicit val s = state
-    val resultOpt = for {
-      oldTypePV <- prop.getPropOpt(Core.TypeProp)
-      oldTypeId <- oldTypePV.firstOpt
-      newTypeId <- idMap.get(oldTypeId)
-    }
-      yield Map(Core.TypeProp(newTypeId))
-      
-    resultOpt.getOrElse(Map.empty)    
-  }
+
+  def noAddl(t:Thing, idMap:IDMap):PropMap = Map.empty
   
   // We use a single function for all the hollowing-out, since it is basically the same for everything. The
   // only real difference is that some Kinds have a "kicker" that is slightly different, which is the addl parameter.
@@ -138,7 +116,7 @@ private [apps] trait Hollower { self:Actor with Requester with EcologyMember =>
   def hollowSpace(extractees:Extractees, idMap:IDMap):RequestM[Unit] = {
     // Extracting the Space itself is optional; did we do so?
     if (extractees.extractState) {
-      withMsg("Adjusting Space", hollowThings(Seq(state), idMap, {(tpe, idMap) => Map.empty}))
+      withMsg("Adjusting Space", hollowThings(Seq(state), idMap, noAddl))
     } else
       RequestM.successful(())
   }

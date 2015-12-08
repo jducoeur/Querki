@@ -7,6 +7,7 @@ import XMLParser._
 import models._
 import Thing._
 
+import querki.core.MOIDs.UrTypeOID
 import querki.time.DateTime
 import querki.globals._
 import querki.types.{ModelTypeBase, ModelTypeDefiner, SimplePropertyBundle}
@@ -139,7 +140,7 @@ private [imexport] class RawXMLImport(rc:RequestContext)(implicit val ecology:Ec
   def buildType(state:SpaceState, node:XmlElement) = {
     implicit val n = node
     implicit val s = state
-    val t = new ModelType(id.oid, modelref.oidPlus, buildProps)
+    val t = new ModelType(id.oid, state.id, UrTypeOID, modelref.oidPlus, buildProps)
     state.copy(types = state.types + (t.id -> t))
   }
   

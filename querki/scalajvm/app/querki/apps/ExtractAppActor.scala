@@ -112,6 +112,9 @@ private [apps] class ExtractAppActor(val ecology:Ecology, val elements:Seq[TID],
   def backupSpace() = {
     QDB(ShardKind.User) { implicit conn =>
       SpacePersistence.SpaceSQL(state.id, """
+          DROP TABLE IF EXISTS {bname}
+          """).executeUpdate()
+      SpacePersistence.SpaceSQL(state.id, """
           CREATE TABLE {bname} LIKE {tname}
           """).executeUpdate
       SpacePersistence.SpaceSQL(state.id, """

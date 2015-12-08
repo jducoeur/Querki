@@ -114,6 +114,8 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
             // Add meta-props, if any...
             val withProps = (in /: p.props.keys) { (ext, propId) => addPropToExtract(propId, ext) }
             // ... the Type...
+//            QLog.spew(s"Extracting prop with pType ${p.pType}:")
+//            QLog.spewThing(p)(state)
             val withType = addTypeToExtract(p.pType, withProps)
             // ... and this Prop itself:
             withType.copy(state = withType.state.copy(spaceProps = withType.state.spaceProps + (id -> p)))
@@ -136,7 +138,10 @@ private [apps] trait ExtracteeComputer { self:EcologyMember =>
             // We specifically note that this is a Model Type, because those do *not* get shadow copies
             // in the new Space:
             val withMT = in.copy(typeModels = in.typeModels + mt.basedOn)
-            addThingToExtract(mt.basedOn, withMT)
+            val withType = withMT.copy(state = withMT.state.copy(types = withMT.state.types + (pt.id -> pt)))
+//            QLog.spew(s"Extracting type:")
+//            QLog.spewThing(pt)(state)
+            addThingToExtract(mt.basedOn, withType)
           }
           case _ => in
         }

@@ -22,7 +22,7 @@ import querki.ecology._
 import querki.globals._
 import querki.identity.User
 import querki.time.DateTime
-import querki.types.ModelTypeDefiner
+import querki.types.{ModelTypeBase, ModelTypeDefiner}
 import querki.types.MOIDs.ModelForTypePropOID
 import querki.util.TryTrans
 import querki.values.SpaceState
@@ -217,7 +217,7 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
                 basedOnVal <- props.get(ModelForTypePropOID);
                 basedOn <- basedOnVal.firstAs(Core.LinkType)
                   )
-                yield new ModelType(thingId, basedOn, props)
+                yield new ModelType(thingId, id, querki.core.MOIDs.UrTypeOID, basedOn, props)
               
               typOpt match {
                 case Some(typ) => updateState(state.copy(types = state.types + (thingId -> typ)))
@@ -307,6 +307,12 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
               // TODO: handle changing the owner or apps of the Space. (Different messages?)
               val newName = newNameOpt.get
               updateState(state.copy(m = modelId, pf = newProps, name = newName, mt = modTime))
+              sender ! ThingFound(thingId, state)
+            }
+            case mt:ModelTypeBase => {
+              // Note that ModelTypeBase has a copy() method tuned for this purpose:
+              val newType = mt.copy(modelId, newProps)
+              updateState(state.copy(types = state.types + (thingId -> newType)))
               sender ! ThingFound(thingId, state)
             }
           }

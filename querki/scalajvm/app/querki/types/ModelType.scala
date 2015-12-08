@@ -85,9 +85,14 @@ trait ModelTypeDefiner { self:EcologyMember =>
   
   private lazy val Core = interface[querki.core.Core]
   
-  class ModelType(tid:OID, val basedOn:OID, typeProps:PropMap) extends querki.core.TypeUtils.SystemType[ModeledPropertyBundle](tid,
-      typeProps) with PTypeBuilder[ModeledPropertyBundle, SimplePropertyBundle] with ModelTypeBase
+  class ModelType(tid:OID, spaceId:OID, modelId:OID, val basedOn:OID, typeProps:PropMap) 
+    extends querki.core.TypeUtils.SystemTypeBase[ModeledPropertyBundle](tid, spaceId, modelId, typeProps) 
+    with PTypeBuilder[ModeledPropertyBundle, SimplePropertyBundle] with ModelTypeBase
   {
+    def this(t:OID, b:OID, tp:PropMap) = this(t, SystemIds.systemOID, querki.core.MOIDs.UrTypeOID, b, tp)
+    
+    def copy(newModelId:OID, newProps:PropMap) = new ModelType(tid, spaceId, newModelId, basedOn, newProps)
+    
     override lazy val props:PropMap = propMap + 
 		  (ModelForTypePropOID -> Core.ExactlyOne(Core.LinkType(basedOn)))
 

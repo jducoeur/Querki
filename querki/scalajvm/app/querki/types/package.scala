@@ -29,6 +29,7 @@ package object types {
    */
   trait ModelTypeBase extends PType[ModeledPropertyBundle] with PTypeBuilder[ModeledPropertyBundle, SimplePropertyBundle]  {
     def basedOn:OID
+    def copy(newModelId:OID, newProps:Thing.PropMap):ModelTypeBase
   }
   
   trait Types extends EcologyInterface {
