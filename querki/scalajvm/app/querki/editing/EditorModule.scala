@@ -325,7 +325,9 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
       Details("""This is broadly similar to [[_edit._self]], but displays in a way that is sometimes more useful.
           |
           |To use _editAsPickList, your set must have a Link Model set. This displays all known instances of that Link Model
-          |as a checklist, and allows you to decide what is in or out simply by checking things in the list.""".stripMargin),
+          |as a checklist, and allows you to decide what is in or out simply by checking things in the list.
+          |
+          |This function will likely be replaced with a variant of _edit, so don't get too attached to it.""".stripMargin),
       AppliesToKindProp(Kind.Property)
     )) 
   {
