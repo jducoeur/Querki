@@ -253,8 +253,8 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
               |)]][[_Function Signature -> _Defining Context -> _if(_isNonEmpty,
               |      ""[[_Function Context Types -> Name -> _join("" *or* "")]]."")
               |  ]][[Name]][[
-              |  _Function Signature -> ""([[_concat(_Required Parameters, _Optional Parameters) -> Name -> _join("", "")]])""
-              |                 ]][[
+              |  _Function Signature -> _concat(_Required Parameters, _Optional Parameters) -> 
+              |        _if(_isNonEmpty, *""([[Name -> _join("", "")]])"")]][[
               |  _Function Signature -> _Function Return Type -> _Function Context Types -> _first -> 
               |      "" -> [[Name]]""]]""""".stripMargin)))
           

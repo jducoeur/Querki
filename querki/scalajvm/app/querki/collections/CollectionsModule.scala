@@ -638,41 +638,45 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
       toProps(
         setName("_foreach"),
         Summary("Applies the parameter to each element in the received collection, and produces a collection of the results"),
-        Details("""    COLL -> _foreach(param) -> RESULT 
-        		|Otherwise known as "map" in many programming languages, this lets you take an expression or function
+        Signature(
+          expected = Some(Seq.empty, "A List or Set of any sort"),
+          reqs = Seq(("exp", AnyType, "An expression to run on each element of the collection")),
+          opts = Seq.empty,
+          returns = (AnyType, "The results of running *exp* on each element")
+        ), 
+        Details("""Otherwise known as "map" in many programming languages, this lets you take an expression or function
                 |that operates on a single element, and apply it to each element in the received collection.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       for {
         elemContext <- inv.contextElements
-        elemResult <- inv.processParam(0, elemContext)
+        elemResult <- inv.process("exp", elemContext)
       }
         yield elemResult
     }
   }
   
   lazy val containsMethod = new InternalMethod(ContainsMethodOID,
-      toProps(
-        setName("_contains"),
-        Summary("Produces true if the received List contains the specified value"),
-        Details("""    LIST -> _contains(VALUE) -> TRUE or FALSE
-            |This checks each value in the received LIST; if any of them are _equal to the given VALUE,
-            |this produces True.""".stripMargin)))
+    toProps(
+      setName("_contains"),
+      Summary("Produces true if the received List contains the specified value"),
+      Signature(
+        expected = Some(Seq.empty, "A List (or Set) of any sort"),
+        reqs = Seq(("v", AnyType, "A single value that might be in the List. This should be Exactly One; if not, the first element will be used.")),
+        opts = Seq.empty,
+        returns = (YesNoType, "True if *v* is found in the List; False otherwise")
+      )))
   {
     override def qlApply(inv:Invocation):QFut = {
-	  val results:QFut = for {
-	    compareTo <- inv.processParam(0)
-	    elem <- inv.contextElements
-	    elemV = elem.value
-	  }
-	    yield boolean2YesNoQValue(Logic.compareValues(elemV, compareTo)( (pt, elem1, elem2) => pt.matches(elem1, elem2) ))
-	    
-    results.map { r =>
-  	  if (r.rawList(YesNoType).contains(true)) 
-  	    boolean2YesNoQValue(true)
-  	  else 
-  	    boolean2YesNoQValue(false)
+      for {
+        compareTo <- inv.process("v")
+        elemOpt = compareTo.firstOpt
+        result = elemOpt match {
+          case Some(elem) => inv.context.value.contains(elem)
+          case _ => false
+        }
       }
+        yield boolean2YesNoQValue(result)
     }
   }
 
@@ -680,12 +684,19 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
     toProps(
       setName("_concat"),
       Summary("Concatenates the Lists given as parameters"),
-      Details("""    CONTEXT -> _concat(LIST1, LIST2, LIST3...) -> LIST
-          |Occasionally, you want to take several separate lists, and treat them as a single list. This allows
+      Signature(
+        expected = None,
+        reqs = Seq(("lists", AnyType, "One or more lists")),
+        opts = Seq.empty,
+        returns = (AnyType, "All of the given *lists*, concatenated together")
+      ), 
+      Details("""Occasionally, you want to take several separate lists, and treat them as a single list. This allows
           |you to do something like
           |```
           |\[[My Thing -> _concat(Primary Sources, Secondary Sources) -> _bulleted\]]
-          |```""".stripMargin)))
+          |```
+          |Note that the received context will be passed to each of the expressions in *lists*, as usual, but
+          |otherwise isn't relevant. You can write expressions that completely ignore the received context.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
   	  for {
@@ -703,8 +714,13 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
     toProps(
       setName("_random"),
       Summary("Select an item at random from a list"),
-      Details("""    LIST -> _random -> RANDOM ITEM
-          |Most of the time, you want your Querki pages to be nice and predictable. But occasionally,
+      Signature(
+        expected = Some(Seq.empty, "A List"),
+        reqs = Seq.empty,
+        opts = Seq.empty,
+        returns = (AnyType, "A random element from the List")
+      ), 
+      Details("""Most of the time, you want your Querki pages to be nice and predictable. But occasionally,
           |you might want some randomness. For example, if you have a Cookbook Space, you might want a
           |page that gives you a recipe at random, to give you ideas for dinner. The _random function
           |does that, allowing you to do something like:

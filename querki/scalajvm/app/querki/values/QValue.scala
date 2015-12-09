@@ -157,6 +157,10 @@ trait QValue {
     elemT.doMatches(vt, toCheck)
   }
   
+  def contains(toCheck:ElemValue):Boolean = cv.exists { elem => 
+    pType.matches(elem, toCheck) 
+  }
+  
   def exists[VT](elemT:PType[VT], check:VT => Boolean):Boolean = cv.exists { elem =>
     val vt = elemT.get(elem)
     check(vt)

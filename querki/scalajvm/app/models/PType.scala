@@ -180,7 +180,8 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropMap) extends Thing(i, s, m,
    * The PType-math version of ==; this is here so that specific PTypes can override it.
    */
   def matches(left:ElemValue, right:ElemValue):Boolean = {
-    doMatches(get(left), get(right))
+    val (realLeft, realRight) = PType.matchTypes(left, right)
+    doMatches(get(realLeft), get(realRight))
   }
   def doMatches(left:VT, right:VT):Boolean = {
     left == right
@@ -214,6 +215,24 @@ abstract class PType[VT](i:OID, s:OID, m:OID, pf:PropMap) extends Thing(i, s, m,
    */
   final def computeMemSize(elem:ElemValue):Int = doComputeMemSize(get(elem))
   def doComputeMemSize(v:VT):Int  
+}
+
+object PType {
+  
+  /**
+   * Given two values of potentially different but compatible PTypes, this coerces the values to be matchable.
+   */
+  def matchTypes(left:ElemValue, right:ElemValue):(ElemValue, ElemValue) = {
+    if (left.pType.realType == right.pType.realType)
+      (left, right)
+    else if (left.pType.canCoerceTo(right.pType))
+      (left.pType.coerceTo(right.pType, left), right)
+    else if (right.pType.canCoerceTo(left.pType))
+      (left, right.pType.coerceTo(left.pType, right))
+    else
+      throw new querki.util.PublicException("Logic.equals.typeMismatch", left.pType.displayName, right.pType.displayName) 
+  }
+  
 }
 
 /**
