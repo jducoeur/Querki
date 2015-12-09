@@ -216,6 +216,75 @@ class CollectionsTests extends QuerkiTests {
     }
   }
   
+  // === _nextInList and _prevInList ===
+  "_nextInList and _prevInList" should {
+    class TSpace extends CommonSpace {
+      val fruit = new SimpleTestThing("Fruit")
+      val apple = new TestThing("Apple", fruit)
+      val pear = new TestThing("Pear", fruit)
+      val banana = new TestThing("Banana", fruit)
+      val blackberry = new TestThing("Blackberry", fruit)
+      val kiwi = new TestThing("Kiwi", fruit)
+      
+      val numList = new TestProperty(Core.IntType, QList, "Num List")
+      val withNums = new SimpleTestThing("With Nums", numList(2, 4, 8, 16, 32, 64))
+    }
+    
+    "work in the middle of the list" in {
+      implicit val s = new TSpace
+      
+      pql("""[[Blackberry -> _prevInList(Fruit._instances -> _sort)]]""") should
+        equal(linkText(s.banana))
+      pql("""[[Blackberry -> _nextInList(Fruit._instances -> _sort)]]""") should
+        equal(linkText(s.kiwi))
+    }
+    
+    "work at the beginning of the list" in {
+      implicit val s = new TSpace
+      
+      pql("""[[Apple -> _prevInList(Fruit._instances -> _sort)]]""") should
+        equal("")
+      pql("""[[Apple -> _nextInList(Fruit._instances -> _sort)]]""") should
+        equal(linkText(s.banana))
+    }
+    
+    "work at the end of the list" in {
+      implicit val s = new TSpace
+      
+      pql("""[[Pear -> _prevInList(Fruit._instances -> _sort)]]""") should
+        equal(linkText(s.kiwi))
+      pql("""[[Pear -> _nextInList(Fruit._instances -> _sort)]]""") should
+        equal("")
+    }
+    
+    "work with an empty list" in {
+      implicit val s = new TSpace
+      
+      pql("""[[Pear -> _prevInList(Fruit._instances -> _drop(10))]]""") should
+        equal("")
+      pql("""[[Pear -> _nextInList(Fruit._instances -> _drop(10))]]""") should
+        equal("")
+    }
+    
+    "work with numbers" in {
+      implicit val s = new TSpace
+      
+      pql("""[[8 -> _prevInList(With Nums -> Num List)]]""") should
+        equal("4")
+      pql("""[[8 -> _nextInList(With Nums -> Num List)]]""") should
+        equal("16")
+    }
+    
+    "work if the element isn't in the list" in {
+      implicit val s = new TSpace
+      
+      pql("""[[7 -> _prevInList(With Nums -> Num List)]]""") should
+        equal("")
+      pql("""[[7 -> _nextInList(With Nums -> Num List)]]""") should
+        equal("")
+    }
+  }
+  
   // === _reverse ===
   "_reverse" should {
     "work correctly with an ordinary list" in {

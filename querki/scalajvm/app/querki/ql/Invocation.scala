@@ -510,10 +510,6 @@ private[ql] case class InvocationImpl(invokedOn:Thing, method:Thing,
     }
   }
   
-  def firstParamOrContextValue:InvocationValue[QValue] = {
-    processParamNofM(0, 1)
-  }
-  
   def processParamNofM(paramNum:Int, expectedParams:Int, processContext:QLContext = context):InvocationValue[QValue] = {
     if (numParams < (expectedParams - 1))
       InvocationValueImpl(new PublicException("Func.insufficientParams", displayName, (expectedParams - 1)))

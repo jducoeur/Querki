@@ -266,13 +266,6 @@ package object ql {
     def processParamFirstOr[VT](paramNum:Int, pt:PType[VT], default:VT, processContext:QLContext = context):InvocationValue[VT]
     
     /**
-     * This looks rather specialized, but isn't actually: it represents the non-terribly-unusual situation where
-     * a function operates on a single value, and should either use the parameter if there is one, or the received
-     * context if not.
-     */
-    def firstParamOrContextValue:InvocationValue[QValue]
-    
-    /**
      * The general case for Functions that may take their first value as either an explicit parameter or
      * as the context.
      * 

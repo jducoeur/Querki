@@ -172,7 +172,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
           expected = Some(Seq.empty, "A Thing, or a List"),
           reqs = Seq.empty,
           opts = Seq(
-            ("exp", IntType, Core.QNone, "An expression to apply to the received value")
+            ("exp", AnyType, Core.QNone, "An expression to apply to the received value")
           ),
           returns = (YesNoType, "Yes if the list has anything in it; No if it is empty"),
           defining = Some(false, Seq(LinkType), "The Property to check whether its value is empty")
@@ -202,7 +202,11 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	      isEmpty(inv).map(v => boolean2YesNoQValue(!v))
 	    else 
 	      for {
-	        v <- inv.firstParamOrContextValue
+          raw <- inv.rawParam("exp")
+	        v <- raw match {
+            case Some(_) => inv.process("exp")
+            case _ => inv.contextValue
+          }
 	      }
 	        yield boolean2YesNoQValue(!v.isEmpty)
 	  }
@@ -212,26 +216,45 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    toProps(
 	      setName("_isEmpty"),
 	      Summary("Tests whether the provided value is empty"),
-	      Details("""    THING -> PROP._isEmpty
-	          |or
-	          |    RECEIVED -> _isEmpty
-	          |or
-	          |    RECEIVED -> _isEmpty(PARAM)
-	          |The first form produces true iff PROP is not defined on THING, or the value is empty.
-	          |
-	          |The second form produces true iff RECEIVED is empty.
-	          |
-	          |The third form runs the PARAM on the RECEIVED value, and produces true iff the result is empty.
-	          |
-	          |This is usually used on a List, Set or Optional, but you *can* use it on an ExactlyOne value. (In which
-	          |case it will always produce False.)""".stripMargin)))
+        Signature(
+          expected = Some(Seq.empty, "A Thing, or a List"),
+          reqs = Seq.empty,
+          opts = Seq(
+            ("exp", AnyType, Core.QNone, "An expression to apply to the received value")
+          ),
+          returns = (YesNoType, "No if the list has anything in it; Yes if it is empty"),
+          defining = Some(false, Seq(LinkType), "The Property to check whether its value is empty")
+        ),
+        Details("""There are several different versions of _isEmpty, depending on what you want to test:
+            |```
+            |Thing -> Property._isEmpty
+            |```
+            |Given a *Thing*, this checks whether it has *Property* and its value is empty.
+            |```
+            |List -> _isEmpty
+            |```
+            |Given a received List of any sort, this checks whether that List is empty.
+            |```
+            |Anything -> _isEmpty(exp)
+            |```
+            |This is the most general form -- it applies *exp* to the received value, and checks whether
+            |the result is empty. For example, if you have a Bookcase, and want to check whether it is
+            |empty of Books, you might say:
+            |```
+            |My Bookcase -> _isEmpty(Books)
+            |```
+            |""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QFut = {
 	    if (inv.definingContext.isDefined)
 	      isEmpty(inv).map(v => boolean2YesNoQValue(v))
 	    else
 	      for {
-	        v <- inv.firstParamOrContextValue
+          raw <- inv.rawParam("exp")
+          v <- raw match {
+            case Some(_) => inv.process("exp")
+            case _ => inv.contextValue
+          }
 	      }
   	        yield boolean2YesNoQValue(v.isEmpty)
 	  }
@@ -241,13 +264,18 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    toProps(
 	      setName("_filter"),
 	      Summary("Filter out non-matching elements of a collection"),
-	      Details("""    RECEIVED -> _filter(FILTER)
-	          |This function is how you take a List of things, and whittle them down to just the ones you want.
+        Signature(
+          expected = Some(Seq.empty, "A List of any sort"),
+          reqs = Seq(("exp", YesNoType, "An expression to apply to the received value, which should produce True or False")),
+          opts = Seq.empty,
+          returns = (AnyType, "The elements of the List for which *exp* produced True")
+        ),
+	      Details("""This function is how you take a List of things, and whittle them down to just the ones you want.
 	          |
-	          |The FILTER should take a Thing, and produce a YesNo that says whether to include this Thing.
-	          |That gets applied to each element of RECEIVED; if FILTER returns Yes, then it is included, otherwise not.
+	          |*exp* should take one element from the received List, and produce a YesNo that says whether to include this Thing.
+	          |That gets applied to each element of the List; if *exp* returns Yes, then it is included, otherwise not.
             |
-            |IMPORTANT: if the FILTER's result is empty for one of the Things, it is considered to be No -- the Thing
+            |IMPORTANT: if *exp*'s result is empty for one of the elements, it is considered to be No -- the element
             |will be left out of the results.
 	    	    |
 	          |This is one of the most commonly-useful functions in Querki. It is how you usually say, "I only want *some*
@@ -257,7 +285,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
       for {
         dummy <- inv.preferCollection(QList)
         elemContext <- inv.contextElements
-        passes <- inv.processParamFirstOr(0, YesNoType, false, elemContext)
+        passes <- inv.processAs("exp", YesNoType, elemContext)
         if (passes)
       }
         yield elemContext.value
@@ -268,34 +296,38 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    toProps(
 	      setName("_sort"),
 	      Summary("Sort the received list"),
-	      Details("""    LIST -> _sort -> SORTED
-	          |or
-	          |    LIST -> _sort(EXP) -> SORTED
-	          |With no parameters (the first form), _sort sorts the elements of the received List alphabetically by their Display Names.
+        Signature(
+          expected = Some(Seq.empty, "A List of any sort"),
+          reqs = Seq.empty,
+          opts = Seq(("exp", AnyType, Core.QNone, "One or more expressions to apply to the received values, saying how to sort them")),
+          returns = (AnyType, "The same List, sorted as requested")
+        ),        
+	      Details("""With no parameters, _sort sorts the elements of the received List "naturally" -- alphabetically by their Display Names
+            |if they are Things, in numeric order if they are Numbers, and so on.
 	          |This is what you want most of the time. However, note that many methods that return Lists are sorted to begin with,
-	          |so you often don't even need to bother. (Sets of Links are always sorted by Display Name.)
+	          |so you often don't even need to bother.
 	          |
-	          |If a parameter is given (the second form), it is applied to each element in LIST, and the results are used to sort the
+	          |If parameters are given, they are applied to each element in LIST, and the results are used to sort the
 	          |elements. The sort order is whatever is natural for the returned elements -- usually alphabetical, but might be, for example,
 	          |numeric if the results are numeric. It is essential that EXP return the same type for all elements, and it should return
 	          |ExactlyOne value. (If it returns a List, only the first will be used. The behaviour is undefined if it returns a Set, or None.)
 	          |
 	          |If you need to sort on multiple fields, list them as additional parameters. For example, if you have
-	          |
-	          |    LIST -> _sort(A, B, C) -> SORTED
-	          |
+	          |```
+	          |LIST -> _sort(A, B, C) -> SORTED
+	          |```
 	          |This will try to sort the list on A. When it finds multiple Things with the same value for A, it will sort them on B instead, then
 	          |C, and so on.
 	          |
 	          |_sort is focused on Links, and as mentioned above, will default to sorting those by Display Name. You can also sort lists of Numbers,
 	          |and many Types just work correctly, but not all. If you need to sort something, and can't make it work, please speak up.
 	          |
-	          |Most of the time, you will want EXP to simply be the name of a Property. For example, this:
-	          |
-	          |    My Stuff._instance -> _sort(Title)
-	          |
+	          |Most of the time, you will want *exp* to simply be the name of a Property. For example, this:
+	          |```
+	          |My Stuff._instance -> _sort(Title)
+	          |```
 	          |Produces all of the Instances of the "My Stuff" Model, sorted based on the "Title" Property. But it's possible to get much fancier if you need to:
-	          |EXP can be any QL Expression that receives a Link and produces a consistent Type.
+	          |*exp* can be any QL Expression that receives a Link and produces a consistent Type.
 	          |
 	          |If you need to reverse the order of the sort, use the [[_desc._self]] method inside of it.
 	          |
@@ -452,24 +484,28 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    toProps(
 	      setName("_desc"),
 	      Summary("Sort this list in descending order"),
-	      Details("""    LIST -> _sort(_desc(EXP)) -> SORTED
-	          |
-	          |_desc returns the given EXP, tweaked so that the values in it have the reversed sort order from
+        Signature(
+          expected = Some(Seq.empty, "A List of any sort"),
+          reqs = Seq(("exp", AnyType, "An expression, that you would use in _sort, which you want to reverse the order for")),
+          opts = Seq.empty,
+          returns = (AnyType, "The sort term, reversed")
+        ), 
+        Details("""_desc returns the given EXP, tweaked so that the values in it have the reversed sort order from
 	          |what they would normally have. It is usually used inside of _sort, to reverse the sort order, which
-	          |is normally in ascending order.""".stripMargin)))
+	          |is normally in ascending order.
+            |
+            |For example, say that your Space was for Groceries, and you wanted to sort them by Price, with the most
+            |expensive on top. That would look something like:
+            |```
+            |\[[Grocery Item._instances -> _sort(_desc(Price))\]]
+            |```
+            |That is, "Sort the instances of Grocery Item, in descending order of Price". """.stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QFut = {
-	    val context = inv.context
-	    val paramsOpt = inv.paramsOpt
-	    
-	    paramsOpt match {
-	      case Some(params) => {
-	        val innerResFut = context.parser.get.processPhrase(params(0).phrase.ops, context).map(_.value)
-	        innerResFut.map(innerRes =>
-            innerRes.cType.makePropValue(innerRes.cv, new DescendingType(innerRes.pType)))
-	      }
-	      case None => QL.WarningFut("_desc is meaningless without a parameter")
-	    }
+      for {
+        v <- inv.process("exp")
+      }
+        yield v.cType.makePropValue(v.cv, new DescendingType(v.pType))
 	  }
 	}
 
@@ -477,8 +513,13 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    toProps(
 	      setName("_count"),
 	      Summary("Produces the number of elements in the received Collection"),
-	      Details("""    LIST -> _count -> NUMBER
-	          |This is pretty much as simple as it sounds. It is most often used in the header of a _section, like this:
+        Signature(
+          expected = Some(Seq.empty, "A List of any sort"),
+          reqs = Seq.empty,
+          opts = Seq.empty,
+          returns = (IntType, "How many elements are in that List")
+        ),        
+	      Details("""This is pretty much as simple as it sounds. It is most often used in the header of a _section, like this:
 	          |    \[[My List -> _section(\""Items: (\[[_count\]])\"", _commas)\]]""".stripMargin)))
 	{
 	  override def qlApply(inv:Invocation):QFut = {
@@ -490,15 +531,19 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    toProps(
 	      setName("_reverse"),
 	      Summary("Produces the same Collection it receives, as a List, in reverse order"),
-	      Details("""    LIST -> _reverse -> REVERSED LIST
-	          |
-	          |This does exactly what it sounds like: it produces the same list, in reversed order.
+        Signature(
+          expected = Some(Seq.empty, "A List of any sort"),
+          reqs = Seq.empty,
+          opts = Seq.empty,
+          returns = (AnyType, "The same List, in reverse order")
+        ),        
+	      Details("""This does exactly what it sounds like: it produces the same list, in reversed order.
 	          |
 	          |_reverse can technically be used on any Collection, but is only useful for Lists. However,
 	          |it can be useful after sorting a Set:
-	          |
-	          |    SET -> _sort -> _reverse
-	          |
+	          |```
+	          |SET -> _sort -> _reverse
+	          |```
 	          |You can't _reverse a Set itself (Sets have their own intrinsic order), but _sort always
 	          |produces a List.""".stripMargin)))
 	{
@@ -510,65 +555,81 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
   lazy val prevInListMethod = new InternalMethod(PrevInListOID,
       toProps(
         setName("_prevInList"),
+        SkillLevel(SkillLevelAdvanced),
         Summary("Fetch the previous value to this one from the given List"),
-        Details("""    THING -> _prevInList(LIST) -> PREVIOUS THING 
-        		|Given a THING, and a LIST that contains that THING, this returns the *previous* THING to that
-        		|in the LIST. It returns None iff the THING is not in the LIST, or if it is the beginning of the LIST.""".stripMargin)))
+        Signature(
+          expected = Some(Seq.empty, "Something that you expect to find in the List"),
+          reqs = Seq(("list", AnyType, "An expression that produces a List")),
+          opts = Seq.empty,
+          returns = (AnyType, "The previous element in *list*. None if the received value was at the beginning, or isn't contained in the *list*")
+        ),        
+        Details("""Given a received value, and a *list* that contains that value, this returns the *previous* element to that
+        		|in the *list*.
+            |
+            |For example, say that your Space has a collection of Fruit, including Apple, Banana, Blackberry, Kiwi and Pear, and you
+            |want to be able to navigate between them. In the Default View for Fruit, you could create a button that goes to the
+            |previous one like this:
+            |```
+            |\[[_prevInList(Fruit._instances -> _sort) -> _linkButton(\""Previous Fruit\"")\]]
+            |```""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
-      val context = inv.context
-      val paramsOpt = inv.paramsOpt
-      
-      paramsOpt match {
-        case Some(params) if (params.length > 0) => {
-          val thing = context.value.first
-          context.parser.get.processPhrase(params(0).phrase.ops, context).map(_.value).map { list =>
-            val index = list.indexOf(thing)
-            index match {
-              case Some(i) => {
-                if (i == 0)
-                  EmptyValue(thing.pType)
-                else
-                  ExactlyOne(list.elemAt(i - 1))
-              }
-              case None => EmptyValue(thing.pType)
-            }
+      for {
+        v <- inv.process("list")
+      }
+      yield {
+        val elem = inv.context.value.first
+        val index = v.indexOf(elem)
+        index match {
+          case Some(i) => {
+            if (i == 0)
+              EmptyValue(elem.pType)
+            else
+              ExactlyOne(v.elemAt(i - 1))
           }
+          case None => EmptyValue(elem.pType)
         }
-        case _ => QL.WarningFut("_prevInList requires a List parameter")
       }
     }
   }
-
+  
   lazy val nextInListMethod = new InternalMethod(NextInListOID,
       toProps(
         setName("_nextInList"),
+        SkillLevel(SkillLevelAdvanced),
         Summary("Fetch the next value to this one from the given List"),
-        Details("""    THING -> _nextInList(LIST) -> NEXT THING 
-        		|Given a THING, and a LIST that contains that THING, this returns the *next* THING to that
-        		|in the LIST. It returns None iff the THING is not in the LIST, or if it is the end of the LIST.""".stripMargin)))
+        Signature(
+          expected = Some(Seq.empty, "Something that you expect to find in the List"),
+          reqs = Seq(("list", AnyType, "An expression that produces a List")),
+          opts = Seq.empty,
+          returns = (AnyType, "The next element in *list*. None if the received value was at the end, or isn't contained in the *list*")
+        ),        
+        Details("""Given a received value, and a *list* that contains that value, this returns the *next* element to that
+            |in the *list*.
+            |
+            |For example, say that your Space has a collection of Fruit, including Apple, Banana, Blackberry, Kiwi and Pear, and you
+            |want to be able to navigate between them. In the Default View for Fruit, you could create a button that goes to the
+            |next one like this:
+            |```
+            |\[[_nextInList(Fruit._instances -> _sort) -> _linkButton(\""Next Fruit\"")\]]
+            |```""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
-      val context = inv.context
-      val paramsOpt = inv.paramsOpt
-      
-      paramsOpt match {
-        case Some(params) if (params.length > 0) => {
-          val thing = context.value.first
-          context.parser.get.processPhrase(params(0).phrase.ops, context).map(_.value).map { list =>
-            val index = list.indexOf(thing)
-            index match {
-              case Some(i) => {
-                if (i == (list.size - 1))
-                  EmptyValue(thing.pType)
-                else
-                  ExactlyOne(list.elemAt(i + 1))
-              }
-              case None => EmptyValue(thing.pType)
-            }
+      for {
+        v <- inv.process("list")
+      }
+      yield {
+        val elem = inv.context.value.first
+        val index = v.indexOf(elem)
+        index match {
+          case Some(i) => {
+            if (i == (v.size - 1))
+              EmptyValue(elem.pType)
+            else
+              ExactlyOne(v.elemAt(i + 1))
           }
+          case None => EmptyValue(elem.pType)
         }
-        case _ => QL.WarningFut("_nextInList requires a List parameter")
       }
     }
   }
