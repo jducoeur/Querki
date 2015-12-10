@@ -11,6 +11,8 @@ import querki.data._
  * @author jducoeur
  */
 trait AppsFunctions {
+  import AppsFunctions._
+  
   /**
    * Add the specified App to this Space, as a mix-in.
    * 
@@ -26,4 +28,19 @@ trait AppsFunctions {
    * Returns the path to an operation handle, which should be fed to getProgress() for regular updates.
    */
   def extractApp(elements:Seq[TID], name:String):OperationHandle
+  
+  /**
+   * Fetches the list of Models that are available to Extract from this Space.
+   */
+  def getExtractableModels():Future[Seq[ExtractableModelInfo]]
+}
+
+object AppsFunctions {
+  case class ExtractableModelInfo(
+    oid:TID, 
+    linkName:Option[String], 
+    displayName:String,
+    canExtract:Boolean,
+    extractInstancesByDefault:Boolean
+  ) extends BasicThingInfo
 }

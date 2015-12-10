@@ -18,6 +18,8 @@ import querki.display.rx._
 import querki.globals._
 import querki.pages.{IndexPage, Page, PageContents, ParamMap}
 
+import AppsFunctions._
+
 /**
  * @author jducoeur
  */
@@ -34,8 +36,8 @@ class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
   
   def pageContent = {
     for {
-      allTypeInfo <- Client[ThingFunctions].getAllTypes().call()
-      models = allTypeInfo.models.sortBy(_.displayName)
+      modelsUnsorted <- Client[AppsFunctions].getExtractableModels().call()
+      models = modelsUnsorted.sortBy(_.displayName)
       pages <- Client[ThingFunctions].getChildren(std.basic.simpleThing, false, true).call()
       sortedPages = pages.sortBy(_.displayName)
       guts = 
@@ -70,19 +72,10 @@ class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
   }
 }
 
-class ExtractTree(models:Seq[ThingInfo], pages:Seq[ThingInfo])(implicit val ecology:Ecology) extends Gadget[dom.html.Div] with EcologyMember {
+class ExtractTree(models:Seq[ExtractableModelInfo], pages:Seq[ThingInfo])(implicit val ecology:Ecology) extends Gadget[dom.html.Div] with EcologyMember {
   
   lazy val Client = interface[querki.client.Client]
   lazy val DataAccess = interface[querki.data.DataAccess]
-  
-  // This deals with the special case of System models which, if there are any local instances, we should
-  // extract them by default.
-  def extractJustInstances(tid:TID):Boolean = {
-    if (tid == DataAccess.std.css.stylesheet.oid)
-      true
-    else
-      false
-  }
   
   val space = DataAccess.space.get
   val spaceNode =
@@ -95,30 +88,18 @@ class ExtractTree(models:Seq[ThingInfo], pages:Seq[ThingInfo])(implicit val ecol
       .state(NodeState.Selected)
       :JsTreeNode
   
-  // TODO: put child Models underneath their parents. Models should always be opened, with an
-  // "Instances" node beneath them that fetches their Instances.
+  // TODO: put child Models underneath their parents.
   val modelNodes = models.map { model =>
-    // All *local* models should be selected. We only include non-local ones so they can be
-    // opened and their Instances exported:
-    val selected:Seq[NodeState] =
-      if (model.importedFrom.isDefined) 
-        Seq.empty
-      else 
-        Seq(NodeState.Selected)
-        
-    val opened = selected ++ {
-      if (extractJustInstances(model.oid))
-        Seq(NodeState.Opened)
-      else
-        Seq.empty
-    }
+    val state:Seq[NodeState] =
+      (if (model.canExtract) Seq(NodeState.Selected) else Seq.empty) ++
+      (if (model.extractInstancesByDefault) Seq(NodeState.Opened) else Seq.empty)
         
     JsTreeNode
       .text(s"<b>${model.displayName}</b>")
       .icon(false)
       .children(true)
       .id(model.oid.underlying)
-      .state(opened:_*)
+      .state(state:_*)
       :JsTreeNode
   }
   
@@ -157,8 +138,9 @@ class ExtractTree(models:Seq[ThingInfo], pages:Seq[ThingInfo])(implicit val ecol
             val tid = TID(id)
             Client[ThingFunctions].getChildren(tid, false, true).call() foreach { result =>
               val instanceNodes = result map { instanceInfo =>
+                val model = models.find(_.oid == tid).get
                 val instanceState = 
-                  if (extractJustInstances(tid) && instanceInfo.importedFrom.isEmpty)
+                  if (model.extractInstancesByDefault && instanceInfo.importedFrom.isEmpty)
                     Seq(NodeState.Selected)
                   else
                     Seq.empty

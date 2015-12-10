@@ -15,6 +15,9 @@ import querki.values.RequestContext
 
 package object api {
   trait ClientApi extends EcologyInterface {
+    def thing2TID(t:Thing):TID
+    def OID2TID(oid:OID):TID
+    
     def requestInfo(rc:RequestContext)(implicit state:SpaceState):RequestInfo
     def rootRequestInfo(rc:RequestContext):RequestInfo
     
