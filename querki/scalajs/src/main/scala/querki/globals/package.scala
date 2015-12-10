@@ -46,9 +46,9 @@ package object globals {
   /**
    * The standard implicit ExecutionContext for Futures. Provide one explicitly if you want to do something different.
    * 
-   * This should generally be left as runNow; otherwise, it can foul up utest.
+   * This used to be runNow, but that's now strongly discouraged. This is the only context that sjrd says should be used.
    */
-  implicit val queue = scala.scalajs.concurrent.JSExecutionContext.Implicits.runNow
+  implicit val execContext = scala.concurrent.ExecutionContext.global
   
   // I'm now using Future and Promise enough that we may as well make them generally available
   type Future[T] = scala.concurrent.Future[T]
