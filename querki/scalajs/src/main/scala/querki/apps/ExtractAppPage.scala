@@ -49,7 +49,7 @@ class ExtractAppPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with E
               |its Instances. In general, you want to includes all Things that are part of the structure of this App, but not
               |the ones that are part of the data of this Space.""".stripMargin),
           p("Any local Properties that are used by these Models and Pages will automatically be lifted into the App"),
-          extractTree <= new ExtractTree(models, pages),
+          extractTree <= new ExtractTree(models, sortedPages),
           p("What should the new App be named?"),
           appNameInput <= new RxText(),
           p("When you have selected the elements you would like to bring into the App, press this button."),
@@ -91,7 +91,7 @@ class ExtractTree(models:Seq[ExtractableModelInfo], pages:Seq[ThingInfo])(implic
   // TODO: put child Models underneath their parents.
   val modelNodes = models.map { model =>
     val state:Seq[NodeState] =
-      (if (model.canExtract) Seq(NodeState.Selected) else Seq.empty) ++
+      (if (model.canExtract) Seq(NodeState.Selected) else Seq(NodeState.Disabled)) ++
       (if (model.extractInstancesByDefault) Seq(NodeState.Opened) else Seq.empty)
         
     JsTreeNode
