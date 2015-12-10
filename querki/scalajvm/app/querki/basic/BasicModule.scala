@@ -68,6 +68,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
   lazy val PlainTextType = new PlainTextType(PlainTextOID, 
     toProps(
       setName("Plain Text Type"),
+      setInternal,
       SkillLevel(SkillLevelAdvanced),
       Summary("A short text that does not contain any QL"),
       Details("""Plain Text is a special, restricted sort of Text. It can contains all of the
@@ -75,9 +76,8 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
           |but it can *not* contain any QL expressions. This means that it can not have simply Links to other Things, and can
           |not use Properties at all.
           |
-          |Therefore, in general this Type is *not* recommended for ordinary use. It is useful in certain special cases --
-          |in particular, it is the Type of the Display Name Property, which every Thing uses. But you should usually favor
-          |Text Type or Large Text Type instead of this.""".stripMargin))) 
+          |Therefore, in general this Type is *not* recommended for ordinary use, and is marked as internal. We recommend
+          |using Text or Large Text instead.""".stripMargin))) 
   {
     override def editorSpan(prop:Property[_,_]):Int = 6
   }
