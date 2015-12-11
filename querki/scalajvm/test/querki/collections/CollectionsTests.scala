@@ -461,6 +461,23 @@ Wild!, 19, """.stripReturns)
       
       pql("""[[My Thing -> List of Ints -> _sort -> _commas]]""") should equal ("0, 6, 12, 44, 83, 92873")
     }
+    
+    "sort display names case-insensitively" in {
+      class TSpace extends CommonSpace {
+        val ordinals = new SimpleTestThing("Ordinals")
+        val first = new TestThing("First", ordinals)
+        val second = new TestThing("Second", ordinals)
+        val third = new TestThing("Third", ordinals)
+        // Note the lower-case -- that's what we are testing:
+        val fourth = new TestThing("fourth", ordinals)
+      }
+      implicit val s = new TSpace
+      
+      pql("""[[Ordinals._instances]]""") should
+        equal(listOfLinkText(s.first, s.fourth, s.second, s.third))
+      pql("""[[Ordinals._instances -> _sort]]""") should
+        equal(listOfLinkText(s.first, s.fourth, s.second, s.third))
+    }
   }
     
   // === _take ===

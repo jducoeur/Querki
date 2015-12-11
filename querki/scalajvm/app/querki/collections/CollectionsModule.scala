@@ -405,7 +405,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	      }
 	      
 	      // When all else fails, compare display names:
-	      resultOpt.getOrElse(left.displayName < right.displayName)
+	      resultOpt.getOrElse(left.displayName.toLowerCase < right.displayName.toLowerCase)
 	    }
 	    
 	    /**
