@@ -79,9 +79,15 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
   lazy val groupByFunction = new InternalMethod(GroupByFunctionOID,
       toProps(
         setName("_groupBy"),
+        SkillLevel(SkillLevelAdvanced),
         Summary("Groups the received Things by the specified Property or Expression"),
-        Details("""    LIST OF THING -> _groupBy(PROP or EXPR) -> GROUPS
-            |This Function takes a list of Things, and collects them into groups based on the given Expression.
+        Signature(
+          expected = Some(Seq(LinkType), "A List of Things to be grouped"),
+          reqs = Seq(("groupExp", AnyType, "The expression to apply to each received element, saying what to group it on")),
+          opts = Seq.empty,
+          returns = (AnyType, "A List of _groupModel values.")
+        ),
+        Details("""This Function takes a list of Things, and collects them into groups based on the given Expression.
             |The Expression may in principle be anything, but is most often a Property on the Things.
             |
             |The result of this is a List of _groupModel values. _groupModel has two Properties:
@@ -91,13 +97,14 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
             |For example, say that My Model has a Property named Score, which is a number from 1-5.
             |I can separate out all of the Instances of My Model based on Score, and print each group,
             |by saying:
-            |    \[[My Model._instances -> _groupBy(Score) -> 
-            |        \""**Score:** \[[_groupKey\]]   **Members:** \[[_groupElements -> _sort -> _commas\]]\""\]]
-            |
+            |```
+            |\[[My Model._instances -> _groupBy(Score) -> 
+            |  \""**Score:** \[[_groupKey\]]   **Members:** \[[_groupElements -> _sort -> _commas\]]\""\]]
+            |```
             |This Function is still pretty delicate. If the parameter doesn't evaluate properly on
             |all of the Things, you will likely get an error.
             |
-            |ADVANCED: in principle, the data structure returned by _groupBy is a Map. It is pretty likely
+            |ADVANCED: in principle, the data structure returned by _groupBy is a Map. It is somewhat likely
             |that, somewhere down the line, we will add Map as an official Collection, and rewrite this in
             |terms of that.
             |
@@ -110,7 +117,7 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
         // TODO: this should really not be imposing a Type on the elements -- we should just take the
         // value, whatever it is, and use it as a raw QValue, wrapping it in WrappedValueType later.
         thing <- inv.opt(elemContext.value.firstAs(LinkType))
-        key <- inv.processParam(0, elemContext)
+        key <- inv.process("groupExp", elemContext)
       }
         yield (key, thing)
         
@@ -129,7 +136,20 @@ class GroupingEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodDefs 
         
       for {
         keyThingPairs <- keyThingsWrapped.get.map(_.toSeq)
-        sortedPairs = keyThingPairs.sortWith(sortFunc)
+        // We need to cope with missing keys with going kaboom. So if we find a missing key, we
+        // normalize it to the default value for the type:
+        realTypeOpt = keyThingPairs.find(!_._1.isEmpty).map(_._1.pType)
+        fixedPairs = realTypeOpt match {
+          case Some(pt) => keyThingPairs.map { pair =>
+            val (key, id) = pair
+            if (key.isEmpty)
+              (ExactlyOne(pt.default(inv.state)), id)
+            else
+              (key, id)
+          }
+          case None => keyThingPairs
+        }
+        sortedPairs = fixedPairs.sortWith(sortFunc)
         rawGroupings = (Seq.empty[(QValue, Seq[OID])] /: sortedPairs) { (seqs, pair) =>
           val (key, id) = pair
           if (seqs.isEmpty)

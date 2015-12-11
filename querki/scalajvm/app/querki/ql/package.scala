@@ -222,7 +222,7 @@ package object ql {
     
     /**
      * Given the named parameter, which should be optional and have a default of Core.QNone, returns
-     * an option of the actual value. This is how you typicall deal with an optional parameter where
+     * an option of the actual value. This is how you typically deal with an optional parameter where
      * the "empty" behavior is different from the "full", so you don't just want to set a default.
      */
     def processAsOpt[VT](name:String, pt:PType[VT], processContext:QLContext = context):InvocationValue[Option[VT]]
