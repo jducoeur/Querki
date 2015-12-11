@@ -119,7 +119,7 @@ class AppTests extends QuerkiTests {
   "_instances" should {
     "includes Instances from both Apps and children" in {
       new WorldTest {
-        pql("[[My Root Model._instances -> _sort]]") should
+        pql("[[My Root Model._instances]]") should
           equal(listOfLinkText(highest.highestInstance, main.mainInstance, mid2.mid2Instance))
       }
     }
