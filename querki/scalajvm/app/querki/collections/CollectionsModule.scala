@@ -570,7 +570,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
             |want to be able to navigate between them. In the Default View for Fruit, you could create a button that goes to the
             |previous one like this:
             |```
-            |\[[_prevInList(Fruit._instances -> _sort) -> _linkButton(\""Previous Fruit\"")\]]
+            |\[[_prevInList(Fruit._instances) -> _linkButton(\""Previous Fruit\"")\]]
             |```""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
@@ -611,7 +611,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
             |want to be able to navigate between them. In the Default View for Fruit, you could create a button that goes to the
             |next one like this:
             |```
-            |\[[_nextInList(Fruit._instances -> _sort) -> _linkButton(\""Next Fruit\"")\]]
+            |\[[_nextInList(Fruit._instances) -> _linkButton(\""Next Fruit\"")\]]
             |```""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {

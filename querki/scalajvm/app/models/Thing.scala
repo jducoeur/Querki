@@ -121,10 +121,9 @@ abstract class Thing(
   lazy val unsafeDisplayName:String = {
     val display = for {
       localName <- lookupDisplayName
-      rendered = Wikitext(localName).plaintext
-      if (rendered.length() > 0)
+      if (localName.length() > 0)
     }
-      yield rendered
+      yield localName
       
     display.getOrElse(id.toThingId.toString)
   }

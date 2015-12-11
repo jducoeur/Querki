@@ -233,27 +233,27 @@ class CollectionsTests extends QuerkiTests {
     "work in the middle of the list" in {
       implicit val s = new TSpace
       
-      pql("""[[Blackberry -> _prevInList(Fruit._instances -> _sort)]]""") should
+      pql("""[[Blackberry -> _prevInList(Fruit._instances)]]""") should
         equal(linkText(s.banana))
-      pql("""[[Blackberry -> _nextInList(Fruit._instances -> _sort)]]""") should
+      pql("""[[Blackberry -> _nextInList(Fruit._instances)]]""") should
         equal(linkText(s.kiwi))
     }
     
     "work at the beginning of the list" in {
       implicit val s = new TSpace
       
-      pql("""[[Apple -> _prevInList(Fruit._instances -> _sort)]]""") should
+      pql("""[[Apple -> _prevInList(Fruit._instances)]]""") should
         equal("")
-      pql("""[[Apple -> _nextInList(Fruit._instances -> _sort)]]""") should
+      pql("""[[Apple -> _nextInList(Fruit._instances)]]""") should
         equal(linkText(s.banana))
     }
     
     "work at the end of the list" in {
       implicit val s = new TSpace
       
-      pql("""[[Pear -> _prevInList(Fruit._instances -> _sort)]]""") should
+      pql("""[[Pear -> _prevInList(Fruit._instances)]]""") should
         equal(linkText(s.kiwi))
-      pql("""[[Pear -> _nextInList(Fruit._instances -> _sort)]]""") should
+      pql("""[[Pear -> _nextInList(Fruit._instances)]]""") should
         equal("")
     }
     

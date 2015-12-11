@@ -2,6 +2,9 @@ package querki.values
 
 import language.existentials
 
+import scala.collection.immutable.{SortedSet, TreeSet}
+import scala.math.Ordering
+
 import models.{AnyProp, Collection, Property, PType, Thing, ThingState}
 import models.{Kind}
 import models.{AsName, AsOID, OID, ThingId}
@@ -293,21 +296,6 @@ case class SpaceState(
     spaceProps.values.filter(_.pType == pt).map(_.confirmType(pt).get)
   }
   
-  /**
-   * Returns all of the immediate children of this Thing.
-   */
-  def children(t:Thing):Iterable[Thing] = {
-    val tid = t.id
-    things.values.filter(_.model == tid)
-  }
-
-  /**
-   * Returns all of the immediate children of this Thing from *any* Space.
-   */
-  def allChildren(t:Thing):Iterable[Thing] = {
-    accumulateAll(_.children(t), { (x:Iterable[Thing], y:Iterable[Thing]) => x.toSet ++ y.toSet })
-  }
-  
   def getApp(appId:OID):Option[SpaceState] = {
     walkTree { state =>
       if (appId == state.id)
@@ -340,6 +328,69 @@ case class SpaceState(
    */
   private lazy val dynCache = scala.collection.concurrent.TrieMap.empty[StateCacheKey, Any]
   def fetchOrCreateCache[T](key:StateCacheKey, creator: => T):T = dynCache.getOrElseUpdate(key, creator).asInstanceOf[T]
+  
+  /* ////////////////////////////////////////////////////////////////////////
+   * 
+   * Inheritance Caching
+   * 
+   */
+  
+  /**
+   * This is the pre-ordering that we do on Things at the cache level. This is *not* as good as
+   * we do in _sort -- it doesn't take Computed Name into account -- but it is good enough for
+   * most simple cases, and is about a zillion times faster.
+   * 
+   * It's a tad more complex than you'd expect at first glance, because multiple Things are allowed
+   * to have the same Display Name, and must *not* be equal in compare(). (Because we are using
+   * Set semantics -- equals means duplicate means dropped.) So we double-check the OIDs in that case.
+   */
+  private object SimpleThingOrdering extends Ordering[Thing] {
+    def compare(x:Thing, y:Thing) = {
+      val rawComp = x.unsafeDisplayName.toLowerCase.compare(y.unsafeDisplayName.toLowerCase)
+      if (rawComp == 0)
+        // Names match, so sort by OID. If the OIDs match, then they really are the same.
+        x.id.raw.compare(y.id.raw)
+      else
+        rawComp
+    }
+  }
+  
+  /**
+   * For each Thing that has children, this describes them.
+   */
+  case class ThingChildren(children:TreeSet[Thing])
+  
+  /**
+   * The childrenMap is a lazily-computed map of inheritance within this Space -- for each Thing, what
+   * Things inherit from it. We build and cache this for efficiency of looking up children, and for
+   * pre-sorting them by name.
+   */
+  lazy val childrenMap:Map[OID, ThingChildren] = {
+    (Map.empty[OID, ThingChildren] /: everythingLocal) { (curMap, t) =>
+      val model = t.model
+      val tc = curMap.get(model) match {
+        case Some(thingChildren) => thingChildren.copy(children = thingChildren.children + t)
+        case None => ThingChildren(TreeSet(t)(SimpleThingOrdering))
+      }
+      curMap + (model -> tc)
+    }
+  }
+  
+  /**
+   * Returns all of the immediate children of this Thing.
+   */
+  def children(t:OID):SortedSet[Thing] = {
+    childrenMap.get(t).map(_.children).getOrElse(SortedSet.empty(SimpleThingOrdering))
+  }
+
+  /**
+   * Returns all of the immediate children of this Thing from *any* Space.
+   */
+  def allChildren(t:OID):SortedSet[Thing] = {
+    accumulateAll(_.children(t), { (x:SortedSet[Thing], y:SortedSet[Thing]) => x ++ y })
+  }
+
+  /* ///////////////////////////////////////////////////////////////////// */
   
   def mapsize[T <: Thing](map:Map[OID, T]):Int = {
     map.values.map { v => 8 + v.memsize }.sum
@@ -378,27 +429,21 @@ class SpaceStateOps(implicit state:SpaceState, val ecology:Ecology) extends Ecol
   def allModels:Iterable[ThingState] = {
     state.accumulateAll(_.models, { (x:Iterable[ThingState], y:Iterable[ThingState]) => x.toSet ++ y.toSet })
   }
-    
-  def descendantsTyped[T <: Thing](
-      root:OID, includeModels:Boolean, includeInstances:Boolean, mapFunc:SpaceState => Map[OID, T], includeApps:Boolean):Iterable[Thing] = 
-  {
-    val map =
+  
+  def descendantsRec(root:OID, includeApps:Boolean):SortedSet[Thing] = {
+    val candidates = 
       if (includeApps)
-        state.accumulateMaps(mapFunc)
+        state.allChildren(root)
       else
-        mapFunc(state)
-        
-    map.values.filter(_.isAncestor(root)(state))
+        state.children(root)
+
+    (candidates /: candidates) { (fullSet, child) =>
+      fullSet ++ descendantsRec(child, includeApps)
+    }
   }
   
-  // TODO: this is pretty inefficient -- it is going to fully walk the tree for every object, with
-  // a lot of redundancy and no sensible snipping. We can probably do a lot to optimize it.
-  def descendants(root:OID, includeModels:Boolean, includeInstances:Boolean, includeApps:Boolean = false):Iterable[Thing] = {
-    val candidates = 
-      descendantsTyped(root, includeModels, includeInstances, _.types, includeApps) ++
-      descendantsTyped(root, includeModels, includeInstances, _.spaceProps, includeApps) ++
-      descendantsTyped(root, includeModels, includeInstances, _.things, includeApps) ++
-      descendantsTyped(root, includeModels, includeInstances, _.colls, includeApps)
+  def descendants(root:OID, includeModels:Boolean, includeInstances:Boolean, includeApps:Boolean = false):SortedSet[Thing] = {
+    val candidates = descendantsRec(root, includeApps)
       
     val stripModels =
       if (includeModels)

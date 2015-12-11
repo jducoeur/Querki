@@ -16,7 +16,7 @@ class BasicTests extends QuerkiTests {
       }
       implicit val s = new TSpace
       
-      pql("""[[Test Model._instances -> _sort -> ""[[Name]][[Numbers -> _bulleted]]"" -> _bulleted]]""") should
+      pql("""[[Test Model._instances -> ""[[Name]][[Numbers -> _bulleted]]"" -> _bulleted]]""") should
         equal("""
 			<ul>
 			<li class="_bullet">
@@ -78,7 +78,7 @@ class BasicTests extends QuerkiTests {
     "be used iff there isn't a Display Name" in {
       implicit val s = new TSpace
 
-      pql("""[[Model With Computed._instances -> _sort -> _commas]]""") should
+      pql("""[[Model With Computed._instances -> _commas]]""") should
         equal (s"[Child of Thing to Link](${s.unnamed.id.toThingId.toString}), [My Named Thing](My-Named-Thing)")
     }
   }

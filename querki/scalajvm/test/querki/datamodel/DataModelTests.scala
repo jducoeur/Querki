@@ -118,7 +118,7 @@ class DataModelTests extends QuerkiTests {
       }
       val space = new TSpace
       
-      processQText(thingAsContext[TSpace](space, (_.instancesModel)), """[[_instances -> _sort]]""") should 
+      processQText(thingAsContext[TSpace](space, (_.instancesModel)), """[[_instances]]""") should 
         equal (listOfLinkText(space.instance1, space.instance2, space.instance3))
     }
     
@@ -128,7 +128,7 @@ class DataModelTests extends QuerkiTests {
       }
       val space = new TSpace
       
-      processQText(thingAsContext[TSpace](space, (_.instancesModel)), """[[_instances -> _sort]]""") should 
+      processQText(thingAsContext[TSpace](space, (_.instancesModel)), """[[_instances]]""") should 
         equal ("""""")
     }
     
@@ -142,7 +142,7 @@ class DataModelTests extends QuerkiTests {
       }
       val space = new TSpace
       
-      processQText(thingAsContext[TSpace](space, (_.instancesModel)), """[[_instances -> _sort]]""") should 
+      processQText(thingAsContext[TSpace](space, (_.instancesModel)), """[[_instances]]""") should 
         equal (listOfLinkText(space.instance1, space.instance2, space.instance3))
     }
     
@@ -164,7 +164,7 @@ class DataModelTests extends QuerkiTests {
       }
       val space = new TSpace
       
-      processQText(thingAsContext[TSpace](space, (_.linker)), """[[My List of Links -> _instances -> _sort]]""") should 
+      processQText(thingAsContext[TSpace](space, (_.linker)), """[[My List of Links -> _instances]]""") should 
         equal (listOfLinkText(space.instance1, space.instance2, space.instance3))
     }
   }

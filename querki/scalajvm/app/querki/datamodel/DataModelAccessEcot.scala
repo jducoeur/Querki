@@ -170,17 +170,23 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |    MODEL -> _instances -> LIST OF INSTANCES
           |That is, it receives a *Model*, and produces the Instances that come from that Model.
           |
+          |If your Instances have Display Names or Link Names, this list will be sorted by those names.
+          |
           |If you have sub-Models under *Model* (that add more Properties, for example), this will include those as well.
           |
           |This will include Instances found in Apps, if there are any. (There usually aren't, but it's sometimes
           |relevant.)""".stripMargin)))
   {
-    override def qlApply(invIn:Invocation):QFut = {
-      val inv = invIn.preferDefiningContext
-      for (
-        thing <- inv.contextAllThings
-      )
-        yield Core.listFrom(inv.state.descendants(thing.id, false, true, true).map(_.id), LinkType)
+    override def qlApply(inv:Invocation):QFut = {
+      // We intentionally don't iterate in the usual way, because we want to combine the values. Note
+      // that descendants() returns SortedSets, which can be combined to preserve the sorting. The below
+      // logic is designed specifically to preserve that sorting until we're done.
+      val context = inv.definingContext.getOrElse(inv.context)
+      val roots = context.value.rawList(LinkType)
+      val allSets = roots.map(root => inv.state.descendants(root, false, true, true))
+      // At this point, we have to lock it down into sequence, since now we will transform it to OIDs:
+      val descendants = allSets.reduce(_ ++ _).toSeq
+      Future.successful(QList.makePropValue(descendants.map(desc => LinkType(desc)), LinkType))
     }
   }
   

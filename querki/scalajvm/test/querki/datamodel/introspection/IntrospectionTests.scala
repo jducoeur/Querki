@@ -127,7 +127,7 @@ class IntrospectionTests extends QuerkiTests {
     "work properly" in {
       implicit val space = new TSpace
       
-      pql("""[[Bottom Model._instances -> _sort -> _foreachProperty(""Name: [[_prop -> Name]]; Value: [[_val]]; On: [[_definedOn -> Name]]"") -> _bulleted]]""")  should
+      pql("""[[Bottom Model._instances -> _foreachProperty(""Name: [[_prop -> Name]]; Value: [[_val]]; On: [[_definedOn -> Name]]"") -> _bulleted]]""")  should
         equal ("""
             |<ul>
 			|<li class="_bullet">
