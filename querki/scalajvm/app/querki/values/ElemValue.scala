@@ -14,16 +14,12 @@ import querki.globals._
  * in the context of their associated PTypes.
  */
 case class ElemValue(elem:Any, pType:PType[_]) {
+  import ElemValue._
   
   lazy val myType = pType.realType
   
-  def matchesType[VT](expectedType:PType[VT]):Boolean = {
-    val realExpected = expectedType.realType
-    realExpected == myType
-  }
-  
   def getBase[VT, RT](expectedType:PType[VT])(succ:VT => RT, fail: => RT):RT = {
-    if (matchesType(expectedType))
+    if (matchesTypeExact(this, expectedType))
       // Here is The One Great Evil Cast, checked as best we can at runtime. Let's see if we can eliminate
       // all others.
       succ(elem.asInstanceOf[VT])
@@ -55,4 +51,18 @@ case class ElemValue(elem:Any, pType:PType[_]) {
   }
   
   override def toString = elem.toString
+}
+
+object ElemValue {
+  def matchesTypeExact(left:PType[_], right:PType[_]):Boolean = {
+    left.realType == right.realType
+  }
+  
+  def matchesTypeExact(elem:ElemValue, pt:PType[_]):Boolean = {
+    matchesTypeExact(elem.pType, pt)
+  }
+  
+  def matchesType(left:PType[_], right:PType[_]):Boolean = {
+    matchesTypeExact(left, right) || (left.canCoerceTo(right))
+  }
 }

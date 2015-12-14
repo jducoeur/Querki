@@ -139,7 +139,7 @@ case class QLContext(value:QValue, requestOpt:Option[RequestContext], parentOpt:
     } else {
       val qvs = map(cb)
       val raw = qvs.flatten(_.cv)
-      if (!raw.isEmpty && (!raw.head.matchesType(pt))) {
+      if (!raw.isEmpty && (!ElemValue.matchesType(raw.head.pType, pt))) {
         raw.head.pType match {
           case errType:IsErrorType => ExactlyOne(raw.head)
           case _ => throw new Exception("Context.collect expected type " + pt + " but got " + raw.head.pType)

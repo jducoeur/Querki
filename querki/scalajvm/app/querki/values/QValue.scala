@@ -70,9 +70,12 @@ trait QValue {
   
   def isEmpty = cType.isEmpty(this)
   def size = cv.size
-  
-  // This essentially duplicates ElemValue.matchesType. Where does this code belong?
-  def matchesType(pt:PType[_]):Boolean = { pType.realType == pt.realType }
+
+  /**
+   * Returns true iff this value is of the given Type *or* can be automatically coerced to it by the various
+   * operations.
+   */
+  def matchesType(pt:PType[_]):Boolean = ElemValue.matchesType(pType, pt)
   
   /**
    * Returns true iff these two QValues are equivalent.
@@ -191,7 +194,7 @@ trait QValue {
    * See Collection.append() for details on what this does.
    */
   def append(elem:ElemValue):(QValue,Option[ElemValue]) = {
-    if (!elem.matchesType(pType))
+    if (!ElemValue.matchesType(elem.pType, pType))
       throw new Exception("QValue.append got the wrong type!")
     
     cType.append(cv, elem)
