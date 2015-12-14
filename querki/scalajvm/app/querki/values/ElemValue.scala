@@ -2,6 +2,8 @@ package querki.values
 
 import models.PType
 
+import querki.globals._
+
 /**
  * The value of a primitive Type. These are always considered "elements", since they
  * are always wrapped inside Collections.
@@ -20,29 +22,36 @@ case class ElemValue(elem:Any, pType:PType[_]) {
     realExpected == myType
   }
   
-  def get[VT](expectedType:PType[VT]):VT = {    
+  def getBase[VT, RT](expectedType:PType[VT])(succ:VT => RT, fail: => RT):RT = {
     if (matchesType(expectedType))
       // Here is The One Great Evil Cast, checked as best we can at runtime. Let's see if we can eliminate
       // all others.
-      elem.asInstanceOf[VT]
-    else {
-      try {
-        throw new Exception("Trying to cast ElemValue " + elem + ", of type " + myType + " to " + expectedType.realType)
-      } catch {
-        case e:Exception => play.api.Logger.error("", e); throw e
-      }
-    }
+      succ(elem.asInstanceOf[VT])
+    else if (myType.canCoerceTo(expectedType.realType)) {
+      // We're not the correct type, but we can get there:
+      myType.coerceTo(expectedType.realType, this).getBase(expectedType)(succ, fail)
+    } else {
+      fail
+    }    
+  }
+  
+  def get[VT](expectedType:PType[VT]):VT = {
+    getBase(expectedType)(
+      { v => v },
+      {
+        try {
+          throw new Exception("Trying to cast ElemValue " + elem + ", of type " + myType + " to " + expectedType.realType)
+        } catch {
+          case e:Exception => play.api.Logger.error("", e); throw e
+        }
+     })
   }
   
   def getOpt[VT](expectedType:PType[VT]):Option[VT] = {
-    val realExpected = expectedType.realType
-    if (realExpected == myType)
-      // Here is The One Great Evil Cast, checked as best we can at runtime. Let's see if we can eliminate
-      // all others.
-      Some(elem.asInstanceOf[VT])
-    else {
-      None
-    }
+    getBase(expectedType)(
+      { v => Some(v) },
+      { None }
+    )
   }
   
   override def toString = elem.toString

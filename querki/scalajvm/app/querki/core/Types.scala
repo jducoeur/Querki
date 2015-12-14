@@ -155,7 +155,9 @@ trait NameTypeBasis { self:CoreEcot with NameUtils with WithQL =>
     override def doMatches(left:String, right:String):Boolean = equalNames(left, right)
     
     override def canCoerceTo(other:PType[_]):Boolean = {
-      other.isInstanceOf[IsTextType] || other == QL.ParsedTextType
+      // Do *not* allow conversion to error; while it's technically a text type, semantically it's
+      // quite different, and shouldn't be considered comparable.
+      other != QL.ErrorTextType && (other.isInstanceOf[IsTextType] || other == QL.ParsedTextType)
     }
     override def coerceTo(other:PType[_], elem:ElemValue):ElemValue = {
       if (other == QL.ParsedTextType)
