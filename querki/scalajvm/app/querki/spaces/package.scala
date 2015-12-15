@@ -8,10 +8,11 @@ import anorm.SqlQuery
 
 import org.querki.requester._
 
-import models.{OID, PType, Thing}
+import models.{Kind, OID, PType, Thing}
 import models.Thing.PropMap
 
 import querki.ecology._
+import querki.identity.User
 import querki.spaces.messages.{SpaceMessage, SpaceMgrMsg}
 import querki.time.DateTime
 import querki.util.{Aggregator, Sequencer}
@@ -80,7 +81,28 @@ package object spaces {
     def createThingInSql(thingId:OID, spaceId:OID, modelId:OID, kind:Int, props:PropMap, modTime:DateTime, serialContext:SpaceState)(implicit conn:java.sql.Connection):Int
   }
     
-  case class ThingChangeRequest(state:SpaceState, modelIdOpt:Option[OID], thingOpt:Option[Thing], newProps:PropMap, changedProps:Seq[OID])
+  // All of the information that is passed into listeners when a change happens.
+  // This structure is getting a tad crazy-large. I suspect there are abstractions fighting
+  // to break out of it.
+  case class ThingChangeRequest(
+      // Who is requesting this change
+      who:User,
+      // The Requester to use, if we need to loop stuff back:
+      req:Requester,
+      // The current state. Note that this can potentially change before all TCR handlers return!
+      state:SpaceState, 
+      // The router at the head of the troupe, if it is necessary to do anything with other Actors
+      router:ActorRef,
+      // The Model, iff it is being changed
+      modelIdOpt:Option[OID], 
+      // The existing Thing, if this is a change; None, if this is a Create operation
+      thingOpt:Option[Thing], 
+      // The Kind of the Thing
+      kind:Kind.Kind, 
+      // The full Properties that we are proposing to set on this Thing. Listeners may alter this
+      newProps:PropMap, 
+      // The Properties that are being changed by this operation
+      changedProps:Seq[OID])
   
   type TCRReq = RequestM[ThingChangeRequest]
   

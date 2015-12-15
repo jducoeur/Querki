@@ -2,29 +2,96 @@ package querki.links
 
 import scala.concurrent.Future
 
+import org.querki.requester._
+
 import models.{DisplayPropVal, Kind, PropertyBundle, PType, PTypeBuilder, Wikitext}
 
 import querki.core.{LinkCandidateProvider, URLableType}
 import querki.ecology._
+import querki.spaces.{TCRReq, ThingChangeRequest}
+import querki.spaces.messages.{CreateThing, ThingFound}
 import querki.values.{ElemValue, QLContext, SpaceState}
+import querki.util.{Contributor, PublicException, Publisher}
 
 object MOIDs extends EcotIds(27) {
   val ChoiceOrderOID = moid(1)
   val ChoiceTypeOID = moid(2)
+  val ChoiceModelOID = moid(3)
 }
 
 class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.NameUtils with querki.core.LinkUtils {
   import PublicMOIDs._
   import MOIDs._
   
+  val SpaceChangeManager = initRequires[querki.spaces.SpaceChangeManager]
   val Types = initRequires[querki.types.Types]
   
   lazy val Links = this // Needed for LinkUtils
   
   lazy val InternalProp = Core.InternalProp
   
+  override def init = {
+    SpaceChangeManager.thingChanges += ChoiceCreator
+  }
+  
+  override def term = {
+    SpaceChangeManager.thingChanges += ChoiceCreator
+  }
+  
   def LinkValue(target:OID):QValue = ExactlyOne(LinkType(target))
+  
+  /**
+   * This hooks into the Thing-change pipeline, specifically listening for the creation of Choice Properties.
+   * When it sees one happening, it creates the associated Choice Model.
+   */
+  private object ChoiceCreator extends Contributor[TCRReq, TCRReq] {
+    // This is called whenever we get a Create or Modify request; we only care about a few
+    def notify(evtReq:TCRReq, sender:Publisher[TCRReq,TCRReq]):TCRReq = {
+      evtReq.flatMap {
+        // Iff there is no Thing (so this is a Create) *and* it's a Property...
+        case tcr @ ThingChangeRequest(who, req, state, router, modelIdOpt, None, Kind.Property, props, changedProps)
+           // ... *and* its PType is Choice...
+           if (props.get(querki.core.MOIDs.TypePropOID).map { v => v.contains(LinkType, ChoiceTypeOID) }.getOrElse(false))=>
+        {
+          import req.RequestableActorRef
+          
+          // ... then we need to create a matching Model
+          // We expect Properties to have Names. Note that this will throw an exception if we don't have one!
+          val propName = props.get(Core.NameProp).get.firstAs(Core.NameType).get
+          val modelName = s"_$propName Model"
+          val modelCreateReq = 
+            CreateThing(who, state, Kind.Thing, ChoiceModelOID, 
+              toProps(
+                setName(modelName),
+                Core.IsModelProp(true)))
+          (router ? modelCreateReq).map { case ThingFound(modelId, _) =>
+            val newProps = props + (LinkModelProp(modelId))
+            val newChangedProps = changedProps :+ LinkModelProp.id
+            ThingChangeRequest(who, req, state, router, modelIdOpt, None, Kind.Property, newProps, newChangedProps)
+          }
+        }
+        
+        // Otherwise, just pass the same value along:
+        case tcr => RequestM.successful(tcr)  
+      }
+    }
+  }
       
+  /***********************************************
+   * THINGS
+   ***********************************************/
+  
+  lazy val ChoiceBaseModel = new ThingState(ChoiceModelOID, systemOID, querki.basic.MOIDs.SimpleThingOID, 
+    toProps(
+      setName("Multiple Choice Options"),
+      Summary("This is simply the base Model for all Multiple Choice Models"),
+      Core.IsModelProp(true),
+      NoCreateThroughLinkProp(true)))
+  
+  override lazy val things = Seq(
+    ChoiceBaseModel
+  )
+
   /***********************************************
    * TYPES
    ***********************************************/
