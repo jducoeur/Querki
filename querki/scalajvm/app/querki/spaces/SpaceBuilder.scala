@@ -274,41 +274,37 @@ trait SpaceBuilder { anActor:Actor with Requester with EcologyMember =>
     val (propId, qv) = pair
     val realQv = imp.prop(propId) match {
       case Some(prop) => {
-        prop.confirmType(Core.LinkType) match {
-          case Some(linkProp) => {
+        prop.pType match {
+          case pt:querki.core.IsLinkType => {
             // This Property is made of Links, so we need to map all of them to the new values:
             val raw = qv.rawList(Core.LinkType)
             val translatedLinks = raw.map { extId => ElemValue(idMapOr(extId, p.idMap), Core.LinkType) }
             //QLog.spew(s"Translated $raw to $translatedLinks")
             qv.cType.makePropValue(translatedLinks, Core.LinkType)
           }
-          case None => {
-            prop.pType match {
-              case mt:ModelTypeBase => {
-                if (deferredProperties.contains(propId)) {
-                  qv
-                } else {
-                  // Okay -- this Property is based on a Model Type value that has been resolved. 
-                  // We need to change the Type of each Element to the correct Type.
-                  // TODO: this can still fail on nested Model Types, because we're not necessarily
-                  // waiting long enough to resolve the inner Types!
-                  val realType = p.realSpaceOpt.get.typ(idMapOr(mt.id, p.idMap)).asInstanceOf[ModelTypeBase]
-                  val translatedModels = for {
-                    elem <- qv.cv
-                    bundle = mt.get(elem)
-                    transProps = bundle.props.map(translateProp(_, p))
-                    simpleBundle = SimplePropertyBundle(transProps)
-                    modelValue = realType(simpleBundle)
-                  }
-                    yield modelValue
-                  val result = qv.cType.makePropValue(translatedModels, realType)
-                  result
-                }
+          case mt:ModelTypeBase => {
+            if (deferredProperties.contains(propId)) {
+              qv
+            } else {
+              // Okay -- this Property is based on a Model Type value that has been resolved. 
+              // We need to change the Type of each Element to the correct Type.
+              // TODO: this can still fail on nested Model Types, because we're not necessarily
+              // waiting long enough to resolve the inner Types!
+              val realType = p.realSpaceOpt.get.typ(idMapOr(mt.id, p.idMap)).asInstanceOf[ModelTypeBase]
+              val translatedModels = for {
+                elem <- qv.cv
+                bundle = mt.get(elem)
+                transProps = bundle.props.map(translateProp(_, p))
+                simpleBundle = SimplePropertyBundle(transProps)
+                modelValue = realType(simpleBundle)
               }
-              case _ => qv
-            }              
+                yield modelValue
+              val result = qv.cType.makePropValue(translatedModels, realType)
+              result
+            }
           }
-        }
+          case _ => qv
+        }              
       }
       case None => qv  // Property not found! TODO: This is weird and buggy! What should we do with it?
     }

@@ -421,7 +421,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
             linkProp <- inv.definingContextAsProperty
             fieldId = new FieldIds(None, linkProp)
             backLink <- inv.opt(linkProp.pType match {
-              case LinkType => Some(lexicalThing.id.toThingId.toString)
+              case pt:querki.core.IsLinkType => Some(lexicalThing.id.toThingId.toString)
               case NewTagSetType => lexicalThing.linkName
               case _ => None
             })

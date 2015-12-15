@@ -19,6 +19,11 @@ import MOIDs._
  */
 trait IsTextType
 
+/**
+ * Trivial marker trait, that identifies the "Link Types".
+ */
+trait IsLinkType
+
 trait WithQL {
   def QL:querki.ql.QL
 }
@@ -247,7 +252,7 @@ trait IntTypeBasis { self:CoreEcot =>
   }
 }
 
-trait LinkUtils { self:CoreEcot =>
+trait LinkUtils { self:CoreEcot with NameUtils =>
   
   def InternalProp:Property[Boolean,Boolean]
   def Links:querki.links.Links
@@ -380,6 +385,115 @@ trait LinkUtils { self:CoreEcot =>
       yield
         <select class="_linkSelect">{fullContents}</select>
   }  
+  
+    
+  /**
+   * The Type for Links to other Things
+   */
+  abstract class LinkTypeBase(tid:OID, pf:PropMap)(implicit e:Ecology) extends SystemType[OID](tid, pf)(e)
+    with SimplePTypeBuilder[OID] with NameableType with URLableType with IsLinkType
+  {
+    override def editorSpan(prop:Property[_,_]):Int = 6    
+    
+    def doDeserialize(v:String)(implicit state:SpaceState) = OID(v)
+    def doSerialize(v:OID)(implicit state:SpaceState) = v.toString
+    
+    def follow(context:QLContext)(v:OID) = context.state.anything(v)
+    def followLink(context:QLContext):Option[Thing] = {
+      // This only works if the valType is LinkType; otherwise, it will return None
+      context.value.firstAs(this).flatMap(follow(context)(_))
+    }
+    
+    def makeWikiLink(context:QLContext, thing:Thing, display:Wikitext):Wikitext = {
+      Wikitext("[") + display + Wikitext("](" + thing.toThingId + ")")
+    }
+
+    def doWikify(context:QLContext)(v:OID, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
+      val target = follow(context)(v)
+      target match {
+        case Some(t) => {
+          val displayFut = displayOpt match {
+            case Some(display) => Future.successful(display)
+            case None => {
+              t.nameOrComputed(context.request, context.state).map(_.htmlWikitext)
+            }
+          }
+          displayFut.map(makeWikiLink(context, t, _))
+        }
+        case None => Future.successful(Wikitext("Bad Link: Thing " + v.toString + " not found"))
+      }
+    }
+    override def doDebugRender(context:QLContext)(v:OID) = {
+      val target = follow(context)(v)
+      target match {
+        case Some(t) => t.displayName + "(" + t.id.toThingId + ")"
+        case None => "???"
+      }      
+    }
+    
+    def getNameFromId(context:QLContext)(id:OID) = {
+      val tOpt = follow(context)(id)
+      tOpt.map(thing => canonicalize(thing.displayName)).getOrElse(throw new Exception("Trying to get name from unknown OID " + id))      
+    }
+    def getName(context:QLContext)(v:ElemValue) = {
+      val id = get(v)
+      getNameFromId(context)(id)
+    }
+    // Iff the display name and canonicalName don't match, return both of them:
+    override def getNames(context:QLContext)(v:ElemValue) = {
+      val id = get(v)
+      follow(context)(id) match {
+        case Some(thing) => {
+          val disp = canonicalize(thing.displayName)
+          thing.canonicalName.map(canonicalize) match {
+            case Some(canon) if (canon != disp) => Seq(disp, canon)
+            case _ => Seq(disp)
+          }
+        }
+        case None => throw new Exception("Trying to get name from unknown OID " + id)
+      }
+    }
+    
+    def getURL(context:QLContext)(elem:ElemValue):Option[String] = {
+      for (
+        v <- elem.getOpt(this);
+        thing <- follow(context)(v)
+          )
+        yield thing.toThingId.toString()
+    }
+    
+    def getDisplay(context:QLContext)(elem:ElemValue):Option[String] = {
+      for (
+        v <- elem.getOpt(this);
+        thing <- follow(context)(v)
+          )
+        yield thing.displayName
+    }
+    
+    // Links are sorted by their *display names*:
+    override def doComp(context:QLContext)(left:OID, right:OID):Boolean = { 
+      compareNames(getNameFromId(context)(left), getNameFromId(context)(right))
+    } 
+    
+    // TODO: define doFromUser()
+
+    def doDefault(implicit state:SpaceState) = UnknownOID
+    
+    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):Future[NodeSeq] = {
+      renderInputXmlGuts(prop, context, currentValue, v, false)
+    }
+    
+    override def doToUser(v:OID)(implicit state:SpaceState):String = {
+      state.anything(v) match {
+        case Some(thing) => thing.displayName
+        case None => v.toString
+      }
+    }
+    
+    override def doToUrlParam(v:OID, raw:Boolean)(implicit state:SpaceState):String = v.toThingId
+    
+    def doComputeMemSize(v:OID):Int = 8
+  }
 }
 
 trait CoreExtra {
@@ -574,11 +688,8 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
     override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):Future[NodeSeq] =
       Future.successful(renderLargeText(prop, context, currentValue, v, this))
   }
-    
-  /**
-   * The Type for Links to other Things
-   */
-  class LinkType extends SystemType[OID](LinkTypeOID,
+  
+  class LinkType extends LinkTypeBase(LinkTypeOID,
       toProps(
         setName("Link Type"),
         Summary("A pointer to a specific Thing"),
@@ -594,109 +705,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
             |choose a Model at creation time, it will only prompt you with existing Instances of that Model. So if
             |you know what sorts of Things you will be using in this Property, it is worth specifying that Model here.            
             |""".stripMargin)
-        )) with SimplePTypeBuilder[OID] with NameableType with URLableType
-  {
-    override def editorSpan(prop:Property[_,_]):Int = 6    
-    
-    def doDeserialize(v:String)(implicit state:SpaceState) = OID(v)
-    def doSerialize(v:OID)(implicit state:SpaceState) = v.toString
-    
-    def follow(context:QLContext)(v:OID) = context.state.anything(v)
-    def followLink(context:QLContext):Option[Thing] = {
-      // This only works if the valType is LinkType; otherwise, it will return None
-      context.value.firstAs(this).flatMap(follow(context)(_))
-    }
-    
-    def makeWikiLink(context:QLContext, thing:Thing, display:Wikitext):Wikitext = {
-      Wikitext("[") + display + Wikitext("](" + thing.toThingId + ")")
-    }
-
-    def doWikify(context:QLContext)(v:OID, displayOpt:Option[Wikitext] = None, lexicalThing:Option[PropertyBundle] = None) = {
-      val target = follow(context)(v)
-      target match {
-        case Some(t) => {
-          val displayFut = displayOpt match {
-            case Some(display) => Future.successful(display)
-            case None => {
-              t.nameOrComputed(context.request, context.state).map(_.htmlWikitext)
-            }
-          }
-          displayFut.map(makeWikiLink(context, t, _))
-        }
-        case None => Future.successful(Wikitext("Bad Link: Thing " + v.toString + " not found"))
-      }
-    }
-    override def doDebugRender(context:QLContext)(v:OID) = {
-      val target = follow(context)(v)
-      target match {
-        case Some(t) => t.displayName + "(" + t.id.toThingId + ")"
-        case None => "???"
-      }      
-    }
-    
-    def getNameFromId(context:QLContext)(id:OID) = {
-      val tOpt = follow(context)(id)
-      tOpt.map(thing => canonicalize(thing.displayName)).getOrElse(throw new Exception("Trying to get name from unknown OID " + id))      
-    }
-    def getName(context:QLContext)(v:ElemValue) = {
-      val id = get(v)
-      getNameFromId(context)(id)
-    }
-    // Iff the display name and canonicalName don't match, return both of them:
-    override def getNames(context:QLContext)(v:ElemValue) = {
-      val id = get(v)
-      follow(context)(id) match {
-        case Some(thing) => {
-          val disp = canonicalize(thing.displayName)
-          thing.canonicalName.map(canonicalize) match {
-            case Some(canon) if (canon != disp) => Seq(disp, canon)
-            case _ => Seq(disp)
-          }
-        }
-        case None => throw new Exception("Trying to get name from unknown OID " + id)
-      }
-    }
-    
-    def getURL(context:QLContext)(elem:ElemValue):Option[String] = {
-      for (
-        v <- elem.getOpt(this);
-        thing <- follow(context)(v)
-          )
-        yield thing.toThingId.toString()
-    }
-    
-    def getDisplay(context:QLContext)(elem:ElemValue):Option[String] = {
-      for (
-        v <- elem.getOpt(this);
-        thing <- follow(context)(v)
-          )
-        yield thing.displayName
-    }
-    
-    // Links are sorted by their *display names*:
-    override def doComp(context:QLContext)(left:OID, right:OID):Boolean = { 
-      compareNames(getNameFromId(context)(left), getNameFromId(context)(right))
-    } 
-    
-    // TODO: define doFromUser()
-
-    def doDefault(implicit state:SpaceState) = UnknownOID
-    
-    override def renderInputXml(prop:Property[_,_], context:QLContext, currentValue:DisplayPropVal, v:ElemValue):Future[NodeSeq] = {
-      renderInputXmlGuts(prop, context, currentValue, v, false)
-    }
-    
-    override def doToUser(v:OID)(implicit state:SpaceState):String = {
-      state.anything(v) match {
-        case Some(thing) => thing.displayName
-        case None => v.toString
-      }
-    }
-    
-    override def doToUrlParam(v:OID, raw:Boolean)(implicit state:SpaceState):String = v.toThingId
-    
-    def doComputeMemSize(v:OID):Int = 8
-  }
+        ))
   
   /**
    * The Type for integers

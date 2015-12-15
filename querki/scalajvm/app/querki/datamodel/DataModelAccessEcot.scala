@@ -306,7 +306,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
         state.anythingByName(qv.firstAs(Tags.NewTagSetType).get.text).isDefined
       else if (qv.pType == Tags.TagSetType)
         state.anythingByName(qv.firstAs(Tags.TagSetType).get).isDefined
-      else if (qv.pType == LinkType)
+      else if (qv.pType.isInstanceOf[querki.core.IsLinkType])
         state.anything(qv.firstAs(LinkType).get).isDefined
       else
         false

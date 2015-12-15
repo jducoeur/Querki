@@ -2,7 +2,7 @@ package querki.links
 
 import scala.concurrent.Future
 
-import models.{DisplayPropVal, Kind, PropertyBundle, PTypeBuilder, Wikitext}
+import models.{DisplayPropVal, Kind, PropertyBundle, PType, PTypeBuilder, Wikitext}
 
 import querki.core.{LinkCandidateProvider, URLableType}
 import querki.ecology._
@@ -10,13 +10,18 @@ import querki.values.{ElemValue, QLContext, SpaceState}
 
 object MOIDs extends EcotIds(27) {
   val ChoiceOrderOID = moid(1)
+  val ChoiceTypeOID = moid(2)
 }
 
-class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
+class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.NameUtils with querki.core.LinkUtils {
   import PublicMOIDs._
   import MOIDs._
   
   val Types = initRequires[querki.types.Types]
+  
+  lazy val Links = this // Needed for LinkUtils
+  
+  lazy val InternalProp = Core.InternalProp
   
   def LinkValue(target:OID):QValue = ExactlyOne(LinkType(target))
       
@@ -60,8 +65,47 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links {
     def doComputeMemSize(v:QURL):Int = v.url.length
   }
 
+  lazy val ChoiceType = new LinkTypeBase(ChoiceTypeOID,
+    toProps(
+      setName("Multiple Choice"),
+      Summary("A choice between several specific options"),
+      Details("""Sometimes, you want to be able to specify a few pre-defined values to choose between
+        |in a Property. For example, in a comic-book Space, you might have a Condition Property that let
+        |you choose "Excellent", "Good", "Fair" and "Poor". Or a Baseball Team Space might have a Position
+        |Property of "Pitcher", "Catcher", "First Baseman" and so on.
+        |
+        |Use Multiple Choice to define a Property of this sort. After you create it, you will be able to
+        |define the values that you can put into the Property, and choose the order in which to list them.
+        |
+        |Multiple Choice is intended for relatively small lists of options. While there is not a firm limit,
+        |it is generally recommended for lists of ten or fewer choices.
+        |
+        |If the possible options are not clearly defined in advance, we recommend using Tag instead: it is
+        |more flexible, and lets you add more possibilities as you add your data.
+        |
+        |**Advanced:** each Multiple Choice Property defines a Model, and an Instance is created for each
+        |option. By default, the Model and Instances just contain Display Names, but you can add more Properties
+        |to them, and pass them around and process them like any other Thing. This allows you to define
+        |arbitrary metadata for each option, which Querki power users can use to write more powerful
+        |expressions.""".stripMargin)))
+  {
+    override def canCoerceTo(other:PType[_]):Boolean = {
+      // Note that Multiple Choice can be turned into Link, but *not* vice-versa. LinkType is
+      // effectively a base class.
+      other == LinkType
+    }
+    
+    override def coerceTo(other:PType[_], elem:ElemValue):ElemValue = {
+      if (other == LinkType)
+        ElemValue(elem.elem, other)
+      else
+        super.coerceTo(other, elem)
+    }
+  }
+
   override lazy val types = Seq(
-    URLType
+    URLType,
+    ChoiceType
   )
     
   /***********************************************

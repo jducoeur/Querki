@@ -297,7 +297,11 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   def isTaggableProperty(prop:AnyProp)(implicit state:SpaceState):Boolean = {
     val cType = prop.cType
     val pType = prop.pType
-    (cType == QSet && (pType == Core.NameType || pType == TagSetType || pType == LinkType || pType == NewTagSetType))
+    (cType == QSet && 
+        (pType == Core.NameType || 
+         pType == TagSetType || 
+         pType.isInstanceOf[querki.core.IsLinkType] || 
+         pType == NewTagSetType))
   }
   
   def getUndefinedTagView(modelId:OID)(implicit state:SpaceState):QLText = {

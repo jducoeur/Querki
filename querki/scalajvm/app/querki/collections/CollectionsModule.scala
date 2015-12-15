@@ -2,6 +2,7 @@ package querki.collections
 
 import models._
 import Thing._
+import querki.core.IsLinkType
 import querki.ecology._
 import querki.globals._
 import querki.ql.{QLParser, QLPhrase}
@@ -457,7 +458,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	    val start = context.value.cv.toSeq
 	    val pType = context.value.pType
 	    pType match {
-	      case LinkType => {
+	      case pt:IsLinkType => {
 	        val asThings = start.map(elemV => context.state.anything(LinkType.get(elemV))).flatten
 	        Future.sequence(asThings.map(computeSortTerms)).map { terms =>
             val sortedOIDs = terms.sortWith(thingSortFunc).map(_.t.id)

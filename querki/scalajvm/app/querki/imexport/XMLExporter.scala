@@ -7,7 +7,7 @@ import scalatags.text._
 import models._
 import Thing.PropMap
 
-import querki.core.NameUtils
+import querki.core.{IsLinkType, NameUtils}
 import querki.core.MOIDs._
 import querki.globals._
 import querki.types.ModelTypeBase
@@ -159,7 +159,7 @@ private [imexport] class XMLExporter(implicit val ecology:Ecology) extends Ecolo
     qv.cv.toSeq.map { elemv =>
       elem(
         elemv.pType match {
-          case LinkType => {
+          case pt:IsLinkType => {
             val topt:Option[Thing] = for {
               oid <- elemv.getOpt(LinkType)
               thing <- state.anything(oid)

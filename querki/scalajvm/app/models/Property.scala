@@ -51,6 +51,10 @@ case class Property[VT, RT](
    * where we know the PType of the property (and thus, the VT) for external reasons, but the
    * Scala compiler isn't smart enough to figure that out. So this provides a consistent way to
    * do the cast safely, at runtime. 
+   * 
+   * DEPRECATED: this is fundamentally inappropriate in the face of possible coercion, and nowadays
+   * there are other ways to accomplish the same effect. In particular, instead of trying to force
+   * the Type of the Property, do so with *values*, which is better-defined.
    */
   def confirmType[PVT](pt:PType[PVT]):Option[Property[PVT,_]] = {    
     if (pt == pType)

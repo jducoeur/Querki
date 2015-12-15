@@ -27,7 +27,7 @@ object MOIDs extends EcotIds(26)
  * TODO: there should be a trait called something like InputRenderer, which this derives from,
  * generalizing the concept of rendering and response.
  */
-class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with querki.core.LinkUtils {
+class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with querki.core.NameUtils with querki.core.LinkUtils {
   
   lazy val Links = interface[querki.links.Links]
   lazy val QL = interface[querki.ql.QL]
@@ -72,7 +72,11 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     implicit val s = context.state
     // TODO: this Ecot has a lot of incestuous tests of NameType. I'm leaving these ugly for now. Find a better solution,
     // like lifting out a more public trait to test against.
-    if (prop.cType == QSet && (prop.pType.isInstanceOf[querki.core.IsNameType] || prop.pType == LinkType || prop.pType == NewTagSetType)) {
+    if (prop.cType == QSet 
+        && (prop.pType.isInstanceOf[querki.core.IsNameType] 
+            || prop.pType.isInstanceOf[querki.core.IsLinkType] 
+            || prop.pType == NewTagSetType)) 
+    {
       handleTagSet(fieldIds, on, form, context)
     } else {
       def withType(pType:PType[_]):FormFieldInfo = {
@@ -190,7 +194,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
       case _ => {
 	    if (cType == Optional && pType == YesNoType)
 	      Some(fut(renderOptYesNo(state, prop, currentValue)))
-	    else if (cType == Optional && pType == LinkType)
+	    else if (cType == Optional && pType.isInstanceOf[querki.core.IsLinkType])
 	      Some(renderOptLink(context, prop, currentValue))
 	    else if (Tags.isTaggableProperty(prop)) {
 	      if (specialization.contains(PickList))
@@ -257,8 +261,8 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     
     def getKeyAndVal(elem:ElemValue):Future[(String, String)] = {
       pt match {
-        case linkType:querki.core.TypeCreation#LinkType => {
-          val oid = linkType.get(elem)
+        case linkType:querki.core.IsLinkType => {
+          val oid = LinkType.get(elem)
           // TODO: cheating! This should go through LinkType.follow, but we don't have a Context yet:
           state.anything(oid) match {
             case Some(t) => t.nameOrComputed(rc, state) map ((oid.toString, _))
@@ -371,7 +375,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   def handleSpecialized(prop:Property[_,_], newVal:String)(implicit state:SpaceState):Option[QValue] = {
     if (prop.cType == Optional && prop.pType == YesNoType)
       Some(handleOptional(prop, newVal, YesNoType, (_ == "maybe")))
-    else if (prop.cType == Optional && prop.pType == LinkType)
+    else if (prop.cType == Optional && prop.pType.isInstanceOf[querki.core.IsLinkType])
       Some(handleOptional(prop, newVal, LinkType, (OID(_) == UnknownOID)))
     else
       None
@@ -388,7 +392,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
   def handleSpecializedForm(prop:Property[_,_], pType:PType[_], newVal:String)(implicit state:SpaceState):Option[FormFieldInfo] = {
     if (prop.cType == Optional && pType == YesNoType)
       Some(handleOptionalForm(prop, newVal, YesNoType, (_ == "maybe")))
-    else if (prop.cType == Optional && pType == LinkType)
+    else if (prop.cType == Optional && pType.isInstanceOf[querki.core.IsLinkType])
       Some(handleOptionalForm(prop, newVal, LinkType, (OID(_) == UnknownOID)))
     else
       None

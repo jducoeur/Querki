@@ -29,7 +29,7 @@ class MarcoPoloImpl(info:AutowireParams)(implicit e:Ecology) extends SpaceApiImp
       val things = thingOpts.flatten
       val allItems:Seq[MarcoPoloItem] = propOpt match {
         case Some(prop) => {
-          if (prop.pType == Core.LinkType) {
+          if (prop.pType.isInstanceOf[querki.core.IsLinkType]) {
             things
           } else {
             // It's a Tag Type, so add Tags
