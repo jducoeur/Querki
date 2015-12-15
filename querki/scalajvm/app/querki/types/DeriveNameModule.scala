@@ -5,7 +5,7 @@ import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState}
 import querki.core.{NameUtils, PropList}
 import querki.core.MOIDs.UrPropOID
 import querki.ecology._
-import querki.spaces.{SpaceChangeManager, ThingChangeRequest}
+import querki.spaces.{SpaceChangeManager, TCRReq, ThingChangeRequest}
 
 import querki.util._
 import querki.values._
@@ -29,7 +29,7 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with Nam
     SpaceChangeManager.thingChanges += NameDeriver
   }
   
-  private object NameDeriver extends Contributor[ThingChangeRequest, ThingChangeRequest] {
+  private object NameDeriver extends Contributor[TCRReq, TCRReq] {
     // What is the appropriate derive flag to use for this request? 
     def deriveFlag(evt:ThingChangeRequest):OID = {
       implicit val s = evt.state
@@ -64,53 +64,55 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with Nam
     }
 
     // This is called whenever we get a Create or Modify request.
-    def notify(evt:ThingChangeRequest, sender:Publisher[ThingChangeRequest,ThingChangeRequest]):ThingChangeRequest = {
-      evt.thingOpt match {
-        // Don't even try this on Spaces -- it's too dangerous:
-        case Some(state:SpaceState) => {
-          if (evt.newProps.contains(querki.core.MOIDs.NameOID))
-            evt
-          else
-            evt.copy(newProps = evt.newProps + NameProp(state.name))
-        }
-        case _ => {
-          implicit val s = evt.state
-          val oldNameOpt = evt.thingOpt.flatMap(_.getPropOpt(NameProp)).flatMap(_.firstOpt)
-          val existingNameOpt = evt.newProps.get(NameProp).flatMap(_.firstTyped(Core.NameType)).orElse(oldNameOpt)
-          // The fallback default: make sure that evt contains a sensible Name if possible. Since it may not be showing in the
-          // Editor, we have to fill it back in from the existing Name in many cases:
-          def evtWithExistingName = existingNameOpt.map(existingName => evt.copy(newProps = evt.newProps + NameProp(existingName))).getOrElse(evt)
-          
-	      val newDisplayNameOpt = for (
-	        newDisplayNameVal <- evt.newProps.get(querki.basic.MOIDs.DisplayNameOID);
-	        name <- newDisplayNameVal.firstTyped(Basic.PlainTextType)
-	          )
-	        yield name.text;
-	      
-	      newDisplayNameOpt match {
-          // Only bother if we can get a non-empty Link Name out of this:
-	        case Some(displayName) if (makeLegal(displayName).length > 0) => {
-	          val flag = deriveFlag(evt)
-	          flag match {
-	            case DeriveInitiallyOID => {
-	              if (existingNameOpt.isDefined && existingNameOpt.get.length() > 0)
-	                evtWithExistingName
-	              else
-	                // Only derive the new Name iff it's currently empty
-	                updateWithDerived(evt, displayName)
-	            }
-	            
-	            case DeriveAlwaysOID => updateWithDerived(evt, displayName)
-	            
-	            case DeriveNeverOID => evtWithExistingName
-	            
-	            case _ => evtWithExistingName
-	          }          
-	        }
-	        
-	        // If there's no Display Name, don't do anything
-	        case _ => evtWithExistingName
-	      }          
+    def notify(evtReq:TCRReq, sender:Publisher[TCRReq,TCRReq]):TCRReq = {
+      evtReq.map { evt =>
+        evt.thingOpt match {
+          // Don't even try this on Spaces -- it's too dangerous:
+          case Some(state:SpaceState) => {
+            if (evt.newProps.contains(querki.core.MOIDs.NameOID))
+              evt
+            else
+              evt.copy(newProps = evt.newProps + NameProp(state.name))
+          }
+          case _ => {
+            implicit val s = evt.state
+            val oldNameOpt = evt.thingOpt.flatMap(_.getPropOpt(NameProp)).flatMap(_.firstOpt)
+            val existingNameOpt = evt.newProps.get(NameProp).flatMap(_.firstTyped(Core.NameType)).orElse(oldNameOpt)
+            // The fallback default: make sure that evt contains a sensible Name if possible. Since it may not be showing in the
+            // Editor, we have to fill it back in from the existing Name in many cases:
+            def evtWithExistingName = existingNameOpt.map(existingName => evt.copy(newProps = evt.newProps + NameProp(existingName))).getOrElse(evt)
+            
+    	      val newDisplayNameOpt = for (
+    	        newDisplayNameVal <- evt.newProps.get(querki.basic.MOIDs.DisplayNameOID);
+    	        name <- newDisplayNameVal.firstTyped(Basic.PlainTextType)
+    	          )
+    	        yield name.text;
+    	      
+    	      newDisplayNameOpt match {
+              // Only bother if we can get a non-empty Link Name out of this:
+    	        case Some(displayName) if (makeLegal(displayName).length > 0) => {
+    	          val flag = deriveFlag(evt)
+    	          flag match {
+    	            case DeriveInitiallyOID => {
+    	              if (existingNameOpt.isDefined && existingNameOpt.get.length() > 0)
+    	                evtWithExistingName
+    	              else
+    	                // Only derive the new Name iff it's currently empty
+    	                updateWithDerived(evt, displayName)
+    	            }
+    	            
+    	            case DeriveAlwaysOID => updateWithDerived(evt, displayName)
+    	            
+    	            case DeriveNeverOID => evtWithExistingName
+    	            
+    	            case _ => evtWithExistingName
+    	          }          
+    	        }
+    	        
+    	        // If there's no Display Name, don't do anything
+    	        case _ => evtWithExistingName
+    	      }    
+          }
         }
       }
     }

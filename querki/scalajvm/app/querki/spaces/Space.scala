@@ -181,53 +181,58 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
     val spaceId = checkSpaceId(spaceThingId)
     val changedProps = changedProperties(Map.empty, propsIn)
     // Give listeners a chance to make alterations
-    val props = SpaceChangeManager.thingChanges(ThingChangeRequest(state, Some(modelId), None, propsIn, changedProps)).newProps
-    val name = Core.NameProp.firstOpt(props)
-    val canChangeTry = 
-      TryTrans[Unit, Boolean] { canChangeProperties(who, changedProps, None, props) }.
-        onSucc { _ => true }.
-        onFail { ex => sender ! ThingError(ex); false }.
-        result
-    if (!canCreate(who, modelId))
-      sender ! ThingError(new PublicException(CreateNotAllowed))
-    else if (!canChangeTry) {
-      // We've already sent the error at this point
-    } else if (name.isDefined && state.anythingByName(name.get).isDefined)
-      sender ! ThingError(new PublicException(NameExists, name.get))
-    else {
-      val modTime = DateTime.now
-      persister.request(Create(state, modelId, kind, props, modTime)).foreach {
-        case Changed(thingId, _) => {
-          implicit val e = ecology
-          kind match {
-            case Kind.Thing => {
-              val thing = ThingState(thingId, spaceId, modelId, props, modTime, kind)
-              updateState(state.copy(things = state.things + (thingId -> thing)))
-            }
-            case Kind.Property => {
-              val typ = state.typ(Core.TypeProp.first(props))
-              val coll = state.coll(Core.CollectionProp.first(props))
-              val boundTyp = typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]]
-              val boundColl = coll.asInstanceOf[Collection]
-              val thing = Property(thingId, spaceId, modelId, boundTyp, boundColl, props, modTime)
-              updateState(state.copy(spaceProps = state.spaceProps + (thingId -> thing)))          
-            }
-            case Kind.Type => {
-              val typOpt = for (
-                basedOnVal <- props.get(ModelForTypePropOID);
-                basedOn <- basedOnVal.firstAs(Core.LinkType)
-                  )
-                yield new ModelType(thingId, id, querki.core.MOIDs.UrTypeOID, basedOn, props)
-              
-              typOpt match {
-                case Some(typ) => updateState(state.copy(types = state.types + (thingId -> typ)))
-                case None => throw new Exception("Tried to create a Type without a valid Model!")
+    // IMPORTANT: note that other activity can happen in this Space before this returns! This isn't a race condition,
+    // but calling code should always be clear that you should *not* assume that sending multiple commands will do
+    // the right thing in the expected order!
+    SpaceChangeManager.thingChanges(RequestM.successful(ThingChangeRequest(state, Some(modelId), None, propsIn, changedProps))).foreach { tcr =>
+      val props = tcr.newProps
+      val name = Core.NameProp.firstOpt(props)
+      val canChangeTry = 
+        TryTrans[Unit, Boolean] { canChangeProperties(who, changedProps, None, props) }.
+          onSucc { _ => true }.
+          onFail { ex => sender ! ThingError(ex); false }.
+          result
+      if (!canCreate(who, modelId))
+        sender ! ThingError(new PublicException(CreateNotAllowed))
+      else if (!canChangeTry) {
+        // We've already sent the error at this point
+      } else if (name.isDefined && state.anythingByName(name.get).isDefined)
+        sender ! ThingError(new PublicException(NameExists, name.get))
+      else {
+        val modTime = DateTime.now
+        persister.request(Create(state, modelId, kind, props, modTime)).foreach {
+          case Changed(thingId, _) => {
+            implicit val e = ecology
+            kind match {
+              case Kind.Thing => {
+                val thing = ThingState(thingId, spaceId, modelId, props, modTime, kind)
+                updateState(state.copy(things = state.things + (thingId -> thing)))
               }
+              case Kind.Property => {
+                val typ = state.typ(Core.TypeProp.first(props))
+                val coll = state.coll(Core.CollectionProp.first(props))
+                val boundTyp = typ.asInstanceOf[PType[Any] with PTypeBuilder[Any, Any]]
+                val boundColl = coll.asInstanceOf[Collection]
+                val thing = Property(thingId, spaceId, modelId, boundTyp, boundColl, props, modTime)
+                updateState(state.copy(spaceProps = state.spaceProps + (thingId -> thing)))          
+              }
+              case Kind.Type => {
+                val typOpt = for (
+                  basedOnVal <- props.get(ModelForTypePropOID);
+                  basedOn <- basedOnVal.firstAs(Core.LinkType)
+                    )
+                  yield new ModelType(thingId, id, querki.core.MOIDs.UrTypeOID, basedOn, props)
+                
+                typOpt match {
+                  case Some(typ) => updateState(state.copy(types = state.types + (thingId -> typ)))
+                  case None => throw new Exception("Tried to create a Type without a valid Model!")
+                }
+              }
+              case _ => throw new Exception("Got a request to create a thing of kind " + kind + ", but don't know how yet!")
             }
-            case _ => throw new Exception("Got a request to create a thing of kind " + kind + ", but don't know how yet!")
+          
+            sender ! ThingFound(thingId, state)
           }
-        
-          sender ! ThingFound(thingId, state)
         }
       }
     }    
@@ -239,98 +244,100 @@ class Space(val ecology:Ecology, persistenceFactory:SpacePersistenceFactory, sta
       val thingId = oldThing.id
       val rawNewProps = pf(oldThing)
       val changedProps = changedProperties(oldThing.props, rawNewProps)
-      val newProps = SpaceChangeManager.thingChanges(ThingChangeRequest(state, modelIdOpt, Some(oldThing), rawNewProps, changedProps)).newProps
-      val canChangeTry = 
-        TryTrans[Unit, Boolean] { canChangeProperties(who, changedProps, Some(oldThing), newProps) }.
-          onSucc { _ => true }.
-          onFail { ex => sender ! ThingError(ex); false }.
-          result
-      if (!canEdit(who, thingId)) {
-        sender ! ThingError(new PublicException(ModifyNotAllowed))
-      } else if (!canChangeTry) {
-        // Error already sent
-      } else {
-        // TODO: compare properties, build a history record of the changes
-        val modelId = modelIdOpt match {
-          case Some(m) => m
-          case None => oldThing.model
-        }
-          
-        implicit val e = ecology
-        val modTime = DateTime.now
-        val rawNameOpt = Core.NameProp.firstOpt(newProps)
-        val newNameOpt = rawNameOpt.map(NameUtils.canonicalize(_))
-        val spaceChangeOpt = oldThing match {
-          case s:SpaceState => {
-            // We presume that Spaces have names:
-            val rawName = rawNameOpt.get
-            val newName = newNameOpt.get
-            val oldName = Core.NameProp.first(oldThing.props)
-            val oldDisplay = Basic.DisplayNameProp.firstOpt(oldThing.props) map (_.raw.toString) getOrElse rawName
-            val newDisplay = Basic.DisplayNameProp.firstOpt(newProps) map (_.raw.toString) getOrElse rawName
-            if (!NameUtils.equalNames(newName, oldName) || !(oldDisplay.contentEquals(newDisplay))) {
-              Some(SpaceChange(newName, newDisplay))
-            } else {
-              None
-            }             
+      SpaceChangeManager.thingChanges(RequestM.successful(ThingChangeRequest(state, modelIdOpt, Some(oldThing), rawNewProps, changedProps))).foreach { tcr =>
+        val newProps = tcr.newProps
+        val canChangeTry = 
+          TryTrans[Unit, Boolean] { canChangeProperties(who, changedProps, Some(oldThing), newProps) }.
+            onSucc { _ => true }.
+            onFail { ex => sender ! ThingError(ex); false }.
+            result
+        if (!canEdit(who, thingId)) {
+          sender ! ThingError(new PublicException(ModifyNotAllowed))
+        } else if (!canChangeTry) {
+          // Error already sent
+        } else {
+          // TODO: compare properties, build a history record of the changes
+          val modelId = modelIdOpt match {
+            case Some(m) => m
+            case None => oldThing.model
           }
-          case _ => None
-        }
-        
-        // This is lifted into a sub-function so that we can either call it immediately or after
-        // persistence, as requested:
-        def changeInMemory() = {
-          oldThing match {
-            case t:ThingState => {
-              val newThingState = t.copy(m = modelId, pf = newProps, mt = modTime)
-              updateState(state.copy(things = state.things + (thingId -> newThingState))) 
-              sender ! ThingFound(thingId, state)
-            }
-            case prop:Property[_,_] => {
-              // If the Type has changed, alter the Property itself accordingly:
-              val typeChange = PropTypeMigrator.prepChange(state, prop, newProps)
-              
-              val newProp = {
-                if (typeChange.typeChanged)
-                  prop.copy(pType = typeChange.newType, m = modelId, pf = newProps, mt = modTime)
-                else
-                  prop.copy(m = modelId, pf = newProps, mt = modTime)
-              }
-              
-              updateState(state.copy(spaceProps = state.spaceProps + (thingId -> newProp)))
-              
-              typeChange.finish(newProp, state, updateState)
-              
-              sender ! ThingFound(thingId, state)
-            }
+            
+          implicit val e = ecology
+          val modTime = DateTime.now
+          val rawNameOpt = Core.NameProp.firstOpt(newProps)
+          val newNameOpt = rawNameOpt.map(NameUtils.canonicalize(_))
+          val spaceChangeOpt = oldThing match {
             case s:SpaceState => {
-              // TODO: handle changing the owner or apps of the Space. (Different messages?)
+              // We presume that Spaces have names:
+              val rawName = rawNameOpt.get
               val newName = newNameOpt.get
-              updateState(state.copy(m = modelId, pf = newProps, name = newName, mt = modTime))
-              sender ! ThingFound(thingId, state)
+              val oldName = Core.NameProp.first(oldThing.props)
+              val oldDisplay = Basic.DisplayNameProp.firstOpt(oldThing.props) map (_.raw.toString) getOrElse rawName
+              val newDisplay = Basic.DisplayNameProp.firstOpt(newProps) map (_.raw.toString) getOrElse rawName
+              if (!NameUtils.equalNames(newName, oldName) || !(oldDisplay.contentEquals(newDisplay))) {
+                Some(SpaceChange(newName, newDisplay))
+              } else {
+                None
+              }             
             }
-            case mt:ModelTypeBase => {
-              // Note that ModelTypeBase has a copy() method tuned for this purpose:
-              val newType = mt.copy(modelId, newProps)
-              updateState(state.copy(types = state.types + (thingId -> newType)))
-              sender ! ThingFound(thingId, state)
+            case _ => None
+          }
+          
+          // This is lifted into a sub-function so that we can either call it immediately or after
+          // persistence, as requested:
+          def changeInMemory() = {
+            oldThing match {
+              case t:ThingState => {
+                val newThingState = t.copy(m = modelId, pf = newProps, mt = modTime)
+                updateState(state.copy(things = state.things + (thingId -> newThingState))) 
+                sender ! ThingFound(thingId, state)
+              }
+              case prop:Property[_,_] => {
+                // If the Type has changed, alter the Property itself accordingly:
+                val typeChange = PropTypeMigrator.prepChange(state, prop, newProps)
+                
+                val newProp = {
+                  if (typeChange.typeChanged)
+                    prop.copy(pType = typeChange.newType, m = modelId, pf = newProps, mt = modTime)
+                  else
+                    prop.copy(m = modelId, pf = newProps, mt = modTime)
+                }
+                
+                updateState(state.copy(spaceProps = state.spaceProps + (thingId -> newProp)))
+                
+                typeChange.finish(newProp, state, updateState)
+                
+                sender ! ThingFound(thingId, state)
+              }
+              case s:SpaceState => {
+                // TODO: handle changing the owner or apps of the Space. (Different messages?)
+                val newName = newNameOpt.get
+                updateState(state.copy(m = modelId, pf = newProps, name = newName, mt = modTime))
+                sender ! ThingFound(thingId, state)
+              }
+              case mt:ModelTypeBase => {
+                // Note that ModelTypeBase has a copy() method tuned for this purpose:
+                val newType = mt.copy(modelId, newProps)
+                updateState(state.copy(types = state.types + (thingId -> newType)))
+                sender ! ThingFound(thingId, state)
+              }
             }
           }
-        }
-        
-        if (!sync)
-          changeInMemory()
-        
-        // ... and persist the change. Note that this is fire-and-forget, and happens after we respond to the caller!
-        persister.request(Change(state, thingId, modelId, modTime, newProps, spaceChangeOpt)).foreach {
-          case Changed(_, _) => {
-            if (sync)
-              changeInMemory()
-          }
-          case err:Any => {
-            // TODO: this is one of those relatively rare situations where we potentially want to
-            // raise Big Red Flags -- serialization failure is Bad.
-            QLog.error(s"Attempt to serialize $thingId in space ${state.id} failed!!! New props were $newProps, and returned value was $err")
+          
+          if (!sync)
+            changeInMemory()
+          
+          // ... and persist the change. Note that this is fire-and-forget, and happens after we respond to the caller!
+          persister.request(Change(state, thingId, modelId, modTime, newProps, spaceChangeOpt)).foreach {
+            case Changed(_, _) => {
+              if (sync)
+                changeInMemory()
+            }
+            case err:Any => {
+              // TODO: this is one of those relatively rare situations where we potentially want to
+              // raise Big Red Flags -- serialization failure is Bad.
+              QLog.error(s"Attempt to serialize $thingId in space ${state.id} failed!!! New props were $newProps, and returned value was $err")
+            }
           }
         }
       }

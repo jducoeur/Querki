@@ -6,6 +6,8 @@ import akka.actor.ActorRef
 
 import anorm.SqlQuery
 
+import org.querki.requester._
+
 import models.{OID, PType, Thing}
 import models.Thing.PropMap
 
@@ -80,6 +82,8 @@ package object spaces {
     
   case class ThingChangeRequest(state:SpaceState, modelIdOpt:Option[OID], thingOpt:Option[Thing], newProps:PropMap, changedProps:Seq[OID])
   
+  type TCRReq = RequestM[ThingChangeRequest]
+  
   case class CacheUpdate(evt:Option[querki.spaces.messages.SpaceMessage], old:Option[SpaceState], current:SpaceState) {
     /**
      * Listeners to updateStateCache should usually call this at the end to update the cache with their particular value.
@@ -93,9 +97,11 @@ package object spaces {
     /**
      * Called before every Create or Modify operation. Listeners can use this specifically to edit the Props.
      * 
-     * IMPORTANT: this is called by the Space, so it MUST NOT BLOCK.
+     * IMPORTANT: this contains a RequestM. It is legal for listeners to invoke long-running operations, but they
+     * must happen in *other* Actors. Note that this may result in other things happening in this Space while
+     * those occur, so be careful when thinking about ordering here!
      */
-    def thingChanges:Sequencer[ThingChangeRequest]
+    def thingChanges:Sequencer[TCRReq]
     
     /**
      * Called whenever the state changes. Listeners should update their cache entries in the "current" field.

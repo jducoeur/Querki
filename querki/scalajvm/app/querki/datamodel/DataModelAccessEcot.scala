@@ -5,7 +5,7 @@ import models.{Kind, PType}
 import querki.ecology._
 import querki.globals._
 import querki.ql.{QLCall, QLPhrase}
-import querki.spaces.ThingChangeRequest
+import querki.spaces.{TCRReq, ThingChangeRequest}
 import querki.util.{Contributor, PublicException, Publisher}
 import querki.values._
 import querki.types.PropPath
@@ -63,40 +63,42 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
   lazy val PropPaths = interface[querki.types.PropPaths]
   lazy val Tags = interface[querki.tags.Tags]
   
-  private object PropCopier extends Contributor[ThingChangeRequest, ThingChangeRequest] {
+  private object PropCopier extends Contributor[TCRReq, TCRReq] {
     // This is called whenever we get a Create or Modify request.
-    def notify(evt:ThingChangeRequest, sender:Publisher[ThingChangeRequest,ThingChangeRequest]):ThingChangeRequest = {
-      evt match {
-        // We only worry about it if there is a Model and there isn't a Thing, so this is a Create:
-        case ThingChangeRequest(state, Some(modelId), None, props, changedProps) => {
-          implicit val s = state
-          state.anything(modelId) match {
-            case Some(model) => {
-              val copiedProps = model.props.keys.filter { propId =>
-                state.prop(propId) match {
-                  case Some(prop) => prop.ifSet(CopyIntoInstances)
-                  case None => false
-                }
-              }
-              
-              val newProps = (props /: copiedProps) { (curProps, copyId) =>
-                if (props.contains(copyId))
-                  // The create is already overriding the Model's value
-                  curProps
-                else
-                  model.getPropOpt(copyId) match {
-                    case Some(pv) => props + (copyId -> pv.v)
-                    case None => props
+    def notify(evtReq:TCRReq, sender:Publisher[TCRReq,TCRReq]):TCRReq = {
+      evtReq.map { evt =>
+        evt match {
+          // We only worry about it if there is a Model and there isn't a Thing, so this is a Create:
+          case ThingChangeRequest(state, Some(modelId), None, props, changedProps) => {
+            implicit val s = state
+            state.anything(modelId) match {
+              case Some(model) => {
+                val copiedProps = model.props.keys.filter { propId =>
+                  state.prop(propId) match {
+                    case Some(prop) => prop.ifSet(CopyIntoInstances)
+                    case None => false
                   }
+                }
+                
+                val newProps = (props /: copiedProps) { (curProps, copyId) =>
+                  if (props.contains(copyId))
+                    // The create is already overriding the Model's value
+                    curProps
+                  else
+                    model.getPropOpt(copyId) match {
+                      case Some(pv) => props + (copyId -> pv.v)
+                      case None => props
+                    }
+                }
+                
+                ThingChangeRequest(state, Some(modelId), None, newProps, changedProps)
               }
-              
-              ThingChangeRequest(state, Some(modelId), None, newProps, changedProps)
+              // TODO: this is actually a strange error -- what should we do here?
+              case None => evt
             }
-            // TODO: this is actually a strange error -- what should we do here?
-            case None => evt
           }
+          case _ => evt
         }
-        case _ => evt
       }
     }
   }
