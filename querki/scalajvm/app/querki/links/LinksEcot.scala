@@ -270,7 +270,8 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
   lazy val ChoiceOrderProp = new SystemProperty(ChoiceOrderOID, LinkType, QList,
     toProps(
       setName("Choice Order"),
-      Summary("If this is set on a Choice Model, it declares the order in which the options should be listed.")))
+      Summary("If this is set on a Choice Model, it declares the order in which the options should be listed."),
+      Types.AppliesToTypesProp(ChoiceType)))
     with LinkCandidateProvider
   {
     def getLinkCandidates(state:SpaceState, currentValue:DisplayPropVal):Seq[Thing] = {
