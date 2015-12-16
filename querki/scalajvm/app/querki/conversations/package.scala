@@ -4,8 +4,8 @@ import akka.actor.{ActorRef, Props}
 
 import models.{OID, Property}
 
-import querki.basic.PlainText
 import querki.conversations.messages.Comment
+import querki.core.QLText
 import querki.ecology._
 import querki.identity.User
 import querki.spaces.SpacePersistenceFactory
@@ -26,7 +26,7 @@ package object conversations {
     /**
      * The actual text body of a Comment.
      */
-    def CommentText:Property[PlainText, String]
+    def CommentText:Property[QLText, String]
     
     /**
      * Who is allowed to write Comments on this.

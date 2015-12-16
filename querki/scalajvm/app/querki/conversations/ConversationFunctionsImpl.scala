@@ -4,7 +4,7 @@ import scala.concurrent.{Future, Promise}
 
 import akka.actor._
 
-import models.{UnknownOID, Wikitext}
+import models.{Thing, UnknownOID, Wikitext}
 
 import querki.api.{SpaceApiImpl, AutowireParams}
 import querki.data.TID
@@ -28,6 +28,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
   lazy val Core = interface[querki.core.Core]
   lazy val IdentityAccess = interface[querki.identity.IdentityAccess]
   lazy val Person = interface[querki.identity.Person]
+  lazy val QL = interface[querki.ql.QL]
   
   def convTrace = Conversations.convTrace _
   
@@ -41,23 +42,40 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
     (Set.empty[OID] /: nodes) { (set, node) => set ++ getIds(node) }
   }
   
-  def toApi(c:Comment)(implicit identities:Map[OID, PublicIdentity], theRc:RequestContext):CommentInfo = {
-    CommentInfo(
-      c.id,
-      ClientApi.identityInfo(identities(c.authorId)),
+  def toApi(t:Thing, c:Comment)(implicit identities:Map[OID, PublicIdentity], theRc:RequestContext):Future[CommentInfo] = {
+    implicit val s = state
+    
+    val contentFut =
       if (c.isDeleted)
-        Wikitext("*Comment deleted*")
-      else
-        Wikitext(Conversations.CommentText.firstOpt(c.props).map(_.text).getOrElse("")),
-      c.primaryResponse,
-      c.createTime.getMillis,
-      theRc.isOwner || theRc.requesterOrAnon.hasIdentity(c.authorId),
-      c.isDeleted
-    )
+        fut(Wikitext("*Comment deleted*"))
+      else {
+        Conversations.CommentText.firstOpt(c.props) match {
+          case Some(comment) => {
+            QL.process(comment, t.thisAsContext)
+          }
+          case _ => fut(Wikitext(""))
+        }
+      }
+    
+    contentFut.map { content =>
+      CommentInfo(
+        c.id,
+        ClientApi.identityInfo(identities(c.authorId)),
+        content,
+        c.primaryResponse,
+        c.createTime.getMillis,
+        theRc.isOwner || theRc.requesterOrAnon.hasIdentity(c.authorId),
+        c.isDeleted
+      )
+    }
   }
   
-  def toApi(node:ConversationNode)(implicit identities:Map[OID, PublicIdentity], theRc:RequestContext):ConvNode = {
-    ConvNode(toApi(node.comment), node.responses.map(toApi(_)))
+  def toApi(t:Thing, node:ConversationNode)(implicit identities:Map[OID, PublicIdentity], theRc:RequestContext):Future[ConvNode] = {
+    for {
+      thisComment <- toApi(t, node.comment)
+      rest <- Future.sequence(node.responses.map(toApi(t, _)))
+    }
+      yield ConvNode(thisComment, rest)
   }
   
   def localIdentity = Person.localIdentities(user)(state).headOption
@@ -76,7 +94,7 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
 	    for {
         ThingConversations(convs) <- spaceRouter.requestFor[ThingConversations](ConversationRequest(rc.requesterOrAnon, state.id, GetConversations(thing.id)))
         identities <- IdentityAccess.getIdentities(getIds(convs).toSeq)
-        apiConvs = convs.map(toApi(_)(identities, theRc))
+        apiConvs <- Future.sequence(convs.map(toApi(thing, _)(identities, theRc)))
       }
         yield ConversationInfo(canComment, canReadComments, apiConvs)
 	  } else {
@@ -111,8 +129,9 @@ class ConversationFunctionsImpl(info:AutowireParams)(implicit e:Ecology) extends
       dummy1 = convTrace(s"    Have added the node for the new comment")
       IdentityFound(identity) <- IdentityAccess.identityCache.request(GetIdentityRequest(authorId))
       dummy2 = convTrace(s"    Have found the Identity of the comment's author")
+      result <- toApi(thing, node)(Map(authorId -> identity), theRc)
     }
-      yield toApi(node)(Map(authorId -> identity), theRc)
+      yield result
   }
   
   def deleteComment(thingId:TID, commentId:CommentId):Future[Unit] = withThing(thingId) { thing =>

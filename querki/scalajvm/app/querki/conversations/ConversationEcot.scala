@@ -18,7 +18,6 @@ import MOIDs._
 class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
     
   val AccessControl = initRequires[querki.security.AccessControl]
-  val Basic = initRequires[querki.basic.Basic]
   lazy val ApiRegistry = interface[querki.api.ApiRegistry]
   lazy val SpaceOps = interface[querki.spaces.SpaceOps]
   
@@ -61,7 +60,7 @@ class ConversationEcot(e:Ecology) extends QuerkiEcot(e) with Conversations {
    * TODO: this shouldn't really be PlainText -- it should be a Type that is explicitly Wikitext for now.
    * Model this on QL.ParsedTextType, but make it realer.
    */
-  lazy val CommentText = new SystemProperty(CommentTextOID, Basic.PlainTextType, Optional,
+  lazy val CommentText = new SystemProperty(CommentTextOID, TextType, Optional,
       toProps(
         setName("Comment Text"),
         setInternal))

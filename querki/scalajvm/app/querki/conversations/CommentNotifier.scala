@@ -69,7 +69,7 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
       
     val bodyOpt = for {
       qv <- comment.props.get(CommentText.id)
-      body <- qv.firstAs(Basic.PlainTextType)
+      body <- qv.firstAs(TextType)
     }
       yield body
     
@@ -78,7 +78,7 @@ class CommentNotifierEcot(e:Ecology) extends QuerkiEcot(e) with Notifier with No
         // NOTE: yes, CommentBody seems redundant with CommentText. But in the medium term, we plan to allow QL in
         // CommentText, and that is absolutely *not* allowed in the contents of a Notification. So we will need to
         // run the QL here, and put the results into CommentBody.
-        CommentBody(bodyOpt.get.text),
+        CommentBody(bodyOpt.map(_.text).getOrElse("")),
         CommentId(comment.id),
         CommentSpaceOwner(state.owner)
       )
