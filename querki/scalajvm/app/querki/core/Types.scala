@@ -257,13 +257,23 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
   def InternalProp:Property[Boolean,Boolean]
   def Links:querki.links.Links
   
+  def namePairs(candidates:Seq[Thing], state:SpaceState, rcOpt:Option[RequestContext]):Future[Seq[(String, Thing)]] = {
+    Future.sequence(candidates.map { t => 
+      val name = rcOpt match {
+        case Some(rc) => t.unsafeNameOrComputed(rc, state)
+        case _ => fut(t.unsafeDisplayName)
+      }
+      name.map((_, t))
+    })
+  }
+  
   /**
    * Given a Link Property, return all of the appropriate candidates for that property to point to.
    * 
    * The Property passed into here should usually be of LinkType -- while in theory that's not required,
    * it would be surprising for it to be used otherwise.
    */
-  def linkCandidates(state:SpaceState, Links:querki.links.Links, prop:Property[_,_]):Seq[Thing] = {
+  def linkCandidates(state:SpaceState, rcOpt:Option[RequestContext], Links:querki.links.Links, prop:Property[_,_]):Future[Seq[(String, Thing)]] = {
     implicit val s = state
     
     val links = if (prop.hasProp(Links.LinkAllowAppsProp) && prop.first(Links.LinkAllowAppsProp))
@@ -272,7 +282,9 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
     else
       linkCandidatesLocal(state, Links, prop)
       
-    links.toSeq.sortBy(_.displayName)
+    val namePairsFut = namePairs(links.toSeq, state, rcOpt)
+      
+    namePairsFut.map(_.sortBy(_._1))    
   }
 
   /**
@@ -338,28 +350,34 @@ trait LinkUtils { self:CoreEcot with NameUtils =>
     val state = context.state
     val Links = interface[querki.links.Links]
     // Give the Property a chance to chime in on which candidates belong here:
-    val candidates = prop match {
-      case f:LinkCandidateProvider => f.getLinkCandidates(state, currentValue)
-      case _ => linkCandidates(state, Links, prop)
+    val candidatesFut = prop match {
+      case f:LinkCandidateProvider => {
+        val rawCandidates = f.getLinkCandidates(state, currentValue)
+        namePairs(rawCandidates, state, context.requestOpt)
+      }
+      case _ => linkCandidates(state, context.requestOpt, Links, prop)
     }
     val realOptionsFut:Future[Seq[NodeSeq]] =
-      if (candidates.isEmpty) {
-        Future.successful(Seq(<option value={UnknownOID.toString}><i>None defined</i></option>))
-      } else {
-        // Note: the unsafeDisplayNames below are because Scala's XML interpolator appears to be doing the
-        // name sanitizing for us:
-        val optFuts:Seq[Future[NodeSeq]] = candidates map { candidate:Thing =>
-          context.requestOpt.map(req => candidate.unsafeNameOrComputed(req, state)).
-            getOrElse(Future.successful(candidate.unsafeDisplayName)).
-            map { name =>
-              if(candidate.id == v.elem) {
-                <option value={candidate.id.toString} selected="selected">{name}</option>        
-              } else {
-                <option value={candidate.id.toString}>{name}</option>
+      candidatesFut.flatMap { candidates =>
+        if (candidates.isEmpty) {
+          Future.successful(Seq(<option value={UnknownOID.toString}><i>None defined</i></option>))
+        } else {
+          // Note: the unsafeDisplayNames below are because Scala's XML interpolator appears to be doing the
+          // name sanitizing for us:
+          val optFuts:Seq[Future[NodeSeq]] = candidates map { candidatePair =>
+            val (name, candidate) = candidatePair
+            context.requestOpt.map(req => candidate.unsafeNameOrComputed(req, state)).
+              getOrElse(Future.successful(candidate.unsafeDisplayName)).
+              map { name =>
+                if(candidate.id == v.elem) {
+                  <option value={candidate.id.toString} selected="selected">{name}</option>        
+                } else {
+                  <option value={candidate.id.toString}>{name}</option>
+                }
               }
-            }
+          }
+          Future.sequence(optFuts)
         }
-        Future.sequence(optFuts)
       }
     
     val linkModel = prop.getPropOpt(Links.LinkModelProp)(state)
