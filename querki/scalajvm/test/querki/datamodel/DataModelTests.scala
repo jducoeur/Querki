@@ -1,5 +1,9 @@
 package querki.datamodel
 
+import org.querki.requester._
+
+import models.Kind
+
 import querki.test._
 
 import querki.spaces.ThingChangeRequest
@@ -28,11 +32,14 @@ class DataModelTests extends QuerkiTests {
       
       // TODO: this is a pretty low-level test. Once we actually have unit testing working for the Space Actor,
       // we should test that way, to get a more realistic functional test:
-      val actualProps = SpaceChangeManager.thingChanges(ThingChangeRequest(s.state, Some(s.myModel.id), None, s.myInstance.props, s.myInstance.props.keys.toSeq)).newProps
+      val tcr = ThingChangeRequest(s.owner, null, s.state, null, Some(s.myModel.id), None, Kind.Thing, s.myInstance.props, s.myInstance.props.keys.toSeq)
+      SpaceChangeManager.thingChanges(RequestM.successful(tcr)).foreach { newTcr =>
+        val actualProps = newTcr.newProps
 
-      // In other words, myProp is being copied into the actual properties, but otherProp is not:
-      assert(actualProps.contains(s.myProp.id))
-      assert(!actualProps.contains(s.otherProp.id))
+        // In other words, myProp is being copied into the actual properties, but otherProp is not:
+        assert(actualProps.contains(s.myProp.id))
+        assert(!actualProps.contains(s.otherProp.id))
+      }
     }
   }
   
