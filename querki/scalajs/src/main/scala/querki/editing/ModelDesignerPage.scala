@@ -144,7 +144,7 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
       }
 	  guts = 
         div(cls:="_advancedEditor",
-          h1(pageTitle),
+          h1(raw(pageTitle)),
           p(cls:="_smallSubtitle", 
             s"Model: ${modelModel.displayName} -- ",
             a("Change Model", 

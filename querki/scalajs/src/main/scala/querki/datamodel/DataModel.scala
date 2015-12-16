@@ -80,7 +80,7 @@ class DataModelEcot(e:Ecology) extends ClientEcot(e) with DataModel with querki.
         val (msg, nInstances) = contents
         val deleteDialog:Dialog = 
           new Dialog("Confirm Delete", 300, 350,
-            p(b(msg)),
+            p(b(raw(msg))),
             ("Delete" -> { dialog => 
               println(s"I'm about to delete ${thing.displayName}");
               // TODO: display a spinner

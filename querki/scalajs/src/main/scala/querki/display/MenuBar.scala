@@ -193,18 +193,18 @@ class MenuBar(implicit e:Ecology) extends HookedGadget[dom.HTMLDivElement](e) wi
           a(id:=idStr,
             href:=PageManager.currentHash,
             onclick:=cb,
-            display)
+            raw(display))
         }
         case _ => {
           a(href:=url,
             id:=idStr,
-            display)
+            raw(display))
         }
       }
       li(link)
     } else {
       li(cls:="disabled",
-        a(display)
+        a(raw(display))
       )
     }
   }
