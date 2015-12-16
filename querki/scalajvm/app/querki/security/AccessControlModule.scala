@@ -2,14 +2,12 @@ package querki.security
 
 import models._
 
-import querki.util._
-import querki.values._
-
+import querki.api.commonName
 import querki.ecology._
 import querki.globals._
 import querki.identity.{Identity, User}
-
-import play.api.Logger
+import querki.util._
+import querki.values._
   
 private object MOIDs extends EcotIds(4) {
   val CanEditCustomOID = moid(1)
@@ -435,7 +433,7 @@ Use this Tag in Can Read if you want your Space or Thing to be readable only by 
   
   lazy val PersonRolesProp = new SystemProperty(PersonRolesOID, LinkType, QSet,
       toProps(
-        setName("Person Roles"),
+        setName(commonName(_.security.personRolesProp)),
         SkillLevel(SkillLevelAdvanced),
         Links.LinkModelProp(RoleModel),
         Summary("""This Property is only useful on Persons. It defines the Roles that this Person has.

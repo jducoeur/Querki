@@ -46,8 +46,9 @@ trait PassthroughHandlerBase {
  * This is tricky magic. PassthroughHandler is defined completely differently on the Server
  * and Client, so that the Server mashalls and the Client unmarshalls from the same calls.
  *
- * IMPORTANT: this uses Names to find these values! This is more fragile than I like, but is
- * the tradeoff I'm making for the time being.
+ * IMPORTANT: when you add a new value here, you should replace the definition of the name
+ * in its server-side definition with a call to commonName() instead, rather than duplicating
+ * the strings!
  */
 class StandardThings(h:PassthroughHandlerBase) {
   

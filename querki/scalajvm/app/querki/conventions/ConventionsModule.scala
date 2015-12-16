@@ -2,6 +2,7 @@ package querki.conventions
 
 import models._
 
+import querki.api.commonName
 import querki.ecology._
 import querki.types.MOIDs._
 
@@ -15,7 +16,7 @@ class ConventionsModule(e:Ecology) extends QuerkiEcot(e) with Conventions {
 
   lazy val PropSummary = new SystemProperty(PropSummaryOID, TextType, Optional,
     toProps(
-      setName("Summary"),
+      setName(commonName(_.conventions.summaryProp)),
       (DefaultValuePropOID -> ExactlyOne(TextType("""____"""))),
       (PropSummaryOID -> Optional(TextType("This is an optional one-line description of something."))),
       (PropDetailsOID -> Optional(LargeTextType("""When you define a Property, you may add this Summary as
@@ -31,7 +32,7 @@ class ConventionsModule(e:Ecology) extends QuerkiEcot(e) with Conventions {
 
   lazy val PropDetails = new SystemProperty(PropDetailsOID, LargeTextType, Optional,
     toProps(
-      setName("Details"),
+      setName(commonName(_.conventions.detailsProp)),
       (PropSummaryOID -> Optional(TextType("This is an optional detailed description of something."))),
       (PropDetailsOID -> Optional(LargeTextType("""When you define a Property, you may add whatever description
           |or documentation you see fit in the Details. This is the place to say what this Property is for, what

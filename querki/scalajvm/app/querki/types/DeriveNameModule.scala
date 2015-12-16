@@ -2,6 +2,7 @@ package querki.types
 
 import models.{DisplayPropVal, Kind, OID, Property, Thing, ThingState}
 
+import querki.api.commonName
 import querki.core.{NameUtils, PropList}
 import querki.core.MOIDs.UrPropOID
 import querki.ecology._
@@ -160,7 +161,7 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with Nam
   
   lazy val DeriveAlways = new ThingState(DeriveAlwaysOID, systemOID, deriveModel,
     toProps(
-      setName("Always Derive Name")))
+      setName(commonName(_.types.deriveAlways))))
   
   lazy val DeriveInitially = new ThingState(DeriveInitiallyOID, systemOID, deriveModel,
     toProps(
@@ -168,7 +169,7 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with Nam
   
   lazy val DeriveNever = new ThingState(DeriveNeverOID, systemOID, deriveModel,
     toProps(
-      setName("Never Derive Name")))
+      setName(commonName(_.types.deriveNever))))
   
   override lazy val things = Seq(
     deriveModel,
@@ -183,7 +184,7 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with Nam
 
   lazy val DeriveNameProp = new SystemProperty(DeriveNameOID, LinkType, ExactlyOne,
     toProps(
-      setName("_deriveName"),
+      setName(commonName(_.types.deriveNameProp)),
       Links.LinkModelProp(deriveModel),
       Links.LinkAllowAppsProp(true),
       SkillLevel(SkillLevelAdvanced),

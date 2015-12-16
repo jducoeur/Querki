@@ -5,8 +5,8 @@ import scala.xml.Elem
 import models.{DisplayPropVal, Kind, OID, Property, PropertyBundle, Thing, ThingState, Wikitext}
 import Thing._
 
+import querki.api.commonName
 import querki.core.{LinkCandidateProvider, QLText}
-
 import querki.ecology._
 import querki.globals._
 import querki.html.RenderSpecialization._
@@ -76,7 +76,7 @@ class EditorModule(e:Ecology) extends QuerkiEcot(e) with Editor with querki.core
     // TODO: this has broadened in scope, and really doesn't belong in Editor any more:
 	lazy val InstanceProps = new SystemProperty(InstanceEditPropsOID, LinkType, QList,
 	    toProps(
-	      setName("Instance Properties"),
+	      setName(commonName(_.editing.instancePropsProp)),
 	      Links.LinkAllowAppsProp(true),
 	      Links.LinkKindProp(Kind.Property),
 	      Summary("Which Properties are relevant for Instances of this Model?"),

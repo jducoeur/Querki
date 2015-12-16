@@ -6,6 +6,7 @@ import scala.concurrent.duration._
 
 import models.{Property}
 
+import querki.api.commonName
 import querki.ecology._
 import querki.globals._
 import querki.spaces._
@@ -61,13 +62,13 @@ class AppsEcot(e:Ecology) extends QuerkiEcot(e) with SpacePluginProvider with Ap
    ***********************************************/
   
   lazy val CanUseAsAppPerm = AccessControl.definePermission(CanBeAppOID, 
-      "Can Use as an App",
+      commonName(_.apps.canUseAsAppPerm),
       "These people are allowed to use this Space as an App. **Use with caution! These people will be able to see everything in this Space!**",
       Seq(AccessControl.OwnerTag),
       true)
   
   lazy val CanManipulateAppsPerm = AccessControl.definePermission(CanManipulateAppsOID, 
-      "Can Manipulate Apps",
+      commonName(_.apps.canManipulateAppsPerm),
       "These people are allowed to add or remove Apps from this Space",
       Seq(AccessControl.OwnerTag),
       true)

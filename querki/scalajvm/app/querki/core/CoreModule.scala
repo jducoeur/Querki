@@ -2,6 +2,7 @@ package querki.core
 
 import models._
 
+import querki.api.commonName
 import querki.conventions
 import querki.ecology._
 
@@ -154,7 +155,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
    */
   lazy val UrProp = Property(UrPropOID, systemOID, UrThing, TextType, ExactlyOne,
       toProps(
-        setName("Property"),
+        setName(commonName(_.core.urProp)),
         setInternal,
         (conventions.MOIDs.PropSummaryOID -> Optional.QNone),
         (querki.basic.MOIDs.DisplayTextOID -> Optional(LargeTextType("""[[Summary -> ""**____** -- ""]]
@@ -227,7 +228,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
    */
   lazy val NameProp = new SystemProperty(NameOID, NameType, ExactlyOne,
       toProps(
-        setName("Name"),
+        setName(commonName(_.core.nameProp)),
         NotInherited,
         Summary("The name of this Thing"),
         Details("""Names should consist mainly of letters and numbers; they may also include dashes
@@ -240,7 +241,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
    */
   lazy val TypeProp = new SystemProperty(TypePropOID, LinkType, ExactlyOne,
       toProps(
-        setName("Property Type"),
+        setName(commonName(_.core.typeProp)),
         LinkKindProp(Kind.Type),
         LinkAllowAppsProp(true),
         AppliesToKindProp(Kind.Property),
@@ -258,7 +259,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
    */
   lazy val CollectionProp = new SystemProperty(CollectionPropOID, LinkType, ExactlyOne,
       toProps(
-        setName("Property Collection"),
+        setName(commonName(_.core.collectionProp)),
         LinkKindProp(Kind.Collection),
         LinkAllowAppsProp(true),
         AppliesToKindProp(Kind.Property),
@@ -288,7 +289,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
    */
   lazy val IsModelProp = new SystemProperty(IsModelOID, YesNoType, ExactlyOne,
       toProps(
-        setName("Is a Model"),
+        setName(commonName(_.core.isModelProp)),
         NotInherited,
         // TBD: we might allow Property Models down the road, but not yet:
         AppliesToKindProp(Kind.Thing),

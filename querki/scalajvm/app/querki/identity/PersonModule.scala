@@ -8,6 +8,7 @@ import scala.concurrent.duration._
 
 import models._
 
+import querki.api.commonName
 import querki.core.QLText
 import querki.ecology._
 import querki.email.emailSepChar
@@ -155,7 +156,7 @@ class PersonModule(e:Ecology) extends QuerkiEcot(e) with Person with querki.core
   
   lazy val InviteText = new SystemProperty(InviteTextOID, LargeTextType, ExactlyOne,
       toProps(
-        setName("Space Invitation Text"),
+        setName(commonName(_.security.inviteTextProp)),
         AppliesToKindProp(Kind.Space),
         Summary("The text to use when inviting people to join your Space"),
         Details("""This is the content of the invitation email, to go along with the standard Querki

@@ -2,14 +2,13 @@ package querki.tags
 
 import scala.xml.NodeSeq
 
-import querki.ecology._
-
 import models.{AsDisplayName, Collection, DisplayPropVal, DisplayText, Kind, PropertyBundle, PType, Thing, ThingId, ThingOps, UnknownOID, Wikitext}
 
-import querki.globals._
-
+import querki.api.commonName
 import querki.basic.{PlainText, PlainTextBaseType}
 import querki.core.{NameableType, NameTypeBasis, NameUtils, QLText, TextTypeBasis}
+import querki.ecology._
+import querki.globals._
 import querki.ql.QLPhrase
 import querki.util.SafeUrl
 import querki.values._
@@ -336,7 +335,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
   
   lazy val IsReifiedTagProp = new SystemProperty(IsReifiedTagOID, YesNoType, Optional,
     toProps(
-      setName("_Is Reified Tag"),
+      setName(commonName(_.tags.isReifiedTag)),
       Core.InternalProp(true),
       Editor.NotEditableProp(true),
       Summary("Set automatically when you turn a Tag into a real Thing"),

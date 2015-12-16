@@ -4,6 +4,7 @@ import scala.xml.NodeSeq
 
 import models._
 
+import querki.api.commonName
 import querki.conventions._
 import querki.core._
 import querki.ecology._
@@ -231,7 +232,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
    */
   lazy val DisplayNameProp = new SystemProperty(DisplayNameOID, PlainTextType, Optional,
     toProps(
-      setName("Display Name"),
+      setName(commonName(_.basic.displayNameProp)),
       NotInherited,
       Types.MinTextLengthProp(1),
       Summary("How to show this Thing's Name"),
@@ -270,7 +271,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
   // TODO: the name DisplayTextProp still need to be renamed to DefaultViewProp:
   lazy val DisplayTextProp = new SystemProperty(DisplayTextOID, LargeTextType, Optional,
       toProps(
-        setName("Default View"),
+        setName(commonName(_.basic.defaultView)),
         Summary("How this Thing will be displayed"),
         Details("""Default View is one of the most important Properties in Querki,
         		|and nearly every Thing has one. The Default View describes how this Thing will usually show up when you
@@ -339,7 +340,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
   
   lazy val PrintViewProp = new SystemProperty(PrintViewOID, LargeTextType, Optional,
       toProps(
-        setName("Print View"),
+        setName(commonName(_.basic.printView)),
         Summary("How this Thing will be printed"),
         Details("""Most of the time, you can just print Querki pages, and they will work as you want. But in some
             |cases, you may want to print a Thing differently from how you look at it on the page -- you may want
@@ -394,7 +395,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
 
   lazy val SimpleThing = ThingState(SimpleThingOID, systemOID, RootOID,
     toProps(
-      setName("Simple-Thing"),
+      setName(commonName(_.basic.simpleThing)),
       IsModelProp(true),
       DisplayTextProp(Core.QNone),
       (querki.basic.MOIDs.DisplayNameOID -> Core.QNone),

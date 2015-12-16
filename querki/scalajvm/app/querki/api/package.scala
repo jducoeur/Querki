@@ -14,6 +14,17 @@ import querki.identity.{PublicIdentity, User}
 import querki.values.RequestContext
 
 package object api {
+  
+  /**
+   * If a Thing is part of the common API -- if it is defined in StandardThings -- then we have
+   * to be careful about name duplication. Instead of defining the name as a literal String,
+   * use this to fetch the name that the API expects. (In other words, the API is the
+   * authoritative source, and we're avoiding duplicating those strings.)
+   */
+  def commonName(f:StandardThings => ThingInfo):String = {
+    f(Names).linkName.get
+  }
+  
   trait ClientApi extends EcologyInterface {
     def thing2TID(t:Thing):TID
     def OID2TID(oid:OID):TID

@@ -5,6 +5,7 @@ import scala.concurrent.Future
 // TODO: these are all abstraction breaks!
 import controllers.{HtmlEvent, PageEventManager, QuerkiTemplate}
 
+import querki.api.commonName
 import querki.globals._
 import models._
 import querki.ecology._
@@ -209,7 +210,7 @@ class StylesheetModule(e:Ecology) extends QuerkiEcot(e) with Stylesheets {
 
   lazy val StylesheetBase = new ThingState(StylesheetBaseOID, systemOID, querki.basic.MOIDs.SimpleThingOID,
     toProps(
-      setName("Stylesheet"),
+      setName(commonName(_.css.stylesheet)),
       Core.IsModelProp(true),
       Editor.InstanceProps(Basic.DisplayNameProp, CSSProp),
       Basic.DisplayTextProp("[[_code(CSS)]]"),

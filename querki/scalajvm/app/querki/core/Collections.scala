@@ -10,6 +10,7 @@ import play.api.data.Form
 
 import models._
 
+import querki.api.commonName
 import querki.ecology._
 import querki.globals._
 import querki.util.{TryTrans, XmlHelpers}
@@ -94,7 +95,7 @@ trait CollectionBase { self:CoreEcot =>
    */
   class ExactlyOneBase(oid:OID) extends SingleElementBase(oid, 
       toProps(
-        setName("Exactly One"))) 
+        setName(commonName(_.core.exactlyOneColl)))) 
   {
     type implType = List[ElemValue]
 
@@ -298,7 +299,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
 
   class Optional extends SingleElementBase(OptionalOID,
       toProps(
-        setName("Optional")
+        setName(commonName(_.core.optionalColl))
         )) 
   {
     type implType = List[ElemValue]
@@ -371,7 +372,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
   
   class QList extends QListBase(QListOID,
       toProps(
-        setName("List")
+        setName(commonName(_.core.listColl))
         ))
   {
     /**
@@ -386,7 +387,7 @@ trait CollectionCreation { self:CoreEcot with CollectionBase with CoreExtra =>
   
   class QSet extends QListBase(QSetOID,
       toProps(
-        setName("Set")))
+        setName(commonName(_.core.setColl))))
   {
     // TODO: this *really* should be makePropValue -- it is Very Very Bad that it isn't. But
     // that doesn't yet have a way of getting at the PType, which we need for comp() and matches().
