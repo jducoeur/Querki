@@ -691,19 +691,16 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
   
   class LinkType extends LinkTypeBase(LinkTypeOID,
       toProps(
-        setName("Link Type"),
-        Summary("A pointer to a specific Thing"),
-        Details("""A Link points to a single Thing in this Space. It can point to any Thing: an Instance, a Model,
+        setName("Thing Type"),
+        Summary("A specific Thing"),
+        Details("""This contains a single Thing in this Space. It can be any Thing: an Instance, a Model,
             |a Property -- even a Type or the Space itself.
             |
-            |The editing interface for Links is currently very different for a Set of Links (which is almost identical
-            |to that for a Tag Set), as opposed to a single Link. But under the hood, they're both letting you do the
-            |same thing: choose one or more Things.
-            |
-            |When you choose "Link Type", the system will say "Link to which Model?". This is optional, but usually
-            |helpful. When you are editing a Link Property, the system will prompt you with existing Things. If you
-            |choose a Model at creation time, it will only prompt you with existing Instances of that Model. So if
-            |you know what sorts of Things you will be using in this Property, it is worth specifying that Model here.            
+            |When you create or edit a Property of `Thing Type`, the system will let you
+            |`Restrict to Model`. This is optional, but usually
+            |helpful. When you are editing a Thing Property, the system will prompt you with existing Things. If you
+            |choose a Model to restrict to, it will only prompt you with existing Instances of that Model. So if
+            |you know what sorts of Things you will be using in this Property, it is worth restricting to that Model.            
             |""".stripMargin)
         ))
   

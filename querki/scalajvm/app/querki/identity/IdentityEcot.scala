@@ -154,13 +154,10 @@ class IdentityEcot(e:Ecology) extends QuerkiEcot(e) with IdentityAccess with que
    * THINGS
    ***********************************************/
   
-  /**
-   * TODO: this page calls a couple of Highly Evil functions. It works, but blocks far too much.
-   */
   lazy val DisplayIdentity = ThingState(DisplayIdentityOID, systemOID, RootOID,
     toProps(
       setName("_displayIdentity"),
-      Basic.DisplayTextProp("""[[$identity -> _asType(Link Type) -> _resolveIdentity -> ""
+      Basic.DisplayTextProp("""[[$identity -> _asType(Thing Type) -> _resolveIdentity -> ""
           |### ____
           |
           |#### User Values

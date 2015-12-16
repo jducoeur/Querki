@@ -368,7 +368,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
         }
       }
       // TODO: we need a better way to specify this warning
-      case None => Future.successful(<p class="warning">Can't display a Pick List for a Set that doesn't have a Link Model!</p>)
+      case None => Future.successful(<p class="warning">Can't display a Pick List for a Set that doesn't have Restrict to Model!</p>)
     }
   }
   

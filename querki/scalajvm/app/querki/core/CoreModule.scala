@@ -26,7 +26,7 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
    */
   lazy val UrThing = new ThingState(RootOID, systemOID, RootOID,
     toProps(
-      setName("Thing"),
+      setName("Ur Thing"),
       // TODO: once we rework the UI some more, we probably can and should remove this Optional from here.
       // It is really only here to remind the Space author to think about whether something is a Model.
       (querki.core.MOIDs.IsModelOID -> ExactlyOne(ElemValue(false, new DelegatingType(YesNoType))))

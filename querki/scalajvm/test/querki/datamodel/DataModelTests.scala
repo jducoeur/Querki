@@ -53,7 +53,7 @@ class DataModelTests extends QuerkiTests {
       }
       implicit val s = new TSpace
       
-      pql("""[[Test Thing -> My Text Prop -> _asType(Link Type)]]""") should
+      pql("""[[Test Thing -> My Text Prop -> _asType(Thing Type)]]""") should
         equal (linkText(s.sandbox))
     }
   }

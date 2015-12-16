@@ -169,11 +169,11 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
             |are no longer required to do so. (Originally, this was called "Tag Set Type", and could only be
             |a Set, but we decided to make it less restrictive.)
             |
-            |When you select Tag Set Type, the Editor will ask you if you want to Link to a Model. This is optional,
+            |When you select Tag Set Type, the Editor will ask you if you want to Restrict to a Model. This is optional,
             |but can be very useful -- if it is set, it restricts the Tags that get offered to you when you are
             |doing data entry. If this Property has any sort of meaning -- if the Tag Set isn't completely open-ended
             |and arbitrary -- consider first creating a Model (which doesn't need anything more than a Display Name),
-            |and using it as the Link Model for the Property. That will help keep your Tags better-organized.""".stripMargin))) 
+            |and using it in Restrict to Model for the Property. That will help keep your Tags better-organized.""".stripMargin))) 
   {
     override def editorSpan(prop:Property[_,_]):Int = 12
     
@@ -326,7 +326,7 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
           |will receive the Name that you are trying to look at.
           |
           |You can also put an Undefined Tag View on a Model, which basically means that all Tags of this Model
-          |will use that View. (Technically, this means all Tags that are used in a Tag Set whose Link Model
+          |will use that View. (Technically, this means all Tags that are used in a Tag Set whose `Restrict to Model`
           |points to this Model.)
           |
           |There is a simple default value that is defined on every Space by default. But you should feel free

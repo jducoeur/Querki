@@ -104,9 +104,9 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
           |pretty forgiving, but don't count on that -- it may get stricter about requiring a well-formed URL
           |in the future, so it is only recommended that this be used with full URLs.
           |
-          |This Type is useful, but not as useful as one would wish, since it doesn't allow you to give a description
-          |of what this URL is linking to. That is why its name was changed from "External Link Type". A new, more
-          |sophisticated External Link Type will be added in the near future.""".stripMargin)
+          |This Type is useful, but not as much as one might wish, since it doesn't allow you to give a description
+          |of what this URL is linking to. In most cases, you will probably find the [[External Link Type]] more
+          |useful.""".stripMargin)
     )) with PTypeBuilder[QURL, String] with URLableType
   {
     override def editorSpan(prop:Property[_,_]):Int = 6
@@ -186,9 +186,9 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
 	    toProps(
 	      setName("Link Kind"),
 	      SkillLevel(SkillLevelAdvanced),
-	      Summary("The Kind that this Property can Link to"),
-	      Details("""When you create a Link Property, if you do *not* set the *Link Model* Property on it,
-	          |you may want to at least specify which *Kind* of Thing this can Link to. There are five Kinds of
+	      Summary("The Kind that this Property can contain"),
+	      Details("""When you create a Thing Property, if you do *not* set the `Restrict to Model` Property on it,
+	          |you may want to at least specify which *Kind* of Thing this can contain. There are five Kinds of
 	          |Things in Querki:
 	          |
 	          |* Ordinary Thing
@@ -197,9 +197,9 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
 	          |* Type
 	          |* Collection
 	          |
-	          |99% of the time, you will want to link to ordinary Things. (And most of those times, you should set
-	          |a particular Link Model.) Occasionally, for very complex systems, you may want to Link to Property
-	          |or Space instead. You are not likely to ever link to Type or Collection, but it is possible to do so.
+	          |99% of the time, you will want to contain ordinary Things. (And most of those times, you should set
+	          |Restrict to Model.) Occasionally, for very complex systems, you may want to contain a Property
+	          |or Space instead. You are not likely to ever want Type or Collection, but it is possible to do so.
 	          |
 	          |This is an extremely advanced property, and not intended for casual use.""".stripMargin),
 	      AppliesToKindProp(Kind.Property)
@@ -219,15 +219,15 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
 	
 	lazy val LinkModelProp = new SystemProperty(LinkModelOID, LinkType, Optional,
 	    toProps(
-	      setName("Link Model"),
-	      Summary("Which Things can this Property link to?"),
-	      Details("""By default, Link Properties allow you to link to *anything*. This usually isn't what
+	      setName("Restrict to Model"),
+	      Summary("Which Things can this Property contain?"),
+	      Details("""By default, Link Properties can contain *anything*. This usually isn't what
 	          |you want, though -- most often, you're looking for Instances of a specific Model. For example,
-	          |if you specify the Stylesheet Property, you only want to give Stylesheets as options to Link to:
-	          |it would be meaningless to have the Stylesheet point to something like a recipe or a to-do list.
+	          |if you specify the Stylesheet Property, you only want to give Stylesheets as options:
+	          |it would be meaningless to have the Stylesheet contain something like a recipe or a to-do list.
 	          |
-	          |So this is a meta-Property: when you create a Property that is a Link, you can add this to say
-	          |exactly what it can link *to*. It is strongly recommended that you set this on all Link Properties
+	          |So this is a meta-Property: when you create a Thing Property, you can add this to say
+	          |exactly *which* Things it can contain. It is strongly recommended that you set this on all Thing Properties
 	          |you create -- it makes them easier to use, and tends to prevent confusing errors.
 	          |
 	          |Note that this is only enforced loosely, and you can't absolutely count upon this restriction
@@ -258,8 +258,9 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
 	      NotInherited,
 	      Core.ModelOnlyProp(true),
 	      Summary("Set this to declare that this Model is a Choice, and its Instances are the options to choose from."),
-	      Details("""When you create a Link Property in the Editor, you can set the "Link Model" -- the sort of Thing
-	          |that this Property points to. The Editor then lets you choose from all of the existing Instances of that
+        // TODO: this documentation is out of date. Rewrite it:
+	      Details("""When you create a Thing Property in the Editor, you can set "Restrict to Model" -- the sort of Thing
+	          |that this Property contains. The Editor then lets you choose from all of the existing Instances of that
 	          |Model, and also lets you create a new one.
 	          |
 	          |Sometimes, though, you don't want to create any new ones from the Editor. In particular, if you've already
