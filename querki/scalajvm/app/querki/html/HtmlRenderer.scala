@@ -238,7 +238,7 @@ class HtmlRendererEcot(e:Ecology) extends QuerkiEcot(e) with HtmlRenderer with q
     // the buttons aren't submittable form elements. Hence the hidden field below: when we click on a button, that gets
     // changed:
       <span class="btn-group _optYesNo" data-toggle="buttons" name={currentValue.inputControlId + "-wrapper"} id={currentValue.inputControlId + "-wrapper"}>
-        {oneButton("Yes", "true", (isSet && v))}{oneButton("Maybe", "maybe", (!isSet))}{oneButton("No", "false", (isSet && !v))}
+        {oneButton("True", "true", (isSet && v))}{oneButton("Maybe", "maybe", (!isSet))}{oneButton("False", "false", (isSet && !v))}
         <input type="hidden" id={currentValue.inputControlId} name={currentValue.inputControlId}
           value={if (isSet) {v.toString} else "maybe"}
         />

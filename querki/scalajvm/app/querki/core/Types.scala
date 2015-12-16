@@ -769,18 +769,19 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
   }
   
   /**
-   * The YesNo Type -- or Boolean, as us geeks think of it
+   * The TrueOrFalse Type -- or Boolean, as us geeks think of it. Originally named YesNo Type; the
+   * code hasn't caught up to the present day yet.
    */
   class YesNoType extends SystemType[Boolean](YesNoTypeOID,
       toProps(
-        setName("YesNo Type"),
-        Summary("A yes/no, true/false value"),
-        Details("""A YesNo Property allows you to say whether something is true or false.
+        setName("TrueOrFalse Type"),
+        Summary("A true/false value"),
+        Details("""A TrueOrFalse Property, as the name implies, allows you to say whether something is true or false.
             |
-            |If you say that your Property is Optional YesNo, that essentially introduces the
+            |If you say that your Property is Optional TrueOrFalse, that essentially introduces the
             |concept of "Maybe" -- a value that is neither True nor False.
             |
-            |YesNo values are called "Boolean" in most programming languages; we are deliberately
+            |TrueOrFalse values are called "Boolean" in most programming languages; we are deliberately
             |avoiding that particular bit of computer-science jargon.""".stripMargin)
         )) with SimplePTypeBuilder[Boolean]
   {
@@ -821,7 +822,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
         // TBD: this is kind of idiotic. Why is it inconsistently happening?
         case "" => true
         
-        case _ => throw new Exception("I can't interpret " + v + " as a YesNo value")
+        case _ => throw new Exception("I can't interpret " + v + " as a TrueOrFalse value")
       }
     }
     def doSerialize(v:Boolean)(implicit state:SpaceState) = v.toString
