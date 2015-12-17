@@ -494,7 +494,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
         classesWikiOpt <- inv.processAsOpt("classes", ParsedTextType)
         allClasses =
           "btn" +
-          classesWikiOpt.map(_.raw.str).map(" " + _).getOrElse("btn-default")
+          classesWikiOpt.map(_.raw.str).map(" " + _).getOrElse(" btn-default")
       }
         yield 
           HtmlValue(
