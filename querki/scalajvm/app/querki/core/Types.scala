@@ -590,6 +590,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
   class NameType extends NameTypeBase(NameTypeOID, 
       toProps(
         setName("Link Name Type"),
+        setInternal,
         Summary("The type for Link Names"),
         Details("""A "Link Name" is exactly that -- a name that *can* be applied to a Thing. It does not
             |necessarily mean a name that is currently in use: the Link Name can be for a Thing that already
