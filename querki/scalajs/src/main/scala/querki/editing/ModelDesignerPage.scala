@@ -12,6 +12,7 @@ import rx.ops._
 import querki.globals._
 
 import EditFunctions._
+import querki.api.ThingFunctions
 import querki.data.{BasicThingInfo, PropInfo, SpaceProps, ThingInfo}
 import querki.display.{Gadget, RawDiv, WithTooltip}
 import querki.display.input.{DeleteInstanceButton, InputGadget}
@@ -86,10 +87,27 @@ class ModelDesignerPage(params:ParamMap)(implicit e:Ecology) extends Page(e) wit
   }
   
   def removeProperty(editor:PropValueEditor) = {
+    val propToRemove = editor.propInfo.oid
+    def removeEditor = editor.section.removeEditor(editor)
     // TODO: this should handle exceptions!
-    Client[EditFunctions].removeProperty(modelId, editor.propInfo.oid).call().foreach { result =>
+    Client[EditFunctions].removeProperty(modelId, propToRemove).call().foreach { result =>
       result match {
-        case PropertyChanged => editor.section.removeEditor(editor)
+        case PropertyChanged => {
+          // If the Property is local...
+          if (!editor.propInfo.isShadow) {
+            Client[EditFunctions].getPropertyUsage(propToRemove).call() foreach { usage =>
+              // ... and it's not being used any more..
+              if (usage.nModels == 0 && usage.nInstances == 0) {
+                // ... then delete it completely:
+                Client[ThingFunctions].deleteThing(propToRemove).call().foreach { dummy =>
+                  removeEditor
+                }
+              } else
+                removeEditor
+            }
+          } else
+            removeEditor
+        }
       }
     }
   }

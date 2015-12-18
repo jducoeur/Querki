@@ -63,7 +63,9 @@ case class PropInfo(
   collId:TID,
   // Note that the typeId points to the Type if it's conventional, or to the Model
   // iff it's a Model Property:
-  typeId:TID
+  typeId:TID,
+  // True iff this Property is shadowing another:
+  isShadow:Boolean
 ) extends BasicThingInfo
 
 case class PropValInfo(

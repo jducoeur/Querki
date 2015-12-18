@@ -155,13 +155,18 @@ class ClientApiEcot(e:Ecology) extends QuerkiEcot(e) with ClientApi
       }
       case _ => prop.pType.id
     }
+    
+    val isShadow = (prop.model != querki.core.MOIDs.UrPropOID)
+    
     PropInfo(
       prop, 
       prop.linkName, 
       prop.displayName, 
       prop.getPropOpt(Core.AppliesToKindProp).flatMap(_.firstOpt),
       prop.cType,
-      typeId)
+      typeId,
+      isShadow
+      )
   }
   
   def propValInfo(t:Thing, rc:RequestContext)(implicit state:SpaceState):Future[Seq[PropValInfo]] = {
