@@ -553,6 +553,13 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
         	ExactlyOne(ElemValue(QLText("""Querki Types are just like any other Things -- they have Models and Instances.
         	    |The Root Type is essentially the Model for all the other Types. It must never be used directly.""".stripMargin),
             new DelegatingType(LargeTextType)))),
+        (querki.basic.MOIDs.DisplayTextOID -> Optional(LargeTextType("""[[Summary -> ""**____**""]]
+            |
+            |[[Details]]
+            |
+            |### Properties of [[Link Name]]
+            |
+            |[[_propsOfType -> _sort -> _bulleted]]""".stripMargin))),            
         setInternal))
   {
     def doDeserialize(v:String)(implicit state:SpaceState) = throw new Exception("Trying to use UrType!")
