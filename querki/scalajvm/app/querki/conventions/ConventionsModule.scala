@@ -25,7 +25,7 @@ class ConventionsModule(e:Ecology) extends QuerkiEcot(e) with Conventions {
           |this for all of your Properties.
           |
           |You may also put Summary on whatever other Things you like, and use it from other Things. By
-          |default (if you use Summary and it isn't defined), it simply shows this Thing's Display Name.
+          |default (if you use Summary and it isn't defined), it simply shows this Thing's Name.
           |
           |There is no required format or content for this Summary -- it should simply be a reminder of what
           |this Thing is about.""".stripMargin)))))

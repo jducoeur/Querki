@@ -72,7 +72,7 @@ class StandardThings(h:PassthroughHandlerBase) {
   
   object basic {
     val simpleThing = h.pass("Simple-Thing")
-    val displayNameProp = h.pass("Display Name")
+    val displayNameProp = h.pass("Name")
   	val defaultView = h.pass("Default View")
   	val printView = h.pass("Print View")
   }

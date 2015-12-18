@@ -172,7 +172,7 @@ class DataModelAccessEcot(e:Ecology) extends QuerkiEcot(e) with DataModelAccess 
           |    MODEL -> _instances -> LIST OF INSTANCES
           |That is, it receives a *Model*, and produces the Instances that come from that Model.
           |
-          |If your Instances have Display Names or Link Names, this list will be sorted by those names.
+          |If your Instances have Names or Link Names, this list will be sorted by those names.
           |
           |If you have sub-Models under *Model* (that add more Properties, for example), this will include those as well.
           |

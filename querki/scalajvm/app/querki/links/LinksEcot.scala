@@ -151,7 +151,7 @@ class LinksEcot(e:Ecology) extends QuerkiEcot(e) with Links with querki.core.Nam
         |more flexible, and lets you add more possibilities as you add your data.
         |
         |**Advanced:** each Multiple Choice Property defines a Model, and an Instance is created for each
-        |option. By default, the Model and Instances just contain Display Names, but you can add more Properties
+        |option. By default, the Model and Instances just contain Names, but you can add more Properties
         |to them, and pass them around and process them like any other Thing. This allows you to define
         |arbitrary metadata for each option, which Querki power users can use to write more powerful
         |expressions.""".stripMargin)))

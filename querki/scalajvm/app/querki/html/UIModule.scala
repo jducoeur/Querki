@@ -207,7 +207,7 @@ class UIModule(e:Ecology) extends QuerkiEcot(e) with HtmlUI with querki.core.Met
       SkillLevel(SkillLevelAdvanced),
       Summary("Allows you to define the top of the page when looking at this Thing"),
       Details("""Normally, Querki displays each Thing with a fairly complex predefined header,
-          |which includes its Display Name, Space, Model, edit buttons and so on. This works well
+          |which includes its Name, Space, Model, edit buttons and so on. This works well
           |for most cases, but if you want more control over the look and feel of your display, you
           |can override that by setting this Property.""".stripMargin)))
 

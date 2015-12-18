@@ -586,32 +586,32 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
     def doComputeMemSize(v:String):Int = 0
   }
   
+  // TODO: this is essentially identical to Tag, isn't it? Is this even useful any more?
   class NameType extends NameTypeBase(NameTypeOID, 
       toProps(
-        setName("Name Type"),
-        Summary("A Name that may or may not be on a Thing"),
-        Details("""A "Name" is exactly that -- a name that can be applied to a Thing. It does not
-            |necessarily mean a name that is currently in use: the Name can be for a Thing that already
-            |exists, or it can simply be a Name with no actual Thing named by it yet.
+        setName("Link Name Type"),
+        Summary("The type for Link Names"),
+        Details("""A "Link Name" is exactly that -- a name that *can* be applied to a Thing. It does not
+            |necessarily mean a name that is currently in use: the Link Name can be for a Thing that already
+            |exists, or it can simply be a Link Name with no actual Thing named by it yet.
             |
-            |Names are very restricted: they can contain only letter, numbers, spaces, dashes and underscores.
+            |Link Names are very restricted: they can contain only letter, numbers, spaces, dashes and underscores.
             |User-defined names may not start with underscore. (System-defined names often do.)
             |
-            |Any given Space may contain at most one Thing with any given Name -- you can't duplicate Names.
+            |Any given Space may contain at most one Thing with any given Link Name -- you can't duplicate Link Names.
             |
-            |When you choose "Name Type", the system will say "Link to which Model?". This is optional, but sometimes
-            |helpful. When you are editing a Name Property, the system will prompt you with existing Names. If you
-            |choose a Model at creation time, it will only prompt you with Names of Instances of that Model. So if
+            |When you choose "Link Name Type", the system will allow you to "Restrict to Model". This is optional, but sometimes
+            |helpful. When you are editing a Link Name Property, the system will prompt you with existing Link Names. If you
+            |choose a Model at creation time, it will only prompt you with Link Names of Instances of that Model. So if
             |you know what sorts of Things you will be naming in this Property, it is worth specifying that Model here.
             |
-            |Note that Names are different from the more-common Display Names, which you will usually use. These
+            |Note that Link Names are different from the more-common Names, which you will usually use. Normal Names
             |have far fewer restrictions, and are usually what you will see in practice. Most of the time, a Thing's
-            |Name is derived automatically from its Display Name when the Thing is first created, by stripping
-            |out the illegal characters.
+            |Link Name is derived automatically from its Name, by stripping out the illegal characters.
             |
-            |Names are used mainly to generate the URLs for each Thing, and are therefore sometimes called Link Names.
+            |Link Names are used mainly to generate the URLs for each Thing.
             |
-            |Names are fairly advanced -- most users usually won't want to create a Name Property.""".stripMargin))) 
+            |Link Names are fairly advanced -- most users usually won't want to create a Link Name Property.""".stripMargin))) 
   {
     override def editorSpan(prop:Property[_,_]):Int = 3
     
@@ -688,7 +688,7 @@ trait TypeCreation { self:CoreEcot with TextTypeBasis with NameTypeBasis with In
             |\[[Instructions\]]
             |```
             |It's as easy as that, but keep in mind that you need to use the other page's Link Name, which may be
-            |slightly different from its Display Name. If you're not sure, look in the small subtitle line on
+            |slightly different from its normal Name. If you're not sure, look in the small subtitle line on
             |that page -- it should give the "Link Name", which is what you should use.
             |
             |Second -- Querki is all about Things with Properties. Say that you want to show the value of the Property

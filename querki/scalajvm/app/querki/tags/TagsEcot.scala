@@ -160,19 +160,19 @@ class TagsEcot(e:Ecology) extends QuerkiEcot(e) with Tags with querki.core.Metho
             |list the characteristics of this Thing.
             |
             |Note that a Tag is, technically just a Plain Text value, and can contain almost anything.
-            |However, if it matches the Display Name of a Thing, it will generally display as a link to that
+            |However, if it matches the Name or Link Name of a Thing, it will generally display as a link to that
             |Thing if you simply show it, and if it doesn't match a Thing, clicking on it will allow you to
             |create a Thing by that name. This way, you can add additional details about what this Tag means.
             |
             |It is strongly recommended that you create Sets of Tags -- there is special UI support for this,
             |and we've found that Sets of Tags are one of the most useful sorts of data in Querki. But you
-            |are no longer required to do so. (Originally, this was called "Tag Set Type", and could only be
-            |a Set, but we decided to make it less restrictive.)
+            |are not required to do so -- in particular, if you really only want one value here, create an
+            |Optional Tag.
             |
-            |When you select Tag Set Type, the Editor will ask you if you want to Restrict to a Model. This is optional,
+            |When you select Tag Type, the Editor will ask you if you want to Restrict to a Model. This is optional,
             |but can be very useful -- if it is set, it restricts the Tags that get offered to you when you are
-            |doing data entry. If this Property has any sort of meaning -- if the Tag Set isn't completely open-ended
-            |and arbitrary -- consider first creating a Model (which doesn't need anything more than a Display Name),
+            |doing data entry. If this Property has any sort of meaning -- if the Tag isn't completely open-ended
+            |and arbitrary -- consider first creating a Model (which doesn't need anything more than a Name),
             |and using it in Restrict to Model for the Property. That will help keep your Tags better-organized.""".stripMargin))) 
   {
     override def editorSpan(prop:Property[_,_]):Int = 12

@@ -188,33 +188,39 @@ class DeriveNameModule(e:Ecology) extends QuerkiEcot(e) with DeriveName with Nam
       Links.LinkModelProp(deriveModel),
       Links.LinkAllowAppsProp(true),
       SkillLevel(SkillLevelAdvanced),
-      Summary("Should this Thing's Name be automatically derived from its Display Name?"),
+      Summary("Should this Thing's Link Name be automatically derived from its Name?"),
       Details("""Querki has two different kinds of "name". Both are important, but they are
           |very different:
           |
-          |* A Thing's Name is its official name -- the one that shows up in its URL, and which you use to refer to it in QL expressions.
-          |* A Thing's Display Name is what actually gets *shown* most of the time.
+          |* A Thing's Link Name is its official name -- the one that shows up in its URL, and which you use to refer to it in QL expressions.
+          |* A Thing's Name is what actually gets *shown* most of the time.
           |
-          |The most important difference is that Name is very restricted: it can contain letters, digits and spaces, and nothing
+          |The most important difference is that Link Name is very restricted: it can contain letters, digits and spaces, and nothing
           |else. It can't contain any of the punctuation you often want in a name: apostrophes, dashes, and stuff like that. So you
-          |usually want to think about the Display Name, not the Name.
+          |usually want to think about the Name, not the Link Name.
           |
-          |However, the Name is still important, so Querki will fill it in for you unless you tell it not to. When we talk about
-          |"deriving" the Name, we mean Querki looking at the Display Name and removing all the characters it can't deal with, to
-          |get the Name. Sometimes the result is exactly the same as Display Name, sometimes not, although a derived Name will usually
-          |be pretty close to the Display Name.
+          |However, the Link Name is still important, so Querki will fill it in for you unless you tell it not to. When we talk about
+          |"deriving" the Name, we mean Querki looking at the Name and removing all the characters it can't deal with, to
+          |get the Link Name. Sometimes the result is exactly the same as Name, sometimes not, although a derived Link Name will usually
+          |be pretty close to the Name.
           |
           |This Property says whether to do so. It has three possible settings, which are appropriate for different situations and tastes:
           |
-          |* *Derive Name Initially* means that the Name will be set based on the Display Name the *first* time you save it, but
-          |will stay that Name thereafter. This means that, if you change the Display Name, it might wind up quite different from
-          |the Name. But since the Name doesn't change, it means that references to this Thing are less likely to break. This was
+          |* *Derive Name Initially* means that the Link Name will be set based on the Name the *first* time you save it, but
+          |will stay that Link Name thereafter. This means that, if you change the Name, it might wind up quite different from
+          |the Link Name. But since the Link Name doesn't change, it means that references to this Thing are less likely to break. This was
           |the default, but is now deprecated: it proves too confusing in practice.
-          |* *Always Derive Name* means that the Name will change whenever the Display Name does. This makes it easier to remember
-          |what the Name is, but means that if you have references to this Thing -- if you have put its URL somewhere, or refer
-          |to it in a QL Expression, that might wind up as a broken link if you ever change the Display Name. This is now the default.
-          |* *Never Derive Name* means that you will set the Name (or not) yourself: Querki shouldn't do anything automatically.
-          |This gives you maximum control, but is more work.""".stripMargin)))
+          |* *Always Derive Name* means that the Link Name will change whenever the Name does. This makes it easier to remember
+          |what the Link Name is, but means that if you have references to this Thing -- if you have put its URL somewhere, or refer
+          |to it in a QL Expression, that might wind up as a broken link if you ever change the Name. This is now the default.
+          |* *Never Derive Name* means that you will set the Link Name (or not) yourself: Querki shouldn't do anything automatically.
+          |This gives you maximum control, but is more work.
+          |
+          |It is rare to set this property by hand. Instead, use the "Derive the Link Name from the Name" checkbox in the
+          |Advanced Editor. This is usually checked, which means *Always Derive* -- the Link Name will change when the Name
+          |does. If you uncheck it, that means *Never Derive* -- the Link Name will no longer change. Unchecking it makes
+          |sense if you might have outside pages pointing to this Thing by its Link Name, and don't want to break those
+          |pointers.""".stripMargin)))
   
   override lazy val props = Seq(
     DeriveNameProp

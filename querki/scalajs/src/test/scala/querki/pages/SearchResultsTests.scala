@@ -31,13 +31,13 @@ object SearchResultsTests extends ThingPageTests {
         val query1 = "sand"
         val result1 = SearchResult(
           ThingInfo(TID(".sandbox"), Some("Sandbox"), "Sandbox", TID(".simpleThing"), models.Kind.Thing, false, true, true, false, false, None),
-          "Display Name",
+          "Name",
           .75,
           "Sandbox",
           List(0))
         val result2 = SearchResult(
           ThingInfo(TID(".sandbox2"), Some("Sandbox-2"), "Sandbox 2", TID(".simpleThing"), models.Kind.Thing, false, true, true, false, false, None),
-          "Display Name",
+          "Name",
           .70,
           "Sandbox 2",
           List(0))

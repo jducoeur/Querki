@@ -174,7 +174,7 @@ class ExternalLinkEcot(e:Ecology) extends QuerkiEcot(e) with querki.core.MethodD
           |Keep in mind that this is rarely needed, though. Most of the time, when you want to display the link
           |to a passed-in Thing, you don't even need a QL expression -- you can simply say \____ (four underscores)
           |in your QText, and that translates as "display the received context". If you've passed in a Thing (which
-          |you most often do), that will display as an HTML link to that Thing, showing its Display Name.""".stripMargin)))
+          |you most often do), that will display as an HTML link to that Thing, showing its Name.""".stripMargin)))
   {
     override def qlApply(inv:Invocation):QFut = {
       for {

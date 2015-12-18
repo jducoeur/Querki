@@ -235,17 +235,18 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
       setName(commonName(_.basic.displayNameProp)),
       NotInherited,
       Types.MinTextLengthProp(1),
-      Summary("How to show this Thing's Name"),
-      Details("""Most Things in Querki have a Name. (It isn't strictly required, but strongly encouraged most
-          |of the time.) In general, when we list a Thing, we show its Name. However, if you want to display
-          |something *other* than its Name instead, set its Display Name Property to show in its place.
-          |
-          |Display Name is mainly useful when the name you would like to use includes characters that aren't
-          |legal in Names, such as quotes, apostrophes, commas or other punctuation characters.
-          |
-          |Note that the relationship of Name and Display Name is still in some flux, and things may shift a
-          |bit over time. We are thinking of putting Display Name more front-and-center, and making Name derive
-          |from that instead.""".stripMargin)
+      Summary("This Thing's usual Name"),
+      Details("""When you create a Thing in Querki, you will usually be asked to provide a Name.
+        |This is *not* generally required -- you can generally leave it off if there isn't a sensible
+        |name -- but it is usually recommended to give one.
+        |
+        |The Name can contain pretty much anything, including special characters like quotes, commas and
+        |so on.
+        |
+        |Note that there is also a "Link Name" Property on most Things, which is usually derived
+        |automatically from the Name. The Link Name is used in URLs, QL expressions, and places like
+        |that, where special characters are not legal. You can usually ignore this distinction, but
+        |keep in mind that the Link Name is what will show up in those places, rather than the usual Name.""".stripMargin)
       ))
   
   lazy val ComputedNameProp = new SystemProperty(ComputedNameOID, TextType, ExactlyOne,
@@ -253,7 +254,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
       setName("Computed Name"),
       SkillLevel(SkillLevelAdvanced),
       Summary("How to compute a name, for Things that don't have their own names"),
-      Details("""Most Things in Querki use the Display Name Property to set a name for this specific Thing.
+      Details("""Most Things in Querki use the Name Property to set a name for this specific Thing.
           |But that sometimes isn't appropriate, especially for "child" Things that are providing more detail
           |to a "parent". In those cases, you often would like to still be able to display links to the child
           |in a way that is clearer than an Object ID like ".3y286ks".
@@ -261,7 +262,7 @@ class BasicModule(e:Ecology) extends QuerkiEcot(e) with Basic with WithQL with T
           |Computed Name exists for this sort of situation. This is a Text Property, which you usually define
           |as a Model Property for the Child Model, to give this Child a pseudo-name based on its properties.
           |For example, to show a name based on the Parent and the Child's "My Date" Property, you would set
-          |Computed Name to `\[[Parent -> Display Name\]]-\[[My Date\]]`.
+          |Computed Name to `\[[Parent -> Name\]]-\[[My Date\]]`.
           |
           |The resulting displayed name is only as unique as you make it. Try to use a combination of Properties
           |that will consistently result in a unique name, to make it clear which Thing is which.

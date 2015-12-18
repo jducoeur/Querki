@@ -45,7 +45,7 @@ class DeriveNameCheck(valEditor:PropValueEditor)(implicit e:Ecology) extends Inp
                   PageManager.reload()
                 } 
               }), 
-          " Derive the Link Name from the Display Name")
+          " Derive the Link Name from the Name")
       )
     )
     

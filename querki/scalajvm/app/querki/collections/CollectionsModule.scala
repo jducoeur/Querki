@@ -303,7 +303,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
           opts = Seq(("exp", AnyType, Core.QNone, "One or more expressions to apply to the received values, saying how to sort them")),
           returns = (AnyType, "The same List, sorted as requested")
         ),        
-	      Details("""With no parameters, _sort sorts the elements of the received List "naturally" -- alphabetically by their Display Names
+	      Details("""With no parameters, _sort sorts the elements of the received List "naturally" -- alphabetically by their Names
             |if they are Things, in numeric order if they are Numbers, and so on.
 	          |This is what you want most of the time. However, note that many methods that return Lists are sorted to begin with,
 	          |so you often don't even need to bother.
@@ -320,7 +320,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |This will try to sort the list on A. When it finds multiple Things with the same value for A, it will sort them on B instead, then
 	          |C, and so on.
 	          |
-	          |_sort is focused on Links, and as mentioned above, will default to sorting those by Display Name. You can also sort lists of Numbers,
+	          |_sort is focused on Things, and as mentioned above, will default to sorting those by Name. You can also sort lists of Numbers,
 	          |and many Types just work correctly, but not all. If you need to sort something, and can't make it work, please speak up.
 	          |
 	          |Most of the time, you will want *exp* to simply be the name of a Property. For example, this:
@@ -332,7 +332,7 @@ class CollectionsModule(e:Ecology) extends QuerkiEcot(e) with querki.core.Method
 	          |
 	          |If you need to reverse the order of the sort, use the [[_desc._self]] method inside of it.
 	          |
-	          |If two or more elements being sorted have the same sort value, they will be sorted by Display Name.""".stripMargin)))
+	          |If two or more elements being sorted have the same sort value, they will be sorted by Name.""".stripMargin)))
 	{
 	  // Note that we intentionally need to keep the type to compare on separate from the actual ElemValue.
 	  // That is because the compType might be, eg, a _desc() wrapper around the actual PType.

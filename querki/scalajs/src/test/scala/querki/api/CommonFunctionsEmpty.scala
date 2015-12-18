@@ -25,7 +25,7 @@ class CommonFunctionsEmpty extends CommonFunctions {
     ppair("Is a Model"),
     
     tpair("Simple-Thing"),
-    ppair("Display Name"),
+    ppair("Name"),
     ppair("Default View"),
     ppair("Print View"),
     
