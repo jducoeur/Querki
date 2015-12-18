@@ -89,12 +89,12 @@ class LogicTests extends QuerkiTests {
       }
       implicit val s = new TSpace
       
-      pql("""[[Trivial -> _equals(Name, ""Trivial"")]]""") should equal ("true")
-      pql("""[[Trivial -> _equals(Name, ""Floob"")]]""") should equal ("false")
-      pql("""[[Trivial -> _equals(Name, My Thing -> My Optional Text)]]""") should equal ("true")
-      pql("""[[Trivial -> _equals(""Trivial"", Name)]]""") should equal ("true")
-      pql("""[[Trivial -> _equals(""Floob"", Name)]]""") should equal ("false")
-      pql("""[[Trivial -> _equals(My Thing -> My Optional Text, Name)]]""") should equal ("true")
+      pql("""[[Trivial -> _equals(Link Name, ""Trivial"")]]""") should equal ("true")
+      pql("""[[Trivial -> _equals(Link Name, ""Floob"")]]""") should equal ("false")
+      pql("""[[Trivial -> _equals(Link Name, My Thing -> My Optional Text)]]""") should equal ("true")
+      pql("""[[Trivial -> _equals(""Trivial"", Link Name)]]""") should equal ("true")
+      pql("""[[Trivial -> _equals(""Floob"", Link Name)]]""") should equal ("false")
+      pql("""[[Trivial -> _equals(My Thing -> My Optional Text, Link Name)]]""") should equal ("true")
     }
     
     "fail if there is a hard Type mismatch" in {
@@ -104,7 +104,7 @@ class LogicTests extends QuerkiTests {
       }
       implicit val s = new TSpace
       
-      pql("""[[Trivial -> _equals(Name, My Thing -> My Num)]]""") should equal ("{{_warning:Logic.equals.typeMismatch}}")      
+      pql("""[[Trivial -> _equals(Link Name, My Thing -> My Num)]]""") should equal ("{{_warning:Logic.equals.typeMismatch}}")      
     }
   }
   
@@ -154,7 +154,7 @@ class LogicTests extends QuerkiTests {
       }
       implicit val s = new TSpace
       
-      pql("""[[_if(Trivial -> _equals(Name, My Thing -> My Num), ""hello"")]]""") should equal ("{{_warning:Logic.equals.typeMismatch}}")            
+      pql("""[[_if(Trivial -> _equals(Link Name, My Thing -> My Num), ""hello"")]]""") should equal ("{{_warning:Logic.equals.typeMismatch}}")            
     }
   }
   

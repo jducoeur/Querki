@@ -231,7 +231,7 @@ class UITests extends QuerkiTests {
         val withLinks = new SimpleTestThing("With Links", listLinksProp(sandbox.id, withUrlOID))
       }
       
-      processQText(thingAsContext[testSpace](new testSpace, _.withLinks), """[[My List of Links -> _showLink(Name)]]""") should
+      processQText(thingAsContext[testSpace](new testSpace, _.withLinks), """[[My List of Links -> _showLink(Link Name)]]""") should
         equal ("\n[Sandbox](Sandbox)\n[With URL](With-URL)")
     }
   }

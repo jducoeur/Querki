@@ -55,7 +55,7 @@ class QLTests extends QuerkiTests {
       class TSpace extends CommonSpace {
         val myMethod = new TestProperty(QLType, ExactlyOne, "My Method")
         
-        val thingWithMethod = new SimpleTestThing("Methodical", myMethod("""$_context -> Name"""))
+        val thingWithMethod = new SimpleTestThing("Methodical", myMethod("""$_context -> Link Name"""))
       }
       val space = new TSpace
       
@@ -119,7 +119,7 @@ class QLTests extends QuerkiTests {
         val otherThing = new SimpleTestThing("Other Thing", numberProp(42))
         val thingWithMethods = new SimpleTestThing("Methodical", 
             myMethod("""My Number._self -> Methodical.Method 2(Other Thing)"""),
-            myInnerMethod("""""[[$_1 -> $_context]] [[$_context._self -> Name]]"""""))
+            myInnerMethod("""""[[$_1 -> $_context]] [[$_context._self -> Link Name]]"""""))
       }
       val space = new TSpace
       
@@ -155,7 +155,7 @@ class QLTests extends QuerkiTests {
       class TSpace extends CommonSpace {
         val myMethod = new TestProperty(QLType, ExactlyOne, "My Method")
         
-        val thingWithMethod = new SimpleTestThing("Methodical", myMethod("""$_1 -> Name"""))
+        val thingWithMethod = new SimpleTestThing("Methodical", myMethod("""$_1 -> Link Name"""))
       }
       val space = new TSpace
       

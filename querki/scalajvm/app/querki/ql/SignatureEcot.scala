@@ -249,26 +249,26 @@ class SignatureEcot(e:Ecology) extends QuerkiEcot(e) with Signature with Signatu
           """""[[_Function Signature -> _Expected Context -> _if(_Context Is Required,
               |      _if(_isEmpty(_Function Context Types),
               |        ""Anything -> "",
-              |        ""[[_Function Context Types -> Name -> _join("" *or* "")]] -> "")
+              |        ""[[_Function Context Types -> Link Name -> _join("" *or* "")]] -> "")
               |)]][[_Function Signature -> _Defining Context -> _if(_isNonEmpty,
-              |      ""[[_Function Context Types -> Name -> _join("" *or* "")]]."")
-              |  ]][[Name]][[
+              |      ""[[_Function Context Types -> Link Name -> _join("" *or* "")]]."")
+              |  ]][[Link Name]][[
               |  _Function Signature -> _concat(_Required Parameters, _Optional Parameters) -> 
-              |        _if(_isNonEmpty, *""([[Name -> _join("", "")]])"")]][[
+              |        _if(_isNonEmpty, *""([[Link Name -> _join("", "")]])"")]][[
               |  _Function Signature -> _Function Return Type -> _Function Context Types -> _first -> 
-              |      "" -> [[Name]]""]]""""".stripMargin)))
+              |      "" -> [[Link Name]]""]]""""".stripMargin)))
           
   lazy val ParamsDisplay = ThingState(ParamsDisplayOID, systemOID, RootOID,
     toProps(
       setName("_Display Function Parameters"),
       Basic.ApplyMethod(
           """""[[_Function Signature -> _Expected Context -> _if(_Context Is Required, "": Receives [[_if(_isNonEmpty(_Function Context Types),
-            |      "" -- [[_Function Context Types -> Name -> _join("" *or* "")]]""
+            |      "" -- [[_Function Context Types -> Link Name -> _join("" *or* "")]]""
             |     )]] : [[Summary]] "")]][[
             |    _Function Signature -> _Defining Context -> ""
             |      : Defining Context [[_if(_not(_Context Is Required), "" (optional)"")]] : [[Summary]]""]][[
             |    _Function Signature -> _concat(_Required Parameters, _Optional Parameters) ->
-            |    "": [[Name]][[_if(_hasProperty(Default Value._self), "" (optional)"")]] : [[Summary]]""]][[
+            |    "": [[Link Name]][[_if(_hasProperty(Default Value._self), "" (optional)"")]] : [[Summary]]""]][[
             |    _Function Signature -> _Function Return Type -> "" 
             |      : Produces : [[Summary]]""]]""""".stripMargin)))
       

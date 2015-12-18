@@ -49,7 +49,7 @@ class AdvancedPage(params:ParamMap)(implicit e:Ecology) extends Page(e) with Eco
   val ql =
     s"""""### Advanced commands for ____
         |
-        |**[Export all Instances of [[Name]] as a CSV file](_exportModel?modelId=[[_oid]]&format=1)**
+        |**[Export all Instances of [[Link Name]] as a CSV file](_exportModel?modelId=[[_oid]]&format=1)**
         |
         |[[_orphanedInstances -> _section(""### Orphaned Instances"", 
         |""These Instances belong to missing Models; we recommend going into each one, opening Advanced Edit from the

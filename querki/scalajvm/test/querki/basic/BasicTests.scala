@@ -16,7 +16,7 @@ class BasicTests extends QuerkiTests {
       }
       implicit val s = new TSpace
       
-      pql("""[[Test Model._instances -> ""[[Name]][[Numbers -> _bulleted]]"" -> _bulleted]]""") should
+      pql("""[[Test Model._instances -> ""[[Link Name]][[Numbers -> _bulleted]]"" -> _bulleted]]""") should
         equal("""
 			<ul>
 			<li class="_bullet">
@@ -69,7 +69,7 @@ class BasicTests extends QuerkiTests {
   "Computed Name" should {
     class TSpace extends CommonSpace {
       val linkedTo = new SimpleTestThing("Thing to Link")
-      val compModel = new SimpleTestThing("Model With Computed", singleLinkProp(), Basic.ComputedNameProp("""Child of [[Single Link -> Name]]"""))
+      val compModel = new SimpleTestThing("Model With Computed", singleLinkProp(), Basic.ComputedNameProp("""Child of [[Single Link -> Link Name]]"""))
       
       val unnamed = new UnnamedThing(compModel, singleLinkProp(linkedTo))
       val named = new TestThing("My Named Thing", compModel)

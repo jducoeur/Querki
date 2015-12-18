@@ -93,7 +93,7 @@ class FunctionTests extends QuerkiTests {
           new SimpleTestThing("Caller", 
               outerText("From the outside: [[Other -> External Thing.My Function]]"))
         val otherThing = new SimpleTestThing("Other", myNumber(42), myFunc("Other Number"), otherNumber(13))
-        val externalThing = new SimpleTestThing("External Thing", myFunc("Name"))
+        val externalThing = new SimpleTestThing("External Thing", myFunc("Link Name"))
       }
       implicit val s = new TSpace
       

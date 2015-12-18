@@ -50,7 +50,7 @@ class IntrospectionTests extends QuerkiTests {
       implicit val space = new TSpace
       
       // Note that the results are in order by Instance Props, not alphabetical:
-      pql("""[[My Complex Thing -> Complex Prop -> _foreachProperty(""Name: [[_prop -> Name]]; Value: [[_val]]"") -> _bulleted]]""") should
+      pql("""[[My Complex Thing -> Complex Prop -> _foreachProperty(""Name: [[_prop -> Link Name]]; Value: [[_val]]"") -> _bulleted]]""") should
         equal("""
             |<ul>
             |<li class="_bullet">
@@ -74,11 +74,11 @@ class IntrospectionTests extends QuerkiTests {
     "work with a non-quoted Expression" in {
       implicit val space = new TSpace
       
-      pql("""[[Thing with Opt -> _foreachProperty(_if(_val -> _isNonEmpty, ""[[_prop -> Name]]: [[_val]]""))]]""") should
+      pql("""[[Thing with Opt -> _foreachProperty(_if(_val -> _isNonEmpty, ""[[_prop -> Link Name]]: [[_val]]""))]]""") should
         equal("""
             |First Prop: 1
             |Second Prop: 2""".stripReturns)
-      pql("""[[My Complex Thing -> Complex Prop -> _foreachProperty(_if(_isNonEmpty, ""[[_prop -> Name]]: [[_val]]""))]]""") should
+      pql("""[[My Complex Thing -> Complex Prop -> _foreachProperty(_if(_isNonEmpty, ""[[_prop -> Link Name]]: [[_val]]""))]]""") should
         equal("""
             |First Prop: 1
             |Second Prop: 2
@@ -127,7 +127,7 @@ class IntrospectionTests extends QuerkiTests {
     "work properly" in {
       implicit val space = new TSpace
       
-      pql("""[[Bottom Model._instances -> _foreachProperty(""Name: [[_prop -> Name]]; Value: [[_val]]; On: [[_definedOn -> Name]]"") -> _bulleted]]""")  should
+      pql("""[[Bottom Model._instances -> _foreachProperty(""Name: [[_prop -> Link Name]]; Value: [[_val]]; On: [[_definedOn -> Link Name]]"") -> _bulleted]]""")  should
         equal ("""
             |<ul>
 			|<li class="_bullet">

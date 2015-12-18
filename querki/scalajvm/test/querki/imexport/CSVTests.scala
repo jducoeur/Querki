@@ -26,7 +26,7 @@ class CSVTests extends QuerkiTests {
       assert(result.name == "My Model.csv")
       // No Instance Properties specified, so we show the Properties in alphabetical
       // order: Name, Number Prop, Text Prop. Everything is ExactlyOne, so no empty fields:
-      new String(result.content).stripReturns should equal("""Name,Number Prop,Text Prop
+      new String(result.content).stripReturns should equal("""Link Name,Number Prop,Text Prop
           |Instance-1,42,Hello
           |Instance-2,99,Hello
           |Instance-3,42,there""".stripReturns)
@@ -48,7 +48,7 @@ class CSVTests extends QuerkiTests {
       
       val result = Imexport.exportInstances(getRc, Format.CSV, s.myModel)(s.state)
       assert(result.name == "My Model.csv")
-      new String(result.content).stripReturns should equal("""Text Prop,Name
+      new String(result.content).stripReturns should equal("""Text Prop,Link Name
           |Hello,Instance-1
           |Hello,Instance-2
           |there,Instance-3""".stripReturns)
@@ -71,7 +71,7 @@ class CSVTests extends QuerkiTests {
       assert(result.name == "My Model.csv")
       // No Instance Properties specified, so we show the Properties in alphabetical
       // order: Name, Number Prop, Text Prop. Everything is ExactlyOne, so no empty fields:
-      new String(result.content).stripReturns should equal("""Name,Number Prop,Text Prop
+      new String(result.content).stripReturns should equal("""Link Name,Number Prop,Text Prop
           |Instance-1,42,
           |Instance-2,99,
           |Instance-3,42,there""".stripReturns)
@@ -97,7 +97,7 @@ class CSVTests extends QuerkiTests {
       assert(result.name == "My Model.csv")
       // No Instance Properties specified, so we show the Properties in alphabetical
       // order: Name, Number Prop, Text Prop. Everything is ExactlyOne, so no empty fields:
-      new String(result.content).stripReturns should equal("""Name,Number Prop,Text Prop
+      new String(result.content).stripReturns should equal("""Link Name,Number Prop,Text Prop
           |Instance-1,42,Hello
           |Instance-2,42,
           |Instance-3,42,Hi""".stripReturns)
@@ -153,12 +153,12 @@ class CSVTests extends QuerkiTests {
       val result = Imexport.exportInstances(getRc, Format.CSV, s.topModel)(s.state)
       assert(result.name == "Top Model.csv")
       // The nested Model Types have InstanceProps, and the top doesn't. The result is that we get
-      // the order (Text in Model, Number in Model),Name -- the first two come from "Meta Property",
-      // which comes before "Name":
-      new String(result.content).stripReturns should equal("""Text in Model,Number in Model,Name
-          |Top Text 1,11,Top-level-Thing-1
-          |Top Text 2,200,Top-level-Thing-2
-          |Text from MetaModel,42,Top-level-Thing-3""".stripReturns)
+      // the order Link Name, (Text in Model, Number in Model) -- the first two come from "Meta Property",
+      // which comes after "Link Name":
+      new String(result.content).stripReturns should equal("""Link Name,Text in Model,Number in Model
+          |Top-level-Thing-1,Top Text 1,11
+          |Top-level-Thing-2,Top Text 2,200
+          |Top-level-Thing-3,Text from MetaModel,42""".stripReturns)
     }
 
     "work with escaped fields" in {
@@ -179,7 +179,7 @@ class CSVTests extends QuerkiTests {
       assert(result.name == "My Model.csv")
       // No Instance Properties specified, so we show the Properties in alphabetical
       // order: Name, Number Prop, Text Prop. Everything is ExactlyOne, so no empty fields:
-      new String(result.content).stripReturns should equal("""Name,Number Prop,"This is ""text"" "
+      new String(result.content).stripReturns should equal("""Link Name,Number Prop,"This is ""text"" "
           |Instance-1,42," ""Hello"" "
           |Instance-2,42,"Hi, there!"
           |Instance-3,42,"Hello
@@ -206,7 +206,7 @@ class CSVTests extends QuerkiTests {
       
       val result = Imexport.exportInstances(getRc, Format.CSV, s.myModel)(s.state)
       assert(result.name == "My Model.csv")
-      new String(result.content).stripReturns should equal("""Name,Number Prop,Text Prop
+      new String(result.content).stripReturns should equal("""Link Name,Number Prop,Text Prop
           |Instance-1,42,Category 2
           |Instance-2,42,Category 1
           |Instance-3,42,Category 3""".stripReturns)
@@ -233,7 +233,7 @@ class CSVTests extends QuerkiTests {
       val result = Imexport.exportInstances(getRc, Format.CSV, s.myModel)(s.state)
       assert(result.name == "My Model.csv")
       // Note that the Categories are at the end because "The categories" comes after "Name" and "Number Prop":
-      new String(result.content).stripReturns should equal("""Name,Number Prop,Category 1,Category 2,Category 3
+      new String(result.content).stripReturns should equal("""Link Name,Number Prop,Category 1,Category 2,Category 3
           |Instance-1,42,,x,
           |Instance-2,42,x,,x
           |Instance-3,42,,,x""".stripReturns)

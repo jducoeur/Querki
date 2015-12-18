@@ -322,7 +322,7 @@ class CollectionsTests extends QuerkiTests {
       val space = new testSpace
       import space._
       
-      processQText(thingAsContext[testSpace](space, _.wrapper), """[[My List of Links -> _sort(_desc(Name))]]""") should
+      processQText(thingAsContext[testSpace](space, _.wrapper), """[[My List of Links -> _sort(_desc(Link Name))]]""") should
         equal (listOfLinkText(linkTarget, pointer1, pointer2))
     }
     
@@ -339,7 +339,7 @@ class CollectionsTests extends QuerkiTests {
       }
       val space = new TSpace
       
-      processQText(thingAsContext[TSpace](space, _.theModel), """[[Sorting Model._instances -> _sort(Prop to Sort) -> ""[[Name]]: [[Prop to Sort]]""]]""") should
+      processQText(thingAsContext[TSpace](space, _.theModel), """[[Sorting Model._instances -> _sort(Prop to Sort) -> ""[[Link Name]]: [[Prop to Sort]]""]]""") should
         equal ("\nThing 5: Alphabetical!\nThing 2: Check!\nThing 4: Floobity!\nThing 1: Kazam!\nThing 3: Wild!")      
     }
     
@@ -365,7 +365,7 @@ class CollectionsTests extends QuerkiTests {
       }
       val space = new TSpace
       
-      processQText(thingAsContext[TSpace](space, _.theModel), """[[Referring Model._instances -> _sort(Reference -> Prop to Sort, ""Unknown"") -> ""[[Name]]: [[Reference -> Prop to Sort]]""]]""") should
+      processQText(thingAsContext[TSpace](space, _.theModel), """[[Referring Model._instances -> _sort(Reference -> Prop to Sort, ""Unknown"") -> ""[[Link Name]]: [[Reference -> Prop to Sort]]""]]""") should
         equal ("\nReference 5: Alphabetical!\nReference 2: Check!\nReference 4: Floobity!\nReference 1: Kazam!\nReference 3: Wild!")      
     }
     
@@ -448,7 +448,7 @@ Wild!, 19, """.stripReturns)
       }
       implicit val space = new TSpace
       
-      processQText(thingAsContext[TSpace](space, _.theModel), """[[Referring Model._instances -> _sort(Reference -> Prop to Sort) -> ""[[Name]]: [[Reference -> Prop to Sort]]""]]""") should
+      processQText(thingAsContext[TSpace](space, _.theModel), """[[Referring Model._instances -> _sort(Reference -> Prop to Sort) -> ""[[Link Name]]: [[Reference -> Prop to Sort]]""]]""") should
         equal ("\nReference 1a: \nReference 3: \nReference 6: \nReference 5: Alphabetical!\nReference 2: Check!\nReference 4: Floobity!\nReference 1: Kazam!")      
     }
     

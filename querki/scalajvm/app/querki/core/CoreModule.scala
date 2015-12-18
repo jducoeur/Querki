@@ -230,10 +230,24 @@ class CoreModule(e:Ecology) extends CoreEcot(e) with Core with WithQL
       toProps(
         setName(commonName(_.core.nameProp)),
         NotInherited,
-        Summary("The name of this Thing"),
-        Details("""Names should consist mainly of letters and numbers; they may also include dashes
+        Summary("The name used to point to this Thing"),
+        Details("""The Link Name for a Thing is usually derived automatically from its normal Name.
+            |It is the official identifier for that Thing, and is always unique within this Space.
+            |So it is used, for instance, in the URL for this Thing, and it is the name you usually
+            |use when referring to the Thing in QL, like \[[My Thing\]]. 
+            |
+            |Link Names should consist mainly of letters and numbers; they may also include dashes
         		|and spaces. They should usually start with a letter, and they shouldn't be
-        		|excessively long.""".stripMargin)
+        		|excessively long.
+            |
+            |If the Thing's Name already follows these rules, and is unique within the Space, the
+            |Link Name will be identical to the Name. If the Name contains illegal characters like
+            |commas, quotes and so on, they will be removed when figuring out the Link Name. If the
+            |result isn't unique within the Space, a number will be added to the end to make it unique.
+            |
+            |This usually works fine, but if you want to define your own Link Name for a Thing, rather
+            |than letting it be derived automatically, uncheck the "Derive the Link Name from the Name" 
+            |box in the Advanced Editor.""".stripMargin)
         ))
 
   /**

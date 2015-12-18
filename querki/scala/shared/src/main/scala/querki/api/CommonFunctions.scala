@@ -59,7 +59,7 @@ class StandardThings(h:PassthroughHandlerBase) {
   	val setColl = h.pass("Set")
   
     val urProp = h.pass("Property")
-    val nameProp = h.pass("Name")
+    val nameProp = h.pass("Link Name")
     val collectionProp = h.pass("Property Collection")
     val typeProp = h.pass("Property Type")
     val isModelProp = h.pass("Is a Model")

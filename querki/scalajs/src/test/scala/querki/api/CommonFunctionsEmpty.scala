@@ -19,7 +19,7 @@ class CommonFunctionsEmpty extends CommonFunctions {
   
   def getStandardThings():Future[Map[String, ThingInfo]] = Future.successful(Map(
     tpair("Property"),
-    ppair("Name"),
+    ppair("Link Name"),
     ppair("Property Collection"),
     ppair("Property Type"),
     ppair("Is a Model"),
