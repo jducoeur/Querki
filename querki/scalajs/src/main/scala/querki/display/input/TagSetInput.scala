@@ -112,6 +112,7 @@ class MarcoPoloInput(val propId:String, val required:Boolean, val kind:TagSetKin
           val q = data.display
           onSelect(data)
           $(elem).value(q)
+          $(elem).change()
           q
         }}
       )
